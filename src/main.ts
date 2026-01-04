@@ -51,11 +51,20 @@ async function main(): Promise<void> {
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
-  // Setup canvas
+  // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+
+  function resizeCanvas(): void {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+  }
+  resizeCanvas();
 
   // Init WebGL
   const gl = initWebGL(canvas);
@@ -65,10 +74,12 @@ async function main(): Promise<void> {
   const geometry = buildVerseGeometry(verses);
   const buffer = createBuffer(gl, geometry);
 
-  // Camera state - center visualization
+  // Camera state - center visualization (use CSS dimensions)
+  const cssWidth = window.innerWidth;
+  const cssHeight = window.innerHeight;
   const pan = {
-    x: (canvas.width / 2 - bounds.width / 2),
-    y: (canvas.height / 2 - bounds.height / 2)
+    x: (cssWidth / 2 - bounds.width / 2),
+    y: (cssHeight / 2 - bounds.height / 2)
   };
   let zoom = 1.0;
 
@@ -84,10 +95,10 @@ async function main(): Promise<void> {
 
     gl.useProgram(prog.program);
 
-    // Set uniforms
+    // Set uniforms - scale zoom by dpr to account for high-DPI canvas
     gl.uniform2f(prog.uniforms.resolution, canvas.width, canvas.height);
     gl.uniform2f(prog.uniforms.pan, pan.x, pan.y);
-    gl.uniform1f(prog.uniforms.zoom, zoom);
+    gl.uniform1f(prog.uniforms.zoom, zoom * dpr);
 
     // Bind buffer and set attributes
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -167,8 +178,7 @@ async function main(): Promise<void> {
 
   // Handle resize
   window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    resizeCanvas();
     render();
   });
 
