@@ -16,11 +16,195 @@
       font-size: 14px;
       pointer-events: none;
     }
+    #controls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+    }
+    #controls label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #aaa;
+    }
+    #controls select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #222;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #controls select:focus {
+      outline: none;
+      border-color: #666;
+    }
+    #legend {
+      margin-top: 12px;
+      font-size: 11px;
+    }
+    #legend .gradient {
+      height: 12px;
+      border-radius: 2px;
+      background: linear-gradient(to right, #1a1a2e, #16213e, #0f3460, #e94560);
+      margin-bottom: 2px;
+      position: relative;
+    }
+    #legend .ticks {
+      position: relative;
+      height: 16px;
+    }
+    #legend .tick {
+      position: absolute;
+      transform: translateX(-50%);
+      color: #888;
+      font-size: 10px;
+    }
+    #legend .tick::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      width: 1px;
+      height: 4px;
+      background: #666;
+    }
+    #verse-sidebar {
+      position: fixed;
+      top: 160px;
+      right: 10px;
+      width: 300px;
+      background: rgba(0, 0, 0, 0.9);
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+      display: none;
+      overflow: hidden;
+    }
+    #verse-sidebar.visible {
+      display: block;
+    }
+    #verse-sidebar .verse-ref {
+      padding: 12px 14px;
+      padding-right: 36px;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 14px;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+    }
+    #verse-sidebar .close-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: transparent;
+      color: #666;
+      font-size: 18px;
+      cursor: pointer;
+      display: none;
+      line-height: 1;
+    }
+    #verse-sidebar .close-btn:hover {
+      color: #fff;
+    }
+    #verse-sidebar.pinned .close-btn {
+      display: block;
+    }
+    #verse-sidebar.pinned {
+      border: 1px solid rgba(106, 176, 243, 0.3);
+    }
+    #verse-sidebar .verse-hebrew {
+      padding: 14px;
+      font-family: "SBL Hebrew", "Ezra SIL", "Times New Roman", serif;
+      font-size: 18px;
+      line-height: 1.6;
+      direction: rtl;
+      text-align: right;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #verse-sidebar .verse-english {
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #ccc;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #verse-sidebar .sefaria-link {
+      padding: 12px 14px;
+      display: block;
+      color: #6ab0f3;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    #verse-sidebar .sefaria-link:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    #verse-sidebar .sefaria-link .link-subtitle {
+      display: block;
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
   <div id="hover-info"></div>
+  <div id="controls">
+    <label>Overlay</label>
+    <select id="overlay-select">
+      <option value="none">None</option>
+      <option value="divine-names">Divine Names</option>
+      <option value="commentary">Commentary</option>
+    </select>
+    <div id="commentary-controls" style="display: none; margin-top: 10px;">
+      <label>Category</label>
+      <select id="category-select">
+        <option value="total">All Categories</option>
+        <option value="Midrash">Midrash</option>
+        <option value="Talmud">Talmud</option>
+        <option value="Halakhah">Halakhah</option>
+        <option value="Chasidut">Chasidut</option>
+        <option value="Kabbalah">Kabbalah</option>
+        <option value="Jewish Thought">Jewish Thought</option>
+        <option value="Musar">Musar</option>
+        <option value="Responsa">Responsa</option>
+        <option value="Tanakh">Tanakh (cross-references)</option>
+      </select>
+    </div>
+    <div id="legend" style="display: none;">
+      <div class="gradient"></div>
+      <div class="ticks" id="legend-ticks"></div>
+    </div>
+    <div id="divine-names-legend" style="display: none; margin-top: 10px; font-size: 11px;">
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(77, 128, 230); border-radius: 2px; vertical-align: middle;"></span> YHWH</span>
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(230, 77, 77); border-radius: 2px; vertical-align: middle;"></span> Elohim</span>
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(179, 77, 204); border-radius: 2px; vertical-align: middle;"></span> Both</span>
+        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(128, 128, 128); border-radius: 2px; vertical-align: middle;"></span> Neither</span>
+      </div>
+    </div>
+  </div>
+  <div id="verse-sidebar">
+    <div class="verse-ref"><span class="ref-text"></span><button class="close-btn">&times;</button></div>
+    <div class="verse-hebrew"></div>
+    <div class="verse-english"></div>
+    <a class="sefaria-link" href="#" target="_blank">
+      View on Sefaria
+      <span class="link-subtitle"></span>
+    </a>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
