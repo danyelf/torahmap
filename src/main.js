@@ -60,6 +60,43 @@ async function main() {
 
   render();
 
+  // Zoom with mouse wheel
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    zoom *= zoomFactor;
+    zoom = Math.max(0.1, Math.min(10, zoom));
+    render();
+  }, { passive: false });
+
+  // Pan with mouse drag
+  let isDragging = false;
+  let lastMouse = { x: 0, y: 0 };
+
+  canvas.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    lastMouse = { x: e.clientX, y: e.clientY };
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      const dx = e.clientX - lastMouse.x;
+      const dy = e.clientY - lastMouse.y;
+      pan.x += dx / zoom;
+      pan.y += dy / zoom;
+      lastMouse = { x: e.clientX, y: e.clientY };
+      render();
+    }
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    isDragging = false;
+  });
+
   // Handle resize
   window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
