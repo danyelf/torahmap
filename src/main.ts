@@ -94,11 +94,11 @@ async function main(): Promise<void> {
   const divineNames: DivineNamesData = await divineNamesResponse.json();
   const commentary: CommentaryData = await commentaryResponse.json();
 
-  // Compute layout with divine names coloring
-  const verses = computeLayout(torahData, divineNames);
+  // Compute layout (without divine names coloring initially - starts as "none")
+  const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
-  console.log('Commentary data loaded');
+  console.log('Divine names and commentary data loaded');
 
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -119,36 +119,58 @@ async function main(): Promise<void> {
   const gl = initWebGL(canvas);
   const prog = createProgram(gl);
 
-  // Current category for coloring
-  let currentCategory = '';
+  // Current overlay state
+  let currentOverlay = 'none';
+  let currentCategory = 'total';
   let buffer: WebGLBuffer;
 
-  // Function to rebuild geometry with colors based on category
-  function updateColors(category: string): void {
-    currentCategory = category;
+  // Divine name colors
+  const DIVINE_NAME_COLORS: { [code: number]: [number, number, number] } = {
+    1: [0.3, 0.5, 0.9],  // YHWH only - Blue
+    2: [0.9, 0.3, 0.3],  // Elohim only - Red
+    3: [0.7, 0.3, 0.8],  // Both - Purple
+  };
 
-    if (category === '') {
-      // Reset to default gray
-      for (const v of verses) {
-        v.color = undefined;
-      }
-    } else {
-      // Calculate max value for this category to normalize colors
+  // Seeded random for consistent gray variation
+  function seededRandom(seed: number): number {
+    const x = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  // Function to apply overlay colors
+  function applyOverlay(): void {
+    if (currentOverlay === 'none') {
+      // Gray with brightness variation
+      verses.forEach((v, i) => {
+        const brightness = 0.4 + seededRandom(i * 3) * 0.4;
+        v.color = [brightness, brightness, brightness];
+      });
+    } else if (currentOverlay === 'divine-names') {
+      // Apply divine names colors
+      verses.forEach((v, i) => {
+        const bookData = divineNames[v.book];
+        const code = bookData?.[v.chapter - 1]?.[v.verse - 1] ?? 0;
+        if (code > 0 && DIVINE_NAME_COLORS[code]) {
+          v.color = DIVINE_NAME_COLORS[code];
+        } else {
+          const brightness = 0.4 + seededRandom(i * 3) * 0.4;
+          v.color = [brightness, brightness, brightness];
+        }
+      });
+    } else if (currentOverlay === 'commentary') {
+      // Calculate max value for this category
       let maxValue = 0;
       for (const v of verses) {
-        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, category);
+        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, currentCategory);
         if (count > maxValue) maxValue = count;
       }
-      // With log scale, we can use the actual max value
       const colorMax = maxValue;
 
-      // Update legend with log-scale ticks
+      // Update legend ticks
       const ticksContainer = document.getElementById('legend-ticks');
       if (ticksContainer) {
         ticksContainer.innerHTML = '';
         const logMax = Math.log(colorMax + 1);
-
-        // Generate ticks at 0, 1, 10, 100, 1000, etc. up to max
         const ticks = [0];
         let tickVal = 1;
         while (tickVal <= colorMax) {
@@ -158,11 +180,9 @@ async function main(): Promise<void> {
         if (ticks[ticks.length - 1] < colorMax) {
           ticks.push(colorMax);
         }
-
         for (const val of ticks) {
           const tick = document.createElement('span');
           tick.className = 'tick';
-          // Position based on log scale (0 is special case)
           const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
           tick.style.left = `${pos}%`;
           tick.textContent = val >= 1000 ? `${val / 1000}k` : String(val);
@@ -170,9 +190,9 @@ async function main(): Promise<void> {
         }
       }
 
-      // Apply colors
+      // Apply heatmap colors
       for (const v of verses) {
-        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, category);
+        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, currentCategory);
         v.color = heatmapColor(count, colorMax);
       }
     }
@@ -274,22 +294,35 @@ async function main(): Promise<void> {
     isDragging = false;
   });
 
-  // Hover detection with commentary info
+  // Hover detection with overlay-aware info
   const hoverInfo = document.getElementById('hover-info');
+  const DIVINE_NAME_LABELS: { [code: number]: string } = {
+    0: '',
+    1: 'YHWH',
+    2: 'Elohim',
+    3: 'YHWH + Elohim'
+  };
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (!isDragging && hoverInfo) {
       const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
       if (verse) {
-        const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
         let info = `${verse.book} ${verse.chapter}:${verse.verse}`;
-        if (verseData) {
-          if (currentCategory === 'total') {
-            info += ` (${verseData.total} links)`;
-          } else if (currentCategory && verseData.categories[currentCategory]) {
-            info += ` (${verseData.categories[currentCategory]} ${currentCategory})`;
-          } else if (currentCategory === '') {
-            info += verseData.total > 0 ? ` (${verseData.total} links)` : '';
+
+        if (currentOverlay === 'divine-names') {
+          const bookData = divineNames[verse.book];
+          const code = bookData?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
+          if (code > 0) {
+            info += ` (${DIVINE_NAME_LABELS[code]})`;
+          }
+        } else if (currentOverlay === 'commentary') {
+          const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
+          if (verseData) {
+            if (currentCategory === 'total') {
+              info += ` (${verseData.total} links)`;
+            } else if (verseData.categories[currentCategory]) {
+              info += ` (${verseData.categories[currentCategory]} ${currentCategory})`;
+            }
           }
         }
         hoverInfo.textContent = info;
@@ -299,18 +332,38 @@ async function main(): Promise<void> {
     }
   });
 
-  // Category selector
+  // UI elements
+  const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
   const categorySelect = document.getElementById('category-select') as HTMLSelectElement;
+  const commentaryControls = document.getElementById('commentary-controls');
   const legend = document.getElementById('legend');
+  const divineNamesLegend = document.getElementById('divine-names-legend');
 
-  categorySelect?.addEventListener('change', () => {
-    const category = categorySelect.value;
-    updateColors(category);
-    render();
+  // Overlay selector
+  overlaySelect?.addEventListener('change', () => {
+    currentOverlay = overlaySelect.value;
 
-    // Show/hide legend
+    // Show/hide controls based on overlay
+    if (commentaryControls) {
+      commentaryControls.style.display = currentOverlay === 'commentary' ? 'block' : 'none';
+    }
     if (legend) {
-      legend.style.display = category === '' ? 'none' : 'block';
+      legend.style.display = currentOverlay === 'commentary' ? 'block' : 'none';
+    }
+    if (divineNamesLegend) {
+      divineNamesLegend.style.display = currentOverlay === 'divine-names' ? 'block' : 'none';
+    }
+
+    applyOverlay();
+    render();
+  });
+
+  // Category selector (for commentary overlay)
+  categorySelect?.addEventListener('change', () => {
+    currentCategory = categorySelect.value;
+    if (currentOverlay === 'commentary') {
+      applyOverlay();
+      render();
     }
   });
 
