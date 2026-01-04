@@ -4,6 +4,20 @@ import { initWebGL, createProgram } from './webgl.js';
 import { computeLayout, getLayoutBounds } from './layout.js';
 import { buildVerseGeometry, createBuffer } from './geometry.js';
 
+function findVerseAtPoint(verses, pan, zoom, canvasX, canvasY) {
+  // Convert screen coords to world coords
+  const worldX = canvasX / zoom - pan.x;
+  const worldY = canvasY / zoom - pan.y;
+
+  for (const v of verses) {
+    if (worldX >= v.x && worldX < v.x + v.size &&
+        worldY >= v.y && worldY < v.y + v.size) {
+      return v;
+    }
+  }
+  return null;
+}
+
 async function main() {
   // Load Torah structure
   const response = await fetch('data/torah-structure.json');
@@ -95,6 +109,20 @@ async function main() {
 
   canvas.addEventListener('mouseleave', () => {
     isDragging = false;
+  });
+
+  // Hover detection
+  const hoverInfo = document.getElementById('hover-info');
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!isDragging) {
+      const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+      if (verse) {
+        hoverInfo.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
+      } else {
+        hoverInfo.textContent = '';
+      }
+    }
   });
 
   // Handle resize
