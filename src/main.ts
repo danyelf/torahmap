@@ -4,7 +4,7 @@ import { initWebGL, createProgram } from './webgl.ts';
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
-import type { Verse, TorahData, Bounds } from './types.ts';
+import type { Verse, TorahData, Bounds, DivineNamesData } from './types.ts';
 
 // Extend window for global state
 declare global {
@@ -42,12 +42,16 @@ function findVerseAtPoint(
 }
 
 async function main(): Promise<void> {
-  // Load Torah structure
-  const response = await fetch('/data/torah-structure.json');
-  const torahData: TorahData = await response.json();
+  // Load Torah structure and divine names data in parallel
+  const [torahResponse, divineNamesResponse] = await Promise.all([
+    fetch('/data/torah-structure.json'),
+    fetch('/data/divine-names.json')
+  ]);
+  const torahData: TorahData = await torahResponse.json();
+  const divineNames: DivineNamesData = await divineNamesResponse.json();
 
-  // Compute layout
-  const verses = computeLayout(torahData);
+  // Compute layout with divine names coloring
+  const verses = computeLayout(torahData, divineNames);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
