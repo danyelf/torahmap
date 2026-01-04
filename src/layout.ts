@@ -32,8 +32,10 @@ const MINOR_PROPHET_STACKS = [
 const MINOR_PROPHETS = new Set(MINOR_PROPHET_STACKS.flat());
 
 // Ketuvim stacking: [stack, insertAfterBook]
+// The Five Megillot (scrolls) are grouped into two stacks
 const KETUVIM_STACK_CONFIG: Array<{ books: string[]; insertAfter: string }> = [
   { books: ['Song of Songs', 'Ruth', 'Lamentations'], insertAfter: 'Job' },      // 8 + 4 + 5 = 17 chapters
+  { books: ['Ecclesiastes', 'Esther'], insertAfter: 'Job' },                      // 12 + 10 = 22 chapters
   { books: ['Ezra', 'Nehemiah'], insertAfter: 'Daniel' }                          // 10 + 13 = 23 chapters
 ];
 const STACKED_KETUVIM = new Set(KETUVIM_STACK_CONFIG.flatMap(c => c.books));

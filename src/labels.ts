@@ -38,11 +38,10 @@ export function createBookLabels(verses: Verse[], container: HTMLElement): HTMLD
       color:#666;
       font-family:sans-serif;
       font-size:12px;
-      transform:translateX(-50%);
       white-space:nowrap;
     `;
     label.dataset.bookName = name;
-    label.dataset.centerX = String((pos.minX + pos.maxX) / 2);
+    label.dataset.leftX = String(pos.minX);
     label.dataset.topY = String(pos.minY);
     labels.appendChild(label);
   }
@@ -54,9 +53,9 @@ export function createBookLabels(verses: Verse[], container: HTMLElement): HTMLD
 export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement) {
-      const centerX = parseFloat(label.dataset.centerX || '0');
+      const leftX = parseFloat(label.dataset.leftX || '0');
       const topY = parseFloat(label.dataset.topY || '0');
-      const screenX = (centerX + pan.x) * zoom;
+      const screenX = (leftX + pan.x) * zoom;
       const screenY = (topY + pan.y) * zoom + LABEL_OFFSET_Y;
       label.style.left = screenX + 'px';
       label.style.top = screenY + 'px';
