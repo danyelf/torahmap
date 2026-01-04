@@ -3,6 +3,7 @@
 import { initWebGL, createProgram } from './webgl.js';
 import { computeLayout, getLayoutBounds } from './layout.js';
 import { buildVerseGeometry, createBuffer } from './geometry.js';
+import { createBookLabels, updateLabelPositions } from './labels.js';
 
 function findVerseAtPoint(verses, pan, zoom, canvasX, canvasY) {
   // Convert screen coords to world coords
@@ -41,8 +42,11 @@ async function main() {
   const geometry = buildVerseGeometry(verses);
   const buffer = createBuffer(gl, geometry);
 
-  // Camera state
-  let pan = { x: 50, y: 50 };
+  // Camera state - center visualization
+  let pan = {
+    x: (canvas.width / 2 - bounds.width / 2),
+    y: (canvas.height / 2 - bounds.height / 2)
+  };
   let zoom = 1.0;
 
   // Render function
@@ -70,9 +74,15 @@ async function main() {
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
+
+    if (window.bookLabels) updateLabelPositions(window.bookLabels, pan, zoom);
   }
 
   render();
+
+  // Book labels
+  window.bookLabels = createBookLabels(verses, document.body);
+  updateLabelPositions(window.bookLabels, pan, zoom);
 
   // Zoom with mouse wheel
   canvas.addEventListener('wheel', (e) => {
