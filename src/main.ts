@@ -4,6 +4,7 @@ import { initWebGL, createProgram } from './webgl.ts';
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
+import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import type { Verse, TorahData, Bounds, DivineNamesData, CommentaryData } from './types.ts';
 
 // Extend window for global state
@@ -84,11 +85,12 @@ function findVerseAtPoint(
 }
 
 async function main(): Promise<void> {
-  // Load Torah structure, divine names, and commentary data in parallel
-  const [torahResponse, divineNamesResponse, commentaryResponse] = await Promise.all([
+  // Load Torah structure, divine names, commentary data, and verse texts in parallel
+  const [torahResponse, divineNamesResponse, commentaryResponse, verseTexts] = await Promise.all([
     fetch('/data/torah-structure.json'),
     fetch('/data/divine-names.json'),
-    fetch('/data/commentary-counts.json')
+    fetch('/data/commentary-counts.json'),
+    loadAllVerseTexts()
   ]);
   const torahData: TorahData = await torahResponse.json();
   const divineNames: DivineNamesData = await divineNamesResponse.json();
@@ -294,8 +296,16 @@ async function main(): Promise<void> {
     isDragging = false;
   });
 
-  // Hover detection with overlay-aware info
+  // Hover detection with overlay-aware info and sidebar
   const hoverInfo = document.getElementById('hover-info');
+  const sidebar = document.getElementById('verse-sidebar');
+  const sidebarRef = sidebar?.querySelector('.ref-text');
+  const sidebarHebrew = sidebar?.querySelector('.verse-hebrew');
+  const sidebarEnglish = sidebar?.querySelector('.verse-english');
+  const sidebarLink = sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement | null;
+  const sidebarLinkSubtitle = sidebar?.querySelector('.link-subtitle');
+  const sidebarCloseBtn = sidebar?.querySelector('.close-btn');
+
   const DIVINE_NAME_LABELS: { [code: number]: string } = {
     0: '',
     1: 'YHWH',
@@ -303,33 +313,134 @@ async function main(): Promise<void> {
     3: 'YHWH + Elohim'
   };
 
-  canvas.addEventListener('mousemove', (e: MouseEvent) => {
-    if (!isDragging && hoverInfo) {
-      const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
-      if (verse) {
-        let info = `${verse.book} ${verse.chapter}:${verse.verse}`;
+  // Build Sefaria URL for a verse
+  function getSefariaUrl(book: string, chapter: number, verse: number, category: string): string {
+    const sefariaBook = book.replace(/ /g, '_');
+    const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
+    if (category && category !== 'total' && category !== '') {
+      return `${baseUrl}?with=${encodeURIComponent(category)}`;
+    }
+    return baseUrl;
+  }
 
-        if (currentOverlay === 'divine-names') {
-          const bookData = divineNames[verse.book];
-          const code = bookData?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
-          if (code > 0) {
-            info += ` (${DIVINE_NAME_LABELS[code]})`;
-          }
-        } else if (currentOverlay === 'commentary') {
-          const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
-          if (verseData) {
-            if (currentCategory === 'total') {
-              info += ` (${verseData.total} links)`;
-            } else if (verseData.categories[currentCategory]) {
-              info += ` (${verseData.categories[currentCategory]} ${currentCategory})`;
-            }
-          }
+  // Track pinned verse (click to persist)
+  let pinnedVerse: Verse | null = null;
+
+  // Update sidebar with verse info
+  function updateSidebar(verse: Verse | null, isPinned: boolean = false): void {
+    if (!sidebar) return;
+
+    if (!verse) {
+      sidebar.classList.remove('visible');
+      sidebar.classList.remove('pinned');
+      return;
+    }
+
+    const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
+    const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
+
+    if (sidebarRef) {
+      sidebarRef.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
+    }
+    if (sidebarHebrew) {
+      sidebarHebrew.textContent = text?.he || 'Loading...';
+    }
+    if (sidebarEnglish) {
+      sidebarEnglish.textContent = text?.en || 'Loading...';
+    }
+    if (sidebarLink) {
+      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentCategory);
+    }
+    if (sidebarLinkSubtitle) {
+      if (verseData) {
+        if (currentCategory === 'total') {
+          sidebarLinkSubtitle.textContent = `${verseData.total} linked texts`;
+        } else if (currentCategory && verseData.categories[currentCategory]) {
+          sidebarLinkSubtitle.textContent = `${verseData.categories[currentCategory]} ${currentCategory} texts`;
+        } else {
+          sidebarLinkSubtitle.textContent = verseData.total > 0 ? `${verseData.total} linked texts` : '';
         }
-        hoverInfo.textContent = info;
       } else {
-        hoverInfo.textContent = '';
+        sidebarLinkSubtitle.textContent = '';
       }
     }
+
+    sidebar.classList.add('visible');
+    if (isPinned) {
+      sidebar.classList.add('pinned');
+    } else {
+      sidebar.classList.remove('pinned');
+    }
+  }
+
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    if (!isDragging) {
+      const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+
+      // Update hover info based on current overlay
+      if (hoverInfo) {
+        if (verse) {
+          let info = `${verse.book} ${verse.chapter}:${verse.verse}`;
+
+          if (currentOverlay === 'divine-names') {
+            const bookData = divineNames[verse.book];
+            const code = bookData?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
+            if (code > 0) {
+              info += ` (${DIVINE_NAME_LABELS[code]})`;
+            }
+          } else if (currentOverlay === 'commentary') {
+            const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
+            if (verseData) {
+              if (currentCategory === 'total') {
+                info += ` (${verseData.total} links)`;
+              } else if (verseData.categories[currentCategory]) {
+                info += ` (${verseData.categories[currentCategory]} ${currentCategory})`;
+              }
+            }
+          }
+          hoverInfo.textContent = info;
+        } else {
+          hoverInfo.textContent = '';
+        }
+      }
+
+      // Update sidebar (pinned takes precedence - no hover changes when pinned)
+      if (pinnedVerse) {
+        // Keep showing pinned verse, don't update on hover
+      } else if (verse) {
+        updateSidebar(verse, false);
+      } else {
+        updateSidebar(null);
+      }
+    }
+  });
+
+  // Click to pin/unpin verse
+  canvas.addEventListener('click', (e: MouseEvent) => {
+    const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+    if (verse) {
+      // Toggle pin: if clicking same verse, unpin; otherwise pin new verse
+      if (pinnedVerse &&
+          pinnedVerse.book === verse.book &&
+          pinnedVerse.chapter === verse.chapter &&
+          pinnedVerse.verse === verse.verse) {
+        pinnedVerse = null;
+        updateSidebar(null);
+      } else {
+        pinnedVerse = verse;
+        updateSidebar(verse, true);
+      }
+    } else if (pinnedVerse) {
+      // Clicking empty space unpins
+      pinnedVerse = null;
+      updateSidebar(null);
+    }
+  });
+
+  // Close button to unpin
+  sidebarCloseBtn?.addEventListener('click', () => {
+    pinnedVerse = null;
+    updateSidebar(null);
   });
 
   // UI elements
