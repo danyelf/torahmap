@@ -1,4 +1,4 @@
-// Torah Map - Main entry point
+// Tanakh Map - Main entry point
 
 import { initWebGL, createProgram } from './webgl.ts';
 import { computeLayout, getLayoutBounds } from './layout.ts';
@@ -85,9 +85,9 @@ function findVerseAtPoint(
 }
 
 async function main(): Promise<void> {
-  // Load Torah structure, divine names, commentary data, and verse texts in parallel
+  // Load Tanakh structure, divine names, commentary data, and verse texts in parallel
   const [torahResponse, divineNamesResponse, commentaryResponse, verseTexts] = await Promise.all([
-    fetch('/data/torah-structure.json'),
+    fetch('/data/tanakh-structure.json'),
     fetch('/data/divine-names.json'),
     fetch('/data/commentary-counts.json'),
     loadAllVerseTexts()
