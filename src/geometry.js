@@ -2,8 +2,8 @@
 
 export function buildVerseGeometry(verses, baseColor = [0.6, 0.6, 0.6]) {
   // Each verse = 2 triangles = 6 vertices
-  // Each vertex = x, y, r, g, b
-  const floatsPerVertex = 5;
+  // Each vertex = x, y, r, g, b, u, v
+  const floatsPerVertex = 7;
   const verticesPerQuad = 6;
   const data = new Float32Array(verses.length * verticesPerQuad * floatsPerVertex);
 
@@ -15,15 +15,15 @@ export function buildVerseGeometry(verses, baseColor = [0.6, 0.6, 0.6]) {
     const y1 = v.y + v.size - 1;
     const [r, g, b] = v.color || baseColor;
 
-    // Triangle 1
-    data[offset++] = x0; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b;
-    data[offset++] = x1; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b;
-    data[offset++] = x0; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b;
+    // Triangle 1 (top-left, top-right, bottom-left)
+    data[offset++] = x0; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 0; data[offset++] = 0;
+    data[offset++] = x1; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 1; data[offset++] = 0;
+    data[offset++] = x0; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 0; data[offset++] = 1;
 
-    // Triangle 2
-    data[offset++] = x0; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b;
-    data[offset++] = x1; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b;
-    data[offset++] = x1; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b;
+    // Triangle 2 (bottom-left, top-right, bottom-right)
+    data[offset++] = x0; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 0; data[offset++] = 1;
+    data[offset++] = x1; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 1; data[offset++] = 0;
+    data[offset++] = x1; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 1; data[offset++] = 1;
   }
 
   return data;

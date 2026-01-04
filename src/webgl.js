@@ -7,24 +7,36 @@ const VERTEX_SHADER = `#version 300 es
 
   in vec2 a_position;
   in vec3 a_color;
+  in vec2 a_uv;
 
   out vec3 v_color;
+  out vec2 v_uv;
 
   void main() {
     vec2 pos = (a_position + u_pan) * u_zoom;
     vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
     v_color = a_color;
+    v_uv = a_uv;
   }
 `;
 
 const FRAGMENT_SHADER = `#version 300 es
   precision mediump float;
   in vec3 v_color;
+  in vec2 v_uv;
   out vec4 fragColor;
 
   void main() {
-    fragColor = vec4(v_color, 1.0);
+    // Compute distance from edge (0 at edge, 0.5 at center)
+    vec2 edgeDist = min(v_uv, 1.0 - v_uv);
+    float dist = min(edgeDist.x, edgeDist.y);
+
+    // Use fwidth for screen-space anti-aliasing
+    float fw = fwidth(dist);
+    float alpha = smoothstep(0.0, fw * 1.5, dist);
+
+    fragColor = vec4(v_color, alpha);
   }
 `;
 
@@ -62,6 +74,7 @@ export function createProgram(gl) {
     attribs: {
       position: gl.getAttribLocation(program, 'a_position'),
       color: gl.getAttribLocation(program, 'a_color'),
+      uv: gl.getAttribLocation(program, 'a_uv'),
     },
     uniforms: {
       resolution: gl.getUniformLocation(program, 'u_resolution'),

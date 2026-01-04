@@ -49,6 +49,10 @@ async function main() {
   };
   let zoom = 1.0;
 
+  // Enable alpha blending for anti-aliased edges
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
   // Render function
   function render() {
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -65,12 +69,15 @@ async function main() {
     // Bind buffer and set attributes
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-    const stride = 5 * 4; // 5 floats * 4 bytes
+    const stride = 7 * 4; // 7 floats * 4 bytes (x, y, r, g, b, u, v)
     gl.enableVertexAttribArray(prog.attribs.position);
     gl.vertexAttribPointer(prog.attribs.position, 2, gl.FLOAT, false, stride, 0);
 
     gl.enableVertexAttribArray(prog.attribs.color);
     gl.vertexAttribPointer(prog.attribs.color, 3, gl.FLOAT, false, stride, 2 * 4);
+
+    gl.enableVertexAttribArray(prog.attribs.uv);
+    gl.vertexAttribPointer(prog.attribs.uv, 2, gl.FLOAT, false, stride, 5 * 4);
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
