@@ -10,6 +10,13 @@ export interface TorahData {
   books: Book[];
 }
 
+/**
+ * Divine names data structure.
+ * Maps book names to arrays of chapters, where each chapter is an array of verse codes.
+ * Verse codes: 0 = no divine name, 1 = YHWH, 2 = Elohim, 3 = both
+ */
+export type DivineNamesData = { [bookName: string]: number[][] };
+
 export interface Verse {
   book: string;
   chapter: number;
