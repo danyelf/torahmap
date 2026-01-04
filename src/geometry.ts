@@ -16,8 +16,8 @@ export function buildVerseGeometry(
   for (const v of verses) {
     const x0 = v.x;
     const y0 = v.y;
-    const x1 = v.x + v.size - 1; // -1 for 1px gap
-    const y1 = v.y + v.size - 1;
+    const x1 = v.x + v.size - 2; // -2 for 2px gap
+    const y1 = v.y + v.size - 2;
     const [r, g, b] = v.color || baseColor;
 
     // Triangle 1 (top-left, top-right, bottom-left)

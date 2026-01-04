@@ -74,14 +74,21 @@ async function main(): Promise<void> {
   const geometry = buildVerseGeometry(verses);
   const buffer = createBuffer(gl, geometry);
 
-  // Camera state - center visualization (use CSS dimensions)
+  // Camera state - fit and center visualization
   const cssWidth = window.innerWidth;
   const cssHeight = window.innerHeight;
+  const padding = 60; // pixels padding around visualization
+
+  // Calculate zoom to fit entire visualization with padding
+  const fitZoomX = (cssWidth - padding * 2) / bounds.width;
+  const fitZoomY = (cssHeight - padding * 2) / bounds.height;
+  let zoom = Math.min(fitZoomX, fitZoomY, 1.0); // don't zoom in past 1.0
+
+  // Center at the calculated zoom level
   const pan = {
-    x: (cssWidth / 2 - bounds.width / 2),
-    y: (cssHeight / 2 - bounds.height / 2)
+    x: (cssWidth / zoom / 2 - bounds.width / 2),
+    y: (cssHeight / zoom / 2 - bounds.height / 2)
   };
-  let zoom = 1.0;
 
   // Enable alpha blending for anti-aliased edges
   gl.enable(gl.BLEND);

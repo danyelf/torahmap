@@ -30,13 +30,13 @@ const FRAGMENT_SHADER = `#version 300 es
   out vec4 fragColor;
 
   void main() {
-    // Compute distance from edge (0 at edge, 0.5 at center)
-    vec2 edgeDist = min(v_uv, 1.0 - v_uv);
-    float dist = min(edgeDist.x, edgeDist.y);
+    // Circular/rounded approach - distance from center
+    vec2 centered = v_uv * 2.0 - 1.0; // -1 to 1
+    float dist = length(centered);
 
     // Use fwidth for screen-space anti-aliasing
     float fw = fwidth(dist);
-    float alpha = smoothstep(0.0, fw * 1.5, dist);
+    float alpha = 1.0 - smoothstep(0.85 - fw, 0.85 + fw, dist);
 
     fragColor = vec4(v_color, alpha);
   }
