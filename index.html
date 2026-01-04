@@ -16,11 +16,91 @@
       font-size: 14px;
       pointer-events: none;
     }
+    #controls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 12px;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+    }
+    #controls label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: #aaa;
+    }
+    #controls select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #222;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #controls select:focus {
+      outline: none;
+      border-color: #666;
+    }
+    #legend {
+      margin-top: 12px;
+      font-size: 11px;
+    }
+    #legend .gradient {
+      height: 12px;
+      border-radius: 2px;
+      background: linear-gradient(to right, #1a1a2e, #16213e, #0f3460, #e94560);
+      margin-bottom: 2px;
+      position: relative;
+    }
+    #legend .ticks {
+      position: relative;
+      height: 16px;
+    }
+    #legend .tick {
+      position: absolute;
+      transform: translateX(-50%);
+      color: #888;
+      font-size: 10px;
+    }
+    #legend .tick::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      width: 1px;
+      height: 4px;
+      background: #666;
+    }
   </style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
   <div id="hover-info"></div>
+  <div id="controls">
+    <label>Color by Commentary</label>
+    <select id="category-select">
+      <option value="">None (default)</option>
+      <option value="total">All Categories</option>
+      <option value="Midrash">Midrash</option>
+      <option value="Talmud">Talmud</option>
+      <option value="Halakhah">Halakhah</option>
+      <option value="Chasidut">Chasidut</option>
+      <option value="Kabbalah">Kabbalah</option>
+      <option value="Jewish Thought">Jewish Thought</option>
+      <option value="Musar">Musar</option>
+      <option value="Responsa">Responsa</option>
+      <option value="Tanakh">Tanakh (cross-references)</option>
+    </select>
+    <div id="legend" style="display: none;">
+      <div class="gradient"></div>
+      <div class="ticks" id="legend-ticks"></div>
+    </div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
