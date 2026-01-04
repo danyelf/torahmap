@@ -1,5 +1,7 @@
 // Tanakh Map - Main entry point
 
+declare const __GIT_BRANCH__: string;
+
 import { initWebGL, createProgram } from './webgl.ts';
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
@@ -85,6 +87,9 @@ function findVerseAtPoint(
 }
 
 async function main(): Promise<void> {
+  // Set page title with branch name
+  document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
+
   // Load Tanakh structure, divine names, commentary data, and verse texts in parallel
   const [torahResponse, divineNamesResponse, commentaryResponse, verseTexts] = await Promise.all([
     fetch('/data/tanakh-structure.json'),
