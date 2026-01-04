@@ -16,7 +16,7 @@ export function buildVerseGeometry(
   for (const v of verses) {
     const x0 = v.x;
     const y0 = v.y;
-    const x1 = v.x + v.size - 2; // -2 for 2px gap
+    const x1 = v.x + v.size - 2; // -2 for 2px gap (more separation reduces moiré)
     const y1 = v.y + v.size - 2;
     const [r, g, b] = v.color || baseColor;
 

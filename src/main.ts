@@ -74,25 +74,18 @@ async function main(): Promise<void> {
   const geometry = buildVerseGeometry(verses);
   const buffer = createBuffer(gl, geometry);
 
-  // Camera state - fit and center visualization
+  // Camera state - start at 1:1 zoom, centered
   const cssWidth = window.innerWidth;
   const cssHeight = window.innerHeight;
-  const padding = 60; // pixels padding around visualization
 
-  // Calculate zoom to fit entire visualization with padding
-  const fitZoomX = (cssWidth - padding * 2) / bounds.width;
-  const fitZoomY = (cssHeight - padding * 2) / bounds.height;
-  let zoom = Math.min(fitZoomX, fitZoomY, 1.0); // don't zoom in past 1.0
+  // Always start at 1:1 zoom to avoid moiré from fractional scaling
+  let zoom = 1.0;
 
-  // Center at the calculated zoom level
+  // Center the visualization
   const pan = {
-    x: (cssWidth / zoom / 2 - bounds.width / 2),
-    y: (cssHeight / zoom / 2 - bounds.height / 2)
+    x: (cssWidth / 2 - bounds.width / 2),
+    y: (cssHeight / 2 - bounds.height / 2)
   };
-
-  // Enable alpha blending for anti-aliased edges
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   // Render function
   function render(): void {
@@ -132,12 +125,11 @@ async function main(): Promise<void> {
   window.bookLabels = createBookLabels(verses, document.body);
   updateLabelPositions(window.bookLabels, pan, zoom);
 
-  // Zoom with mouse wheel
+  // Smooth zooming with mouse wheel
   canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    zoom *= zoomFactor;
-    zoom = Math.max(0.1, Math.min(10, zoom));
+    zoom = Math.max(0.1, Math.min(10, zoom * zoomFactor));
     render();
   }, { passive: false });
 

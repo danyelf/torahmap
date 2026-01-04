@@ -29,21 +29,21 @@ const FRAGMENT_SHADER = `#version 300 es
   in vec2 v_uv;
   out vec4 fragColor;
 
+  // Simple hash for dithering noise
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  }
+
   void main() {
-    // Circular/rounded approach - distance from center
-    vec2 centered = v_uv * 2.0 - 1.0; // -1 to 1
-    float dist = length(centered);
-
-    // Use fwidth for screen-space anti-aliasing
-    float fw = fwidth(dist);
-    float alpha = 1.0 - smoothstep(0.85 - fw, 0.85 + fw, dist);
-
-    fragColor = vec4(v_color, alpha);
+    // Add dithering noise to break up moiré patterns
+    float noise = (hash(gl_FragCoord.xy) - 0.5) * 0.15;
+    vec3 color = v_color + noise;
+    fragColor = vec4(color, 1.0);
   }
 `;
 
 export function initWebGL(canvas: HTMLCanvasElement): WebGL2RenderingContext {
-  const gl = canvas.getContext('webgl2');
+  const gl = canvas.getContext('webgl2', { antialias: true });
   if (!gl) throw new Error('WebGL2 not supported');
   return gl;
 }
