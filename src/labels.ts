@@ -5,6 +5,7 @@ import type { Verse } from './types.ts';
 interface BookBounds {
   minX: number;
   maxX: number;
+  minY: number;
 }
 
 interface Pan {
@@ -12,14 +13,17 @@ interface Pan {
   y: number;
 }
 
+const LABEL_OFFSET_Y = -20; // Position labels above the book
+
 export function createBookLabels(verses: Verse[], container: HTMLElement): HTMLDivElement {
   // Group verses by book to find column positions
   const books: Record<string, BookBounds> = {};
   for (const v of verses) {
     if (!books[v.book]) {
-      books[v.book] = { minX: v.x, maxX: v.x + v.size };
+      books[v.book] = { minX: v.x, maxX: v.x + v.size, minY: v.y };
     }
     books[v.book].maxX = Math.max(books[v.book].maxX, v.x + v.size);
+    books[v.book].minY = Math.min(books[v.book].minY, v.y);
   }
 
   const labels = document.createElement('div');
@@ -35,9 +39,11 @@ export function createBookLabels(verses: Verse[], container: HTMLElement): HTMLD
       font-family:sans-serif;
       font-size:12px;
       transform:translateX(-50%);
+      white-space:nowrap;
     `;
     label.dataset.bookName = name;
     label.dataset.centerX = String((pos.minX + pos.maxX) / 2);
+    label.dataset.topY = String(pos.minY);
     labels.appendChild(label);
   }
 
@@ -49,9 +55,11 @@ export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoo
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement) {
       const centerX = parseFloat(label.dataset.centerX || '0');
+      const topY = parseFloat(label.dataset.topY || '0');
       const screenX = (centerX + pan.x) * zoom;
+      const screenY = (topY + pan.y) * zoom + LABEL_OFFSET_Y;
       label.style.left = screenX + 'px';
-      label.style.top = '30px';
+      label.style.top = screenY + 'px';
     }
   }
 }
