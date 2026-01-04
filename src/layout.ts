@@ -6,7 +6,7 @@ const VERSE_SIZE = 6;           // pixels per verse square
 const CHAPTER_GAP = 2;          // gap between chapter rows
 const BOOK_GAP = 12;            // gap between book columns
 const SECTION_GAP = 70;         // gap between Torah/Nevi'im/Ketuvim sections
-const STACKED_BOOK_GAP = 20;    // gap between vertically stacked books
+const STACKED_BOOK_GAP = 35;    // gap between vertically stacked books
 const WRAP_THRESHOLD = 50;      // wrap chapters longer than this
 const WRAP_INDENT = 12;         // indent for wrapped lines (2 verse widths)
 const PSALMS_COLUMN_GAP = 15;   // gap between Psalms columns
@@ -20,12 +20,12 @@ const KETUVIM_BOOKS = new Set([
 ]);
 
 // Minor prophets stacking: each array is a vertical stack (top to bottom)
+// Balanced for similar heights: ~18, ~14, ~18, ~17 chapter rows
 const MINOR_PROPHET_STACKS = [
-  ['Hosea', 'Joel'],
-  ['Amos', 'Obadiah', 'Jonah'],
-  ['Micah', 'Nahum', 'Habakkuk'],
-  ['Zephaniah', 'Haggai'],
-  ['Zechariah', 'Malachi']
+  ['Hosea', 'Joel'],                                    // 14 + 4 = 18 chapters
+  ['Amos', 'Obadiah', 'Jonah'],                         // 9 + 1 + 4 = 14 chapters
+  ['Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai'], // 7 + 3 + 3 + 3 + 2 = 18 chapters
+  ['Zechariah', 'Malachi']                              // 14 + 3 = 17 chapters
 ];
 
 const MINOR_PROPHETS = new Set(MINOR_PROPHET_STACKS.flat());
