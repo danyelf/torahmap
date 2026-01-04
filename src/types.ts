@@ -25,6 +25,15 @@ export interface Bounds {
   height: number;
 }
 
+// Commentary counts from Sefaria
+export interface VerseCommentary {
+  total: number;
+  categories: Record<string, number>;
+}
+
+export type CommentaryData = Record<string, Record<string, Record<string, VerseCommentary>>>;
+// Structure: { [book]: { [chapter]: { [verse]: VerseCommentary } } }
+
 export interface ShaderProgram {
   program: WebGLProgram;
   attribs: {
