@@ -9,6 +9,7 @@ const SECTION_GAP = 70;         // gap between Torah/Nevi'im/Ketuvim sections
 const STACKED_BOOK_GAP = 35;    // gap between vertically stacked books
 const WRAP_THRESHOLD = 50;      // wrap chapters longer than this
 const WRAP_INDENT = 12;         // indent for wrapped lines (2 verse widths)
+const MIN_WRAP_VERSES = 3;      // minimum verses on a wrapped line (avoid widows)
 const PSALMS_COLUMN_GAP = 15;   // gap between Psalms columns
 
 // Section definitions for Tanakh
@@ -30,6 +31,13 @@ const MINOR_PROPHET_STACKS = [
 
 const MINOR_PROPHETS = new Set(MINOR_PROPHET_STACKS.flat());
 
+// Ketuvim stacking: [stack, insertAfterBook]
+const KETUVIM_STACK_CONFIG: Array<{ books: string[]; insertAfter: string }> = [
+  { books: ['Song of Songs', 'Ruth', 'Lamentations'], insertAfter: 'Job' },      // 8 + 4 + 5 = 17 chapters
+  { books: ['Ezra', 'Nehemiah'], insertAfter: 'Daniel' }                          // 10 + 13 = 23 chapters
+];
+const STACKED_KETUVIM = new Set(KETUVIM_STACK_CONFIG.flatMap(c => c.books));
+
 function getSection(bookName: string): 'torah' | 'neviim' | 'ketuvim' {
   if (TORAH_BOOKS.has(bookName)) return 'torah';
   if (KETUVIM_BOOKS.has(bookName)) return 'ketuvim';
@@ -42,6 +50,36 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x);
 }
 
+// Calculate wrap points for a chapter, avoiding widow lines (< MIN_WRAP_VERSES)
+function calculateWrapPoints(verseCount: number): number[] {
+  if (verseCount <= WRAP_THRESHOLD) {
+    return [verseCount]; // No wrapping needed
+  }
+
+  const lines: number[] = [];
+  let remaining = verseCount;
+
+  while (remaining > 0) {
+    if (remaining <= WRAP_THRESHOLD) {
+      // Last line - just take what's left
+      lines.push(remaining);
+      remaining = 0;
+    } else if (remaining <= WRAP_THRESHOLD + MIN_WRAP_VERSES - 1) {
+      // Would create a widow on next line - split more evenly
+      // e.g., 52 verses: instead of 50+2, do 49+3 or split evenly
+      const firstLine = remaining - MIN_WRAP_VERSES;
+      lines.push(firstLine);
+      remaining -= firstLine;
+    } else {
+      // Normal case - take full line
+      lines.push(WRAP_THRESHOLD);
+      remaining -= WRAP_THRESHOLD;
+    }
+  }
+
+  return lines;
+}
+
 // Layout a single chapter, handling wrapping for long chapters
 function layoutChapter(
   bookName: string,
@@ -52,48 +90,44 @@ function layoutChapter(
   globalVerseIdx: { value: number },
   verses: Verse[]
 ): { width: number; height: number } {
+  const wrapPoints = calculateWrapPoints(verseCount);
   let maxWidth = 0;
-  let currentX = bookX;
   let currentY = chapterY;
-  let lineVerseCount = 0;
-  let lineNumber = 0;
+  let verseIdx = 0;
 
-  for (let verseIdx = 0; verseIdx < verseCount; verseIdx++) {
-    // Check if we need to wrap
-    if (lineVerseCount >= WRAP_THRESHOLD) {
-      // Start new line with indent
-      lineNumber++;
-      lineVerseCount = 0;
-      currentX = bookX + WRAP_INDENT;
-      currentY += VERSE_SIZE + CHAPTER_GAP;
+  for (let lineNumber = 0; lineNumber < wrapPoints.length; lineNumber++) {
+    const lineLength = wrapPoints[lineNumber];
+    const lineIndent = lineNumber > 0 ? WRAP_INDENT : 0;
+
+    for (let lineVerseIdx = 0; lineVerseIdx < lineLength; lineVerseIdx++) {
+      // Position jitter (±1px) to break up regular grid
+      const jitterX = (seededRandom(globalVerseIdx.value * 2) - 0.5) * 2.0;
+      const jitterY = (seededRandom(globalVerseIdx.value * 2 + 1) - 0.5) * 2.0;
+
+      // Wider brightness variation (0.4 to 0.8)
+      const brightness = 0.4 + seededRandom(globalVerseIdx.value * 3) * 0.4;
+
+      const x = bookX + lineIndent + lineVerseIdx * VERSE_SIZE + jitterX;
+
+      verses.push({
+        book: bookName,
+        chapter: chapterIdx + 1,
+        verse: verseIdx + 1,
+        x: x,
+        y: currentY + jitterY,
+        size: VERSE_SIZE,
+        color: [brightness, brightness, brightness]
+      });
+
+      maxWidth = Math.max(maxWidth, lineIndent + (lineVerseIdx + 1) * VERSE_SIZE);
+      verseIdx++;
+      globalVerseIdx.value++;
     }
 
-    // Position jitter (±1px) to break up regular grid
-    const jitterX = (seededRandom(globalVerseIdx.value * 2) - 0.5) * 2.0;
-    const jitterY = (seededRandom(globalVerseIdx.value * 2 + 1) - 0.5) * 2.0;
-
-    // Wider brightness variation (0.4 to 0.8)
-    const brightness = 0.4 + seededRandom(globalVerseIdx.value * 3) * 0.4;
-
-    const x = currentX + lineVerseCount * VERSE_SIZE + jitterX;
-
-    verses.push({
-      book: bookName,
-      chapter: chapterIdx + 1,
-      verse: verseIdx + 1,
-      x: x,
-      y: currentY + jitterY,
-      size: VERSE_SIZE,
-      color: [brightness, brightness, brightness]
-    });
-
-    maxWidth = Math.max(maxWidth, (lineVerseCount + 1) * VERSE_SIZE + (lineNumber > 0 ? WRAP_INDENT : 0));
-    lineVerseCount++;
-    globalVerseIdx.value++;
+    currentY += VERSE_SIZE + CHAPTER_GAP;
   }
 
-  const totalHeight = (lineNumber + 1) * (VERSE_SIZE + CHAPTER_GAP);
-  return { width: maxWidth, height: totalHeight };
+  return { width: maxWidth, height: wrapPoints.length * (VERSE_SIZE + CHAPTER_GAP) };
 }
 
 // Layout a single book and return its dimensions
@@ -255,7 +289,32 @@ function layoutNeviim(
   return maxHeight;
 }
 
-// Layout Ketuvim section (with special Psalms handling)
+// Layout a single Ketuvim stack
+function layoutKetuvimStack(
+  stackBooks: string[],
+  allBooks: Book[],
+  startX: number,
+  sectionY: number,
+  globalVerseIdx: { value: number },
+  verses: Verse[]
+): { width: number; height: number } {
+  const bookMap = new Map(allBooks.map(b => [b.name, b]));
+  let stackY = sectionY;
+  let stackWidth = 0;
+
+  for (const bookName of stackBooks) {
+    const book = bookMap.get(bookName);
+    if (!book) continue;
+
+    const { width, height } = layoutBook(book, startX, stackY, globalVerseIdx, verses);
+    stackWidth = Math.max(stackWidth, width);
+    stackY += height + STACKED_BOOK_GAP;
+  }
+
+  return { width: stackWidth, height: stackY - sectionY - STACKED_BOOK_GAP };
+}
+
+// Layout Ketuvim section (with special Psalms and stacking handling)
 function layoutKetuvim(
   books: Book[],
   sectionY: number,
@@ -265,7 +324,11 @@ function layoutKetuvim(
   let bookX = 0;
   let maxHeight = 0;
 
-  for (const book of books) {
+  // Get regular (non-stacked) books
+  const regularBooks = books.filter(b => !STACKED_KETUVIM.has(b.name));
+
+  // Layout regular books, inserting stacks at appropriate positions
+  for (const book of regularBooks) {
     let width: number, height: number;
 
     if (book.name === 'Psalms') {
@@ -276,6 +339,22 @@ function layoutKetuvim(
 
     maxHeight = Math.max(maxHeight, height);
     bookX += width + BOOK_GAP;
+
+    // Check if any stack should be inserted after this book
+    for (const config of KETUVIM_STACK_CONFIG) {
+      if (book.name === config.insertAfter) {
+        const { width: stackWidth, height: stackHeight } = layoutKetuvimStack(
+          config.books,
+          books,
+          bookX,
+          sectionY,
+          globalVerseIdx,
+          verses
+        );
+        maxHeight = Math.max(maxHeight, stackHeight);
+        bookX += stackWidth + BOOK_GAP;
+      }
+    }
   }
 
   return maxHeight;
