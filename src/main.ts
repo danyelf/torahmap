@@ -1,4 +1,4 @@
-// Torah Map - Main entry point
+// Tanakh Map - Main entry point
 
 import { initWebGL, createProgram } from './webgl.ts';
 import { computeLayout, getLayoutBounds } from './layout.ts';
@@ -42,8 +42,8 @@ function findVerseAtPoint(
 }
 
 async function main(): Promise<void> {
-  // Load Torah structure
-  const response = await fetch('/data/torah-structure.json');
+  // Load Tanakh structure
+  const response = await fetch('/data/tanakh-structure.json');
   const torahData: TorahData = await response.json();
 
   // Compute layout
