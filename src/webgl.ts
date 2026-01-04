@@ -1,5 +1,7 @@
 // WebGL utilities for rendering verse quads
 
+import type { ShaderProgram } from './types.ts';
+
 const VERTEX_SHADER = `#version 300 es
   uniform vec2 u_resolution;
   uniform vec2 u_pan;
@@ -40,33 +42,35 @@ const FRAGMENT_SHADER = `#version 300 es
   }
 `;
 
-export function initWebGL(canvas) {
+export function initWebGL(canvas: HTMLCanvasElement): WebGL2RenderingContext {
   const gl = canvas.getContext('webgl2');
   if (!gl) throw new Error('WebGL2 not supported');
   return gl;
 }
 
-function compileShader(gl, type, source) {
+function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
   const shader = gl.createShader(type);
+  if (!shader) throw new Error('Failed to create shader');
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    throw new Error(gl.getShaderInfoLog(shader));
+    throw new Error(gl.getShaderInfoLog(shader) || 'Shader compilation failed');
   }
   return shader;
 }
 
-export function createProgram(gl) {
+export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
   const vs = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
   const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
 
   const program = gl.createProgram();
+  if (!program) throw new Error('Failed to create program');
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(gl.getProgramInfoLog(program));
+    throw new Error(gl.getProgramInfoLog(program) || 'Program linking failed');
   }
 
   return {

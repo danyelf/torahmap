@@ -1,6 +1,11 @@
 // Build vertex buffer from verse layout
 
-export function buildVerseGeometry(verses, baseColor = [0.6, 0.6, 0.6]) {
+import type { Verse } from './types.ts';
+
+export function buildVerseGeometry(
+  verses: Verse[],
+  baseColor: [number, number, number] = [0.6, 0.6, 0.6]
+): Float32Array {
   // Each verse = 2 triangles = 6 vertices
   // Each vertex = x, y, r, g, b, u, v
   const floatsPerVertex = 7;
@@ -29,8 +34,9 @@ export function buildVerseGeometry(verses, baseColor = [0.6, 0.6, 0.6]) {
   return data;
 }
 
-export function createBuffer(gl, data) {
+export function createBuffer(gl: WebGL2RenderingContext, data: Float32Array): WebGLBuffer {
   const buffer = gl.createBuffer();
+  if (!buffer) throw new Error('Failed to create buffer');
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
   return buffer;

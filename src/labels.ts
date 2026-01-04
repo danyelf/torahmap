@@ -1,8 +1,20 @@
 // Render book labels as HTML overlays
 
-export function createBookLabels(verses, container) {
+import type { Verse } from './types.ts';
+
+interface BookBounds {
+  minX: number;
+  maxX: number;
+}
+
+interface Pan {
+  x: number;
+  y: number;
+}
+
+export function createBookLabels(verses: Verse[], container: HTMLElement): HTMLDivElement {
   // Group verses by book to find column positions
-  const books = {};
+  const books: Record<string, BookBounds> = {};
   for (const v of verses) {
     if (!books[v.book]) {
       books[v.book] = { minX: v.x, maxX: v.x + v.size };
@@ -25,7 +37,7 @@ export function createBookLabels(verses, container) {
       transform:translateX(-50%);
     `;
     label.dataset.bookName = name;
-    label.dataset.centerX = (pos.minX + pos.maxX) / 2;
+    label.dataset.centerX = String((pos.minX + pos.maxX) / 2);
     labels.appendChild(label);
   }
 
@@ -33,11 +45,13 @@ export function createBookLabels(verses, container) {
   return labels;
 }
 
-export function updateLabelPositions(labelsContainer, pan, zoom) {
+export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
   for (const label of labelsContainer.children) {
-    const centerX = parseFloat(label.dataset.centerX);
-    const screenX = (centerX + pan.x) * zoom;
-    label.style.left = screenX + 'px';
-    label.style.top = '30px';
+    if (label instanceof HTMLElement) {
+      const centerX = parseFloat(label.dataset.centerX || '0');
+      const screenX = (centerX + pan.x) * zoom;
+      label.style.left = screenX + 'px';
+      label.style.top = '30px';
+    }
   }
 }

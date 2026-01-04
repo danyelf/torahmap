@@ -1,11 +1,33 @@
 // Torah Map - Main entry point
 
-import { initWebGL, createProgram } from './webgl.js';
-import { computeLayout, getLayoutBounds } from './layout.js';
-import { buildVerseGeometry, createBuffer } from './geometry.js';
-import { createBookLabels, updateLabelPositions } from './labels.js';
+import { initWebGL, createProgram } from './webgl.ts';
+import { computeLayout, getLayoutBounds } from './layout.ts';
+import { buildVerseGeometry, createBuffer } from './geometry.ts';
+import { createBookLabels, updateLabelPositions } from './labels.ts';
+import type { Verse, TorahData, Bounds } from './types.ts';
 
-function findVerseAtPoint(verses, pan, zoom, canvasX, canvasY) {
+// Extend window for global state
+declare global {
+  interface Window {
+    bookLabels?: HTMLDivElement;
+    torahMap?: {
+      verses: Verse[];
+      pan: { x: number; y: number };
+      zoom: number;
+      render: () => void;
+      canvas: HTMLCanvasElement;
+      bounds: Bounds;
+    };
+  }
+}
+
+function findVerseAtPoint(
+  verses: Verse[],
+  pan: { x: number; y: number },
+  zoom: number,
+  canvasX: number,
+  canvasY: number
+): Verse | null {
   // Convert screen coords to world coords
   const worldX = canvasX / zoom - pan.x;
   const worldY = canvasY / zoom - pan.y;
@@ -19,10 +41,10 @@ function findVerseAtPoint(verses, pan, zoom, canvasX, canvasY) {
   return null;
 }
 
-async function main() {
+async function main(): Promise<void> {
   // Load Torah structure
-  const response = await fetch('data/torah-structure.json');
-  const torahData = await response.json();
+  const response = await fetch('/data/torah-structure.json');
+  const torahData: TorahData = await response.json();
 
   // Compute layout
   const verses = computeLayout(torahData);
@@ -30,7 +52,8 @@ async function main() {
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
   // Setup canvas
-  const canvas = document.getElementById('canvas');
+  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+  if (!canvas) throw new Error('Canvas not found');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
@@ -43,7 +66,7 @@ async function main() {
   const buffer = createBuffer(gl, geometry);
 
   // Camera state - center visualization
-  let pan = {
+  const pan = {
     x: (canvas.width / 2 - bounds.width / 2),
     y: (canvas.height / 2 - bounds.height / 2)
   };
@@ -54,7 +77,7 @@ async function main() {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   // Render function
-  function render() {
+  function render(): void {
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.1, 0.1, 0.1, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -92,7 +115,7 @@ async function main() {
   updateLabelPositions(window.bookLabels, pan, zoom);
 
   // Zoom with mouse wheel
-  canvas.addEventListener('wheel', (e) => {
+  canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
     zoom *= zoomFactor;
@@ -104,12 +127,12 @@ async function main() {
   let isDragging = false;
   let lastMouse = { x: 0, y: 0 };
 
-  canvas.addEventListener('mousedown', (e) => {
+  canvas.addEventListener('mousedown', (e: MouseEvent) => {
     isDragging = true;
     lastMouse = { x: e.clientX, y: e.clientY };
   });
 
-  canvas.addEventListener('mousemove', (e) => {
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (isDragging) {
       const dx = e.clientX - lastMouse.x;
       const dy = e.clientY - lastMouse.y;
@@ -131,8 +154,8 @@ async function main() {
   // Hover detection
   const hoverInfo = document.getElementById('hover-info');
 
-  canvas.addEventListener('mousemove', (e) => {
-    if (!isDragging) {
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+    if (!isDragging && hoverInfo) {
       const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
       if (verse) {
         hoverInfo.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;

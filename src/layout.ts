@@ -1,11 +1,13 @@
 // Layout algorithm: compute (x, y) position for every verse
 
+import type { TorahData, Verse, Bounds } from './types.ts';
+
 const VERSE_SIZE = 10;      // pixels per verse square
 const CHAPTER_GAP = 3;      // gap between chapter rows
 const BOOK_GAP = 20;        // gap between book columns
 
-export function computeLayout(torahData) {
-  const verses = [];
+export function computeLayout(torahData: TorahData): Verse[] {
+  const verses: Verse[] = [];
   let bookX = 0;
 
   for (const book of torahData.books) {
@@ -36,7 +38,7 @@ export function computeLayout(torahData) {
   return verses;
 }
 
-export function getLayoutBounds(verses) {
+export function getLayoutBounds(verses: Verse[]): Bounds {
   let maxX = 0, maxY = 0;
   for (const v of verses) {
     maxX = Math.max(maxX, v.x + v.size);
