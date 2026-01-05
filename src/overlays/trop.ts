@@ -14,46 +14,61 @@ let tropByFrequency: TropIndexEntry[] = [];
 let selectedTrop: TropIndexEntry | null = null;
 let updateCallback: (() => void) | null = null;
 
+// Cached values for performance (computed once per trop selection, not per verse)
+let cachedVerseLookup: Map<string, number> = new Map();
+let cachedMaxCount = 1;
+let cachedLogMax = 0;
+let cachedTier: 'rare' | 'uncommon' | 'common' = 'common';
+
 // Colors for trop visualization
 const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
 const RARE_NO_MATCH_COLOR: Color = [0.15, 0.15, 0.15]; // Very dim
+
+// Update cached values when trop selection changes
+function updateCache(): void {
+  cachedVerseLookup.clear();
+  if (!selectedTrop) return;
+
+  cachedTier = getRarityTier(selectedTrop.totalCount);
+
+  // Build verse lookup once
+  for (const loc of selectedTrop.verses) {
+    const key = `${loc.book}:${loc.chapter}:${loc.verse}`;
+    cachedVerseLookup.set(key, loc.count);
+  }
+
+  // Calculate max count once
+  cachedMaxCount = 1;
+  for (const loc of selectedTrop.verses) {
+    if (loc.count > cachedMaxCount) cachedMaxCount = loc.count;
+  }
+  cachedLogMax = Math.log(cachedMaxCount + 1);
+}
 
 // Get verse color based on selected trop and rarity tier
 function getTropVerseColor(verse: Verse): Color | null {
   if (!selectedTrop) return null;
 
   const key = `${verse.book}:${verse.chapter}:${verse.verse}`;
-  const tier = getRarityTier(selectedTrop.totalCount);
+  const count = cachedVerseLookup.get(key) || 0;
 
-  // Build verse lookup
-  const verseLookup = new Map<string, number>();
-  for (const loc of selectedTrop.verses) {
-    const locKey = `${loc.book}:${loc.chapter}:${loc.verse}`;
-    verseLookup.set(locKey, loc.count);
-  }
-
-  if (tier === 'rare') {
+  if (cachedTier === 'rare') {
     // Binary highlight: bright gold for matches, dim gray for non-matches
-    return verseLookup.has(key) ? RARE_MATCH_COLOR : RARE_NO_MATCH_COLOR;
-  } else if (tier === 'uncommon') {
+    return count > 0 ? RARE_MATCH_COLOR : RARE_NO_MATCH_COLOR;
+  } else if (cachedTier === 'uncommon') {
     // Gradient based on count (0 = dim, max = bright purple)
-    const maxCount = Math.max(...selectedTrop.verses.map(v => v.count), 1);
-    const count = verseLookup.get(key) || 0;
     if (count === 0) {
       return [0.12, 0.12, 0.15];
     }
-    const t = count / maxCount;
+    const t = count / cachedMaxCount;
     // Dim purple to bright purple
     return [0.4 + t * 0.5, 0.2 + t * 0.2, 0.6 + t * 0.35];
   } else {
     // Common: full heatmap like commentary
-    const maxCount = Math.max(...selectedTrop.verses.map(v => v.count), 1);
-    const count = verseLookup.get(key) || 0;
     if (count === 0) {
       return [0.12, 0.1, 0.15];
     }
-    const logMax = Math.log(maxCount + 1);
-    const t = Math.log(count + 1) / logMax;
+    const t = Math.log(count + 1) / cachedLogMax;
     // Purple spectrum: dark purple -> purple -> magenta -> pink
     if (t < 0.33) {
       const s = t / 0.33;
@@ -123,6 +138,7 @@ function createTropChart(container: HTMLElement): void {
         selectedButton = button;
         selectedTrop = entry;
       }
+      updateCache(); // Rebuild lookup table once, not per-verse
       updateCallback?.();
     });
 
