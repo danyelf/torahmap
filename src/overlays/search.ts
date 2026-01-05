@@ -5,6 +5,10 @@ import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS, DIM_FACTOR, blendColorsHSL } from '../utils/color.ts';
 
+function colorToCss(color: Color): string {
+  return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
+}
+
 // State
 let verses: Verse[] = [];
 let currentQuery = '';
@@ -58,23 +62,43 @@ function renderResults(): void {
     return;
   }
 
-  // Update count
+  // Update count with term info
   if (searchCount) {
-    searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results`;
+    const termInfo = currentTerms.length > 1 ? ` (${currentTerms.length} terms)` : '';
+    searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results${termInfo}`;
   }
 
   // Show up to 10 results
   const displayResults = currentResults.slice(0, 10);
   for (const result of displayResults) {
-    const firstMatch = result.matchingTerms[0];
     const div = document.createElement('div');
     div.className = 'search-result';
+
+    // Build term indicator dots
+    const dots = result.matchingTerms
+      .map(m => {
+        const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
+        return `<span class="term-dot" style="background: ${colorToCss(color)}"></span>`;
+      })
+      .join('');
+
+    // Use first match's snippet for display
+    const firstMatch = result.matchingTerms[0];
+    const snippetHtml = escapeAndHighlight(
+      firstMatch.snippet,
+      firstMatch.matchStart,
+      firstMatch.matchEnd,
+      firstMatch.termIndex
+    );
+
     div.innerHTML = `
-      <div class="ref">${result.book} ${result.chapter}:${result.verse}</div>
-      <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${escapeAndHighlight(firstMatch.snippet, firstMatch.matchStart, firstMatch.matchEnd)}</div>
+      <div class="ref">
+        <span class="term-indicators">${dots}</span>
+        ${result.book} ${result.chapter}:${result.verse}
+      </div>
+      <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${snippetHtml}</div>
     `;
     div.addEventListener('click', () => {
-      // Find the verse and trigger callback
       const verse = verses.find(v =>
         v.book === result.book &&
         v.chapter === result.chapter &&
@@ -90,11 +114,11 @@ function renderResults(): void {
   searchResults.classList.add('visible');
 }
 
-function escapeAndHighlight(text: string, start: number, end: number): string {
+function escapeAndHighlight(text: string, start: number, end: number, termIndex: number): string {
   const before = escapeHtml(text.slice(0, start));
   const match = escapeHtml(text.slice(start, end));
   const after = escapeHtml(text.slice(end));
-  return `${before}<mark>${match}</mark>${after}`;
+  return `${before}<mark class="term-${termIndex % 5}">${match}</mark>${after}`;
 }
 
 function escapeHtml(text: string): string {
