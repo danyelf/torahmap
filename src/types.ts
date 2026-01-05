@@ -25,6 +25,7 @@ export interface Verse {
   y: number;
   size: number;
   color?: [number, number, number];
+  highlighted?: boolean;
 }
 
 export interface Bounds {
