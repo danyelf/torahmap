@@ -17,6 +17,10 @@ import {
   commentaryOverlay,
   setCommentaryVerses,
   getVerseLinkCount,
+  tropOverlay,
+  setTropVerseTexts,
+  getSelectedTrop,
+  highlightTropInText,
   type Overlay,
 } from './overlays/index.ts';
 
@@ -77,7 +81,9 @@ async function main(): Promise<void> {
   // Register and initialize overlays
   registerOverlay(divineNamesOverlay);
   registerOverlay(commentaryOverlay);
+  registerOverlay(tropOverlay);
   setCommentaryVerses(verses);
+  setTropVerseTexts(verseTexts);
 
   await Promise.all(getAllOverlays().map(o => o.init?.()));
 
@@ -283,7 +289,13 @@ async function main(): Promise<void> {
       sidebarRef.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
     }
     if (sidebarHebrew) {
-      sidebarHebrew.textContent = text?.he || 'Loading...';
+      const hebrewText = text?.he || 'Loading...';
+      const selectedTrop = getSelectedTrop();
+      if (currentOverlay?.id === 'trop' && selectedTrop) {
+        sidebarHebrew.innerHTML = highlightTropInText(hebrewText, selectedTrop.unicode);
+      } else {
+        sidebarHebrew.textContent = hebrewText;
+      }
     }
     if (sidebarEnglish) {
       sidebarEnglish.textContent = text?.en || 'Loading...';
