@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Process Sefaria links data to count commentary per Torah verse by category.
+Process Sefaria links data to count commentary per Tanakh verse by category.
 Downloads CSV files from Sefaria-Export repo and aggregates.
 """
 
@@ -13,6 +13,21 @@ from pathlib import Path
 
 # Torah books
 TORAH_BOOKS = {"Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"}
+
+# All Tanakh books for detecting direct cross-references
+TANAKH_BOOKS = {
+    # Torah
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
+    # Nevi'im
+    "Joshua", "Judges", "I Samuel", "II Samuel", "I Kings", "II Kings",
+    "Isaiah", "Jeremiah", "Ezekiel", "Hosea", "Joel", "Amos", "Obadiah",
+    "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai",
+    "Zechariah", "Malachi",
+    # Ketuvim
+    "Psalms", "Proverbs", "Job", "Song of Songs", "Ruth", "Lamentations",
+    "Ecclesiastes", "Esther", "Daniel", "Ezra", "Nehemiah",
+    "I Chronicles", "II Chronicles"
+}
 
 # Major categories we care about
 MAJOR_CATEGORIES = {
@@ -30,25 +45,52 @@ MAJOR_CATEGORIES = {
 
 BASE_URL = "https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/links"
 
+# Track seen link pairs globally to avoid double-counting bidirectional entries
+# Key: frozenset({citation1, citation2}) - normalized pair
+seen_link_pairs: set[frozenset[str]] = set()
+
 def parse_verse_ref(citation: str) -> tuple[str, int, int] | None:
-    """Extract (book, chapter, verse) from a citation like 'Genesis 1:2' or 'Genesis 1:2-3'."""
-    # Match patterns like "Genesis 1:2" or "Genesis 1:2-3"
-    pattern = r'^(Genesis|Exodus|Leviticus|Numbers|Deuteronomy)\s+(\d+):(\d+)'
-    match = re.match(pattern, citation)
-    if match:
-        book = match.group(1)
-        chapter = int(match.group(2))
-        verse = int(match.group(3))
-        return (book, chapter, verse)
+    """Extract (book, chapter, verse) from a citation like 'Genesis 1:2' or 'Psalms 23:1'."""
+    # Check each Tanakh book - use longest match first to handle "I Samuel" vs "I"
+    for book in sorted(TANAKH_BOOKS, key=len, reverse=True):
+        if citation.startswith(book + " "):
+            # Extract chapter:verse after the book name
+            after_book = citation[len(book) + 1:]
+            match = re.match(r'^(\d+):(\d+)', after_book)
+            if match:
+                chapter = int(match.group(1))
+                verse = int(match.group(2))
+                return (book, chapter, verse)
     return None
+
+
+def is_direct_tanakh_ref(citation: str) -> bool:
+    """
+    Check if a citation is a direct Tanakh verse reference (like "Amos 1:1")
+    vs a commentary on a Tanakh book (like "Abarbanel on Amos 1:1:1").
+
+    Only direct verse references should be counted in the "Tanakh" category.
+    Commentary-on-Tanakh should be counted as "Commentary".
+    """
+    for book in TANAKH_BOOKS:
+        # Check if citation starts with "BookName " followed by chapter:verse
+        if citation.startswith(book + " "):
+            # Get the part after the book name
+            after_book = citation[len(book) + 1:]
+            # Should start with a digit (chapter number)
+            if after_book and after_book[0].isdigit():
+                return True
+    return False
 
 def download_and_process_file(file_num: int) -> dict:
     """Download and process a single links file."""
+    global seen_link_pairs
     url = f"{BASE_URL}/links{file_num}.csv"
     print(f"Processing {url}...")
 
     # verse_counts[book][chapter][verse][category] = count
     verse_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int))))
+    duplicates_skipped = 0
 
     try:
         with urllib.request.urlopen(url) as response:
@@ -62,11 +104,25 @@ def download_and_process_file(file_num: int) -> dict:
 
                 citation1, citation2, conn_type, text1, text2, cat1, cat2 = row[:7]
 
+                # Create a normalized key for this link pair to detect duplicates
+                # This handles cases where Sefaria has both A→B and B→A as separate rows
+                link_pair = frozenset({citation1, citation2})
+                if link_pair in seen_link_pairs:
+                    duplicates_skipped += 1
+                    continue
+                seen_link_pairs.add(link_pair)
+
                 # Check if citation2 is a Torah verse
                 verse_ref = parse_verse_ref(citation2)
                 if verse_ref:
                     book, chapter, verse = verse_ref
                     category = cat1.strip()
+
+                    # Fix: Only count as "Tanakh" if citation1 is a direct verse reference
+                    # Commentary-on-Tanakh (like "Abarbanel on Amos") should count as Commentary
+                    if category == "Tanakh" and not is_direct_tanakh_ref(citation1):
+                        category = "Commentary"
+
                     # Normalize category
                     if category in MAJOR_CATEGORIES:
                         verse_counts[book][chapter][verse][category] += 1
@@ -78,6 +134,11 @@ def download_and_process_file(file_num: int) -> dict:
                 if verse_ref:
                     book, chapter, verse = verse_ref
                     category = cat2.strip()
+
+                    # Fix: Only count as "Tanakh" if citation2 is a direct verse reference
+                    if category == "Tanakh" and not is_direct_tanakh_ref(citation2):
+                        category = "Commentary"
+
                     if category in MAJOR_CATEGORIES:
                         verse_counts[book][chapter][verse][category] += 1
                     else:
@@ -85,6 +146,9 @@ def download_and_process_file(file_num: int) -> dict:
 
     except Exception as e:
         print(f"Error processing {url}: {e}")
+
+    if duplicates_skipped > 0:
+        print(f"  Skipped {duplicates_skipped} duplicate link pairs")
 
     return verse_counts
 
@@ -105,12 +169,18 @@ def merge_counts(target: dict, source: dict):
                     target[book][chapter][verse][cat] += count
 
 def main():
+    global seen_link_pairs
     all_counts = {}
+
+    # Reset seen pairs for fresh run
+    seen_link_pairs = set()
 
     # Process all link files (0-12)
     for i in range(13):
         counts = download_and_process_file(i)
         merge_counts(all_counts, counts)
+
+    print(f"\nTotal unique link pairs processed: {len(seen_link_pairs)}")
 
     # Convert to more compact format for the frontend
     # Structure: { "Genesis": { "1": { "1": { "total": N, "categories": {...} } } } }
