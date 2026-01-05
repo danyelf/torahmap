@@ -16,4 +16,5 @@ export {
 export {
   searchOverlay,
   configure as configureSearch,
+  highlightSearchTerms,
 } from './search.ts';

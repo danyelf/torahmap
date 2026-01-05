@@ -2,7 +2,7 @@
 import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS, DIM_FACTOR, blendColorsHSL } from '../utils/color.ts';
 
 function colorToCss(color: Color): string {
@@ -126,6 +126,107 @@ function escapeHtml(text: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/**
+ * Highlight all search terms in text with per-term colors
+ * Returns HTML string with <mark class="term-N"> tags
+ */
+export function highlightSearchTerms(text: string, language: 'he' | 'en'): string {
+  if (currentTerms.length === 0) return escapeHtml(text);
+
+  const isHebrew = language === 'he';
+
+  // Build list of all matches with their positions
+  interface Match {
+    start: number;
+    end: number;
+    termIndex: number;
+  }
+  const matches: Match[] = [];
+
+  // Prepare normalized text for searching
+  const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
+
+  for (let termIndex = 0; termIndex < currentTerms.length; termIndex++) {
+    const term = currentTerms[termIndex];
+    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+
+    // Find all occurrences
+    let searchStart = 0;
+    while (true) {
+      const idx = normalizedText.indexOf(normalizedTerm, searchStart);
+      if (idx === -1) break;
+
+      // Map back to original text position for Hebrew (nikkud may shift positions)
+      let origStart = idx;
+      let origEnd = idx + normalizedTerm.length;
+
+      if (isHebrew) {
+        // Count how many nikkud chars before this position
+        let nikkudBefore = 0;
+        let normalizedPos = 0;
+        for (let i = 0; i < text.length && normalizedPos < idx; i++) {
+          const code = text.charCodeAt(i);
+          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
+                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+          if (isNikkud) {
+            nikkudBefore++;
+          } else {
+            normalizedPos++;
+          }
+        }
+        origStart = idx + nikkudBefore;
+
+        // Find end position accounting for nikkud within the match
+        let nikkudInMatch = 0;
+        normalizedPos = 0;
+        for (let i = origStart; i < text.length && normalizedPos < normalizedTerm.length; i++) {
+          const code = text.charCodeAt(i);
+          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
+                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+          if (isNikkud) {
+            nikkudInMatch++;
+          } else {
+            normalizedPos++;
+          }
+        }
+        origEnd = origStart + normalizedTerm.length + nikkudInMatch;
+      }
+
+      matches.push({ start: origStart, end: origEnd, termIndex });
+      searchStart = idx + 1;
+    }
+  }
+
+  if (matches.length === 0) return escapeHtml(text);
+
+  // Sort by position, longest match first for overlaps
+  matches.sort((a, b) => a.start - b.start || b.end - a.end);
+
+  // Remove overlapping matches (keep first/longest)
+  const filtered: Match[] = [];
+  for (const m of matches) {
+    if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
+      filtered.push(m);
+    }
+  }
+
+  // Build result with highlights
+  let result = '';
+  let pos = 0;
+  for (const m of filtered) {
+    if (m.start > pos) {
+      result += escapeHtml(text.slice(pos, m.start));
+    }
+    result += `<mark class="term-${m.termIndex % 5}">${escapeHtml(text.slice(m.start, m.end))}</mark>`;
+    pos = m.end;
+  }
+  if (pos < text.length) {
+    result += escapeHtml(text.slice(pos));
+  }
+
+  return result;
 }
 
 export const searchOverlay: Overlay = {
