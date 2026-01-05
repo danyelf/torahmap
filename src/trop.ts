@@ -1,5 +1,8 @@
 // Trop (cantillation marks) extraction and indexing
 
+import type { TropIndex, TropIndexEntry } from './types.ts';
+import type { VerseTexts } from './verseTexts.ts';
+
 // Unicode range for Hebrew cantillation marks: U+0591 - U+05AF
 // Reference: https://unicode.org/charts/PDF/U0590.pdf
 
@@ -89,4 +92,48 @@ export function countTropMarks(hebrewText: string): Map<string, number> {
     counts.set(mark, (counts.get(mark) || 0) + 1);
   }
   return counts;
+}
+
+// Build complete trop index from all verse texts
+export function buildTropIndex(verseTexts: VerseTexts): TropIndex {
+  const index: TropIndex = new Map();
+
+  // Initialize entries for all known trop marks
+  for (const trop of TROP_MARKS) {
+    index.set(trop.unicode, {
+      unicode: trop.unicode,
+      name: trop.name,
+      hebrewName: trop.hebrewName,
+      totalCount: 0,
+      verses: [],
+    });
+  }
+
+  // Scan all verses
+  for (const [book, chapters] of Object.entries(verseTexts)) {
+    for (const [chapterStr, verses] of Object.entries(chapters)) {
+      const chapter = parseInt(chapterStr, 10);
+      for (const [verseStr, text] of Object.entries(verses)) {
+        const verse = parseInt(verseStr, 10);
+        const counts = countTropMarks(text.he);
+
+        for (const [unicode, count] of counts) {
+          const entry = index.get(unicode);
+          if (entry) {
+            entry.totalCount += count;
+            entry.verses.push({ book, chapter, verse, count });
+          }
+        }
+      }
+    }
+  }
+
+  return index;
+}
+
+// Get trop marks sorted by frequency (rarest first)
+export function getTropByFrequency(index: TropIndex): TropIndexEntry[] {
+  return Array.from(index.values())
+    .filter(entry => entry.totalCount > 0)  // Only include marks that appear
+    .sort((a, b) => a.totalCount - b.totalCount);
 }

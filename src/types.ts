@@ -54,3 +54,21 @@ export interface ShaderProgram {
     zoom: WebGLUniformLocation | null;
   };
 }
+
+// Trop index: maps trop unicode -> list of verse locations containing it
+export interface TropVerseLocation {
+  book: string;
+  chapter: number;
+  verse: number;
+  count: number;  // How many times this trop appears in this verse
+}
+
+export interface TropIndexEntry {
+  unicode: string;
+  name: string;
+  hebrewName: string;
+  totalCount: number;
+  verses: TropVerseLocation[];
+}
+
+export type TropIndex = Map<string, TropIndexEntry>;
