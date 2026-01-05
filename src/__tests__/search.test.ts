@@ -69,8 +69,8 @@ describe('isHebrewQuery', () => {
 describe('getMatchingVerseKeys', () => {
   it('creates set of verse keys from results', () => {
     const results = [
-      { book: 'Genesis', chapter: 1, verse: 1, snippet: '', matchStart: 0, matchEnd: 0, language: 'he' as const },
-      { book: 'Genesis', chapter: 1, verse: 2, snippet: '', matchStart: 0, matchEnd: 0, language: 'he' as const },
+      { book: 'Genesis', chapter: 1, verse: 1, language: 'he' as const, matchingTerms: [{ termIndex: 0, snippet: '', matchStart: 0, matchEnd: 0 }] },
+      { book: 'Genesis', chapter: 1, verse: 2, language: 'he' as const, matchingTerms: [{ termIndex: 0, snippet: '', matchStart: 0, matchEnd: 0 }] },
     ];
     const keys = getMatchingVerseKeys(results);
     expect(keys.has('Genesis:1:1')).toBe(true);
@@ -83,12 +83,12 @@ describe('getMatchingVerseKeys', () => {
     expect(keys.size).toBe(0);
   });
 
-  it('deduplicates same verse in multiple results', () => {
+  it('returns unique keys even if called multiple times', () => {
     const results = [
-      { book: 'Genesis', chapter: 1, verse: 1, snippet: 'a', matchStart: 0, matchEnd: 0, language: 'he' as const },
-      { book: 'Genesis', chapter: 1, verse: 1, snippet: 'b', matchStart: 0, matchEnd: 0, language: 'en' as const },
+      { book: 'Genesis', chapter: 1, verse: 1, language: 'he' as const, matchingTerms: [{ termIndex: 0, snippet: 'a', matchStart: 0, matchEnd: 0 }] },
     ];
     const keys = getMatchingVerseKeys(results);
     expect(keys.size).toBe(1);
+    expect(keys.has('Genesis:1:1')).toBe(true);
   });
 });
