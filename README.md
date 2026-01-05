@@ -75,17 +75,19 @@ The dev server runs at `http://localhost:5173`
 │       └── search.ts
 │
 ├── public/data/
-│   ├── tanakh-structure.json    # Verse counts per chapter per book
-│   ├── divine-names.json        # Divine name encodings (Torah)
-│   └── commentary-counts.json   # Sefaria link counts by category
+│   ├── all-texts.json            # Bundled verse texts (generated)
+│   ├── tanakh-structure.json     # Verse counts per chapter per book
+│   ├── divine-names.json         # Divine name encodings (Torah)
+│   └── commentary-counts.json    # Sefaria link counts by category
 │
-├── data/texts/           # Hebrew & English verse texts (76 files, ~10MB)
+├── data/texts/           # Source Hebrew & English verse texts (78 files)
 │
 ├── scripts/
-│   ├── download-texts.sh           # Download texts from Sefaria
-│   ├── fetch-tanakh-structure.js   # Generate structure JSON from API
-│   ├── generate-divine-names.ts    # Generate divine names from Torah text
-│   └── process_sefaria_links.py    # Generate commentary counts from Sefaria links
+│   ├── bundle-texts.ts            # Bundle all verse texts into one file
+│   ├── download-texts.sh          # Download texts from Sefaria
+│   ├── fetch-tanakh-structure.js  # Generate structure JSON from API
+│   ├── generate-divine-names.ts   # Generate divine names from Torah text
+│   └── process_sefaria_links.py   # Generate commentary counts from Sefaria links
 │
 └── docs/plans/           # Design documents
 ```
@@ -121,6 +123,9 @@ All data comes from [Sefaria](https://www.sefaria.org/):
 ```bash
 # Download all verse texts (~10MB)
 bash scripts/download-texts.sh
+
+# Bundle verse texts into single file (required after downloading)
+npx tsx scripts/bundle-texts.ts
 
 # Regenerate structure from Sefaria API
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
