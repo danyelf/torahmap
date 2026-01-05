@@ -188,9 +188,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // Suppress unused variable warning - selectedTrop will be used in Task 8
-  void selectedTrop;
-
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
@@ -285,6 +282,74 @@ async function main(): Promise<void> {
       for (const v of verses) {
         const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, currentCategory);
         v.color = heatmapColor(count, colorMax);
+      }
+    } else if (currentOverlay === 'trop') {
+      if (!selectedTrop) {
+        // No trop selected - show gray
+        verses.forEach((v, i) => {
+          const brightness = 0.4 + seededRandom(i * 3) * 0.4;
+          v.color = [brightness, brightness, brightness];
+        });
+      } else {
+        const tier = getRarityTier(selectedTrop.totalCount);
+
+        // Build verse lookup for quick access
+        const verseLookup = new Map<string, number>();
+        for (const loc of selectedTrop.verses) {
+          const key = `${loc.book}:${loc.chapter}:${loc.verse}`;
+          verseLookup.set(key, loc.count);
+        }
+
+        if (tier === 'rare') {
+          // Binary highlight: bright gold for matches, dim gray for non-matches
+          verses.forEach((v) => {
+            const key = `${v.book}:${v.chapter}:${v.verse}`;
+            if (verseLookup.has(key)) {
+              v.color = [1.0, 0.84, 0.0]; // Gold
+            } else {
+              v.color = [0.15, 0.15, 0.15]; // Very dim
+            }
+          });
+        } else if (tier === 'uncommon') {
+          // Gradient based on count (0 = dim, max = bright purple)
+          const maxCount = Math.max(...selectedTrop.verses.map(v => v.count), 1);
+          verses.forEach((v) => {
+            const key = `${v.book}:${v.chapter}:${v.verse}`;
+            const count = verseLookup.get(key) || 0;
+            if (count === 0) {
+              v.color = [0.12, 0.12, 0.15];
+            } else {
+              const t = count / maxCount;
+              // Dim purple to bright purple
+              v.color = [0.4 + t * 0.5, 0.2 + t * 0.2, 0.6 + t * 0.35];
+            }
+          });
+        } else {
+          // Common: full heatmap like commentary
+          const maxCount = Math.max(...selectedTrop.verses.map(v => v.count), 1);
+          verses.forEach((v) => {
+            const key = `${v.book}:${v.chapter}:${v.verse}`;
+            const count = verseLookup.get(key) || 0;
+            // Reuse heatmap color function with purple tint
+            if (count === 0) {
+              v.color = [0.12, 0.1, 0.15];
+            } else {
+              const logMax = Math.log(maxCount + 1);
+              const t = Math.log(count + 1) / logMax;
+              // Purple spectrum: dark purple -> purple -> magenta -> pink
+              if (t < 0.33) {
+                const s = t / 0.33;
+                v.color = [0.2 + s * 0.2, 0.1 + s * 0.1, 0.3 + s * 0.2];
+              } else if (t < 0.66) {
+                const s = (t - 0.33) / 0.33;
+                v.color = [0.4 + s * 0.3, 0.2 + s * 0.1, 0.5 + s * 0.2];
+              } else {
+                const s = (t - 0.66) / 0.34;
+                v.color = [0.7 + s * 0.25, 0.3 + s * 0.3, 0.7 + s * 0.2];
+              }
+            }
+          });
+        }
       }
     }
 
