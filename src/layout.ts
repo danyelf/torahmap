@@ -40,20 +40,20 @@ const KETUVIM_STACK_CONFIG: Array<{ books: string[]; insertAfter: string }> = [
 ];
 const STACKED_KETUVIM = new Set(KETUVIM_STACK_CONFIG.flatMap(c => c.books));
 
-function getSection(bookName: string): 'torah' | 'neviim' | 'ketuvim' {
+export function getSection(bookName: string): 'torah' | 'neviim' | 'ketuvim' {
   if (TORAH_BOOKS.has(bookName)) return 'torah';
   if (KETUVIM_BOOKS.has(bookName)) return 'ketuvim';
   return 'neviim';
 }
 
 // Seeded random for deterministic jitter (same layout every time)
-function seededRandom(seed: number): number {
+export function seededRandom(seed: number): number {
   const x = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453;
   return x - Math.floor(x);
 }
 
 // Calculate wrap points for a chapter, avoiding widow lines (< MIN_WRAP_VERSES)
-function calculateWrapPoints(verseCount: number): number[] {
+export function calculateWrapPoints(verseCount: number): number[] {
   if (verseCount <= WRAP_THRESHOLD) {
     return [verseCount]; // No wrapping needed
   }
