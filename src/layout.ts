@@ -161,6 +161,93 @@ function layoutBook(
   return { width: maxWidth, height: currentY - bookY };
 }
 
+// Type for custom book layout functions (e.g., Psalms multi-column)
+type BookLayoutFn = (
+  book: Book,
+  x: number,
+  y: number,
+  globalVerseIdx: { value: number },
+  verses: Verse[]
+) => { width: number; height: number };
+
+// Layout books horizontally in a row
+function layoutBooksRow(
+  books: Book[],
+  startX: number,
+  y: number,
+  gap: number,
+  globalVerseIdx: { value: number },
+  verses: Verse[],
+  bookLayoutFn: BookLayoutFn = layoutBook
+): { width: number; height: number; nextX: number } {
+  let currentX = startX;
+  let maxHeight = 0;
+
+  for (const book of books) {
+    const { width, height } = bookLayoutFn(book, currentX, y, globalVerseIdx, verses);
+    maxHeight = Math.max(maxHeight, height);
+    currentX += width + gap;
+  }
+
+  return {
+    width: currentX - startX - (books.length > 0 ? gap : 0),
+    height: maxHeight,
+    nextX: currentX
+  };
+}
+
+// Layout books vertically in a stack
+function layoutBooksStack(
+  bookNames: string[],
+  bookMap: Map<string, Book>,
+  x: number,
+  startY: number,
+  gap: number,
+  globalVerseIdx: { value: number },
+  verses: Verse[]
+): { width: number; height: number } {
+  let currentY = startY;
+  let maxWidth = 0;
+
+  for (const bookName of bookNames) {
+    const book = bookMap.get(bookName);
+    if (!book) continue;
+
+    const { width, height } = layoutBook(book, x, currentY, globalVerseIdx, verses);
+    maxWidth = Math.max(maxWidth, width);
+    currentY += height + gap;
+  }
+
+  const totalHeight = currentY - startY - (bookNames.length > 0 ? gap : 0);
+  return { width: maxWidth, height: totalHeight };
+}
+
+// Layout multiple stacks side by side (for minor prophets, etc.)
+function layoutStacksRow(
+  stacks: string[][],
+  bookMap: Map<string, Book>,
+  startX: number,
+  y: number,
+  stackGap: number,
+  columnGap: number,
+  globalVerseIdx: { value: number },
+  verses: Verse[]
+): { width: number; height: number } {
+  let currentX = startX;
+  let maxHeight = 0;
+
+  for (const stack of stacks) {
+    const { width, height } = layoutBooksStack(stack, bookMap, currentX, y, stackGap, globalVerseIdx, verses);
+    maxHeight = Math.max(maxHeight, height);
+    currentX += width + columnGap;
+  }
+
+  return {
+    width: currentX - startX - (stacks.length > 0 ? columnGap : 0),
+    height: maxHeight
+  };
+}
+
 // Layout Psalms in two columns (Books 1-2 and Books 3-5)
 function layoutPsalms(
   book: Book,
@@ -217,38 +304,6 @@ function layoutPsalms(
   };
 }
 
-// Layout minor prophets with vertical stacking
-function layoutMinorProphets(
-  books: Book[],
-  startX: number,
-  sectionY: number,
-  globalVerseIdx: { value: number },
-  verses: Verse[]
-): { width: number; height: number } {
-  const bookMap = new Map(books.map(b => [b.name, b]));
-  let currentX = startX;
-  let maxHeight = 0;
-
-  for (const stack of MINOR_PROPHET_STACKS) {
-    let stackY = sectionY;
-    let stackWidth = 0;
-
-    for (const bookName of stack) {
-      const book = bookMap.get(bookName);
-      if (!book) continue;
-
-      const { width, height } = layoutBook(book, currentX, stackY, globalVerseIdx, verses);
-      stackWidth = Math.max(stackWidth, width);
-      stackY += height + STACKED_BOOK_GAP;
-    }
-
-    maxHeight = Math.max(maxHeight, stackY - sectionY - STACKED_BOOK_GAP);
-    currentX += stackWidth + BOOK_GAP;
-  }
-
-  return { width: currentX - startX - BOOK_GAP, height: maxHeight };
-}
-
 // Layout Nevi'im section (Former Prophets + Latter Prophets + stacked Minor Prophets)
 function layoutNeviim(
   books: Book[],
@@ -256,64 +311,23 @@ function layoutNeviim(
   globalVerseIdx: { value: number },
   verses: Verse[]
 ): number {
-  let bookX = 0;
-  let maxHeight = 0;
-
   // Separate major prophets from minor prophets
-  const majorProphets: Book[] = [];
-  const minorProphets: Book[] = [];
+  const majorProphets = books.filter(b => !MINOR_PROPHETS.has(b.name));
+  const minorProphets = books.filter(b => MINOR_PROPHETS.has(b.name));
+  const minorProphetMap = new Map(minorProphets.map(b => [b.name, b]));
 
-  for (const book of books) {
-    if (MINOR_PROPHETS.has(book.name)) {
-      minorProphets.push(book);
-    } else {
-      majorProphets.push(book);
-    }
-  }
-
-  // Layout major prophets (Former + Latter) normally
-  for (const book of majorProphets) {
-    const { width, height } = layoutBook(book, bookX, sectionY, globalVerseIdx, verses);
-    maxHeight = Math.max(maxHeight, height);
-    bookX += width + BOOK_GAP;
-  }
-
-  // Layout minor prophets with stacking
-  const { height: minorHeight } = layoutMinorProphets(
-    minorProphets,
-    bookX,
-    sectionY,
-    globalVerseIdx,
-    verses
+  // Layout major prophets (Former + Latter) horizontally
+  const { height: majorHeight, nextX } = layoutBooksRow(
+    majorProphets, 0, sectionY, BOOK_GAP, globalVerseIdx, verses
   );
-  maxHeight = Math.max(maxHeight, minorHeight);
 
-  return maxHeight;
-}
+  // Layout minor prophets as stacked columns
+  const { height: minorHeight } = layoutStacksRow(
+    MINOR_PROPHET_STACKS, minorProphetMap, nextX, sectionY,
+    STACKED_BOOK_GAP, BOOK_GAP, globalVerseIdx, verses
+  );
 
-// Layout a single Ketuvim stack
-function layoutKetuvimStack(
-  stackBooks: string[],
-  allBooks: Book[],
-  startX: number,
-  sectionY: number,
-  globalVerseIdx: { value: number },
-  verses: Verse[]
-): { width: number; height: number } {
-  const bookMap = new Map(allBooks.map(b => [b.name, b]));
-  let stackY = sectionY;
-  let stackWidth = 0;
-
-  for (const bookName of stackBooks) {
-    const book = bookMap.get(bookName);
-    if (!book) continue;
-
-    const { width, height } = layoutBook(book, startX, stackY, globalVerseIdx, verses);
-    stackWidth = Math.max(stackWidth, width);
-    stackY += height + STACKED_BOOK_GAP;
-  }
-
-  return { width: stackWidth, height: stackY - sectionY - STACKED_BOOK_GAP };
+  return Math.max(majorHeight, minorHeight);
 }
 
 // Layout Ketuvim section (with special Psalms and stacking handling)
@@ -323,6 +337,7 @@ function layoutKetuvim(
   globalVerseIdx: { value: number },
   verses: Verse[]
 ): number {
+  const bookMap = new Map(books.map(b => [b.name, b]));
   let bookX = 0;
   let maxHeight = 0;
 
@@ -331,27 +346,19 @@ function layoutKetuvim(
 
   // Layout regular books, inserting stacks at appropriate positions
   for (const book of regularBooks) {
-    let width: number, height: number;
-
-    if (book.name === 'Psalms') {
-      ({ width, height } = layoutPsalms(book, bookX, sectionY, globalVerseIdx, verses));
-    } else {
-      ({ width, height } = layoutBook(book, bookX, sectionY, globalVerseIdx, verses));
-    }
+    // Psalms uses special two-column layout
+    const { width, height } = book.name === 'Psalms'
+      ? layoutPsalms(book, bookX, sectionY, globalVerseIdx, verses)
+      : layoutBook(book, bookX, sectionY, globalVerseIdx, verses);
 
     maxHeight = Math.max(maxHeight, height);
     bookX += width + BOOK_GAP;
 
-    // Check if any stack should be inserted after this book
+    // Insert any stacks configured to appear after this book
     for (const config of KETUVIM_STACK_CONFIG) {
       if (book.name === config.insertAfter) {
-        const { width: stackWidth, height: stackHeight } = layoutKetuvimStack(
-          config.books,
-          books,
-          bookX,
-          sectionY,
-          globalVerseIdx,
-          verses
+        const { width: stackWidth, height: stackHeight } = layoutBooksStack(
+          config.books, bookMap, bookX, sectionY, STACKED_BOOK_GAP, globalVerseIdx, verses
         );
         maxHeight = Math.max(maxHeight, stackHeight);
         bookX += stackWidth + BOOK_GAP;
@@ -362,23 +369,15 @@ function layoutKetuvim(
   return maxHeight;
 }
 
-// Layout Torah section (standard layout)
+// Layout Torah section (standard horizontal layout)
 function layoutTorah(
   books: Book[],
   sectionY: number,
   globalVerseIdx: { value: number },
   verses: Verse[]
 ): number {
-  let bookX = 0;
-  let maxHeight = 0;
-
-  for (const book of books) {
-    const { width, height } = layoutBook(book, bookX, sectionY, globalVerseIdx, verses);
-    maxHeight = Math.max(maxHeight, height);
-    bookX += width + BOOK_GAP;
-  }
-
-  return maxHeight;
+  const { height } = layoutBooksRow(books, 0, sectionY, BOOK_GAP, globalVerseIdx, verses);
+  return height;
 }
 
 export function computeLayout(torahData: TorahData): Verse[] {
