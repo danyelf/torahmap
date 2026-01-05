@@ -25,8 +25,17 @@ The core design principle is **position stability** - each verse occupies a perm
 | **None** | Gray with subtle brightness variation |
 | **Divine Names** | Colors by divine name usage: Blue (YHWH), Red (Elohim), Purple (both), Gray (neither). Torah only. |
 | **Commentary** | Logarithmic heatmap of Sefaria commentary link counts, filterable by 9 categories |
+| **Trop** | Cantillation mark (trope) visualizer - select any of the 39 trop marks to see where they appear across Tanakh, with rarity-based coloring (gold for rare marks, heatmap for common ones) |
+| **Search** | Full-text search with Hebrew/English support - highlights matching verses on the map |
 
 Commentary categories: Talmud, Midrash, Halakhah, Chasidut, Kabbalah, Jewish Thought, Musar, Responsa, Tanakh (cross-references)
+
+### Search
+
+- **Word-wheeling**: Results appear as you type
+- **Bilingual**: Searches both Hebrew and English text
+- **Nikkud-insensitive**: Hebrew searches ignore vowel marks
+- **Visual integration**: Matching verses highlighted on the map via Search overlay
 
 ## Quick Start
 
@@ -53,7 +62,17 @@ The dev server runs at `http://localhost:5173`
 │   ├── webgl.ts         # Shader compilation and WebGL setup
 │   ├── geometry.ts      # Vertex buffer building
 │   ├── labels.ts        # Book label overlay positioning
-│   └── verseTexts.ts    # Verse text loading from Sefaria
+│   ├── verseTexts.ts    # Verse text loading from Sefaria
+│   ├── search.ts        # Full-text search with Hebrew/English support
+│   ├── trop.ts          # Cantillation mark parsing and indexing
+│   └── overlays/        # Modular overlay system
+│       ├── index.ts     # Public exports
+│       ├── registry.ts  # Overlay registration
+│       ├── types.ts     # Overlay interface definitions
+│       ├── divine-names.ts
+│       ├── commentary.ts
+│       ├── trop.ts
+│       └── search.ts
 │
 ├── public/data/
 │   ├── tanakh-structure.json    # Verse counts per chapter per book
@@ -122,8 +141,10 @@ python3 scripts/process_sefaria_links.py > public/data/commentary-counts.json
 | Hover | Show verse reference |
 | Click verse | Pin and show sidebar with text |
 | Click pinned verse | Unpin |
-| Overlay selector | Switch between None / Divine Names / Commentary |
+| Overlay selector | Switch between None / Divine Names / Commentary / Trop / Search |
 | Category filter | Filter commentary heatmap by source type |
+| Trop selector | Choose cantillation mark to visualize |
+| Search box | Type to search Hebrew/English text with live results |
 
 ## Design Documents
 
@@ -132,6 +153,9 @@ See `docs/plans/` for detailed design documents:
 - `2026-01-03-visual-substrate-design.md` - Overall vision and philosophy
 - `2026-01-03-substrate-implementation.md` - Implementation details
 - `2026-01-04-divine-names-overlay-design.md` - Divine names feature specification
+- `2026-01-04-fulltext-search-design.md` - Full-text search implementation
+- `2026-01-04-trop-visualizer-design.md` - Cantillation mark visualizer
+- `2026-01-04-overlay-modules-design.md` - Modular overlay architecture
 
 ## License
 
