@@ -2,14 +2,15 @@
 import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseKeys, type SearchResult } from '../search.ts';
-import { HIGHLIGHT_COLOR, DIM_FACTOR } from '../utils/color.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, type SearchResult } from '../search.ts';
+import { SEARCH_COLORS, DIM_FACTOR, blendColorsHSL } from '../utils/color.ts';
 
 // State
 let verses: Verse[] = [];
 let currentQuery = '';
+let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
-let matchingKeys = new Set<string>();
+let matchingTerms = new Map<string, number[]>();
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: Verse) => void) | null = null;
 
@@ -28,13 +29,14 @@ export function configure(config: { verses: Verse[]; callbacks?: { onVerseClick?
 
 function doSearch(query: string): void {
   currentQuery = query;
+  currentTerms = parseSearchTerms(query);
 
-  if (query.length < 2) {
+  if (currentTerms.length === 0) {
     currentResults = [];
-    matchingKeys = new Set();
+    matchingTerms = new Map();
   } else {
     currentResults = search(query);
-    matchingKeys = getMatchingVerseKeys(currentResults);
+    matchingTerms = getMatchingVerseTerms(currentResults);
   }
 
   renderResults();
@@ -64,11 +66,12 @@ function renderResults(): void {
   // Show up to 10 results
   const displayResults = currentResults.slice(0, 10);
   for (const result of displayResults) {
+    const firstMatch = result.matchingTerms[0];
     const div = document.createElement('div');
     div.className = 'search-result';
     div.innerHTML = `
       <div class="ref">${result.book} ${result.chapter}:${result.verse}</div>
-      <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${escapeAndHighlight(result.snippet, result.matchStart, result.matchEnd)}</div>
+      <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${escapeAndHighlight(firstMatch.snippet, firstMatch.matchStart, firstMatch.matchEnd)}</div>
     `;
     div.addEventListener('click', () => {
       // Find the verse and trigger callback
@@ -107,17 +110,22 @@ export const searchOverlay: Overlay = {
 
   getVerseColor(verse: Verse): Color | null {
     // No active search - use default colors
-    if (currentQuery.length < 2) {
+    if (currentTerms.length === 0) {
       return null;
     }
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
-    if (matchingKeys.has(key)) {
-      return HIGHLIGHT_COLOR;
+    const termIndices = matchingTerms.get(key);
+
+    if (termIndices && termIndices.length > 0) {
+      // Get colors for all matching terms
+      const colors = termIndices.map(i => SEARCH_COLORS[i % SEARCH_COLORS.length]);
+      // Blend if multiple, otherwise use single color
+      return colors.length === 1 ? colors[0] : blendColorsHSL(colors);
     }
 
     // Dim non-matching verses
-    const brightness = (0.4 + 0.2) * DIM_FACTOR; // Approximate middle gray dimmed
+    const brightness = (0.4 + 0.2) * DIM_FACTOR;
     return [brightness, brightness, brightness];
   },
 
@@ -183,18 +191,18 @@ export const searchOverlay: Overlay = {
   renderLegend(container: HTMLElement): void {
     if (currentResults.length > 0) {
       container.innerHTML = `<div style="color: #888; font-size: 11px;">${currentResults.length} matching verses highlighted</div>`;
-    } else if (currentQuery.length > 0 && currentQuery.length < 2) {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type at least 2 characters</div>`;
+    } else if (currentQuery.length > 0 && currentTerms.length === 0) {
+      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type at least 2 characters per term</div>`;
     } else {
       container.innerHTML = `<div style="color: #888; font-size: 11px;">Type to search Hebrew or English text</div>`;
     }
   },
 
   getHoverInfo(verse: Verse): string | null {
-    if (currentQuery.length < 2) return null;
+    if (currentTerms.length === 0) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
-    if (!matchingKeys.has(key)) return null;
+    if (!matchingTerms.has(key)) return null;
 
     // Find the result for this verse
     const result = currentResults.find(r =>
@@ -203,8 +211,9 @@ export const searchOverlay: Overlay = {
       r.verse === verse.verse
     );
 
-    if (result) {
-      return `Match: "${result.snippet.replace(/\.\.\./g, '').trim()}"`;
+    if (result && result.matchingTerms.length > 0) {
+      const firstMatch = result.matchingTerms[0];
+      return `Match: "${firstMatch.snippet.replace(/\.\.\./g, '').trim()}"`;
     }
     return 'Match';
   },
