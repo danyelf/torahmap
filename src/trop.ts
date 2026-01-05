@@ -68,3 +68,25 @@ export function getRarityTier(count: number): RarityTier {
   if (count < RARITY_THRESHOLDS.UNCOMMON) return 'uncommon';
   return 'common';
 }
+
+// Extract all trop marks from a Hebrew text string
+export function extractTropMarks(hebrewText: string): string[] {
+  const marks: string[] = [];
+  for (const char of hebrewText) {
+    const codePoint = char.codePointAt(0);
+    if (codePoint && codePoint >= 0x0591 && codePoint <= 0x05AF) {
+      marks.push(char);
+    }
+  }
+  return marks;
+}
+
+// Count occurrences of each trop mark in text
+export function countTropMarks(hebrewText: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  const marks = extractTropMarks(hebrewText);
+  for (const mark of marks) {
+    counts.set(mark, (counts.get(mark) || 0) + 1);
+  }
+  return counts;
+}
