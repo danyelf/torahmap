@@ -69,7 +69,7 @@ async function main(): Promise<void> {
 
   // Load Tanakh structure and verse texts in parallel
   const [torahResponse, verseTexts] = await Promise.all([
-    fetch('/data/tanakh-structure.json'),
+    fetch(`${import.meta.env.BASE_URL}data/tanakh-structure.json`),
     loadAllVerseTexts()
   ]);
 

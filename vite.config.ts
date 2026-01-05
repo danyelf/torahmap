@@ -10,9 +10,10 @@ function getGitBranch(): string {
   }
 }
 
-export default defineConfig({
-  base: '/torahmap/',
+export default defineConfig(({ command }) => ({
+  // Use /torahmap/ base path only for production build
+  base: command === 'build' ? '/torahmap/' : '/',
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
   },
-});
+}));

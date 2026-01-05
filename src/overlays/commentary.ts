@@ -37,7 +37,7 @@ export const commentaryOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetch('/data/commentary-counts.json');
+      const res = await fetch(`${import.meta.env.BASE_URL}data/commentary-counts.json`);
       if (!res.ok) {
         console.error(`Failed to load commentary-counts.json: ${res.status}`);
         return;

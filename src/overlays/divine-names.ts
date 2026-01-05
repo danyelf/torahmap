@@ -22,7 +22,7 @@ export const divineNamesOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetch('/data/divine-names.json');
+      const res = await fetch(`${import.meta.env.BASE_URL}data/divine-names.json`);
       if (!res.ok) {
         console.error(`Failed to load divine-names.json: ${res.status}`);
         return;
