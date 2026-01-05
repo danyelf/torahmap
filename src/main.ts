@@ -8,6 +8,7 @@ import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex } from './search.ts';
+import { seededRandom } from './utils/random.ts';
 import type { Verse, TorahData, Bounds } from './types.ts';
 import {
   registerOverlay,
@@ -71,7 +72,17 @@ async function main(): Promise<void> {
     fetch('/data/tanakh-structure.json'),
     loadAllVerseTexts()
   ]);
-  const torahData: TorahData = await torahResponse.json();
+
+  if (!torahResponse.ok) {
+    throw new Error(`Failed to load tanakh-structure.json: ${torahResponse.status}`);
+  }
+
+  let torahData: TorahData;
+  try {
+    torahData = await torahResponse.json();
+  } catch (e) {
+    throw new Error(`Failed to parse tanakh-structure.json: ${e}`);
+  }
 
   // Compute layout
   const verses = computeLayout(torahData);
@@ -114,12 +125,6 @@ async function main(): Promise<void> {
   // Current overlay state
   let currentOverlay: Overlay | null = null;
   let buffer: WebGLBuffer;
-
-  // Seeded random for consistent gray variation
-  function seededRandom(seed: number): number {
-    const x = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453;
-    return x - Math.floor(x);
-  }
 
   // Function to apply overlay colors
   function applyOverlay(): void {
@@ -230,8 +235,7 @@ async function main(): Promise<void> {
     isDragging = false;
   });
 
-  // Hover detection with overlay-aware info and sidebar
-  const hoverInfo = document.getElementById('hover-info');
+  // Sidebar for verse details
   const sidebar = document.getElementById('verse-sidebar');
   const sidebarRef = sidebar?.querySelector('.ref-text');
   const sidebarHebrew = sidebar?.querySelector('.verse-hebrew');
@@ -239,6 +243,14 @@ async function main(): Promise<void> {
   const sidebarLink = sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement | null;
   const sidebarLinkSubtitle = sidebar?.querySelector('.link-subtitle');
   const sidebarCloseBtn = sidebar?.querySelector('.close-btn');
+  const controlsPanel = document.getElementById('controls');
+
+  // Position sidebar below controls panel
+  function positionSidebar(): void {
+    if (!sidebar || !controlsPanel) return;
+    const controlsRect = controlsPanel.getBoundingClientRect();
+    (sidebar as HTMLElement).style.top = `${controlsRect.bottom + 10}px`;
+  }
 
   // Build Sefaria URL for a verse
   function getSefariaUrl(book: string, chapter: number, verse: number): string {
@@ -284,6 +296,7 @@ async function main(): Promise<void> {
       sidebarLinkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
     }
 
+    positionSidebar();
     sidebar.classList.add('visible');
     if (isPinned) {
       sidebar.classList.add('pinned');
@@ -295,20 +308,6 @@ async function main(): Promise<void> {
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (!isDragging) {
       const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
-
-      // Update hover info based on current overlay
-      if (hoverInfo) {
-        if (verse) {
-          let info = `${verse.book} ${verse.chapter}:${verse.verse}`;
-          const overlayInfo = currentOverlay?.getHoverInfo?.(verse);
-          if (overlayInfo) {
-            info += ` (${overlayInfo})`;
-          }
-          hoverInfo.textContent = info;
-        } else {
-          hoverInfo.textContent = '';
-        }
-      }
 
       // Update sidebar (pinned takes precedence - no hover changes when pinned)
       if (pinnedVerse) {
@@ -383,6 +382,9 @@ async function main(): Promise<void> {
 
     applyOverlay();
     render();
+
+    // Reposition sidebar after overlay controls are rendered
+    requestAnimationFrame(positionSidebar);
   }
 
   // Overlay selector

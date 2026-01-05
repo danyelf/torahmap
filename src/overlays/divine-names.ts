@@ -21,8 +21,16 @@ export const divineNamesOverlay: Overlay = {
   name: 'Divine Names',
 
   async init() {
-    const res = await fetch('/data/divine-names.json');
-    data = await res.json();
+    try {
+      const res = await fetch('/data/divine-names.json');
+      if (!res.ok) {
+        console.error(`Failed to load divine-names.json: ${res.status}`);
+        return;
+      }
+      data = await res.json();
+    } catch (e) {
+      console.error('Failed to parse divine-names.json:', e);
+    }
   },
 
   getVerseColor(verse: Verse): Color | null {

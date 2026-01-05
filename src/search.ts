@@ -1,6 +1,8 @@
 // Full-text search with word-wheeling support for Hebrew and English
 
 import type { VerseTexts } from './verseTexts';
+import { BOOK_ORDER } from './constants/books.ts';
+import { getVerseKey } from './types.ts';
 
 export interface SearchResult {
   book: string;
@@ -66,22 +68,7 @@ function isHebrewQuery(query: string): boolean {
 export function buildSearchIndex(verseTexts: VerseTexts): void {
   searchIndex = [];
 
-  // Canonical book order
-  const bookOrder = [
-    // Torah
-    'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy',
-    // Prophets
-    'Joshua', 'Judges', 'I Samuel', 'II Samuel', 'I Kings', 'II Kings',
-    'Isaiah', 'Jeremiah', 'Ezekiel',
-    'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah',
-    'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
-    // Writings
-    'Psalms', 'Proverbs', 'Job', 'Song of Songs', 'Ruth', 'Lamentations',
-    'Ecclesiastes', 'Esther', 'Daniel', 'Ezra', 'Nehemiah',
-    'I Chronicles', 'II Chronicles'
-  ];
-
-  for (const book of bookOrder) {
+  for (const book of BOOK_ORDER) {
     const chapters = verseTexts[book];
     if (!chapters) continue;
 
@@ -206,7 +193,7 @@ function createSnippet(text: string, matchIdx: number, matchLen: number): Snippe
 export function getMatchingVerseKeys(results: SearchResult[]): Set<string> {
   const keys = new Set<string>();
   for (const r of results) {
-    keys.add(`${r.book}:${r.chapter}:${r.verse}`);
+    keys.add(getVerseKey(r.book, r.chapter, r.verse));
   }
   return keys;
 }

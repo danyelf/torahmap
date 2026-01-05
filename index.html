@@ -7,25 +7,17 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #1a1a1a; overflow: hidden; }
     canvas { display: block; }
-    #hover-info {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: #fff;
-      font-family: monospace;
-      font-size: 14px;
-      pointer-events: none;
-    }
     #controls {
       position: fixed;
       top: 10px;
       right: 10px;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       padding: 12px;
       border-radius: 8px;
       font-family: system-ui, sans-serif;
       color: #fff;
-      width: 220px;
+      width: 280px;
+      z-index: 10;
     }
     #controls label {
       display: block;
@@ -94,15 +86,15 @@
     }
     #verse-sidebar {
       position: fixed;
-      top: 160px;
       right: 10px;
-      width: 300px;
-      background: rgba(0, 0, 0, 0.9);
+      width: 280px;
+      background: rgba(0, 0, 0, 0.85);
       border-radius: 8px;
       font-family: system-ui, sans-serif;
       color: #fff;
       display: none;
       overflow: hidden;
+      z-index: 10;
     }
     #verse-sidebar.visible {
       display: block;
@@ -321,7 +313,6 @@
 </head>
 <body>
   <canvas id="canvas"></canvas>
-  <div id="hover-info"></div>
   <div id="controls">
     <label>Overlay</label>
     <select id="overlay-select">

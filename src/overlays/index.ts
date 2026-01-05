@@ -1,16 +1,23 @@
 // src/overlays/index.ts
-export type { Overlay, Color } from './types.ts';
+export type { Overlay, Color, OverlayConfig } from './types.ts';
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { divineNamesOverlay } from './divine-names.ts';
-export { commentaryOverlay, setVerses as setCommentaryVerses, getVerseLinkCount } from './commentary.ts';
+export {
+  commentaryOverlay,
+  configure as configureCommentary,
+  setVerses as setCommentaryVerses, // @deprecated
+  getVerseLinkCount,
+} from './commentary.ts';
 export {
   tropOverlay,
-  setVerseTexts as setTropVerseTexts,
+  configure as configureTrop,
+  setVerseTexts as setTropVerseTexts, // @deprecated
   getSelectedTrop,
   highlightTropInText,
 } from './trop.ts';
 export {
   searchOverlay,
-  setSearchVerses,
-  setSearchCallbacks,
+  configure as configureSearch,
+  setSearchVerses, // @deprecated
+  setSearchCallbacks, // @deprecated
 } from './search.ts';

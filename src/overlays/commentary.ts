@@ -36,8 +36,22 @@ export const commentaryOverlay: Overlay = {
   name: 'Commentary Density',
 
   async init() {
-    const res = await fetch('/data/commentary-counts.json');
-    data = await res.json();
+    try {
+      const res = await fetch('/data/commentary-counts.json');
+      if (!res.ok) {
+        console.error(`Failed to load commentary-counts.json: ${res.status}`);
+        return;
+      }
+      data = await res.json();
+    } catch (e) {
+      console.error('Failed to parse commentary-counts.json:', e);
+    }
+  },
+
+  destroy() {
+    currentCategory = 'total';
+    cachedMaxValues = {};
+    updateCallback = null;
   },
 
   onUpdate(callback) {
@@ -114,10 +128,15 @@ export const commentaryOverlay: Overlay = {
   },
 };
 
-// Allow main.ts to pass verses reference for max calculation
-export function setVerses(v: Verse[]): void {
-  verses = v;
+// Standard configuration - use this instead of setVerses
+export function configure(config: { verses: Verse[] }): void {
+  verses = config.verses;
   cachedMaxValues = {};
+}
+
+// @deprecated Use configure() instead
+export function setVerses(v: Verse[]): void {
+  configure({ verses: v });
 }
 
 // Get total linked texts count for a verse (used by sidebar)

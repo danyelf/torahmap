@@ -2,15 +2,9 @@
 
 import type { Verse } from './types.ts';
 
-// Highlight color: bright cyan
-const HIGHLIGHT_COLOR: [number, number, number] = [0.2, 0.9, 1.0];
-// Dim factor for non-highlighted verses when search is active
-const DIM_FACTOR = 0.3;
-
 export function buildVerseGeometry(
   verses: Verse[],
-  baseColor: [number, number, number] = [0.6, 0.6, 0.6],
-  hasActiveSearch: boolean = false
+  baseColor: [number, number, number] = [0.6, 0.6, 0.6]
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
   // Each vertex = x, y, r, g, b, u, v
@@ -25,19 +19,7 @@ export function buildVerseGeometry(
     const x1 = v.x + v.size - 2; // -2 for 2px gap (more separation reduces moiré)
     const y1 = v.y + v.size - 2;
 
-    let [r, g, b] = v.color || baseColor;
-
-    if (hasActiveSearch) {
-      if (v.highlighted) {
-        // Use bright highlight color
-        [r, g, b] = HIGHLIGHT_COLOR;
-      } else {
-        // Dim non-highlighted verses
-        r *= DIM_FACTOR;
-        g *= DIM_FACTOR;
-        b *= DIM_FACTOR;
-      }
-    }
+    const [r, g, b] = v.color || baseColor;
 
     // Triangle 1 (top-left, top-right, bottom-left)
     data[offset++] = x0; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 0; data[offset++] = 0;

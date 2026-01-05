@@ -1,7 +1,20 @@
 // src/overlays/types.ts
 import type { Verse } from '../types.ts';
+import type { VerseTexts } from '../verseTexts.ts';
 
 export type Color = [number, number, number];
+
+/**
+ * Standard configuration passed to overlays that need external data.
+ * Use the configure() function exported by each overlay that needs this.
+ */
+export interface OverlayConfig {
+  verses: Verse[];
+  verseTexts: VerseTexts;
+  callbacks?: {
+    onVerseClick?: (verse: Verse) => void;
+  };
+}
 
 export interface Overlay {
   id: string;

@@ -1,6 +1,10 @@
 // src/utils/color.ts
 import type { Color } from '../overlays/types.ts';
 
+// Shared color constants
+export const HIGHLIGHT_COLOR: Color = [0.2, 0.9, 1.0]; // Bright cyan for search/selection
+export const DIM_FACTOR = 0.3; // Dimming factor for non-highlighted verses
+
 /**
  * Heatmap color scale: dark blue -> light blue -> teal -> orange -> red
  * Uses logarithmic scale for better distribution

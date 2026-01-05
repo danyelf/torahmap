@@ -1,6 +1,8 @@
 // Layout algorithm: compute (x, y) position for every verse
 
 import type { TorahData, Verse, Bounds, Book } from './types.ts';
+import { seededRandom } from './utils/random.ts';
+import { getBookSection } from './constants/books.ts';
 
 const VERSE_SIZE = 6;           // pixels per verse square
 const CHAPTER_GAP = 2;          // gap between chapter rows
@@ -11,14 +13,8 @@ const WRAP_THRESHOLD = 50;      // wrap chapters longer than this
 const WRAP_INDENT = 12;         // indent for wrapped lines (2 verse widths)
 const MIN_WRAP_VERSES = 3;      // minimum verses on a wrapped line (avoid widows)
 const PSALMS_COLUMN_GAP = 15;   // gap between Psalms columns
-
-// Section definitions for Tanakh
-const TORAH_BOOKS = new Set(['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']);
-const KETUVIM_BOOKS = new Set([
-  'Psalms', 'Proverbs', 'Job', 'Song of Songs', 'Ruth',
-  'Lamentations', 'Ecclesiastes', 'Esther', 'Daniel',
-  'Ezra', 'Nehemiah', 'I Chronicles', 'II Chronicles'
-]);
+// Psalms is divided into 5 "books" - split at end of Book 2 for visual balance
+const PSALMS_BOOK_2_END = 72;
 
 // Minor prophets stacking: each array is a vertical stack (top to bottom)
 // Balanced for similar heights: ~18, ~14, ~18, ~17 chapter rows
@@ -40,17 +36,6 @@ const KETUVIM_STACK_CONFIG: Array<{ books: string[]; insertAfter: string }> = [
 ];
 const STACKED_KETUVIM = new Set(KETUVIM_STACK_CONFIG.flatMap(c => c.books));
 
-function getSection(bookName: string): 'torah' | 'neviim' | 'ketuvim' {
-  if (TORAH_BOOKS.has(bookName)) return 'torah';
-  if (KETUVIM_BOOKS.has(bookName)) return 'ketuvim';
-  return 'neviim';
-}
-
-// Seeded random for deterministic jitter (same layout every time)
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
 
 // Calculate wrap points for a chapter, avoiding widow lines (< MIN_WRAP_VERSES)
 function calculateWrapPoints(verseCount: number): number[] {
@@ -256,8 +241,7 @@ function layoutPsalms(
   globalVerseIdx: { value: number },
   verses: Verse[]
 ): { width: number; height: number } {
-  // Split at chapter 72 (end of Book 2)
-  const splitPoint = 72;
+  const splitPoint = PSALMS_BOOK_2_END;
 
   // Column A: chapters 1-72
   let colAY = bookY;
@@ -390,7 +374,7 @@ export function computeLayout(torahData: TorahData): Verse[] {
   const ketuvim: Book[] = [];
 
   for (const book of torahData.books) {
-    const section = getSection(book.name);
+    const section = getBookSection(book.name);
     if (section === 'torah') torah.push(book);
     else if (section === 'neviim') neviim.push(book);
     else ketuvim.push(book);

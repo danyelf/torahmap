@@ -1,13 +1,13 @@
 // src/overlays/trop.ts
 import type { Overlay, Color } from './types.ts';
-import type { Verse } from '../types.ts';
+import type { Verse, TropIndex, TropIndexEntry } from '../types.ts';
+import { getVerseKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
   getTropByFrequency,
   getRarityTier,
 } from '../trop.ts';
-import type { TropIndex, TropIndexEntry } from '../types.ts';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
@@ -33,7 +33,7 @@ function updateCache(): void {
 
   // Build verse lookup once
   for (const loc of selectedTrop.verses) {
-    const key = `${loc.book}:${loc.chapter}:${loc.verse}`;
+    const key = getVerseKey(loc.book, loc.chapter, loc.verse);
     cachedVerseLookup.set(key, loc.count);
   }
 
@@ -49,7 +49,7 @@ function updateCache(): void {
 function getTropVerseColor(verse: Verse): Color | null {
   if (!selectedTrop) return null;
 
-  const key = `${verse.book}:${verse.chapter}:${verse.verse}`;
+  const key = getVerseKey(verse.book, verse.chapter, verse.verse);
   const count = cachedVerseLookup.get(key) || 0;
 
   if (cachedTier === 'rare') {
@@ -206,12 +206,17 @@ export const tropOverlay: Overlay = {
   },
 };
 
-// Allow main.ts to pass verse texts for building trop index
-export function setVerseTexts(verseTexts: VerseTexts): void {
-  tropIndex = buildTropIndex(verseTexts);
+// Standard configuration - use this instead of setVerseTexts
+export function configure(config: { verseTexts: VerseTexts }): void {
+  tropIndex = buildTropIndex(config.verseTexts);
   tropByFrequency = getTropByFrequency(tropIndex);
   console.log(`Built trop index: ${tropByFrequency.length} marks found`);
   console.log('Rarest trop:', tropByFrequency.slice(0, 5).map(t => `${t.name} (${t.totalCount})`).join(', '));
+}
+
+// @deprecated Use configure() instead
+export function setVerseTexts(verseTexts: VerseTexts): void {
+  configure({ verseTexts });
 }
 
 // Get selected trop for sidebar highlighting

@@ -1,12 +1,9 @@
 // Full-text search overlay
 import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
+import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseKeys, type SearchResult } from '../search.ts';
-
-// Highlight color: bright cyan (matches geometry.ts HIGHLIGHT_COLOR)
-const HIGHLIGHT_COLOR: Color = [0.2, 0.9, 1.0];
-// Dim factor for non-matching verses
-const DIM_FACTOR = 0.3;
+import { HIGHLIGHT_COLOR, DIM_FACTOR } from '../utils/color.ts';
 
 // State
 let verses: Verse[] = [];
@@ -22,10 +19,20 @@ let searchClear: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
+// Standard configuration - use this instead of setSearchVerses/setSearchCallbacks
+export function configure(config: { verses: Verse[]; callbacks?: { onVerseClick?: (verse: Verse) => void } }): void {
+  verses = config.verses;
+  if (config.callbacks?.onVerseClick) {
+    onVerseClickCallback = config.callbacks.onVerseClick;
+  }
+}
+
+// @deprecated Use configure() instead
 export function setSearchVerses(v: Verse[]): void {
   verses = v;
 }
 
+// @deprecated Use configure() instead
 export function setSearchCallbacks(callbacks: { onVerseClick: (verse: Verse) => void }): void {
   onVerseClickCallback = callbacks.onVerseClick;
 }
@@ -115,7 +122,7 @@ export const searchOverlay: Overlay = {
       return null;
     }
 
-    const key = `${verse.book}:${verse.chapter}:${verse.verse}`;
+    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
     if (matchingKeys.has(key)) {
       return HIGHLIGHT_COLOR;
     }
@@ -197,7 +204,7 @@ export const searchOverlay: Overlay = {
   getHoverInfo(verse: Verse): string | null {
     if (currentQuery.length < 2) return null;
 
-    const key = `${verse.book}:${verse.chapter}:${verse.verse}`;
+    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
     if (!matchingKeys.has(key)) return null;
 
     // Find the result for this verse

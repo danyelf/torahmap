@@ -1,5 +1,7 @@
 // Verse text loading from Sefaria export data
 
+import { BOOK_FILES } from './constants/books.ts';
+
 export interface VerseText {
   he: string;
   en: string;
@@ -13,52 +15,6 @@ interface SefariaTextFile {
   language: string;
   text: string[][];
 }
-
-// Map from our book names to file prefixes
-const BOOK_FILES: Record<string, string> = {
-  // Torah
-  'Genesis': 'genesis',
-  'Exodus': 'exodus',
-  'Leviticus': 'leviticus',
-  'Numbers': 'numbers',
-  'Deuteronomy': 'deuteronomy',
-  // Prophets
-  'Joshua': 'joshua',
-  'Judges': 'judges',
-  'I Samuel': 'i-samuel',
-  'II Samuel': 'ii-samuel',
-  'I Kings': 'i-kings',
-  'II Kings': 'ii-kings',
-  'Isaiah': 'isaiah',
-  'Jeremiah': 'jeremiah',
-  'Ezekiel': 'ezekiel',
-  'Hosea': 'hosea',
-  'Joel': 'joel',
-  'Amos': 'amos',
-  'Obadiah': 'obadiah',
-  'Jonah': 'jonah',
-  'Micah': 'micah',
-  'Nahum': 'nahum',
-  'Habakkuk': 'habakkuk',
-  'Zephaniah': 'zephaniah',
-  'Haggai': 'haggai',
-  'Zechariah': 'zechariah',
-  'Malachi': 'malachi',
-  // Writings
-  'Psalms': 'psalms',
-  'Proverbs': 'proverbs',
-  'Job': 'job',
-  'Song of Songs': 'song-of-songs',
-  'Ruth': 'ruth',
-  'Lamentations': 'lamentations',
-  'Ecclesiastes': 'ecclesiastes',
-  'Esther': 'esther',
-  'Daniel': 'daniel',
-  'Ezra': 'ezra',
-  'Nehemiah': 'nehemiah',
-  'I Chronicles': 'i-chronicles',
-  'II Chronicles': 'ii-chronicles',
-};
 
 // Strip HTML tags and footnotes from text
 function cleanText(text: string): string {
@@ -80,8 +36,20 @@ async function loadBookTexts(
     fetch(`/data/texts/${filePrefix}-en.json`),
   ]);
 
-  const heData: SefariaTextFile = await heResponse.json();
-  const enData: SefariaTextFile = await enResponse.json();
+  if (!heResponse.ok || !enResponse.ok) {
+    console.error(`Failed to load text files for ${filePrefix}: he=${heResponse.status}, en=${enResponse.status}`);
+    return {};
+  }
+
+  let heData: SefariaTextFile;
+  let enData: SefariaTextFile;
+  try {
+    heData = await heResponse.json();
+    enData = await enResponse.json();
+  } catch (e) {
+    console.error(`Failed to parse text files for ${filePrefix}:`, e);
+    return {};
+  }
 
   const bookTexts: Record<string, Record<string, VerseText>> = {};
 
