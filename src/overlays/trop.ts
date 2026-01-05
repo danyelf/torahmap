@@ -206,17 +206,11 @@ export const tropOverlay: Overlay = {
   },
 };
 
-// Standard configuration - use this instead of setVerseTexts
 export function configure(config: { verseTexts: VerseTexts }): void {
   tropIndex = buildTropIndex(config.verseTexts);
   tropByFrequency = getTropByFrequency(tropIndex);
   console.log(`Built trop index: ${tropByFrequency.length} marks found`);
   console.log('Rarest trop:', tropByFrequency.slice(0, 5).map(t => `${t.name} (${t.totalCount})`).join(', '));
-}
-
-// @deprecated Use configure() instead
-export function setVerseTexts(verseTexts: VerseTexts): void {
-  configure({ verseTexts });
 }
 
 // Get selected trop for sidebar highlighting

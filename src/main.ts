@@ -16,15 +16,14 @@ import {
   getAllOverlays,
   divineNamesOverlay,
   commentaryOverlay,
-  setCommentaryVerses,
+  configureCommentary,
   getVerseLinkCount,
   tropOverlay,
-  setTropVerseTexts,
+  configureTrop,
   getSelectedTrop,
   highlightTropInText,
   searchOverlay,
-  setSearchVerses,
-  setSearchCallbacks,
+  configureSearch,
   type Overlay,
 } from './overlays/index.ts';
 
@@ -97,9 +96,9 @@ async function main(): Promise<void> {
   registerOverlay(commentaryOverlay);
   registerOverlay(tropOverlay);
   registerOverlay(searchOverlay);
-  setCommentaryVerses(verses);
-  setTropVerseTexts(verseTexts);
-  setSearchVerses(verses);
+  configureCommentary({ verses });
+  configureTrop({ verseTexts });
+  // Note: configureSearch is called later after updateSidebar is defined
 
   await Promise.all(getAllOverlays().map(o => o.init?.()));
 
@@ -402,10 +401,13 @@ async function main(): Promise<void> {
   window.torahMap = { verses, pan, zoom, render, canvas, bounds };
 
   // Wire up search overlay callbacks
-  setSearchCallbacks({
-    onVerseClick: (verse: Verse) => {
-      pinnedVerse = verse;
-      updateSidebar(verse, true);
+  configureSearch({
+    verses,
+    callbacks: {
+      onVerseClick: (verse: Verse) => {
+        pinnedVerse = verse;
+        updateSidebar(verse, true);
+      },
     },
   });
 }

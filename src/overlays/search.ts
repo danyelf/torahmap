@@ -19,22 +19,11 @@ let searchClear: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
-// Standard configuration - use this instead of setSearchVerses/setSearchCallbacks
 export function configure(config: { verses: Verse[]; callbacks?: { onVerseClick?: (verse: Verse) => void } }): void {
   verses = config.verses;
   if (config.callbacks?.onVerseClick) {
     onVerseClickCallback = config.callbacks.onVerseClick;
   }
-}
-
-// @deprecated Use configure() instead
-export function setSearchVerses(v: Verse[]): void {
-  verses = v;
-}
-
-// @deprecated Use configure() instead
-export function setSearchCallbacks(callbacks: { onVerseClick: (verse: Verse) => void }): void {
-  onVerseClickCallback = callbacks.onVerseClick;
 }
 
 function doSearch(query: string): void {

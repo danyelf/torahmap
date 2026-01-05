@@ -128,15 +128,9 @@ export const commentaryOverlay: Overlay = {
   },
 };
 
-// Standard configuration - use this instead of setVerses
 export function configure(config: { verses: Verse[] }): void {
   verses = config.verses;
   cachedMaxValues = {};
-}
-
-// @deprecated Use configure() instead
-export function setVerses(v: Verse[]): void {
-  configure({ verses: v });
 }
 
 // Get total linked texts count for a verse (used by sidebar)
