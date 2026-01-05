@@ -47,28 +47,29 @@
       outline: none;
       border-color: #666;
     }
-    #legend {
+    /* Overlay legend container */
+    #overlay-legend {
       margin-top: 12px;
       font-size: 11px;
     }
-    #legend .gradient {
+    /* Commentary overlay legend */
+    #overlay-legend .legend-gradient {
       height: 12px;
       border-radius: 2px;
       background: linear-gradient(to right, #1a1a2e, #16213e, #0f3460, #e94560);
       margin-bottom: 2px;
-      position: relative;
     }
-    #legend .ticks {
+    #overlay-legend .legend-ticks {
       position: relative;
       height: 16px;
     }
-    #legend .tick {
+    #overlay-legend .tick {
       position: absolute;
       transform: translateX(-50%);
       color: #888;
       font-size: 10px;
     }
-    #legend .tick::before {
+    #overlay-legend .tick::before {
       content: '';
       position: absolute;
       top: -4px;
@@ -76,6 +77,20 @@
       width: 1px;
       height: 4px;
       background: #666;
+    }
+    /* Divine names overlay legend */
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 11px;
+      color: #ccc;
+    }
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
     }
     #verse-sidebar {
       position: fixed;
@@ -157,7 +172,17 @@
       color: #888;
       margin-top: 2px;
     }
-    #trop-chart button {
+/* Trop chart styles */
+    .trop-controls {
+      margin-top: 10px;
+    }
+    .trop-chart {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .trop-chart button {
       width: 100%;
       aspect-ratio: 1;
       border: 1px solid #444;
@@ -170,15 +195,15 @@
       transition: all 0.15s;
       position: relative;
     }
-    #trop-chart button:hover {
+    .trop-chart button:hover {
       border-color: #888;
       background: #333;
     }
-    #trop-chart button.selected {
+    .trop-chart button.selected {
       border-color: #6ab0f3;
       background: #2a3f55;
     }
-    #trop-chart button.rare::after {
+    .trop-chart button.rare::after {
       content: '';
       position: absolute;
       top: 2px;
@@ -188,10 +213,109 @@
       background: #ffd700;
       border-radius: 50%;
     }
+    .trop-info {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #888;
+      height: 36px;
+      line-height: 1.4;
+      overflow: hidden;
+    }
     .trop-highlight {
       background: rgba(255, 215, 0, 0.3);
       border-radius: 2px;
       padding: 0 1px;
+    }
+    /* Search styles */
+    #search-container {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    #search-input {
+      width: 100%;
+      padding: 8px 28px 8px 10px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #222;
+      color: #fff;
+      font-size: 14px;
+    }
+    #search-input::placeholder {
+      color: #666;
+    }
+    #search-input:focus {
+      outline: none;
+      border-color: #6ab0f3;
+    }
+    #search-clear {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+      padding: 2px 6px;
+    }
+    #search-clear:hover {
+      color: #fff;
+    }
+    #search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: rgba(30, 30, 30, 0.98);
+      border: 1px solid #444;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      max-height: 320px;
+      overflow-y: auto;
+      display: none;
+      z-index: 100;
+    }
+    #search-results.visible {
+      display: block;
+    }
+    .search-result {
+      padding: 8px 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #333;
+    }
+    .search-result:last-child {
+      border-bottom: none;
+    }
+    .search-result:hover {
+      background: rgba(106, 176, 243, 0.15);
+    }
+    .search-result .ref {
+      font-size: 12px;
+      color: #6ab0f3;
+      margin-bottom: 2px;
+    }
+    .search-result .snippet {
+      font-size: 13px;
+      color: #aaa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .search-result .snippet.rtl {
+      direction: rtl;
+      text-align: right;
+    }
+    .search-result .snippet mark {
+      background: rgba(255, 220, 100, 0.3);
+      color: #fff;
+    }
+    #search-count {
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #666;
+      border-bottom: 1px solid #333;
     }
   </style>
 </head>
@@ -199,6 +323,13 @@
   <canvas id="canvas"></canvas>
   <div id="hover-info"></div>
   <div id="controls">
+    <div id="search-container">
+      <input type="text" id="search-input" placeholder="Search Hebrew or English...">
+      <button id="search-clear">&times;</button>
+      <div id="search-results">
+        <div id="search-count"></div>
+      </div>
+    </div>
     <label>Overlay</label>
     <select id="overlay-select">
       <option value="none">None</option>
@@ -206,42 +337,8 @@
       <option value="commentary">Commentary</option>
       <option value="trop">Trop</option>
     </select>
-    <div id="commentary-controls" style="display: none; margin-top: 10px;">
-      <label>Category</label>
-      <select id="category-select">
-        <option value="total">All Categories</option>
-        <option value="Midrash">Midrash</option>
-        <option value="Talmud">Talmud</option>
-        <option value="Halakhah">Halakhah</option>
-        <option value="Chasidut">Chasidut</option>
-        <option value="Kabbalah">Kabbalah</option>
-        <option value="Jewish Thought">Jewish Thought</option>
-        <option value="Musar">Musar</option>
-        <option value="Responsa">Responsa</option>
-        <option value="Tanakh">Tanakh (cross-references)</option>
-      </select>
-    </div>
-    <div id="legend" style="display: none;">
-      <div class="gradient"></div>
-      <div class="ticks" id="legend-ticks"></div>
-    </div>
-    <div id="divine-names-legend" style="display: none; margin-top: 10px; font-size: 11px;">
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(77, 128, 230); border-radius: 2px; vertical-align: middle;"></span> YHWH</span>
-        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(230, 77, 77); border-radius: 2px; vertical-align: middle;"></span> Elohim</span>
-        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(179, 77, 204); border-radius: 2px; vertical-align: middle;"></span> Both</span>
-        <span><span style="display: inline-block; width: 12px; height: 12px; background: rgb(128, 128, 128); border-radius: 2px; vertical-align: middle;"></span> Neither</span>
-      </div>
-    </div>
-    <div id="trop-controls" style="display: none; margin-top: 10px;">
-      <label style="margin-bottom: 8px;">Select Trop Mark</label>
-      <div id="trop-chart" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 6px;">
-        <!-- Trop buttons will be inserted here by JS -->
-      </div>
-      <div id="trop-info" style="margin-top: 8px; font-size: 11px; color: #888; height: 36px; line-height: 1.4; overflow: hidden;">
-        <!-- Selected trop info appears here -->
-      </div>
-    </div>
+    <div id="overlay-controls"></div>
+    <div id="overlay-legend"></div>
   </div>
   <div id="verse-sidebar">
     <div class="verse-ref"><span class="ref-text"></span><button class="close-btn">&times;</button></div>

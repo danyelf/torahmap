@@ -7,8 +7,21 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildTropIndex, getTropByFrequency, getRarityTier } from './trop.ts';
-import type { Verse, TorahData, Bounds, DivineNamesData, CommentaryData, TropIndexEntry } from './types.ts';
+import { buildSearchIndex, search, getMatchingVerseKeys, type SearchResult } from './search.ts';
+import type { Verse, TorahData, Bounds } from './types.ts';
+import {
+  registerOverlay,
+  getOverlay,
+  getAllOverlays,
+  divineNamesOverlay,
+  commentaryOverlay,
+  setCommentaryVerses,
+  tropOverlay,
+  setTropVerseTexts,
+  getSelectedTrop,
+  highlightTropInText,
+  type Overlay,
+} from './overlays/index.ts';
 
 // Extend window for global state
 declare global {
@@ -23,48 +36,6 @@ declare global {
       bounds: Bounds;
     };
   }
-}
-
-// Heatmap color scale: dark blue -> light blue -> orange -> red (log scale)
-function heatmapColor(value: number, maxValue: number): [number, number, number] {
-  if (value === 0) return [0.15, 0.15, 0.2]; // Very dark for no commentary
-
-  // Log scale: map 1..maxValue to 0..1 using natural log
-  // log(1) = 0, log(maxValue) = max
-  const logMax = Math.log(maxValue + 1);
-  const t = Math.log(value + 1) / logMax;
-
-  // Multi-stop gradient
-  if (t < 0.25) {
-    // Dark blue to blue
-    const s = t / 0.25;
-    return [0.1, 0.13 + s * 0.1, 0.18 + s * 0.2];
-  } else if (t < 0.5) {
-    // Blue to teal
-    const s = (t - 0.25) / 0.25;
-    return [0.1 + s * 0.1, 0.23 + s * 0.2, 0.38 - s * 0.05];
-  } else if (t < 0.75) {
-    // Teal to orange
-    const s = (t - 0.5) / 0.25;
-    return [0.2 + s * 0.7, 0.43 - s * 0.1, 0.33 - s * 0.2];
-  } else {
-    // Orange to red
-    const s = (t - 0.75) / 0.25;
-    return [0.9 + s * 0.1, 0.33 - s * 0.1, 0.13 + s * 0.05];
-  }
-}
-
-function getCommentaryCount(
-  commentary: CommentaryData,
-  book: string,
-  chapter: number,
-  verse: number,
-  category: string
-): number {
-  const verseData = commentary[book]?.[String(chapter)]?.[String(verse)];
-  if (!verseData) return 0;
-  if (category === 'total') return verseData.total;
-  return verseData.categories[category] || 0;
 }
 
 function findVerseAtPoint(
@@ -87,106 +58,33 @@ function findVerseAtPoint(
   return null;
 }
 
-function createTropChart(
-  tropByFrequency: TropIndexEntry[],
-  onSelect: (entry: TropIndexEntry | null) => void
-): void {
-  const chart = document.getElementById('trop-chart');
-  const info = document.getElementById('trop-info');
-  if (!chart) return;
-
-  chart.innerHTML = '';
-  let selectedButton: HTMLButtonElement | null = null;
-
-  for (const entry of tropByFrequency) {
-    const button = document.createElement('button');
-    button.textContent = 'ב' + entry.unicode; // Show on a bet for visibility
-    button.title = `${entry.name} (${entry.hebrewName})`;
-
-    const tier = getRarityTier(entry.totalCount);
-    if (tier === 'rare') {
-      button.classList.add('rare');
-    }
-
-    button.addEventListener('mouseenter', () => {
-      if (info) {
-        const tierLabel = tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
-        info.textContent = `${entry.name} (${entry.hebrewName}) · ${entry.totalCount.toLocaleString()} occurrences · ${tierLabel}`;
-      }
-    });
-
-    button.addEventListener('mouseleave', () => {
-      if (info && !selectedButton) {
-        info.textContent = '';
-      } else if (info && selectedButton) {
-        // Restore selected info
-        const selEntry = tropByFrequency.find(e => e.unicode === selectedButton?.dataset.unicode);
-        if (selEntry) {
-          const selTier = getRarityTier(selEntry.totalCount);
-          const tierLabel = selTier === 'rare' ? 'Rare' : selTier === 'uncommon' ? 'Uncommon' : 'Common';
-          info.textContent = `${selEntry.name} (${selEntry.hebrewName}) · ${selEntry.totalCount.toLocaleString()} · ${tierLabel}`;
-        }
-      }
-    });
-
-    button.addEventListener('click', () => {
-      // Toggle selection
-      if (selectedButton === button) {
-        button.classList.remove('selected');
-        selectedButton = null;
-        onSelect(null);
-        if (info) info.textContent = '';
-      } else {
-        if (selectedButton) selectedButton.classList.remove('selected');
-        button.classList.add('selected');
-        selectedButton = button;
-        onSelect(entry);
-      }
-    });
-
-    button.dataset.unicode = entry.unicode;
-    chart.appendChild(button);
-  }
-}
-
 async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load Tanakh structure, divine names, commentary data, and verse texts in parallel
-  const [torahResponse, divineNamesResponse, commentaryResponse, verseTexts] = await Promise.all([
+  // Load Tanakh structure and verse texts in parallel
+  const [torahResponse, verseTexts] = await Promise.all([
     fetch('/data/tanakh-structure.json'),
-    fetch('/data/divine-names.json'),
-    fetch('/data/commentary-counts.json'),
     loadAllVerseTexts()
   ]);
   const torahData: TorahData = await torahResponse.json();
-  const divineNames: DivineNamesData = await divineNamesResponse.json();
-  const commentary: CommentaryData = await commentaryResponse.json();
 
-  // Compute layout (without divine names coloring initially - starts as "none")
+  // Compute layout
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
-  console.log('Divine names and commentary data loaded');
 
-  // Build trop index from verse texts
-  const tropIndex = buildTropIndex(verseTexts);
-  const tropByFrequency = getTropByFrequency(tropIndex);
-  console.log(`Built trop index: ${tropByFrequency.length} marks found`);
-  console.log('Rarest trop:', tropByFrequency.slice(0, 5).map(t => `${t.name} (${t.totalCount})`).join(', '));
+  // Build search index
+  buildSearchIndex(verseTexts);
 
-  // Track selected trop
-  let selectedTrop: TropIndexEntry | null = null;
+  // Register and initialize overlays
+  registerOverlay(divineNamesOverlay);
+  registerOverlay(commentaryOverlay);
+  registerOverlay(tropOverlay);
+  setCommentaryVerses(verses);
+  setTropVerseTexts(verseTexts);
 
-  // Create trop chart
-  createTropChart(tropByFrequency, (entry) => {
-    selectedTrop = entry;
-    if (currentOverlay === 'trop') {
-      applyOverlay();
-      render();
-    }
-  });
+  await Promise.all(getAllOverlays().map(o => o.init?.()));
 
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -208,16 +106,12 @@ async function main(): Promise<void> {
   const prog = createProgram(gl);
 
   // Current overlay state
-  let currentOverlay = 'none';
-  let currentCategory = 'total';
+  let currentOverlay: Overlay | null = null;
   let buffer: WebGLBuffer;
 
-  // Divine name colors
-  const DIVINE_NAME_COLORS: { [code: number]: [number, number, number] } = {
-    1: [0.3, 0.5, 0.9],  // YHWH only - Blue
-    2: [0.9, 0.3, 0.3],  // Elohim only - Red
-    3: [0.7, 0.3, 0.8],  // Both - Purple
-  };
+  // Search state
+  let hasActiveSearch = false;
+  let currentSearchResults: SearchResult[] = [];
 
   // Seeded random for consistent gray variation
   function seededRandom(seed: number): number {
@@ -227,136 +121,45 @@ async function main(): Promise<void> {
 
   // Function to apply overlay colors
   function applyOverlay(): void {
-    if (currentOverlay === 'none') {
-      // Gray with brightness variation
-      verses.forEach((v, i) => {
+    verses.forEach((v, i) => {
+      const color = currentOverlay?.getVerseColor(v) ?? null;
+      if (color) {
+        v.color = color;
+      } else {
         const brightness = 0.4 + seededRandom(i * 3) * 0.4;
         v.color = [brightness, brightness, brightness];
-      });
-    } else if (currentOverlay === 'divine-names') {
-      // Apply divine names colors
-      verses.forEach((v, i) => {
-        const bookData = divineNames[v.book];
-        const code = bookData?.[v.chapter - 1]?.[v.verse - 1] ?? 0;
-        if (code > 0 && DIVINE_NAME_COLORS[code]) {
-          v.color = DIVINE_NAME_COLORS[code];
-        } else {
-          const brightness = 0.4 + seededRandom(i * 3) * 0.4;
-          v.color = [brightness, brightness, brightness];
-        }
-      });
-    } else if (currentOverlay === 'commentary') {
-      // Calculate max value for this category
-      let maxValue = 0;
+      }
+    });
+
+    // Rebuild geometry buffer
+    const geometry = buildVerseGeometry(verses, [0.6, 0.6, 0.6], hasActiveSearch);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+  }
+
+  // Function to update search highlights
+  function updateSearchHighlights(results: SearchResult[]): void {
+    // Clear all highlights
+    for (const v of verses) {
+      v.highlighted = false;
+    }
+
+    // Set highlights for matching verses
+    if (results.length > 0) {
+      const matchingKeys = getMatchingVerseKeys(results);
       for (const v of verses) {
-        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, currentCategory);
-        if (count > maxValue) maxValue = count;
-      }
-      const colorMax = maxValue;
-
-      // Update legend ticks
-      const ticksContainer = document.getElementById('legend-ticks');
-      if (ticksContainer) {
-        ticksContainer.innerHTML = '';
-        const logMax = Math.log(colorMax + 1);
-        const ticks = [0];
-        let tickVal = 1;
-        while (tickVal <= colorMax) {
-          ticks.push(tickVal);
-          tickVal *= 10;
-        }
-        if (ticks[ticks.length - 1] < colorMax) {
-          ticks.push(colorMax);
-        }
-        for (const val of ticks) {
-          const tick = document.createElement('span');
-          tick.className = 'tick';
-          const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
-          tick.style.left = `${pos}%`;
-          tick.textContent = val >= 1000 ? `${val / 1000}k` : String(val);
-          ticksContainer.appendChild(tick);
-        }
-      }
-
-      // Apply heatmap colors
-      for (const v of verses) {
-        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, currentCategory);
-        v.color = heatmapColor(count, colorMax);
-      }
-    } else if (currentOverlay === 'trop') {
-      if (!selectedTrop) {
-        // No trop selected - show gray
-        verses.forEach((v, i) => {
-          const brightness = 0.4 + seededRandom(i * 3) * 0.4;
-          v.color = [brightness, brightness, brightness];
-        });
-      } else {
-        const tier = getRarityTier(selectedTrop.totalCount);
-
-        // Build verse lookup for quick access
-        const verseLookup = new Map<string, number>();
-        for (const loc of selectedTrop.verses) {
-          const key = `${loc.book}:${loc.chapter}:${loc.verse}`;
-          verseLookup.set(key, loc.count);
-        }
-
-        if (tier === 'rare') {
-          // Binary highlight: bright gold for matches, dim gray for non-matches
-          verses.forEach((v) => {
-            const key = `${v.book}:${v.chapter}:${v.verse}`;
-            if (verseLookup.has(key)) {
-              v.color = [1.0, 0.84, 0.0]; // Gold
-            } else {
-              v.color = [0.15, 0.15, 0.15]; // Very dim
-            }
-          });
-        } else if (tier === 'uncommon') {
-          // Gradient based on count (0 = dim, max = bright purple)
-          const maxCount = Math.max(...selectedTrop.verses.map(v => v.count), 1);
-          verses.forEach((v) => {
-            const key = `${v.book}:${v.chapter}:${v.verse}`;
-            const count = verseLookup.get(key) || 0;
-            if (count === 0) {
-              v.color = [0.12, 0.12, 0.15];
-            } else {
-              const t = count / maxCount;
-              // Dim purple to bright purple
-              v.color = [0.4 + t * 0.5, 0.2 + t * 0.2, 0.6 + t * 0.35];
-            }
-          });
-        } else {
-          // Common: full heatmap like commentary
-          const maxCount = Math.max(...selectedTrop.verses.map(v => v.count), 1);
-          verses.forEach((v) => {
-            const key = `${v.book}:${v.chapter}:${v.verse}`;
-            const count = verseLookup.get(key) || 0;
-            // Reuse heatmap color function with purple tint
-            if (count === 0) {
-              v.color = [0.12, 0.1, 0.15];
-            } else {
-              const logMax = Math.log(maxCount + 1);
-              const t = Math.log(count + 1) / logMax;
-              // Purple spectrum: dark purple -> purple -> magenta -> pink
-              if (t < 0.33) {
-                const s = t / 0.33;
-                v.color = [0.2 + s * 0.2, 0.1 + s * 0.1, 0.3 + s * 0.2];
-              } else if (t < 0.66) {
-                const s = (t - 0.33) / 0.33;
-                v.color = [0.4 + s * 0.3, 0.2 + s * 0.1, 0.5 + s * 0.2];
-              } else {
-                const s = (t - 0.66) / 0.34;
-                v.color = [0.7 + s * 0.25, 0.3 + s * 0.3, 0.7 + s * 0.2];
-              }
-            }
-          });
+        const key = `${v.book}:${v.chapter}:${v.verse}`;
+        if (matchingKeys.has(key)) {
+          v.highlighted = true;
         }
       }
     }
 
-    // Rebuild geometry buffer
-    const geometry = buildVerseGeometry(verses);
+    // Rebuild geometry with current overlay + highlights
+    const geometry = buildVerseGeometry(verses, [0.6, 0.6, 0.6], hasActiveSearch);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+    render();
   }
 
   // Build initial geometry
@@ -460,68 +263,14 @@ async function main(): Promise<void> {
   const sidebarLinkSubtitle = sidebar?.querySelector('.link-subtitle');
   const sidebarCloseBtn = sidebar?.querySelector('.close-btn');
 
-  const DIVINE_NAME_LABELS: { [code: number]: string } = {
-    0: '',
-    1: 'YHWH',
-    2: 'Elohim',
-    3: 'YHWH + Elohim'
-  };
-
   // Build Sefaria URL for a verse
-  function getSefariaUrl(book: string, chapter: number, verse: number, category: string): string {
+  function getSefariaUrl(book: string, chapter: number, verse: number): string {
     const sefariaBook = book.replace(/ /g, '_');
-    const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
-    if (category && category !== 'total' && category !== '') {
-      return `${baseUrl}?with=${encodeURIComponent(category)}`;
-    }
-    return baseUrl;
+    return `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
   }
 
   // Track pinned verse (click to persist)
   let pinnedVerse: Verse | null = null;
-
-  // Highlight trop mark in Hebrew text
-  function highlightTropInText(hebrewText: string, tropUnicode: string): string {
-    // Wrap the trop mark in a span for highlighting
-    // The trop is a combining character, so we highlight it with its base letter
-    const result: string[] = [];
-    let i = 0;
-
-    while (i < hebrewText.length) {
-      const char = hebrewText[i];
-
-      // Check if this is the target trop mark
-      if (char === tropUnicode) {
-        // Find the base letter (previous non-combining character)
-        // Wrap from the last base letter through this trop
-        if (result.length > 0) {
-          // Pop characters back to the base letter
-          const highlighted: string[] = [];
-          while (result.length > 0) {
-            const last = result[result.length - 1];
-            const lastCode = last.codePointAt(0) || 0;
-            // Keep popping combining characters
-            if (lastCode >= 0x0591 && lastCode <= 0x05C7) {
-              highlighted.unshift(result.pop()!);
-            } else {
-              // This is the base letter
-              highlighted.unshift(result.pop()!);
-              break;
-            }
-          }
-          highlighted.push(char);
-          result.push(`<mark class="trop-highlight">${highlighted.join('')}</mark>`);
-        } else {
-          result.push(`<mark class="trop-highlight">${char}</mark>`);
-        }
-      } else {
-        result.push(char);
-      }
-      i++;
-    }
-
-    return result.join('');
-  }
 
   // Update sidebar with verse info
   function updateSidebar(verse: Verse | null, isPinned: boolean = false): void {
@@ -534,14 +283,14 @@ async function main(): Promise<void> {
     }
 
     const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
-    const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
 
     if (sidebarRef) {
       sidebarRef.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
     }
     if (sidebarHebrew) {
       const hebrewText = text?.he || 'Loading...';
-      if (currentOverlay === 'trop' && selectedTrop) {
+      const selectedTrop = getSelectedTrop();
+      if (currentOverlay?.id === 'trop' && selectedTrop) {
         sidebarHebrew.innerHTML = highlightTropInText(hebrewText, selectedTrop.unicode);
       } else {
         sidebarHebrew.textContent = hebrewText;
@@ -551,20 +300,10 @@ async function main(): Promise<void> {
       sidebarEnglish.textContent = text?.en || 'Loading...';
     }
     if (sidebarLink) {
-      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentCategory);
+      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse);
     }
     if (sidebarLinkSubtitle) {
-      if (verseData) {
-        if (currentCategory === 'total') {
-          sidebarLinkSubtitle.textContent = `${verseData.total} linked texts`;
-        } else if (currentCategory && verseData.categories[currentCategory]) {
-          sidebarLinkSubtitle.textContent = `${verseData.categories[currentCategory]} ${currentCategory} texts`;
-        } else {
-          sidebarLinkSubtitle.textContent = verseData.total > 0 ? `${verseData.total} linked texts` : '';
-        }
-      } else {
-        sidebarLinkSubtitle.textContent = '';
-      }
+      sidebarLinkSubtitle.textContent = '';
     }
 
     sidebar.classList.add('visible');
@@ -583,29 +322,9 @@ async function main(): Promise<void> {
       if (hoverInfo) {
         if (verse) {
           let info = `${verse.book} ${verse.chapter}:${verse.verse}`;
-
-          if (currentOverlay === 'divine-names') {
-            const bookData = divineNames[verse.book];
-            const code = bookData?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
-            if (code > 0) {
-              info += ` (${DIVINE_NAME_LABELS[code]})`;
-            }
-          } else if (currentOverlay === 'commentary') {
-            const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
-            if (verseData) {
-              if (currentCategory === 'total') {
-                info += ` (${verseData.total} links)`;
-              } else if (verseData.categories[currentCategory]) {
-                info += ` (${verseData.categories[currentCategory]} ${currentCategory})`;
-              }
-            }
-          } else if (currentOverlay === 'trop' && selectedTrop) {
-            const loc = selectedTrop.verses.find(
-              v => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse
-            );
-            if (loc) {
-              info += ` (${selectedTrop.name} ×${loc.count})`;
-            }
+          const overlayInfo = currentOverlay?.getHoverInfo?.(verse);
+          if (overlayInfo) {
+            info += ` (${overlayInfo})`;
           }
           hoverInfo.textContent = info;
         } else {
@@ -654,41 +373,38 @@ async function main(): Promise<void> {
 
   // UI elements
   const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
-  const categorySelect = document.getElementById('category-select') as HTMLSelectElement;
-  const commentaryControls = document.getElementById('commentary-controls');
-  const legend = document.getElementById('legend');
-  const divineNamesLegend = document.getElementById('divine-names-legend');
-  const tropControls = document.getElementById('trop-controls');
 
-  // Overlay selector
-  overlaySelect?.addEventListener('change', () => {
-    currentOverlay = overlaySelect.value;
+  // Overlay controls container (will be populated by overlays)
+  const overlayControlsContainer = document.getElementById('overlay-controls');
+  const overlayLegendContainer = document.getElementById('overlay-legend');
 
-    // Show/hide controls based on overlay
-    if (commentaryControls) {
-      commentaryControls.style.display = currentOverlay === 'commentary' ? 'block' : 'none';
+  function setOverlay(id: string): void {
+    currentOverlay?.destroy?.();
+    currentOverlay = getOverlay(id) ?? null;
+
+    // Wire up update callback for dynamic overlays
+    currentOverlay?.onUpdate?.(() => {
+      applyOverlay();
+      render();
+    });
+
+    // Clear and render overlay's UI
+    if (overlayControlsContainer) {
+      overlayControlsContainer.innerHTML = '';
+      currentOverlay?.renderControls?.(overlayControlsContainer);
     }
-    if (legend) {
-      legend.style.display = currentOverlay === 'commentary' ? 'block' : 'none';
-    }
-    if (divineNamesLegend) {
-      divineNamesLegend.style.display = currentOverlay === 'divine-names' ? 'block' : 'none';
-    }
-    if (tropControls) {
-      tropControls.style.display = currentOverlay === 'trop' ? 'block' : 'none';
+    if (overlayLegendContainer) {
+      overlayLegendContainer.innerHTML = '';
+      currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
 
     applyOverlay();
     render();
-  });
+  }
 
-  // Category selector (for commentary overlay)
-  categorySelect?.addEventListener('change', () => {
-    currentCategory = categorySelect.value;
-    if (currentOverlay === 'commentary') {
-      applyOverlay();
-      render();
-    }
+  // Overlay selector
+  overlaySelect?.addEventListener('change', () => {
+    setOverlay(overlaySelect.value);
   });
 
   // Handle resize
@@ -699,6 +415,114 @@ async function main(): Promise<void> {
 
   // Store for hover detection
   window.torahMap = { verses, pan, zoom, render, canvas, bounds };
+
+  // Search UI
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const searchClear = document.getElementById('search-clear') as HTMLButtonElement;
+  const searchResults = document.getElementById('search-results');
+  const searchCount = document.getElementById('search-count');
+
+  function renderSearchResults(results: SearchResult[]): void {
+    if (!searchResults || !searchCount) return;
+
+    // Clear previous results (except count)
+    const existingResults = searchResults.querySelectorAll('.search-result');
+    existingResults.forEach(el => el.remove());
+
+    if (results.length === 0) {
+      searchResults.classList.remove('visible');
+      return;
+    }
+
+    // Update count
+    searchCount.textContent = `${results.length}${results.length >= 100 ? '+' : ''} results`;
+
+    // Show up to 10 results
+    const displayResults = results.slice(0, 10);
+    for (const result of displayResults) {
+      const div = document.createElement('div');
+      div.className = 'search-result';
+      div.innerHTML = `
+        <div class="ref">${result.book} ${result.chapter}:${result.verse}</div>
+        <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${escapeAndHighlight(result.snippet, result.matchStart, result.matchEnd)}</div>
+      `;
+      div.addEventListener('click', () => {
+        // Find the verse and show sidebar
+        const verse = verses.find(v =>
+          v.book === result.book &&
+          v.chapter === result.chapter &&
+          v.verse === result.verse
+        );
+        if (verse) {
+          pinnedVerse = verse;
+          updateSidebar(verse, true);
+        }
+      });
+      searchResults.appendChild(div);
+    }
+
+    searchResults.classList.add('visible');
+  }
+
+  function escapeAndHighlight(text: string, start: number, end: number): string {
+    const before = escapeHtml(text.slice(0, start));
+    const match = escapeHtml(text.slice(start, end));
+    const after = escapeHtml(text.slice(end));
+    return `${before}<mark>${match}</mark>${after}`;
+  }
+
+  function escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function doSearch(query: string): void {
+    if (query.length < 2) {
+      hasActiveSearch = false;
+      currentSearchResults = [];
+      renderSearchResults([]);
+      updateSearchHighlights([]);
+      return;
+    }
+
+    hasActiveSearch = true;
+    currentSearchResults = search(query);
+    renderSearchResults(currentSearchResults);
+    updateSearchHighlights(currentSearchResults);
+  }
+
+  searchInput?.addEventListener('input', () => {
+    const query = searchInput.value.trim();
+    if (searchClear) {
+      searchClear.style.display = query ? 'block' : 'none';
+    }
+    doSearch(query);
+  });
+
+  searchClear?.addEventListener('click', () => {
+    if (searchInput) {
+      searchInput.value = '';
+      searchClear.style.display = 'none';
+    }
+    doSearch('');
+  });
+
+  // Close search results when clicking outside
+  document.addEventListener('click', (e) => {
+    if (searchResults && !searchResults.contains(e.target as Node) &&
+        e.target !== searchInput && e.target !== searchClear) {
+      searchResults.classList.remove('visible');
+    }
+  });
+
+  // Re-show results when focusing input
+  searchInput?.addEventListener('focus', () => {
+    if (currentSearchResults.length > 0) {
+      searchResults?.classList.add('visible');
+    }
+  });
 }
 
 main().catch(console.error);
