@@ -9,3 +9,8 @@ export {
   getSelectedTrop,
   highlightTropInText,
 } from './trop.ts';
+export {
+  searchOverlay,
+  setSearchVerses,
+  setSearchCallbacks,
+} from './search.ts';

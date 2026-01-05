@@ -7,7 +7,7 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex, search, getMatchingVerseKeys, type SearchResult } from './search.ts';
+import { buildSearchIndex } from './search.ts';
 import type { Verse, TorahData, Bounds } from './types.ts';
 import {
   registerOverlay,
@@ -21,6 +21,9 @@ import {
   setTropVerseTexts,
   getSelectedTrop,
   highlightTropInText,
+  searchOverlay,
+  setSearchVerses,
+  setSearchCallbacks,
   type Overlay,
 } from './overlays/index.ts';
 
@@ -82,8 +85,10 @@ async function main(): Promise<void> {
   registerOverlay(divineNamesOverlay);
   registerOverlay(commentaryOverlay);
   registerOverlay(tropOverlay);
+  registerOverlay(searchOverlay);
   setCommentaryVerses(verses);
   setTropVerseTexts(verseTexts);
+  setSearchVerses(verses);
 
   await Promise.all(getAllOverlays().map(o => o.init?.()));
 
@@ -110,10 +115,6 @@ async function main(): Promise<void> {
   let currentOverlay: Overlay | null = null;
   let buffer: WebGLBuffer;
 
-  // Search state
-  let hasActiveSearch = false;
-  let currentSearchResults: SearchResult[] = [];
-
   // Seeded random for consistent gray variation
   function seededRandom(seed: number): number {
     const x = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453;
@@ -133,34 +134,9 @@ async function main(): Promise<void> {
     });
 
     // Rebuild geometry buffer
-    const geometry = buildVerseGeometry(verses, [0.6, 0.6, 0.6], hasActiveSearch);
+    const geometry = buildVerseGeometry(verses, [0.6, 0.6, 0.6]);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
-  }
-
-  // Function to update search highlights
-  function updateSearchHighlights(results: SearchResult[]): void {
-    // Clear all highlights
-    for (const v of verses) {
-      v.highlighted = false;
-    }
-
-    // Set highlights for matching verses
-    if (results.length > 0) {
-      const matchingKeys = getMatchingVerseKeys(results);
-      for (const v of verses) {
-        const key = `${v.book}:${v.chapter}:${v.verse}`;
-        if (matchingKeys.has(key)) {
-          v.highlighted = true;
-        }
-      }
-    }
-
-    // Rebuild geometry with current overlay + highlights
-    const geometry = buildVerseGeometry(verses, [0.6, 0.6, 0.6], hasActiveSearch);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
-    render();
   }
 
   // Build initial geometry
@@ -423,112 +399,12 @@ async function main(): Promise<void> {
   // Store for hover detection
   window.torahMap = { verses, pan, zoom, render, canvas, bounds };
 
-  // Search UI
-  const searchInput = document.getElementById('search-input') as HTMLInputElement;
-  const searchClear = document.getElementById('search-clear') as HTMLButtonElement;
-  const searchResults = document.getElementById('search-results');
-  const searchCount = document.getElementById('search-count');
-
-  function renderSearchResults(results: SearchResult[]): void {
-    if (!searchResults || !searchCount) return;
-
-    // Clear previous results (except count)
-    const existingResults = searchResults.querySelectorAll('.search-result');
-    existingResults.forEach(el => el.remove());
-
-    if (results.length === 0) {
-      searchResults.classList.remove('visible');
-      return;
-    }
-
-    // Update count
-    searchCount.textContent = `${results.length}${results.length >= 100 ? '+' : ''} results`;
-
-    // Show up to 10 results
-    const displayResults = results.slice(0, 10);
-    for (const result of displayResults) {
-      const div = document.createElement('div');
-      div.className = 'search-result';
-      div.innerHTML = `
-        <div class="ref">${result.book} ${result.chapter}:${result.verse}</div>
-        <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${escapeAndHighlight(result.snippet, result.matchStart, result.matchEnd)}</div>
-      `;
-      div.addEventListener('click', () => {
-        // Find the verse and show sidebar
-        const verse = verses.find(v =>
-          v.book === result.book &&
-          v.chapter === result.chapter &&
-          v.verse === result.verse
-        );
-        if (verse) {
-          pinnedVerse = verse;
-          updateSidebar(verse, true);
-        }
-      });
-      searchResults.appendChild(div);
-    }
-
-    searchResults.classList.add('visible');
-  }
-
-  function escapeAndHighlight(text: string, start: number, end: number): string {
-    const before = escapeHtml(text.slice(0, start));
-    const match = escapeHtml(text.slice(start, end));
-    const after = escapeHtml(text.slice(end));
-    return `${before}<mark>${match}</mark>${after}`;
-  }
-
-  function escapeHtml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-
-  function doSearch(query: string): void {
-    if (query.length < 2) {
-      hasActiveSearch = false;
-      currentSearchResults = [];
-      renderSearchResults([]);
-      updateSearchHighlights([]);
-      return;
-    }
-
-    hasActiveSearch = true;
-    currentSearchResults = search(query);
-    renderSearchResults(currentSearchResults);
-    updateSearchHighlights(currentSearchResults);
-  }
-
-  searchInput?.addEventListener('input', () => {
-    const query = searchInput.value.trim();
-    if (searchClear) {
-      searchClear.style.display = query ? 'block' : 'none';
-    }
-    doSearch(query);
-  });
-
-  searchClear?.addEventListener('click', () => {
-    if (searchInput) {
-      searchInput.value = '';
-      searchClear.style.display = 'none';
-    }
-    doSearch('');
-  });
-
-  // Close search results when clicking outside
-  document.addEventListener('click', (e) => {
-    if (searchResults && !searchResults.contains(e.target as Node) &&
-        e.target !== searchInput && e.target !== searchClear) {
-      searchResults.classList.remove('visible');
-    }
-  });
-
-  // Re-show results when focusing input
-  searchInput?.addEventListener('focus', () => {
-    if (currentSearchResults.length > 0) {
-      searchResults?.classList.add('visible');
-    }
+  // Wire up search overlay callbacks
+  setSearchCallbacks({
+    onVerseClick: (verse: Verse) => {
+      pinnedVerse = verse;
+      updateSidebar(verse, true);
+    },
   });
 }
 
