@@ -7,6 +7,7 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
+import { buildTropIndex, getTropByFrequency } from './trop.ts';
 import type { Verse, TorahData, Bounds, DivineNamesData, CommentaryData } from './types.ts';
 
 // Extend window for global state
@@ -106,6 +107,12 @@ async function main(): Promise<void> {
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
   console.log('Divine names and commentary data loaded');
+
+  // Build trop index from verse texts
+  const tropIndex = buildTropIndex(verseTexts);
+  const tropByFrequency = getTropByFrequency(tropIndex);
+  console.log(`Built trop index: ${tropByFrequency.length} marks found`);
+  console.log('Rarest trop:', tropByFrequency.slice(0, 5).map(t => `${t.name} (${t.totalCount})`).join(', '));
 
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
