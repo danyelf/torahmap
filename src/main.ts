@@ -480,6 +480,49 @@ async function main(): Promise<void> {
   // Track pinned verse (click to persist)
   let pinnedVerse: Verse | null = null;
 
+  // Highlight trop mark in Hebrew text
+  function highlightTropInText(hebrewText: string, tropUnicode: string): string {
+    // Wrap the trop mark in a span for highlighting
+    // The trop is a combining character, so we highlight it with its base letter
+    const result: string[] = [];
+    let i = 0;
+
+    while (i < hebrewText.length) {
+      const char = hebrewText[i];
+
+      // Check if this is the target trop mark
+      if (char === tropUnicode) {
+        // Find the base letter (previous non-combining character)
+        // Wrap from the last base letter through this trop
+        if (result.length > 0) {
+          // Pop characters back to the base letter
+          const highlighted: string[] = [];
+          while (result.length > 0) {
+            const last = result[result.length - 1];
+            const lastCode = last.codePointAt(0) || 0;
+            // Keep popping combining characters
+            if (lastCode >= 0x0591 && lastCode <= 0x05C7) {
+              highlighted.unshift(result.pop()!);
+            } else {
+              // This is the base letter
+              highlighted.unshift(result.pop()!);
+              break;
+            }
+          }
+          highlighted.push(char);
+          result.push(`<mark class="trop-highlight">${highlighted.join('')}</mark>`);
+        } else {
+          result.push(`<mark class="trop-highlight">${char}</mark>`);
+        }
+      } else {
+        result.push(char);
+      }
+      i++;
+    }
+
+    return result.join('');
+  }
+
   // Update sidebar with verse info
   function updateSidebar(verse: Verse | null, isPinned: boolean = false): void {
     if (!sidebar) return;
@@ -497,7 +540,12 @@ async function main(): Promise<void> {
       sidebarRef.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
     }
     if (sidebarHebrew) {
-      sidebarHebrew.textContent = text?.he || 'Loading...';
+      const hebrewText = text?.he || 'Loading...';
+      if (currentOverlay === 'trop' && selectedTrop) {
+        sidebarHebrew.innerHTML = highlightTropInText(hebrewText, selectedTrop.unicode);
+      } else {
+        sidebarHebrew.textContent = hebrewText;
+      }
     }
     if (sidebarEnglish) {
       sidebarEnglish.textContent = text?.en || 'Loading...';
