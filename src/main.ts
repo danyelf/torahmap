@@ -8,7 +8,7 @@ import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, search, getMatchingVerseKeys, type SearchResult } from './search.ts';
-import type { Verse, TorahData, Bounds, CommentaryData } from './types.ts';
+import type { Verse, TorahData, Bounds } from './types.ts';
 import {
   registerOverlay,
   getOverlay,
@@ -58,20 +58,17 @@ async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load Tanakh structure, commentary data, and verse texts in parallel
-  const [torahResponse, commentaryResponse, verseTexts] = await Promise.all([
+  // Load Tanakh structure and verse texts in parallel
+  const [torahResponse, verseTexts] = await Promise.all([
     fetch('/data/tanakh-structure.json'),
-    fetch('/data/commentary-counts.json'),
     loadAllVerseTexts()
   ]);
   const torahData: TorahData = await torahResponse.json();
-  const commentary: CommentaryData = await commentaryResponse.json();
 
   // Compute layout
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
-  console.log('Commentary data loaded');
 
   // Build search index
   buildSearchIndex(verseTexts);
@@ -261,13 +258,9 @@ async function main(): Promise<void> {
   const sidebarCloseBtn = sidebar?.querySelector('.close-btn');
 
   // Build Sefaria URL for a verse
-  function getSefariaUrl(book: string, chapter: number, verse: number, category: string): string {
+  function getSefariaUrl(book: string, chapter: number, verse: number): string {
     const sefariaBook = book.replace(/ /g, '_');
-    const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
-    if (category && category !== 'total' && category !== '') {
-      return `${baseUrl}?with=${encodeURIComponent(category)}`;
-    }
-    return baseUrl;
+    return `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
   }
 
   // Track pinned verse (click to persist)
@@ -284,7 +277,6 @@ async function main(): Promise<void> {
     }
 
     const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
-    const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
 
     if (sidebarRef) {
       sidebarRef.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
@@ -296,14 +288,10 @@ async function main(): Promise<void> {
       sidebarEnglish.textContent = text?.en || 'Loading...';
     }
     if (sidebarLink) {
-      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, '');
+      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse);
     }
     if (sidebarLinkSubtitle) {
-      if (verseData) {
-        sidebarLinkSubtitle.textContent = `${verseData.total} linked texts`;
-      } else {
-        sidebarLinkSubtitle.textContent = '';
-      }
+      sidebarLinkSubtitle.textContent = '';
     }
 
     sidebar.classList.add('visible');

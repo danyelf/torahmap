@@ -46,28 +46,29 @@
       outline: none;
       border-color: #666;
     }
-    #legend {
+    /* Overlay legend container */
+    #overlay-legend {
       margin-top: 12px;
       font-size: 11px;
     }
-    #legend .gradient {
+    /* Commentary overlay legend */
+    #overlay-legend .legend-gradient {
       height: 12px;
       border-radius: 2px;
       background: linear-gradient(to right, #1a1a2e, #16213e, #0f3460, #e94560);
       margin-bottom: 2px;
-      position: relative;
     }
-    #legend .ticks {
+    #overlay-legend .legend-ticks {
       position: relative;
       height: 16px;
     }
-    #legend .tick {
+    #overlay-legend .tick {
       position: absolute;
       transform: translateX(-50%);
       color: #888;
       font-size: 10px;
     }
-    #legend .tick::before {
+    #overlay-legend .tick::before {
       content: '';
       position: absolute;
       top: -4px;
@@ -75,6 +76,20 @@
       width: 1px;
       height: 4px;
       background: #666;
+    }
+    /* Divine names overlay legend */
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 11px;
+      color: #ccc;
+    }
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
     }
     #verse-sidebar {
       position: fixed;
