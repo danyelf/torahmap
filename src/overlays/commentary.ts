@@ -59,14 +59,11 @@ export const commentaryOverlay: Overlay = {
       <label for="category-select">Category:</label>
       <select id="category-select">
         <option value="total">All Commentary</option>
-        <option value="Rashi">Rashi</option>
-        <option value="Ramban">Ramban</option>
-        <option value="Ibn Ezra">Ibn Ezra</option>
-        <option value="Sforno">Sforno</option>
-        <option value="Or HaChaim">Or HaChaim</option>
-        <option value="Targum">Targum</option>
+        <option value="Tanakh">Tanakh</option>
         <option value="Talmud">Talmud</option>
         <option value="Midrash">Midrash</option>
+        <option value="Halakhah">Halakhah</option>
+        <option value="Kabbalah">Kabbalah</option>
       </select>
     `;
     const select = wrapper.querySelector('select')!;
@@ -121,4 +118,10 @@ export const commentaryOverlay: Overlay = {
 export function setVerses(v: Verse[]): void {
   verses = v;
   cachedMaxValues = {};
+}
+
+// Get total linked texts count for a verse (used by sidebar)
+export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
+  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
+  return verseData?.total ?? null;
 }

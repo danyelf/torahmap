@@ -16,6 +16,7 @@ import {
   divineNamesOverlay,
   commentaryOverlay,
   setCommentaryVerses,
+  getVerseLinkCount,
   type Overlay,
 } from './overlays/index.ts';
 
@@ -291,7 +292,8 @@ async function main(): Promise<void> {
       sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse);
     }
     if (sidebarLinkSubtitle) {
-      sidebarLinkSubtitle.textContent = '';
+      const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
+      sidebarLinkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
     }
 
     sidebar.classList.add('visible');
@@ -373,6 +375,11 @@ async function main(): Promise<void> {
     // Wire up update callback for dynamic overlays
     currentOverlay?.onUpdate?.(() => {
       applyOverlay();
+      // Re-render legend when overlay updates (e.g., category changes)
+      if (overlayLegendContainer) {
+        overlayLegendContainer.innerHTML = '';
+        currentOverlay?.renderLegend?.(overlayLegendContainer);
+      }
       render();
     });
 
