@@ -110,8 +110,9 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
 
 /**
  * Search for verses matching the query
+ * Returns ALL matching verses (no cap) so highlighting works across entire Tanakh
  */
-export function search(query: string, maxResults: number = 100): SearchResult[] {
+export function search(query: string): SearchResult[] {
   if (!query || query.length < 2) return [];
 
   const isHebrew = isHebrewQuery(query);
@@ -134,7 +135,6 @@ export function search(query: string, maxResults: number = 100): SearchResult[] 
           matchEnd: snippet.matchEnd,
           language: 'he',
         });
-        if (results.length >= maxResults) break;
       }
     }
   } else {
@@ -153,7 +153,6 @@ export function search(query: string, maxResults: number = 100): SearchResult[] 
           matchEnd: snippet.matchEnd,
           language: 'en',
         });
-        if (results.length >= maxResults) break;
       }
     }
   }
