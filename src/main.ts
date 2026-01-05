@@ -599,6 +599,13 @@ async function main(): Promise<void> {
                 info += ` (${verseData.categories[currentCategory]} ${currentCategory})`;
               }
             }
+          } else if (currentOverlay === 'trop' && selectedTrop) {
+            const loc = selectedTrop.verses.find(
+              v => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse
+            );
+            if (loc) {
+              info += ` (${selectedTrop.name} ×${loc.count})`;
+            }
           }
           hoverInfo.textContent = info;
         } else {
