@@ -7,8 +7,8 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildTropIndex, getTropByFrequency } from './trop.ts';
-import type { Verse, TorahData, Bounds, DivineNamesData, CommentaryData } from './types.ts';
+import { buildTropIndex, getTropByFrequency, getRarityTier } from './trop.ts';
+import type { Verse, TorahData, Bounds, DivineNamesData, CommentaryData, TropIndexEntry } from './types.ts';
 
 // Extend window for global state
 declare global {
@@ -87,6 +87,68 @@ function findVerseAtPoint(
   return null;
 }
 
+function createTropChart(
+  tropByFrequency: TropIndexEntry[],
+  onSelect: (entry: TropIndexEntry | null) => void
+): void {
+  const chart = document.getElementById('trop-chart');
+  const info = document.getElementById('trop-info');
+  if (!chart) return;
+
+  chart.innerHTML = '';
+  let selectedButton: HTMLButtonElement | null = null;
+
+  for (const entry of tropByFrequency) {
+    const button = document.createElement('button');
+    button.textContent = 'ב' + entry.unicode; // Show on a bet for visibility
+    button.title = `${entry.name} (${entry.hebrewName})`;
+
+    const tier = getRarityTier(entry.totalCount);
+    if (tier === 'rare') {
+      button.classList.add('rare');
+    }
+
+    button.addEventListener('mouseenter', () => {
+      if (info) {
+        const tierLabel = tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
+        info.textContent = `${entry.name} (${entry.hebrewName}) · ${entry.totalCount.toLocaleString()} occurrences · ${tierLabel}`;
+      }
+    });
+
+    button.addEventListener('mouseleave', () => {
+      if (info && !selectedButton) {
+        info.textContent = '';
+      } else if (info && selectedButton) {
+        // Restore selected info
+        const selEntry = tropByFrequency.find(e => e.unicode === selectedButton?.dataset.unicode);
+        if (selEntry) {
+          const selTier = getRarityTier(selEntry.totalCount);
+          const tierLabel = selTier === 'rare' ? 'Rare' : selTier === 'uncommon' ? 'Uncommon' : 'Common';
+          info.textContent = `${selEntry.name} (${selEntry.hebrewName}) · ${selEntry.totalCount.toLocaleString()} · ${tierLabel}`;
+        }
+      }
+    });
+
+    button.addEventListener('click', () => {
+      // Toggle selection
+      if (selectedButton === button) {
+        button.classList.remove('selected');
+        selectedButton = null;
+        onSelect(null);
+        if (info) info.textContent = '';
+      } else {
+        if (selectedButton) selectedButton.classList.remove('selected');
+        button.classList.add('selected');
+        selectedButton = button;
+        onSelect(entry);
+      }
+    });
+
+    button.dataset.unicode = entry.unicode;
+    chart.appendChild(button);
+  }
+}
+
 async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
@@ -113,6 +175,21 @@ async function main(): Promise<void> {
   const tropByFrequency = getTropByFrequency(tropIndex);
   console.log(`Built trop index: ${tropByFrequency.length} marks found`);
   console.log('Rarest trop:', tropByFrequency.slice(0, 5).map(t => `${t.name} (${t.totalCount})`).join(', '));
+
+  // Track selected trop
+  let selectedTrop: TropIndexEntry | null = null;
+
+  // Create trop chart
+  createTropChart(tropByFrequency, (entry) => {
+    selectedTrop = entry;
+    if (currentOverlay === 'trop') {
+      applyOverlay();
+      render();
+    }
+  });
+
+  // Suppress unused variable warning - selectedTrop will be used in Task 8
+  void selectedTrop;
 
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -461,6 +538,7 @@ async function main(): Promise<void> {
   const commentaryControls = document.getElementById('commentary-controls');
   const legend = document.getElementById('legend');
   const divineNamesLegend = document.getElementById('divine-names-legend');
+  const tropControls = document.getElementById('trop-controls');
 
   // Overlay selector
   overlaySelect?.addEventListener('change', () => {
@@ -475,6 +553,9 @@ async function main(): Promise<void> {
     }
     if (divineNamesLegend) {
       divineNamesLegend.style.display = currentOverlay === 'divine-names' ? 'block' : 'none';
+    }
+    if (tropControls) {
+      tropControls.style.display = currentOverlay === 'trop' ? 'block' : 'none';
     }
 
     applyOverlay();
