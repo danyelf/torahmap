@@ -2,14 +2,19 @@
 import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseKeys, type SearchResult } from '../search.ts';
-import { HIGHLIGHT_COLOR, DIM_FACTOR } from '../utils/color.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, type SearchResult } from '../search.ts';
+import { SEARCH_COLORS, DIM_FACTOR, blendColorsHSL } from '../utils/color.ts';
+
+function colorToCss(color: Color): string {
+  return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
+}
 
 // State
 let verses: Verse[] = [];
 let currentQuery = '';
+let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
-let matchingKeys = new Set<string>();
+let matchingTerms = new Map<string, number[]>();
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: Verse) => void) | null = null;
 
@@ -28,13 +33,14 @@ export function configure(config: { verses: Verse[]; callbacks?: { onVerseClick?
 
 function doSearch(query: string): void {
   currentQuery = query;
+  currentTerms = parseSearchTerms(query);
 
-  if (query.length < 2) {
+  if (currentTerms.length === 0) {
     currentResults = [];
-    matchingKeys = new Set();
+    matchingTerms = new Map();
   } else {
     currentResults = search(query);
-    matchingKeys = getMatchingVerseKeys(currentResults);
+    matchingTerms = getMatchingVerseTerms(currentResults);
   }
 
   renderResults();
@@ -56,9 +62,10 @@ function renderResults(): void {
     return;
   }
 
-  // Update count
+  // Update count with term info
   if (searchCount) {
-    searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results`;
+    const termInfo = currentTerms.length > 1 ? ` (${currentTerms.length} terms)` : '';
+    searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results${termInfo}`;
   }
 
   // Show up to 10 results
@@ -66,12 +73,32 @@ function renderResults(): void {
   for (const result of displayResults) {
     const div = document.createElement('div');
     div.className = 'search-result';
+
+    // Build term indicator dots
+    const dots = result.matchingTerms
+      .map(m => {
+        const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
+        return `<span class="term-dot" style="background: ${colorToCss(color)}"></span>`;
+      })
+      .join('');
+
+    // Use first match's snippet for display
+    const firstMatch = result.matchingTerms[0];
+    const snippetHtml = escapeAndHighlight(
+      firstMatch.snippet,
+      firstMatch.matchStart,
+      firstMatch.matchEnd,
+      firstMatch.termIndex
+    );
+
     div.innerHTML = `
-      <div class="ref">${result.book} ${result.chapter}:${result.verse}</div>
-      <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${escapeAndHighlight(result.snippet, result.matchStart, result.matchEnd)}</div>
+      <div class="ref">
+        <span class="term-indicators">${dots}</span>
+        ${result.book} ${result.chapter}:${result.verse}
+      </div>
+      <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${snippetHtml}</div>
     `;
     div.addEventListener('click', () => {
-      // Find the verse and trigger callback
       const verse = verses.find(v =>
         v.book === result.book &&
         v.chapter === result.chapter &&
@@ -87,11 +114,11 @@ function renderResults(): void {
   searchResults.classList.add('visible');
 }
 
-function escapeAndHighlight(text: string, start: number, end: number): string {
+function escapeAndHighlight(text: string, start: number, end: number, termIndex: number): string {
   const before = escapeHtml(text.slice(0, start));
   const match = escapeHtml(text.slice(start, end));
   const after = escapeHtml(text.slice(end));
-  return `${before}<mark>${match}</mark>${after}`;
+  return `${before}<mark class="term-${termIndex % 5}">${match}</mark>${after}`;
 }
 
 function escapeHtml(text: string): string {
@@ -101,23 +128,129 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
+/**
+ * Highlight all search terms in text with per-term colors
+ * Returns HTML string with <mark class="term-N"> tags
+ */
+export function highlightSearchTerms(text: string, language: 'he' | 'en'): string {
+  if (currentTerms.length === 0) return escapeHtml(text);
+
+  const isHebrew = language === 'he';
+
+  // Build list of all matches with their positions
+  interface Match {
+    start: number;
+    end: number;
+    termIndex: number;
+  }
+  const matches: Match[] = [];
+
+  // Prepare normalized text for searching
+  const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
+
+  for (let termIndex = 0; termIndex < currentTerms.length; termIndex++) {
+    const term = currentTerms[termIndex];
+    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+
+    // Find all occurrences
+    let searchStart = 0;
+    while (true) {
+      const idx = normalizedText.indexOf(normalizedTerm, searchStart);
+      if (idx === -1) break;
+
+      // Map back to original text position for Hebrew (nikkud may shift positions)
+      let origStart = idx;
+      let origEnd = idx + normalizedTerm.length;
+
+      if (isHebrew) {
+        // Count how many nikkud chars before this position
+        let nikkudBefore = 0;
+        let normalizedPos = 0;
+        for (let i = 0; i < text.length && normalizedPos < idx; i++) {
+          const code = text.charCodeAt(i);
+          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
+                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+          if (isNikkud) {
+            nikkudBefore++;
+          } else {
+            normalizedPos++;
+          }
+        }
+        origStart = idx + nikkudBefore;
+
+        // Find end position accounting for nikkud within the match
+        let nikkudInMatch = 0;
+        normalizedPos = 0;
+        for (let i = origStart; i < text.length && normalizedPos < normalizedTerm.length; i++) {
+          const code = text.charCodeAt(i);
+          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
+                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+          if (isNikkud) {
+            nikkudInMatch++;
+          } else {
+            normalizedPos++;
+          }
+        }
+        origEnd = origStart + normalizedTerm.length + nikkudInMatch;
+      }
+
+      matches.push({ start: origStart, end: origEnd, termIndex });
+      searchStart = idx + 1;
+    }
+  }
+
+  if (matches.length === 0) return escapeHtml(text);
+
+  // Sort by position, longest match first for overlaps
+  matches.sort((a, b) => a.start - b.start || b.end - a.end);
+
+  // Remove overlapping matches (keep first/longest)
+  const filtered: Match[] = [];
+  for (const m of matches) {
+    if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
+      filtered.push(m);
+    }
+  }
+
+  // Build result with highlights
+  let result = '';
+  let pos = 0;
+  for (const m of filtered) {
+    if (m.start > pos) {
+      result += escapeHtml(text.slice(pos, m.start));
+    }
+    result += `<mark class="term-${m.termIndex % 5}">${escapeHtml(text.slice(m.start, m.end))}</mark>`;
+    pos = m.end;
+  }
+  if (pos < text.length) {
+    result += escapeHtml(text.slice(pos));
+  }
+
+  return result;
+}
+
 export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
 
   getVerseColor(verse: Verse): Color | null {
     // No active search - use default colors
-    if (currentQuery.length < 2) {
+    if (currentTerms.length === 0) {
       return null;
     }
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
-    if (matchingKeys.has(key)) {
-      return HIGHLIGHT_COLOR;
+    const termIndices = matchingTerms.get(key);
+
+    if (termIndices && termIndices.length > 0) {
+      // Get colors for all matching terms
+      const colors = termIndices.map(i => SEARCH_COLORS[i % SEARCH_COLORS.length]);
+      // Blend if multiple, otherwise use single color
+      return colors.length === 1 ? colors[0] : blendColorsHSL(colors);
     }
 
     // Dim non-matching verses
-    const brightness = (0.4 + 0.2) * DIM_FACTOR; // Approximate middle gray dimmed
+    const brightness = (0.4 + 0.2) * DIM_FACTOR;
     return [brightness, brightness, brightness];
   },
 
@@ -181,32 +314,35 @@ export const searchOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement): void {
-    if (currentResults.length > 0) {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">${currentResults.length} matching verses highlighted</div>`;
-    } else if (currentQuery.length > 0 && currentQuery.length < 2) {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type at least 2 characters</div>`;
+    if (currentTerms.length > 0 && currentResults.length > 0) {
+      const termLabels = currentTerms
+        .map((term, i) => {
+          const color = SEARCH_COLORS[i % SEARCH_COLORS.length];
+          return `<span class="legend-term">
+            <span class="color-swatch" style="background: ${colorToCss(color)}"></span>
+            "${term}"
+          </span>`;
+        })
+        .join(' ');
+      container.innerHTML = `<div class="search-legend">${termLabels}</div>
+        <div style="color: #888; font-size: 11px; margin-top: 4px;">${currentResults.length} matching verses</div>`;
+    } else if (currentQuery.length > 0 && currentTerms.length === 0) {
+      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type at least 2 characters per term</div>`;
     } else {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type to search Hebrew or English text</div>`;
+      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type to search (comma-separate multiple terms)</div>`;
     }
   },
 
   getHoverInfo(verse: Verse): string | null {
-    if (currentQuery.length < 2) return null;
+    if (currentTerms.length === 0) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
-    if (!matchingKeys.has(key)) return null;
+    const termIndices = matchingTerms.get(key);
+    if (!termIndices) return null;
 
-    // Find the result for this verse
-    const result = currentResults.find(r =>
-      r.book === verse.book &&
-      r.chapter === verse.chapter &&
-      r.verse === verse.verse
-    );
-
-    if (result) {
-      return `Match: "${result.snippet.replace(/\.\.\./g, '').trim()}"`;
-    }
-    return 'Match';
+    // Show which terms matched
+    const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
+    return `Matches: ${matchedTerms}`;
   },
 
   onUpdate(callback: () => void): void {

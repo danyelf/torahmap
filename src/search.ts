@@ -4,14 +4,19 @@ import type { VerseTexts } from './verseTexts';
 import { BOOK_ORDER } from './constants/books.ts';
 import { getVerseKey } from './types.ts';
 
+export interface TermMatch {
+  termIndex: number;
+  snippet: string;
+  matchStart: number;
+  matchEnd: number;
+}
+
 export interface SearchResult {
   book: string;
   chapter: number;
   verse: number;
-  snippet: string;
-  matchStart: number;
-  matchEnd: number;
   language: 'he' | 'en';
+  matchingTerms: TermMatch[];
 }
 
 interface IndexEntry {
@@ -47,6 +52,16 @@ export function stripNikkud(text: string): string {
     }
   }
   return result;
+}
+
+/**
+ * Parse comma-separated search terms, filtering empty ones
+ */
+export function parseSearchTerms(query: string): string[] {
+  return query
+    .split(',')
+    .map(t => t.trim())
+    .filter(t => t.length >= 2);
 }
 
 /**
@@ -96,55 +111,58 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
 }
 
 /**
- * Search for verses matching the query
- * Returns ALL matching verses (no cap) so highlighting works across entire Tanakh
+ * Search for verses matching any of the comma-separated terms
+ * Returns ALL matching verses with info about which terms matched
  */
 export function search(query: string): SearchResult[] {
-  if (!query || query.length < 2) return [];
+  const terms = parseSearchTerms(query);
+  if (terms.length === 0) return [];
 
-  const isHebrew = isHebrewQuery(query);
-  const results: SearchResult[] = [];
+  // Determine language from first term (all terms use same language)
+  const isHebrew = isHebrewQuery(terms[0]);
 
-  if (isHebrew) {
-    const normalizedQuery = stripNikkud(query);
+  // Map: verseKey -> SearchResult
+  const resultMap = new Map<string, SearchResult>();
 
-    for (const entry of searchIndex) {
-      const idx = entry.hebrewText.indexOf(normalizedQuery);
-      if (idx !== -1) {
-        // Find corresponding position in original text (approximate)
-        const snippet = createSnippet(entry.hebrewOriginal, idx, normalizedQuery.length);
-        results.push({
-          book: entry.book,
-          chapter: entry.chapter,
-          verse: entry.verse,
-          snippet: snippet.text,
-          matchStart: snippet.matchStart,
-          matchEnd: snippet.matchEnd,
-          language: 'he',
-        });
-      }
-    }
-  } else {
-    const normalizedQuery = query.toLowerCase();
+  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
+    const term = terms[termIndex];
+    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
 
     for (const entry of searchIndex) {
-      const idx = entry.englishText.indexOf(normalizedQuery);
+      const text = isHebrew ? entry.hebrewText : entry.englishText;
+      const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
+      const idx = text.indexOf(normalizedTerm);
+
       if (idx !== -1) {
-        const snippet = createSnippet(entry.englishOriginal, idx, normalizedQuery.length);
-        results.push({
-          book: entry.book,
-          chapter: entry.chapter,
-          verse: entry.verse,
-          snippet: snippet.text,
-          matchStart: snippet.matchStart,
-          matchEnd: snippet.matchEnd,
-          language: 'en',
-        });
+        const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
+        const snippet = createSnippet(original, idx, normalizedTerm.length);
+
+        let result = resultMap.get(key);
+        if (!result) {
+          result = {
+            book: entry.book,
+            chapter: entry.chapter,
+            verse: entry.verse,
+            language: isHebrew ? 'he' : 'en',
+            matchingTerms: [],
+          };
+          resultMap.set(key, result);
+        }
+
+        // Only add if this term hasn't matched this verse yet
+        if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+          result.matchingTerms.push({
+            termIndex,
+            snippet: snippet.text,
+            matchStart: snippet.matchStart,
+            matchEnd: snippet.matchEnd,
+          });
+        }
       }
     }
   }
 
-  return results;
+  return Array.from(resultMap.values());
 }
 
 interface SnippetResult {
@@ -188,12 +206,18 @@ function createSnippet(text: string, matchIdx: number, matchLen: number): Snippe
 }
 
 /**
- * Get all matching verse keys for highlighting
+ * Get map of verse keys to their matching term indices
  */
-export function getMatchingVerseKeys(results: SearchResult[]): Set<string> {
-  const keys = new Set<string>();
+export function getMatchingVerseTerms(results: SearchResult[]): Map<string, number[]> {
+  const map = new Map<string, number[]>();
   for (const r of results) {
-    keys.add(getVerseKey(r.book, r.chapter, r.verse));
+    const key = getVerseKey(r.book, r.chapter, r.verse);
+    map.set(key, r.matchingTerms.map(m => m.termIndex));
   }
-  return keys;
+  return map;
+}
+
+// Keep old function for backwards compatibility during transition
+export function getMatchingVerseKeys(results: SearchResult[]): Set<string> {
+  return new Set(getMatchingVerseTerms(results).keys());
 }

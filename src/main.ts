@@ -24,6 +24,7 @@ import {
   highlightTropInText,
   searchOverlay,
   configureSearch,
+  highlightSearchTerms,
   type Overlay,
 } from './overlays/index.ts';
 
@@ -280,12 +281,19 @@ async function main(): Promise<void> {
       const selectedTrop = getSelectedTrop();
       if (currentOverlay?.id === 'trop' && selectedTrop) {
         sidebarHebrew.innerHTML = highlightTropInText(hebrewText, selectedTrop.unicode);
+      } else if (currentOverlay?.id === 'search') {
+        sidebarHebrew.innerHTML = highlightSearchTerms(hebrewText, 'he');
       } else {
         sidebarHebrew.textContent = hebrewText;
       }
     }
     if (sidebarEnglish) {
-      sidebarEnglish.textContent = text?.en || 'Loading...';
+      const englishText = text?.en || 'Loading...';
+      if (currentOverlay?.id === 'search') {
+        sidebarEnglish.innerHTML = highlightSearchTerms(englishText, 'en');
+      } else {
+        sidebarEnglish.textContent = englishText;
+      }
     }
     if (sidebarLink) {
       sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse);

@@ -303,6 +303,47 @@
       background: rgba(255, 220, 100, 0.3);
       color: #fff;
     }
+    .term-indicators {
+      display: inline-flex;
+      gap: 3px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .term-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .search-result .snippet mark.term-0 { background: rgba(51, 230, 255, 0.4); color: #fff; }
+    .search-result .snippet mark.term-1 { background: rgba(255, 128, 0, 0.4); color: #fff; }
+    .search-result .snippet mark.term-2 { background: rgba(128, 255, 51, 0.4); color: #fff; }
+    .search-result .snippet mark.term-3 { background: rgba(255, 51, 204, 0.4); color: #fff; }
+    .search-result .snippet mark.term-4 { background: rgba(255, 255, 51, 0.4); color: #000; }
+    .search-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+    }
+    .legend-term {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #ccc;
+    }
+    .color-swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+    /* Sidebar search term highlighting */
+    #verse-sidebar mark.term-0 { background: rgba(51, 230, 255, 0.4); color: #fff; }
+    #verse-sidebar mark.term-1 { background: rgba(255, 128, 0, 0.4); color: #fff; }
+    #verse-sidebar mark.term-2 { background: rgba(128, 255, 51, 0.4); color: #fff; }
+    #verse-sidebar mark.term-3 { background: rgba(255, 51, 204, 0.4); color: #fff; }
+    #verse-sidebar mark.term-4 { background: rgba(255, 255, 51, 0.4); color: #000; }
     #search-count {
       padding: 6px 10px;
       font-size: 11px;
