@@ -213,12 +213,22 @@ export const searchOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement): void {
-    if (currentResults.length > 0) {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">${currentResults.length} matching verses highlighted</div>`;
+    if (currentTerms.length > 0 && currentResults.length > 0) {
+      const termLabels = currentTerms
+        .map((term, i) => {
+          const color = SEARCH_COLORS[i % SEARCH_COLORS.length];
+          return `<span class="legend-term">
+            <span class="color-swatch" style="background: ${colorToCss(color)}"></span>
+            "${term}"
+          </span>`;
+        })
+        .join(' ');
+      container.innerHTML = `<div class="search-legend">${termLabels}</div>
+        <div style="color: #888; font-size: 11px; margin-top: 4px;">${currentResults.length} matching verses</div>`;
     } else if (currentQuery.length > 0 && currentTerms.length === 0) {
       container.innerHTML = `<div style="color: #888; font-size: 11px;">Type at least 2 characters per term</div>`;
     } else {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type to search Hebrew or English text</div>`;
+      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type to search (comma-separate multiple terms)</div>`;
     }
   },
 
@@ -226,20 +236,12 @@ export const searchOverlay: Overlay = {
     if (currentTerms.length === 0) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
-    if (!matchingTerms.has(key)) return null;
+    const termIndices = matchingTerms.get(key);
+    if (!termIndices) return null;
 
-    // Find the result for this verse
-    const result = currentResults.find(r =>
-      r.book === verse.book &&
-      r.chapter === verse.chapter &&
-      r.verse === verse.verse
-    );
-
-    if (result && result.matchingTerms.length > 0) {
-      const firstMatch = result.matchingTerms[0];
-      return `Match: "${firstMatch.snippet.replace(/\.\.\./g, '').trim()}"`;
-    }
-    return 'Match';
+    // Show which terms matched
+    const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
+    return `Matches: ${matchedTerms}`;
   },
 
   onUpdate(callback: () => void): void {
