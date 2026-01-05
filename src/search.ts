@@ -37,7 +37,7 @@ let searchIndex: IndexEntry[] = [];
 /**
  * Strip Hebrew vowel marks (nikkud) from text
  */
-function stripNikkud(text: string): string {
+export function stripNikkud(text: string): string {
   let result = '';
   for (const char of text) {
     const code = char.charCodeAt(0);
@@ -52,7 +52,7 @@ function stripNikkud(text: string): string {
 /**
  * Detect if a string contains Hebrew characters
  */
-function isHebrewQuery(query: string): boolean {
+export function isHebrewQuery(query: string): boolean {
   for (const char of query) {
     const code = char.charCodeAt(0);
     if (code >= HEBREW_RANGE_START && code <= HEBREW_RANGE_END) {

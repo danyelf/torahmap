@@ -11,6 +11,7 @@ function getGitBranch(): string {
 }
 
 export default defineConfig({
+  base: '/torahmap/',
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
   },

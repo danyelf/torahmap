@@ -36,9 +36,12 @@ const KETUVIM_STACK_CONFIG: Array<{ books: string[]; insertAfter: string }> = [
 ];
 const STACKED_KETUVIM = new Set(KETUVIM_STACK_CONFIG.flatMap(c => c.books));
 
+// Re-export for tests
+export { seededRandom } from './utils/random.ts';
+export { getBookSection as getSection } from './constants/books.ts';
 
 // Calculate wrap points for a chapter, avoiding widow lines (< MIN_WRAP_VERSES)
-function calculateWrapPoints(verseCount: number): number[] {
+export function calculateWrapPoints(verseCount: number): number[] {
   if (verseCount <= WRAP_THRESHOLD) {
     return [verseCount]; // No wrapping needed
   }
