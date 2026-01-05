@@ -8,7 +8,16 @@ import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, search, getMatchingVerseKeys, type SearchResult } from './search.ts';
-import type { Verse, TorahData, Bounds, DivineNamesData, CommentaryData } from './types.ts';
+import type { Verse, TorahData, Bounds, CommentaryData } from './types.ts';
+import {
+  registerOverlay,
+  getOverlay,
+  getAllOverlays,
+  divineNamesOverlay,
+  commentaryOverlay,
+  setCommentaryVerses,
+  type Overlay,
+} from './overlays/index.ts';
 
 // Extend window for global state
 declare global {
@@ -23,48 +32,6 @@ declare global {
       bounds: Bounds;
     };
   }
-}
-
-// Heatmap color scale: dark blue -> light blue -> orange -> red (log scale)
-function heatmapColor(value: number, maxValue: number): [number, number, number] {
-  if (value === 0) return [0.15, 0.15, 0.2]; // Very dark for no commentary
-
-  // Log scale: map 1..maxValue to 0..1 using natural log
-  // log(1) = 0, log(maxValue) = max
-  const logMax = Math.log(maxValue + 1);
-  const t = Math.log(value + 1) / logMax;
-
-  // Multi-stop gradient
-  if (t < 0.25) {
-    // Dark blue to blue
-    const s = t / 0.25;
-    return [0.1, 0.13 + s * 0.1, 0.18 + s * 0.2];
-  } else if (t < 0.5) {
-    // Blue to teal
-    const s = (t - 0.25) / 0.25;
-    return [0.1 + s * 0.1, 0.23 + s * 0.2, 0.38 - s * 0.05];
-  } else if (t < 0.75) {
-    // Teal to orange
-    const s = (t - 0.5) / 0.25;
-    return [0.2 + s * 0.7, 0.43 - s * 0.1, 0.33 - s * 0.2];
-  } else {
-    // Orange to red
-    const s = (t - 0.75) / 0.25;
-    return [0.9 + s * 0.1, 0.33 - s * 0.1, 0.13 + s * 0.05];
-  }
-}
-
-function getCommentaryCount(
-  commentary: CommentaryData,
-  book: string,
-  chapter: number,
-  verse: number,
-  category: string
-): number {
-  const verseData = commentary[book]?.[String(chapter)]?.[String(verse)];
-  if (!verseData) return 0;
-  if (category === 'total') return verseData.total;
-  return verseData.categories[category] || 0;
 }
 
 function findVerseAtPoint(
@@ -91,25 +58,30 @@ async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load Tanakh structure, divine names, commentary data, and verse texts in parallel
-  const [torahResponse, divineNamesResponse, commentaryResponse, verseTexts] = await Promise.all([
+  // Load Tanakh structure, commentary data, and verse texts in parallel
+  const [torahResponse, commentaryResponse, verseTexts] = await Promise.all([
     fetch('/data/tanakh-structure.json'),
-    fetch('/data/divine-names.json'),
     fetch('/data/commentary-counts.json'),
     loadAllVerseTexts()
   ]);
   const torahData: TorahData = await torahResponse.json();
-  const divineNames: DivineNamesData = await divineNamesResponse.json();
   const commentary: CommentaryData = await commentaryResponse.json();
 
-  // Compute layout (without divine names coloring initially - starts as "none")
+  // Compute layout
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
-  console.log('Divine names and commentary data loaded');
+  console.log('Commentary data loaded');
 
   // Build search index
   buildSearchIndex(verseTexts);
+
+  // Register and initialize overlays
+  registerOverlay(divineNamesOverlay);
+  registerOverlay(commentaryOverlay);
+  setCommentaryVerses(verses);
+
+  await Promise.all(getAllOverlays().map(o => o.init?.()));
 
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -131,20 +103,12 @@ async function main(): Promise<void> {
   const prog = createProgram(gl);
 
   // Current overlay state
-  let currentOverlay = 'none';
-  let currentCategory = 'total';
+  let currentOverlay: Overlay | null = null;
   let buffer: WebGLBuffer;
 
   // Search state
   let hasActiveSearch = false;
   let currentSearchResults: SearchResult[] = [];
-
-  // Divine name colors
-  const DIVINE_NAME_COLORS: { [code: number]: [number, number, number] } = {
-    1: [0.3, 0.5, 0.9],  // YHWH only - Blue
-    2: [0.9, 0.3, 0.3],  // Elohim only - Red
-    3: [0.7, 0.3, 0.8],  // Both - Purple
-  };
 
   // Seeded random for consistent gray variation
   function seededRandom(seed: number): number {
@@ -154,63 +118,15 @@ async function main(): Promise<void> {
 
   // Function to apply overlay colors
   function applyOverlay(): void {
-    if (currentOverlay === 'none') {
-      // Gray with brightness variation
-      verses.forEach((v, i) => {
+    verses.forEach((v, i) => {
+      const color = currentOverlay?.getVerseColor(v) ?? null;
+      if (color) {
+        v.color = color;
+      } else {
         const brightness = 0.4 + seededRandom(i * 3) * 0.4;
         v.color = [brightness, brightness, brightness];
-      });
-    } else if (currentOverlay === 'divine-names') {
-      // Apply divine names colors
-      verses.forEach((v, i) => {
-        const bookData = divineNames[v.book];
-        const code = bookData?.[v.chapter - 1]?.[v.verse - 1] ?? 0;
-        if (code > 0 && DIVINE_NAME_COLORS[code]) {
-          v.color = DIVINE_NAME_COLORS[code];
-        } else {
-          const brightness = 0.4 + seededRandom(i * 3) * 0.4;
-          v.color = [brightness, brightness, brightness];
-        }
-      });
-    } else if (currentOverlay === 'commentary') {
-      // Calculate max value for this category
-      let maxValue = 0;
-      for (const v of verses) {
-        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, currentCategory);
-        if (count > maxValue) maxValue = count;
       }
-      const colorMax = maxValue;
-
-      // Update legend ticks
-      const ticksContainer = document.getElementById('legend-ticks');
-      if (ticksContainer) {
-        ticksContainer.innerHTML = '';
-        const logMax = Math.log(colorMax + 1);
-        const ticks = [0];
-        let tickVal = 1;
-        while (tickVal <= colorMax) {
-          ticks.push(tickVal);
-          tickVal *= 10;
-        }
-        if (ticks[ticks.length - 1] < colorMax) {
-          ticks.push(colorMax);
-        }
-        for (const val of ticks) {
-          const tick = document.createElement('span');
-          tick.className = 'tick';
-          const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
-          tick.style.left = `${pos}%`;
-          tick.textContent = val >= 1000 ? `${val / 1000}k` : String(val);
-          ticksContainer.appendChild(tick);
-        }
-      }
-
-      // Apply heatmap colors
-      for (const v of verses) {
-        const count = getCommentaryCount(commentary, v.book, v.chapter, v.verse, currentCategory);
-        v.color = heatmapColor(count, colorMax);
-      }
-    }
+    });
 
     // Rebuild geometry buffer
     const geometry = buildVerseGeometry(verses, [0.6, 0.6, 0.6], hasActiveSearch);
@@ -344,13 +260,6 @@ async function main(): Promise<void> {
   const sidebarLinkSubtitle = sidebar?.querySelector('.link-subtitle');
   const sidebarCloseBtn = sidebar?.querySelector('.close-btn');
 
-  const DIVINE_NAME_LABELS: { [code: number]: string } = {
-    0: '',
-    1: 'YHWH',
-    2: 'Elohim',
-    3: 'YHWH + Elohim'
-  };
-
   // Build Sefaria URL for a verse
   function getSefariaUrl(book: string, chapter: number, verse: number, category: string): string {
     const sefariaBook = book.replace(/ /g, '_');
@@ -387,17 +296,11 @@ async function main(): Promise<void> {
       sidebarEnglish.textContent = text?.en || 'Loading...';
     }
     if (sidebarLink) {
-      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentCategory);
+      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, '');
     }
     if (sidebarLinkSubtitle) {
       if (verseData) {
-        if (currentCategory === 'total') {
-          sidebarLinkSubtitle.textContent = `${verseData.total} linked texts`;
-        } else if (currentCategory && verseData.categories[currentCategory]) {
-          sidebarLinkSubtitle.textContent = `${verseData.categories[currentCategory]} ${currentCategory} texts`;
-        } else {
-          sidebarLinkSubtitle.textContent = verseData.total > 0 ? `${verseData.total} linked texts` : '';
-        }
+        sidebarLinkSubtitle.textContent = `${verseData.total} linked texts`;
       } else {
         sidebarLinkSubtitle.textContent = '';
       }
@@ -419,22 +322,9 @@ async function main(): Promise<void> {
       if (hoverInfo) {
         if (verse) {
           let info = `${verse.book} ${verse.chapter}:${verse.verse}`;
-
-          if (currentOverlay === 'divine-names') {
-            const bookData = divineNames[verse.book];
-            const code = bookData?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
-            if (code > 0) {
-              info += ` (${DIVINE_NAME_LABELS[code]})`;
-            }
-          } else if (currentOverlay === 'commentary') {
-            const verseData = commentary[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
-            if (verseData) {
-              if (currentCategory === 'total') {
-                info += ` (${verseData.total} links)`;
-              } else if (verseData.categories[currentCategory]) {
-                info += ` (${verseData.categories[currentCategory]} ${currentCategory})`;
-              }
-            }
+          const overlayInfo = currentOverlay?.getHoverInfo?.(verse);
+          if (overlayInfo) {
+            info += ` (${overlayInfo})`;
           }
           hoverInfo.textContent = info;
         } else {
@@ -483,37 +373,38 @@ async function main(): Promise<void> {
 
   // UI elements
   const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
-  const categorySelect = document.getElementById('category-select') as HTMLSelectElement;
-  const commentaryControls = document.getElementById('commentary-controls');
-  const legend = document.getElementById('legend');
-  const divineNamesLegend = document.getElementById('divine-names-legend');
 
-  // Overlay selector
-  overlaySelect?.addEventListener('change', () => {
-    currentOverlay = overlaySelect.value;
+  // Overlay controls container (will be populated by overlays)
+  const overlayControlsContainer = document.getElementById('overlay-controls');
+  const overlayLegendContainer = document.getElementById('overlay-legend');
 
-    // Show/hide controls based on overlay
-    if (commentaryControls) {
-      commentaryControls.style.display = currentOverlay === 'commentary' ? 'block' : 'none';
+  function setOverlay(id: string): void {
+    currentOverlay?.destroy?.();
+    currentOverlay = getOverlay(id) ?? null;
+
+    // Wire up update callback for dynamic overlays
+    currentOverlay?.onUpdate?.(() => {
+      applyOverlay();
+      render();
+    });
+
+    // Clear and render overlay's UI
+    if (overlayControlsContainer) {
+      overlayControlsContainer.innerHTML = '';
+      currentOverlay?.renderControls?.(overlayControlsContainer);
     }
-    if (legend) {
-      legend.style.display = currentOverlay === 'commentary' ? 'block' : 'none';
-    }
-    if (divineNamesLegend) {
-      divineNamesLegend.style.display = currentOverlay === 'divine-names' ? 'block' : 'none';
+    if (overlayLegendContainer) {
+      overlayLegendContainer.innerHTML = '';
+      currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
 
     applyOverlay();
     render();
-  });
+  }
 
-  // Category selector (for commentary overlay)
-  categorySelect?.addEventListener('change', () => {
-    currentCategory = categorySelect.value;
-    if (currentOverlay === 'commentary') {
-      applyOverlay();
-      render();
-    }
+  // Overlay selector
+  overlaySelect?.addEventListener('change', () => {
+    setOverlay(overlaySelect.value);
   });
 
   // Handle resize
