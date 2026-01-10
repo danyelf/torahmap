@@ -126,6 +126,20 @@ export const commentaryOverlay: Overlay = {
     const count = verseData.categories[currentCategory];
     return count ? `${count} ${currentCategory}` : null;
   },
+
+  getUrlParams(): Record<string, string> {
+    if (currentCategory === 'total') return {};
+    return { cat: currentCategory };
+  },
+
+  applyUrlParams(params: URLSearchParams): void {
+    const category = params.get('cat');
+    if (category) {
+      currentCategory = category;
+      cachedMaxValues = {};
+      updateCallback?.();
+    }
+  },
 };
 
 export function configure(config: { verses: Verse[] }): void {

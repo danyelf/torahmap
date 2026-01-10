@@ -37,4 +37,8 @@ export interface Overlay {
 
   // For dynamic overlays - register callback to trigger re-render
   onUpdate?(callback: () => void): void;
+
+  // URL state persistence - for shareable links
+  getUrlParams?(): Record<string, string>;
+  applyUrlParams?(params: URLSearchParams): void;
 }

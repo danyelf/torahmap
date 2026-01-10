@@ -360,4 +360,23 @@ export const searchOverlay: Overlay = {
     searchClear = null;
     searchResults = null;
   },
+
+  getUrlParams(): Record<string, string> {
+    if (!currentQuery) return {};
+    return { q: currentQuery };
+  },
+
+  applyUrlParams(params: URLSearchParams): void {
+    const query = params.get('q');
+    if (query) {
+      doSearch(query);
+      // Update input if it exists
+      if (searchInput) {
+        searchInput.value = query;
+        if (searchClear) {
+          searchClear.style.display = 'block';
+        }
+      }
+    }
+  },
 };

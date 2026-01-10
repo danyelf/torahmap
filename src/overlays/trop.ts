@@ -144,6 +144,15 @@ function createTropChart(container: HTMLElement): void {
 
     button.dataset.unicode = entry.unicode;
     chart.appendChild(button);
+
+    // Restore selection state if this trop was previously selected
+    if (selectedTrop && entry.unicode === selectedTrop.unicode) {
+      button.classList.add('selected');
+      selectedButton = button;
+      const tier = getRarityTier(entry.totalCount);
+      const tierLabel = tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
+      info.textContent = `${entry.name} (${entry.hebrewName}) · ${entry.totalCount.toLocaleString()} · ${tierLabel}`;
+    }
   }
 }
 
@@ -203,6 +212,28 @@ export const tropOverlay: Overlay = {
       v => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse
     );
     return loc ? `${selectedTrop.name} ×${loc.count}` : null;
+  },
+
+  getUrlParams(): Record<string, string> {
+    if (!selectedTrop) return {};
+    // Use lowercase name with hyphens for URL-friendly format
+    const slug = selectedTrop.name.toLowerCase().replace(/\s+/g, '-');
+    return { trop: slug };
+  },
+
+  applyUrlParams(params: URLSearchParams): void {
+    const slug = params.get('trop');
+    if (slug) {
+      // Match against slugified name
+      const entry = tropByFrequency.find(t =>
+        t.name.toLowerCase().replace(/\s+/g, '-') === slug
+      );
+      if (entry) {
+        selectedTrop = entry;
+        updateCache();
+        updateCallback?.();
+      }
+    }
   },
 };
 
