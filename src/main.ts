@@ -9,6 +9,7 @@ import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex } from './search.ts';
 import { seededRandom } from './utils/random.ts';
+import { getCurrentUrl } from './urlState.ts';
 import type { Verse, TorahData, Bounds } from './types.ts';
 import {
   registerOverlay,
@@ -417,6 +418,23 @@ async function main(): Promise<void> {
         updateSidebar(verse, true);
       },
     },
+  });
+
+  // Copy Link button handler
+  const copyLinkBtn = document.getElementById('copy-link-btn');
+  const copyLinkText = copyLinkBtn?.querySelector('span');
+  copyLinkBtn?.addEventListener('click', async () => {
+    const url = getCurrentUrl();
+    await navigator.clipboard.writeText(url);
+
+    // Visual feedback
+    copyLinkBtn.classList.add('copied');
+    if (copyLinkText) copyLinkText.textContent = 'Copied!';
+
+    setTimeout(() => {
+      copyLinkBtn.classList.remove('copied');
+      if (copyLinkText) copyLinkText.textContent = 'Copy Link';
+    }, 1500);
   });
 }
 
