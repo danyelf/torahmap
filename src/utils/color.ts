@@ -7,7 +7,7 @@ export const DIM_FACTOR = 0.3; // Dimming factor for non-highlighted verses
 
 // Fixed palette for multi-term search (cyan, orange, lime, pink, yellow)
 export const SEARCH_COLORS: Color[] = [
-  [0.2, 0.9, 1.0],   // Cyan
+  [0.1, 0.7, 0.8],   // Cyan (dimmed for luminance balance)
   [1.0, 0.5, 0.0],   // Orange
   [0.5, 1.0, 0.2],   // Lime
   [1.0, 0.2, 0.8],   // Pink

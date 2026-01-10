@@ -58,8 +58,8 @@ const FRAGMENT_SHADER = `#version 300 es
       color = v_color;
     } else {
       // Multiple colors - use hash to pick one (stipple effect)
-      // Quantize to 4x4 pixel blocks so stipples are visible
-      vec2 blockCoord = floor(gl_FragCoord.xy / 4.0);
+      // Use UV coords (stable per-verse) quantized into a 6x6 grid
+      vec2 blockCoord = floor(v_uv * 6.0);
       float h = hash(blockCoord);
       int idx = int(floor(h * float(v_colorCount)));
 
@@ -75,8 +75,9 @@ const FRAGMENT_SHADER = `#version 300 es
       }
     }
 
-    // Add subtle dithering noise to break up moiré patterns
-    float noise = (hash(gl_FragCoord.xy + 0.5) - 0.5) * 0.1;
+    // Add subtle dithering noise to break up moiré patterns (UV-based for zoom stability)
+    vec2 noiseCoord = floor(v_uv * 12.0);
+    float noise = (hash(noiseCoord) - 0.5) * 0.1;
     color = color + noise;
 
     fragColor = vec4(color, 1.0);
