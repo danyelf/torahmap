@@ -2,13 +2,20 @@
 
 import type { Verse } from './types.ts';
 
+type Color = [number, number, number];
+
+// Helper to check if color is an array of colors (stipple mode)
+function isColorArray(color: Color | Color[] | undefined): color is Color[] {
+  return Array.isArray(color) && Array.isArray(color[0]);
+}
+
 export function buildVerseGeometry(
   verses: Verse[],
-  baseColor: [number, number, number] = [0.6, 0.6, 0.6]
+  baseColor: Color = [0.6, 0.6, 0.6]
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
-  // Each vertex = x, y, r, g, b, u, v
-  const floatsPerVertex = 7;
+  // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v
+  const floatsPerVertex = 17;
   const verticesPerQuad = 6;
   const data = new Float32Array(verses.length * verticesPerQuad * floatsPerVertex);
 
@@ -19,17 +26,44 @@ export function buildVerseGeometry(
     const x1 = v.x + v.size - 2; // -2 for 2px gap (more separation reduces moiré)
     const y1 = v.y + v.size - 2;
 
-    const [r, g, b] = v.color || baseColor;
+    // Extract colors - handle single color or array of colors
+    let colors: Color[];
+    if (isColorArray(v.color)) {
+      colors = v.color.slice(0, 4) as Color[]; // Cap at 4 colors
+    } else {
+      colors = [v.color || baseColor];
+    }
+    const colorCount = colors.length;
+
+    // Pad to 4 colors with black
+    while (colors.length < 4) {
+      colors.push([0, 0, 0]);
+    }
+
+    // Helper to write a vertex
+    const writeVertex = (x: number, y: number, u: number, vCoord: number) => {
+      data[offset++] = x;
+      data[offset++] = y;
+      // Write all 4 colors
+      for (let c = 0; c < 4; c++) {
+        data[offset++] = colors[c][0];
+        data[offset++] = colors[c][1];
+        data[offset++] = colors[c][2];
+      }
+      data[offset++] = colorCount;
+      data[offset++] = u;
+      data[offset++] = vCoord;
+    };
 
     // Triangle 1 (top-left, top-right, bottom-left)
-    data[offset++] = x0; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 0; data[offset++] = 0;
-    data[offset++] = x1; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 1; data[offset++] = 0;
-    data[offset++] = x0; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 0; data[offset++] = 1;
+    writeVertex(x0, y0, 0, 0);
+    writeVertex(x1, y0, 1, 0);
+    writeVertex(x0, y1, 0, 1);
 
     // Triangle 2 (bottom-left, top-right, bottom-right)
-    data[offset++] = x0; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 0; data[offset++] = 1;
-    data[offset++] = x1; data[offset++] = y0; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 1; data[offset++] = 0;
-    data[offset++] = x1; data[offset++] = y1; data[offset++] = r; data[offset++] = g; data[offset++] = b; data[offset++] = 1; data[offset++] = 1;
+    writeVertex(x0, y1, 0, 1);
+    writeVertex(x1, y0, 1, 0);
+    writeVertex(x1, y1, 1, 1);
   }
 
   return data;

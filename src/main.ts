@@ -9,7 +9,17 @@ import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex } from './search.ts';
 import { seededRandom } from './utils/random.ts';
-import { getCurrentUrl } from './urlState.ts';
+import { initHelp } from './help.ts';
+import {
+  parseUrlState,
+  parseVerseFromUrl,
+  updateUrl,
+  subscribeToHashChange,
+  verseToUrlFormat,
+  debounce,
+  getCurrentUrl,
+  type UrlState,
+} from './urlState.ts';
 import type { Verse, TorahData, Bounds } from './types.ts';
 import {
   registerOverlay,
@@ -178,15 +188,28 @@ async function main(): Promise<void> {
     // Bind buffer and set attributes
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-    const stride = 7 * 4; // 7 floats * 4 bytes (x, y, r, g, b, u, v)
+    // Vertex layout: x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v
+    const stride = 17 * 4; // 17 floats * 4 bytes
     gl.enableVertexAttribArray(prog.attribs.position);
     gl.vertexAttribPointer(prog.attribs.position, 2, gl.FLOAT, false, stride, 0);
 
     gl.enableVertexAttribArray(prog.attribs.color);
     gl.vertexAttribPointer(prog.attribs.color, 3, gl.FLOAT, false, stride, 2 * 4);
 
+    gl.enableVertexAttribArray(prog.attribs.color2);
+    gl.vertexAttribPointer(prog.attribs.color2, 3, gl.FLOAT, false, stride, 5 * 4);
+
+    gl.enableVertexAttribArray(prog.attribs.color3);
+    gl.vertexAttribPointer(prog.attribs.color3, 3, gl.FLOAT, false, stride, 8 * 4);
+
+    gl.enableVertexAttribArray(prog.attribs.color4);
+    gl.vertexAttribPointer(prog.attribs.color4, 3, gl.FLOAT, false, stride, 11 * 4);
+
+    gl.enableVertexAttribArray(prog.attribs.colorCount);
+    gl.vertexAttribPointer(prog.attribs.colorCount, 1, gl.FLOAT, false, stride, 14 * 4);
+
     gl.enableVertexAttribArray(prog.attribs.uv);
-    gl.vertexAttribPointer(prog.attribs.uv, 2, gl.FLOAT, false, stride, 5 * 4);
+    gl.vertexAttribPointer(prog.attribs.uv, 2, gl.FLOAT, false, stride, 15 * 4);
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
@@ -206,6 +229,7 @@ async function main(): Promise<void> {
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
     zoom = Math.max(0.1, Math.min(10, zoom * zoomFactor));
     render();
+    debouncedSaveUrlState();
   }, { passive: false });
 
   // Pan with mouse drag
@@ -229,7 +253,10 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('mouseup', () => {
-    isDragging = false;
+    if (isDragging) {
+      isDragging = false;
+      debouncedSaveUrlState();
+    }
   });
 
   canvas.addEventListener('mouseleave', () => {
@@ -261,6 +288,51 @@ async function main(): Promise<void> {
 
   // Track pinned verse (click to persist)
   let pinnedVerse: Verse | null = null;
+
+  // URL State Management
+  // Build current state for URL
+  function buildCurrentUrlState(): UrlState {
+    const state: UrlState = {
+      overlayParams: {},
+    };
+
+    // Overlay
+    if (currentOverlay) {
+      state.overlay = currentOverlay.id;
+      // Get overlay-specific params
+      const overlayParams = currentOverlay.getUrlParams?.() ?? {};
+      if (overlayParams.trop) state.overlayParams.trop = overlayParams.trop;
+      if (overlayParams.cat) state.overlayParams.category = overlayParams.cat;
+      if (overlayParams.q) state.overlayParams.q = overlayParams.q;
+    }
+
+    // Pinned verse
+    if (pinnedVerse) {
+      state.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
+    }
+
+    // Zoom (only if not default)
+    if (zoom !== 1.0) {
+      state.zoom = zoom;
+    }
+
+    // Pan (only if no verse - verse auto-centers)
+    if (!pinnedVerse) {
+      state.x = pan.x;
+      state.y = pan.y;
+    }
+
+    return state;
+  }
+
+  // Save current state to URL
+  function saveUrlState(pushHistory: boolean = false): void {
+    const state = buildCurrentUrlState();
+    updateUrl(state, pushHistory);
+  }
+
+  // Debounced version for pan/zoom (replaceState only)
+  const debouncedSaveUrlState = debounce(() => saveUrlState(false), 300);
 
   // Update sidebar with verse info
   function updateSidebar(verse: Verse | null, isPinned: boolean = false): void {
@@ -339,14 +411,17 @@ async function main(): Promise<void> {
           pinnedVerse.verse === verse.verse) {
         pinnedVerse = null;
         updateSidebar(null);
+        saveUrlState(true);
       } else {
         pinnedVerse = verse;
         updateSidebar(verse, true);
+        saveUrlState(true);
       }
     } else if (pinnedVerse) {
       // Clicking empty space unpins
       pinnedVerse = null;
       updateSidebar(null);
+      saveUrlState(true);
     }
   });
 
@@ -354,6 +429,7 @@ async function main(): Promise<void> {
   sidebarCloseBtn?.addEventListener('click', () => {
     pinnedVerse = null;
     updateSidebar(null);
+    saveUrlState(true);
   });
 
   // UI elements
@@ -363,7 +439,7 @@ async function main(): Promise<void> {
   const overlayControlsContainer = document.getElementById('overlay-controls');
   const overlayLegendContainer = document.getElementById('overlay-legend');
 
-  function setOverlay(id: string): void {
+  function setOverlay(id: string, fromUrlRestore: boolean = false): void {
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
 
@@ -376,6 +452,8 @@ async function main(): Promise<void> {
         currentOverlay?.renderLegend?.(overlayLegendContainer);
       }
       render();
+      // Save URL state when overlay params change (replaceState)
+      saveUrlState(false);
     });
 
     // Clear and render overlay's UI
@@ -393,6 +471,11 @@ async function main(): Promise<void> {
 
     // Reposition sidebar after overlay controls are rendered
     requestAnimationFrame(positionSidebar);
+
+    // Update URL when overlay changes (unless restoring from URL)
+    if (!fromUrlRestore) {
+      saveUrlState(true);
+    }
   }
 
   // Overlay selector
@@ -416,9 +499,15 @@ async function main(): Promise<void> {
       onVerseClick: (verse: Verse) => {
         pinnedVerse = verse;
         updateSidebar(verse, true);
+        saveUrlState(true);
       },
     },
   });
+
+  // Initialize help modal
+  if (controlsPanel) {
+    initHelp(controlsPanel);
+  }
 
   // Copy Link button handler
   const copyLinkBtn = document.getElementById('copy-link-btn');
@@ -435,6 +524,70 @@ async function main(): Promise<void> {
       copyLinkBtn.classList.remove('copied');
       if (copyLinkText) copyLinkText.textContent = 'Copy Link';
     }, 1500);
+  });
+
+  // URL State Restoration
+  function restoreFromUrl(): void {
+    const urlState = parseUrlState();
+
+    // Restore overlay
+    if (urlState.overlay) {
+      setOverlay(urlState.overlay, true);
+      if (overlaySelect) {
+        overlaySelect.value = urlState.overlay;
+      }
+
+      // Apply overlay-specific params
+      if (currentOverlay?.applyUrlParams) {
+        const params = new URLSearchParams();
+        if (urlState.overlayParams.trop) params.set('trop', urlState.overlayParams.trop);
+        if (urlState.overlayParams.category) params.set('cat', urlState.overlayParams.category);
+        if (urlState.overlayParams.q) params.set('q', urlState.overlayParams.q);
+        currentOverlay.applyUrlParams(params);
+      }
+    }
+
+    // Restore zoom
+    if (urlState.zoom !== undefined) {
+      zoom = urlState.zoom;
+    }
+
+    // Restore verse (and center on it)
+    if (urlState.verse) {
+      const parsed = parseVerseFromUrl(urlState.verse);
+      if (parsed) {
+        // Find the verse in our list
+        const verse = verses.find(
+          v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
+        );
+        if (verse) {
+          pinnedVerse = verse;
+          updateSidebar(verse, true);
+
+          // Center on the verse
+          const cssWidth = window.innerWidth;
+          const cssHeight = window.innerHeight;
+          pan.x = cssWidth / 2 / zoom - verse.x - verse.size / 2;
+          pan.y = cssHeight / 2 / zoom - verse.y - verse.size / 2;
+        }
+      }
+    } else if (urlState.x !== undefined && urlState.y !== undefined) {
+      // Restore pan position (only if no verse)
+      pan.x = urlState.x;
+      pan.y = urlState.y;
+    }
+
+    render();
+  }
+
+  // Restore state from URL on page load
+  if (window.location.hash) {
+    restoreFromUrl();
+  }
+
+  // Handle browser back/forward navigation
+  subscribeToHashChange(() => {
+    restoreFromUrl();
   });
 }
 

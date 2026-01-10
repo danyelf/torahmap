@@ -3,7 +3,7 @@ import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, type SearchResult } from '../search.ts';
-import { SEARCH_COLORS, DIM_FACTOR, blendColorsHSL } from '../utils/color.ts';
+import { SEARCH_COLORS, DIM_FACTOR } from '../utils/color.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
@@ -233,7 +233,7 @@ export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
 
-  getVerseColor(verse: Verse): Color | null {
+  getVerseColor(verse: Verse): Color | Color[] | null {
     // No active search - use default colors
     if (currentTerms.length === 0) {
       return null;
@@ -245,8 +245,12 @@ export const searchOverlay: Overlay = {
     if (termIndices && termIndices.length > 0) {
       // Get colors for all matching terms
       const colors = termIndices.map(i => SEARCH_COLORS[i % SEARCH_COLORS.length]);
-      // Blend if multiple, otherwise use single color
-      return colors.length === 1 ? colors[0] : blendColorsHSL(colors);
+      // Return array for stipple effect if multiple, otherwise single color
+      if (colors.length === 1) {
+        return colors[0];
+      }
+      // Return multiple colors for stipple effect (capped at 4)
+      return colors.slice(0, 4) as Color[];
     }
 
     // Dim non-matching verses

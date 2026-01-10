@@ -26,7 +26,8 @@ export interface Overlay {
 
   // Core - called for each verse during applyOverlay
   // Return null to use default gray
-  getVerseColor(verse: Verse): Color | null;
+  // Return Color[] for stipple effect (multiple colors shown via noise dithering)
+  getVerseColor(verse: Verse): Color | Color[] | null;
 
   // UI - called when overlay becomes active
   renderControls?(container: HTMLElement): void;

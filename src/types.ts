@@ -24,7 +24,7 @@ export interface Verse {
   x: number;
   y: number;
   size: number;
-  color?: [number, number, number];
+  color?: [number, number, number] | [number, number, number][];
   highlighted?: boolean;
 }
 
@@ -47,6 +47,10 @@ export interface ShaderProgram {
   attribs: {
     position: number;
     color: number;
+    color2: number;
+    color3: number;
+    color4: number;
+    colorCount: number;
     uv: number;
   };
   uniforms: {
