@@ -58,7 +58,9 @@ const FRAGMENT_SHADER = `#version 300 es
       color = v_color;
     } else {
       // Multiple colors - use hash to pick one (stipple effect)
-      float h = hash(gl_FragCoord.xy);
+      // Quantize to 4x4 pixel blocks so stipples are visible
+      vec2 blockCoord = floor(gl_FragCoord.xy / 4.0);
+      float h = hash(blockCoord);
       int idx = int(floor(h * float(v_colorCount)));
 
       // Select color based on hash
