@@ -1,3 +1,11 @@
+@AGENTS.md
+
+# Agent Working Directory
+
+You are confined to your own working directory. Do not read or write files outside of it. If you need files from the parent project, ask the user to copy them here first.
+
+---
+
 # Torah Map
 
 An interactive spatial visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position, enabling analytical overlays to reveal patterns across the 39 books and 23,000+ verses.
@@ -89,7 +97,6 @@ The dev server runs at `http://localhost:5173`
 │   ├── generate-divine-names.ts   # Generate divine names from Torah text
 │   └── process_sefaria_links.py   # Generate commentary counts from Sefaria links
 │
-└── docs/plans/           # Design documents
 ```
 
 ## Tech Stack
@@ -150,17 +157,6 @@ python3 scripts/process_sefaria_links.py > public/data/commentary-counts.json
 | Category filter | Filter commentary heatmap by source type |
 | Trop selector | Choose cantillation mark to visualize |
 | Search box | Type to search Hebrew/English text with live results |
-
-## Design Documents
-
-See `docs/plans/` for detailed design documents:
-
-- `2026-01-03-visual-substrate-design.md` - Overall vision and philosophy
-- `2026-01-03-substrate-implementation.md` - Implementation details
-- `2026-01-04-divine-names-overlay-design.md` - Divine names feature specification
-- `2026-01-04-fulltext-search-design.md` - Full-text search implementation
-- `2026-01-04-trop-visualizer-design.md` - Cantillation mark visualizer
-- `2026-01-04-overlay-modules-design.md` - Modular overlay architecture
 
 ## License
 
