@@ -1,19 +1,24 @@
-import { defineConfig } from 'vite';
-import { execSync } from 'child_process';
+import { defineConfig } from "vite";
+import { execSync } from "child_process";
 
 // Get the current git branch name
 function getGitBranch(): string {
   try {
-    return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
+    return execSync("git rev-parse --abbrev-ref HEAD", {
+      encoding: "utf8",
+    }).trim();
   } catch {
-    return 'unknown';
+    return "unknown";
   }
 }
 
 export default defineConfig(({ command }) => ({
   // Use /torahmap/ base path only for production build
-  base: command === 'build' ? '/torahmap/' : '/',
+  base: command === "build" ? "/torahmap/" : "/",
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
+  },
+  server: {
+    host: true, // Listen on all interfaces (needed for Lima VM port forwarding)
   },
 }));
