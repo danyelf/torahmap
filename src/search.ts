@@ -1,4 +1,5 @@
 // Full-text search with word-wheeling support for Hebrew and English
+// Now with Hebrew lemmatization via morphhb Strong's numbers
 
 import type { VerseTexts } from './verseTexts';
 import { BOOK_ORDER } from './constants/books.ts';
@@ -37,7 +38,16 @@ const HEBREW_RANGE_END = 0x05FF;
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05C7;
 
+// Common Hebrew prefixes that can be stripped for lemma lookup
+const HEBREW_PREFIXES = ['ו', 'ה', 'ב', 'ל', 'כ', 'מ', 'ש'];
+// Two-letter prefix combinations
+const HEBREW_PREFIX_COMBOS = ['וב', 'וה', 'ול', 'וכ', 'ומ', 'וש', 'מה', 'שב', 'של', 'בה'];
+
 let searchIndex: IndexEntry[] = [];
+
+// Lemma data loaded from morphhb
+let wordLemmas: Record<string, string[]> | null = null;  // Hebrew word -> Strong's numbers
+let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong's numbers
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text
@@ -62,6 +72,68 @@ export function parseSearchTerms(query: string): string[] {
     .split(',')
     .map(t => t.trim())
     .filter(t => t.length >= 2);
+}
+
+/**
+ * Load lemma data from morphhb (called during initialization)
+ */
+export async function loadLemmaData(): Promise<void> {
+  try {
+    const [wordRes, verseRes] = await Promise.all([
+      fetch('/data/word-lemmas.json'),
+      fetch('/data/verse-lemmas.json'),
+    ]);
+
+    if (wordRes.ok && verseRes.ok) {
+      wordLemmas = await wordRes.json();
+      verseLemmas = await verseRes.json();
+      console.log('Lemma data loaded for Hebrew canonicalization');
+    } else {
+      console.warn('Failed to load lemma data, falling back to substring search');
+    }
+  } catch (err) {
+    console.warn('Error loading lemma data:', err);
+  }
+}
+
+/**
+ * Try to find Strong's numbers (lemmas) for a Hebrew word
+ * Tries:
+ * 1. Direct lookup
+ * 2. With common prefixes stripped (ו, ה, ב, ל, כ, מ, ש)
+ * 3. With two-letter prefix combos stripped
+ */
+function findLemmasForWord(hebrewWord: string): string[] | null {
+  if (!wordLemmas) return null;
+
+  const stripped = stripNikkud(hebrewWord);
+
+  // Try direct lookup
+  if (wordLemmas[stripped]) {
+    return wordLemmas[stripped];
+  }
+
+  // Try stripping two-letter prefix combos first
+  for (const prefix of HEBREW_PREFIX_COMBOS) {
+    if (stripped.startsWith(prefix) && stripped.length > prefix.length + 1) {
+      const withoutPrefix = stripped.slice(prefix.length);
+      if (wordLemmas[withoutPrefix]) {
+        return wordLemmas[withoutPrefix];
+      }
+    }
+  }
+
+  // Try stripping single-letter prefixes
+  for (const prefix of HEBREW_PREFIXES) {
+    if (stripped.startsWith(prefix) && stripped.length > 2) {
+      const withoutPrefix = stripped.slice(prefix.length);
+      if (wordLemmas[withoutPrefix]) {
+        return wordLemmas[withoutPrefix];
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -111,8 +183,30 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
 }
 
 /**
+ * Search by Strong's numbers (lemmas) for Hebrew terms
+ * Returns verse keys that contain any of the specified lemmas
+ */
+function searchByLemmas(lemmas: string[]): Set<string> {
+  const matchingVerses = new Set<string>();
+
+  if (!verseLemmas) return matchingVerses;
+
+  for (const [verseKey, verseLemmasList] of Object.entries(verseLemmas)) {
+    // Check if this verse contains any of the search lemmas
+    if (lemmas.some(lemma => verseLemmasList.includes(lemma))) {
+      matchingVerses.add(verseKey);
+    }
+  }
+
+  return matchingVerses;
+}
+
+/**
  * Search for verses matching any of the comma-separated terms
  * Returns ALL matching verses with info about which terms matched
+ *
+ * For Hebrew: Uses lemma-based search via morphhb Strong's numbers, with fallback to substring
+ * For English: Uses substring search
  */
 export function search(query: string): SearchResult[] {
   const terms = parseSearchTerms(query);
@@ -124,6 +218,64 @@ export function search(query: string): SearchResult[] {
   // Map: verseKey -> SearchResult
   const resultMap = new Map<string, SearchResult>();
 
+  // For Hebrew, try lemma-based search first
+  if (isHebrew && wordLemmas && verseLemmas) {
+    const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
+
+    // Collect lemmas for each search term
+    for (let termIndex = 0; termIndex < terms.length; termIndex++) {
+      const lemmas = findLemmasForWord(terms[termIndex]);
+      if (lemmas && lemmas.length > 0) {
+        termLemmas.push({ termIndex, lemmas });
+      }
+    }
+
+    // If we found lemmas for any terms, use lemma-based search
+    if (termLemmas.length > 0) {
+      for (const { termIndex, lemmas } of termLemmas) {
+        const matchingVerseKeys = searchByLemmas(lemmas);
+
+        for (const verseKey of matchingVerseKeys) {
+          // Find the corresponding index entry
+          const entry = searchIndex.find(e =>
+            `${e.book}:${e.chapter}:${e.verse}` === verseKey
+          );
+
+          if (entry) {
+            let result = resultMap.get(verseKey);
+            if (!result) {
+              result = {
+                book: entry.book,
+                chapter: entry.chapter,
+                verse: entry.verse,
+                language: 'he',
+                matchingTerms: [],
+              };
+              resultMap.set(verseKey, result);
+            }
+
+            // Only add if this term hasn't matched this verse yet
+            if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+              // Create a snippet showing the original text
+              result.matchingTerms.push({
+                termIndex,
+                snippet: entry.hebrewOriginal.slice(0, 60),
+                matchStart: 0,
+                matchEnd: 0,
+              });
+            }
+          }
+        }
+      }
+
+      // If we got results from lemma search, return them
+      if (resultMap.size > 0) {
+        return Array.from(resultMap.values());
+      }
+    }
+  }
+
+  // Fallback to substring search (for English or if lemma search failed/unavailable)
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const term = terms[termIndex];
     const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();

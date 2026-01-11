@@ -7,7 +7,7 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex } from './search.ts';
+import { buildSearchIndex, loadLemmaData } from './search.ts';
 import { seededRandom } from './utils/random.ts';
 import { initHelp } from './help.ts';
 import {
@@ -100,8 +100,9 @@ async function main(): Promise<void> {
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
-  // Build search index
+  // Build search index and load lemma data for Hebrew canonicalization
   buildSearchIndex(verseTexts);
+  await loadLemmaData();
 
   // Register and initialize overlays
   registerOverlay(divineNamesOverlay);

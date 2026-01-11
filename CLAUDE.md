@@ -1,11 +1,5 @@
 @AGENTS.md
 
-# Agent Working Directory
-
-You are confined to your own working directory. Do not read or write files outside of it. If you need files from the parent project, ask the user to copy them here first.
-
----
-
 # Torah Map
 
 An interactive spatial visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position, enabling analytical overlays to reveal patterns across the 39 books and 23,000+ verses.
