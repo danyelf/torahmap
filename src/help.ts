@@ -19,7 +19,8 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
       </ul>
       <p>Switch between different analytical overlays to reveal patterns across 23,000+ verses.</p>
       <p class="credits">
-        <a href="https://github.com/danyelf/torahmap" target="_blank">Source on GitHub</a> ·
+        By <a href="https://danyelfisher.info" target="_blank">Danyel Fisher</a> ·
+        <a href="https://github.com/danyelf/torahmap" target="_blank">GitHub</a> ·
         Data from <a href="https://www.sefaria.org/" target="_blank">Sefaria</a>
       </p>
     `,
