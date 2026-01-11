@@ -18,6 +18,10 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
         <li><strong>Ketuvim</strong> — The Writings</li>
       </ul>
       <p>Switch between different analytical overlays to reveal patterns across 23,000+ verses.</p>
+      <p class="credits">
+        <a href="https://github.com/danyelf/torahmap" target="_blank">Source on GitHub</a> ·
+        Data from <a href="https://www.sefaria.org/" target="_blank">Sefaria</a>
+      </p>
     `,
   },
   controls: {
