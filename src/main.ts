@@ -7,7 +7,7 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex, loadLemmaData } from './search.ts';
+import { buildSearchIndex } from './search.ts';
 import { seededRandom } from './utils/random.ts';
 import { initHelp } from './help.ts';
 import {
@@ -36,6 +36,7 @@ import {
   searchOverlay,
   configureSearch,
   highlightSearchTerms,
+  haftarahOverlay,
   type Overlay,
 } from './overlays/index.ts';
 
@@ -100,15 +101,15 @@ async function main(): Promise<void> {
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
-  // Build search index and load lemma data for Hebrew canonicalization
+  // Build search index
   buildSearchIndex(verseTexts);
-  await loadLemmaData();
 
   // Register and initialize overlays
   registerOverlay(divineNamesOverlay);
   registerOverlay(commentaryOverlay);
   registerOverlay(tropOverlay);
   registerOverlay(searchOverlay);
+  registerOverlay(haftarahOverlay);
   configureCommentary({ verses });
   configureTrop({ verseTexts });
   // Note: configureSearch is called later after updateSidebar is defined
@@ -262,6 +263,14 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('mouseleave', () => {
     isDragging = false;
+    // Clear overlay hover state
+    if (currentOverlay?.setHoveredVerse) {
+      const shouldRerender = currentOverlay.setHoveredVerse(null);
+      if (shouldRerender) {
+        applyOverlay();
+        render();
+      }
+    }
   });
 
   // Sidebar for verse details
@@ -389,6 +398,15 @@ async function main(): Promise<void> {
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (!isDragging) {
       const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+
+      // Notify overlay of hover change for cross-highlighting
+      if (currentOverlay?.setHoveredVerse) {
+        const shouldRerender = currentOverlay.setHoveredVerse(verse);
+        if (shouldRerender) {
+          applyOverlay();
+          render();
+        }
+      }
 
       // Update sidebar (pinned takes precedence - no hover changes when pinned)
       if (pinnedVerse) {

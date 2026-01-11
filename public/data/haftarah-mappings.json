@@ -1,0 +1,2412 @@
+{
+  "parshiot": [
+    {
+      "name": "Bereshit",
+      "hebrewName": "בראשית",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 1,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 6,
+          "verse": 8
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 42,
+              "verse": 5
+            },
+            "end": {
+              "chapter": 42,
+              "verse": 21
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 42,
+              "verse": 5
+            },
+            "end": {
+              "chapter": 43,
+              "verse": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Noach",
+      "hebrewName": "נח",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 6,
+          "verse": 9
+        },
+        "end": {
+          "chapter": 11,
+          "verse": 32
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 54,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 55,
+              "verse": 5
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 54,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 54,
+              "verse": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Lech-Lecha",
+      "hebrewName": "לך־לך",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 12,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 17,
+          "verse": 27
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 40,
+              "verse": 27
+            },
+            "end": {
+              "chapter": 41,
+              "verse": 16
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 40,
+              "verse": 27
+            },
+            "end": {
+              "chapter": 41,
+              "verse": 16
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayera",
+      "hebrewName": "וירא",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 18,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 22,
+          "verse": 24
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 4,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 37
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 4,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 23
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Chayei Sara",
+      "hebrewName": "חיי שרה",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 23,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 25,
+          "verse": 18
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 31
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 31
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Toldot",
+      "hebrewName": "תולדות",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 25,
+          "verse": 19
+        },
+        "end": {
+          "chapter": 28,
+          "verse": 9
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Malachi",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 27
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Malachi",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 7
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayetzei",
+      "hebrewName": "ויצא",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 28,
+          "verse": 10
+        },
+        "end": {
+          "chapter": 32,
+          "verse": 3
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Hosea",
+            "start": {
+              "chapter": 12,
+              "verse": 13
+            },
+            "end": {
+              "chapter": 14,
+              "verse": 10
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Hosea",
+            "start": {
+              "chapter": 11,
+              "verse": 7
+            },
+            "end": {
+              "chapter": 11,
+              "verse": 12
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayishlach",
+      "hebrewName": "וישלח",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 32,
+          "verse": 4
+        },
+        "end": {
+          "chapter": 36,
+          "verse": 43
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Obadiah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 21
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Obadiah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 21
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayeshev",
+      "hebrewName": "וישב",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 37,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 40,
+          "verse": 23
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Amos",
+            "start": {
+              "chapter": 2,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 16
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Amos",
+            "start": {
+              "chapter": 2,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 8
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Miketz",
+      "hebrewName": "מקץ",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 41,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 44,
+          "verse": 17
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 3,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 1
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 3,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayigash",
+      "hebrewName": "ויגש",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 44,
+          "verse": 18
+        },
+        "end": {
+          "chapter": 47,
+          "verse": 27
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 37,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 37,
+              "verse": 28
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 37,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 37,
+              "verse": 28
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayechi",
+      "hebrewName": "ויחי",
+      "torah": {
+        "book": "Genesis",
+        "start": {
+          "chapter": 47,
+          "verse": 28
+        },
+        "end": {
+          "chapter": 50,
+          "verse": 26
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 2,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 12
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 2,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 12
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shemot",
+      "hebrewName": "שמות",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 1,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 6,
+          "verse": 1
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 27,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 28,
+              "verse": 13
+            }
+          },
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 29,
+              "verse": 22
+            },
+            "end": {
+              "chapter": 29,
+              "verse": 23
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 19
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vaera",
+      "hebrewName": "וארא",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 6,
+          "verse": 2
+        },
+        "end": {
+          "chapter": 9,
+          "verse": 35
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 28,
+              "verse": 25
+            },
+            "end": {
+              "chapter": 28,
+              "verse": 29
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 28,
+              "verse": 25
+            },
+            "end": {
+              "chapter": 29,
+              "verse": 21
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bo",
+      "hebrewName": "בא",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 10,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 13,
+          "verse": 16
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 46,
+              "verse": 13
+            },
+            "end": {
+              "chapter": 46,
+              "verse": 28
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 46,
+              "verse": 13
+            },
+            "end": {
+              "chapter": 46,
+              "verse": 28
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Beshalach",
+      "hebrewName": "בשלח",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 13,
+          "verse": 17
+        },
+        "end": {
+          "chapter": 17,
+          "verse": 16
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Judges",
+            "start": {
+              "chapter": 4,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 31
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Judges",
+            "start": {
+              "chapter": 4,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 5,
+              "verse": 31
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Yitro",
+      "hebrewName": "יתרו",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 18,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 20,
+          "verse": 23
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 6,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 7
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 6,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 6
+            }
+          },
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 9,
+              "verse": 5
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 6
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Mishpatim",
+      "hebrewName": "משפטים",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 21,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 24,
+          "verse": 18
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 34,
+              "verse": 8
+            },
+            "end": {
+              "chapter": 34,
+              "verse": 22
+            }
+          },
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 33,
+              "verse": 25
+            },
+            "end": {
+              "chapter": 33,
+              "verse": 26
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 34,
+              "verse": 8
+            },
+            "end": {
+              "chapter": 34,
+              "verse": 22
+            }
+          },
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 33,
+              "verse": 25
+            },
+            "end": {
+              "chapter": 33,
+              "verse": 26
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Terumah",
+      "hebrewName": "תרומה",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 25,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 27,
+          "verse": 19
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 5,
+              "verse": 26
+            },
+            "end": {
+              "chapter": 5,
+              "verse": 32
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 5,
+              "verse": 26
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 13
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tetzaveh",
+      "hebrewName": "תצוה",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 27,
+          "verse": 20
+        },
+        "end": {
+          "chapter": 30,
+          "verse": 10
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 43,
+              "verse": 10
+            },
+            "end": {
+              "chapter": 43,
+              "verse": 27
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 43,
+              "verse": 10
+            },
+            "end": {
+              "chapter": 43,
+              "verse": 27
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ki Tisa",
+      "hebrewName": "כי תשא",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 30,
+          "verse": 11
+        },
+        "end": {
+          "chapter": 34,
+          "verse": 35
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 18,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 39
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 18,
+              "verse": 20
+            },
+            "end": {
+              "chapter": 39
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayakhel",
+      "hebrewName": "ויקהל",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 35,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 38,
+          "verse": 20
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 40
+            },
+            "end": {
+              "chapter": 50
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 13
+            },
+            "end": {
+              "chapter": 26
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pekudei",
+      "hebrewName": "פקודי",
+      "torah": {
+        "book": "Exodus",
+        "start": {
+          "chapter": 38,
+          "verse": 21
+        },
+        "end": {
+          "chapter": 40,
+          "verse": 38
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 51
+            },
+            "end": {
+              "chapter": 8,
+              "verse": 21
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 40
+            },
+            "end": {
+              "chapter": 50
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayikra",
+      "hebrewName": "ויקרא",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 1,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 5,
+          "verse": 26
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 43,
+              "verse": 21
+            },
+            "end": {
+              "chapter": 43,
+              "verse": 28
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 43,
+              "verse": 21
+            },
+            "end": {
+              "chapter": 44,
+              "verse": 23
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tzav",
+      "hebrewName": "צו",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 6,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 8,
+          "verse": 36
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 7,
+              "verse": 21
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 28
+            }
+          },
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 9,
+              "verse": 22
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 23
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 7,
+              "verse": 21
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 34
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shemini",
+      "hebrewName": "שמיני",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 9,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 11,
+          "verse": 47
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Samuel",
+            "start": {
+              "chapter": 6,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 17
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Samuel",
+            "start": {
+              "chapter": 6,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 19
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tazria",
+      "hebrewName": "תזריע",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 12,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 13,
+          "verse": 59
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 4,
+              "verse": 42
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 44
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 4,
+              "verse": 42
+            },
+            "end": {
+              "chapter": 5,
+              "verse": 19
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Metzora",
+      "hebrewName": "מצורע",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 14,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 15,
+          "verse": 33
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 3
+            },
+            "end": {
+              "chapter": 20
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 3
+            },
+            "end": {
+              "chapter": 20
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Achrei Mot",
+      "hebrewName": "אחרי מות",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 16,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 18,
+          "verse": 30
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 22,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 22,
+              "verse": 19
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 22,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 22,
+              "verse": 16
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kedoshim",
+      "hebrewName": "קדושים",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 19,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 20,
+          "verse": 27
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Amos",
+            "start": {
+              "chapter": 9,
+              "verse": 7
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 15
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 20,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 20,
+              "verse": 20
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Emor",
+      "hebrewName": "אמור",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 21,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 24,
+          "verse": 23
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 44,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 44,
+              "verse": 31
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 44,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 44,
+              "verse": 31
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Behar",
+      "hebrewName": "בהר",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 25,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 26,
+          "verse": 2
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 32,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 32,
+              "verse": 27
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 32,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 32,
+              "verse": 22
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bechukotai",
+      "hebrewName": "בחוקותי",
+      "torah": {
+        "book": "Leviticus",
+        "start": {
+          "chapter": 26,
+          "verse": 3
+        },
+        "end": {
+          "chapter": 27,
+          "verse": 34
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 16,
+              "verse": 19
+            },
+            "end": {
+              "chapter": 17,
+              "verse": 14
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 16,
+              "verse": 19
+            },
+            "end": {
+              "chapter": 17,
+              "verse": 14
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bamidbar",
+      "hebrewName": "במדבר",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 1,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 4,
+          "verse": 20
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Hosea",
+            "start": {
+              "chapter": 2,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 22
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Hosea",
+            "start": {
+              "chapter": 2,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 22
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Nasso",
+      "hebrewName": "נשא",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 4,
+          "verse": 21
+        },
+        "end": {
+          "chapter": 7,
+          "verse": 89
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Judges",
+            "start": {
+              "chapter": 13,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 13,
+              "verse": 25
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Judges",
+            "start": {
+              "chapter": 13,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 13,
+              "verse": 25
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Behaalotcha",
+      "hebrewName": "בהעלותך",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 8,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 12,
+          "verse": 16
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Zechariah",
+            "start": {
+              "chapter": 2,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 7
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Zechariah",
+            "start": {
+              "chapter": 2,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 7
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shelach",
+      "hebrewName": "שלח",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 13,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 15,
+          "verse": 41
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 2,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 24
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 2,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 24
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Korach",
+      "hebrewName": "קורח",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 16,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 18,
+          "verse": 32
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 11,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 11,
+              "verse": 34
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 11,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 11,
+              "verse": 34
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Chukat",
+      "hebrewName": "חוקת",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 19,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 22,
+          "verse": 1
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Judges",
+            "start": {
+              "chapter": 11,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 11,
+              "verse": 33
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Judges",
+            "start": {
+              "chapter": 11,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 11,
+              "verse": 33
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Balak",
+      "hebrewName": "בלק",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 22,
+          "verse": 2
+        },
+        "end": {
+          "chapter": 25,
+          "verse": 9
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Micah",
+            "start": {
+              "chapter": 5,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 5,
+              "verse": 8
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Micah",
+            "start": {
+              "chapter": 5,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 8
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pinchas",
+      "hebrewName": "פינחס",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 25,
+          "verse": 10
+        },
+        "end": {
+          "chapter": 30,
+          "verse": 1
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 18,
+              "verse": 46
+            },
+            "end": {
+              "chapter": 19,
+              "verse": 21
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 18,
+              "verse": 46
+            },
+            "end": {
+              "chapter": 19,
+              "verse": 21
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Matot",
+      "hebrewName": "מטות",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 30,
+          "verse": 2
+        },
+        "end": {
+          "chapter": 32,
+          "verse": 42
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 2
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 19
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Masei",
+      "hebrewName": "מסעי",
+      "torah": {
+        "book": "Numbers",
+        "start": {
+          "chapter": 33,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 36,
+          "verse": 13
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 2,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 28
+            }
+          },
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 3,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 4
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 2,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 28
+            }
+          },
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 4,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 2
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Devarim",
+      "hebrewName": "דברים",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 1,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 3,
+          "verse": 22
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 27
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 27
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vaetchanan",
+      "hebrewName": "ואתחנן",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 3,
+          "verse": 23
+        },
+        "end": {
+          "chapter": 7,
+          "verse": 11
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 40,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 40,
+              "verse": 26
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 40,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 40,
+              "verse": 26
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Eikev",
+      "hebrewName": "עקב",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 7,
+          "verse": 12
+        },
+        "end": {
+          "chapter": 11,
+          "verse": 25
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 49,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 49,
+              "verse": 26
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 49,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 50,
+              "verse": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reeh",
+      "hebrewName": "ראה",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 11,
+          "verse": 26
+        },
+        "end": {
+          "chapter": 16,
+          "verse": 17
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 54,
+              "verse": 11
+            },
+            "end": {
+              "chapter": 55,
+              "verse": 5
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 54,
+              "verse": 11
+            },
+            "end": {
+              "chapter": 55,
+              "verse": 5
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shoftim",
+      "hebrewName": "שופטים",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 16,
+          "verse": 18
+        },
+        "end": {
+          "chapter": 21,
+          "verse": 9
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 51,
+              "verse": 12
+            },
+            "end": {
+              "chapter": 51,
+              "verse": 23
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 51,
+              "verse": 12
+            },
+            "end": {
+              "chapter": 52,
+              "verse": 12
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ki Teitzei",
+      "hebrewName": "כי תצא",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 21,
+          "verse": 10
+        },
+        "end": {
+          "chapter": 25,
+          "verse": 19
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 54,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 54,
+              "verse": 10
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 54,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 55,
+              "verse": 5
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ki Tavo",
+      "hebrewName": "כי תבוא",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 26,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 29,
+          "verse": 8
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 60,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 60,
+              "verse": 22
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 60,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 60,
+              "verse": 22
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Nitzavim",
+      "hebrewName": "נצבים",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 29,
+          "verse": 9
+        },
+        "end": {
+          "chapter": 30,
+          "verse": 20
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 61,
+              "verse": 10
+            },
+            "end": {
+              "chapter": 63,
+              "verse": 9
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 61,
+              "verse": 10
+            },
+            "end": {
+              "chapter": 63,
+              "verse": 9
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vayeilech",
+      "hebrewName": "וילך",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 31,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 31,
+          "verse": 30
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Hosea",
+            "start": {
+              "chapter": 14,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 10
+            }
+          },
+          {
+            "book": "Micah",
+            "start": {
+              "chapter": 7,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 20
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Hosea",
+            "start": {
+              "chapter": 14,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 10
+            }
+          },
+          {
+            "book": "Joel",
+            "start": {
+              "chapter": 2,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 27
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Haazinu",
+      "hebrewName": "האזינו",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 32,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 32,
+          "verse": 52
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Samuel",
+            "start": {
+              "chapter": 22,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 22,
+              "verse": 51
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Samuel",
+            "start": {
+              "chapter": 22,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 22,
+              "verse": 51
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vezot Haberachah",
+      "hebrewName": "וזאת הברכה",
+      "torah": {
+        "book": "Deuteronomy",
+        "start": {
+          "chapter": 33,
+          "verse": 1
+        },
+        "end": {
+          "chapter": 34,
+          "verse": 12
+        }
+      },
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 18
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 18
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

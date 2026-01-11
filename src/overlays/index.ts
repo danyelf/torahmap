@@ -18,3 +18,4 @@ export {
   configure as configureSearch,
   highlightSearchTerms,
 } from './search.ts';
+export { haftarahOverlay } from './haftarah.ts';

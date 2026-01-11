@@ -36,6 +36,10 @@ export interface Overlay {
   // Hover - called when user hovers a verse
   getHoverInfo?(verse: Verse): string | null;
 
+  // Called when hover state changes - enables cross-highlighting
+  // Returns true if overlay needs re-render, false otherwise
+  setHoveredVerse?(verse: Verse | null): boolean;
+
   // For dynamic overlays - register callback to trigger re-render
   onUpdate?(callback: () => void): void;
 
