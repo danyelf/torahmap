@@ -69,11 +69,13 @@ const BOOKS = [
   { name: 'II Chronicles', file: 'ii-chronicles' },
 ];
 
-// Strip HTML tags and footnotes from text (same as verseTexts.ts)
+// Strip HTML tags and footnotes from text
 function cleanText(text: string): string {
   return text
     .replace(/<sup[^>]*>[\s\S]*?<\/sup>/g, '') // Remove footnote markers
-    .replace(/<i class="footnote">[\s\S]*?<\/i>/g, '') // Remove footnotes
+    .replace(/<i>([^<]*)<\/i>/g, '$1') // Flatten nested <i> tags (keep content)
+    .replace(/<i class="footnote">[\s\S]*?<\/i>/g, '') // Remove footnotes (now without nested tags)
+    .replace(/<br\s*\/?>/gi, ' ') // Convert <br> to space (for poetry)
     .replace(/<[^>]+>/g, '') // Remove remaining HTML tags
     .replace(/&nbsp;/g, ' ') // Replace &nbsp; with regular space
     .replace(/&[a-z]+;/g, '') // Remove other HTML entities
