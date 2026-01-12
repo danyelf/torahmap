@@ -54,6 +54,42 @@ npm run build
 
 The dev server runs at `http://localhost:5173`
 
+## Testing
+
+The project has comprehensive test coverage with **831 tests** covering all major functionality:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (during development)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+### Pre-commit Hook
+
+A pre-commit hook automatically runs all tests before allowing commits. This ensures:
+- All 831 tests pass before code enters the repository
+- No broken commits
+- Immediate feedback on test failures
+
+The hook is installed automatically via `bd hooks` (beads issue tracker). If you need to bypass it (not recommended):
+
+```bash
+git commit --no-verify
+```
+
+### Test Coverage
+
+- **Utilities**: 100% coverage (color, random functions)
+- **URL State**: 95%+ coverage (parsing, serialization, browser history)
+- **Geometry/WebGL**: 85%+ coverage (buffer building, shader compilation)
+- **Overlays**: 90%+ coverage (commentary, divine-names, search, trop)
+- **Integration**: Full workflow testing (overlay switching, URL sync)
+
 ## Project Structure
 
 ```
