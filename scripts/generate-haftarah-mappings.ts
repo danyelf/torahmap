@@ -9,7 +9,7 @@
  * - Ashkenazi and Sephardi haftarah traditions
  */
 
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 interface VerseRef {
@@ -107,7 +107,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "תולדות",
     torah: r("Genesis", 25, 19, 28, 9),
     haftarah: {
-      ashkenazi: [r1("Malachi", 1, 1, 27)],
+      ashkenazi: [r("Malachi", 1, 1, 2, 7)],
       sephardi: [r("Malachi", 1, 1, 2, 7)],
     },
   },
@@ -117,7 +117,7 @@ const PARSHIOT: Parsha[] = [
     torah: r("Genesis", 28, 10, 32, 3),
     haftarah: {
       ashkenazi: [r("Hosea", 12, 13, 14, 10)],
-      sephardi: [r1("Hosea", 11, 7, 12)],
+      sephardi: [r("Hosea", 11, 7, 12, 12)],
     },
   },
   {
@@ -181,7 +181,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "וארא",
     torah: r("Exodus", 6, 2, 9, 35),
     haftarah: {
-      ashkenazi: [r1("Ezekiel", 28, 25, 29)],
+      ashkenazi: [r1("Ezekiel", 28, 25, 26)],
       sephardi: [r("Ezekiel", 28, 25, 29, 21)],
     },
   },
@@ -199,7 +199,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "בשלח",
     torah: r("Exodus", 13, 17, 17, 16),
     haftarah: {
-      ashkenazi: [r1("Judges", 4, 4, 31)],
+      ashkenazi: [r1("Judges", 4, 4, 24)],
       sephardi: [r("Judges", 4, 4, 5, 31)],
     },
   },
@@ -401,8 +401,8 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "קורח",
     torah: r("Numbers", 16, 1, 18, 32),
     haftarah: {
-      ashkenazi: [r1("I Samuel", 11, 14, 34)],
-      sephardi: [r1("I Samuel", 11, 14, 34)],
+      ashkenazi: [r("I Samuel", 11, 14, 12, 22)],
+      sephardi: [r("I Samuel", 11, 14, 12, 22)],
     },
   },
   {
@@ -446,8 +446,8 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "מסעי",
     torah: r("Numbers", 33, 1, 36, 13),
     haftarah: {
-      ashkenazi: [r("Jeremiah", 2, 4, 28), r("Jeremiah", 3, 4, 3, 4)],
-      sephardi: [r("Jeremiah", 2, 4, 28), r1("Jeremiah", 4, 1, 2)],
+      ashkenazi: [r1("Jeremiah", 2, 4, 28), r1("Jeremiah", 3, 4, 4)],
+      sephardi: [r1("Jeremiah", 2, 4, 28), r1("Jeremiah", 4, 1, 2)],
     },
   },
 
@@ -529,8 +529,8 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "וילך",
     torah: r("Deuteronomy", 31, 1, 31, 30),
     haftarah: {
-      ashkenazi: [r("Hosea", 14, 2, 10), r1("Micah", 7, 18, 20)],
-      sephardi: [r("Hosea", 14, 2, 10), r1("Joel", 2, 15, 27)],
+      ashkenazi: [r1("Hosea", 14, 2, 10), r1("Micah", 7, 18, 20)],
+      sephardi: [r1("Hosea", 14, 2, 10), r1("Joel", 2, 15, 27)],
     },
   },
   {
@@ -553,18 +553,125 @@ const PARSHIOT: Parsha[] = [
   },
 ];
 
+// Load Tanakh structure to get chapter counts for validation
+interface TanakhStructure {
+  books: Array<{
+    name: string;
+    hebrewName: string;
+    chapters: number[];
+  }>;
+}
+
+async function loadTanakhStructure(): Promise<TanakhStructure> {
+  const structurePath = new URL(
+    "../public/data/tanakh-structure.json",
+    import.meta.url
+  );
+  const content = await readFile(structurePath, "utf-8");
+  return JSON.parse(content);
+}
+
+function validateVerseRange(range: VerseRange, structure: TanakhStructure, context: string): void {
+  // Find the book
+  const bookData = structure.books.find((b) => b.name === range.book);
+  if (!bookData) {
+    throw new Error(`${context}: Unknown book "${range.book}"`);
+  }
+
+  // Check that verse numbers are defined
+  if (range.start.verse === undefined || range.start.verse === null) {
+    throw new Error(`${context}: ${range.book} start verse is undefined/null`);
+  }
+  if (range.end.verse === undefined || range.end.verse === null) {
+    throw new Error(`${context}: ${range.book} end verse is undefined/null`);
+  }
+
+  // Check chapter numbers are in valid range
+  if (range.start.chapter < 1 || range.start.chapter > bookData.chapters.length) {
+    throw new Error(
+      `${context}: ${range.book} start chapter ${range.start.chapter} out of range (1-${bookData.chapters.length})`
+    );
+  }
+  if (range.end.chapter < 1 || range.end.chapter > bookData.chapters.length) {
+    throw new Error(
+      `${context}: ${range.book} end chapter ${range.end.chapter} out of range (1-${bookData.chapters.length})`
+    );
+  }
+
+  // Check verse numbers are in valid range for their chapters
+  const startChapterVerseCount = bookData.chapters[range.start.chapter - 1];
+  if (range.start.verse < 1 || range.start.verse > startChapterVerseCount) {
+    throw new Error(
+      `${context}: ${range.book} ${range.start.chapter}:${range.start.verse} out of range (1-${startChapterVerseCount})`
+    );
+  }
+
+  const endChapterVerseCount = bookData.chapters[range.end.chapter - 1];
+  if (range.end.verse < 1 || range.end.verse > endChapterVerseCount) {
+    throw new Error(
+      `${context}: ${range.book} ${range.end.chapter}:${range.end.verse} out of range (1-${endChapterVerseCount})`
+    );
+  }
+
+  // Check that start comes before or equals end
+  if (range.start.chapter > range.end.chapter) {
+    throw new Error(
+      `${context}: ${range.book} start chapter ${range.start.chapter} > end chapter ${range.end.chapter}`
+    );
+  }
+  if (range.start.chapter === range.end.chapter && range.start.verse > range.end.verse) {
+    throw new Error(
+      `${context}: ${range.book} ${range.start.chapter}:${range.start.verse} > ${range.end.chapter}:${range.end.verse}`
+    );
+  }
+}
+
 async function main() {
   console.log("Generating haftarah mappings data...\n");
+
+  // Load structure for validation
+  const structure = await loadTanakhStructure();
 
   // Validate data
   let torahVerseCount = 0;
   let haftarahCount = 0;
+  let errors = 0;
 
   for (const parsha of PARSHIOT) {
     console.log(`${parsha.name} (${parsha.hebrewName})`);
     console.log(
       `  Torah: ${parsha.torah.book} ${parsha.torah.start.chapter}:${parsha.torah.start.verse}-${parsha.torah.end.chapter}:${parsha.torah.end.verse}`
     );
+
+    // Validate Torah range
+    try {
+      validateVerseRange(parsha.torah, structure, `${parsha.name} Torah`);
+    } catch (err) {
+      console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
+      errors++;
+    }
+
+    // Validate Ashkenazi haftarot
+    for (let i = 0; i < parsha.haftarah.ashkenazi.length; i++) {
+      const range = parsha.haftarah.ashkenazi[i];
+      try {
+        validateVerseRange(range, structure, `${parsha.name} Ashkenazi[${i}]`);
+      } catch (err) {
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
+        errors++;
+      }
+    }
+
+    // Validate Sephardi haftarot
+    for (let i = 0; i < parsha.haftarah.sephardi.length; i++) {
+      const range = parsha.haftarah.sephardi[i];
+      try {
+        validateVerseRange(range, structure, `${parsha.name} Sephardi[${i}]`);
+      } catch (err) {
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
+        errors++;
+      }
+    }
 
     const ashkBooks = parsha.haftarah.ashkenazi.map((r) => r.book).join(", ");
     console.log(`  Haftarah (Ashk): ${ashkBooks}`);
@@ -580,6 +687,13 @@ async function main() {
     torahVerseCount++;
     haftarahCount += parsha.haftarah.ashkenazi.length;
   }
+
+  if (errors > 0) {
+    console.error(`\n❌ Validation failed with ${errors} error(s)`);
+    process.exit(1);
+  }
+
+  console.log("\n✅ All ranges validated successfully");
 
   // Ensure output directory exists
   const outputPath = new URL(

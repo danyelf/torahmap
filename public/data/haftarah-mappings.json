@@ -238,8 +238,8 @@
               "verse": 1
             },
             "end": {
-              "chapter": 1,
-              "verse": 27
+              "chapter": 2,
+              "verse": 7
             }
           }
         ],
@@ -294,7 +294,7 @@
               "verse": 7
             },
             "end": {
-              "chapter": 11,
+              "chapter": 12,
               "verse": 12
             }
           }
@@ -594,7 +594,7 @@
             },
             "end": {
               "chapter": 28,
-              "verse": 29
+              "verse": 26
             }
           }
         ],
@@ -680,7 +680,7 @@
             },
             "end": {
               "chapter": 4,
-              "verse": 31
+              "verse": 24
             }
           }
         ],
@@ -1669,8 +1669,8 @@
               "verse": 14
             },
             "end": {
-              "chapter": 11,
-              "verse": 34
+              "chapter": 12,
+              "verse": 22
             }
           }
         ],
@@ -1682,8 +1682,8 @@
               "verse": 14
             },
             "end": {
-              "chapter": 11,
-              "verse": 34
+              "chapter": 12,
+              "verse": 22
             }
           }
         ]
@@ -1884,7 +1884,8 @@
               "verse": 4
             },
             "end": {
-              "chapter": 28
+              "chapter": 2,
+              "verse": 28
             }
           },
           {
@@ -1907,7 +1908,8 @@
               "verse": 4
             },
             "end": {
-              "chapter": 28
+              "chapter": 2,
+              "verse": 28
             }
           },
           {
@@ -2291,7 +2293,8 @@
               "verse": 2
             },
             "end": {
-              "chapter": 10
+              "chapter": 14,
+              "verse": 10
             }
           },
           {
@@ -2314,7 +2317,8 @@
               "verse": 2
             },
             "end": {
-              "chapter": 10
+              "chapter": 14,
+              "verse": 10
             }
           },
           {
