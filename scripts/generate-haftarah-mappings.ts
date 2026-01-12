@@ -244,8 +244,8 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "כי תשא",
     torah: r("Exodus", 30, 11, 34, 35),
     haftarah: {
-      ashkenazi: [r("I Kings", 18, 1, 39)],
-      sephardi: [r("I Kings", 18, 20, 39)],
+      ashkenazi: [r1("I Kings", 18, 1, 39)],
+      sephardi: [r1("I Kings", 18, 20, 39)],
     },
   },
   {
@@ -253,8 +253,8 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "ויקהל",
     torah: r("Exodus", 35, 1, 38, 20),
     haftarah: {
-      ashkenazi: [r("I Kings", 7, 40, 50)],
-      sephardi: [r("I Kings", 7, 13, 26)],
+      ashkenazi: [r1("I Kings", 7, 40, 50)],
+      sephardi: [r1("I Kings", 7, 13, 26)],
     },
   },
   {
@@ -263,7 +263,7 @@ const PARSHIOT: Parsha[] = [
     torah: r("Exodus", 38, 21, 40, 38),
     haftarah: {
       ashkenazi: [r("I Kings", 7, 51, 8, 21)],
-      sephardi: [r("I Kings", 7, 40, 50)],
+      sephardi: [r1("I Kings", 7, 40, 50)],
     },
   },
 

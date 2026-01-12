@@ -925,7 +925,8 @@
               "verse": 1
             },
             "end": {
-              "chapter": 39
+              "chapter": 18,
+              "verse": 39
             }
           }
         ],
@@ -937,7 +938,8 @@
               "verse": 20
             },
             "end": {
-              "chapter": 39
+              "chapter": 18,
+              "verse": 39
             }
           }
         ]
@@ -966,7 +968,8 @@
               "verse": 40
             },
             "end": {
-              "chapter": 50
+              "chapter": 7,
+              "verse": 50
             }
           }
         ],
@@ -978,7 +981,8 @@
               "verse": 13
             },
             "end": {
-              "chapter": 26
+              "chapter": 7,
+              "verse": 26
             }
           }
         ]
@@ -1020,7 +1024,8 @@
               "verse": 40
             },
             "end": {
-              "chapter": 50
+              "chapter": 7,
+              "verse": 50
             }
           }
         ]
