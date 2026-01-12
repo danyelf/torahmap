@@ -249,11 +249,24 @@ async function main(): Promise<void> {
   window.bookLabels = createBookLabels(verses, document.body);
   updateLabelPositions(window.bookLabels, pan, zoom);
 
-  // Smooth zooming with mouse wheel
+  // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    zoom = Math.max(0.1, Math.min(10, zoom * zoomFactor));
+    const newZoom = Math.max(0.1, Math.min(10, zoom * zoomFactor));
+
+    // Get mouse position in canvas coordinates
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+
+    // Adjust pan so the world point under the mouse stays fixed
+    // Before: worldX = mouseX / zoom - pan.x
+    // After:  worldX = mouseX / newZoom - newPan.x (same worldX)
+    // Solving: newPan.x = pan.x + mouseX * (1/newZoom - 1/zoom)
+    pan.x += mouseX * (1 / newZoom - 1 / zoom);
+    pan.y += mouseY * (1 / newZoom - 1 / zoom);
+
+    zoom = newZoom;
     render();
     debouncedSaveUrlState();
   }, { passive: false });
