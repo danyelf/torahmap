@@ -66,13 +66,37 @@ function findVerseAtPoint(
   const worldX = canvasX / zoom - pan.x;
   const worldY = canvasY / zoom - pan.y;
 
+  // First, try exact hit detection
   for (const v of verses) {
     if (worldX >= v.x && worldX < v.x + v.size &&
         worldY >= v.y && worldY < v.y + v.size) {
       return v;
     }
   }
-  return null;
+
+  // If no exact hit, find nearest verse within a fuzzy radius
+  const FUZZY_RADIUS = 10; // world units (pixels at 1x zoom)
+  let nearestVerse: Verse | null = null;
+  let nearestDistSq = FUZZY_RADIUS * FUZZY_RADIUS;
+
+  for (const v of verses) {
+    // Find center of verse square
+    const centerX = v.x + v.size / 2;
+    const centerY = v.y + v.size / 2;
+
+    // Distance from mouse to verse center
+    const dx = worldX - centerX;
+    const dy = worldY - centerY;
+    const distSq = dx * dx + dy * dy;
+
+    // If within fuzzy radius and closer than previous best
+    if (distSq < nearestDistSq) {
+      nearestVerse = v;
+      nearestDistSq = distSq;
+    }
+  }
+
+  return nearestVerse;
 }
 
 async function main(): Promise<void> {
