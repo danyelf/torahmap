@@ -37,11 +37,81 @@ interface TanakhStructure {
   }>;
 }
 
-// Colors
-const TORAH_PARSHA_COLOR: Color = [0.3, 0.5, 0.8];       // Blue for Torah portions
-const HAFTARAH_COLOR: Color = [0.8, 0.5, 0.3];           // Orange for haftarah
-const HIGHLIGHT_COLOR: Color = [0.2, 0.9, 0.6];          // Bright green for cross-highlight
-const DIM_COLOR: Color = [0.2, 0.2, 0.2];                // Dim for non-related when hovering
+// Brightness adjustment factor
+const BRIGHTNESS_FACTOR = 1.5;  // Multiply by this to brighten
+const DESATURATE_FACTOR = 0.2;  // Multiply saturation by this to desaturate
+
+// Convert RGB to HSL (R, G, B: 0-1) -> (H: 0-360, S: 0-1, L: 0-1)
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+
+  if (max === min) {
+    return [0, 0, l]; // achromatic
+  }
+
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+  let h = 0;
+  if (max === r) {
+    h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  } else if (max === g) {
+    h = ((b - r) / d + 2) / 6;
+  } else {
+    h = ((r - g) / d + 4) / 6;
+  }
+
+  return [h * 360, s, l];
+}
+
+// Convert HSL to RGB (H: 0-360, S: 0-1, L: 0-1) -> RGB (0-1)
+function hslToRgb(h: number, s: number, l: number): Color {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  let r = 0, g = 0, b = 0;
+  if (h >= 0 && h < 60) {
+    [r, g, b] = [c, x, 0];
+  } else if (h >= 60 && h < 120) {
+    [r, g, b] = [x, c, 0];
+  } else if (h >= 120 && h < 180) {
+    [r, g, b] = [0, c, x];
+  } else if (h >= 180 && h < 240) {
+    [r, g, b] = [0, x, c];
+  } else if (h >= 240 && h < 300) {
+    [r, g, b] = [x, 0, c];
+  } else {
+    [r, g, b] = [c, 0, x];
+  }
+
+  return [r + m, g + m, b + m];
+}
+
+// Generate rainbow color for a parsha index (0-53)
+function getParshaColor(parshaIndex: number, totalParshiot: number): Color {
+  // Use full spectrum: 0° (red) → 360° (red again)
+  const hue = (parshaIndex / totalParshiot) * 360;
+  // High saturation and medium-high lightness for vibrant colors
+  return hslToRgb(hue, 0.8, 0.55);
+}
+
+// Adjust color brightness (multiply RGB values, clamping to [0, 1])
+function adjustBrightness(color: Color, factor: number): Color {
+  return [
+    Math.min(1, color[0] * factor),
+    Math.min(1, color[1] * factor),
+    Math.min(1, color[2] * factor),
+  ];
+}
+
+// Desaturate a color by reducing its saturation
+function desaturate(color: Color, factor: number): Color {
+  const [h, s, l] = rgbToHsl(color[0], color[1], color[2]);
+  return hslToRgb(h, s * factor, l);
+}
 
 type Custom = 'ashkenazi' | 'sephardi';
 
@@ -57,10 +127,7 @@ let torahVerseToParsha: Map<string, ParshaData> = new Map();
 let haftarahVerseToParsha: Map<string, ParshaData> = new Map();
 let isTorahVerse: Set<string> = new Set();
 let isHaftarahVerse: Set<string> = new Set();
-
-// Cache for highlighted verses
-let cachedHighlightedVerses: Set<string> | null = null;
-let cachedHoverKey: string | null = null;
+let parshaToColor: Map<ParshaData, Color> = new Map();
 
 // Get verse count for a chapter from structure data
 function getVerseCount(book: string, chapter: number): number {
@@ -93,12 +160,18 @@ function buildIndexes(): void {
   haftarahVerseToParsha.clear();
   isTorahVerse.clear();
   isHaftarahVerse.clear();
-  cachedHighlightedVerses = null;
-  cachedHoverKey = null;
+  parshaToColor.clear();
 
   if (!data) return;
 
-  for (const parsha of data.parshiot) {
+  const totalParshiot = data.parshiot.length;
+
+  for (let i = 0; i < data.parshiot.length; i++) {
+    const parsha = data.parshiot[i];
+
+    // Assign rainbow color to this parsha
+    parshaToColor.set(parsha, getParshaColor(i, totalParshiot));
+
     // Index Torah verses
     forEachVerseInRange(parsha.torah, (book, ch, v) => {
       const key = getVerseKey(book, ch, v);
@@ -116,49 +189,6 @@ function buildIndexes(): void {
       });
     }
   }
-}
-
-// Get verses to highlight based on hovered verse
-function getHighlightedVerses(): Set<string> {
-  const currentKey = hoveredVerse
-    ? getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse)
-    : null;
-
-  if (currentKey === cachedHoverKey && cachedHighlightedVerses) {
-    return cachedHighlightedVerses;
-  }
-
-  cachedHoverKey = currentKey;
-  cachedHighlightedVerses = new Set<string>();
-
-  if (!hoveredVerse || !data) return cachedHighlightedVerses;
-
-  const key = getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
-
-  // Check if hovered verse is in Torah portion
-  const parshaFromTorah = torahVerseToParsha.get(key);
-  if (parshaFromTorah) {
-    // Highlight corresponding haftarah
-    const haftarahRanges = parshaFromTorah.haftarah[currentCustom];
-    for (const range of haftarahRanges) {
-      forEachVerseInRange(range, (book, ch, v) => {
-        cachedHighlightedVerses!.add(getVerseKey(book, ch, v));
-      });
-    }
-    return cachedHighlightedVerses;
-  }
-
-  // Check if hovered verse is in haftarah
-  const parshaFromHaftarah = haftarahVerseToParsha.get(key);
-  if (parshaFromHaftarah) {
-    // Highlight corresponding Torah portion
-    forEachVerseInRange(parshaFromHaftarah.torah, (book, ch, v) => {
-      cachedHighlightedVerses!.add(getVerseKey(book, ch, v));
-    });
-    return cachedHighlightedVerses;
-  }
-
-  return cachedHighlightedVerses;
 }
 
 // Check if a verse is relevant to the overlay (Torah or haftarah)
@@ -198,8 +228,6 @@ export const haftarahOverlay: Overlay = {
 
   destroy() {
     hoveredVerse = null;
-    cachedHighlightedVerses = null;
-    cachedHoverKey = null;
   },
 
   onUpdate(callback) {
@@ -229,7 +257,6 @@ export const haftarahOverlay: Overlay = {
     }
 
     hoveredVerse = verse;
-    cachedHighlightedVerses = null; // Invalidate cache
 
     // Re-render if either old or new hover is relevant
     return wasRelevant || isRelevant;
@@ -239,38 +266,38 @@ export const haftarahOverlay: Overlay = {
     if (!data) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
-    const highlightedVerses = getHighlightedVerses();
 
-    // Check if this verse should be highlighted (cross-reference from hover)
-    if (highlightedVerses.has(key)) {
-      return HIGHLIGHT_COLOR;
+    // Get the base parsha and color for this verse
+    const parshaFromTorah = torahVerseToParsha.get(key);
+    const parshaFromHaftarah = haftarahVerseToParsha.get(key);
+    const parsha = parshaFromTorah || parshaFromHaftarah;
+
+    if (!parsha) {
+      // Verse is not part of any Torah portion or haftarah
+      return null;
     }
 
-    const isHovering = hoveredVerse !== null;
-    const hoverKey = hoveredVerse
-      ? getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse)
-      : null;
+    const baseColor = parshaToColor.get(parsha);
+    if (!baseColor) return null;
 
-    // Check if this is a Torah portion verse
-    if (isTorahVerse.has(key)) {
-      // If we're hovering a haftarah verse, dim non-connected Torah
-      if (isHovering && hoverKey && haftarahVerseToParsha.has(hoverKey)) {
-        return DIM_COLOR;
-      }
-      return TORAH_PARSHA_COLOR;
+    // If not hovering, return base color
+    if (!hoveredVerse) {
+      return baseColor;
     }
 
-    // Check if this is a haftarah verse
-    if (isHaftarahVerse.has(key)) {
-      // If we're hovering a Torah verse, dim non-connected haftarah
-      if (isHovering && hoverKey && torahVerseToParsha.has(hoverKey)) {
-        return DIM_COLOR;
-      }
-      return HAFTARAH_COLOR;
+    // Determine which parsha is being hovered
+    const hoverKey = getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
+    const hoveredParshaTorah = torahVerseToParsha.get(hoverKey);
+    const hoveredParshaHaftarah = haftarahVerseToParsha.get(hoverKey);
+    const hoveredParsha = hoveredParshaTorah || hoveredParshaHaftarah;
+
+    // Brighten if this verse belongs to the same parsha as the hovered verse
+    if (hoveredParsha && hoveredParsha === parsha) {
+      return adjustBrightness(baseColor, BRIGHTNESS_FACTOR);
     }
 
-    // Verse is not part of any Torah portion or haftarah
-    return null;
+    // Desaturate all other verses
+    return desaturate(baseColor, DESATURATE_FACTOR);
   },
 
   renderControls(container: HTMLElement) {
@@ -299,21 +326,33 @@ export const haftarahOverlay: Overlay = {
 
   renderLegend(container: HTMLElement) {
     const customLabel = currentCustom === 'ashkenazi' ? 'Ashkenazi' : 'Sephardi';
+
+    // Generate a gradient showing the rainbow spectrum
+    const gradientStops = [];
+    const numStops = 10;
+    for (let i = 0; i < numStops; i++) {
+      const color = getParshaColor(i * (54 / numStops), 54);
+      const rgb = color.map(c => Math.round(c * 255)).join(', ');
+      const percent = (i / (numStops - 1)) * 100;
+      gradientStops.push(`rgb(${rgb}) ${percent}%`);
+    }
+    const gradient = gradientStops.join(', ');
+
     container.innerHTML = `
       <div class="legend-row">
-        <span class="swatch" style="background: rgb(77, 128, 204)"></span>
-        <span>Torah Portion</span>
+        <div style="
+          width: 20px;
+          height: 12px;
+          background: linear-gradient(to right, ${gradient});
+          border-radius: 2px;
+        "></div>
+        <span>54 Parshiot (rainbow spectrum)</span>
       </div>
-      <div class="legend-row">
-        <span class="swatch" style="background: rgb(204, 128, 77)"></span>
-        <span>Haftarah (${customLabel})</span>
-      </div>
-      <div class="legend-row">
-        <span class="swatch" style="background: rgb(51, 230, 153)"></span>
-        <span>Connected (hover)</span>
+      <div style="color: #888; font-size: 10px; margin-top: 4px; margin-left: 28px; line-height: 1.3;">
+        Torah portion & haftarah (${customLabel}) use same color
       </div>
       <div style="color: #666; font-size: 10px; margin-top: 8px; line-height: 1.4;">
-        Hover Torah verse to highlight its haftarah, or vice versa
+        Hover brightens the parsha & its haftarah, desaturates others
       </div>
     `;
   },
