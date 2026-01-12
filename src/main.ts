@@ -300,6 +300,7 @@ async function main(): Promise<void> {
   // Sidebar for verse details
   const sidebar = document.getElementById('verse-sidebar');
   const sidebarRef = sidebar?.querySelector('.ref-text');
+  const sidebarOverlayInfo = sidebar?.querySelector('.overlay-info');
   const sidebarHebrew = sidebar?.querySelector('.verse-hebrew');
   const sidebarEnglish = sidebar?.querySelector('.verse-english');
   const sidebarLink = sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement | null;
@@ -382,6 +383,11 @@ async function main(): Promise<void> {
 
     if (sidebarRef) {
       sidebarRef.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
+    }
+    if (sidebarOverlayInfo) {
+      // Get overlay-specific hover info (e.g., parshah name for Torah verses)
+      const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
+      sidebarOverlayInfo.textContent = hoverInfo || '';
     }
     if (sidebarHebrew) {
       const hebrewText = text?.he || 'Loading...';

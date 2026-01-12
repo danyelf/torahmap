@@ -132,6 +132,19 @@
     #verse-sidebar.pinned {
       border: 1px solid rgba(106, 176, 243, 0.3);
     }
+    #verse-sidebar .overlay-info {
+      padding: 10px 14px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #6ab0f3;
+      background: rgba(106, 176, 243, 0.1);
+      border-bottom: 1px solid rgba(106, 176, 243, 0.2);
+      font-style: italic;
+      display: none;
+    }
+    #verse-sidebar .overlay-info:not(:empty) {
+      display: block;
+    }
     #verse-sidebar .verse-hebrew {
       padding: 14px;
       font-family: "SBL Hebrew", "Ezra SIL", "Times New Roman", serif;
@@ -559,6 +572,7 @@
   </div>
   <div id="verse-sidebar">
     <div class="verse-ref"><span class="ref-text"></span><button class="close-btn">&times;</button></div>
+    <div class="overlay-info"></div>
     <div class="verse-hebrew"></div>
     <div class="verse-english"></div>
     <a class="sefaria-link" href="#" target="_blank">
