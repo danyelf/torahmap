@@ -17,7 +17,6 @@ import {
   subscribeToHashChange,
   verseToUrlFormat,
   debounce,
-  getCurrentUrl,
   type UrlState,
 } from './urlState.ts';
 import type { Verse, TorahData, Bounds } from './types.ts';
@@ -570,23 +569,6 @@ async function main(): Promise<void> {
   if (controlsPanel) {
     initHelp(controlsPanel);
   }
-
-  // Copy Link button handler
-  const copyLinkBtn = document.getElementById('copy-link-btn');
-  const copyLinkText = copyLinkBtn?.querySelector('span');
-  copyLinkBtn?.addEventListener('click', async () => {
-    const url = getCurrentUrl();
-    await navigator.clipboard.writeText(url);
-
-    // Visual feedback
-    copyLinkBtn.classList.add('copied');
-    if (copyLinkText) copyLinkText.textContent = 'Copied!';
-
-    setTimeout(() => {
-      copyLinkBtn.classList.remove('copied');
-      if (copyLinkText) copyLinkText.textContent = 'Copy Link';
-    }, 1500);
-  });
 
   // URL State Restoration
   function restoreFromUrl(): void {

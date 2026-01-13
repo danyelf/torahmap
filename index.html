@@ -363,36 +363,6 @@
       color: #666;
       border-bottom: 1px solid #333;
     }
-    /* Copy Link button */
-    #copy-link-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      width: 100%;
-      margin-top: 10px;
-      padding: 8px 12px;
-      border: 1px solid #444;
-      border-radius: 4px;
-      background: #222;
-      color: #aaa;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    #copy-link-btn:hover {
-      border-color: #666;
-      color: #fff;
-      background: #2a2a2a;
-    }
-    #copy-link-btn.copied {
-      border-color: #4a9;
-      color: #4a9;
-    }
-    #copy-link-btn svg {
-      width: 14px;
-      height: 14px;
-    }
     /* Help button */
     #help-btn {
       position: absolute;
@@ -562,13 +532,6 @@
     </select>
     <div id="overlay-controls"></div>
     <div id="overlay-legend"></div>
-    <button id="copy-link-btn" title="Copy shareable link to clipboard">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-      </svg>
-      <span>Copy Link</span>
-    </button>
   </div>
   <div id="verse-sidebar">
     <div class="verse-ref"><span class="ref-text"></span><button class="close-btn">&times;</button></div>
