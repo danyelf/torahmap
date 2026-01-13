@@ -14,6 +14,7 @@ const VERTEX_SHADER = `#version 300 es
   in vec3 a_color4;
   in float a_colorCount;
   in vec2 a_uv;
+  in vec2 a_seed;
 
   out vec3 v_color;
   out vec3 v_color2;
@@ -21,6 +22,7 @@ const VERTEX_SHADER = `#version 300 es
   out vec3 v_color4;
   flat out int v_colorCount;
   out vec2 v_uv;
+  out vec2 v_seed;
 
   void main() {
     vec2 pos = (a_position + u_pan) * u_zoom;
@@ -32,6 +34,7 @@ const VERTEX_SHADER = `#version 300 es
     v_color4 = a_color4;
     v_colorCount = int(a_colorCount);
     v_uv = a_uv;
+    v_seed = a_seed;
   }
 `;
 
@@ -43,11 +46,17 @@ const FRAGMENT_SHADER = `#version 300 es
   in vec3 v_color4;
   flat in int v_colorCount;
   in vec2 v_uv;
+  in vec2 v_seed;
   out vec4 fragColor;
 
   // Simple hash for dithering noise and stipple selection
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  }
+
+  // Second hash with different coefficients for variety
+  float hash2(vec2 p) {
+    return fract(sin(dot(p, vec2(39.346, 11.135))) * 83758.5453);
   }
 
   void main() {
@@ -57,27 +66,57 @@ const FRAGMENT_SHADER = `#version 300 es
       // Single color - use directly
       color = v_color;
     } else {
-      // Multiple colors - use hash to pick one (stipple effect)
-      // Use UV coords (stable per-verse) quantized into a 6x6 grid
-      vec2 blockCoord = floor(v_uv * 6.0);
-      float h = hash(blockCoord);
-      int idx = int(floor(h * float(v_colorCount)));
+      // Multiple colors with bleed effect
+      // UV < 0 or > 1 means we're in the bleed zone
+      bool inBleedZone = v_uv.x < 0.0 || v_uv.x > 1.0 || v_uv.y < 0.0 || v_uv.y > 1.0;
 
-      // Select color based on hash
-      if (idx == 0) {
-        color = v_color;
-      } else if (idx == 1) {
-        color = v_color2;
-      } else if (idx == 2) {
-        color = v_color3;
+      if (inBleedZone) {
+        // In bleed zone: sparse scattered pixels
+        // Use seed + UV to create unique pattern per verse
+        vec2 scatterCoord = floor(v_uv * 8.0) + v_seed * 0.1;
+        float scatter = hash(scatterCoord);
+        float scatter2 = hash2(scatterCoord);
+
+        // Only render ~30% of pixels in bleed zone (sparse scatter)
+        if (scatter > 0.3) {
+          discard;
+        }
+
+        // Pick a color from the available colors
+        int idx = int(floor(scatter2 * float(v_colorCount)));
+        if (idx == 0) {
+          color = v_color;
+        } else if (idx == 1) {
+          color = v_color2;
+        } else if (idx == 2) {
+          color = v_color3;
+        } else {
+          color = v_color4;
+        }
       } else {
-        color = v_color4;
+        // Inside verse: use seed-varied stipple pattern
+        // Combine UV with verse seed for unique pattern per verse
+        // Use a 5x5 grid with per-verse offset for more organic feel
+        vec2 blockCoord = floor(v_uv * 5.0 + fract(v_seed * 0.0731) * 5.0);
+        float h = hash(blockCoord + v_seed * 0.0137);
+        int idx = int(floor(h * float(v_colorCount)));
+
+        // Select color based on hash
+        if (idx == 0) {
+          color = v_color;
+        } else if (idx == 1) {
+          color = v_color2;
+        } else if (idx == 2) {
+          color = v_color3;
+        } else {
+          color = v_color4;
+        }
       }
     }
 
     // Add subtle dithering noise to break up moiré patterns (UV-based for zoom stability)
     vec2 noiseCoord = floor(v_uv * 12.0);
-    float noise = (hash(noiseCoord) - 0.5) * 0.1;
+    float noise = (hash(noiseCoord + v_seed * 0.01) - 0.5) * 0.1;
     color = color + noise;
 
     fragColor = vec4(color, 1.0);
@@ -125,6 +164,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       color4: gl.getAttribLocation(program, 'a_color4'),
       colorCount: gl.getAttribLocation(program, 'a_colorCount'),
       uv: gl.getAttribLocation(program, 'a_uv'),
+      seed: gl.getAttribLocation(program, 'a_seed'),
     },
     uniforms: {
       resolution: gl.getUniformLocation(program, 'u_resolution'),

@@ -213,8 +213,8 @@ async function main(): Promise<void> {
     // Bind buffer and set attributes
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-    // Vertex layout: x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v
-    const stride = 17 * 4; // 17 floats * 4 bytes
+    // Vertex layout: x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
+    const stride = 19 * 4; // 19 floats * 4 bytes
     gl.enableVertexAttribArray(prog.attribs.position);
     gl.vertexAttribPointer(prog.attribs.position, 2, gl.FLOAT, false, stride, 0);
 
@@ -235,6 +235,9 @@ async function main(): Promise<void> {
 
     gl.enableVertexAttribArray(prog.attribs.uv);
     gl.vertexAttribPointer(prog.attribs.uv, 2, gl.FLOAT, false, stride, 15 * 4);
+
+    gl.enableVertexAttribArray(prog.attribs.seed);
+    gl.vertexAttribPointer(prog.attribs.seed, 2, gl.FLOAT, false, stride, 17 * 4);
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);

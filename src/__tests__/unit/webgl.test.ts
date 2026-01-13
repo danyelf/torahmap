@@ -405,11 +405,11 @@ describe('createProgram', () => {
       expect(program.program).toBe(mockProgram);
     });
 
-    it('attribs contains all 7 attributes', () => {
+    it('attribs contains all 8 attributes', () => {
       const program = createProgram(gl);
 
       const attribKeys = Object.keys(program.attribs);
-      expect(attribKeys).toHaveLength(7);
+      expect(attribKeys).toHaveLength(8);
       expect(attribKeys).toContain('position');
       expect(attribKeys).toContain('color');
       expect(attribKeys).toContain('color2');
@@ -417,6 +417,7 @@ describe('createProgram', () => {
       expect(attribKeys).toContain('color4');
       expect(attribKeys).toContain('colorCount');
       expect(attribKeys).toContain('uv');
+      expect(attribKeys).toContain('seed');
     });
 
     it('uniforms contains all 3 uniforms', () => {

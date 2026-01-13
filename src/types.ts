@@ -52,6 +52,7 @@ export interface ShaderProgram {
     color4: number;
     colorCount: number;
     uv: number;
+    seed: number;
   };
   uniforms: {
     resolution: WebGLUniformLocation | null;

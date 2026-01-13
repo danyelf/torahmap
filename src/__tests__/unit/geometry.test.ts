@@ -14,15 +14,15 @@ describe('buildVerseGeometry', () => {
     it('returns correct buffer size for single verse', () => {
       const verses = [createVerse()];
       const buffer = buildVerseGeometry(verses);
-      // 6 vertices * 17 floats per vertex = 102 floats
-      expect(buffer.length).toBe(102);
+      // 6 vertices * 19 floats per vertex = 114 floats
+      expect(buffer.length).toBe(114);
     });
 
     it('returns correct buffer size for multiple verses', () => {
       const verses = createVerses(5);
       const buffer = buildVerseGeometry(verses);
-      // 5 verses * 6 vertices * 17 floats = 510 floats
-      expect(buffer.length).toBe(510);
+      // 5 verses * 6 vertices * 19 floats = 570 floats
+      expect(buffer.length).toBe(570);
     });
 
     it('handles empty verse array', () => {
@@ -34,8 +34,8 @@ describe('buildVerseGeometry', () => {
     it('handles large verse arrays', () => {
       const verses = createVerses(1000);
       const buffer = buildVerseGeometry(verses);
-      // 1000 verses * 6 vertices * 17 floats = 102,000 floats
-      expect(buffer.length).toBe(102000);
+      // 1000 verses * 6 vertices * 19 floats = 114,000 floats
+      expect(buffer.length).toBe(114000);
     });
   });
 
@@ -44,7 +44,7 @@ describe('buildVerseGeometry', () => {
       const verses = [createVerse()];
       const buffer = buildVerseGeometry(verses);
       const verticesPerQuad = 6;
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const expectedFloats = verticesPerQuad * floatsPerVertex;
       expect(buffer.length).toBe(expectedFloats);
     });
@@ -53,16 +53,16 @@ describe('buildVerseGeometry', () => {
       const verseCount = 10;
       const verses = createVerses(verseCount);
       const buffer = buildVerseGeometry(verses);
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const verticesPerQuad = 6;
       expect(buffer.length).toBe(verseCount * verticesPerQuad * floatsPerVertex);
     });
 
-    it('each vertex has 17 floats (x, y, 4 colors of 3 channels, colorCount, u, v)', () => {
+    it('each vertex has 19 floats (x, y, 4 colors of 3 channels, colorCount, u, v, seedX, seedY)', () => {
       const verses = [createVerse()];
       const buffer = buildVerseGeometry(verses);
-      // Structure: x(1) + y(1) + color1(3) + color2(3) + color3(3) + color4(3) + colorCount(1) + u(1) + v(1) = 17
-      const floatsPerVertex = 17;
+      // Structure: x(1) + y(1) + color1(3) + color2(3) + color3(3) + color4(3) + colorCount(1) + u(1) + v(1) + seedX(1) + seedY(1) = 19
+      const floatsPerVertex = 19;
       expect(buffer.length % floatsPerVertex).toBe(0);
     });
   });
@@ -81,7 +81,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ x: 100, y: 200, size: 10 });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       // Second vertex (top-right): x should be x + size - 2
       const expectedX = 100 + 10 - 2; // 108
       expect(buffer[floatsPerVertex]).toBe(expectedX);
@@ -92,7 +92,7 @@ describe('buildVerseGeometry', () => {
       const verse2 = createVerse({ x: 10, y: 10, size: 12 });
       const buffer = buildVerseGeometry([verse1, verse2]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
 
       // Verse 1: size 6, so width/height = 4 (6-2)
@@ -116,7 +116,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ x: 10, y: 20, size: 8 });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const x0 = 10, y0 = 20;
       const x1 = 10 + 8 - 2, y1 = 20 + 8 - 2;
 
@@ -137,7 +137,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ x: 10, y: 20, size: 8 });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const x0 = 10, y0 = 20;
       const x1 = 10 + 8 - 2, y1 = 20 + 8 - 2;
 
@@ -158,7 +158,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ x: 0, y: 0, size: 10 });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const corners = [];
       for (let i = 0; i < 6; i++) {
         corners.push({
@@ -178,7 +178,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ color: TEST_COLORS.RED });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       // Color starts at index 2 (after x, y)
       const colorOffset = 2;
 
@@ -214,7 +214,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ color: TEST_COLORS.BLUE });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const colorOffset = 2;
 
       // Color 1: blue
@@ -235,7 +235,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ color: TEST_COLORS.GREEN });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const colorCountOffset = 14; // After x, y, and 4 colors (2 + 12)
       expect(buffer[colorCountOffset]).toBe(1);
     });
@@ -244,7 +244,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ color: TEST_COLORS.RED });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const colorOffset = 2;
 
       // Check all 6 vertices have the same color
@@ -348,7 +348,7 @@ describe('buildVerseGeometry', () => {
       ];
       const buffer = buildVerseGeometry(verses);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
       const colorCountOffset = 14;
 
@@ -368,7 +368,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse();
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const uvOffset = 15; // After x, y, 4 colors, colorCount
 
       // Vertex 0 (top-left): u=0, v=0
@@ -400,7 +400,7 @@ describe('buildVerseGeometry', () => {
       const verses = createVerses(5);
       const buffer = buildVerseGeometry(verses);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
       const uvOffset = 15;
 
@@ -428,7 +428,7 @@ describe('buildVerseGeometry', () => {
       const verses = createVerses(3);
       const buffer = buildVerseGeometry(verses);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
 
       // Check that each verse quad is properly separated
@@ -459,7 +459,7 @@ describe('buildVerseGeometry', () => {
       const verses = createVerses(5);
       const buffer = buildVerseGeometry(verses);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
 
       for (let v = 0; v < 5 * 6; v++) {
         const offset = v * floatsPerVertex;
@@ -494,7 +494,7 @@ describe('buildVerseGeometry', () => {
 
       expect(buffer[0]).toBe(0);
       expect(buffer[1]).toBe(0);
-      expect(buffer.length).toBe(102);
+      expect(buffer.length).toBe(114);
     });
 
     it('handles verse with negative coordinates', () => {
@@ -517,7 +517,7 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ x: 10, y: 10, size: 2 });
       const buffer = buildVerseGeometry([verse]);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       // With size 2 and -2 gap, width/height should be 0
       expect(buffer[floatsPerVertex]).toBe(10 + 2 - 2); // x1 = x0 + 0
     });
@@ -530,7 +530,7 @@ describe('buildVerseGeometry', () => {
       ];
       const buffer = buildVerseGeometry(verses);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
       const colorCountOffset = 14;
 
@@ -580,7 +580,7 @@ describe('buildVerseGeometry', () => {
       ];
       const buffer = buildVerseGeometry(verses);
 
-      const floatsPerVertex = 17;
+      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
 
       // Check each verse maintains its properties
@@ -598,7 +598,7 @@ describe('buildVerseGeometry', () => {
       for (const count of [1, 10, 50, 100]) {
         const verses = createVerses(count);
         const buffer = buildVerseGeometry(verses);
-        expect(buffer.length).toBe(count * 6 * 17);
+        expect(buffer.length).toBe(count * 6 * 19);
       }
     });
   });
