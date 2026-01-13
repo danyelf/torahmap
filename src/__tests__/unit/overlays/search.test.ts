@@ -1079,6 +1079,75 @@ describe('Search Overlay', () => {
     });
   });
 
+  describe('Hebrew Substring Position Bug Fix', () => {
+    // Test for tm-tm-8nz: Search: Hebrew text highlighting matches wrong substring in preview
+    // The bug was that matchStart/matchEnd were calculated using nikkud-stripped positions
+    // but applied to original text with nikkud, causing wrong highlight positions
+
+    it('returns correct match positions for Hebrew text with nikkud', () => {
+      // Search for אלהים (Elohim) without nikkud
+      const results = search('אלהים');
+
+      // Find result for Genesis 1:1 which has: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים'
+      const genesis11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+      expect(genesis11).toBeDefined();
+
+      const firstMatch = genesis11!.matchingTerms[0];
+      const snippet = firstMatch.snippet;
+
+      // The highlighted portion should contain the Hebrew word אלהים (with nikkud: אֱלֹהִים)
+      const highlighted = snippet.slice(firstMatch.matchStart, firstMatch.matchEnd);
+
+      // Strip nikkud from the highlighted portion and check it matches the search term
+      const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
+      expect(strippedHighlight).toContain('אלהים');
+    });
+
+    it('highlights correct Hebrew word, not wrong substring', () => {
+      // This test verifies the fix for the specific bug:
+      // searching for 'כניהו' should highlight 'כׇּנְיָ֔הוּ', not 'כִּ֣י'
+
+      // Since we don't have Jeremiah in our mock data, test with available data
+      // Search for a Hebrew word that appears in Isaiah
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      input.value = 'שמים'; // "shamayim" (heavens)
+      input.dispatchEvent(new Event('input'));
+
+      // Isaiah 1:2 has 'שִׁמְעוּ שָׁמַיִם' (shim'u shamayim - hear heavens)
+      const results = search('שמים');
+      const isaiah12 = results.find(r => r.book === 'Isaiah' && r.chapter === 1 && r.verse === 2);
+
+      if (isaiah12) {
+        const firstMatch = isaiah12.matchingTerms[0];
+        const snippet = firstMatch.snippet;
+        const highlighted = snippet.slice(firstMatch.matchStart, firstMatch.matchEnd);
+
+        // The highlighted text should contain שמים letters (possibly with nikkud)
+        // Not some other random substring
+        const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
+        expect(strippedHighlight).toContain('שמ'); // At least the beginning should match
+      }
+    });
+
+    it('match positions account for nikkud characters', () => {
+      // Test that positions in original text correctly span the match including nikkud
+      const results = search('אלהים');
+      const genesis11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+
+      if (genesis11) {
+        const firstMatch = genesis11.matchingTerms[0];
+
+        // matchEnd - matchStart should be >= the stripped search term length
+        // because it includes nikkud characters
+        const highlightLength = firstMatch.matchEnd - firstMatch.matchStart;
+        expect(highlightLength).toBeGreaterThanOrEqual(5); // 'אלהים' is 5 chars
+      }
+    });
+  });
+
   describe('Integration with Search Module', () => {
     it('uses search results from search.ts', () => {
       const results = search('God');

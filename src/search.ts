@@ -287,7 +287,7 @@ export function search(query: string): SearchResult[] {
 
       if (idx !== -1) {
         const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
-        const snippet = createSnippet(original, idx, normalizedTerm.length);
+        const snippet = createSnippet(original, idx, normalizedTerm.length, isHebrew);
 
         let result = resultMap.get(key);
         if (!result) {
@@ -324,13 +324,62 @@ interface SnippetResult {
 }
 
 /**
- * Create a snippet around the match position
+ * Map a position in nikkud-stripped text to the corresponding position in original text
  */
-function createSnippet(text: string, matchIdx: number, matchLen: number): SnippetResult {
+function mapStrippedToOriginal(original: string, strippedPos: number): number {
+  let normalizedPos = 0;
+  for (let i = 0; i < original.length; i++) {
+    if (normalizedPos === strippedPos) {
+      return i;
+    }
+    const code = original.charCodeAt(i);
+    const isNikkud = code >= NIKKUD_START && code <= NIKKUD_END &&
+                     code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+    if (!isNikkud) {
+      normalizedPos++;
+    }
+  }
+  return original.length;
+}
+
+/**
+ * Count nikkud characters in a range of the original text
+ */
+function countNikkudInRange(text: string, start: number, strippedLen: number): number {
+  let nikkudCount = 0;
+  let nonNikkudCount = 0;
+  for (let i = start; i < text.length && nonNikkudCount < strippedLen; i++) {
+    const code = text.charCodeAt(i);
+    const isNikkud = code >= NIKKUD_START && code <= NIKKUD_END &&
+                     code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+    if (isNikkud) {
+      nikkudCount++;
+    } else {
+      nonNikkudCount++;
+    }
+  }
+  return nikkudCount;
+}
+
+/**
+ * Create a snippet around the match position
+ * For Hebrew, matchIdx/matchLen refer to positions in the nikkud-stripped text
+ */
+function createSnippet(text: string, matchIdx: number, matchLen: number, isHebrew: boolean = false): SnippetResult {
   const maxLen = 60;
   const contextBefore = 20;
 
-  let start = Math.max(0, matchIdx - contextBefore);
+  // For Hebrew, map stripped positions to original positions
+  let origMatchStart = matchIdx;
+  let origMatchEnd = matchIdx + matchLen;
+
+  if (isHebrew) {
+    origMatchStart = mapStrippedToOriginal(text, matchIdx);
+    const nikkudInMatch = countNikkudInRange(text, origMatchStart, matchLen);
+    origMatchEnd = origMatchStart + matchLen + nikkudInMatch;
+  }
+
+  let start = Math.max(0, origMatchStart - contextBefore);
   let end = Math.min(text.length, start + maxLen);
 
   // Adjust start if we're near the end
@@ -339,12 +388,14 @@ function createSnippet(text: string, matchIdx: number, matchLen: number): Snippe
   }
 
   let snippet = text.slice(start, end);
-  const adjustedMatchStart = matchIdx - start;
-  const adjustedMatchEnd = adjustedMatchStart + matchLen;
+  const adjustedMatchStart = origMatchStart - start;
+  const adjustedMatchEnd = origMatchEnd - start;
 
   // Add ellipsis if truncated
+  let prefixLen = 0;
   if (start > 0) {
     snippet = '...' + snippet;
+    prefixLen = 3;
   }
   if (end < text.length) {
     snippet = snippet + '...';
@@ -352,8 +403,8 @@ function createSnippet(text: string, matchIdx: number, matchLen: number): Snippe
 
   return {
     text: snippet,
-    matchStart: start > 0 ? adjustedMatchStart + 3 : adjustedMatchStart,
-    matchEnd: start > 0 ? adjustedMatchEnd + 3 : adjustedMatchEnd,
+    matchStart: adjustedMatchStart + prefixLen,
+    matchEnd: Math.min(adjustedMatchEnd + prefixLen, snippet.length),
   };
 }
 
