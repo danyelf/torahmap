@@ -124,7 +124,8 @@ let updateCallback: (() => void) | null = null;
 
 // Lookup indexes (built once on init, rebuilt on custom change)
 let torahVerseToParsha: Map<string, ParshaData> = new Map();
-let haftarahVerseToParsha: Map<string, ParshaData> = new Map();
+// Haftarah verses can belong to multiple parshiot (e.g., Hosea 14, Isaiah 54)
+let haftarahVerseToParsha: Map<string, ParshaData[]> = new Map();
 let isTorahVerse: Set<string> = new Set();
 let isHaftarahVerse: Set<string> = new Set();
 let parshaToColor: Map<ParshaData, Color> = new Map();
@@ -180,11 +181,17 @@ function buildIndexes(): void {
     });
 
     // Index haftarah verses for current custom
+    // A verse can belong to multiple parshiot, so we accumulate into an array
     const haftarahRanges = parsha.haftarah[currentCustom];
     for (const range of haftarahRanges) {
       forEachVerseInRange(range, (book, ch, v) => {
         const key = getVerseKey(book, ch, v);
-        haftarahVerseToParsha.set(key, parsha);
+        const existing = haftarahVerseToParsha.get(key);
+        if (existing) {
+          existing.push(parsha);
+        } else {
+          haftarahVerseToParsha.set(key, [parsha]);
+        }
         isHaftarahVerse.add(key);
       });
     }
@@ -262,42 +269,74 @@ export const haftarahOverlay: Overlay = {
     return wasRelevant || isRelevant;
   },
 
-  getVerseColor(verse: Verse): Color | null {
+  getVerseColor(verse: Verse): Color | Color[] | null {
     if (!data) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
 
-    // Get the base parsha and color for this verse
+    // Get the parsha(s) for this verse
     const parshaFromTorah = torahVerseToParsha.get(key);
-    const parshaFromHaftarah = haftarahVerseToParsha.get(key);
-    const parsha = parshaFromTorah || parshaFromHaftarah;
+    const parshiotFromHaftarah = haftarahVerseToParsha.get(key);
 
-    if (!parsha) {
-      // Verse is not part of any Torah portion or haftarah
-      return null;
+    // Torah verses belong to exactly one parsha
+    if (parshaFromTorah) {
+      const baseColor = parshaToColor.get(parshaFromTorah);
+      if (!baseColor) return null;
+
+      if (!hoveredVerse) {
+        return baseColor;
+      }
+
+      // Check if hovered verse belongs to the same parsha
+      const hoverKey = getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
+      const hoveredParshaTorah = torahVerseToParsha.get(hoverKey);
+      const hoveredParshiotHaftarah = haftarahVerseToParsha.get(hoverKey);
+
+      const isHoveredParsha =
+        hoveredParshaTorah === parshaFromTorah ||
+        (hoveredParshiotHaftarah && hoveredParshiotHaftarah.includes(parshaFromTorah));
+
+      if (isHoveredParsha) {
+        return adjustBrightness(baseColor, BRIGHTNESS_FACTOR);
+      }
+      return desaturate(baseColor, DESATURATE_FACTOR);
     }
 
-    const baseColor = parshaToColor.get(parsha);
-    if (!baseColor) return null;
+    // Haftarah verses can belong to multiple parshiot
+    if (parshiotFromHaftarah && parshiotFromHaftarah.length > 0) {
+      // Get colors for all parshiot this verse belongs to
+      const colors = parshiotFromHaftarah
+        .map((p) => parshaToColor.get(p))
+        .filter((c): c is Color => c !== undefined);
 
-    // If not hovering, return base color
-    if (!hoveredVerse) {
-      return baseColor;
+      if (colors.length === 0) return null;
+
+      if (!hoveredVerse) {
+        // Return multiple colors for stipple effect, or single color
+        return colors.length === 1 ? colors[0] : colors;
+      }
+
+      // Check if hovered verse shares any parsha with this verse
+      const hoverKey = getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
+      const hoveredParshaTorah = torahVerseToParsha.get(hoverKey);
+      const hoveredParshiotHaftarah = haftarahVerseToParsha.get(hoverKey);
+
+      const isHoveredParsha =
+        (hoveredParshaTorah && parshiotFromHaftarah.includes(hoveredParshaTorah)) ||
+        (hoveredParshiotHaftarah &&
+          hoveredParshiotHaftarah.some((hp) => parshiotFromHaftarah.includes(hp)));
+
+      if (isHoveredParsha) {
+        const brightColors = colors.map((c) => adjustBrightness(c, BRIGHTNESS_FACTOR));
+        return brightColors.length === 1 ? brightColors[0] : brightColors;
+      }
+
+      const desatColors = colors.map((c) => desaturate(c, DESATURATE_FACTOR));
+      return desatColors.length === 1 ? desatColors[0] : desatColors;
     }
 
-    // Determine which parsha is being hovered
-    const hoverKey = getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
-    const hoveredParshaTorah = torahVerseToParsha.get(hoverKey);
-    const hoveredParshaHaftarah = haftarahVerseToParsha.get(hoverKey);
-    const hoveredParsha = hoveredParshaTorah || hoveredParshaHaftarah;
-
-    // Brighten if this verse belongs to the same parsha as the hovered verse
-    if (hoveredParsha && hoveredParsha === parsha) {
-      return adjustBrightness(baseColor, BRIGHTNESS_FACTOR);
-    }
-
-    // Desaturate all other verses
-    return desaturate(baseColor, DESATURATE_FACTOR);
+    // Verse is not part of any Torah portion or haftarah
+    return null;
   },
 
   renderControls(container: HTMLElement) {
@@ -351,6 +390,9 @@ export const haftarahOverlay: Overlay = {
       <div style="color: #888; font-size: 10px; margin-top: 4px; margin-left: 28px; line-height: 1.3;">
         Torah portion & haftarah (${customLabel}) use same color
       </div>
+      <div style="color: #888; font-size: 10px; margin-top: 4px; margin-left: 28px; line-height: 1.3;">
+        Multi-parsha verses show stippled pattern
+      </div>
       <div style="color: #666; font-size: 10px; margin-top: 8px; line-height: 1.4;">
         Hover brightens the parsha & its haftarah, desaturates others
       </div>
@@ -376,9 +418,17 @@ export const haftarahOverlay: Overlay = {
       return `${parshaFromTorah.name} (${parshaFromTorah.hebrewName}) → ${haftarahStr}`;
     }
 
-    const parshaFromHaftarah = haftarahVerseToParsha.get(key);
-    if (parshaFromHaftarah) {
-      return `Haftarah for ${parshaFromHaftarah.name} (${parshaFromHaftarah.hebrewName})`;
+    const parshiotFromHaftarah = haftarahVerseToParsha.get(key);
+    if (parshiotFromHaftarah && parshiotFromHaftarah.length > 0) {
+      if (parshiotFromHaftarah.length === 1) {
+        const parsha = parshiotFromHaftarah[0];
+        return `Haftarah for ${parsha.name} (${parsha.hebrewName})`;
+      }
+      // Multiple parshiot - list them all
+      const parshaList = parshiotFromHaftarah
+        .map((p) => `${p.name} (${p.hebrewName})`)
+        .join(', ');
+      return `Haftarah for multiple parshiot: ${parshaList}`;
     }
 
     return null;
