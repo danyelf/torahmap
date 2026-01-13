@@ -256,13 +256,28 @@ export function search(query: string): SearchResult[] {
 
             // Only add if this term hasn't matched this verse yet
             if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
-              // Create a snippet showing the original text
-              result.matchingTerms.push({
-                termIndex,
-                snippet: entry.hebrewOriginal.slice(0, 60),
-                matchStart: 0,
-                matchEnd: 0,
-              });
+              // Find position of search term in verse text for highlighting
+              const normalizedTerm = stripNikkud(terms[termIndex]);
+              const idx = entry.hebrewText.indexOf(normalizedTerm);
+
+              if (idx !== -1) {
+                // Use createSnippet for consistent position mapping
+                const snippet = createSnippet(entry.hebrewOriginal, idx, normalizedTerm.length, true);
+                result.matchingTerms.push({
+                  termIndex,
+                  snippet: snippet.text,
+                  matchStart: snippet.matchStart,
+                  matchEnd: snippet.matchEnd,
+                });
+              } else {
+                // Fallback: term not found as substring (lemma matches different form)
+                result.matchingTerms.push({
+                  termIndex,
+                  snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
+                  matchStart: 0,
+                  matchEnd: 0,
+                });
+              }
             }
           }
         }
