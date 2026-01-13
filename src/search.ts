@@ -202,6 +202,64 @@ function searchByLemmas(lemmas: string[]): Set<string> {
 }
 
 /**
+ * Find the word index in a verse where a lemma appears
+ * Returns -1 if not found
+ */
+function findWordIndexByLemma(verseKey: string, lemmas: string[]): number {
+  if (!verseLemmas) return -1;
+
+  const verseLemmasList = verseLemmas[verseKey];
+  if (!verseLemmasList) return -1;
+
+  // Find the first word index that has one of our lemmas
+  for (let i = 0; i < verseLemmasList.length; i++) {
+    if (lemmas.includes(verseLemmasList[i])) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+/**
+ * Get the start and end positions of a word at a given index in the text
+ * Words are separated by whitespace
+ * Exported for testing
+ */
+export function getWordBoundaries(text: string, wordIndex: number): { start: number; end: number } | null {
+  let currentWord = 0;
+  let start = 0;
+
+  // Skip leading whitespace
+  while (start < text.length && /\s/.test(text[start])) {
+    start++;
+  }
+
+  // Find the word at the given index
+  while (currentWord < wordIndex && start < text.length) {
+    // Skip current word
+    while (start < text.length && !/\s/.test(text[start])) {
+      start++;
+    }
+    // Skip whitespace to next word
+    while (start < text.length && /\s/.test(text[start])) {
+      start++;
+    }
+    currentWord++;
+  }
+
+  if (start >= text.length) return null;
+
+  // Find end of this word
+  let end = start;
+  while (end < text.length && !/\s/.test(text[end])) {
+    end++;
+  }
+
+  return { start, end };
+}
+
+/**
  * Search for verses matching any of the comma-separated terms
  * Returns ALL matching verses with info about which terms matched
  *
@@ -256,13 +314,14 @@ export function search(query: string): SearchResult[] {
 
             // Only add if this term hasn't matched this verse yet
             if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
-              // Find position of search term in verse text for highlighting
-              const normalizedTerm = stripNikkud(terms[termIndex]);
-              const idx = entry.hebrewText.indexOf(normalizedTerm);
+              // Find the word that matched via lemma lookup
+              const wordIndex = findWordIndexByLemma(verseKey, lemmas);
+              const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
 
-              if (idx !== -1) {
-                // Use createSnippet for consistent position mapping
-                const snippet = createSnippet(entry.hebrewOriginal, idx, normalizedTerm.length, true);
+              if (wordBounds) {
+                // Highlight the matched word
+                const wordLen = wordBounds.end - wordBounds.start;
+                const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
                 result.matchingTerms.push({
                   termIndex,
                   snippet: snippet.text,
@@ -270,13 +329,27 @@ export function search(query: string): SearchResult[] {
                   matchEnd: snippet.matchEnd,
                 });
               } else {
-                // Fallback: term not found as substring (lemma matches different form)
-                result.matchingTerms.push({
-                  termIndex,
-                  snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
-                  matchStart: 0,
-                  matchEnd: 0,
-                });
+                // Fallback: try substring match
+                const normalizedTerm = stripNikkud(terms[termIndex]);
+                const idx = entry.hebrewText.indexOf(normalizedTerm);
+
+                if (idx !== -1) {
+                  const snippet = createSnippet(entry.hebrewOriginal, idx, normalizedTerm.length, true);
+                  result.matchingTerms.push({
+                    termIndex,
+                    snippet: snippet.text,
+                    matchStart: snippet.matchStart,
+                    matchEnd: snippet.matchEnd,
+                  });
+                } else {
+                  // Last resort: no highlighting
+                  result.matchingTerms.push({
+                    termIndex,
+                    snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
+                    matchStart: 0,
+                    matchEnd: 0,
+                  });
+                }
               }
             }
           }
@@ -336,6 +409,45 @@ interface SnippetResult {
   text: string;
   matchStart: number;
   matchEnd: number;
+}
+
+/**
+ * Create a snippet around a match when we already have positions in the original text
+ * (no nikkud mapping needed - used for lemma-based word highlighting)
+ */
+function createSnippetAtPosition(text: string, matchStart: number, matchLen: number): SnippetResult {
+  const maxLen = 60;
+  const contextBefore = 20;
+
+  const matchEnd = matchStart + matchLen;
+
+  let start = Math.max(0, matchStart - contextBefore);
+  let end = Math.min(text.length, start + maxLen);
+
+  // Adjust start if we're near the end
+  if (end === text.length && end - start < maxLen) {
+    start = Math.max(0, end - maxLen);
+  }
+
+  let snippet = text.slice(start, end);
+  const adjustedMatchStart = matchStart - start;
+  const adjustedMatchEnd = matchEnd - start;
+
+  // Add ellipsis if truncated
+  let prefixLen = 0;
+  if (start > 0) {
+    snippet = '...' + snippet;
+    prefixLen = 3;
+  }
+  if (end < text.length) {
+    snippet = snippet + '...';
+  }
+
+  return {
+    text: snippet,
+    matchStart: adjustedMatchStart + prefixLen,
+    matchEnd: Math.min(adjustedMatchEnd + prefixLen, snippet.length),
+  };
 }
 
 /**

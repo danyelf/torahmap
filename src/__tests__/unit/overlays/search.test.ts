@@ -1,6 +1,7 @@
 // Tests for search overlay - verse highlighting based on search results, color computation
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchOverlay, configure, highlightSearchTerms } from '../../../overlays/search';
+import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
@@ -1197,6 +1198,56 @@ describe('Search Overlay', () => {
     it('filters out short terms', () => {
       const terms = parseSearchTerms('a, God, b, earth');
       expect(terms).toEqual(['God', 'earth']);
+    });
+  });
+
+  describe('getWordBoundaries', () => {
+    it('returns correct boundaries for first word', () => {
+      const result = getWordBoundaries('hello world', 0);
+      expect(result).toEqual({ start: 0, end: 5 });
+    });
+
+    it('returns correct boundaries for second word', () => {
+      const result = getWordBoundaries('hello world', 1);
+      expect(result).toEqual({ start: 6, end: 11 });
+    });
+
+    it('handles Hebrew text with nikkud', () => {
+      const text = 'בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים';
+      const result = getWordBoundaries(text, 2);
+      expect(result).not.toBeNull();
+      // Third word should be אֱלֹהִ֑ים
+      const word = text.slice(result!.start, result!.end);
+      expect(word).toBe('אֱלֹהִ֑ים');
+    });
+
+    it('handles multiple spaces between words', () => {
+      const result = getWordBoundaries('hello   world', 1);
+      expect(result).toEqual({ start: 8, end: 13 });
+    });
+
+    it('returns null for out of bounds index', () => {
+      const result = getWordBoundaries('hello world', 5);
+      expect(result).toBeNull();
+    });
+
+    it('handles leading whitespace', () => {
+      const result = getWordBoundaries('  hello world', 0);
+      expect(result).toEqual({ start: 2, end: 7 });
+    });
+
+    it('handles single word text', () => {
+      const result = getWordBoundaries('hello', 0);
+      expect(result).toEqual({ start: 0, end: 5 });
+    });
+
+    it('handles Hebrew verse with sof pasuk', () => {
+      const text = 'אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
+      // Get first word
+      const result = getWordBoundaries(text, 0);
+      expect(result).not.toBeNull();
+      const word = text.slice(result!.start, result!.end);
+      expect(word).toBe('אֵ֥ת');
     });
   });
 });
