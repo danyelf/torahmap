@@ -6,7 +6,6 @@ import {
   verseToUrlFormat,
   parseVerseFromUrl,
   debounce,
-  getCurrentUrl,
   subscribeToHashChange,
   type UrlState,
 } from '../../urlState';
@@ -711,20 +710,6 @@ describe('debounce', () => {
     vi.advanceTimersByTime(100);
     expect(fn).toHaveBeenCalledWith('third');
     expect(fn).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('getCurrentUrl', () => {
-  it('returns current window location href', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=trop');
-    const url = getCurrentUrl();
-    expect(url).toBe('http://localhost:5173/#overlay=trop');
-  });
-
-  it('includes pathname and search params', () => {
-    mockWindowLocation('http://localhost:5173/index.html?debug=true#verse=Genesis.1.1');
-    const url = getCurrentUrl();
-    expect(url).toBe('http://localhost:5173/index.html?debug=true#verse=Genesis.1.1');
   });
 });
 

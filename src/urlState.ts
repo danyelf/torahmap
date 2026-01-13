@@ -201,9 +201,3 @@ export function debounce<T extends (...args: unknown[]) => void>(
   };
 }
 
-/**
- * Get the current full URL (for Copy Link functionality)
- */
-export function getCurrentUrl(): string {
-  return window.location.href;
-}
