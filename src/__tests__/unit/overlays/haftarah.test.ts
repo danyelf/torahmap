@@ -402,4 +402,104 @@ describe('Haftarah Overlay', () => {
       expect(color).toBeNull();
     });
   });
+
+  describe('Hover State (setHoveredVerse)', () => {
+    beforeEach(async () => {
+      await haftarahOverlay.init?.();
+    });
+
+    it('returns true when hovering relevant verse from null', () => {
+      const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      const shouldRerender = haftarahOverlay.setHoveredVerse?.(torahVerse);
+
+      expect(shouldRerender).toBe(true);
+    });
+
+    it('returns true when clearing hover from relevant verse', () => {
+      const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      haftarahOverlay.setHoveredVerse?.(torahVerse);
+
+      const shouldRerender = haftarahOverlay.setHoveredVerse?.(null);
+
+      expect(shouldRerender).toBe(true);
+    });
+
+    it('returns false when moving between non-relevant verses', () => {
+      const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
+      const ruthVerse = createVerse({ book: 'Ruth', chapter: 1, verse: 1 });
+
+      haftarahOverlay.setHoveredVerse?.(psalmsVerse);
+      const shouldRerender = haftarahOverlay.setHoveredVerse?.(ruthVerse);
+
+      expect(shouldRerender).toBe(false);
+    });
+
+    it('returns true when moving from relevant to non-relevant verse', () => {
+      const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
+
+      haftarahOverlay.setHoveredVerse?.(torahVerse);
+      const shouldRerender = haftarahOverlay.setHoveredVerse?.(psalmsVerse);
+
+      expect(shouldRerender).toBe(true);
+    });
+
+    it('returns false when clearing hover after non-relevant verse (bug fix)', () => {
+      // This tests the bug where dimmed state persisted after mouse left canvas
+      const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
+
+      // Hover relevant verse (causes dimming)
+      haftarahOverlay.setHoveredVerse?.(torahVerse);
+      // Move to non-relevant verse
+      haftarahOverlay.setHoveredVerse?.(psalmsVerse);
+      // Move off canvas (null)
+      const shouldRerender = haftarahOverlay.setHoveredVerse?.(null);
+
+      // Should return false because hover is already effectively cleared
+      // (non-relevant verses are treated as null)
+      expect(shouldRerender).toBe(false);
+    });
+
+    it('restores base colors after hovering non-relevant verse', () => {
+      const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
+
+      // Get base color (no hover)
+      const baseColor = haftarahOverlay.getVerseColor(torahVerse);
+
+      // Hover relevant verse, then non-relevant verse
+      haftarahOverlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.setHoveredVerse?.(psalmsVerse);
+
+      // After moving to non-relevant verse, should see base color (not desaturated)
+      const colorAfterNonRelevant = haftarahOverlay.getVerseColor(torahVerse);
+
+      expect(colorAfterNonRelevant).toEqual(baseColor);
+    });
+
+    it('brightens hovered relevant verse and its related verses', () => {
+      const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      const otherParsha = createVerse({ book: 'Genesis', chapter: 7, verse: 1 }); // Noach
+
+      // Get base colors
+      const baseTorahColor = haftarahOverlay.getVerseColor(torahVerse) as [number, number, number];
+      const baseOtherColor = haftarahOverlay.getVerseColor(otherParsha) as [number, number, number];
+
+      // Hover the torah verse
+      haftarahOverlay.setHoveredVerse?.(torahVerse);
+
+      const hoveredColor = haftarahOverlay.getVerseColor(torahVerse) as [number, number, number];
+      const otherColor = haftarahOverlay.getVerseColor(otherParsha) as [number, number, number];
+
+      // Hovered verse should be brighter
+      const hoveredBrightness = hoveredColor[0] + hoveredColor[1] + hoveredColor[2];
+      const baseBrightness = baseTorahColor[0] + baseTorahColor[1] + baseTorahColor[2];
+      expect(hoveredBrightness).toBeGreaterThan(baseBrightness);
+
+      // Other verse should be desaturated (lower saturation, similar lightness)
+      // We can verify it's different from base
+      expect(otherColor).not.toEqual(baseOtherColor);
+    });
+  });
 });

@@ -294,25 +294,29 @@ export const haftarahOverlay: Overlay = {
     const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse) : false;
     const isRelevant = verse ? isRelevantVerse(verse) : false;
 
+    // Only track relevant verses; treat non-relevant verses as empty space (null)
+    // This prevents non-relevant verses from causing all relevant verses to be desaturated
+    const effectiveVerse = isRelevant ? verse : null;
+
     // Quick check: if neither was nor is a relevant verse, no change needed
     if (!wasRelevant && !isRelevant) {
-      hoveredVerse = verse;
+      hoveredVerse = null;
       return false;
     }
 
     const oldKey = hoveredVerse
       ? getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse)
       : null;
-    const newKey = verse
-      ? getVerseKey(verse.book, verse.chapter, verse.verse)
+    const newKey = effectiveVerse
+      ? getVerseKey(effectiveVerse.book, effectiveVerse.chapter, effectiveVerse.verse)
       : null;
 
-    // If same verse, no change needed
+    // If same effective verse, no change needed
     if (oldKey === newKey) {
       return false;
     }
 
-    hoveredVerse = verse;
+    hoveredVerse = effectiveVerse;
 
     // Re-render if either old or new hover is relevant
     return wasRelevant || isRelevant;
