@@ -2421,5 +2421,953 @@
         ]
       }
     }
+  ],
+  "specialOccasions": [
+    {
+      "name": "Shabbat Rosh Chodesh",
+      "hebrewName": "שבת ראש חודש",
+      "category": "rosh-chodesh",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 66,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 66,
+              "verse": 24
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 66,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 66,
+              "verse": 24
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat Machar Chodesh",
+      "hebrewName": "שבת מחר חודש",
+      "category": "rosh-chodesh",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 20,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 20,
+              "verse": 42
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 20,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 20,
+              "verse": 42
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat Shekalim",
+      "hebrewName": "שבת שקלים",
+      "category": "four-shabbatot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 12,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 12,
+              "verse": 17
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 11,
+              "verse": 17
+            },
+            "end": {
+              "chapter": 12,
+              "verse": 17
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat Zachor",
+      "hebrewName": "שבת זכור",
+      "category": "four-shabbatot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 15,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 15,
+              "verse": 34
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 15,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 15,
+              "verse": 34
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat Parah",
+      "hebrewName": "שבת פרה",
+      "category": "four-shabbatot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 36,
+              "verse": 16
+            },
+            "end": {
+              "chapter": 36,
+              "verse": 38
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 36,
+              "verse": 16
+            },
+            "end": {
+              "chapter": 36,
+              "verse": 36
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat HaChodesh",
+      "hebrewName": "שבת החודש",
+      "category": "four-shabbatot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 45,
+              "verse": 16
+            },
+            "end": {
+              "chapter": 46,
+              "verse": 18
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 45,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 46,
+              "verse": 15
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Rosh Hashanah Day 1",
+      "hebrewName": "ראש השנה יום א׳",
+      "category": "high-holidays",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 10
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Samuel",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 10
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Rosh Hashanah Day 2",
+      "hebrewName": "ראש השנה יום ב׳",
+      "category": "high-holidays",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 31,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 31,
+              "verse": 20
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 31,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 31,
+              "verse": 20
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Yom Kippur Shacharit",
+      "hebrewName": "יום כיפור שחרית",
+      "category": "high-holidays",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 57,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 58,
+              "verse": 14
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 57,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 58,
+              "verse": 14
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Yom Kippur Mincha",
+      "hebrewName": "יום כיפור מנחה",
+      "category": "high-holidays",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jonah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 11
+            }
+          },
+          {
+            "book": "Micah",
+            "start": {
+              "chapter": 7,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 20
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jonah",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 11
+            }
+          },
+          {
+            "book": "Micah",
+            "start": {
+              "chapter": 7,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 20
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Sukkot Day 1",
+      "hebrewName": "סוכות יום א׳",
+      "category": "sukkot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Zechariah",
+            "start": {
+              "chapter": 14,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 14,
+              "verse": 21
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Zechariah",
+            "start": {
+              "chapter": 14,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 14,
+              "verse": 21
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Sukkot Day 2",
+      "hebrewName": "סוכות יום ב׳",
+      "category": "sukkot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 8,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 8,
+              "verse": 21
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 8,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 8,
+              "verse": 21
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Sukkot Chol HaMoed Shabbat",
+      "hebrewName": "שבת חול המועד סוכות",
+      "category": "sukkot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 38,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 39,
+              "verse": 16
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 38,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 39,
+              "verse": 16
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shemini Atzeret",
+      "hebrewName": "שמיני עצרת",
+      "category": "sukkot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 8,
+              "verse": 54
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 1
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 8,
+              "verse": 54
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Simchat Torah",
+      "hebrewName": "שמחת תורה",
+      "category": "sukkot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 18
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 18
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pesach Day 1",
+      "hebrewName": "פסח יום א׳",
+      "category": "pesach",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 5,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 1
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 5,
+              "verse": 2
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 27
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pesach Day 2",
+      "hebrewName": "פסח יום ב׳",
+      "category": "pesach",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 23,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 23,
+              "verse": 9
+            }
+          },
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 23,
+              "verse": 21
+            },
+            "end": {
+              "chapter": 23,
+              "verse": 25
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 23,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 23,
+              "verse": 9
+            }
+          },
+          {
+            "book": "II Kings",
+            "start": {
+              "chapter": 23,
+              "verse": 21
+            },
+            "end": {
+              "chapter": 23,
+              "verse": 25
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pesach Chol HaMoed Shabbat",
+      "hebrewName": "שבת חול המועד פסח",
+      "category": "pesach",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 37,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 37,
+              "verse": 14
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 37,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 37,
+              "verse": 14
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pesach Day 7",
+      "hebrewName": "פסח יום ז׳",
+      "category": "pesach",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "II Samuel",
+            "start": {
+              "chapter": 22,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 22,
+              "verse": 51
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "II Samuel",
+            "start": {
+              "chapter": 22,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 22,
+              "verse": 51
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Pesach Day 8",
+      "hebrewName": "פסח יום ח׳",
+      "category": "pesach",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 10,
+              "verse": 32
+            },
+            "end": {
+              "chapter": 12,
+              "verse": 6
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 10,
+              "verse": 32
+            },
+            "end": {
+              "chapter": 12,
+              "verse": 6
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shavuot Day 1",
+      "hebrewName": "שבועות יום א׳",
+      "category": "shavuot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 28
+            }
+          },
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 3,
+              "verse": 12
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 12
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 1,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 1,
+              "verse": 28
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shavuot Day 2",
+      "hebrewName": "שבועות יום ב׳",
+      "category": "shavuot",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Habakkuk",
+            "start": {
+              "chapter": 3,
+              "verse": 1
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 19
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Habakkuk",
+            "start": {
+              "chapter": 2,
+              "verse": 20
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 19
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tisha B'Av Shacharit",
+      "hebrewName": "תשעה באב שחרית",
+      "category": "fast-days",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 8,
+              "verse": 13
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 23
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 8,
+              "verse": 13
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 23
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Tisha B'Av Mincha",
+      "hebrewName": "תשעה באב מנחה",
+      "category": "fast-days",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 55,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 56,
+              "verse": 8
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 55,
+              "verse": 6
+            },
+            "end": {
+              "chapter": 56,
+              "verse": 8
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat Chanukah 1",
+      "hebrewName": "שבת חנוכה א׳",
+      "category": "other",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Zechariah",
+            "start": {
+              "chapter": 2,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 7
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Zechariah",
+            "start": {
+              "chapter": 2,
+              "verse": 14
+            },
+            "end": {
+              "chapter": 4,
+              "verse": 7
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat Chanukah 2",
+      "hebrewName": "שבת חנוכה ב׳",
+      "category": "other",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 40
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 50
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "I Kings",
+            "start": {
+              "chapter": 7,
+              "verse": 40
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 50
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shabbat HaGadol",
+      "hebrewName": "שבת הגדול",
+      "category": "other",
+      "haftarah": {
+        "ashkenazi": [
+          {
+            "book": "Malachi",
+            "start": {
+              "chapter": 3,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 24
+            }
+          }
+        ],
+        "sephardi": [
+          {
+            "book": "Malachi",
+            "start": {
+              "chapter": 3,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 24
+            }
+          }
+        ]
+      }
+    }
   ]
 }

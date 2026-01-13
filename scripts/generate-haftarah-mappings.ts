@@ -33,6 +33,17 @@ interface Parsha {
   };
 }
 
+// Special occasions only have haftarah, no Torah reading (Torah is determined by the occasion)
+interface SpecialOccasion {
+  name: string;
+  hebrewName: string;
+  category: 'rosh-chodesh' | 'four-shabbatot' | 'high-holidays' | 'sukkot' | 'pesach' | 'shavuot' | 'fast-days' | 'other';
+  haftarah: {
+    ashkenazi: VerseRange[];
+    sephardi: VerseRange[];
+  };
+}
+
 // Helper to create verse range
 function r(
   book: string,
@@ -553,6 +564,269 @@ const PARSHIOT: Parsha[] = [
   },
 ];
 
+// Special occasions with their haftarot
+// Data compiled from traditional Jewish sources
+const SPECIAL_OCCASIONS: SpecialOccasion[] = [
+  // ROSH CHODESH RELATED
+  {
+    name: "Shabbat Rosh Chodesh",
+    hebrewName: "שבת ראש חודש",
+    category: "rosh-chodesh",
+    haftarah: {
+      ashkenazi: [r1("Isaiah", 66, 1, 24)],
+      sephardi: [r1("Isaiah", 66, 1, 24)],
+    },
+  },
+  {
+    name: "Shabbat Machar Chodesh",
+    hebrewName: "שבת מחר חודש",
+    category: "rosh-chodesh",
+    haftarah: {
+      ashkenazi: [r1("I Samuel", 20, 18, 42)],
+      sephardi: [r1("I Samuel", 20, 18, 42)],
+    },
+  },
+
+  // FOUR SPECIAL SHABBATOT
+  {
+    name: "Shabbat Shekalim",
+    hebrewName: "שבת שקלים",
+    category: "four-shabbatot",
+    haftarah: {
+      ashkenazi: [r1("II Kings", 12, 1, 17)],
+      sephardi: [r("II Kings", 11, 17, 12, 17)],
+    },
+  },
+  {
+    name: "Shabbat Zachor",
+    hebrewName: "שבת זכור",
+    category: "four-shabbatot",
+    haftarah: {
+      ashkenazi: [r1("I Samuel", 15, 2, 34)],
+      sephardi: [r1("I Samuel", 15, 1, 34)],
+    },
+  },
+  {
+    name: "Shabbat Parah",
+    hebrewName: "שבת פרה",
+    category: "four-shabbatot",
+    haftarah: {
+      ashkenazi: [r1("Ezekiel", 36, 16, 38)],
+      sephardi: [r1("Ezekiel", 36, 16, 36)],
+    },
+  },
+  {
+    name: "Shabbat HaChodesh",
+    hebrewName: "שבת החודש",
+    category: "four-shabbatot",
+    haftarah: {
+      ashkenazi: [r("Ezekiel", 45, 16, 46, 18)],
+      sephardi: [r("Ezekiel", 45, 18, 46, 15)],
+    },
+  },
+
+  // HIGH HOLIDAYS
+  {
+    name: "Rosh Hashanah Day 1",
+    hebrewName: "ראש השנה יום א׳",
+    category: "high-holidays",
+    haftarah: {
+      ashkenazi: [r("I Samuel", 1, 1, 2, 10)],
+      sephardi: [r("I Samuel", 1, 1, 2, 10)],
+    },
+  },
+  {
+    name: "Rosh Hashanah Day 2",
+    hebrewName: "ראש השנה יום ב׳",
+    category: "high-holidays",
+    haftarah: {
+      ashkenazi: [r1("Jeremiah", 31, 2, 20)],
+      sephardi: [r1("Jeremiah", 31, 2, 20)],
+    },
+  },
+  {
+    name: "Yom Kippur Shacharit",
+    hebrewName: "יום כיפור שחרית",
+    category: "high-holidays",
+    haftarah: {
+      ashkenazi: [r("Isaiah", 57, 14, 58, 14)],
+      sephardi: [r("Isaiah", 57, 14, 58, 14)],
+    },
+  },
+  {
+    name: "Yom Kippur Mincha",
+    hebrewName: "יום כיפור מנחה",
+    category: "high-holidays",
+    haftarah: {
+      ashkenazi: [r("Jonah", 1, 1, 4, 11), r1("Micah", 7, 18, 20)],
+      sephardi: [r("Jonah", 1, 1, 4, 11), r1("Micah", 7, 18, 20)],
+    },
+  },
+
+  // SUKKOT
+  {
+    name: "Sukkot Day 1",
+    hebrewName: "סוכות יום א׳",
+    category: "sukkot",
+    haftarah: {
+      ashkenazi: [r1("Zechariah", 14, 1, 21)],
+      sephardi: [r1("Zechariah", 14, 1, 21)],
+    },
+  },
+  {
+    name: "Sukkot Day 2",
+    hebrewName: "סוכות יום ב׳",
+    category: "sukkot",
+    haftarah: {
+      ashkenazi: [r1("I Kings", 8, 2, 21)],
+      sephardi: [r1("I Kings", 8, 2, 21)],
+    },
+  },
+  {
+    name: "Sukkot Chol HaMoed Shabbat",
+    hebrewName: "שבת חול המועד סוכות",
+    category: "sukkot",
+    haftarah: {
+      ashkenazi: [r("Ezekiel", 38, 18, 39, 16)],
+      sephardi: [r("Ezekiel", 38, 18, 39, 16)],
+    },
+  },
+  {
+    name: "Shemini Atzeret",
+    hebrewName: "שמיני עצרת",
+    category: "sukkot",
+    haftarah: {
+      ashkenazi: [r("I Kings", 8, 54, 9, 1)],
+      sephardi: [r("I Kings", 8, 54, 9, 1)],
+    },
+  },
+  {
+    name: "Simchat Torah",
+    hebrewName: "שמחת תורה",
+    category: "sukkot",
+    haftarah: {
+      ashkenazi: [r1("Joshua", 1, 1, 18)],
+      sephardi: [r1("Joshua", 1, 1, 18)],
+    },
+  },
+
+  // PESACH
+  {
+    name: "Pesach Day 1",
+    hebrewName: "פסח יום א׳",
+    category: "pesach",
+    haftarah: {
+      ashkenazi: [r("Joshua", 5, 2, 6, 1)],
+      sephardi: [r("Joshua", 5, 2, 6, 27)],
+    },
+  },
+  {
+    name: "Pesach Day 2",
+    hebrewName: "פסח יום ב׳",
+    category: "pesach",
+    haftarah: {
+      ashkenazi: [r1("II Kings", 23, 1, 9), r1("II Kings", 23, 21, 25)],
+      sephardi: [r1("II Kings", 23, 1, 9), r1("II Kings", 23, 21, 25)],
+    },
+  },
+  {
+    name: "Pesach Chol HaMoed Shabbat",
+    hebrewName: "שבת חול המועד פסח",
+    category: "pesach",
+    haftarah: {
+      ashkenazi: [r1("Ezekiel", 37, 1, 14)],
+      sephardi: [r1("Ezekiel", 37, 1, 14)],
+    },
+  },
+  {
+    name: "Pesach Day 7",
+    hebrewName: "פסח יום ז׳",
+    category: "pesach",
+    haftarah: {
+      ashkenazi: [r1("II Samuel", 22, 1, 51)],
+      sephardi: [r1("II Samuel", 22, 1, 51)],
+    },
+  },
+  {
+    name: "Pesach Day 8",
+    hebrewName: "פסח יום ח׳",
+    category: "pesach",
+    haftarah: {
+      ashkenazi: [r("Isaiah", 10, 32, 12, 6)],
+      sephardi: [r("Isaiah", 10, 32, 12, 6)],
+    },
+  },
+
+  // SHAVUOT
+  {
+    name: "Shavuot Day 1",
+    hebrewName: "שבועות יום א׳",
+    category: "shavuot",
+    haftarah: {
+      ashkenazi: [r1("Ezekiel", 1, 1, 28), r1("Ezekiel", 3, 12, 12)],
+      sephardi: [r1("Ezekiel", 1, 1, 28)],
+    },
+  },
+  {
+    name: "Shavuot Day 2",
+    hebrewName: "שבועות יום ב׳",
+    category: "shavuot",
+    haftarah: {
+      ashkenazi: [r1("Habakkuk", 3, 1, 19)],
+      sephardi: [r("Habakkuk", 2, 20, 3, 19)],
+    },
+  },
+
+  // FAST DAYS
+  {
+    name: "Tisha B'Av Shacharit",
+    hebrewName: "תשעה באב שחרית",
+    category: "fast-days",
+    haftarah: {
+      ashkenazi: [r("Jeremiah", 8, 13, 9, 23)],
+      sephardi: [r("Jeremiah", 8, 13, 9, 23)],
+    },
+  },
+  {
+    name: "Tisha B'Av Mincha",
+    hebrewName: "תשעה באב מנחה",
+    category: "fast-days",
+    haftarah: {
+      ashkenazi: [r("Isaiah", 55, 6, 56, 8)],
+      sephardi: [r("Isaiah", 55, 6, 56, 8)],
+    },
+  },
+
+  // OTHER SPECIAL SHABBATOT
+  {
+    name: "Shabbat Chanukah 1",
+    hebrewName: "שבת חנוכה א׳",
+    category: "other",
+    haftarah: {
+      ashkenazi: [r("Zechariah", 2, 14, 4, 7)],
+      sephardi: [r("Zechariah", 2, 14, 4, 7)],
+    },
+  },
+  {
+    name: "Shabbat Chanukah 2",
+    hebrewName: "שבת חנוכה ב׳",
+    category: "other",
+    haftarah: {
+      ashkenazi: [r1("I Kings", 7, 40, 50)],
+      sephardi: [r1("I Kings", 7, 40, 50)],
+    },
+  },
+  {
+    name: "Shabbat HaGadol",
+    hebrewName: "שבת הגדול",
+    category: "other",
+    haftarah: {
+      ashkenazi: [r1("Malachi", 3, 4, 24)],
+      sephardi: [r1("Malachi", 3, 4, 24)],
+    },
+  },
+];
+
 // Load Tanakh structure to get chapter counts for validation
 interface TanakhStructure {
   books: Array<{
@@ -635,7 +909,10 @@ async function main() {
   // Validate data
   let torahVerseCount = 0;
   let haftarahCount = 0;
+  let specialOccasionCount = 0;
   let errors = 0;
+
+  console.log("=== PARSHIOT ===\n");
 
   for (const parsha of PARSHIOT) {
     console.log(`${parsha.name} (${parsha.hebrewName})`);
@@ -688,6 +965,48 @@ async function main() {
     haftarahCount += parsha.haftarah.ashkenazi.length;
   }
 
+  console.log("\n=== SPECIAL OCCASIONS ===\n");
+
+  for (const occasion of SPECIAL_OCCASIONS) {
+    console.log(`${occasion.name} (${occasion.hebrewName}) [${occasion.category}]`);
+
+    // Validate Ashkenazi haftarot
+    for (let i = 0; i < occasion.haftarah.ashkenazi.length; i++) {
+      const range = occasion.haftarah.ashkenazi[i];
+      try {
+        validateVerseRange(range, structure, `${occasion.name} Ashkenazi[${i}]`);
+      } catch (err) {
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
+        errors++;
+      }
+    }
+
+    // Validate Sephardi haftarot
+    for (let i = 0; i < occasion.haftarah.sephardi.length; i++) {
+      const range = occasion.haftarah.sephardi[i];
+      try {
+        validateVerseRange(range, structure, `${occasion.name} Sephardi[${i}]`);
+      } catch (err) {
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
+        errors++;
+      }
+    }
+
+    const ashkBooks = occasion.haftarah.ashkenazi.map((r) => r.book).join(", ");
+    console.log(`  Haftarah (Ashk): ${ashkBooks}`);
+
+    if (
+      JSON.stringify(occasion.haftarah.ashkenazi) !==
+      JSON.stringify(occasion.haftarah.sephardi)
+    ) {
+      const sephBooks = occasion.haftarah.sephardi.map((r) => r.book).join(", ");
+      console.log(`  Haftarah (Seph): ${sephBooks}`);
+    }
+
+    specialOccasionCount++;
+    haftarahCount += occasion.haftarah.ashkenazi.length;
+  }
+
   if (errors > 0) {
     console.error(`\n❌ Validation failed with ${errors} error(s)`);
     process.exit(1);
@@ -704,13 +1023,15 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
 
   // Write output
-  const output = { parshiot: PARSHIOT };
+  const output = { parshiot: PARSHIOT, specialOccasions: SPECIAL_OCCASIONS };
   await writeFile(outputPath, JSON.stringify(output, null, 2));
   console.log(`\nWrote ${outputPath.pathname}`);
 
   // Summary
   console.log(`\nTotal parshiot: ${PARSHIOT.length}`);
+  console.log(`Total special occasions: ${specialOccasionCount}`);
   console.log(`Total haftarah segments: ${haftarahCount}`);
+  console.log(`Total items (parshiot + special occasions): ${PARSHIOT.length + specialOccasionCount}`);
 }
 
 main().catch((err) => {
