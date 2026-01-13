@@ -593,8 +593,8 @@
               "verse": 25
             },
             "end": {
-              "chapter": 28,
-              "verse": 26
+              "chapter": 29,
+              "verse": 21
             }
           }
         ],
@@ -722,8 +722,19 @@
               "verse": 1
             },
             "end": {
-              "chapter": 6,
-              "verse": 7
+              "chapter": 7,
+              "verse": 6
+            }
+          },
+          {
+            "book": "Isaiah",
+            "start": {
+              "chapter": 9,
+              "verse": 5
+            },
+            "end": {
+              "chapter": 9,
+              "verse": 6
             }
           }
         ],
@@ -841,8 +852,8 @@
               "verse": 26
             },
             "end": {
-              "chapter": 5,
-              "verse": 32
+              "chapter": 6,
+              "verse": 13
             }
           }
         ],
@@ -1196,8 +1207,8 @@
               "verse": 42
             },
             "end": {
-              "chapter": 4,
-              "verse": 44
+              "chapter": 5,
+              "verse": 19
             }
           }
         ],
@@ -1755,7 +1766,7 @@
               "verse": 6
             },
             "end": {
-              "chapter": 5,
+              "chapter": 6,
               "verse": 8
             }
           }
@@ -1841,8 +1852,8 @@
               "verse": 1
             },
             "end": {
-              "chapter": 1,
-              "verse": 2
+              "chapter": 2,
+              "verse": 3
             }
           }
         ],

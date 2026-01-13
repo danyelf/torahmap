@@ -192,7 +192,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "וארא",
     torah: r("Exodus", 6, 2, 9, 35),
     haftarah: {
-      ashkenazi: [r1("Ezekiel", 28, 25, 26)],
+      ashkenazi: [r("Ezekiel", 28, 25, 29, 21)],
       sephardi: [r("Ezekiel", 28, 25, 29, 21)],
     },
   },
@@ -219,7 +219,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "יתרו",
     torah: r("Exodus", 18, 1, 20, 23),
     haftarah: {
-      ashkenazi: [r1("Isaiah", 6, 1, 7)],
+      ashkenazi: [r("Isaiah", 6, 1, 7, 6), r1("Isaiah", 9, 5, 6)],
       sephardi: [r("Isaiah", 6, 1, 7, 6), r1("Isaiah", 9, 5, 6)],
     },
   },
@@ -237,7 +237,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "תרומה",
     torah: r("Exodus", 25, 1, 27, 19),
     haftarah: {
-      ashkenazi: [r1("I Kings", 5, 26, 32)],
+      ashkenazi: [r("I Kings", 5, 26, 6, 13)],
       sephardi: [r("I Kings", 5, 26, 6, 13)],
     },
   },
@@ -311,7 +311,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "תזריע",
     torah: r("Leviticus", 12, 1, 13, 59),
     haftarah: {
-      ashkenazi: [r1("II Kings", 4, 42, 44)],
+      ashkenazi: [r("II Kings", 4, 42, 5, 19)],
       sephardi: [r("II Kings", 4, 42, 5, 19)],
     },
   },
@@ -430,7 +430,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "בלק",
     torah: r("Numbers", 22, 2, 25, 9),
     haftarah: {
-      ashkenazi: [r1("Micah", 5, 6, 8)],
+      ashkenazi: [r("Micah", 5, 6, 6, 8)],
       sephardi: [r("Micah", 5, 6, 6, 8)],
     },
   },
@@ -448,7 +448,7 @@ const PARSHIOT: Parsha[] = [
     hebrewName: "מטות",
     torah: r("Numbers", 30, 2, 32, 42),
     haftarah: {
-      ashkenazi: [r1("Jeremiah", 1, 1, 2)],
+      ashkenazi: [r("Jeremiah", 1, 1, 2, 3)],
       sephardi: [r1("Jeremiah", 1, 1, 19)],
     },
   },
