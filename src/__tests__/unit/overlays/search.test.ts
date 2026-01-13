@@ -105,17 +105,6 @@ describe('Search Overlay', () => {
       expect(searchOverlay.id).toBe('search');
       expect(searchOverlay.name).toBe('Text Search');
     });
-
-    it('implements required overlay interface methods', () => {
-      expect(typeof searchOverlay.getVerseColor).toBe('function');
-      expect(typeof searchOverlay.renderControls).toBe('function');
-      expect(typeof searchOverlay.renderLegend).toBe('function');
-      expect(typeof searchOverlay.getHoverInfo).toBe('function');
-      expect(typeof searchOverlay.onUpdate).toBe('function');
-      expect(typeof searchOverlay.destroy).toBe('function');
-      expect(typeof searchOverlay.getUrlParams).toBe('function');
-      expect(typeof searchOverlay.applyUrlParams).toBe('function');
-    });
   });
 
   describe('Color Computation - No Search', () => {

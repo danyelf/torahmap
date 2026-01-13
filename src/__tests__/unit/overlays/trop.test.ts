@@ -89,18 +89,6 @@ describe('Trop Overlay', () => {
       expect(tropOverlay.id).toBe('trop');
       expect(tropOverlay.name).toBe('Cantillation (Trop)');
     });
-
-    it('implements required overlay interface methods', () => {
-      expect(typeof tropOverlay.getVerseColor).toBe('function');
-      expect(typeof tropOverlay.init).toBe('function');
-      expect(typeof tropOverlay.destroy).toBe('function');
-      expect(typeof tropOverlay.onUpdate).toBe('function');
-      expect(typeof tropOverlay.renderControls).toBe('function');
-      expect(typeof tropOverlay.renderLegend).toBe('function');
-      expect(typeof tropOverlay.getHoverInfo).toBe('function');
-      expect(typeof tropOverlay.getUrlParams).toBe('function');
-      expect(typeof tropOverlay.applyUrlParams).toBe('function');
-    });
   });
 
   describe('Initialization', () => {

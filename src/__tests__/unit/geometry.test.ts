@@ -563,12 +563,11 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse({ color: [] as any });
       const buffer = buildVerseGeometry([verse]);
 
-      // Empty array [] is truthy but color[0] is undefined, so it's treated as single color
-      // This results in NaN values - edge case that reveals the code doesn't handle this well
+      // Empty array should fall back to base color [0.6, 0.6, 0.6]
       const colorOffset = 2;
-      expect(isNaN(buffer[colorOffset])).toBe(true);
-      expect(isNaN(buffer[colorOffset + 1])).toBe(true);
-      expect(isNaN(buffer[colorOffset + 2])).toBe(true);
+      expect(buffer[colorOffset]).toBeCloseTo(0.6, 5);
+      expect(buffer[colorOffset + 1]).toBeCloseTo(0.6, 5);
+      expect(buffer[colorOffset + 2]).toBeCloseTo(0.6, 5);
     });
   });
 

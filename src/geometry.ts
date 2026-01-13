@@ -30,6 +30,9 @@ export function buildVerseGeometry(
     let colors: Color[];
     if (isColorArray(v.color)) {
       colors = v.color.slice(0, 4) as Color[]; // Cap at 4 colors
+    } else if (Array.isArray(v.color) && v.color.length === 0) {
+      // Handle empty array - fall back to base color
+      colors = [baseColor];
     } else {
       colors = [v.color || baseColor];
     }

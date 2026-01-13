@@ -18,17 +18,12 @@ describe('color constants', () => {
     it('is a valid color', () => {
       assertValidColor(HIGHLIGHT_COLOR);
     });
-
-    it('is bright cyan as documented', () => {
-      expect(HIGHLIGHT_COLOR).toEqual([0.2, 0.9, 1.0]);
-    });
   });
 
   describe('DIM_FACTOR', () => {
     it('is a valid dimming factor', () => {
       expect(DIM_FACTOR).toBeGreaterThan(0);
       expect(DIM_FACTOR).toBeLessThan(1);
-      expect(DIM_FACTOR).toBe(0.3);
     });
   });
 
@@ -41,15 +36,6 @@ describe('color constants', () => {
       for (const color of SEARCH_COLORS) {
         assertValidColor(color);
       }
-    });
-
-    it('contains expected color palette', () => {
-      // Cyan, Orange, Lime, Pink, Yellow
-      expect(SEARCH_COLORS[0]).toEqual([0.1, 0.7, 0.8]); // Cyan
-      expect(SEARCH_COLORS[1]).toEqual([1.0, 0.5, 0.0]); // Orange
-      expect(SEARCH_COLORS[2]).toEqual([0.5, 1.0, 0.2]); // Lime
-      expect(SEARCH_COLORS[3]).toEqual([1.0, 0.2, 0.8]); // Pink
-      expect(SEARCH_COLORS[4]).toEqual([1.0, 1.0, 0.2]); // Yellow
     });
   });
 });

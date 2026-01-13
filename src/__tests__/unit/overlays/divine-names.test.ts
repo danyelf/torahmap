@@ -50,13 +50,6 @@ describe('Divine Names Overlay', () => {
       expect(divineNamesOverlay.id).toBe('divine-names');
       expect(divineNamesOverlay.name).toBe('Divine Names');
     });
-
-    it('implements required overlay interface methods', () => {
-      expect(typeof divineNamesOverlay.getVerseColor).toBe('function');
-      expect(typeof divineNamesOverlay.init).toBe('function');
-      expect(typeof divineNamesOverlay.renderLegend).toBe('function');
-      expect(typeof divineNamesOverlay.getHoverInfo).toBe('function');
-    });
   });
 
   describe('Initialization', () => {

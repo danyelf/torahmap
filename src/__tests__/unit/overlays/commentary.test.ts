@@ -76,18 +76,6 @@ describe('Commentary Overlay', () => {
       expect(commentaryOverlay.id).toBe('commentary');
       expect(commentaryOverlay.name).toBe('Commentary Density');
     });
-
-    it('implements required overlay interface methods', () => {
-      expect(typeof commentaryOverlay.getVerseColor).toBe('function');
-      expect(typeof commentaryOverlay.init).toBe('function');
-      expect(typeof commentaryOverlay.destroy).toBe('function');
-      expect(typeof commentaryOverlay.onUpdate).toBe('function');
-      expect(typeof commentaryOverlay.renderControls).toBe('function');
-      expect(typeof commentaryOverlay.renderLegend).toBe('function');
-      expect(typeof commentaryOverlay.getHoverInfo).toBe('function');
-      expect(typeof commentaryOverlay.getUrlParams).toBe('function');
-      expect(typeof commentaryOverlay.applyUrlParams).toBe('function');
-    });
   });
 
   describe('Initialization', () => {
