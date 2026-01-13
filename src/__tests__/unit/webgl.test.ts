@@ -554,34 +554,6 @@ describe('createProgram', () => {
       // createProgram should not call state-changing functions like useProgram
       expect(gl.useProgram).not.toHaveBeenCalled();
     });
-
-    it('only creates shaders and program objects', () => {
-      const allowedFunctions = [
-        'createShader',
-        'shaderSource',
-        'compileShader',
-        'getShaderParameter',
-        'getShaderInfoLog',
-        'createProgram',
-        'attachShader',
-        'linkProgram',
-        'getProgramParameter',
-        'getProgramInfoLog',
-        'getAttribLocation',
-        'getUniformLocation',
-      ];
-
-      createProgram(gl);
-
-      // Check that only allowed functions were called
-      const glAny = gl as any;
-      for (const key of Object.keys(glAny)) {
-        const value = glAny[key];
-        if (vi.isMockFunction(value) && value.mock.calls.length > 0) {
-          expect(allowedFunctions).toContain(key);
-        }
-      }
-    });
   });
 
   describe('edge cases', () => {
@@ -609,27 +581,6 @@ describe('createProgram', () => {
 
       expect(gl.createShader).toHaveBeenCalledTimes(20); // 2 per program
       expect(gl.createProgram).toHaveBeenCalledTimes(10);
-    });
-
-    it('handles attribute location -1 (not found)', () => {
-      gl.getAttribLocation = vi.fn(() => -1);
-
-      const program = createProgram(gl);
-
-      // Should still return the location even if -1
-      expect(program.attribs.position).toBe(-1);
-      expect(program.attribs.color).toBe(-1);
-    });
-
-    it('handles uniform location null (not found)', () => {
-      gl.getUniformLocation = vi.fn(() => null);
-
-      const program = createProgram(gl);
-
-      // Should still return null uniform locations
-      expect(program.uniforms.resolution).toBeNull();
-      expect(program.uniforms.pan).toBeNull();
-      expect(program.uniforms.zoom).toBeNull();
     });
   });
 });

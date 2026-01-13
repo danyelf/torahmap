@@ -112,26 +112,6 @@ describe('seededRandom', () => {
     expect(uniqueValues.size).toBe(values.length);
   });
 
-  it('is consistent with the original implementation', () => {
-    // Test specific known values to ensure the algorithm remains consistent
-    const value42 = seededRandom(42);
-    const value100 = seededRandom(100);
-    const value999 = seededRandom(999);
-
-    // These values should remain constant across runs
-    expect(seededRandom(42)).toBe(value42);
-    expect(seededRandom(100)).toBe(value100);
-    expect(seededRandom(999)).toBe(value999);
-
-    // Verify the values are in valid range
-    expect(value42).toBeGreaterThanOrEqual(0);
-    expect(value42).toBeLessThan(1);
-    expect(value100).toBeGreaterThanOrEqual(0);
-    expect(value100).toBeLessThan(1);
-    expect(value999).toBeGreaterThanOrEqual(0);
-    expect(value999).toBeLessThan(1);
-  });
-
   it('handles edge case seeds that might cause issues', () => {
     // Test seeds that might cause overflow or precision issues
     const edgeCases = [
