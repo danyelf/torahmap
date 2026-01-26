@@ -64,6 +64,16 @@ interface MouseState {
   dragStart: { x: number; y: number };
 }
 
+/**
+ * Check if two verses refer to the same verse.
+ * Handles null comparison.
+ */
+function versesEqual(a: Verse | null, b: Verse | null): boolean {
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
+}
+
 function findVerseAtPoint(
   verses: Verse[],
   pan: { x: number; y: number },
@@ -415,15 +425,20 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('mouseleave', () => {
+    const wasHovering = mouseState.hoveredVerse !== null;
     mouseState.isDragging = false;
     mouseState.hoveredVerse = null;
-    // Clear overlay hover state
+
+    // Notify overlay of hover change
+    let overlayWantsRerender = false;
     if (currentOverlay?.setHoveredVerse) {
-      const shouldRerender = currentOverlay.setHoveredVerse(null);
-      if (shouldRerender) {
-        applyOverlay();
-        render();
-      }
+      overlayWantsRerender = currentOverlay.setHoveredVerse(null);
+    }
+
+    // Re-render if we were hovering (to clear highlight) or overlay requested it
+    if (wasHovering || overlayWantsRerender) {
+      applyOverlay();
+      render();
     }
   });
 
@@ -558,15 +573,22 @@ async function main(): Promise<void> {
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (!mouseState.isDragging) {
       const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+      const previousHover = mouseState.hoveredVerse;
       mouseState.hoveredVerse = verse;
 
+      // Check if hover actually changed
+      const hoverChanged = !versesEqual(previousHover, verse);
+
       // Notify overlay of hover change for cross-highlighting
+      let overlayWantsRerender = false;
       if (currentOverlay?.setHoveredVerse) {
-        const shouldRerender = currentOverlay.setHoveredVerse(verse);
-        if (shouldRerender) {
-          applyOverlay();
-          render();
-        }
+        overlayWantsRerender = currentOverlay.setHoveredVerse(verse);
+      }
+
+      // Re-render if hover changed (for base highlighting) or overlay requested it
+      if (hoverChanged || overlayWantsRerender) {
+        applyOverlay();
+        render();
       }
 
       // Update sidebar (pinned takes precedence - no hover changes when pinned)
