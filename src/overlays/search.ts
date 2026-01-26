@@ -302,6 +302,10 @@ export const searchOverlay: Overlay = {
     });
 
     // Close results when clicking outside
+    // Remove any existing handler first to prevent memory leak
+    if (documentClickHandler) {
+      document.removeEventListener('click', documentClickHandler);
+    }
     documentClickHandler = (e: MouseEvent) => {
       if (searchResults && !searchResults.contains(e.target as Node) &&
           e.target !== searchInput && e.target !== searchClear) {

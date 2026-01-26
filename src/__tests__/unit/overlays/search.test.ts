@@ -848,6 +848,32 @@ describe('Search Overlay', () => {
       // Should not throw
       expect(true).toBe(true);
     });
+
+    it('removes old document click handler before adding new one when re-rendering controls', () => {
+      const container = document.createElement('div');
+      const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
+      const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
+
+      // First render - should add listener
+      searchOverlay.renderControls?.(container);
+      expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
+      const firstCallCount = addEventListenerSpy.mock.calls.length;
+
+      // Second render - should remove old listener before adding new one
+      searchOverlay.renderControls?.(container);
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
+      expect(addEventListenerSpy).toHaveBeenCalledTimes(firstCallCount + 1);
+
+      // Third render - verify pattern continues
+      searchOverlay.renderControls?.(container);
+      expect(removeEventListenerSpy).toHaveBeenCalledTimes(2);
+      expect(addEventListenerSpy).toHaveBeenCalledTimes(firstCallCount + 2);
+
+      // Cleanup
+      searchOverlay.destroy?.();
+      addEventListenerSpy.mockRestore();
+      removeEventListenerSpy.mockRestore();
+    });
   });
 
   describe('Configure', () => {
