@@ -23,7 +23,7 @@ import {
 } from './sidebar.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import { createMouseState, startDrag, stopDrag, setHoveredVerse, clearHover } from './mouseState.ts';
-import { versesEqual } from './types.ts';
+import { versesEqual, nextVerse, prevVerse } from './types.ts';
 import { findVerseLayoutAtPoint } from './hitDetection.ts';
 import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
 import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame } from './rendering.ts';
@@ -149,6 +149,36 @@ async function main(): Promise<void> {
   // Render function
   function render(): void {
     renderFrame(renderContext, renderState, camera, mouseState.hoveredVerse, pinnedVerse);
+  }
+
+  // Helper: Center camera on a verse
+  function centerOnVerse(verse: VerseLayout): void {
+    const cssWidth = window.innerWidth;
+    const cssHeight = window.innerHeight;
+    camera.x = cssWidth / 2 / camera.zoom - verse.x - verse.size / 2;
+    camera.y = cssHeight / 2 / camera.zoom - verse.y - verse.size / 2;
+  }
+
+  // Helper: Pin a verse and update all dependent state
+  function pinVerse(verse: VerseLayout, centerCamera: boolean = false): void {
+    pinnedVerse = verse;
+    updateSidebarWrapper(verse, true);
+    if (centerCamera) {
+      centerOnVerse(verse);
+    }
+    applyOverlay();
+    render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    saveUrlState(true);
+  }
+
+  // Helper: Unpin the current verse and update all dependent state
+  function unpinVerse(): void {
+    pinnedVerse = null;
+    updateSidebarWrapper(null);
+    applyOverlay();
+    render();
+    saveUrlState(true);
   }
 
   render();
@@ -312,35 +342,36 @@ async function main(): Promise<void> {
           pinnedVerse.book === verse.book &&
           pinnedVerse.chapter === verse.chapter &&
           pinnedVerse.verse === verse.verse) {
-        pinnedVerse = null;
-        updateSidebarWrapper(null);
-        applyOverlay();
-        render();
-        saveUrlState(true);
+        unpinVerse();
       } else {
-        pinnedVerse = verse;
-        updateSidebarWrapper(verse, true);
-        applyOverlay();
-        render();
-        saveUrlState(true);
+        pinVerse(verse);
       }
     } else if (pinnedVerse) {
       // Clicking empty space unpins
-      pinnedVerse = null;
-      updateSidebarWrapper(null);
-      applyOverlay();
-      render();
-      saveUrlState(true);
+      unpinVerse();
     }
   });
 
   // Close button to unpin
   sidebarElements.closeBtn?.addEventListener('click', () => {
-    pinnedVerse = null;
-    updateSidebarWrapper(null);
-    applyOverlay();
-    render();
-    saveUrlState(true);
+    unpinVerse();
+  });
+
+  // Keyboard navigation: arrow keys for next/previous verse
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (!pinnedVerse) return;
+
+    let targetVerse: VerseLayout | null = null;
+
+    if (e.key === 'ArrowRight') {
+      targetVerse = nextVerse(verses, pinnedVerse);
+    } else if (e.key === 'ArrowLeft') {
+      targetVerse = prevVerse(verses, pinnedVerse);
+    }
+
+    if (targetVerse) {
+      pinVerse(targetVerse, true);
+    }
   });
 
   // UI elements
@@ -415,11 +446,7 @@ async function main(): Promise<void> {
     verses,
     callbacks: {
       onVerseClick: (verse: VerseLayout) => {
-        pinnedVerse = verse;
-        updateSidebarWrapper(verse, true);
-        applyOverlay();
-        render();
-        saveUrlState(true);
+        pinVerse(verse);
       },
     },
   });
@@ -464,14 +491,10 @@ async function main(): Promise<void> {
           v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
         );
         if (verse) {
+          // Pin without saveUrlState since we're restoring FROM the URL
           pinnedVerse = verse;
           updateSidebarWrapper(verse, true);
-
-          // Center on the verse
-          const cssWidth = window.innerWidth;
-          const cssHeight = window.innerHeight;
-          camera.x = cssWidth / 2 / camera.zoom - verse.x - verse.size / 2;
-          camera.y = cssHeight / 2 / camera.zoom - verse.y - verse.size / 2;
+          centerOnVerse(verse);
         }
       }
     } else if (urlState.x !== undefined && urlState.y !== undefined) {
