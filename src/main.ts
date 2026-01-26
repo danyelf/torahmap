@@ -18,7 +18,6 @@ import {
 } from './urlState.ts';
 import {
   getSidebarElements,
-  positionSidebar,
   updateSidebar,
 } from './sidebar.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
@@ -304,7 +303,6 @@ async function main(): Promise<void> {
   // Update sidebar with verse info - wrapper for the extracted module function
   function updateSidebarWrapper(verse: VerseLayout | null, isPinned: boolean = false): void {
     updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
-    positionSidebar(sidebarElements.sidebar, controlsPanel);
   }
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
@@ -416,9 +414,6 @@ async function main(): Promise<void> {
 
     applyOverlay();
     render();
-
-    // Reposition sidebar after overlay controls are rendered
-    requestAnimationFrame(() => positionSidebar(sidebarElements.sidebar, controlsPanel));
 
     // Update URL when overlay changes (unless restoring from URL)
     if (!fromUrlRestore) {

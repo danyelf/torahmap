@@ -9,7 +9,7 @@ canvas { display: block; }
 #controls {
   position: fixed;
   top: 10px;
-  right: 10px;
+  left: 10px;
   background: rgba(0, 0, 0, 0.85);
   padding: 12px;
   border-radius: 8px;
@@ -48,6 +48,7 @@ canvas { display: block; }
 /* Verse sidebar */
 #verse-sidebar {
   position: fixed;
+  top: 10px;
   right: 10px;
   width: 280px;
   background: rgba(0, 0, 0, 0.85);
