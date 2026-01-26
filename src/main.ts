@@ -666,16 +666,22 @@ async function main(): Promise<void> {
           pinnedVerse.verse === verse.verse) {
         pinnedVerse = null;
         updateSidebar(null);
+        applyOverlay();
+        render();
         saveUrlState(true);
       } else {
         pinnedVerse = verse;
         updateSidebar(verse, true);
+        applyOverlay();
+        render();
         saveUrlState(true);
       }
     } else if (pinnedVerse) {
       // Clicking empty space unpins
       pinnedVerse = null;
       updateSidebar(null);
+      applyOverlay();
+      render();
       saveUrlState(true);
     }
   });
@@ -684,6 +690,8 @@ async function main(): Promise<void> {
   sidebarCloseBtn?.addEventListener('click', () => {
     pinnedVerse = null;
     updateSidebar(null);
+    applyOverlay();
+    render();
     saveUrlState(true);
   });
 
@@ -754,6 +762,8 @@ async function main(): Promise<void> {
       onVerseClick: (verse: Verse) => {
         pinnedVerse = verse;
         updateSidebar(verse, true);
+        applyOverlay();
+        render();
         saveUrlState(true);
       },
     },
@@ -815,6 +825,7 @@ async function main(): Promise<void> {
       pan.y = urlState.y;
     }
 
+    applyOverlay();
     render();
   }
 
