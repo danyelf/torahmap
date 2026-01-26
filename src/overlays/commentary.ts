@@ -3,35 +3,50 @@ import type { Overlay, Color } from './types.ts';
 import type { Verse, CommentaryData } from '../types.ts';
 import { heatmapColor } from '../utils/color.ts';
 
-let data: CommentaryData = {};
-let currentCategory = 'total';
-let updateCallback: (() => void) | null = null;
+export function createCommentaryOverlay(): Overlay {
+  // State - encapsulated in closure
+  let data: CommentaryData = {};
+  let currentCategory = 'total';
+  let updateCallback: (() => void) | null = null;
+  let cachedMaxValues: Record<string, number> = {};
+  let verses: Verse[] = [];
 
-// Cache max values per category to avoid recalculating
-let cachedMaxValues: Record<string, number> = {};
-let verses: Verse[] = [];
-
-function getCount(book: string, chapter: number, verse: number): number {
-  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-  if (!verseData) return 0;
-  if (currentCategory === 'total') return verseData.total;
-  return verseData.categories[currentCategory] || 0;
-}
-
-function getMaxValue(): number {
-  if (cachedMaxValues[currentCategory] !== undefined) {
-    return cachedMaxValues[currentCategory];
+  function getCount(book: string, chapter: number, verse: number): number {
+    const verseData = data[book]?.[String(chapter)]?.[String(verse)];
+    if (!verseData) return 0;
+    if (currentCategory === 'total') return verseData.total;
+    return verseData.categories[currentCategory] || 0;
   }
-  let max = 0;
-  for (const v of verses) {
-    const count = getCount(v.book, v.chapter, v.verse);
-    if (count > max) max = count;
-  }
-  cachedMaxValues[currentCategory] = max;
-  return max;
-}
 
-export const commentaryOverlay: Overlay = {
+  function getMaxValue(): number {
+    if (cachedMaxValues[currentCategory] !== undefined) {
+      return cachedMaxValues[currentCategory];
+    }
+    let max = 0;
+    for (const v of verses) {
+      const count = getCount(v.book, v.chapter, v.verse);
+      if (count > max) max = count;
+    }
+    cachedMaxValues[currentCategory] = max;
+    return max;
+  }
+
+  // Public API for configuring overlay
+  function configure(config: { verses: Verse[] }): void {
+    verses = config.verses;
+    cachedMaxValues = {};
+  }
+
+  // Public API for getting verse link count (used by sidebar)
+  function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
+    const verseData = data[book]?.[String(chapter)]?.[String(verse)];
+    return verseData?.total ?? null;
+  }
+
+  const overlay: Overlay & {
+    configure: typeof configure;
+    getVerseLinkCount: typeof getVerseLinkCount;
+  } = {
   id: 'commentary',
   name: 'Commentary Density',
 
@@ -140,15 +155,18 @@ export const commentaryOverlay: Overlay = {
       updateCallback?.();
     }
   },
-};
 
-export function configure(config: { verses: Verse[] }): void {
-  verses = config.verses;
-  cachedMaxValues = {};
+  // Expose configuration methods on overlay instance
+  configure,
+  getVerseLinkCount,
+  };
+
+  return overlay;
 }
 
-// Get total linked texts count for a verse (used by sidebar)
-export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
-  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-  return verseData?.total ?? null;
-}
+// Create singleton instance
+export const commentaryOverlay = createCommentaryOverlay();
+
+// Export helper methods for external use (sidebar, etc.)
+export const configureCommentary = commentaryOverlay.configure;
+export const getVerseLinkCount = commentaryOverlay.getVerseLinkCount;
