@@ -1257,6 +1257,11 @@ describe('Search Overlay', () => {
       expect(result).toBeNull();
     });
 
+    it('returns null for negative index', () => {
+      const result = getWordBoundaries('hello world', -1);
+      expect(result).toBeNull();
+    });
+
     it('handles leading whitespace', () => {
       const result = getWordBoundaries('  hello world', 0);
       expect(result).toEqual({ start: 2, end: 7 });
