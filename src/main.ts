@@ -42,6 +42,12 @@ import {
   haftarahOverlay,
   type Overlay,
 } from './overlays/index.ts';
+import {
+  ZOOM_OUT_FACTOR,
+  ZOOM_IN_FACTOR,
+  DEFAULT_ZOOM,
+  URL_UPDATE_DEBOUNCE_MS,
+} from './constants/app.ts';
 
 // Extend window for global state
 declare global {
@@ -160,7 +166,7 @@ async function main(): Promise<void> {
   // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
-    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
     const newZoom = clampZoom(camera.zoom * zoomFactor);
 
     // Get mouse position in canvas coordinates
@@ -243,7 +249,7 @@ async function main(): Promise<void> {
     }
 
     // Zoom (only if not default)
-    if (camera.zoom !== 1.0) {
+    if (camera.zoom !== DEFAULT_ZOOM) {
       state.zoom = camera.zoom;
     }
 
@@ -263,7 +269,7 @@ async function main(): Promise<void> {
   }
 
   // Debounced version for pan/zoom (replaceState only)
-  const debouncedSaveUrlState = debounce(() => saveUrlState(false), 300);
+  const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
 
   // Update sidebar with verse info - wrapper for the extracted module function
   function updateSidebarWrapper(verse: VerseLayout | null, isPinned: boolean = false): void {
