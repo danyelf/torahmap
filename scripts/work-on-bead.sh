@@ -31,6 +31,8 @@ REPO_NAME=$(basename "$REPO_ROOT")
 # Worktree path (sibling to main repo)
 WORKTREE_DIR="${REPO_ROOT}/../${REPO_NAME}-worktrees"
 WORKTREE_PATH="${WORKTREE_DIR}/${BEAD_ID}"
+# Relative path for bd worktree create (from repo root)
+RELATIVE_WORKTREE_PATH="../${REPO_NAME}-worktrees/${BEAD_ID}"
 
 # Check if worktree already exists
 if [ -d "$WORKTREE_PATH" ]; then
@@ -54,7 +56,7 @@ echo "Branch: $BRANCH_NAME"
 echo "Path: $WORKTREE_PATH"
 echo ""
 
-bd worktree create "$WORKTREE_PATH" --branch "$BRANCH_NAME"
+bd worktree create "$RELATIVE_WORKTREE_PATH" --branch "$BRANCH_NAME"
 
 # Change to worktree and run claude
 cd "$WORKTREE_PATH"
