@@ -192,6 +192,40 @@ async function main(): Promise<void> {
   }
 
   /**
+   * Apply hover highlighting to a verse color.
+   * Second pass: modifies colors based on hover state.
+   * - Verses with overlay color: brighten by 1.5x
+   * - Verses without overlay color (background): replace with highlight color
+   */
+  function applyHoverHighlight(
+    baseColor: [number, number, number] | [number, number, number][],
+    hasOverlayColor: boolean
+  ): [number, number, number] | [number, number, number][] {
+    if (hasOverlayColor) {
+      // Brighten overlay-colored verses by 1.5x
+      if (Array.isArray(baseColor[0])) {
+        // Array of colors (multi-color verse)
+        return (baseColor as [number, number, number][]).map((c) => [
+          Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
+          Math.min(1, c[1] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
+          Math.min(1, c[2] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
+        ] as [number, number, number]);
+      } else {
+        // Single color
+        const c = baseColor as [number, number, number];
+        return [
+          Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
+          Math.min(1, c[1] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
+          Math.min(1, c[2] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
+        ];
+      }
+    } else {
+      // Replace background verses with highlight color
+      return HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR;
+    }
+  }
+
+  /**
    * Compute semantic state for all verses.
    * First pass: determine what is true about each verse (hasOverlayColor, baseColor, isHovered, isPinned)
    * Returns array parallel to verses array.
@@ -228,7 +262,7 @@ async function main(): Promise<void> {
 
   // Function to apply overlay colors
   function applyOverlay(): void {
-    // Compute semantic state for all verses
+    // First pass: compute semantic state for all verses
     const verseStates = computeVerseStates(
       verses,
       currentOverlay,
@@ -236,9 +270,19 @@ async function main(): Promise<void> {
       pinnedVerse ?? null
     );
 
-    // Apply computed state to verses
+    // Second pass: apply base colors, then hover highlighting
     verses.forEach((v, i) => {
-      v.color = verseStates[i].baseColor;
+      const state = verseStates[i];
+
+      // Start with base color
+      let finalColor = state.baseColor;
+
+      // Apply hover highlighting if this verse is hovered
+      if (state.isHovered) {
+        finalColor = applyHoverHighlight(finalColor, state.hasOverlayColor);
+      }
+
+      v.color = finalColor;
     });
 
     // Rebuild geometry buffer
