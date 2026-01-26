@@ -26,6 +26,9 @@ export const HIGHLIGHT_CONSTANTS = {
   // Outline color for pinned verses
   PINNED_OUTLINE_COLOR: [0.2, 0.9, 1.0] as Color,
 
+  // Outline color for hovered verses
+  HOVER_OUTLINE_COLOR: [1.0, 1.0, 1.0] as Color,
+
   // Outline thickness (extends outside verse bounds)
   OUTLINE_THICKNESS: 2,
 

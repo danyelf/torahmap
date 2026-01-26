@@ -183,6 +183,7 @@ async function main(): Promise<void> {
   let currentOverlay: Overlay | null = null;
   let buffer: WebGLBuffer;
   let outlineBuffer: WebGLBuffer | null = null;
+  let hoverOutlineBuffer: WebGLBuffer | null = null;
 
   /**
    * Get default gray color with brightness variation for a verse.
@@ -324,6 +325,13 @@ async function main(): Promise<void> {
   // Track pinned verse (click to persist)
   let pinnedVerse: Verse | null = null;
 
+  // Mouse interaction state
+  const mouseState: MouseState = {
+    isDragging: false,
+    hoveredVerse: null,
+    dragStart: { x: 0, y: 0 },
+  };
+
   // Render function
   function render(): void {
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -369,19 +377,36 @@ async function main(): Promise<void> {
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
 
-    // Draw outline for pinned verse on top
-    renderOutline(pinnedVerse);
+    // Draw hover outline (if hovering and not same as pinned)
+    if (mouseState?.hoveredVerse && !versesEqual(mouseState.hoveredVerse, pinnedVerse)) {
+      hoverOutlineBuffer = renderOutline(
+        mouseState.hoveredVerse,
+        HIGHLIGHT_CONSTANTS.HOVER_OUTLINE_COLOR,
+        hoverOutlineBuffer
+      );
+    }
+
+    // Draw pinned outline on top
+    if (pinnedVerse) {
+      outlineBuffer = renderOutline(
+        pinnedVerse,
+        HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
+        outlineBuffer
+      );
+    }
 
     if (window.bookLabels) updateLabelPositions(window.bookLabels, pan, zoom);
   }
 
   /**
-   * Render outline border for the pinned verse.
+   * Render outline border for a verse.
    * Draws on top of the main verse geometry.
    */
-  function renderOutline(verse: Verse | null): void {
-    if (!verse) return;
-
+  function renderOutline(
+    verse: Verse,
+    color: [number, number, number],
+    buffer: WebGLBuffer | null
+  ): WebGLBuffer {
     // Build outline geometry for this verse
     const geometry = buildOutlineGeometry({
       x: verse.x,
@@ -389,14 +414,15 @@ async function main(): Promise<void> {
       size: verse.size,
     }, {
       thickness: HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
-      color: HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
+      color: color,
     });
 
     // Create or update outline buffer
-    if (!outlineBuffer) {
-      outlineBuffer = createBuffer(gl, geometry);
+    let currentBuffer = buffer;
+    if (!currentBuffer) {
+      currentBuffer = createBuffer(gl, geometry);
     } else {
-      gl.bindBuffer(gl.ARRAY_BUFFER, outlineBuffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER, currentBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
     }
 
@@ -407,10 +433,10 @@ async function main(): Promise<void> {
     gl.uniform2f(outlineProg.uniforms.resolution, canvas.width, canvas.height);
     gl.uniform2f(outlineProg.uniforms.pan, pan.x, pan.y);
     gl.uniform1f(outlineProg.uniforms.zoom, zoom * dpr);
-    gl.uniform3f(outlineProg.uniforms.color, ...HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR);
+    gl.uniform3f(outlineProg.uniforms.color, ...color);
 
     // Bind buffer and set position attribute
-    gl.bindBuffer(gl.ARRAY_BUFFER, outlineBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, currentBuffer);
 
     // Vertex layout for outline: just x, y at start (then other unused data)
     // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
@@ -420,6 +446,8 @@ async function main(): Promise<void> {
 
     // Draw outline (4 borders * 6 vertices each = 24 vertices)
     gl.drawArrays(gl.TRIANGLES, 0, 24);
+
+    return currentBuffer;
   }
 
   render();
@@ -449,13 +477,6 @@ async function main(): Promise<void> {
     render();
     debouncedSaveUrlState();
   }, { passive: false });
-
-  // Mouse interaction state
-  const mouseState: MouseState = {
-    isDragging: false,
-    hoveredVerse: null,
-    dragStart: { x: 0, y: 0 },
-  };
 
   canvas.addEventListener('mousedown', (e: MouseEvent) => {
     mouseState.isDragging = true;
