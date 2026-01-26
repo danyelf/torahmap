@@ -167,6 +167,11 @@ export const tropOverlay: Overlay = {
 
   destroy() {
     selectedTrop = null;
+    updateCallback = null;
+    cachedVerseLookup.clear();
+    cachedMaxCount = 1;
+    cachedLogMax = 0;
+    cachedTier = 'common';
   },
 
   onUpdate(callback) {

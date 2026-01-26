@@ -233,6 +233,14 @@ export const haftarahOverlay: Overlay = {
 
   destroy() {
     hoveredVerse = null;
+    currentCustom = 'ashkenazi';
+    updateCallback = null;
+    // Clear all lookup indexes
+    torahVerseToParsha.clear();
+    haftarahVerseToItem.clear();
+    isTorahVerse.clear();
+    isHaftarahVerse.clear();
+    itemToColor.clear();
   },
 
   onUpdate(callback) {

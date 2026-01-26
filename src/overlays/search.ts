@@ -429,6 +429,13 @@ export const searchOverlay: Overlay = {
     searchInput = null;
     searchClear = null;
     searchResults = null;
+    // Reset state
+    currentQuery = '';
+    currentTerms = [];
+    currentResults = [];
+    matchingTerms.clear();
+    updateCallback = null;
+    onVerseClickCallback = null;
   },
 
   getUrlParams(): Record<string, string> {
