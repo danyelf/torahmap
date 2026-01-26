@@ -614,7 +614,7 @@ async function main(): Promise<void> {
       if (currentOverlay?.id === 'trop' && selectedTrop) {
         sidebarHebrew.innerHTML = highlightTropInText(hebrewText, selectedTrop.unicode);
       } else if (currentOverlay?.id === 'search') {
-        sidebarHebrew.innerHTML = highlightSearchTerms(hebrewText, 'he');
+        sidebarHebrew.replaceChildren(highlightSearchTerms(hebrewText, 'he'));
       } else {
         sidebarHebrew.textContent = hebrewText;
       }
@@ -622,7 +622,7 @@ async function main(): Promise<void> {
     if (sidebarEnglish) {
       const englishText = text?.en || 'Loading...';
       if (currentOverlay?.id === 'search') {
-        sidebarEnglish.innerHTML = highlightSearchTerms(englishText, 'en');
+        sidebarEnglish.replaceChildren(highlightSearchTerms(englishText, 'en'));
       } else {
         sidebarEnglish.textContent = englishText;
       }
