@@ -8,6 +8,7 @@ import {
   getTropByFrequency,
   getRarityTier,
 } from '../trop.ts';
+import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
@@ -22,7 +23,6 @@ let cachedTier: 'rare' | 'uncommon' | 'common' = 'common';
 
 // Colors for trop visualization
 const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
-const RARE_NO_MATCH_COLOR: Color = [0.15, 0.15, 0.15]; // Very dim
 
 // Update cached values when trop selection changes
 function updateCache(): void {
@@ -54,7 +54,7 @@ function getTropVerseColor(verse: Verse): Color | null {
 
   if (cachedTier === 'rare') {
     // Binary highlight: bright gold for matches, dim gray for non-matches
-    return count > 0 ? RARE_MATCH_COLOR : RARE_NO_MATCH_COLOR;
+    return count > 0 ? RARE_MATCH_COLOR : HIGHLIGHT_CONSTANTS.RARE_NO_MATCH_COLOR;
   } else if (cachedTier === 'uncommon') {
     // Gradient based on count (0 = dim, max = bright purple)
     if (count === 0) {

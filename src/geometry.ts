@@ -1,6 +1,7 @@
 // Build vertex buffer from verse layout
 
 import type { Verse } from './types.ts';
+import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 type Color = [number, number, number];
 
@@ -9,12 +10,9 @@ function isColorArray(color: Color | Color[] | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
 
-// Bleed distance for multicolor verses (pixels outside the normal bounds)
-const BLEED_PIXELS = 3;
-
 export function buildVerseGeometry(
   verses: Verse[],
-  baseColor: Color = [0.6, 0.6, 0.6]
+  baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
   // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
@@ -39,7 +37,7 @@ export function buildVerseGeometry(
     const isMulticolor = colorCount > 1;
 
     // For multicolor verses, expand bounds to allow bleed
-    const bleed = isMulticolor ? BLEED_PIXELS : 0;
+    const bleed = isMulticolor ? HIGHLIGHT_CONSTANTS.BLEED_PIXELS : 0;
     const x0 = v.x - bleed;
     const y0 = v.y - bleed;
     const x1 = v.x + v.size - 2 + bleed; // -2 for gap, +bleed for expansion

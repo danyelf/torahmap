@@ -2,6 +2,7 @@
 import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
 import { getVerseKey } from '../types.ts';
+import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 
 // Types for haftarah data
 interface VerseRef {
@@ -57,10 +58,6 @@ interface TanakhStructure {
     chapters: number[];
   }>;
 }
-
-// Brightness adjustment factor
-const BRIGHTNESS_FACTOR = 1.5;  // Multiply by this to brighten
-const DESATURATE_FACTOR = 0.2;  // Multiply saturation by this to desaturate
 
 // Convert RGB to HSL (R, G, B: 0-1) -> (H: 0-360, S: 0-1, L: 0-1)
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
@@ -350,9 +347,9 @@ export const haftarahOverlay: Overlay = {
         (hoveredItemsHaftarah && hoveredItemsHaftarah.includes(parshaFromTorah));
 
       if (isHoveredItem) {
-        return adjustBrightness(baseColor, BRIGHTNESS_FACTOR);
+        return adjustBrightness(baseColor, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR);
       }
-      return desaturate(baseColor, DESATURATE_FACTOR);
+      return desaturate(baseColor, HIGHLIGHT_CONSTANTS.DESATURATE_FACTOR);
     }
 
     // Haftarah verses can belong to multiple items (parshiot or special occasions)
@@ -380,11 +377,11 @@ export const haftarahOverlay: Overlay = {
           hoveredItemsHaftarah.some((hi) => itemsFromHaftarah.includes(hi)));
 
       if (isHoveredItem) {
-        const brightColors = colors.map((c) => adjustBrightness(c, BRIGHTNESS_FACTOR));
+        const brightColors = colors.map((c) => adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR));
         return brightColors.length === 1 ? brightColors[0] : brightColors;
       }
 
-      const desatColors = colors.map((c) => desaturate(c, DESATURATE_FACTOR));
+      const desatColors = colors.map((c) => desaturate(c, HIGHLIGHT_CONSTANTS.DESATURATE_FACTOR));
       return desatColors.length === 1 ? desatColors[0] : desatColors;
     }
 

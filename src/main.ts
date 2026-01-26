@@ -38,6 +38,7 @@ import {
   haftarahOverlay,
   type Overlay,
 } from './overlays/index.ts';
+import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 // Extend window for global state
 declare global {
@@ -52,6 +53,15 @@ declare global {
       bounds: Bounds;
     };
   }
+}
+
+/**
+ * Mouse interaction state
+ */
+interface MouseState {
+  isDragging: boolean;
+  hoveredVerse: Verse | null;
+  dragStart: { x: number; y: number };
 }
 
 function findVerseAtPoint(
@@ -74,9 +84,8 @@ function findVerseAtPoint(
   }
 
   // If no exact hit, find nearest verse within a fuzzy radius
-  const FUZZY_RADIUS = 10; // world units (pixels at 1x zoom)
   let nearestVerse: Verse | null = null;
-  let nearestDistSq = FUZZY_RADIUS * FUZZY_RADIUS;
+  let nearestDistSq = HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
 
   for (const v of verses) {
     // Find center of verse square
@@ -169,13 +178,14 @@ async function main(): Promise<void> {
       if (color) {
         v.color = color;
       } else {
-        const brightness = 0.4 + seededRandom(i * 3) * 0.4;
+        const brightness = HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
+          seededRandom(i * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
         v.color = [brightness, brightness, brightness];
       }
     });
 
     // Rebuild geometry buffer
-    const geometry = buildVerseGeometry(verses, [0.6, 0.6, 0.6]);
+    const geometry = buildVerseGeometry(verses, HIGHLIGHT_CONSTANTS.OUTLINE_COLOR);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
   }
@@ -273,35 +283,39 @@ async function main(): Promise<void> {
     debouncedSaveUrlState();
   }, { passive: false });
 
-  // Pan with mouse drag
-  let isDragging = false;
-  let lastMouse = { x: 0, y: 0 };
+  // Mouse interaction state
+  const mouseState: MouseState = {
+    isDragging: false,
+    hoveredVerse: null,
+    dragStart: { x: 0, y: 0 },
+  };
 
   canvas.addEventListener('mousedown', (e: MouseEvent) => {
-    isDragging = true;
-    lastMouse = { x: e.clientX, y: e.clientY };
+    mouseState.isDragging = true;
+    mouseState.dragStart = { x: e.clientX, y: e.clientY };
   });
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
-    if (isDragging) {
-      const dx = e.clientX - lastMouse.x;
-      const dy = e.clientY - lastMouse.y;
+    if (mouseState.isDragging) {
+      const dx = e.clientX - mouseState.dragStart.x;
+      const dy = e.clientY - mouseState.dragStart.y;
       pan.x += dx / zoom;
       pan.y += dy / zoom;
-      lastMouse = { x: e.clientX, y: e.clientY };
+      mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
     }
   });
 
   canvas.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
+    if (mouseState.isDragging) {
+      mouseState.isDragging = false;
       debouncedSaveUrlState();
     }
   });
 
   canvas.addEventListener('mouseleave', () => {
-    isDragging = false;
+    mouseState.isDragging = false;
+    mouseState.hoveredVerse = null;
     // Clear overlay hover state
     if (currentOverlay?.setHoveredVerse) {
       const shouldRerender = currentOverlay.setHoveredVerse(null);
@@ -441,8 +455,9 @@ async function main(): Promise<void> {
   }
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
-    if (!isDragging) {
+    if (!mouseState.isDragging) {
       const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+      mouseState.hoveredVerse = verse;
 
       // Notify overlay of hover change for cross-highlighting
       if (currentOverlay?.setHoveredVerse) {

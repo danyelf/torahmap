@@ -3,7 +3,8 @@ import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, type SearchResult } from '../search.ts';
-import { SEARCH_COLORS, DIM_FACTOR } from '../utils/color.ts';
+import { SEARCH_COLORS } from '../utils/color.ts';
+import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
@@ -254,7 +255,7 @@ export const searchOverlay: Overlay = {
     }
 
     // Dim non-matching verses
-    const brightness = (0.4 + 0.2) * DIM_FACTOR;
+    const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
     return [brightness, brightness, brightness];
   },
 
