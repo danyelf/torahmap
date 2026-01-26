@@ -79,6 +79,44 @@ export function versesEqual(a: VerseIdentity | null, b: VerseIdentity | null): b
 }
 
 /**
+ * Find the next verse in the layout array.
+ *
+ * @param verses - Array of all verses in layout order
+ * @param current - Current verse
+ * @returns Next verse or null if current is last verse or not found
+ */
+export function nextVerse(verses: VerseLayout[], current: VerseIdentity): VerseLayout | null {
+  const currentIndex = verses.findIndex(
+    v => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse
+  );
+
+  if (currentIndex === -1 || currentIndex >= verses.length - 1) {
+    return null;
+  }
+
+  return verses[currentIndex + 1];
+}
+
+/**
+ * Find the previous verse in the layout array.
+ *
+ * @param verses - Array of all verses in layout order
+ * @param current - Current verse
+ * @returns Previous verse or null if current is first verse or not found
+ */
+export function prevVerse(verses: VerseLayout[], current: VerseIdentity): VerseLayout | null {
+  const currentIndex = verses.findIndex(
+    v => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse
+  );
+
+  if (currentIndex <= 0) {
+    return null;
+  }
+
+  return verses[currentIndex - 1];
+}
+
+/**
  * Computed state for a single verse during rendering.
  * First pass: semantic state (what is true about this verse)
  * Second pass: visual state (how to render it)
