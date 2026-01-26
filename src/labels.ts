@@ -35,9 +35,11 @@ export function createBookLabels(verses: VerseLayout[], container: HTMLElement):
     label.textContent = name;
     label.style.cssText = `
       position:absolute;
-      color:#666;
+      color:#eee;
       font-family:sans-serif;
-      font-size:12px;
+      font-size:13px;
+      font-weight:700;
+      text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
     `;
     label.dataset.bookName = name;
