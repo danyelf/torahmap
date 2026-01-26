@@ -85,10 +85,11 @@ describe('labels', () => {
         const label = labels.children[0] as HTMLElement;
         expect(label.style.position).toBe('absolute');
         // happy-dom keeps color as hex, while real browsers convert to rgb
-        expect(label.style.color).toBe('#666');
+        expect(label.style.color).toBe('#eee');
         expect(label.style.fontFamily).toContain('sans-serif');
-        expect(label.style.fontSize).toBe('12px');
+        expect(label.style.fontWeight).toBe('700');
         expect(label.style.whiteSpace).toBe('nowrap');
+        // fontSize is set dynamically in updateLabelPositions, not here
       });
 
       it('stores book name in dataset', () => {
@@ -526,6 +527,47 @@ describe('labels', () => {
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
+      });
+    });
+
+    describe('font size scaling', () => {
+      it('scales font size with zoom at zoom=1', () => {
+        updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 1);
+        const label = labelsContainer.children[0] as HTMLElement;
+        expect(label.style.fontSize).toBe('13px'); // BASE_FONT_SIZE
+      });
+
+      it('scales font size with zoom at zoom=2', () => {
+        updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 2);
+        const label = labelsContainer.children[0] as HTMLElement;
+        expect(label.style.fontSize).toBe('20px'); // clamped to MAX_FONT_SIZE
+      });
+
+      it('clamps to minimum font size when zoomed way out', () => {
+        updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 0.1);
+        const label = labelsContainer.children[0] as HTMLElement;
+        expect(label.style.fontSize).toBe('10px'); // MIN_FONT_SIZE
+      });
+
+      it('clamps to maximum font size when zoomed way in', () => {
+        updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 10);
+        const label = labelsContainer.children[0] as HTMLElement;
+        expect(label.style.fontSize).toBe('20px'); // MAX_FONT_SIZE
+      });
+
+      it('scales proportionally at intermediate zoom levels', () => {
+        updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 1.5);
+        const label = labelsContainer.children[0] as HTMLElement;
+        expect(label.style.fontSize).toBe('19.5px'); // 13 * 1.5
+      });
+
+      it('applies same font size to all labels', () => {
+        updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 1.5);
+
+        for (const child of labelsContainer.children) {
+          const label = child as HTMLElement;
+          expect(label.style.fontSize).toBe('19.5px');
+        }
       });
     });
 

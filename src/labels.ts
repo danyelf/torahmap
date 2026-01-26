@@ -1,6 +1,6 @@
 // Render book labels as HTML overlays
 
-import type { VerseLayout } from './types.ts';
+import type { VerseLayout } from "./types.ts";
 
 interface BookBounds {
   minX: number;
@@ -13,9 +13,15 @@ interface Pan {
   y: number;
 }
 
-const LABEL_OFFSET_Y = -20; // Position labels above the book
+const BASE_LABEL_GAP = 10; // Gap between label bottom and verse top at BASE_FONT_SIZE
+const BASE_FONT_SIZE = 13; // Font size at zoom=1
+const MIN_FONT_SIZE = 5; // Minimum font size when zoomed out
+const MAX_FONT_SIZE = 50; // Maximum font size when zoomed in
 
-export function createBookLabels(verses: VerseLayout[], container: HTMLElement): HTMLDivElement {
+export function createBookLabels(
+  verses: VerseLayout[],
+  container: HTMLElement,
+): HTMLDivElement {
   // Group verses by book to find column positions
   const books: Record<string, BookBounds> = {};
   for (const v of verses) {
@@ -26,18 +32,17 @@ export function createBookLabels(verses: VerseLayout[], container: HTMLElement):
     books[v.book].minY = Math.min(books[v.book].minY, v.y);
   }
 
-  const labels = document.createElement('div');
-  labels.id = 'book-labels';
-  labels.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;';
+  const labels = document.createElement("div");
+  labels.id = "book-labels";
+  labels.style.cssText = "position:fixed;top:0;left:0;pointer-events:none;";
 
   for (const [name, pos] of Object.entries(books)) {
-    const label = document.createElement('div');
+    const label = document.createElement("div");
     label.textContent = name;
     label.style.cssText = `
       position:absolute;
       color:#eee;
       font-family:sans-serif;
-      font-size:13px;
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
@@ -52,15 +57,30 @@ export function createBookLabels(verses: VerseLayout[], container: HTMLElement):
   return labels;
 }
 
-export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
+export function updateLabelPositions(
+  labelsContainer: HTMLElement,
+  pan: Pan,
+  zoom: number,
+): void {
+  // Scale font size with zoom, clamped to prevent extremes
+  const fontSize = Math.max(
+    MIN_FONT_SIZE,
+    Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom),
+  );
+
+  // Scale gap proportionally to font size
+  const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
+
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement) {
-      const leftX = parseFloat(label.dataset.leftX || '0');
-      const topY = parseFloat(label.dataset.topY || '0');
+      const leftX = parseFloat(label.dataset.leftX || "0");
+      const topY = parseFloat(label.dataset.topY || "0");
       const screenX = (leftX + pan.x) * zoom;
-      const screenY = (topY + pan.y) * zoom + LABEL_OFFSET_Y;
-      label.style.left = screenX + 'px';
-      label.style.top = screenY + 'px';
+      // Position so the gap from label bottom to verse top scales with font size
+      const screenY = (topY + pan.y) * zoom - fontSize - gap;
+      label.style.left = screenX + "px";
+      label.style.top = screenY + "px";
+      label.style.fontSize = fontSize + "px";
     }
   }
 }
