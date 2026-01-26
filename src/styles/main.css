@@ -1,0 +1,527 @@
+/* Torah Map - Main Styles */
+
+/* Base styles */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1a1a; overflow: hidden; }
+canvas { display: block; }
+
+/* Controls panel */
+#controls {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 12px;
+  border-radius: 8px;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+  width: 280px;
+  z-index: 10;
+}
+#controls label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #aaa;
+}
+#controls select {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+#controls select:focus {
+  outline: none;
+  border-color: #666;
+}
+
+/* Overlay legend container */
+#overlay-legend {
+  margin-top: 12px;
+  font-size: 11px;
+}
+
+/* Commentary overlay legend */
+#overlay-legend .legend-gradient {
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #1a1a2e, #16213e, #0f3460, #e94560);
+  margin-bottom: 2px;
+}
+#overlay-legend .legend-ticks {
+  position: relative;
+  height: 16px;
+}
+#overlay-legend .tick {
+  position: absolute;
+  transform: translateX(-50%);
+  color: #888;
+  font-size: 10px;
+}
+#overlay-legend .tick::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 1px;
+  height: 4px;
+  background: #666;
+}
+
+/* Divine names overlay legend */
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #ccc;
+}
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+/* Verse sidebar */
+#verse-sidebar {
+  position: fixed;
+  right: 10px;
+  width: 280px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 8px;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+  display: none;
+  overflow: hidden;
+  z-index: 10;
+}
+#verse-sidebar.visible {
+  display: block;
+}
+#verse-sidebar .verse-ref {
+  padding: 12px 14px;
+  padding-right: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+#verse-sidebar .close-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+  line-height: 1;
+}
+#verse-sidebar .close-btn:hover {
+  color: #fff;
+}
+#verse-sidebar.pinned .close-btn {
+  display: block;
+}
+#verse-sidebar.pinned {
+  border: 1px solid rgba(106, 176, 243, 0.3);
+}
+#verse-sidebar .overlay-info {
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6ab0f3;
+  background: rgba(106, 176, 243, 0.1);
+  border-bottom: 1px solid rgba(106, 176, 243, 0.2);
+  font-style: italic;
+  display: none;
+}
+#verse-sidebar .overlay-info:not(:empty) {
+  display: block;
+}
+#verse-sidebar .verse-hebrew {
+  padding: 14px;
+  font-family: "SBL Hebrew", "Ezra SIL", "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.6;
+  direction: rtl;
+  text-align: right;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+#verse-sidebar .verse-english {
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ccc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+#verse-sidebar .sefaria-link {
+  padding: 12px 14px;
+  display: block;
+  color: #6ab0f3;
+  text-decoration: none;
+  font-size: 13px;
+}
+#verse-sidebar .sefaria-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+#verse-sidebar .sefaria-link .link-subtitle {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* Trop chart styles */
+.trop-controls {
+  margin-top: 10px;
+}
+.trop-chart {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.trop-chart button {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  font-family: "SBL Hebrew", "Ezra SIL", serif;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.trop-chart button:hover {
+  border-color: #888;
+  background: #333;
+}
+.trop-chart button.selected {
+  border-color: #6ab0f3;
+  background: #2a3f55;
+}
+.trop-chart button.rare::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  background: #ffd700;
+  border-radius: 50%;
+}
+.trop-info {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #888;
+  height: 36px;
+  line-height: 1.4;
+  overflow: hidden;
+}
+.trop-highlight {
+  background: rgba(255, 215, 0, 0.3);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Search styles */
+#search-container {
+  position: relative;
+  margin-bottom: 12px;
+}
+#search-input {
+  width: 100%;
+  padding: 8px 28px 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  font-size: 14px;
+}
+#search-input::placeholder {
+  color: #666;
+}
+#search-input:focus {
+  outline: none;
+  border-color: #6ab0f3;
+}
+#search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 16px;
+  cursor: pointer;
+  display: none;
+  padding: 2px 6px;
+}
+#search-clear:hover {
+  color: #fff;
+}
+#search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.98);
+  border: 1px solid #444;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: none;
+  z-index: 100;
+}
+#search-results.visible {
+  display: block;
+}
+.search-result {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #333;
+}
+.search-result:last-child {
+  border-bottom: none;
+}
+.search-result:hover {
+  background: rgba(106, 176, 243, 0.15);
+}
+.search-result .ref {
+  font-size: 12px;
+  color: #6ab0f3;
+  margin-bottom: 2px;
+}
+.search-result .snippet {
+  font-size: 13px;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-result .snippet.rtl {
+  direction: rtl;
+  text-align: right;
+}
+.search-result .snippet mark {
+  background: rgba(255, 220, 100, 0.3);
+  color: #fff;
+}
+.term-indicators {
+  display: inline-flex;
+  gap: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.term-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.search-result .snippet mark.term-0 { background: rgba(51, 230, 255, 0.4); color: #fff; }
+.search-result .snippet mark.term-1 { background: rgba(255, 128, 0, 0.4); color: #fff; }
+.search-result .snippet mark.term-2 { background: rgba(128, 255, 51, 0.4); color: #fff; }
+.search-result .snippet mark.term-3 { background: rgba(255, 51, 204, 0.4); color: #fff; }
+.search-result .snippet mark.term-4 { background: rgba(255, 255, 51, 0.4); color: #000; }
+.search-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+}
+.legend-term {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #ccc;
+}
+.color-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* Sidebar search term highlighting */
+#verse-sidebar mark.term-0 { background: rgba(51, 230, 255, 0.4); color: #fff; }
+#verse-sidebar mark.term-1 { background: rgba(255, 128, 0, 0.4); color: #fff; }
+#verse-sidebar mark.term-2 { background: rgba(128, 255, 51, 0.4); color: #fff; }
+#verse-sidebar mark.term-3 { background: rgba(255, 51, 204, 0.4); color: #fff; }
+#verse-sidebar mark.term-4 { background: rgba(255, 255, 51, 0.4); color: #000; }
+#search-count {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #666;
+  border-bottom: 1px solid #333;
+}
+
+/* Help button */
+#help-btn {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #444;
+  background: #222;
+  color: #888;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#help-btn:hover {
+  border-color: #6ab0f3;
+  color: #6ab0f3;
+  background: #2a3f55;
+}
+
+/* Help modal */
+.help-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+.help-modal.visible {
+  display: block;
+}
+.help-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+.help-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 500px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: #1e1e1e;
+  border-radius: 12px;
+  border: 1px solid #333;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+  color: #e0e0e0;
+}
+.help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  background: #252525;
+  border-bottom: 1px solid #333;
+}
+.help-tabs {
+  display: flex;
+  gap: 4px;
+}
+.help-tab {
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.help-tab:hover {
+  color: #ccc;
+}
+.help-tab.active {
+  color: #6ab0f3;
+  border-bottom-color: #6ab0f3;
+}
+.help-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+.help-close:hover {
+  color: #fff;
+}
+.help-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(80vh - 50px);
+  line-height: 1.6;
+}
+.help-body h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  color: #fff;
+}
+.help-body p {
+  margin: 0 0 12px;
+  color: #bbb;
+}
+.help-body ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: #bbb;
+}
+.help-body li {
+  margin-bottom: 6px;
+}
+.controls-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.controls-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #333;
+}
+.controls-table td:first-child {
+  color: #6ab0f3;
+  font-weight: 500;
+  width: 120px;
+}
+.controls-table tr:last-child td {
+  border-bottom: none;
+}
+.overlay-list {
+  margin: 0;
+}
+.overlay-list dt {
+  color: #6ab0f3;
+  font-weight: 600;
+  margin-top: 16px;
+}
+.overlay-list dt:first-child {
+  margin-top: 0;
+}
+.overlay-list dd {
+  margin: 4px 0 0 0;
+  color: #aaa;
+}
