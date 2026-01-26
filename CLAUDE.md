@@ -56,7 +56,7 @@ The dev server runs at `http://localhost:5173`
 
 ## Testing
 
-The project has comprehensive test coverage with **831 tests** covering all major functionality:
+The project has comprehensive test coverage with **1129 tests** covering all major functionality:
 
 ```bash
 # Run all tests
