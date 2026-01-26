@@ -19,7 +19,7 @@ import {
   debounce,
   type UrlState,
 } from './urlState.ts';
-import type { Verse, TorahData, Bounds } from './types.ts';
+import type { Verse, TorahData, Bounds, VerseState } from './types.ts';
 import {
   registerOverlay,
   getOverlay,
@@ -171,17 +171,74 @@ async function main(): Promise<void> {
   let currentOverlay: Overlay | null = null;
   let buffer: WebGLBuffer;
 
+  /**
+   * Get default gray color with brightness variation for a verse.
+   * Uses seeded random to ensure consistent appearance.
+   */
+  function getDefaultColor(verseIndex: number): [number, number, number] {
+    const brightness = HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
+      seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
+    return [brightness, brightness, brightness];
+  }
+
+  /**
+   * Get overlay-provided color for a verse, or null if overlay doesn't color it.
+   */
+  function getOverlayColor(
+    overlay: Overlay | null,
+    verse: Verse
+  ): [number, number, number] | [number, number, number][] | null {
+    return overlay?.getVerseColor(verse) ?? null;
+  }
+
+  /**
+   * Compute semantic state for all verses.
+   * First pass: determine what is true about each verse (hasOverlayColor, baseColor, isHovered, isPinned)
+   * Returns array parallel to verses array.
+   */
+  function computeVerseStates(
+    verses: Verse[],
+    overlay: Overlay | null,
+    hoveredVerse: Verse | null,
+    pinnedVerse: Verse | null
+  ): VerseState[] {
+    return verses.map((v, i) => {
+      const overlayColor = getOverlayColor(overlay, v);
+      const hasOverlayColor = overlayColor !== null;
+      const baseColor = hasOverlayColor ? overlayColor : getDefaultColor(i);
+
+      const isHovered = hoveredVerse !== null &&
+        hoveredVerse.book === v.book &&
+        hoveredVerse.chapter === v.chapter &&
+        hoveredVerse.verse === v.verse;
+
+      const isPinned = pinnedVerse !== null &&
+        pinnedVerse.book === v.book &&
+        pinnedVerse.chapter === v.chapter &&
+        pinnedVerse.verse === v.verse;
+
+      return {
+        hasOverlayColor,
+        baseColor,
+        isHovered,
+        isPinned,
+      };
+    });
+  }
+
   // Function to apply overlay colors
   function applyOverlay(): void {
+    // Compute semantic state for all verses
+    const verseStates = computeVerseStates(
+      verses,
+      currentOverlay,
+      mouseState?.hoveredVerse ?? null,
+      pinnedVerse ?? null
+    );
+
+    // Apply computed state to verses
     verses.forEach((v, i) => {
-      const color = currentOverlay?.getVerseColor(v) ?? null;
-      if (color) {
-        v.color = color;
-      } else {
-        const brightness = HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
-          seededRandom(i * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
-        v.color = [brightness, brightness, brightness];
-      }
+      v.color = verseStates[i].baseColor;
     });
 
     // Rebuild geometry buffer

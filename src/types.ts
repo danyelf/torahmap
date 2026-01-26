@@ -28,6 +28,18 @@ export interface Verse {
   highlighted?: boolean;
 }
 
+/**
+ * Computed state for a single verse during rendering.
+ * First pass: semantic state (what is true about this verse)
+ * Second pass: visual state (how to render it)
+ */
+export interface VerseState {
+  hasOverlayColor: boolean;  // Does overlay provide a color?
+  baseColor: [number, number, number] | [number, number, number][]; // Overlay color or default gray
+  isHovered: boolean;         // Is mouse hovering this verse?
+  isPinned: boolean;          // Is this verse pinned in sidebar?
+}
+
 export interface Bounds {
   width: number;
   height: number;
