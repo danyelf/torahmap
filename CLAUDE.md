@@ -26,11 +26,13 @@ The core design principle is **position stability** - each verse occupies a perm
 |---------|-------------|
 | **None** | Gray with subtle brightness variation |
 | **Divine Names** | Colors by divine name usage: Blue (YHWH), Red (Elohim), Purple (both), Gray (neither). Torah only. |
-| **Commentary** | Logarithmic heatmap of Sefaria commentary link counts, filterable by 9 categories |
+| **Commentary** | Logarithmic heatmap of Sefaria commentary link counts, filterable by 8 categories |
 | **Trop** | Cantillation mark (trope) visualizer - select any of the 39 trop marks to see where they appear across Tanakh, with rarity-based coloring (gold for rare marks, heatmap for common ones) |
 | **Search** | Full-text search with Hebrew/English support - highlights matching verses on the map |
 
-Commentary categories: Talmud, Midrash, Halakhah, Chasidut, Kabbalah, Jewish Thought, Musar, Responsa, Tanakh (cross-references)
+Commentary categories: Talmud (direct text only, filters commentaries), Midrash, Halakhah, Jewish Thought, Chasidut, Kabbalah, Musar, Responsa
+
+Note: The "Tanakh" category (verse cross-references) was removed as it was confusing.
 
 ### Search
 
@@ -143,11 +145,12 @@ git commit --no-verify
 ├── data/texts/           # Source Hebrew & English verse texts (78 files)
 │
 ├── scripts/
-│   ├── bundle-texts.ts            # Bundle all verse texts into one file
-│   ├── download-texts.sh          # Download texts from Sefaria
-│   ├── fetch-tanakh-structure.js  # Generate structure JSON from API
-│   ├── generate-divine-names.ts   # Generate divine names from Torah text
-│   └── process_sefaria_links.py   # Generate commentary counts from Sefaria links
+│   ├── bundle-texts.ts               # Bundle all verse texts into one file
+│   ├── download-texts.sh             # Download texts from Sefaria
+│   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
+│   ├── generate-divine-names.ts      # Generate divine names from Torah text
+│   ├── process_sefaria_links.py      # (Deprecated) Old commentary counts script
+│   └── process_sefaria_links_v2.py   # Generate commentary counts (USE THIS)
 │
 ```
 
@@ -274,9 +277,24 @@ node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 # Regenerate divine names data
 npx tsx scripts/generate-divine-names.ts
 
-# Regenerate commentary counts
-python3 scripts/process_sefaria_links.py > public/data/commentary-counts.json
+# Regenerate commentary counts (IMPORTANT: Use v2 script)
+# First, download Sefaria links CSV files (~470MB) if not already present:
+mkdir -p data/sefaria-links
+cd data/sefaria-links
+for i in {0..12}; do
+  curl -O "https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/links/links$i.csv"
+done
+cd ../..
+
+# Then run the v2 script (filters Talmud commentaries, drops Tanakh category):
+python3 scripts/process_sefaria_links_v2.py
 ```
+
+**Note:** `process_sefaria_links_v2.py` differs from the old script:
+- **Drops "Tanakh" category** (verse cross-references were confusing)
+- **Filters Talmud** to show only direct text references (not Steinsaltz, Rashi on Talmud, etc.)
+- **Uses local CSV files** from `data/sefaria-links/` instead of downloading on each run
+- **Result:** Closer match to Sefaria's website counts (e.g., Exodus 23:5 shows 24 Talmud vs 28 on Sefaria)
 
 ## Interactions
 

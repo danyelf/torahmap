@@ -333,11 +333,13 @@ describe('Commentary Overlay', () => {
       const options = Array.from(select.options).map(opt => opt.value);
 
       expect(options).toContain('total');
-      expect(options).toContain('Tanakh');
       expect(options).toContain('Talmud');
       expect(options).toContain('Midrash');
       expect(options).toContain('Halakhah');
+      expect(options).toContain('Jewish Thought');
+      expect(options).toContain('Chasidut');
       expect(options).toContain('Kabbalah');
+      expect(options).toContain('Musar');
     });
 
     it('sets initial value to current category', () => {
