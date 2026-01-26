@@ -314,5 +314,6 @@ export const tropOverlay = createTropOverlay();
 
 // Export helper methods for external use (sidebar, etc.)
 export const configureTrop = tropOverlay.configure;
+export const configure = tropOverlay.configure; // Backward compatibility alias for tests
 export const getSelectedTrop = tropOverlay.getSelectedTrop;
 export const highlightTropInText = tropOverlay.highlightTropInText;

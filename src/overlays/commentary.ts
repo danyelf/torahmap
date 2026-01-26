@@ -169,4 +169,5 @@ export const commentaryOverlay = createCommentaryOverlay();
 
 // Export helper methods for external use (sidebar, etc.)
 export const configureCommentary = commentaryOverlay.configure;
+export const configure = commentaryOverlay.configure; // Backward compatibility alias for tests
 export const getVerseLinkCount = commentaryOverlay.getVerseLinkCount;

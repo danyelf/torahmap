@@ -468,3 +468,10 @@ export function createSearchOverlay(): Overlay {
 
   return overlay;
 }
+
+// Create singleton instance
+export const searchOverlay = createSearchOverlay();
+
+// Export helper methods for external use (backward compatibility with tests)
+export const configure = searchOverlay.configure;
+export const highlightSearchTerms = searchOverlay.highlightSearchTerms;
