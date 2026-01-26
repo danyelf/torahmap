@@ -227,6 +227,9 @@ function findWordIndexByLemma(verseKey: string, lemmas: string[]): number {
  * Exported for testing
  */
 export function getWordBoundaries(text: string, wordIndex: number): { start: number; end: number } | null {
+  // Bounds check: wordIndex must be non-negative
+  if (wordIndex < 0) return null;
+
   let currentWord = 0;
   let start = 0;
 
@@ -454,6 +457,9 @@ function createSnippetAtPosition(text: string, matchStart: number, matchLen: num
  * Map a position in nikkud-stripped text to the corresponding position in original text
  */
 function mapStrippedToOriginal(original: string, strippedPos: number): number {
+  // Bounds check: strippedPos must be non-negative
+  if (strippedPos < 0) return 0;
+
   let normalizedPos = 0;
   for (let i = 0; i < original.length; i++) {
     if (normalizedPos === strippedPos) {
@@ -473,6 +479,11 @@ function mapStrippedToOriginal(original: string, strippedPos: number): number {
  * Count nikkud characters in a range of the original text
  */
 function countNikkudInRange(text: string, start: number, strippedLen: number): number {
+  // Bounds check: start must be within valid range
+  if (start < 0 || start >= text.length) return 0;
+  // Bounds check: strippedLen must be non-negative
+  if (strippedLen < 0) return 0;
+
   let nikkudCount = 0;
   let nonNikkudCount = 0;
   for (let i = start; i < text.length && nonNikkudCount < strippedLen; i++) {
