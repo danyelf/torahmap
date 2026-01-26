@@ -20,6 +20,11 @@ import {
   debounce,
   type UrlState,
 } from './urlState.ts';
+import {
+  getSidebarElements,
+  positionSidebar,
+  updateSidebar,
+} from './sidebar.ts';
 import type { Verse, TorahData, Bounds, VerseState } from './types.ts';
 import {
   registerOverlay,
@@ -28,14 +33,10 @@ import {
   divineNamesOverlay,
   commentaryOverlay,
   configureCommentary,
-  getVerseLinkCount,
   tropOverlay,
   configureTrop,
-  getSelectedTrop,
-  highlightTropInText,
   searchOverlay,
   configureSearch,
-  highlightSearchTerms,
   haftarahOverlay,
   type Overlay,
 } from './overlays/index.ts';
@@ -520,28 +521,8 @@ async function main(): Promise<void> {
   });
 
   // Sidebar for verse details
-  const sidebar = document.getElementById('verse-sidebar');
-  const sidebarRef = sidebar?.querySelector('.ref-text');
-  const sidebarOverlayInfo = sidebar?.querySelector('.overlay-info');
-  const sidebarHebrew = sidebar?.querySelector('.verse-hebrew');
-  const sidebarEnglish = sidebar?.querySelector('.verse-english');
-  const sidebarLink = sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement | null;
-  const sidebarLinkSubtitle = sidebar?.querySelector('.link-subtitle');
-  const sidebarCloseBtn = sidebar?.querySelector('.close-btn');
+  const sidebarElements = getSidebarElements();
   const controlsPanel = document.getElementById('controls');
-
-  // Position sidebar below controls panel
-  function positionSidebar(): void {
-    if (!sidebar || !controlsPanel) return;
-    const controlsRect = controlsPanel.getBoundingClientRect();
-    (sidebar as HTMLElement).style.top = `${controlsRect.bottom + 10}px`;
-  }
-
-  // Build Sefaria URL for a verse
-  function getSefariaUrl(book: string, chapter: number, verse: number): string {
-    const sefariaBook = book.replace(/ /g, '_');
-    return `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
-  }
 
   // URL State Management
   // Build current state for URL
@@ -588,60 +569,10 @@ async function main(): Promise<void> {
   // Debounced version for pan/zoom (replaceState only)
   const debouncedSaveUrlState = debounce(() => saveUrlState(false), 300);
 
-  // Update sidebar with verse info
-  function updateSidebar(verse: Verse | null, isPinned: boolean = false): void {
-    if (!sidebar) return;
-
-    if (!verse) {
-      sidebar.classList.remove('visible');
-      sidebar.classList.remove('pinned');
-      return;
-    }
-
-    const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
-
-    if (sidebarRef) {
-      sidebarRef.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
-    }
-    if (sidebarOverlayInfo) {
-      // Get overlay-specific hover info (e.g., parshah name for Torah verses)
-      const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
-      sidebarOverlayInfo.textContent = hoverInfo || '';
-    }
-    if (sidebarHebrew) {
-      const hebrewText = text?.he || 'Loading...';
-      const selectedTrop = getSelectedTrop();
-      if (currentOverlay?.id === 'trop' && selectedTrop) {
-        sidebarHebrew.innerHTML = highlightTropInText(hebrewText, selectedTrop.unicode);
-      } else if (currentOverlay?.id === 'search') {
-        sidebarHebrew.replaceChildren(highlightSearchTerms(hebrewText, 'he'));
-      } else {
-        sidebarHebrew.textContent = hebrewText;
-      }
-    }
-    if (sidebarEnglish) {
-      const englishText = text?.en || 'Loading...';
-      if (currentOverlay?.id === 'search') {
-        sidebarEnglish.replaceChildren(highlightSearchTerms(englishText, 'en'));
-      } else {
-        sidebarEnglish.textContent = englishText;
-      }
-    }
-    if (sidebarLink) {
-      sidebarLink.href = getSefariaUrl(verse.book, verse.chapter, verse.verse);
-    }
-    if (sidebarLinkSubtitle) {
-      const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
-      sidebarLinkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
-    }
-
-    positionSidebar();
-    sidebar.classList.add('visible');
-    if (isPinned) {
-      sidebar.classList.add('pinned');
-    } else {
-      sidebar.classList.remove('pinned');
-    }
+  // Update sidebar with verse info - wrapper for the extracted module function
+  function updateSidebarWrapper(verse: Verse | null, isPinned: boolean = false): void {
+    updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
+    positionSidebar(sidebarElements.sidebar, controlsPanel);
   }
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
@@ -669,9 +600,9 @@ async function main(): Promise<void> {
       if (pinnedVerse) {
         // Keep showing pinned verse, don't update on hover
       } else if (verse) {
-        updateSidebar(verse, false);
+        updateSidebarWrapper(verse, false);
       } else {
-        updateSidebar(null);
+        updateSidebarWrapper(null);
       }
     }
   });
@@ -686,13 +617,13 @@ async function main(): Promise<void> {
           pinnedVerse.chapter === verse.chapter &&
           pinnedVerse.verse === verse.verse) {
         pinnedVerse = null;
-        updateSidebar(null);
+        updateSidebarWrapper(null);
         applyOverlay();
         render();
         saveUrlState(true);
       } else {
         pinnedVerse = verse;
-        updateSidebar(verse, true);
+        updateSidebarWrapper(verse, true);
         applyOverlay();
         render();
         saveUrlState(true);
@@ -700,7 +631,7 @@ async function main(): Promise<void> {
     } else if (pinnedVerse) {
       // Clicking empty space unpins
       pinnedVerse = null;
-      updateSidebar(null);
+      updateSidebarWrapper(null);
       applyOverlay();
       render();
       saveUrlState(true);
@@ -708,9 +639,9 @@ async function main(): Promise<void> {
   });
 
   // Close button to unpin
-  sidebarCloseBtn?.addEventListener('click', () => {
+  sidebarElements.closeBtn?.addEventListener('click', () => {
     pinnedVerse = null;
-    updateSidebar(null);
+    updateSidebarWrapper(null);
     applyOverlay();
     render();
     saveUrlState(true);
@@ -754,7 +685,7 @@ async function main(): Promise<void> {
     render();
 
     // Reposition sidebar after overlay controls are rendered
-    requestAnimationFrame(positionSidebar);
+    requestAnimationFrame(() => positionSidebar(sidebarElements.sidebar, controlsPanel));
 
     // Update URL when overlay changes (unless restoring from URL)
     if (!fromUrlRestore) {
@@ -782,7 +713,7 @@ async function main(): Promise<void> {
     callbacks: {
       onVerseClick: (verse: Verse) => {
         pinnedVerse = verse;
-        updateSidebar(verse, true);
+        updateSidebarWrapper(verse, true);
         applyOverlay();
         render();
         saveUrlState(true);
@@ -831,7 +762,7 @@ async function main(): Promise<void> {
         );
         if (verse) {
           pinnedVerse = verse;
-          updateSidebar(verse, true);
+          updateSidebarWrapper(verse, true);
 
           // Center on the verse
           const cssWidth = window.innerWidth;
