@@ -1,4 +1,5 @@
 // src/overlays/trop.ts
+import '../styles/overlays/trop.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, TropIndex, TropIndexEntry } from '../types.ts';
 import { getVerseKey } from '../types.ts';

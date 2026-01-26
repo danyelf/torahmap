@@ -1,4 +1,5 @@
 // Full-text search overlay
+import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';

@@ -1,0 +1,30 @@
+/* Commentary Overlay Styles */
+
+#overlay-legend .legend-gradient {
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(to right, #1a1a2e, #16213e, #0f3460, #e94560);
+  margin-bottom: 2px;
+}
+
+#overlay-legend .legend-ticks {
+  position: relative;
+  height: 16px;
+}
+
+#overlay-legend .tick {
+  position: absolute;
+  transform: translateX(-50%);
+  color: #888;
+  font-size: 10px;
+}
+
+#overlay-legend .tick::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 1px;
+  height: 4px;
+  background: #666;
+}

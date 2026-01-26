@@ -1,4 +1,5 @@
 // Help modal for Torah Map
+import './styles/help.css';
 
 const STORAGE_KEY_SEEN = 'torahMap.helpSeen';
 const STORAGE_KEY_TAB = 'torahMap.helpTab';

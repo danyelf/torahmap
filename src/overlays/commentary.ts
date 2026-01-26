@@ -1,4 +1,5 @@
 // src/overlays/commentary.ts
+import '../styles/overlays/commentary.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout, CommentaryData } from '../types.ts';
 import { heatmapColor } from '../utils/color.ts';

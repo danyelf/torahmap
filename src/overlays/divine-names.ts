@@ -1,4 +1,5 @@
 // src/overlays/divine-names.ts
+import '../styles/overlays/divine-names.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, DivineNamesData } from '../types.ts';
 
