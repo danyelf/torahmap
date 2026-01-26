@@ -2,14 +2,10 @@
 
 declare const __GIT_BRANCH__: string;
 
-import { initWebGL, createProgram, createOutlineProgram } from './webgl.ts';
 import { computeLayout, getLayoutBounds } from './layout.ts';
-import { buildVerseGeometry, createBuffer } from './geometry.ts';
-import { buildOutlineGeometry } from './outline.ts';
-import { createBookLabels, updateLabelPositions } from './labels.ts';
+import { createBookLabels } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex } from './search.ts';
-import { seededRandom } from './utils/random.ts';
 import { initHelp } from './help.ts';
 import {
   parseUrlState,
@@ -25,6 +21,11 @@ import {
   positionSidebar,
   updateSidebar,
 } from './sidebar.ts';
+import { createCamera, clampZoom, panForZoom, type Camera } from './camera.ts';
+import { createMouseState, versesEqual, startDrag, stopDrag, setHoveredVerse, clearHover, type MouseState } from './mouseState.ts';
+import { findVerseAtPoint } from './hitDetection.ts';
+import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
+import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame, type RenderContext, type RenderState } from './rendering.ts';
 import type { Verse, TorahData, Bounds, VerseState } from './types.ts';
 import {
   registerOverlay,
@@ -57,67 +58,6 @@ declare global {
   }
 }
 
-/**
- * Mouse interaction state
- */
-interface MouseState {
-  isDragging: boolean;
-  hoveredVerse: Verse | null;
-  dragStart: { x: number; y: number };
-}
-
-/**
- * Check if two verses refer to the same verse.
- * Handles null comparison.
- */
-function versesEqual(a: Verse | null, b: Verse | null): boolean {
-  if (a === null && b === null) return true;
-  if (a === null || b === null) return false;
-  return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
-}
-
-function findVerseAtPoint(
-  verses: Verse[],
-  pan: { x: number; y: number },
-  zoom: number,
-  canvasX: number,
-  canvasY: number
-): Verse | null {
-  // Convert screen coords to world coords
-  const worldX = canvasX / zoom - pan.x;
-  const worldY = canvasY / zoom - pan.y;
-
-  // First, try exact hit detection
-  for (const v of verses) {
-    if (worldX >= v.x && worldX < v.x + v.size &&
-        worldY >= v.y && worldY < v.y + v.size) {
-      return v;
-    }
-  }
-
-  // If no exact hit, find nearest verse within a fuzzy radius
-  let nearestVerse: Verse | null = null;
-  let nearestDistSq = HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
-
-  for (const v of verses) {
-    // Find center of verse square
-    const centerX = v.x + v.size / 2;
-    const centerY = v.y + v.size / 2;
-
-    // Distance from mouse to verse center
-    const dx = worldX - centerX;
-    const dy = worldY - centerY;
-    const distSq = dx * dx + dy * dy;
-
-    // If within fuzzy radius and closer than previous best
-    if (distSq < nearestDistSq) {
-      nearestVerse = v;
-      nearestDistSq = distSq;
-    }
-  }
-
-  return nearestVerse;
-}
 
 async function main(): Promise<void> {
   // Set page title with branch name
@@ -175,321 +115,78 @@ async function main(): Promise<void> {
   }
   resizeCanvas();
 
-  // Init WebGL
-  const gl = initWebGL(canvas);
-  const prog = createProgram(gl);
-  const outlineProg = createOutlineProgram(gl);
+  // Init WebGL and rendering infrastructure
+  const renderContext = createRenderContext(canvas);
+  const renderState = createRenderState(renderContext.gl, verses, dpr);
 
   // Current overlay state
   let currentOverlay: Overlay | null = null;
-  let buffer: WebGLBuffer;
-  let outlineBuffer: WebGLBuffer | null = null;
-  let hoverOutlineBuffer: WebGLBuffer | null = null;
-
-  /**
-   * Get default gray color with brightness variation for a verse.
-   * Uses seeded random to ensure consistent appearance.
-   */
-  function getDefaultColor(verseIndex: number): [number, number, number] {
-    const brightness = HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
-      seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
-    return [brightness, brightness, brightness];
-  }
-
-  /**
-   * Get overlay-provided color for a verse, or null if overlay doesn't color it.
-   */
-  function getOverlayColor(
-    overlay: Overlay | null,
-    verse: Verse
-  ): [number, number, number] | [number, number, number][] | null {
-    return overlay?.getVerseColor(verse) ?? null;
-  }
-
-  /**
-   * Apply hover highlighting to a verse color.
-   * Second pass: modifies colors based on hover state.
-   * - Verses with overlay color: brighten by 1.5x
-   * - Verses without overlay color (background): replace with highlight color
-   */
-  function applyHoverHighlight(
-    baseColor: [number, number, number] | [number, number, number][],
-    hasOverlayColor: boolean
-  ): [number, number, number] | [number, number, number][] {
-    if (hasOverlayColor) {
-      // Brighten overlay-colored verses by 1.5x
-      if (Array.isArray(baseColor[0])) {
-        // Array of colors (multi-color verse)
-        return (baseColor as [number, number, number][]).map((c) => [
-          Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-          Math.min(1, c[1] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-          Math.min(1, c[2] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-        ] as [number, number, number]);
-      } else {
-        // Single color
-        const c = baseColor as [number, number, number];
-        return [
-          Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-          Math.min(1, c[1] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-          Math.min(1, c[2] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-        ];
-      }
-    } else {
-      // Replace background verses with highlight color
-      return HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR;
-    }
-  }
-
-  /**
-   * Compute semantic state for all verses.
-   * First pass: determine what is true about each verse (hasOverlayColor, baseColor, isHovered, isPinned)
-   * Returns array parallel to verses array.
-   */
-  function computeVerseStates(
-    verses: Verse[],
-    overlay: Overlay | null,
-    hoveredVerse: Verse | null,
-    pinnedVerse: Verse | null
-  ): VerseState[] {
-    return verses.map((v, i) => {
-      const overlayColor = getOverlayColor(overlay, v);
-      const hasOverlayColor = overlayColor !== null;
-      const baseColor = hasOverlayColor ? overlayColor : getDefaultColor(i);
-
-      const isHovered = hoveredVerse !== null &&
-        hoveredVerse.book === v.book &&
-        hoveredVerse.chapter === v.chapter &&
-        hoveredVerse.verse === v.verse;
-
-      const isPinned = pinnedVerse !== null &&
-        pinnedVerse.book === v.book &&
-        pinnedVerse.chapter === v.chapter &&
-        pinnedVerse.verse === v.verse;
-
-      return {
-        hasOverlayColor,
-        baseColor,
-        isHovered,
-        isPinned,
-      };
-    });
-  }
 
   // Function to apply overlay colors
   function applyOverlay(): void {
-    // First pass: compute semantic state for all verses
+    // Compute verse states and apply colors
     const verseStates = computeVerseStates(
       verses,
       currentOverlay,
-      mouseState?.hoveredVerse ?? null,
-      pinnedVerse ?? null
+      mouseState.hoveredVerse,
+      pinnedVerse
     );
-
-    // Second pass: apply base colors, then hover highlighting
-    verses.forEach((v, i) => {
-      const state = verseStates[i];
-
-      // Start with base color
-      let finalColor = state.baseColor;
-
-      // Apply hover highlighting if this verse is hovered
-      if (state.isHovered) {
-        finalColor = applyHoverHighlight(finalColor, state.hasOverlayColor);
-      }
-
-      v.color = finalColor;
-    });
+    applyVerseColors(verses, verseStates);
 
     // Rebuild geometry buffer
-    const geometry = buildVerseGeometry(verses, HIGHLIGHT_CONSTANTS.OUTLINE_COLOR);
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+    rebuildGeometry(renderContext.gl, renderState);
   }
 
-  // Build initial geometry
-  const geometry = buildVerseGeometry(verses);
-  buffer = createBuffer(gl, geometry);
-
   // Camera state - start at 1:1 zoom, centered
-  const cssWidth = window.innerWidth;
-  const cssHeight = window.innerHeight;
-
-  // Always start at 1:1 zoom to avoid moiré from fractional scaling
-  let zoom = 1.0;
-
-  // Center the visualization
-  const pan = {
-    x: (cssWidth / 2 - bounds.width / 2),
-    y: (cssHeight / 2 - bounds.height / 2)
-  };
+  const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
 
   // Track pinned verse (click to persist)
   let pinnedVerse: Verse | null = null;
 
   // Mouse interaction state
-  const mouseState: MouseState = {
-    isDragging: false,
-    hoveredVerse: null,
-    dragStart: { x: 0, y: 0 },
-  };
+  const mouseState = createMouseState();
 
   // Render function
   function render(): void {
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.clearColor(0.1, 0.1, 0.1, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    gl.useProgram(prog.program);
-
-    // Set uniforms - scale zoom by dpr to account for high-DPI canvas
-    gl.uniform2f(prog.uniforms.resolution, canvas.width, canvas.height);
-    gl.uniform2f(prog.uniforms.pan, pan.x, pan.y);
-    gl.uniform1f(prog.uniforms.zoom, zoom * dpr);
-
-    // Bind buffer and set attributes
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-    // Vertex layout: x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-    const stride = 19 * 4; // 19 floats * 4 bytes
-    gl.enableVertexAttribArray(prog.attribs.position);
-    gl.vertexAttribPointer(prog.attribs.position, 2, gl.FLOAT, false, stride, 0);
-
-    gl.enableVertexAttribArray(prog.attribs.color);
-    gl.vertexAttribPointer(prog.attribs.color, 3, gl.FLOAT, false, stride, 2 * 4);
-
-    gl.enableVertexAttribArray(prog.attribs.color2);
-    gl.vertexAttribPointer(prog.attribs.color2, 3, gl.FLOAT, false, stride, 5 * 4);
-
-    gl.enableVertexAttribArray(prog.attribs.color3);
-    gl.vertexAttribPointer(prog.attribs.color3, 3, gl.FLOAT, false, stride, 8 * 4);
-
-    gl.enableVertexAttribArray(prog.attribs.color4);
-    gl.vertexAttribPointer(prog.attribs.color4, 3, gl.FLOAT, false, stride, 11 * 4);
-
-    gl.enableVertexAttribArray(prog.attribs.colorCount);
-    gl.vertexAttribPointer(prog.attribs.colorCount, 1, gl.FLOAT, false, stride, 14 * 4);
-
-    gl.enableVertexAttribArray(prog.attribs.uv);
-    gl.vertexAttribPointer(prog.attribs.uv, 2, gl.FLOAT, false, stride, 15 * 4);
-
-    gl.enableVertexAttribArray(prog.attribs.seed);
-    gl.vertexAttribPointer(prog.attribs.seed, 2, gl.FLOAT, false, stride, 17 * 4);
-
-    // Draw
-    gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
-
-    // Draw hover outline (if hovering and not same as pinned)
-    if (mouseState?.hoveredVerse && !versesEqual(mouseState.hoveredVerse, pinnedVerse)) {
-      hoverOutlineBuffer = renderOutline(
-        mouseState.hoveredVerse,
-        HIGHLIGHT_CONSTANTS.HOVER_OUTLINE_COLOR,
-        hoverOutlineBuffer
-      );
-    }
-
-    // Draw pinned outline on top
-    if (pinnedVerse) {
-      outlineBuffer = renderOutline(
-        pinnedVerse,
-        HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
-        outlineBuffer
-      );
-    }
-
-    if (window.bookLabels) updateLabelPositions(window.bookLabels, pan, zoom);
-  }
-
-  /**
-   * Render outline border for a verse.
-   * Draws on top of the main verse geometry.
-   */
-  function renderOutline(
-    verse: Verse,
-    color: [number, number, number],
-    buffer: WebGLBuffer | null
-  ): WebGLBuffer {
-    // Build outline geometry for this verse
-    const geometry = buildOutlineGeometry({
-      x: verse.x,
-      y: verse.y,
-      size: verse.size,
-    }, {
-      thickness: HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
-      color: color,
-    });
-
-    // Create or update outline buffer
-    let currentBuffer = buffer;
-    if (!currentBuffer) {
-      currentBuffer = createBuffer(gl, geometry);
-    } else {
-      gl.bindBuffer(gl.ARRAY_BUFFER, currentBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
-    }
-
-    // Use outline shader
-    gl.useProgram(outlineProg.program);
-
-    // Set uniforms (same pan/zoom as main render)
-    gl.uniform2f(outlineProg.uniforms.resolution, canvas.width, canvas.height);
-    gl.uniform2f(outlineProg.uniforms.pan, pan.x, pan.y);
-    gl.uniform1f(outlineProg.uniforms.zoom, zoom * dpr);
-    gl.uniform3f(outlineProg.uniforms.color, ...color);
-
-    // Bind buffer and set position attribute
-    gl.bindBuffer(gl.ARRAY_BUFFER, currentBuffer);
-
-    // Vertex layout for outline: just x, y at start (then other unused data)
-    // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-    const stride = 19 * 4; // Same as main shader
-    gl.enableVertexAttribArray(outlineProg.attribs.position);
-    gl.vertexAttribPointer(outlineProg.attribs.position, 2, gl.FLOAT, false, stride, 0);
-
-    // Draw outline (4 borders * 6 vertices each = 24 vertices)
-    gl.drawArrays(gl.TRIANGLES, 0, 24);
-
-    return currentBuffer;
+    renderFrame(renderContext, renderState, camera, mouseState.hoveredVerse, pinnedVerse);
   }
 
   render();
 
   // Book labels
   window.bookLabels = createBookLabels(verses, document.body);
-  updateLabelPositions(window.bookLabels, pan, zoom);
+  updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
 
   // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, Math.min(10, zoom * zoomFactor));
+    const newZoom = clampZoom(camera.zoom * zoomFactor);
 
     // Get mouse position in canvas coordinates
     const mouseX = e.clientX;
     const mouseY = e.clientY;
 
     // Adjust pan so the world point under the mouse stays fixed
-    // Before: worldX = mouseX / zoom - pan.x
-    // After:  worldX = mouseX / newZoom - newPan.x (same worldX)
-    // Solving: newPan.x = pan.x + mouseX * (1/newZoom - 1/zoom)
-    pan.x += mouseX * (1 / newZoom - 1 / zoom);
-    pan.y += mouseY * (1 / newZoom - 1 / zoom);
+    const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, mouseX, mouseY);
+    camera.x = newPan.x;
+    camera.y = newPan.y;
+    camera.zoom = newZoom;
 
-    zoom = newZoom;
     render();
     debouncedSaveUrlState();
   }, { passive: false });
 
   canvas.addEventListener('mousedown', (e: MouseEvent) => {
-    mouseState.isDragging = true;
-    mouseState.dragStart = { x: e.clientX, y: e.clientY };
+    startDrag(mouseState, e.clientX, e.clientY);
   });
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (mouseState.isDragging) {
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
-      pan.x += dx / zoom;
-      pan.y += dy / zoom;
+      camera.x += dx / camera.zoom;
+      camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
     }
@@ -497,15 +194,14 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('mouseup', () => {
     if (mouseState.isDragging) {
-      mouseState.isDragging = false;
+      stopDrag(mouseState);
       debouncedSaveUrlState();
     }
   });
 
   canvas.addEventListener('mouseleave', () => {
     const wasHovering = mouseState.hoveredVerse !== null;
-    mouseState.isDragging = false;
-    mouseState.hoveredVerse = null;
+    clearHover(mouseState);
 
     // Notify overlay of hover change
     let overlayWantsRerender = false;
@@ -547,14 +243,14 @@ async function main(): Promise<void> {
     }
 
     // Zoom (only if not default)
-    if (zoom !== 1.0) {
-      state.zoom = zoom;
+    if (camera.zoom !== 1.0) {
+      state.zoom = camera.zoom;
     }
 
     // Pan (only if no verse - verse auto-centers)
     if (!pinnedVerse) {
-      state.x = pan.x;
-      state.y = pan.y;
+      state.x = camera.x;
+      state.y = camera.y;
     }
 
     return state;
@@ -577,9 +273,9 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (!mouseState.isDragging) {
-      const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+      const verse = findVerseAtPoint(verses, camera, e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
-      mouseState.hoveredVerse = verse;
+      setHoveredVerse(mouseState, verse);
 
       // Check if hover actually changed
       const hoverChanged = !versesEqual(previousHover, verse);
@@ -609,7 +305,7 @@ async function main(): Promise<void> {
 
   // Click to pin/unpin verse
   canvas.addEventListener('click', (e: MouseEvent) => {
-    const verse = findVerseAtPoint(verses, pan, zoom, e.clientX, e.clientY);
+    const verse = findVerseAtPoint(verses, camera, e.clientX, e.clientY);
     if (verse) {
       // Toggle pin: if clicking same verse, unpin; otherwise pin new verse
       if (pinnedVerse &&
@@ -705,7 +401,14 @@ async function main(): Promise<void> {
   });
 
   // Store for hover detection
-  window.torahMap = { verses, pan, zoom, render, canvas, bounds };
+  window.torahMap = {
+    verses,
+    pan: { x: camera.x, y: camera.y },
+    zoom: camera.zoom,
+    render,
+    canvas,
+    bounds
+  };
 
   // Wire up search overlay callbacks
   configureSearch({
@@ -749,7 +452,7 @@ async function main(): Promise<void> {
 
     // Restore zoom
     if (urlState.zoom !== undefined) {
-      zoom = urlState.zoom;
+      camera.zoom = urlState.zoom;
     }
 
     // Restore verse (and center on it)
@@ -767,14 +470,14 @@ async function main(): Promise<void> {
           // Center on the verse
           const cssWidth = window.innerWidth;
           const cssHeight = window.innerHeight;
-          pan.x = cssWidth / 2 / zoom - verse.x - verse.size / 2;
-          pan.y = cssHeight / 2 / zoom - verse.y - verse.size / 2;
+          camera.x = cssWidth / 2 / camera.zoom - verse.x - verse.size / 2;
+          camera.y = cssHeight / 2 / camera.zoom - verse.y - verse.size / 2;
         }
       }
     } else if (urlState.x !== undefined && urlState.y !== undefined) {
       // Restore pan position (only if no verse)
-      pan.x = urlState.x;
-      pan.y = urlState.y;
+      camera.x = urlState.x;
+      camera.y = urlState.y;
     }
 
     applyOverlay();
