@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createBookLabels, updateLabelPositions } from '../../labels';
 import { createVerse, SAMPLE_VERSES } from '../helpers';
-import type { Verse } from '../../types';
+import type { VerseLayout } from '../../types';
 
 describe('labels', () => {
   let container: HTMLElement;

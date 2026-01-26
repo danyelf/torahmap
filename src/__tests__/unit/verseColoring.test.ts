@@ -6,7 +6,7 @@ import {
   computeVerseStates,
   applyVerseColors,
 } from '../../verseColoring';
-import type { Verse, VerseState } from '../../types';
+import type { VerseLayout, VerseState } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
 
@@ -58,7 +58,7 @@ describe('verseColoring', () => {
 
   describe('getOverlayColor', () => {
     it('returns null when overlay is null', () => {
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -73,7 +73,7 @@ describe('verseColoring', () => {
     });
 
     it('returns overlay color when overlay provides color', () => {
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -97,7 +97,7 @@ describe('verseColoring', () => {
     });
 
     it('returns null when overlay getVerseColor returns null', () => {
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -120,7 +120,7 @@ describe('verseColoring', () => {
     });
 
     it('handles multi-color verses', () => {
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -210,7 +210,7 @@ describe('verseColoring', () => {
     });
 
     it('computes hasOverlayColor correctly when overlay provides color', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -229,7 +229,7 @@ describe('verseColoring', () => {
     });
 
     it('computes hasOverlayColor as false when overlay returns null', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -251,7 +251,7 @@ describe('verseColoring', () => {
     });
 
     it('uses default color when overlay is null', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -265,7 +265,7 @@ describe('verseColoring', () => {
     });
 
     it('identifies hovered verse correctly', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
@@ -278,7 +278,7 @@ describe('verseColoring', () => {
     });
 
     it('identifies pinned verse correctly', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
@@ -291,7 +291,7 @@ describe('verseColoring', () => {
     });
 
     it('handles null hoveredVerse', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -301,7 +301,7 @@ describe('verseColoring', () => {
     });
 
     it('handles null pinnedVerse', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -311,12 +311,12 @@ describe('verseColoring', () => {
     });
 
     it('matches verses by book, chapter, and verse number', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
         { book: 'Exodus', chapter: 1, verse: 1, x: 0, y: 10, size: 1 },
       ];
-      const hoveredVerse: Verse = {
+      const hoveredVerse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -333,7 +333,7 @@ describe('verseColoring', () => {
     });
 
     it('returns array parallel to verses', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 3, x: 20, y: 0, size: 1 },
@@ -346,11 +346,8 @@ describe('verseColoring', () => {
   });
 
   describe('applyVerseColors', () => {
-    it('applies base colors to verses', () => {
-      const verses: Verse[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
-      const states: VerseState[] = [
+    it('applies base colors', () => {
+      const states: VerseLayoutState[] = [
         {
           hasOverlayColor: true,
           baseColor: [1, 0, 0],
@@ -359,16 +356,13 @@ describe('verseColoring', () => {
         },
       ];
 
-      applyVerseColors(verses, states);
+      const colors = applyVerseColors(states);
 
-      expect(verses[0].color).toEqual([1, 0, 0]);
+      expect(colors[0]).toEqual([1, 0, 0]);
     });
 
     it('applies hover highlighting when verse is hovered', () => {
-      const verses: Verse[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
-      const states: VerseState[] = [
+      const states: VerseLayoutState[] = [
         {
           hasOverlayColor: true,
           baseColor: [0.6, 0.4, 0.2],
@@ -377,19 +371,16 @@ describe('verseColoring', () => {
         },
       ];
 
-      applyVerseColors(verses, states);
+      const colors = applyVerseColors(states);
 
-      const color = verses[0].color as [number, number, number];
+      const color = colors[0] as [number, number, number];
       expect(color[0]).toBeCloseTo(0.9, 10);
       expect(color[1]).toBeCloseTo(0.6, 10);
       expect(color[2]).toBeCloseTo(0.3, 10);
     });
 
     it('does not apply hover highlighting when verse is not hovered', () => {
-      const verses: Verse[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
-      const states: VerseState[] = [
+      const states: VerseLayoutState[] = [
         {
           hasOverlayColor: true,
           baseColor: [0.6, 0.4, 0.2],
@@ -398,17 +389,13 @@ describe('verseColoring', () => {
         },
       ];
 
-      applyVerseColors(verses, states);
+      const colors = applyVerseColors(states);
 
-      expect(verses[0].color).toEqual([0.6, 0.4, 0.2]); // Unchanged
+      expect(colors[0]).toEqual([0.6, 0.4, 0.2]); // Unchanged
     });
 
-    it('mutates verses array in place', () => {
-      const verses: Verse[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
-      const originalVerse = verses[0];
-      const states: VerseState[] = [
+    it('returns immutable color array', () => {
+      const states: VerseLayoutState[] = [
         {
           hasOverlayColor: false,
           baseColor: [0.5, 0.5, 0.5],
@@ -417,19 +404,15 @@ describe('verseColoring', () => {
         },
       ];
 
-      applyVerseColors(verses, states);
+      const colors = applyVerseColors(states);
 
-      expect(verses[0]).toBe(originalVerse); // Same object
-      expect(verses[0].color).toEqual([0.5, 0.5, 0.5]);
+      expect(colors).toBeInstanceOf(Array);
+      expect(colors.length).toBe(1);
+      expect(colors[0]).toEqual([0.5, 0.5, 0.5]);
     });
 
     it('handles multiple verses', () => {
-      const verses: Verse[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 3, x: 20, y: 0, size: 1 },
-      ];
-      const states: VerseState[] = [
+      const states: VerseLayoutState[] = [
         {
           hasOverlayColor: false,
           baseColor: [0.5, 0.5, 0.5],
@@ -450,22 +433,19 @@ describe('verseColoring', () => {
         },
       ];
 
-      applyVerseColors(verses, states);
+      const colors = applyVerseColors(states);
 
-      expect(verses[0].color).toEqual([0.5, 0.5, 0.5]);
-      expect(verses[1].color).toEqual([1, 0, 0]); // Hovered, already at max
-      expect(verses[2].color).toEqual([0, 1, 0]); // Pinned but not hovered
+      expect(colors[0]).toEqual([0.5, 0.5, 0.5]);
+      expect(colors[1]).toEqual([1, 0, 0]); // Hovered, already at max
+      expect(colors[2]).toEqual([0, 1, 0]); // Pinned but not hovered
     });
 
     it('handles multi-color verses', () => {
-      const verses: Verse[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
       const multiColor: [number, number, number][] = [
         [0.4, 0.2, 0.6],
         [0.2, 0.8, 0.4],
       ];
-      const states: VerseState[] = [
+      const states: VerseLayoutState[] = [
         {
           hasOverlayColor: true,
           baseColor: multiColor,
@@ -474,9 +454,9 @@ describe('verseColoring', () => {
         },
       ];
 
-      applyVerseColors(verses, states);
+      const colors = applyVerseColors(states);
 
-      const color = verses[0].color as [number, number, number][];
+      const color = colors[0] as [number, number, number][];
       expect(color[0][0]).toBeCloseTo(0.6, 10);
       expect(color[0][1]).toBeCloseTo(0.3, 10);
       expect(color[0][2]).toBeCloseTo(0.9, 10);
@@ -496,7 +476,7 @@ describe('verseColoring', () => {
     });
 
     it('supports full workflow: compute states then apply colors', () => {
-      const verses: Verse[] = [
+      const verses: VerseLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
@@ -533,10 +513,10 @@ describe('verseColoring', () => {
       expect(states[1].isHovered).toBe(true);
 
       // Second pass: apply colors
-      applyVerseColors(verses, states);
+      const colors = applyVerseColors(states);
 
-      expect(verses[0].color).toEqual([1, 0, 0]); // Overlay color, not hovered
-      expect(verses[1].color).toEqual([0.2, 0.9, 1.0]); // Background hovered -> highlight
+      expect(colors[0]).toEqual([1, 0, 0]); // Overlay color, not hovered
+      expect(colors[1]).toEqual([0.2, 0.9, 1.0]); // Background hovered -> highlight
     });
   });
 });

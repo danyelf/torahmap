@@ -2,11 +2,11 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { computeLayout, getSection, getLayoutBounds } from '../../layout';
-import type { TorahData, Verse } from '../../types';
+import type { TorahData, VerseLayout } from '../../types';
 
 describe('Layout Integration', () => {
   let torahData: TorahData;
-  let verses: Verse[];
+  let verses: VerseLayout[];
 
   beforeAll(() => {
     // Load the real tanakh structure data

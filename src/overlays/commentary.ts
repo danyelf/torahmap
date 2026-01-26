@@ -1,6 +1,6 @@
 // src/overlays/commentary.ts
 import type { Overlay, Color } from './types.ts';
-import type { Verse, CommentaryData } from '../types.ts';
+import type { VerseIdentity, VerseLayout, CommentaryData } from '../types.ts';
 import { heatmapColor } from '../utils/color.ts';
 
 let data: CommentaryData = {};
@@ -9,7 +9,7 @@ let updateCallback: (() => void) | null = null;
 
 // Cache max values per category to avoid recalculating
 let cachedMaxValues: Record<string, number> = {};
-let verses: Verse[] = [];
+let verses: VerseLayout[] = [];
 
 function getCount(book: string, chapter: number, verse: number): number {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
@@ -58,7 +58,7 @@ export const commentaryOverlay: Overlay = {
     updateCallback = callback;
   },
 
-  getVerseColor(verse: Verse): Color | null {
+  getVerseColor(verse: VerseIdentity): Color | null {
     // Store reference to verses for max calculation
     // This is a bit awkward - we'll improve this in integration
     const count = getCount(verse.book, verse.chapter, verse.verse);
@@ -142,7 +142,7 @@ export const commentaryOverlay: Overlay = {
   },
 };
 
-export function configure(config: { verses: Verse[] }): void {
+export function configure(config: { verses: VerseLayout[] }): void {
   verses = config.verses;
   cachedMaxValues = {};
 }

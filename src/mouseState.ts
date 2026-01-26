@@ -1,13 +1,13 @@
 // Mouse State module - handles mouse interaction state
 
-import type { Verse } from './types';
+import type { VerseLayout } from './types';
 
 /**
  * Mouse interaction state
  */
 export interface MouseState {
   isDragging: boolean;
-  hoveredVerse: Verse | null;
+  hoveredVerse: VerseLayout | null;
   dragStart: { x: number; y: number };
 }
 
@@ -22,20 +22,6 @@ export function createMouseState(): MouseState {
     hoveredVerse: null,
     dragStart: { x: 0, y: 0 },
   };
-}
-
-/**
- * Check if two verses refer to the same verse.
- * Handles null comparison.
- *
- * @param a - First verse (or null)
- * @param b - Second verse (or null)
- * @returns true if both are null or both refer to same verse
- */
-export function versesEqual(a: Verse | null, b: Verse | null): boolean {
-  if (a === null && b === null) return true;
-  if (a === null || b === null) return false;
-  return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
 }
 
 /**
@@ -65,7 +51,7 @@ export function stopDrag(state: MouseState): void {
  * @param state - Mouse state to update
  * @param verse - Verse under mouse (or null)
  */
-export function setHoveredVerse(state: MouseState, verse: Verse | null): void {
+export function setHoveredVerse(state: MouseState, verse: VerseLayout | null): void {
   state.hoveredVerse = verse;
 }
 

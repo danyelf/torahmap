@@ -1,6 +1,6 @@
 // src/overlays/haftarah.ts
 import type { Overlay, Color } from './types.ts';
-import type { Verse } from '../types.ts';
+import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { rgbToHsl, hslToRgb } from '../utils/color.ts';
@@ -89,7 +89,7 @@ type Custom = 'ashkenazi' | 'sephardi';
 let data: HaftarahMappings | null = null;
 let structure: TanakhStructure | null = null;
 let currentCustom: Custom = 'ashkenazi';
-let hoveredVerse: Verse | null = null;
+let hoveredVerse: VerseLayout | null = null;
 let updateCallback: (() => void) | null = null;
 
 // Lookup indexes (built once on init, rebuilt on custom change)
@@ -197,7 +197,7 @@ function buildIndexes(): void {
 }
 
 // Check if a verse is relevant to the overlay (Torah or haftarah)
-function isRelevantVerse(verse: Verse): boolean {
+function isRelevantVerse(verse: VerseIdentity): boolean {
   const key = getVerseKey(verse.book, verse.chapter, verse.verse);
   return torahVerseToParsha.has(key) || haftarahVerseToItem.has(key);
 }
@@ -247,7 +247,7 @@ export const haftarahOverlay: Overlay = {
     updateCallback = callback;
   },
 
-  setHoveredVerse(verse: Verse | null): boolean {
+  setHoveredVerse(verse: VerseLayout | null): boolean {
     const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse) : false;
     const isRelevant = verse ? isRelevantVerse(verse) : false;
 
@@ -279,7 +279,7 @@ export const haftarahOverlay: Overlay = {
     return wasRelevant || isRelevant;
   },
 
-  getVerseColor(verse: Verse): Color | Color[] | null {
+  getVerseColor(verse: VerseIdentity): Color | Color[] | null {
     if (!data) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
@@ -414,7 +414,7 @@ export const haftarahOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: Verse): string | null {
+  getHoverInfo(verse: VerseIdentity): string | null {
     if (!data) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);

@@ -1,6 +1,6 @@
 // Build vertex buffer from verse layout
 
-import type { Verse } from './types.ts';
+import type { VerseLayout } from './types.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 type Color = [number, number, number];
@@ -11,7 +11,8 @@ function isColorArray(color: Color | Color[] | undefined): color is Color[] {
 }
 
 export function buildVerseGeometry(
-  verses: Verse[],
+  verses: VerseLayout[],
+  colors?: (Color | Color[])[],
   baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
@@ -21,19 +22,22 @@ export function buildVerseGeometry(
   const data = new Float32Array(verses.length * verticesPerQuad * floatsPerVertex);
 
   let offset = 0;
-  for (const v of verses) {
+  for (let i = 0; i < verses.length; i++) {
+    const v = verses[i];
+    const verseColor = colors?.[i];
+
     // Extract colors - handle single color or array of colors
-    let colors: Color[];
+    let vertexColors: Color[];
     // Check for empty array first (before isColorArray which would fail on empty)
-    if (Array.isArray(v.color) && (v.color as unknown[]).length === 0) {
+    if (Array.isArray(verseColor) && (verseColor as unknown[]).length === 0) {
       // Handle empty array - fall back to base color
-      colors = [baseColor];
-    } else if (isColorArray(v.color)) {
-      colors = v.color.slice(0, 4) as Color[]; // Cap at 4 colors
+      vertexColors = [baseColor];
+    } else if (isColorArray(verseColor)) {
+      vertexColors = verseColor.slice(0, 4) as Color[]; // Cap at 4 colors
     } else {
-      colors = [v.color || baseColor];
+      vertexColors = [verseColor || baseColor];
     }
-    const colorCount = colors.length;
+    const colorCount = vertexColors.length;
     const isMulticolor = colorCount > 1;
 
     // For multicolor verses, expand bounds to allow bleed
@@ -52,8 +56,8 @@ export function buildVerseGeometry(
     const seedY = v.y;
 
     // Pad to 4 colors with black
-    while (colors.length < 4) {
-      colors.push([0, 0, 0]);
+    while (vertexColors.length < 4) {
+      vertexColors.push([0, 0, 0]);
     }
 
     // Helper to write a vertex
@@ -62,9 +66,9 @@ export function buildVerseGeometry(
       data[offset++] = y;
       // Write all 4 colors
       for (let c = 0; c < 4; c++) {
-        data[offset++] = colors[c][0];
-        data[offset++] = colors[c][1];
-        data[offset++] = colors[c][2];
+        data[offset++] = vertexColors[c][0];
+        data[offset++] = vertexColors[c][1];
+        data[offset++] = vertexColors[c][2];
       }
       data[offset++] = colorCount;
       data[offset++] = u;

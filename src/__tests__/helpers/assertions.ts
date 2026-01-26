@@ -1,6 +1,6 @@
 // Custom assertions and matchers for Torah Map tests
 import { expect } from 'vitest';
-import type { Verse } from '../../types';
+import type { VerseLayout } from '../../types';
 
 /**
  * Asserts that a color is valid (all channels in [0, 1] range)
@@ -77,7 +77,7 @@ export function assertValidVerse(verse: Verse) {
 /**
  * Asserts that all verses in an array are valid
  */
-export function assertValidVerses(verses: Verse[]) {
+export function assertValidVerses(verses: VerseLayout[]) {
   for (const verse of verses) {
     assertValidVerse(verse);
   }
@@ -104,7 +104,7 @@ export function assertInRange(value: number, min: number, max: number) {
  * Asserts that all verses have unique positions (no overlaps)
  * Allows for small floating point differences
  */
-export function assertUniquePositions(verses: Verse[], tolerance: number = 0.01) {
+export function assertUniquePositions(verses: VerseLayout[], tolerance: number = 0.01) {
   const positions = new Map<string, Verse>();
 
   for (const verse of verses) {

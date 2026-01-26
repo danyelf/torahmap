@@ -4,7 +4,8 @@ import { initWebGL, createProgram, createOutlineProgram } from './webgl';
 import { buildVerseGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
-import type { Verse, ShaderProgram } from './types';
+import type { VerseLayout, ShaderProgram } from './types';
+import { versesEqual } from './types';
 import type { Camera } from './camera';
 
 /**
@@ -28,7 +29,7 @@ export interface RenderState {
   buffer: WebGLBuffer;
   outlineBuffer: WebGLBuffer | null;
   hoverOutlineBuffer: WebGLBuffer | null;
-  verses: Verse[];
+  verses: VerseLayout[];
   dpr: number;
 }
 
@@ -60,7 +61,7 @@ export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
  */
 export function createRenderState(
   gl: WebGL2RenderingContext,
-  verses: Verse[],
+  verses: VerseLayout[],
   dpr: number
 ): RenderState {
   const geometry = buildVerseGeometry(verses);
@@ -84,9 +85,10 @@ export function createRenderState(
  */
 export function rebuildGeometry(
   gl: WebGL2RenderingContext,
-  state: RenderState
+  state: RenderState,
+  colors?: ([number, number, number] | [number, number, number][])[]
 ): void {
-  const geometry = buildVerseGeometry(state.verses);
+  const geometry = buildVerseGeometry(state.verses, colors);
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
@@ -105,8 +107,8 @@ export function render(
   context: RenderContext,
   state: RenderState,
   camera: Camera,
-  hoveredVerse: Verse | null,
-  pinnedVerse: Verse | null
+  hoveredVerse: VerseLayout | null,
+  pinnedVerse: VerseLayout | null
 ): void {
   const { gl, programs, canvas } = context;
   const { buffer, verses, dpr } = state;
@@ -156,13 +158,6 @@ export function render(
 
   // Draw all verses
   gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
-
-  // Helper to check if two verses are equal
-  function versesEqual(a: Verse | null, b: Verse | null): boolean {
-    if (a === null && b === null) return true;
-    if (a === null || b === null) return false;
-    return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
-  }
 
   // Draw hover outline (if hovering and not same as pinned)
   if (hoveredVerse && !versesEqual(hoveredVerse, pinnedVerse)) {

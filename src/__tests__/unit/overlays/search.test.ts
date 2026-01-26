@@ -10,7 +10,7 @@ import type { Verse, Color } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 
 describe('Search Overlay', () => {
-  let testVerses: Verse[];
+  let testVerses: VerseLayout[];
   let mockVerseTexts: VerseTexts;
 
   beforeEach(() => {

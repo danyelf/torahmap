@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { buildVerseGeometry, createBuffer } from '../../geometry';
 import { createVerse, createVerses, TEST_COLORS } from '../helpers';
-import type { Verse } from '../../types';
+import type { VerseLayout } from '../../types';
 
 describe('buildVerseGeometry', () => {
   describe('basic buffer properties', () => {

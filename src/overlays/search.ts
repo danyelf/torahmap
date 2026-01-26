@@ -1,6 +1,6 @@
 // Full-text search overlay
 import type { Overlay, Color } from './types.ts';
-import type { Verse } from '../types.ts';
+import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -11,13 +11,13 @@ function colorToCss(color: Color): string {
 }
 
 // State
-let verses: Verse[] = [];
+let verses: VerseLayout[] = [];
 let currentQuery = '';
 let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
 let updateCallback: (() => void) | null = null;
-let onVerseClickCallback: ((verse: Verse) => void) | null = null;
+let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
@@ -25,7 +25,7 @@ let searchClear: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
-export function configure(config: { verses: Verse[]; callbacks?: { onVerseClick?: (verse: Verse) => void } }): void {
+export function configure(config: { verses: VerseLayout[]; callbacks?: { onVerseClick?: (verse: VerseLayout) => void } }): void {
   verses = config.verses;
   if (config.callbacks?.onVerseClick) {
     onVerseClickCallback = config.callbacks.onVerseClick;
@@ -264,7 +264,7 @@ export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
 
-  getVerseColor(verse: Verse): Color | Color[] | null {
+  getVerseColor(verse: VerseIdentity): Color | Color[] | null {
     // No active search - use default colors
     if (currentTerms.length === 0) {
       return null;
@@ -403,7 +403,7 @@ export const searchOverlay: Overlay = {
     }
   },
 
-  getHoverInfo(verse: Verse): string | null {
+  getHoverInfo(verse: VerseIdentity): string | null {
     if (currentTerms.length === 0) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);

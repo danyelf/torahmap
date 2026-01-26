@@ -1,6 +1,6 @@
 // Layout algorithm: compute (x, y) position for every verse
 
-import type { TorahData, Verse, Bounds, Book } from './types.ts';
+import type { TorahData, VerseLayout, Bounds, Book } from './types.ts';
 import { seededRandom } from './utils/random.ts';
 import { getBookSection } from './constants/books.ts';
 
@@ -87,7 +87,7 @@ function layoutChapter(
   bookX: number,
   chapterY: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): { width: number; height: number } {
   // Defensive: validate inputs
   if (!Number.isFinite(verseCount) || verseCount < 0) {
@@ -155,7 +155,7 @@ function layoutBook(
   bookX: number,
   bookY: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): { width: number; height: number } {
   // Defensive: validate book structure
   if (!book || typeof book !== 'object') {
@@ -208,7 +208,7 @@ type BookLayoutFn = (
   x: number,
   y: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ) => { width: number; height: number };
 
 // Layout books horizontally in a row
@@ -218,7 +218,7 @@ function layoutBooksRow(
   y: number,
   gap: number,
   globalVerseIdx: { value: number },
-  verses: Verse[],
+  verses: VerseLayout[],
   bookLayoutFn: BookLayoutFn = layoutBook
 ): { width: number; height: number; nextX: number } {
   // Defensive: validate inputs
@@ -259,7 +259,7 @@ function layoutBooksStack(
   startY: number,
   gap: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): { width: number; height: number } {
   // Defensive: validate inputs
   if (!Array.isArray(bookNames)) {
@@ -308,7 +308,7 @@ function layoutStacksRow(
   stackGap: number,
   columnGap: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): { width: number; height: number } {
   // Defensive: validate inputs
   if (!Array.isArray(stacks)) {
@@ -345,7 +345,7 @@ function layoutPsalms(
   bookX: number,
   bookY: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): { width: number; height: number } {
   // Defensive: validate book structure
   if (!book || !Array.isArray(book.chapters)) {
@@ -424,7 +424,7 @@ function layoutNeviim(
   books: Book[],
   sectionY: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): number {
   // Defensive: validate inputs
   if (!Array.isArray(books)) {
@@ -460,7 +460,7 @@ function layoutKetuvim(
   books: Book[],
   sectionY: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): number {
   // Defensive: validate inputs
   if (!Array.isArray(books)) {
@@ -518,7 +518,7 @@ function layoutTorah(
   books: Book[],
   sectionY: number,
   globalVerseIdx: { value: number },
-  verses: Verse[]
+  verses: VerseLayout[]
 ): number {
   // Defensive: validate inputs
   if (!Array.isArray(books)) {
@@ -534,7 +534,7 @@ function layoutTorah(
   return height;
 }
 
-export function computeLayout(torahData: TorahData): Verse[] {
+export function computeLayout(torahData: TorahData): VerseLayout[] {
   // Defensive: validate input structure
   if (!torahData || typeof torahData !== 'object') {
     console.error('Invalid torahData: not an object');
@@ -549,7 +549,7 @@ export function computeLayout(torahData: TorahData): Verse[] {
     return [];
   }
 
-  const verses: Verse[] = [];
+  const verses: VerseLayout[] = [];
   const globalVerseIdx = { value: 0 };
 
   // Group books by section
@@ -599,7 +599,7 @@ export function computeLayout(torahData: TorahData): Verse[] {
   return verses;
 }
 
-export function getLayoutBounds(verses: Verse[]): Bounds {
+export function getLayoutBounds(verses: VerseLayout[]): Bounds {
   // Defensive: validate input
   if (!Array.isArray(verses)) {
     console.error('getLayoutBounds: verses is not an array');

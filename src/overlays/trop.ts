@@ -1,6 +1,6 @@
 // src/overlays/trop.ts
 import type { Overlay, Color } from './types.ts';
-import type { Verse, TropIndex, TropIndexEntry } from '../types.ts';
+import type { VerseIdentity, TropIndex, TropIndexEntry } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import {
@@ -46,7 +46,7 @@ function updateCache(): void {
 }
 
 // Get verse color based on selected trop and rarity tier
-function getTropVerseColor(verse: Verse): Color | null {
+function getTropVerseColor(verse: VerseIdentity): Color | null {
   if (!selectedTrop) return null;
 
   const key = getVerseKey(verse.book, verse.chapter, verse.verse);
@@ -178,7 +178,7 @@ export const tropOverlay: Overlay = {
     updateCallback = callback;
   },
 
-  getVerseColor(verse: Verse): Color | null {
+  getVerseColor(verse: VerseIdentity): Color | null {
     return getTropVerseColor(verse);
   },
 
@@ -210,7 +210,7 @@ export const tropOverlay: Overlay = {
     }
   },
 
-  getHoverInfo(verse: Verse): string | null {
+  getHoverInfo(verse: VerseIdentity): string | null {
     if (!selectedTrop) return null;
 
     const loc = selectedTrop.verses.find(
