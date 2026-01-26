@@ -1,10 +1,10 @@
 // Test fixtures for Torah Map tests
-import type { Verse, TorahData, CommentaryData, DivineNamesData, VerseCommentary } from '../../types';
+import type { VerseLayout, TorahData, CommentaryData, DivineNamesData, VerseCommentary } from '../../types';
 
 /**
  * Creates a sample verse with default values that can be overridden
  */
-export function createVerse(overrides: Partial<Verse> = {}): Verse {
+export function createVerse(overrides: Partial<VerseLayout> = {}): VerseLayout {
   return {
     book: 'Genesis',
     chapter: 1,
@@ -12,7 +12,6 @@ export function createVerse(overrides: Partial<Verse> = {}): Verse {
     x: 10,
     y: 20,
     size: 6,
-    color: [0.5, 0.5, 0.5],
     ...overrides,
   };
 }
@@ -20,7 +19,7 @@ export function createVerse(overrides: Partial<Verse> = {}): Verse {
 /**
  * Creates multiple sample verses
  */
-export function createVerses(count: number, baseOverrides: Partial<Verse> = {}): Verse[] {
+export function createVerses(count: number, baseOverrides: Partial<VerseLayout> = {}): VerseLayout[] {
   return Array.from({ length: count }, (_, i) =>
     createVerse({
       verse: i + 1,
@@ -34,7 +33,7 @@ export function createVerses(count: number, baseOverrides: Partial<Verse> = {}):
 /**
  * Sample verse data spanning multiple books and sections
  */
-export const SAMPLE_VERSES: Verse[] = [
+export const SAMPLE_VERSES: VerseLayout[] = [
   // Torah - Genesis
   createVerse({ book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20 }),
   createVerse({ book: 'Genesis', chapter: 1, verse: 2, x: 18, y: 20 }),

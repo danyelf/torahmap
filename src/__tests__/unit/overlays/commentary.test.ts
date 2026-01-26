@@ -4,11 +4,11 @@ import { commentaryOverlay, configure, getVerseLinkCount } from '../../../overla
 import { heatmapColor } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import type { CommentaryData, Verse } from '../../../types';
+import type { CommentaryData, VerseLayout } from '../../../types';
 
 describe('Commentary Overlay', () => {
   let testData: CommentaryData;
-  let testVerses: Verse[];
+  let testVerses: VerseLayout[];
   let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {

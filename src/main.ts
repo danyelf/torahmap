@@ -22,11 +22,12 @@ import {
   updateSidebar,
 } from './sidebar.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
-import { createMouseState, versesEqual, startDrag, stopDrag, setHoveredVerse, clearHover } from './mouseState.ts';
-import { findVerseAtPoint } from './hitDetection.ts';
+import { createMouseState, startDrag, stopDrag, setHoveredVerse, clearHover } from './mouseState.ts';
+import { versesEqual } from './types.ts';
+import { findVerseLayoutAtPoint } from './hitDetection.ts';
 import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
 import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame } from './rendering.ts';
-import type { Verse, TorahData, Bounds } from './types.ts';
+import type { VerseLayout, TorahData, Bounds } from './types.ts';
 import {
   registerOverlay,
   getOverlay,
@@ -47,7 +48,7 @@ declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
     torahMap?: {
-      verses: Verse[];
+      verses: VerseLayout[];
       pan: { x: number; y: number };
       zoom: number;
       render: () => void;
@@ -130,17 +131,17 @@ async function main(): Promise<void> {
       mouseState.hoveredVerse,
       pinnedVerse
     );
-    applyVerseColors(verses, verseStates);
+    const colors = applyVerseColors(verseStates);
 
-    // Rebuild geometry buffer
-    rebuildGeometry(renderContext.gl, renderState);
+    // Rebuild geometry buffer with new colors
+    rebuildGeometry(renderContext.gl, renderState, colors);
   }
 
   // Camera state - start at 1:1 zoom, centered
   const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
 
   // Track pinned verse (click to persist)
-  let pinnedVerse: Verse | null = null;
+  let pinnedVerse: VerseLayout | null = null;
 
   // Mouse interaction state
   const mouseState = createMouseState();
@@ -265,14 +266,14 @@ async function main(): Promise<void> {
   const debouncedSaveUrlState = debounce(() => saveUrlState(false), 300);
 
   // Update sidebar with verse info - wrapper for the extracted module function
-  function updateSidebarWrapper(verse: Verse | null, isPinned: boolean = false): void {
+  function updateSidebarWrapper(verse: VerseLayout | null, isPinned: boolean = false): void {
     updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
     positionSidebar(sidebarElements.sidebar, controlsPanel);
   }
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (!mouseState.isDragging) {
-      const verse = findVerseAtPoint(verses, camera, e.clientX, e.clientY);
+      const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
@@ -304,7 +305,7 @@ async function main(): Promise<void> {
 
   // Click to pin/unpin verse
   canvas.addEventListener('click', (e: MouseEvent) => {
-    const verse = findVerseAtPoint(verses, camera, e.clientX, e.clientY);
+    const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
     if (verse) {
       // Toggle pin: if clicking same verse, unpin; otherwise pin new verse
       if (pinnedVerse &&
@@ -413,7 +414,7 @@ async function main(): Promise<void> {
   configureSearch({
     verses,
     callbacks: {
-      onVerseClick: (verse: Verse) => {
+      onVerseClick: (verse: VerseLayout) => {
         pinnedVerse = verse;
         updateSidebarWrapper(verse, true);
         applyOverlay();

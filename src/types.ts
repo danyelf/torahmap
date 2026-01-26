@@ -1,5 +1,31 @@
 // Shared types for Torah Map
 
+/**
+ * ARCHITECTURE: Domain vs Spatial Separation
+ *
+ * This codebase separates domain knowledge (Torah structure) from spatial rendering.
+ * This enables future abstraction to other structured texts (Quran, Talmud, etc).
+ *
+ * DOMAIN LAYER (Torah-specific):
+ * - VerseIdentity: References a biblical verse (book/chapter/verse)
+ * - Data loaders: layout.ts, verseTexts.ts, overlay data loading
+ * - Overlays: Implement domain logic (divine names, commentary, etc)
+ * - Display: Sidebar, URL state (formatting "Genesis 1:1")
+ *
+ * SPATIAL LAYER (domain-agnostic):
+ * - VerseLayout: Position and size in 2D space (x, y, size)
+ * - Rendering: geometry.ts, rendering.ts, webgl.ts
+ * - Interaction: hitDetection.ts, mouse handling
+ * - Camera: zoom, pan (camera.ts)
+ *
+ * To adapt this codebase for another text:
+ * 1. Redefine VerseIdentity structure
+ * 2. Replace data loaders
+ * 3. Implement domain-specific overlays
+ * 4. Update display formatting
+ * The entire rendering pipeline remains unchanged.
+ */
+
 export interface Book {
   name: string;
   hebrewName: string;
@@ -17,15 +43,39 @@ export interface TorahData {
  */
 export type DivineNamesData = { [bookName: string]: number[][] };
 
-export interface Verse {
+/**
+ * Identity of a biblical verse.
+ * The minimal information needed to uniquely identify a verse in Tanakh.
+ */
+export interface VerseIdentity {
   book: string;
   chapter: number;
   verse: number;
+}
+
+/**
+ * Complete layout information for a verse.
+ * Extends identity with spatial position computed during layout.
+ * This data is immutable after initial layout computation.
+ */
+export interface VerseLayout extends VerseIdentity {
   x: number;
   y: number;
   size: number;
-  color?: [number, number, number] | [number, number, number][];
-  highlighted?: boolean;
+}
+
+/**
+ * Check if two verses refer to the same verse.
+ * Handles null comparison for optional verse references (hover, pinned).
+ *
+ * @param a - First verse identity (or null)
+ * @param b - Second verse identity (or null)
+ * @returns true if both are null or both refer to same verse
+ */
+export function versesEqual(a: VerseIdentity | null, b: VerseIdentity | null): boolean {
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
 }
 
 /**

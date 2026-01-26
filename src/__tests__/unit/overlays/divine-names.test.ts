@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { divineNamesOverlay } from '../../../overlays/divine-names';
 import { createVerse, SAMPLE_DIVINE_NAMES_DATA } from '../../helpers/fixtures';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
-import type { DivineNamesData, Verse } from '../../../types';
+import type { DivineNamesData, VerseLayout } from '../../../types';
 
 describe('Divine Names Overlay', () => {
   let testData: DivineNamesData;

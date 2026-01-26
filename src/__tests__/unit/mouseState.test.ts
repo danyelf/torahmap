@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   createMouseState,
-  versesEqual,
   startDrag,
   stopDrag,
   setHoveredVerse,
   clearHover,
   type MouseState,
 } from '../../mouseState';
-import type { Verse } from '../../types';
+import type { VerseLayout } from '../../types';
+import { versesEqual } from '../../types';
 
 describe('mouseState', () => {
   describe('createMouseState', () => {
@@ -35,7 +35,7 @@ describe('mouseState', () => {
     });
 
     it('returns false when only first is null', () => {
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -47,7 +47,7 @@ describe('mouseState', () => {
     });
 
     it('returns false when only second is null', () => {
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -59,7 +59,7 @@ describe('mouseState', () => {
     });
 
     it('returns true when verses are the same', () => {
-      const verse1: Verse = {
+      const verse1: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -67,7 +67,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: Verse = {
+      const verse2: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -79,7 +79,7 @@ describe('mouseState', () => {
     });
 
     it('returns false when books differ', () => {
-      const verse1: Verse = {
+      const verse1: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -87,7 +87,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: Verse = {
+      const verse2: VerseLayout = {
         book: 'Exodus',
         chapter: 1,
         verse: 1,
@@ -99,7 +99,7 @@ describe('mouseState', () => {
     });
 
     it('returns false when chapters differ', () => {
-      const verse1: Verse = {
+      const verse1: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -107,7 +107,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: Verse = {
+      const verse2: VerseLayout = {
         book: 'Genesis',
         chapter: 2,
         verse: 1,
@@ -119,7 +119,7 @@ describe('mouseState', () => {
     });
 
     it('returns false when verse numbers differ', () => {
-      const verse1: Verse = {
+      const verse1: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -127,7 +127,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: Verse = {
+      const verse2: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 2,
@@ -164,7 +164,7 @@ describe('mouseState', () => {
 
     it('does not modify hoveredVerse', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -216,7 +216,7 @@ describe('mouseState', () => {
 
     it('does not modify hoveredVerse', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -245,7 +245,7 @@ describe('mouseState', () => {
   describe('setHoveredVerse', () => {
     it('sets hovered verse', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -261,7 +261,7 @@ describe('mouseState', () => {
 
     it('can set to null', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -278,7 +278,7 @@ describe('mouseState', () => {
 
     it('can change from one verse to another', () => {
       const state = createMouseState();
-      const verse1: Verse = {
+      const verse1: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -286,7 +286,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: Verse = {
+      const verse2: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 2,
@@ -305,7 +305,7 @@ describe('mouseState', () => {
     it('does not modify isDragging', () => {
       const state = createMouseState();
       state.isDragging = true;
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -322,7 +322,7 @@ describe('mouseState', () => {
     it('does not modify dragStart', () => {
       const state = createMouseState();
       state.dragStart = { x: 100, y: 200 };
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -349,7 +349,7 @@ describe('mouseState', () => {
 
     it('clears hoveredVerse', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -366,7 +366,7 @@ describe('mouseState', () => {
 
     it('clears both dragging and hover', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -394,7 +394,7 @@ describe('mouseState', () => {
 
     it('is idempotent', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -433,7 +433,7 @@ describe('mouseState', () => {
 
     it('supports typical hover workflow', () => {
       const state = createMouseState();
-      const verse1: Verse = {
+      const verse1: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -441,7 +441,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: Verse = {
+      const verse2: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 2,
@@ -465,7 +465,7 @@ describe('mouseState', () => {
 
     it('supports drag while hovering', () => {
       const state = createMouseState();
-      const verse: Verse = {
+      const verse: VerseLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,

@@ -2,11 +2,11 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { computeLayout, getSection, getLayoutBounds } from '../../layout';
-import type { TorahData, Verse } from '../../types';
+import type { TorahData, VerseLayout } from '../../types';
 
 describe('Layout Integration', () => {
   let torahData: TorahData;
-  let verses: Verse[];
+  let verses: VerseLayout[];
 
   beforeAll(() => {
     // Load the real tanakh structure data
@@ -88,7 +88,7 @@ describe('Layout Integration', () => {
     it('no two verses share the exact same position', () => {
       // Since there's jitter, we check for unique (x, y) pairs
       // With jitter, exact overlaps should be impossible
-      const positions = new Map<string, Verse>();
+      const positions = new Map<string, VerseLayout>();
 
       for (const v of verses) {
         const key = `${v.x.toFixed(1)},${v.y.toFixed(1)}`;
@@ -144,14 +144,10 @@ describe('Layout Integration', () => {
       }
     });
 
-    it('colors are in valid range', () => {
+    it('verses have no color property (colors computed separately)', () => {
       for (const v of verses) {
-        if (v.color) {
-          for (const channel of v.color) {
-            expect(channel).toBeGreaterThanOrEqual(0);
-            expect(channel).toBeLessThanOrEqual(1);
-          }
-        }
+        // @ts-expect-error - checking that color property doesn't exist
+        expect(v.color).toBeUndefined();
       }
     });
   });

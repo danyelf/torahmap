@@ -1,6 +1,6 @@
 // src/overlays/divine-names.ts
 import type { Overlay, Color } from './types.ts';
-import type { Verse, DivineNamesData } from '../types.ts';
+import type { VerseIdentity, DivineNamesData } from '../types.ts';
 
 const COLORS: Record<number, Color> = {
   1: [0.3, 0.5, 0.9],  // YHWH only - Blue
@@ -33,7 +33,7 @@ export const divineNamesOverlay: Overlay = {
     }
   },
 
-  getVerseColor(verse: Verse): Color | null {
+  getVerseColor(verse: VerseIdentity): Color | null {
     const code = data[verse.book]?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
     return code > 0 ? COLORS[code] ?? null : null;
   },
@@ -46,7 +46,7 @@ export const divineNamesOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: Verse): string | null {
+  getHoverInfo(verse: VerseIdentity): string | null {
     const code = data[verse.book]?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
     return code > 0 ? LABELS[code] : null;
   },

@@ -1,6 +1,6 @@
 // Full-text search overlay
 import type { Overlay, Color } from './types.ts';
-import type { Verse } from '../types.ts';
+import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -10,265 +10,261 @@ function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
 }
 
-export function createSearchOverlay(): Overlay {
-  // State - encapsulated in closure
-  let verses: Verse[] = [];
-  let currentQuery = '';
-  let currentTerms: string[] = [];
-  let currentResults: SearchResult[] = [];
-  let matchingTerms = new Map<string, number[]>();
-  let updateCallback: (() => void) | null = null;
-  let onVerseClickCallback: ((verse: Verse) => void) | null = null;
+// State
+let verses: VerseLayout[] = [];
+let currentQuery = '';
+let currentTerms: string[] = [];
+let currentResults: SearchResult[] = [];
+let matchingTerms = new Map<string, number[]>();
+let updateCallback: (() => void) | null = null;
+let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 
-  // DOM references (for cleanup)
-  let searchInput: HTMLInputElement | null = null;
-  let searchClear: HTMLButtonElement | null = null;
-  let searchResults: HTMLDivElement | null = null;
-  let documentClickHandler: ((e: MouseEvent) => void) | null = null;
+// DOM references (for cleanup)
+let searchInput: HTMLInputElement | null = null;
+let searchClear: HTMLButtonElement | null = null;
+let searchResults: HTMLDivElement | null = null;
+let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
-  function configure(config: { verses: Verse[]; callbacks?: { onVerseClick?: (verse: Verse) => void } }): void {
-    verses = config.verses;
-    if (config.callbacks?.onVerseClick) {
-      onVerseClickCallback = config.callbacks.onVerseClick;
-    }
+export function configure(config: { verses: VerseLayout[]; callbacks?: { onVerseClick?: (verse: VerseLayout) => void } }): void {
+  verses = config.verses;
+  if (config.callbacks?.onVerseClick) {
+    onVerseClickCallback = config.callbacks.onVerseClick;
+  }
+}
+
+function doSearch(query: string): void {
+  currentQuery = query;
+  currentTerms = parseSearchTerms(query);
+
+  if (currentTerms.length === 0) {
+    currentResults = [];
+    matchingTerms = new Map();
+  } else {
+    currentResults = search(query);
+    matchingTerms = getMatchingVerseTerms(currentResults);
   }
 
-  function doSearch(query: string): void {
-    currentQuery = query;
-    currentTerms = parseSearchTerms(query);
+  renderResults();
+  updateCallback?.();
+}
 
-    if (currentTerms.length === 0) {
-      currentResults = [];
-      matchingTerms = new Map();
-    } else {
-      currentResults = search(query);
-      matchingTerms = getMatchingVerseTerms(currentResults);
-    }
+function renderResults(): void {
+  if (!searchResults) return;
 
-    renderResults();
-    updateCallback?.();
+  // Clear previous results (keep count div)
+  const existingResults = searchResults.querySelectorAll('.search-result');
+  existingResults.forEach(el => el.remove());
+
+  const searchCount = searchResults.querySelector('#search-count') as HTMLDivElement;
+
+  if (currentResults.length === 0) {
+    searchResults.classList.remove('visible');
+    if (searchCount) searchCount.textContent = '';
+    return;
   }
 
-  function renderResults(): void {
-    if (!searchResults) return;
+  // Update count with term info
+  if (searchCount) {
+    const termInfo = currentTerms.length > 1 ? ` (${currentTerms.length} terms)` : '';
+    searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results${termInfo}`;
+  }
 
-    // Clear previous results (keep count div)
-    const existingResults = searchResults.querySelectorAll('.search-result');
-    existingResults.forEach(el => el.remove());
+  // Show up to 10 results
+  const displayResults = currentResults.slice(0, 10);
+  for (const result of displayResults) {
+    const div = document.createElement('div');
+    div.className = 'search-result';
 
-    const searchCount = searchResults.querySelector('#search-count') as HTMLDivElement;
+    // Create ref div with term indicators
+    const refDiv = document.createElement('div');
+    refDiv.className = 'ref';
 
-    if (currentResults.length === 0) {
-      searchResults.classList.remove('visible');
-      if (searchCount) searchCount.textContent = '';
-      return;
+    // Create term indicator dots programmatically
+    const termIndicators = document.createElement('span');
+    termIndicators.className = 'term-indicators';
+    for (const m of result.matchingTerms) {
+      const dot = document.createElement('span');
+      dot.className = 'term-dot';
+      const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
+      dot.style.background = colorToCss(color);
+      termIndicators.appendChild(dot);
     }
+    refDiv.appendChild(termIndicators);
+    refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
 
-    // Update count with term info
-    if (searchCount) {
-      const termInfo = currentTerms.length > 1 ? ` (${currentTerms.length} terms)` : '';
-      searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results${termInfo}`;
-    }
+    // Create snippet div with highlighting
+    const snippetDiv = document.createElement('div');
+    snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
 
-    // Show up to 10 results
-    const displayResults = currentResults.slice(0, 10);
-    for (const result of displayResults) {
-      const div = document.createElement('div');
-      div.className = 'search-result';
+    // Use first match's snippet for display
+    const firstMatch = result.matchingTerms[0];
+    const snippetContent = createHighlightedText(
+      firstMatch.snippet,
+      firstMatch.matchStart,
+      firstMatch.matchEnd,
+      firstMatch.termIndex
+    );
+    snippetDiv.appendChild(snippetContent);
 
-      // Create ref div with term indicators
-      const refDiv = document.createElement('div');
-      refDiv.className = 'ref';
+    div.appendChild(refDiv);
+    div.appendChild(snippetDiv);
 
-      // Create term indicator dots programmatically
-      const termIndicators = document.createElement('span');
-      termIndicators.className = 'term-indicators';
-      for (const m of result.matchingTerms) {
-        const dot = document.createElement('span');
-        dot.className = 'term-dot';
-        const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
-        dot.style.background = colorToCss(color);
-        termIndicators.appendChild(dot);
-      }
-      refDiv.appendChild(termIndicators);
-      refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
-
-      // Create snippet div with highlighting
-      const snippetDiv = document.createElement('div');
-      snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
-
-      // Use first match's snippet for display
-      const firstMatch = result.matchingTerms[0];
-      const snippetContent = createHighlightedText(
-        firstMatch.snippet,
-        firstMatch.matchStart,
-        firstMatch.matchEnd,
-        firstMatch.termIndex
+    div.addEventListener('click', () => {
+      const verse = verses.find(v =>
+        v.book === result.book &&
+        v.chapter === result.chapter &&
+        v.verse === result.verse
       );
-      snippetDiv.appendChild(snippetContent);
-
-      div.appendChild(refDiv);
-      div.appendChild(snippetDiv);
-
-      div.addEventListener('click', () => {
-        const verse = verses.find(v =>
-          v.book === result.book &&
-          v.chapter === result.chapter &&
-          v.verse === result.verse
-        );
-        if (verse && onVerseClickCallback) {
-          onVerseClickCallback(verse);
-        }
-      });
-      searchResults.appendChild(div);
-    }
-
-    searchResults.classList.add('visible');
+      if (verse && onVerseClickCallback) {
+        onVerseClickCallback(verse);
+      }
+    });
+    searchResults.appendChild(div);
   }
 
-  /**
-   * Create a DocumentFragment with highlighted text
-   * Safer than innerHTML - builds DOM programmatically
-   */
-  function createHighlightedText(text: string, start: number, end: number, termIndex: number): DocumentFragment {
-    const fragment = document.createDocumentFragment();
+  searchResults.classList.add('visible');
+}
 
-    if (start > 0) {
-      fragment.appendChild(document.createTextNode(text.slice(0, start)));
+/**
+ * Create a DocumentFragment with highlighted text
+ * Safer than innerHTML - builds DOM programmatically
+ */
+function createHighlightedText(text: string, start: number, end: number, termIndex: number): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+
+  if (start > 0) {
+    fragment.appendChild(document.createTextNode(text.slice(0, start)));
+  }
+
+  const mark = document.createElement('mark');
+  mark.className = `term-${termIndex % 5}`;
+  mark.textContent = text.slice(start, end);
+  fragment.appendChild(mark);
+
+  if (end < text.length) {
+    fragment.appendChild(document.createTextNode(text.slice(end)));
+  }
+
+  return fragment;
+}
+
+/**
+ * Highlight all search terms in text with per-term colors
+ * Returns DocumentFragment with <mark class="term-N"> elements
+ * Safer than innerHTML - builds DOM programmatically
+ */
+export function highlightSearchTerms(text: string, language: 'he' | 'en'): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+
+  if (currentTerms.length === 0) {
+    fragment.appendChild(document.createTextNode(text));
+    return fragment;
+  }
+
+  const isHebrew = language === 'he';
+
+  // Build list of all matches with their positions
+  interface Match {
+    start: number;
+    end: number;
+    termIndex: number;
+  }
+  const matches: Match[] = [];
+
+  // Prepare normalized text for searching
+  const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
+
+  for (let termIndex = 0; termIndex < currentTerms.length; termIndex++) {
+    const term = currentTerms[termIndex];
+    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+
+    // Find all occurrences
+    let searchStart = 0;
+    while (true) {
+      const idx = normalizedText.indexOf(normalizedTerm, searchStart);
+      if (idx === -1) break;
+
+      // Map back to original text position for Hebrew (nikkud may shift positions)
+      let origStart = idx;
+      let origEnd = idx + normalizedTerm.length;
+
+      if (isHebrew) {
+        // Count how many nikkud chars before this position
+        let nikkudBefore = 0;
+        let normalizedPos = 0;
+        for (let i = 0; i < text.length && normalizedPos < idx; i++) {
+          const code = text.charCodeAt(i);
+          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
+                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+          if (isNikkud) {
+            nikkudBefore++;
+          } else {
+            normalizedPos++;
+          }
+        }
+        origStart = idx + nikkudBefore;
+
+        // Find end position accounting for nikkud within the match
+        let nikkudInMatch = 0;
+        normalizedPos = 0;
+        for (let i = origStart; i < text.length && normalizedPos < normalizedTerm.length; i++) {
+          const code = text.charCodeAt(i);
+          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
+                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+          if (isNikkud) {
+            nikkudInMatch++;
+          } else {
+            normalizedPos++;
+          }
+        }
+        origEnd = origStart + normalizedTerm.length + nikkudInMatch;
+      }
+
+      matches.push({ start: origStart, end: origEnd, termIndex });
+      searchStart = idx + 1;
     }
+  }
 
+  if (matches.length === 0) {
+    fragment.appendChild(document.createTextNode(text));
+    return fragment;
+  }
+
+  // Sort by position, longest match first for overlaps
+  matches.sort((a, b) => a.start - b.start || b.end - a.end);
+
+  // Remove overlapping matches (keep first/longest)
+  const filtered: Match[] = [];
+  for (const m of matches) {
+    if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
+      filtered.push(m);
+    }
+  }
+
+  // Build result with highlights using DOM
+  let pos = 0;
+  for (const m of filtered) {
+    if (m.start > pos) {
+      fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
+    }
     const mark = document.createElement('mark');
-    mark.className = `term-${termIndex % 5}`;
-    mark.textContent = text.slice(start, end);
+    mark.className = `term-${m.termIndex % 5}`;
+    mark.textContent = text.slice(m.start, m.end);
     fragment.appendChild(mark);
-
-    if (end < text.length) {
-      fragment.appendChild(document.createTextNode(text.slice(end)));
-    }
-
-    return fragment;
+    pos = m.end;
+  }
+  if (pos < text.length) {
+    fragment.appendChild(document.createTextNode(text.slice(pos)));
   }
 
-  /**
-   * Highlight all search terms in text with per-term colors
-   * Returns DocumentFragment with <mark class="term-N"> elements
-   * Safer than innerHTML - builds DOM programmatically
-   */
-  function highlightSearchTerms(text: string, language: 'he' | 'en'): DocumentFragment {
-    const fragment = document.createDocumentFragment();
+  return fragment;
+}
 
-    if (currentTerms.length === 0) {
-      fragment.appendChild(document.createTextNode(text));
-      return fragment;
-    }
-
-    const isHebrew = language === 'he';
-
-    // Build list of all matches with their positions
-    interface Match {
-      start: number;
-      end: number;
-      termIndex: number;
-    }
-    const matches: Match[] = [];
-
-    // Prepare normalized text for searching
-    const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
-
-    for (let termIndex = 0; termIndex < currentTerms.length; termIndex++) {
-      const term = currentTerms[termIndex];
-      const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
-
-      // Find all occurrences
-      let searchStart = 0;
-      while (true) {
-        const idx = normalizedText.indexOf(normalizedTerm, searchStart);
-        if (idx === -1) break;
-
-        // Map back to original text position for Hebrew (nikkud may shift positions)
-        let origStart = idx;
-        let origEnd = idx + normalizedTerm.length;
-
-        if (isHebrew) {
-          // Count how many nikkud chars before this position
-          let nikkudBefore = 0;
-          let normalizedPos = 0;
-          for (let i = 0; i < text.length && normalizedPos < idx; i++) {
-            const code = text.charCodeAt(i);
-            const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
-                             code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
-            if (isNikkud) {
-              nikkudBefore++;
-            } else {
-              normalizedPos++;
-            }
-          }
-          origStart = idx + nikkudBefore;
-
-          // Find end position accounting for nikkud within the match
-          let nikkudInMatch = 0;
-          normalizedPos = 0;
-          for (let i = origStart; i < text.length && normalizedPos < normalizedTerm.length; i++) {
-            const code = text.charCodeAt(i);
-            const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
-                             code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
-            if (isNikkud) {
-              nikkudInMatch++;
-            } else {
-              normalizedPos++;
-            }
-          }
-          origEnd = origStart + normalizedTerm.length + nikkudInMatch;
-        }
-
-        matches.push({ start: origStart, end: origEnd, termIndex });
-        searchStart = idx + 1;
-      }
-    }
-
-    if (matches.length === 0) {
-      fragment.appendChild(document.createTextNode(text));
-      return fragment;
-    }
-
-    // Sort by position, longest match first for overlaps
-    matches.sort((a, b) => a.start - b.start || b.end - a.end);
-
-    // Remove overlapping matches (keep first/longest)
-    const filtered: Match[] = [];
-    for (const m of matches) {
-      if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
-        filtered.push(m);
-      }
-    }
-
-    // Build result with highlights using DOM
-    let pos = 0;
-    for (const m of filtered) {
-      if (m.start > pos) {
-        fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
-      }
-      const mark = document.createElement('mark');
-      mark.className = `term-${m.termIndex % 5}`;
-      mark.textContent = text.slice(m.start, m.end);
-      fragment.appendChild(mark);
-      pos = m.end;
-    }
-    if (pos < text.length) {
-      fragment.appendChild(document.createTextNode(text.slice(pos)));
-    }
-
-    return fragment;
-  }
-
-  const overlay: Overlay & {
-    configure: typeof configure;
-    highlightSearchTerms: typeof highlightSearchTerms;
-  } = {
+export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
 
-  getVerseColor(verse: Verse): Color | Color[] | null {
+  getVerseColor(verse: VerseIdentity): Color | Color[] | null {
     // No active search - use default colors
     if (currentTerms.length === 0) {
       return null;
@@ -407,7 +403,7 @@ export function createSearchOverlay(): Overlay {
     }
   },
 
-  getHoverInfo(verse: Verse): string | null {
+  getHoverInfo(verse: VerseIdentity): string | null {
     if (currentTerms.length === 0) return null;
 
     const key = getVerseKey(verse.book, verse.chapter, verse.verse);
@@ -460,18 +456,4 @@ export function createSearchOverlay(): Overlay {
       }
     }
   },
-
-  // Expose configuration methods on overlay instance
-  configure,
-  highlightSearchTerms,
-  };
-
-  return overlay;
-}
-
-// Create singleton instance
-export const searchOverlay = createSearchOverlay();
-
-// Export helper methods for external use (backward compatibility with tests)
-export const configure = searchOverlay.configure;
-export const highlightSearchTerms = searchOverlay.highlightSearchTerms;
+};

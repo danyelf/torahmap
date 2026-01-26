@@ -9,7 +9,7 @@ import { getRarityTier, RARITY_THRESHOLDS } from '../../../trop';
 
 describe('Trop Overlay', () => {
   let testVerseTexts: VerseTexts;
-  let testVerses: Verse[];
+  let testVerses: VerseLayout[];
   let updateCallback: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -305,7 +305,7 @@ describe('Trop Overlay', () => {
           rareButton.click();
 
           // Find a verse that contains this trop
-          let verseWithTrop: Verse | null = null;
+          let verseWithTrop: VerseLayout | null = null;
           for (const verse of testVerses) {
             const color = tropOverlay.getVerseColor(verse);
             if (color && color[0] > 0.9 && color[1] > 0.8) {
@@ -344,7 +344,7 @@ describe('Trop Overlay', () => {
           rareButton.click();
 
           // Find a verse that doesn't contain this trop
-          let verseWithoutTrop: Verse | null = null;
+          let verseWithoutTrop: VerseLayout | null = null;
           for (const verse of testVerses) {
             const color = tropOverlay.getVerseColor(verse);
             if (color && color[0] < 0.2) {

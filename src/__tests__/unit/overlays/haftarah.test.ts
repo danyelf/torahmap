@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { haftarahOverlay } from '../../../overlays/haftarah';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import type { Verse } from '../../../types';
+import type { VerseLayout } from '../../../types';
 
 // Sample data matching the real structure
 const SAMPLE_HAFTARAH_DATA = {

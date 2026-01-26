@@ -1,52 +1,37 @@
 // src/overlays/commentary.ts
 import type { Overlay, Color } from './types.ts';
-import type { Verse, CommentaryData } from '../types.ts';
+import type { VerseIdentity, VerseLayout, CommentaryData } from '../types.ts';
 import { heatmapColor } from '../utils/color.ts';
 
-export function createCommentaryOverlay(): Overlay {
-  // State - encapsulated in closure
-  let data: CommentaryData = {};
-  let currentCategory = 'total';
-  let updateCallback: (() => void) | null = null;
-  let cachedMaxValues: Record<string, number> = {};
-  let verses: Verse[] = [];
+let data: CommentaryData = {};
+let currentCategory = 'total';
+let updateCallback: (() => void) | null = null;
 
-  function getCount(book: string, chapter: number, verse: number): number {
-    const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-    if (!verseData) return 0;
-    if (currentCategory === 'total') return verseData.total;
-    return verseData.categories[currentCategory] || 0;
+// Cache max values per category to avoid recalculating
+let cachedMaxValues: Record<string, number> = {};
+let verses: VerseLayout[] = [];
+
+function getCount(book: string, chapter: number, verse: number): number {
+  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
+  if (!verseData) return 0;
+  if (currentCategory === 'total') return verseData.total;
+  return verseData.categories[currentCategory] || 0;
+}
+
+function getMaxValue(): number {
+  if (cachedMaxValues[currentCategory] !== undefined) {
+    return cachedMaxValues[currentCategory];
   }
-
-  function getMaxValue(): number {
-    if (cachedMaxValues[currentCategory] !== undefined) {
-      return cachedMaxValues[currentCategory];
-    }
-    let max = 0;
-    for (const v of verses) {
-      const count = getCount(v.book, v.chapter, v.verse);
-      if (count > max) max = count;
-    }
-    cachedMaxValues[currentCategory] = max;
-    return max;
+  let max = 0;
+  for (const v of verses) {
+    const count = getCount(v.book, v.chapter, v.verse);
+    if (count > max) max = count;
   }
+  cachedMaxValues[currentCategory] = max;
+  return max;
+}
 
-  // Public API for configuring overlay
-  function configure(config: { verses: Verse[] }): void {
-    verses = config.verses;
-    cachedMaxValues = {};
-  }
-
-  // Public API for getting verse link count (used by sidebar)
-  function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
-    const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-    return verseData?.total ?? null;
-  }
-
-  const overlay: Overlay & {
-    configure: typeof configure;
-    getVerseLinkCount: typeof getVerseLinkCount;
-  } = {
+export const commentaryOverlay: Overlay = {
   id: 'commentary',
   name: 'Commentary Density',
 
@@ -73,7 +58,7 @@ export function createCommentaryOverlay(): Overlay {
     updateCallback = callback;
   },
 
-  getVerseColor(verse: Verse): Color | null {
+  getVerseColor(verse: VerseIdentity): Color | null {
     // Store reference to verses for max calculation
     // This is a bit awkward - we'll improve this in integration
     const count = getCount(verse.book, verse.chapter, verse.verse);
@@ -132,7 +117,7 @@ export function createCommentaryOverlay(): Overlay {
     `;
   },
 
-  getHoverInfo(verse: Verse): string | null {
+  getHoverInfo(verse: VerseLayout): string | null {
     const verseData = data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
     if (!verseData) return null;
     if (currentCategory === 'total') {
@@ -155,19 +140,15 @@ export function createCommentaryOverlay(): Overlay {
       updateCallback?.();
     }
   },
+};
 
-  // Expose configuration methods on overlay instance
-  configure,
-  getVerseLinkCount,
-  };
-
-  return overlay;
+export function configure(config: { verses: VerseLayout[] }): void {
+  verses = config.verses;
+  cachedMaxValues = {};
 }
 
-// Create singleton instance
-export const commentaryOverlay = createCommentaryOverlay();
-
-// Export helper methods for external use (sidebar, etc.)
-export const configureCommentary = commentaryOverlay.configure;
-export const configure = commentaryOverlay.configure; // Backward compatibility alias for tests
-export const getVerseLinkCount = commentaryOverlay.getVerseLinkCount;
+// Get total linked texts count for a verse (used by sidebar)
+export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
+  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
+  return verseData?.total ?? null;
+}

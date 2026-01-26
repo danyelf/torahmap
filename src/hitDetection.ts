@@ -1,6 +1,6 @@
 // Hit Detection module - handles verse hit detection from screen coordinates
 
-import type { Verse } from './types';
+import type { VerseLayout } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -28,13 +28,13 @@ export function screenToWorld(
  *
  * @param worldX - X coordinate in world space
  * @param worldY - Y coordinate in world space
- * @param verse - Verse to test
+ * @param verse - VerseLayout to test
  * @returns true if point is inside verse bounds
  */
-export function isPointInVerse(
+export function isPointInVerseLayout(
   worldX: number,
   worldY: number,
-  verse: Verse
+  verse: VerseLayout
 ): boolean {
   return (
     worldX >= verse.x &&
@@ -50,15 +50,15 @@ export function isPointInVerse(
  * @param verses - All verses
  * @param worldX - X coordinate in world space
  * @param worldY - Y coordinate in world space
- * @returns Verse at point, or null if none found
+ * @returns VerseLayout at point, or null if none found
  */
 export function findExactHit(
-  verses: Verse[],
+  verses: VerseLayout[],
   worldX: number,
   worldY: number
-): Verse | null {
+): VerseLayout | null {
   for (const v of verses) {
-    if (isPointInVerse(worldX, worldY, v)) {
+    if (isPointInVerseLayout(worldX, worldY, v)) {
       return v;
     }
   }
@@ -75,11 +75,11 @@ export function findExactHit(
  * @returns Nearest verse within fuzzy radius, or null if none found
  */
 export function findFuzzyHit(
-  verses: Verse[],
+  verses: VerseLayout[],
   worldX: number,
   worldY: number
-): Verse | null {
-  let nearestVerse: Verse | null = null;
+): VerseLayout | null {
+  let nearestVerseLayout: VerseLayout | null = null;
   let nearestDistSq =
     HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
 
@@ -95,12 +95,12 @@ export function findFuzzyHit(
 
     // If within fuzzy radius and closer than previous best
     if (distSq < nearestDistSq) {
-      nearestVerse = v;
+      nearestVerseLayout = v;
       nearestDistSq = distSq;
     }
   }
 
-  return nearestVerse;
+  return nearestVerseLayout;
 }
 
 /**
@@ -111,14 +111,14 @@ export function findFuzzyHit(
  * @param camera - Camera state with pan and zoom
  * @param screenX - X coordinate in screen space
  * @param screenY - Y coordinate in screen space
- * @returns Verse at point, or null if none found
+ * @returns VerseLayout at point, or null if none found
  */
-export function findVerseAtPoint(
-  verses: Verse[],
+export function findVerseLayoutAtPoint(
+  verses: VerseLayout[],
   camera: Camera,
   screenX: number,
   screenY: number
-): Verse | null {
+): VerseLayout | null {
   // Convert screen coords to world coords
   const { x: worldX, y: worldY } = screenToWorld(screenX, screenY, camera);
 

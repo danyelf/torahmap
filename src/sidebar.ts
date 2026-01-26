@@ -1,6 +1,6 @@
 // Sidebar management for verse details display
 
-import type { Verse } from './types.ts';
+import type { VerseLayout } from './types.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { getSelectedTrop, highlightTropInText } from './overlays/trop.ts';
@@ -64,7 +64,7 @@ export function positionSidebar(
  */
 export function updateSidebar(
   elements: SidebarElements,
-  verse: Verse | null,
+  verse: VerseLayout | null,
   verseTexts: VerseTexts,
   currentOverlay: Overlay | null,
   getVerseText: (

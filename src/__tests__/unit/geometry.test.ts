@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { buildVerseGeometry, createBuffer } from '../../geometry';
 import { createVerse, createVerses, TEST_COLORS } from '../helpers';
-import type { Verse } from '../../types';
+import type { VerseLayout } from '../../types';
 
 describe('buildVerseGeometry', () => {
   describe('basic buffer properties', () => {
@@ -175,8 +175,8 @@ describe('buildVerseGeometry', () => {
 
   describe('color handling - single color', () => {
     it('uses verse color when provided', () => {
-      const verse = createVerse({ color: TEST_COLORS.RED });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [TEST_COLORS.RED]);
 
       const floatsPerVertex = 19;
       // Color starts at index 2 (after x, y)
@@ -189,9 +189,9 @@ describe('buildVerseGeometry', () => {
     });
 
     it('uses base color when verse color is undefined', () => {
-      const verse = createVerse({ color: undefined });
+      const verse = createVerse();
       const baseColor: [number, number, number] = [0.7, 0.8, 0.9];
-      const buffer = buildVerseGeometry([verse], baseColor);
+      const buffer = buildVerseGeometry([verse], undefined, baseColor);
 
       const colorOffset = 2;
       expect(buffer[colorOffset]).toBeCloseTo(0.7, 5);
@@ -200,7 +200,7 @@ describe('buildVerseGeometry', () => {
     });
 
     it('uses default base color when neither provided', () => {
-      const verse = createVerse({ color: undefined });
+      const verse = createVerse();
       const buffer = buildVerseGeometry([verse]);
 
       const colorOffset = 2;
@@ -211,8 +211,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('pads single color with 3 black colors', () => {
-      const verse = createVerse({ color: TEST_COLORS.BLUE });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [TEST_COLORS.BLUE]);
 
       const floatsPerVertex = 19;
       const colorOffset = 2;
@@ -232,8 +232,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('sets colorCount to 1 for single color', () => {
-      const verse = createVerse({ color: TEST_COLORS.GREEN });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [TEST_COLORS.GREEN]);
 
       const floatsPerVertex = 19;
       const colorCountOffset = 14; // After x, y, and 4 colors (2 + 12)
@@ -241,8 +241,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('applies same color to all vertices', () => {
-      const verse = createVerse({ color: TEST_COLORS.RED });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [TEST_COLORS.RED]);
 
       const floatsPerVertex = 19;
       const colorOffset = 2;
@@ -259,10 +259,8 @@ describe('buildVerseGeometry', () => {
 
   describe('color handling - multiple colors (stipple)', () => {
     it('handles 2 colors correctly', () => {
-      const verse = createVerse({
-        color: [TEST_COLORS.RED, TEST_COLORS.BLUE] as [number, number, number][],
-      });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.BLUE]]);
 
       const colorOffset = 2;
 
@@ -286,10 +284,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('handles 3 colors correctly', () => {
-      const verse = createVerse({
-        color: [TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE] as [number, number, number][],
-      });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE]]);
 
       const colorOffset = 2;
       const colorCountOffset = 14;
@@ -305,10 +301,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('handles 4 colors correctly', () => {
-      const verse = createVerse({
-        color: [TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE, TEST_COLORS.YELLOW] as [number, number, number][],
-      });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE, TEST_COLORS.YELLOW]]);
 
       const colorOffset = 2;
       const colorCountOffset = 14;
@@ -323,17 +317,15 @@ describe('buildVerseGeometry', () => {
     });
 
     it('caps at 4 colors when more provided', () => {
-      const verse = createVerse({
-        color: [
-          TEST_COLORS.RED,
-          TEST_COLORS.GREEN,
-          TEST_COLORS.BLUE,
-          TEST_COLORS.YELLOW,
-          TEST_COLORS.PURPLE, // This should be ignored
-          TEST_COLORS.WHITE,  // This should be ignored
-        ] as [number, number, number][],
-      });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [[
+        TEST_COLORS.RED,
+        TEST_COLORS.GREEN,
+        TEST_COLORS.BLUE,
+        TEST_COLORS.YELLOW,
+        TEST_COLORS.PURPLE, // This should be ignored
+        TEST_COLORS.WHITE,  // This should be ignored
+      ]]);
 
       const colorCountOffset = 14;
       // Should still be 4, not 6
@@ -342,11 +334,16 @@ describe('buildVerseGeometry', () => {
 
     it('sets correct colorCount for multiple colors', () => {
       const verses = [
-        createVerse({ color: [TEST_COLORS.RED, TEST_COLORS.BLUE] as [number, number, number][] }),
-        createVerse({ color: [TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE] as [number, number, number][] }),
-        createVerse({ color: TEST_COLORS.YELLOW }),
+        createVerse(),
+        createVerse(),
+        createVerse(),
       ];
-      const buffer = buildVerseGeometry(verses);
+      const colors = [
+        [TEST_COLORS.RED, TEST_COLORS.BLUE],
+        [TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE],
+        TEST_COLORS.YELLOW,
+      ];
+      const buffer = buildVerseGeometry(verses, colors);
 
       const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
@@ -524,11 +521,16 @@ describe('buildVerseGeometry', () => {
 
     it('handles mixed color types in array', () => {
       const verses = [
-        createVerse({ color: TEST_COLORS.RED }), // single
-        createVerse({ color: [TEST_COLORS.BLUE, TEST_COLORS.GREEN] as [number, number, number][] }), // double
-        createVerse({ color: undefined }), // default
+        createVerse(), // single
+        createVerse(), // double
+        createVerse(), // default
       ];
-      const buffer = buildVerseGeometry(verses);
+      const colors = [
+        TEST_COLORS.RED,
+        [TEST_COLORS.BLUE, TEST_COLORS.GREEN],
+        undefined,
+      ];
+      const buffer = buildVerseGeometry(verses, colors);
 
       const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
@@ -540,8 +542,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('handles all black colors', () => {
-      const verse = createVerse({ color: TEST_COLORS.BLACK });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [TEST_COLORS.BLACK]);
 
       const colorOffset = 2;
       expect(buffer[colorOffset]).toBe(0);
@@ -550,8 +552,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('handles all white colors', () => {
-      const verse = createVerse({ color: TEST_COLORS.WHITE });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [TEST_COLORS.WHITE]);
 
       const colorOffset = 2;
       expect(buffer[colorOffset]).toBe(1);
@@ -560,8 +562,8 @@ describe('buildVerseGeometry', () => {
     });
 
     it('handles zero-width color arrays', () => {
-      const verse = createVerse({ color: [] as any });
-      const buffer = buildVerseGeometry([verse]);
+      const verse = createVerse();
+      const buffer = buildVerseGeometry([verse], [[]]);
 
       // Empty array should fall back to base color [0.6, 0.6, 0.6]
       const colorOffset = 2;
@@ -574,11 +576,12 @@ describe('buildVerseGeometry', () => {
   describe('multiple verses consistency', () => {
     it('verses maintain independent properties', () => {
       const verses = [
-        createVerse({ x: 10, y: 20, color: TEST_COLORS.RED }),
-        createVerse({ x: 30, y: 40, color: TEST_COLORS.GREEN }),
-        createVerse({ x: 50, y: 60, color: TEST_COLORS.BLUE }),
+        createVerse({ x: 10, y: 20 }),
+        createVerse({ x: 30, y: 40 }),
+        createVerse({ x: 50, y: 60 }),
       ];
-      const buffer = buildVerseGeometry(verses);
+      const colors = [TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE];
+      const buffer = buildVerseGeometry(verses, colors);
 
       const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
