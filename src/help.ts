@@ -58,7 +58,6 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
 };
 
 let modal: HTMLDivElement | null = null;
-let currentTab: TabId = 'overview';
 
 function createModal(): HTMLDivElement {
   const container = document.createElement('div');
@@ -98,7 +97,6 @@ function createModal(): HTMLDivElement {
 }
 
 function switchTab(container: HTMLElement, tabId: TabId): void {
-  currentTab = tabId;
   localStorage.setItem(STORAGE_KEY_TAB, tabId);
 
   // Update tab buttons
