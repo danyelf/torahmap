@@ -29,7 +29,7 @@ issue-prefix: "tm"
 # actor: ""
 
 # Path to database (overridden by BEADS_DB or --db)
-db: ".beads/beads.db"
+# db: ".beads/beads.db"
 
 # Auto-start daemon if not running (can also use BEADS_AUTO_START_DAEMON)
 auto-start-daemon: true
