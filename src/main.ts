@@ -21,12 +21,12 @@ import {
   positionSidebar,
   updateSidebar,
 } from './sidebar.ts';
-import { createCamera, clampZoom, panForZoom, type Camera } from './camera.ts';
-import { createMouseState, versesEqual, startDrag, stopDrag, setHoveredVerse, clearHover, type MouseState } from './mouseState.ts';
+import { createCamera, clampZoom, panForZoom } from './camera.ts';
+import { createMouseState, versesEqual, startDrag, stopDrag, setHoveredVerse, clearHover } from './mouseState.ts';
 import { findVerseAtPoint } from './hitDetection.ts';
 import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
-import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame, type RenderContext, type RenderState } from './rendering.ts';
-import type { Verse, TorahData, Bounds, VerseState } from './types.ts';
+import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame } from './rendering.ts';
+import type { Verse, TorahData, Bounds } from './types.ts';
 import {
   registerOverlay,
   getOverlay,
@@ -41,7 +41,6 @@ import {
   haftarahOverlay,
   type Overlay,
 } from './overlays/index.ts';
-import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 // Extend window for global state
 declare global {
