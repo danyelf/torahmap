@@ -1,6 +1,6 @@
 // Rendering module - handles WebGL rendering state and operations
 
-import { initWebGL, createProgram, createOutlineProgram } from './webgl';
+import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } from './webgl';
 import { buildVerseGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
@@ -16,7 +16,7 @@ export interface RenderContext {
   gl: WebGL2RenderingContext;
   programs: {
     main: ShaderProgram;
-    outline: ShaderProgram;
+    outline: OutlineProgram;
   };
   canvas: HTMLCanvasElement;
 }
@@ -204,7 +204,7 @@ export function render(
 export function renderOutline(
   context: RenderContext,
   state: RenderState,
-  verse: Verse,
+  verse: VerseLayout,
   color: [number, number, number],
   buffer: WebGLBuffer | null,
   camera: Camera

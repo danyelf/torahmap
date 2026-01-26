@@ -40,7 +40,7 @@ export function assertColorEquals(
 /**
  * Asserts that a verse has all required properties
  */
-export function assertValidVerse(verse: Verse) {
+export function assertValidVerse(verse: VerseLayout) {
   expect(verse.book).toBeDefined();
   expect(typeof verse.book).toBe('string');
   expect(verse.book.length).toBeGreaterThan(0);
@@ -63,15 +63,7 @@ export function assertValidVerse(verse: Verse) {
   expect(typeof verse.size).toBe('number');
   expect(verse.size).toBeGreaterThan(0);
 
-  if (verse.color) {
-    if (Array.isArray(verse.color[0])) {
-      // Multiple colors (stipple)
-      assertValidColors(verse.color as [number, number, number][]);
-    } else {
-      // Single color
-      assertValidColor(verse.color as [number, number, number]);
-    }
-  }
+  // Note: colors are no longer part of VerseLayout - they're computed separately
 }
 
 /**
@@ -86,7 +78,7 @@ export function assertValidVerses(verses: VerseLayout[]) {
 /**
  * Asserts that two verses represent the same location (book, chapter, verse)
  */
-export function assertSameVerseLocation(actual: Verse, expected: Verse) {
+export function assertSameVerseLocation(actual: VerseLayout, expected: VerseLayout) {
   expect(actual.book).toBe(expected.book);
   expect(actual.chapter).toBe(expected.chapter);
   expect(actual.verse).toBe(expected.verse);
@@ -105,7 +97,7 @@ export function assertInRange(value: number, min: number, max: number) {
  * Allows for small floating point differences
  */
 export function assertUniquePositions(verses: VerseLayout[], tolerance: number = 0.01) {
-  const positions = new Map<string, Verse>();
+  const positions = new Map<string, VerseLayout>();
 
   for (const verse of verses) {
     const key = `${Math.round(verse.x / tolerance)},${Math.round(verse.y / tolerance)}`;

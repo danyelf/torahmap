@@ -1,6 +1,6 @@
 // Render book labels as HTML overlays
 
-import type { Verse } from './types.ts';
+import type { VerseLayout } from './types.ts';
 
 interface BookBounds {
   minX: number;
@@ -15,7 +15,7 @@ interface Pan {
 
 const LABEL_OFFSET_Y = -20; // Position labels above the book
 
-export function createBookLabels(verses: Verse[], container: HTMLElement): HTMLDivElement {
+export function createBookLabels(verses: VerseLayout[], container: HTMLElement): HTMLDivElement {
   // Group verses by book to find column positions
   const books: Record<string, BookBounds> = {};
   for (const v of verses) {

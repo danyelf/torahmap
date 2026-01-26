@@ -123,9 +123,6 @@ function layoutChapter(
       const jitterX = (seededRandom(globalVerseIdx.value * 2) - 0.5) * 2.0;
       const jitterY = (seededRandom(globalVerseIdx.value * 2 + 1) - 0.5) * 2.0;
 
-      // Wider brightness variation (0.4 to 0.8)
-      const brightness = 0.4 + seededRandom(globalVerseIdx.value * 3) * 0.4;
-
       const x = bookX + lineIndent + lineVerseIdx * VERSE_SIZE + jitterX;
 
       verses.push({
@@ -134,8 +131,7 @@ function layoutChapter(
         verse: verseIdx + 1,
         x: x,
         y: currentY + jitterY,
-        size: VERSE_SIZE,
-        color: [brightness, brightness, brightness]
+        size: VERSE_SIZE
       });
 
       maxWidth = Math.max(maxWidth, lineIndent + (lineVerseIdx + 1) * VERSE_SIZE);

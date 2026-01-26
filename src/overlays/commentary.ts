@@ -117,7 +117,7 @@ export const commentaryOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: Verse): string | null {
+  getHoverInfo(verse: VerseLayout): string | null {
     const verseData = data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
     if (!verseData) return null;
     if (currentCategory === 'total') {

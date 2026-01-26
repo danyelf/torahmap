@@ -24,7 +24,7 @@ import {
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import { createMouseState, startDrag, stopDrag, setHoveredVerse, clearHover } from './mouseState.ts';
 import { versesEqual } from './types.ts';
-import { findVerseAtPoint } from './hitDetection.ts';
+import { findVerseLayoutAtPoint } from './hitDetection.ts';
 import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
 import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame } from './rendering.ts';
 import type { VerseLayout, TorahData, Bounds } from './types.ts';
@@ -273,7 +273,7 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (!mouseState.isDragging) {
-      const verse = findVerseAtPoint(verses, camera, e.clientX, e.clientY);
+      const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
@@ -305,7 +305,7 @@ async function main(): Promise<void> {
 
   // Click to pin/unpin verse
   canvas.addEventListener('click', (e: MouseEvent) => {
-    const verse = findVerseAtPoint(verses, camera, e.clientX, e.clientY);
+    const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
     if (verse) {
       // Toggle pin: if clicking same verse, unpin; otherwise pin new verse
       if (pinnedVerse &&
@@ -414,7 +414,7 @@ async function main(): Promise<void> {
   configureSearch({
     verses,
     callbacks: {
-      onVerseClick: (verse: Verse) => {
+      onVerseClick: (verse: VerseLayout) => {
         pinnedVerse = verse;
         updateSidebarWrapper(verse, true);
         applyOverlay();
