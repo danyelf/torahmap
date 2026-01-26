@@ -273,10 +273,9 @@ export function createTropOverlay(): Overlay {
   getHoverInfo(verse: Verse): string | null {
     if (!selectedTrop) return null;
 
-    const loc = selectedTrop.verses.find(
-      v => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse
-    );
-    return loc ? `${selectedTrop.name} ×${loc.count}` : null;
+    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+    const count = cachedVerseLookup.get(key);
+    return count ? `${selectedTrop.name} ×${count}` : null;
   },
 
   getUrlParams(): Record<string, string> {
