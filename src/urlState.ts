@@ -1,6 +1,8 @@
 // URL State Management
 // Handles parsing and serializing view state to/from URL hash
 
+import { MIN_ZOOM, MAX_ZOOM } from './camera.ts';
+
 /**
  * Overlay-specific parameters that can be stored in the URL
  */
@@ -132,7 +134,7 @@ export function parseUrlState(): UrlState {
   const zoom = params.get('zoom');
   if (zoom) {
     const parsed = parseFloat(zoom);
-    if (!isNaN(parsed) && parsed >= 0.1 && parsed <= 10) {
+    if (!isNaN(parsed) && parsed >= MIN_ZOOM && parsed <= MAX_ZOOM) {
       state.zoom = parsed;
     }
   }

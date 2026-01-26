@@ -4,6 +4,11 @@
 import type { VerseTexts } from './verseTexts';
 import { BOOK_ORDER } from './constants/books.ts';
 import { getVerseKey } from './types.ts';
+import {
+  MIN_SEARCH_TERM_LENGTH,
+  SEARCH_SNIPPET_MAX_LENGTH,
+  SEARCH_SNIPPET_CONTEXT_BEFORE,
+} from './constants/app.ts';
 
 export interface TermMatch {
   termIndex: number;
@@ -71,7 +76,7 @@ export function parseSearchTerms(query: string): string[] {
   return query
     .split(',')
     .map(t => t.trim())
-    .filter(t => t.length >= 2);
+    .filter(t => t.length >= MIN_SEARCH_TERM_LENGTH);
 }
 
 /**
@@ -419,8 +424,8 @@ interface SnippetResult {
  * (no nikkud mapping needed - used for lemma-based word highlighting)
  */
 function createSnippetAtPosition(text: string, matchStart: number, matchLen: number): SnippetResult {
-  const maxLen = 60;
-  const contextBefore = 20;
+  const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
+  const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
 
   const matchEnd = matchStart + matchLen;
 
@@ -504,8 +509,8 @@ function countNikkudInRange(text: string, start: number, strippedLen: number): n
  * For Hebrew, matchIdx/matchLen refer to positions in the nikkud-stripped text
  */
 function createSnippet(text: string, matchIdx: number, matchLen: number, isHebrew: boolean = false): SnippetResult {
-  const maxLen = 60;
-  const contextBefore = 20;
+  const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
+  const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
 
   // For Hebrew, map stripped positions to original positions
   let origMatchStart = matchIdx;

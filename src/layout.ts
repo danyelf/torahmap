@@ -3,6 +3,7 @@
 import type { TorahData, VerseLayout, Bounds, Book } from './types.ts';
 import { seededRandom } from './utils/random.ts';
 import { getBookSection } from './constants/books.ts';
+import { JITTER_CENTER, JITTER_RANGE } from './constants/app.ts';
 
 const VERSE_SIZE = 6;           // pixels per verse square
 const CHAPTER_GAP = 2;          // gap between chapter rows
@@ -120,8 +121,8 @@ function layoutChapter(
 
     for (let lineVerseIdx = 0; lineVerseIdx < lineLength; lineVerseIdx++) {
       // Position jitter (±1px) to break up regular grid
-      const jitterX = (seededRandom(globalVerseIdx.value * 2) - 0.5) * 2.0;
-      const jitterY = (seededRandom(globalVerseIdx.value * 2 + 1) - 0.5) * 2.0;
+      const jitterX = (seededRandom(globalVerseIdx.value * 2) - JITTER_CENTER) * JITTER_RANGE;
+      const jitterY = (seededRandom(globalVerseIdx.value * 2 + 1) - JITTER_CENTER) * JITTER_RANGE;
 
       const x = bookX + lineIndent + lineVerseIdx * VERSE_SIZE + jitterX;
 

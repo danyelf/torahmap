@@ -8,8 +8,8 @@ export interface Camera {
   zoom: number;  // zoom level (0.1 - 10.0)
 }
 
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 10.0;
+export const MIN_ZOOM = 0.1;
+export const MAX_ZOOM = 10.0;
 
 /**
  * Create initial camera state centered on the given bounds.
