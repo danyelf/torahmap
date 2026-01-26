@@ -898,6 +898,20 @@ describe('Search Overlay', () => {
   });
 
   describe('highlightSearchTerms Function', () => {
+    // Helper to convert DocumentFragment to HTML string for testing
+    function fragmentToHtml(fragment: DocumentFragment): string {
+      const div = document.createElement('div');
+      div.appendChild(fragment.cloneNode(true));
+      return div.innerHTML;
+    }
+
+    // Helper to get text content from DocumentFragment
+    function fragmentToText(fragment: DocumentFragment): string {
+      const div = document.createElement('div');
+      div.appendChild(fragment.cloneNode(true));
+      return div.textContent || '';
+    }
+
     beforeEach(() => {
       // Setup search with terms
       const container = document.createElement('div');
@@ -908,7 +922,7 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
     });
 
-    it('returns escaped HTML when no search terms', () => {
+    it('returns plain text when no search terms', () => {
       // Clear search
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
@@ -918,15 +932,17 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       const result = highlightSearchTerms('In the beginning', 'en');
-      expect(result).toBe('In the beginning');
+      expect(fragmentToText(result)).toBe('In the beginning');
+      expect(fragmentToHtml(result)).not.toContain('<mark');
     });
 
     it('highlights matching terms in English text', () => {
       const result = highlightSearchTerms('And God said let there be light', 'en');
+      const html = fragmentToHtml(result);
 
-      expect(result).toContain('<mark');
-      expect(result).toContain('God');
-      expect(result).toContain('light');
+      expect(html).toContain('<mark');
+      expect(html).toContain('God');
+      expect(html).toContain('light');
     });
 
     it('highlights matching terms in Hebrew text', () => {
@@ -938,21 +954,26 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       const result = highlightSearchTerms('בְּרֵאשִׁית בָּרָא אֱלֹהִים', 'he');
-      expect(result).toContain('<mark');
+      expect(fragmentToHtml(result)).toContain('<mark');
     });
 
     it('escapes HTML special characters', () => {
       const result = highlightSearchTerms('Test <script>alert("xss")</script>', 'en');
+      const text = fragmentToText(result);
+      const html = fragmentToHtml(result);
 
-      expect(result).toContain('&lt;script&gt;');
-      expect(result).not.toContain('<script>');
+      // Text content should contain the literal script tags (as text, not code)
+      expect(text).toContain('<script>');
+      // HTML should not contain executable script tags
+      expect(html).not.toContain('<script>alert');
     });
 
     it('assigns term-N class to marks', () => {
       const result = highlightSearchTerms('And God said let there be light', 'en');
+      const html = fragmentToHtml(result);
 
-      expect(result).toContain('term-0');
-      expect(result).toContain('term-1');
+      expect(html).toContain('term-0');
+      expect(html).toContain('term-1');
     });
 
     it('handles overlapping matches correctly', () => {
@@ -964,23 +985,24 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       const result = highlightSearchTerms('God is great', 'en');
+      const text = fragmentToText(result);
       // Should handle overlaps without duplicate marks
-      expect(result).toContain('God');
+      expect(text).toContain('God');
     });
 
     it('handles text with no matches', () => {
       const result = highlightSearchTerms('No matches here', 'en');
-      expect(result).not.toContain('<mark');
+      expect(fragmentToHtml(result)).not.toContain('<mark');
     });
 
     it('handles empty text', () => {
       const result = highlightSearchTerms('', 'en');
-      expect(result).toBe('');
+      expect(fragmentToText(result)).toBe('');
     });
 
     it('handles case-insensitive English matching', () => {
       const result = highlightSearchTerms('god created', 'en');
-      expect(result).toContain('<mark');
+      expect(fragmentToHtml(result)).toContain('<mark');
     });
 
     it('handles Hebrew with nikkud', () => {
@@ -992,12 +1014,13 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       const result = highlightSearchTerms('אֱלֹהִים', 'he'); // With nikkud
-      expect(result).toContain('<mark');
+      expect(fragmentToHtml(result)).toContain('<mark');
     });
 
     it('handles multiple occurrences of same term', () => {
       const result = highlightSearchTerms('God said God created', 'en');
-      const matches = result.match(/<mark/g);
+      const html = fragmentToHtml(result);
+      const matches = html.match(/<mark/g);
       expect(matches?.length).toBeGreaterThan(1);
     });
   });

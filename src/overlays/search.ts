@@ -75,30 +75,40 @@ function renderResults(): void {
     const div = document.createElement('div');
     div.className = 'search-result';
 
-    // Build term indicator dots
-    const dots = result.matchingTerms
-      .map(m => {
-        const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
-        return `<span class="term-dot" style="background: ${colorToCss(color)}"></span>`;
-      })
-      .join('');
+    // Create ref div with term indicators
+    const refDiv = document.createElement('div');
+    refDiv.className = 'ref';
+
+    // Create term indicator dots programmatically
+    const termIndicators = document.createElement('span');
+    termIndicators.className = 'term-indicators';
+    for (const m of result.matchingTerms) {
+      const dot = document.createElement('span');
+      dot.className = 'term-dot';
+      const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
+      dot.style.background = colorToCss(color);
+      termIndicators.appendChild(dot);
+    }
+    refDiv.appendChild(termIndicators);
+    refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
+
+    // Create snippet div with highlighting
+    const snippetDiv = document.createElement('div');
+    snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
 
     // Use first match's snippet for display
     const firstMatch = result.matchingTerms[0];
-    const snippetHtml = escapeAndHighlight(
+    const snippetContent = createHighlightedText(
       firstMatch.snippet,
       firstMatch.matchStart,
       firstMatch.matchEnd,
       firstMatch.termIndex
     );
+    snippetDiv.appendChild(snippetContent);
 
-    div.innerHTML = `
-      <div class="ref">
-        <span class="term-indicators">${dots}</span>
-        ${result.book} ${result.chapter}:${result.verse}
-      </div>
-      <div class="snippet ${result.language === 'he' ? 'rtl' : ''}">${snippetHtml}</div>
-    `;
+    div.appendChild(refDiv);
+    div.appendChild(snippetDiv);
+
     div.addEventListener('click', () => {
       const verse = verses.find(v =>
         v.book === result.book &&
@@ -115,26 +125,41 @@ function renderResults(): void {
   searchResults.classList.add('visible');
 }
 
-function escapeAndHighlight(text: string, start: number, end: number, termIndex: number): string {
-  const before = escapeHtml(text.slice(0, start));
-  const match = escapeHtml(text.slice(start, end));
-  const after = escapeHtml(text.slice(end));
-  return `${before}<mark class="term-${termIndex % 5}">${match}</mark>${after}`;
-}
+/**
+ * Create a DocumentFragment with highlighted text
+ * Safer than innerHTML - builds DOM programmatically
+ */
+function createHighlightedText(text: string, start: number, end: number, termIndex: number): DocumentFragment {
+  const fragment = document.createDocumentFragment();
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  if (start > 0) {
+    fragment.appendChild(document.createTextNode(text.slice(0, start)));
+  }
+
+  const mark = document.createElement('mark');
+  mark.className = `term-${termIndex % 5}`;
+  mark.textContent = text.slice(start, end);
+  fragment.appendChild(mark);
+
+  if (end < text.length) {
+    fragment.appendChild(document.createTextNode(text.slice(end)));
+  }
+
+  return fragment;
 }
 
 /**
  * Highlight all search terms in text with per-term colors
- * Returns HTML string with <mark class="term-N"> tags
+ * Returns DocumentFragment with <mark class="term-N"> elements
+ * Safer than innerHTML - builds DOM programmatically
  */
-export function highlightSearchTerms(text: string, language: 'he' | 'en'): string {
-  if (currentTerms.length === 0) return escapeHtml(text);
+export function highlightSearchTerms(text: string, language: 'he' | 'en'): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+
+  if (currentTerms.length === 0) {
+    fragment.appendChild(document.createTextNode(text));
+    return fragment;
+  }
 
   const isHebrew = language === 'he';
 
@@ -200,7 +225,10 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): strin
     }
   }
 
-  if (matches.length === 0) return escapeHtml(text);
+  if (matches.length === 0) {
+    fragment.appendChild(document.createTextNode(text));
+    return fragment;
+  }
 
   // Sort by position, longest match first for overlaps
   matches.sort((a, b) => a.start - b.start || b.end - a.end);
@@ -213,21 +241,23 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): strin
     }
   }
 
-  // Build result with highlights
-  let result = '';
+  // Build result with highlights using DOM
   let pos = 0;
   for (const m of filtered) {
     if (m.start > pos) {
-      result += escapeHtml(text.slice(pos, m.start));
+      fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
     }
-    result += `<mark class="term-${m.termIndex % 5}">${escapeHtml(text.slice(m.start, m.end))}</mark>`;
+    const mark = document.createElement('mark');
+    mark.className = `term-${m.termIndex % 5}`;
+    mark.textContent = text.slice(m.start, m.end);
+    fragment.appendChild(mark);
     pos = m.end;
   }
   if (pos < text.length) {
-    result += escapeHtml(text.slice(pos));
+    fragment.appendChild(document.createTextNode(text.slice(pos)));
   }
 
-  return result;
+  return fragment;
 }
 
 export const searchOverlay: Overlay = {
@@ -323,22 +353,53 @@ export const searchOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement): void {
+    // Clear container
+    container.textContent = '';
+
     if (currentTerms.length > 0 && currentResults.length > 0) {
-      const termLabels = currentTerms
-        .map((term, i) => {
-          const color = SEARCH_COLORS[i % SEARCH_COLORS.length];
-          return `<span class="legend-term">
-            <span class="color-swatch" style="background: ${colorToCss(color)}"></span>
-            "${term}"
-          </span>`;
-        })
-        .join(' ');
-      container.innerHTML = `<div class="search-legend">${termLabels}</div>
-        <div style="color: #888; font-size: 11px; margin-top: 4px;">${currentResults.length} matching verses</div>`;
+      const legendDiv = document.createElement('div');
+      legendDiv.className = 'search-legend';
+
+      for (let i = 0; i < currentTerms.length; i++) {
+        const term = currentTerms[i];
+        const color = SEARCH_COLORS[i % SEARCH_COLORS.length];
+
+        const termSpan = document.createElement('span');
+        termSpan.className = 'legend-term';
+
+        const swatch = document.createElement('span');
+        swatch.className = 'color-swatch';
+        swatch.style.background = colorToCss(color);
+        termSpan.appendChild(swatch);
+
+        termSpan.appendChild(document.createTextNode(`"${term}"`));
+        legendDiv.appendChild(termSpan);
+
+        if (i < currentTerms.length - 1) {
+          legendDiv.appendChild(document.createTextNode(' '));
+        }
+      }
+
+      const countDiv = document.createElement('div');
+      countDiv.style.color = '#888';
+      countDiv.style.fontSize = '11px';
+      countDiv.style.marginTop = '4px';
+      countDiv.textContent = `${currentResults.length} matching verses`;
+
+      container.appendChild(legendDiv);
+      container.appendChild(countDiv);
     } else if (currentQuery.length > 0 && currentTerms.length === 0) {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type at least 2 characters per term</div>`;
+      const hintDiv = document.createElement('div');
+      hintDiv.style.color = '#888';
+      hintDiv.style.fontSize = '11px';
+      hintDiv.textContent = 'Type at least 2 characters per term';
+      container.appendChild(hintDiv);
     } else {
-      container.innerHTML = `<div style="color: #888; font-size: 11px;">Type to search (comma-separate multiple terms)</div>`;
+      const hintDiv = document.createElement('div');
+      hintDiv.style.color = '#888';
+      hintDiv.style.fontSize = '11px';
+      hintDiv.textContent = 'Type to search (comma-separate multiple terms)';
+      container.appendChild(hintDiv);
     }
   },
 
