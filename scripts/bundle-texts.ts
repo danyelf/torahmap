@@ -78,7 +78,7 @@ function cleanText(text: string): string {
     .replace(/<br\s*\/?>/gi, ' ') // Convert <br> to space (for poetry)
     .replace(/<[^>]+>/g, '') // Remove remaining HTML tags
     .replace(/&nbsp;/g, ' ') // Replace &nbsp; with regular space
-    .replace(/&[a-z]+;/g, '') // Remove other HTML entities
+    .replace(/&[a-z]+;/g, ' ') // Replace other HTML entities with space
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim();
 }
