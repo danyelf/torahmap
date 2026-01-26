@@ -47,14 +47,14 @@ mkdir -p "$WORKTREE_DIR"
 echo "Marking $BEAD_ID as in_progress..."
 bd update "$BEAD_ID" --status in_progress
 
-# Create worktree
+# Create worktree with beads redirect
 echo ""
 echo "Creating worktree for $BEAD_ID"
 echo "Branch: $BRANCH_NAME"
 echo "Path: $WORKTREE_PATH"
 echo ""
 
-git worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH"
+bd worktree create "$WORKTREE_PATH" --branch "$BRANCH_NAME"
 
 # Change to worktree and run claude
 cd "$WORKTREE_PATH"
