@@ -3,6 +3,7 @@ import type { Overlay, Color } from './types.ts';
 import type { Verse } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
+import { rgbToHsl, hslToRgb } from '../utils/color.ts';
 
 // Types for haftarah data
 interface VerseRef {
@@ -59,61 +60,12 @@ interface TanakhStructure {
   }>;
 }
 
-// Convert RGB to HSL (R, G, B: 0-1) -> (H: 0-360, S: 0-1, L: 0-1)
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-
-  if (max === min) {
-    return [0, 0, l]; // achromatic
-  }
-
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-  let h = 0;
-  if (max === r) {
-    h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-  } else if (max === g) {
-    h = ((b - r) / d + 2) / 6;
-  } else {
-    h = ((r - g) / d + 4) / 6;
-  }
-
-  return [h * 360, s, l];
-}
-
-// Convert HSL to RGB (H: 0-360, S: 0-1, L: 0-1) -> RGB (0-1)
-function hslToRgb(h: number, s: number, l: number): Color {
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = l - c / 2;
-
-  let r = 0, g = 0, b = 0;
-  if (h >= 0 && h < 60) {
-    [r, g, b] = [c, x, 0];
-  } else if (h >= 60 && h < 120) {
-    [r, g, b] = [x, c, 0];
-  } else if (h >= 120 && h < 180) {
-    [r, g, b] = [0, c, x];
-  } else if (h >= 180 && h < 240) {
-    [r, g, b] = [0, x, c];
-  } else if (h >= 240 && h < 300) {
-    [r, g, b] = [x, 0, c];
-  } else {
-    [r, g, b] = [c, 0, x];
-  }
-
-  return [r + m, g + m, b + m];
-}
-
 // Generate rainbow color for an item index
 function getItemColor(itemIndex: number, totalItemCount: number): Color {
   // Use full spectrum: 0° (red) → 360° (red again)
   const hue = (itemIndex / totalItemCount) * 360;
   // High saturation and medium-high lightness for vibrant colors
-  return hslToRgb(hue, 0.8, 0.55);
+  return hslToRgb({ h: hue, s: 0.8, l: 0.55 });
 }
 
 // Adjust color brightness (multiply RGB values, clamping to [0, 1])
@@ -127,8 +79,8 @@ function adjustBrightness(color: Color, factor: number): Color {
 
 // Desaturate a color by reducing its saturation
 function desaturate(color: Color, factor: number): Color {
-  const [h, s, l] = rgbToHsl(color[0], color[1], color[2]);
-  return hslToRgb(h, s * factor, l);
+  const { h, s, l } = rgbToHsl(color);
+  return hslToRgb({ h, s: s * factor, l });
 }
 
 type Custom = 'ashkenazi' | 'sephardi';
