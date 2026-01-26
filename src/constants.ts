@@ -23,6 +23,12 @@ export const HIGHLIGHT_CONSTANTS = {
   // Highlight color for search/selection
   HIGHLIGHT_COLOR: [0.2, 0.9, 1.0] as Color,
 
+  // Outline color for pinned verses
+  PINNED_OUTLINE_COLOR: [0.2, 0.9, 1.0] as Color,
+
+  // Outline thickness (extends outside verse bounds)
+  OUTLINE_THICKNESS: 2,
+
   // Dimming factor for non-highlighted verses
   DIM_FACTOR: 0.3,
 

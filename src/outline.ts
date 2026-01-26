@@ -36,11 +36,12 @@ export function buildOutlineGeometry(
   const borderCount = 4; // top, right, bottom, left
   const data = new Float32Array(borderCount * verticesPerBorder * floatsPerVertex);
 
-  // Calculate outline bounds (same as verse bounds with -2 gap adjustment)
-  const x0 = bounds.x;
-  const y0 = bounds.y;
-  const x1 = bounds.x + bounds.size - 2; // -2 for gap
-  const y1 = bounds.y + bounds.size - 2;
+  // Calculate outline bounds - extend OUTSIDE the verse by thickness
+  // so the outline doesn't cover the verse itself
+  const x0 = bounds.x - thickness;
+  const y0 = bounds.y - thickness;
+  const x1 = bounds.x + bounds.size - 2 + thickness; // -2 for gap, +thickness for outer edge
+  const y1 = bounds.y + bounds.size - 2 + thickness;
 
   // Use verse position as seed for consistent pattern
   const seedX = bounds.x;

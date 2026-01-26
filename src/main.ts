@@ -387,6 +387,9 @@ async function main(): Promise<void> {
       x: verse.x,
       y: verse.y,
       size: verse.size,
+    }, {
+      thickness: HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
+      color: HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
     });
 
     // Create or update outline buffer
@@ -404,7 +407,7 @@ async function main(): Promise<void> {
     gl.uniform2f(outlineProg.uniforms.resolution, canvas.width, canvas.height);
     gl.uniform2f(outlineProg.uniforms.pan, pan.x, pan.y);
     gl.uniform1f(outlineProg.uniforms.zoom, zoom * dpr);
-    gl.uniform3f(outlineProg.uniforms.color, ...HIGHLIGHT_CONSTANTS.OUTLINE_COLOR);
+    gl.uniform3f(outlineProg.uniforms.color, ...HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR);
 
     // Bind buffer and set position attribute
     gl.bindBuffer(gl.ARRAY_BUFFER, outlineBuffer);
