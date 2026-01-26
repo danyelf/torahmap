@@ -3,7 +3,7 @@
 declare const __GIT_BRANCH__: string;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
-import { createBookLabels } from './labels.ts';
+import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex } from './search.ts';
 import { initHelp } from './help.ts';
