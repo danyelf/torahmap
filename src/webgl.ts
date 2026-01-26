@@ -123,6 +123,30 @@ const FRAGMENT_SHADER = `#version 300 es
   }
 `;
 
+const OUTLINE_VERTEX_SHADER = `#version 300 es
+  uniform vec2 u_resolution;
+  uniform vec2 u_pan;
+  uniform float u_zoom;
+
+  in vec2 a_position;
+
+  void main() {
+    vec2 pos = (a_position + u_pan) * u_zoom;
+    vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
+    gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+  }
+`;
+
+const OUTLINE_FRAGMENT_SHADER = `#version 300 es
+  precision mediump float;
+  uniform vec3 u_color;
+  out vec4 fragColor;
+
+  void main() {
+    fragColor = vec4(u_color, 1.0);
+  }
+`;
+
 export function initWebGL(canvas: HTMLCanvasElement): WebGL2RenderingContext {
   const gl = canvas.getContext('webgl2', { antialias: true });
   if (!gl) throw new Error('WebGL2 not supported');
@@ -170,6 +194,47 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
+    }
+  };
+}
+
+export interface OutlineProgram {
+  program: WebGLProgram;
+  attribs: {
+    position: number;
+  };
+  uniforms: {
+    resolution: WebGLUniformLocation | null;
+    pan: WebGLUniformLocation | null;
+    zoom: WebGLUniformLocation | null;
+    color: WebGLUniformLocation | null;
+  };
+}
+
+export function createOutlineProgram(gl: WebGL2RenderingContext): OutlineProgram {
+  const vs = compileShader(gl, gl.VERTEX_SHADER, OUTLINE_VERTEX_SHADER);
+  const fs = compileShader(gl, gl.FRAGMENT_SHADER, OUTLINE_FRAGMENT_SHADER);
+
+  const program = gl.createProgram();
+  if (!program) throw new Error('Failed to create program');
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    throw new Error(gl.getProgramInfoLog(program) || 'Program linking failed');
+  }
+
+  return {
+    program,
+    attribs: {
+      position: gl.getAttribLocation(program, 'a_position'),
+    },
+    uniforms: {
+      resolution: gl.getUniformLocation(program, 'u_resolution'),
+      pan: gl.getUniformLocation(program, 'u_pan'),
+      zoom: gl.getUniformLocation(program, 'u_zoom'),
+      color: gl.getUniformLocation(program, 'u_color'),
     }
   };
 }

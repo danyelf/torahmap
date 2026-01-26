@@ -2,9 +2,10 @@
 
 declare const __GIT_BRANCH__: string;
 
-import { initWebGL, createProgram } from './webgl.ts';
+import { initWebGL, createProgram, createOutlineProgram } from './webgl.ts';
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { buildVerseGeometry, createBuffer } from './geometry.ts';
+import { buildOutlineGeometry } from './outline.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex } from './search.ts';
@@ -176,10 +177,12 @@ async function main(): Promise<void> {
   // Init WebGL
   const gl = initWebGL(canvas);
   const prog = createProgram(gl);
+  const outlineProg = createOutlineProgram(gl);
 
   // Current overlay state
   let currentOverlay: Overlay | null = null;
   let buffer: WebGLBuffer;
+  let outlineBuffer: WebGLBuffer | null = null;
 
   /**
    * Get default gray color with brightness variation for a verse.
@@ -318,6 +321,9 @@ async function main(): Promise<void> {
     y: (cssHeight / 2 - bounds.height / 2)
   };
 
+  // Track pinned verse (click to persist)
+  let pinnedVerse: Verse | null = null;
+
   // Render function
   function render(): void {
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -363,7 +369,54 @@ async function main(): Promise<void> {
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
 
+    // Draw outline for pinned verse on top
+    renderOutline(pinnedVerse);
+
     if (window.bookLabels) updateLabelPositions(window.bookLabels, pan, zoom);
+  }
+
+  /**
+   * Render outline border for the pinned verse.
+   * Draws on top of the main verse geometry.
+   */
+  function renderOutline(verse: Verse | null): void {
+    if (!verse) return;
+
+    // Build outline geometry for this verse
+    const geometry = buildOutlineGeometry({
+      x: verse.x,
+      y: verse.y,
+      size: verse.size,
+    });
+
+    // Create or update outline buffer
+    if (!outlineBuffer) {
+      outlineBuffer = createBuffer(gl, geometry);
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, outlineBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+    }
+
+    // Use outline shader
+    gl.useProgram(outlineProg.program);
+
+    // Set uniforms (same pan/zoom as main render)
+    gl.uniform2f(outlineProg.uniforms.resolution, canvas.width, canvas.height);
+    gl.uniform2f(outlineProg.uniforms.pan, pan.x, pan.y);
+    gl.uniform1f(outlineProg.uniforms.zoom, zoom * dpr);
+    gl.uniform3f(outlineProg.uniforms.color, ...HIGHLIGHT_CONSTANTS.OUTLINE_COLOR);
+
+    // Bind buffer and set position attribute
+    gl.bindBuffer(gl.ARRAY_BUFFER, outlineBuffer);
+
+    // Vertex layout for outline: just x, y at start (then other unused data)
+    // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
+    const stride = 19 * 4; // Same as main shader
+    gl.enableVertexAttribArray(outlineProg.attribs.position);
+    gl.vertexAttribPointer(outlineProg.attribs.position, 2, gl.FLOAT, false, stride, 0);
+
+    // Draw outline (4 borders * 6 vertices each = 24 vertices)
+    gl.drawArrays(gl.TRIANGLES, 0, 24);
   }
 
   render();
@@ -465,9 +518,6 @@ async function main(): Promise<void> {
     const sefariaBook = book.replace(/ /g, '_');
     return `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
   }
-
-  // Track pinned verse (click to persist)
-  let pinnedVerse: Verse | null = null;
 
   // URL State Management
   // Build current state for URL
