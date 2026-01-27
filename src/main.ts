@@ -361,9 +361,14 @@ async function main(): Promise<void> {
     unpinVerse();
   });
 
-  // Keyboard navigation: arrow keys for next/previous verse
+  // Keyboard navigation: arrow keys for next/previous verse, Escape to close
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (!pinnedVerse) return;
+
+    if (e.key === 'Escape') {
+      unpinVerse();
+      return;
+    }
 
     let targetVerse: VerseLayout | null = null;
 
