@@ -556,5 +556,14 @@
     "date_bce": 325,
     "note": "Composed between 400 and 250 BCE, probably in period 350-300 BCE.",
     "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Deuteronomy",
+    "chapters": "28",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Blessings and curses chapter, characteristic of Deuteronomistic editing during exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
   }
 ]
