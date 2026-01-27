@@ -127,7 +127,7 @@ export const commentaryOverlay: Overlay = {
       return `${verseData.total} links`;
     }
     const count = verseData.categories[currentCategory];
-    return count ? `${count} ${currentCategory}` : null;
+    return count ? `${count} ${currentCategory}` : `no ${currentCategory}`;
   },
 
   getUrlParams(): Record<string, string> {
@@ -154,4 +154,17 @@ export function configure(config: { verses: VerseLayout[] }): void {
 export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   return verseData?.total ?? null;
+}
+
+// Get current category (used by sidebar for category-specific display)
+export function getCurrentCategory(): string {
+  return currentCategory;
+}
+
+// Get category-specific link count for a verse (used by sidebar)
+export function getVerseCategoryCount(book: string, chapter: number, verse: number): number | null {
+  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
+  if (!verseData) return null;
+  if (currentCategory === 'total') return verseData.total;
+  return verseData.categories[currentCategory] ?? null;
 }
