@@ -319,10 +319,21 @@ export const searchOverlay: Overlay = {
     // Restore current query if any
     if (searchInput && currentQuery) {
       searchInput.value = currentQuery;
+      const isHebrew = isHebrewQuery(currentQuery);
+
       // Set RTL if Hebrew
-      if (isHebrewQuery(currentQuery)) {
+      if (isHebrew) {
         searchInput.dir = 'rtl';
       }
+
+      // Hide checkbox for Hebrew
+      if (wholeWordCheckbox) {
+        const optionsContainer = wholeWordCheckbox.closest('#search-options') as HTMLElement;
+        if (optionsContainer) {
+          optionsContainer.style.display = isHebrew ? 'none' : 'block';
+        }
+      }
+
       if (searchClear) {
         searchClear.style.display = currentQuery ? 'block' : 'none';
       }
@@ -336,22 +347,33 @@ export const searchOverlay: Overlay = {
       wholeWordCheckbox.checked = wholeWordEnabled;
     }
 
-    // Update text direction based on input content
-    const updateTextDirection = () => {
+    // Update text direction and checkbox visibility based on input content
+    const updateInputMode = () => {
       if (!searchInput) return;
       const query = searchInput.value;
+      const isHebrew = query.length > 0 && isHebrewQuery(query);
+
+      // Set text direction
       if (query.length === 0) {
         searchInput.dir = 'ltr';
-      } else if (isHebrewQuery(query)) {
+      } else if (isHebrew) {
         searchInput.dir = 'rtl';
       } else {
         searchInput.dir = 'ltr';
+      }
+
+      // Hide checkbox for Hebrew (whole-word doesn't apply)
+      if (wholeWordCheckbox) {
+        const optionsContainer = wholeWordCheckbox.closest('#search-options') as HTMLElement;
+        if (optionsContainer) {
+          optionsContainer.style.display = isHebrew ? 'none' : 'block';
+        }
       }
     };
 
     searchInput?.addEventListener('input', () => {
       const query = searchInput!.value.trim();
-      updateTextDirection();
+      updateInputMode();
       if (searchClear) {
         searchClear.style.display = query ? 'block' : 'none';
       }
@@ -363,6 +385,13 @@ export const searchOverlay: Overlay = {
         searchInput.value = '';
         searchInput.dir = 'ltr';
         searchClear!.style.display = 'none';
+      }
+      // Show checkbox again when clearing (back to English mode)
+      if (wholeWordCheckbox) {
+        const optionsContainer = wholeWordCheckbox.closest('#search-options') as HTMLElement;
+        if (optionsContainer) {
+          optionsContainer.style.display = 'block';
+        }
       }
       doSearch('');
     });
@@ -512,10 +541,21 @@ export const searchOverlay: Overlay = {
       // Update input if it exists
       if (searchInput) {
         searchInput.value = query;
+        const isHebrew = isHebrewQuery(query);
+
         // Set RTL if Hebrew
-        if (isHebrewQuery(query)) {
+        if (isHebrew) {
           searchInput.dir = 'rtl';
         }
+
+        // Hide checkbox for Hebrew
+        if (wholeWordCheckbox) {
+          const optionsContainer = wholeWordCheckbox.closest('#search-options') as HTMLElement;
+          if (optionsContainer) {
+            optionsContainer.style.display = isHebrew ? 'none' : 'block';
+          }
+        }
+
         if (searchClear) {
           searchClear.style.display = 'block';
         }
