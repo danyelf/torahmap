@@ -272,9 +272,9 @@ export function getWordBoundaries(text: string, wordIndex: number): { start: num
  * Returns ALL matching verses with info about which terms matched
  *
  * For Hebrew: Uses lemma-based search via morphhb Strong's numbers, with fallback to substring
- * For English: Uses substring search
+ * For English: Uses substring search (optionally whole-word matching)
  */
-export function search(query: string): SearchResult[] {
+export function search(query: string, wholeWord: boolean = false): SearchResult[] {
   const terms = parseSearchTerms(query);
   if (terms.length === 0) return [];
 
@@ -379,11 +379,30 @@ export function search(query: string): SearchResult[] {
     for (const entry of searchIndex) {
       const text = isHebrew ? entry.hebrewText : entry.englishText;
       const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
-      const idx = text.indexOf(normalizedTerm);
 
-      if (idx !== -1) {
+      // For English with whole-word matching, use regex
+      let matches: Array<{ idx: number; len: number }> = [];
+
+      if (!isHebrew && wholeWord) {
+        // Create word boundary regex (case insensitive)
+        const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          matches.push({ idx: match.index, len: match[0].length });
+        }
+      } else {
+        // Simple substring search
+        const idx = text.indexOf(normalizedTerm);
+        if (idx !== -1) {
+          matches.push({ idx, len: normalizedTerm.length });
+        }
+      }
+
+      // Process all matches
+      for (const { idx, len } of matches) {
         const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
-        const snippet = createSnippet(original, idx, normalizedTerm.length, isHebrew);
+        const snippet = createSnippet(original, idx, len, isHebrew);
 
         let result = resultMap.get(key);
         if (!result) {

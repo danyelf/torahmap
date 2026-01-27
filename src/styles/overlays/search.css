@@ -154,3 +154,20 @@
   color: #666;
   border-bottom: 1px solid #333;
 }
+
+#search-options {
+  margin-bottom: 12px;
+}
+
+#search-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+#search-options input[type="checkbox"] {
+  cursor: pointer;
+}

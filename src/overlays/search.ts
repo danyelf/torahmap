@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 
@@ -17,6 +17,7 @@ let currentQuery = '';
 let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
+let wholeWordEnabled = false;
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 
@@ -24,6 +25,7 @@ let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 let searchInput: HTMLInputElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
+let wholeWordCheckbox: HTMLInputElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
 export function configure(config: { verses: VerseLayout[]; callbacks?: { onVerseClick?: (verse: VerseLayout) => void } }): void {
@@ -41,7 +43,9 @@ function doSearch(query: string): void {
     currentResults = [];
     matchingTerms = new Map();
   } else {
-    currentResults = search(query);
+    // Only use wholeWord for English queries
+    const useWholeWord = wholeWordEnabled && currentTerms.length > 0 && !isHebrewQuery(currentTerms[0]);
+    currentResults = search(query, useWholeWord);
     matchingTerms = getMatchingVerseTerms(currentResults);
   }
 
@@ -299,15 +303,26 @@ export const searchOverlay: Overlay = {
           <div id="search-count"></div>
         </div>
       </div>
+      <div id="search-options">
+        <label>
+          <input type="checkbox" id="whole-word-checkbox">
+          Match whole words only
+        </label>
+      </div>
     `;
 
     searchInput = container.querySelector('#search-input');
     searchClear = container.querySelector('#search-clear');
     searchResults = container.querySelector('#search-results');
+    wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
 
     // Restore current query if any
     if (searchInput && currentQuery) {
       searchInput.value = currentQuery;
+      // Set RTL if Hebrew
+      if (isHebrewQuery(currentQuery)) {
+        searchInput.dir = 'rtl';
+      }
       if (searchClear) {
         searchClear.style.display = currentQuery ? 'block' : 'none';
       }
@@ -316,8 +331,27 @@ export const searchOverlay: Overlay = {
       }
     }
 
+    // Restore whole-word checkbox state
+    if (wholeWordCheckbox) {
+      wholeWordCheckbox.checked = wholeWordEnabled;
+    }
+
+    // Update text direction based on input content
+    const updateTextDirection = () => {
+      if (!searchInput) return;
+      const query = searchInput.value;
+      if (query.length === 0) {
+        searchInput.dir = 'ltr';
+      } else if (isHebrewQuery(query)) {
+        searchInput.dir = 'rtl';
+      } else {
+        searchInput.dir = 'ltr';
+      }
+    };
+
     searchInput?.addEventListener('input', () => {
       const query = searchInput!.value.trim();
+      updateTextDirection();
       if (searchClear) {
         searchClear.style.display = query ? 'block' : 'none';
       }
@@ -327,9 +361,18 @@ export const searchOverlay: Overlay = {
     searchClear?.addEventListener('click', () => {
       if (searchInput) {
         searchInput.value = '';
+        searchInput.dir = 'ltr';
         searchClear!.style.display = 'none';
       }
       doSearch('');
+    });
+
+    wholeWordCheckbox?.addEventListener('change', () => {
+      wholeWordEnabled = wholeWordCheckbox!.checked;
+      // Re-run search with new setting
+      if (currentQuery) {
+        doSearch(currentQuery);
+      }
     });
 
     // Close results when clicking outside
@@ -430,27 +473,49 @@ export const searchOverlay: Overlay = {
     searchInput = null;
     searchClear = null;
     searchResults = null;
+    wholeWordCheckbox = null;
     // Reset state
     currentQuery = '';
     currentTerms = [];
     currentResults = [];
     matchingTerms.clear();
+    wholeWordEnabled = false;
     updateCallback = null;
     onVerseClickCallback = null;
   },
 
   getUrlParams(): Record<string, string> {
-    if (!currentQuery) return {};
-    return { q: currentQuery };
+    const params: Record<string, string> = {};
+    if (currentQuery) {
+      params.q = currentQuery;
+    }
+    if (wholeWordEnabled) {
+      params.ww = '1';
+    }
+    return params;
   },
 
   applyUrlParams(params: URLSearchParams): void {
     const query = params.get('q');
+    const wholeWord = params.get('ww');
+
+    // Restore whole-word setting
+    if (wholeWord === '1') {
+      wholeWordEnabled = true;
+      if (wholeWordCheckbox) {
+        wholeWordCheckbox.checked = true;
+      }
+    }
+
     if (query) {
       doSearch(query);
       // Update input if it exists
       if (searchInput) {
         searchInput.value = query;
+        // Set RTL if Hebrew
+        if (isHebrewQuery(query)) {
+          searchInput.dir = 'rtl';
+        }
         if (searchClear) {
           searchClear.style.display = 'block';
         }
