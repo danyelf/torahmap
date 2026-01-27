@@ -6,6 +6,7 @@ import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
+import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
@@ -337,7 +338,6 @@ export const searchOverlay: Overlay = {
     container.innerHTML = `
       <div id="search-container">
         <input type="text" id="search-input" class="keyboardInput" placeholder="Search Hebrew or English...">
-        <img src="/images/keyboard-icon.svg" id="keyboard-icon" class="keyboard-trigger" style="display: none;" alt="Hebrew keyboard">
         <button id="search-clear">&times;</button>
       </div>
       <div id="search-options">
@@ -463,6 +463,13 @@ export const searchOverlay: Overlay = {
         searchResults?.classList.add('visible');
       }
     });
+
+    // Open Hebrew keyboard on click
+    searchInput?.addEventListener('click', () => {
+      if (searchInput && !isKeyboardOpen()) {
+        createHebrewKeyboard(searchInput);
+      }
+    });
   },
 
   renderLegend(container: HTMLElement): void {
@@ -533,6 +540,8 @@ export const searchOverlay: Overlay = {
   },
 
   destroy(): void {
+    // Close Hebrew keyboard
+    closeHebrewKeyboard();
     // Clean up event listener
     if (documentClickHandler) {
       document.removeEventListener('click', documentClickHandler);
