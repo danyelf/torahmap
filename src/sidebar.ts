@@ -5,7 +5,7 @@ import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { getSelectedTrop, highlightTropInText } from './overlays/trop.ts';
 import { highlightSearchTerms } from './overlays/search.ts';
-import { getVerseLinkCount } from './overlays/commentary.ts';
+import { getVerseLinkCount, getCurrentCategory } from './overlays/commentary.ts';
 
 /**
  * DOM elements that make up the verse details sidebar
@@ -40,11 +40,31 @@ export function getSidebarElements(): SidebarElements {
 }
 
 /**
- * Build Sefaria URL for a verse
+ * Build Sefaria URL for a verse with context-aware parameters
+ *
+ * When viewing the commentary overlay with a specific category filter,
+ * opens Sefaria to that category (e.g., ?with=Talmud).
+ * Otherwise, opens to all connections (?with=all) since we show link counts.
  */
-export function getSefariaUrl(book: string, chapter: number, verse: number): string {
+export function getSefariaUrl(
+  book: string,
+  chapter: number,
+  verse: number,
+  currentOverlay: Overlay | null = null
+): string {
   const sefariaBook = book.replace(/ /g, '_');
-  return `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
+  const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
+
+  // If viewing commentary overlay with a category filter, open to that category
+  if (currentOverlay?.id === 'commentary') {
+    const category = getCurrentCategory();
+    if (category !== 'total') {
+      return `${baseUrl}?with=${encodeURIComponent(category)}`;
+    }
+  }
+
+  // Default: show all connections (since we display link counts in sidebar)
+  return `${baseUrl}?with=all`;
 }
 
 /**
@@ -115,7 +135,7 @@ export function updateSidebar(
     }
   }
   if (link) {
-    link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse);
+    link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
   }
   if (linkSubtitle) {
     const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
