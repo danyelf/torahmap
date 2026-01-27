@@ -149,6 +149,7 @@ git commit --no-verify
 │   ├── download-texts.sh             # Download texts from Sefaria
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
 │   ├── generate-divine-names.ts      # Generate divine names from Torah text
+│   ├── generate-text-dating.ts       # Generate text dating data from source ranges
 │   ├── process_sefaria_links.py      # (Deprecated) Old commentary counts script
 │   └── process_sefaria_links_v2.py   # Generate commentary counts (USE THIS)
 │
@@ -276,6 +277,9 @@ node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 
 # Regenerate divine names data
 npx tsx scripts/generate-divine-names.ts
+
+# Regenerate text dating data (requires data/text-dating-source.json)
+npm run generate:text-dating
 
 # Regenerate commentary counts (IMPORTANT: Use v2 script)
 # First, download Sefaria links CSV files (~470MB) if not already present:

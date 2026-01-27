@@ -1,0 +1,36 @@
+{
+  "$schema": "Text dating source format",
+  "$comment": "This file contains estimated dating ranges for biblical text passages. Each entry specifies a book, chapter, verse range, date range (BCE as negative, CE as positive), and a note explaining the source/dating. The generate-text-dating.ts script expands these ranges into per-verse runtime data.",
+  "entries": [
+    {
+      "book": "Genesis",
+      "chapter": 1,
+      "verses": "*",
+      "dating": {
+        "min": -950,
+        "max": -900
+      },
+      "note": "P source (Priestly)"
+    },
+    {
+      "book": "Genesis",
+      "chapter": 2,
+      "verses": "4-25",
+      "dating": {
+        "min": -1000,
+        "max": -950
+      },
+      "note": "J source (Yahwist)"
+    },
+    {
+      "book": "Genesis",
+      "chapter": 2,
+      "verses": "1-3",
+      "dating": {
+        "min": -950,
+        "max": -900
+      },
+      "note": "P source (Priestly)"
+    }
+  ]
+}
