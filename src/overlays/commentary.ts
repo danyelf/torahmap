@@ -120,7 +120,7 @@ export const commentaryOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: VerseLayout): string | null {
+  getHoverInfo(verse: VerseIdentity): string | null {
     const verseData = data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
     if (!verseData) return null;
     if (currentCategory === 'total') {
@@ -130,6 +130,8 @@ export const commentaryOverlay: Overlay = {
     return count ? `${count} ${currentCategory}` : `no ${currentCategory}`;
   },
 
+  // URL parameter uses 'cat' for brevity in shareable links,
+  // while internal code uses 'category' for clarity
   getUrlParams(): Record<string, string> {
     if (currentCategory === 'total') return {};
     return { cat: currentCategory };

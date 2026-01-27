@@ -183,7 +183,3 @@ export type TropIndex = Map<string, TropIndexEntry>;
 export function getVerseKey(book: string, chapter: number, verse: number): string {
   return `${book}:${chapter}:${verse}`;
 }
-
-export function getVerseKeyFromVerse(v: { book: string; chapter: number; verse: number }): string {
-  return getVerseKey(v.book, v.chapter, v.verse);
-}
