@@ -5,7 +5,7 @@ import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { getSelectedTrop, highlightTropInText } from './overlays/trop.ts';
 import { highlightSearchTerms } from './overlays/search.ts';
-import { getVerseLinkCount, getCurrentCategory } from './overlays/commentary.ts';
+import { getVerseLinkCount, getCurrentCategory, getVerseCategoryCount } from './overlays/commentary.ts';
 
 /**
  * DOM elements that make up the verse details sidebar
@@ -138,8 +138,20 @@ export function updateSidebar(
     link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
   }
   if (linkSubtitle) {
-    const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
-    linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
+    // Show category-specific text when commentary overlay is active
+    if (currentOverlay?.id === 'commentary') {
+      const category = getCurrentCategory();
+      const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
+      if (count) {
+        const categoryName = category === 'total' ? 'linked texts' : `${category} links`;
+        linkSubtitle.textContent = `${count} ${categoryName}`;
+      } else {
+        linkSubtitle.textContent = '';
+      }
+    } else {
+      const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
+      linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
+    }
   }
 
   sidebar.classList.add('visible');

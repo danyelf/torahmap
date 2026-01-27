@@ -458,7 +458,7 @@ describe('Commentary Overlay', () => {
       expect(info).toBeNull();
     });
 
-    it('returns null for category with zero count', () => {
+    it('returns "no <category>" for category with zero count', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderControls?.(container);
 
@@ -469,7 +469,7 @@ describe('Commentary Overlay', () => {
       const verse = testVerses[0]; // Genesis 1:1, no Kabbalah
       const info = commentaryOverlay.getHoverInfo?.(verse);
 
-      expect(info).toBeNull();
+      expect(info).toBe('no Kabbalah');
     });
   });
 
