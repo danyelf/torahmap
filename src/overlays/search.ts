@@ -149,6 +149,124 @@ function createHighlightedText(text: string, start: number, end: number, termInd
   return fragment;
 }
 
+// Match interface for search term highlighting
+interface Match {
+  start: number;
+  end: number;
+  termIndex: number;
+}
+
+/**
+ * Check if a character is Hebrew nikkud (diacritical mark)
+ */
+function isNikkudChar(code: number): boolean {
+  return code >= 0x0591 && code <= 0x05C7 &&
+         code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+}
+
+/**
+ * Map position in normalized (no nikkud) text back to original text position
+ * Accounts for nikkud characters that were stripped during normalization
+ */
+function mapNormalizedToOriginalPosition(
+  text: string,
+  normalizedPos: number,
+  startFrom: number = 0
+): number {
+  let nikkudCount = 0;
+  let currentNormalizedPos = 0;
+
+  for (let i = startFrom; i < text.length && currentNormalizedPos < normalizedPos; i++) {
+    const code = text.charCodeAt(i);
+    if (isNikkudChar(code)) {
+      nikkudCount++;
+    } else {
+      currentNormalizedPos++;
+    }
+  }
+
+  return normalizedPos + nikkudCount;
+}
+
+/**
+ * Find all matches for all search terms in the given text
+ * Handles Hebrew nikkud stripping and position mapping
+ */
+function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): Match[] {
+  const matches: Match[] = [];
+  const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
+
+  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
+    const term = terms[termIndex];
+    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+
+    // Find all occurrences of this term
+    let searchStart = 0;
+    while (true) {
+      const idx = normalizedText.indexOf(normalizedTerm, searchStart);
+      if (idx === -1) break;
+
+      // Map normalized positions back to original text
+      let origStart = idx;
+      let origEnd = idx + normalizedTerm.length;
+
+      if (isHebrew) {
+        origStart = mapNormalizedToOriginalPosition(text, idx);
+        origEnd = mapNormalizedToOriginalPosition(text, normalizedTerm.length, origStart);
+      }
+
+      matches.push({ start: origStart, end: origEnd, termIndex });
+      searchStart = idx + 1;
+    }
+  }
+
+  return matches;
+}
+
+/**
+ * Remove overlapping matches, keeping the first/longest match
+ * Assumes matches are already sorted by position
+ */
+function removeOverlappingMatches(matches: Match[]): Match[] {
+  const filtered: Match[] = [];
+  for (const m of matches) {
+    if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
+      filtered.push(m);
+    }
+  }
+  return filtered;
+}
+
+/**
+ * Build DOM fragment with highlighted matches
+ */
+function buildHighlightedDomFragment(text: string, matches: Match[]): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+
+  let pos = 0;
+  for (const m of matches) {
+    // Add text before this match
+    if (m.start > pos) {
+      fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
+    }
+
+    // Add highlighted match
+    const mark = document.createElement('mark');
+    mark.className = `term-${m.termIndex % 5}`;
+    mark.textContent = text.slice(m.start, m.end);
+    fragment.appendChild(mark);
+
+    pos = m.end;
+  }
+
+  // Add remaining text after last match
+  if (pos < text.length) {
+    fragment.appendChild(document.createTextNode(text.slice(pos)));
+  }
+
+  return fragment;
+}
+
 /**
  * Highlight all search terms in text with per-term colors
  * Returns DocumentFragment with <mark class="term-N"> elements
@@ -164,67 +282,8 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
 
   const isHebrew = language === 'he';
 
-  // Build list of all matches with their positions
-  interface Match {
-    start: number;
-    end: number;
-    termIndex: number;
-  }
-  const matches: Match[] = [];
-
-  // Prepare normalized text for searching
-  const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
-
-  for (let termIndex = 0; termIndex < currentTerms.length; termIndex++) {
-    const term = currentTerms[termIndex];
-    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
-
-    // Find all occurrences
-    let searchStart = 0;
-    while (true) {
-      const idx = normalizedText.indexOf(normalizedTerm, searchStart);
-      if (idx === -1) break;
-
-      // Map back to original text position for Hebrew (nikkud may shift positions)
-      let origStart = idx;
-      let origEnd = idx + normalizedTerm.length;
-
-      if (isHebrew) {
-        // Count how many nikkud chars before this position
-        let nikkudBefore = 0;
-        let normalizedPos = 0;
-        for (let i = 0; i < text.length && normalizedPos < idx; i++) {
-          const code = text.charCodeAt(i);
-          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
-                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
-          if (isNikkud) {
-            nikkudBefore++;
-          } else {
-            normalizedPos++;
-          }
-        }
-        origStart = idx + nikkudBefore;
-
-        // Find end position accounting for nikkud within the match
-        let nikkudInMatch = 0;
-        normalizedPos = 0;
-        for (let i = origStart; i < text.length && normalizedPos < normalizedTerm.length; i++) {
-          const code = text.charCodeAt(i);
-          const isNikkud = code >= 0x0591 && code <= 0x05C7 &&
-                           code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
-          if (isNikkud) {
-            nikkudInMatch++;
-          } else {
-            normalizedPos++;
-          }
-        }
-        origEnd = origStart + normalizedTerm.length + nikkudInMatch;
-      }
-
-      matches.push({ start: origStart, end: origEnd, termIndex });
-      searchStart = idx + 1;
-    }
-  }
+  // Find all matches
+  const matches = findAllTermMatches(text, currentTerms, isHebrew);
 
   if (matches.length === 0) {
     fragment.appendChild(document.createTextNode(text));
@@ -235,30 +294,10 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
   matches.sort((a, b) => a.start - b.start || b.end - a.end);
 
   // Remove overlapping matches (keep first/longest)
-  const filtered: Match[] = [];
-  for (const m of matches) {
-    if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
-      filtered.push(m);
-    }
-  }
+  const filtered = removeOverlappingMatches(matches);
 
-  // Build result with highlights using DOM
-  let pos = 0;
-  for (const m of filtered) {
-    if (m.start > pos) {
-      fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
-    }
-    const mark = document.createElement('mark');
-    mark.className = `term-${m.termIndex % 5}`;
-    mark.textContent = text.slice(m.start, m.end);
-    fragment.appendChild(mark);
-    pos = m.end;
-  }
-  if (pos < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(pos)));
-  }
-
-  return fragment;
+  // Build result with highlights
+  return buildHighlightedDomFragment(text, filtered);
 }
 
 export const searchOverlay: Overlay = {

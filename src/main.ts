@@ -258,6 +258,20 @@ async function main(): Promise<void> {
   const controlsPanel = document.getElementById('controls');
 
   // URL State Management
+  // Extract overlay params for URL encoding
+  function buildOverlayParamsForUrl(): Record<string, string> {
+    if (!currentOverlay) return {};
+
+    const overlayParams = currentOverlay.getUrlParams?.() ?? {};
+    const result: Record<string, string> = {};
+
+    if (overlayParams.trop) result.trop = overlayParams.trop;
+    if (overlayParams.cat) result.category = overlayParams.cat;
+    if (overlayParams.q) result.q = overlayParams.q;
+
+    return result;
+  }
+
   // Build current state for URL
   function buildCurrentUrlState(): UrlState {
     const state: UrlState = {
@@ -267,11 +281,7 @@ async function main(): Promise<void> {
     // Overlay
     if (currentOverlay) {
       state.overlay = currentOverlay.id;
-      // Get overlay-specific params
-      const overlayParams = currentOverlay.getUrlParams?.() ?? {};
-      if (overlayParams.trop) state.overlayParams.trop = overlayParams.trop;
-      if (overlayParams.cat) state.overlayParams.category = overlayParams.cat;
-      if (overlayParams.q) state.overlayParams.q = overlayParams.q;
+      state.overlayParams = buildOverlayParamsForUrl();
     }
 
     // Pinned verse
@@ -465,51 +475,65 @@ async function main(): Promise<void> {
   }
 
   // URL State Restoration
-  function restoreFromUrl(): void {
-    const urlState = parseUrlState();
+  // Restore overlay and its parameters from URL
+  function restoreOverlayFromUrl(urlState: UrlState): void {
+    if (!urlState.overlay) return;
 
-    // Restore overlay
-    if (urlState.overlay) {
-      setOverlay(urlState.overlay, true);
-      if (overlaySelect) {
-        overlaySelect.value = urlState.overlay;
-      }
-
-      // Apply overlay-specific params
-      if (currentOverlay?.applyUrlParams) {
-        const params = new URLSearchParams();
-        if (urlState.overlayParams.trop) params.set('trop', urlState.overlayParams.trop);
-        if (urlState.overlayParams.category) params.set('cat', urlState.overlayParams.category);
-        if (urlState.overlayParams.q) params.set('q', urlState.overlayParams.q);
-        currentOverlay.applyUrlParams(params);
-      }
+    setOverlay(urlState.overlay, true);
+    if (overlaySelect) {
+      overlaySelect.value = urlState.overlay;
     }
 
+    // Apply overlay-specific params
+    if (currentOverlay?.applyUrlParams) {
+      const params = new URLSearchParams();
+      if (urlState.overlayParams.trop) params.set('trop', urlState.overlayParams.trop);
+      if (urlState.overlayParams.category) params.set('cat', urlState.overlayParams.category);
+      if (urlState.overlayParams.q) params.set('q', urlState.overlayParams.q);
+      currentOverlay.applyUrlParams(params);
+    }
+  }
+
+  // Restore pinned verse from URL and center on it
+  function restoreVerseFromUrl(urlState: UrlState): boolean {
+    if (!urlState.verse) return false;
+
+    const parsed = parseVerseFromUrl(urlState.verse);
+    if (!parsed) return false;
+
+    // Find the verse in our list
+    const verse = verses.find(
+      v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
+    );
+    if (!verse) return false;
+
+    // Pin without saveUrlState since we're restoring FROM the URL
+    pinnedVerse = verse;
+    updateSidebarWrapper(verse, true);
+    centerOnVerse(verse);
+    return true;
+  }
+
+  // Restore camera position from URL (zoom always, pan only if no verse)
+  function restoreCameraFromUrl(urlState: UrlState, hasVerse: boolean): void {
     // Restore zoom
     if (urlState.zoom !== undefined) {
       camera.zoom = urlState.zoom;
     }
 
-    // Restore verse (and center on it)
-    if (urlState.verse) {
-      const parsed = parseVerseFromUrl(urlState.verse);
-      if (parsed) {
-        // Find the verse in our list
-        const verse = verses.find(
-          v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
-        );
-        if (verse) {
-          // Pin without saveUrlState since we're restoring FROM the URL
-          pinnedVerse = verse;
-          updateSidebarWrapper(verse, true);
-          centerOnVerse(verse);
-        }
-      }
-    } else if (urlState.x !== undefined && urlState.y !== undefined) {
-      // Restore pan position (only if no verse)
+    // Restore pan position (only if no verse - verse auto-centers)
+    if (!hasVerse && urlState.x !== undefined && urlState.y !== undefined) {
       camera.x = urlState.x;
       camera.y = urlState.y;
     }
+  }
+
+  function restoreFromUrl(): void {
+    const urlState = parseUrlState();
+
+    restoreOverlayFromUrl(urlState);
+    const hasVerse = restoreVerseFromUrl(urlState);
+    restoreCameraFromUrl(urlState, hasVerse);
 
     applyOverlay();
     render();
