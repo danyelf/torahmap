@@ -49,7 +49,8 @@ if [ -d "$WORKTREE_PATH" ]; then
   done
 
   echo "Syncing beads data from remote..."
-  bd sync
+  git fetch origin beads-sync
+  bd sync --import
   echo "Launching Claude in existing worktree..."
   exec claude --permission-mode bypassPermissions "work on $BEAD_ID"
 fi
@@ -84,7 +85,8 @@ done
 
 # Sync beads data from remote before starting work
 echo "Syncing beads data from remote..."
-bd sync
+git fetch origin beads-sync
+bd sync --import
 
 # Set terminal tab title
 echo -ne "\033]0;${REPO_NAME}: ${BEAD_ID}\007"
