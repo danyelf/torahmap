@@ -25,6 +25,7 @@ let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
+let keyboardToggle: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
@@ -338,6 +339,7 @@ export const searchOverlay: Overlay = {
     container.innerHTML = `
       <div id="search-container">
         <input type="text" id="search-input" class="keyboardInput" placeholder="Search Hebrew or English...">
+        <button id="keyboard-toggle" title="Toggle Hebrew keyboard">⌨</button>
         <button id="search-clear">&times;</button>
       </div>
       <div id="search-options">
@@ -353,6 +355,7 @@ export const searchOverlay: Overlay = {
 
     searchInput = container.querySelector('#search-input');
     searchClear = container.querySelector('#search-clear');
+    keyboardToggle = container.querySelector('#keyboard-toggle');
     searchResults = container.querySelector('#search-results');
     wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
 
@@ -464,10 +467,22 @@ export const searchOverlay: Overlay = {
       }
     });
 
-    // Open Hebrew keyboard on click
-    searchInput?.addEventListener('click', () => {
-      if (searchInput && !isKeyboardOpen()) {
-        createHebrewKeyboard(searchInput);
+    // Toggle Hebrew keyboard on button click
+    keyboardToggle?.addEventListener('click', () => {
+      if (searchInput) {
+        if (isKeyboardOpen()) {
+          closeHebrewKeyboard();
+          keyboardToggle!.classList.remove('active');
+          // Show results again if there are any
+          if (currentResults.length > 0 && searchResults) {
+            searchResults.classList.add('visible');
+          }
+        } else {
+          createHebrewKeyboard(searchInput);
+          keyboardToggle!.classList.add('active');
+          // Hide results while keyboard is open to prevent overlap
+          searchResults?.classList.remove('visible');
+        }
       }
     });
   },
@@ -550,6 +565,7 @@ export const searchOverlay: Overlay = {
     // Clear DOM references
     searchInput = null;
     searchClear = null;
+    keyboardToggle = null;
     searchResults = null;
     wholeWordCheckbox = null;
     // Reset state

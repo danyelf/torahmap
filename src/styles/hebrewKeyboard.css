@@ -11,13 +11,13 @@
   background: rgba(0, 0, 0, 0.95);
   border: 1px solid #444;
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* Override simple-keyboard default theme */
 .hebrew-keyboard-theme {
-  background-color: transparent !important;
+  background-color: rgba(0, 0, 0, 0.95) !important;
   border-radius: 0 !important;
   padding: 0 !important;
 }
@@ -26,8 +26,10 @@
   background: #222 !important;
   border: 1px solid #444 !important;
   color: #fff !important;
-  font-size: 18px !important;
-  height: 50px !important;
+  font-size: 16px !important;
+  height: 42px !important;
+  min-width: 0 !important;
+  flex: 1 !important;
   border-radius: 4px !important;
   box-shadow: none !important;
   transition: background 0.15s, border-color 0.15s !important;
@@ -62,7 +64,9 @@
 
 /* Row spacing */
 .hebrew-keyboard-theme .hg-row {
-  margin-bottom: 6px !important;
+  margin-bottom: 5px !important;
+  display: flex !important;
+  gap: 4px !important;
 }
 
 .hebrew-keyboard-theme .hg-row:last-child {
