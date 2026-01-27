@@ -3,13 +3,13 @@
 #help-btn {
   position: absolute;
   top: -8px;
-  left: -8px;
+  right: -8px;
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1px solid #444;
-  background: #222;
-  color: #888;
+  border: 1px solid #4a8ac9;
+  background: #2a3f55;
+  color: #6ab0f3;
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
@@ -18,8 +18,8 @@
 
 #help-btn:hover {
   border-color: #6ab0f3;
-  color: #6ab0f3;
-  background: #2a3f55;
+  color: #8ec5f7;
+  background: #3a5270;
 }
 
 .help-modal {
