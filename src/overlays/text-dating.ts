@@ -20,29 +20,34 @@ interface EraInfo {
 
 const ERAS: EraInfo[] = [
   {
+    name: 'Pre-Monarchic',
+    dateRange: [1400, 1000],
+    baseColor: [0.60, 0.25, 0.15], // Deep red-brown (oldest layer)
+  },
+  {
     name: 'Early Monarchic',
     dateRange: [1000, 722],
-    baseColor: [0.35, 0.25, 0.15], // Deep brown (oldest layer)
+    baseColor: [0.75, 0.40, 0.20], // Burnt orange
   },
   {
     name: 'Late Monarchic',
     dateRange: [722, 586],
-    baseColor: [0.65, 0.40, 0.20], // Orange-brown
+    baseColor: [0.85, 0.55, 0.25], // Bright orange
   },
   {
     name: 'Exilic',
     dateRange: [586, 538],
-    baseColor: [0.70, 0.45, 0.30], // Rust/ochre
+    baseColor: [0.85, 0.70, 0.35], // Golden yellow
   },
   {
     name: 'Persian Period',
     dateRange: [538, 331],
-    baseColor: [0.75, 0.60, 0.45], // Tan/beige
+    baseColor: [0.75, 0.75, 0.50], // Pale gold
   },
   {
     name: 'Hellenistic',
     dateRange: [331, 164],
-    baseColor: [0.65, 0.65, 0.65], // Light gray (newest layer)
+    baseColor: [0.80, 0.80, 0.70], // Cream/beige (newest layer)
   },
 ];
 
