@@ -26,6 +26,7 @@ vi.mock('../../overlays/search.ts', () => ({
 
 vi.mock('../../overlays/commentary.ts', () => ({
   getVerseLinkCount: vi.fn(() => 0),
+  getCurrentCategory: vi.fn(() => 'total'),
 }));
 
 describe('sidebar', () => {
@@ -162,39 +163,126 @@ describe('sidebar', () => {
   });
 
   describe('getSefariaUrl', () => {
-    it('builds URL for Genesis verse', () => {
+    it('builds URL with ?with=all by default', () => {
       const url = getSefariaUrl('Genesis', 1, 1);
-      expect(url).toBe('https://www.sefaria.org/Genesis.1.1');
+      expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
     });
 
-    it('builds URL for Exodus verse', () => {
+    it('builds URL with ?with=all for Exodus verse', () => {
       const url = getSefariaUrl('Exodus', 20, 2);
-      expect(url).toBe('https://www.sefaria.org/Exodus.20.2');
+      expect(url).toBe('https://www.sefaria.org/Exodus.20.2?with=all');
     });
 
     it('replaces spaces with underscores in book names', () => {
       const url = getSefariaUrl('Song of Songs', 1, 1);
-      expect(url).toBe('https://www.sefaria.org/Song_of_Songs.1.1');
+      expect(url).toBe('https://www.sefaria.org/Song_of_Songs.1.1?with=all');
     });
 
     it('handles multiple spaces in book names', () => {
       const url = getSefariaUrl('I Samuel', 1, 1);
-      expect(url).toBe('https://www.sefaria.org/I_Samuel.1.1');
+      expect(url).toBe('https://www.sefaria.org/I_Samuel.1.1?with=all');
     });
 
     it('handles large chapter numbers', () => {
       const url = getSefariaUrl('Psalms', 119, 1);
-      expect(url).toBe('https://www.sefaria.org/Psalms.119.1');
+      expect(url).toBe('https://www.sefaria.org/Psalms.119.1?with=all');
     });
 
     it('handles large verse numbers', () => {
       const url = getSefariaUrl('Psalms', 119, 176);
-      expect(url).toBe('https://www.sefaria.org/Psalms.119.176');
+      expect(url).toBe('https://www.sefaria.org/Psalms.119.176?with=all');
     });
 
     it('handles book names with special characters', () => {
       const url = getSefariaUrl('II Kings', 1, 1);
-      expect(url).toBe('https://www.sefaria.org/II_Kings.1.1');
+      expect(url).toBe('https://www.sefaria.org/II_Kings.1.1?with=all');
+    });
+
+    it('adds ?with=all when no overlay is active', () => {
+      const url = getSefariaUrl('Genesis', 1, 1, null);
+      expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
+    });
+
+    it('adds ?with=all when commentary overlay shows all categories', () => {
+      const mockOverlay = { id: 'commentary' } as any;
+      // When getCurrentCategory returns 'total', should use ?with=all
+      const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
+      expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
+    });
+
+    it('adds ?with=all when non-commentary overlay is active', () => {
+      const mockOverlay = { id: 'search' } as any;
+      const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
+      expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
+    });
+
+    describe('commentary category filtering', () => {
+      beforeEach(() => {
+        vi.resetAllMocks();
+      });
+
+      it('adds ?with=Talmud when Talmud category is selected', async () => {
+        const { getCurrentCategory } = await import('../../overlays/commentary');
+        vi.mocked(getCurrentCategory).mockReturnValue('Talmud');
+
+        const mockOverlay = { id: 'commentary' } as any;
+        const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
+        expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Talmud');
+      });
+
+      it('adds ?with=Midrash when Midrash category is selected', async () => {
+        const { getCurrentCategory } = await import('../../overlays/commentary');
+        vi.mocked(getCurrentCategory).mockReturnValue('Midrash');
+
+        const mockOverlay = { id: 'commentary' } as any;
+        const url = getSefariaUrl('Exodus', 20, 2, mockOverlay);
+        expect(url).toBe('https://www.sefaria.org/Exodus.20.2?with=Midrash');
+      });
+
+      it('adds ?with=Halakhah when Halakhah category is selected', async () => {
+        const { getCurrentCategory } = await import('../../overlays/commentary');
+        vi.mocked(getCurrentCategory).mockReturnValue('Halakhah');
+
+        const mockOverlay = { id: 'commentary' } as any;
+        const url = getSefariaUrl('Leviticus', 19, 18, mockOverlay);
+        expect(url).toBe('https://www.sefaria.org/Leviticus.19.18?with=Halakhah');
+      });
+
+      it('encodes category names with spaces', async () => {
+        const { getCurrentCategory } = await import('../../overlays/commentary');
+        vi.mocked(getCurrentCategory).mockReturnValue('Jewish Thought');
+
+        const mockOverlay = { id: 'commentary' } as any;
+        const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
+        expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Jewish%20Thought');
+      });
+
+      it('adds ?with=Kabbalah when Kabbalah category is selected', async () => {
+        const { getCurrentCategory } = await import('../../overlays/commentary');
+        vi.mocked(getCurrentCategory).mockReturnValue('Kabbalah');
+
+        const mockOverlay = { id: 'commentary' } as any;
+        const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
+        expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Kabbalah');
+      });
+
+      it('adds ?with=Chasidut when Chasidut category is selected', async () => {
+        const { getCurrentCategory } = await import('../../overlays/commentary');
+        vi.mocked(getCurrentCategory).mockReturnValue('Chasidut');
+
+        const mockOverlay = { id: 'commentary' } as any;
+        const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
+        expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Chasidut');
+      });
+
+      it('adds ?with=Musar when Musar category is selected', async () => {
+        const { getCurrentCategory } = await import('../../overlays/commentary');
+        vi.mocked(getCurrentCategory).mockReturnValue('Musar');
+
+        const mockOverlay = { id: 'commentary' } as any;
+        const url = getSefariaUrl('Proverbs', 1, 1, mockOverlay);
+        expect(url).toBe('https://www.sefaria.org/Proverbs.1.1?with=Musar');
+      });
     });
   });
 
@@ -372,7 +460,7 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
 
-        expect(elements.link?.href).toBe('https://www.sefaria.org/Genesis.1.1');
+        expect(elements.link?.href).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
       });
 
       it('makes sidebar visible', () => {
@@ -615,7 +703,7 @@ describe('sidebar', () => {
         updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
 
         expect(elements.ref?.textContent).toBe('Song of Songs 1:1');
-        expect(elements.link?.href).toBe('https://www.sefaria.org/Song_of_Songs.1.1');
+        expect(elements.link?.href).toBe('https://www.sefaria.org/Song_of_Songs.1.1?with=all');
       });
     });
   });

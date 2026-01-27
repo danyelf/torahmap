@@ -155,3 +155,8 @@ export function getVerseLinkCount(book: string, chapter: number, verse: number):
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   return verseData?.total ?? null;
 }
+
+// Get current category filter (used for Sefaria URL generation)
+export function getCurrentCategory(): string {
+  return currentCategory;
+}
