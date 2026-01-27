@@ -74,11 +74,13 @@ export const commentaryOverlay: Overlay = {
       <label for="category-select">Category:</label>
       <select id="category-select">
         <option value="total">All Commentary</option>
-        <option value="Tanakh">Tanakh</option>
         <option value="Talmud">Talmud</option>
         <option value="Midrash">Midrash</option>
         <option value="Halakhah">Halakhah</option>
+        <option value="Jewish Thought">Jewish Thought</option>
+        <option value="Chasidut">Chasidut</option>
         <option value="Kabbalah">Kabbalah</option>
+        <option value="Musar">Musar</option>
       </select>
     `;
     const select = wrapper.querySelector('select')!;
