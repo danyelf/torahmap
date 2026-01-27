@@ -39,20 +39,14 @@ if [ -d "$WORKTREE_PATH" ]; then
   echo "Worktree already exists at $WORKTREE_PATH"
   cd "$WORKTREE_PATH"
 
-  # Wait for daemon to finish any pending syncs (check up to 3 times)
-  for i in {1..3}; do
-    if bd sync --status | grep -q "Pending changes: none"; then
-      break
-    fi
-    echo "Waiting for daemon to finish syncing..."
-    sleep 2
-  done
+  # Fix old worktrees: ensure .beads contains only redirect file
+  if [ -f .beads/redirect ] && [ -f .beads/beads.db ]; then
+    echo "Fixing .beads redirect (cleaning up old files)..."
+    REDIRECT_TARGET=$(cat .beads/redirect)
+    rm -rf .beads/*
+    echo "$REDIRECT_TARGET" > .beads/redirect
+  fi
 
-  echo "Syncing beads data from remote..."
-  git fetch origin beads-sync
-  # Update local JSONL from remote beads-sync branch
-  git show origin/beads-sync:.beads/issues.jsonl > .beads/issues.jsonl
-  bd sync --import
   echo "Launching Claude in existing worktree..."
   exec claude --permission-mode bypassPermissions "work on $BEAD_ID"
 fi
@@ -73,24 +67,15 @@ echo ""
 
 bd worktree create "$RELATIVE_WORKTREE_PATH" --branch "$BRANCH_NAME"
 
-# Change to worktree and run claude
+# Change to worktree
 cd "$WORKTREE_PATH"
 
-# Wait for daemon to finish any pending syncs (check up to 3 times)
-for i in {1..3}; do
-  if bd sync --status | grep -q "Pending changes: none"; then
-    break
-  fi
-  echo "Waiting for daemon to finish syncing..."
-  sleep 2
-done
-
-# Sync beads data from remote before starting work
-echo "Syncing beads data from remote..."
-git fetch origin beads-sync
-# Update local JSONL from remote beads-sync branch
-git show origin/beads-sync:.beads/issues.jsonl > .beads/issues.jsonl
-bd sync --import
+# Fix redirect: bd worktree create copies too many files to .beads/
+# The redirect only works when .beads/ contains ONLY the redirect file
+echo "Fixing .beads redirect..."
+REDIRECT_TARGET=$(cat .beads/redirect)
+rm -rf .beads/*
+echo "$REDIRECT_TARGET" > .beads/redirect
 
 # Set terminal tab title
 echo -ne "\033]0;${REPO_NAME}: ${BEAD_ID}\007"
