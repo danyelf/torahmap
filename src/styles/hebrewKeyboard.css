@@ -1,10 +1,11 @@
 /* Hebrew keyboard styling to match Torah Map theme */
 
 #hebrew-keyboard-container {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
   z-index: 1000;
   display: none;
   background: rgba(0, 0, 0, 0.95);
@@ -12,7 +13,6 @@
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  max-width: 600px;
 }
 
 /* Override simple-keyboard default theme */

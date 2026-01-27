@@ -25,7 +25,14 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
     container = document.createElement('div');
     container.id = 'hebrew-keyboard-container';
     container.className = 'hebrew-keyboard-container';
-    document.body.appendChild(container);
+
+    // Append to the search container (parent of input) to position relative to it
+    const searchContainer = inputElement.closest('#search-container');
+    if (searchContainer) {
+      searchContainer.appendChild(container);
+    } else {
+      document.body.appendChild(container);
+    }
   }
 
   // Create or update keyboard instance
