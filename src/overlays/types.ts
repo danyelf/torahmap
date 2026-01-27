@@ -22,7 +22,20 @@ export interface Overlay {
 
   // Lifecycle - called once when app starts
   init?(): Promise<void>;
+
+  // Cleanup - called when overlay is deactivated or app is unmounted
+  // Implement this if your overlay:
+  // - Adds event listeners (e.g., click handlers, input handlers)
+  // - Caches state that should be cleared (e.g., maps, sets, arrays)
+  // - Stores callbacks or DOM references
+  // Even if your overlay doesn't need cleanup, consider adding an empty destroy()
+  // for consistency and future-proofing
   destroy?(): void;
+
+  // Configuration - called to provide runtime data (verses, callbacks, etc.)
+  // Use this for overlays that need access to app state or external data
+  // The config parameter type is overlay-specific
+  configure?(config: unknown): void;
 
   // Core - called for each verse during applyOverlay
   // Return null to use default gray

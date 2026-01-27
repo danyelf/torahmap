@@ -34,6 +34,10 @@ export const divineNamesOverlay: Overlay = {
     }
   },
 
+  destroy() {
+    data = {};
+  },
+
   getVerseColor(verse: VerseIdentity): Color | null {
     const code = data[verse.book]?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
     return code > 0 ? COLORS[code] ?? null : null;

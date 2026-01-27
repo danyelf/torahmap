@@ -119,6 +119,10 @@ export const textDatingOverlay: Overlay = {
     }
   },
 
+  destroy() {
+    data = { notes: [], books: {} };
+  },
+
   getVerseColor(verse: VerseIdentity): Color | null {
     const verseData = getVerseData(verse);
     if (!verseData) return null;
