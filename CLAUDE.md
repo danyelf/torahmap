@@ -29,6 +29,7 @@ The core design principle is **position stability** - each verse occupies a perm
 | **Commentary** | Logarithmic heatmap of Sefaria commentary link counts, filterable by 8 categories |
 | **Trop** | Cantillation mark (trope) visualizer - select any of the 39 trop marks to see where they appear across Tanakh, with rarity-based coloring (gold for rare marks, heatmap for common ones) |
 | **Search** | Full-text search with Hebrew/English support - highlights matching verses on the map |
+| **Text Dating** | Visualizes estimated composition dates using scholarly consensus - shows 6 historical periods from Pre-Monarchic (1400-1000 BCE) through Hellenistic (331-164 BCE) with geological metaphor coloring |
 
 Commentary categories: Talmud (direct text only, filters commentaries), Midrash, Halakhah, Jewish Thought, Chasidut, Kabbalah, Musar, Responsa
 
@@ -58,7 +59,7 @@ The dev server runs at `http://localhost:5173`
 
 ## Testing
 
-The project has comprehensive test coverage with **1129 tests** covering all major functionality:
+The project has comprehensive test coverage with **1204 tests** covering all major functionality:
 
 ```bash
 # Run all tests
@@ -74,7 +75,7 @@ npm run test:coverage
 ### Pre-commit Hook
 
 A pre-commit hook automatically runs all tests before allowing commits. This ensures:
-- All 831 tests pass before code enters the repository
+- All 1204 tests pass before code enters the repository
 - No broken commits
 - Immediate feedback on test failures
 
