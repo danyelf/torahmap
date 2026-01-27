@@ -1,16 +1,66 @@
 #!/usr/bin/env bash
 set -e
 
-# Usage: work-on-bead.sh <bead-id>
+# Usage: work-on-bead.sh [bead-id]
 # Creates a git worktree for the specified bead and launches Claude in it
+# If no bead-id provided, shows interactive selector
 
-if [ -z "$1" ]; then
-  echo "Usage: $0 <bead-id>"
-  echo "Example: $0 beads-123"
-  exit 1
-fi
+# Ensure terminal is restored to sane state on exit
+trap 'stty sane 2>/dev/null || true' EXIT
 
 BEAD_ID="$1"
+
+# If no bead ID provided, show interactive selector
+if [ -z "$BEAD_ID" ]; then
+  echo "Fetching available beads..."
+
+  # Get list of open beads with details
+  BEAD_LIST=$(bd list --status=open --json)
+
+  if [ -z "$BEAD_LIST" ] || [ "$BEAD_LIST" = "[]" ]; then
+    echo "No open beads found. Create one with 'bd create'"
+    exit 1
+  fi
+
+  # Format beads for display: "bead-id | type | priority | title"
+  FORMATTED_BEADS=$(echo "$BEAD_LIST" | jq -r '.[] | "\(.id) | \(.type // "task") | P\(.priority // "2") | \(.title // "No title")"')
+
+  # Try fzf first (better UX), fall back to select
+  # Only use fzf if it exists AND we have an interactive terminal
+  if command -v fzf &> /dev/null && [ -t 0 ] && [ -t 1 ]; then
+    SELECTED=$(echo "$FORMATTED_BEADS" | fzf \
+      --height=40% \
+      --reverse \
+      --border \
+      --prompt="Select bead: " \
+      --header="ID | Type | Priority | Title" \
+      --preview='bd show {1}' \
+      --preview-window=right:60%:wrap)
+  else
+    # Use bash select as fallback (it prints the list automatically)
+    IFS=$'\n' read -r -d '' -a BEAD_ARRAY <<< "$FORMATTED_BEADS" || true
+    echo ""
+    PS3='Select bead number (or Ctrl+C to cancel): '
+    select SELECTED in "${BEAD_ARRAY[@]}"; do
+      if [ -n "$SELECTED" ]; then
+        break
+      else
+        echo "Invalid selection. Try again."
+      fi
+    done
+  fi
+
+  if [ -z "$SELECTED" ]; then
+    echo "No bead selected. Exiting."
+    exit 1
+  fi
+
+  # Extract bead ID (first field before |)
+  BEAD_ID=$(echo "$SELECTED" | awk -F' \\| ' '{print $1}')
+  echo ""
+  echo "Selected: $SELECTED"
+  echo ""
+fi
 
 # Verify bead exists BEFORE doing anything else
 echo "Verifying bead $BEAD_ID exists..."
