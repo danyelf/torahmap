@@ -6,6 +6,7 @@ import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { getSelectedTrop, highlightTropInText } from './overlays/trop.ts';
 import { highlightSearchTerms } from './overlays/search.ts';
 import { getVerseLinkCount, getCurrentCategory, getVerseCategoryCount } from './overlays/commentary.ts';
+import { getVerseDatingInfo } from './overlays/text-dating.ts';
 
 /**
  * DOM elements that make up the verse details sidebar
@@ -111,9 +112,32 @@ export function updateSidebar(
     ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
   }
   if (overlayInfo) {
-    // Get overlay-specific hover info (e.g., parshah name for Torah verses)
-    const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
-    overlayInfo.textContent = hoverInfo || '';
+    // Show detailed dating info when text-dating overlay is active and verse is pinned
+    if (currentOverlay?.id === 'text-dating' && isPinned) {
+      const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
+      if (datingInfo) {
+        const dateStr = datingInfo.dateRange[0] === datingInfo.dateRange[1]
+          ? `~${datingInfo.dateRange[0]} BCE`
+          : `${datingInfo.dateRange[0]}-${datingInfo.dateRange[1]} BCE`;
+
+        // Parse citation links from note (format: [text](url))
+        const noteHtml = datingInfo.note.replace(
+          /\[([^\]]+)\]\(([^)]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener">$1</a>'
+        );
+
+        overlayInfo.innerHTML = `
+          <strong>${datingInfo.era}</strong> (${dateStr})
+          <br>${noteHtml}
+        `;
+      } else {
+        overlayInfo.textContent = '';
+      }
+    } else {
+      // Get overlay-specific hover info (e.g., parshah name for Torah verses)
+      const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
+      overlayInfo.textContent = hoverInfo || '';
+    }
   }
   if (hebrew) {
     const hebrewText = text?.he || 'Loading...';

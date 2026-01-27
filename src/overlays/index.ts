@@ -6,3 +6,4 @@ export { commentaryOverlay, configure as configureCommentary, getVerseLinkCount 
 export { tropOverlay, configure as configureTrop, getSelectedTrop, highlightTropInText } from './trop.ts';
 export { searchOverlay, configure as configureSearch, highlightSearchTerms } from './search.ts';
 export { haftarahOverlay } from './haftarah.ts';
+export { textDatingOverlay, getVerseDatingInfo } from './text-dating.ts';

@@ -39,6 +39,7 @@ import {
   searchOverlay,
   configureSearch,
   haftarahOverlay,
+  textDatingOverlay,
   type Overlay,
 } from './overlays/index.ts';
 import {
@@ -99,6 +100,7 @@ async function main(): Promise<void> {
   registerOverlay(tropOverlay);
   registerOverlay(searchOverlay);
   registerOverlay(haftarahOverlay);
+  registerOverlay(textDatingOverlay);
   configureCommentary({ verses });
   configureTrop({ verseTexts });
   // Note: configureSearch is called later after updateSidebar is defined
