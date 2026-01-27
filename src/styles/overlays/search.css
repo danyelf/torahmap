@@ -43,18 +43,14 @@
 }
 
 #search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
   background: rgba(30, 30, 30, 0.98);
   border: 1px solid #444;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
+  border-radius: 4px;
   max-height: 320px;
   overflow-y: auto;
   display: none;
   z-index: 100;
+  margin-top: 8px;
 }
 
 #search-results.visible {

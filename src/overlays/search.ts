@@ -299,15 +299,15 @@ export const searchOverlay: Overlay = {
       <div id="search-container">
         <input type="text" id="search-input" placeholder="Search Hebrew or English...">
         <button id="search-clear">&times;</button>
-        <div id="search-results">
-          <div id="search-count"></div>
-        </div>
       </div>
       <div id="search-options">
         <label>
           <input type="checkbox" id="whole-word-checkbox">
           Match whole words only
         </label>
+      </div>
+      <div id="search-results">
+        <div id="search-count"></div>
       </div>
     `;
 
