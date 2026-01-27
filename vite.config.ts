@@ -18,7 +18,4 @@ export default defineConfig(({ command }) => ({
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
   },
-  server: {
-    host: true, // Listen on all interfaces (needed for Lima VM port forwarding)
-  },
 }));
