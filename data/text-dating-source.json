@@ -307,20 +307,20 @@
   },
   {
     "book": "Amos",
+    "chapters": "all",
+    "verses": "all",
+    "era": "early_monarchic",
+    "date_bce": 760,
+    "note": "8th century BCE prophetic text from the reign of Jeroboam II.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Amos",
     "chapters": "2-9",
     "verses": "6-end",
     "era": "early_monarchic",
     "date_bce": 760,
     "note": "Initial composition of earliest layer (Amos 2:6-9:10), late 8th-early 7th century BCE.",
-    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
-  },
-  {
-    "book": "Amos",
-    "chapters": "all",
-    "verses": "all",
-    "era": "exilic",
-    "date_bce": 550,
-    "note": "Expansion and reshaping during exilic period (6th century BCE).",
     "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
   },
   {
