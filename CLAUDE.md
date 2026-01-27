@@ -296,6 +296,8 @@ python3 scripts/process_sefaria_links_v2.py
 - **Uses local CSV files** from `data/sefaria-links/` instead of downloading on each run
 - **Result:** Closer match to Sefaria's website counts (e.g., Exodus 23:5 shows 24 Talmud vs 28 on Sefaria)
 
+**Data Staleness:** The CSV files from Sefaria-Export are updated periodically (typically every few months). Our commentary counts will be behind Sefaria's live website by however long since the last CSV export. This is an acceptable trade-off for having fast, offline-capable data. To update to the latest counts, re-download the CSV files and re-run the script.
+
 ## Interactions
 
 | Action | Effect |
