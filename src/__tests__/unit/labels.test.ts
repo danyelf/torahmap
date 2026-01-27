@@ -3,6 +3,19 @@ import { createBookLabels, updateLabelPositions } from '../../labels';
 import { createVerse, SAMPLE_VERSES } from '../helpers';
 import type { VerseLayout } from '../../types';
 
+// Match constants from labels.ts implementation
+const BASE_LABEL_GAP = 10;
+const BASE_FONT_SIZE = 13;
+const MIN_FONT_SIZE = 5;
+const MAX_FONT_SIZE = 50;
+
+// Helper function to calculate expected Y position matching the implementation
+function calculateExpectedY(topY: number, panY: number, zoom: number): number {
+  const fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
+  const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
+  return (topY + panY) * zoom - fontSize - gap;
+}
+
 describe('labels', () => {
   let container: HTMLElement;
 
@@ -358,9 +371,9 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
 
-        // Position should be leftX, topY - 20 (LABEL_OFFSET_Y)
+        // Position should be leftX, topY with fontSize + gap offset
         expect(label.style.left).toBe(`${leftX}px`);
-        expect(label.style.top).toBe(`${topY - 20}px`);
+        expect(label.style.top).toBe(`${calculateExpectedY(topY, 0, 1)}px`);
       });
 
       it('applies LABEL_OFFSET_Y of -20 pixels', () => {
@@ -368,7 +381,7 @@ describe('labels', () => {
 
         const label = labelsContainer.children[0] as HTMLElement;
         const topY = parseFloat(label.dataset.topY || '0');
-        const expectedTop = topY - 20;
+        const expectedTop = calculateExpectedY(topY, 0, 1);
 
         expect(label.style.top).toBe(`${expectedTop}px`);
       });
@@ -413,7 +426,7 @@ describe('labels', () => {
 
         const label = labelsContainer.children[0] as HTMLElement;
         const topY = parseFloat(label.dataset.topY || '0');
-        const expectedTop = (topY + pan.y) - 20; // Include LABEL_OFFSET_Y
+        const expectedTop = calculateExpectedY(topY, pan.y, 1);
 
         expect(label.style.top).toBe(`${expectedTop}px`);
       });
@@ -424,7 +437,7 @@ describe('labels', () => {
 
         const label = labelsContainer.children[0] as HTMLElement;
         const topY = parseFloat(label.dataset.topY || '0');
-        const expectedTop = (topY + pan.y) - 20; // Include LABEL_OFFSET_Y
+        const expectedTop = calculateExpectedY(topY, pan.y, 1);
 
         expect(label.style.top).toBe(`${expectedTop}px`);
       });
@@ -437,7 +450,7 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
         const expectedLeft = leftX + pan.x;
-        const expectedTop = (topY + pan.y) - 20;
+        const expectedTop = calculateExpectedY(topY, pan.y, 1);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -451,7 +464,7 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
         const expectedLeft = leftX + pan.x;
-        const expectedTop = (topY + pan.y) - 20;
+        const expectedTop = calculateExpectedY(topY, pan.y, 1);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -467,7 +480,7 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
         const expectedLeft = leftX * zoom;
-        const expectedTop = topY * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, 0, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -481,7 +494,7 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
         const expectedLeft = leftX * zoom;
-        const expectedTop = topY * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, 0, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -495,7 +508,7 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
         const expectedLeft = leftX * zoom;
-        const expectedTop = topY * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, 0, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -509,10 +522,12 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
         const expectedLeft = leftX * zoom;
-        const expectedTop = topY * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, 0, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
-        expect(label.style.top).toBe(`${expectedTop}px`);
+        // Use toBeCloseTo for floating point comparison due to browser precision
+        const actualTop = parseFloat(label.style.top);
+        expect(actualTop).toBeCloseTo(expectedTop, 5);
       });
 
       it('handles large zoom values', () => {
@@ -523,10 +538,12 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
         const expectedLeft = leftX * zoom;
-        const expectedTop = topY * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, 0, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
-        expect(label.style.top).toBe(`${expectedTop}px`);
+        // Use toBeCloseTo for floating point comparison due to browser precision
+        const actualTop = parseFloat(label.style.top);
+        expect(actualTop).toBeCloseTo(expectedTop, 5);
       });
     });
 
@@ -540,19 +557,19 @@ describe('labels', () => {
       it('scales font size with zoom at zoom=2', () => {
         updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 2);
         const label = labelsContainer.children[0] as HTMLElement;
-        expect(label.style.fontSize).toBe('20px'); // clamped to MAX_FONT_SIZE
+        expect(label.style.fontSize).toBe('26px'); // BASE_FONT_SIZE * 2 = 13 * 2
       });
 
       it('clamps to minimum font size when zoomed way out', () => {
         updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 0.1);
         const label = labelsContainer.children[0] as HTMLElement;
-        expect(label.style.fontSize).toBe('10px'); // MIN_FONT_SIZE
+        expect(label.style.fontSize).toBe('5px'); // MIN_FONT_SIZE
       });
 
       it('clamps to maximum font size when zoomed way in', () => {
         updateLabelPositions(labelsContainer, { x: 0, y: 0 }, 10);
         const label = labelsContainer.children[0] as HTMLElement;
-        expect(label.style.fontSize).toBe('20px'); // MAX_FONT_SIZE
+        expect(label.style.fontSize).toBe('50px'); // MAX_FONT_SIZE
       });
 
       it('scales proportionally at intermediate zoom levels', () => {
@@ -581,9 +598,9 @@ describe('labels', () => {
         const leftX = parseFloat(label.dataset.leftX || '0');
         const topY = parseFloat(label.dataset.topY || '0');
 
-        // Formula: (position + pan) * zoom, then add offset for Y
+        // Formula: (position + pan) * zoom, then apply fontSize + gap offset for Y
         const expectedLeft = (leftX + pan.x) * zoom;
-        const expectedTop = (topY + pan.y) * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, pan.y, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -599,7 +616,7 @@ describe('labels', () => {
         const topY = parseFloat(label.dataset.topY || '0');
 
         const expectedLeft = (leftX + pan.x) * zoom;
-        const expectedTop = (topY + pan.y) * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, pan.y, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -615,7 +632,7 @@ describe('labels', () => {
         const topY = parseFloat(label.dataset.topY || '0');
 
         const expectedLeft = (leftX + pan.x) * zoom;
-        const expectedTop = (topY + pan.y) * zoom - 20;
+        const expectedTop = calculateExpectedY(topY, pan.y, zoom);
 
         expect(label.style.left).toBe(`${expectedLeft}px`);
         expect(label.style.top).toBe(`${expectedTop}px`);
@@ -635,7 +652,7 @@ describe('labels', () => {
         }).not.toThrow();
 
         expect(label.style.left).toBe('10px'); // 0 + 10
-        expect(label.style.top).toBe('0px');   // 0 + 20 - 20
+        expect(label.style.top).toBe(`${calculateExpectedY(0, 20, 1)}px`);
       });
 
       it('handles empty labels container', () => {
@@ -664,7 +681,7 @@ describe('labels', () => {
         const topY = parseFloat(label.dataset.topY || '0');
 
         expect(label.style.left).toBe(`${leftX + pan.x}px`);
-        expect(label.style.top).toBe(`${topY + pan.y - 20}px`);
+        expect(label.style.top).toBe(`${calculateExpectedY(topY, pan.y, 1)}px`);
       });
 
       it('handles fractional zoom values', () => {
@@ -676,7 +693,7 @@ describe('labels', () => {
         const topY = parseFloat(label.dataset.topY || '0');
 
         expect(label.style.left).toBe(`${leftX * zoom}px`);
-        expect(label.style.top).toBe(`${topY * zoom - 20}px`);
+        expect(label.style.top).toBe(`${calculateExpectedY(topY, 0, zoom)}px`);
       });
 
       it('updates positions multiple times', () => {
