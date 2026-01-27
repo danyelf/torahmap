@@ -346,8 +346,22 @@ async function main() {
     const chapterIndex = entry.chapter - 1;
     for (const verseNum of verses) {
       const verseIndex = verseNum - 1;
-      books[entry.book][chapterIndex][verseIndex] = verseDating;
-      totalVerses++;
+      const existingVerse = books[entry.book][chapterIndex][verseIndex];
+
+      // Only apply if verse has no date, or if new date is earlier
+      // Use midpoint of date range for comparison
+      if (existingVerse === null) {
+        books[entry.book][chapterIndex][verseIndex] = verseDating;
+        totalVerses++;
+      } else {
+        const existingMidpoint = (existingVerse.d[0] + existingVerse.d[1]) / 2;
+        const newMidpoint = (entry.dating.min + entry.dating.max) / 2;
+
+        // Earlier date wins (more negative = older BCE date)
+        if (newMidpoint < existingMidpoint) {
+          books[entry.book][chapterIndex][verseIndex] = verseDating;
+        }
+      }
     }
 
     console.log(
