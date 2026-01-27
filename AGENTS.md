@@ -25,8 +25,11 @@ This creates an isolated git worktree and launches Claude with full context.
 
 When you're done with the work, run from within the worktree:
 ```bash
-./scripts/land-bead.sh
+./scripts/land-bead.sh --delete-branch
 ```
+
+The `--delete-branch` flag automatically deletes the feature branch (recommended for most cases).
+Omit it if you want to be prompted.
 
 This script will:
 1. Verify no uncommitted changes
@@ -36,9 +39,11 @@ This script will:
 5. Push to remote
 6. Close the bead and sync
 7. Clean up the worktree
-8. Optionally delete the feature branch
+8. Delete the feature branch (if --delete-branch passed)
 
 **DO NOT try to merge manually** - use the land-bead.sh script to avoid beads conflicts.
+
+**Note:** The worktree directory will be removed after landing, so any commands after that will fail (this is expected).
 
 ## Landing the Plane (Non-Worktree Sessions)
 

@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 set -e
 
-# Usage: land-bead.sh
+# Usage: land-bead.sh [--delete-branch]
 # Merges current worktree branch into main and cleans up
 # Must be run from within a worktree
+# Options:
+#   --delete-branch  Automatically delete the feature branch after landing (no prompt)
+
+DELETE_BRANCH=false
+if [ "$1" = "--delete-branch" ]; then
+  DELETE_BRANCH=true
+fi
 
 # Verify we're in a worktree
 if [ ! -f .beads/redirect ]; then
@@ -66,17 +73,22 @@ if [ "$COMMIT_COUNT" -eq 0 ]; then
   exit 0
 fi
 
-# Step 5: Verify feature branch has NO beads file changes
+# Step 5: Verify feature branch has NO beads file changes (except .gitignore which is OK)
 cd "$REPO_ROOT"
-if git diff main --name-only | grep -q "^\.beads/"; then
+BEADS_CHANGES=$(git diff main --name-only | grep "^\.beads/" | grep -v "^\.beads/\.gitignore$" || true)
+if [ -n "$BEADS_CHANGES" ]; then
   echo "ERROR: Feature branch has .beads/ changes!"
   echo "This should not happen - beads changes should only be on beads-sync branch"
   echo ""
   echo "Changes in .beads/:"
-  git diff main --name-only | grep "^\.beads/"
+  echo "$BEADS_CHANGES"
   echo ""
   echo "This indicates a problem with the worktree setup."
-  echo "Please investigate before merging."
+  echo "The work-on-bead.sh script should have untracked these files."
+  echo ""
+  echo "To fix: Run the following in this worktree:"
+  echo "  git rm --cached .beads/config.yaml .beads/issues.jsonl .beads/metadata.json"
+  echo "  git commit --amend"
   exit 1
 fi
 
@@ -99,13 +111,19 @@ echo "Cleaning up worktree..."
 git worktree remove "$REPO_ROOT"
 
 # Step 10: Optionally delete branch
-echo ""
-echo "Branch merged and worktree removed."
-echo "Would you like to delete the feature branch $BRANCH_NAME? (y/n)"
-read -r response
-if [ "$response" = "y" ]; then
+if [ "$DELETE_BRANCH" = true ]; then
+  echo "Deleting feature branch $BRANCH_NAME..."
   git branch -d "$BRANCH_NAME"
   echo "✓ Deleted branch $BRANCH_NAME"
+else
+  echo ""
+  echo "Branch merged and worktree removed."
+  echo "Would you like to delete the feature branch $BRANCH_NAME? (y/n)"
+  read -r response
+  if [ "$response" = "y" ]; then
+    git branch -d "$BRANCH_NAME"
+    echo "✓ Deleted branch $BRANCH_NAME"
+  fi
 fi
 
 echo ""

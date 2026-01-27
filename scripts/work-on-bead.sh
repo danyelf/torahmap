@@ -45,7 +45,7 @@ if [ -d "$WORKTREE_PATH" ]; then
     REDIRECT_TARGET=$(cat .beads/redirect)
 
     # Remove from git index if present
-    git rm --cached .beads/README.md .beads/issues.jsonl .beads/metadata.json 2>/dev/null || true
+    git rm --cached .beads/README.md .beads/config.yaml .beads/issues.jsonl .beads/metadata.json 2>/dev/null || true
 
     # Ensure worktree-local gitignore has these files
     EXCLUDE_FILE=$(git rev-parse --git-path info/exclude)
@@ -53,6 +53,7 @@ if [ -d "$WORKTREE_PATH" ]; then
       cat >> "$EXCLUDE_FILE" << 'EOF'
 # Beads data files (tracked in main repo, but use redirect in worktrees)
 .beads/README.md
+.beads/config.yaml
 .beads/issues.jsonl
 .beads/metadata.json
 EOF
@@ -92,7 +93,7 @@ echo "Fixing .beads redirect and git tracking..."
 REDIRECT_TARGET=$(cat .beads/redirect)
 
 # Remove from git index (but keep on disk temporarily)
-git rm --cached .beads/README.md .beads/issues.jsonl .beads/metadata.json 2>/dev/null || true
+git rm --cached .beads/README.md .beads/config.yaml .beads/issues.jsonl .beads/metadata.json 2>/dev/null || true
 
 # Add to worktree-local gitignore (not committed)
 # Use git rev-parse to find the actual info/exclude path in worktree
@@ -100,6 +101,7 @@ EXCLUDE_FILE=$(git rev-parse --git-path info/exclude)
 cat >> "$EXCLUDE_FILE" << 'EOF'
 # Beads data files (tracked in main repo, but use redirect in worktrees)
 .beads/README.md
+.beads/config.yaml
 .beads/issues.jsonl
 .beads/metadata.json
 EOF
