@@ -336,7 +336,8 @@ export const searchOverlay: Overlay = {
   renderControls(container: HTMLElement): void {
     container.innerHTML = `
       <div id="search-container">
-        <input type="text" id="search-input" placeholder="Search Hebrew or English...">
+        <input type="text" id="search-input" class="keyboardInput" placeholder="Search Hebrew or English...">
+        <img src="/images/keyboard-icon.svg" id="keyboard-icon" class="keyboard-trigger" style="display: none;" alt="Hebrew keyboard">
         <button id="search-clear">&times;</button>
       </div>
       <div id="search-options">
