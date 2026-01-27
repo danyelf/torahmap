@@ -26,13 +26,8 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
     container.id = 'hebrew-keyboard-container';
     container.className = 'hebrew-keyboard-container';
 
-    // Append to the search container (parent of input) to position relative to it
-    const searchContainer = inputElement.closest('#search-container');
-    if (searchContainer) {
-      searchContainer.appendChild(container);
-    } else {
-      document.body.appendChild(container);
-    }
+    // Append to body as a full popup overlay
+    document.body.appendChild(container);
   }
 
   // Create or update keyboard instance
@@ -57,6 +52,9 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
         }
       }
     });
+  } else {
+    // Keyboard exists, just update the input reference
+    currentInput = inputElement;
   }
 
   // Sync keyboard with input value
@@ -81,7 +79,7 @@ export function closeHebrewKeyboard(): void {
   if (container) {
     container.style.display = 'none';
   }
-  currentInput = null;
+  // Don't null out currentInput - keep the reference for when keyboard reopens
 }
 
 export function isKeyboardOpen(): boolean {

@@ -339,7 +339,7 @@ export const searchOverlay: Overlay = {
     container.innerHTML = `
       <div id="search-container">
         <input type="text" id="search-input" class="keyboardInput" placeholder="Search Hebrew or English...">
-        <button id="keyboard-toggle" title="Toggle Hebrew keyboard">⌨</button>
+        <button id="keyboard-toggle" title="Toggle Hebrew keyboard">א</button>
         <button id="search-clear">&times;</button>
       </div>
       <div id="search-options">
@@ -473,15 +473,9 @@ export const searchOverlay: Overlay = {
         if (isKeyboardOpen()) {
           closeHebrewKeyboard();
           keyboardToggle!.classList.remove('active');
-          // Show results again if there are any
-          if (currentResults.length > 0 && searchResults) {
-            searchResults.classList.add('visible');
-          }
         } else {
           createHebrewKeyboard(searchInput);
           keyboardToggle!.classList.add('active');
-          // Hide results while keyboard is open to prevent overlap
-          searchResults?.classList.remove('visible');
         }
       }
     });
