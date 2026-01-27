@@ -307,15 +307,6 @@
   },
   {
     "book": "Amos",
-    "chapters": "2-9",
-    "verses": "6-end",
-    "era": "early_monarchic",
-    "date_bce": 760,
-    "note": "Initial composition of earliest layer (Amos 2:6-9:10), late 8th-early 7th century BCE.",
-    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
-  },
-  {
-    "book": "Amos",
     "chapters": "all",
     "verses": "all",
     "era": "exilic",
@@ -564,6 +555,24 @@
     "era": "exilic",
     "date_bce": 550,
     "note": "Blessings and curses chapter, characteristic of Deuteronomistic editing during exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Amos",
+    "chapters": "2",
+    "verses": "6-end",
+    "era": "early_monarchic",
+    "date_bce": 760,
+    "note": "Initial composition of earliest layer (Amos 2:6-9:10), late 8th-early 7th century BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Amos",
+    "chapters": "3-9",
+    "verses": "all",
+    "era": "early_monarchic",
+    "date_bce": 760,
+    "note": "Initial composition of earliest layer (Amos 2:6-9:10), late 8th-early 7th century BCE.",
     "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
   }
 ]
