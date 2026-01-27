@@ -10,6 +10,7 @@ import {
   getRarityTier,
 } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
+import { scaleToGradient, type ColorStop } from '../utils/color.ts';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
@@ -46,6 +47,20 @@ function updateCache(): void {
   cachedLogMax = Math.log(cachedMaxCount + 1);
 }
 
+// Gradient for uncommon trop (linear purple gradient)
+const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
+  { t: 0, color: [0.4, 0.2, 0.6] },       // Dim purple
+  { t: 1, color: [0.9, 0.4, 0.95] },      // Bright purple
+];
+
+// Gradient for common trop (purple spectrum with log scale)
+const COMMON_TROP_GRADIENT: ColorStop[] = [
+  { t: 0, color: [0.2, 0.1, 0.3] },       // Dark purple
+  { t: 0.33, color: [0.4, 0.2, 0.5] },    // Purple
+  { t: 0.66, color: [0.7, 0.3, 0.7] },    // Magenta
+  { t: 1.0, color: [0.95, 0.6, 0.9] },    // Pink
+];
+
 // Get verse color based on selected trop and rarity tier
 function getTropVerseColor(verse: VerseIdentity): Color | null {
   if (!selectedTrop) return null;
@@ -57,30 +72,17 @@ function getTropVerseColor(verse: VerseIdentity): Color | null {
     // Binary highlight: bright gold for matches, dim gray for non-matches
     return count > 0 ? RARE_MATCH_COLOR : HIGHLIGHT_CONSTANTS.RARE_NO_MATCH_COLOR;
   } else if (cachedTier === 'uncommon') {
-    // Gradient based on count (0 = dim, max = bright purple)
+    // Linear gradient based on count
     if (count === 0) {
       return [0.12, 0.12, 0.15];
     }
-    const t = count / cachedMaxCount;
-    // Dim purple to bright purple
-    return [0.4 + t * 0.5, 0.2 + t * 0.2, 0.6 + t * 0.35];
+    return scaleToGradient(count, cachedMaxCount, UNCOMMON_TROP_GRADIENT);
   } else {
-    // Common: full heatmap like commentary
+    // Common: logarithmic heatmap
     if (count === 0) {
       return [0.12, 0.1, 0.15];
     }
-    const t = Math.log(count + 1) / cachedLogMax;
-    // Purple spectrum: dark purple -> purple -> magenta -> pink
-    if (t < 0.33) {
-      const s = t / 0.33;
-      return [0.2 + s * 0.2, 0.1 + s * 0.1, 0.3 + s * 0.2];
-    } else if (t < 0.66) {
-      const s = (t - 0.33) / 0.33;
-      return [0.4 + s * 0.3, 0.2 + s * 0.1, 0.5 + s * 0.2];
-    } else {
-      const s = (t - 0.66) / 0.34;
-      return [0.7 + s * 0.25, 0.3 + s * 0.3, 0.7 + s * 0.2];
-    }
+    return scaleToGradient(count, cachedMaxCount, COMMON_TROP_GRADIENT, { useLog: true });
   }
 }
 

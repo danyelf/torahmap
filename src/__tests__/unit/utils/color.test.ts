@@ -5,9 +5,12 @@ import {
   rgbToHsl,
   hslToRgb,
   blendColorsHSL,
+  interpolateGradient,
+  scaleToGradient,
   HIGHLIGHT_COLOR,
   DIM_FACTOR,
   SEARCH_COLORS,
+  type ColorStop,
 } from '../../../utils/color';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import { TEST_COLORS } from '../../helpers/fixtures';
@@ -37,6 +40,215 @@ describe('color constants', () => {
         assertValidColor(color);
       }
     });
+  });
+});
+
+describe('interpolateGradient', () => {
+  const simpleGradient: ColorStop[] = [
+    { t: 0, color: [0, 0, 0] },      // Black
+    { t: 1, color: [1, 1, 1] },      // White
+  ];
+
+  const multiStopGradient: ColorStop[] = [
+    { t: 0, color: [1, 0, 0] },      // Red
+    { t: 0.5, color: [0, 1, 0] },    // Green
+    { t: 1, color: [0, 0, 1] },      // Blue
+  ];
+
+  it('returns first color at t=0', () => {
+    const color = interpolateGradient(0, simpleGradient);
+    assertColorEquals(color, [0, 0, 0], 0.01);
+  });
+
+  it('returns last color at t=1', () => {
+    const color = interpolateGradient(1, simpleGradient);
+    assertColorEquals(color, [1, 1, 1], 0.01);
+  });
+
+  it('returns midpoint color at t=0.5', () => {
+    const color = interpolateGradient(0.5, simpleGradient);
+    assertColorEquals(color, [0.5, 0.5, 0.5], 0.01);
+  });
+
+  it('interpolates correctly in first segment', () => {
+    const color = interpolateGradient(0.25, multiStopGradient);
+    assertValidColor(color);
+    // Should be halfway between red and green
+    expect(color[0]).toBeCloseTo(0.5, 2);
+    expect(color[1]).toBeCloseTo(0.5, 2);
+    expect(color[2]).toBeCloseTo(0, 2);
+  });
+
+  it('interpolates correctly in second segment', () => {
+    const color = interpolateGradient(0.75, multiStopGradient);
+    assertValidColor(color);
+    // Should be halfway between green and blue
+    expect(color[0]).toBeCloseTo(0, 2);
+    expect(color[1]).toBeCloseTo(0.5, 2);
+    expect(color[2]).toBeCloseTo(0.5, 2);
+  });
+
+  it('clamps values below 0', () => {
+    const color = interpolateGradient(-0.5, simpleGradient);
+    assertColorEquals(color, [0, 0, 0], 0.01);
+  });
+
+  it('clamps values above 1', () => {
+    const color = interpolateGradient(1.5, simpleGradient);
+    assertColorEquals(color, [1, 1, 1], 0.01);
+  });
+
+  it('handles gradient with many stops', () => {
+    const gradient: ColorStop[] = [
+      { t: 0, color: [0, 0, 0] },
+      { t: 0.25, color: [0.25, 0.25, 0.25] },
+      { t: 0.5, color: [0.5, 0.5, 0.5] },
+      { t: 0.75, color: [0.75, 0.75, 0.75] },
+      { t: 1, color: [1, 1, 1] },
+    ];
+
+    for (let t = 0; t <= 1; t += 0.1) {
+      const color = interpolateGradient(t, gradient);
+      assertValidColor(color);
+    }
+  });
+
+  it('returns exact color at stop positions', () => {
+    for (const stop of multiStopGradient) {
+      const color = interpolateGradient(stop.t, multiStopGradient);
+      assertColorEquals(color, stop.color, 0.01);
+    }
+  });
+
+  it('produces smooth transitions', () => {
+    const colors: Color[] = [];
+    for (let t = 0; t <= 1; t += 0.1) {
+      colors.push(interpolateGradient(t, simpleGradient));
+    }
+
+    // Check that adjacent colors are not too different (smooth gradient)
+    for (let i = 1; i < colors.length; i++) {
+      const distance = Math.sqrt(
+        Math.pow(colors[i][0] - colors[i - 1][0], 2) +
+        Math.pow(colors[i][1] - colors[i - 1][1], 2) +
+        Math.pow(colors[i][2] - colors[i - 1][2], 2)
+      );
+      expect(distance).toBeLessThan(0.3);
+    }
+  });
+
+  it('handles stops with zero segment length', () => {
+    // Edge case: two stops at same position (shouldn't happen in practice)
+    const gradient: ColorStop[] = [
+      { t: 0, color: [0, 0, 0] },
+      { t: 0.5, color: [0.5, 0.5, 0.5] },
+      { t: 0.5, color: [0.6, 0.6, 0.6] },
+      { t: 1, color: [1, 1, 1] },
+    ];
+
+    const color = interpolateGradient(0.5, gradient);
+    assertValidColor(color);
+  });
+});
+
+describe('scaleToGradient', () => {
+  const gradient: ColorStop[] = [
+    { t: 0, color: [0, 0, 0] },
+    { t: 1, color: [1, 1, 1] },
+  ];
+
+  describe('linear scaling', () => {
+    it('maps 0 to first color', () => {
+      const color = scaleToGradient(0, 100, gradient);
+      assertColorEquals(color, [0, 0, 0], 0.01);
+    });
+
+    it('maps maxValue to last color', () => {
+      const color = scaleToGradient(100, 100, gradient);
+      assertColorEquals(color, [1, 1, 1], 0.01);
+    });
+
+    it('maps midpoint to middle color', () => {
+      const color = scaleToGradient(50, 100, gradient);
+      assertColorEquals(color, [0.5, 0.5, 0.5], 0.01);
+    });
+
+    it('handles maxValue of 0', () => {
+      const color = scaleToGradient(0, 0, gradient);
+      assertColorEquals(color, [0, 0, 0], 0.01);
+    });
+
+    it('produces linear progression', () => {
+      const max = 100;
+      const colors: Color[] = [];
+      for (let v = 0; v <= max; v += 10) {
+        colors.push(scaleToGradient(v, max, gradient));
+      }
+
+      // Check equal spacing in color space
+      for (let i = 2; i < colors.length; i++) {
+        const diff1 = colors[i - 1][0] - colors[i - 2][0];
+        const diff2 = colors[i][0] - colors[i - 1][0];
+        expect(diff1).toBeCloseTo(diff2, 2);
+      }
+    });
+  });
+
+  describe('logarithmic scaling', () => {
+    it('maps 0 to first color', () => {
+      const color = scaleToGradient(0, 100, gradient, { useLog: true });
+      assertColorEquals(color, [0, 0, 0], 0.01);
+    });
+
+    it('maps maxValue to last color', () => {
+      const color = scaleToGradient(100, 100, gradient, { useLog: true });
+      assertColorEquals(color, [1, 1, 1], 0.01);
+    });
+
+    it('produces non-linear progression', () => {
+      const max = 100;
+      const color1 = scaleToGradient(1, max, gradient, { useLog: true });
+      const color10 = scaleToGradient(10, max, gradient, { useLog: true });
+      const color91 = scaleToGradient(91, max, gradient, { useLog: true });
+      const color100 = scaleToGradient(100, max, gradient, { useLog: true });
+
+      // Difference between 1 and 10 should be greater than between 91 and 100
+      const diff1to10 = Math.abs(color10[0] - color1[0]);
+      const diff91to100 = Math.abs(color100[0] - color91[0]);
+
+      expect(diff1to10).toBeGreaterThan(diff91to100);
+    });
+
+    it('handles small values correctly', () => {
+      const color = scaleToGradient(1, 1000, gradient, { useLog: true });
+      assertValidColor(color);
+      // Should be closer to the start than with linear scale
+      const linearColor = scaleToGradient(1, 1000, gradient);
+      expect(color[0]).toBeGreaterThan(linearColor[0]);
+    });
+  });
+
+  it('works with multi-stop gradients', () => {
+    const multiStop: ColorStop[] = [
+      { t: 0, color: [1, 0, 0] },
+      { t: 0.5, color: [0, 1, 0] },
+      { t: 1, color: [0, 0, 1] },
+    ];
+
+    for (let v = 0; v <= 100; v += 10) {
+      const color = scaleToGradient(v, 100, multiStop);
+      assertValidColor(color);
+    }
+  });
+
+  it('produces valid colors for all inputs', () => {
+    const max = 1000;
+    for (let v = 0; v <= max; v += 50) {
+      const linearColor = scaleToGradient(v, max, gradient);
+      const logColor = scaleToGradient(v, max, gradient, { useLog: true });
+      assertValidColor(linearColor);
+      assertValidColor(logColor);
+    }
   });
 });
 
