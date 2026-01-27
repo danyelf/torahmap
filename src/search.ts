@@ -443,7 +443,8 @@ function createSnippetAtPosition(text: string, matchStart: number, matchLen: num
   const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
   const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
 
-  const matchEnd = matchStart + matchLen;
+  // Bounds validation: ensure matchEnd doesn't exceed text length
+  const matchEnd = Math.min(matchStart + matchLen, text.length);
 
   let start = Math.max(0, matchStart - contextBefore);
   let end = Math.min(text.length, start + maxLen);
@@ -535,7 +536,8 @@ function createSnippet(text: string, matchIdx: number, matchLen: number, isHebre
   if (isHebrew) {
     origMatchStart = mapStrippedToOriginal(text, matchIdx);
     const nikkudInMatch = countNikkudInRange(text, origMatchStart, matchLen);
-    origMatchEnd = origMatchStart + matchLen + nikkudInMatch;
+    // Bounds validation: ensure origMatchEnd doesn't exceed text length
+    origMatchEnd = Math.min(origMatchStart + matchLen + nikkudInMatch, text.length);
   }
 
   let start = Math.max(0, origMatchStart - contextBefore);
