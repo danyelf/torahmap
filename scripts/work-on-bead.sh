@@ -37,8 +37,20 @@ RELATIVE_WORKTREE_PATH="../${REPO_NAME}-worktrees/${BEAD_ID}"
 # Check if worktree already exists
 if [ -d "$WORKTREE_PATH" ]; then
   echo "Worktree already exists at $WORKTREE_PATH"
-  echo "Launching Claude in existing worktree..."
   cd "$WORKTREE_PATH"
+
+  # Wait for daemon to finish any pending syncs (check up to 3 times)
+  for i in {1..3}; do
+    if bd sync --status | grep -q "Pending changes: none"; then
+      break
+    fi
+    echo "Waiting for daemon to finish syncing..."
+    sleep 2
+  done
+
+  echo "Syncing beads data from remote..."
+  bd sync
+  echo "Launching Claude in existing worktree..."
   exec claude --permission-mode bypassPermissions "work on $BEAD_ID"
 fi
 
@@ -60,6 +72,19 @@ bd worktree create "$RELATIVE_WORKTREE_PATH" --branch "$BRANCH_NAME"
 
 # Change to worktree and run claude
 cd "$WORKTREE_PATH"
+
+# Wait for daemon to finish any pending syncs (check up to 3 times)
+for i in {1..3}; do
+  if bd sync --status | grep -q "Pending changes: none"; then
+    break
+  fi
+  echo "Waiting for daemon to finish syncing..."
+  sleep 2
+done
+
+# Sync beads data from remote before starting work
+echo "Syncing beads data from remote..."
+bd sync
 
 # Set terminal tab title
 echo -ne "\033]0;${REPO_NAME}: ${BEAD_ID}\007"
