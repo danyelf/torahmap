@@ -166,7 +166,61 @@ function normalizeWikipediaEntry(
     }));
   }
 
-  // Handle chapter range: "2-9"
+  // Handle comma-separated chapter ranges: "1-14,16-40" or "1-4,6-21"
+  if (wiki.chapters.includes(",")) {
+    const ranges = wiki.chapters.split(",").map((r) => r.trim());
+    const results: SourceEntry[] = [];
+
+    for (const range of ranges) {
+      if (range.includes("-")) {
+        // Range like "1-14"
+        const [startStr, endStr] = range.split("-");
+        const startChapter = parseInt(startStr.trim(), 10);
+        const endChapter = parseInt(endStr.trim(), 10);
+
+        if (
+          isNaN(startChapter) ||
+          isNaN(endChapter) ||
+          startChapter < 1 ||
+          endChapter > book.chapters.length ||
+          startChapter > endChapter
+        ) {
+          throw new Error(
+            `Invalid chapter range: ${range} in ${wiki.chapters} for book ${wiki.book}`
+          );
+        }
+
+        for (let ch = startChapter; ch <= endChapter; ch++) {
+          results.push({
+            book: wiki.book,
+            chapter: ch,
+            verses,
+            dating: { min, max },
+            note,
+          });
+        }
+      } else {
+        // Single chapter like "15"
+        const chapter = parseInt(range, 10);
+        if (isNaN(chapter) || chapter < 1 || chapter > book.chapters.length) {
+          throw new Error(
+            `Invalid chapter number: ${range} in ${wiki.chapters} for book ${wiki.book}`
+          );
+        }
+        results.push({
+          book: wiki.book,
+          chapter,
+          verses,
+          dating: { min, max },
+          note,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  // Handle single chapter range: "2-9"
   if (wiki.chapters.includes("-")) {
     const [startStr, endStr] = wiki.chapters.split("-");
     const startChapter = parseInt(startStr.trim(), 10);
