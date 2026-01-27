@@ -1,36 +1,560 @@
-{
-  "$schema": "Text dating source format",
-  "$comment": "This file contains estimated dating ranges for biblical text passages. Each entry specifies a book, chapter, verse range, date range (BCE as negative, CE as positive), and a note explaining the source/dating. The generate-text-dating.ts script expands these ranges into per-verse runtime data.",
-  "entries": [
-    {
-      "book": "Genesis",
-      "chapter": 1,
-      "verses": "*",
-      "dating": {
-        "min": -950,
-        "max": -900
-      },
-      "note": "P source (Priestly)"
-    },
-    {
-      "book": "Genesis",
-      "chapter": 2,
-      "verses": "4-25",
-      "dating": {
-        "min": -1000,
-        "max": -950
-      },
-      "note": "J source (Yahwist)"
-    },
-    {
-      "book": "Genesis",
-      "chapter": 2,
-      "verses": "1-3",
-      "dating": {
-        "min": -950,
-        "max": -900
-      },
-      "note": "P source (Priestly)"
-    }
-  ]
-}
+[
+  {
+    "book": "Exodus",
+    "chapters": "15",
+    "verses": "all",
+    "era": "pre_monarchic",
+    "date_bce": 1250,
+    "note": "Song of the Sea - Late 13th century BCE, one of the earliest Hebrew poems.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Numbers",
+    "chapters": "24",
+    "verses": "all",
+    "era": "pre_monarchic",
+    "date_bce": 1000,
+    "note": "Balaam's oracle - 11th-10th century BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Deuteronomy",
+    "chapters": "32",
+    "verses": "1-43",
+    "era": "pre_monarchic",
+    "date_bce": 1100,
+    "note": "Song of Moses - 12th-8th century BCE (not including editorializing layer of 32:44-55).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Judges",
+    "chapters": "5",
+    "verses": "all",
+    "era": "pre_monarchic",
+    "date_bce": 1100,
+    "note": "Song of Deborah - Late 12th-late 11th century BCE (alternative datings to monarchic period have been advanced).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Psalms",
+    "chapters": "29",
+    "verses": "all",
+    "era": "pre_monarchic",
+    "date_bce": 1000,
+    "note": "Psalm 29 specifically dated to 12th-10th century BCE, one of the earliest psalms.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Genesis",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "Post-exilic work combining Priestly and non-Priestly material. Final form reached in Persian period.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Exodus",
+    "chapters": "1-14,16-40",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "Anthology drawn from nearly all periods of Israel's history, reaching final form in Persian period.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Leviticus",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Entirely Priestly material dating from the exilic/post-exilic period.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Numbers",
+    "chapters": "1-23,25-36",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "Final form reached in Persian period, combining material from various periods.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Numbers",
+    "chapters": "6",
+    "verses": "24-26",
+    "era": "late_monarchic",
+    "date_bce": 600,
+    "note": "Priestly Blessing - Late 7th-early 6th century BCE. From oldest surviving Biblical text, the Ketef Hinnom scrolls.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Deuteronomy",
+    "chapters": "5-26",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 620,
+    "note": "Core religious laws from reign of Josiah (late 7th century BCE).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Deuteronomy",
+    "chapters": "1-4,29-30",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Expanded with addition of chapters 1-4 and 29-30 to serve as introduction to Deuteronomistic history.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Deuteronomy",
+    "chapters": "19-25,27,31-34",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "Revised with expansions to chapters 19-25 and addition of chapters 27 and 31-34 to serve as conclusion to the Torah.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Joshua",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 620,
+    "note": "Part of Deuteronomistic history, first edition during Josiah's reign (late 7th century BCE).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Joshua",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Completion of Deuteronomistic history during Babylonian exile (6th century BCE).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Judges",
+    "chapters": "1-4,6-21",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 620,
+    "note": "Part of Deuteronomistic history, first edition during Josiah's reign.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Judges",
+    "chapters": "1-4,6-21",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Completion of Deuteronomistic history during Babylonian exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "I Samuel",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 620,
+    "note": "Part of Deuteronomistic history, first edition during Josiah's reign.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "I Samuel",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Completion of Deuteronomistic history during Babylonian exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "II Samuel",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 620,
+    "note": "Part of Deuteronomistic history, first edition during Josiah's reign.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "II Samuel",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Completion of Deuteronomistic history during Babylonian exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "I Kings",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 620,
+    "note": "Part of Deuteronomistic history, first edition during Josiah's reign.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "I Kings",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Completion of Deuteronomistic history during Babylonian exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "II Kings",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 620,
+    "note": "Part of Deuteronomistic history, first edition during Josiah's reign.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "II Kings",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Completion of Deuteronomistic history during Babylonian exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Isaiah",
+    "chapters": "1-39",
+    "verses": "all",
+    "era": "early_monarchic",
+    "date_bce": 740,
+    "note": "Proto-Isaiah/First Isaiah: Original 8th century BCE Isaiah material (late 8th-early 7th century).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Isaiah",
+    "chapters": "40-55",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 540,
+    "note": "Deutero-Isaiah/Second Isaiah: Anonymous prophet living in Babylon during exile, active around mid-6th century BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Isaiah",
+    "chapters": "56-66",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 520,
+    "note": "Trito-Isaiah/Third Isaiah: Anonymous author(s) in Jerusalem immediately after the exile.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Jeremiah",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 600,
+    "note": "Jeremiah active in last decade of 7th century and first decades of 6th century BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Jeremiah",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "Later Masoretic Hebrew version finalized in Persian period.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Ezekiel",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 580,
+    "note": "Ezekiel active in Babylon 592-571 BCE. Book reflects historic Ezekiel with significant additions by later followers.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Hosea",
+    "chapters": "all",
+    "verses": "all",
+    "era": "early_monarchic",
+    "date_bce": 750,
+    "note": "Second half of 8th century BCE (late 8th-early 7th).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Hosea",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Expansion and reshaping during exilic period (6th century BCE).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Joel",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 400,
+    "note": "Late Persian or Hellenistic period, between 450 and 350 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Amos",
+    "chapters": "2-9",
+    "verses": "6-end",
+    "era": "early_monarchic",
+    "date_bce": 760,
+    "note": "Initial composition of earliest layer (Amos 2:6-9:10), late 8th-early 7th century BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Amos",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Expansion and reshaping during exilic period (6th century BCE).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Obadiah",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 586,
+    "note": "Core around the time of the fall of Jerusalem in 586 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Jonah",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 350,
+    "note": "Persian or Hellenistic period, no later than 2nd century BCE. Regarded as fictional by scholars.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Micah",
+    "chapters": "1-3",
+    "verses": "all",
+    "era": "early_monarchic",
+    "date_bce": 725,
+    "note": "Original 8th century material, approximately 750-700 BCE (late 8th-early 7th century).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Micah",
+    "chapters": "4-7",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Expansion and reshaping during exilic period (6th century BCE).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Nahum",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 612,
+    "note": "Oracle concerning Nineveh, written around the Assyrian city's destruction in 612 BCE (7th century).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Habakkuk",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 605,
+    "note": "Possibly shortly before the Battle of Carchemish in 605 BCE (7th century).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Zephaniah",
+    "chapters": "all",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 630,
+    "note": "Reign of Josiah (c. 649-609 BCE), 7th century.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Zephaniah",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 550,
+    "note": "Expansion and reshaping during exilic period (6th century BCE).",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Haggai",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 520,
+    "note": "Self-dated to second year of Darius the Great, 520 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Zechariah",
+    "chapters": "1-8",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 520,
+    "note": "Contemporary with Haggai, 520 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Zechariah",
+    "chapters": "9-14",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "From the 5th century BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Malachi",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "5th century BCE, contemporaneous or immediately prior to missions of Nehemiah and Ezra.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Psalms",
+    "chapters": "1-89",
+    "verses": "all",
+    "era": "late_monarchic",
+    "date_bce": 650,
+    "note": "First two-thirds of psalter predominantly pre-exilic (before 586 BCE). Early collection (psalms 'of David') ending with Psalm 89 possibly compiled during exilic period.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Psalms",
+    "chapters": "90-150",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 350,
+    "note": "Most individual psalms making up final third predominantly post-exilic. Final collection given modern shape and division into five parts in post-exilic period.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Proverbs",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 350,
+    "note": "Possibly written in 4th or even 5th century, reflects contact with Greek culture.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Job",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 350,
+    "note": "Possibly written in 4th or even 5th century, reflects contact with Greek culture.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Song of Songs",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 350,
+    "note": "Possibly written in 4th or even 5th century, reflects contact with Greek culture. Could have been composed any time after 6th century BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Ruth",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 450,
+    "note": "Commonly dated to the Persian period.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Lamentations",
+    "chapters": "all",
+    "verses": "all",
+    "era": "exilic",
+    "date_bce": 586,
+    "note": "Generally accepted that destruction of Jerusalem by Babylon in 586 BCE forms the background.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Ecclesiastes",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 300,
+    "note": "Possibly written in 4th or even 5th century, but seems to reflect contact with Greek culture.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Esther",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 350,
+    "note": "Dated to 3rd or 4th centuries BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Daniel",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 164,
+    "note": "Between 168 and 164 BCE, precisely dated thanks to veiled prophecy of death of Greek king of Syria.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Ezra",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 250,
+    "note": "Origins in Persian period, may have reached final form as late as Ptolemaic period, c. 300-200 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "Nehemiah",
+    "chapters": "all",
+    "verses": "all",
+    "era": "hellenistic",
+    "date_bce": 250,
+    "note": "Origins in Persian period, may have reached final form as late as Ptolemaic period, c. 300-200 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "I Chronicles",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 325,
+    "note": "Composed between 400 and 250 BCE, probably in period 350-300 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  },
+  {
+    "book": "II Chronicles",
+    "chapters": "all",
+    "verses": "all",
+    "era": "persian",
+    "date_bce": 325,
+    "note": "Composed between 400 and 250 BCE, probably in period 350-300 BCE.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  }
+]
