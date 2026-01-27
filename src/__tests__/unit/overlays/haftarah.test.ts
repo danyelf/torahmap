@@ -156,12 +156,14 @@ describe('Haftarah Overlay', () => {
     });
 
     it('handles fetch errors gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockResolvedValue({
         ok: false,
         status: 404,
       } as Response);
 
       await expect(haftarahOverlay.init?.()).resolves.not.toThrow();
+      consoleSpy.mockRestore();
     });
   });
 

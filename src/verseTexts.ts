@@ -20,7 +20,6 @@ export async function loadAllVerseTexts(): Promise<VerseTexts> {
   }
 
   const verseTexts: VerseTexts = await response.json();
-  console.log(`Loaded verse texts for ${Object.keys(verseTexts).length} books`);
   return verseTexts;
 }
 

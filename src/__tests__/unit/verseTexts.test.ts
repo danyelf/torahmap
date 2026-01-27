@@ -80,28 +80,6 @@ describe('verseTexts', () => {
         expect(fetchSpy).toHaveBeenCalledWith('/data/all-texts.json');
       });
 
-      it('logs success message with book count', async () => {
-        const consoleSpy = vi.spyOn(console, 'log');
-        const mockData: VerseTexts = {
-          'Genesis': { '1': { '1': { he: '', en: '' } } },
-          'Exodus': { '1': { '1': { he: '', en: '' } } },
-          'Leviticus': { '1': { '1': { he: '', en: '' } } },
-        };
-
-        global.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response)
-        );
-
-        await loadAllVerseTexts();
-
-        expect(consoleSpy).toHaveBeenCalledWith('Loaded verse texts for 3 books');
-        consoleSpy.mockRestore();
-      });
-
       it('returns nested structure with correct hierarchy', async () => {
         const mockData: VerseTexts = {
           'Genesis': {
@@ -130,23 +108,6 @@ describe('verseTexts', () => {
         expect(result['Genesis']['1']['1']).toBeDefined();
         expect(result['Genesis']['1']['1'].he).toBe('text1');
         expect(result['Genesis']['1']['1'].en).toBe('text1');
-      });
-
-      it('handles empty JSON response', async () => {
-        const consoleSpy = vi.spyOn(console, 'log');
-        global.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({}),
-          } as Response)
-        );
-
-        const result = await loadAllVerseTexts();
-
-        expect(result).toEqual({});
-        expect(consoleSpy).toHaveBeenCalledWith('Loaded verse texts for 0 books');
-        consoleSpy.mockRestore();
       });
 
       it('handles large dataset', async () => {
@@ -183,7 +144,7 @@ describe('verseTexts', () => {
 
     describe('error handling', () => {
       it('handles 404 response', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error');
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         global.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
@@ -200,7 +161,7 @@ describe('verseTexts', () => {
       });
 
       it('handles 500 response', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error');
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         global.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
@@ -217,7 +178,7 @@ describe('verseTexts', () => {
       });
 
       it('handles network error', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error');
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         global.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
@@ -252,7 +213,7 @@ describe('verseTexts', () => {
       });
 
       it('returns empty object on error (not null)', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error');
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         global.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
@@ -782,7 +743,7 @@ describe('verseTexts', () => {
     });
 
     it('handles load failure gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error');
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,

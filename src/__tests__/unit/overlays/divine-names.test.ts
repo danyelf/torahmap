@@ -62,6 +62,7 @@ describe('Divine Names Overlay', () => {
     });
 
     it('handles fetch errors gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -69,9 +70,11 @@ describe('Divine Names Overlay', () => {
 
       // Should not throw
       await expect(divineNamesOverlay.init?.()).resolves.not.toThrow();
+      consoleSpy.mockRestore();
     });
 
     it('handles JSON parse errors gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -80,13 +83,16 @@ describe('Divine Names Overlay', () => {
 
       // Should not throw
       await expect(divineNamesOverlay.init?.()).resolves.not.toThrow();
+      consoleSpy.mockRestore();
     });
 
     it('handles network errors gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       // Should not throw
       await expect(divineNamesOverlay.init?.()).resolves.not.toThrow();
+      consoleSpy.mockRestore();
     });
   });
 

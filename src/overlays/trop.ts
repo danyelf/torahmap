@@ -246,8 +246,6 @@ export const tropOverlay: Overlay = {
 export function configure(config: { verseTexts: VerseTexts }): void {
   tropIndex = buildTropIndex(config.verseTexts);
   tropByFrequency = getTropByFrequency(tropIndex);
-  console.log(`Built trop index: ${tropByFrequency.length} marks found`);
-  console.log('Rarest trop:', tropByFrequency.slice(0, 5).map(t => `${t.name} (${t.totalCount})`).join(', '));
 }
 
 // Get selected trop for sidebar highlighting

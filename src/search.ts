@@ -92,7 +92,6 @@ export async function loadLemmaData(): Promise<void> {
     if (wordRes.ok && verseRes.ok) {
       wordLemmas = await wordRes.json();
       verseLemmas = await verseRes.json();
-      console.log('Lemma data loaded for Hebrew canonicalization');
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
     }
@@ -183,8 +182,6 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
       }
     }
   }
-
-  console.log(`Search index built with ${searchIndex.length} verses`);
 }
 
 /**

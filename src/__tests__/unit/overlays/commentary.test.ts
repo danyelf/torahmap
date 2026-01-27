@@ -88,6 +88,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('handles fetch errors gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -95,9 +96,11 @@ describe('Commentary Overlay', () => {
 
       // Should not throw
       await expect(commentaryOverlay.init?.()).resolves.not.toThrow();
+      consoleSpy.mockRestore();
     });
 
     it('handles JSON parse errors gracefully', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -106,6 +109,7 @@ describe('Commentary Overlay', () => {
 
       // Should not throw
       await expect(commentaryOverlay.init?.()).resolves.not.toThrow();
+      consoleSpy.mockRestore();
     });
   });
 

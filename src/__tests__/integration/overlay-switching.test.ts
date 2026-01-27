@@ -639,6 +639,7 @@ describe('Overlay Switching Integration', () => {
 
   describe('Error Handling', () => {
     it('handles fetch failure gracefully during init', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       // Mock fetch to fail
       global.fetch = vi.fn(() => Promise.resolve({
         ok: false,
@@ -654,6 +655,7 @@ describe('Overlay Switching Integration', () => {
       const nullColors = lastColors.filter(c => c === null);
       // Most or all colors should be null since data failed to load
       expect(nullColors.length).toBeGreaterThan(0);
+      consoleSpy.mockRestore();
     });
 
     it('handles malformed data gracefully', async () => {
