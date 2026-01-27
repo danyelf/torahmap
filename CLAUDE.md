@@ -317,6 +317,22 @@ python3 scripts/process_sefaria_links_v2.py
 | Trop selector | Choose cantillation mark to visualize |
 | Search box | Type to search Hebrew/English text with live results |
 
+## Worktree Workflow
+
+For feature development, use the worktree workflow to avoid conflicts:
+
+```bash
+# Start work on a bead
+./scripts/work-on-bead.sh tm-xxx
+
+# ... do your work in the isolated worktree ...
+
+# When done, land the changes
+./scripts/land-bead.sh
+```
+
+The `land-bead.sh` script handles the entire merge and cleanup process, preventing beads file conflicts.
+
 ## License
 
 MIT
