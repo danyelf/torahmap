@@ -2,11 +2,9 @@
 
 #hebrew-keyboard-container {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  /* Position is set dynamically in JS to be next to controls panel */
   width: 500px;
-  max-width: 90vw;
+  max-width: calc(100vw - 320px); /* Leave room for controls panel + gap */
   z-index: 1000;
   display: none;
   background: rgba(0, 0, 0, 0.95);

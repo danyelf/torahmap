@@ -60,8 +60,23 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
   // Sync keyboard with input value
   keyboardInstance.setInput(inputElement.value);
 
+  // Position keyboard next to the controls panel
+  positionKeyboard(inputElement, container);
+
   // Show keyboard
   container.style.display = 'block';
+}
+
+function positionKeyboard(inputElement: HTMLInputElement, container: HTMLElement): void {
+  // Get the controls panel position
+  const controlsPanel = document.getElementById('controls');
+  if (!controlsPanel) return;
+
+  const controlsRect = controlsPanel.getBoundingClientRect();
+
+  // Position keyboard to the right of controls panel with some gap
+  container.style.left = `${controlsRect.right + 16}px`;
+  container.style.top = `${controlsRect.top}px`;
 }
 
 function handleBackspace(): void {
