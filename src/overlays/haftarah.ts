@@ -473,4 +473,8 @@ export const haftarahOverlay: Overlay = {
       }
     }
   },
+
+  getHelpText(): string {
+    return 'Colors Torah portions and their corresponding haftarah readings. Includes weekly parshiot, holidays, and special Shabbatot with Ashkenazi/Sephardi customs.';
+  },
 };

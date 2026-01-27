@@ -461,4 +461,8 @@ export const searchOverlay: Overlay = {
   highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment | string {
     return highlightSearchTerms(text, language);
   },
+
+  getHelpText(): string {
+    return 'Search Hebrew or English text. Matching verses are highlighted on the map.';
+  },
 };

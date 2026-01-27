@@ -151,6 +151,10 @@ export const commentaryOverlay: Overlay = {
     const categoryName = currentCategory === 'total' ? 'linked texts' : `${currentCategory} links`;
     return `${count} ${categoryName}`;
   },
+
+  getHelpText(): string {
+    return 'Heatmap showing commentary density from Sefaria. Filter by source type (Talmud, Midrash, etc.).';
+  },
 };
 
 export function configure(config: { verses: VerseLayout[] }): void {

@@ -55,4 +55,8 @@ export const divineNamesOverlay: Overlay = {
     const code = data[verse.book]?.[verse.chapter - 1]?.[verse.verse - 1] ?? 0;
     return code > 0 ? LABELS[code] : null;
   },
+
+  getHelpText(): string {
+    return 'Colors Torah verses by divine name usage: YHWH (blue), Elohim (red), both (purple).';
+  },
 };

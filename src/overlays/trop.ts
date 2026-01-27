@@ -249,6 +249,10 @@ export const tropOverlay: Overlay = {
     }
     return highlightTropInText(text, selectedTrop.unicode);
   },
+
+  getHelpText(): string {
+    return 'Visualize cantillation marks (trope). Select a mark to see where it appears throughout the Tanakh.';
+  },
 };
 
 export function configure(config: { verseTexts: VerseTexts }): void {

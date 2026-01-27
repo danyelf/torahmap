@@ -72,4 +72,9 @@ export interface Overlay {
 
   // Provide overlay-specific link subtitle (e.g., category-specific commentary counts)
   getLinkSubtitle?(verse: VerseIdentity): string | null;
+
+  // Help text - displayed in the help modal's "Overlays" tab
+  // Should be a concise (1-2 sentence) description of what this overlay does
+  // Returns plain text or HTML string
+  getHelpText?(): string;
 }

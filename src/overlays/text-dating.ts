@@ -194,6 +194,10 @@ export const textDatingOverlay: Overlay = {
       <br>${noteHtml}
     `;
   },
+
+  getHelpText(): string {
+    return 'Visualizes estimated composition dates using scholarly consensus. Shows 6 historical periods from Pre-Monarchic (1400-1000 BCE) through Hellenistic (331-164 BCE) with geological metaphor coloring.';
+  },
 };
 
 /**

@@ -1,12 +1,33 @@
 // Help modal for Torah Map
 import './styles/help.css';
+import { getAllOverlays } from './overlays/index.ts';
 
 const STORAGE_KEY_SEEN = 'torahMap.helpSeen';
 const STORAGE_KEY_TAB = 'torahMap.helpTab';
 
 type TabId = 'overview' | 'controls' | 'overlays';
 
-const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
+/**
+ * Generate overlays tab content dynamically from registered overlays
+ */
+function generateOverlaysContent(): string {
+  const overlays = getAllOverlays();
+
+  if (overlays.length === 0) {
+    return '<p>No overlays registered.</p>';
+  }
+
+  const items = overlays
+    .map(overlay => {
+      const helpText = overlay.getHelpText?.() || 'No description available.';
+      return `<dt>${overlay.name}</dt>\n        <dd>${helpText}</dd>`;
+    })
+    .join('\n\n        ');
+
+  return `<dl class="overlay-list">\n        ${items}\n      </dl>`;
+}
+
+const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => string) }> = {
   overview: {
     title: 'Overview',
     content: `
@@ -40,21 +61,7 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
   },
   overlays: {
     title: 'Overlays',
-    content: `
-      <dl class="overlay-list">
-        <dt>Text Search</dt>
-        <dd>Search Hebrew or English text. Matching verses are highlighted on the map.</dd>
-
-        <dt>Divine Names</dt>
-        <dd>Colors Torah verses by divine name usage: YHWH (blue), Elohim (red), both (purple).</dd>
-
-        <dt>Commentary</dt>
-        <dd>Heatmap showing commentary density from Sefaria. Filter by source type.</dd>
-
-        <dt>Trop</dt>
-        <dd>Visualize cantillation marks (trope). Select a mark to see where it appears.</dd>
-      </dl>
-    `,
+    content: generateOverlaysContent, // Dynamic generation
   },
 };
 
@@ -105,9 +112,10 @@ function switchTab(container: HTMLElement, tabId: TabId): void {
     tab.classList.toggle('active', (tab as HTMLElement).dataset.tab === tabId);
   });
 
-  // Update body content
+  // Update body content (may be static string or dynamic function)
   const body = container.querySelector('.help-body') as HTMLElement;
-  body.innerHTML = TAB_CONTENT[tabId].content;
+  const tabContent = TAB_CONTENT[tabId].content;
+  body.innerHTML = typeof tabContent === 'function' ? tabContent() : tabContent;
 }
 
 export function showHelp(): void {
