@@ -3,10 +3,7 @@
 import type { VerseLayout } from './types.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
-import { getSelectedTrop, highlightTropInText } from './overlays/trop.ts';
-import { highlightSearchTerms } from './overlays/search.ts';
-import { getVerseLinkCount, getCurrentCategory, getVerseCategoryCount } from './overlays/commentary.ts';
-import { getVerseDatingInfo } from './overlays/text-dating.ts';
+import { getVerseLinkCount } from './overlays/commentary.ts';
 
 /**
  * DOM elements that make up the verse details sidebar
@@ -58,8 +55,9 @@ export function getSefariaUrl(
 
   // If viewing commentary overlay with a category filter, open to that category
   if (currentOverlay?.id === 'commentary') {
-    const category = getCurrentCategory();
-    if (category !== 'total') {
+    const urlParams = currentOverlay.getUrlParams?.();
+    const category = urlParams?.cat;
+    if (category) {
       return `${baseUrl}?with=${encodeURIComponent(category)}`;
     }
   }
@@ -112,48 +110,42 @@ export function updateSidebar(
     ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
   }
   if (overlayInfo) {
-    // Show detailed dating info when text-dating overlay is active and verse is pinned
-    if (currentOverlay?.id === 'text-dating' && isPinned) {
-      const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
-      if (datingInfo) {
-        const dateStr = datingInfo.dateRange[0] === datingInfo.dateRange[1]
-          ? `~${datingInfo.dateRange[0]} BCE`
-          : `${datingInfo.dateRange[0]}-${datingInfo.dateRange[1]} BCE`;
-
-        // Parse citation links from note (format: [text](url))
-        const noteHtml = datingInfo.note.replace(
-          /\[([^\]]+)\]\(([^)]+)\)/g,
-          '<a href="$2" target="_blank" rel="noopener">$1</a>'
-        );
-
-        overlayInfo.innerHTML = `
-          <strong>${datingInfo.era}</strong> (${dateStr})
-          <br>${noteHtml}
-        `;
+    // Try overlay-specific sidebar info first (for detailed info when pinned)
+    const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned);
+    if (sidebarInfo) {
+      if (typeof sidebarInfo === 'string') {
+        overlayInfo.innerHTML = sidebarInfo;
       } else {
-        overlayInfo.textContent = '';
+        overlayInfo.replaceChildren(sidebarInfo);
       }
     } else {
-      // Get overlay-specific hover info (e.g., parshah name for Torah verses)
+      // Fall back to hover info (e.g., parshah name for Torah verses)
       const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
       overlayInfo.textContent = hoverInfo || '';
     }
   }
   if (hebrew) {
     const hebrewText = text?.he || 'Loading...';
-    const selectedTrop = getSelectedTrop();
-    if (currentOverlay?.id === 'trop' && selectedTrop) {
-      hebrew.innerHTML = highlightTropInText(hebrewText, selectedTrop.unicode);
-    } else if (currentOverlay?.id === 'search') {
-      hebrew.replaceChildren(highlightSearchTerms(hebrewText, 'he'));
+    const highlighted = currentOverlay?.highlightVerseText?.(hebrewText, 'he');
+    if (highlighted && highlighted !== hebrewText) {
+      if (typeof highlighted === 'string') {
+        hebrew.innerHTML = highlighted;
+      } else {
+        hebrew.replaceChildren(highlighted);
+      }
     } else {
       hebrew.textContent = hebrewText;
     }
   }
   if (english) {
     const englishText = text?.en || 'Loading...';
-    if (currentOverlay?.id === 'search') {
-      english.replaceChildren(highlightSearchTerms(englishText, 'en'));
+    const highlighted = currentOverlay?.highlightVerseText?.(englishText, 'en');
+    if (highlighted && highlighted !== englishText) {
+      if (typeof highlighted === 'string') {
+        english.innerHTML = highlighted;
+      } else {
+        english.replaceChildren(highlighted);
+      }
     } else {
       english.textContent = englishText;
     }
@@ -162,17 +154,12 @@ export function updateSidebar(
     link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
   }
   if (linkSubtitle) {
-    // Show category-specific text when commentary overlay is active
-    if (currentOverlay?.id === 'commentary') {
-      const category = getCurrentCategory();
-      const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
-      if (count) {
-        const categoryName = category === 'total' ? 'linked texts' : `${category} links`;
-        linkSubtitle.textContent = `${count} ${categoryName}`;
-      } else {
-        linkSubtitle.textContent = '';
-      }
+    // Try overlay-specific link subtitle first
+    const overlaySubtitle = currentOverlay?.getLinkSubtitle?.(verse);
+    if (overlaySubtitle) {
+      linkSubtitle.textContent = overlaySubtitle;
     } else {
+      // Fall back to total link count
       const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
       linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
     }

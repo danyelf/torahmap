@@ -49,4 +49,14 @@ export interface Overlay {
   // URL state persistence - for shareable links
   getUrlParams?(): Record<string, string>;
   applyUrlParams?(params: URLSearchParams): void;
+
+  // Sidebar integration - for verse details display
+  // Render overlay-specific info in the sidebar (e.g., dating info, parshah name)
+  renderSidebarInfo?(verse: VerseIdentity, isPinned: boolean): HTMLElement | string | null;
+
+  // Highlight or modify verse text display (e.g., search terms, trop marks)
+  highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment | string;
+
+  // Provide overlay-specific link subtitle (e.g., category-specific commentary counts)
+  getLinkSubtitle?(verse: VerseIdentity): string | null;
 }

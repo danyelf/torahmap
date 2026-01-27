@@ -143,6 +143,14 @@ export const commentaryOverlay: Overlay = {
       updateCallback?.();
     }
   },
+
+  getLinkSubtitle(verse: VerseIdentity): string | null {
+    const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
+    if (!count) return null;
+
+    const categoryName = currentCategory === 'total' ? 'linked texts' : `${currentCategory} links`;
+    return `${count} ${categoryName}`;
+  },
 };
 
 export function configure(config: { verses: VerseLayout[] }): void {

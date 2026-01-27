@@ -3,14 +3,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchOverlay, configure, highlightSearchTerms } from '../../../overlays/search';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
-import { SEARCH_COLORS } from '../../../utils/color';
-import { HIGHLIGHT_CONSTANTS } from '../../../constants';
+import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { Verse, Color } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
-
-const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 
 describe('Search Overlay', () => {
   let testVerses: VerseLayout[];

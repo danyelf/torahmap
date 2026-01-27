@@ -167,6 +167,29 @@ export const textDatingOverlay: Overlay = {
 
     return `${era.name} (${dateStr})\n${note}`;
   },
+
+  renderSidebarInfo(verse: VerseIdentity, isPinned: boolean): HTMLElement | string | null {
+    // Only show detailed info when verse is pinned
+    if (!isPinned) return null;
+
+    const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
+    if (!datingInfo) return null;
+
+    const dateStr = datingInfo.dateRange[0] === datingInfo.dateRange[1]
+      ? `~${datingInfo.dateRange[0]} BCE`
+      : `${datingInfo.dateRange[0]}-${datingInfo.dateRange[1]} BCE`;
+
+    // Parse citation links from note (format: [text](url))
+    const noteHtml = datingInfo.note.replace(
+      /\[([^\]]+)\]\(([^)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener">$1</a>'
+    );
+
+    return `
+      <strong>${datingInfo.era}</strong> (${dateStr})
+      <br>${noteHtml}
+    `;
+  },
 };
 
 /**

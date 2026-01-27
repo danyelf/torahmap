@@ -5,6 +5,8 @@ import {
   rgbToHsl,
   hslToRgb,
   blendColorsHSL,
+  HIGHLIGHT_COLOR,
+  DIM_FACTOR,
   SEARCH_COLORS,
 } from '../../../utils/color';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
@@ -12,6 +14,19 @@ import { TEST_COLORS } from '../../helpers/fixtures';
 import type { Color } from '../../../overlays/types';
 
 describe('color constants', () => {
+  describe('HIGHLIGHT_COLOR', () => {
+    it('is a valid color', () => {
+      assertValidColor(HIGHLIGHT_COLOR);
+    });
+  });
+
+  describe('DIM_FACTOR', () => {
+    it('is a valid dimming factor', () => {
+      expect(DIM_FACTOR).toBeGreaterThan(0);
+      expect(DIM_FACTOR).toBeLessThan(1);
+    });
+  });
+
   describe('SEARCH_COLORS', () => {
     it('contains 5 colors', () => {
       expect(SEARCH_COLORS).toHaveLength(5);

@@ -221,65 +221,65 @@ describe('sidebar', () => {
         vi.resetAllMocks();
       });
 
-      it('adds ?with=Talmud when Talmud category is selected', async () => {
-        const { getCurrentCategory } = await import('../../overlays/commentary');
-        vi.mocked(getCurrentCategory).mockReturnValue('Talmud');
-
-        const mockOverlay = { id: 'commentary' } as any;
+      it('adds ?with=Talmud when Talmud category is selected', () => {
+        const mockOverlay = {
+          id: 'commentary',
+          getUrlParams: () => ({ cat: 'Talmud' }),
+        } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Talmud');
       });
 
-      it('adds ?with=Midrash when Midrash category is selected', async () => {
-        const { getCurrentCategory } = await import('../../overlays/commentary');
-        vi.mocked(getCurrentCategory).mockReturnValue('Midrash');
-
-        const mockOverlay = { id: 'commentary' } as any;
+      it('adds ?with=Midrash when Midrash category is selected', () => {
+        const mockOverlay = {
+          id: 'commentary',
+          getUrlParams: () => ({ cat: 'Midrash' }),
+        } as any;
         const url = getSefariaUrl('Exodus', 20, 2, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Exodus.20.2?with=Midrash');
       });
 
-      it('adds ?with=Halakhah when Halakhah category is selected', async () => {
-        const { getCurrentCategory } = await import('../../overlays/commentary');
-        vi.mocked(getCurrentCategory).mockReturnValue('Halakhah');
-
-        const mockOverlay = { id: 'commentary' } as any;
+      it('adds ?with=Halakhah when Halakhah category is selected', () => {
+        const mockOverlay = {
+          id: 'commentary',
+          getUrlParams: () => ({ cat: 'Halakhah' }),
+        } as any;
         const url = getSefariaUrl('Leviticus', 19, 18, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Leviticus.19.18?with=Halakhah');
       });
 
-      it('encodes category names with spaces', async () => {
-        const { getCurrentCategory } = await import('../../overlays/commentary');
-        vi.mocked(getCurrentCategory).mockReturnValue('Jewish Thought');
-
-        const mockOverlay = { id: 'commentary' } as any;
+      it('encodes category names with spaces', () => {
+        const mockOverlay = {
+          id: 'commentary',
+          getUrlParams: () => ({ cat: 'Jewish Thought' }),
+        } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Jewish%20Thought');
       });
 
-      it('adds ?with=Kabbalah when Kabbalah category is selected', async () => {
-        const { getCurrentCategory } = await import('../../overlays/commentary');
-        vi.mocked(getCurrentCategory).mockReturnValue('Kabbalah');
-
-        const mockOverlay = { id: 'commentary' } as any;
+      it('adds ?with=Kabbalah when Kabbalah category is selected', () => {
+        const mockOverlay = {
+          id: 'commentary',
+          getUrlParams: () => ({ cat: 'Kabbalah' }),
+        } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Kabbalah');
       });
 
-      it('adds ?with=Chasidut when Chasidut category is selected', async () => {
-        const { getCurrentCategory } = await import('../../overlays/commentary');
-        vi.mocked(getCurrentCategory).mockReturnValue('Chasidut');
-
-        const mockOverlay = { id: 'commentary' } as any;
+      it('adds ?with=Chasidut when Chasidut category is selected', () => {
+        const mockOverlay = {
+          id: 'commentary',
+          getUrlParams: () => ({ cat: 'Chasidut' }),
+        } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Chasidut');
       });
 
-      it('adds ?with=Musar when Musar category is selected', async () => {
-        const { getCurrentCategory } = await import('../../overlays/commentary');
-        vi.mocked(getCurrentCategory).mockReturnValue('Musar');
-
-        const mockOverlay = { id: 'commentary' } as any;
+      it('adds ?with=Musar when Musar category is selected', () => {
+        const mockOverlay = {
+          id: 'commentary',
+          getUrlParams: () => ({ cat: 'Musar' }),
+        } as any;
         const url = getSefariaUrl('Proverbs', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Proverbs.1.1?with=Musar');
       });
@@ -597,44 +597,47 @@ describe('sidebar', () => {
     });
 
     describe('special text highlighting', () => {
-      it('highlights trop marks when trop overlay is active', async () => {
-        const { getSelectedTrop, highlightTropInText } = await import('../../overlays/trop.ts');
-        vi.mocked(getSelectedTrop).mockReturnValue({
-          unicode: '\u0591',
-          name: 'Etnachta',
-          hebrewName: 'אתנחתא',
-          totalCount: 100,
-          verses: [],
-        });
-        vi.mocked(highlightTropInText).mockReturnValue('<span>highlighted</span>');
-
+      it('highlights trop marks when trop overlay is active', () => {
         const mockOverlay: Overlay = {
           id: 'trop',
           name: 'Trop Overlay',
           getVerseColor: () => null,
+          highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
+            if (language === 'he') {
+              return '<span>highlighted</span>';
+            }
+            return text;
+          }),
         };
 
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
 
-        expect(highlightTropInText).toHaveBeenCalledWith('בְּרֵאשִׁית', '\u0591');
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he');
         expect(elements.hebrew?.innerHTML).toBe('<span>highlighted</span>');
       });
 
-      it('highlights search terms when search overlay is active', async () => {
-        const { highlightSearchTerms } = await import('../../overlays/search.ts');
+      it('highlights search terms when search overlay is active', () => {
+        const hebrewFragment = document.createDocumentFragment();
+        hebrewFragment.appendChild(document.createTextNode('highlighted hebrew'));
+        const englishFragment = document.createDocumentFragment();
+        englishFragment.appendChild(document.createTextNode('highlighted english'));
 
         const mockOverlay: Overlay = {
           id: 'search',
           name: 'Search Overlay',
           getVerseColor: () => null,
+          highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
+            if (language === 'he') return hebrewFragment;
+            return englishFragment;
+          }),
         };
 
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
 
-        expect(highlightSearchTerms).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he');
-        expect(highlightSearchTerms).toHaveBeenCalledWith('In the beginning', 'en');
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he');
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('In the beginning', 'en');
       });
 
       it('uses plain text when no special overlay is active', () => {

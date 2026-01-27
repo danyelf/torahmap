@@ -457,4 +457,8 @@ export const searchOverlay: Overlay = {
       }
     }
   },
+
+  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment | string {
+    return highlightSearchTerms(text, language);
+  },
 };

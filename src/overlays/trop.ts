@@ -241,6 +241,14 @@ export const tropOverlay: Overlay = {
       }
     }
   },
+
+  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment | string {
+    // Only highlight Hebrew text when trop is selected
+    if (language !== 'he' || !selectedTrop) {
+      return text;
+    }
+    return highlightTropInText(text, selectedTrop.unicode);
+  },
 };
 
 export function configure(config: { verseTexts: VerseTexts }): void {
