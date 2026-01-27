@@ -1,0 +1,83 @@
+/* Text Dating Overlay Styles */
+
+.text-dating-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.text-dating-legend .legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #ccc;
+}
+
+.text-dating-legend .swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.text-dating-legend .label {
+  line-height: 1.2;
+}
+
+.text-dating-legend .legend-note {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Sidebar dating info section */
+.dating-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+}
+
+.dating-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: #aaa;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dating-info .era {
+  font-size: 13px;
+  color: #ccc;
+  margin: 4px 0;
+  font-weight: 500;
+}
+
+.dating-info .estimated-date {
+  font-size: 11px;
+  color: #999;
+  margin: 2px 0;
+}
+
+.dating-info .note {
+  font-size: 11px;
+  color: #bbb;
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.dating-info .citation {
+  margin: 8px 0 0 0;
+}
+
+.dating-info .citation a {
+  font-size: 10px;
+  color: #6b9bd1;
+  text-decoration: none;
+}
+
+.dating-info .citation a:hover {
+  text-decoration: underline;
+}
