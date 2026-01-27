@@ -6,6 +6,7 @@ import { getVerseKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
+import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
@@ -24,6 +25,7 @@ let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
+let keyboardToggle: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
@@ -336,7 +338,8 @@ export const searchOverlay: Overlay = {
   renderControls(container: HTMLElement): void {
     container.innerHTML = `
       <div id="search-container">
-        <input type="text" id="search-input" placeholder="Search Hebrew or English...">
+        <input type="text" id="search-input" class="keyboardInput" placeholder="Search Hebrew or English...">
+        <button id="keyboard-toggle" title="Toggle Hebrew keyboard">א</button>
         <button id="search-clear">&times;</button>
       </div>
       <div id="search-options">
@@ -352,6 +355,7 @@ export const searchOverlay: Overlay = {
 
     searchInput = container.querySelector('#search-input');
     searchClear = container.querySelector('#search-clear');
+    keyboardToggle = container.querySelector('#keyboard-toggle');
     searchResults = container.querySelector('#search-results');
     wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
 
@@ -462,6 +466,19 @@ export const searchOverlay: Overlay = {
         searchResults?.classList.add('visible');
       }
     });
+
+    // Toggle Hebrew keyboard on button click
+    keyboardToggle?.addEventListener('click', () => {
+      if (searchInput) {
+        if (isKeyboardOpen()) {
+          closeHebrewKeyboard();
+          keyboardToggle!.classList.remove('active');
+        } else {
+          createHebrewKeyboard(searchInput);
+          keyboardToggle!.classList.add('active');
+        }
+      }
+    });
   },
 
   renderLegend(container: HTMLElement): void {
@@ -532,6 +549,8 @@ export const searchOverlay: Overlay = {
   },
 
   destroy(): void {
+    // Close Hebrew keyboard
+    closeHebrewKeyboard();
     // Clean up event listener
     if (documentClickHandler) {
       document.removeEventListener('click', documentClickHandler);
@@ -540,6 +559,7 @@ export const searchOverlay: Overlay = {
     // Clear DOM references
     searchInput = null;
     searchClear = null;
+    keyboardToggle = null;
     searchResults = null;
     wholeWordCheckbox = null;
     // Reset state
