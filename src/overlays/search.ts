@@ -233,6 +233,44 @@ function mapNormalizedToOriginalPosition(
 }
 
 /**
+ * Split text into words, treating both whitespace and maqaf (־) as separators
+ * Returns array of {word, start, end} with positions in the normalized text
+ */
+function splitIntoWords(normalizedText: string): Array<{word: string; start: number; end: number}> {
+  const words: Array<{word: string; start: number; end: number}> = [];
+  let start = 0;
+
+  while (start < normalizedText.length) {
+    // Skip separators (whitespace and maqaf U+05BE)
+    while (start < normalizedText.length &&
+           (/\s/.test(normalizedText[start]) || normalizedText.charCodeAt(start) === 0x05BE)) {
+      start++;
+    }
+
+    if (start >= normalizedText.length) break;
+
+    // Find end of word (next separator or end of text)
+    let end = start;
+    while (end < normalizedText.length &&
+           !(/\s/.test(normalizedText[end]) || normalizedText.charCodeAt(end) === 0x05BE)) {
+      end++;
+    }
+
+    if (end > start) {
+      words.push({
+        word: normalizedText.slice(start, end),
+        start,
+        end
+      });
+    }
+
+    start = end;
+  }
+
+  return words;
+}
+
+/**
  * Find all matches for all search terms in the given text
  * Handles Hebrew nikkud stripping and position mapping
  * Respects Hebrew search mode (substring/word/root) and English whole-word setting
@@ -262,64 +300,42 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
       const searchLemmas = termLemmas[termIndex];
       if (!searchLemmas || searchLemmas.length === 0) {
         // No lemmas for search term, fall back to word matching
-        const words = normalizedText.split(/\s+/);
-        let currentPos = 0;
+        const wordEntries = splitIntoWords(normalizedText);
 
-        for (const word of words) {
-          while (currentPos < normalizedText.length && /\s/.test(normalizedText[currentPos])) {
-            currentPos++;
-          }
-
+        for (const {word, start} of wordEntries) {
           if (word === normalizedTerm) {
-            const origStart = mapNormalizedToOriginalPosition(text, currentPos);
-            const origEnd = mapNormalizedToOriginalPosition(text, currentPos + word.length);
+            const origStart = mapNormalizedToOriginalPosition(text, start);
+            const origEnd = mapNormalizedToOriginalPosition(text, start + word.length);
             matches.push({ start: origStart, end: origEnd, termIndex });
           }
-
-          currentPos += word.length;
         }
       } else {
         // Match words that share the same lemmas
-        const words = normalizedText.split(/\s+/);
-        let currentPos = 0;
+        const wordEntries = splitIntoWords(normalizedText);
 
-        for (const word of words) {
-          while (currentPos < normalizedText.length && /\s/.test(normalizedText[currentPos])) {
-            currentPos++;
-          }
-
+        for (const {word, start} of wordEntries) {
           // Look up this word's lemmas
           const wordLemmas = findLemmasForWord(word);
           if (wordLemmas && wordLemmas.some(lemma => searchLemmas.includes(lemma))) {
             // This word shares a lemma with the search term
-            const origStart = mapNormalizedToOriginalPosition(text, currentPos);
-            const origEnd = mapNormalizedToOriginalPosition(text, currentPos + word.length);
+            const origStart = mapNormalizedToOriginalPosition(text, start);
+            const origEnd = mapNormalizedToOriginalPosition(text, start + word.length);
             matches.push({ start: origStart, end: origEnd, termIndex });
           }
-
-          currentPos += word.length;
         }
       }
     } else if (isHebrew && hebrewSearchMode === 'word') {
       // Hebrew whole-word matching
-      const words = normalizedText.split(/\s+/);
-      let currentPos = 0;
+      const wordEntries = splitIntoWords(normalizedText);
 
-      for (const word of words) {
-        // Skip whitespace to find word start in original text
-        while (currentPos < normalizedText.length && /\s/.test(normalizedText[currentPos])) {
-          currentPos++;
-        }
-
+      for (const {word, start} of wordEntries) {
         if (word === normalizedTerm) {
           // Found a match - map to original text position
-          const origStart = mapNormalizedToOriginalPosition(text, currentPos);
-          const origEnd = mapNormalizedToOriginalPosition(text, currentPos + word.length);
+          const origStart = mapNormalizedToOriginalPosition(text, start);
+          const origEnd = mapNormalizedToOriginalPosition(text, start + word.length);
 
           matches.push({ start: origStart, end: origEnd, termIndex });
         }
-
-        currentPos += word.length;
       }
     } else {
       // Substring search (for Hebrew substring mode and English non-whole-word)
