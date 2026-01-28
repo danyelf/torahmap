@@ -24,6 +24,8 @@ let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 // Track which terms have valid lemma data (for root mode visual indicators)
 let termLemmaStatus: boolean[] = [];
+// Track the lemmas found for each term (for root mode hover info)
+let termLemmas: Array<string[] | null> = [];
 
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
@@ -49,17 +51,22 @@ function doSearch(query: string): void {
     currentResults = [];
     matchingTerms = new Map();
     termLemmaStatus = [];
+    termLemmas = [];
   } else {
     const isHebrew = isHebrewQuery(currentTerms[0]);
 
     // Check which terms have lemma data (only relevant for Hebrew root mode)
     if (isHebrew && hebrewSearchMode === 'root') {
-      termLemmaStatus = currentTerms.map(term => {
+      termLemmaStatus = [];
+      termLemmas = [];
+      for (const term of currentTerms) {
         const lemmas = findLemmasForWord(term);
-        return lemmas !== null && lemmas.length > 0;
-      });
+        termLemmaStatus.push(lemmas !== null && lemmas.length > 0);
+        termLemmas.push(lemmas);
+      }
     } else {
       termLemmaStatus = [];
+      termLemmas = [];
     }
 
     // Only use wholeWord for English queries
@@ -252,7 +259,7 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
         if (word === normalizedTerm) {
           // Found a match - map to original text position
           const origStart = mapNormalizedToOriginalPosition(text, currentPos);
-          const origEnd = mapNormalizedToOriginalPosition(text, word.length, origStart);
+          const origEnd = mapNormalizedToOriginalPosition(text, currentPos + word.length);
 
           matches.push({ start: origStart, end: origEnd, termIndex });
         }
@@ -272,7 +279,7 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
 
         if (isHebrew) {
           origStart = mapNormalizedToOriginalPosition(text, idx);
-          origEnd = mapNormalizedToOriginalPosition(text, normalizedTerm.length, origStart);
+          origEnd = mapNormalizedToOriginalPosition(text, idx + normalizedTerm.length);
         }
 
         matches.push({ start: origStart, end: origEnd, termIndex });
@@ -729,9 +736,30 @@ export const searchOverlay: Overlay = {
     const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 
-    // Show which terms matched
-    const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
-    return `Matches: ${matchedTerms}`;
+    // Show which terms matched, with mode-specific formatting
+    const isHebrew = isHebrewQuery(currentTerms[0]);
+
+    if (isHebrew && hebrewSearchMode === 'root') {
+      // For root mode, show which roots were matched
+      const matchedTerms = termIndices.map(i => {
+        const term = currentTerms[i];
+        const lemmas = termLemmas[i];
+        if (lemmas && lemmas.length > 0) {
+          // Found a root - show the search term as the root
+          return `"${stripNikkud(term)}"`;
+        } else {
+          // No root found, fell back to word search
+          return `"${term}"`;
+        }
+      }).join(', ');
+      return `Matches root: ${matchedTerms}`;
+    } else if (isHebrew && hebrewSearchMode === 'word') {
+      const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
+      return `Matches word: ${matchedTerms}`;
+    } else {
+      const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
+      return `Matches: ${matchedTerms}`;
+    }
   },
 
   onUpdate(callback: () => void): void {
@@ -761,6 +789,7 @@ export const searchOverlay: Overlay = {
     wholeWordEnabled = false;
     hebrewSearchMode = 'substring';
     termLemmaStatus = [];
+    termLemmas = [];
     updateCallback = null;
     onVerseClickCallback = null;
   },

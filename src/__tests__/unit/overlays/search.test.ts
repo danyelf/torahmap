@@ -1216,6 +1216,42 @@ describe('Search Overlay', () => {
       expect(marks?.[0]).toContain('God');
       expect(html).not.toContain('<mark>Godly</mark>');
     });
+
+    it('correctly highlights Hebrew words with nikkud in word mode', () => {
+      // Regression test for bug where Hebrew word highlighting was broken
+      // The bug was passing word.length instead of currentPos + word.length
+      // to mapNormalizedToOriginalPosition, causing incorrect highlighting
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      input.value = 'אלהים'; // Search for "God" (without nikkud)
+      input.dispatchEvent(new Event('input'));
+
+      // Switch to word mode
+      const wordRadio = container.querySelector('input[name="hebrew-mode"][value="word"]') as HTMLInputElement;
+      wordRadio.checked = true;
+      wordRadio.dispatchEvent(new Event('change'));
+
+      // Test with the actual verse text from Genesis 1:1
+      const verseText = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים';
+      const result = highlightSearchTerms(verseText, 'he');
+      const html = fragmentToHtml(result);
+
+      // Should contain exactly one <mark> tag
+      const matches = html.match(/<mark[^>]*>([^<]*)<\/mark>/g);
+      expect(matches?.length).toBe(1);
+
+      // The marked text should be "אֱלֹהִים" (with nikkud)
+      expect(matches?.[0]).toContain('אֱלֹהִים');
+
+      // Verify the full highlighted text is correct
+      // It should be: בְּרֵאשִׁית בָּרָא <mark class="term-0">אֱלֹהִים</mark>
+      expect(html).toContain('בְּרֵאשִׁית');
+      expect(html).toContain('בָּרָא');
+      expect(html).toContain('<mark');
+      expect(html).toContain('אֱלֹהִים');
+    });
   });
 
   describe('Color Validation', () => {
