@@ -13,11 +13,13 @@ let maxWordCount = 0;
 
 /**
  * Count Hebrew words in a text by splitting on whitespace
+ * Filters out punctuation-only tokens (e.g., em dashes)
  */
 function countHebrewWords(text: string): number {
   if (!text) return 0;
-  // Split on whitespace and filter empty strings
-  const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+  // Split on whitespace and filter out empty strings and punctuation-only tokens
+  // A word must contain at least one letter character
+  const words = text.trim().split(/\s+/).filter(w => /\p{L}/u.test(w));
   return words.length;
 }
 
