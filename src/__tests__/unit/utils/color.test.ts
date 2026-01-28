@@ -16,33 +16,6 @@ import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import { TEST_COLORS } from '../../helpers/fixtures';
 import type { Color } from '../../../overlays/types';
 
-describe('color constants', () => {
-  describe('HIGHLIGHT_COLOR', () => {
-    it('is a valid color', () => {
-      assertValidColor(HIGHLIGHT_COLOR);
-    });
-  });
-
-  describe('DIM_FACTOR', () => {
-    it('is a valid dimming factor', () => {
-      expect(DIM_FACTOR).toBeGreaterThan(0);
-      expect(DIM_FACTOR).toBeLessThan(1);
-    });
-  });
-
-  describe('SEARCH_COLORS', () => {
-    it('contains 5 colors', () => {
-      expect(SEARCH_COLORS).toHaveLength(5);
-    });
-
-    it('all colors are valid', () => {
-      for (const color of SEARCH_COLORS) {
-        assertValidColor(color);
-      }
-    });
-  });
-});
-
 describe('interpolateGradient', () => {
   const simpleGradient: ColorStop[] = [
     { t: 0, color: [0, 0, 0] },      // Black

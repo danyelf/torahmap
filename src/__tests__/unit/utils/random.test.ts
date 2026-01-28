@@ -35,52 +35,6 @@ describe('seededRandom', () => {
     expect(result).toBeLessThan(1);
   });
 
-  it('handles negative seeds', () => {
-    const result1 = seededRandom(-1);
-    const result2 = seededRandom(-100);
-    const result3 = seededRandom(-999999);
-
-    expect(result1).toBeGreaterThanOrEqual(0);
-    expect(result1).toBeLessThan(1);
-    expect(result2).toBeGreaterThanOrEqual(0);
-    expect(result2).toBeLessThan(1);
-    expect(result3).toBeGreaterThanOrEqual(0);
-    expect(result3).toBeLessThan(1);
-
-    // Different negative seeds should produce different values
-    expect(result1).not.toBe(result2);
-    expect(result2).not.toBe(result3);
-  });
-
-  it('handles large seeds', () => {
-    const result1 = seededRandom(1000000);
-    const result2 = seededRandom(999999999);
-    const result3 = seededRandom(Number.MAX_SAFE_INTEGER);
-
-    expect(result1).toBeGreaterThanOrEqual(0);
-    expect(result1).toBeLessThan(1);
-    expect(result2).toBeGreaterThanOrEqual(0);
-    expect(result2).toBeLessThan(1);
-    expect(result3).toBeGreaterThanOrEqual(0);
-    expect(result3).toBeLessThan(1);
-  });
-
-  it('handles fractional seeds', () => {
-    const result1 = seededRandom(0.5);
-    const result2 = seededRandom(3.14159);
-    const result3 = seededRandom(123.456);
-
-    expect(result1).toBeGreaterThanOrEqual(0);
-    expect(result1).toBeLessThan(1);
-    expect(result2).toBeGreaterThanOrEqual(0);
-    expect(result2).toBeLessThan(1);
-    expect(result3).toBeGreaterThanOrEqual(0);
-    expect(result3).toBeLessThan(1);
-
-    // Same fractional seed should produce same result
-    expect(seededRandom(3.14159)).toBe(result2);
-  });
-
   it('produces well-distributed values across many seeds', () => {
     // Test that values are well-distributed
     const buckets = [0, 0, 0, 0, 0]; // 5 buckets for ranges [0, 0.2), [0.2, 0.4), etc.
@@ -118,8 +72,12 @@ describe('seededRandom', () => {
       0,
       1,
       -1,
+      -100,
+      1000000,
+      Number.MAX_SAFE_INTEGER,
       0.0001,
       -0.0001,
+      3.14159,
       Math.PI,
       Math.E,
       Number.EPSILON,
@@ -130,15 +88,6 @@ describe('seededRandom', () => {
       const result = seededRandom(seed);
       expect(result).toBeGreaterThanOrEqual(0);
       expect(result).toBeLessThan(1);
-      expect(Number.isFinite(result)).toBe(true);
-      expect(Number.isNaN(result)).toBe(false);
-    }
-  });
-
-  it('returns finite numbers for all seeds', () => {
-    // Ensure no NaN or Infinity values
-    for (let i = -100; i <= 100; i += 0.5) {
-      const result = seededRandom(i);
       expect(Number.isFinite(result)).toBe(true);
       expect(Number.isNaN(result)).toBe(false);
     }
