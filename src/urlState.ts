@@ -13,6 +13,10 @@ export interface OverlayParams {
   category?: string;
   /** Search overlay: search query */
   q?: string;
+  /** Search overlay: whole word matching */
+  ww?: string;
+  /** Search overlay: Hebrew search mode (substring, word, or root) */
+  hm?: string;
 }
 
 /**
