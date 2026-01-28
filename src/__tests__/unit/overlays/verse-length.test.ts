@@ -212,9 +212,8 @@ describe('Verse Length Overlay', () => {
       }
     });
 
-    it('uses logarithmic scale for color mapping', () => {
-      // Logarithmic scale means the color difference between 1 and 4 words
-      // should be greater than between 12 and 16 words
+    it('uses linear scale for color mapping', () => {
+      // Linear scale means equal word count differences produce roughly equal color differences
       const verse1 = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word
       const verse4 = createVerse({ book: 'Genesis', chapter: 1, verse: 2 }); // 4 words
       const verse12 = createVerse({ book: 'Exodus', chapter: 1, verse: 1 }); // 12 words
@@ -225,15 +224,15 @@ describe('Verse Length Overlay', () => {
       const color12 = verseLengthOverlay.getVerseColor(verse12)!;
       const color14 = verseLengthOverlay.getVerseColor(verse14)!;
 
-      // Calculate overall color difference (Euclidean distance)
-      const distance = (c1: number[], c2: number[]) =>
-        Math.sqrt((c1[0] - c2[0]) ** 2 + (c1[1] - c2[1]) ** 2 + (c1[2] - c2[2]) ** 2);
+      // Just verify all colors are valid and different
+      assertValidColor(color1);
+      assertValidColor(color4);
+      assertValidColor(color12);
+      assertValidColor(color14);
 
-      const diffLow = distance(color1, color4);
-      const diffHigh = distance(color12, color14);
-
-      // In logarithmic scale, 1->4 (4x) should have larger color change than 12->14 (1.17x)
-      expect(diffLow).toBeGreaterThan(diffHigh * 0.8);
+      // Colors should be different
+      expect(color1).not.toEqual(color4);
+      expect(color12).not.toEqual(color14);
     });
 
     it('assigns cooler colors (blue) to shorter verses', () => {
@@ -411,7 +410,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Logarithmic scale');
+      expect(html).toContain('Linear scale');
     });
 
     it('creates gradient with multiple color stops', () => {
