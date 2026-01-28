@@ -215,6 +215,7 @@ function mapNormalizedToOriginalPosition(
 /**
  * Find all matches for all search terms in the given text
  * Handles Hebrew nikkud stripping and position mapping
+ * Respects Hebrew search mode (substring/word/root) and English whole-word setting
  */
 function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): Match[] {
   const matches: Match[] = [];
@@ -224,23 +225,59 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
     const term = terms[termIndex];
     const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
 
-    // Find all occurrences of this term
-    let searchStart = 0;
-    while (true) {
-      const idx = normalizedText.indexOf(normalizedTerm, searchStart);
-      if (idx === -1) break;
-
-      // Map normalized positions back to original text
-      let origStart = idx;
-      let origEnd = idx + normalizedTerm.length;
-
-      if (isHebrew) {
-        origStart = mapNormalizedToOriginalPosition(text, idx);
-        origEnd = mapNormalizedToOriginalPosition(text, normalizedTerm.length, origStart);
+    if (!isHebrew && wholeWordEnabled) {
+      // English whole-word matching using regex
+      const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
+      let match;
+      while ((match = regex.exec(text.toLowerCase())) !== null) {
+        matches.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          termIndex
+        });
       }
+    } else if (isHebrew && (hebrewSearchMode === 'word' || hebrewSearchMode === 'root')) {
+      // Hebrew whole-word matching
+      // Split text into words and find exact matches
+      const words = normalizedText.split(/\s+/);
+      let currentPos = 0;
 
-      matches.push({ start: origStart, end: origEnd, termIndex });
-      searchStart = idx + 1;
+      for (const word of words) {
+        // Skip whitespace to find word start in original text
+        while (currentPos < normalizedText.length && /\s/.test(normalizedText[currentPos])) {
+          currentPos++;
+        }
+
+        if (word === normalizedTerm) {
+          // Found a match - map to original text position
+          const origStart = mapNormalizedToOriginalPosition(text, currentPos);
+          const origEnd = mapNormalizedToOriginalPosition(text, word.length, origStart);
+
+          matches.push({ start: origStart, end: origEnd, termIndex });
+        }
+
+        currentPos += word.length;
+      }
+    } else {
+      // Substring search (for Hebrew substring mode and English non-whole-word)
+      let searchStart = 0;
+      while (true) {
+        const idx = normalizedText.indexOf(normalizedTerm, searchStart);
+        if (idx === -1) break;
+
+        // Map normalized positions back to original text
+        let origStart = idx;
+        let origEnd = idx + normalizedTerm.length;
+
+        if (isHebrew) {
+          origStart = mapNormalizedToOriginalPosition(text, idx);
+          origEnd = mapNormalizedToOriginalPosition(text, normalizedTerm.length, origStart);
+        }
+
+        matches.push({ start: origStart, end: origEnd, termIndex });
+        searchStart = idx + 1;
+      }
     }
   }
 
@@ -443,12 +480,14 @@ export const searchOverlay: Overlay = {
     const updateInputMode = () => {
       if (!searchInput) return;
       const query = searchInput.value;
-      const isHebrew = query.length > 0 && isHebrewQuery(query);
+      const queryIsHebrew = query.length > 0 && isHebrewQuery(query);
+      // Consider it Hebrew mode if the query is Hebrew OR the keyboard is open
+      const isHebrew = queryIsHebrew || isKeyboardOpen();
 
       // Set text direction
       if (query.length === 0) {
-        searchInput.dir = 'ltr';
-      } else if (isHebrew) {
+        searchInput.dir = isKeyboardOpen() ? 'rtl' : 'ltr';
+      } else if (queryIsHebrew) {
         searchInput.dir = 'rtl';
       } else {
         searchInput.dir = 'ltr';
@@ -462,7 +501,7 @@ export const searchOverlay: Overlay = {
         }
       }
 
-      // Show Hebrew mode selector for Hebrew queries
+      // Show Hebrew mode selector for Hebrew queries or when keyboard is open
       if (hebrewModeContainer) {
         hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
       }
@@ -609,6 +648,8 @@ export const searchOverlay: Overlay = {
           createHebrewKeyboard(searchInput);
           keyboardToggle!.classList.add('active');
         }
+        // Update mode selector visibility after keyboard state changes
+        updateInputMode();
       }
     });
   },

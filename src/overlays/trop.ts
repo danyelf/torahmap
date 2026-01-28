@@ -20,7 +20,6 @@ let updateCallback: (() => void) | null = null;
 // Cached values for performance (computed once per trop selection, not per verse)
 let cachedVerseLookup: Map<string, number> = new Map();
 let cachedMaxCount = 1;
-let cachedLogMax = 0;
 let cachedTier: 'rare' | 'uncommon' | 'common' = 'common';
 
 // Colors for trop visualization
@@ -44,7 +43,6 @@ function updateCache(): void {
   for (const loc of selectedTrop.verses) {
     if (loc.count > cachedMaxCount) cachedMaxCount = loc.count;
   }
-  cachedLogMax = Math.log(cachedMaxCount + 1);
 }
 
 // Gradient for uncommon trop (linear purple gradient)
@@ -173,7 +171,6 @@ export const tropOverlay: Overlay = {
     updateCallback = null;
     cachedVerseLookup.clear();
     cachedMaxCount = 1;
-    cachedLogMax = 0;
     cachedTier = 'common';
   },
 

@@ -1165,6 +1165,57 @@ describe('Search Overlay', () => {
       const matches = html.match(/<mark/g);
       expect(matches?.length).toBeGreaterThan(1);
     });
+
+    it('respects Hebrew word mode for highlighting', () => {
+      // Setup with Hebrew word mode
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      input.value = 'אלהים'; // Search term
+      input.dispatchEvent(new Event('input'));
+
+      // Switch to word mode
+      const wordRadio = container.querySelector('input[name="hebrew-mode"][value="word"]') as HTMLInputElement;
+      wordRadio.checked = true;
+      wordRadio.dispatchEvent(new Event('change'));
+
+      // Test verse with the word אֱלֹהִים (with nikkud)
+      // Should highlight only the full word, not substrings
+      const result = highlightSearchTerms('בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת', 'he');
+      const html = fragmentToHtml(result);
+
+      // Should contain exactly one mark for the full word
+      const matches = html.match(/<mark/g);
+      expect(matches?.length).toBe(1);
+      expect(html).toContain('אֱלֹהִים');
+    });
+
+    it('respects English whole-word mode for highlighting', () => {
+      // Setup with whole-word enabled
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      input.value = 'God'; // Search term
+      input.dispatchEvent(new Event('input'));
+
+      // Enable whole-word checkbox
+      const wholeWordCheckbox = container.querySelector('#whole-word-checkbox') as HTMLInputElement;
+      wholeWordCheckbox.checked = true;
+      wholeWordCheckbox.dispatchEvent(new Event('change'));
+
+      // Test verse where "God" appears as full word and as substring
+      // "God" should match but "Godly" should not
+      const result = highlightSearchTerms('God is Godly and good', 'en');
+      const html = fragmentToHtml(result);
+
+      // Should contain only one mark for the whole word "God"
+      const marks = html.match(/<mark[^>]*>([^<]*)<\/mark>/g);
+      expect(marks?.length).toBe(1);
+      expect(marks?.[0]).toContain('God');
+      expect(html).not.toContain('<mark>Godly</mark>');
+    });
   });
 
   describe('Color Validation', () => {

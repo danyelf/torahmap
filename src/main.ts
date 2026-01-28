@@ -5,7 +5,7 @@ declare const __GIT_BRANCH__: string;
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex } from './search.ts';
+import { buildSearchIndex, loadLemmaData } from './search.ts';
 import { initHelp } from './help.ts';
 import {
   parseUrlState,
@@ -69,10 +69,11 @@ async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load Tanakh structure and verse texts in parallel
+  // Load Tanakh structure, verse texts, and lemma data in parallel
   const [torahResponse, verseTexts] = await Promise.all([
     fetch(`${import.meta.env.BASE_URL}data/tanakh-structure.json`),
-    loadAllVerseTexts()
+    loadAllVerseTexts(),
+    loadLemmaData()
   ]);
 
   if (!torahResponse.ok) {
