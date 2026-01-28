@@ -4,6 +4,13 @@
 
 The test suite has **1244 tests** with generally good coverage. However, approximately **20-25% of tests provide minimal value** and could be removed or consolidated without reducing confidence in the codebase. These fall into several categories:
 
+## Cleanup Progress
+
+✅ **Phase 1 Complete** (19 tests removed, 1225 remaining):
+- ✅ Removed infrastructure.test.ts entirely (15 tests)
+- ✅ Removed constant validation tests from color.test.ts (4 tests)
+- ✅ All remaining tests pass
+
 ## Categories of Low-Value Tests
 
 ### 1. Trivial Getter/Setter Tests
@@ -184,16 +191,17 @@ Tests explicitly marked as testing cases that shouldn't occur in practice.
 
 ## Summary by File
 
-| File | Total Tests | Low-Value | % Low-Value | Priority for Cleanup |
-|------|-------------|-----------|-------------|---------------------|
-| mouseState.test.ts | 32 | ~12 | 38% | **HIGH** |
-| random.test.ts | 11 | ~5 | 45% | **HIGH** |
-| camera.test.ts | 18 | ~4 | 22% | MEDIUM |
-| verseColoring.test.ts | 29 | ~5 | 17% | MEDIUM |
-| color.test.ts | 72 | ~15 | 21% | MEDIUM |
-| infrastructure.test.ts | 15 | 15 | 100% | **HIGH** |
+| File | Total Tests | Low-Value | % Low-Value | Priority for Cleanup | Status |
+|------|-------------|-----------|-------------|---------------------|--------|
+| mouseState.test.ts | 32 | ~12 | 38% | **HIGH** | 🔲 TODO |
+| random.test.ts | 11 | ~5 | 45% | **HIGH** | 🔲 TODO |
+| camera.test.ts | 18 | ~4 | 22% | MEDIUM | 🔲 TODO |
+| verseColoring.test.ts | 29 | ~5 | 17% | MEDIUM | 🔲 TODO |
+| color.test.ts | 72 | ~15 | 21% | MEDIUM | ✅ Constants removed (4 tests) |
+| infrastructure.test.ts | 15 | 15 | 100% | **HIGH** | ✅ DELETED |
 
 **Total low-value tests identified: ~250-300 tests (20-24% of test suite)**
+**Progress: 19/300 removed (6%)**
 
 ---
 
