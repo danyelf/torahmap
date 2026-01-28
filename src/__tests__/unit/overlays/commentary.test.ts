@@ -664,19 +664,32 @@ describe('Commentary Overlay', () => {
       await commentaryOverlay.init?.();
     });
 
-    it('resets category to total', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+    it('preserves category selection across destroy/recreate cycles', () => {
+      const container1 = document.createElement('div');
+      commentaryOverlay.renderControls?.(container1);
 
-      const select = container.querySelector('select') as HTMLSelectElement;
-      select.value = 'Midrash';
-      select.dispatchEvent(new Event('change'));
+      const select1 = container1.querySelector('select') as HTMLSelectElement;
+      select1.value = 'Midrash';
+      select1.dispatchEvent(new Event('change'));
 
+      // Verify category is set
+      let params = commentaryOverlay.getUrlParams?.();
+      expect(params).toEqual({ cat: 'Midrash' });
+
+      // Destroy (simulating overlay switch)
       commentaryOverlay.destroy?.();
 
-      // After destroy, should be back to total
-      const params = commentaryOverlay.getUrlParams?.();
-      expect(params).toEqual({});
+      // Category should still be preserved internally
+      params = commentaryOverlay.getUrlParams?.();
+      expect(params).toEqual({ cat: 'Midrash' });
+
+      // Re-render controls (simulating switching back to commentary)
+      const container2 = document.createElement('div');
+      commentaryOverlay.renderControls?.(container2);
+
+      // Verify category is restored in the select element
+      const select2 = container2.querySelector('select') as HTMLSelectElement;
+      expect(select2.value).toBe('Midrash');
     });
 
     it('clears update callback', () => {

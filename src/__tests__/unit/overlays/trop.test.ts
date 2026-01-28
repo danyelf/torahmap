@@ -1060,21 +1060,36 @@ describe('Trop Overlay', () => {
       await tropOverlay.init?.();
     });
 
-    it('clears selected trop', () => {
-      const container = document.createElement('div');
-      tropOverlay.renderControls?.(container);
+    it('preserves selected trop across destroy/recreate cycles', () => {
+      const container1 = document.createElement('div');
+      tropOverlay.renderControls?.(container1);
 
-      const button = container.querySelector('button') as HTMLButtonElement;
-      button.click();
+      const button1 = container1.querySelector('button') as HTMLButtonElement;
+      button1.click();
 
-      expect(getSelectedTrop()).not.toBeNull();
+      const selectedBefore = getSelectedTrop();
+      expect(selectedBefore).not.toBeNull();
+      const tropNameBefore = selectedBefore!.name;
 
+      // Destroy (simulating overlay switch)
       tropOverlay.destroy?.();
 
-      expect(getSelectedTrop()).toBeNull();
+      // Selection should still be preserved internally
+      const selectedAfterDestroy = getSelectedTrop();
+      expect(selectedAfterDestroy).not.toBeNull();
+      expect(selectedAfterDestroy!.name).toBe(tropNameBefore);
+
+      // Re-render controls (simulating switching back to trop)
+      const container2 = document.createElement('div');
+      tropOverlay.renderControls?.(container2);
+
+      // Verify selection is still preserved
+      const selectedAfterRender = getSelectedTrop();
+      expect(selectedAfterRender).not.toBeNull();
+      expect(selectedAfterRender!.name).toBe(tropNameBefore);
     });
 
-    it('returns null color after destroy', () => {
+    it('preserves colors after destroy', () => {
       const container = document.createElement('div');
       tropOverlay.renderControls?.(container);
 
@@ -1085,10 +1100,12 @@ describe('Trop Overlay', () => {
       const colorBefore = tropOverlay.getVerseColor(verse);
       expect(colorBefore).not.toBeNull();
 
+      // Destroy (simulating overlay switch)
       tropOverlay.destroy?.();
 
+      // Colors should still work (selection is preserved)
       const colorAfter = tropOverlay.getVerseColor(verse);
-      expect(colorAfter).toBeNull();
+      expect(colorAfter).toEqual(colorBefore);
     });
   });
 

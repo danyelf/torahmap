@@ -65,6 +65,11 @@ const COMMON_TROP_GRADIENT: ColorStop[] = [
 function getTropVerseColor(verse: VerseIdentity): Color | null {
   if (!selectedTrop) return null;
 
+  // Rebuild cache if it was cleared (e.g., after destroy)
+  if (cachedVerseLookup.size === 0) {
+    updateCache();
+  }
+
   const key = getVerseKey(verse.book, verse.chapter, verse.verse);
   const count = cachedVerseLookup.get(key) || 0;
 
@@ -169,12 +174,15 @@ export const tropOverlay: Overlay = {
   },
 
   destroy() {
-    selectedTrop = null;
+    // Clear callback (to prevent stale references)
     updateCallback = null;
+    // Clear cached values (will be recalculated when overlay is re-rendered)
     cachedVerseLookup.clear();
     cachedMaxCount = 1;
     cachedLogMax = 0;
     cachedTier = 'common';
+    // NOTE: We intentionally DO NOT reset selectedTrop here. It should persist
+    // across overlay switches so the user can return to their selected trop mark.
   },
 
   onUpdate(callback) {
@@ -256,6 +264,9 @@ export const tropOverlay: Overlay = {
 export function configure(config: { verseTexts: VerseTexts }): void {
   tropIndex = buildTropIndex(config.verseTexts);
   tropByFrequency = getTropByFrequency(tropIndex);
+  // Reset to default state for testing
+  selectedTrop = null;
+  updateCache();
 }
 
 // Get selected trop for sidebar highlighting

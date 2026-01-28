@@ -50,9 +50,12 @@ export const commentaryOverlay: Overlay = {
   },
 
   destroy() {
-    currentCategory = 'total';
+    // Clear cached max values (will be recalculated when overlay is re-rendered)
     cachedMaxValues = {};
+    // Clear callback (to prevent stale references)
     updateCallback = null;
+    // NOTE: We intentionally DO NOT reset currentCategory here. It should persist
+    // across overlay switches so the user can return to their selected category.
   },
 
   onUpdate(callback) {
@@ -158,6 +161,8 @@ export const commentaryOverlay: Overlay = {
 export function configure(config: { verses: VerseLayout[] }): void {
   verses = config.verses;
   cachedMaxValues = {};
+  // Reset to default state for testing
+  currentCategory = 'total';
 }
 
 // Get total linked texts count for a verse (used by sidebar)
