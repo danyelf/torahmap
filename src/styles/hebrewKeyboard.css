@@ -3,7 +3,7 @@
 #hebrew-keyboard-container {
   position: fixed;
   /* Position is set dynamically in JS to be next to controls panel */
-  width: 500px;
+  width: 650px;
   max-width: calc(100vw - 320px); /* Leave room for controls panel + gap */
   z-index: 1000;
   display: none;
