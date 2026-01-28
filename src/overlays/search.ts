@@ -19,6 +19,7 @@ let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
 let wholeWordEnabled = false;
+let hebrewSearchMode: 'substring' | 'word' | 'root' = 'substring';
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 
@@ -28,6 +29,7 @@ let searchClear: HTMLButtonElement | null = null;
 let keyboardToggle: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
+let hebrewModeContainer: HTMLDivElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
 export function configure(config: { verses: VerseLayout[]; callbacks?: { onVerseClick?: (verse: VerseLayout) => void } }): void {
@@ -45,9 +47,11 @@ function doSearch(query: string): void {
     currentResults = [];
     matchingTerms = new Map();
   } else {
+    const isHebrew = isHebrewQuery(currentTerms[0]);
     // Only use wholeWord for English queries
-    const useWholeWord = wholeWordEnabled && currentTerms.length > 0 && !isHebrewQuery(currentTerms[0]);
-    currentResults = search(query, useWholeWord);
+    const useWholeWord = wholeWordEnabled && currentTerms.length > 0 && !isHebrew;
+    // Pass hebrewMode for Hebrew searches
+    currentResults = search(query, useWholeWord, isHebrew ? hebrewSearchMode : 'substring');
     matchingTerms = getMatchingVerseTerms(currentResults);
   }
 
@@ -348,6 +352,21 @@ export const searchOverlay: Overlay = {
           Match whole words only
         </label>
       </div>
+      <div id="hebrew-mode-container" style="display: none;">
+        <div class="hebrew-mode-label">Hebrew search mode:</div>
+        <label class="hebrew-mode-option">
+          <input type="radio" name="hebrew-mode" value="substring" checked>
+          Substring
+        </label>
+        <label class="hebrew-mode-option">
+          <input type="radio" name="hebrew-mode" value="word">
+          Whole word
+        </label>
+        <label class="hebrew-mode-option">
+          <input type="radio" name="hebrew-mode" value="root">
+          Root (שרש)
+        </label>
+      </div>
       <div id="search-results">
         <div id="search-count"></div>
       </div>
@@ -358,6 +377,7 @@ export const searchOverlay: Overlay = {
     keyboardToggle = container.querySelector('#keyboard-toggle');
     searchResults = container.querySelector('#search-results');
     wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
+    hebrewModeContainer = container.querySelector('#hebrew-mode-container');
 
     // Restore current query if any
     if (searchInput && currentQuery) {
@@ -377,6 +397,11 @@ export const searchOverlay: Overlay = {
         }
       }
 
+      // Show Hebrew mode selector for Hebrew
+      if (hebrewModeContainer) {
+        hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
+      }
+
       if (searchClear) {
         searchClear.style.display = currentQuery ? 'block' : 'none';
       }
@@ -390,7 +415,17 @@ export const searchOverlay: Overlay = {
       wholeWordCheckbox.checked = wholeWordEnabled;
     }
 
-    // Update text direction and checkbox visibility based on input content
+    // Restore Hebrew mode radio state
+    if (hebrewModeContainer) {
+      const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+      radioButtons.forEach(radio => {
+        if (radio.value === hebrewSearchMode) {
+          radio.checked = true;
+        }
+      });
+    }
+
+    // Update text direction and checkbox/mode visibility based on input content
     const updateInputMode = () => {
       if (!searchInput) return;
       const query = searchInput.value;
@@ -411,6 +446,11 @@ export const searchOverlay: Overlay = {
         if (optionsContainer) {
           optionsContainer.style.display = isHebrew ? 'none' : 'block';
         }
+      }
+
+      // Show Hebrew mode selector for Hebrew queries
+      if (hebrewModeContainer) {
+        hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
       }
     };
 
@@ -443,7 +483,37 @@ export const searchOverlay: Overlay = {
     });
 
     searchInput?.addEventListener('input', () => {
-      const query = searchInput!.value.trim();
+      // Strip nikkud from typed Hebrew text
+      const input = searchInput!;
+      const currentValue = input.value;
+
+      // Check if there's Hebrew text with nikkud
+      if (currentValue && isHebrewQuery(currentValue)) {
+        const stripped = stripNikkud(currentValue);
+
+        // Only update if nikkud was actually stripped
+        if (stripped !== currentValue) {
+          const cursorPos = input.selectionStart ?? currentValue.length;
+
+          // Calculate new cursor position accounting for removed nikkud
+          let nikkudBeforeCursor = 0;
+          for (let i = 0; i < Math.min(cursorPos, currentValue.length); i++) {
+            const code = currentValue.charCodeAt(i);
+            if (isNikkudChar(code)) {
+              nikkudBeforeCursor++;
+            }
+          }
+
+          // Set stripped value
+          input.value = stripped;
+
+          // Restore cursor position
+          const newCursorPos = cursorPos - nikkudBeforeCursor;
+          input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }
+
+      const query = input.value.trim();
       updateInputMode();
       if (searchClear) {
         searchClear.style.display = query ? 'block' : 'none';
@@ -464,6 +534,10 @@ export const searchOverlay: Overlay = {
           optionsContainer.style.display = 'block';
         }
       }
+      // Hide Hebrew mode selector when clearing
+      if (hebrewModeContainer) {
+        hebrewModeContainer.style.display = 'none';
+      }
       doSearch('');
     });
 
@@ -474,6 +548,22 @@ export const searchOverlay: Overlay = {
         doSearch(currentQuery);
       }
     });
+
+    // Add event listeners for Hebrew mode radio buttons
+    if (hebrewModeContainer) {
+      const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+      radioButtons.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.checked) {
+            hebrewSearchMode = radio.value as 'substring' | 'word' | 'root';
+            // Re-run search with new mode
+            if (currentQuery) {
+              doSearch(currentQuery);
+            }
+          }
+        });
+      });
+    }
 
     // Close results when clicking outside
     // Remove any existing handler first to prevent memory leak
@@ -590,12 +680,14 @@ export const searchOverlay: Overlay = {
     keyboardToggle = null;
     searchResults = null;
     wholeWordCheckbox = null;
+    hebrewModeContainer = null;
     // Reset state
     currentQuery = '';
     currentTerms = [];
     currentResults = [];
     matchingTerms.clear();
     wholeWordEnabled = false;
+    hebrewSearchMode = 'substring';
     updateCallback = null;
     onVerseClickCallback = null;
   },
@@ -608,18 +700,36 @@ export const searchOverlay: Overlay = {
     if (wholeWordEnabled) {
       params.ww = '1';
     }
+    // Only include hebrewMode if it's not the default (substring)
+    if (currentQuery && isHebrewQuery(currentQuery) && hebrewSearchMode !== 'substring') {
+      params.hm = hebrewSearchMode;
+    }
     return params;
   },
 
   applyUrlParams(params: URLSearchParams): void {
     const query = params.get('q');
     const wholeWord = params.get('ww');
+    const hebrewMode = params.get('hm');
 
     // Restore whole-word setting
     if (wholeWord === '1') {
       wholeWordEnabled = true;
       if (wholeWordCheckbox) {
         wholeWordCheckbox.checked = true;
+      }
+    }
+
+    // Restore Hebrew mode setting
+    if (hebrewMode === 'word' || hebrewMode === 'root') {
+      hebrewSearchMode = hebrewMode;
+      if (hebrewModeContainer) {
+        const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+        radioButtons.forEach(radio => {
+          if (radio.value === hebrewMode) {
+            radio.checked = true;
+          }
+        });
       }
     }
 
@@ -641,6 +751,11 @@ export const searchOverlay: Overlay = {
           if (optionsContainer) {
             optionsContainer.style.display = isHebrew ? 'none' : 'block';
           }
+        }
+
+        // Show Hebrew mode selector for Hebrew
+        if (hebrewModeContainer) {
+          hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
         }
 
         if (searchClear) {

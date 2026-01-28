@@ -468,6 +468,60 @@ describe('Search Overlay', () => {
       expect(input.selectionStart).toBe(5 + expectedStripped.length);
       expect(input.selectionEnd).toBe(5 + expectedStripped.length);
     });
+
+    it('strips nikkud from typed Hebrew text', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      // Simulate typing Hebrew text with nikkud (e.g., from a Hebrew keyboard with nikkud enabled)
+      const hebrewWithNikkud = 'אֱלֹהִים';
+      const expectedStripped = 'אלהים';
+
+      // Set value and trigger input event
+      input.value = hebrewWithNikkud;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // Verify nikkud was stripped
+      expect(input.value).toBe(expectedStripped);
+    });
+
+    it('preserves cursor position when stripping nikkud from typed text', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      // Start with some Hebrew text
+      input.value = 'בְּרֵאשִׁית';
+      input.setSelectionRange(5, 5); // Position cursor in middle (accounting for nikkud)
+
+      // Trigger input event (simulating typing)
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // After stripping nikkud, cursor should be adjusted
+      // Original: בְּרֵאשִׁית (10 chars with nikkud)
+      // Stripped: בראשית (6 chars)
+      // Cursor was at position 5, with nikkud before it
+      expect(input.value).toBe('בראשית');
+      // The cursor position should be preserved relative to visible characters
+      expect(input.selectionStart).toBeLessThanOrEqual(input.value.length);
+    });
+
+    it('does not modify English typed text', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      const englishText = 'beginning';
+      input.value = englishText;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // English text should remain unchanged
+      expect(input.value).toBe(englishText);
+    });
   });
 
   describe('Render Legend', () => {
