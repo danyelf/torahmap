@@ -180,11 +180,31 @@ function positionKeyboard(_inputElement: HTMLInputElement, container: HTMLElemen
 
 function handleBackspace(): void {
   if (currentInput && keyboardInstance) {
+    const start = currentInput.selectionStart ?? 0;
+    const end = currentInput.selectionEnd ?? 0;
     const currentValue = currentInput.value;
-    const newValue = currentValue.slice(0, -1);
-    currentInput.value = newValue;
-    keyboardInstance.setInput(newValue);
-    currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+    // If there's a selection, delete the selection
+    if (start !== end) {
+      const newValue = currentValue.slice(0, start) + currentValue.slice(end);
+      currentInput.value = newValue;
+      currentInput.setSelectionRange(start, start);
+      keyboardInstance.setInput(newValue);
+      currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    // If cursor is at the beginning, do nothing
+    else if (start === 0) {
+      return;
+    }
+    // Otherwise, delete character before cursor
+    else {
+      const newValue = currentValue.slice(0, start - 1) + currentValue.slice(start);
+      currentInput.value = newValue;
+      const newCursorPos = start - 1;
+      currentInput.setSelectionRange(newCursorPos, newCursorPos);
+      keyboardInstance.setInput(newValue);
+      currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
   }
 }
 
