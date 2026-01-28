@@ -67,7 +67,7 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
   container.style.display = 'block';
 }
 
-function positionKeyboard(inputElement: HTMLInputElement, container: HTMLElement): void {
+function positionKeyboard(_inputElement: HTMLInputElement, container: HTMLElement): void {
   // Get the controls panel position
   const controlsPanel = document.getElementById('controls');
   if (!controlsPanel) return;

@@ -358,10 +358,10 @@ describe('Trop Overlay', () => {
             const color = tropOverlay.getVerseColor(verseWithoutTrop);
             expect(color).not.toBeNull();
 
-            // Dim gray: [0.15, 0.15, 0.15]
-            assertApproximately(color![0], 0.15, 0.02);
-            assertApproximately(color![1], 0.15, 0.02);
-            assertApproximately(color![2], 0.15, 0.02);
+            // Dim gray (more visible): [0.25, 0.25, 0.25]
+            assertApproximately(color![0], 0.25, 0.02);
+            assertApproximately(color![1], 0.25, 0.02);
+            assertApproximately(color![2], 0.25, 0.02);
           }
         }
       });
@@ -442,10 +442,13 @@ describe('Trop Overlay', () => {
               const color = tropOverlay.getVerseColor(verseWithoutTrop);
               expect(color).not.toBeNull();
 
-              // Dim color: [0.12, 0.12, 0.15]
-              expect(color![0]).toBeLessThan(0.2);
-              expect(color![1]).toBeLessThan(0.2);
-              expect(color![2]).toBeLessThan(0.25);
+              // Dim color (more visible): [0.25, 0.25, 0.28]
+              expect(color![0]).toBeGreaterThan(0.2);
+              expect(color![0]).toBeLessThan(0.3);
+              expect(color![1]).toBeGreaterThan(0.2);
+              expect(color![1]).toBeLessThan(0.3);
+              expect(color![2]).toBeGreaterThan(0.25);
+              expect(color![2]).toBeLessThan(0.35);
             }
 
             break;

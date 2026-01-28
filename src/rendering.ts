@@ -7,6 +7,7 @@ import { updateLabelPositions } from './labels';
 import type { VerseLayout, ShaderProgram } from './types';
 import { versesEqual } from './types';
 import type { Camera } from './camera';
+import { HIGHLIGHT_CONSTANTS } from './constants';
 
 /**
  * Immutable WebGL infrastructure created once at startup.
@@ -161,11 +162,16 @@ export function render(
 
   // Draw hover outline (if hovering and not same as pinned)
   if (hoveredVerse && !versesEqual(hoveredVerse, pinnedVerse)) {
+    // Use different color when hovering while another verse is pinned
+    const hoverColor = pinnedVerse
+      ? HIGHLIGHT_CONSTANTS.HOVER_WHILE_PINNED_OUTLINE_COLOR
+      : HIGHLIGHT_CONSTANTS.HOVER_OUTLINE_COLOR;
+
     state.hoverOutlineBuffer = renderOutline(
       context,
       state,
       hoveredVerse,
-      [1.0, 1.0, 1.0],
+      hoverColor,
       state.hoverOutlineBuffer,
       camera
     );
@@ -177,7 +183,7 @@ export function render(
       context,
       state,
       pinnedVerse,
-      [0.2, 0.9, 1.0],
+      HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
       state.outlineBuffer,
       camera
     );

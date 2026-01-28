@@ -5,7 +5,7 @@ declare const __GIT_BRANCH__: string;
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex } from './search.ts';
+import { buildSearchIndex, loadLemmaData } from './search.ts';
 import { initHelp } from './help.ts';
 import {
   parseUrlState,
@@ -68,10 +68,11 @@ async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load Tanakh structure and verse texts in parallel
+  // Load Tanakh structure, verse texts, and lemma data in parallel
   const [torahResponse, verseTexts] = await Promise.all([
     fetch(`${import.meta.env.BASE_URL}data/tanakh-structure.json`),
-    loadAllVerseTexts()
+    loadAllVerseTexts(),
+    loadLemmaData()
   ]);
 
   if (!torahResponse.ok) {
@@ -214,6 +215,7 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('mousedown', (e: MouseEvent) => {
     startDrag(mouseState, e.clientX, e.clientY);
+    canvas.style.cursor = 'grabbing';
   });
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
@@ -227,16 +229,27 @@ async function main(): Promise<void> {
     }
   });
 
-  canvas.addEventListener('mouseup', () => {
+  canvas.addEventListener('mouseup', (e: MouseEvent) => {
     if (mouseState.isDragging) {
       stopDrag(mouseState);
       debouncedSaveUrlState();
+
+      // Reset cursor after drag
+      const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
+      if (pinnedVerse && verse) {
+        canvas.style.cursor = 'pointer';
+      } else {
+        canvas.style.cursor = 'default';
+      }
     }
   });
 
   canvas.addEventListener('mouseleave', () => {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
+
+    // Reset cursor
+    canvas.style.cursor = 'default';
 
     // Notify overlay of hover change
     let overlayWantsRerender = false;
@@ -266,6 +279,8 @@ async function main(): Promise<void> {
     if (overlayParams.trop) result.trop = overlayParams.trop;
     if (overlayParams.cat) result.category = overlayParams.cat;
     if (overlayParams.q) result.q = overlayParams.q;
+    if (overlayParams.ww) result.ww = overlayParams.ww;
+    if (overlayParams.hm) result.hm = overlayParams.hm;
 
     return result;
   }
@@ -323,6 +338,15 @@ async function main(): Promise<void> {
 
       // Check if hover actually changed
       const hoverChanged = !versesEqual(previousHover, verse);
+
+      // Update cursor when hovering over verses while pinned
+      if (pinnedVerse && verse) {
+        canvas.style.cursor = 'pointer';
+      } else if (mouseState.isDragging) {
+        canvas.style.cursor = 'grabbing';
+      } else {
+        canvas.style.cursor = 'default';
+      }
 
       // Notify overlay of hover change for cross-highlighting
       let overlayWantsRerender = false;
@@ -488,6 +512,8 @@ async function main(): Promise<void> {
       if (urlState.overlayParams.trop) params.set('trop', urlState.overlayParams.trop);
       if (urlState.overlayParams.category) params.set('cat', urlState.overlayParams.category);
       if (urlState.overlayParams.q) params.set('q', urlState.overlayParams.q);
+      if (urlState.overlayParams.ww) params.set('ww', urlState.overlayParams.ww);
+      if (urlState.overlayParams.hm) params.set('hm', urlState.overlayParams.hm);
       currentOverlay.applyUrlParams(params);
     }
   }

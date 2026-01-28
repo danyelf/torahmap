@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRootForStrongsNumber, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -19,8 +19,15 @@ let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
 let wholeWordEnabled = false;
+let hebrewSearchMode: 'substring' | 'word' | 'root' = 'substring';
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
+// Track which terms have valid lemma data (for root mode visual indicators)
+let termLemmaStatus: boolean[] = [];
+// Track the lemmas found for each term (for root mode hover info)
+let termLemmas: Array<string[] | null> = [];
+// Track the Hebrew root text for each term (for legend display)
+let termRoots: Array<string | null> = [];
 
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
@@ -28,6 +35,7 @@ let searchClear: HTMLButtonElement | null = null;
 let keyboardToggle: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
+let hebrewModeContainer: HTMLDivElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
 export function configure(config: { verses: VerseLayout[]; callbacks?: { onVerseClick?: (verse: VerseLayout) => void } }): void {
@@ -44,10 +52,40 @@ function doSearch(query: string): void {
   if (currentTerms.length === 0) {
     currentResults = [];
     matchingTerms = new Map();
+    termLemmaStatus = [];
+    termLemmas = [];
+    termRoots = [];
   } else {
+    const isHebrew = isHebrewQuery(currentTerms[0]);
+
+    // Check which terms have lemma data (only relevant for Hebrew root mode)
+    if (isHebrew && hebrewSearchMode === 'root') {
+      termLemmaStatus = [];
+      termLemmas = [];
+      termRoots = [];
+      for (const term of currentTerms) {
+        const lemmas = findLemmasForWord(term);
+        termLemmaStatus.push(lemmas !== null && lemmas.length > 0);
+        termLemmas.push(lemmas);
+
+        // Get the Hebrew root text for the first lemma (most relevant)
+        if (lemmas && lemmas.length > 0) {
+          const rootText = getRootForStrongsNumber(lemmas[0]);
+          termRoots.push(rootText);
+        } else {
+          termRoots.push(null);
+        }
+      }
+    } else {
+      termLemmaStatus = [];
+      termLemmas = [];
+      termRoots = [];
+    }
+
     // Only use wholeWord for English queries
-    const useWholeWord = wholeWordEnabled && currentTerms.length > 0 && !isHebrewQuery(currentTerms[0]);
-    currentResults = search(query, useWholeWord);
+    const useWholeWord = wholeWordEnabled && currentTerms.length > 0 && !isHebrew;
+    // Pass hebrewMode for Hebrew searches
+    currentResults = search(query, useWholeWord, isHebrew ? hebrewSearchMode : 'substring');
     matchingTerms = getMatchingVerseTerms(currentResults);
   }
 
@@ -197,6 +235,7 @@ function mapNormalizedToOriginalPosition(
 /**
  * Find all matches for all search terms in the given text
  * Handles Hebrew nikkud stripping and position mapping
+ * Respects Hebrew search mode (substring/word/root) and English whole-word setting
  */
 function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): Match[] {
   const matches: Match[] = [];
@@ -206,23 +245,59 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
     const term = terms[termIndex];
     const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
 
-    // Find all occurrences of this term
-    let searchStart = 0;
-    while (true) {
-      const idx = normalizedText.indexOf(normalizedTerm, searchStart);
-      if (idx === -1) break;
-
-      // Map normalized positions back to original text
-      let origStart = idx;
-      let origEnd = idx + normalizedTerm.length;
-
-      if (isHebrew) {
-        origStart = mapNormalizedToOriginalPosition(text, idx);
-        origEnd = mapNormalizedToOriginalPosition(text, normalizedTerm.length, origStart);
+    if (!isHebrew && wholeWordEnabled) {
+      // English whole-word matching using regex
+      const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
+      let match;
+      while ((match = regex.exec(text.toLowerCase())) !== null) {
+        matches.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          termIndex
+        });
       }
+    } else if (isHebrew && (hebrewSearchMode === 'word' || hebrewSearchMode === 'root')) {
+      // Hebrew whole-word matching
+      // Split text into words and find exact matches
+      const words = normalizedText.split(/\s+/);
+      let currentPos = 0;
 
-      matches.push({ start: origStart, end: origEnd, termIndex });
-      searchStart = idx + 1;
+      for (const word of words) {
+        // Skip whitespace to find word start in original text
+        while (currentPos < normalizedText.length && /\s/.test(normalizedText[currentPos])) {
+          currentPos++;
+        }
+
+        if (word === normalizedTerm) {
+          // Found a match - map to original text position
+          const origStart = mapNormalizedToOriginalPosition(text, currentPos);
+          const origEnd = mapNormalizedToOriginalPosition(text, currentPos + word.length);
+
+          matches.push({ start: origStart, end: origEnd, termIndex });
+        }
+
+        currentPos += word.length;
+      }
+    } else {
+      // Substring search (for Hebrew substring mode and English non-whole-word)
+      let searchStart = 0;
+      while (true) {
+        const idx = normalizedText.indexOf(normalizedTerm, searchStart);
+        if (idx === -1) break;
+
+        // Map normalized positions back to original text
+        let origStart = idx;
+        let origEnd = idx + normalizedTerm.length;
+
+        if (isHebrew) {
+          origStart = mapNormalizedToOriginalPosition(text, idx);
+          origEnd = mapNormalizedToOriginalPosition(text, idx + normalizedTerm.length);
+        }
+
+        matches.push({ start: origStart, end: origEnd, termIndex });
+        searchStart = idx + 1;
+      }
     }
   }
 
@@ -348,6 +423,21 @@ export const searchOverlay: Overlay = {
           Match whole words only
         </label>
       </div>
+      <div id="hebrew-mode-container" style="display: none;">
+        <div class="hebrew-mode-label">Hebrew search mode:</div>
+        <label class="hebrew-mode-option">
+          <input type="radio" name="hebrew-mode" value="substring" checked>
+          Substring
+        </label>
+        <label class="hebrew-mode-option">
+          <input type="radio" name="hebrew-mode" value="word">
+          Whole word
+        </label>
+        <label class="hebrew-mode-option">
+          <input type="radio" name="hebrew-mode" value="root">
+          Root (שרש)
+        </label>
+      </div>
       <div id="search-results">
         <div id="search-count"></div>
       </div>
@@ -358,6 +448,7 @@ export const searchOverlay: Overlay = {
     keyboardToggle = container.querySelector('#keyboard-toggle');
     searchResults = container.querySelector('#search-results');
     wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
+    hebrewModeContainer = container.querySelector('#hebrew-mode-container');
 
     // Restore current query if any
     if (searchInput && currentQuery) {
@@ -377,6 +468,11 @@ export const searchOverlay: Overlay = {
         }
       }
 
+      // Show Hebrew mode selector for Hebrew
+      if (hebrewModeContainer) {
+        hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
+      }
+
       if (searchClear) {
         searchClear.style.display = currentQuery ? 'block' : 'none';
       }
@@ -390,16 +486,28 @@ export const searchOverlay: Overlay = {
       wholeWordCheckbox.checked = wholeWordEnabled;
     }
 
-    // Update text direction and checkbox visibility based on input content
+    // Restore Hebrew mode radio state
+    if (hebrewModeContainer) {
+      const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+      radioButtons.forEach(radio => {
+        if (radio.value === hebrewSearchMode) {
+          radio.checked = true;
+        }
+      });
+    }
+
+    // Update text direction and checkbox/mode visibility based on input content
     const updateInputMode = () => {
       if (!searchInput) return;
       const query = searchInput.value;
-      const isHebrew = query.length > 0 && isHebrewQuery(query);
+      const queryIsHebrew = query.length > 0 && isHebrewQuery(query);
+      // Consider it Hebrew mode if the query is Hebrew OR the keyboard is open
+      const isHebrew = queryIsHebrew || isKeyboardOpen();
 
       // Set text direction
       if (query.length === 0) {
-        searchInput.dir = 'ltr';
-      } else if (isHebrew) {
+        searchInput.dir = isKeyboardOpen() ? 'rtl' : 'ltr';
+      } else if (queryIsHebrew) {
         searchInput.dir = 'rtl';
       } else {
         searchInput.dir = 'ltr';
@@ -411,6 +519,11 @@ export const searchOverlay: Overlay = {
         if (optionsContainer) {
           optionsContainer.style.display = isHebrew ? 'none' : 'block';
         }
+      }
+
+      // Show Hebrew mode selector for Hebrew queries or when keyboard is open
+      if (hebrewModeContainer) {
+        hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
       }
     };
 
@@ -443,7 +556,37 @@ export const searchOverlay: Overlay = {
     });
 
     searchInput?.addEventListener('input', () => {
-      const query = searchInput!.value.trim();
+      // Strip nikkud from typed Hebrew text
+      const input = searchInput!;
+      const currentValue = input.value;
+
+      // Check if there's Hebrew text with nikkud
+      if (currentValue && isHebrewQuery(currentValue)) {
+        const stripped = stripNikkud(currentValue);
+
+        // Only update if nikkud was actually stripped
+        if (stripped !== currentValue) {
+          const cursorPos = input.selectionStart ?? currentValue.length;
+
+          // Calculate new cursor position accounting for removed nikkud
+          let nikkudBeforeCursor = 0;
+          for (let i = 0; i < Math.min(cursorPos, currentValue.length); i++) {
+            const code = currentValue.charCodeAt(i);
+            if (isNikkudChar(code)) {
+              nikkudBeforeCursor++;
+            }
+          }
+
+          // Set stripped value
+          input.value = stripped;
+
+          // Restore cursor position
+          const newCursorPos = cursorPos - nikkudBeforeCursor;
+          input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }
+
+      const query = input.value.trim();
       updateInputMode();
       if (searchClear) {
         searchClear.style.display = query ? 'block' : 'none';
@@ -464,6 +607,10 @@ export const searchOverlay: Overlay = {
           optionsContainer.style.display = 'block';
         }
       }
+      // Hide Hebrew mode selector when clearing
+      if (hebrewModeContainer) {
+        hebrewModeContainer.style.display = 'none';
+      }
       doSearch('');
     });
 
@@ -474,6 +621,22 @@ export const searchOverlay: Overlay = {
         doSearch(currentQuery);
       }
     });
+
+    // Add event listeners for Hebrew mode radio buttons
+    if (hebrewModeContainer) {
+      const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+      radioButtons.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.checked) {
+            hebrewSearchMode = radio.value as 'substring' | 'word' | 'root';
+            // Re-run search with new mode
+            if (currentQuery) {
+              doSearch(currentQuery);
+            }
+          }
+        });
+      });
+    }
 
     // Close results when clicking outside
     // Remove any existing handler first to prevent memory leak
@@ -505,6 +668,8 @@ export const searchOverlay: Overlay = {
           createHebrewKeyboard(searchInput);
           keyboardToggle!.classList.add('active');
         }
+        // Update mode selector visibility after keyboard state changes
+        updateInputMode();
       }
     });
   },
@@ -529,7 +694,26 @@ export const searchOverlay: Overlay = {
         swatch.style.background = colorToCss(color);
         termSpan.appendChild(swatch);
 
-        termSpan.appendChild(document.createTextNode(`"${term}"`));
+        // For root mode, show the actual root that was found
+        if (hebrewSearchMode === 'root' && termLemmaStatus.length > 0) {
+          if (termLemmaStatus[i] && termRoots[i]) {
+            // Show root (from search_term) format
+            termSpan.appendChild(document.createTextNode(`"${termRoots[i]}" (from "${term}")`));
+          } else {
+            // No root found, show term with fallback indicator
+            termSpan.appendChild(document.createTextNode(`"${term}"`));
+            const indicator = document.createElement('span');
+            indicator.className = 'lemma-indicator';
+            indicator.textContent = ' \u21AA'; // hook arrow
+            indicator.title = 'No root data, using whole-word search';
+            indicator.style.color = '#FF9800'; // orange
+            termSpan.appendChild(indicator);
+          }
+        } else {
+          // For non-root modes, just show the term
+          termSpan.appendChild(document.createTextNode(`"${term}"`));
+        }
+
         legendDiv.appendChild(termSpan);
 
         if (i < currentTerms.length - 1) {
@@ -567,9 +751,30 @@ export const searchOverlay: Overlay = {
     const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 
-    // Show which terms matched
-    const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
-    return `Matches: ${matchedTerms}`;
+    // Show which terms matched, with mode-specific formatting
+    const isHebrew = isHebrewQuery(currentTerms[0]);
+
+    if (isHebrew && hebrewSearchMode === 'root') {
+      // For root mode, show which roots were matched
+      const matchedTerms = termIndices.map(i => {
+        const term = currentTerms[i];
+        const lemmas = termLemmas[i];
+        if (lemmas && lemmas.length > 0) {
+          // Found a root - show the search term as the root
+          return `"${stripNikkud(term)}"`;
+        } else {
+          // No root found, fell back to word search
+          return `"${term}"`;
+        }
+      }).join(', ');
+      return `Matches root: ${matchedTerms}`;
+    } else if (isHebrew && hebrewSearchMode === 'word') {
+      const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
+      return `Matches word: ${matchedTerms}`;
+    } else {
+      const matchedTerms = termIndices.map(i => `"${currentTerms[i]}"`).join(', ');
+      return `Matches: ${matchedTerms}`;
+    }
   },
 
   onUpdate(callback: () => void): void {
@@ -590,7 +795,17 @@ export const searchOverlay: Overlay = {
     keyboardToggle = null;
     searchResults = null;
     wholeWordCheckbox = null;
-    // Clear callbacks (but preserve search state for when we return)
+    hebrewModeContainer = null;
+    // Reset state
+    currentQuery = '';
+    currentTerms = [];
+    currentResults = [];
+    matchingTerms.clear();
+    wholeWordEnabled = false;
+    hebrewSearchMode = 'substring';
+    termLemmaStatus = [];
+    termLemmas = [];
+    termRoots = [];
     updateCallback = null;
     onVerseClickCallback = null;
     // NOTE: We intentionally DO NOT reset currentQuery, currentTerms, currentResults,
@@ -606,18 +821,36 @@ export const searchOverlay: Overlay = {
     if (wholeWordEnabled) {
       params.ww = '1';
     }
+    // Only include hebrewMode if it's not the default (substring)
+    if (currentQuery && isHebrewQuery(currentQuery) && hebrewSearchMode !== 'substring') {
+      params.hm = hebrewSearchMode;
+    }
     return params;
   },
 
   applyUrlParams(params: URLSearchParams): void {
     const query = params.get('q');
     const wholeWord = params.get('ww');
+    const hebrewMode = params.get('hm');
 
     // Restore whole-word setting
     if (wholeWord === '1') {
       wholeWordEnabled = true;
       if (wholeWordCheckbox) {
         wholeWordCheckbox.checked = true;
+      }
+    }
+
+    // Restore Hebrew mode setting
+    if (hebrewMode === 'word' || hebrewMode === 'root') {
+      hebrewSearchMode = hebrewMode;
+      if (hebrewModeContainer) {
+        const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+        radioButtons.forEach(radio => {
+          if (radio.value === hebrewMode) {
+            radio.checked = true;
+          }
+        });
       }
     }
 
@@ -639,6 +872,11 @@ export const searchOverlay: Overlay = {
           if (optionsContainer) {
             optionsContainer.style.display = isHebrew ? 'none' : 'block';
           }
+        }
+
+        // Show Hebrew mode selector for Hebrew
+        if (hebrewModeContainer) {
+          hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
         }
 
         if (searchClear) {

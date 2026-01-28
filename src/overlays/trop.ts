@@ -20,7 +20,6 @@ let updateCallback: (() => void) | null = null;
 // Cached values for performance (computed once per trop selection, not per verse)
 let cachedVerseLookup: Map<string, number> = new Map();
 let cachedMaxCount = 1;
-let cachedLogMax = 0;
 let cachedTier: 'rare' | 'uncommon' | 'common' = 'common';
 
 // Colors for trop visualization
@@ -44,7 +43,6 @@ function updateCache(): void {
   for (const loc of selectedTrop.verses) {
     if (loc.count > cachedMaxCount) cachedMaxCount = loc.count;
   }
-  cachedLogMax = Math.log(cachedMaxCount + 1);
 }
 
 // Gradient for uncommon trop (linear purple gradient)
@@ -79,13 +77,13 @@ function getTropVerseColor(verse: VerseIdentity): Color | null {
   } else if (cachedTier === 'uncommon') {
     // Linear gradient based on count
     if (count === 0) {
-      return [0.12, 0.12, 0.15];
+      return [0.25, 0.25, 0.28];
     }
     return scaleToGradient(count, cachedMaxCount, UNCOMMON_TROP_GRADIENT);
   } else {
     // Common: logarithmic heatmap
     if (count === 0) {
-      return [0.12, 0.1, 0.15];
+      return [0.25, 0.23, 0.28];
     }
     return scaleToGradient(count, cachedMaxCount, COMMON_TROP_GRADIENT, { useLog: true });
   }
@@ -179,7 +177,6 @@ export const tropOverlay: Overlay = {
     // Clear cached values (will be recalculated when overlay is re-rendered)
     cachedVerseLookup.clear();
     cachedMaxCount = 1;
-    cachedLogMax = 0;
     cachedTier = 'common';
     // NOTE: We intentionally DO NOT reset selectedTrop here. It should persist
     // across overlay switches so the user can return to their selected trop mark.
@@ -207,11 +204,11 @@ export const tropOverlay: Overlay = {
     if (tier === 'rare') {
       container.innerHTML = `
         <div class="legend-row"><span class="swatch" style="background: rgb(255, 214, 0)"></span><span>Contains ${selectedTrop.name}</span></div>
-        <div class="legend-row"><span class="swatch" style="background: rgb(38, 38, 38)"></span><span>Does not contain</span></div>
+        <div class="legend-row"><span class="swatch" style="background: rgb(64, 64, 64)"></span><span>Does not contain</span></div>
       `;
     } else {
       container.innerHTML = `
-        <div class="legend-gradient" style="background: linear-gradient(to right, #1f1a2e, #5a3f7a, #a060a0, #e090c0);"></div>
+        <div class="legend-gradient" style="background: linear-gradient(to right, #3f3b47, #5a3f7a, #a060a0, #e090c0);"></div>
         <div style="display: flex; justify-content: space-between; font-size: 10px; color: #888;">
           <span>0</span>
           <span>Count</span>

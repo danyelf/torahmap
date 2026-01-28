@@ -119,6 +119,7 @@ export interface VerseState {
   baseColor: [number, number, number] | [number, number, number][]; // Overlay color or default gray
   isHovered: boolean;         // Is mouse hovering this verse?
   isPinned: boolean;          // Is this verse pinned in sidebar?
+  isHoveredWhilePinned: boolean; // Is mouse hovering a different verse while another is pinned?
 }
 
 export interface Bounds {

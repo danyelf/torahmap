@@ -4,6 +4,7 @@
  * Outputs:
  * 1. verse-lemmas.json: Map of verse key -> array of Strong's numbers
  * 2. word-lemmas.json: Map of Hebrew word (no nikkud) -> array of Strong's numbers
+ * 3. strongs-to-root.json: Map of Strong's number -> canonical Hebrew root (no nikkud)
  */
 
 import * as fs from 'fs';
@@ -95,8 +96,13 @@ interface WordLemmas {
   [word: string]: Set<string>; // Hebrew word (no nikkud/prefixes) -> Set of Strong's numbers
 }
 
+interface StrongsToRoot {
+  [strongsNum: string]: string; // Strong's number -> canonical Hebrew root
+}
+
 const verseLemmas: VerseLemmas = {};
 const wordLemmas: WordLemmas = {};
+const strongsToRoot: StrongsToRoot = {};
 
 console.log('Building lemma index from morphhb...');
 
@@ -133,6 +139,12 @@ for (const bookName of Object.keys(morphhb)) {
           const parts = hebrewWord.split('/');
           const rootWord = stripNikkud(parts[parts.length - 1]);
 
+          // Store the canonical root for this Strong's number
+          // Prefer shorter forms (more canonical) - typically the root/lemma
+          if (!strongsToRoot[strongsNum] || rootWord.length < strongsToRoot[strongsNum].length) {
+            strongsToRoot[strongsNum] = rootWord;
+          }
+
           // Also store each part that could be searched
           for (const part of parts) {
             const stripped = stripNikkud(part);
@@ -160,6 +172,7 @@ for (const [word, lemmaSet] of Object.entries(wordLemmas)) {
 
 console.log(`Processed ${totalVerses} verses with ${totalWords} words`);
 console.log(`Found ${Object.keys(wordLemmasArray).length} unique Hebrew word forms`);
+console.log(`Found ${Object.keys(strongsToRoot).length} unique Strong's numbers`);
 
 // Write output files
 const outputDir = path.join(__dirname, '..', 'public', 'data');
@@ -174,6 +187,12 @@ fs.writeFileSync(
   JSON.stringify(wordLemmasArray, null, 2)
 );
 
+fs.writeFileSync(
+  path.join(outputDir, 'strongs-to-root.json'),
+  JSON.stringify(strongsToRoot, null, 2)
+);
+
 console.log('Generated:');
 console.log('  - public/data/verse-lemmas.json');
 console.log('  - public/data/word-lemmas.json');
+console.log('  - public/data/strongs-to-root.json');

@@ -77,7 +77,7 @@ export function applyHoverHighlight(
 
 /**
  * Compute semantic state for all verses.
- * First pass: determine what is true about each verse (hasOverlayColor, baseColor, isHovered, isPinned)
+ * First pass: determine what is true about each verse (hasOverlayColor, baseColor, isHovered, isPinned, isHoveredWhilePinned)
  * Returns array parallel to verses array.
  *
  * @param verses - All verses
@@ -99,12 +99,15 @@ export function computeVerseStates(
 
     const isHovered = versesEqual(hoveredVerse, v);
     const isPinned = versesEqual(pinnedVerse, v);
+    // Hover state is different when another verse is pinned (and this is not the pinned verse)
+    const isHoveredWhilePinned = isHovered && pinnedVerse !== null && !isPinned;
 
     return {
       hasOverlayColor,
       baseColor,
       isHovered,
       isPinned,
+      isHoveredWhilePinned,
     };
   });
 }

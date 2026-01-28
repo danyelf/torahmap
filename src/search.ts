@@ -53,6 +53,7 @@ let searchIndex: IndexEntry[] = [];
 // Lemma data loaded from morphhb
 let wordLemmas: Record<string, string[]> | null = null;  // Hebrew word -> Strong's numbers
 let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong's numbers
+let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text
@@ -71,10 +72,11 @@ export function stripNikkud(text: string): string {
 
 /**
  * Parse comma-separated search terms, filtering empty ones
+ * Supports multiple comma variants: English (U+002C), Arabic (U+060C), Hebrew Gershayim (U+05F4)
  */
 export function parseSearchTerms(query: string): string[] {
   return query
-    .split(',')
+    .split(/[,،‎\u05F4]/)  // Split on English comma, Arabic comma, or Hebrew Gershayim
     .map(t => t.trim())
     .filter(t => t.length >= MIN_SEARCH_TERM_LENGTH);
 }
@@ -84,14 +86,16 @@ export function parseSearchTerms(query: string): string[] {
  */
 export async function loadLemmaData(): Promise<void> {
   try {
-    const [wordRes, verseRes] = await Promise.all([
+    const [wordRes, verseRes, strongsRes] = await Promise.all([
       fetch('/data/word-lemmas.json'),
       fetch('/data/verse-lemmas.json'),
+      fetch('/data/strongs-to-root.json'),
     ]);
 
-    if (wordRes.ok && verseRes.ok) {
+    if (wordRes.ok && verseRes.ok && strongsRes.ok) {
       wordLemmas = await wordRes.json();
       verseLemmas = await verseRes.json();
+      strongsToRoot = await strongsRes.json();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
     }
@@ -106,8 +110,9 @@ export async function loadLemmaData(): Promise<void> {
  * 1. Direct lookup
  * 2. With common prefixes stripped (ו, ה, ב, ל, כ, מ, ש)
  * 3. With two-letter prefix combos stripped
+ * Exported for use in overlay UI to show which terms have lemma data
  */
-function findLemmasForWord(hebrewWord: string): string[] | null {
+export function findLemmasForWord(hebrewWord: string): string[] | null {
   if (!wordLemmas) return null;
 
   const stripped = stripNikkud(hebrewWord);
@@ -138,6 +143,15 @@ function findLemmasForWord(hebrewWord: string): string[] | null {
   }
 
   return null;
+}
+
+/**
+ * Get the Hebrew root for a Strong's number
+ * Exported for use in overlay UI to show which root was matched
+ */
+export function getRootForStrongsNumber(strongsNum: string): string | null {
+  if (!strongsToRoot) return null;
+  return strongsToRoot[strongsNum] || null;
 }
 
 /**
@@ -265,123 +279,218 @@ export function getWordBoundaries(text: string, wordIndex: number): { start: num
 }
 
 /**
+ * Search Hebrew text for whole-word matches only
+ * Returns verse indices that match complete words
+ */
+export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
+  const resultMap = new Map<string, SearchResult>();
+
+  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
+    const term = terms[termIndex];
+    const normalizedTerm = stripNikkud(term);
+
+    for (const entry of searchIndex) {
+      const words = entry.hebrewText.split(/\s+/);
+
+      // Find word index that matches exactly
+      const wordIndex = words.findIndex(word => word === normalizedTerm);
+
+      if (wordIndex !== -1) {
+        // Found a match - use getWordBoundaries to find position in original text
+        const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
+
+        if (wordBounds) {
+          const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
+
+          let result = resultMap.get(key);
+          if (!result) {
+            result = {
+              book: entry.book,
+              chapter: entry.chapter,
+              verse: entry.verse,
+              language: 'he',
+              matchingTerms: [],
+            };
+            resultMap.set(key, result);
+          }
+
+          // Only add if this term hasn't matched this verse yet
+          if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+            const wordLen = wordBounds.end - wordBounds.start;
+            const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+            result.matchingTerms.push({
+              termIndex,
+              snippet: snippet.text,
+              matchStart: snippet.matchStart,
+              matchEnd: snippet.matchEnd,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(resultMap.values());
+}
+
+/**
+ * Search Hebrew text by root (lemma) using morphhb Strong's numbers
+ * Falls back to whole-word search if lemma is not found
+ *
+ * @param terms - Array of Hebrew search terms
+ * @returns Array of SearchResults with matching verses
+ */
+function searchByRootMode(terms: string[]): SearchResult[] {
+  const resultMap = new Map<string, SearchResult>();
+
+  if (!wordLemmas || !verseLemmas) {
+    // No lemma data available, fall back to whole-word search
+    return searchHebrewWholeWord(terms);
+  }
+
+  const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
+
+  // Collect lemmas for each search term
+  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
+    const lemmas = findLemmasForWord(terms[termIndex]);
+    if (lemmas && lemmas.length > 0) {
+      termLemmas.push({ termIndex, lemmas });
+    }
+  }
+
+  // If we found lemmas for any terms, use lemma-based search
+  if (termLemmas.length > 0) {
+    for (const { termIndex, lemmas } of termLemmas) {
+      const matchingVerseKeys = searchByLemmas(lemmas);
+
+      for (const verseKey of matchingVerseKeys) {
+        // Find the corresponding index entry
+        const entry = searchIndex.find(e =>
+          `${e.book}:${e.chapter}:${e.verse}` === verseKey
+        );
+
+        if (entry) {
+          let result = resultMap.get(verseKey);
+          if (!result) {
+            result = {
+              book: entry.book,
+              chapter: entry.chapter,
+              verse: entry.verse,
+              language: 'he',
+              matchingTerms: [],
+            };
+            resultMap.set(verseKey, result);
+          }
+
+          // Only add if this term hasn't matched this verse yet
+          if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+            // Find the word that matched via lemma lookup
+            const wordIndex = findWordIndexByLemma(verseKey, lemmas);
+            const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
+
+            if (wordBounds) {
+              // Highlight the matched word
+              const wordLen = wordBounds.end - wordBounds.start;
+              const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+              result.matchingTerms.push({
+                termIndex,
+                snippet: snippet.text,
+                matchStart: snippet.matchStart,
+                matchEnd: snippet.matchEnd,
+              });
+            } else {
+              // Fallback: try whole-word match
+              const wholeWordResults = searchHebrewWholeWord([terms[termIndex]]);
+              const wholeWordMatch = wholeWordResults.find(r =>
+                r.book === entry.book && r.chapter === entry.chapter && r.verse === entry.verse
+              );
+
+              if (wholeWordMatch && wholeWordMatch.matchingTerms.length > 0) {
+                // Use the whole-word match snippet
+                const match = wholeWordMatch.matchingTerms[0];
+                result.matchingTerms.push({
+                  termIndex,
+                  snippet: match.snippet,
+                  matchStart: match.matchStart,
+                  matchEnd: match.matchEnd,
+                });
+              } else {
+                // Last resort: no highlighting
+                result.matchingTerms.push({
+                  termIndex,
+                  snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
+                  matchStart: 0,
+                  matchEnd: 0,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // If we got results from lemma search, return them
+    if (resultMap.size > 0) {
+      return Array.from(resultMap.values());
+    }
+  }
+
+  // No lemmas found for any terms, fall back to whole-word search
+  return searchHebrewWholeWord(terms);
+}
+
+/**
  * Search for verses matching any of the comma-separated terms
  * Returns ALL matching verses with info about which terms matched
  *
- * For Hebrew: Uses lemma-based search via morphhb Strong's numbers, with fallback to substring
+ * For Hebrew: Supports three modes:
+ *   - 'substring': substring search (nikkud-insensitive)
+ *   - 'word': whole-word matching only
+ *   - 'root': lemma-based search via morphhb Strong's numbers (default)
  * For English: Uses substring search (optionally whole-word matching)
  */
-export function search(query: string, wholeWord: boolean = false): SearchResult[] {
+export function search(
+  query: string,
+  wholeWord: boolean = false,
+  hebrewMode: 'substring' | 'word' | 'root' = 'substring'
+): SearchResult[] {
   const terms = parseSearchTerms(query);
   if (terms.length === 0) return [];
 
   // Determine language from first term (all terms use same language)
   const isHebrew = isHebrewQuery(terms[0]);
 
-  // Map: verseKey -> SearchResult
-  const resultMap = new Map<string, SearchResult>();
-
-  // For Hebrew, try lemma-based search first
-  if (isHebrew && wordLemmas && verseLemmas) {
-    const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
-
-    // Collect lemmas for each search term
-    for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-      const lemmas = findLemmasForWord(terms[termIndex]);
-      if (lemmas && lemmas.length > 0) {
-        termLemmas.push({ termIndex, lemmas });
-      }
-    }
-
-    // If we found lemmas for any terms, use lemma-based search
-    if (termLemmas.length > 0) {
-      for (const { termIndex, lemmas } of termLemmas) {
-        const matchingVerseKeys = searchByLemmas(lemmas);
-
-        for (const verseKey of matchingVerseKeys) {
-          // Find the corresponding index entry
-          const entry = searchIndex.find(e =>
-            `${e.book}:${e.chapter}:${e.verse}` === verseKey
-          );
-
-          if (entry) {
-            let result = resultMap.get(verseKey);
-            if (!result) {
-              result = {
-                book: entry.book,
-                chapter: entry.chapter,
-                verse: entry.verse,
-                language: 'he',
-                matchingTerms: [],
-              };
-              resultMap.set(verseKey, result);
-            }
-
-            // Only add if this term hasn't matched this verse yet
-            if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
-              // Find the word that matched via lemma lookup
-              const wordIndex = findWordIndexByLemma(verseKey, lemmas);
-              const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
-
-              if (wordBounds) {
-                // Highlight the matched word
-                const wordLen = wordBounds.end - wordBounds.start;
-                const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
-                result.matchingTerms.push({
-                  termIndex,
-                  snippet: snippet.text,
-                  matchStart: snippet.matchStart,
-                  matchEnd: snippet.matchEnd,
-                });
-              } else {
-                // Fallback: try substring match
-                const normalizedTerm = stripNikkud(terms[termIndex]);
-                const idx = entry.hebrewText.indexOf(normalizedTerm);
-
-                if (idx !== -1) {
-                  const snippet = createSnippet(entry.hebrewOriginal, idx, normalizedTerm.length, true);
-                  result.matchingTerms.push({
-                    termIndex,
-                    snippet: snippet.text,
-                    matchStart: snippet.matchStart,
-                    matchEnd: snippet.matchEnd,
-                  });
-                } else {
-                  // Last resort: no highlighting
-                  result.matchingTerms.push({
-                    termIndex,
-                    snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
-                    matchStart: 0,
-                    matchEnd: 0,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // If we got results from lemma search, return them
-      if (resultMap.size > 0) {
-        return Array.from(resultMap.values());
-      }
+  // For Hebrew, dispatch based on mode
+  if (isHebrew) {
+    switch (hebrewMode) {
+      case 'word':
+        return searchHebrewWholeWord(terms);
+      case 'root':
+        return searchByRootMode(terms);
+      case 'substring':
+      default:
+        // Fall through to substring search below
+        break;
     }
   }
 
-  // Fallback to substring search (for English or if lemma search failed/unavailable)
+  // Substring search for Hebrew or English
+  const resultMap = new Map<string, SearchResult>();
+
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const term = terms[termIndex];
     const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
 
     for (const entry of searchIndex) {
+      // Select appropriate text based on language
       const text = isHebrew ? entry.hebrewText : entry.englishText;
       const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
 
-      // For English with whole-word matching, use regex
+      // Find matches
       let matches: Array<{ idx: number; len: number }> = [];
 
       if (!isHebrew && wholeWord) {
-        // Create word boundary regex (case insensitive)
+        // For English with whole-word matching, use regex
         const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
         let match;
@@ -389,7 +498,7 @@ export function search(query: string, wholeWord: boolean = false): SearchResult[
           matches.push({ idx: match.index, len: match[0].length });
         }
       } else {
-        // Simple substring search
+        // Simple substring search (for both Hebrew and English)
         const idx = text.indexOf(normalizedTerm);
         if (idx !== -1) {
           matches.push({ idx, len: normalizedTerm.length });

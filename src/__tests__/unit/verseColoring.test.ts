@@ -343,16 +343,63 @@ describe('verseColoring', () => {
 
       expect(states.length).toBe(3);
     });
+
+    it('identifies isHoveredWhilePinned when hovering different verse than pinned', () => {
+      const verses: VerseLayout[] = [
+        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
+        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
+      ];
+      const pinnedVerse = verses[0];
+      const hoveredVerse = verses[1];
+
+      const states = computeVerseStates(verses, null, hoveredVerse, pinnedVerse);
+
+      expect(states[0].isHovered).toBe(false);
+      expect(states[0].isPinned).toBe(true);
+      expect(states[0].isHoveredWhilePinned).toBe(false);
+
+      expect(states[1].isHovered).toBe(true);
+      expect(states[1].isPinned).toBe(false);
+      expect(states[1].isHoveredWhilePinned).toBe(true);
+    });
+
+    it('isHoveredWhilePinned is false when hovering the pinned verse', () => {
+      const verses: VerseLayout[] = [
+        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
+      ];
+      const pinnedVerse = verses[0];
+      const hoveredVerse = verses[0];
+
+      const states = computeVerseStates(verses, null, hoveredVerse, pinnedVerse);
+
+      expect(states[0].isHovered).toBe(true);
+      expect(states[0].isPinned).toBe(true);
+      expect(states[0].isHoveredWhilePinned).toBe(false);
+    });
+
+    it('isHoveredWhilePinned is false when no verse is pinned', () => {
+      const verses: VerseLayout[] = [
+        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
+      ];
+      const hoveredVerse = verses[0];
+
+      const states = computeVerseStates(verses, null, hoveredVerse, null);
+
+      expect(states[0].isHovered).toBe(true);
+      expect(states[0].isPinned).toBe(false);
+      expect(states[0].isHoveredWhilePinned).toBe(false);
+    });
   });
 
   describe('applyVerseColors', () => {
     it('applies base colors', () => {
-      const states: VerseLayoutState[] = [
+      const states: VerseState[] = [
         {
           hasOverlayColor: true,
           baseColor: [1, 0, 0],
           isHovered: false,
           isPinned: false,
+          isHoveredWhilePinned: false,
         },
       ];
 
@@ -362,12 +409,13 @@ describe('verseColoring', () => {
     });
 
     it('applies hover highlighting when verse is hovered', () => {
-      const states: VerseLayoutState[] = [
+      const states: VerseState[] = [
         {
           hasOverlayColor: true,
           baseColor: [0.6, 0.4, 0.2],
           isHovered: true,
           isPinned: false,
+          isHoveredWhilePinned: false,
         },
       ];
 
@@ -380,12 +428,13 @@ describe('verseColoring', () => {
     });
 
     it('does not apply hover highlighting when verse is not hovered', () => {
-      const states: VerseLayoutState[] = [
+      const states: VerseState[] = [
         {
           hasOverlayColor: true,
           baseColor: [0.6, 0.4, 0.2],
           isHovered: false,
           isPinned: false,
+          isHoveredWhilePinned: false,
         },
       ];
 
@@ -395,12 +444,13 @@ describe('verseColoring', () => {
     });
 
     it('returns immutable color array', () => {
-      const states: VerseLayoutState[] = [
+      const states: VerseState[] = [
         {
           hasOverlayColor: false,
           baseColor: [0.5, 0.5, 0.5],
           isHovered: false,
           isPinned: false,
+          isHoveredWhilePinned: false,
         },
       ];
 
@@ -412,24 +462,27 @@ describe('verseColoring', () => {
     });
 
     it('handles multiple verses', () => {
-      const states: VerseLayoutState[] = [
+      const states: VerseState[] = [
         {
           hasOverlayColor: false,
           baseColor: [0.5, 0.5, 0.5],
           isHovered: false,
           isPinned: false,
+          isHoveredWhilePinned: false,
         },
         {
           hasOverlayColor: true,
           baseColor: [1, 0, 0],
           isHovered: true,
           isPinned: false,
+          isHoveredWhilePinned: false,
         },
         {
           hasOverlayColor: true,
           baseColor: [0, 1, 0],
           isHovered: false,
           isPinned: true,
+          isHoveredWhilePinned: false,
         },
       ];
 
@@ -445,12 +498,13 @@ describe('verseColoring', () => {
         [0.4, 0.2, 0.6],
         [0.2, 0.8, 0.4],
       ];
-      const states: VerseLayoutState[] = [
+      const states: VerseState[] = [
         {
           hasOverlayColor: true,
           baseColor: multiColor,
           isHovered: true,
           isPinned: false,
+          isHoveredWhilePinned: false,
         },
       ];
 

@@ -29,6 +29,9 @@ export const HIGHLIGHT_CONSTANTS = {
   // Outline color for hovered verses
   HOVER_OUTLINE_COLOR: [1.0, 1.0, 1.0] as Color,
 
+  // Outline color for hovered verses when another verse is pinned
+  HOVER_WHILE_PINNED_OUTLINE_COLOR: [1.0, 0.8, 0.2] as Color,
+
   // Outline thickness (extends outside verse bounds)
   OUTLINE_THICKNESS: 2,
 
@@ -42,5 +45,5 @@ export const HIGHLIGHT_CONSTANTS = {
   DESATURATE_FACTOR: 0.2,
 
   // Color for rare trop marks with no matches
-  RARE_NO_MATCH_COLOR: [0.15, 0.15, 0.15] as Color,
+  RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
 } as const;
