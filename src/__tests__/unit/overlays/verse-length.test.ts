@@ -235,39 +235,40 @@ describe('Verse Length Overlay', () => {
       expect(color12).not.toEqual(color14);
     });
 
-    it('assigns cooler colors (blue) to shorter verses', () => {
+    it('assigns cooler colors (purple/blue) to shorter verses', () => {
       const shortVerse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word
       const color = verseLengthOverlay.getVerseColor(shortVerse)!;
 
       assertValidColor(color);
 
-      // Blue has higher blue channel and lower red channel
-      // The gradient goes from blue (240°) to red (0°), so short should be bluish
+      // Viridis starts with purple/blue - higher blue channel, lower red/green
       expect(color[2]).toBeGreaterThan(color[0]); // Blue > Red for cool colors
     });
 
-    it('assigns warmer colors (red/orange) to longer verses', () => {
+    it('assigns warmer colors (yellow/green) to longer verses', () => {
       const longVerse = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 16 words
       const color = verseLengthOverlay.getVerseColor(longVerse)!;
 
       assertValidColor(color);
 
-      // Red/orange has higher red channel
+      // Viridis ends with yellow - higher red and green, lower blue
       expect(color[0]).toBeGreaterThan(color[2]); // Red > Blue for warm colors
+      expect(color[1]).toBeGreaterThan(color[2]); // Green > Blue for warm colors
     });
 
-    it('uses cool-to-warm gradient from blue to red', () => {
+    it('uses viridis gradient from purple to yellow', () => {
       const shortVerse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word (min)
       const longVerse = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 16 words (max)
 
       const shortColor = verseLengthOverlay.getVerseColor(shortVerse)!;
       const longColor = verseLengthOverlay.getVerseColor(longVerse)!;
 
-      // Short should be cooler (higher blue component)
+      // Short should be purple/blue (higher blue component)
       expect(shortColor[2]).toBeGreaterThan(longColor[2]);
 
-      // Long should be warmer (higher red component)
+      // Long should be yellow (higher red and green components)
       expect(longColor[0]).toBeGreaterThan(shortColor[0]);
+      expect(longColor[1]).toBeGreaterThan(shortColor[1]);
     });
 
     it('returns dark gray for verses with zero words', () => {
@@ -385,13 +386,12 @@ describe('Verse Length Overlay', () => {
       expect(html).toContain('14 words'); // Max
     });
 
-    it('includes explanatory text about cool and warm colors', () => {
+    it('includes explanatory text about cool colors', () => {
       const container = document.createElement('div');
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Cool colors');
-      expect(html).toContain('blue');
+      expect(html).toContain('Purple/blue');
       expect(html).toContain('shorter verses');
     });
 
@@ -400,8 +400,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Warm colors');
-      expect(html).toContain('red/orange');
+      expect(html).toContain('Green/yellow');
       expect(html).toContain('longer verses');
     });
 
@@ -410,7 +409,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Square root scale');
+      expect(html).toContain('Viridis palette');
     });
 
     it('creates gradient with multiple color stops', () => {
@@ -425,7 +424,7 @@ describe('Verse Length Overlay', () => {
       expect(rgbMatches!.length).toBeGreaterThanOrEqual(5); // Should have multiple stops
     });
 
-    it('gradient goes from blue to red', () => {
+    it('gradient uses viridis palette from purple to yellow', () => {
       const container = document.createElement('div');
       verseLengthOverlay.renderLegend(container);
 
@@ -434,17 +433,23 @@ describe('Verse Length Overlay', () => {
       // Extract RGB values from gradient
       const rgbMatches = html.match(/rgb\(([^)]+)\)/g);
       expect(rgbMatches).not.toBeNull();
+      expect(rgbMatches!.length).toBeGreaterThanOrEqual(2);
 
-      if (rgbMatches && rgbMatches.length >= 2) {
-        const firstColor = rgbMatches[0];
-        const lastColor = rgbMatches[rgbMatches.length - 1];
+      // Parse first and last colors
+      const parseRgb = (rgb: string): [number, number, number] => {
+        const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        return match ? [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])] : [0, 0, 0];
+      };
 
-        // First color should be bluish (high blue component)
-        expect(firstColor).toMatch(/rgb\(\s*\d+,\s*\d+,\s*\d+\s*\)/);
+      const firstColor = parseRgb(rgbMatches![0]);
+      const lastColor = parseRgb(rgbMatches![rgbMatches!.length - 1]);
 
-        // Last color should be reddish (high red component)
-        expect(lastColor).toMatch(/rgb\(\s*\d+,\s*\d+,\s*\d+\s*\)/);
-      }
+      // First color should be purple/blue (low R, low G, higher B)
+      expect(firstColor[2]).toBeGreaterThan(firstColor[0]); // B > R
+
+      // Last color should be yellow (high R, high G, low B)
+      expect(lastColor[0]).toBeGreaterThan(100); // Yellow has high red
+      expect(lastColor[1]).toBeGreaterThan(100); // Yellow has high green
     });
   });
 

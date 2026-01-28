@@ -3,7 +3,44 @@ import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
-import { hslToRgb } from '../utils/color.ts';
+
+// Viridis color palette (perceptually uniform, colorblind-friendly)
+// Key stops from the viridis colormap
+const VIRIDIS_STOPS: Array<[number, Color]> = [
+  [0.0, [68/255, 1/255, 84/255]],      // dark purple
+  [0.25, [59/255, 82/255, 139/255]],   // blue
+  [0.5, [33/255, 145/255, 140/255]],   // teal
+  [0.75, [94/255, 201/255, 98/255]],   // green
+  [1.0, [253/255, 231/255, 37/255]],   // yellow
+];
+
+/**
+ * Get a color from the viridis palette at position t ∈ [0, 1]
+ * Uses linear interpolation between key stops
+ */
+function viridis(t: number): Color {
+  // Clamp t to [0, 1]
+  t = Math.max(0, Math.min(1, t));
+
+  // Find the two stops to interpolate between
+  for (let i = 0; i < VIRIDIS_STOPS.length - 1; i++) {
+    const [t0, color0] = VIRIDIS_STOPS[i];
+    const [t1, color1] = VIRIDIS_STOPS[i + 1];
+
+    if (t >= t0 && t <= t1) {
+      // Linear interpolation between color0 and color1
+      const localT = (t - t0) / (t1 - t0);
+      return [
+        color0[0] + (color1[0] - color0[0]) * localT,
+        color0[1] + (color1[1] - color0[1]) * localT,
+        color0[2] + (color1[2] - color0[2]) * localT,
+      ];
+    }
+  }
+
+  // Fallback to last color
+  return VIRIDIS_STOPS[VIRIDIS_STOPS.length - 1][1];
+}
 
 // State
 let verseTexts: VerseTexts | null = null;
@@ -59,7 +96,7 @@ export function configure(config: { verseTexts: VerseTexts }): void {
 
 /**
  * Get color for a verse based on its word count
- * Uses square root scale and cool-to-warm gradient
+ * Uses square root scale and viridis color palette
  */
 function getVerseColorForWordCount(verse: VerseIdentity): Color | null {
   const key = getVerseKey(verse.book, verse.chapter, verse.verse);
@@ -76,12 +113,8 @@ function getVerseColorForWordCount(verse: VerseIdentity): Color | null {
   const sqrtValue = Math.sqrt(wordCount);
   const t = (sqrtValue - sqrtMin) / (sqrtMax - sqrtMin);
 
-  // Cool-to-warm gradient: blue (240°) → cyan → green → yellow → orange → red (0°)
-  // Hue goes from 240° (cool) down to 0° (warm)
-  const hue = 240 - (t * 240);
-
-  // High saturation and medium lightness for vibrant colors
-  return hslToRgb({ h: hue, s: 0.8, l: 0.55 });
+  // Get color from viridis palette
+  return viridis(t);
 }
 
 export const verseLengthOverlay: Overlay = {
@@ -93,13 +126,12 @@ export const verseLengthOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement): void {
-    // Generate gradient from blue to red
+    // Generate gradient using viridis palette
     const gradientStops = [];
     const numStops = 10;
     for (let i = 0; i < numStops; i++) {
       const t = i / (numStops - 1);
-      const hue = 240 - (t * 240); // Blue to red
-      const color = hslToRgb({ h: hue, s: 0.8, l: 0.55 });
+      const color = viridis(t);
       const rgb = color.map(c => Math.round(c * 255)).join(', ');
       const percent = (i / (numStops - 1)) * 100;
       gradientStops.push(`rgb(${rgb}) ${percent}%`);
@@ -121,13 +153,13 @@ export const verseLengthOverlay: Overlay = {
         </div>
       </div>
       <div style="color: #888; font-size: 10px; margin-top: 8px; line-height: 1.3;">
-        Cool colors (blue) = shorter verses
+        Purple/blue = shorter verses
       </div>
       <div style="color: #888; font-size: 10px; margin-top: 4px; line-height: 1.3;">
-        Warm colors (red/orange) = longer verses
+        Green/yellow = longer verses
       </div>
       <div style="color: #888; font-size: 10px; margin-top: 4px; line-height: 1.3;">
-        Square root scale
+        Square root scale · Viridis palette
       </div>
     `;
   },
