@@ -21,6 +21,7 @@ bd sync               # Sync with git
 ## Working in Worktrees
 
 **Starting work:**
+
 ```bash
 ./scripts/work-on-bead.sh tm-xxx
 ```
@@ -30,6 +31,7 @@ This creates an isolated git worktree and launches Claude with full context.
 **Landing work (merge and cleanup):**
 
 When you're done with the work, run from within the worktree:
+
 ```bash
 ./scripts/land-bead.sh --delete-branch
 ```
@@ -38,6 +40,7 @@ The `--delete-branch` flag automatically deletes the feature branch (recommended
 Omit it if you want to be prompted.
 
 This script will:
+
 1. Verify no uncommitted changes
 2. Sync beads changes to beads-sync branch
 3. Pull latest from remote
@@ -50,26 +53,6 @@ This script will:
 **DO NOT try to merge manually** - use the land-bead.sh script to avoid beads conflicts.
 
 **Note:** The worktree directory will be removed after landing, so any commands after that will fail (this is expected).
-
-## Landing the Plane (Non-Worktree Sessions)
-
-**When ending a regular work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
 
