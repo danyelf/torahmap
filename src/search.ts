@@ -265,6 +265,61 @@ export function getWordBoundaries(text: string, wordIndex: number): { start: num
 }
 
 /**
+ * Search Hebrew text for whole-word matches only
+ * Returns verse indices that match complete words
+ */
+export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
+  const resultMap = new Map<string, SearchResult>();
+
+  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
+    const term = terms[termIndex];
+    const normalizedTerm = stripNikkud(term);
+
+    for (const entry of searchIndex) {
+      const words = entry.hebrewText.split(/\s+/);
+
+      // Find word index that matches exactly
+      const wordIndex = words.findIndex(word => word === normalizedTerm);
+
+      if (wordIndex !== -1) {
+        // Found a match - use getWordBoundaries to find position in original text
+        const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
+
+        if (wordBounds) {
+          const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
+
+          let result = resultMap.get(key);
+          if (!result) {
+            result = {
+              book: entry.book,
+              chapter: entry.chapter,
+              verse: entry.verse,
+              language: 'he',
+              matchingTerms: [],
+            };
+            resultMap.set(key, result);
+          }
+
+          // Only add if this term hasn't matched this verse yet
+          if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+            const wordLen = wordBounds.end - wordBounds.start;
+            const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+            result.matchingTerms.push({
+              termIndex,
+              snippet: snippet.text,
+              matchStart: snippet.matchStart,
+              matchEnd: snippet.matchEnd,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(resultMap.values());
+}
+
+/**
  * Search for verses matching any of the comma-separated terms
  * Returns ALL matching verses with info about which terms matched
  *

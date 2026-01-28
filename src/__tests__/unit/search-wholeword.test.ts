@@ -1,6 +1,6 @@
 // Tests for whole-word search functionality
 import { describe, it, expect, beforeEach } from 'vitest';
-import { search, buildSearchIndex, parseSearchTerms } from '../../search';
+import { search, buildSearchIndex, parseSearchTerms, searchHebrewWholeWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Whole Word Search', () => {
@@ -149,5 +149,133 @@ describe('Whole Word Search', () => {
       // but NOT "heavens" or "these"
       expect(results.length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe('searchHebrewWholeWord()', () => {
+  let mockVerseTexts: VerseTexts;
+
+  beforeEach(() => {
+    // Setup test verse texts with Hebrew content
+    mockVerseTexts = {
+      'Genesis': {
+        '1': {
+          '1': {
+            he: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים',
+            en: 'In the beginning God created the heavens',
+          },
+          '2': {
+            he: 'וְהָאָרֶץ הָיְתָה תֹהוּ וָבֹהוּ',
+            en: 'And the earth was without form and void',
+          },
+          '3': {
+            he: 'וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר',
+            en: 'God said let there be light',
+          },
+        },
+      },
+      'Exodus': {
+        '1': {
+          '1': {
+            he: 'וְאֵלֶּה שְׁמוֹת בְּנֵי יִשְׂרָאֵל',
+            en: 'Now these are the names of Israel',
+          },
+        },
+      },
+    };
+
+    buildSearchIndex(mockVerseTexts);
+  });
+
+  it('finds exact whole-word matches', () => {
+    // Search for "אלהים" - should match two verses
+    const results = searchHebrewWholeWord(['אלהים']);
+    expect(results.length).toBe(2);
+
+    // Check that both Genesis 1:1 and 1:3 are found
+    const verseKeys = results.map(r => `${r.book}:${r.chapter}:${r.verse}`);
+    expect(verseKeys).toContain('Genesis:1:1');
+    expect(verseKeys).toContain('Genesis:1:3');
+  });
+
+  it('strips nikkud before matching', () => {
+    // Search for "ברא" (without nikkud) - should match "בָּרָא" in Genesis 1:1
+    const results = searchHebrewWholeWord(['ברא']);
+    expect(results.length).toBe(1);
+    expect(results[0].book).toBe('Genesis');
+    expect(results[0].chapter).toBe(1);
+    expect(results[0].verse).toBe(1);
+  });
+
+  it('does not match partial words', () => {
+    // Search for "אלה" - should NOT match "ואלה" as a whole word
+    // It should only match if there's an exact standalone "אלה"
+    const results = searchHebrewWholeWord(['אלה']);
+
+    // "ואלה" in Exodus 1:1 should NOT match because we're looking for "אלה" as a whole word
+    // However, if we split by whitespace, "ואלה" is a whole word itself
+    // So this should not match at all since "אלה" is not a standalone word
+    expect(results.length).toBe(0);
+  });
+
+  it('returns empty array when no matches found', () => {
+    const results = searchHebrewWholeWord(['xyz123']);
+    expect(results.length).toBe(0);
+  });
+
+  it('handles multiple search terms', () => {
+    // Search for both "ברא" and "אלהים"
+    const results = searchHebrewWholeWord(['ברא', 'אלהים']);
+
+    // Should find:
+    // - Genesis 1:1 (has both "ברא" and "אלהים")
+    // - Genesis 1:3 (has "אלהים")
+    expect(results.length).toBe(2);
+
+    // Genesis 1:1 should have both terms matching
+    const gen11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+    expect(gen11).toBeDefined();
+    expect(gen11?.matchingTerms.length).toBe(2);
+
+    // Genesis 1:3 should have only one term matching
+    const gen13 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 3);
+    expect(gen13).toBeDefined();
+    expect(gen13?.matchingTerms.length).toBe(1);
+  });
+
+  it('creates proper snippets with match positions', () => {
+    const results = searchHebrewWholeWord(['אלהים']);
+    expect(results.length).toBeGreaterThan(0);
+
+    const firstResult = results[0];
+    expect(firstResult.matchingTerms.length).toBe(1);
+
+    const termMatch = firstResult.matchingTerms[0];
+    expect(termMatch.snippet).toBeDefined();
+    expect(termMatch.matchStart).toBeGreaterThanOrEqual(0);
+    expect(termMatch.matchEnd).toBeGreaterThan(termMatch.matchStart);
+    expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+  });
+
+  it('sets language to Hebrew', () => {
+    const results = searchHebrewWholeWord(['אלהים']);
+    expect(results.length).toBeGreaterThan(0);
+
+    for (const result of results) {
+      expect(result.language).toBe('he');
+    }
+  });
+
+  it('uses word boundaries correctly', () => {
+    // Search for first word in a verse
+    const results = searchHebrewWholeWord(['בראשית']);
+    expect(results.length).toBe(1);
+    expect(results[0].book).toBe('Genesis');
+    expect(results[0].chapter).toBe(1);
+    expect(results[0].verse).toBe(1);
+
+    // Verify snippet contains the word
+    const snippet = results[0].matchingTerms[0].snippet;
+    expect(snippet).toContain('בְּרֵאשִׁית'); // With nikkud in display
   });
 });
