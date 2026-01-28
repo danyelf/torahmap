@@ -216,6 +216,7 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('mousedown', (e: MouseEvent) => {
     startDrag(mouseState, e.clientX, e.clientY);
+    canvas.style.cursor = 'grabbing';
   });
 
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
@@ -229,16 +230,27 @@ async function main(): Promise<void> {
     }
   });
 
-  canvas.addEventListener('mouseup', () => {
+  canvas.addEventListener('mouseup', (e: MouseEvent) => {
     if (mouseState.isDragging) {
       stopDrag(mouseState);
       debouncedSaveUrlState();
+
+      // Reset cursor after drag
+      const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
+      if (pinnedVerse && verse) {
+        canvas.style.cursor = 'pointer';
+      } else {
+        canvas.style.cursor = 'default';
+      }
     }
   });
 
   canvas.addEventListener('mouseleave', () => {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
+
+    // Reset cursor
+    canvas.style.cursor = 'default';
 
     // Notify overlay of hover change
     let overlayWantsRerender = false;
@@ -325,6 +337,15 @@ async function main(): Promise<void> {
 
       // Check if hover actually changed
       const hoverChanged = !versesEqual(previousHover, verse);
+
+      // Update cursor when hovering over verses while pinned
+      if (pinnedVerse && verse) {
+        canvas.style.cursor = 'pointer';
+      } else if (mouseState.isDragging) {
+        canvas.style.cursor = 'grabbing';
+      } else {
+        canvas.style.cursor = 'default';
+      }
 
       // Notify overlay of hover change for cross-highlighting
       let overlayWantsRerender = false;
