@@ -175,6 +175,19 @@ export function parseUrlState(): UrlState {
     }
   }
 
+  // Search options
+  const ww = params.get('ww');
+  if (ww) {
+    state.overlayParams.ww = ww;
+  }
+
+  const hm = params.get('hm');
+  const validatedHm = validateString(hm);
+  // Only accept valid Hebrew mode values
+  if (validatedHm && (validatedHm === 'substring' || validatedHm === 'word' || validatedHm === 'root')) {
+    state.overlayParams.hm = validatedHm;
+  }
+
   return state;
 }
 
@@ -218,6 +231,12 @@ export function buildUrlHash(state: UrlState): string {
   }
   if (state.overlayParams.q) {
     params.set('q', state.overlayParams.q);
+  }
+  if (state.overlayParams.ww) {
+    params.set('ww', state.overlayParams.ww);
+  }
+  if (state.overlayParams.hm) {
+    params.set('hm', state.overlayParams.hm);
   }
 
   const hash = params.toString();

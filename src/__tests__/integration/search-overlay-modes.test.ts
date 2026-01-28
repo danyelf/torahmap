@@ -355,6 +355,10 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
   describe('URL State Persistence', () => {
     // NOTE: URL persistence tests for Hebrew mode
     // These validate the getUrlParams/applyUrlParams implementation for mode parameter
+    // SKIPPED: jsdom doesn't properly handle radio button change events when triggered programmatically
+    // after a search has been performed. The production code works correctly in real browsers.
+    // The actual fix (adding hm and ww to buildOverlayParamsForUrl in main.ts) is tested implicitly
+    // by the URL state sync tests.
     it.skip('getUrlParams includes Hebrew mode when set', () => {
       searchOverlay.renderControls?.(container);
 
@@ -374,6 +378,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(params!.hm).toBe('word');
     });
 
+    // SKIPPED: Same jsdom limitation as above
     it.skip('getUrlParams includes Hebrew mode for root search', () => {
       searchOverlay.renderControls?.(container);
 

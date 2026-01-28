@@ -281,6 +281,8 @@ async function main(): Promise<void> {
     if (overlayParams.trop) result.trop = overlayParams.trop;
     if (overlayParams.cat) result.category = overlayParams.cat;
     if (overlayParams.q) result.q = overlayParams.q;
+    if (overlayParams.ww) result.ww = overlayParams.ww;
+    if (overlayParams.hm) result.hm = overlayParams.hm;
 
     return result;
   }
@@ -512,6 +514,8 @@ async function main(): Promise<void> {
       if (urlState.overlayParams.trop) params.set('trop', urlState.overlayParams.trop);
       if (urlState.overlayParams.category) params.set('cat', urlState.overlayParams.category);
       if (urlState.overlayParams.q) params.set('q', urlState.overlayParams.q);
+      if (urlState.overlayParams.ww) params.set('ww', urlState.overlayParams.ww);
+      if (urlState.overlayParams.hm) params.set('hm', urlState.overlayParams.hm);
       currentOverlay.applyUrlParams(params);
     }
   }
