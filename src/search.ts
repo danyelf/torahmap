@@ -71,10 +71,11 @@ export function stripNikkud(text: string): string {
 
 /**
  * Parse comma-separated search terms, filtering empty ones
+ * Supports multiple comma variants: English (U+002C), Arabic (U+060C), Hebrew Gershayim (U+05F4)
  */
 export function parseSearchTerms(query: string): string[] {
   return query
-    .split(',')
+    .split(/[,،‎\u05F4]/)  // Split on English comma, Arabic comma, or Hebrew Gershayim
     .map(t => t.trim())
     .filter(t => t.length >= MIN_SEARCH_TERM_LENGTH);
 }
@@ -429,37 +430,54 @@ function searchByRootMode(terms: string[]): SearchResult[] {
  * Search for verses matching any of the comma-separated terms
  * Returns ALL matching verses with info about which terms matched
  *
- * For Hebrew: Uses lemma-based search via morphhb Strong's numbers, with fallback to whole-word
+ * For Hebrew: Supports three modes:
+ *   - 'substring': substring search (nikkud-insensitive)
+ *   - 'word': whole-word matching only
+ *   - 'root': lemma-based search via morphhb Strong's numbers (default)
  * For English: Uses substring search (optionally whole-word matching)
  */
-export function search(query: string, wholeWord: boolean = false): SearchResult[] {
+export function search(
+  query: string,
+  wholeWord: boolean = false,
+  hebrewMode: 'substring' | 'word' | 'root' = 'substring'
+): SearchResult[] {
   const terms = parseSearchTerms(query);
   if (terms.length === 0) return [];
 
   // Determine language from first term (all terms use same language)
   const isHebrew = isHebrewQuery(terms[0]);
 
-  // For Hebrew, use lemma-based search (with whole-word fallback)
+  // For Hebrew, dispatch based on mode
   if (isHebrew) {
-    return searchByRootMode(terms);
+    switch (hebrewMode) {
+      case 'word':
+        return searchHebrewWholeWord(terms);
+      case 'root':
+        return searchByRootMode(terms);
+      case 'substring':
+      default:
+        // Fall through to substring search below
+        break;
+    }
   }
 
-  // For English, use substring or whole-word search
+  // Substring search for Hebrew or English
   const resultMap = new Map<string, SearchResult>();
 
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const term = terms[termIndex];
-    const normalizedTerm = term.toLowerCase();
+    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
 
     for (const entry of searchIndex) {
-      const text = entry.englishText;
-      const original = entry.englishOriginal;
+      // Select appropriate text based on language
+      const text = isHebrew ? entry.hebrewText : entry.englishText;
+      const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
 
-      // For English with whole-word matching, use regex
+      // Find matches
       let matches: Array<{ idx: number; len: number }> = [];
 
-      if (wholeWord) {
-        // Create word boundary regex (case insensitive)
+      if (!isHebrew && wholeWord) {
+        // For English with whole-word matching, use regex
         const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
         let match;
@@ -467,7 +485,7 @@ export function search(query: string, wholeWord: boolean = false): SearchResult[
           matches.push({ idx: match.index, len: match[0].length });
         }
       } else {
-        // Simple substring search
+        // Simple substring search (for both Hebrew and English)
         const idx = text.indexOf(normalizedTerm);
         if (idx !== -1) {
           matches.push({ idx, len: normalizedTerm.length });
@@ -477,7 +495,7 @@ export function search(query: string, wholeWord: boolean = false): SearchResult[
       // Process all matches
       for (const { idx, len } of matches) {
         const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
-        const snippet = createSnippet(original, idx, len, false);
+        const snippet = createSnippet(original, idx, len, isHebrew);
 
         let result = resultMap.get(key);
         if (!result) {
@@ -485,7 +503,7 @@ export function search(query: string, wholeWord: boolean = false): SearchResult[
             book: entry.book,
             chapter: entry.chapter,
             verse: entry.verse,
-            language: 'en',
+            language: isHebrew ? 'he' : 'en',
             matchingTerms: [],
           };
           resultMap.set(key, result);

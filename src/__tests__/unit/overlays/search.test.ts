@@ -1336,6 +1336,41 @@ describe('Search Overlay', () => {
       const terms = parseSearchTerms('a, God, b, earth');
       expect(terms).toEqual(['God', 'earth']);
     });
+
+    it('handles English comma (U+002C)', () => {
+      const terms = parseSearchTerms('God,earth,light');
+      expect(terms).toEqual(['God', 'earth', 'light']);
+    });
+
+    it('handles Arabic comma (U+060C)', () => {
+      const terms = parseSearchTerms('God،earth،light');
+      expect(terms).toEqual(['God', 'earth', 'light']);
+    });
+
+    it('handles Hebrew Gershayim (U+05F4)', () => {
+      const terms = parseSearchTerms('God‎״earth‎״light');
+      expect(terms).toEqual(['God', 'earth', 'light']);
+    });
+
+    it('handles mixed comma characters', () => {
+      const terms = parseSearchTerms('God,earth،light‎״heavens');
+      expect(terms).toEqual(['God', 'earth', 'light', 'heavens']);
+    });
+
+    it('handles Hebrew terms with Arabic comma', () => {
+      const terms = parseSearchTerms('אלהים،שמים');
+      expect(terms).toEqual(['אלהים', 'שמים']);
+    });
+
+    it('handles Hebrew terms with Hebrew Gershayim', () => {
+      const terms = parseSearchTerms('אלהים‎״שמים');
+      expect(terms).toEqual(['אלהים', 'שמים']);
+    });
+
+    it('trims whitespace around all comma variants', () => {
+      const terms = parseSearchTerms('  God  ,  earth  ،  light  ‎״  heavens  ');
+      expect(terms).toEqual(['God', 'earth', 'light', 'heavens']);
+    });
   });
 
   describe('getWordBoundaries', () => {
