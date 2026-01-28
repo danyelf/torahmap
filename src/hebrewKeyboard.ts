@@ -86,7 +86,32 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
       theme: 'hg-theme-default hebrew-keyboard-theme',
       display: {
         '{bksp}': '⌫',
-        '{space}': ' '
+        '{space}': ' ',
+        // Display English letters above Hebrew letters (keycap labels)
+        // Top row (q w e r t y p)
+        '\u05e7': 'q\n\u05e7', // ק qof
+        '\u05d5': 'w/v\n\u05d5', // ו vav (w and v both map here)
+        '\u05e2': 'e\n\u05e2', // ע ayin
+        '\u05e8': 'r\n\u05e8', // ר resh
+        '\u05ea': 't\n\u05ea', // ת tav
+        '\u05d9': 'y\n\u05d9', // י yod
+        '\u05e4': 'p/f\n\u05e4', // פ pe (p and f both map here)
+        // Middle row (a s d g h j k l) - f merged with p above
+        '\u05d0': 'a\n\u05d0', // א aleph
+        '\u05e1': 's\n\u05e1', // ס samech
+        '\u05d3': 'd\n\u05d3', // ד dalet
+        '\u05d2': 'g\n\u05d2', // ג gimel
+        '\u05d4': 'h\n\u05d4', // ה he
+        '\u05d7': 'j\n\u05d7', // ח chet
+        '\u05db': 'k\n\u05db', // כ kaf
+        '\u05dc': 'l\n\u05dc', // ל lamed
+        // Bottom row (z x c b n m) - v merged with w above
+        '\u05d6': 'z\n\u05d6', // ז zayin
+        '\u05e9': 'x\n\u05e9', // ש shin
+        '\u05e6': 'c\n\u05e6', // צ tsadi
+        '\u05d1': 'b\n\u05d1', // ב bet
+        '\u05e0': 'n\n\u05e0', // נ nun
+        '\u05de': 'm\n\u05de'  // מ mem
       },
       onChange: (input: string) => {
         if (currentInput) {
