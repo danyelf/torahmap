@@ -32,6 +32,13 @@
   border-radius: 4px !important;
   box-shadow: none !important;
   transition: background 0.15s, border-color 0.15s !important;
+  white-space: pre-line !important; /* Allow newlines in button labels */
+  line-height: 1.2 !important;
+  padding: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
 
 .hebrew-keyboard-theme .hg-button:hover {

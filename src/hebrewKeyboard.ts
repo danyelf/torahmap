@@ -6,12 +6,12 @@ import './styles/hebrewKeyboard.css';
 let keyboardInstance: Keyboard | null = null;
 let currentInput: HTMLInputElement | null = null;
 
-// Hebrew keyboard layout
+// Hebrew keyboard layout (without punctuation marks)
 const hebrewLayout = {
   default: [
-    "/ ' \u05e7 \u05e8 \u05d0 \u05d8 \u05d5 \u05df \u05dd \u05e4 {bksp}",
-    "\u05e9 \u05d3 \u05d2 \u05db \u05e2 \u05d9 \u05d7 \u05dc \u05da \u05e3 ,",
-    "\u05d6 \u05e1 \u05d1 \u05d4 \u05e0 \u05de \u05e6 \u05ea \u05e5 .",
+    "\u05e7 \u05e8 \u05d0 \u05d8 \u05d5 \u05df \u05dd \u05e4 {bksp}",
+    "\u05e9 \u05d3 \u05d2 \u05db \u05e2 \u05d9 \u05d7 \u05dc \u05da \u05e3",
+    "\u05d6 \u05e1 \u05d1 \u05d4 \u05e0 \u05de \u05e6",
     "{space}"
   ]
 };
@@ -37,7 +37,33 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
       theme: 'hg-theme-default hebrew-keyboard-theme',
       display: {
         '{bksp}': '⌫',
-        '{space}': ' '
+        '{space}': ' ',
+        // Display English letters above Hebrew letters (keycap labels)
+        '\u05e7': 'e\n\u05e7', // ק (qof)
+        '\u05e8': 'r\n\u05e8', // ר (resh)
+        '\u05d0': 't\n\u05d0', // א (aleph)
+        '\u05d8': 'y\n\u05d8', // ט (tet)
+        '\u05d5': 'u\n\u05d5', // ו (vav)
+        '\u05df': 'i\n\u05df', // ן (final nun)
+        '\u05dd': 'o\n\u05dd', // ם (final mem)
+        '\u05e4': 'p\n\u05e4', // פ (pe)
+        '\u05e9': 'a\n\u05e9', // ש (shin)
+        '\u05d3': 's\n\u05d3', // ד (dalet)
+        '\u05d2': 'd\n\u05d2', // ג (gimel)
+        '\u05db': 'f\n\u05db', // כ (kaf)
+        '\u05e2': 'g\n\u05e2', // ע (ayin)
+        '\u05d9': 'h\n\u05d9', // י (yod)
+        '\u05d7': 'j\n\u05d7', // ח (chet)
+        '\u05dc': 'k\n\u05dc', // ל (lamed)
+        '\u05da': 'l\n\u05da', // ך (final kaf)
+        '\u05e3': ';\n\u05e3', // ף (final pe)
+        '\u05d6': 'z\n\u05d6', // ז (zayin)
+        '\u05e1': 'x\n\u05e1', // ס (samech)
+        '\u05d1': 'c\n\u05d1', // ב (bet)
+        '\u05d4': 'v\n\u05d4', // ה (he)
+        '\u05e0': 'b\n\u05e0', // נ (nun)
+        '\u05de': 'n\n\u05de', // מ (mem)
+        '\u05e6': 'm\n\u05e6'  // צ (tsadi)
       },
       onChange: (input: string) => {
         if (currentInput) {
