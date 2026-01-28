@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -22,6 +22,8 @@ let wholeWordEnabled = false;
 let hebrewSearchMode: 'substring' | 'word' | 'root' = 'substring';
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
+// Track which terms have valid lemma data (for root mode visual indicators)
+let termLemmaStatus: boolean[] = [];
 
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
@@ -46,8 +48,20 @@ function doSearch(query: string): void {
   if (currentTerms.length === 0) {
     currentResults = [];
     matchingTerms = new Map();
+    termLemmaStatus = [];
   } else {
     const isHebrew = isHebrewQuery(currentTerms[0]);
+
+    // Check which terms have lemma data (only relevant for Hebrew root mode)
+    if (isHebrew && hebrewSearchMode === 'root') {
+      termLemmaStatus = currentTerms.map(term => {
+        const lemmas = findLemmasForWord(term);
+        return lemmas !== null && lemmas.length > 0;
+      });
+    } else {
+      termLemmaStatus = [];
+    }
+
     // Only use wholeWord for English queries
     const useWholeWord = wholeWordEnabled && currentTerms.length > 0 && !isHebrew;
     // Pass hebrewMode for Hebrew searches
@@ -620,6 +634,23 @@ export const searchOverlay: Overlay = {
         termSpan.appendChild(swatch);
 
         termSpan.appendChild(document.createTextNode(`"${term}"`));
+
+        // Add lemma status indicator for root mode
+        if (hebrewSearchMode === 'root' && termLemmaStatus.length > 0) {
+          const indicator = document.createElement('span');
+          indicator.className = 'lemma-indicator';
+          if (termLemmaStatus[i]) {
+            indicator.textContent = ' \u2713'; // checkmark
+            indicator.title = 'Root data found';
+            indicator.style.color = '#4CAF50'; // green
+          } else {
+            indicator.textContent = ' \u21AA'; // hook arrow
+            indicator.title = 'No root data, using whole-word search';
+            indicator.style.color = '#FF9800'; // orange
+          }
+          termSpan.appendChild(indicator);
+        }
+
         legendDiv.appendChild(termSpan);
 
         if (i < currentTerms.length - 1) {
@@ -688,6 +719,7 @@ export const searchOverlay: Overlay = {
     matchingTerms.clear();
     wholeWordEnabled = false;
     hebrewSearchMode = 'substring';
+    termLemmaStatus = [];
     updateCallback = null;
     onVerseClickCallback = null;
   },

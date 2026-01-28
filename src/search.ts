@@ -107,8 +107,9 @@ export async function loadLemmaData(): Promise<void> {
  * 1. Direct lookup
  * 2. With common prefixes stripped (ו, ה, ב, ל, כ, מ, ש)
  * 3. With two-letter prefix combos stripped
+ * Exported for use in overlay UI to show which terms have lemma data
  */
-function findLemmasForWord(hebrewWord: string): string[] | null {
+export function findLemmasForWord(hebrewWord: string): string[] | null {
   if (!wordLemmas) return null;
 
   const stripped = stripNikkud(hebrewWord);

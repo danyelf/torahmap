@@ -164,6 +164,12 @@
   border-radius: 2px;
 }
 
+.lemma-indicator {
+  font-size: 11px;
+  font-weight: bold;
+  cursor: help;
+}
+
 /* Sidebar search term highlighting */
 #verse-sidebar mark.term-0 { background: rgba(51, 230, 255, 0.4); color: #fff; }
 #verse-sidebar mark.term-1 { background: rgba(255, 128, 0, 0.4); color: #fff; }
