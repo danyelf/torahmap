@@ -380,6 +380,94 @@ describe('Search Overlay', () => {
       const input2 = container2.querySelector('#search-input') as HTMLInputElement;
       expect(input2.value).toBe('God');
     });
+
+    it('strips nikkud from pasted Hebrew text', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      // Create a ClipboardEvent with Hebrew text containing nikkud
+      const hebrewWithNikkud = 'אֱלֹהִ֛ים';
+      const expectedStripped = 'אלהים';
+
+      // Create clipboard data
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', hebrewWithNikkud);
+
+      // Create and dispatch paste event
+      const pasteEvent = new ClipboardEvent('paste', {
+        clipboardData,
+        bubbles: true,
+        cancelable: true,
+      });
+
+      input.dispatchEvent(pasteEvent);
+
+      // Verify nikkud was stripped
+      expect(input.value).toBe(expectedStripped);
+    });
+
+    it('does not prevent default for non-Hebrew pasted text', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      // Create a ClipboardEvent with English text
+      const englishText = 'beginning';
+
+      // Create clipboard data
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', englishText);
+
+      // Create and dispatch paste event
+      const pasteEvent = new ClipboardEvent('paste', {
+        clipboardData,
+        bubbles: true,
+        cancelable: true,
+      });
+
+      input.dispatchEvent(pasteEvent);
+
+      // Verify default was NOT prevented (defaultPrevented should be false)
+      expect(pasteEvent.defaultPrevented).toBe(false);
+    });
+
+    it('handles paste at cursor position', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      // Set initial value and cursor position
+      input.value = 'test  here';
+      input.setSelectionRange(5, 5); // Position cursor between "test" and "here"
+
+      // Create a ClipboardEvent with Hebrew text containing nikkud
+      const hebrewWithNikkud = 'אֱלֹהִ֛ים';
+      const expectedStripped = 'אלהים';
+
+      // Create clipboard data
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', hebrewWithNikkud);
+
+      // Create and dispatch paste event
+      const pasteEvent = new ClipboardEvent('paste', {
+        clipboardData,
+        bubbles: true,
+        cancelable: true,
+      });
+
+      input.dispatchEvent(pasteEvent);
+
+      // Verify nikkud was stripped and inserted at cursor position
+      expect(input.value).toBe('test ' + expectedStripped + ' here');
+
+      // Verify cursor is after inserted text
+      expect(input.selectionStart).toBe(5 + expectedStripped.length);
+      expect(input.selectionEnd).toBe(5 + expectedStripped.length);
+    });
   });
 
   describe('Render Legend', () => {

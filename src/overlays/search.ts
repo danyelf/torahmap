@@ -414,6 +414,34 @@ export const searchOverlay: Overlay = {
       }
     };
 
+    // Strip nikkud from pasted Hebrew text
+    searchInput?.addEventListener('paste', (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData('text/plain');
+      if (text && isHebrewQuery(text)) {
+        // Prevent default paste
+        e.preventDefault();
+
+        // Strip nikkud and insert
+        const stripped = stripNikkud(text);
+
+        // Insert at cursor position
+        const input = searchInput!;
+        const start = input.selectionStart ?? 0;
+        const end = input.selectionEnd ?? 0;
+        const currentValue = input.value;
+
+        // Build new value
+        input.value = currentValue.slice(0, start) + stripped + currentValue.slice(end);
+
+        // Set cursor position after inserted text
+        const newCursorPos = start + stripped.length;
+        input.setSelectionRange(newCursorPos, newCursorPos);
+
+        // Trigger input event to update search
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+
     searchInput?.addEventListener('input', () => {
       const query = searchInput!.value.trim();
       updateInputMode();
