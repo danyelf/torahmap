@@ -1,4 +1,4 @@
-// Verse length overlay - visualizes word count per verse using linear scale
+// Verse length overlay - visualizes word count per verse using square root scale
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity } from '../types.ts';
 import { getVerseKey } from '../types.ts';
@@ -59,7 +59,7 @@ export function configure(config: { verseTexts: VerseTexts }): void {
 
 /**
  * Get color for a verse based on its word count
- * Uses linear scale and cool-to-warm gradient
+ * Uses square root scale and cool-to-warm gradient
  */
 function getVerseColorForWordCount(verse: VerseIdentity): Color | null {
   const key = getVerseKey(verse.book, verse.chapter, verse.verse);
@@ -70,8 +70,11 @@ function getVerseColorForWordCount(verse: VerseIdentity): Color | null {
     return [0.15, 0.15, 0.2];
   }
 
-  // Linear scale: map word count to [0, 1]
-  const t = (wordCount - minWordCount) / (maxWordCount - minWordCount);
+  // Square root scale: map word count to [0, 1]
+  const sqrtMin = Math.sqrt(minWordCount);
+  const sqrtMax = Math.sqrt(maxWordCount);
+  const sqrtValue = Math.sqrt(wordCount);
+  const t = (sqrtValue - sqrtMin) / (sqrtMax - sqrtMin);
 
   // Cool-to-warm gradient: blue (240°) → cyan → green → yellow → orange → red (0°)
   // Hue goes from 240° (cool) down to 0° (warm)
@@ -124,7 +127,7 @@ export const verseLengthOverlay: Overlay = {
         Warm colors (red/orange) = longer verses
       </div>
       <div style="color: #888; font-size: 10px; margin-top: 4px; line-height: 1.3;">
-        Linear scale
+        Square root scale
       </div>
     `;
   },

@@ -212,8 +212,8 @@ describe('Verse Length Overlay', () => {
       }
     });
 
-    it('uses linear scale for color mapping', () => {
-      // Linear scale means equal word count differences produce roughly equal color differences
+    it('uses square root scale for color mapping', () => {
+      // Square root scale is between linear and logarithmic
       const verse1 = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word
       const verse4 = createVerse({ book: 'Genesis', chapter: 1, verse: 2 }); // 4 words
       const verse12 = createVerse({ book: 'Exodus', chapter: 1, verse: 1 }); // 12 words
@@ -410,7 +410,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Linear scale');
+      expect(html).toContain('Square root scale');
     });
 
     it('creates gradient with multiple color stops', () => {
