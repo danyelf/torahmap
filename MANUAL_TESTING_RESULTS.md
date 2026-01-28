@@ -8,7 +8,20 @@
 
 ## Code Review Summary
 
-I've reviewed the implementation of the Hebrew keyboard and transliteration functionality. The code is well-structured and handles the following scenarios correctly:
+I've reviewed the implementation of the Hebrew keyboard and transliteration functionality. During the review, I found and fixed one bug:
+
+### Bug Fixed: Virtual Keyboard Backspace
+**Issue**: The virtual keyboard backspace button was always deleting from the end of the text, not respecting cursor position.
+
+**Fix**: Updated `handleBackspace()` to:
+- Delete selected text when there's a selection
+- Delete character before cursor when cursor is in middle of text
+- Do nothing when cursor is at the beginning
+- Properly update cursor position after deletion
+
+**Tests Added**: 18 comprehensive unit tests covering all keyboard functionality
+
+The code is now well-structured and handles the following scenarios correctly:
 
 ### ✓ 1. Transliteration Activation/Deactivation
 
@@ -267,10 +280,11 @@ The following test files provide extensive coverage:
 3. **search-hebrew-modes.test.ts**: Tests substring/word/root modes
 4. **url-state-sync.test.ts**: Tests URL state persistence
 
-All 1075 tests passing, including:
+All 1260 tests passing, including:
 - 108 tests in search.test.ts
 - 33 tests in search-hebrew-modes.test.ts
-- 84 tests in hebrewTransliteration.test.ts (from bundle-texts.test.ts)
+- 18 tests in hebrewKeyboard.test.ts (newly added)
+- 15 tests in hebrewTransliteration.test.ts
 - 63 tests in url-state-sync.test.ts
 
 ---
@@ -305,4 +319,5 @@ The implementation is robust and handles all required edge cases correctly:
 ✓ Dev server running on **port 5173**
 ✓ Worktree: **tm-6xjf**
 ✓ Project: **torahmap**
-✓ All automated tests passing (1075 tests)
+✓ All automated tests passing (1260 tests)
+✓ Bug fix committed and pushed (1c6df0f)
