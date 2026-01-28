@@ -9,7 +9,7 @@
  * DOMAIN LAYER (Torah-specific):
  * - VerseIdentity: References a biblical verse (book/chapter/verse)
  * - Data loaders: layout.ts, verseTexts.ts, overlay data loading
- * - Overlays: Implement domain logic (divine names, commentary, etc)
+ * - Overlays: Implement domain logic (commentary, trop, search, text dating, etc)
  * - Display: Sidebar, URL state (formatting "Genesis 1:1")
  *
  * SPATIAL LAYER (domain-agnostic):
@@ -35,13 +35,6 @@ export interface Book {
 export interface TorahData {
   books: Book[];
 }
-
-/**
- * Divine names data structure.
- * Maps book names to arrays of chapters, where each chapter is an array of verse codes.
- * Verse codes: 0 = no divine name, 1 = YHWH, 2 = Elohim, 3 = both
- */
-export type DivineNamesData = { [bookName: string]: number[][] };
 
 /**
  * Identity of a biblical verse.

@@ -1,5 +1,5 @@
 // Test fixtures for Torah Map tests
-import type { VerseLayout, TorahData, CommentaryData, DivineNamesData, VerseCommentary } from '../../types';
+import type { VerseLayout, TorahData, CommentaryData, VerseCommentary } from '../../types';
 
 /**
  * Creates a sample verse with default values that can be overridden
@@ -100,22 +100,6 @@ export const SAMPLE_COMMENTARY_DATA: CommentaryData = {
       '2': { total: 25, categories: { 'Midrash': 15, 'Responsa': 10 } },
     },
   },
-};
-
-/**
- * Sample divine names data (Torah only)
- */
-export const SAMPLE_DIVINE_NAMES_DATA: DivineNamesData = {
-  'Genesis': [
-    // Chapter 1: [verse codes...]
-    // 0 = no divine name, 1 = YHWH, 2 = Elohim, 3 = both
-    [2, 2, 0, 2, 0, 1, 2, 2, 0, 2], // 10 verses in chapter 1
-    [1, 2, 3, 0, 1, 2, 0, 1], // 8 verses in chapter 2
-  ],
-  'Exodus': [
-    [1, 0, 2, 1, 0, 3, 1, 2], // 8 verses in chapter 1
-    [2, 1, 0, 2, 1], // 5 verses in chapter 2
-  ],
 };
 
 /**

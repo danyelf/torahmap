@@ -145,7 +145,7 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Overlay Name Validation', () => {
     it('accepts valid overlay names', () => {
-      const validOverlays = ['divine-names', 'commentary', 'trop', 'search'];
+      const validOverlays = ['commentary', 'trop', 'search'];
       validOverlays.forEach(overlay => {
         mockWindowLocation(`http://localhost:5173/#overlay=${overlay}`);
         const state = parseUrlState();
@@ -182,9 +182,9 @@ describe('URL Parameter Security Validation', () => {
     });
 
     it('accepts overlay name with hyphens', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=divine-names');
+      mockWindowLocation('http://localhost:5173/#overlay=text-dating');
       const state = parseUrlState();
-      expect(state.overlay).toBe('divine-names');
+      expect(state.overlay).toBe('text-dating');
     });
   });
 

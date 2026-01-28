@@ -236,7 +236,6 @@ export function mockFetch(responses: Record<string, any> = {}) {
     '/data/tanakh-structure.json': { books: [] },
     '/data/all-texts.json': {},
     '/data/commentary-counts.json': {},
-    '/data/divine-names.json': {},
     ...responses,
   };
 

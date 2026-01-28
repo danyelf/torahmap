@@ -31,7 +31,6 @@ import {
   registerOverlay,
   getOverlay,
   getAllOverlays,
-  divineNamesOverlay,
   commentaryOverlay,
   configureCommentary,
   tropOverlay,
@@ -95,7 +94,6 @@ async function main(): Promise<void> {
   buildSearchIndex(verseTexts);
 
   // Register and initialize overlays
-  registerOverlay(divineNamesOverlay);
   registerOverlay(commentaryOverlay);
   registerOverlay(tropOverlay);
   registerOverlay(searchOverlay);

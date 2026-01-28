@@ -40,9 +40,9 @@ describe('parseUrlState', () => {
   });
 
   it('parses overlay parameter', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=divine-names');
+    mockWindowLocation('http://localhost:5173/#overlay=commentary');
     const state = parseUrlState();
-    expect(state.overlay).toBe('divine-names');
+    expect(state.overlay).toBe('commentary');
   });
 
   it('parses verse parameter', () => {
@@ -200,11 +200,11 @@ describe('buildUrlHash', () => {
 
   it('builds hash with overlay', () => {
     const state: UrlState = {
-      overlay: 'divine-names',
+      overlay: 'commentary',
       overlayParams: {},
     };
     const hash = buildUrlHash(state);
-    expect(hash).toBe('#overlay=divine-names');
+    expect(hash).toBe('#overlay=commentary');
   });
 
   it('builds hash with verse', () => {
@@ -458,11 +458,11 @@ describe('updateUrl', () => {
 
   it('replaces state by default', () => {
     const state: UrlState = {
-      overlay: 'divine-names',
+      overlay: 'commentary',
       overlayParams: {},
     };
     updateUrl(state);
-    expect(history.replaceState).toHaveBeenCalledWith(null, '', '/#overlay=divine-names');
+    expect(history.replaceState).toHaveBeenCalledWith(null, '', '/#overlay=commentary');
     expect(history.pushState).not.toHaveBeenCalled();
   });
 
@@ -742,7 +742,7 @@ describe('subscribeToHashChange', () => {
 describe('backward compatibility', () => {
   it('handles old URL format without overlay prefix', () => {
     // Old format might have been just the overlay name
-    mockWindowLocation('http://localhost:5173/#divine-names');
+    mockWindowLocation('http://localhost:5173/#commentary');
     const state = parseUrlState();
     // Should parse as empty since it's not a valid param
     expect(state).toEqual({ overlayParams: {} });
