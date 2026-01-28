@@ -14,33 +14,11 @@ The core design principle is **position stability** - each verse occupies a perm
 
 ## Features
 
-### Visualization
-- **23,000+ verses** rendered as colored squares using WebGL
-- **Three sections**: Torah → Nevi'im → Ketuvim (stacked vertically)
+- **23,000+ verses** rendered as colored squares using WebGL (Torah → Nevi'im → Ketuvim)
 - **Smooth zoom/pan** with mouse wheel and drag
 - **Verse details** on hover/click with Hebrew text, English translation, and Sefaria link
-
-### Overlays
-
-| Overlay | Description |
-|---------|-------------|
-| **None** | Gray with subtle brightness variation |
-| **Search** | Full-text search with Hebrew/English support - highlights matching verses on the map |
-| **Commentary** | Logarithmic heatmap of Sefaria commentary link counts, filterable by 8 categories |
-| **Trop** | Cantillation mark (trope) visualizer - select any of the 39 trop marks to see where they appear across Tanakh, with rarity-based coloring (gold for rare marks, heatmap for common ones) |
-| **Text Dating** | Visualizes estimated composition dates using scholarly consensus - shows 6 historical periods from Pre-Monarchic (1400-1000 BCE) through Hellenistic (331-164 BCE) with geological metaphor coloring |
-| **Haftarah** | Highlights Torah portions that have associated Haftarah readings |
-
-Commentary categories: Talmud (direct text only, filters commentaries), Midrash, Halakhah, Jewish Thought, Chasidut, Kabbalah, Musar, Responsa
-
-Note: The "Tanakh" category (verse cross-references) was removed as it was confusing.
-
-### Search
-
-- **Word-wheeling**: Results appear as you type
-- **Bilingual**: Searches both Hebrew and English text
-- **Nikkud-insensitive**: Hebrew searches ignore vowel marks
-- **Visual integration**: Matching verses highlighted on the map via Search overlay
+- **Full-text search** with Hebrew/English support, nikkud-insensitive
+- **Pluggable overlays**: Search, Commentary (8 categories), Trop (39 cantillation marks), Text Dating (6 historical periods), Haftarah
 
 ## Quick Start
 
@@ -59,39 +37,15 @@ The dev server runs at `http://localhost:5173`
 
 ## Testing
 
-The project has comprehensive test coverage with **1144 tests** covering all major functionality:
+The project has comprehensive test coverage (1000+ tests):
 
 ```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode (during development)
-npm run test:watch
-
-# Run tests with coverage report
-npm run test:coverage
+npm test              # Run all tests
+npm run test:watch    # Watch mode for development
+npm run test:coverage # Coverage report
 ```
 
-### Pre-commit Hook
-
-A pre-commit hook automatically runs all tests before allowing commits. This ensures:
-- All 1144 tests pass before code enters the repository
-- No broken commits
-- Immediate feedback on test failures
-
-The hook is installed automatically via `bd hooks` (beads issue tracker). If you need to bypass it (not recommended):
-
-```bash
-git commit --no-verify
-```
-
-### Test Coverage
-
-- **Utilities**: 100% coverage (color, random functions)
-- **URL State**: 95%+ coverage (parsing, serialization, browser history)
-- **Geometry/WebGL**: 85%+ coverage (buffer building, shader compilation)
-- **Overlays**: 90%+ coverage (commentary, search, trop, text-dating, haftarah)
-- **Integration**: Full workflow testing (overlay switching, URL sync)
+A pre-commit hook automatically runs all tests. To bypass (not recommended): `git commit --no-verify`
 
 ## Project Structure
 
@@ -164,170 +118,38 @@ git commit --no-verify
 
 ## Architecture
 
-The codebase follows a **functional, modular design** with clear separation of concerns. After a major refactoring (tm-1qi), the monolithic `main.ts` was split into focused modules:
-
-### Core Modules
-
-**main.ts** - Application orchestrator
-- Wires together all modules
-- Handles user interactions (mouse, keyboard, UI)
-- Manages application state (current overlay, pinned verse)
-- Coordinates between overlay system and rendering pipeline
-
-**camera.ts** - Camera state management
-- Tracks zoom (0.1x - 10x) and pan position
-- Provides zoom clamping and pan adjustment for zoom-to-cursor behavior
-- Pure functions operating on immutable Camera interface
-
-**mouseState.ts** - Mouse interaction state
-- Tracks dragging state and hovered verse
-- Provides utilities for drag operations and verse comparison
-- Minimal state, clear mutation points
-
-**rendering.ts** - WebGL rendering infrastructure
-- **RenderContext**: Immutable WebGL infrastructure (gl context, compiled shaders)
-- **RenderState**: Mutable rendering state (vertex buffers, verse data, DPR)
-- Separation between "created once" and "changes during lifecycle"
-- Main render loop and outline rendering
-
-**verseColoring.ts** - Verse color computation
-- **Two-pass design**: First compute semantic state (computeVerseStates), then apply colors (applyVerseColors)
-- Handles base colors, overlay colors, and hover highlighting
-- Separation of "what is true" from "how to render it"
-
-**hitDetection.ts** - Coordinate transformation and hit testing
-- Screen-to-world coordinate conversion
-- Exact hit detection (point in bounds)
-- Fuzzy hit detection (nearest verse within radius)
-- Combined algorithm for robust verse selection
-
-**sidebar.ts** - Verse details sidebar
-- DOM manipulation for sidebar display
-- Integration with overlays for contextual information
-- Positioning logic relative to controls panel
-- Clean separation from main.ts
-
-**outline.ts** - Highlight outline geometry
-- Generates WebGL geometry for verse borders
-- Used for hover and pinned verse highlighting
-- 4 border rectangles (24 vertices) per outline
+The codebase follows a **functional, modular design** with clear separation of concerns:
 
 ### Design Principles
 
-1. **Separation of concerns**: Each module has a single, well-defined responsibility
-2. **Functional core**: Prefer pure functions over classes and mutation
-3. **Immutable vs mutable**: Clear distinction (RenderContext vs RenderState)
-4. **Two-pass rendering**: Separate "compute state" from "apply effects" for clarity
-5. **Minimal state**: State lives at the right level of abstraction
-6. **No circular dependencies**: Clean dependency graph from main.ts down
+1. **Separation of concerns** - Each module has a single responsibility
+2. **Functional core** - Prefer pure functions over classes and mutation
+3. **Immutable vs mutable** - Clear distinction (RenderContext vs RenderState)
+4. **Two-pass rendering** - Separate "compute state" from "apply effects"
+5. **Minimal state** - State lives at the right level of abstraction
+6. **No circular dependencies** - Clean dependency graph from main.ts down
 
-### Module Dependencies
+### Key Concepts
 
-```
-main.ts (orchestrator)
-  ├─→ camera.ts (zoom/pan state)
-  ├─→ mouseState.ts (interaction state)
-  ├─→ rendering.ts (WebGL)
-  │     ├─→ webgl.ts (shader compilation)
-  │     ├─→ geometry.ts (vertex buffers)
-  │     ├─→ outline.ts (highlight geometry)
-  │     └─→ labels.ts (book labels)
-  ├─→ verseColoring.ts (color logic)
-  │     └─→ utils/random.ts (seeded randomness)
-  ├─→ hitDetection.ts (coordinate transform)
-  ├─→ sidebar.ts (verse details UI)
-  │     └─→ overlays/*.ts (for contextual info)
-  ├─→ layout.ts (verse positioning)
-  ├─→ urlState.ts (browser state sync)
-  └─→ overlays/ (data visualizations)
-        ├─→ registry.ts (overlay management)
-        └─→ types.ts (overlay interface)
-```
+- **main.ts** orchestrates all modules and handles user interactions
+- **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
+- **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
+- **verseColoring.ts** uses two-pass design: compute semantic state, then apply colors
+- **overlays/** are pluggable and easy to add
 
-## Layout Algorithm
+## Data
 
-The layout handles complex arrangement requirements:
-
-- **Torah**: 5 books side-by-side
-- **Nevi'im**: Major prophets as columns, 12 minor prophets in 4 sub-columns
-- **Ketuvim**: Regular books + Psalms (2-column split) + stacked groups (Five Scrolls, Chronicles, Ezra/Nehemiah)
-- **Chapter wrapping**: Long chapters (>50 verses) wrap to multiple lines
-- **Widow prevention**: Avoids leaving <3 verses orphaned on a line
-- **Visual noise reduction**: Position jitter and brightness variation to reduce moiré patterns
-
-## Data Sources
-
-All data comes from [Sefaria](https://www.sefaria.org/):
-
-- **Verse texts**: [Sefaria-Export](https://github.com/Sefaria/Sefaria-Export) GitHub repository
-- **Structure data**: Sefaria `/api/shape/` endpoint
-- **Commentary links**: Sefaria Links CSV exports
-
-## Regenerating Data
-
-```bash
-# Download all verse texts (~10MB)
-bash scripts/download-texts.sh
-
-# Bundle verse texts into single file (required after downloading)
-npx tsx scripts/bundle-texts.ts
-
-# Regenerate structure from Sefaria API
-node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
-
-# Regenerate text dating data (requires data/text-dating-source.json)
-npm run generate:text-dating
-
-# Regenerate commentary counts (IMPORTANT: Use v2 script)
-# First, download Sefaria links CSV files (~470MB) if not already present:
-mkdir -p data/sefaria-links
-cd data/sefaria-links
-for i in {0..12}; do
-  curl -O "https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/links/links$i.csv"
-done
-cd ../..
-
-# Then run the v2 script (filters Talmud commentaries, drops Tanakh category):
-python3 scripts/process_sefaria_links_v2.py
-```
-
-**Note:** `process_sefaria_links_v2.py` differs from the old script:
-- **Drops "Tanakh" category** (verse cross-references were confusing)
-- **Filters Talmud** to show only direct text references (not Steinsaltz, Rashi on Talmud, etc.)
-- **Uses local CSV files** from `data/sefaria-links/` instead of downloading on each run
-- **Result:** Closer match to Sefaria's website counts (e.g., Exodus 23:5 shows 24 Talmud vs 28 on Sefaria)
-
-**Data Staleness:** The CSV files from Sefaria-Export are updated periodically (typically every few months). Our commentary counts will be behind Sefaria's live website by however long since the last CSV export. This is an acceptable trade-off for having fast, offline-capable data. To update to the latest counts, re-download the CSV files and re-run the script.
+All data comes from [Sefaria](https://www.sefaria.org/). See [DATA_REGENERATION.md](DATA_REGENERATION.md) for instructions on updating data files.
 
 ## Interactions
 
-| Action | Effect |
-|--------|--------|
-| Mouse wheel | Zoom (0.1x - 10x) |
-| Click + drag | Pan |
-| Hover | Show verse reference |
-| Click verse | Pin and show sidebar with text |
-| Click pinned verse | Unpin |
-| Overlay selector | Switch between None / Search / Commentary / Trop / Text Dating / Haftarah |
-| Category filter | Filter commentary heatmap by source type |
-| Trop selector | Choose cantillation mark to visualize |
-| Search box | Type to search Hebrew/English text with live results |
-
-## Worktree Workflow
-
-For feature development, use the worktree workflow to avoid conflicts:
-
-```bash
-# Start work on a bead
-./scripts/work-on-bead.sh tm-xxx
-
-# ... do your work in the isolated worktree ...
-
-# When done, land the changes
-./scripts/land-bead.sh
-```
-
-The `land-bead.sh` script handles the entire merge and cleanup process, preventing beads file conflicts.
+- **Mouse wheel** - Zoom (0.1x - 10x)
+- **Click + drag** - Pan
+- **Hover** - Show verse reference
+- **Click verse** - Pin and show sidebar with text
+- **Click pinned verse** - Unpin
+- **Overlay selector** - Switch between visualization modes
+- **Search box** - Type to search Hebrew/English text with live results
 
 ## License
 

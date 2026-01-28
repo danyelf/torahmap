@@ -2,6 +2,12 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+## How to Code
+
+When you start in a worktree, expect to work in that worktree as autonomously as you can on the corresponding bead and its dependencies.
+
+**UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until Danyel has looked at it and agreed it's ready to close.
+
 ## Quick Reference
 
 ```bash
