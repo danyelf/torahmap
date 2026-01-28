@@ -136,11 +136,34 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
   // Sync keyboard with input value
   keyboardInstance.setInput(inputElement.value);
 
+  // Post-process button labels to add styled markup for English/Hebrew keycaps
+  styleKeycapLabels();
+
   // Position keyboard next to the controls panel
   positionKeyboard(inputElement, container);
 
   // Show keyboard
   container.style.display = 'block';
+}
+
+/**
+ * Post-process keyboard buttons to wrap keycap labels in styled spans
+ * Converts "e\nק" text into <span class="english">e</span><span class="hebrew">ק</span>
+ */
+function styleKeycapLabels(): void {
+  const buttons = document.querySelectorAll('.hebrew-keyboard-theme .hg-button');
+  buttons.forEach((button) => {
+    const span = button.querySelector('span');
+    if (!span) return;
+
+    const text = span.textContent || '';
+    // Check if this is a keycap label with newline (skip special keys)
+    if (text.includes('\n') && !text.includes('{')) {
+      const [english, hebrew] = text.split('\n');
+      // Replace with styled spans
+      span.innerHTML = `<span class="keycap-english">${english}</span><span class="keycap-hebrew">${hebrew}</span>`;
+    }
+  });
 }
 
 function positionKeyboard(_inputElement: HTMLInputElement, container: HTMLElement): void {
