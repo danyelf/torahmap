@@ -45,9 +45,6 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
         <dt>Text Search</dt>
         <dd>Search Hebrew or English text. Matching verses are highlighted on the map.</dd>
 
-        <dt>Divine Names</dt>
-        <dd>Colors Torah verses by divine name usage: YHWH (blue), Elohim (red), both (purple).</dd>
-
         <dt>Commentary</dt>
         <dd>Heatmap showing commentary density from Sefaria. Filter by source type.</dd>
 

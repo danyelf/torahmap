@@ -11,7 +11,6 @@ import {
 import {
   registerOverlay,
   getOverlay,
-  divineNamesOverlay,
   commentaryOverlay,
   tropOverlay,
   searchOverlay,
@@ -23,7 +22,6 @@ import {
 import {
   SAMPLE_VERSES,
   SAMPLE_COMMENTARY_DATA,
-  SAMPLE_DIVINE_NAMES_DATA,
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
@@ -77,9 +75,7 @@ describe('URL State Sync Integration', () => {
       const urlString = typeof url === 'string' ? url : url.url;
 
       let data: any;
-      if (urlString.includes('divine-names.json')) {
-        data = SAMPLE_DIVINE_NAMES_DATA;
-      } else if (urlString.includes('commentary-counts.json')) {
+      if (urlString.includes('commentary-counts.json')) {
         data = SAMPLE_COMMENTARY_DATA;
       } else {
         data = {};
@@ -93,7 +89,6 @@ describe('URL State Sync Integration', () => {
     });
 
     // Register overlays
-    registerOverlay(divineNamesOverlay);
     registerOverlay(commentaryOverlay);
     registerOverlay(tropOverlay);
     registerOverlay(searchOverlay);
@@ -115,10 +110,10 @@ describe('URL State Sync Integration', () => {
 
   describe('URL State Parsing', () => {
     it('parses overlay from URL hash', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=divine-names');
+      mockWindowLocation('http://localhost:5173/#overlay=commentary');
       const state = parseUrlState();
 
-      expect(state.overlay).toBe('divine-names');
+      expect(state.overlay).toBe('commentary');
     });
 
     it('parses overlay-specific parameters for commentary', () => {
@@ -227,12 +222,12 @@ describe('URL State Sync Integration', () => {
   describe('URL State Building', () => {
     it('builds hash with overlay selection', () => {
       const state: UrlState = {
-        overlay: 'divine-names',
+        overlay: 'commentary',
         overlayParams: {},
       };
 
       const hash = buildUrlHash(state);
-      expect(hash).toBe('#overlay=divine-names');
+      expect(hash).toBe('#overlay=commentary');
     });
 
     it('builds hash with commentary overlay and category', () => {
@@ -370,7 +365,7 @@ describe('URL State Sync Integration', () => {
   describe('URL Update Operations', () => {
     it('updates URL with replaceState by default', () => {
       const state: UrlState = {
-        overlay: 'divine-names',
+        overlay: 'commentary',
         overlayParams: {},
       };
 
@@ -378,12 +373,12 @@ describe('URL State Sync Integration', () => {
 
       expect(history.replaceState).toHaveBeenCalled();
       expect(history.pushState).not.toHaveBeenCalled();
-      expect(window.location.hash).toBe('#overlay=divine-names');
+      expect(window.location.hash).toBe('#overlay=commentary');
     });
 
     it('updates URL with pushState when requested', () => {
       const state: UrlState = {
-        overlay: 'divine-names',
+        overlay: 'commentary',
         overlayParams: {},
       };
 
@@ -450,13 +445,6 @@ describe('URL State Sync Integration', () => {
       expect(urlParams).toEqual({ q: 'moses' });
     });
 
-    it('divine names overlay has no URL params', async () => {
-      const overlay = getOverlay('divine-names');
-      await overlay?.init?.();
-
-      const urlParams = overlay?.getUrlParams?.();
-      expect(urlParams).toBeUndefined();
-    });
 
     it('handles overlay switch in URL', async () => {
       // Start with commentary
@@ -886,7 +874,7 @@ describe('URL State Sync Integration', () => {
 
     it('handles overlay exploration workflow', async () => {
       // User tries different overlays
-      const overlays = ['divine-names', 'commentary', 'trop', 'search'];
+      const overlays = ['commentary', 'trop', 'search'];
 
       for (const overlayId of overlays) {
         const state: UrlState = {
@@ -897,11 +885,10 @@ describe('URL State Sync Integration', () => {
       }
 
       // All transitions should be in history
-      expect(historyStates.length).toBe(4);
-      expect(historyStates[0]).toContain('divine-names');
-      expect(historyStates[1]).toContain('commentary');
-      expect(historyStates[2]).toContain('trop');
-      expect(historyStates[3]).toContain('search');
+      expect(historyStates.length).toBe(3);
+      expect(historyStates[0]).toContain('commentary');
+      expect(historyStates[1]).toContain('trop');
+      expect(historyStates[2]).toContain('search');
     });
 
     it('handles pan/zoom refinement without history spam', () => {

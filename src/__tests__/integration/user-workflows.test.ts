@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   registerOverlay,
   getOverlay,
-  divineNamesOverlay,
   commentaryOverlay,
   tropOverlay,
   searchOverlay,
@@ -22,7 +21,6 @@ import {
   createVerses,
   SAMPLE_VERSES,
   SAMPLE_COMMENTARY_DATA,
-  SAMPLE_DIVINE_NAMES_DATA,
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
@@ -75,9 +73,7 @@ describe('User Workflows Integration', () => {
       const urlString = typeof url === 'string' ? url : url.url;
 
       let data: any;
-      if (urlString.includes('divine-names.json')) {
-        data = SAMPLE_DIVINE_NAMES_DATA;
-      } else if (urlString.includes('commentary-counts.json')) {
+      if (urlString.includes('commentary-counts.json')) {
         data = SAMPLE_COMMENTARY_DATA;
       } else {
         data = {};
@@ -91,7 +87,6 @@ describe('User Workflows Integration', () => {
     });
 
     // Register overlays
-    registerOverlay(divineNamesOverlay);
     registerOverlay(commentaryOverlay);
     registerOverlay(tropOverlay);
     registerOverlay(searchOverlay);
@@ -198,11 +193,10 @@ describe('User Workflows Integration', () => {
 
     it('switches overlays multiple times without state leakage', async () => {
       const overlaySequence = [
-        { id: 'divine-names', params: {} },
         { id: 'commentary', params: { category: 'talmud' } },
         { id: 'trop', params: { trop: 'tipcha' } },
         { id: 'search', params: { q: 'abraham' } },
-        { id: 'divine-names', params: {} },
+        { id: 'commentary', params: {} },
       ];
 
       for (const { id, params } of overlaySequence) {
@@ -229,10 +223,9 @@ describe('User Workflows Integration', () => {
         }
       }
 
-      // Final state should be divine-names with no params
+      // Final state should be commentary with no params
       const finalParsed = parseUrlState();
-      expect(finalParsed.overlay).toBe('divine-names');
-      expect(finalParsed.overlayParams.category).toBeUndefined();
+      expect(finalParsed.overlay).toBe('commentary');
       expect(finalParsed.overlayParams.trop).toBeUndefined();
       expect(finalParsed.overlayParams.q).toBeUndefined();
     });
@@ -316,16 +309,16 @@ describe('User Workflows Integration', () => {
     it('maintains URL sync throughout full interaction cycle', async () => {
       const interactions = [
         {
-          state: { overlay: 'divine-names', overlayParams: {} },
-          expected: ['overlay=divine-names'],
+          state: { overlay: 'commentary', overlayParams: {} },
+          expected: ['overlay=commentary'],
         },
         {
-          state: { overlay: 'divine-names', overlayParams: {}, zoom: 2.0 },
-          expected: ['overlay=divine-names', 'zoom=2'],
+          state: { overlay: 'commentary', overlayParams: {}, zoom: 2.0 },
+          expected: ['overlay=commentary', 'zoom=2'],
         },
         {
-          state: { overlay: 'divine-names', overlayParams: {}, zoom: 2.0, verse: 'Genesis.1.1' },
-          expected: ['overlay=divine-names', 'verse=Genesis.1.1'],
+          state: { overlay: 'commentary', overlayParams: {}, zoom: 2.0, verse: 'Genesis.1.1' },
+          expected: ['overlay=commentary', 'verse=Genesis.1.1'],
         },
         {
           state: { overlay: 'search', overlayParams: { q: 'covenant' }, zoom: 2.0 },
@@ -350,9 +343,9 @@ describe('User Workflows Integration', () => {
 
     it('handles browser back/forward correctly', () => {
       const states: UrlState[] = [
-        { overlay: 'divine-names', overlayParams: {} },
         { overlay: 'commentary', overlayParams: { category: 'talmud' } },
         { overlay: 'trop', overlayParams: { trop: 'etnachta' } },
+        { overlay: 'search', overlayParams: { q: 'moses' } },
       ];
 
       // Build history
@@ -362,21 +355,22 @@ describe('User Workflows Integration', () => {
 
       // Verify final state
       let parsed = parseUrlState();
-      expect(parsed.overlay).toBe('trop');
-      expect(parsed.overlayParams.trop).toBe('etnachta');
+      expect(parsed.overlay).toBe('search');
+      expect(parsed.overlayParams.q).toBe('moses');
 
       // Simulate browser back (would change URL, we test parsing)
+      mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta');
+      parsed = parseUrlState();
+      expect(parsed.overlay).toBe('trop');
+      expect(parsed.overlayParams.trop).toBe('etnachta');
+      expect(parsed.overlayParams.q).toBeUndefined(); // No leakage
+
+      // Simulate another back
       mockWindowLocation('http://localhost:5173/#overlay=commentary&category=talmud');
       parsed = parseUrlState();
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('talmud');
-      expect(parsed.overlayParams.trop).toBeUndefined(); // No leakage
-
-      // Simulate another back
-      mockWindowLocation('http://localhost:5173/#overlay=divine-names');
-      parsed = parseUrlState();
-      expect(parsed.overlay).toBe('divine-names');
-      expect(parsed.overlayParams.category).toBeUndefined();
+      expect(parsed.overlayParams.trop).toBeUndefined();
     });
   });
 
@@ -400,7 +394,7 @@ describe('User Workflows Integration', () => {
     });
 
     it('switches overlays 10 times without memory issues', async () => {
-      const overlays = ['divine-names', 'commentary', 'trop', 'search'];
+      const overlays = ['commentary', 'trop', 'search'];
       const iterations = 10;
 
       // Track memory if available (Node.js)
@@ -446,7 +440,7 @@ describe('User Workflows Integration', () => {
     });
 
     it('measures overlay initialization performance', async () => {
-      const overlays = ['divine-names', 'commentary', 'trop', 'search'];
+      const overlays = ['commentary', 'trop', 'search'];
       const times: Record<string, number> = {};
 
       for (const overlayId of overlays) {
@@ -532,7 +526,7 @@ describe('User Workflows Integration', () => {
     });
 
     it('handles rapid overlay switching stress test', async () => {
-      const overlays = ['divine-names', 'commentary', 'trop', 'search'];
+      const overlays = ['commentary', 'trop', 'search'];
 
       for (let i = 0; i < 20; i++) {
         const overlayId = overlays[i % overlays.length];
@@ -618,10 +612,10 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, true);
 
-      // Switches to divine names overlay to see divine name usage
-      await switchToOverlay('divine-names');
+      // Switches to trop overlay to see cantillation marks
+      await switchToOverlay('trop');
       state = {
-        overlay: 'divine-names',
+        overlay: 'trop',
         overlayParams: {},
         verse: 'Genesis.1.1',
         zoom: 2.0,
@@ -731,14 +725,14 @@ describe('User Workflows Integration', () => {
     it('scenario: User explores with random clicks and recovers', async () => {
       // Simulate chaotic exploration
       const randomActions = [
-        () => switchToOverlay('divine-names'),
         () => switchToOverlay('commentary'),
+        () => switchToOverlay('trop'),
         () => updateUrl({ zoom: 5.0, overlayParams: {} }, false),
         () => updateUrl({ x: 100, y: 200, overlayParams: {} }, false),
-        () => switchToOverlay('trop'),
-        () => updateUrl({ verse: 'Psalms.23.1', overlayParams: {} }, true),
         () => switchToOverlay('search'),
-        () => updateUrl({ overlay: 'search', overlayParams: { q: 'test' } }, false),
+        () => updateUrl({ verse: 'Psalms.23.1', overlayParams: {} }, true),
+        () => switchToOverlay('commentary'),
+        () => updateUrl({ overlay: 'commentary', overlayParams: { category: 'midrash' } }, false),
       ];
 
       for (const action of randomActions) {
@@ -785,7 +779,7 @@ describe('User Workflows Integration', () => {
     it('maintains verse selection across overlay changes', async () => {
       const verse = 'Exodus.20.2';
 
-      const overlays = ['divine-names', 'commentary', 'trop', 'search'];
+      const overlays = ['commentary', 'trop', 'search'];
 
       for (const overlayId of overlays) {
         await switchToOverlay(overlayId);

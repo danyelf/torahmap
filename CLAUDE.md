@@ -25,11 +25,11 @@ The core design principle is **position stability** - each verse occupies a perm
 | Overlay | Description |
 |---------|-------------|
 | **None** | Gray with subtle brightness variation |
-| **Divine Names** | Colors by divine name usage: Blue (YHWH), Red (Elohim), Purple (both), Gray (neither). Torah only. |
+| **Search** | Full-text search with Hebrew/English support - highlights matching verses on the map |
 | **Commentary** | Logarithmic heatmap of Sefaria commentary link counts, filterable by 8 categories |
 | **Trop** | Cantillation mark (trope) visualizer - select any of the 39 trop marks to see where they appear across Tanakh, with rarity-based coloring (gold for rare marks, heatmap for common ones) |
-| **Search** | Full-text search with Hebrew/English support - highlights matching verses on the map |
 | **Text Dating** | Visualizes estimated composition dates using scholarly consensus - shows 6 historical periods from Pre-Monarchic (1400-1000 BCE) through Hellenistic (331-164 BCE) with geological metaphor coloring |
+| **Haftarah** | Highlights Torah portions that have associated Haftarah readings |
 
 Commentary categories: Talmud (direct text only, filters commentaries), Midrash, Halakhah, Jewish Thought, Chasidut, Kabbalah, Musar, Responsa
 
@@ -59,7 +59,7 @@ The dev server runs at `http://localhost:5173`
 
 ## Testing
 
-The project has comprehensive test coverage with **1204 tests** covering all major functionality:
+The project has comprehensive test coverage with **1144 tests** covering all major functionality:
 
 ```bash
 # Run all tests
@@ -75,7 +75,7 @@ npm run test:coverage
 ### Pre-commit Hook
 
 A pre-commit hook automatically runs all tests before allowing commits. This ensures:
-- All 1204 tests pass before code enters the repository
+- All 1144 tests pass before code enters the repository
 - No broken commits
 - Immediate feedback on test failures
 
@@ -90,7 +90,7 @@ git commit --no-verify
 - **Utilities**: 100% coverage (color, random functions)
 - **URL State**: 95%+ coverage (parsing, serialization, browser history)
 - **Geometry/WebGL**: 85%+ coverage (buffer building, shader compilation)
-- **Overlays**: 90%+ coverage (commentary, divine-names, search, trop)
+- **Overlays**: 90%+ coverage (commentary, search, trop, text-dating, haftarah)
 - **Integration**: Full workflow testing (overlay switching, URL sync)
 
 ## Project Structure
@@ -124,11 +124,11 @@ git commit --no-verify
 │   │   ├── index.ts         # Public exports
 │   │   ├── registry.ts      # Overlay registration
 │   │   ├── types.ts         # Overlay interface definitions
-│   │   ├── divine-names.ts  # Divine names overlay (YHWH, Elohim)
 │   │   ├── commentary.ts    # Commentary link count heatmap
 │   │   ├── trop.ts          # Cantillation mark visualizer
 │   │   ├── search.ts        # Full-text search overlay
-│   │   └── haftarah.ts      # Haftarah portions overlay
+│   │   ├── haftarah.ts      # Haftarah portions overlay
+│   │   └── text-dating.ts   # Text dating visualization
 │   │
 │   ├── utils/               # Utility functions
 │   │   ├── color.ts         # Color manipulation utilities
@@ -140,8 +140,8 @@ git commit --no-verify
 ├── public/data/
 │   ├── all-texts.json            # Bundled verse texts (generated)
 │   ├── tanakh-structure.json     # Verse counts per chapter per book
-│   ├── divine-names.json         # Divine name encodings (Torah)
-│   └── commentary-counts.json    # Sefaria link counts by category
+│   ├── commentary-counts.json    # Sefaria link counts by category
+│   └── text-dating.json          # Estimated composition dates by verse
 │
 ├── data/texts/           # Source Hebrew & English verse texts (78 files)
 │
@@ -149,7 +149,6 @@ git commit --no-verify
 │   ├── bundle-texts.ts               # Bundle all verse texts into one file
 │   ├── download-texts.sh             # Download texts from Sefaria
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
-│   ├── generate-divine-names.ts      # Generate divine names from Torah text
 │   ├── generate-text-dating.ts       # Generate text dating data from source ranges
 │   ├── process_sefaria_links.py      # (Deprecated) Old commentary counts script
 │   └── process_sefaria_links_v2.py   # Generate commentary counts (USE THIS)
@@ -276,9 +275,6 @@ npx tsx scripts/bundle-texts.ts
 # Regenerate structure from Sefaria API
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 
-# Regenerate divine names data
-npx tsx scripts/generate-divine-names.ts
-
 # Regenerate text dating data (requires data/text-dating-source.json)
 npm run generate:text-dating
 
@@ -312,7 +308,7 @@ python3 scripts/process_sefaria_links_v2.py
 | Hover | Show verse reference |
 | Click verse | Pin and show sidebar with text |
 | Click pinned verse | Unpin |
-| Overlay selector | Switch between None / Divine Names / Commentary / Trop / Search |
+| Overlay selector | Switch between None / Search / Commentary / Trop / Text Dating / Haftarah |
 | Category filter | Filter commentary heatmap by source type |
 | Trop selector | Choose cantillation mark to visualize |
 | Search box | Type to search Hebrew/English text with live results |
