@@ -636,6 +636,8 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = '';
+      // Explicitly trigger input event to clear any previous search state
+      input.dispatchEvent(new Event('input'));
 
       const modes = ['substring', 'word', 'root'];
       for (const mode of modes) {

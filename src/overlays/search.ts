@@ -620,6 +620,8 @@ export const searchOverlay: Overlay = {
       if (currentQuery) {
         doSearch(currentQuery);
       }
+      // Trigger URL update
+      updateCallback?.();
     });
 
     // Add event listeners for Hebrew mode radio buttons
@@ -633,6 +635,9 @@ export const searchOverlay: Overlay = {
             if (currentQuery) {
               doSearch(currentQuery);
             }
+            // Trigger URL update (doSearch calls updateCallback, but we call it here too
+            // to ensure URL is updated even if doSearch behavior changes)
+            updateCallback?.();
           }
         });
       });
@@ -796,21 +801,12 @@ export const searchOverlay: Overlay = {
     searchResults = null;
     wholeWordCheckbox = null;
     hebrewModeContainer = null;
-    // Reset state
-    currentQuery = '';
-    currentTerms = [];
-    currentResults = [];
-    matchingTerms.clear();
-    wholeWordEnabled = false;
-    hebrewSearchMode = 'substring';
-    termLemmaStatus = [];
-    termLemmas = [];
-    termRoots = [];
+    // Clear callbacks
     updateCallback = null;
     onVerseClickCallback = null;
     // NOTE: We intentionally DO NOT reset currentQuery, currentTerms, currentResults,
-    // matchingTerms, or wholeWordEnabled here. These should persist across overlay
-    // switches so the user can return to their search.
+    // matchingTerms, wholeWordEnabled, hebrewSearchMode, or related state here.
+    // These should persist across overlay switches so the user can return to their search.
   },
 
   getUrlParams(): Record<string, string> {
