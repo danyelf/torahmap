@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRootForStrongsNumber, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -26,6 +26,8 @@ let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
 let termLemmaStatus: boolean[] = [];
 // Track the lemmas found for each term (for root mode hover info)
 let termLemmas: Array<string[] | null> = [];
+// Track the Hebrew root text for each term (for legend display)
+let termRoots: Array<string | null> = [];
 
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
@@ -52,6 +54,7 @@ function doSearch(query: string): void {
     matchingTerms = new Map();
     termLemmaStatus = [];
     termLemmas = [];
+    termRoots = [];
   } else {
     const isHebrew = isHebrewQuery(currentTerms[0]);
 
@@ -59,14 +62,24 @@ function doSearch(query: string): void {
     if (isHebrew && hebrewSearchMode === 'root') {
       termLemmaStatus = [];
       termLemmas = [];
+      termRoots = [];
       for (const term of currentTerms) {
         const lemmas = findLemmasForWord(term);
         termLemmaStatus.push(lemmas !== null && lemmas.length > 0);
         termLemmas.push(lemmas);
+
+        // Get the Hebrew root text for the first lemma (most relevant)
+        if (lemmas && lemmas.length > 0) {
+          const rootText = getRootForStrongsNumber(lemmas[0]);
+          termRoots.push(rootText);
+        } else {
+          termRoots.push(null);
+        }
       }
     } else {
       termLemmaStatus = [];
       termLemmas = [];
+      termRoots = [];
     }
 
     // Only use wholeWord for English queries
@@ -681,22 +694,24 @@ export const searchOverlay: Overlay = {
         swatch.style.background = colorToCss(color);
         termSpan.appendChild(swatch);
 
-        termSpan.appendChild(document.createTextNode(`"${term}"`));
-
-        // Add lemma status indicator for root mode
+        // For root mode, show the actual root that was found
         if (hebrewSearchMode === 'root' && termLemmaStatus.length > 0) {
-          const indicator = document.createElement('span');
-          indicator.className = 'lemma-indicator';
-          if (termLemmaStatus[i]) {
-            indicator.textContent = ' \u2713'; // checkmark
-            indicator.title = 'Root data found';
-            indicator.style.color = '#4CAF50'; // green
+          if (termLemmaStatus[i] && termRoots[i]) {
+            // Show root (from search_term) format
+            termSpan.appendChild(document.createTextNode(`"${termRoots[i]}" (from "${term}")`));
           } else {
+            // No root found, show term with fallback indicator
+            termSpan.appendChild(document.createTextNode(`"${term}"`));
+            const indicator = document.createElement('span');
+            indicator.className = 'lemma-indicator';
             indicator.textContent = ' \u21AA'; // hook arrow
             indicator.title = 'No root data, using whole-word search';
             indicator.style.color = '#FF9800'; // orange
+            termSpan.appendChild(indicator);
           }
-          termSpan.appendChild(indicator);
+        } else {
+          // For non-root modes, just show the term
+          termSpan.appendChild(document.createTextNode(`"${term}"`));
         }
 
         legendDiv.appendChild(termSpan);
@@ -790,6 +805,7 @@ export const searchOverlay: Overlay = {
     hebrewSearchMode = 'substring';
     termLemmaStatus = [];
     termLemmas = [];
+    termRoots = [];
     updateCallback = null;
     onVerseClickCallback = null;
   },

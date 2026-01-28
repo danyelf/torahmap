@@ -77,19 +77,24 @@ describe('Search Overlay - Lemma Indicators', () => {
     const legendContainer = document.createElement('div');
     searchOverlay.renderLegend(legendContainer);
 
-    // Check for lemma indicators
-    const indicators = legendContainer.querySelectorAll('.lemma-indicator');
+    // Check legend content - should show either root text or fallback indicator
+    const legendText = legendContainer.textContent || '';
 
-    // If lemma data is available, we should see indicators
-    // The exact count depends on whether lemma files are present
-    if (indicators.length > 0) {
-      // Indicators are present - verify they have the expected attributes
-      indicators.forEach(indicator => {
-        const text = indicator.textContent?.trim();
-        expect(['✓', '↪']).toContain(text);
-        expect(indicator.getAttribute('title')).toBeTruthy();
-      });
+    // If lemma data is available, we should see either:
+    // 1. Root text with "(from ...)" format for terms with lemmas
+    // 2. Hook arrow indicator (↪) for terms without lemmas
+    if (legendText.includes('(from')) {
+      // Root text format is present - verify structure
+      expect(legendText).toMatch(/".+"\s*\(from\s*".+"\)/);
     }
+
+    // Check for fallback indicators (only shown for terms without root data)
+    const indicators = legendContainer.querySelectorAll('.lemma-indicator');
+    indicators.forEach(indicator => {
+      const text = indicator.textContent?.trim();
+      expect(text).toBe('↪'); // Only fallback indicator should be present
+      expect(indicator.getAttribute('title')).toBe('No root data, using whole-word search');
+    });
   });
 
   it('should not show lemma indicators in substring mode', () => {
@@ -202,14 +207,14 @@ describe('Search Overlay - Lemma Indicators', () => {
     const legendContainer = document.createElement('div');
     searchOverlay.renderLegend(legendContainer);
 
-    // Check styling
+    // Check styling - only fallback indicators have .lemma-indicator class
     const indicators = legendContainer.querySelectorAll('.lemma-indicator');
     indicators.forEach(indicator => {
       const element = indicator as HTMLElement;
-      // Should have color styling
-      expect(element.style.color).toBeTruthy();
+      // Should have color styling (orange for fallback)
+      expect(element.style.color).toBe('rgb(255, 152, 0)'); // #FF9800
       // Should have title attribute for tooltip
-      expect(element.title).toBeTruthy();
+      expect(element.title).toBe('No root data, using whole-word search');
     });
   });
 });

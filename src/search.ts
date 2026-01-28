@@ -53,6 +53,7 @@ let searchIndex: IndexEntry[] = [];
 // Lemma data loaded from morphhb
 let wordLemmas: Record<string, string[]> | null = null;  // Hebrew word -> Strong's numbers
 let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong's numbers
+let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text
@@ -85,14 +86,16 @@ export function parseSearchTerms(query: string): string[] {
  */
 export async function loadLemmaData(): Promise<void> {
   try {
-    const [wordRes, verseRes] = await Promise.all([
+    const [wordRes, verseRes, strongsRes] = await Promise.all([
       fetch('/data/word-lemmas.json'),
       fetch('/data/verse-lemmas.json'),
+      fetch('/data/strongs-to-root.json'),
     ]);
 
-    if (wordRes.ok && verseRes.ok) {
+    if (wordRes.ok && verseRes.ok && strongsRes.ok) {
       wordLemmas = await wordRes.json();
       verseLemmas = await verseRes.json();
+      strongsToRoot = await strongsRes.json();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
     }
@@ -140,6 +143,15 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
   }
 
   return null;
+}
+
+/**
+ * Get the Hebrew root for a Strong's number
+ * Exported for use in overlay UI to show which root was matched
+ */
+export function getRootForStrongsNumber(strongsNum: string): string | null {
+  if (!strongsToRoot) return null;
+  return strongsToRoot[strongsNum] || null;
 }
 
 /**
