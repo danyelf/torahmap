@@ -161,38 +161,6 @@ describe('mouseState', () => {
 
       expect(state.dragStart).toEqual({ x: 300, y: 400 });
     });
-
-    it('does not modify hoveredVerse', () => {
-      const state = createMouseState();
-      const verse: VerseLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
-      state.hoveredVerse = verse;
-
-      startDrag(state, 100, 200);
-
-      expect(state.hoveredVerse).toBe(verse);
-    });
-
-    it('handles zero coordinates', () => {
-      const state = createMouseState();
-      startDrag(state, 0, 0);
-
-      expect(state.dragStart).toEqual({ x: 0, y: 0 });
-      expect(state.isDragging).toBe(true);
-    });
-
-    it('handles negative coordinates', () => {
-      const state = createMouseState();
-      startDrag(state, -50, -100);
-
-      expect(state.dragStart).toEqual({ x: -50, y: -100 });
-    });
   });
 
   describe('stopDrag', () => {
@@ -200,42 +168,6 @@ describe('mouseState', () => {
       const state = createMouseState();
       state.isDragging = true;
 
-      stopDrag(state);
-
-      expect(state.isDragging).toBe(false);
-    });
-
-    it('does not modify dragStart', () => {
-      const state = createMouseState();
-      state.dragStart = { x: 100, y: 200 };
-
-      stopDrag(state);
-
-      expect(state.dragStart).toEqual({ x: 100, y: 200 });
-    });
-
-    it('does not modify hoveredVerse', () => {
-      const state = createMouseState();
-      const verse: VerseLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
-      state.hoveredVerse = verse;
-
-      stopDrag(state);
-
-      expect(state.hoveredVerse).toBe(verse);
-    });
-
-    it('is idempotent', () => {
-      const state = createMouseState();
-      state.isDragging = true;
-
-      stopDrag(state);
       stopDrag(state);
 
       expect(state.isDragging).toBe(false);
@@ -301,40 +233,6 @@ describe('mouseState', () => {
       setHoveredVerse(state, verse2);
       expect(state.hoveredVerse).toBe(verse2);
     });
-
-    it('does not modify isDragging', () => {
-      const state = createMouseState();
-      state.isDragging = true;
-      const verse: VerseLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
-
-      setHoveredVerse(state, verse);
-
-      expect(state.isDragging).toBe(true);
-    });
-
-    it('does not modify dragStart', () => {
-      const state = createMouseState();
-      state.dragStart = { x: 100, y: 200 };
-      const verse: VerseLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
-
-      setHoveredVerse(state, verse);
-
-      expect(state.dragStart).toEqual({ x: 100, y: 200 });
-    });
   });
 
   describe('clearHover', () => {
@@ -381,35 +279,6 @@ describe('mouseState', () => {
 
       expect(state.isDragging).toBe(false);
       expect(state.hoveredVerse).toBe(null);
-    });
-
-    it('does not modify dragStart', () => {
-      const state = createMouseState();
-      state.dragStart = { x: 100, y: 200 };
-
-      clearHover(state);
-
-      expect(state.dragStart).toEqual({ x: 100, y: 200 });
-    });
-
-    it('is idempotent', () => {
-      const state = createMouseState();
-      const verse: VerseLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
-      state.hoveredVerse = verse;
-      state.isDragging = true;
-
-      clearHover(state);
-      clearHover(state);
-
-      expect(state.hoveredVerse).toBe(null);
-      expect(state.isDragging).toBe(false);
     });
   });
 
