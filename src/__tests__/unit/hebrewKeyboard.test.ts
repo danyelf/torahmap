@@ -36,8 +36,8 @@ describe('hebrewKeyboard', () => {
     it('sets up transliteration handler', () => {
       createHebrewKeyboard(input);
 
-      // Simulate typing 'e' (should become ק)
-      const event = new KeyboardEvent('keydown', { key: 'e', bubbles: true });
+      // Simulate typing 'a' (should become א)
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
       const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
       input.dispatchEvent(event);
 
@@ -60,7 +60,7 @@ describe('hebrewKeyboard', () => {
 
       // Typing should work normally now
       input.value = '';
-      const event = new KeyboardEvent('keydown', { key: 'e', bubbles: true });
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
       const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
       input.dispatchEvent(event);
 
@@ -96,40 +96,40 @@ describe('hebrewKeyboard', () => {
       input.value = '';
       input.setSelectionRange(0, 0);
 
-      const event = new KeyboardEvent('keydown', { key: 'e', bubbles: true });
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
       Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
       input.dispatchEvent(event);
 
-      expect(input.value).toBe('\u05e7'); // ק
+      expect(input.value).toBe('\u05d0'); // א
     });
 
     it('inserts character in middle of text', () => {
-      input.value = 'ab';
-      input.setSelectionRange(1, 1); // Cursor between 'a' and 'b'
+      input.value = '12';
+      input.setSelectionRange(1, 1); // Cursor between '1' and '2'
 
-      const event = new KeyboardEvent('keydown', { key: 'e', bubbles: true });
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
       Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
       input.dispatchEvent(event);
 
-      expect(input.value).toBe('a\u05e7b'); // a ק b
+      expect(input.value).toBe('1\u05d02'); // 1 א 2
     });
 
     it('replaces selected text', () => {
       input.value = 'test';
       input.setSelectionRange(1, 3); // Select 'es'
 
-      const event = new KeyboardEvent('keydown', { key: 'e', bubbles: true });
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
       Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
       input.dispatchEvent(event);
 
-      expect(input.value).toBe('t\u05e7t'); // t ק t
+      expect(input.value).toBe('t\u05d0t'); // t א t
     });
 
     it('updates cursor position after insertion', () => {
       input.value = 'test';
       input.setSelectionRange(2, 2);
 
-      const event = new KeyboardEvent('keydown', { key: 'e', bubbles: true });
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
       Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
       input.dispatchEvent(event);
 

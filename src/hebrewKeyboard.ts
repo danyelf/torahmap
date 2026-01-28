@@ -8,13 +8,14 @@ let keyboardInstance: Keyboard | null = null;
 let currentInput: HTMLInputElement | null = null;
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
-// Hebrew keyboard layout matching standard Israeli layout (SI 1452) without final forms
-// Row positions: ertyuiop (qw are punctuation), asdfghjkl, zxcvbnm
+// Hebrew keyboard layout using phonetic transliteration
+// Rows correspond to QWERTY physical layout: qwertyp / asdfghjkl / zxcvbnm
+// (u i o skipped - vowels, not in transliteration map)
 const hebrewLayout = {
   default: [
-    "\u05e7 \u05e8 \u05d0 \u05d8 \u05d5 \u05e0 \u05de \u05e4 {bksp}",  // e r t y u i o p
-    "\u05e9 \u05d3 \u05d2 \u05db \u05e2 \u05d9 \u05d7 \u05dc \u05db",      // a s d f g h j k l (l=kaf like f)
-    "\u05d6 \u05e1 \u05d1 \u05d4 \u05e0 \u05de \u05e6",                    // z x c v b n m
+    "\u05e7 \u05d5 \u05e2 \u05e8 \u05ea \u05d9 \u05e4 {bksp}",  // q w e r t y p
+    "\u05d0 \u05e1 \u05d3 \u05e4 \u05d2 \u05d4 \u05d7 \u05db \u05dc",  // a s d f g h j k l
+    "\u05d6 \u05e9 \u05e6 \u05d5 \u05d1 \u05e0 \u05de",  // z x c v b n m
     "{space}"
   ]
 };
@@ -51,12 +52,12 @@ function setupTransliterationHandler(inputElement: HTMLInputElement): void {
       const newCursorPos = start + hebrewChar.length;
       inputElement.setSelectionRange(newCursorPos, newCursorPos);
 
-      // Update virtual keyboard display to match
+      // Sync virtual keyboard
       if (keyboardInstance) {
         keyboardInstance.setInput(newValue);
       }
 
-      // Trigger input event so search updates
+      // Trigger input event to update search
       inputElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
   };
@@ -85,33 +86,7 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
       theme: 'hg-theme-default hebrew-keyboard-theme',
       display: {
         '{bksp}': '⌫',
-        '{space}': ' ',
-        // Display English letters above Hebrew letters (keycap labels)
-        '\u05e7': 'e\n\u05e7', // ק (qof)
-        '\u05e8': 'r\n\u05e8', // ר (resh)
-        '\u05d0': 't\n\u05d0', // א (aleph)
-        '\u05d8': 'y\n\u05d8', // ט (tet)
-        '\u05d5': 'u\n\u05d5', // ו (vav)
-        '\u05df': 'i\n\u05df', // ן (final nun)
-        '\u05dd': 'o\n\u05dd', // ם (final mem)
-        '\u05e4': 'p\n\u05e4', // פ (pe)
-        '\u05e9': 'a\n\u05e9', // ש (shin)
-        '\u05d3': 's\n\u05d3', // ד (dalet)
-        '\u05d2': 'd\n\u05d2', // ג (gimel)
-        '\u05db': 'f\n\u05db', // כ (kaf)
-        '\u05e2': 'g\n\u05e2', // ע (ayin)
-        '\u05d9': 'h\n\u05d9', // י (yod)
-        '\u05d7': 'j\n\u05d7', // ח (chet)
-        '\u05dc': 'k\n\u05dc', // ל (lamed)
-        '\u05da': 'l\n\u05da', // ך (final kaf)
-        '\u05e3': ';\n\u05e3', // ף (final pe)
-        '\u05d6': 'z\n\u05d6', // ז (zayin)
-        '\u05e1': 'x\n\u05e1', // ס (samech)
-        '\u05d1': 'c\n\u05d1', // ב (bet)
-        '\u05d4': 'v\n\u05d4', // ה (he)
-        '\u05e0': 'b\n\u05e0', // נ (nun)
-        '\u05de': 'n\n\u05de', // מ (mem)
-        '\u05e6': 'm\n\u05e6'  // צ (tsadi)
+        '{space}': ' '
       },
       onChange: (input: string) => {
         if (currentInput) {
@@ -126,44 +101,48 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
         }
       }
     });
+
+    // Style the keycap labels after keyboard is initialized
+    styleKeycapLabels();
   } else {
     // Keyboard exists, just update the input reference
     currentInput = inputElement;
   }
 
-  // Setup transliteration handler for physical keyboard
-  setupTransliterationHandler(inputElement);
-
   // Sync keyboard with input value
   keyboardInstance.setInput(inputElement.value);
-
-  // Post-process button labels to add styled markup for English/Hebrew keycaps
-  styleKeycapLabels();
 
   // Position keyboard next to the controls panel
   positionKeyboard(inputElement, container);
 
   // Show keyboard
   container.style.display = 'block';
+
+  // Setup transliteration handler for physical keyboard
+  setupTransliterationHandler(inputElement);
 }
 
 /**
- * Post-process keyboard buttons to wrap keycap labels in styled spans
- * Converts "e\nק" text into <span class="english">e</span><span class="hebrew">ק</span>
+ * Post-process keyboard buttons to add styled keycap labels
+ * Converts "e\nק" text format into styled HTML spans
  */
 function styleKeycapLabels(): void {
-  const buttons = document.querySelectorAll('.hebrew-keyboard-theme .hg-button');
-  buttons.forEach((button) => {
-    const span = button.querySelector('span');
-    if (!span) return;
+  if (!keyboardInstance) return;
 
-    const text = span.textContent || '';
-    // Check if this is a keycap label with newline (skip special keys)
-    if (text.includes('\n') && !text.includes('{')) {
-      const [english, hebrew] = text.split('\n');
-      // Replace with styled spans
-      span.innerHTML = `<span class="keycap-english">${english}</span><span class="keycap-hebrew">${hebrew}</span>`;
-    }
+  // Get all keyboard buttons
+  const buttons = document.querySelectorAll<HTMLElement>('.hebrew-keyboard-theme .hg-button');
+
+  buttons.forEach(button => {
+    const text = button.textContent;
+    if (!text || text.includes('{') || !text.includes('\n')) return;
+
+    const [english, hebrew] = text.split('\n');
+    button.innerHTML = `
+      <span>
+        <span class="keycap-english">${english}</span>
+        <span class="keycap-hebrew">${hebrew}</span>
+      </span>
+    `;
   });
 }
 
@@ -185,27 +164,26 @@ function handleBackspace(): void {
     const end = currentInput.selectionEnd ?? 0;
     const currentValue = currentInput.value;
 
-    // If there's a selection, delete the selection
+    let newValue: string;
+    let newCursorPos: number;
+
     if (start !== end) {
-      const newValue = currentValue.slice(0, start) + currentValue.slice(end);
-      currentInput.value = newValue;
-      currentInput.setSelectionRange(start, start);
-      keyboardInstance.setInput(newValue);
-      currentInput.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    // If cursor is at the beginning, do nothing
-    else if (start === 0) {
+      // There's a selection - delete the selected text
+      newValue = currentValue.slice(0, start) + currentValue.slice(end);
+      newCursorPos = start;
+    } else if (start > 0) {
+      // No selection - delete the character before cursor
+      newValue = currentValue.slice(0, start - 1) + currentValue.slice(start);
+      newCursorPos = start - 1;
+    } else {
+      // Cursor is at the beginning - do nothing
       return;
     }
-    // Otherwise, delete character before cursor
-    else {
-      const newValue = currentValue.slice(0, start - 1) + currentValue.slice(start);
-      currentInput.value = newValue;
-      const newCursorPos = start - 1;
-      currentInput.setSelectionRange(newCursorPos, newCursorPos);
-      keyboardInstance.setInput(newValue);
-      currentInput.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+
+    currentInput.value = newValue;
+    keyboardInstance.setInput(newValue);
+    currentInput.setSelectionRange(newCursorPos, newCursorPos);
+    currentInput.dispatchEvent(new Event('input', { bubbles: true }));
   }
 }
 
@@ -215,7 +193,7 @@ export function closeHebrewKeyboard(): void {
     container.style.display = 'none';
   }
 
-  // Remove transliteration handler when keyboard closes
+  // Remove transliteration handler
   if (currentInput && keydownHandler) {
     currentInput.removeEventListener('keydown', keydownHandler);
     keydownHandler = null;

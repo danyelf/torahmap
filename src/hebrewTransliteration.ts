@@ -1,58 +1,52 @@
 /**
  * Hebrew transliteration module
- * Maps English QWERTY keys to Hebrew letters according to the standard Hebrew keyboard layout
- * with final forms replaced by regular forms
+ * Maps English letters to Hebrew letters using phonetic transliteration
+ * Based on standard romanization (similar to Lexilogos)
  */
 
-// Standard Hebrew keyboard layout mapping (QWERTY to Hebrew)
-// Based on the Israeli Standard SI 1452 keyboard layout, with final forms removed
+// Phonetic Hebrew transliteration mapping (English to Hebrew)
+// Based on common romanization standards
 export const TRANSLITERATION_MAP: Record<string, string> = {
-  // Top row (QWERTY)
-  q: '/', // slash (punctuation)
-  w: "'", // apostrophe (punctuation)
-  e: '\u05e7', // ק (qof)
-  r: '\u05e8', // ר (resh)
-  t: '\u05d0', // א (aleph)
-  y: '\u05d8', // ט (tet)
-  u: '\u05d5', // ו (vav)
-  i: '\u05e0', // נ (nun) - standard has final nun ן, using regular form
-  o: '\u05de', // מ (mem) - standard has final mem ם, using regular form
-  p: '\u05e4', // פ (pe)
+  // Phonetic consonants (lowercase)
+  a: '\u05d0', // א aleph
+  b: '\u05d1', // ב bet
+  g: '\u05d2', // ג gimel
+  d: '\u05d3', // ד dalet
+  h: '\u05d4', // ה he
+  v: '\u05d5', // ו vav
+  w: '\u05d5', // ו vav (alternate)
+  z: '\u05d6', // ז zayin
+  j: '\u05d7', // ח chet (phonetic j for 'ch' sound)
+  y: '\u05d9', // י yod
+  k: '\u05db', // כ kaf
+  l: '\u05dc', // ל lamed
+  m: '\u05de', // מ mem
+  n: '\u05e0', // נ nun
+  s: '\u05e1', // ס samech
+  e: '\u05e2', // ע ayin (phonetic placeholder)
+  p: '\u05e4', // פ pe
+  f: '\u05e4', // פ pe (alternate)
+  c: '\u05e6', // צ tsadi (phonetic 'ts' sound)
+  q: '\u05e7', // ק qof
+  r: '\u05e8', // ר resh
+  x: '\u05e9', // ש shin (phonetic 'sh' sound)
+  t: '\u05ea', // ת tav
 
-  // Middle row (ASDFGHJKL)
-  a: '\u05e9', // ש (shin)
-  s: '\u05d3', // ד (dalet)
-  d: '\u05d2', // ג (gimel)
-  f: '\u05db', // כ (kaf)
-  g: '\u05e2', // ע (ayin)
-  h: '\u05d9', // י (yod)
-  j: '\u05d7', // ח (chet)
-  k: '\u05dc', // ל (lamed)
-  l: '\u05db', // כ (kaf) - standard has final kaf ך, using regular form (same as f)
-
-  // Bottom row (ZXCVBNM)
-  z: '\u05d6', // ז (zayin)
-  x: '\u05e1', // ס (samech)
-  c: '\u05d1', // ב (bet)
-  v: '\u05d4', // ה (he)
-  b: '\u05e0', // נ (nun) - standard layout
-  n: '\u05de', // מ (mem) - standard layout
-  m: '\u05e6', // צ (tsadi)
+  // No mappings for: i, o, u (these could be vowels in a full system)
 };
 
 // Reverse mapping: Hebrew to English
-// Note: Multiple keys can map to same Hebrew letter (i/b→nun, o/n→mem, f/l→kaf)
 export const HEBREW_TO_ENGLISH: Record<string, string> = {};
 for (const eng in TRANSLITERATION_MAP) {
   const heb = TRANSLITERATION_MAP[eng];
-  // Only store first occurrence to avoid duplicates
+  // Only store first occurrence to avoid duplicates (v/w, p/f, etc.)
   if (!HEBREW_TO_ENGLISH[heb]) {
     HEBREW_TO_ENGLISH[heb] = eng;
   }
 }
 
 /**
- * Transliterates English text to Hebrew using the standard keyboard layout
+ * Transliterates English text to Hebrew using phonetic mapping
  * @param text - English text to transliterate
  * @returns Hebrew text
  */
