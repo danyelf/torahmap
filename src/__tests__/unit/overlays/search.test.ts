@@ -962,6 +962,69 @@ describe('Search Overlay', () => {
       addEventListenerSpy.mockRestore();
       removeEventListenerSpy.mockRestore();
     });
+
+    it('preserves search state across destroy/recreate cycles (tm-oof3)', () => {
+      // This test verifies the fix for tm-oof3: when switching overlays, the search
+      // query should be preserved so the user can return to the same search
+
+      // Setup initial search
+      const container1 = document.createElement('div');
+      searchOverlay.renderControls?.(container1);
+
+      const input1 = container1.querySelector('#search-input') as HTMLInputElement;
+      input1.value = 'God';
+      input1.dispatchEvent(new Event('input'));
+
+      // Verify search is working
+      const verse = testVerses[0]; // Genesis 1:1
+      let color = searchOverlay.getVerseColor(verse);
+      expect(color).toEqual(SEARCH_COLORS[0]);
+
+      // Simulate switching to a different overlay (calls destroy)
+      searchOverlay.destroy?.();
+
+      // Search state should still be preserved internally
+      // Verify colors still work (search results should still be available)
+      color = searchOverlay.getVerseColor(verse);
+      expect(color).toEqual(SEARCH_COLORS[0]);
+
+      // Simulate switching back to search overlay (renders controls again)
+      const container2 = document.createElement('div');
+      searchOverlay.renderControls?.(container2);
+
+      // Verify query is restored in the input
+      const input2 = container2.querySelector('#search-input') as HTMLInputElement;
+      expect(input2.value).toBe('God');
+
+      // Verify search is still active
+      color = searchOverlay.getVerseColor(verse);
+      expect(color).toEqual(SEARCH_COLORS[0]);
+    });
+
+    it('preserves whole-word setting across destroy/recreate cycles', () => {
+      // Setup search with whole-word enabled
+      const container1 = document.createElement('div');
+      searchOverlay.renderControls?.(container1);
+
+      const input1 = container1.querySelector('#search-input') as HTMLInputElement;
+      const checkbox1 = container1.querySelector('#whole-word-checkbox') as HTMLInputElement;
+
+      input1.value = 'God';
+      input1.dispatchEvent(new Event('input'));
+      checkbox1.checked = true;
+      checkbox1.dispatchEvent(new Event('change'));
+
+      // Simulate switching overlays
+      searchOverlay.destroy?.();
+
+      // Render controls again
+      const container2 = document.createElement('div');
+      searchOverlay.renderControls?.(container2);
+
+      // Verify whole-word setting is restored
+      const checkbox2 = container2.querySelector('#whole-word-checkbox') as HTMLInputElement;
+      expect(checkbox2.checked).toBe(true);
+    });
   });
 
   describe('Configure', () => {

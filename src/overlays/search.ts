@@ -584,20 +584,18 @@ export const searchOverlay: Overlay = {
       document.removeEventListener('click', documentClickHandler);
       documentClickHandler = null;
     }
-    // Clear DOM references
+    // Clear DOM references (for memory cleanup)
     searchInput = null;
     searchClear = null;
     keyboardToggle = null;
     searchResults = null;
     wholeWordCheckbox = null;
-    // Reset state
-    currentQuery = '';
-    currentTerms = [];
-    currentResults = [];
-    matchingTerms.clear();
-    wholeWordEnabled = false;
+    // Clear callbacks (but preserve search state for when we return)
     updateCallback = null;
     onVerseClickCallback = null;
+    // NOTE: We intentionally DO NOT reset currentQuery, currentTerms, currentResults,
+    // matchingTerms, or wholeWordEnabled here. These should persist across overlay
+    // switches so the user can return to their search.
   },
 
   getUrlParams(): Record<string, string> {
