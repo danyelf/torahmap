@@ -11,6 +11,11 @@ The test suite has **1244 tests** with generally good coverage. However, approxi
 - ✅ Removed constant validation tests from color.test.ts (4 tests)
 - ✅ All remaining tests pass
 
+✅ **Phase 2 Complete** (4 tests removed, 1221 remaining):
+- ✅ Consolidated random.test.ts edge case testing (4 tests removed: negative seeds, large seeds, fractional seeds, 401-iteration loop)
+- ✅ Enhanced single edge cases test to cover all scenarios
+- ✅ All remaining tests pass
+
 ## Categories of Low-Value Tests
 
 ### 1. Trivial Getter/Setter Tests
@@ -194,14 +199,14 @@ Tests explicitly marked as testing cases that shouldn't occur in practice.
 | File | Total Tests | Low-Value | % Low-Value | Priority for Cleanup | Status |
 |------|-------------|-----------|-------------|---------------------|--------|
 | mouseState.test.ts | 32 | ~12 | 38% | **HIGH** | 🔲 TODO |
-| random.test.ts | 11 | ~5 | 45% | **HIGH** | 🔲 TODO |
+| random.test.ts | 11 | ~5 | 45% | **HIGH** | ✅ Consolidated edge cases (4 tests) |
 | camera.test.ts | 18 | ~4 | 22% | MEDIUM | 🔲 TODO |
 | verseColoring.test.ts | 29 | ~5 | 17% | MEDIUM | 🔲 TODO |
 | color.test.ts | 72 | ~15 | 21% | MEDIUM | ✅ Constants removed (4 tests) |
-| infrastructure.test.ts | 15 | 15 | 100% | **HIGH** | ✅ DELETED |
+| infrastructure.test.ts | 15 | 15 | 100% | **HIGH** | ✅ DELETED (15 tests) |
 
 **Total low-value tests identified: ~250-300 tests (20-24% of test suite)**
-**Progress: 19/300 removed (6%)**
+**Progress: 23/300 removed (8%)**
 
 ---
 
