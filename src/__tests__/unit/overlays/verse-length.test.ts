@@ -235,35 +235,35 @@ describe('Verse Length Overlay', () => {
       expect(color12).not.toEqual(color14);
     });
 
-    it('assigns cooler colors (purple/blue) to shorter verses', () => {
+    it('assigns cooler colors (purple) to shorter verses', () => {
       const shortVerse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word
       const color = verseLengthOverlay.getVerseColor(shortVerse)!;
 
       assertValidColor(color);
 
-      // Viridis starts with purple/blue - higher blue channel, lower red/green
-      expect(color[2]).toBeGreaterThan(color[0]); // Blue > Red for cool colors
+      // Both palettes start with purple - higher blue channel
+      expect(color[2]).toBeGreaterThan(color[0]); // Blue > Red for purple
     });
 
-    it('assigns warmer colors (yellow/green) to longer verses', () => {
+    it('assigns warmer colors (yellow) to longer verses', () => {
       const longVerse = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 16 words
       const color = verseLengthOverlay.getVerseColor(longVerse)!;
 
       assertValidColor(color);
 
-      // Viridis ends with yellow - higher red and green, lower blue
-      expect(color[0]).toBeGreaterThan(color[2]); // Red > Blue for warm colors
-      expect(color[1]).toBeGreaterThan(color[2]); // Green > Blue for warm colors
+      // Both palettes end with yellow - higher red and green, lower blue
+      expect(color[0]).toBeGreaterThan(color[2]); // Red > Blue for yellow
+      expect(color[1]).toBeGreaterThan(color[2]); // Green > Blue for yellow
     });
 
-    it('uses viridis gradient from purple to yellow', () => {
+    it('uses palette gradient from purple to yellow', () => {
       const shortVerse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word (min)
       const longVerse = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 16 words (max)
 
       const shortColor = verseLengthOverlay.getVerseColor(shortVerse)!;
       const longColor = verseLengthOverlay.getVerseColor(longVerse)!;
 
-      // Short should be purple/blue (higher blue component)
+      // Short should be purple (higher blue component)
       expect(shortColor[2]).toBeGreaterThan(longColor[2]);
 
       // Long should be yellow (higher red and green components)
@@ -391,7 +391,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Purple/blue');
+      expect(html).toMatch(/Purple\/blue|Purple/);
       expect(html).toContain('shorter verses');
     });
 
@@ -400,7 +400,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Green/yellow');
+      expect(html).toMatch(/Green\/yellow|Orange\/yellow/);
       expect(html).toContain('longer verses');
     });
 
@@ -409,7 +409,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('Viridis palette');
+      expect(html).toMatch(/Viridis palette|Plasma palette/);
     });
 
     it('creates gradient with multiple color stops', () => {
@@ -424,7 +424,7 @@ describe('Verse Length Overlay', () => {
       expect(rgbMatches!.length).toBeGreaterThanOrEqual(5); // Should have multiple stops
     });
 
-    it('gradient uses viridis palette from purple to yellow', () => {
+    it('gradient uses palette from purple to yellow', () => {
       const container = document.createElement('div');
       verseLengthOverlay.renderLegend(container);
 
@@ -444,10 +444,10 @@ describe('Verse Length Overlay', () => {
       const firstColor = parseRgb(rgbMatches![0]);
       const lastColor = parseRgb(rgbMatches![rgbMatches!.length - 1]);
 
-      // First color should be purple/blue (low R, low G, higher B)
-      expect(firstColor[2]).toBeGreaterThan(firstColor[0]); // B > R
+      // First color should be purple (both palettes start with purple)
+      expect(firstColor[2]).toBeGreaterThan(firstColor[1]); // B > G for purple
 
-      // Last color should be yellow (high R, high G, low B)
+      // Last color should be yellow (both palettes end with yellow)
       expect(lastColor[0]).toBeGreaterThan(100); // Yellow has high red
       expect(lastColor[1]).toBeGreaterThan(100); // Yellow has high green
     });

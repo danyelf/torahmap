@@ -1,31 +1,45 @@
 // Verse length overlay - visualizes word count per verse using square root scale
-import type { Overlay, Color } from './types.ts';
-import type { VerseIdentity } from '../types.ts';
-import { getVerseKey } from '../types.ts';
-import type { VerseTexts } from '../verseTexts.ts';
+import type { Overlay, Color } from "./types.ts";
+import type { VerseIdentity } from "../types.ts";
+import { getVerseKey } from "../types.ts";
+import type { VerseTexts } from "../verseTexts.ts";
 
-// Viridis color palette (perceptually uniform, colorblind-friendly)
-// Key stops from the viridis colormap
+// Color palettes (perceptually uniform, colorblind-friendly)
+
+// Viridis: purple→blue→teal→green→yellow
 const VIRIDIS_STOPS: Array<[number, Color]> = [
-  [0.0, [68/255, 1/255, 84/255]],      // dark purple
-  [0.25, [59/255, 82/255, 139/255]],   // blue
-  [0.5, [33/255, 145/255, 140/255]],   // teal
-  [0.75, [94/255, 201/255, 98/255]],   // green
-  [1.0, [253/255, 231/255, 37/255]],   // yellow
+  [0.0, [68 / 255, 1 / 255, 84 / 255]], // dark purple
+  [0.25, [59 / 255, 82 / 255, 139 / 255]], // blue
+  [0.5, [33 / 255, 145 / 255, 140 / 255]], // teal
+  [0.75, [94 / 255, 201 / 255, 98 / 255]], // green
+  [1.0, [253 / 255, 231 / 255, 37 / 255]], // yellow
 ];
 
+// Plasma: purple→pink→orange→yellow
+const PLASMA_STOPS: Array<[number, Color]> = [
+  [0.0, [13 / 255, 8 / 255, 135 / 255]], // dark purple
+  [0.25, [126 / 255, 3 / 255, 168 / 255]], // magenta
+  [0.5, [204 / 255, 71 / 255, 120 / 255]], // pink/red
+  [0.75, [248 / 255, 149 / 255, 64 / 255]], // orange
+  [1.0, [240 / 255, 249 / 255, 33 / 255]], // yellow
+];
+
+// Select which palette to use (change this line to switch palettes)
+const COLOR_STOPS = PLASMA_STOPS;
+// const COLOR_STOPS = VIRIDIS_STOPS;
+
 /**
- * Get a color from the viridis palette at position t ∈ [0, 1]
+ * Get a color from the selected palette at position t ∈ [0, 1]
  * Uses linear interpolation between key stops
  */
-function viridis(t: number): Color {
+function getPaletteColor(t: number): Color {
   // Clamp t to [0, 1]
   t = Math.max(0, Math.min(1, t));
 
   // Find the two stops to interpolate between
-  for (let i = 0; i < VIRIDIS_STOPS.length - 1; i++) {
-    const [t0, color0] = VIRIDIS_STOPS[i];
-    const [t1, color1] = VIRIDIS_STOPS[i + 1];
+  for (let i = 0; i < COLOR_STOPS.length - 1; i++) {
+    const [t0, color0] = COLOR_STOPS[i];
+    const [t1, color1] = COLOR_STOPS[i + 1];
 
     if (t >= t0 && t <= t1) {
       // Linear interpolation between color0 and color1
@@ -39,7 +53,7 @@ function viridis(t: number): Color {
   }
 
   // Fallback to last color
-  return VIRIDIS_STOPS[VIRIDIS_STOPS.length - 1][1];
+  return COLOR_STOPS[COLOR_STOPS.length - 1][1];
 }
 
 // State
@@ -56,7 +70,10 @@ function countHebrewWords(text: string): number {
   if (!text) return 0;
   // Split on whitespace and filter out empty strings and punctuation-only tokens
   // A word must contain at least one letter character
-  const words = text.trim().split(/\s+/).filter(w => /\p{L}/u.test(w));
+  const words = text
+    .trim()
+    .split(/\s+/)
+    .filter((w) => /\p{L}/u.test(w));
   return words.length;
 }
 
@@ -107,36 +124,45 @@ function getVerseColorForWordCount(verse: VerseIdentity): Color | null {
     return [0.15, 0.15, 0.2];
   }
 
+  let op = (x: number) => x;
+  op = Math.sqrt;
+  //op = Math.log;
+
   // Square root scale: map word count to [0, 1]
-  const sqrtMin = Math.sqrt(minWordCount);
-  const sqrtMax = Math.sqrt(maxWordCount);
-  const sqrtValue = Math.sqrt(wordCount);
+  const sqrtMin = op(minWordCount);
+  const sqrtMax = op(maxWordCount);
+  const sqrtValue = op(wordCount);
   const t = (sqrtValue - sqrtMin) / (sqrtMax - sqrtMin);
 
-  // Get color from viridis palette
-  return viridis(t);
+  // Get color from selected palette
+  return getPaletteColor(t);
 }
 
 export const verseLengthOverlay: Overlay = {
-  id: 'verse-length',
-  name: 'Verse Length',
+  id: "verse-length",
+  name: "Verse Length",
 
   getVerseColor(verse: VerseIdentity): Color | null {
     return getVerseColorForWordCount(verse);
   },
 
   renderLegend(container: HTMLElement): void {
-    // Generate gradient using viridis palette
+    // Generate gradient using selected palette
     const gradientStops = [];
     const numStops = 10;
     for (let i = 0; i < numStops; i++) {
       const t = i / (numStops - 1);
-      const color = viridis(t);
-      const rgb = color.map(c => Math.round(c * 255)).join(', ');
+      const color = getPaletteColor(t);
+      const rgb = color.map((c) => Math.round(c * 255)).join(", ");
       const percent = (i / (numStops - 1)) * 100;
       gradientStops.push(`rgb(${rgb}) ${percent}%`);
     }
-    const gradient = gradientStops.join(', ');
+    const gradient = gradientStops.join(", ");
+
+    // Determine palette name for display
+    const paletteName = COLOR_STOPS === PLASMA_STOPS ? 'Plasma' : 'Viridis';
+    const lowColor = COLOR_STOPS === PLASMA_STOPS ? 'Purple' : 'Purple/blue';
+    const highColor = COLOR_STOPS === PLASMA_STOPS ? 'Orange/yellow' : 'Green/yellow';
 
     container.innerHTML = `
       <div class="legend-row">
@@ -153,13 +179,13 @@ export const verseLengthOverlay: Overlay = {
         </div>
       </div>
       <div style="color: #888; font-size: 10px; margin-top: 8px; line-height: 1.3;">
-        Purple/blue = shorter verses
+        ${lowColor} = shorter verses
       </div>
       <div style="color: #888; font-size: 10px; margin-top: 4px; line-height: 1.3;">
-        Green/yellow = longer verses
+        ${highColor} = longer verses
       </div>
       <div style="color: #888; font-size: 10px; margin-top: 4px; line-height: 1.3;">
-        Square root scale · Viridis palette
+        Square root scale · ${paletteName} palette
       </div>
     `;
   },
@@ -170,7 +196,7 @@ export const verseLengthOverlay: Overlay = {
 
     if (wordCount === undefined) return null;
 
-    const plural = wordCount === 1 ? 'word' : 'words';
+    const plural = wordCount === 1 ? "word" : "words";
     return `${wordCount} ${plural}`;
   },
 
@@ -180,17 +206,18 @@ export const verseLengthOverlay: Overlay = {
 
     if (wordCount === undefined) return null;
 
-    const plural = wordCount === 1 ? 'word' : 'words';
+    const plural = wordCount === 1 ? "word" : "words";
 
-    const div = document.createElement('div');
-    div.style.cssText = 'margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;';
+    const div = document.createElement("div");
+    div.style.cssText =
+      "margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;";
 
-    const label = document.createElement('div');
-    label.style.cssText = 'font-size: 11px; color: #888; margin-bottom: 4px;';
-    label.textContent = 'Verse Length:';
+    const label = document.createElement("div");
+    label.style.cssText = "font-size: 11px; color: #888; margin-bottom: 4px;";
+    label.textContent = "Verse Length:";
 
-    const value = document.createElement('div');
-    value.style.cssText = 'font-size: 13px; color: #ddd;';
+    const value = document.createElement("div");
+    value.style.cssText = "font-size: 13px; color: #ddd;";
     value.textContent = `${wordCount} ${plural}`;
 
     div.appendChild(label);
