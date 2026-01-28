@@ -320,10 +320,116 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
 }
 
 /**
+ * Search Hebrew text by root (lemma) using morphhb Strong's numbers
+ * Falls back to whole-word search if lemma is not found
+ *
+ * @param terms - Array of Hebrew search terms
+ * @returns Array of SearchResults with matching verses
+ */
+function searchByRootMode(terms: string[]): SearchResult[] {
+  const resultMap = new Map<string, SearchResult>();
+
+  if (!wordLemmas || !verseLemmas) {
+    // No lemma data available, fall back to whole-word search
+    return searchHebrewWholeWord(terms);
+  }
+
+  const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
+
+  // Collect lemmas for each search term
+  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
+    const lemmas = findLemmasForWord(terms[termIndex]);
+    if (lemmas && lemmas.length > 0) {
+      termLemmas.push({ termIndex, lemmas });
+    }
+  }
+
+  // If we found lemmas for any terms, use lemma-based search
+  if (termLemmas.length > 0) {
+    for (const { termIndex, lemmas } of termLemmas) {
+      const matchingVerseKeys = searchByLemmas(lemmas);
+
+      for (const verseKey of matchingVerseKeys) {
+        // Find the corresponding index entry
+        const entry = searchIndex.find(e =>
+          `${e.book}:${e.chapter}:${e.verse}` === verseKey
+        );
+
+        if (entry) {
+          let result = resultMap.get(verseKey);
+          if (!result) {
+            result = {
+              book: entry.book,
+              chapter: entry.chapter,
+              verse: entry.verse,
+              language: 'he',
+              matchingTerms: [],
+            };
+            resultMap.set(verseKey, result);
+          }
+
+          // Only add if this term hasn't matched this verse yet
+          if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+            // Find the word that matched via lemma lookup
+            const wordIndex = findWordIndexByLemma(verseKey, lemmas);
+            const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
+
+            if (wordBounds) {
+              // Highlight the matched word
+              const wordLen = wordBounds.end - wordBounds.start;
+              const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+              result.matchingTerms.push({
+                termIndex,
+                snippet: snippet.text,
+                matchStart: snippet.matchStart,
+                matchEnd: snippet.matchEnd,
+              });
+            } else {
+              // Fallback: try whole-word match
+              const wholeWordResults = searchHebrewWholeWord([terms[termIndex]]);
+              const wholeWordMatch = wholeWordResults.find(r =>
+                r.book === entry.book && r.chapter === entry.chapter && r.verse === entry.verse
+              );
+
+              if (wholeWordMatch && wholeWordMatch.matchingTerms.length > 0) {
+                // Use the whole-word match snippet
+                const match = wholeWordMatch.matchingTerms[0];
+                result.matchingTerms.push({
+                  termIndex,
+                  snippet: match.snippet,
+                  matchStart: match.matchStart,
+                  matchEnd: match.matchEnd,
+                });
+              } else {
+                // Last resort: no highlighting
+                result.matchingTerms.push({
+                  termIndex,
+                  snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
+                  matchStart: 0,
+                  matchEnd: 0,
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // If we got results from lemma search, return them
+    if (resultMap.size > 0) {
+      return Array.from(resultMap.values());
+    }
+  }
+
+  // No lemmas found for any terms, fall back to whole-word search
+  return searchHebrewWholeWord(terms);
+}
+
+/**
  * Search for verses matching any of the comma-separated terms
  * Returns ALL matching verses with info about which terms matched
  *
- * For Hebrew: Uses lemma-based search via morphhb Strong's numbers, with fallback to substring
+ * For Hebrew: Uses lemma-based search via morphhb Strong's numbers, with fallback to whole-word
  * For English: Uses substring search (optionally whole-word matching)
  */
 export function search(query: string, wholeWord: boolean = false): SearchResult[] {
@@ -333,109 +439,26 @@ export function search(query: string, wholeWord: boolean = false): SearchResult[
   // Determine language from first term (all terms use same language)
   const isHebrew = isHebrewQuery(terms[0]);
 
-  // Map: verseKey -> SearchResult
-  const resultMap = new Map<string, SearchResult>();
-
-  // For Hebrew, try lemma-based search first
-  if (isHebrew && wordLemmas && verseLemmas) {
-    const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
-
-    // Collect lemmas for each search term
-    for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-      const lemmas = findLemmasForWord(terms[termIndex]);
-      if (lemmas && lemmas.length > 0) {
-        termLemmas.push({ termIndex, lemmas });
-      }
-    }
-
-    // If we found lemmas for any terms, use lemma-based search
-    if (termLemmas.length > 0) {
-      for (const { termIndex, lemmas } of termLemmas) {
-        const matchingVerseKeys = searchByLemmas(lemmas);
-
-        for (const verseKey of matchingVerseKeys) {
-          // Find the corresponding index entry
-          const entry = searchIndex.find(e =>
-            `${e.book}:${e.chapter}:${e.verse}` === verseKey
-          );
-
-          if (entry) {
-            let result = resultMap.get(verseKey);
-            if (!result) {
-              result = {
-                book: entry.book,
-                chapter: entry.chapter,
-                verse: entry.verse,
-                language: 'he',
-                matchingTerms: [],
-              };
-              resultMap.set(verseKey, result);
-            }
-
-            // Only add if this term hasn't matched this verse yet
-            if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
-              // Find the word that matched via lemma lookup
-              const wordIndex = findWordIndexByLemma(verseKey, lemmas);
-              const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
-
-              if (wordBounds) {
-                // Highlight the matched word
-                const wordLen = wordBounds.end - wordBounds.start;
-                const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
-                result.matchingTerms.push({
-                  termIndex,
-                  snippet: snippet.text,
-                  matchStart: snippet.matchStart,
-                  matchEnd: snippet.matchEnd,
-                });
-              } else {
-                // Fallback: try substring match
-                const normalizedTerm = stripNikkud(terms[termIndex]);
-                const idx = entry.hebrewText.indexOf(normalizedTerm);
-
-                if (idx !== -1) {
-                  const snippet = createSnippet(entry.hebrewOriginal, idx, normalizedTerm.length, true);
-                  result.matchingTerms.push({
-                    termIndex,
-                    snippet: snippet.text,
-                    matchStart: snippet.matchStart,
-                    matchEnd: snippet.matchEnd,
-                  });
-                } else {
-                  // Last resort: no highlighting
-                  result.matchingTerms.push({
-                    termIndex,
-                    snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
-                    matchStart: 0,
-                    matchEnd: 0,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // If we got results from lemma search, return them
-      if (resultMap.size > 0) {
-        return Array.from(resultMap.values());
-      }
-    }
+  // For Hebrew, use lemma-based search (with whole-word fallback)
+  if (isHebrew) {
+    return searchByRootMode(terms);
   }
 
-  // Fallback to substring search (for English or if lemma search failed/unavailable)
+  // For English, use substring or whole-word search
+  const resultMap = new Map<string, SearchResult>();
+
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const term = terms[termIndex];
-    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+    const normalizedTerm = term.toLowerCase();
 
     for (const entry of searchIndex) {
-      const text = isHebrew ? entry.hebrewText : entry.englishText;
-      const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
+      const text = entry.englishText;
+      const original = entry.englishOriginal;
 
       // For English with whole-word matching, use regex
       let matches: Array<{ idx: number; len: number }> = [];
 
-      if (!isHebrew && wholeWord) {
+      if (wholeWord) {
         // Create word boundary regex (case insensitive)
         const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
@@ -454,7 +477,7 @@ export function search(query: string, wholeWord: boolean = false): SearchResult[
       // Process all matches
       for (const { idx, len } of matches) {
         const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
-        const snippet = createSnippet(original, idx, len, isHebrew);
+        const snippet = createSnippet(original, idx, len, false);
 
         let result = resultMap.get(key);
         if (!result) {
@@ -462,7 +485,7 @@ export function search(query: string, wholeWord: boolean = false): SearchResult[
             book: entry.book,
             chapter: entry.chapter,
             verse: entry.verse,
-            language: isHebrew ? 'he' : 'en',
+            language: 'en',
             matchingTerms: [],
           };
           resultMap.set(key, result);
