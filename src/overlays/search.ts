@@ -257,9 +257,51 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
           termIndex
         });
       }
-    } else if (isHebrew && (hebrewSearchMode === 'word' || hebrewSearchMode === 'root')) {
+    } else if (isHebrew && hebrewSearchMode === 'root') {
+      // Hebrew root mode - match words with same lemmas
+      const searchLemmas = termLemmas[termIndex];
+      if (!searchLemmas || searchLemmas.length === 0) {
+        // No lemmas for search term, fall back to word matching
+        const words = normalizedText.split(/\s+/);
+        let currentPos = 0;
+
+        for (const word of words) {
+          while (currentPos < normalizedText.length && /\s/.test(normalizedText[currentPos])) {
+            currentPos++;
+          }
+
+          if (word === normalizedTerm) {
+            const origStart = mapNormalizedToOriginalPosition(text, currentPos);
+            const origEnd = mapNormalizedToOriginalPosition(text, currentPos + word.length);
+            matches.push({ start: origStart, end: origEnd, termIndex });
+          }
+
+          currentPos += word.length;
+        }
+      } else {
+        // Match words that share the same lemmas
+        const words = normalizedText.split(/\s+/);
+        let currentPos = 0;
+
+        for (const word of words) {
+          while (currentPos < normalizedText.length && /\s/.test(normalizedText[currentPos])) {
+            currentPos++;
+          }
+
+          // Look up this word's lemmas
+          const wordLemmas = findLemmasForWord(word);
+          if (wordLemmas && wordLemmas.some(lemma => searchLemmas.includes(lemma))) {
+            // This word shares a lemma with the search term
+            const origStart = mapNormalizedToOriginalPosition(text, currentPos);
+            const origEnd = mapNormalizedToOriginalPosition(text, currentPos + word.length);
+            matches.push({ start: origStart, end: origEnd, termIndex });
+          }
+
+          currentPos += word.length;
+        }
+      }
+    } else if (isHebrew && hebrewSearchMode === 'word') {
       // Hebrew whole-word matching
-      // Split text into words and find exact matches
       const words = normalizedText.split(/\s+/);
       let currentPos = 0;
 
@@ -762,14 +804,14 @@ export const searchOverlay: Overlay = {
     if (isHebrew && hebrewSearchMode === 'root') {
       // For root mode, show which roots were matched
       const matchedTerms = termIndices.map(i => {
-        const term = currentTerms[i];
         const lemmas = termLemmas[i];
-        if (lemmas && lemmas.length > 0) {
-          // Found a root - show the search term as the root
-          return `"${stripNikkud(term)}"`;
+        const root = termRoots[i];
+        if (lemmas && lemmas.length > 0 && root) {
+          // Found a root - show the actual root from Strong's
+          return `"${root}"`;
         } else {
           // No root found, fell back to word search
-          return `"${term}"`;
+          return `"${currentTerms[i]}"`;
         }
       }).join(', ');
       return `Matches root: ${matchedTerms}`;
