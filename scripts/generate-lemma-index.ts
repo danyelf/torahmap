@@ -140,9 +140,22 @@ for (const bookName of Object.keys(morphhb)) {
           const rootWord = stripNikkud(parts[parts.length - 1]);
 
           // Store the canonical root for this Strong's number
-          // Prefer shorter forms (more canonical) - typically the root/lemma
-          if (!strongsToRoot[strongsNum] || rootWord.length < strongsToRoot[strongsNum].length) {
-            strongsToRoot[strongsNum] = rootWord;
+          // Ignore very short forms (1-2 chars) which are typically just suffixes/prefixes
+          // Among longer forms, prefer shorter (more canonical) roots
+          if (rootWord.length >= 3) {
+            if (!strongsToRoot[strongsNum] || rootWord.length < strongsToRoot[strongsNum].length) {
+              strongsToRoot[strongsNum] = rootWord;
+            }
+          }
+
+          // Store the full word (all parts joined) for exact matching
+          // This handles cases like "עבדיו" where morphhb has "עבדי/ו"
+          const fullWord = stripNikkud(parts.join(''));
+          if (fullWord.length >= 2) {
+            if (!wordLemmas[fullWord]) {
+              wordLemmas[fullWord] = new Set();
+            }
+            wordLemmas[fullWord].add(strongsNum);
           }
 
           // Also store each part that could be searched
