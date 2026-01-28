@@ -2,9 +2,11 @@
 import Keyboard from 'simple-keyboard';
 import 'simple-keyboard/build/css/index.css';
 import './styles/hebrewKeyboard.css';
+import { TRANSLITERATION_MAP } from './hebrewTransliteration.ts';
 
 let keyboardInstance: Keyboard | null = null;
 let currentInput: HTMLInputElement | null = null;
+let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
 // Hebrew keyboard layout (without punctuation marks)
 const hebrewLayout = {
@@ -15,6 +17,51 @@ const hebrewLayout = {
     "{space}"
   ]
 };
+
+/**
+ * Setup transliteration keydown handler for physical keyboard input
+ * Intercepts mapped keys and inserts Hebrew characters at cursor position
+ */
+function setupTransliterationHandler(inputElement: HTMLInputElement): void {
+  // Remove existing handler if any
+  if (keydownHandler) {
+    inputElement.removeEventListener('keydown', keydownHandler);
+  }
+
+  keydownHandler = (e: KeyboardEvent) => {
+    // Only handle printable keys in the transliteration map
+    const key = e.key.toLowerCase();
+
+    // Check if this key is in the transliteration map
+    if (key.length === 1 && TRANSLITERATION_MAP[key]) {
+      // Prevent default behavior (don't insert the English letter)
+      e.preventDefault();
+
+      const hebrewChar = TRANSLITERATION_MAP[key];
+      const start = inputElement.selectionStart ?? 0;
+      const end = inputElement.selectionEnd ?? 0;
+      const currentValue = inputElement.value;
+
+      // Insert Hebrew character at cursor position
+      const newValue = currentValue.slice(0, start) + hebrewChar + currentValue.slice(end);
+      inputElement.value = newValue;
+
+      // Set cursor position after inserted character
+      const newCursorPos = start + hebrewChar.length;
+      inputElement.setSelectionRange(newCursorPos, newCursorPos);
+
+      // Update virtual keyboard display to match
+      if (keyboardInstance) {
+        keyboardInstance.setInput(newValue);
+      }
+
+      // Trigger input event so search updates
+      inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  };
+
+  inputElement.addEventListener('keydown', keydownHandler);
+}
 
 export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
   currentInput = inputElement;
@@ -83,6 +130,9 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
     currentInput = inputElement;
   }
 
+  // Setup transliteration handler for physical keyboard
+  setupTransliterationHandler(inputElement);
+
   // Sync keyboard with input value
   keyboardInstance.setInput(inputElement.value);
 
@@ -120,6 +170,13 @@ export function closeHebrewKeyboard(): void {
   if (container) {
     container.style.display = 'none';
   }
+
+  // Remove transliteration handler when keyboard closes
+  if (currentInput && keydownHandler) {
+    currentInput.removeEventListener('keydown', keydownHandler);
+    keydownHandler = null;
+  }
+
   // Don't null out currentInput - keep the reference for when keyboard reopens
 }
 
