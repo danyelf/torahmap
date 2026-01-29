@@ -653,6 +653,13 @@ export const searchOverlay: Overlay = {
     });
 
     searchClear?.addEventListener('click', () => {
+      // Close Hebrew keyboard if open
+      if (isKeyboardOpen()) {
+        closeHebrewKeyboard();
+        if (keyboardToggle) {
+          keyboardToggle.classList.remove('active');
+        }
+      }
       if (searchInput) {
         searchInput.value = '';
         searchInput.dir = 'ltr';

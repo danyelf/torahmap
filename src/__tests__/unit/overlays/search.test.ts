@@ -8,6 +8,7 @@ import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { Verse, Color } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
+import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
 
 describe('Search Overlay', () => {
   let testVerses: VerseLayout[];
@@ -99,6 +100,13 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
     }
     searchOverlay.destroy?.();
+
+    // Clean up Hebrew keyboard if open
+    closeHebrewKeyboard();
+    const keyboardContainer = document.getElementById('hebrew-keyboard-container');
+    if (keyboardContainer?.parentNode) {
+      keyboardContainer.parentNode.removeChild(keyboardContainer);
+    }
   });
 
   describe('Overlay Interface', () => {
@@ -348,6 +356,32 @@ describe('Search Overlay', () => {
 
       expect(input.value).toBe('');
       expect(clearBtn.style.display).toBe('none');
+    });
+
+    it('closes Hebrew keyboard when clear button is clicked', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const clearBtn = container.querySelector('#search-clear') as HTMLButtonElement;
+      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
+
+      // Open Hebrew keyboard
+      keyboardToggle.click();
+      expect(isKeyboardOpen()).toBe(true);
+      expect(keyboardToggle.classList.contains('active')).toBe(true);
+
+      // Type some Hebrew text
+      input.value = 'אלהים';
+      input.dispatchEvent(new Event('input'));
+
+      // Click clear button
+      clearBtn.click();
+
+      // Verify keyboard is closed
+      expect(isKeyboardOpen()).toBe(false);
+      expect(keyboardToggle.classList.contains('active')).toBe(false);
+      expect(input.value).toBe('');
     });
 
     it('triggers update callback on search', () => {
