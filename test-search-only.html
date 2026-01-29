@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Search Only Test</title></head><body>
+<h2>Test Search Performance WITHOUT Canvas Rendering</h2>
+<p>This isolates just the search algorithm to confirm it's fast now.</p>
+<input type="text" id="search" placeholder="Type Hebrew (אלהים)" style="width:400px;padding:10px;font-size:18px;direction:rtl" />
+<div id="time" style="margin:20px 0;font-size:24px;font-family:monospace"></div>
+<div id="results" style="font-family:monospace"></div>
+<script type="module">
+import { search, buildSearchIndex, loadLemmaData } from './src/search.ts';
+
+console.log('Loading data...');
+const response = await fetch('/data/all-texts.json');
+const verseTexts = await response.json();
+buildSearchIndex(verseTexts);
+await loadLemmaData();
+console.log('Ready!');
+
+document.getElementById('search').addEventListener('input', (e) => {
+  const query = e.target.value.trim();
+  if (query.length < 2) {
+    document.getElementById('time').textContent = '';
+    document.getElementById('results').textContent = '';
+    return;
+  }
+
+  const start = performance.now();
+  const results = search(query, false, 'root');
+  const end = performance.now();
+
+  const time = end - start;
+  const color = time > 50 ? 'red' : time > 30 ? 'orange' : 'green';
+  document.getElementById('time').innerHTML = `<span style="color:${color}">${time.toFixed(2)}ms</span> for ${results.length} results`;
+  document.getElementById('results').textContent = results.slice(0, 5).map(r => `${r.book} ${r.chapter}:${r.verse}`).join(', ');
+
+  console.log(`Search took ${time.toFixed(2)}ms for ${results.length} results`);
+});
+</script>
+</body></html>

@@ -149,9 +149,11 @@ export async function loadLemmaData(): Promise<void> {
 function buildLemmaInvertedIndex(): void {
   if (!verseLemmas) {
     lemmaToVerses = null;
+    console.warn('Cannot build lemma inverted index: verseLemmas is null');
     return;
   }
 
+  const startTime = performance.now();
   lemmaToVerses = new Map();
 
   for (const [verseKey, lemmas] of Object.entries(verseLemmas)) {
@@ -164,6 +166,9 @@ function buildLemmaInvertedIndex(): void {
       verses.add(verseKey);
     }
   }
+
+  const endTime = performance.now();
+  console.log(`✓ Built lemma inverted index: ${lemmaToVerses.size} unique lemmas in ${(endTime - startTime).toFixed(2)}ms`);
 }
 
 /**
@@ -276,6 +281,7 @@ function searchByLemmas(lemmas: string[]): Set<string> {
 
   // Use inverted index if available (O(L) where L = number of lemmas)
   if (lemmaToVerses) {
+    const startTime = performance.now();
     for (const lemma of lemmas) {
       const verses = lemmaToVerses.get(lemma);
       if (verses) {
@@ -284,18 +290,24 @@ function searchByLemmas(lemmas: string[]): Set<string> {
         }
       }
     }
+    const endTime = performance.now();
+    console.log(`  searchByLemmas (inverted index): ${(endTime - startTime).toFixed(2)}ms for ${lemmas.length} lemmas → ${matchingVerses.size} verses`);
     return matchingVerses;
   }
 
   // Fallback to linear search if inverted index not available
+  console.warn('  searchByLemmas: Using SLOW fallback (inverted index not available)');
   if (!verseLemmas) return matchingVerses;
 
+  const startTime = performance.now();
   for (const [verseKey, verseLemmasList] of Object.entries(verseLemmas)) {
     // Check if this verse contains any of the search lemmas
     if (lemmas.some(lemma => verseLemmasList.includes(lemma))) {
       matchingVerses.add(verseKey);
     }
   }
+  const endTime = performance.now();
+  console.log(`  searchByLemmas (fallback): ${(endTime - startTime).toFixed(2)}ms → ${matchingVerses.size} verses`);
 
   return matchingVerses;
 }

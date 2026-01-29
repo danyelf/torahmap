@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Hebrew Search Performance Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .metric {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    .slow { color: #d32f2f; font-weight: bold; }
+    .medium { color: #f57c00; }
+    .fast { color: #4caf50; }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      margin: 20px 0;
+      direction: rtl;
+    }
+    #breakdown {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+    }
+    .timing {
+      display: grid;
+      grid-template-columns: 200px 100px 1fr;
+      gap: 10px;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hebrew Search Performance Diagnostics</h1>
+
+  <p>This tool measures exactly where time is spent during search:</p>
+
+  <input type="text" id="search" placeholder="Type Hebrew text (try: אלהים)" dir="rtl" />
+
+  <div class="metric">
+    <strong>Total Time:</strong> <span id="total">-</span>
+  </div>
+
+  <div id="breakdown">
+    <h3>Time Breakdown:</h3>
+    <div class="timing">
+      <span><strong>Search Algorithm:</strong></span>
+      <span id="search-time">-</span>
+      <span id="search-bar"></span>
+    </div>
+    <div class="timing">
+      <span><strong>Result Processing:</strong></span>
+      <span id="process-time">-</span>
+      <span id="process-bar"></span>
+    </div>
+    <div class="timing">
+      <span><strong>DOM Rendering:</strong></span>
+      <span id="render-time">-</span>
+      <span id="render-bar"></span>
+    </div>
+    <div class="timing">
+      <span><strong>Update Callback:</strong></span>
+      <span id="callback-time">-</span>
+      <span id="callback-bar"></span>
+    </div>
+  </div>
+
+  <div class="metric">
+    <div><strong>Results:</strong> <span id="result-count">-</span></div>
+    <div><strong>Index Size:</strong> <span id="index-size">-</span></div>
+  </div>
+
+  <div id="results" style="margin-top: 20px;"></div>
+
+  <script type="module">
+    import { search, buildSearchIndex, loadLemmaData, parseSearchTerms } from './src/search.ts';
+    import { BOOK_ORDER } from './src/constants/books.ts';
+
+    console.log('Loading verse texts and building index...');
+    const loadStart = performance.now();
+
+    const response = await fetch('/data/all-texts.json');
+    const verseTexts = await response.json();
+    buildSearchIndex(verseTexts);
+
+    console.log('Loading lemma data...');
+    await loadLemmaData();
+
+    const loadEnd = performance.now();
+    console.log(`Data loaded in ${(loadEnd - loadStart).toFixed(2)}ms`);
+
+    // Count verses
+    let verseCount = 0;
+    for (const book of BOOK_ORDER) {
+      const chapters = verseTexts[book];
+      if (!chapters) continue;
+      for (const chapter of Object.keys(chapters)) {
+        verseCount += Object.keys(chapters[chapter]).length;
+      }
+    }
+    document.getElementById('index-size').textContent = `${verseCount.toLocaleString()} verses`;
+
+    function formatTime(ms) {
+      if (ms > 100) return `<span class="slow">${ms.toFixed(2)}ms</span>`;
+      if (ms > 50) return `<span class="medium">${ms.toFixed(2)}ms</span>`;
+      return `<span class="fast">${ms.toFixed(2)}ms</span>`;
+    }
+
+    function makeBar(ms, maxMs) {
+      const width = Math.min(100, (ms / maxMs) * 100);
+      const color = ms > 100 ? '#d32f2f' : ms > 50 ? '#f57c00' : '#4caf50';
+      return `<div style="width: ${width}%; height: 20px; background: ${color}; border-radius: 3px;"></div>`;
+    }
+
+    const searchInput = document.getElementById('search');
+    const resultsDiv = document.getElementById('results');
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim();
+
+      if (!query || query.length < 2) {
+        document.getElementById('total').innerHTML = '-';
+        document.getElementById('search-time').innerHTML = '-';
+        document.getElementById('process-time').innerHTML = '-';
+        document.getElementById('render-time').innerHTML = '-';
+        document.getElementById('callback-time').innerHTML = '-';
+        document.getElementById('result-count').textContent = '-';
+        document.getElementById('search-bar').innerHTML = '';
+        document.getElementById('process-bar').innerHTML = '';
+        document.getElementById('render-bar').innerHTML = '';
+        document.getElementById('callback-bar').innerHTML = '';
+        resultsDiv.innerHTML = '';
+        return;
+      }
+
+      const t0 = performance.now();
+
+      // 1. Search algorithm
+      const t1 = performance.now();
+      const results = search(query, false, 'root');
+      const t2 = performance.now();
+      const searchTime = t2 - t1;
+
+      // 2. Process results (slicing, mapping)
+      const t3 = performance.now();
+      const displayResults = results.slice(0, 10);
+      const processedResults = displayResults.map(r => ({
+        text: `${r.book} ${r.chapter}:${r.verse}`,
+        matches: r.matchingTerms.length
+      }));
+      const t4 = performance.now();
+      const processTime = t4 - t3;
+
+      // 3. DOM rendering
+      const t5 = performance.now();
+      resultsDiv.innerHTML = '';
+      for (const result of processedResults) {
+        const div = document.createElement('div');
+        div.style.padding = '8px';
+        div.style.margin = '4px 0';
+        div.style.background = '#fff';
+        div.style.border = '1px solid #ddd';
+        div.textContent = result.text;
+        resultsDiv.appendChild(div);
+      }
+      const t6 = performance.now();
+      const renderTime = t6 - t5;
+
+      // 4. Simulate callback (like verseColoring update)
+      const t7 = performance.now();
+      // In real app, this triggers re-render of entire canvas
+      const dummyCallback = () => {
+        // Simulate work
+        for (let i = 0; i < 1000; i++) { /* noop */ }
+      };
+      dummyCallback();
+      const t8 = performance.now();
+      const callbackTime = t8 - t7;
+
+      const totalTime = t8 - t0;
+      const maxTime = Math.max(searchTime, processTime, renderTime, callbackTime, 1);
+
+      // Update UI
+      document.getElementById('total').innerHTML = formatTime(totalTime);
+      document.getElementById('search-time').innerHTML = formatTime(searchTime);
+      document.getElementById('process-time').innerHTML = formatTime(processTime);
+      document.getElementById('render-time').innerHTML = formatTime(renderTime);
+      document.getElementById('callback-time').innerHTML = formatTime(callbackTime);
+      document.getElementById('result-count').textContent = `${results.length} (showing ${displayResults.length})`;
+
+      document.getElementById('search-bar').innerHTML = makeBar(searchTime, maxTime);
+      document.getElementById('process-bar').innerHTML = makeBar(processTime, maxTime);
+      document.getElementById('render-bar').innerHTML = makeBar(renderTime, maxTime);
+      document.getElementById('callback-bar').innerHTML = makeBar(callbackTime, maxTime);
+
+      console.log(`Search: ${searchTime.toFixed(2)}ms | Process: ${processTime.toFixed(2)}ms | Render: ${renderTime.toFixed(2)}ms | Callback: ${callbackTime.toFixed(2)}ms | Total: ${totalTime.toFixed(2)}ms`);
+    });
+  </script>
+</body>
+</html>

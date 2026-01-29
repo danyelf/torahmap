@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Search Diagnostic</title>
+<style>
+body { font-family: monospace; padding: 20px; max-width: 800px; margin: 0 auto; }
+.status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+.good { background: #c8e6c9; }
+.bad { background: #ffcdd2; }
+.warn { background: #fff9c4; }
+input { width: 100%; padding: 12px; font-size: 18px; direction: rtl; margin: 20px 0; }
+</style>
+</head><body>
+<h1>Search Optimization Diagnostic</h1>
+
+<div id="status"></div>
+
+<input type="text" id="search" placeholder="Type: פסח" />
+<div id="results" style="margin-top: 20px; font-size: 18px;"></div>
+
+<script type="module">
+import { search, buildSearchIndex, loadLemmaData, findLemmasForWord } from './src/search.ts';
+
+const statusDiv = document.getElementById('status');
+
+function addStatus(message, type = 'good') {
+  const div = document.createElement('div');
+  div.className = `status ${type}`;
+  div.innerHTML = message;
+  statusDiv.appendChild(div);
+}
+
+// Check 1: Load verse texts
+addStatus('⏳ Loading verse texts...', 'warn');
+const response = await fetch('/data/all-texts.json');
+const verseTexts = await response.json();
+buildSearchIndex(verseTexts);
+addStatus('✓ Verse texts loaded and index built', 'good');
+
+// Check 2: Load lemma data
+addStatus('⏳ Loading lemma data (this enables inverted index)...', 'warn');
+try {
+  await loadLemmaData();
+  addStatus('✓ Lemma data loaded', 'good');
+} catch (err) {
+  addStatus(`✗ Lemma data failed to load: ${err}`, 'bad');
+}
+
+// Check 3: Test if inverted index is being used
+addStatus('⏳ Testing if inverted index is working...', 'warn');
+const testWord = 'אלהים';
+const lemmas = findLemmasForWord(testWord);
+if (lemmas && lemmas.length > 0) {
+  addStatus(`✓ Inverted index working! Found ${lemmas.length} lemmas for "${testWord}": ${lemmas.join(', ')}`, 'good');
+} else {
+  addStatus(`✗ Inverted index NOT working - no lemmas found for "${testWord}"`, 'bad');
+  addStatus('This means search will fall back to slower whole-word mode', 'warn');
+}
+
+// Check 4: Test search performance
+addStatus('⏳ Running performance test...', 'warn');
+const perfTest = 'אלהים';
+const start = performance.now();
+const results = search(perfTest, false, 'root');
+const end = performance.now();
+const time = end - start;
+
+if (time < 30) {
+  addStatus(`✓ Search performance is GOOD: ${time.toFixed(2)}ms for ${results.length} results`, 'good');
+} else if (time < 50) {
+  addStatus(`⚠ Search performance is OK: ${time.toFixed(2)}ms for ${results.length} results`, 'warn');
+} else {
+  addStatus(`✗ Search performance is SLOW: ${time.toFixed(2)}ms for ${results.length} results`, 'bad');
+}
+
+// Interactive test
+const searchInput = document.getElementById('search');
+const resultsDiv = document.getElementById('results');
+
+searchInput.addEventListener('input', (e) => {
+  const query = e.target.value.trim();
+  if (query.length < 2) {
+    resultsDiv.innerHTML = '';
+    return;
+  }
+
+  // Test if this word has lemmas
+  const hasLemmas = findLemmasForWord(query);
+  const lemmaStatus = hasLemmas ?
+    `Using inverted index (${hasLemmas.length} lemmas)` :
+    'No lemmas found - using fallback';
+
+  const start = performance.now();
+  const results = search(query, false, 'root');
+  const end = performance.now();
+  const time = end - start;
+
+  const color = time > 50 ? 'red' : time > 30 ? 'orange' : 'green';
+  resultsDiv.innerHTML = `
+    <div style="color:${color};font-size:24px;margin-bottom:10px">
+      ${time.toFixed(2)}ms for ${results.length} results
+    </div>
+    <div style="color:#666;margin-bottom:10px">${lemmaStatus}</div>
+    <div>${results.slice(0, 5).map(r => `${r.book} ${r.chapter}:${r.verse}`).join('<br>')}</div>
+  `;
+
+  console.log(`"${query}": ${time.toFixed(2)}ms, ${results.length} results, lemmas: ${hasLemmas ? hasLemmas.join(',') : 'none'}`);
+});
+
+addStatus('✓ Ready! Type "פסח" to test', 'good');
+</script>
+</body></html>
