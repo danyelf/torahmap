@@ -58,11 +58,15 @@ const HEBREW_PREFIXES = ['ו', 'ה', 'ב', 'ל', 'כ', 'מ', 'ש'];
 const HEBREW_PREFIX_COMBOS = ['וב', 'וה', 'ול', 'וכ', 'ומ', 'וש', 'מה', 'שב', 'של', 'בה'];
 
 let searchIndex: IndexEntry[] = [];
+// Fast lookup map: verse key -> index entry (avoids O(n) find() calls)
+let verseKeyToEntry: Map<string, IndexEntry> = new Map();
 
 // Lemma data loaded from morphhb
 let wordLemmas: Record<string, string[]> | null = null;  // Hebrew word -> Strong's numbers
 let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong's numbers
 let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
+// Inverted index: Strong's number -> Set of verse keys (for fast lemma-based search)
+let lemmaToVerses: Map<string, Set<string>> | null = null;
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
@@ -126,11 +130,39 @@ export async function loadLemmaData(): Promise<void> {
       wordLemmas = await wordRes.json();
       verseLemmas = await verseRes.json();
       strongsToRoot = await strongsRes.json();
+
+      // Build inverted index: Strong's number -> Set of verse keys
+      // This converts O(V) search-by-lemma to O(1) lookup
+      buildLemmaInvertedIndex();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
     }
   } catch (err) {
     console.warn('Error loading lemma data:', err);
+  }
+}
+
+/**
+ * Build inverted index from verseLemmas: lemma -> Set<verseKey>
+ * This enables O(1) lookup for lemma-based searches instead of O(n) iteration
+ */
+function buildLemmaInvertedIndex(): void {
+  if (!verseLemmas) {
+    lemmaToVerses = null;
+    return;
+  }
+
+  lemmaToVerses = new Map();
+
+  for (const [verseKey, lemmas] of Object.entries(verseLemmas)) {
+    for (const lemma of lemmas) {
+      let verses = lemmaToVerses.get(lemma);
+      if (!verses) {
+        verses = new Set();
+        lemmaToVerses.set(lemma, verses);
+      }
+      verses.add(verseKey);
+    }
   }
 }
 
@@ -202,6 +234,7 @@ export function isHebrewQuery(query: string): boolean {
  */
 export function buildSearchIndex(verseTexts: VerseTexts): void {
   searchIndex = [];
+  verseKeyToEntry.clear();
 
   for (const book of BOOK_ORDER) {
     const chapters = verseTexts[book];
@@ -214,7 +247,7 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
 
       for (const verse of verseNums) {
         const { he, en } = verses[String(verse)];
-        searchIndex.push({
+        const entry: IndexEntry = {
           book,
           chapter,
           verse,
@@ -222,7 +255,12 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
           hebrewOriginal: he,
           englishText: en.toLowerCase(),
           englishOriginal: en,
-        });
+        };
+        searchIndex.push(entry);
+
+        // Build fast lookup map
+        const verseKey = `${book}:${chapter}:${verse}`;
+        verseKeyToEntry.set(verseKey, entry);
       }
     }
   }
@@ -231,10 +269,25 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
 /**
  * Search by Strong's numbers (lemmas) for Hebrew terms
  * Returns verse keys that contain any of the specified lemmas
+ * Uses inverted index for O(1) lookup per lemma instead of O(V) iteration
  */
 function searchByLemmas(lemmas: string[]): Set<string> {
   const matchingVerses = new Set<string>();
 
+  // Use inverted index if available (O(L) where L = number of lemmas)
+  if (lemmaToVerses) {
+    for (const lemma of lemmas) {
+      const verses = lemmaToVerses.get(lemma);
+      if (verses) {
+        for (const verseKey of verses) {
+          matchingVerses.add(verseKey);
+        }
+      }
+    }
+    return matchingVerses;
+  }
+
+  // Fallback to linear search if inverted index not available
   if (!verseLemmas) return matchingVerses;
 
   for (const [verseKey, verseLemmasList] of Object.entries(verseLemmas)) {
@@ -394,10 +447,8 @@ function searchByRootMode(terms: string[]): SearchResult[] {
       const matchingVerseKeys = searchByLemmas(lemmas);
 
       for (const verseKey of matchingVerseKeys) {
-        // Find the corresponding index entry
-        const entry = searchIndex.find(e =>
-          `${e.book}:${e.chapter}:${e.verse}` === verseKey
-        );
+        // Find the corresponding index entry using fast O(1) map lookup
+        const entry = verseKeyToEntry.get(verseKey);
 
         if (entry) {
           let result = resultMap.get(verseKey);

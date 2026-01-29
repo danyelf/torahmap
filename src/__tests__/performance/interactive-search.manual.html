@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <title>Hebrew Search Performance Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+    #search-input {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      border: 2px solid #ccc;
+      border-radius: 4px;
+      direction: rtl;
+    }
+    .metrics {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .metric {
+      margin: 5px 0;
+    }
+    .slow { color: #d32f2f; font-weight: bold; }
+    .medium { color: #f57c00; }
+    .fast { color: #388e3c; }
+    #results {
+      margin-top: 20px;
+    }
+    .result {
+      padding: 8px;
+      margin: 4px 0;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hebrew Search Performance Test</h1>
+  <p>Type Hebrew words to measure search performance in real-time:</p>
+
+  <input type="text" id="search-input" placeholder="Type Hebrew text here... (try: אלהים, בראשית, etc.)" />
+
+  <div class="metrics">
+    <div class="metric">Query: <span id="query">-</span></div>
+    <div class="metric">Search Mode: <span id="mode">root</span></div>
+    <div class="metric">Search Time: <span id="search-time">-</span></div>
+    <div class="metric">Render Time: <span id="render-time">-</span></div>
+    <div class="metric">Total Time: <span id="total-time">-</span></div>
+    <div class="metric">Results: <span id="result-count">-</span></div>
+    <div class="metric">Index Size: <span id="index-size">-</span></div>
+  </div>
+
+  <div id="results"></div>
+
+  <script type="module">
+    import { search, buildSearchIndex } from '/src/search.ts';
+    import { BOOK_ORDER } from '/src/constants/books.ts';
+
+    // Load data and build index
+    const response = await fetch('/data/all-texts.json');
+    const verseTexts = await response.json();
+    buildSearchIndex(verseTexts);
+
+    // Count verses in index
+    let verseCount = 0;
+    for (const book of BOOK_ORDER) {
+      const chapters = verseTexts[book];
+      if (!chapters) continue;
+      for (const chapter of Object.keys(chapters)) {
+        verseCount += Object.keys(chapters[chapter]).length;
+      }
+    }
+
+    document.getElementById('index-size').textContent = `${verseCount} verses`;
+
+    const searchInput = document.getElementById('search-input');
+    const resultsDiv = document.getElementById('results');
+
+    function formatTime(ms) {
+      if (ms > 100) return `<span class="slow">${ms.toFixed(2)}ms</span>`;
+      if (ms > 50) return `<span class="medium">${ms.toFixed(2)}ms</span>`;
+      return `<span class="fast">${ms.toFixed(2)}ms</span>`;
+    }
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.trim();
+      document.getElementById('query').textContent = query || '-';
+
+      if (!query || query.length < 2) {
+        resultsDiv.innerHTML = '';
+        document.getElementById('search-time').innerHTML = '-';
+        document.getElementById('render-time').innerHTML = '-';
+        document.getElementById('total-time').innerHTML = '-';
+        document.getElementById('result-count').textContent = '-';
+        return;
+      }
+
+      const totalStart = performance.now();
+
+      // Measure search time
+      const searchStart = performance.now();
+      const results = search(query, false, 'root');
+      const searchEnd = performance.now();
+      const searchTime = searchEnd - searchStart;
+
+      // Measure render time
+      const renderStart = performance.now();
+      resultsDiv.innerHTML = '';
+      const displayResults = results.slice(0, 10);
+      for (const result of displayResults) {
+        const div = document.createElement('div');
+        div.className = 'result';
+        div.textContent = `${result.book} ${result.chapter}:${result.verse}`;
+        resultsDiv.appendChild(div);
+      }
+      const renderEnd = performance.now();
+      const renderTime = renderEnd - renderStart;
+
+      const totalEnd = performance.now();
+      const totalTime = totalEnd - totalStart;
+
+      // Update metrics
+      document.getElementById('search-time').innerHTML = formatTime(searchTime);
+      document.getElementById('render-time').innerHTML = formatTime(renderTime);
+      document.getElementById('total-time').innerHTML = formatTime(totalTime);
+      document.getElementById('result-count').textContent = `${results.length} (showing ${displayResults.length})`;
+    });
+  </script>
+</body>
+</html>
