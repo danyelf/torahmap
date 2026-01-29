@@ -202,6 +202,23 @@ describe('hebrewKeyboard', () => {
       // Comma should not be intercepted
       expect(preventDefaultSpy).not.toHaveBeenCalled();
     });
+
+    it('works even when keyboard container has focus', () => {
+      input.value = '';
+      input.setSelectionRange(0, 0);
+
+      // Get the keyboard container
+      const container = document.getElementById('hebrew-keyboard-container');
+      expect(container).toBeTruthy();
+
+      // Simulate typing while keyboard has focus (dispatch to document)
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
+      Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+      document.dispatchEvent(event);
+
+      // Hebrew character should still be inserted
+      expect(input.value).toBe('\u05d0'); // א
+    });
   });
 
   describe('virtual keyboard backspace', () => {

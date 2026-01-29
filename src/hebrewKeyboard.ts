@@ -23,14 +23,20 @@ const hebrewLayout = {
 /**
  * Setup transliteration keydown handler for physical keyboard input
  * Intercepts mapped keys and inserts Hebrew characters at cursor position
+ * Listens at document level so typing works even when virtual keyboard has focus
  */
 function setupTransliterationHandler(inputElement: HTMLInputElement): void {
   // Remove existing handler if any
   if (keydownHandler) {
-    inputElement.removeEventListener('keydown', keydownHandler);
+    document.removeEventListener('keydown', keydownHandler);
   }
 
   keydownHandler = (e: KeyboardEvent) => {
+    // Only process if keyboard is open and we have a current input
+    if (!isKeyboardOpen() || !currentInput) {
+      return;
+    }
+
     const key = e.key.toLowerCase();
 
     // Only handle single-character alphabetic keys
@@ -45,17 +51,17 @@ function setupTransliterationHandler(inputElement: HTMLInputElement): void {
       e.preventDefault();
 
       const hebrewChar = TRANSLITERATION_MAP[key];
-      const start = inputElement.selectionStart ?? 0;
-      const end = inputElement.selectionEnd ?? 0;
-      const currentValue = inputElement.value;
+      const start = currentInput.selectionStart ?? 0;
+      const end = currentInput.selectionEnd ?? 0;
+      const currentValue = currentInput.value;
 
       // Insert Hebrew character at cursor position
       const newValue = currentValue.slice(0, start) + hebrewChar + currentValue.slice(end);
-      inputElement.value = newValue;
+      currentInput.value = newValue;
 
       // Set cursor position after inserted character
       const newCursorPos = start + hebrewChar.length;
-      inputElement.setSelectionRange(newCursorPos, newCursorPos);
+      currentInput.setSelectionRange(newCursorPos, newCursorPos);
 
       // Sync virtual keyboard
       if (keyboardInstance) {
@@ -63,14 +69,15 @@ function setupTransliterationHandler(inputElement: HTMLInputElement): void {
       }
 
       // Trigger input event to update search
-      inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+      currentInput.dispatchEvent(new Event('input', { bubbles: true }));
     } else {
       // Key is a letter but not in the map (e.g., 'i', 'o', 'u') - ignore it
       e.preventDefault();
     }
   };
 
-  inputElement.addEventListener('keydown', keydownHandler);
+  // Listen at document level so it works even when keyboard has focus
+  document.addEventListener('keydown', keydownHandler);
 }
 
 export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
@@ -226,9 +233,9 @@ export function closeHebrewKeyboard(): void {
     container.style.display = 'none';
   }
 
-  // Remove transliteration handler
-  if (currentInput && keydownHandler) {
-    currentInput.removeEventListener('keydown', keydownHandler);
+  // Remove transliteration handler from document
+  if (keydownHandler) {
+    document.removeEventListener('keydown', keydownHandler);
     keydownHandler = null;
   }
 
