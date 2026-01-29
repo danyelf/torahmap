@@ -260,9 +260,10 @@ describe('Hebrew Search Modes', () => {
     });
 
     it('modes create valid snippets with match positions', () => {
-      const modes: Array<'substring' | 'word' | 'root'> = ['substring', 'word', 'root'];
+      // Substring and word modes compute snippets eagerly
+      const eagerModes: Array<'substring' | 'word'> = ['substring', 'word'];
 
-      for (const mode of modes) {
+      for (const mode of eagerModes) {
         const results = search('אלהים', false, mode);
         expect(results.length).toBeGreaterThan(0);
 
@@ -272,9 +273,17 @@ describe('Hebrew Search Modes', () => {
         const match = firstResult.matchingTerms[0];
         expect(match.snippet).toBeDefined();
         expect(match.matchStart).toBeGreaterThanOrEqual(0);
-        expect(match.matchEnd).toBeGreaterThan(match.matchStart);
-        expect(match.matchEnd).toBeLessThanOrEqual(match.snippet.length);
+        expect(match.matchEnd).toBeGreaterThan(match.matchStart!);
+        expect(match.matchEnd).toBeLessThanOrEqual(match.snippet!.length);
       }
+
+      // Root mode uses lazy evaluation - snippets are undefined initially
+      const rootResults = search('אלהים', false, 'root');
+      expect(rootResults.length).toBeGreaterThan(0);
+      const rootMatch = rootResults[0].matchingTerms[0];
+      expect(rootMatch.snippet).toBeUndefined();
+      expect(rootMatch.matchStart).toBeUndefined();
+      expect(rootMatch.matchEnd).toBeUndefined();
     });
   });
 

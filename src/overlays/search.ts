@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRootForStrongsNumber, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -143,10 +143,31 @@ function renderResults(): void {
 
     // Use first match's snippet for display
     const firstMatch = result.matchingTerms[0];
+
+    // Compute snippet on-demand if not present (for lazy evaluation in root mode)
+    let snippet = firstMatch.snippet;
+    let matchStart = firstMatch.matchStart;
+    let matchEnd = firstMatch.matchEnd;
+
+    if (snippet === undefined || matchStart === undefined || matchEnd === undefined) {
+      // Lazy evaluation - compute snippet now
+      const snippetData = computeSnippetForMatch(result, firstMatch.termIndex, currentTerms[firstMatch.termIndex]);
+      if (snippetData) {
+        snippet = snippetData.snippet;
+        matchStart = snippetData.matchStart;
+        matchEnd = snippetData.matchEnd;
+      } else {
+        // Fallback if computation fails
+        snippet = `${result.book} ${result.chapter}:${result.verse}`;
+        matchStart = 0;
+        matchEnd = 0;
+      }
+    }
+
     const snippetContent = createHighlightedText(
-      firstMatch.snippet,
-      firstMatch.matchStart,
-      firstMatch.matchEnd,
+      snippet,
+      matchStart,
+      matchEnd,
       firstMatch.termIndex
     );
     snippetDiv.appendChild(snippetContent);
