@@ -137,15 +137,47 @@ describe('hebrewKeyboard', () => {
       expect(input.selectionEnd).toBe(3);
     });
 
-    it('does not intercept unmapped keys', () => {
+    it('does not intercept non-alphabetic keys', () => {
       input.value = '';
 
-      // Try typing a number (not in transliteration map)
+      // Try typing a number (not a letter)
       const event = new KeyboardEvent('keydown', { key: '1', bubbles: true });
       const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
       input.dispatchEvent(event);
 
+      // Numbers should pass through
       expect(preventDefaultSpy).not.toHaveBeenCalled();
+    });
+
+    it('ignores unmapped alphabetic keys', () => {
+      input.value = '';
+
+      // Try typing 'o' (letter not in transliteration map)
+      const eventO = new KeyboardEvent('keydown', { key: 'o', bubbles: true });
+      const preventDefaultSpyO = vi.spyOn(eventO, 'preventDefault');
+      input.dispatchEvent(eventO);
+
+      // 'o' should be prevented (ignored)
+      expect(preventDefaultSpyO).toHaveBeenCalled();
+      expect(input.value).toBe('');
+
+      // Try typing 'i' (letter not in transliteration map)
+      const eventI = new KeyboardEvent('keydown', { key: 'i', bubbles: true });
+      const preventDefaultSpyI = vi.spyOn(eventI, 'preventDefault');
+      input.dispatchEvent(eventI);
+
+      // 'i' should be prevented (ignored)
+      expect(preventDefaultSpyI).toHaveBeenCalled();
+      expect(input.value).toBe('');
+
+      // Try typing 'u' (letter not in transliteration map)
+      const eventU = new KeyboardEvent('keydown', { key: 'u', bubbles: true });
+      const preventDefaultSpyU = vi.spyOn(eventU, 'preventDefault');
+      input.dispatchEvent(eventU);
+
+      // 'u' should be prevented (ignored)
+      expect(preventDefaultSpyU).toHaveBeenCalled();
+      expect(input.value).toBe('');
     });
 
     it('does not intercept special keys', () => {
@@ -169,6 +201,146 @@ describe('hebrewKeyboard', () => {
 
       // Comma should not be intercepted
       expect(preventDefaultSpy).not.toHaveBeenCalled();
+    });
+
+    it('works even when keyboard container has focus', () => {
+      input.value = '';
+      input.setSelectionRange(0, 0);
+
+      // Get the keyboard container
+      const container = document.getElementById('hebrew-keyboard-container');
+      expect(container).toBeTruthy();
+
+      // Create a mock element inside the keyboard container
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Simulate typing 'a' while element inside keyboard has focus
+      const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
+      Object.defineProperty(event, 'target', { value: mockElement, configurable: true });
+      const preventDefaultFn = vi.fn();
+      Object.defineProperty(event, 'preventDefault', { value: preventDefaultFn, configurable: true });
+      document.dispatchEvent(event);
+
+      // Hebrew character should still be inserted
+      expect(input.value).toBe('\u05d0'); // א
+      expect(preventDefaultFn).toHaveBeenCalled(); // Prevented default
+    });
+
+    it('allows comma when keyboard container has focus', () => {
+      input.value = '\u05d0'; // Start with א
+      input.setSelectionRange(1, 1);
+
+      const container = document.getElementById('hebrew-keyboard-container');
+      expect(container).toBeTruthy();
+
+      // Create a mock element inside the keyboard container
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Simulate typing comma while element inside keyboard has focus
+      const event = new KeyboardEvent('keydown', { key: ',', bubbles: true });
+      Object.defineProperty(event, 'target', { value: mockElement, configurable: true });
+      const preventDefaultFn = vi.fn();
+      Object.defineProperty(event, 'preventDefault', { value: preventDefaultFn, configurable: true });
+      document.dispatchEvent(event);
+
+      // Comma should be inserted into input
+      expect(input.value).toBe('\u05d0,'); // א,
+      expect(preventDefaultFn).toHaveBeenCalled(); // Prevented default and handled manually
+    });
+
+    it('allows space when keyboard container has focus', () => {
+      input.value = '\u05d0';
+      input.setSelectionRange(1, 1);
+
+      const container = document.getElementById('hebrew-keyboard-container');
+      expect(container).toBeTruthy();
+
+      // Create a mock element inside the keyboard container
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Simulate typing space while element inside keyboard has focus
+      const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true });
+      Object.defineProperty(event, 'target', { value: mockElement, configurable: true });
+      const preventDefaultFn = vi.fn();
+      Object.defineProperty(event, 'preventDefault', { value: preventDefaultFn, configurable: true });
+      document.dispatchEvent(event);
+
+      // Space should be inserted
+      expect(input.value).toBe('\u05d0 '); // א with space
+      expect(preventDefaultFn).toHaveBeenCalled(); // Prevented default and handled manually
+    });
+  });
+
+  describe('paste support', () => {
+    beforeEach(() => {
+      createHebrewKeyboard(input);
+    });
+
+    it('allows pasting Hebrew text when keyboard is open', () => {
+      input.value = '';
+      input.setSelectionRange(0, 0);
+
+      // Simulate paste event
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        clipboardData: new DataTransfer()
+      });
+
+      // Add Hebrew text to clipboard
+      pasteEvent.clipboardData?.setData('text/plain', 'שלום');
+
+      // Manually insert pasted text (browser would normally do this)
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e as ClipboardEvent).clipboardData?.getData('text/plain');
+        if (text) {
+          const start = input.selectionStart ?? 0;
+          const end = input.selectionEnd ?? 0;
+          input.value = input.value.slice(0, start) + text + input.value.slice(end);
+          input.setSelectionRange(start + text.length, start + text.length);
+        }
+      }, { once: true });
+
+      input.dispatchEvent(pasteEvent);
+
+      // Hebrew text should be pasted successfully
+      expect(input.value).toBe('שלום');
+    });
+
+    it('allows pasting when keyboard container has focus', () => {
+      input.value = 'א';
+      input.setSelectionRange(1, 1);
+
+      const container = document.getElementById('hebrew-keyboard-container');
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Even if keyboard has focus, paste should still work on the input
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        clipboardData: new DataTransfer()
+      });
+
+      pasteEvent.clipboardData?.setData('text/plain', ' עולם');
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e as ClipboardEvent).clipboardData?.getData('text/plain');
+        if (text) {
+          const start = input.selectionStart ?? 0;
+          const end = input.selectionEnd ?? 0;
+          input.value = input.value.slice(0, start) + text + input.value.slice(end);
+          input.setSelectionRange(start + text.length, start + text.length);
+        }
+      }, { once: true });
+
+      input.dispatchEvent(pasteEvent);
+
+      // Pasted text should be appended
+      expect(input.value).toBe('א עולם');
     });
   });
 

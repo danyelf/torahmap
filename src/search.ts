@@ -43,6 +43,15 @@ const HEBREW_RANGE_END = 0x05FF;
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05C7;
 
+// Hebrew final forms (sofit) - map final form to regular form
+const FINAL_FORM_MAP: Record<string, string> = {
+  'ך': 'כ', // kaf sofit (U+05DA) → kaf (U+05DB)
+  'ם': 'מ', // mem sofit (U+05DD) → mem (U+05DE)
+  'ן': 'נ', // nun sofit (U+05DF) → nun (U+05E0)
+  'ף': 'פ', // pe sofit (U+05E3) → pe (U+05E4)
+  'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
+};
+
 // Common Hebrew prefixes that can be stripped for lemma lookup
 const HEBREW_PREFIXES = ['ו', 'ה', 'ב', 'ל', 'כ', 'מ', 'ש'];
 // Two-letter prefix combinations
@@ -56,7 +65,7 @@ let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong'
 let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
 
 /**
- * Strip Hebrew vowel marks (nikkud) from text
+ * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
  */
 export function stripNikkud(text: string): string {
   let result = '';
@@ -65,6 +74,27 @@ export function stripNikkud(text: string): string {
     // Skip nikkud marks but keep Hebrew letters and other characters
     if (code < NIKKUD_START || code > NIKKUD_END || code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6) {
       result += char;
+    }
+  }
+  return result;
+}
+
+/**
+ * Normalize Hebrew text for search: strip nikkud AND normalize final forms
+ * Final forms (sofit) are converted to their regular equivalents:
+ * ך → כ, ם → מ, ן → נ, ף → פ, ץ → צ
+ *
+ * This function is used for search matching, where we want both forms to match.
+ * Use stripNikkud() if you want to preserve final forms (e.g., for display).
+ */
+export function normalizeHebrewForSearch(text: string): string {
+  let result = '';
+  for (const char of text) {
+    const code = char.charCodeAt(0);
+    // Skip nikkud marks but keep Hebrew letters and other characters
+    if (code < NIKKUD_START || code > NIKKUD_END || code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6) {
+      // Normalize final forms to regular forms
+      result += FINAL_FORM_MAP[char] || char;
     }
   }
   return result;
@@ -115,7 +145,7 @@ export async function loadLemmaData(): Promise<void> {
 export function findLemmasForWord(hebrewWord: string): string[] | null {
   if (!wordLemmas) return null;
 
-  const stripped = stripNikkud(hebrewWord);
+  const stripped = normalizeHebrewForSearch(hebrewWord);
 
   // Try direct lookup
   if (wordLemmas[stripped]) {
@@ -188,7 +218,7 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
           book,
           chapter,
           verse,
-          hebrewText: stripNikkud(he),
+          hebrewText: normalizeHebrewForSearch(he),
           hebrewOriginal: he,
           englishText: en.toLowerCase(),
           englishOriginal: en,
@@ -287,7 +317,7 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
 
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const term = terms[termIndex];
-    const normalizedTerm = stripNikkud(term);
+    const normalizedTerm = normalizeHebrewForSearch(term);
 
     for (const entry of searchIndex) {
       const words = entry.hebrewText.split(/\s+/);
@@ -479,7 +509,7 @@ export function search(
 
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const term = terms[termIndex];
-    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+    const normalizedTerm = isHebrew ? normalizeHebrewForSearch(term) : term.toLowerCase();
 
     for (const entry of searchIndex) {
       // Select appropriate text based on language
