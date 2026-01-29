@@ -137,15 +137,47 @@ describe('hebrewKeyboard', () => {
       expect(input.selectionEnd).toBe(3);
     });
 
-    it('does not intercept unmapped keys', () => {
+    it('does not intercept non-alphabetic keys', () => {
       input.value = '';
 
-      // Try typing a number (not in transliteration map)
+      // Try typing a number (not a letter)
       const event = new KeyboardEvent('keydown', { key: '1', bubbles: true });
       const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
       input.dispatchEvent(event);
 
+      // Numbers should pass through
       expect(preventDefaultSpy).not.toHaveBeenCalled();
+    });
+
+    it('ignores unmapped alphabetic keys', () => {
+      input.value = '';
+
+      // Try typing 'o' (letter not in transliteration map)
+      const eventO = new KeyboardEvent('keydown', { key: 'o', bubbles: true });
+      const preventDefaultSpyO = vi.spyOn(eventO, 'preventDefault');
+      input.dispatchEvent(eventO);
+
+      // 'o' should be prevented (ignored)
+      expect(preventDefaultSpyO).toHaveBeenCalled();
+      expect(input.value).toBe('');
+
+      // Try typing 'i' (letter not in transliteration map)
+      const eventI = new KeyboardEvent('keydown', { key: 'i', bubbles: true });
+      const preventDefaultSpyI = vi.spyOn(eventI, 'preventDefault');
+      input.dispatchEvent(eventI);
+
+      // 'i' should be prevented (ignored)
+      expect(preventDefaultSpyI).toHaveBeenCalled();
+      expect(input.value).toBe('');
+
+      // Try typing 'u' (letter not in transliteration map)
+      const eventU = new KeyboardEvent('keydown', { key: 'u', bubbles: true });
+      const preventDefaultSpyU = vi.spyOn(eventU, 'preventDefault');
+      input.dispatchEvent(eventU);
+
+      // 'u' should be prevented (ignored)
+      expect(preventDefaultSpyU).toHaveBeenCalled();
+      expect(input.value).toBe('');
     });
 
     it('does not intercept special keys', () => {

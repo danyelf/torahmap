@@ -31,11 +31,16 @@ function setupTransliterationHandler(inputElement: HTMLInputElement): void {
   }
 
   keydownHandler = (e: KeyboardEvent) => {
-    // Only handle printable keys in the transliteration map
     const key = e.key.toLowerCase();
 
+    // Only handle single-character alphabetic keys
+    if (key.length !== 1 || !/^[a-z]$/.test(key)) {
+      // Allow special keys (backspace, arrows, etc.) to pass through
+      return;
+    }
+
     // Check if this key is in the transliteration map
-    if (key.length === 1 && TRANSLITERATION_MAP[key]) {
+    if (TRANSLITERATION_MAP[key]) {
       // Prevent default behavior (don't insert the English letter)
       e.preventDefault();
 
@@ -59,6 +64,9 @@ function setupTransliterationHandler(inputElement: HTMLInputElement): void {
 
       // Trigger input event to update search
       inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+    } else {
+      // Key is a letter but not in the map (e.g., 'i', 'o', 'u') - ignore it
+      e.preventDefault();
     }
   };
 
