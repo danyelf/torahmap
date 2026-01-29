@@ -188,12 +188,17 @@ function buildLemmaInvertedIndex(): void {
  * Exported for use in overlay UI to show which terms have lemma data
  */
 export function findLemmasForWord(hebrewWord: string): string[] | null {
-  if (!wordLemmas) return null;
+  if (!wordLemmas) {
+    console.log(`findLemmasForWord("${hebrewWord}"): wordLemmas is null`);
+    return null;
+  }
 
   const stripped = normalizeHebrewForSearch(hebrewWord);
+  console.log(`findLemmasForWord("${hebrewWord}") normalized to "${stripped}"`);
 
   // Try direct lookup
   if (wordLemmas[stripped]) {
+    console.log(`  ✓ Found direct match: ${wordLemmas[stripped].length} lemmas`);
     return wordLemmas[stripped];
   }
 
@@ -202,6 +207,7 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
     if (stripped.startsWith(prefix) && stripped.length > prefix.length + 1) {
       const withoutPrefix = stripped.slice(prefix.length);
       if (wordLemmas[withoutPrefix]) {
+        console.log(`  ✓ Found after stripping prefix "${prefix}": ${wordLemmas[withoutPrefix].length} lemmas`);
         return wordLemmas[withoutPrefix];
       }
     }
@@ -212,11 +218,13 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
     if (stripped.startsWith(prefix) && stripped.length > 2) {
       const withoutPrefix = stripped.slice(prefix.length);
       if (wordLemmas[withoutPrefix]) {
+        console.log(`  ✓ Found after stripping prefix "${prefix}": ${wordLemmas[withoutPrefix].length} lemmas`);
         return wordLemmas[withoutPrefix];
       }
     }
   }
 
+  console.log(`  ✗ No lemmas found (tried direct and with prefixes stripped)`);
   return null;
 }
 
