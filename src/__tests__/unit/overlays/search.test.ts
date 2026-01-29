@@ -358,7 +358,7 @@ describe('Search Overlay', () => {
       expect(clearBtn.style.display).toBe('none');
     });
 
-    it('closes Hebrew keyboard when clear button is clicked', () => {
+    it('preserves Hebrew mode when clear button is clicked', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
@@ -374,13 +374,15 @@ describe('Search Overlay', () => {
       // Type some Hebrew text
       input.value = 'אלהים';
       input.dispatchEvent(new Event('input'));
+      expect(input.dir).toBe('rtl');
 
       // Click clear button
       clearBtn.click();
 
-      // Verify keyboard is closed
-      expect(isKeyboardOpen()).toBe(false);
-      expect(keyboardToggle.classList.contains('active')).toBe(false);
+      // Verify keyboard stays open and direction stays RTL
+      expect(isKeyboardOpen()).toBe(true);
+      expect(keyboardToggle.classList.contains('active')).toBe(true);
+      expect(input.dir).toBe('rtl');
       expect(input.value).toBe('');
     });
 

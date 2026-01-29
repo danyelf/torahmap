@@ -653,29 +653,12 @@ export const searchOverlay: Overlay = {
     });
 
     searchClear?.addEventListener('click', () => {
-      // Close Hebrew keyboard if open
-      if (isKeyboardOpen()) {
-        closeHebrewKeyboard();
-        if (keyboardToggle) {
-          keyboardToggle.classList.remove('active');
-        }
-      }
       if (searchInput) {
         searchInput.value = '';
-        searchInput.dir = 'ltr';
         searchClear!.style.display = 'none';
       }
-      // Show checkbox again when clearing (back to English mode)
-      if (wholeWordCheckbox) {
-        const optionsContainer = wholeWordCheckbox.closest('#search-options') as HTMLElement;
-        if (optionsContainer) {
-          optionsContainer.style.display = 'block';
-        }
-      }
-      // Hide Hebrew mode selector when clearing
-      if (hebrewModeContainer) {
-        hebrewModeContainer.style.display = 'none';
-      }
+      // Update UI to reflect current mode (keyboard open or not)
+      updateInputMode();
       doSearch('');
     });
 
