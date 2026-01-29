@@ -193,8 +193,10 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
     return null;
   }
 
-  const stripped = normalizeHebrewForSearch(hebrewWord);
-  console.log(`findLemmasForWord("${hebrewWord}") normalized to "${stripped}"`);
+  // Use stripNikkud (preserves final forms) not normalizeHebrewForSearch (converts final forms)
+  // The morphhb database keys use final forms, so we need to preserve them
+  const stripped = stripNikkud(hebrewWord);
+  console.log(`findLemmasForWord("${hebrewWord}") stripped to "${stripped}"`);
 
   // Try direct lookup
   if (wordLemmas[stripped]) {
