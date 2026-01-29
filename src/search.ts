@@ -120,22 +120,30 @@ export function parseSearchTerms(query: string): string[] {
  */
 export async function loadLemmaData(): Promise<void> {
   try {
+    console.log('Loading lemma data files...');
     const [wordRes, verseRes, strongsRes] = await Promise.all([
       fetch('/data/word-lemmas.json'),
       fetch('/data/verse-lemmas.json'),
       fetch('/data/strongs-to-root.json'),
     ]);
 
+    console.log(`Fetch results: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
+
     if (wordRes.ok && verseRes.ok && strongsRes.ok) {
+      console.log('Parsing JSON...');
       wordLemmas = await wordRes.json();
       verseLemmas = await verseRes.json();
       strongsToRoot = await strongsRes.json();
+
+      console.log(`✓ Loaded: ${Object.keys(wordLemmas).length} words, ${Object.keys(verseLemmas).length} verses, ${Object.keys(strongsToRoot).length} Strong's numbers`);
 
       // Build inverted index: Strong's number -> Set of verse keys
       // This converts O(V) search-by-lemma to O(1) lookup
       buildLemmaInvertedIndex();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
+      console.warn(`Response status: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
+      console.warn(`URLs tried: ${wordRes.url}, ${verseRes.url}, ${strongsRes.url}`);
     }
   } catch (err) {
     console.warn('Error loading lemma data:', err);
