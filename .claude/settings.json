@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git push:*)",
+      "Bash(./scripts/work-on-bead.sh:*)",
+      "Bash(git rebase:*)",
+      "Bash(for branch in edb puz tm-a1g tm-amw tm-ask tm-edb tm-k1o tm-u6q tm-wnv tm-z4i z4i)",
+      "Bash(do echo \"=== $branch ===\")",
+      "Bash(done)",
+      "Bash(for branch in tm-u6q tm-amw tm-wnv tm-a1g tm-ask edb puz z4i tm-z4i)",
+      "Bash(do)",
+      "Bash(bash -c \"cd /Users/danyel/code/MISC/torahmap && git worktree list\")",
+      "Bash(/bin/bash -c 'cd /Users/danyel/code/MISC/torahmap && git worktree list')",
+      "Bash(exec bash -c \"cd /Users/danyel/code/MISC/torahmap && git worktree list\")",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(./scripts/cleanup-worktrees.sh:*)",
+      "Bash(command -v:*)",
+      "Bash(fzf:*)",
+      "Bash(stty:*)",
+      "Bash(pgrep:*)",
+      "Bash(ps:*)"
+    ]
+  },
+  "env": {
+    "TRACE_TO_LANGFUSE": "true",
+    "LANGFUSE_SECRET_KEY": "sk-lf-39142a59-aea1-4066-a72a-23f198d837c2",
+    "LANGFUSE_PUBLIC_KEY": "pk-lf-bd59b534-00c5-448d-9a49-ce9f53051558",
+    "LANGFUSE_BASE_URL": "http://localhost:3000"
+  }
+}
