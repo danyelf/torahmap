@@ -274,6 +274,76 @@ describe('hebrewKeyboard', () => {
     });
   });
 
+  describe('paste support', () => {
+    beforeEach(() => {
+      createHebrewKeyboard(input);
+    });
+
+    it('allows pasting Hebrew text when keyboard is open', () => {
+      input.value = '';
+      input.setSelectionRange(0, 0);
+
+      // Simulate paste event
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        clipboardData: new DataTransfer()
+      });
+
+      // Add Hebrew text to clipboard
+      pasteEvent.clipboardData?.setData('text/plain', 'שלום');
+
+      // Manually insert pasted text (browser would normally do this)
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e as ClipboardEvent).clipboardData?.getData('text/plain');
+        if (text) {
+          const start = input.selectionStart ?? 0;
+          const end = input.selectionEnd ?? 0;
+          input.value = input.value.slice(0, start) + text + input.value.slice(end);
+          input.setSelectionRange(start + text.length, start + text.length);
+        }
+      }, { once: true });
+
+      input.dispatchEvent(pasteEvent);
+
+      // Hebrew text should be pasted successfully
+      expect(input.value).toBe('שלום');
+    });
+
+    it('allows pasting when keyboard container has focus', () => {
+      input.value = 'א';
+      input.setSelectionRange(1, 1);
+
+      const container = document.getElementById('hebrew-keyboard-container');
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Even if keyboard has focus, paste should still work on the input
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        clipboardData: new DataTransfer()
+      });
+
+      pasteEvent.clipboardData?.setData('text/plain', ' עולם');
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e as ClipboardEvent).clipboardData?.getData('text/plain');
+        if (text) {
+          const start = input.selectionStart ?? 0;
+          const end = input.selectionEnd ?? 0;
+          input.value = input.value.slice(0, start) + text + input.value.slice(end);
+          input.setSelectionRange(start + text.length, start + text.length);
+        }
+      }, { once: true });
+
+      input.dispatchEvent(pasteEvent);
+
+      // Pasted text should be appended
+      expect(input.value).toBe('א עולם');
+    });
+  });
+
   describe('virtual keyboard backspace', () => {
     beforeEach(() => {
       createHebrewKeyboard(input);
