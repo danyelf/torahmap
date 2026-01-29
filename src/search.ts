@@ -474,27 +474,11 @@ function searchByRootMode(terms: string[]): SearchResult[] {
   // If we found lemmas for any terms, use lemma-based search
   if (termLemmas.length > 0) {
     for (const { termIndex, lemmas } of termLemmas) {
-      const t0 = performance.now();
       const matchingVerseKeys = searchByLemmas(lemmas);
-      const t1 = performance.now();
-
-      console.log(`  Processing ${matchingVerseKeys.size} matching verses...`);
-      let wordIndexTime = 0;
-      let wordBoundsTime = 0;
-      let snippetTime = 0;
-      let mapLookupTime = 0;
-      let someCheckTime = 0;
-      let otherTime = 0;
-      let loopCount = 0;
 
       for (const verseKey of matchingVerseKeys) {
-        const tLoop0 = performance.now();
-
         // Find the corresponding index entry using fast O(1) map lookup
-        const tMap0 = performance.now();
         const entry = verseKeyToEntry.get(verseKey);
-        const tMap1 = performance.now();
-        mapLookupTime += (tMap1 - tMap0);
 
         if (entry) {
           let result = resultMap.get(verseKey);
@@ -510,30 +494,17 @@ function searchByRootMode(terms: string[]): SearchResult[] {
           }
 
           // Only add if this term hasn't matched this verse yet
-          const tSome0 = performance.now();
           const shouldAdd = !result.matchingTerms.some(m => m.termIndex === termIndex);
-          const tSome1 = performance.now();
-          someCheckTime += (tSome1 - tSome0);
 
           if (shouldAdd) {
             // Find the word that matched via lemma lookup
-            const tw0 = performance.now();
             const wordIndex = findWordIndexByLemma(verseKey, lemmas);
-            const tw1 = performance.now();
-            wordIndexTime += (tw1 - tw0);
-
-            const tb0 = performance.now();
             const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
-            const tb1 = performance.now();
-            wordBoundsTime += (tb1 - tb0);
 
             if (wordBounds) {
               // Highlight the matched word
-              const ts0 = performance.now();
               const wordLen = wordBounds.end - wordBounds.start;
               const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
-              const ts1 = performance.now();
-              snippetTime += (ts1 - ts0);
 
               result.matchingTerms.push({
                 termIndex,
@@ -569,28 +540,7 @@ function searchByRootMode(terms: string[]): SearchResult[] {
             }
           }
         }
-
-        const tLoop1 = performance.now();
-        const loopIterTime = tLoop1 - tLoop0;
-        const measuredTime = (tMap1 - tMap0) + (tSome1 - tSome0);
-        otherTime += (loopIterTime - measuredTime);
-        loopCount++;
       }
-
-      const t2 = performance.now();
-      const totalLoopTime = t2 - t1;
-      const accountedTime = wordIndexTime + wordBoundsTime + snippetTime + mapLookupTime + someCheckTime;
-      const unaccountedTime = totalLoopTime - accountedTime;
-
-      console.log(`  Timing breakdown for ${matchingVerseKeys.size} verses (${loopCount} iterations):`);
-      console.log(`    - searchByLemmas: ${(t1 - t0).toFixed(2)}ms`);
-      console.log(`    - Map lookups: ${mapLookupTime.toFixed(2)}ms`);
-      console.log(`    - someCheckTime: ${someCheckTime.toFixed(2)}ms`);
-      console.log(`    - findWordIndexByLemma: ${wordIndexTime.toFixed(2)}ms`);
-      console.log(`    - getWordBoundaries: ${wordBoundsTime.toFixed(2)}ms`);
-      console.log(`    - createSnippet: ${snippetTime.toFixed(2)}ms`);
-      console.log(`    - Unaccounted: ${unaccountedTime.toFixed(2)}ms ← BOTTLENECK`);
-      console.log(`    - Total processing: ${(t2 - t0).toFixed(2)}ms`);
     }
 
     // If we got results from lemma search, return them
