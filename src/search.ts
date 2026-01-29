@@ -474,7 +474,14 @@ function searchByRootMode(terms: string[]): SearchResult[] {
   // If we found lemmas for any terms, use lemma-based search
   if (termLemmas.length > 0) {
     for (const { termIndex, lemmas } of termLemmas) {
+      const t0 = performance.now();
       const matchingVerseKeys = searchByLemmas(lemmas);
+      const t1 = performance.now();
+
+      console.log(`  Processing ${matchingVerseKeys.size} matching verses...`);
+      let wordIndexTime = 0;
+      let wordBoundsTime = 0;
+      let snippetTime = 0;
 
       for (const verseKey of matchingVerseKeys) {
         // Find the corresponding index entry using fast O(1) map lookup
@@ -496,13 +503,24 @@ function searchByRootMode(terms: string[]): SearchResult[] {
           // Only add if this term hasn't matched this verse yet
           if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
             // Find the word that matched via lemma lookup
+            const tw0 = performance.now();
             const wordIndex = findWordIndexByLemma(verseKey, lemmas);
+            const tw1 = performance.now();
+            wordIndexTime += (tw1 - tw0);
+
+            const tb0 = performance.now();
             const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
+            const tb1 = performance.now();
+            wordBoundsTime += (tb1 - tb0);
 
             if (wordBounds) {
               // Highlight the matched word
+              const ts0 = performance.now();
               const wordLen = wordBounds.end - wordBounds.start;
               const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+              const ts1 = performance.now();
+              snippetTime += (ts1 - ts0);
+
               result.matchingTerms.push({
                 termIndex,
                 snippet: snippet.text,
@@ -538,6 +556,14 @@ function searchByRootMode(terms: string[]): SearchResult[] {
           }
         }
       }
+
+      const t2 = performance.now();
+      console.log(`  Timing breakdown for ${matchingVerseKeys.size} verses:`);
+      console.log(`    - searchByLemmas: ${(t1 - t0).toFixed(2)}ms`);
+      console.log(`    - findWordIndexByLemma: ${wordIndexTime.toFixed(2)}ms`);
+      console.log(`    - getWordBoundaries: ${wordBoundsTime.toFixed(2)}ms`);
+      console.log(`    - createSnippet: ${snippetTime.toFixed(2)}ms`);
+      console.log(`    - Total processing: ${(t2 - t0).toFixed(2)}ms`);
     }
 
     // If we got results from lemma search, return them
