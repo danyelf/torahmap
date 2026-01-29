@@ -211,13 +211,66 @@ describe('hebrewKeyboard', () => {
       const container = document.getElementById('hebrew-keyboard-container');
       expect(container).toBeTruthy();
 
-      // Simulate typing while keyboard has focus (dispatch to document)
+      // Create a mock element inside the keyboard container
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Simulate typing 'a' while element inside keyboard has focus
       const event = new KeyboardEvent('keydown', { key: 'a', bubbles: true });
-      Object.defineProperty(event, 'preventDefault', { value: vi.fn() });
+      Object.defineProperty(event, 'target', { value: mockElement, configurable: true });
+      const preventDefaultFn = vi.fn();
+      Object.defineProperty(event, 'preventDefault', { value: preventDefaultFn, configurable: true });
       document.dispatchEvent(event);
 
       // Hebrew character should still be inserted
       expect(input.value).toBe('\u05d0'); // א
+      expect(preventDefaultFn).toHaveBeenCalled(); // Prevented default
+    });
+
+    it('allows comma when keyboard container has focus', () => {
+      input.value = '\u05d0'; // Start with א
+      input.setSelectionRange(1, 1);
+
+      const container = document.getElementById('hebrew-keyboard-container');
+      expect(container).toBeTruthy();
+
+      // Create a mock element inside the keyboard container
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Simulate typing comma while element inside keyboard has focus
+      const event = new KeyboardEvent('keydown', { key: ',', bubbles: true });
+      Object.defineProperty(event, 'target', { value: mockElement, configurable: true });
+      const preventDefaultFn = vi.fn();
+      Object.defineProperty(event, 'preventDefault', { value: preventDefaultFn, configurable: true });
+      document.dispatchEvent(event);
+
+      // Comma should be inserted into input
+      expect(input.value).toBe('\u05d0,'); // א,
+      expect(preventDefaultFn).toHaveBeenCalled(); // Prevented default and handled manually
+    });
+
+    it('allows space when keyboard container has focus', () => {
+      input.value = '\u05d0';
+      input.setSelectionRange(1, 1);
+
+      const container = document.getElementById('hebrew-keyboard-container');
+      expect(container).toBeTruthy();
+
+      // Create a mock element inside the keyboard container
+      const mockElement = document.createElement('div');
+      container!.appendChild(mockElement);
+
+      // Simulate typing space while element inside keyboard has focus
+      const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true });
+      Object.defineProperty(event, 'target', { value: mockElement, configurable: true });
+      const preventDefaultFn = vi.fn();
+      Object.defineProperty(event, 'preventDefault', { value: preventDefaultFn, configurable: true });
+      document.dispatchEvent(event);
+
+      // Space should be inserted
+      expect(input.value).toBe('\u05d0 '); // א with space
+      expect(preventDefaultFn).toHaveBeenCalled(); // Prevented default and handled manually
     });
   });
 

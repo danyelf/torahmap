@@ -37,15 +37,46 @@ function setupTransliterationHandler(inputElement: HTMLInputElement): void {
       return;
     }
 
-    const key = e.key.toLowerCase();
+    // Only process if event target is the input itself or inside keyboard container
+    const target = e.target as HTMLElement;
+    const isInputOrKeyboard =
+      target === currentInput ||
+      (target?.closest && target.closest('#hebrew-keyboard-container') !== null);
 
-    // Only handle single-character alphabetic keys
-    if (key.length !== 1 || !/^[a-z]$/.test(key)) {
-      // Allow special keys (backspace, arrows, etc.) to pass through
+    if (!isInputOrKeyboard) {
       return;
     }
 
-    // Check if this key is in the transliteration map
+    const key = e.key.toLowerCase();
+
+    // Special keys and non-alphabetic characters: handle only if input is focused
+    if (key.length !== 1 || !/^[a-z]$/.test(key)) {
+      // If the input itself is focused, let these keys work normally
+      if (target === currentInput) {
+        return;
+      }
+      // If keyboard is focused but user pressed a special key, redirect to input
+      // For comma, space, etc., we need to manually insert them
+      if (key === ',' || key === ' ') {
+        e.preventDefault();
+        const start = currentInput.selectionStart ?? 0;
+        const end = currentInput.selectionEnd ?? 0;
+        const currentValue = currentInput.value;
+        const newValue = currentValue.slice(0, start) + key + currentValue.slice(end);
+        currentInput.value = newValue;
+        const newCursorPos = start + 1;
+        currentInput.setSelectionRange(newCursorPos, newCursorPos);
+        if (keyboardInstance) {
+          keyboardInstance.setInput(newValue);
+        }
+        currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+      // For other special keys (arrows, etc.), just ignore when keyboard focused
+      return;
+    }
+
+    // Single alphabetic character - apply transliteration
     if (TRANSLITERATION_MAP[key]) {
       // Prevent default behavior (don't insert the English letter)
       e.preventDefault();
