@@ -1,18 +1,18 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createProgram, createOutlineProgram } from '../../webgl';
-import { buildOutlineGeometry } from '../../outline';
-import { createMockWebGL2Context } from '../helpers';
-import type { VerseLayout } from '../../types';
+import { describe, it, expect, beforeEach } from "vitest";
+import { createProgram, createOutlineProgram } from "../../webgl";
+import { buildOutlineGeometry } from "../../outline";
+import { createMockWebGL2Context } from "../helpers";
+import type { VerseLayout } from "../../types";
 
-describe('Main Initialization Integration', () => {
+describe("Main Initialization Integration", () => {
   let gl: WebGL2RenderingContext;
 
   beforeEach(() => {
     gl = createMockWebGL2Context();
   });
 
-  describe('Program Creation Order', () => {
-    it('creates main program and outline program without errors', () => {
+  describe("Program Creation Order", () => {
+    it("creates main program and outline program without errors", () => {
       expect(() => {
         const prog = createProgram(gl);
         const outlineProg = createOutlineProgram(gl);
@@ -21,7 +21,7 @@ describe('Main Initialization Integration', () => {
       }).not.toThrow();
     });
 
-    it('outline program has required uniforms and attributes', () => {
+    it("outline program has required uniforms and attributes", () => {
       const outlineProg = createOutlineProgram(gl);
 
       expect(outlineProg.program).toBeDefined();
@@ -33,15 +33,15 @@ describe('Main Initialization Integration', () => {
     });
   });
 
-  describe('Render Loop Initialization', () => {
-    it('renderOutline handles null pinnedVerse without error', () => {
+  describe("Render Loop Initialization", () => {
+    it("renderOutline handles null pinnedVerse without error", () => {
       const outlineProg = createOutlineProgram(gl);
       const pinnedVerse: VerseLayout | null = null;
 
       // This simulates the render() function calling renderOutline(pinnedVerse)
       // where pinnedVerse might be null on initial render
       expect(() => {
-        if (pinnedVerse) {
+        if (pinnedVerse !== null) {
           const geometry = buildOutlineGeometry({
             x: pinnedVerse.x,
             y: pinnedVerse.y,
@@ -52,10 +52,10 @@ describe('Main Initialization Integration', () => {
       }).not.toThrow();
     });
 
-    it('renderOutline works with a valid verse', () => {
+    it("renderOutline works with a valid verse", () => {
       const outlineProg = createOutlineProgram(gl);
       const pinnedVerse: VerseLayout = {
-        book: 'Genesis',
+        book: "Genesis",
         chapter: 1,
         verse: 1,
         x: 100,
@@ -83,8 +83,8 @@ describe('Main Initialization Integration', () => {
     });
   });
 
-  describe('Variable Declaration Order', () => {
-    it('pinnedVerse can be declared before render function and accessed within it', () => {
+  describe("Variable Declaration Order", () => {
+    it("pinnedVerse can be declared before render function and accessed within it", () => {
       // This test simulates the critical bug fix: pinnedVerse must be declared
       // before the render() function that references it
 
@@ -108,7 +108,7 @@ describe('Main Initialization Integration', () => {
 
       // Now set pinnedVerse
       pinnedVerse = {
-        book: 'Genesis',
+        book: "Genesis",
         chapter: 1,
         verse: 1,
         x: 10,
@@ -122,11 +122,16 @@ describe('Main Initialization Integration', () => {
       expect(result?.length).toBe(456); // 4 borders * 6 vertices * 19 floats
     });
 
-    it('attempting to access undeclared variable would throw ReferenceError', () => {
+    it("attempting to access undeclared variable would throw ReferenceError", () => {
       // This demonstrates what would happen with the original bug
       const render = () => {
         // @ts-expect-error - Intentionally accessing undeclared variable to show the bug
-        if (typeof undeclaredPinnedVerse !== 'undefined' && undeclaredPinnedVerse) {
+        // @ts-ignore - Suppress additional errors for this intentional test
+        if (
+          typeof undeclaredPinnedVerse !== "undefined" &&
+          undeclaredPinnedVerse
+        ) {
+          // @ts-ignore - Suppress errors for intentional undeclared variable access
           return buildOutlineGeometry({
             x: undeclaredPinnedVerse.x,
             y: undeclaredPinnedVerse.y,
@@ -142,8 +147,8 @@ describe('Main Initialization Integration', () => {
     });
   });
 
-  describe('Outline Rendering Flow', () => {
-    it('complete outline rendering flow works end-to-end', () => {
+  describe("Outline Rendering Flow", () => {
+    it("complete outline rendering flow works end-to-end", () => {
       const prog = createProgram(gl);
       const outlineProg = createOutlineProgram(gl);
       let pinnedVerse: VerseLayout | null = null;
@@ -174,7 +179,14 @@ describe('Main Initialization Integration', () => {
 
         const stride = 19 * 4;
         gl.enableVertexAttribArray(outlineProg.attribs.position);
-        gl.vertexAttribPointer(outlineProg.attribs.position, 2, gl.FLOAT, false, stride, 0);
+        gl.vertexAttribPointer(
+          outlineProg.attribs.position,
+          2,
+          gl.FLOAT,
+          false,
+          stride,
+          0,
+        );
 
         gl.drawArrays(gl.TRIANGLES, 0, 24);
       };
@@ -184,7 +196,7 @@ describe('Main Initialization Integration', () => {
 
       // Pin a verse
       pinnedVerse = {
-        book: 'Genesis',
+        book: "Genesis",
         chapter: 1,
         verse: 1,
         x: 100,
@@ -201,7 +213,7 @@ describe('Main Initialization Integration', () => {
       expect(() => renderOutline(pinnedVerse)).not.toThrow();
     });
 
-    it('render function can be called immediately after declaring pinnedVerse', () => {
+    it("render function can be called immediately after declaring pinnedVerse", () => {
       const outlineProg = createOutlineProgram(gl);
 
       // This is the critical test: declare pinnedVerse, then immediately call render
@@ -233,23 +245,25 @@ describe('Main Initialization Integration', () => {
     });
   });
 
-  describe('Mouse Interaction Dependencies', () => {
-    it('all variables needed by event handlers are available at initialization', () => {
+  describe("Mouse Interaction Dependencies", () => {
+    it("all variables needed by event handlers are available at initialization", () => {
       // Simulate the key variables that must be declared before event handlers
       let pinnedVerse: VerseLayout | null = null;
       const pan = { x: 0, y: 0 };
       let zoom = 1.0;
       const verses: VerseLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
+        { book: "Genesis", chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
       ];
 
       // Simulate mouse click handler
       const handleClick = () => {
         const verse = verses[0]; // Simplified hit detection
         if (verse) {
-          if (pinnedVerse?.book === verse.book &&
-              pinnedVerse?.chapter === verse.chapter &&
-              pinnedVerse?.verse === verse.verse) {
+          if (
+            pinnedVerse?.book === verse.book &&
+            pinnedVerse?.chapter === verse.chapter &&
+            pinnedVerse?.verse === verse.verse
+          ) {
             pinnedVerse = null;
           } else {
             pinnedVerse = verse;
