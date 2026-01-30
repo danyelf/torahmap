@@ -38,11 +38,11 @@ describe('Search Bounds Validation', () => {
 
       const termMatch = match.matchingTerms[0];
       // Verify matchEnd doesn't exceed snippet length
-      expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+      expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet!.length);
 
       // Verify we can safely slice the snippet
       expect(() => {
-        termMatch.snippet.slice(termMatch.matchStart, termMatch.matchEnd);
+        termMatch.snippet!.slice(termMatch.matchStart!, termMatch.matchEnd!);
       }).not.toThrow();
     });
 
@@ -56,10 +56,10 @@ describe('Search Bounds Validation', () => {
       for (const result of results) {
         for (const termMatch of result.matchingTerms) {
           // matchEnd should never exceed snippet length
-          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet!.length);
 
           // The slice should work without issues
-          const highlighted = termMatch.snippet.slice(termMatch.matchStart, termMatch.matchEnd);
+          const highlighted = termMatch.snippet!.slice(termMatch.matchStart!, termMatch.matchEnd!);
           expect(highlighted).toBeDefined();
           expect(highlighted.length).toBeGreaterThan(0);
         }
@@ -102,10 +102,10 @@ describe('Search Bounds Validation', () => {
       const termMatch = result.matchingTerms[0];
 
       // matchEnd should not exceed snippet length
-      expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+      expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet!.length);
 
       // Should be able to extract the highlighted text
-      const highlighted = termMatch.snippet.slice(termMatch.matchStart, termMatch.matchEnd);
+      const highlighted = termMatch.snippet!.slice(termMatch.matchStart!, termMatch.matchEnd!);
       expect(highlighted).toBeTruthy();
     });
 
@@ -120,11 +120,11 @@ describe('Search Bounds Validation', () => {
 
       // Verify bounds are respected
       expect(termMatch.matchStart).toBeGreaterThanOrEqual(0);
-      expect(termMatch.matchEnd).toBeGreaterThanOrEqual(termMatch.matchStart);
-      expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+      expect(termMatch.matchEnd!).toBeGreaterThanOrEqual(termMatch.matchStart!);
+      expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet!.length);
 
       // Should extract successfully
-      const highlighted = termMatch.snippet.slice(termMatch.matchStart, termMatch.matchEnd);
+      const highlighted = termMatch.snippet!.slice(termMatch.matchStart!, termMatch.matchEnd!);
       expect(highlighted.length).toBeGreaterThan(0);
     });
 
@@ -135,11 +135,11 @@ describe('Search Bounds Validation', () => {
         for (const termMatch of result.matchingTerms) {
           // Core validation: matchEnd should be valid for the snippet
           expect(termMatch.matchStart).toBeGreaterThanOrEqual(0);
-          expect(termMatch.matchEnd).toBeGreaterThanOrEqual(termMatch.matchStart);
-          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+          expect(termMatch.matchEnd!).toBeGreaterThanOrEqual(termMatch.matchStart!);
+          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet!.length);
 
           // Extracting the highlighted portion should work
-          const highlighted = termMatch.snippet.slice(termMatch.matchStart, termMatch.matchEnd);
+          const highlighted = termMatch.snippet!.slice(termMatch.matchStart!, termMatch.matchEnd!);
           expect(highlighted).toBeTruthy();
         }
       }
@@ -154,7 +154,7 @@ describe('Search Bounds Validation', () => {
 
       for (const result of results) {
         for (const termMatch of result.matchingTerms) {
-          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet!.length);
         }
       }
     });
@@ -166,8 +166,8 @@ describe('Search Bounds Validation', () => {
         for (const termMatch of result.matchingTerms) {
           // Bounds validation
           expect(termMatch.matchStart).toBeGreaterThanOrEqual(0);
-          expect(termMatch.matchEnd).toBeGreaterThanOrEqual(termMatch.matchStart);
-          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+          expect(termMatch.matchEnd!).toBeGreaterThanOrEqual(termMatch.matchStart!);
+          expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet!.length);
         }
       }
     });
