@@ -135,7 +135,7 @@ export async function loadLemmaData(): Promise<void> {
       verseLemmas = await verseRes.json();
       strongsToRoot = await strongsRes.json();
 
-      console.log(`✓ Loaded: ${Object.keys(wordLemmas).length} words, ${Object.keys(verseLemmas).length} verses, ${Object.keys(strongsToRoot).length} Strong's numbers`);
+      console.log(`✓ Loaded: ${Object.keys(wordLemmas || {}).length} words, ${Object.keys(verseLemmas || {}).length} verses, ${Object.keys(strongsToRoot || {}).length} Strong's numbers`);
 
       // Build inverted index: Strong's number -> Set of verse keys
       // This converts O(V) search-by-lemma to O(1) lookup
@@ -457,7 +457,7 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
  */
 export function computeSnippetForMatch(
   result: SearchResult,
-  termIndex: number,
+  _termIndex: number,
   searchTerm: string
 ): { snippet: string; matchStart: number; matchEnd: number } | null {
   // Find verse text

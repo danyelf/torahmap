@@ -120,7 +120,7 @@ describe('Commentary Overlay', () => {
 
     it('returns valid colors for verses with data', () => {
       const verse = testVerses[0]; // Genesis 1:1, total: 150
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -142,7 +142,7 @@ describe('Commentary Overlay', () => {
 
     it('returns color for verses with zero commentary', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // total: 0
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -156,7 +156,7 @@ describe('Commentary Overlay', () => {
 
     it('returns valid color for verses not in data', () => {
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -214,7 +214,7 @@ describe('Commentary Overlay', () => {
       select.dispatchEvent(new Event('change'));
 
       const verse = testVerses[4]; // Exodus 1:1, Talmud: 50
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -229,7 +229,7 @@ describe('Commentary Overlay', () => {
       select.dispatchEvent(new Event('change'));
 
       const verse = testVerses[4]; // Exodus 1:1, Halakhah: 30
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -260,13 +260,13 @@ describe('Commentary Overlay', () => {
       // Switch to Midrash
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
-      const midrashColor = commentaryOverlay.getVerseColor(verse);
+      const midrashColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       assertValidColor(midrashColor as [number, number, number]);
 
       // Switch to Talmud
       select.value = 'Talmud';
       select.dispatchEvent(new Event('change'));
-      const talmudColor = commentaryOverlay.getVerseColor(verse);
+      const talmudColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       assertValidColor(talmudColor as [number, number, number]);
 
       // Colors should be different
@@ -275,7 +275,7 @@ describe('Commentary Overlay', () => {
       // Switch back to total
       select.value = 'total';
       select.dispatchEvent(new Event('change'));
-      const totalColor = commentaryOverlay.getVerseColor(verse);
+      const totalColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       assertValidColor(totalColor as [number, number, number]);
     });
   });
@@ -301,13 +301,13 @@ describe('Commentary Overlay', () => {
       // Use verse 2 which has different relative values in total vs Midrash
       // Genesis 1:2: total 45 (max 150), Midrash 20 (max 50)
       const verse = testVerses[1];
-      const totalColor = commentaryOverlay.getVerseColor(verse);
+      const totalColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
-      const midrashColor = commentaryOverlay.getVerseColor(verse);
+      const midrashColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       // Colors should be different because relative positions differ
       // In total: 45/150 = 0.3, in Midrash: 20/50 = 0.4
@@ -504,7 +504,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.applyUrlParams?.(urlParams);
 
       const verse = testVerses[0]; // Genesis 1:1, Talmud: 30
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -515,7 +515,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.applyUrlParams?.(urlParams);
 
       const verse = testVerses[0];
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -539,7 +539,7 @@ describe('Commentary Overlay', () => {
 
     it('handles missing book data', () => {
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -547,7 +547,7 @@ describe('Commentary Overlay', () => {
 
     it('handles missing chapter data', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 999, verse: 1 });
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -555,7 +555,7 @@ describe('Commentary Overlay', () => {
 
     it('handles missing verse data', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 999 });
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -563,7 +563,7 @@ describe('Commentary Overlay', () => {
 
     it('handles verses with only zero counts', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // total: 0
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -578,7 +578,7 @@ describe('Commentary Overlay', () => {
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
     });
 
@@ -602,7 +602,7 @@ describe('Commentary Overlay', () => {
 
       await commentaryOverlay.init?.();
 
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
     });
@@ -734,7 +734,7 @@ describe('Commentary Overlay', () => {
 
           // Get colors for all test verses
           for (const verse of testVerses) {
-            const color = commentaryOverlay.getVerseColor(verse);
+            const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
             expect(color).not.toBeNull();
             assertValidColor(color as [number, number, number]);
           }
@@ -750,7 +750,7 @@ describe('Commentary Overlay', () => {
 
     it('uses heatmapColor function from utils/color', () => {
       const verse = testVerses[0];
-      const color = commentaryOverlay.getVerseColor(verse);
+      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       // Verify it returns same result as calling heatmapColor directly
       const expectedColor = heatmapColor(150, 150);

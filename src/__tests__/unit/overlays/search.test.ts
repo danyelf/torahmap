@@ -119,13 +119,13 @@ describe('Search Overlay', () => {
   describe('Color Computation - No Search', () => {
     it('returns null when no search is active', () => {
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).toBeNull();
     });
 
     it('returns null for all verses when no search query', () => {
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse);
+        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -175,7 +175,7 @@ describe('Search Overlay', () => {
 
     it('uses correct color from SEARCH_COLORS palette', () => {
       const verse = testVerses[0]; // Genesis 1:1
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       // First term uses first color
       expect(color).toEqual(SEARCH_COLORS[0]);
@@ -197,7 +197,7 @@ describe('Search Overlay', () => {
     it('returns single color for verse matching one term', () => {
       // Genesis 1:1 contains "God" but not "earth"
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[0]); // Color for first term
     });
@@ -205,7 +205,7 @@ describe('Search Overlay', () => {
     it('returns array of colors for verse matching multiple terms', () => {
       // Genesis 1:2 contains "earth"
       const verse = testVerses[1];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       // Should match second term (earth)
       expect(color).toEqual(SEARCH_COLORS[1]);
@@ -223,7 +223,7 @@ describe('Search Overlay', () => {
 
       // Any verse matching multiple terms should cap at 4 colors
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse);
+        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
         if (Array.isArray(color) && color.length > 1) {
           expect(color.length).toBeLessThanOrEqual(4);
         }
@@ -251,7 +251,7 @@ describe('Search Overlay', () => {
     it('highlights verses with Hebrew matches', () => {
       // Genesis 1:1 contains אלהים
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       expect(color).toEqual(SEARCH_COLORS[0]);
@@ -278,7 +278,7 @@ describe('Search Overlay', () => {
 
       // Should still match Genesis 1:1 which has אֱלֹהִים (with nikkud)
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
@@ -725,7 +725,7 @@ describe('Search Overlay', () => {
 
       // Isaiah 1:1 should be highlighted
       const verse = testVerses[6];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
@@ -764,7 +764,7 @@ describe('Search Overlay', () => {
       searchOverlay.applyUrlParams?.(urlParams);
 
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).toBeNull();
     });
@@ -875,7 +875,7 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse);
+        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -889,7 +889,7 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse);
+        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -937,7 +937,7 @@ describe('Search Overlay', () => {
 
       // Should parse and search for all three terms
       const verse = testVerses[0]; // Genesis 1:1 has "God"
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
     });
@@ -952,7 +952,7 @@ describe('Search Overlay', () => {
 
       // Should trim and parse correctly
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
     });
@@ -991,7 +991,7 @@ describe('Search Overlay', () => {
 
       // Should not search, all verses return null
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse);
+        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -1365,7 +1365,7 @@ describe('Search Overlay', () => {
 
     it('returns valid RGB colors for all verses', () => {
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse);
+        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
         expect(color).not.toBeNull();
 
         if (Array.isArray(color)) {
@@ -1384,7 +1384,7 @@ describe('Search Overlay', () => {
 
     it('returns colors in 0-1 range', () => {
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse);
+        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
 
         if (Array.isArray(color) && typeof color[0] === 'number') {
           const c = color as Color;
@@ -1563,7 +1563,7 @@ describe('Search Overlay', () => {
 
       // Matching verses should be highlighted
       const verse = testVerses[0]; // Genesis 1:1
-      const color = searchOverlay.getVerseColor(verse);
+      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
 

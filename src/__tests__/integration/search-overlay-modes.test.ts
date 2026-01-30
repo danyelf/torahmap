@@ -253,7 +253,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Check results (Exodus 1:1 has "ואלה")
       const verse = testVerses.find(v => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
-      const substringColor = searchOverlay.getVerseColor(verse!);
+      const substringColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
       // Should be highlighted (matched)
       expect(substringColor).not.toBeNull();
@@ -264,7 +264,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       wordRadio!.checked = true;
       wordRadio!.dispatchEvent(new Event('change'));
 
-      const wordColor = searchOverlay.getVerseColor(verse!);
+      const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
       // Should be dimmed (not matched as whole word)
       // Word mode should not match "אלה" in "ואלה"
@@ -337,14 +337,14 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.dispatchEvent(new Event('input'));
 
       const verse = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
-      const wordColor = searchOverlay.getVerseColor(verse!);
+      const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
       // Now test root mode
       const rootRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="root"]');
       rootRadio!.checked = true;
       rootRadio!.dispatchEvent(new Event('change'));
 
-      const rootColor = searchOverlay.getVerseColor(verse!);
+      const rootColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
       // Should behave identically (both should match)
       expect(rootColor).not.toBeNull();
@@ -443,7 +443,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Verify search executed in word mode
       const gen175 = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
-      const color = searchOverlay.getVerseColor(gen175!);
+      const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
       expect(color).not.toBeNull();
     });
 
@@ -586,7 +586,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Should find אברהם as whole word (lemma lookup fails, falls back to whole-word)
       const gen175 = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
-      const color = searchOverlay.getVerseColor(gen175!);
+      const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       // Should be highlighted (matched)
@@ -608,14 +608,14 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Exodus 1:1 has "ואלה" - should NOT match in root mode
       const ex11 = testVerses.find(v => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
-      const rootColor = searchOverlay.getVerseColor(ex11!);
+      const rootColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
 
       // Switch to substring mode
       const substringRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="substring"]');
       substringRadio!.checked = true;
       substringRadio!.dispatchEvent(new Event('change'));
 
-      const substringColor = searchOverlay.getVerseColor(ex11!);
+      const substringColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
 
       // Substring should match, root should not (dimmed)
       if (Array.isArray(rootColor) && typeof rootColor[0] === 'number' &&
@@ -649,7 +649,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
         // All verses should return null (no search active)
         for (const verse of testVerses) {
-          const color = searchOverlay.getVerseColor(verse);
+          const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
           expect(color).toBeNull();
         }
       }

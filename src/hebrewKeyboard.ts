@@ -25,7 +25,7 @@ const hebrewLayout = {
  * Intercepts mapped keys and inserts Hebrew characters at cursor position
  * Listens at document level so typing works even when virtual keyboard has focus
  */
-function setupTransliterationHandler(inputElement: HTMLInputElement): void {
+function setupTransliterationHandler(): void {
   // Remove existing handler if any
   if (keydownHandler) {
     document.removeEventListener('keydown', keydownHandler);
@@ -190,7 +190,7 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
   container.style.display = 'block';
 
   // Setup transliteration handler for physical keyboard
-  setupTransliterationHandler(inputElement);
+  setupTransliterationHandler();
 }
 
 /**

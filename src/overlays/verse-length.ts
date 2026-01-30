@@ -6,7 +6,8 @@ import type { VerseTexts } from "../verseTexts.ts";
 
 // Color palettes (perceptually uniform, colorblind-friendly)
 
-// Viridis: purple→blue→teal→green→yellow
+// Viridis: purple→blue→teal→green→yellow (unused but kept for reference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const VIRIDIS_STOPS: Array<[number, Color]> = [
   [0.0, [68 / 255, 1 / 255, 84 / 255]], // dark purple
   [0.25, [59 / 255, 82 / 255, 139 / 255]], // blue

@@ -40,7 +40,7 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
     deleteProgram: vi.fn(),
 
     // Attribute and uniform locations
-    getAttribLocation: vi.fn((program, name) => {
+    getAttribLocation: vi.fn((_program, name) => {
       const locations: Record<string, number> = {
         'a_position': 0,
         'a_color': 1,
@@ -52,7 +52,7 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
       };
       return locations[name] ?? -1;
     }),
-    getUniformLocation: vi.fn((program, name) => mockUniformLocation),
+    getUniformLocation: vi.fn((_program, _name) => mockUniformLocation),
 
     // Buffer operations
     createBuffer: vi.fn(() => mockBuffer),
@@ -153,23 +153,27 @@ export function mockWindowLocation(url: string = 'http://localhost:5173/') {
  * Creates a mock HTMLElement for testing UI controls
  */
 export function createMockElement(tagName: string = 'div'): HTMLElement {
+  const childrenArray: HTMLElement[] = [];
+
   const element = {
     tagName: tagName.toUpperCase(),
     innerHTML: '',
     textContent: '',
     className: '',
     id: '',
-    children: [] as HTMLElement[],
+    get children() {
+      return childrenArray as unknown as HTMLCollection;
+    },
     style: {} as CSSStyleDeclaration,
 
     appendChild: vi.fn((child: HTMLElement) => {
-      element.children.push(child);
+      childrenArray.push(child);
       return child;
     }),
     removeChild: vi.fn((child: HTMLElement) => {
-      const index = element.children.indexOf(child);
+      const index = childrenArray.indexOf(child);
       if (index > -1) {
-        element.children.splice(index, 1);
+        childrenArray.splice(index, 1);
       }
       return child;
     }),
@@ -189,8 +193,6 @@ export function createMockElement(tagName: string = 'div'): HTMLElement {
  * Mock for document.createElement
  */
 export function mockDocumentCreateElement() {
-  const originalCreateElement = document.createElement.bind(document);
-
   vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
     if (tagName === 'canvas') {
       return createMockCanvas();
@@ -239,8 +241,8 @@ export function mockFetch(responses: Record<string, any> = {}) {
     ...responses,
   };
 
-  global.fetch = vi.fn((url: string | Request) => {
-    const urlString = typeof url === 'string' ? url : url.url;
+  global.fetch = vi.fn((url: string | URL | Request) => {
+    const urlString = typeof url === 'string' ? url : url instanceof URL ? url.toString() : url.url;
     const data = defaultResponses[urlString];
 
     return Promise.resolve({
@@ -249,7 +251,7 @@ export function mockFetch(responses: Record<string, any> = {}) {
       json: () => Promise.resolve(data),
       text: () => Promise.resolve(JSON.stringify(data)),
     } as Response);
-  });
+  }) as typeof fetch;
 
   return () => {
     (global.fetch as any).mockRestore?.();

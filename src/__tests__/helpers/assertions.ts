@@ -4,12 +4,23 @@ import type { VerseLayout } from '../../types';
 
 /**
  * Asserts that a color is valid (all channels in [0, 1] range)
+ * Accepts Color | Color[] from overlay getVerseColor return type
  */
-export function assertValidColor(color: number[] | [number, number, number]) {
-  expect(color).toHaveLength(3);
-  for (let i = 0; i < 3; i++) {
-    expect(color[i]).toBeGreaterThanOrEqual(0);
-    expect(color[i]).toBeLessThanOrEqual(1);
+export function assertValidColor(color: number[] | [number, number, number] | (number[] | [number, number, number])[]) {
+  // If it's an array of colors, validate the first one
+  if (Array.isArray(color) && Array.isArray(color[0])) {
+    const firstColor = color[0] as number[] | [number, number, number];
+    expect(firstColor).toHaveLength(3);
+    for (let i = 0; i < 3; i++) {
+      expect(firstColor[i]).toBeGreaterThanOrEqual(0);
+      expect(firstColor[i]).toBeLessThanOrEqual(1);
+    }
+  } else {
+    expect(color).toHaveLength(3);
+    for (let i = 0; i < 3; i++) {
+      expect((color as number[])[i]).toBeGreaterThanOrEqual(0);
+      expect((color as number[])[i]).toBeLessThanOrEqual(1);
+    }
   }
 }
 
@@ -169,7 +180,7 @@ export function assertHasProperties<T extends object>(
   properties: (keyof T)[]
 ) {
   for (const prop of properties) {
-    expect(obj).toHaveProperty(prop);
+    expect(obj).toHaveProperty(String(prop));
     expect(obj[prop]).toBeDefined();
   }
 }
@@ -192,8 +203,8 @@ export function assertSortedBy<T, K extends keyof T>(
   order: 'asc' | 'desc' = 'asc'
 ) {
   for (let i = 1; i < items.length; i++) {
-    const prev = items[i - 1][property];
-    const curr = items[i][property];
+    const prev = items[i - 1][property] as number | bigint;
+    const curr = items[i][property] as number | bigint;
 
     if (order === 'asc') {
       expect(prev).toBeLessThanOrEqual(curr);

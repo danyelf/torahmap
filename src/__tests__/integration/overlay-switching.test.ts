@@ -341,7 +341,7 @@ describe('Overlay Switching Integration', () => {
 
       const genesisVerse = verses.find(v => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1);
       if (genesisVerse && currentOverlay?.getHoverInfo) {
-        const info = currentOverlay.getHoverInfo(genesisVerse);
+        const info = currentOverlay.getHoverInfo!(genesisVerse);
         expect(info).toBeTruthy();
         expect(typeof info).toBe('string');
       }
@@ -480,7 +480,7 @@ describe('Overlay Switching Integration', () => {
 
       // Set hover state if supported
       if (currentOverlay?.setHoveredVerse) {
-        currentOverlay.setHoveredVerse(verses[0]);
+        currentOverlay.setHoveredVerse!(verses[0]);
       }
 
       // Switch overlay
@@ -496,7 +496,7 @@ describe('Overlay Switching Integration', () => {
       await switchToOverlay('commentary');
 
       if (currentOverlay?.getUrlParams) {
-        const params = currentOverlay.getUrlParams();
+        const params = currentOverlay.getUrlParams!();
         expect(params).toBeDefined();
         expect(typeof params).toBe('object');
       }

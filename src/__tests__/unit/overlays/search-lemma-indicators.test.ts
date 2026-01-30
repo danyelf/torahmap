@@ -56,7 +56,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
   it('should show lemma indicators in root mode for Hebrew search', () => {
     // Render controls
-    searchOverlay.renderControls(container);
+    searchOverlay.renderControls!(container);
 
     // Get search input and mode selector
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
@@ -75,7 +75,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Render legend
     const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
 
     // Check legend content - should show either root text or fallback indicator
     const legendText = legendContainer.textContent || '';
@@ -99,7 +99,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
   it('should not show lemma indicators in substring mode', () => {
     // Render controls
-    searchOverlay.renderControls(container);
+    searchOverlay.renderControls!(container);
 
     // Get search input and mode selector
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
@@ -118,7 +118,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Render legend
     const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
 
     // Should NOT have lemma indicators in substring mode
     const indicators = legendContainer.querySelectorAll('.lemma-indicator');
@@ -127,7 +127,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
   it('should not show lemma indicators for English search', () => {
     // Render controls
-    searchOverlay.renderControls(container);
+    searchOverlay.renderControls!(container);
 
     // Get search input
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
@@ -139,7 +139,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Render legend
     const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
 
     // Should NOT have lemma indicators for English
     const indicators = legendContainer.querySelectorAll('.lemma-indicator');
@@ -148,7 +148,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
   it('should update indicators when switching between modes', () => {
     // Render controls
-    searchOverlay.renderControls(container);
+    searchOverlay.renderControls!(container);
 
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
     const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
@@ -164,7 +164,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Check root mode - may have indicators
     let legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
     const indicatorsInRootMode = legendContainer.querySelectorAll('.lemma-indicator').length;
 
     // Switch to substring mode
@@ -174,7 +174,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Check substring mode - should have no indicators
     legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
     expect(legendContainer.querySelectorAll('.lemma-indicator').length).toBe(0);
 
     // Switch back to root mode
@@ -184,13 +184,13 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Check root mode again - should match original count
     legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
     expect(legendContainer.querySelectorAll('.lemma-indicator').length).toBe(indicatorsInRootMode);
   });
 
   it('should have proper styling for lemma indicators', () => {
     // Render controls
-    searchOverlay.renderControls(container);
+    searchOverlay.renderControls!(container);
 
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
     const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
@@ -205,7 +205,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Render legend
     const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
 
     // Check styling - only fallback indicators have .lemma-indicator class
     const indicators = legendContainer.querySelectorAll('.lemma-indicator');
