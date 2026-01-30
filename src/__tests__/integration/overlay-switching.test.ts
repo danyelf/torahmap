@@ -12,7 +12,6 @@ import {
   type Overlay,
 } from '../../overlays/index';
 import {
-  createVerse,
   createVerses,
   SAMPLE_VERSES,
   SAMPLE_COMMENTARY_DATA,
@@ -36,16 +35,13 @@ describe('Overlay Switching Integration', () => {
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
 
   beforeEach(() => {
-    // Clear overlay registry
-    const registry = new Map();
-
     // Create real DOM elements for testing (jsdom)
     mockControlsContainer = document.createElement('div');
     mockLegendContainer = document.createElement('div');
 
     // Mock fetch for overlay data
-    global.fetch = vi.fn((url: string | Request) => {
-      const urlString = typeof url === 'string' ? url : url.url;
+    global.fetch = vi.fn((url: string | URL | Request) => {
+      const urlString = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
 
       let data: any;
       if (urlString.includes('commentary-counts.json')) {
@@ -59,7 +55,7 @@ describe('Overlay Switching Integration', () => {
         status: 200,
         json: () => Promise.resolve(data),
       } as Response);
-    });
+    }) as typeof fetch;
 
     // Register overlays fresh
     registerOverlay(commentaryOverlay);
@@ -101,9 +97,8 @@ describe('Overlay Switching Integration', () => {
     await overlay.init?.();
 
     // Wire up update callback
-    let updateCallbackFired = false;
     overlay.onUpdate?.(() => {
-      updateCallbackFired = true;
+      // Update callback registered for overlay
     });
 
     // Render controls and legend
@@ -281,7 +276,6 @@ describe('Overlay Switching Integration', () => {
 
     it('updates legend when overlay state changes', async () => {
       const overlay = await switchToOverlay('commentary');
-      const initialLegend = mockLegendContainer.innerHTML;
 
       // Simulate category change by directly calling the callback
       const updateCallback = vi.fn(() => {
@@ -326,7 +320,7 @@ describe('Overlay Switching Integration', () => {
       const overlay = await switchToOverlay('commentary');
 
       const genesisVerse = verses.find(v => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1)!;
-      const initialColor = overlay.getVerseColor(genesisVerse);
+      overlay.getVerseColor(genesisVerse);
 
       // Simulate category change (would trigger different color calculation)
       // This is a bit tricky without full DOM, but we can test that the mechanism exists
