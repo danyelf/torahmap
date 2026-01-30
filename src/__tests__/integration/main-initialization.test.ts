@@ -34,12 +34,31 @@ describe("Main Initialization Integration", () => {
   });
 
   describe("Render Loop Initialization", () => {
-    it("renderOutline handles null pinnedVerse without error", () => {
-      const outlineProg = createOutlineProgram(gl);
-      const pinnedVerse: VerseLayout | null = null;
+    it("renderOutline handles null and non-null pinnedVerse without error", () => {
+      let pinnedVerse: VerseLayout | null = null;
 
       // This simulates the render() function calling renderOutline(pinnedVerse)
       // where pinnedVerse might be null on initial render
+      expect(() => {
+        if (pinnedVerse !== null) {
+          buildOutlineGeometry({
+            x: pinnedVerse.x,
+            y: pinnedVerse.y,
+            size: pinnedVerse.size,
+          });
+        }
+      }).not.toThrow();
+
+      // Now test with a valid verse
+      pinnedVerse = {
+        book: "Genesis",
+        chapter: 1,
+        verse: 1,
+        x: 100,
+        y: 200,
+        size: 10,
+      };
+
       expect(() => {
         if (pinnedVerse !== null) {
           const geometry = buildOutlineGeometry({
@@ -125,16 +144,19 @@ describe("Main Initialization Integration", () => {
     it("attempting to access undeclared variable would throw ReferenceError", () => {
       // This demonstrates what would happen with the original bug
       const render = () => {
-        // @ts-expect-error - Intentionally accessing undeclared variable to show the bug
-        // @ts-ignore - Suppress additional errors for this intentional test
+        // @ts-ignore - Intentionally accessing undeclared variable to show the bug
         if (
+          // @ts-ignore - typeof check on undeclared variable
           typeof undeclaredPinnedVerse !== "undefined" &&
+          // @ts-ignore - accessing undeclared variable
           undeclaredPinnedVerse
         ) {
-          // @ts-ignore - Suppress errors for intentional undeclared variable access
           return buildOutlineGeometry({
+            // @ts-ignore - accessing undeclared variable properties
             x: undeclaredPinnedVerse.x,
+            // @ts-ignore
             y: undeclaredPinnedVerse.y,
+            // @ts-ignore
             size: undeclaredPinnedVerse.size,
           });
         }
@@ -149,7 +171,6 @@ describe("Main Initialization Integration", () => {
 
   describe("Outline Rendering Flow", () => {
     it("complete outline rendering flow works end-to-end", () => {
-      const prog = createProgram(gl);
       const outlineProg = createOutlineProgram(gl);
       let pinnedVerse: VerseLayout | null = null;
       let outlineBuffer: WebGLBuffer | null = null;
@@ -227,8 +248,8 @@ describe("Main Initialization Integration", () => {
         // Main rendering would go here...
 
         // Call renderOutline (this was failing before the fix)
-        if (pinnedVerse) {
-          const geometry = buildOutlineGeometry({
+        if (pinnedVerse !== null) {
+          buildOutlineGeometry({
             x: pinnedVerse.x,
             y: pinnedVerse.y,
             size: pinnedVerse.size,
@@ -240,7 +261,18 @@ describe("Main Initialization Integration", () => {
         }
       };
 
-      // This should not throw ReferenceError
+      // Test with null - should not throw ReferenceError
+      expect(() => render()).not.toThrow();
+
+      // Test with a value - should also not throw
+      pinnedVerse = {
+        book: "Genesis",
+        chapter: 1,
+        verse: 1,
+        x: 100,
+        y: 200,
+        size: 10,
+      };
       expect(() => render()).not.toThrow();
     });
   });
@@ -254,6 +286,10 @@ describe("Main Initialization Integration", () => {
       const verses: VerseLayout[] = [
         { book: "Genesis", chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
       ];
+
+      // Verify all variables are properly initialized
+      expect(pan).toBeDefined();
+      expect(zoom).toBe(1.0);
 
       // Simulate mouse click handler
       const handleClick = () => {
