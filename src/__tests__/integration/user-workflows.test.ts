@@ -17,21 +17,20 @@ import {
   type UrlState,
 } from '../../urlState';
 import {
-  createVerse,
   createVerses,
   SAMPLE_VERSES,
   SAMPLE_COMMENTARY_DATA,
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import type { Verse } from '../../types';
+import type { VerseLayout } from '../../types';
 
 /**
  * Integration tests for complete user workflows
  * Tests realistic multi-step user interactions from start to finish
  */
 describe('User Workflows Integration', () => {
-  let verses: Verse[];
+  let verses: VerseLayout[];
   let currentOverlay: Overlay | null = null;
   let mockControlsContainer: HTMLElement;
   let mockLegendContainer: HTMLElement;
@@ -54,7 +53,8 @@ describe('User Workflows Integration', () => {
 
     vi.spyOn(history, 'pushState').mockImplementation((state, title, url) => {
       if (url) {
-        const fullUrl = url.startsWith('http') ? url : `http://localhost:5173${url}`;
+        const urlString = url.toString();
+        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalPushState(state, title, url);
@@ -62,15 +62,16 @@ describe('User Workflows Integration', () => {
 
     vi.spyOn(history, 'replaceState').mockImplementation((state, title, url) => {
       if (url) {
-        const fullUrl = url.startsWith('http') ? url : `http://localhost:5173${url}`;
+        const urlString = url.toString();
+        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalReplaceState(state, title, url);
     });
 
     // Mock fetch for overlay data
-    global.fetch = vi.fn((url: string | Request) => {
-      const urlString = typeof url === 'string' ? url : url.url;
+    global.fetch = vi.fn((url: string | URL | Request) => {
+      const urlString = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
 
       let data: any;
       if (urlString.includes('commentary-counts.json')) {
@@ -84,7 +85,7 @@ describe('User Workflows Integration', () => {
         status: 200,
         json: () => Promise.resolve(data),
       } as Response);
-    });
+    }) as typeof fetch;
 
     // Register overlays
     registerOverlay(commentaryOverlay);
@@ -106,7 +107,10 @@ describe('User Workflows Integration', () => {
     currentOverlay?.destroy?.();
     restoreAllMocks();
     // Restore original location
-    window.location = originalLocation;
+    Object.defineProperty(window, 'location', {
+      value: originalLocation,
+      writable: true,
+    });
   });
 
   /**
@@ -218,7 +222,7 @@ describe('User Workflows Integration', () => {
 
         for (const paramKey of otherParams) {
           if (!Object.keys(params).includes(paramKey)) {
-            expect(parsed.overlayParams[paramKey]).toBeUndefined();
+            expect((parsed.overlayParams as any)[paramKey]).toBeUndefined();
           }
         }
       }
@@ -587,7 +591,7 @@ describe('User Workflows Integration', () => {
         // Special characters should round-trip correctly
         for (const [key, value] of Object.entries(params)) {
           if (value.trim() !== '') {
-            expect(parsed.overlayParams[key]).toBe(value);
+            expect((parsed.overlayParams as any)[key]).toBe(value);
           }
         }
       }
