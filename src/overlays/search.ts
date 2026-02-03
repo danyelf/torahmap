@@ -34,6 +34,7 @@ let searchInput: HTMLInputElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
 let keyboardToggle: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
+let searchHitCaption: HTMLDivElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
 let hebrewModeContainer: HTMLDivElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
@@ -93,6 +94,71 @@ function doSearch(query: string): void {
   updateCallback?.();
 }
 
+function updateHitCaption(): void {
+  if (!searchHitCaption) return;
+  searchHitCaption.textContent = '';
+
+  if (currentTerms.length > 0 && currentResults.length > 0) {
+    const legendDiv = document.createElement('div');
+    legendDiv.className = 'search-legend';
+
+    for (let i = 0; i < currentTerms.length; i++) {
+      const term = currentTerms[i];
+      const color = SEARCH_COLORS[i % SEARCH_COLORS.length];
+
+      const termSpan = document.createElement('span');
+      termSpan.className = 'legend-term';
+
+      const swatch = document.createElement('span');
+      swatch.className = 'color-swatch';
+      swatch.style.background = colorToCss(color);
+      termSpan.appendChild(swatch);
+
+      if (hebrewSearchMode === 'root' && termLemmaStatus.length > 0) {
+        if (termLemmaStatus[i] && termRoots[i]) {
+          termSpan.appendChild(document.createTextNode(`"${termRoots[i]}" (from "${term}")`));
+        } else {
+          termSpan.appendChild(document.createTextNode(`"${term}"`));
+          const indicator = document.createElement('span');
+          indicator.className = 'lemma-indicator';
+          indicator.textContent = ' \u21AA';
+          indicator.title = 'No root data, using whole-word search';
+          indicator.style.color = '#FF9800';
+          termSpan.appendChild(indicator);
+        }
+      } else {
+        termSpan.appendChild(document.createTextNode(`"${term}"`));
+      }
+
+      legendDiv.appendChild(termSpan);
+      if (i < currentTerms.length - 1) {
+        legendDiv.appendChild(document.createTextNode(' '));
+      }
+    }
+
+    const countDiv = document.createElement('div');
+    countDiv.style.color = '#888';
+    countDiv.style.fontSize = '11px';
+    countDiv.style.marginTop = '4px';
+    countDiv.textContent = `${currentResults.length} matching verses`;
+
+    searchHitCaption.appendChild(legendDiv);
+    searchHitCaption.appendChild(countDiv);
+  } else if (currentQuery.length > 0 && currentTerms.length === 0) {
+    const hintDiv = document.createElement('div');
+    hintDiv.style.color = '#888';
+    hintDiv.style.fontSize = '11px';
+    hintDiv.textContent = 'Type at least 2 characters per term';
+    searchHitCaption.appendChild(hintDiv);
+  } else {
+    const hintDiv = document.createElement('div');
+    hintDiv.style.color = '#888';
+    hintDiv.style.fontSize = '11px';
+    hintDiv.textContent = 'Type to search (comma-separate multiple terms)';
+    searchHitCaption.appendChild(hintDiv);
+  }
+}
+
 function renderResults(): void {
   if (!searchResults) return;
 
@@ -105,6 +171,7 @@ function renderResults(): void {
   if (currentResults.length === 0) {
     searchResults.classList.remove('visible');
     if (searchCount) searchCount.textContent = '';
+    updateHitCaption();
     return;
   }
 
@@ -113,6 +180,8 @@ function renderResults(): void {
     const termInfo = currentTerms.length > 1 ? ` (${currentTerms.length} terms)` : '';
     searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results${termInfo}`;
   }
+
+  updateHitCaption();
 
   // Show up to 10 results
   const displayResults = currentResults.slice(0, 10);
@@ -517,6 +586,7 @@ export const searchOverlay: Overlay = {
           Root (שרש)
         </label>
       </div>
+      <div id="search-hit-caption"></div>
       <div id="search-count"></div>
       <div id="search-results">
       </div>
@@ -526,6 +596,7 @@ export const searchOverlay: Overlay = {
     searchClear = container.querySelector('#search-clear');
     keyboardToggle = container.querySelector('#keyboard-toggle');
     searchResults = container.querySelector('#search-results');
+    searchHitCaption = container.querySelector('#search-hit-caption');
     wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
     hebrewModeContainer = container.querySelector('#hebrew-mode-container');
 
@@ -748,74 +819,10 @@ export const searchOverlay: Overlay = {
     });
   },
 
-  renderLegend(container: HTMLElement): void {
-    // Clear container
-    container.textContent = '';
-
-    if (currentTerms.length > 0 && currentResults.length > 0) {
-      const legendDiv = document.createElement('div');
-      legendDiv.className = 'search-legend';
-
-      for (let i = 0; i < currentTerms.length; i++) {
-        const term = currentTerms[i];
-        const color = SEARCH_COLORS[i % SEARCH_COLORS.length];
-
-        const termSpan = document.createElement('span');
-        termSpan.className = 'legend-term';
-
-        const swatch = document.createElement('span');
-        swatch.className = 'color-swatch';
-        swatch.style.background = colorToCss(color);
-        termSpan.appendChild(swatch);
-
-        // For root mode, show the actual root that was found
-        if (hebrewSearchMode === 'root' && termLemmaStatus.length > 0) {
-          if (termLemmaStatus[i] && termRoots[i]) {
-            // Show root (from search_term) format
-            termSpan.appendChild(document.createTextNode(`"${termRoots[i]}" (from "${term}")`));
-          } else {
-            // No root found, show term with fallback indicator
-            termSpan.appendChild(document.createTextNode(`"${term}"`));
-            const indicator = document.createElement('span');
-            indicator.className = 'lemma-indicator';
-            indicator.textContent = ' \u21AA'; // hook arrow
-            indicator.title = 'No root data, using whole-word search';
-            indicator.style.color = '#FF9800'; // orange
-            termSpan.appendChild(indicator);
-          }
-        } else {
-          // For non-root modes, just show the term
-          termSpan.appendChild(document.createTextNode(`"${term}"`));
-        }
-
-        legendDiv.appendChild(termSpan);
-
-        if (i < currentTerms.length - 1) {
-          legendDiv.appendChild(document.createTextNode(' '));
-        }
-      }
-
-      const countDiv = document.createElement('div');
-      countDiv.style.color = '#888';
-      countDiv.style.fontSize = '11px';
-      countDiv.style.marginTop = '4px';
-      countDiv.textContent = `${currentResults.length} matching verses`;
-
-      container.appendChild(legendDiv);
-      container.appendChild(countDiv);
-    } else if (currentQuery.length > 0 && currentTerms.length === 0) {
-      const hintDiv = document.createElement('div');
-      hintDiv.style.color = '#888';
-      hintDiv.style.fontSize = '11px';
-      hintDiv.textContent = 'Type at least 2 characters per term';
-      container.appendChild(hintDiv);
-    } else {
-      const hintDiv = document.createElement('div');
-      hintDiv.style.color = '#888';
-      hintDiv.style.fontSize = '11px';
-      hintDiv.textContent = 'Type to search (comma-separate multiple terms)';
-      container.appendChild(hintDiv);
-    }
+  renderLegend(_container: HTMLElement): void {
+    // Legend content is rendered inline above search results via updateHitCaption()
+    _container.textContent = '';
+    updateHitCaption();
   },
 
   getHoverInfo(verse: VerseIdentity): string | null {
@@ -868,6 +875,7 @@ export const searchOverlay: Overlay = {
     searchClear = null;
     keyboardToggle = null;
     searchResults = null;
+    searchHitCaption = null;
     wholeWordCheckbox = null;
     hebrewModeContainer = null;
     // Clear callbacks

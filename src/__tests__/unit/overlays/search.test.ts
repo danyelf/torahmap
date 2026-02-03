@@ -561,22 +561,22 @@ describe('Search Overlay', () => {
   });
 
   describe('Render Legend', () => {
+    // Legend content is rendered inline in #search-hit-caption above search results
     it('renders default message when no search', () => {
-      // Perform an empty search to clear any previous state
       const controlsContainer = document.createElement('div');
       searchOverlay.renderControls?.(controlsContainer);
       const input = controlsContainer.querySelector('#search-input') as HTMLInputElement;
       input.value = '';
       input.dispatchEvent(new Event('input'));
 
-      const container = document.createElement('div');
-      searchOverlay.renderLegend?.(container);
+      const legendContainer = document.createElement('div');
+      searchOverlay.renderLegend?.(legendContainer);
 
-      expect(container.innerHTML).toContain('Type to search');
+      const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
+      expect(hitCaption.innerHTML).toContain('Type to search');
     });
 
     it('renders term indicators when search is active', () => {
-      // Perform search first
       const controlsContainer = document.createElement('div');
       searchOverlay.renderControls?.(controlsContainer);
 
@@ -584,15 +584,11 @@ describe('Search Overlay', () => {
       input.value = 'God';
       input.dispatchEvent(new Event('input'));
 
-      // Render legend
-      const legendContainer = document.createElement('div');
-      searchOverlay.renderLegend?.(legendContainer);
-
-      expect(legendContainer.innerHTML).toContain('"God"');
+      const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
+      expect(hitCaption.innerHTML).toContain('"God"');
     });
 
     it('renders multiple terms with color swatches', () => {
-      // Perform search first
       const controlsContainer = document.createElement('div');
       searchOverlay.renderControls?.(controlsContainer);
 
@@ -600,13 +596,10 @@ describe('Search Overlay', () => {
       input.value = 'God, earth';
       input.dispatchEvent(new Event('input'));
 
-      // Render legend
-      const legendContainer = document.createElement('div');
-      searchOverlay.renderLegend?.(legendContainer);
-
-      expect(legendContainer.innerHTML).toContain('"God"');
-      expect(legendContainer.innerHTML).toContain('"earth"');
-      expect(legendContainer.innerHTML).toContain('color-swatch');
+      const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
+      expect(hitCaption.innerHTML).toContain('"God"');
+      expect(hitCaption.innerHTML).toContain('"earth"');
+      expect(hitCaption.innerHTML).toContain('color-swatch');
     });
 
     it('displays result count', () => {
@@ -617,10 +610,8 @@ describe('Search Overlay', () => {
       input.value = 'God';
       input.dispatchEvent(new Event('input'));
 
-      const legendContainer = document.createElement('div');
-      searchOverlay.renderLegend?.(legendContainer);
-
-      expect(legendContainer.innerHTML).toContain('matching verses');
+      const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
+      expect(hitCaption.innerHTML).toContain('matching verses');
     });
 
     it('shows minimum character warning for short terms', () => {
@@ -631,10 +622,8 @@ describe('Search Overlay', () => {
       input.value = 'a'; // Too short
       input.dispatchEvent(new Event('input'));
 
-      const legendContainer = document.createElement('div');
-      searchOverlay.renderLegend?.(legendContainer);
-
-      expect(legendContainer.innerHTML).toContain('at least 2 characters');
+      const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
+      expect(hitCaption.innerHTML).toContain('at least 2 characters');
     });
   });
 
