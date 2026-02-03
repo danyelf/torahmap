@@ -7,3 +7,4 @@ dist
 .csb
 coverage
 data/sefaria-links/
+.DS_Store
