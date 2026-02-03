@@ -52,6 +52,15 @@ const FINAL_FORM_MAP: Record<string, string> = {
   'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
 };
 
+// Reverse map: medial form → final form (for display)
+const MEDIAL_TO_FINAL_MAP: Record<string, string> = {
+  'כ': 'ך',
+  'מ': 'ם',
+  'נ': 'ן',
+  'פ': 'ף',
+  'צ': 'ץ',
+};
+
 // Common Hebrew prefixes that can be stripped for lemma lookup
 const HEBREW_PREFIXES = ['ו', 'ה', 'ב', 'ל', 'כ', 'מ', 'ש'];
 // Two-letter prefix combinations
@@ -102,6 +111,22 @@ export function normalizeHebrewForSearch(text: string): string {
     }
   }
   return result;
+}
+
+/**
+ * Convert medial-only Hebrew text to proper display form by restoring
+ * final letters (sofit) at word endings: כ→ך, מ→ם, נ→ן, פ→ף, צ→ץ
+ */
+export function toDisplayHebrew(text: string): string {
+  return text.replace(/\S+/g, word => {
+    const chars = [...word];
+    const last = chars[chars.length - 1];
+    const finalForm = MEDIAL_TO_FINAL_MAP[last];
+    if (finalForm) {
+      chars[chars.length - 1] = finalForm;
+    }
+    return chars.join('');
+  });
 }
 
 /**
@@ -193,9 +218,9 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
     return null;
   }
 
-  // Use stripNikkud (preserves final forms) not normalizeHebrewForSearch (converts final forms)
-  // The morphhb database keys use final forms, so we need to preserve them
-  const stripped = stripNikkud(hebrewWord);
+  // word-lemmas keys are medial-only (finals normalized at generation time),
+  // so we normalize to medial here to match
+  const stripped = normalizeHebrewForSearch(hebrewWord);
   console.log(`findLemmasForWord("${hebrewWord}") stripped to "${stripped}"`);
 
   // Try direct lookup
@@ -231,12 +256,13 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
 }
 
 /**
- * Get the Hebrew root for a Strong's number
+ * Get the Hebrew root for a Strong's number (display form with proper finals)
  * Exported for use in overlay UI to show which root was matched
  */
 export function getRootForStrongsNumber(strongsNum: string): string | null {
   if (!strongsToRoot) return null;
-  return strongsToRoot[strongsNum] || null;
+  const root = strongsToRoot[strongsNum];
+  return root ? toDisplayHebrew(root) : null;
 }
 
 /**
@@ -468,18 +494,39 @@ export function computeSnippetForMatch(
   // Try lemma-based search first
   const lemmas = findLemmasForWord(searchTerm);
   if (lemmas && lemmas.length > 0) {
-    // Find word position via lemma
-    const wordIndex = findWordIndexByLemma(verseKey, lemmas);
-    const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
+    // Search the whitespace-split text for a word containing the root.
+    // We can't use findWordIndexByLemma here because morphhb word indices
+    // don't align with whitespace indices (maqaf-joined words like "בני־יוסף"
+    // are one whitespace token but multiple morphhb segments).
+    const words = entry.hebrewText.split(/\s+/);
+    let wordIndex = -1;
 
-    if (wordBounds) {
-      const wordLen = wordBounds.end - wordBounds.start;
-      const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
-      return {
-        snippet: snippet.text,
-        matchStart: snippet.matchStart,
-        matchEnd: snippet.matchEnd,
-      };
+    // Try each lemma's root text as a substring within whitespace words
+    for (const lemma of lemmas) {
+      const root = strongsToRoot?.[lemma];
+      if (root) {
+        wordIndex = words.findIndex(w => w.includes(root));
+        if (wordIndex >= 0) break;
+      }
+    }
+
+    // Fallback: try the search term itself
+    if (wordIndex < 0) {
+      const normalizedSearch = normalizeHebrewForSearch(searchTerm);
+      wordIndex = words.findIndex(w => w.includes(normalizedSearch));
+    }
+
+    if (wordIndex >= 0) {
+      const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
+      if (wordBounds) {
+        const wordLen = wordBounds.end - wordBounds.start;
+        const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+        return {
+          snippet: snippet.text,
+          matchStart: snippet.matchStart,
+          matchEnd: snippet.matchEnd,
+        };
+      }
     }
   }
 

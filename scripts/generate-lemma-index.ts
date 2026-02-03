@@ -64,16 +64,31 @@ const BOOK_NAME_MAP: Record<string, string> = {
   'II Chronicles': 'II Chronicles',
 };
 
+// Nikkud (vowel marks) range
+const NIKKUD_START = 0x0591;
+const NIKKUD_END = 0x05C7;
+
+// Hebrew final forms (sofit) - map final form to regular (medial) form
+const FINAL_FORM_MAP: Record<string, string> = {
+  'ך': 'כ', // kaf sofit
+  'ם': 'מ', // mem sofit
+  'ן': 'נ', // nun sofit
+  'ף': 'פ', // pe sofit
+  'ץ': 'צ', // tzadi sofit
+};
+
 /**
- * Strip nikkud from Hebrew text
+ * Normalize Hebrew text for search: strip nikkud AND convert final forms to medial.
+ * All keys in word-lemmas and values in strongs-to-root use medial forms only,
+ * matching what the keyboard emits.
  */
-function stripNikkud(text: string): string {
+function normalizeHebrew(text: string): string {
   let result = '';
   for (const char of text) {
     const code = char.charCodeAt(0);
     // Skip nikkud marks but keep Hebrew letters and other characters
-    if (code < 0x0591 || code > 0x05C7 || code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6) {
-      result += char;
+    if (code < NIKKUD_START || code > NIKKUD_END || code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6) {
+      result += FINAL_FORM_MAP[char] || char;
     }
   }
   return result;
@@ -137,7 +152,7 @@ for (const bookName of Object.keys(morphhb)) {
           // Extract root Hebrew word (remove prefixes/suffixes marked with /)
           // Example: "ו/ה/ארץ" -> ["ו", "ה", "ארץ"], we want the last part
           const parts = hebrewWord.split('/');
-          const rootWord = stripNikkud(parts[parts.length - 1]);
+          const rootWord = normalizeHebrew(parts[parts.length - 1]);
 
           // Store the canonical root for this Strong's number
           // Ignore very short forms (1-2 chars) which are typically just suffixes/prefixes
@@ -150,7 +165,7 @@ for (const bookName of Object.keys(morphhb)) {
 
           // Store the full word (all parts joined) for exact matching
           // This handles cases like "עבדיו" where morphhb has "עבדי/ו"
-          const fullWord = stripNikkud(parts.join(''));
+          const fullWord = normalizeHebrew(parts.join(''));
           if (fullWord.length >= 2) {
             if (!wordLemmas[fullWord]) {
               wordLemmas[fullWord] = new Set();
@@ -160,7 +175,7 @@ for (const bookName of Object.keys(morphhb)) {
 
           // Also store each part that could be searched
           for (const part of parts) {
-            const stripped = stripNikkud(part);
+            const stripped = normalizeHebrew(part);
             if (stripped.length >= 2) { // Skip single-letter prefixes
               if (!wordLemmas[stripped]) {
                 wordLemmas[stripped] = new Set();
