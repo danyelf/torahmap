@@ -779,8 +779,7 @@ describe('Search Overlay', () => {
       input.value = 'God';
       input.dispatchEvent(new Event('input'));
 
-      const results = container.querySelector('#search-results') as HTMLElement;
-      const count = results.querySelector('#search-count') as HTMLElement;
+      const count = container.querySelector('#search-count') as HTMLElement;
 
       expect(count.textContent).toContain('results');
     });

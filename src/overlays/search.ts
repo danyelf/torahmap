@@ -100,7 +100,7 @@ function renderResults(): void {
   const existingResults = searchResults.querySelectorAll('.search-result');
   existingResults.forEach(el => el.remove());
 
-  const searchCount = searchResults.querySelector('#search-count') as HTMLDivElement;
+  const searchCount = searchResults.parentElement?.querySelector('#search-count') as HTMLDivElement;
 
   if (currentResults.length === 0) {
     searchResults.classList.remove('visible');
@@ -517,8 +517,8 @@ export const searchOverlay: Overlay = {
           Root (שרש)
         </label>
       </div>
+      <div id="search-count"></div>
       <div id="search-results">
-        <div id="search-count"></div>
       </div>
     `;
 
