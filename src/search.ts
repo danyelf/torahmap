@@ -76,6 +76,13 @@ let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong'
 let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
 // Inverted index: Strong's number -> Set of verse keys (for fast lemma-based search)
 let lemmaToVerses: Map<string, Set<string>> | null = null;
+// Adjacency map: Strong's number -> Set of directly connected Strong's numbers
+// Two Strong's numbers are adjacent if they co-occur as lemmas for the same
+// surface form (with exactly 2 lemmas) in word-lemmas. NOT transitive.
+let lemmaAdjacency: Map<string, Set<string>> | null = null;
+// Reverse lookup: Strong's number -> shortest surface form that maps to it
+// Used to generate searchable terms when related-root chips are clicked
+let strongsToSurfaceForm: Map<string, string> | null = null;
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
@@ -165,6 +172,9 @@ export async function loadLemmaData(): Promise<void> {
       // Build inverted index: Strong's number -> Set of verse keys
       // This converts O(V) search-by-lemma to O(1) lookup
       buildLemmaInvertedIndex();
+
+      // Build adjacency map: direct neighbors from 2-lemma surface forms
+      buildLemmaAdjacency();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
       console.warn(`Response status: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
@@ -202,6 +212,64 @@ function buildLemmaInvertedIndex(): void {
 
   const endTime = performance.now();
   console.log(`✓ Built lemma inverted index: ${lemmaToVerses.size} unique lemmas in ${(endTime - startTime).toFixed(2)}ms`);
+}
+
+/**
+ * Build adjacency map from wordLemmas.
+ * Two Strong's numbers are adjacent if they co-occur as lemmas for the same
+ * surface form (restricted to forms with exactly 2 lemmas to avoid ambiguity).
+ *
+ * Unlike the old union-find approach, this is NOT transitive:
+ * if A-B share a form and B-C share a different form, A and C are NOT linked.
+ * Instead, related roots are surfaced as clickable UI suggestions.
+ *
+ * Also builds strongsToSurfaceForm: for each Strong's number, keeps the
+ * shortest surface form that maps to it (for generating search terms).
+ */
+function buildLemmaAdjacency(): void {
+  if (!wordLemmas) {
+    lemmaAdjacency = null;
+    strongsToSurfaceForm = null;
+    return;
+  }
+
+  const startTime = performance.now();
+
+  lemmaAdjacency = new Map();
+  strongsToSurfaceForm = new Map();
+
+  for (const [surfaceForm, lemmas] of Object.entries(wordLemmas)) {
+    // Track shortest surface form per Strong's number
+    for (const lemma of lemmas) {
+      const existing = strongsToSurfaceForm.get(lemma);
+      if (!existing || surfaceForm.length < existing.length) {
+        strongsToSurfaceForm.set(lemma, surfaceForm);
+      }
+    }
+
+    // Only build adjacency from forms with exactly 2 lemmas
+    if (lemmas.length !== 2) continue;
+
+    const [a, b] = lemmas;
+
+    let neighborsA = lemmaAdjacency.get(a);
+    if (!neighborsA) {
+      neighborsA = new Set();
+      lemmaAdjacency.set(a, neighborsA);
+    }
+    neighborsA.add(b);
+
+    let neighborsB = lemmaAdjacency.get(b);
+    if (!neighborsB) {
+      neighborsB = new Set();
+      lemmaAdjacency.set(b, neighborsB);
+    }
+    neighborsB.add(a);
+  }
+
+  const endTime = performance.now();
+  const withNeighbors = [...lemmaAdjacency.values()].filter(s => s.size > 0).length;
+  console.log(`✓ Built lemma adjacency: ${withNeighbors} lemmas with neighbors in ${(endTime - startTime).toFixed(2)}ms`);
 }
 
 /**
@@ -558,6 +626,48 @@ export function computeSnippetForMatch(
 }
 
 /**
+ * Represents a related root that can be shown as a clickable chip in the UI
+ */
+export interface RelatedRoot {
+  strongsNum: string;
+  rootText: string;       // Hebrew root from strongs-to-root.json
+  surfaceForm: string;    // representative word for searching
+}
+
+/**
+ * Get depth-1 neighbors for a set of lemmas from the adjacency map.
+ * Returns related roots (neighbors not in the input set), deduplicated by rootText.
+ * Used for showing clickable "Related:" chips in the search legend.
+ */
+export function getRelatedRoots(lemmas: string[]): RelatedRoot[] {
+  if (!lemmaAdjacency || !strongsToRoot || !strongsToSurfaceForm) return [];
+
+  const inputSet = new Set(lemmas);
+  const seen = new Set<string>(); // deduplicate by rootText
+  const related: RelatedRoot[] = [];
+
+  for (const lemma of lemmas) {
+    const neighbors = lemmaAdjacency.get(lemma);
+    if (!neighbors) continue;
+
+    for (const neighbor of neighbors) {
+      if (inputSet.has(neighbor)) continue;
+
+      const rootText = strongsToRoot[neighbor];
+      if (!rootText || seen.has(rootText)) continue;
+
+      const surfaceForm = strongsToSurfaceForm.get(neighbor);
+      if (!surfaceForm) continue;
+
+      seen.add(rootText);
+      related.push({ strongsNum: neighbor, rootText, surfaceForm });
+    }
+  }
+
+  return related;
+}
+
+/**
  * Search Hebrew text by root (lemma) using morphhb Strong's numbers
  * Falls back to whole-word search if lemma is not found
  *
@@ -574,7 +684,7 @@ function searchByRootMode(terms: string[]): SearchResult[] {
 
   const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
 
-  // Collect lemmas for each search term
+  // Collect lemmas for each search term (direct lemmas only, no cluster expansion)
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const lemmas = findLemmasForWord(terms[termIndex]);
     if (lemmas && lemmas.length > 0) {
