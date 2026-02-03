@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, expandLemmasThroughClusters, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -64,7 +64,10 @@ function doSearch(query: string): void {
       termLemmas = [];
       termRoots = [];
       for (const term of currentTerms) {
-        const lemmas = findLemmasForWord(term);
+        const rawLemmas = findLemmasForWord(term);
+        const lemmas = rawLemmas && rawLemmas.length > 0
+          ? expandLemmasThroughClusters(rawLemmas)
+          : rawLemmas;
         termLemmaStatus.push(lemmas !== null && lemmas.length > 0);
         termLemmas.push(lemmas);
 

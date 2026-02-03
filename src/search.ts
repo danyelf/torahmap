@@ -67,6 +67,11 @@ let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong'
 let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
 // Inverted index: Strong's number -> Set of verse keys (for fast lemma-based search)
 let lemmaToVerses: Map<string, Set<string>> | null = null;
+// Union-find cluster: Strong's number -> Set of all Strong's numbers in same root cluster
+// Two Strong's numbers are in the same cluster if they co-occur as lemmas for the same
+// surface form in word-lemmas. This makes root search transitive:
+// e.g. צחק→[6712,6711] and יצחק→[3327,6711] means {6711,6712,3327} are one cluster.
+let lemmaClusters: Map<string, Set<string>> | null = null;
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
@@ -140,6 +145,9 @@ export async function loadLemmaData(): Promise<void> {
       // Build inverted index: Strong's number -> Set of verse keys
       // This converts O(V) search-by-lemma to O(1) lookup
       buildLemmaInvertedIndex();
+
+      // Build union-find clusters: group Strong's numbers that share surface forms
+      buildLemmaClusters();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
       console.warn(`Response status: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
@@ -177,6 +185,109 @@ function buildLemmaInvertedIndex(): void {
 
   const endTime = performance.now();
   console.log(`✓ Built lemma inverted index: ${lemmaToVerses.size} unique lemmas in ${(endTime - startTime).toFixed(2)}ms`);
+}
+
+/**
+ * Build union-find clusters from wordLemmas.
+ * Two Strong's numbers belong to the same cluster if they co-occur as lemmas
+ * for any surface form. This is transitive: if A and B share a form, and B and C
+ * share a different form, then {A, B, C} are one cluster.
+ *
+ * Guards against runaway clustering from ambiguous Hebrew surface forms:
+ * - Only bridges through surface forms with exactly 2 lemmas (avoids highly
+ *   ambiguous words like הון with 30+ lemmas bridging unrelated roots)
+ * - Discards clusters that grow beyond MAX_CLUSTER_SIZE (transitive chaining
+ *   through common homographs like אשה/שמת can still create large clusters)
+ *
+ * Uses union-find (disjoint set) with path compression and union by rank.
+ */
+const MAX_CLUSTER_SIZE = 15;
+
+function buildLemmaClusters(): void {
+  if (!wordLemmas) {
+    lemmaClusters = null;
+    return;
+  }
+
+  const startTime = performance.now();
+
+  // Union-find data structures
+  const parent = new Map<string, string>();
+  const rank = new Map<string, number>();
+
+  function find(x: string): string {
+    if (!parent.has(x)) {
+      parent.set(x, x);
+      rank.set(x, 0);
+    }
+    let root = x;
+    while (parent.get(root) !== root) {
+      root = parent.get(root)!;
+    }
+    // Path compression
+    let current = x;
+    while (current !== root) {
+      const next = parent.get(current)!;
+      parent.set(current, root);
+      current = next;
+    }
+    return root;
+  }
+
+  function union(a: string, b: string): void {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA === rootB) return;
+
+    const rankA = rank.get(rootA) || 0;
+    const rankB = rank.get(rootB) || 0;
+    if (rankA < rankB) {
+      parent.set(rootA, rootB);
+    } else if (rankA > rankB) {
+      parent.set(rootB, rootA);
+    } else {
+      parent.set(rootB, rootA);
+      rank.set(rootA, rankA + 1);
+    }
+  }
+
+  // Only union lemmas from surface forms with exactly 2 lemmas.
+  // Forms with 3+ lemmas are too ambiguous and bridge unrelated roots.
+  for (const lemmas of Object.values(wordLemmas)) {
+    if (lemmas.length !== 2) continue;
+    union(lemmas[0], lemmas[1]);
+  }
+
+  // Build cluster map: for each lemma, find its root and collect all members
+  const clustersByRoot = new Map<string, Set<string>>();
+  for (const lemma of parent.keys()) {
+    const root = find(lemma);
+    let cluster = clustersByRoot.get(root);
+    if (!cluster) {
+      cluster = new Set();
+      clustersByRoot.set(root, cluster);
+    }
+    cluster.add(lemma);
+  }
+
+  // Map each lemma to its full cluster, but discard oversized clusters.
+  // Transitive chaining through common homographs can still create large
+  // clusters even with the 2-lemma restriction — cap them.
+  lemmaClusters = new Map();
+  let discarded = 0;
+  for (const cluster of clustersByRoot.values()) {
+    if (cluster.size > MAX_CLUSTER_SIZE) {
+      discarded++;
+      continue;
+    }
+    for (const lemma of cluster) {
+      lemmaClusters.set(lemma, cluster);
+    }
+  }
+
+  const endTime = performance.now();
+  const multiMemberClusters = [...clustersByRoot.values()].filter(c => c.size > 1 && c.size <= MAX_CLUSTER_SIZE);
+  console.log(`✓ Built lemma clusters: ${multiMemberClusters.length} clusters (discarded ${discarded} oversized) in ${(endTime - startTime).toFixed(2)}ms`);
 }
 
 /**
@@ -511,6 +622,28 @@ export function computeSnippetForMatch(
 }
 
 /**
+ * Expand a set of lemmas through union-find clusters.
+ * If any lemma belongs to a cluster, all cluster members are included.
+ * Returns deduplicated array of all lemmas in the combined clusters.
+ */
+export function expandLemmasThroughClusters(lemmas: string[]): string[] {
+  if (!lemmaClusters) return lemmas;
+
+  const expanded = new Set<string>();
+  for (const lemma of lemmas) {
+    const cluster = lemmaClusters.get(lemma);
+    if (cluster) {
+      for (const member of cluster) {
+        expanded.add(member);
+      }
+    } else {
+      expanded.add(lemma);
+    }
+  }
+  return Array.from(expanded);
+}
+
+/**
  * Search Hebrew text by root (lemma) using morphhb Strong's numbers
  * Falls back to whole-word search if lemma is not found
  *
@@ -527,11 +660,12 @@ function searchByRootMode(terms: string[]): SearchResult[] {
 
   const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
 
-  // Collect lemmas for each search term
+  // Collect lemmas for each search term, expanding through clusters
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const lemmas = findLemmasForWord(terms[termIndex]);
     if (lemmas && lemmas.length > 0) {
-      termLemmas.push({ termIndex, lemmas });
+      const expanded = expandLemmasThroughClusters(lemmas);
+      termLemmas.push({ termIndex, lemmas: expanded });
     }
   }
 
