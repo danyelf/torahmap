@@ -52,6 +52,15 @@ const FINAL_FORM_MAP: Record<string, string> = {
   'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
 };
 
+// Reverse map: medial form → final form (for display)
+const MEDIAL_TO_FINAL_MAP: Record<string, string> = {
+  'כ': 'ך',
+  'מ': 'ם',
+  'נ': 'ן',
+  'פ': 'ף',
+  'צ': 'ץ',
+};
+
 // Common Hebrew prefixes that can be stripped for lemma lookup
 const HEBREW_PREFIXES = ['ו', 'ה', 'ב', 'ל', 'כ', 'מ', 'ש'];
 // Two-letter prefix combinations
@@ -102,6 +111,22 @@ export function normalizeHebrewForSearch(text: string): string {
     }
   }
   return result;
+}
+
+/**
+ * Convert medial-only Hebrew text to proper display form by restoring
+ * final letters (sofit) at word endings: כ→ך, מ→ם, נ→ן, פ→ף, צ→ץ
+ */
+export function toDisplayHebrew(text: string): string {
+  return text.replace(/\S+/g, word => {
+    const chars = [...word];
+    const last = chars[chars.length - 1];
+    const finalForm = MEDIAL_TO_FINAL_MAP[last];
+    if (finalForm) {
+      chars[chars.length - 1] = finalForm;
+    }
+    return chars.join('');
+  });
 }
 
 /**
@@ -231,12 +256,13 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
 }
 
 /**
- * Get the Hebrew root for a Strong's number
+ * Get the Hebrew root for a Strong's number (display form with proper finals)
  * Exported for use in overlay UI to show which root was matched
  */
 export function getRootForStrongsNumber(strongsNum: string): string | null {
   if (!strongsToRoot) return null;
-  return strongsToRoot[strongsNum] || null;
+  const root = strongsToRoot[strongsNum];
+  return root ? toDisplayHebrew(root) : null;
 }
 
 /**

@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { stripNikkud, normalizeHebrewForSearch, buildSearchIndex, search, findLemmasForWord } from '../../search';
+import { stripNikkud, normalizeHebrewForSearch, toDisplayHebrew, buildSearchIndex, search, findLemmasForWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Hebrew Final Forms Normalization', () => {
@@ -54,6 +54,28 @@ describe('Hebrew Final Forms Normalization', () => {
 
     it('should normalize final forms even with nikkud present', () => {
       expect(normalizeHebrewForSearch('שָׁלוֹם')).toBe('שלומ'); // Remove nikkud AND normalize ם → מ
+    });
+  });
+
+  describe('toDisplayHebrew (restores final forms at word endings)', () => {
+    it('should restore mem sofit at word end', () => {
+      expect(toDisplayHebrew('שלומ')).toBe('שלום'); // מ → ם at end
+    });
+
+    it('should restore kaf sofit at word end', () => {
+      expect(toDisplayHebrew('מלכ')).toBe('מלך'); // כ → ך at end
+    });
+
+    it('should restore finals in multi-word text', () => {
+      expect(toDisplayHebrew('מלכ הארצ')).toBe('מלך הארץ'); // כ→ך, צ→ץ
+    });
+
+    it('should not change medial letters mid-word', () => {
+      expect(toDisplayHebrew('כנפי')).toBe('כנפי'); // פ stays medial (not at end)
+    });
+
+    it('should not change letters that have no final form', () => {
+      expect(toDisplayHebrew('דבר')).toBe('דבר'); // ר has no final form
     });
   });
 
