@@ -179,11 +179,8 @@
 #verse-sidebar mark.term-3 { background: rgba(255, 51, 204, 0.4); color: #fff; }
 #verse-sidebar mark.term-4 { background: rgba(255, 255, 51, 0.4); color: #000; }
 
-#search-count {
-  padding: 6px 10px;
-  font-size: 11px;
-  color: #666;
-  border-bottom: 1px solid #333;
+#search-hit-caption {
+  margin-bottom: 4px;
 }
 
 #search-options {
