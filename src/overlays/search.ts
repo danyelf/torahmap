@@ -166,19 +166,10 @@ function renderResults(): void {
   const existingResults = searchResults.querySelectorAll('.search-result');
   existingResults.forEach(el => el.remove());
 
-  const searchCount = searchResults.parentElement?.querySelector('#search-count') as HTMLDivElement;
-
   if (currentResults.length === 0) {
     searchResults.classList.remove('visible');
-    if (searchCount) searchCount.textContent = '';
     updateHitCaption();
     return;
-  }
-
-  // Update count with term info
-  if (searchCount) {
-    const termInfo = currentTerms.length > 1 ? ` (${currentTerms.length} terms)` : '';
-    searchCount.textContent = `${currentResults.length}${currentResults.length >= 100 ? '+' : ''} results${termInfo}`;
   }
 
   updateHitCaption();
@@ -587,7 +578,6 @@ export const searchOverlay: Overlay = {
         </label>
       </div>
       <div id="search-hit-caption"></div>
-      <div id="search-count"></div>
       <div id="search-results">
       </div>
     `;

@@ -768,9 +768,8 @@ describe('Search Overlay', () => {
       input.value = 'God';
       input.dispatchEvent(new Event('input'));
 
-      const count = container.querySelector('#search-count') as HTMLElement;
-
-      expect(count.textContent).toContain('results');
+      const caption = container.querySelector('#search-hit-caption') as HTMLElement;
+      expect(caption.textContent).toContain('matching verses');
     });
 
     it('displays result count correctly', () => {
@@ -781,8 +780,8 @@ describe('Search Overlay', () => {
       input.value = 'God';
       input.dispatchEvent(new Event('input'));
 
-      const count = container.querySelector('#search-count') as HTMLElement;
-      expect(count.textContent).toMatch(/\d+ results?/);
+      const caption = container.querySelector('#search-hit-caption') as HTMLElement;
+      expect(caption.textContent).toMatch(/\d+ matching verses/);
     });
 
     it('limits displayed results to 10', () => {
@@ -795,21 +794,6 @@ describe('Search Overlay', () => {
 
       const results = container.querySelectorAll('.search-result');
       expect(results.length).toBeLessThanOrEqual(10);
-    });
-
-    it('shows plus sign for 100+ results', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      // In real scenario with full Tanakh, common words would have 100+ results
-      // For this test, we'll just check the logic exists
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
-
-      const count = container.querySelector('#search-count') as HTMLElement;
-      // Either shows number or number+
-      expect(count.textContent).toMatch(/\d+\+? results?/);
     });
 
     it('clears previous results on new search', () => {
