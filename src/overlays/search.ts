@@ -29,6 +29,11 @@ let termLemmas: Array<string[] | null> = [];
 // Track the Hebrew root text for each term (for legend display)
 let termRoots: Array<string | null> = [];
 
+// Incremental rendering state
+const RESULTS_BATCH_SIZE = 50;
+let renderedCount = 0;
+let scrollHandler: (() => void) | null = null;
+
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
@@ -159,12 +164,93 @@ function updateHitCaption(): void {
   }
 }
 
+function createResultElement(result: SearchResult): HTMLDivElement {
+  const div = document.createElement('div');
+  div.className = 'search-result';
+
+  // Create ref div with term indicators
+  const refDiv = document.createElement('div');
+  refDiv.className = 'ref';
+
+  const termIndicators = document.createElement('span');
+  termIndicators.className = 'term-indicators';
+  for (const m of result.matchingTerms) {
+    const dot = document.createElement('span');
+    dot.className = 'term-dot';
+    const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
+    dot.style.background = colorToCss(color);
+    termIndicators.appendChild(dot);
+  }
+  refDiv.appendChild(termIndicators);
+  refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
+
+  // Create snippet div with highlighting
+  const snippetDiv = document.createElement('div');
+  snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
+
+  const firstMatch = result.matchingTerms[0];
+
+  // Compute snippet on-demand if not present (for lazy evaluation in root mode)
+  let snippet = firstMatch.snippet;
+  let matchStart = firstMatch.matchStart;
+  let matchEnd = firstMatch.matchEnd;
+
+  if (snippet === undefined || matchStart === undefined || matchEnd === undefined) {
+    const snippetData = computeSnippetForMatch(result, firstMatch.termIndex, currentTerms[firstMatch.termIndex]);
+    if (snippetData) {
+      snippet = snippetData.snippet;
+      matchStart = snippetData.matchStart;
+      matchEnd = snippetData.matchEnd;
+    } else {
+      snippet = `${result.book} ${result.chapter}:${result.verse}`;
+      matchStart = 0;
+      matchEnd = 0;
+    }
+  }
+
+  const snippetContent = createHighlightedText(snippet, matchStart, matchEnd, firstMatch.termIndex);
+  snippetDiv.appendChild(snippetContent);
+
+  div.appendChild(refDiv);
+  div.appendChild(snippetDiv);
+
+  div.addEventListener('click', () => {
+    const verse = verses.find(v =>
+      v.book === result.book &&
+      v.chapter === result.chapter &&
+      v.verse === result.verse
+    );
+    if (verse && onVerseClickCallback) {
+      onVerseClickCallback(verse);
+    }
+  });
+
+  return div;
+}
+
+function appendResultsBatch(): void {
+  if (!searchResults || renderedCount >= currentResults.length) return;
+
+  const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, currentResults.length);
+  for (let i = renderedCount; i < end; i++) {
+    searchResults.appendChild(createResultElement(currentResults[i]));
+  }
+  renderedCount = end;
+}
+
 function renderResults(): void {
   if (!searchResults) return;
 
-  // Clear previous results (keep count div)
+  // Clear previous results and reset scroll state
   const existingResults = searchResults.querySelectorAll('.search-result');
   existingResults.forEach(el => el.remove());
+  renderedCount = 0;
+
+  // Remove previous scroll handler
+  if (scrollHandler) {
+    searchResults.removeEventListener('scroll', scrollHandler);
+    scrollHandler = null;
+  }
 
   if (currentResults.length === 0) {
     searchResults.classList.remove('visible');
@@ -174,78 +260,20 @@ function renderResults(): void {
 
   updateHitCaption();
 
-  // Show up to 10 results
-  const displayResults = currentResults.slice(0, 10);
-  for (const result of displayResults) {
-    const div = document.createElement('div');
-    div.className = 'search-result';
+  // Render first batch
+  appendResultsBatch();
 
-    // Create ref div with term indicators
-    const refDiv = document.createElement('div');
-    refDiv.className = 'ref';
-
-    // Create term indicator dots programmatically
-    const termIndicators = document.createElement('span');
-    termIndicators.className = 'term-indicators';
-    for (const m of result.matchingTerms) {
-      const dot = document.createElement('span');
-      dot.className = 'term-dot';
-      const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
-      dot.style.background = colorToCss(color);
-      termIndicators.appendChild(dot);
-    }
-    refDiv.appendChild(termIndicators);
-    refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
-
-    // Create snippet div with highlighting
-    const snippetDiv = document.createElement('div');
-    snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
-
-    // Use first match's snippet for display
-    const firstMatch = result.matchingTerms[0];
-
-    // Compute snippet on-demand if not present (for lazy evaluation in root mode)
-    let snippet = firstMatch.snippet;
-    let matchStart = firstMatch.matchStart;
-    let matchEnd = firstMatch.matchEnd;
-
-    if (snippet === undefined || matchStart === undefined || matchEnd === undefined) {
-      // Lazy evaluation - compute snippet now
-      const snippetData = computeSnippetForMatch(result, firstMatch.termIndex, currentTerms[firstMatch.termIndex]);
-      if (snippetData) {
-        snippet = snippetData.snippet;
-        matchStart = snippetData.matchStart;
-        matchEnd = snippetData.matchEnd;
-      } else {
-        // Fallback if computation fails
-        snippet = `${result.book} ${result.chapter}:${result.verse}`;
-        matchStart = 0;
-        matchEnd = 0;
+  // Set up infinite scroll if there are more results
+  if (renderedCount < currentResults.length) {
+    scrollHandler = () => {
+      if (!searchResults) return;
+      const { scrollTop, scrollHeight, clientHeight } = searchResults;
+      // Load more when within 100px of the bottom
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        appendResultsBatch();
       }
-    }
-
-    const snippetContent = createHighlightedText(
-      snippet,
-      matchStart,
-      matchEnd,
-      firstMatch.termIndex
-    );
-    snippetDiv.appendChild(snippetContent);
-
-    div.appendChild(refDiv);
-    div.appendChild(snippetDiv);
-
-    div.addEventListener('click', () => {
-      const verse = verses.find(v =>
-        v.book === result.book &&
-        v.chapter === result.chapter &&
-        v.verse === result.verse
-      );
-      if (verse && onVerseClickCallback) {
-        onVerseClickCallback(verse);
-      }
-    });
-    searchResults.appendChild(div);
+    };
+    searchResults.addEventListener('scroll', scrollHandler);
   }
 
   searchResults.classList.add('visible');
@@ -855,7 +883,11 @@ export const searchOverlay: Overlay = {
   destroy(): void {
     // Close Hebrew keyboard
     closeHebrewKeyboard();
-    // Clean up event listener
+    // Clean up event listeners
+    if (scrollHandler && searchResults) {
+      searchResults.removeEventListener('scroll', scrollHandler);
+      scrollHandler = null;
+    }
     if (documentClickHandler) {
       document.removeEventListener('click', documentClickHandler);
       documentClickHandler = null;

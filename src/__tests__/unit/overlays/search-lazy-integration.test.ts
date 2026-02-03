@@ -51,29 +51,30 @@ describe('Search Overlay - Lazy Snippet Integration', () => {
   });
 
   it('computes snippets only for displayed results (not all 2000+ results)', () => {
+    const BATCH_SIZE = 50; // Matches RESULTS_BATCH_SIZE in search overlay
     // Search that returns many results
     const results = search('אלהים', false, 'root');
 
-    // Simulate UI showing first 10 results only
-    const displayResults = results.slice(0, 10);
+    // Simulate UI rendering first batch (incremental scroll)
+    const displayResults = results.slice(0, BATCH_SIZE);
 
     // All results should have NO snippets initially
     for (const result of results) {
       expect(result.matchingTerms[0].snippet).toBeUndefined();
     }
 
-    // Compute snippets only for displayed results
+    // Compute snippets only for displayed batch
     const computedSnippets = displayResults.map(result => {
       const match = result.matchingTerms[0];
       return computeSnippetForMatch(result, match.termIndex, 'אלהים');
     });
 
-    // Verify only 10 snippets computed
-    expect(computedSnippets.length).toBe(Math.min(10, results.length));
+    // Verify only the batch's snippets computed
+    expect(computedSnippets.length).toBe(Math.min(BATCH_SIZE, results.length));
     expect(computedSnippets.every(s => s !== null)).toBe(true);
 
     // Verify remaining results still have no snippets
-    for (let i = 10; i < results.length; i++) {
+    for (let i = BATCH_SIZE; i < results.length; i++) {
       expect(results[i].matchingTerms[0].snippet).toBeUndefined();
     }
   });
