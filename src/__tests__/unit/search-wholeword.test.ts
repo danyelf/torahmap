@@ -1,6 +1,6 @@
 // Tests for whole-word search functionality
 import { describe, it, expect, beforeEach } from 'vitest';
-import { search, buildSearchIndex, parseSearchTerms, searchHebrewWholeWord } from '../../search';
+import { search, buildSearchIndex, searchHebrewWholeWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Whole Word Search', () => {
@@ -252,9 +252,11 @@ describe('searchHebrewWholeWord()', () => {
 
     const termMatch = firstResult.matchingTerms[0];
     expect(termMatch.snippet).toBeDefined();
+    expect(termMatch.matchStart).toBeDefined();
+    expect(termMatch.matchEnd).toBeDefined();
     expect(termMatch.matchStart).toBeGreaterThanOrEqual(0);
-    expect(termMatch.matchEnd).toBeGreaterThan(termMatch.matchStart);
-    expect(termMatch.matchEnd).toBeLessThanOrEqual(termMatch.snippet.length);
+    expect(termMatch.matchEnd!).toBeGreaterThan(termMatch.matchStart!);
+    expect(termMatch.matchEnd!).toBeLessThanOrEqual(termMatch.snippet!.length);
   });
 
   it('sets language to Hebrew', () => {

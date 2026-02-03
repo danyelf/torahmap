@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { buildVerseGeometry, createBuffer } from '../../geometry';
 import { createVerse, createVerses, TEST_COLORS } from '../helpers';
-import type { VerseLayout } from '../../types';
 
 describe('buildVerseGeometry', () => {
   describe('basic buffer properties', () => {
@@ -178,7 +177,6 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse();
       const buffer = buildVerseGeometry([verse], [TEST_COLORS.RED]);
 
-      const floatsPerVertex = 19;
       // Color starts at index 2 (after x, y)
       const colorOffset = 2;
 
@@ -214,7 +212,6 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse();
       const buffer = buildVerseGeometry([verse], [TEST_COLORS.BLUE]);
 
-      const floatsPerVertex = 19;
       const colorOffset = 2;
 
       // Color 1: blue
@@ -235,7 +232,6 @@ describe('buildVerseGeometry', () => {
       const verse = createVerse();
       const buffer = buildVerseGeometry([verse], [TEST_COLORS.GREEN]);
 
-      const floatsPerVertex = 19;
       const colorCountOffset = 14; // After x, y, and 4 colors (2 + 12)
       expect(buffer[colorCountOffset]).toBe(1);
     });
@@ -525,12 +521,12 @@ describe('buildVerseGeometry', () => {
         createVerse(), // double
         createVerse(), // default
       ];
-      const colors = [
+      const colors: (typeof TEST_COLORS.RED | typeof TEST_COLORS.RED[] | undefined)[] = [
         TEST_COLORS.RED,
         [TEST_COLORS.BLUE, TEST_COLORS.GREEN],
         undefined,
       ];
-      const buffer = buildVerseGeometry(verses, colors);
+      const buffer = buildVerseGeometry(verses, colors as any);
 
       const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;

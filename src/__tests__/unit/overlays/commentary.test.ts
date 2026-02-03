@@ -53,7 +53,7 @@ describe('Commentary Overlay', () => {
     ];
 
     // Mock fetch
-    mockFetch = vi.fn((url: string) => {
+    mockFetch = vi.fn((_url: string) => {
       return Promise.resolve({
         ok: true,
         status: 200,

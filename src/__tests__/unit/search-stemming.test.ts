@@ -20,7 +20,7 @@ describe('Hebrew Search Stemming Data Quality', () => {
     // Check a sample of roots to ensure none are single characters
     const sampleRoots = Object.entries(strongsToRoot).slice(0, 100);
 
-    for (const [strongsNum, root] of sampleRoots) {
+    for (const [_strongsNum, root] of sampleRoots) {
       expect(root).toBeTruthy();
       expect((root as string).length).toBeGreaterThanOrEqual(3);
     }

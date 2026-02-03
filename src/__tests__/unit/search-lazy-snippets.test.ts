@@ -4,7 +4,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   search,
   buildSearchIndex,
-  loadLemmaData,
   computeSnippetForMatch,
   type SearchResult,
 } from '../../search';

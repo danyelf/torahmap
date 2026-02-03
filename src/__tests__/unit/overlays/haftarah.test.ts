@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { haftarahOverlay } from '../../../overlays/haftarah';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import type { VerseLayout } from '../../../types';
 
 // Sample data matching the real structure
 const SAMPLE_HAFTARAH_DATA = {
@@ -343,7 +342,7 @@ describe('Haftarah Overlay', () => {
       // The return can be Color or Color[], so check both cases
       if (Array.isArray(color) && Array.isArray(color[0])) {
         // Array of colors - multi-item verse
-        for (const c of color as [number, number, number][]) {
+        for (const c of color as unknown as [number, number, number][]) {
           assertValidColor(c);
         }
       } else {

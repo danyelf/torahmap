@@ -3,7 +3,6 @@ import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../..
 
 describe('hebrewKeyboard', () => {
   let input: HTMLInputElement;
-  let container: HTMLElement;
 
   beforeEach(() => {
     // Create a test input element

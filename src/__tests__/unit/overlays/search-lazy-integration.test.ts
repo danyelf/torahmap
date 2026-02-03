@@ -1,6 +1,6 @@
 // Integration tests for lazy snippet evaluation in search overlay
 // tm-6mw3: Verify UI properly computes snippets on-demand
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, computeSnippetForMatch } from '../../../search';
 import type { VerseTexts } from '../../../verseTexts';
 

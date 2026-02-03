@@ -7,7 +7,7 @@ import {
   applyVerseColors,
 } from '../../verseColoring';
 import type { VerseLayout, VerseState } from '../../types';
-import type { Overlay } from '../../overlays/types';
+import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
 
 describe('verseColoring', () => {
@@ -87,7 +87,6 @@ describe('verseColoring', () => {
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
-        onHover: vi.fn(),
       };
 
       const color = getOverlayColor(mockOverlay, verse);
@@ -111,7 +110,6 @@ describe('verseColoring', () => {
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn().mockReturnValue(null),
-        onHover: vi.fn(),
       };
 
       const color = getOverlayColor(mockOverlay, verse);
@@ -138,7 +136,6 @@ describe('verseColoring', () => {
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn().mockReturnValue(multiColor),
-        onHover: vi.fn(),
       };
 
       const color = getOverlayColor(mockOverlay, verse);
@@ -219,7 +216,6 @@ describe('verseColoring', () => {
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
-        onHover: vi.fn(),
       };
 
       const states = computeVerseStates(verses, mockOverlay, null, null);
@@ -238,7 +234,6 @@ describe('verseColoring', () => {
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn().mockReturnValue(null),
-        onHover: vi.fn(),
       };
 
       const states = computeVerseStates(verses, mockOverlay, null, null);
@@ -540,9 +535,8 @@ describe('verseColoring', () => {
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn((v) => {
-          return v.verse === 1 ? [1, 0, 0] : null;
+          return v.verse === 1 ? [1, 0, 0] as Color : null;
         }),
-        onHover: vi.fn(),
       };
 
       const hoveredVerse = verses[1];

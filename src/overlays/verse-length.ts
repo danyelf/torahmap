@@ -7,8 +7,7 @@ import type { VerseTexts } from "../verseTexts.ts";
 // Color palettes (perceptually uniform, colorblind-friendly)
 
 // Viridis: purple→blue→teal→green→yellow (unused but kept for reference)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const VIRIDIS_STOPS: Array<[number, Color]> = [
+const _VIRIDIS_STOPS: Array<[number, Color]> = [
   [0.0, [68 / 255, 1 / 255, 84 / 255]], // dark purple
   [0.25, [59 / 255, 82 / 255, 139 / 255]], // blue
   [0.5, [33 / 255, 145 / 255, 140 / 255]], // teal
@@ -165,6 +164,9 @@ export const verseLengthOverlay: Overlay = {
     const lowColor = COLOR_STOPS === PLASMA_STOPS ? "Purple" : "Purple/blue";
     const highColor =
       COLOR_STOPS === PLASMA_STOPS ? "Orange/yellow" : "Green/yellow";
+
+    // Suppress unused variable warning (reference for alternative palette)
+    void _VIRIDIS_STOPS;
 
     container.innerHTML = `
       <div class="legend-row">

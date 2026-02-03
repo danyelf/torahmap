@@ -442,7 +442,6 @@ describe('buildOutlineGeometry', () => {
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
-      const thickness = 2;
       // x0 = 10 - 2 = 8
       // x1 = 10 + 2 - 2 + 2 = 12 (x + size - gap + thickness)
       expect(buffer[floatsPerVertex]).toBe(12);

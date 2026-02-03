@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { loadAllVerseTexts, getVerseText } from '../../verseTexts';
-import type { VerseTexts, VerseText } from '../../verseTexts';
+import type { VerseTexts } from '../../verseTexts';
 import { SAMPLE_VERSE_TEXTS } from '../helpers';
 
 describe('verseTexts', () => {

@@ -5,7 +5,6 @@ import {
   stopDrag,
   setHoveredVerse,
   clearHover,
-  type MouseState,
 } from '../../mouseState';
 import type { VerseLayout } from '../../types';
 import { versesEqual } from '../../types';

@@ -355,7 +355,7 @@ describe('createProgram', () => {
 
   describe('error handling - program linking', () => {
     it('throws error when program creation fails', () => {
-      gl.createProgram = vi.fn(() => null);
+      gl.createProgram = vi.fn(() => null) as unknown as () => WebGLProgram;
 
       expect(() => createProgram(gl)).toThrow('Failed to create program');
     });

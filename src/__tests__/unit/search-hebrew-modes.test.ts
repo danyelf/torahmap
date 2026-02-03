@@ -151,7 +151,7 @@ describe('Hebrew Search Modes', () => {
 
     it('word mode does NOT match אברהם when searching for אברם', () => {
       // "אברם" (Abram) and "אברהם" (Abraham) are different words
-      const resultsAbram = search('אברם', false, 'word');
+      search('אברם', false, 'word');
       const resultsAbraham = search('אברהם', false, 'word');
 
       // Verify they find different sets of verses
@@ -504,11 +504,13 @@ describe('searchHebrewWholeWord() - Direct Function Tests', () => {
     const match = firstResult.matchingTerms[0];
 
     expect(match.snippet).toBeDefined();
+    expect(match.matchStart).toBeDefined();
+    expect(match.matchEnd).toBeDefined();
     expect(match.matchStart).toBeGreaterThanOrEqual(0);
-    expect(match.matchEnd).toBeGreaterThan(match.matchStart);
+    expect(match.matchEnd!).toBeGreaterThan(match.matchStart!);
 
     // Verify snippet contains the Hebrew letters (may have nikkud)
-    const highlighted = match.snippet.slice(match.matchStart, match.matchEnd);
+    const highlighted = match.snippet!.slice(match.matchStart!, match.matchEnd!);
     // The highlighted portion should contain the base letters א, ב, ר, ה, ם
     expect(highlighted).toMatch(/א.*ב.*ר.*ה.*ם/);
   });

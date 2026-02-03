@@ -1,7 +1,7 @@
 // Performance diagnostic tests for Hebrew search
 // tm-6mw3: Gather evidence about where Hebrew search is slow
 import { describe, it, expect, beforeEach } from 'vitest';
-import { search, buildSearchIndex, findLemmasForWord, searchHebrewWholeWord } from '../../search';
+import { search, buildSearchIndex, findLemmasForWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Hebrew Search Performance Diagnostics', () => {
@@ -83,7 +83,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
     it('measures root mode search for single common term', () => {
       const term = 'אלהים'; // God - appears in ~2600 verses
 
-      const { result, timeMs } = measureTime(() => {
+      const { result } = measureTime(() => {
         return search(term, false, 'root');
       }, 'search("אלהים", root mode) - ~2600 results');
 
@@ -97,7 +97,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
     it('measures root mode search for multiple terms', () => {
       const terms = 'אלהים, יהוה'; // God, LORD
 
-      const { result, timeMs } = measureTime(() => {
+      const { result } = measureTime(() => {
         return search(terms, false, 'root');
       }, 'search("אלהים, יהוה", root mode) - multiple terms');
 
@@ -111,7 +111,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
     it('measures substring search for single term', () => {
       const term = 'אלהים';
 
-      const { result, timeMs } = measureTime(() => {
+      const { result } = measureTime(() => {
         return search(term, false, 'substring');
       }, 'search("אלהים", substring mode)');
 
@@ -125,7 +125,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
     it('measures whole-word search for single term', () => {
       const term = 'אלהים';
 
-      const { result, timeMs } = measureTime(() => {
+      const { result } = measureTime(() => {
         return search(term, false, 'word');
       }, 'search("אלהים", word mode)');
 

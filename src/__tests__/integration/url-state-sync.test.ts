@@ -17,7 +17,6 @@ import {
   configureCommentary,
   configureTrop,
   configureSearch,
-  type Overlay,
 } from '../../overlays/index';
 import {
   SAMPLE_VERSES,
@@ -50,7 +49,8 @@ describe('URL State Sync Integration', () => {
       historyStates.push(url as string);
       // Update mock location
       if (url) {
-        const fullUrl = url.startsWith('http') ? url : `http://localhost:5173${url}`;
+        const urlString = typeof url === 'string' ? url : url.toString();
+        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalPushState(state, title, url);
@@ -64,7 +64,8 @@ describe('URL State Sync Integration', () => {
       }
       // Update mock location
       if (url) {
-        const fullUrl = url.startsWith('http') ? url : `http://localhost:5173${url}`;
+        const urlString = typeof url === 'string' ? url : url.toString();
+        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalReplaceState(state, title, url);
@@ -86,7 +87,7 @@ describe('URL State Sync Integration', () => {
         status: 200,
         json: () => Promise.resolve(data),
       } as Response);
-    });
+    }) as any;
 
     // Register overlays
     registerOverlay(commentaryOverlay);
@@ -105,7 +106,7 @@ describe('URL State Sync Integration', () => {
   afterEach(() => {
     restoreAllMocks();
     // Restore original location
-    window.location = originalLocation;
+    (window as any).location = originalLocation;
   });
 
   describe('URL State Parsing', () => {

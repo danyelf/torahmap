@@ -7,8 +7,6 @@ import {
   blendColorsHSL,
   interpolateGradient,
   scaleToGradient,
-  HIGHLIGHT_COLOR,
-  DIM_FACTOR,
   SEARCH_COLORS,
   type ColorStop,
 } from '../../../utils/color';

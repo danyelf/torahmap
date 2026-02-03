@@ -1,5 +1,5 @@
 // Tests for lemma indicator feature in search overlay
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { searchOverlay, configure } from '../../../overlays/search';
 import { buildSearchIndex, loadLemmaData } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';

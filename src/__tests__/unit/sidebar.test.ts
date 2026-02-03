@@ -627,7 +627,7 @@ describe('sidebar', () => {
           id: 'search',
           name: 'Search Overlay',
           getVerseColor: () => null,
-          highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
+          highlightVerseText: vi.fn((_text: string, language: 'he' | 'en') => {
             if (language === 'he') return hebrewFragment;
             return englishFragment;
           }),

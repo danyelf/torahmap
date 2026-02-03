@@ -1,14 +1,15 @@
 // Tests for search overlay - verse highlighting based on search results, color computation
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchOverlay, configure, highlightSearchTerms } from '../../../overlays/search';
+import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import type { Verse, Color } from '../../../types';
+import type { VerseLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
-import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
+import { closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
 
 describe('Search Overlay', () => {
   let testVerses: VerseLayout[];
@@ -1374,7 +1375,7 @@ describe('Search Overlay', () => {
             assertValidColor(color as Color);
           } else {
             // Array of colors (stipple)
-            for (const c of color as Color[]) {
+            for (const c of color as unknown as Color[]) {
               assertValidColor(c);
             }
           }
@@ -1472,9 +1473,10 @@ describe('Search Overlay', () => {
 
       const firstMatch = genesis11!.matchingTerms[0];
       const snippet = firstMatch.snippet;
+      expect(snippet).toBeDefined();
 
       // The highlighted portion should contain the Hebrew word אלהים (with nikkud: אֱלֹהִים)
-      const highlighted = snippet.slice(firstMatch.matchStart, firstMatch.matchEnd);
+      const highlighted = snippet!.slice(firstMatch.matchStart!, firstMatch.matchEnd!);
 
       // Strip nikkud from the highlighted portion and check it matches the search term
       const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
@@ -1501,7 +1503,8 @@ describe('Search Overlay', () => {
       if (isaiah12) {
         const firstMatch = isaiah12.matchingTerms[0];
         const snippet = firstMatch.snippet;
-        const highlighted = snippet.slice(firstMatch.matchStart, firstMatch.matchEnd);
+        expect(snippet).toBeDefined();
+        const highlighted = snippet!.slice(firstMatch.matchStart!, firstMatch.matchEnd!);
 
         // The highlighted text should contain שמים letters (possibly with nikkud)
         // Not some other random substring
@@ -1520,7 +1523,9 @@ describe('Search Overlay', () => {
 
         // matchEnd - matchStart should be >= the stripped search term length
         // because it includes nikkud characters
-        const highlightLength = firstMatch.matchEnd - firstMatch.matchStart;
+        expect(firstMatch.matchEnd).toBeDefined();
+        expect(firstMatch.matchStart).toBeDefined();
+        const highlightLength = firstMatch.matchEnd! - firstMatch.matchStart!;
         expect(highlightLength).toBeGreaterThanOrEqual(5); // 'אלהים' is 5 chars
       }
     });
@@ -1540,7 +1545,8 @@ describe('Search Overlay', () => {
         // (except for edge case where term is at position 0, which is unlikely)
         if (firstMatch.matchStart !== 0 || firstMatch.matchEnd !== 0) {
           // Verify the highlighted portion contains the search term
-          const highlighted = firstMatch.snippet.slice(firstMatch.matchStart, firstMatch.matchEnd);
+          expect(firstMatch.snippet).toBeDefined();
+          const highlighted = firstMatch.snippet!.slice(firstMatch.matchStart!, firstMatch.matchEnd!);
           const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
           expect(strippedHighlight).toContain('אלהים');
         }

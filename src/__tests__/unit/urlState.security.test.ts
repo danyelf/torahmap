@@ -1,8 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   parseUrlState,
   parseVerseFromUrl,
-  type UrlState,
 } from '../../urlState';
 import { mockWindowLocation } from '../helpers/mocks';
 

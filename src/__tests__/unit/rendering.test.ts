@@ -129,9 +129,10 @@ describe('rendering', () => {
     });
 
     it('uses verses from state', () => {
-      // Update verse colors
-      state.verses[0].color = [1, 0, 0];
-      state.verses[1].color = [0, 1, 0];
+      // Update verse colors (TypeScript: these properties don't exist on VerseLayout,
+      // but the test is checking that rebuildGeometry uses state.verses)
+      (state.verses[0] as any).color = [1, 0, 0];
+      (state.verses[1] as any).color = [0, 1, 0];
 
       rebuildGeometry(gl, state);
 
