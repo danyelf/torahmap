@@ -172,6 +172,38 @@
   display: inline-block;
 }
 
+.related-roots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 11px;
+}
+
+.related-roots-label {
+  color: #888;
+  margin-right: 2px;
+}
+
+.root-chip {
+  display: inline-block;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 10px;
+  color: #ccc;
+  font-size: 11px;
+  padding: 1px 8px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.root-chip:hover {
+  background: #383838;
+  border-color: #6ab0f3;
+  color: #fff;
+}
+
 /* Sidebar search term highlighting */
 #verse-sidebar mark.term-0 { background: rgba(51, 230, 255, 0.4); color: #fff; }
 #verse-sidebar mark.term-1 { background: rgba(255, 128, 0, 0.4); color: #fff; }

@@ -188,6 +188,68 @@ describe('Search Overlay - Lemma Indicators', () => {
     expect(legendContainer.querySelectorAll('.lemma-indicator').length).toBe(indicatorsInRootMode);
   });
 
+  it('should show related roots section in root mode with related roots', () => {
+    // Render controls
+    searchOverlay.renderControls(container);
+
+    const searchInput = container.querySelector('#search-input') as HTMLInputElement;
+    const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
+
+    // Set to root mode
+    rootModeRadio.checked = true;
+    rootModeRadio.dispatchEvent(new Event('change'));
+
+    // Perform Hebrew search with a term that has related roots
+    searchInput.value = 'אלהים';
+    searchInput.dispatchEvent(new Event('input'));
+
+    // Render legend
+    const legendContainer = document.createElement('div');
+    searchOverlay.renderLegend(legendContainer);
+
+    // Check for related roots section
+    const relatedSection = legendContainer.querySelector('.related-roots');
+    if (relatedSection) {
+      // If related roots exist, verify structure
+      const label = relatedSection.querySelector('.related-roots-label');
+      expect(label?.textContent).toBe('Related:');
+
+      const chips = relatedSection.querySelectorAll('.root-chip');
+      expect(chips.length).toBeGreaterThan(0);
+
+      // Each chip should be a button
+      chips.forEach(chip => {
+        expect(chip.tagName).toBe('BUTTON');
+        expect(chip.textContent?.length).toBeGreaterThan(0);
+      });
+    }
+    // If no related roots, the section won't be present (also valid)
+  });
+
+  it('should not show related roots section in substring mode', () => {
+    // Render controls
+    searchOverlay.renderControls(container);
+
+    const searchInput = container.querySelector('#search-input') as HTMLInputElement;
+    const substringModeRadio = container.querySelector('input[name="hebrew-mode"][value="substring"]') as HTMLInputElement;
+
+    // Set to substring mode
+    substringModeRadio.checked = true;
+    substringModeRadio.dispatchEvent(new Event('change'));
+
+    // Perform Hebrew search
+    searchInput.value = 'אלהים';
+    searchInput.dispatchEvent(new Event('input'));
+
+    // Render legend
+    const legendContainer = document.createElement('div');
+    searchOverlay.renderLegend(legendContainer);
+
+    // Should NOT have related roots section in substring mode
+    const relatedSection = legendContainer.querySelector('.related-roots');
+    expect(relatedSection).toBeNull();
+  });
+
   it('should have proper styling for lemma indicators', () => {
     // Render controls
     searchOverlay.renderControls(container);

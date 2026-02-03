@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
 import { getVerseKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, expandLemmasThroughClusters, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRelatedRoots, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult, type RelatedRoot } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -28,6 +28,8 @@ let termLemmaStatus: boolean[] = [];
 let termLemmas: Array<string[] | null> = [];
 // Track the Hebrew root text for each term (for legend display)
 let termRoots: Array<string | null> = [];
+// Track related roots for UI suggestion chips (depth-1 neighbors)
+let relatedRoots: RelatedRoot[] = [];
 
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
@@ -55,6 +57,7 @@ function doSearch(query: string): void {
     termLemmaStatus = [];
     termLemmas = [];
     termRoots = [];
+    relatedRoots = [];
   } else {
     const isHebrew = isHebrewQuery(currentTerms[0]);
 
@@ -63,11 +66,9 @@ function doSearch(query: string): void {
       termLemmaStatus = [];
       termLemmas = [];
       termRoots = [];
+      const allLemmasForRelated: string[] = [];
       for (const term of currentTerms) {
-        const rawLemmas = findLemmasForWord(term);
-        const lemmas = rawLemmas && rawLemmas.length > 0
-          ? expandLemmasThroughClusters(rawLemmas)
-          : rawLemmas;
+        const lemmas = findLemmasForWord(term);
         termLemmaStatus.push(lemmas !== null && lemmas.length > 0);
         termLemmas.push(lemmas);
 
@@ -75,14 +76,18 @@ function doSearch(query: string): void {
         if (lemmas && lemmas.length > 0) {
           const rootText = getRootForStrongsNumber(lemmas[0]);
           termRoots.push(rootText);
+          allLemmasForRelated.push(...lemmas);
         } else {
           termRoots.push(null);
         }
       }
+      // Compute related roots (depth-1 neighbors) for UI chips
+      relatedRoots = getRelatedRoots(allLemmasForRelated);
     } else {
       termLemmaStatus = [];
       termLemmas = [];
       termRoots = [];
+      relatedRoots = [];
     }
 
     // Only use wholeWord for English queries
@@ -798,6 +803,33 @@ export const searchOverlay: Overlay = {
         }
       }
 
+      // Related roots chips (only in root mode with results)
+      let relatedDiv: HTMLDivElement | null = null;
+      if (hebrewSearchMode === 'root' && relatedRoots.length > 0) {
+        relatedDiv = document.createElement('div');
+        relatedDiv.className = 'related-roots';
+
+        const label = document.createElement('span');
+        label.className = 'related-roots-label';
+        label.textContent = 'Related:';
+        relatedDiv.appendChild(label);
+
+        for (const related of relatedRoots) {
+          const chip = document.createElement('button');
+          chip.className = 'root-chip';
+          chip.textContent = related.rootText;
+          chip.title = `Add "${related.surfaceForm}" to search`;
+          chip.addEventListener('click', () => {
+            if (searchInput) {
+              const current = searchInput.value.trim();
+              searchInput.value = current ? `${current},${related.surfaceForm}` : related.surfaceForm;
+              searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          });
+          relatedDiv.appendChild(chip);
+        }
+      }
+
       const countDiv = document.createElement('div');
       countDiv.style.color = '#888';
       countDiv.style.fontSize = '11px';
@@ -805,6 +837,9 @@ export const searchOverlay: Overlay = {
       countDiv.textContent = `${currentResults.length} matching verses`;
 
       container.appendChild(legendDiv);
+      if (relatedDiv) {
+        container.appendChild(relatedDiv);
+      }
       container.appendChild(countDiv);
     } else if (currentQuery.length > 0 && currentTerms.length === 0) {
       const hintDiv = document.createElement('div');

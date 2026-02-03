@@ -67,11 +67,13 @@ let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong'
 let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
 // Inverted index: Strong's number -> Set of verse keys (for fast lemma-based search)
 let lemmaToVerses: Map<string, Set<string>> | null = null;
-// Union-find cluster: Strong's number -> Set of all Strong's numbers in same root cluster
-// Two Strong's numbers are in the same cluster if they co-occur as lemmas for the same
-// surface form in word-lemmas. This makes root search transitive:
-// e.g. צחק→[6712,6711] and יצחק→[3327,6711] means {6711,6712,3327} are one cluster.
-let lemmaClusters: Map<string, Set<string>> | null = null;
+// Adjacency map: Strong's number -> Set of directly connected Strong's numbers
+// Two Strong's numbers are adjacent if they co-occur as lemmas for the same
+// surface form (with exactly 2 lemmas) in word-lemmas. NOT transitive.
+let lemmaAdjacency: Map<string, Set<string>> | null = null;
+// Reverse lookup: Strong's number -> shortest surface form that maps to it
+// Used to generate searchable terms when related-root chips are clicked
+let strongsToSurfaceForm: Map<string, string> | null = null;
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
@@ -146,8 +148,8 @@ export async function loadLemmaData(): Promise<void> {
       // This converts O(V) search-by-lemma to O(1) lookup
       buildLemmaInvertedIndex();
 
-      // Build union-find clusters: group Strong's numbers that share surface forms
-      buildLemmaClusters();
+      // Build adjacency map: direct neighbors from 2-lemma surface forms
+      buildLemmaAdjacency();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
       console.warn(`Response status: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
@@ -188,106 +190,61 @@ function buildLemmaInvertedIndex(): void {
 }
 
 /**
- * Build union-find clusters from wordLemmas.
- * Two Strong's numbers belong to the same cluster if they co-occur as lemmas
- * for any surface form. This is transitive: if A and B share a form, and B and C
- * share a different form, then {A, B, C} are one cluster.
+ * Build adjacency map from wordLemmas.
+ * Two Strong's numbers are adjacent if they co-occur as lemmas for the same
+ * surface form (restricted to forms with exactly 2 lemmas to avoid ambiguity).
  *
- * Guards against runaway clustering from ambiguous Hebrew surface forms:
- * - Only bridges through surface forms with exactly 2 lemmas (avoids highly
- *   ambiguous words like הון with 30+ lemmas bridging unrelated roots)
- * - Discards clusters that grow beyond MAX_CLUSTER_SIZE (transitive chaining
- *   through common homographs like אשה/שמת can still create large clusters)
+ * Unlike the old union-find approach, this is NOT transitive:
+ * if A-B share a form and B-C share a different form, A and C are NOT linked.
+ * Instead, related roots are surfaced as clickable UI suggestions.
  *
- * Uses union-find (disjoint set) with path compression and union by rank.
+ * Also builds strongsToSurfaceForm: for each Strong's number, keeps the
+ * shortest surface form that maps to it (for generating search terms).
  */
-const MAX_CLUSTER_SIZE = 15;
-
-function buildLemmaClusters(): void {
+function buildLemmaAdjacency(): void {
   if (!wordLemmas) {
-    lemmaClusters = null;
+    lemmaAdjacency = null;
+    strongsToSurfaceForm = null;
     return;
   }
 
   const startTime = performance.now();
 
-  // Union-find data structures
-  const parent = new Map<string, string>();
-  const rank = new Map<string, number>();
+  lemmaAdjacency = new Map();
+  strongsToSurfaceForm = new Map();
 
-  function find(x: string): string {
-    if (!parent.has(x)) {
-      parent.set(x, x);
-      rank.set(x, 0);
+  for (const [surfaceForm, lemmas] of Object.entries(wordLemmas)) {
+    // Track shortest surface form per Strong's number
+    for (const lemma of lemmas) {
+      const existing = strongsToSurfaceForm.get(lemma);
+      if (!existing || surfaceForm.length < existing.length) {
+        strongsToSurfaceForm.set(lemma, surfaceForm);
+      }
     }
-    let root = x;
-    while (parent.get(root) !== root) {
-      root = parent.get(root)!;
-    }
-    // Path compression
-    let current = x;
-    while (current !== root) {
-      const next = parent.get(current)!;
-      parent.set(current, root);
-      current = next;
-    }
-    return root;
-  }
 
-  function union(a: string, b: string): void {
-    const rootA = find(a);
-    const rootB = find(b);
-    if (rootA === rootB) return;
-
-    const rankA = rank.get(rootA) || 0;
-    const rankB = rank.get(rootB) || 0;
-    if (rankA < rankB) {
-      parent.set(rootA, rootB);
-    } else if (rankA > rankB) {
-      parent.set(rootB, rootA);
-    } else {
-      parent.set(rootB, rootA);
-      rank.set(rootA, rankA + 1);
-    }
-  }
-
-  // Only union lemmas from surface forms with exactly 2 lemmas.
-  // Forms with 3+ lemmas are too ambiguous and bridge unrelated roots.
-  for (const lemmas of Object.values(wordLemmas)) {
+    // Only build adjacency from forms with exactly 2 lemmas
     if (lemmas.length !== 2) continue;
-    union(lemmas[0], lemmas[1]);
-  }
 
-  // Build cluster map: for each lemma, find its root and collect all members
-  const clustersByRoot = new Map<string, Set<string>>();
-  for (const lemma of parent.keys()) {
-    const root = find(lemma);
-    let cluster = clustersByRoot.get(root);
-    if (!cluster) {
-      cluster = new Set();
-      clustersByRoot.set(root, cluster);
-    }
-    cluster.add(lemma);
-  }
+    const [a, b] = lemmas;
 
-  // Map each lemma to its full cluster, but discard oversized clusters.
-  // Transitive chaining through common homographs can still create large
-  // clusters even with the 2-lemma restriction — cap them.
-  lemmaClusters = new Map();
-  let discarded = 0;
-  for (const cluster of clustersByRoot.values()) {
-    if (cluster.size > MAX_CLUSTER_SIZE) {
-      discarded++;
-      continue;
+    let neighborsA = lemmaAdjacency.get(a);
+    if (!neighborsA) {
+      neighborsA = new Set();
+      lemmaAdjacency.set(a, neighborsA);
     }
-    for (const lemma of cluster) {
-      lemmaClusters.set(lemma, cluster);
+    neighborsA.add(b);
+
+    let neighborsB = lemmaAdjacency.get(b);
+    if (!neighborsB) {
+      neighborsB = new Set();
+      lemmaAdjacency.set(b, neighborsB);
     }
+    neighborsB.add(a);
   }
 
   const endTime = performance.now();
-  const multiMemberClusters = [...clustersByRoot.values()].filter(c => c.size > 1 && c.size <= MAX_CLUSTER_SIZE);
-  console.log(`✓ Built lemma clusters: ${multiMemberClusters.length} clusters (discarded ${discarded} oversized) in ${(endTime - startTime).toFixed(2)}ms`);
+  const withNeighbors = [...lemmaAdjacency.values()].filter(s => s.size > 0).length;
+  console.log(`✓ Built lemma adjacency: ${withNeighbors} lemmas with neighbors in ${(endTime - startTime).toFixed(2)}ms`);
 }
 
 /**
@@ -622,25 +579,45 @@ export function computeSnippetForMatch(
 }
 
 /**
- * Expand a set of lemmas through union-find clusters.
- * If any lemma belongs to a cluster, all cluster members are included.
- * Returns deduplicated array of all lemmas in the combined clusters.
+ * Represents a related root that can be shown as a clickable chip in the UI
  */
-export function expandLemmasThroughClusters(lemmas: string[]): string[] {
-  if (!lemmaClusters) return lemmas;
+export interface RelatedRoot {
+  strongsNum: string;
+  rootText: string;       // Hebrew root from strongs-to-root.json
+  surfaceForm: string;    // representative word for searching
+}
 
-  const expanded = new Set<string>();
+/**
+ * Get depth-1 neighbors for a set of lemmas from the adjacency map.
+ * Returns related roots (neighbors not in the input set), deduplicated by rootText.
+ * Used for showing clickable "Related:" chips in the search legend.
+ */
+export function getRelatedRoots(lemmas: string[]): RelatedRoot[] {
+  if (!lemmaAdjacency || !strongsToRoot || !strongsToSurfaceForm) return [];
+
+  const inputSet = new Set(lemmas);
+  const seen = new Set<string>(); // deduplicate by rootText
+  const related: RelatedRoot[] = [];
+
   for (const lemma of lemmas) {
-    const cluster = lemmaClusters.get(lemma);
-    if (cluster) {
-      for (const member of cluster) {
-        expanded.add(member);
-      }
-    } else {
-      expanded.add(lemma);
+    const neighbors = lemmaAdjacency.get(lemma);
+    if (!neighbors) continue;
+
+    for (const neighbor of neighbors) {
+      if (inputSet.has(neighbor)) continue;
+
+      const rootText = strongsToRoot[neighbor];
+      if (!rootText || seen.has(rootText)) continue;
+
+      const surfaceForm = strongsToSurfaceForm.get(neighbor);
+      if (!surfaceForm) continue;
+
+      seen.add(rootText);
+      related.push({ strongsNum: neighbor, rootText, surfaceForm });
     }
   }
-  return Array.from(expanded);
+
+  return related;
 }
 
 /**
@@ -660,12 +637,11 @@ function searchByRootMode(terms: string[]): SearchResult[] {
 
   const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
 
-  // Collect lemmas for each search term, expanding through clusters
+  // Collect lemmas for each search term (direct lemmas only, no cluster expansion)
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const lemmas = findLemmasForWord(terms[termIndex]);
     if (lemmas && lemmas.length > 0) {
-      const expanded = expandLemmasThroughClusters(lemmas);
-      termLemmas.push({ termIndex, lemmas: expanded });
+      termLemmas.push({ termIndex, lemmas });
     }
   }
 
