@@ -231,6 +231,77 @@ function extractStrongsNumber(strongsField: string): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * Psalms where morphhb combines superscription + first verse into a single verse 1.
+ * splitAt = lemma index where superscription ends and real verse begins.
+ * diff = 1: morphhb v1 → Sefaria v1 (superscription) + v2 (real verse)
+ * diff = 2: morphhb v1 → Sefaria v2 + v3 (Sefaria v1 is text-only header, no morphhb data)
+ */
+const PSALM_SUPERSCRIPTION_SPLITS: Record<number, { splitAt: number; diff: number }> = {
+  3:   { splitAt: 6,  diff: 1 },
+  4:   { splitAt: 4,  diff: 1 },
+  5:   { splitAt: 5,  diff: 1 },
+  6:   { splitAt: 6,  diff: 1 },
+  7:   { splitAt: 10, diff: 1 },
+  8:   { splitAt: 5,  diff: 1 },
+  9:   { splitAt: 5,  diff: 1 },
+  12:  { splitAt: 5,  diff: 1 },
+  18:  { splitAt: 20, diff: 1 },
+  19:  { splitAt: 3,  diff: 1 },
+  20:  { splitAt: 3,  diff: 1 },
+  21:  { splitAt: 3,  diff: 1 },
+  22:  { splitAt: 6,  diff: 1 },
+  30:  { splitAt: 5,  diff: 1 },
+  31:  { splitAt: 3,  diff: 1 },
+  34:  { splitAt: 8,  diff: 1 },
+  36:  { splitAt: 4,  diff: 1 },
+  38:  { splitAt: 3,  diff: 1 },
+  39:  { splitAt: 5,  diff: 1 },
+  40:  { splitAt: 3,  diff: 1 },
+  41:  { splitAt: 3,  diff: 1 },
+  42:  { splitAt: 4,  diff: 1 },
+  44:  { splitAt: 4,  diff: 1 },
+  45:  { splitAt: 8,  diff: 1 },
+  46:  { splitAt: 6,  diff: 1 },
+  47:  { splitAt: 4,  diff: 1 },
+  48:  { splitAt: 4,  diff: 1 },
+  49:  { splitAt: 4,  diff: 1 },
+  51:  { splitAt: 9,  diff: 2 },
+  52:  { splitAt: 11, diff: 2 },
+  53:  { splitAt: 5,  diff: 1 },
+  54:  { splitAt: 8,  diff: 2 },
+  55:  { splitAt: 4,  diff: 1 },
+  56:  { splitAt: 11, diff: 1 },
+  57:  { splitAt: 9,  diff: 1 },
+  58:  { splitAt: 5,  diff: 1 },
+  59:  { splitAt: 11, diff: 1 },
+  60:  { splitAt: 17, diff: 2 },
+  61:  { splitAt: 4,  diff: 1 },
+  62:  { splitAt: 5,  diff: 1 },
+  63:  { splitAt: 5,  diff: 1 },
+  64:  { splitAt: 3,  diff: 1 },
+  65:  { splitAt: 4,  diff: 1 },
+  67:  { splitAt: 4,  diff: 1 },
+  68:  { splitAt: 4,  diff: 1 },
+  69:  { splitAt: 4,  diff: 1 },
+  70:  { splitAt: 3,  diff: 1 },
+  75:  { splitAt: 6,  diff: 1 },
+  76:  { splitAt: 5,  diff: 1 },
+  77:  { splitAt: 6,  diff: 1 },
+  80:  { splitAt: 6,  diff: 1 },
+  81:  { splitAt: 4,  diff: 1 },
+  83:  { splitAt: 3,  diff: 1 },
+  84:  { splitAt: 6,  diff: 1 },
+  85:  { splitAt: 4,  diff: 1 },
+  88:  { splitAt: 11, diff: 1 },
+  89:  { splitAt: 3,  diff: 1 },
+  92:  { splitAt: 4,  diff: 1 },
+  102: { splitAt: 8,  diff: 1 },
+  108: { splitAt: 3,  diff: 1 },
+  140: { splitAt: 3,  diff: 1 },
+  142: { splitAt: 5,  diff: 1 },
+};
+
 interface VerseLemmas {
   [verseKey: string]: string[]; // verse key -> array of Strong's numbers
 }
@@ -331,12 +402,30 @@ for (const bookName of Object.keys(morphhb)) {
         }
       }
 
-      // Merge lemmas when multiple morphhb verses map to the same Sefaria verse
-      // (e.g., Ten Commandments where morphhb splits verses that Sefaria combines)
-      if (verseLemmas[verseKey]) {
-        verseLemmas[verseKey] = verseLemmas[verseKey].concat(lemmas);
+      // Psalms superscription splitting: morphhb combines superscription + first verse
+      // into a single verse 1, but Sefaria splits them into separate verses.
+      const psalmSplit = ourBookName === 'Psalms' && morphhbVerse === 1
+        ? PSALM_SUPERSCRIPTION_SPLITS[morphhbChapter]
+        : undefined;
+
+      if (psalmSplit) {
+        const { splitAt, diff } = psalmSplit;
+        const superLemmas = lemmas.slice(0, splitAt);
+        const verseLemmasArr = lemmas.slice(splitAt);
+        // diff=1: superscription → v1, real verse → v2
+        // diff=2: superscription → v2, real verse → v3 (v1 is text-only header)
+        const superKey = `${ourBookName}:${morphhbChapter}:${diff === 1 ? 1 : 2}`;
+        const verseKeyForReal = `${ourBookName}:${morphhbChapter}:${diff === 1 ? 2 : 3}`;
+        verseLemmas[superKey] = superLemmas;
+        verseLemmas[verseKeyForReal] = verseLemmasArr;
       } else {
-        verseLemmas[verseKey] = lemmas;
+        // Merge lemmas when multiple morphhb verses map to the same Sefaria verse
+        // (e.g., Ten Commandments where morphhb splits verses that Sefaria combines)
+        if (verseLemmas[verseKey]) {
+          verseLemmas[verseKey] = verseLemmas[verseKey].concat(lemmas);
+        } else {
+          verseLemmas[verseKey] = lemmas;
+        }
       }
       totalVerses++;
     }
