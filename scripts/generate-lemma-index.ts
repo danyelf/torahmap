@@ -5,6 +5,11 @@
  * 1. verse-lemmas.json: Map of verse key -> array of Strong's numbers
  * 2. word-lemmas.json: Map of Hebrew word (no nikkud) -> array of Strong's numbers
  * 3. strongs-to-root.json: Map of Strong's number -> canonical Hebrew root (no nikkud)
+ *
+ * Note: morphhb and Sefaria use different verse numbering for ~140 chapters
+ * (Psalms superscriptions, chapter boundary shifts, Ten Commandments splitting).
+ * This script matches morphhb verses to Sefaria verses by comparing Hebrew text
+ * so that verse-lemmas.json keys align with the Sefaria-based all-texts.json keys.
  */
 
 import * as fs from 'fs';
@@ -20,6 +25,10 @@ const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 // @ts-ignore - morphhb doesn't have types
 const morphhb = require('morphhb');
+
+// Load Sefaria texts for verse number alignment
+const sefariaTexts: Record<string, Record<string, Record<string, { he: string; en: string }>>> =
+  JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'data', 'all-texts.json'), 'utf-8'));
 
 // Book name mapping from morphhb to our internal names
 const BOOK_NAME_MAP: Record<string, string> = {
@@ -95,6 +104,125 @@ function normalizeHebrew(text: string): string {
 }
 
 /**
+ * Strip Hebrew text to bare letters only (no nikkud, cantillation, or punctuation).
+ * Used for comparing morphhb text against Sefaria text to align verse numbering.
+ */
+function stripToLetters(text: string): string {
+  let result = '';
+  for (const char of text) {
+    const code = char.charCodeAt(0);
+    // Keep only Hebrew letters (U+05D0-U+05EA)
+    if (code >= 0x05D0 && code <= 0x05EA) {
+      result += char;
+    }
+    // Convert maqaf (U+05BE) and spaces to space
+    else if (char === ' ' || code === 0x05BE) {
+      result += ' ';
+    }
+  }
+  return result.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Reconstruct plain Hebrew text from a morphhb verse (strip nikkud and segmentation marks)
+ */
+function morphhbVerseToText(verse: string[][]): string {
+  return verse.map((word: string[]) => stripToLetters(word[0].replace(/\//g, ''))).join(' ');
+}
+
+// chapter → (signature → verse numbers[])
+type ChapterSigLookup = Map<number, Map<string, number[]>>;
+
+/**
+ * Build text signature lookups for a Sefaria book at multiple word lengths.
+ * Stores arrays of verse numbers per signature to handle collisions
+ * (e.g., Genesis 1 where "ויהי ערב ויהי בקר יום" repeats 6 times).
+ */
+function buildSefariaLookups(bookName: string): Record<number, ChapterSigLookup> {
+  const lookups: Record<number, ChapterSigLookup> = {};
+  for (const n of [5, 4, 3]) {
+    lookups[n] = new Map();
+  }
+
+  const bookData = sefariaTexts[bookName];
+  if (!bookData) return lookups;
+
+  for (const ch of Object.keys(bookData)) {
+    const chNum = parseInt(ch);
+    for (const n of [5, 4, 3]) {
+      if (!lookups[n].has(chNum)) lookups[n].set(chNum, new Map());
+    }
+    for (const v of Object.keys(bookData[ch])) {
+      const heText = bookData[ch][v].he;
+      if (!heText) continue;
+      const stripped = stripToLetters(heText);
+      const words = stripped.split(' ');
+      for (const n of [5, 4, 3]) {
+        if (words.length >= n) {
+          const sig = words.slice(0, n).join(' ');
+          const chMap = lookups[n].get(chNum)!;
+          const existing = chMap.get(sig);
+          if (existing) {
+            existing.push(parseInt(v));
+          } else {
+            chMap.set(sig, [parseInt(v)]);
+          }
+        }
+      }
+    }
+  }
+  return lookups;
+}
+
+/**
+ * Find the Sefaria verse key that matches a morphhb verse by comparing text.
+ * Tries progressively shorter signatures (5, 4, 3 words) and searches
+ * within ±2 chapters of the expected position.
+ * When multiple Sefaria verses share the same signature (e.g., repeated formulae),
+ * picks the one closest to the morphhb verse number.
+ * Returns the matched "book:chapter:verse" key, or null if no match found.
+ */
+function findSefariaVerseKey(
+  lookups: Record<number, ChapterSigLookup>,
+  morphhbText: string,
+  morphhbChapter: number,
+  morphhbVerse: number,
+  bookName: string
+): string | null {
+  const words = morphhbText.split(' ');
+
+  for (const sigLen of [5, 4, 3]) {
+    if (words.length < sigLen) continue;
+    const sig = words.slice(0, sigLen).join(' ');
+    const lookup = lookups[sigLen];
+
+    // Search same chapter first, then adjacent chapters
+    for (const chOffset of [0, -1, 1, -2, 2]) {
+      const targetCh = morphhbChapter + chOffset;
+      const chMap = lookup.get(targetCh);
+      if (!chMap) continue;
+
+      const candidates = chMap.get(sig);
+      if (candidates && candidates.length > 0) {
+        // Pick the candidate closest to the expected verse number
+        let bestV = candidates[0];
+        let bestDist = Math.abs(candidates[0] - morphhbVerse);
+        for (let i = 1; i < candidates.length; i++) {
+          const dist = Math.abs(candidates[i] - morphhbVerse);
+          if (dist < bestDist) {
+            bestV = candidates[i];
+            bestDist = dist;
+          }
+        }
+        return `${bookName}:${targetCh}:${bestV}`;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Extract Strong's number from morphhb encoding
  * Examples: "H1234" -> "1234", "Hc/H1234" -> "1234"
  */
@@ -123,6 +251,8 @@ console.log('Building lemma index from morphhb...');
 
 let totalVerses = 0;
 let totalWords = 0;
+let remappedVerses = 0;
+let unmatchedVerses = 0;
 
 for (const bookName of Object.keys(morphhb)) {
   const ourBookName = BOOK_NAME_MAP[bookName];
@@ -132,13 +262,28 @@ for (const bookName of Object.keys(morphhb)) {
   }
 
   const book = morphhb[bookName];
+  const sefariaLookups = buildSefariaLookups(ourBookName);
 
   for (let chapterIdx = 0; chapterIdx < book.length; chapterIdx++) {
     const chapter = book[chapterIdx];
+    const morphhbChapter = chapterIdx + 1;
 
     for (let verseIdx = 0; verseIdx < chapter.length; verseIdx++) {
       const verse = chapter[verseIdx];
-      const verseKey = `${ourBookName}:${chapterIdx + 1}:${verseIdx + 1}`;
+      const morphhbVerse = verseIdx + 1;
+      const morphhbKey = `${ourBookName}:${morphhbChapter}:${morphhbVerse}`;
+
+      // Match morphhb verse text against Sefaria to find the correct verse key
+      const morphhbText = morphhbVerseToText(verse);
+      const sefariaKey = findSefariaVerseKey(sefariaLookups, morphhbText, morphhbChapter, morphhbVerse, ourBookName);
+      const verseKey = sefariaKey || morphhbKey;
+
+      if (sefariaKey && sefariaKey !== morphhbKey) {
+        remappedVerses++;
+      } else if (!sefariaKey) {
+        unmatchedVerses++;
+      }
+
       const lemmas: string[] = [];
 
       for (const word of verse) {
@@ -186,7 +331,13 @@ for (const bookName of Object.keys(morphhb)) {
         }
       }
 
-      verseLemmas[verseKey] = lemmas;
+      // Merge lemmas when multiple morphhb verses map to the same Sefaria verse
+      // (e.g., Ten Commandments where morphhb splits verses that Sefaria combines)
+      if (verseLemmas[verseKey]) {
+        verseLemmas[verseKey] = verseLemmas[verseKey].concat(lemmas);
+      } else {
+        verseLemmas[verseKey] = lemmas;
+      }
       totalVerses++;
     }
   }
@@ -199,6 +350,7 @@ for (const [word, lemmaSet] of Object.entries(wordLemmas)) {
 }
 
 console.log(`Processed ${totalVerses} verses with ${totalWords} words`);
+console.log(`  Verse key alignment: ${remappedVerses} remapped to Sefaria numbering, ${unmatchedVerses} unmatched (using morphhb key)`);
 console.log(`Found ${Object.keys(wordLemmasArray).length} unique Hebrew word forms`);
 console.log(`Found ${Object.keys(strongsToRoot).length} unique Strong's numbers`);
 
