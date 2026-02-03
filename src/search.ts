@@ -494,18 +494,39 @@ export function computeSnippetForMatch(
   // Try lemma-based search first
   const lemmas = findLemmasForWord(searchTerm);
   if (lemmas && lemmas.length > 0) {
-    // Find word position via lemma
-    const wordIndex = findWordIndexByLemma(verseKey, lemmas);
-    const wordBounds = wordIndex >= 0 ? getWordBoundaries(entry.hebrewOriginal, wordIndex) : null;
+    // Search the whitespace-split text for a word containing the root.
+    // We can't use findWordIndexByLemma here because morphhb word indices
+    // don't align with whitespace indices (maqaf-joined words like "בני־יוסף"
+    // are one whitespace token but multiple morphhb segments).
+    const words = entry.hebrewText.split(/\s+/);
+    let wordIndex = -1;
 
-    if (wordBounds) {
-      const wordLen = wordBounds.end - wordBounds.start;
-      const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
-      return {
-        snippet: snippet.text,
-        matchStart: snippet.matchStart,
-        matchEnd: snippet.matchEnd,
-      };
+    // Try each lemma's root text as a substring within whitespace words
+    for (const lemma of lemmas) {
+      const root = strongsToRoot?.[lemma];
+      if (root) {
+        wordIndex = words.findIndex(w => w.includes(root));
+        if (wordIndex >= 0) break;
+      }
+    }
+
+    // Fallback: try the search term itself
+    if (wordIndex < 0) {
+      const normalizedSearch = normalizeHebrewForSearch(searchTerm);
+      wordIndex = words.findIndex(w => w.includes(normalizedSearch));
+    }
+
+    if (wordIndex >= 0) {
+      const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
+      if (wordBounds) {
+        const wordLen = wordBounds.end - wordBounds.start;
+        const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+        return {
+          snippet: snippet.text,
+          matchStart: snippet.matchStart,
+          matchEnd: snippet.matchEnd,
+        };
+      }
     }
   }
 
