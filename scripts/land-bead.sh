@@ -39,7 +39,20 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
-# Step 2: Sync beads from main repo and commit if needed
+# Step 2: Kill any background npm/node processes spawned from this worktree
+KILLED=""
+for pid in $(pgrep -f "$REPO_ROOT" 2>/dev/null); do
+  # Skip our own process tree
+  if [ "$pid" != "$$" ] && ps -p "$pid" -o comm= 2>/dev/null | grep -qE 'node|npm'; then
+    kill "$pid" 2>/dev/null && KILLED="$KILLED $pid"
+  fi
+done
+if [ -n "$KILLED" ]; then
+  echo "Killed background npm/node processes:$KILLED"
+  sleep 1
+fi
+
+# Step 3: Sync beads from main repo and commit if needed
 echo "Syncing beads from main repo..."
 cd "$MAIN_REPO"
 bd sync
@@ -51,11 +64,11 @@ if git status --porcelain | grep -q "^.M .beads/"; then
   git commit -m "Sync beads before landing $BRANCH_NAME"
 fi
 
-# Step 3: Pull latest from remote
+# Step 4: Pull latest from remote
 echo "Pulling latest changes from remote..."
 git pull --rebase
 
-# Step 4: Check if feature branch has any commits
+# Step 5: Check if feature branch has any commits
 cd "$REPO_ROOT"
 COMMIT_COUNT=$(git log main..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
 if [ "$COMMIT_COUNT" -eq 0 ]; then
@@ -73,7 +86,7 @@ if [ "$COMMIT_COUNT" -eq 0 ]; then
   exit 0
 fi
 
-# Step 5: Verify feature branch has NO beads file changes (except .gitignore which is OK)
+# Step 6: Verify feature branch has NO beads file changes (except .gitignore which is OK)
 cd "$REPO_ROOT"
 BEADS_CHANGES=$(git diff main --name-only | grep "^\.beads/" | grep -v "^\.beads/\.gitignore$" || true)
 if [ -n "$BEADS_CHANGES" ]; then
@@ -92,25 +105,25 @@ if [ -n "$BEADS_CHANGES" ]; then
   exit 1
 fi
 
-# Step 6: Merge feature branch into main
+# Step 7: Merge feature branch into main
 echo "Merging $BRANCH_NAME into main..."
 cd "$MAIN_REPO"
 git merge "$BRANCH_NAME" --no-edit
 
-# Step 7: Push to remote
+# Step 8: Push to remote
 echo "Pushing to remote..."
 git push
 
-# Step 8: Close the bead
+# Step 9: Close the bead
 echo "Closing bead $BEAD_ID..."
 bd close "$BEAD_ID"
 bd sync
 
-# Step 9: Clean up worktree
+# Step 10: Clean up worktree
 echo "Cleaning up worktree..."
 git worktree remove "$REPO_ROOT"
 
-# Step 10: Optionally delete branch
+# Step 11: Optionally delete branch
 if [ "$DELETE_BRANCH" = true ]; then
   echo "Deleting feature branch $BRANCH_NAME..."
   git branch -d "$BRANCH_NAME"
