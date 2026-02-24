@@ -23,7 +23,7 @@ if [ -z "$BEAD_ID" ]; then
   fi
 
   # Format beads for display: "bead-id | type | priority | title"
-  FORMATTED_BEADS=$(echo "$BEAD_LIST" | jq -r '.[] | "\(.id) | \(.type // "task") | P\(.priority // "2") | \(.title // "No title")"')
+  FORMATTED_BEADS=$(echo "$BEAD_LIST" | jq -r '.[] | "\(.id) | \(.issue_type // "task") | P\(.priority // "2") | \(.title // "No title")"')
 
   # Try fzf first (better UX), fall back to select
   # Only use fzf if it exists AND we have an interactive terminal
@@ -88,32 +88,6 @@ RELATIVE_WORKTREE_PATH="../${REPO_NAME}-worktrees/${BEAD_ID}"
 if [ -d "$WORKTREE_PATH" ]; then
   echo "Worktree already exists at $WORKTREE_PATH"
   cd "$WORKTREE_PATH"
-
-  # Fix old worktrees: ensure .beads contains only redirect file
-  if [ -f .beads/redirect ]; then
-    echo "Fixing .beads redirect (ensuring proper git tracking)..."
-    REDIRECT_TARGET=$(cat .beads/redirect)
-
-    # Remove from git index if present
-    git rm --cached .beads/README.md .beads/config.yaml .beads/issues.jsonl .beads/metadata.json 2>/dev/null || true
-
-    # Ensure worktree-local gitignore has these files
-    EXCLUDE_FILE=$(git rev-parse --git-path info/exclude)
-    if ! grep -q ".beads/issues.jsonl" "$EXCLUDE_FILE" 2>/dev/null; then
-      cat >> "$EXCLUDE_FILE" << 'EOF'
-# Beads data files (tracked in main repo, but use redirect in worktrees)
-.beads/README.md
-.beads/config.yaml
-.beads/issues.jsonl
-.beads/metadata.json
-EOF
-    fi
-
-    # Clean up files and restore redirect
-    rm -rf .beads/*
-    echo "$REDIRECT_TARGET" > .beads/redirect
-  fi
-
   echo "Launching Claude in existing worktree..."
   exec claude --permission-mode bypassPermissions "work on $BEAD_ID"
 fi
@@ -137,29 +111,6 @@ bd worktree create "$RELATIVE_WORKTREE_PATH" --branch "$BRANCH_NAME"
 # Change to worktree
 cd "$WORKTREE_PATH"
 
-# Fix redirect: bd worktree create copies too many files to .beads/
-# The redirect only works when .beads/ contains ONLY the redirect file
-echo "Fixing .beads redirect and git tracking..."
-REDIRECT_TARGET=$(cat .beads/redirect)
-
-# Remove from git index (but keep on disk temporarily)
-git rm --cached .beads/README.md .beads/config.yaml .beads/issues.jsonl .beads/metadata.json 2>/dev/null || true
-
-# Add to worktree-local gitignore (not committed)
-# Use git rev-parse to find the actual info/exclude path in worktree
-EXCLUDE_FILE=$(git rev-parse --git-path info/exclude)
-cat >> "$EXCLUDE_FILE" << 'EOF'
-# Beads data files (tracked in main repo, but use redirect in worktrees)
-.beads/README.md
-.beads/config.yaml
-.beads/issues.jsonl
-.beads/metadata.json
-EOF
-
-# Now delete the files and keep only redirect
-rm -rf .beads/*
-echo "$REDIRECT_TARGET" > .beads/redirect
-
 # Set terminal tab title
 echo -ne "\033]0;${REPO_NAME}: ${BEAD_ID}\007"
 
@@ -167,7 +118,7 @@ echo -ne "\033]0;${REPO_NAME}: ${BEAD_ID}\007"
 BEAD_INFO=$(bd show "$BEAD_ID" --json)
 BEAD_TITLE=$(echo "$BEAD_INFO" | jq -r '.[0].title // "No title"')
 BEAD_STATUS=$(echo "$BEAD_INFO" | jq -r '.[0].status // "unknown"')
-BEAD_TYPE=$(echo "$BEAD_INFO" | jq -r '.[0].type // "task"')
+BEAD_TYPE=$(echo "$BEAD_INFO" | jq -r '.[0].issue_type // "task"')
 
 # Check if any work has been done on this branch
 COMMIT_COUNT=$(git log main..HEAD --oneline 2>/dev/null | wc -l | tr -d ' ')
