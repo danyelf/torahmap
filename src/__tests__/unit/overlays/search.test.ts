@@ -477,9 +477,15 @@ describe('Search Overlay', () => {
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
-      // Set initial value and cursor position
-      input.value = 'test  here';
-      input.setSelectionRange(5, 5); // Position cursor between "test" and "here"
+      // Simulate Hebrew mode (keyboard open) since input has Hebrew content
+      const kbContainer = document.createElement('div');
+      kbContainer.id = 'hebrew-keyboard-container';
+      kbContainer.style.display = 'block';
+      document.body.appendChild(kbContainer);
+
+      // Set initial value (Hebrew) and cursor position
+      input.value = 'שלום  עולם';
+      input.setSelectionRange(5, 5); // Position cursor between words
 
       // Create a ClipboardEvent with Hebrew text containing nikkud
       const hebrewWithNikkud = 'אֱלֹהִ֛ים';
@@ -499,11 +505,14 @@ describe('Search Overlay', () => {
       input.dispatchEvent(pasteEvent);
 
       // Verify nikkud was stripped and inserted at cursor position
-      expect(input.value).toBe('test ' + expectedStripped + ' here');
+      expect(input.value).toBe('שלום ' + expectedStripped + ' עולם');
 
       // Verify cursor is after inserted text
       expect(input.selectionStart).toBe(5 + expectedStripped.length);
       expect(input.selectionEnd).toBe(5 + expectedStripped.length);
+
+      // Clean up keyboard container
+      kbContainer.remove();
     });
 
     it('strips nikkud from typed Hebrew text', () => {

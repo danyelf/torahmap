@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Torah Map - Input Test Harness</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <style>
+    body {
+      background: #1a1a1a;
+      overflow: auto;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+    }
+
+    #harness {
+      margin: 20px 24px;
+      padding: 0;
+    }
+
+    h1 {
+      font-size: 18px;
+      color: #6ab0f3;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    /* Top row: controls + keyboard side by side */
+    .harness-top {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    /* Re-create the controls panel styling inline */
+    #controls {
+      position: static;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 12px;
+      border-radius: 8px;
+      width: 320px;
+      flex-shrink: 0;
+    }
+
+    /* Override keyboard positioning: inline in flex row, always visible */
+    #hebrew-keyboard-container {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      margin-top: 0 !important;
+      flex-shrink: 0;
+    }
+
+    /* Status line */
+    #status-line {
+      margin-top: 16px;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.85);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 16px;
+    }
+
+    #status-line .status-item {
+      white-space: nowrap;
+    }
+
+    #status-line .status-label {
+      color: #666;
+    }
+
+    #status-line .status-value {
+      color: #ccc;
+    }
+
+    .status-text-value {
+      direction: rtl;
+      unicode-bidi: isolate;
+      color: #e8c56a !important;
+      font-family: 'SF Mono', 'Menlo', monospace;
+    }
+
+    /* Event log */
+    #event-log {
+      margin-top: 16px;
+      background: rgba(0, 0, 0, 0.85);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    #event-log .log-entry {
+      border-bottom: 1px solid #222;
+      padding: 2px 0;
+    }
+
+    #event-log .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    #event-log .log-type {
+      color: #6ab0f3;
+      font-weight: 600;
+      display: inline-block;
+      width: 100px;
+    }
+
+    #event-log .log-detail {
+      color: #aaa;
+    }
+
+    #event-log .log-hebrew {
+      direction: rtl;
+      unicode-bidi: isolate;
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .log-header h2 {
+      font-size: 13px;
+      color: #888;
+      font-weight: 500;
+    }
+
+    .log-header button {
+      background: #333;
+      border: 1px solid #444;
+      color: #888;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .log-header button:hover {
+      color: #fff;
+      border-color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div id="harness">
+    <h1>Input Test Harness</h1>
+    <div class="subtitle">Standalone search input flow — no WebGL, no map</div>
+
+    <div class="harness-top">
+      <div id="controls">
+        <div id="overlay-controls"></div>
+        <div id="overlay-legend"></div>
+      </div>
+
+      <!-- Pre-create keyboard container so it sits in the flex row
+           instead of being appended to body as a fixed overlay -->
+      <div id="hebrew-keyboard-container" class="hebrew-keyboard-container"></div>
+    </div>
+
+    <div id="status-line">
+      <span class="status-item">
+        <span class="status-label">Focus: </span>
+        <span class="status-value" id="status-focus">none</span>
+      </span>
+      <span class="status-item">
+        <span class="status-label">Dir: </span>
+        <span class="status-value" id="status-dir">ltr</span>
+      </span>
+      <span class="status-item">
+        <span class="status-label">Keyboard: </span>
+        <span class="status-value" id="status-keyboard">closed</span>
+      </span>
+      <span class="status-item">
+        <span class="status-label">Selection: </span>
+        <span class="status-value" id="status-selection">-</span>
+      </span>
+      <span class="status-item">
+        <span class="status-label">Text: </span>
+        <span class="status-value status-text-value" id="status-text">(empty)</span>
+      </span>
+    </div>
+
+    <div id="event-log">
+      <div class="log-header">
+        <h2>Event Log</h2>
+        <button id="clear-log">Clear</button>
+      </div>
+      <div id="log-entries"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

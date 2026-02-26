@@ -733,32 +733,54 @@ export const searchOverlay: Overlay = {
       }
     };
 
-    // Strip nikkud from pasted Hebrew text
+    // Handle pasted text: strip nikkud from Hebrew, auto-switch mode on paste into empty input
     searchInput?.addEventListener('paste', (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain');
-      if (text && isHebrewQuery(text)) {
-        // Prevent default paste
+      if (!text) return;
+
+      const input = searchInput!;
+      const pasteIsHebrew = isHebrewQuery(text);
+      const inputIsEmpty = input.value.length === 0;
+
+      // Auto-switch mode when pasting into empty input
+      if (inputIsEmpty) {
+        if (pasteIsHebrew && !isKeyboardOpen()) {
+          createHebrewKeyboard(input);
+          if (keyboardToggle) keyboardToggle.classList.add('active');
+          updateInputMode();
+        } else if (!pasteIsHebrew && isKeyboardOpen()) {
+          closeHebrewKeyboard();
+          if (keyboardToggle) keyboardToggle.classList.remove('active');
+          updateInputMode();
+        }
+      }
+
+      // Reject paste if script doesn't match current mode (non-empty input)
+      if (!inputIsEmpty) {
+        const kbOpen = isKeyboardOpen();
+        if (pasteIsHebrew && !kbOpen) {
+          e.preventDefault();
+          return;
+        }
+        if (!pasteIsHebrew && kbOpen) {
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // For Hebrew text, strip nikkud and insert manually
+      if (pasteIsHebrew) {
         e.preventDefault();
-
-        // Strip nikkud and insert
         const stripped = stripNikkud(text);
-
-        // Insert at cursor position
-        const input = searchInput!;
         const start = input.selectionStart ?? 0;
         const end = input.selectionEnd ?? 0;
         const currentValue = input.value;
-
-        // Build new value
         input.value = currentValue.slice(0, start) + stripped + currentValue.slice(end);
-
-        // Set cursor position after inserted text
         const newCursorPos = start + stripped.length;
         input.setSelectionRange(newCursorPos, newCursorPos);
-
-        // Trigger input event to update search
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }
+      // English text: let browser handle default paste
     });
 
     searchInput?.addEventListener('input', () => {
@@ -792,10 +814,50 @@ export const searchOverlay: Overlay = {
         }
       }
 
+      // Script enforcement: reject wrong-script chars, auto-switch on paste into empty
+      const afterSanitize = input.value;
+      let kbOpen = isKeyboardOpen();
+      if (afterSanitize) {
+        const hasHebrew = /[\u05D0-\u05EA]/.test(afterSanitize);
+        const hasLatin = /[a-zA-Z]/.test(afterSanitize);
+
+        // Auto-switch: pure wrong-script means paste into empty input — switch mode
+        if (hasHebrew && !hasLatin && !kbOpen) {
+          createHebrewKeyboard(input);
+          if (keyboardToggle) keyboardToggle.classList.add('active');
+          kbOpen = true;
+        } else if (hasLatin && !hasHebrew && kbOpen) {
+          closeHebrewKeyboard();
+          if (keyboardToggle) keyboardToggle.classList.remove('active');
+          kbOpen = false;
+        }
+
+        // Strip wrong-script characters (after potential mode switch)
+        const removePattern = kbOpen ? /[a-zA-Z]/g : /[\u05D0-\u05EA]/g;
+        const cleaned = afterSanitize.replace(removePattern, '');
+        if (cleaned !== afterSanitize) {
+          const cursor = input.selectionStart ?? afterSanitize.length;
+          let removedBeforeCursor = 0;
+          const charPattern = kbOpen ? /[a-zA-Z]/ : /[\u05D0-\u05EA]/;
+          for (let i = 0; i < Math.min(cursor, afterSanitize.length); i++) {
+            if (charPattern.test(afterSanitize[i])) {
+              removedBeforeCursor++;
+            }
+          }
+          input.value = cleaned;
+          const newPos = cursor - removedBeforeCursor;
+          input.setSelectionRange(newPos, newPos);
+        }
+      }
+
       const query = input.value.trim();
       updateInputMode();
       if (searchClear) {
         searchClear.style.display = query ? 'block' : 'none';
+      }
+      // Disable toggle when text is non-empty (lock to current mode)
+      if (keyboardToggle) {
+        keyboardToggle.disabled = query.length > 0;
       }
       doSearch(query);
     });
@@ -804,6 +866,10 @@ export const searchOverlay: Overlay = {
       if (searchInput) {
         searchInput.value = '';
         searchClear!.style.display = 'none';
+      }
+      // Re-enable toggle (input is now empty)
+      if (keyboardToggle) {
+        keyboardToggle.disabled = false;
       }
       // Update UI to reflect current mode (keyboard open or not)
       updateInputMode();

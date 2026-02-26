@@ -51,6 +51,12 @@
   background: rgba(106, 176, 243, 0.1);
 }
 
+#keyboard-toggle:disabled {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+
 #search-clear {
   position: absolute;
   right: 6px;

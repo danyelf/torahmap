@@ -7,6 +7,7 @@ import { TRANSLITERATION_MAP } from './hebrewTransliteration.ts';
 let keyboardInstance: Keyboard | null = null;
 let currentInput: HTMLInputElement | null = null;
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+let pasteHandler: ((e: ClipboardEvent) => void) | null = null;
 
 // Hebrew keyboard layout using phonetic transliteration
 // Rows correspond to QWERTY physical layout: qwertyp / asdfghjkl / zxcvbnm
@@ -37,13 +38,17 @@ function setupTransliterationHandler(): void {
       return;
     }
 
-    // Only process if event target is the input itself or inside keyboard container
-    const target = e.target as HTMLElement;
-    const isInputOrKeyboard =
-      target === currentInput ||
-      (target?.closest && target.closest('#hebrew-keyboard-container') !== null);
+    // Don't intercept keyboard shortcuts (Cmd+V paste, Cmd+C copy, Cmd+A select all, etc.)
+    if (e.metaKey || e.ctrlKey || e.altKey) {
+      return;
+    }
 
-    if (!isInputOrKeyboard) {
+    // Skip if focus is on a different text input (not our target input)
+    const target = e.target as HTMLElement;
+    if (
+      target !== currentInput &&
+      (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+    ) {
       return;
     }
 
@@ -69,6 +74,35 @@ function setupTransliterationHandler(): void {
         if (keyboardInstance) {
           keyboardInstance.setInput(newValue);
         }
+        currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
+      // Backspace: delegate to existing handler
+      if (key === 'backspace') {
+        e.preventDefault();
+        handleBackspace();
+        return;
+      }
+      // Forward delete
+      if (key === 'delete') {
+        e.preventDefault();
+        const start = currentInput.selectionStart ?? 0;
+        const end = currentInput.selectionEnd ?? 0;
+        const val = currentInput.value;
+        let newValue: string;
+        let newCursor: number;
+        if (start !== end) {
+          newValue = val.slice(0, start) + val.slice(end);
+          newCursor = start;
+        } else if (start < val.length) {
+          newValue = val.slice(0, start) + val.slice(start + 1);
+          newCursor = start;
+        } else {
+          return;
+        }
+        currentInput.value = newValue;
+        if (keyboardInstance) keyboardInstance.setInput(newValue);
+        currentInput.setSelectionRange(newCursor, newCursor);
         currentInput.dispatchEvent(new Event('input', { bubbles: true }));
         return;
       }
@@ -109,6 +143,42 @@ function setupTransliterationHandler(): void {
 
   // Listen at document level so it works even when keyboard has focus
   document.addEventListener('keydown', keydownHandler);
+
+  // Paste handler: redirect paste to input when keyboard is open
+  if (pasteHandler) {
+    document.removeEventListener('paste', pasteHandler);
+  }
+
+  pasteHandler = (e: ClipboardEvent) => {
+    if (!isKeyboardOpen() || !currentInput) return;
+
+    const target = e.target as HTMLElement;
+    // If input itself has focus, let its own paste handler work
+    if (target === currentInput) return;
+    // Skip if focus is on another text input
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+
+    const text = e.clipboardData?.getData('text/plain');
+    if (!text) return;
+
+    e.preventDefault();
+
+    const start = currentInput.selectionStart ?? 0;
+    const end = currentInput.selectionEnd ?? 0;
+    const currentValue = currentInput.value;
+    currentInput.value = currentValue.slice(0, start) + text + currentValue.slice(end);
+    const newCursorPos = start + text.length;
+    currentInput.setSelectionRange(newCursorPos, newCursorPos);
+
+    if (keyboardInstance) {
+      keyboardInstance.setInput(currentInput.value);
+    }
+
+    // Dispatch input event — the search overlay's input handler strips nikkud
+    currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+
+  document.addEventListener('paste', pasteHandler);
 }
 
 export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
@@ -264,10 +334,14 @@ export function closeHebrewKeyboard(): void {
     container.style.display = 'none';
   }
 
-  // Remove transliteration handler from document
+  // Remove document-level handlers
   if (keydownHandler) {
     document.removeEventListener('keydown', keydownHandler);
     keydownHandler = null;
+  }
+  if (pasteHandler) {
+    document.removeEventListener('paste', pasteHandler);
+    pasteHandler = null;
   }
 
   // Don't null out currentInput - keep the reference for when keyboard reopens

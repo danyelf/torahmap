@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "harness": "vite --open /test-harness/",
     "build": "tsc --project tsconfig.build.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
