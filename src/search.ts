@@ -424,25 +424,6 @@ function searchByLemmas(lemmas: string[]): Set<string> {
   return matchingVerses;
 }
 
-/**
- * Find the word index in a verse where a lemma appears
- * Returns -1 if not found
- */
-function findWordIndexByLemma(verseKey: string, lemmas: string[]): number {
-  if (!verseLemmas) return -1;
-
-  const verseLemmasList = verseLemmas[verseKey];
-  if (!verseLemmasList) return -1;
-
-  // Find the first word index that has one of our lemmas
-  for (let i = 0; i < verseLemmasList.length; i++) {
-    if (lemmas.includes(verseLemmasList[i])) {
-      return i;
-    }
-  }
-
-  return -1;
-}
 
 /**
  * Get the start and end positions of a word at a given index in the text
