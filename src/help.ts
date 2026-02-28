@@ -30,11 +30,13 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
     title: 'Controls',
     content: `
       <table class="controls-table">
-        <tr><td>Mouse wheel</td><td>Zoom in/out</td></tr>
-        <tr><td>Click + drag</td><td>Pan around</td></tr>
+        <tr><td>Scroll / Pinch</td><td>Zoom in/out</td></tr>
+        <tr><td>Drag</td><td>Pan around</td></tr>
         <tr><td>Hover</td><td>Preview verse details</td></tr>
-        <tr><td>Click verse</td><td>Pin verse in sidebar</td></tr>
-        <tr><td>Click pinned</td><td>Unpin verse</td></tr>
+        <tr><td>Click / Tap</td><td>Pin verse details</td></tr>
+        <tr><td>Click pinned / Tap again</td><td>Unpin verse</td></tr>
+        <tr><td>&larr; &rarr; arrow keys</td><td>Navigate verses</td></tr>
+        <tr><td>Escape</td><td>Unpin verse</td></tr>
       </table>
     `,
   },

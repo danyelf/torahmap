@@ -22,6 +22,14 @@ import {
 } from './sidebar.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import { createMouseState, startDrag, stopDrag, setHoveredVerse, clearHover } from './mouseState.ts';
+import {
+  createTouchState,
+  trackTouch,
+  releaseTouch,
+  getPinchDistance,
+  getPinchCenter,
+  resetTouchState,
+} from './touchState.ts';
 import { versesEqual, nextVerse, prevVerse } from './types.ts';
 import { findVerseLayoutAtPoint } from './hitDetection.ts';
 import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
@@ -156,6 +164,13 @@ async function main(): Promise<void> {
   // Mouse interaction state
   const mouseState = createMouseState();
 
+  const touchState = createTouchState();
+
+  // Tap detection for touch devices
+  let pointerDownPos: { x: number; y: number; time: number } | null = null;
+  const TAP_THRESHOLD = 10; // max px movement to count as tap
+  const TAP_MAX_DURATION = 300; // max ms to count as tap
+
   // Render function
   function render(): void {
     renderFrame(renderContext, renderState, camera, mouseState.hoveredVerse, pinnedVerse);
@@ -214,31 +229,111 @@ async function main(): Promise<void> {
     camera.zoom = newZoom;
 
     render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
     debouncedSaveUrlState();
   }, { passive: false });
 
-  canvas.addEventListener('mousedown', (e: MouseEvent) => {
-    startDrag(mouseState, e.clientX, e.clientY);
-    canvas.style.cursor = 'grabbing';
+  // Touch events for pinch-to-zoom
+  canvas.addEventListener('touchstart', (e: TouchEvent) => {
+    for (const touch of e.changedTouches) {
+      trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
+    }
+    if (touchState.activeTouches.size === 2) {
+      touchState.lastPinchDistance = getPinchDistance(touchState);
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('touchmove', (e: TouchEvent) => {
+    for (const touch of e.changedTouches) {
+      trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
+    }
+
+    if (touchState.activeTouches.size >= 2) {
+      const newDist = getPinchDistance(touchState);
+      const center = getPinchCenter(touchState);
+      if (newDist && center && touchState.lastPinchDistance) {
+        const scale = newDist / touchState.lastPinchDistance;
+        const newZoom = clampZoom(camera.zoom * scale);
+        const newPan = panForZoom(
+          { x: camera.x, y: camera.y },
+          camera.zoom,
+          newZoom,
+          center.x,
+          center.y
+        );
+        camera.x = newPan.x;
+        camera.y = newPan.y;
+        camera.zoom = newZoom;
+        render();
+        updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      }
+      touchState.lastPinchDistance = newDist;
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', (e: TouchEvent) => {
+    for (const touch of e.changedTouches) {
+      releaseTouch(touchState, touch.identifier);
+    }
+    if (touchState.activeTouches.size === 0) {
+      debouncedSaveUrlState();
+    }
   });
 
-  canvas.addEventListener('mousemove', (e: MouseEvent) => {
-    if (mouseState.isDragging) {
+  canvas.addEventListener('touchcancel', () => {
+    resetTouchState(touchState);
+  });
+
+  // Pointer events for pan/drag (works for both mouse and touch)
+  canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+    startDrag(mouseState, e.clientX, e.clientY);
+    canvas.style.cursor = 'grabbing';
+    canvas.setPointerCapture(e.pointerId);
+    pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
+  });
+
+  canvas.addEventListener('pointermove', (e: PointerEvent) => {
+    if (mouseState.isDragging && touchState.activeTouches.size < 2) {
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
       camera.x += dx / camera.zoom;
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
+      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
     }
   });
 
-  canvas.addEventListener('mouseup', (e: MouseEvent) => {
-    if (mouseState.isDragging) {
+  canvas.addEventListener('pointerup', (e: PointerEvent) => {
+    const wasDragging = mouseState.isDragging;
+    if (wasDragging) {
       stopDrag(mouseState);
       debouncedSaveUrlState();
+    }
 
-      // Reset cursor after drag
+    // Tap detection (works for both mouse and touch)
+    if (pointerDownPos) {
+      const dx = Math.abs(e.clientX - pointerDownPos.x);
+      const dy = Math.abs(e.clientY - pointerDownPos.y);
+      const duration = Date.now() - pointerDownPos.time;
+
+      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
+        const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
+        if (verse) {
+          if (pinnedVerse && versesEqual(pinnedVerse, verse)) {
+            unpinVerse();
+          } else {
+            pinVerse(verse);
+          }
+        } else if (pinnedVerse) {
+          unpinVerse();
+        }
+      }
+      pointerDownPos = null;
+    }
+
+    // Reset cursor
+    if (wasDragging) {
       const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
@@ -248,20 +343,16 @@ async function main(): Promise<void> {
     }
   });
 
-  canvas.addEventListener('mouseleave', () => {
+  canvas.addEventListener('pointerleave', () => {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
-
-    // Reset cursor
     canvas.style.cursor = 'default';
 
-    // Notify overlay of hover change
     let overlayWantsRerender = false;
     if (currentOverlay?.setHoveredVerse) {
       overlayWantsRerender = currentOverlay.setHoveredVerse(null);
     }
 
-    // Re-render if we were hovering (to clear highlight) or overlay requested it
     if (wasHovering || overlayWantsRerender) {
       applyOverlay();
       render();
@@ -334,16 +425,17 @@ async function main(): Promise<void> {
     updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
   }
 
-  canvas.addEventListener('mousemove', (e: MouseEvent) => {
+  canvas.addEventListener('pointermove', (e: PointerEvent) => {
+    // Skip hover logic on touch devices and during pinch
+    if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
+
     if (!mouseState.isDragging) {
       const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
-      // Check if hover actually changed
       const hoverChanged = !versesEqual(previousHover, verse);
 
-      // Update cursor when hovering over verses while pinned
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
       } else if (mouseState.isDragging) {
@@ -352,21 +444,18 @@ async function main(): Promise<void> {
         canvas.style.cursor = 'default';
       }
 
-      // Notify overlay of hover change for cross-highlighting
       let overlayWantsRerender = false;
       if (currentOverlay?.setHoveredVerse) {
         overlayWantsRerender = currentOverlay.setHoveredVerse(verse);
       }
 
-      // Re-render if hover changed (for base highlighting) or overlay requested it
       if (hoverChanged || overlayWantsRerender) {
         applyOverlay();
         render();
       }
 
-      // Update sidebar (pinned takes precedence - no hover changes when pinned)
       if (pinnedVerse) {
-        // Keep showing pinned verse, don't update on hover
+        // Keep showing pinned verse
       } else if (verse) {
         updateSidebarWrapper(verse, false);
       } else {
@@ -375,27 +464,14 @@ async function main(): Promise<void> {
     }
   });
 
-  // Click to pin/unpin verse
-  canvas.addEventListener('click', (e: MouseEvent) => {
-    const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
-    if (verse) {
-      // Toggle pin: if clicking same verse, unpin; otherwise pin new verse
-      if (pinnedVerse &&
-          pinnedVerse.book === verse.book &&
-          pinnedVerse.chapter === verse.chapter &&
-          pinnedVerse.verse === verse.verse) {
-        unpinVerse();
-      } else {
-        pinVerse(verse);
-      }
-    } else if (pinnedVerse) {
-      // Clicking empty space unpins
-      unpinVerse();
-    }
-  });
-
   // Close button to unpin
   sidebarElements.closeBtn?.addEventListener('click', () => {
+    unpinVerse();
+  });
+
+  // Bottom sheet handle tap to dismiss
+  const bottomSheetHandle = document.querySelector('.bottom-sheet-handle');
+  bottomSheetHandle?.addEventListener('click', () => {
     unpinVerse();
   });
 
@@ -473,6 +549,7 @@ async function main(): Promise<void> {
   window.addEventListener('resize', () => {
     resizeCanvas();
     render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
   });
 
   // Store for hover detection
