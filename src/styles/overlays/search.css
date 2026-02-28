@@ -261,3 +261,20 @@
 .hebrew-mode-option input[type="radio"] {
   cursor: pointer;
 }
+
+@media (max-width: 768px) {
+  #search-results {
+    max-height: 40vh;
+  }
+  .search-result {
+    padding: 10px;
+  }
+  .search-result:active {
+    background: rgba(106, 176, 243, 0.15);
+  }
+  .root-chip:active {
+    background: #383838;
+    border-color: #6ab0f3;
+    color: #fff;
+  }
+}
