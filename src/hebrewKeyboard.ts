@@ -9,14 +9,14 @@ let currentInput: HTMLInputElement | null = null;
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let pasteHandler: ((e: ClipboardEvent) => void) | null = null;
 
-// Hebrew keyboard layout using phonetic transliteration
-// Rows correspond to QWERTY physical layout: qwertyp / asdfghjkl / zxcvbnm
-// (u i o skipped - vowels, not in transliteration map)
+// Hebrew keyboard layout - 22 letters in Hebrew alphabetical order, RTL
+// CSS direction:rtl makes first item in each string appear on the right.
+// So {bksp} first = top-right position; א second = next to delete; etc.
 const hebrewLayout = {
   default: [
-    "\u05e7 \u05d5 \u05e2 \u05e8 \u05ea \u05d9 \u05e4 {bksp}",  // q w e r t y p
-    "\u05d0 \u05e1 \u05d3 \u05e4 \u05d2 \u05d4 \u05d7 \u05db \u05dc",  // a s d f g h j k l
-    "\u05d6 \u05e9 \u05e6 \u05d5 \u05d1 \u05e0 \u05de",  // z x c v b n m
+    "{bksp} \u05d0 \u05d1 \u05d2 \u05d3 \u05d4 \u05d5 \u05d6",  // ⌫ א ב ג ד ה ו ז
+    "\u05d7 \u05d8 \u05d9 \u05db \u05dc \u05de \u05e0 \u05e1",  // ח ט י כ ל מ נ ס
+    "\u05e2 \u05e4 \u05e6 \u05e7 \u05e8 \u05e9 \u05ea",  // ע פ צ ק ר ש ת
     "{space}"
   ]
 };
@@ -191,6 +191,17 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
     container.id = 'hebrew-keyboard-container';
     container.className = 'hebrew-keyboard-container';
 
+    // Add close button - clicking it does the same as clicking the א toggle
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'hebrew-keyboard-close';
+    closeBtn.textContent = '✕';
+    closeBtn.title = 'Close keyboard';
+    closeBtn.addEventListener('click', () => {
+      const toggle = document.getElementById('keyboard-toggle');
+      if (toggle) toggle.click();
+    });
+    container.appendChild(closeBtn);
+
     // Append to body as a full popup overlay
     document.body.appendChild(container);
   }
@@ -203,31 +214,32 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
       display: {
         '{bksp}': '⌫',
         '{space}': ' ',
-        // Display English letters above Hebrew letters (keycap labels)
-        // Top row (q w e r t y p)
-        '\u05e7': 'q\n\u05e7', // ק qof
-        '\u05d5': 'w/v\n\u05d5', // ו vav (w and v both map here)
-        '\u05e2': 'e\n\u05e2', // ע ayin
-        '\u05e8': 'r\n\u05e8', // ר resh
-        '\u05ea': 't\n\u05ea', // ת tav
-        '\u05d9': 'y\n\u05d9', // י yod
-        '\u05e4': 'p/f\n\u05e4', // פ pe (p and f both map here)
-        // Middle row (a s d g h j k l) - f merged with p above
+        // Display English shortcut above Hebrew letter (keycap labels)
+        // Row 1: א ב ג ד ה ו ז ח
         '\u05d0': 'a\n\u05d0', // א aleph
-        '\u05e1': 's\n\u05e1', // ס samech
-        '\u05d3': 'd\n\u05d3', // ד dalet
+        '\u05d1': 'b\n\u05d1', // ב bet
         '\u05d2': 'g\n\u05d2', // ג gimel
+        '\u05d3': 'd\n\u05d3', // ד dalet
         '\u05d4': 'h\n\u05d4', // ה he
+        '\u05d5': 'w/v\n\u05d5', // ו vav
+        '\u05d6': 'z\n\u05d6', // ז zayin
         '\u05d7': 'j\n\u05d7', // ח chet
+        // Row 2: ט י כ ל מ נ ס
+        '\u05d8': 'u\n\u05d8', // ט tet
+        '\u05d9': 'y\n\u05d9', // י yod
         '\u05db': 'k\n\u05db', // כ kaf
         '\u05dc': 'l\n\u05dc', // ל lamed
-        // Bottom row (z x c b n m) - v merged with w above
-        '\u05d6': 'z\n\u05d6', // ז zayin
-        '\u05e9': 'x\n\u05e9', // ש shin
-        '\u05e6': 'c\n\u05e6', // צ tsadi
-        '\u05d1': 'b\n\u05d1', // ב bet
+        '\u05de': 'm\n\u05de', // מ mem
         '\u05e0': 'n\n\u05e0', // נ nun
-        '\u05de': 'm\n\u05de'  // מ mem
+        '\u05e1': 's\n\u05e1', // ס samech
+        // Row 3: ע פ צ ק ר ש ת
+        '\u05e2': 'e\n\u05e2', // ע ayin
+        '\u05e4': 'p/f\n\u05e4', // פ pe
+        '\u05e6': 'c\n\u05e6', // צ tsadi
+        '\u05e7': 'q\n\u05e7', // ק qof
+        '\u05e8': 'r\n\u05e8', // ר resh
+        '\u05e9': 'x\n\u05e9', // ש shin
+        '\u05ea': 't\n\u05ea'  // ת tav
       },
       onChange: (input: string) => {
         if (currentInput) {

@@ -17,6 +17,7 @@ export const TRANSLITERATION_MAP: Record<string, string> = {
   w: '\u05d5', // ו vav (alternate)
   z: '\u05d6', // ז zayin
   j: '\u05d7', // ח chet (phonetic j for 'ch' sound)
+  u: '\u05d8', // ט tet
   y: '\u05d9', // י yod
   k: '\u05db', // כ kaf
   l: '\u05dc', // ל lamed
@@ -32,7 +33,7 @@ export const TRANSLITERATION_MAP: Record<string, string> = {
   x: '\u05e9', // ש shin (phonetic 'sh' sound)
   t: '\u05ea', // ת tav
 
-  // No mappings for: i, o, u (these could be vowels in a full system)
+  // No mappings for: i, o (these could be vowels in a full system)
 };
 
 // Reverse mapping: Hebrew to English
@@ -56,8 +57,9 @@ export function transliterate(text: string): string {
     const lower = char.toLowerCase();
     if (TRANSLITERATION_MAP[lower]) {
       result += TRANSLITERATION_MAP[lower];
-    } else {
+    } else if (!/[a-z]/i.test(char)) {
       // Preserve non-alphabetic characters (spaces, numbers, punctuation)
+      // Drop unmapped letters (vowels i, o)
       result += char;
     }
   }

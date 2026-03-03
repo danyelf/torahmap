@@ -15,19 +15,22 @@ describe('hebrewTransliteration', () => {
       expect(TRANSLITERATION_MAP.m).toBe('\u05de');
     });
 
-    it('maps phonetic consonants (23 letters)', () => {
-      // Should have mappings for all consonants except i, o, u (vowels)
-      const consonants = 'abcdefghjklmnpqrstvwxyz';
+    it('maps u to ט (tet)', () => {
+      expect(TRANSLITERATION_MAP.u).toBe('\u05d8');
+    });
+
+    it('maps phonetic consonants (24 keys)', () => {
+      // Should have mappings for all consonants except i, o (vowels)
+      const consonants = 'abcdefghjklmnpqrstuvwxyz';
       for (const letter of consonants) {
         expect(TRANSLITERATION_MAP[letter]).toBeDefined();
         expect(typeof TRANSLITERATION_MAP[letter]).toBe('string');
       }
     });
 
-    it('does not map vowel letters i, o, u', () => {
+    it('does not map vowel letters i, o', () => {
       expect(TRANSLITERATION_MAP.i).toBeUndefined();
       expect(TRANSLITERATION_MAP.o).toBeUndefined();
-      expect(TRANSLITERATION_MAP.u).toBeUndefined();
     });
 
     it('maps Hebrew letters to valid Hebrew character range', () => {
@@ -90,9 +93,9 @@ describe('hebrewTransliteration', () => {
       expect(transliterate('AbC')).toBe('\u05d0\u05d1\u05e6'); // A=א, b=ב, C=צ
     });
 
-    it('preserves unmapped vowels i, o, u', () => {
-      // s=ס, h=ה, a=א, l=ל, o=preserved, m=מ
-      expect(transliterate('shalom')).toBe('\u05e1\u05d4\u05d0\u05dco\u05de');
+    it('drops unmapped vowels i, o', () => {
+      // s=ס, h=ה, a=א, l=ל, o=dropped, m=מ
+      expect(transliterate('shalom')).toBe('\u05e1\u05d4\u05d0\u05dc\u05de');
     });
   });
 });
