@@ -189,40 +189,89 @@ function processLine(
       );
       const format = isShirah ? 's' : 'n';
 
-      // Compute character widths for fraction calculation
-      const strippedFragments = fragments.map(f => stripForWidth(f));
-      const totalChars = strippedFragments.reduce((sum, f) => sum + f.length, 0);
-      if (totalChars === 0) return currentVerse;
+      if (isShirah) {
+        // Shirah brick pattern: fixed-position zones with gaps
+        // 3-fragment lines: text | gap | text | gap | text
+        // 2-fragment lines: gap | text | gap | text | gap
+        const BRICK_WIDTH = 0.27;
+        const GAP = 0.095;
 
-      let cumChars = 0;
-      for (let fragIdx = 0; fragIdx < fragments.length; fragIdx++) {
-        const fragText = fragments[fragIdx];
-        const stripped = strippedFragments[fragIdx];
-        if (stripped.length === 0) continue;
+        let positions: Array<{ s: number; w: number }>;
+        if (fragments.length === 3) {
+          positions = [
+            { s: 0, w: BRICK_WIDTH },
+            { s: BRICK_WIDTH + GAP, w: BRICK_WIDTH },
+            { s: 1 - BRICK_WIDTH, w: BRICK_WIDTH },
+          ];
+        } else {
+          // 2-fragment lines: offset to create brick stagger
+          positions = [
+            { s: GAP + BRICK_WIDTH / 2, w: BRICK_WIDTH },
+            { s: 1 - GAP - BRICK_WIDTH * 1.5, w: BRICK_WIDTH },
+          ];
+        }
 
-        const startFrac = cumChars / totalChars;
-        const widthFrac = stripped.length / totalChars;
+        for (let fragIdx = 0; fragIdx < fragments.length; fragIdx++) {
+          const fragText = fragments[fragIdx];
+          const stripped = stripForWidth(fragText);
+          if (stripped.length === 0) continue;
 
-        segments.push({
-          b: currentVerse.book,
-          c: currentVerse.chapter,
-          v: currentVerse.verse,
-          p: page,
-          l: lineIdx,
-          s: round(startFrac),
-          w: round(widthFrac),
-          f: format,
-          pe: isPetucha,
-        });
+          const pos = positions[fragIdx];
+          segments.push({
+            b: currentVerse.book,
+            c: currentVerse.chapter,
+            v: currentVerse.verse,
+            p: page,
+            l: lineIdx,
+            s: round(pos.s),
+            w: round(pos.w),
+            f: 's',
+            pe: isPetucha,
+          });
 
-        cumChars += stripped.length;
+          if (stripMarkers(fragText).endsWith(SOF_PASUK)) {
+            if (verseQueue.length > 0) {
+              currentVerse = verseQueue.shift()!;
+            } else {
+              currentVerse = advanceVerse(currentVerse, torahStructure);
+            }
+          }
+        }
+      } else {
+        // Non-shirah multi-fragment: compute proportional widths
+        const strippedFragments = fragments.map(f => stripForWidth(f));
+        const totalChars = strippedFragments.reduce((sum, f) => sum + f.length, 0);
+        if (totalChars === 0) return currentVerse;
 
-        // Check if this fragment ends the current verse
-        if (stripMarkers(fragText).endsWith(SOF_PASUK)) {
-          if (verseQueue.length > 0) {
-            currentVerse = verseQueue.shift()!;
-          } else {
-            currentVerse = advanceVerse(currentVerse, torahStructure);
+        let cumChars = 0;
+        for (let fragIdx = 0; fragIdx < fragments.length; fragIdx++) {
+          const fragText = fragments[fragIdx];
+          const stripped = strippedFragments[fragIdx];
+          if (stripped.length === 0) continue;
+
+          const startFrac = cumChars / totalChars;
+          const widthFrac = stripped.length / totalChars;
+
+          segments.push({
+            b: currentVerse.book,
+            c: currentVerse.chapter,
+            v: currentVerse.verse,
+            p: page,
+            l: lineIdx,
+            s: round(startFrac),
+            w: round(widthFrac),
+            f: 'n',
+            pe: isPetucha,
+          });
+
+          cumChars += stripped.length;
+
+          if (stripMarkers(fragText).endsWith(SOF_PASUK)) {
+            if (verseQueue.length > 0) {
+              currentVerse = verseQueue.shift()!;
+            } else {
+              currentVerse = advanceVerse(currentVerse, torahStructure);
+            }
           }
         }
       }
