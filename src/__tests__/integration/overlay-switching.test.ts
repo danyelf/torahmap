@@ -40,7 +40,7 @@ describe('Overlay Switching Integration', () => {
     mockLegendContainer = document.createElement('div');
 
     // Mock fetch for overlay data
-    global.fetch = vi.fn((url: string | URL | Request) => {
+    globalThis.fetch = vi.fn((url: string | URL | Request) => {
       const urlString = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
 
       let data: any;
@@ -605,7 +605,7 @@ describe('Overlay Switching Integration', () => {
     it('handles fetch failure gracefully during init', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       // Mock fetch to fail
-      global.fetch = vi.fn(() => Promise.resolve({
+      globalThis.fetch = vi.fn(() => Promise.resolve({
         ok: false,
         status: 404,
         json: () => Promise.reject(new Error('Not found')),
@@ -623,7 +623,7 @@ describe('Overlay Switching Integration', () => {
 
     it('handles malformed data gracefully', async () => {
       // Mock fetch to return invalid data
-      global.fetch = vi.fn(() => Promise.resolve({
+      globalThis.fetch = vi.fn(() => Promise.resolve({
         ok: true,
         status: 200,
         json: () => Promise.resolve({ invalidKey: 'invalid data' }),

@@ -122,7 +122,7 @@ describe('Haftarah Overlay', () => {
         status: 404,
       } as Response);
     });
-    global.fetch = mockFetch;
+    globalThis.fetch = mockFetch;
   });
 
   afterEach(() => {

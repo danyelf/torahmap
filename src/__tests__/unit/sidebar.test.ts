@@ -7,7 +7,7 @@ import {
   type SidebarElements,
 } from '../../sidebar';
 import type { Overlay } from '../../overlays/types';
-import type { VerseTexts } from '../../verseTexts';
+import type { VerseTexts, VerseText } from '../../verseTexts';
 import { createVerse } from '../helpers';
 
 // Mock the overlay modules
@@ -381,7 +381,7 @@ describe('sidebar', () => {
   describe('updateSidebar', () => {
     let elements: SidebarElements;
     let verseTexts: VerseTexts;
-    let mockGetVerseText: ReturnType<typeof vi.fn>;
+    let mockGetVerseText: (texts: VerseTexts, book: string, chapter: number, verse: number) => VerseText | null;
 
     beforeEach(() => {
       const sidebar = document.createElement('div');

@@ -35,7 +35,7 @@ describe('verseTexts', () => {
           }
         };
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -55,7 +55,7 @@ describe('verseTexts', () => {
             json: () => Promise.resolve({}),
           } as Response)
         );
-        global.fetch = fetchSpy;
+        globalThis.fetch = fetchSpy;
 
         await loadAllVerseTexts();
 
@@ -72,7 +72,7 @@ describe('verseTexts', () => {
             json: () => Promise.resolve({}),
           } as Response)
         );
-        global.fetch = fetchSpy;
+        globalThis.fetch = fetchSpy;
 
         await loadAllVerseTexts();
 
@@ -93,7 +93,7 @@ describe('verseTexts', () => {
           }
         };
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -127,7 +127,7 @@ describe('verseTexts', () => {
           }
         }
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -145,7 +145,7 @@ describe('verseTexts', () => {
     describe('error handling', () => {
       it('handles 404 response', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
             status: 404,
@@ -162,7 +162,7 @@ describe('verseTexts', () => {
 
       it('handles 500 response', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
             status: 500,
@@ -179,7 +179,7 @@ describe('verseTexts', () => {
 
       it('handles network error', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
             status: 0,
@@ -195,13 +195,13 @@ describe('verseTexts', () => {
       });
 
       it('handles fetch rejection', async () => {
-        global.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
+        globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
 
         await expect(loadAllVerseTexts()).rejects.toThrow('Network error');
       });
 
       it('handles invalid JSON response', async () => {
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -214,7 +214,7 @@ describe('verseTexts', () => {
 
       it('returns empty object on error (not null)', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: false,
             status: 404,
@@ -243,7 +243,7 @@ describe('verseTexts', () => {
           }
         };
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -269,7 +269,7 @@ describe('verseTexts', () => {
           }
         };
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -293,7 +293,7 @@ describe('verseTexts', () => {
           }
         };
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -316,7 +316,7 @@ describe('verseTexts', () => {
           }
         };
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -341,7 +341,7 @@ describe('verseTexts', () => {
           }
         };
 
-        global.fetch = vi.fn(() =>
+        globalThis.fetch = vi.fn(() =>
           Promise.resolve({
             ok: true,
             status: 200,
@@ -726,7 +726,7 @@ describe('verseTexts', () => {
         }
       };
 
-      global.fetch = vi.fn(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           status: 200,
@@ -744,7 +744,7 @@ describe('verseTexts', () => {
 
     it('handles load failure gracefully', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      global.fetch = vi.fn(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
           status: 404,
@@ -774,7 +774,7 @@ describe('verseTexts', () => {
         }
       };
 
-      global.fetch = vi.fn(() =>
+      globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
           status: 200,

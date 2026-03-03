@@ -14,14 +14,14 @@ import { mockWindowLocation } from '../helpers/mocks';
 // Set up window object for tests
 beforeAll(() => {
   if (typeof window === 'undefined') {
-    (global as any).window = {};
+    (globalThis as any).window = {};
   }
 });
 
 describe('parseUrlState', () => {
   beforeEach(() => {
     // Mock history API
-    global.history = {
+    globalThis.history = {
       pushState: vi.fn(),
       replaceState: vi.fn(),
     } as any;
@@ -450,7 +450,7 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
 describe('updateUrl', () => {
   beforeEach(() => {
     mockWindowLocation('http://localhost:5173/');
-    global.history = {
+    globalThis.history = {
       pushState: vi.fn(),
       replaceState: vi.fn(),
     } as any;
@@ -716,7 +716,7 @@ describe('debounce', () => {
 describe('subscribeToHashChange', () => {
   beforeEach(() => {
     if (typeof window === 'undefined') {
-      (global as any).window = {};
+      (globalThis as any).window = {};
     }
     window.addEventListener = vi.fn();
   });

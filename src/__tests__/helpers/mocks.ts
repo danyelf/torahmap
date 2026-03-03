@@ -241,7 +241,7 @@ export function mockFetch(responses: Record<string, any> = {}) {
     ...responses,
   };
 
-  global.fetch = vi.fn((url: string | URL | Request) => {
+  globalThis.fetch = vi.fn((url: string | URL | Request) => {
     const urlString = typeof url === 'string' ? url : url instanceof URL ? url.toString() : url.url;
     const data = defaultResponses[urlString];
 
@@ -254,7 +254,7 @@ export function mockFetch(responses: Record<string, any> = {}) {
   }) as typeof fetch;
 
   return () => {
-    (global.fetch as any).mockRestore?.();
+    (globalThis.fetch as any).mockRestore?.();
   };
 }
 
