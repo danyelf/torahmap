@@ -15,11 +15,18 @@ export function buildVerseGeometry(
   colors?: (Color | Color[])[],
   baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR
 ): Float32Array {
-  // Each verse = 2 triangles = 6 vertices
+  // Each quad = 2 triangles = 6 vertices
   // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-  const floatsPerVertex = 19; // Added 2 for seed position
+  const floatsPerVertex = 19;
   const verticesPerQuad = 6;
-  const data = new Float32Array(verses.length * verticesPerQuad * floatsPerVertex);
+
+  // Count total quads: each verse contributes segments.length or 1 quad
+  let totalQuads = 0;
+  for (const v of verses) {
+    totalQuads += v.segments ? v.segments.length : 1;
+  }
+
+  const data = new Float32Array(totalQuads * verticesPerQuad * floatsPerVertex);
 
   let offset = 0;
   for (let i = 0; i < verses.length; i++) {
@@ -40,18 +47,8 @@ export function buildVerseGeometry(
     const colorCount = vertexColors.length;
     const isMulticolor = colorCount > 1;
 
-    // For multicolor verses, expand bounds to allow bleed
-    const bleed = isMulticolor ? HIGHLIGHT_CONSTANTS.BLEED_PIXELS : 0;
-    const x0 = v.x - bleed;
-    const y0 = v.y - bleed;
-    const x1 = v.x + v.size - 2 + bleed; // -2 for gap, +bleed for expansion
-    const y1 = v.y + v.size - 2 + bleed;
-
-    // UV coords need to account for bleed zone (-bleed to size+bleed maps to -epsilon to 1+epsilon)
-    const uvMin = isMulticolor ? -bleed / (v.size - 2) : 0;
-    const uvMax = isMulticolor ? 1 + bleed / (v.size - 2) : 1;
-
     // Use verse world position as seed for unique stipple pattern
+    // (consistent across all segments of the same verse)
     const seedX = v.x;
     const seedY = v.y;
 
@@ -77,15 +74,33 @@ export function buildVerseGeometry(
       data[offset++] = seedY;
     };
 
-    // Triangle 1 (top-left, top-right, bottom-left)
-    writeVertex(x0, y0, uvMin, uvMin);
-    writeVertex(x1, y0, uvMax, uvMin);
-    writeVertex(x0, y1, uvMin, uvMax);
+    // Build list of rectangles to emit
+    const rects = v.segments
+      ? v.segments.map(s => ({ x: s.x, y: s.y, w: s.width, h: s.height }))
+      : [{ x: v.x, y: v.y, w: v.size, h: v.size }];
 
-    // Triangle 2 (bottom-left, top-right, bottom-right)
-    writeVertex(x0, y1, uvMin, uvMax);
-    writeVertex(x1, y0, uvMax, uvMin);
-    writeVertex(x1, y1, uvMax, uvMax);
+    for (const rect of rects) {
+      // For multicolor verses, expand bounds to allow bleed
+      const bleed = isMulticolor ? HIGHLIGHT_CONSTANTS.BLEED_PIXELS : 0;
+      const x0 = rect.x - bleed;
+      const y0 = rect.y - bleed;
+      const x1 = rect.x + rect.w - 2 + bleed; // -2 for gap, +bleed for expansion
+      const y1 = rect.y + rect.h - 2 + bleed;
+
+      // UV coords need to account for bleed zone
+      const uvMin = isMulticolor ? -bleed / (rect.w - 2) : 0;
+      const uvMax = isMulticolor ? 1 + bleed / (rect.w - 2) : 1;
+
+      // Triangle 1 (top-left, top-right, bottom-left)
+      writeVertex(x0, y0, uvMin, uvMin);
+      writeVertex(x1, y0, uvMax, uvMin);
+      writeVertex(x0, y1, uvMin, uvMax);
+
+      // Triangle 2 (bottom-left, top-right, bottom-right)
+      writeVertex(x0, y1, uvMin, uvMax);
+      writeVertex(x1, y0, uvMax, uvMin);
+      writeVertex(x1, y1, uvMax, uvMax);
+    }
   }
 
   return data;

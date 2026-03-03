@@ -36,6 +36,14 @@ export function isPointInVerseLayout(
   worldY: number,
   verse: VerseLayout
 ): boolean {
+  if (verse.segments) {
+    return verse.segments.some(seg =>
+      worldX >= seg.x &&
+      worldX < seg.x + seg.width &&
+      worldY >= seg.y &&
+      worldY < seg.y + seg.height
+    );
+  }
   return (
     worldX >= verse.x &&
     worldX < verse.x + verse.size &&
@@ -84,19 +92,28 @@ export function findFuzzyHit(
     HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
 
   for (const v of verses) {
-    // Find center of verse square
-    const centerX = v.x + v.size / 2;
-    const centerY = v.y + v.size / 2;
+    let bestDistSq = Infinity;
 
-    // Distance from point to verse center
-    const dx = worldX - centerX;
-    const dy = worldY - centerY;
-    const distSq = dx * dx + dy * dy;
+    if (v.segments) {
+      for (const seg of v.segments) {
+        const centerX = seg.x + seg.width / 2;
+        const centerY = seg.y + seg.height / 2;
+        const dx = worldX - centerX;
+        const dy = worldY - centerY;
+        bestDistSq = Math.min(bestDistSq, dx * dx + dy * dy);
+      }
+    } else {
+      const centerX = v.x + v.size / 2;
+      const centerY = v.y + v.size / 2;
+      const dx = worldX - centerX;
+      const dy = worldY - centerY;
+      bestDistSq = dx * dx + dy * dy;
+    }
 
     // If within fuzzy radius and closer than previous best
-    if (distSq < nearestDistSq) {
+    if (bestDistSq < nearestDistSq) {
       nearestVerseLayout = v;
-      nearestDistSq = distSq;
+      nearestDistSq = bestDistSq;
     }
   }
 

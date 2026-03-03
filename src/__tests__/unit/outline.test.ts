@@ -7,20 +7,20 @@ import { TEST_COLORS } from '../helpers';
 describe('buildOutlineGeometry', () => {
   describe('basic buffer properties', () => {
     it('returns Float32Array', () => {
-      const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
+      const bounds: OutlineBounds = { x: 10, y: 20, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
       expect(buffer).toBeInstanceOf(Float32Array);
     });
 
     it('returns correct buffer size for outline (24 vertices * 19 floats)', () => {
-      const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
+      const bounds: OutlineBounds = { x: 10, y: 20, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
       // 4 borders * 6 vertices per border * 19 floats per vertex = 456 floats
       expect(buffer.length).toBe(456);
     });
 
     it('generates 4 borders (24 vertices total)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
       const floatsPerVertex = 19;
       const verticesPerBorder = 6;
@@ -30,7 +30,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('each vertex has 19 floats (x, y, 4 colors, colorCount, u, v, seedX, seedY)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
       const floatsPerVertex = 19;
       expect(buffer.length % floatsPerVertex).toBe(0);
@@ -39,7 +39,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('default options', () => {
     it('uses default thickness of 2 when not specified', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -58,7 +58,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('uses HIGHLIGHT_CONSTANTS.OUTLINE_COLOR when color not specified', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const colorOffset = 2;
@@ -73,7 +73,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('custom options', () => {
     it('uses custom thickness when provided', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const options: OutlineOptions = { thickness: 5 };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -86,7 +86,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('uses custom color when provided', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const options: OutlineOptions = { color: TEST_COLORS.RED };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -99,7 +99,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('accepts both thickness and color options', () => {
-      const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
+      const bounds: OutlineBounds = { x: 10, y: 20, width: 10, height: 10 };
       const options: OutlineOptions = { thickness: 3, color: TEST_COLORS.BLUE };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -120,7 +120,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('border positions', () => {
     it('top border spans full width extending outside verse', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -148,7 +148,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('right border spans full height extending outside verse', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -175,7 +175,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('bottom border spans full width extending outside verse', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -202,7 +202,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('left border spans full height extending outside verse', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -229,7 +229,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('extends outside verse bounds by thickness', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -254,7 +254,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('color handling', () => {
     it('sets colorCount to 1 (single color, no stipple)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -270,7 +270,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('duplicates color to all 4 color slots', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const options: OutlineOptions = { color: TEST_COLORS.GREEN };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -286,7 +286,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('applies same color to all vertices', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const options: OutlineOptions = { color: TEST_COLORS.YELLOW };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -303,7 +303,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('color values are in valid range [0, 1]', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -325,7 +325,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('UV and seed coordinates', () => {
     it('sets UV coordinates to 0 (not used for solid outlines)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -340,7 +340,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('sets seed coordinates to verse position', () => {
-      const bounds: OutlineBounds = { x: 123, y: 456, size: 10 };
+      const bounds: OutlineBounds = { x: 123, y: 456, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -357,7 +357,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('data layout integrity', () => {
     it('all floats are finite numbers', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       for (let i = 0; i < buffer.length; i++) {
@@ -367,7 +367,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('maintains correct stride between vertices', () => {
-      const bounds: OutlineBounds = { x: 50, y: 75, size: 12 };
+      const bounds: OutlineBounds = { x: 50, y: 75, width: 12, height: 12 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -386,7 +386,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('each border has 6 vertices (2 triangles)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -400,7 +400,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('edge cases', () => {
     it('handles bounds at origin', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 6 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 6, height: 6 };
       const buffer = buildOutlineGeometry(bounds);
 
       const thickness = 2;
@@ -410,7 +410,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles negative coordinates', () => {
-      const bounds: OutlineBounds = { x: -100, y: -200, size: 10 };
+      const bounds: OutlineBounds = { x: -100, y: -200, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const thickness = 2;
@@ -420,7 +420,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles very large coordinates', () => {
-      const bounds: OutlineBounds = { x: 10000, y: 20000, size: 10 };
+      const bounds: OutlineBounds = { x: 10000, y: 20000, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const thickness = 2;
@@ -429,7 +429,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles floating point positions', () => {
-      const bounds: OutlineBounds = { x: 100.5, y: 200.75, size: 10 };
+      const bounds: OutlineBounds = { x: 100.5, y: 200.75, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const thickness = 2;
@@ -438,7 +438,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles very small size', () => {
-      const bounds: OutlineBounds = { x: 10, y: 10, size: 2 };
+      const bounds: OutlineBounds = { x: 10, y: 10, width: 2, height: 2 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -448,7 +448,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles very large size', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 1000 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 1000, height: 1000 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -458,7 +458,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles zero thickness', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 10, height: 10 };
       const options: OutlineOptions = { thickness: 0 };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -471,7 +471,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles very thick outline', () => {
-      const bounds: OutlineBounds = { x: 100, y: 200, size: 20 };
+      const bounds: OutlineBounds = { x: 100, y: 200, width: 20, height: 20 };
       const options: OutlineOptions = { thickness: 10 };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -484,7 +484,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles black outline color', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const options: OutlineOptions = { color: TEST_COLORS.BLACK };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -495,7 +495,7 @@ describe('buildOutlineGeometry', () => {
     });
 
     it('handles white outline color', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
       const options: OutlineOptions = { color: TEST_COLORS.WHITE };
       const buffer = buildOutlineGeometry(bounds, options);
 
@@ -508,7 +508,7 @@ describe('buildOutlineGeometry', () => {
 
   describe('triangle winding order', () => {
     it('each border forms proper rectangles', () => {
-      const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
+      const bounds: OutlineBounds = { x: 10, y: 20, width: 10, height: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
       const floatsPerVertex = 19;
@@ -531,6 +531,35 @@ describe('buildOutlineGeometry', () => {
         const uniqueCorners = new Set(corners.map(c => `${c.x},${c.y}`));
         expect(uniqueCorners.size).toBe(4);
       }
+    });
+  });
+
+  describe('multi-segment outline', () => {
+    it('builds outline for multiple bounds', () => {
+      const bounds: OutlineBounds[] = [
+        { x: 0, y: 0, width: 50, height: 10 },
+        { x: 0, y: 10, width: 50, height: 10 },
+      ];
+      const geometry = buildOutlineGeometry(bounds);
+      // 2 bounds * 4 borders * 6 vertices * 19 floats = 912
+      expect(geometry.length).toBe(912);
+    });
+
+    it('builds outline for single bounds (backward compat)', () => {
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 10, height: 10 };
+      const geometry = buildOutlineGeometry(bounds);
+      // 1 bounds * 4 borders * 6 vertices * 19 floats = 456
+      expect(geometry.length).toBe(456);
+    });
+
+    it('uses different width and height for rectangular segments', () => {
+      const bounds: OutlineBounds = { x: 0, y: 0, width: 80, height: 4 };
+      const geometry = buildOutlineGeometry(bounds);
+      const floatsPerVertex = 19;
+      // Top-right vertex x should be 0 + 80 - 2 + 2 = 80
+      expect(geometry[floatsPerVertex]).toBe(80);
+      // Bottom-left vertex y should be 0 + 4 - 2 + 2 = 4
+      expect(geometry[floatsPerVertex * 2 + 1]).toBe(0); // y0 + thickness = -2 + 2 = 0
     });
   });
 });

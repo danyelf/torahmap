@@ -7,7 +7,8 @@ type Color = [number, number, number];
 export interface OutlineBounds {
   x: number;
   y: number;
-  size: number;
+  width: number;
+  height: number;
 }
 
 export interface OutlineOptions {
@@ -16,17 +17,18 @@ export interface OutlineOptions {
 }
 
 /**
- * Build outline geometry as 4 border rectangles around a verse.
- * Each border is 2 triangles (6 vertices), total 24 vertices.
+ * Build outline geometry as 4 border rectangles around one or more bounds.
+ * Each bound gets 4 borders * 6 vertices = 24 vertices.
  *
- * @param bounds - Verse bounds (x, y, size)
+ * @param bounds - Single bounds or array of bounds
  * @param options - Outline configuration (thickness, color)
- * @returns Float32Array with vertex data (24 vertices * 19 floats each)
+ * @returns Float32Array with vertex data
  */
 export function buildOutlineGeometry(
-  bounds: OutlineBounds,
+  bounds: OutlineBounds | OutlineBounds[],
   options: OutlineOptions = {}
 ): Float32Array {
+  const boundsArray = Array.isArray(bounds) ? bounds : [bounds];
   const thickness = options.thickness ?? 2;
   const color = options.color ?? HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 
@@ -34,18 +36,11 @@ export function buildOutlineGeometry(
   const floatsPerVertex = 19;
   const verticesPerBorder = 6; // 2 triangles
   const borderCount = 4; // top, right, bottom, left
-  const data = new Float32Array(borderCount * verticesPerBorder * floatsPerVertex);
+  const data = new Float32Array(boundsArray.length * borderCount * verticesPerBorder * floatsPerVertex);
 
-  // Calculate outline bounds - extend OUTSIDE the verse by thickness
-  // so the outline doesn't cover the verse itself
-  const x0 = bounds.x - thickness;
-  const y0 = bounds.y - thickness;
-  const x1 = bounds.x + bounds.size - 2 + thickness; // -2 for gap, +thickness for outer edge
-  const y1 = bounds.y + bounds.size - 2 + thickness;
-
-  // Use verse position as seed for consistent pattern
-  const seedX = bounds.x;
-  const seedY = bounds.y;
+  // Use first bounds position as seed for consistent pattern
+  const seedX = boundsArray[0]?.x ?? 0;
+  const seedY = boundsArray[0]?.y ?? 0;
 
   let offset = 0;
 
@@ -78,17 +73,25 @@ export function buildOutlineGeometry(
     writeVertex(rx1, ry1);
   };
 
-  // Top border (horizontal rectangle across top)
-  writeRect(x0, y0, x1, y0 + thickness);
+  for (const b of boundsArray) {
+    // Calculate outline bounds - extend OUTSIDE the verse by thickness
+    const x0 = b.x - thickness;
+    const y0 = b.y - thickness;
+    const x1 = b.x + b.width - 2 + thickness; // -2 for gap, +thickness for outer edge
+    const y1 = b.y + b.height - 2 + thickness;
 
-  // Right border (vertical rectangle on right side)
-  writeRect(x1 - thickness, y0, x1, y1);
+    // Top border (horizontal rectangle across top)
+    writeRect(x0, y0, x1, y0 + thickness);
 
-  // Bottom border (horizontal rectangle across bottom)
-  writeRect(x0, y1 - thickness, x1, y1);
+    // Right border (vertical rectangle on right side)
+    writeRect(x1 - thickness, y0, x1, y1);
 
-  // Left border (vertical rectangle on left side)
-  writeRect(x0, y0, x0 + thickness, y1);
+    // Bottom border (horizontal rectangle across bottom)
+    writeRect(x0, y1 - thickness, x1, y1);
+
+    // Left border (vertical rectangle on left side)
+    writeRect(x0, y0, x0 + thickness, y1);
+  }
 
   return data;
 }

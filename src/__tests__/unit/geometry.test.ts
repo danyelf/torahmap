@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { buildVerseGeometry, createBuffer } from '../../geometry';
-import { createVerse, createVerses, TEST_COLORS } from '../helpers';
+import { createVerse, createVerses, createVerseWithSegments, TEST_COLORS } from '../helpers';
+import type { LayoutSegment } from '../../types';
 
 describe('buildVerseGeometry', () => {
   describe('basic buffer properties', () => {
@@ -600,6 +601,81 @@ describe('buildVerseGeometry', () => {
         expect(buffer.length).toBe(count * 6 * 19);
       }
     });
+  });
+});
+
+describe('segment geometry', () => {
+  it('generates vertices for each segment instead of one square', () => {
+    const segments: LayoutSegment[] = [
+      { x: 0, y: 0, width: 50, height: 10 },
+      { x: 0, y: 10, width: 50, height: 10 },
+    ];
+    const verse = createVerseWithSegments({}, segments);
+    const buffer = buildVerseGeometry([verse]);
+    // 2 segments * 6 vertices * 19 floats = 228
+    expect(buffer.length).toBe(228);
+  });
+
+  it('uses segment bounds for vertex positions', () => {
+    const segments: LayoutSegment[] = [
+      { x: 100, y: 200, width: 50, height: 10 },
+    ];
+    const verse = createVerseWithSegments({}, segments);
+    const buffer = buildVerseGeometry([verse]);
+    // First vertex x should be 100 (segment x)
+    expect(buffer[0]).toBe(100);
+    // First vertex y should be 200
+    expect(buffer[1]).toBe(200);
+  });
+
+  it('mixes segment and non-segment verses correctly', () => {
+    const segmentVerse = createVerseWithSegments(
+      { book: 'Genesis', verse: 1 },
+      [
+        { x: 0, y: 0, width: 50, height: 10 },
+        { x: 0, y: 10, width: 50, height: 10 },
+        { x: 0, y: 20, width: 30, height: 10 },
+      ]
+    );
+    const squareVerse = createVerse({ book: 'Isaiah', verse: 1, x: 500, y: 500 });
+    const buffer = buildVerseGeometry([segmentVerse, squareVerse]);
+    // 3 segments + 1 square = 4 quads * 6 vertices * 19 floats = 456
+    expect(buffer.length).toBe(456);
+  });
+
+  it('all segments share the same seed position', () => {
+    const segments: LayoutSegment[] = [
+      { x: 100, y: 200, width: 50, height: 10 },
+      { x: 100, y: 210, width: 50, height: 10 },
+    ];
+    const verse = createVerseWithSegments({ x: 10, y: 20 }, segments);
+    const buffer = buildVerseGeometry([verse]);
+    const floatsPerVertex = 19;
+    // Seed should be verse.x/y (10, 20) for all segments
+    // First segment, first vertex
+    expect(buffer[17]).toBe(10); // seedX
+    expect(buffer[18]).toBe(20); // seedY
+    // Second segment, first vertex
+    expect(buffer[6 * floatsPerVertex + 17]).toBe(10);
+    expect(buffer[6 * floatsPerVertex + 18]).toBe(20);
+  });
+
+  it('applies colors to all segments of a verse', () => {
+    const segments: LayoutSegment[] = [
+      { x: 0, y: 0, width: 50, height: 10 },
+      { x: 0, y: 10, width: 50, height: 10 },
+    ];
+    const verse = createVerseWithSegments({}, segments);
+    const buffer = buildVerseGeometry([verse], [TEST_COLORS.RED]);
+    const floatsPerVertex = 19;
+    // First segment color
+    expect(buffer[2]).toBe(1); // r
+    expect(buffer[3]).toBe(0); // g
+    expect(buffer[4]).toBe(0); // b
+    // Second segment color
+    expect(buffer[6 * floatsPerVertex + 2]).toBe(1); // r
+    expect(buffer[6 * floatsPerVertex + 3]).toBe(0); // g
+    expect(buffer[6 * floatsPerVertex + 4]).toBe(0); // b
   });
 });
 

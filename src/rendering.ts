@@ -32,6 +32,7 @@ export interface RenderState {
   hoverOutlineBuffer: WebGLBuffer | null;
   verses: VerseLayout[];
   dpr: number;
+  vertexCount: number;
 }
 
 /**
@@ -66,6 +67,7 @@ export function createRenderState(
   dpr: number
 ): RenderState {
   const geometry = buildVerseGeometry(verses);
+  const vertexCount = geometry.length / 19;
   const buffer = createBuffer(gl, geometry);
 
   return {
@@ -74,6 +76,7 @@ export function createRenderState(
     hoverOutlineBuffer: null,
     verses,
     dpr,
+    vertexCount,
   };
 }
 
@@ -90,6 +93,7 @@ export function rebuildGeometry(
   colors?: ([number, number, number] | [number, number, number][])[]
 ): void {
   const geometry = buildVerseGeometry(state.verses, colors);
+  state.vertexCount = geometry.length / 19;
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
@@ -112,7 +116,7 @@ export function render(
   pinnedVerse: VerseLayout | null
 ): void {
   const { gl, programs, canvas } = context;
-  const { buffer, verses, dpr } = state;
+  const { buffer, dpr } = state;
 
   // Clear canvas
   gl.viewport(0, 0, canvas.width, canvas.height);
@@ -157,8 +161,8 @@ export function render(
   gl.enableVertexAttribArray(programs.main.attribs.seed);
   gl.vertexAttribPointer(programs.main.attribs.seed, 2, gl.FLOAT, false, stride, 17 * 4);
 
-  // Draw all verses
-  gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
+  // Draw all verses (vertexCount accounts for multi-segment verses)
+  gl.drawArrays(gl.TRIANGLES, 0, state.vertexCount);
 
   // Draw hover outline (if hovering and not same as pinned)
   if (hoveredVerse && !versesEqual(hoveredVerse, pinnedVerse)) {
@@ -218,18 +222,16 @@ export function renderOutline(
   const { gl, programs, canvas } = context;
   const { dpr } = state;
 
+  // Build bounds from segments or from the verse square
+  const bounds = verse.segments
+    ? verse.segments.map(s => ({ x: s.x, y: s.y, width: s.width, height: s.height }))
+    : [{ x: verse.x, y: verse.y, width: verse.size, height: verse.size }];
+
   // Build outline geometry for this verse
-  const geometry = buildOutlineGeometry(
-    {
-      x: verse.x,
-      y: verse.y,
-      size: verse.size,
-    },
-    {
-      thickness: 2,
-      color: color,
-    }
-  );
+  const geometry = buildOutlineGeometry(bounds, {
+    thickness: 2,
+    color: color,
+  });
 
   // Create or update outline buffer
   let currentBuffer = buffer;
@@ -257,8 +259,8 @@ export function renderOutline(
   gl.enableVertexAttribArray(programs.outline.attribs.position);
   gl.vertexAttribPointer(programs.outline.attribs.position, 2, gl.FLOAT, false, stride, 0);
 
-  // Draw outline (4 borders * 6 vertices each = 24 vertices)
-  gl.drawArrays(gl.TRIANGLES, 0, 24);
+  // Draw outline (each bound = 4 borders * 6 vertices = 24 vertices)
+  gl.drawArrays(gl.TRIANGLES, 0, bounds.length * 24);
 
   return currentBuffer;
 }

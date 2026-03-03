@@ -297,6 +297,7 @@ describe('rendering', () => {
 
     it('handles zero verses', () => {
       state.verses = [];
+      state.vertexCount = 0;
 
       expect(() => render(context, state, camera, null, null)).not.toThrow();
       expect(context.gl.drawArrays).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 0);

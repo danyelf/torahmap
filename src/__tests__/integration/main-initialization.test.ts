@@ -44,7 +44,8 @@ describe("Main Initialization Integration", () => {
           buildOutlineGeometry({
             x: pinnedVerse.x,
             y: pinnedVerse.y,
-            size: pinnedVerse.size,
+            width: pinnedVerse.size,
+            height: pinnedVerse.size,
           });
         }
       }).not.toThrow();
@@ -64,7 +65,8 @@ describe("Main Initialization Integration", () => {
           const geometry = buildOutlineGeometry({
             x: pinnedVerse.x,
             y: pinnedVerse.y,
-            size: pinnedVerse.size,
+            width: pinnedVerse.size,
+            height: pinnedVerse.size,
           });
           expect(geometry).toBeDefined();
         }
@@ -86,7 +88,8 @@ describe("Main Initialization Integration", () => {
         const geometry = buildOutlineGeometry({
           x: pinnedVerse.x,
           y: pinnedVerse.y,
-          size: pinnedVerse.size,
+          width: pinnedVerse.size,
+          height: pinnedVerse.size,
         });
 
         const buffer = gl.createBuffer();
@@ -115,7 +118,8 @@ describe("Main Initialization Integration", () => {
           return buildOutlineGeometry({
             x: pinnedVerse.x,
             y: pinnedVerse.y,
-            size: pinnedVerse.size,
+            width: pinnedVerse.size,
+            height: pinnedVerse.size,
           });
         }
         return null;
@@ -144,20 +148,14 @@ describe("Main Initialization Integration", () => {
     it("attempting to access undeclared variable would throw ReferenceError", () => {
       // This demonstrates what would happen with the original bug
       const render = () => {
-        // @ts-ignore - Intentionally accessing undeclared variable to show the bug
-        if (
-          // @ts-ignore - typeof check on undeclared variable
-          typeof undeclaredPinnedVerse !== "undefined" &&
-          // @ts-ignore - accessing undeclared variable
-          undeclaredPinnedVerse
-        ) {
+        // Intentionally accessing undeclared variable to show the bug
+        const undeclared = (globalThis as any).undeclaredPinnedVerse;
+        if (typeof undeclared !== "undefined" && undeclared) {
           return buildOutlineGeometry({
-            // @ts-ignore - accessing undeclared variable properties
-            x: undeclaredPinnedVerse.x,
-            // @ts-ignore
-            y: undeclaredPinnedVerse.y,
-            // @ts-ignore
-            size: undeclaredPinnedVerse.size,
+            x: undeclared.x,
+            y: undeclared.y,
+            width: undeclared.size,
+            height: undeclared.size,
           });
         }
         return null;
@@ -182,7 +180,8 @@ describe("Main Initialization Integration", () => {
         const geometry = buildOutlineGeometry({
           x: verse.x,
           y: verse.y,
-          size: verse.size,
+          width: verse.size,
+          height: verse.size,
         });
 
         if (!outlineBuffer) {
@@ -252,7 +251,8 @@ describe("Main Initialization Integration", () => {
           buildOutlineGeometry({
             x: pinnedVerse.x,
             y: pinnedVerse.y,
-            size: pinnedVerse.size,
+            width: pinnedVerse.size,
+            height: pinnedVerse.size,
           });
 
           gl.useProgram(outlineProg.program);

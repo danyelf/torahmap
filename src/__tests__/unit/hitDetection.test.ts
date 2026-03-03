@@ -8,6 +8,7 @@ import {
 } from '../../hitDetection';
 import type { VerseLayout } from '../../types';
 import type { Camera } from '../../camera';
+import { createVerseWithSegments } from '../helpers';
 
 describe('hitDetection', () => {
   describe('screenToWorld', () => {
@@ -372,6 +373,66 @@ describe('hitDetection', () => {
       expect(findVerseLayoutAtPoint(verses, camera, 45, 5)).toBe(verses[2]); // (2,0)
       expect(findVerseLayoutAtPoint(verses, camera, 5, 25)).toBe(verses[3]); // (0,1)
       expect(findVerseLayoutAtPoint(verses, camera, 25, 25)).toBe(verses[4]); // (1,1)
+    });
+  });
+
+  describe('segment hit detection', () => {
+    it('detects hit on first segment of multi-segment verse', () => {
+      const verse = createVerseWithSegments(
+        { x: 0, y: 0, size: 6 },
+        [
+          { x: 0, y: 0, width: 50, height: 10 },
+          { x: 0, y: 10, width: 50, height: 10 },
+        ]
+      );
+      expect(isPointInVerseLayout(25, 5, verse)).toBe(true);
+    });
+
+    it('detects hit on second segment', () => {
+      const verse = createVerseWithSegments(
+        { x: 0, y: 0, size: 6 },
+        [
+          { x: 0, y: 0, width: 50, height: 10 },
+          { x: 0, y: 10, width: 50, height: 10 },
+        ]
+      );
+      expect(isPointInVerseLayout(25, 15, verse)).toBe(true);
+    });
+
+    it('misses between segments', () => {
+      const verse = createVerseWithSegments(
+        { x: 0, y: 0, size: 6 },
+        [
+          { x: 0, y: 0, width: 50, height: 10 },
+          { x: 0, y: 20, width: 50, height: 10 }, // gap at y=10-20
+        ]
+      );
+      expect(isPointInVerseLayout(25, 15, verse)).toBe(false);
+    });
+
+    it('findExactHit returns verse when hitting any segment', () => {
+      const verse = createVerseWithSegments(
+        { x: 0, y: 0, size: 6 },
+        [
+          { x: 100, y: 200, width: 50, height: 10 },
+          { x: 100, y: 210, width: 50, height: 10 },
+        ]
+      );
+      const hit = findExactHit([verse], 125, 215);
+      expect(hit).toBe(verse);
+    });
+
+    it('findFuzzyHit uses segment centers for distance', () => {
+      const verse = createVerseWithSegments(
+        { x: 0, y: 0, size: 6 },
+        [
+          { x: 0, y: 0, width: 10, height: 10 },
+          { x: 0, y: 100, width: 10, height: 10 },
+        ]
+      );
+      // Point near second segment center (5, 105)
+      const hit = findFuzzyHit([verse], 5, 103);
+      expect(hit).toBe(verse);
     });
   });
 });
