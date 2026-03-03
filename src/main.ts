@@ -3,6 +3,7 @@
 declare const __GIT_BRANCH__: string;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
+import type { ScrollLayoutData } from './scrollLayout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLemmaData } from './search.ts';
@@ -78,9 +79,10 @@ async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load Tanakh structure, verse texts, and lemma data in parallel
-  const [torahResponse, verseTexts] = await Promise.all([
+  // Load Tanakh structure, scroll layout, verse texts, and lemma data in parallel
+  const [torahResponse, scrollResponse, verseTexts] = await Promise.all([
     fetch(`${import.meta.env.BASE_URL}data/tanakh-structure.json`),
+    fetch(`${import.meta.env.BASE_URL}data/scroll-layout.json`),
     loadAllVerseTexts(),
     loadLemmaData()
   ]);
@@ -96,8 +98,20 @@ async function main(): Promise<void> {
     throw new Error(`Failed to parse tanakh-structure.json: ${e}`);
   }
 
+  // Parse scroll layout data (optional — falls back to grid layout)
+  let scrollData: ScrollLayoutData | undefined;
+  if (scrollResponse.ok) {
+    try {
+      scrollData = await scrollResponse.json();
+    } catch (e) {
+      console.warn('Failed to parse scroll-layout.json, using default layout:', e);
+    }
+  } else {
+    console.warn('scroll-layout.json not found, using default layout');
+  }
+
   // Compute layout
-  const verses = computeLayout(torahData);
+  const verses = computeLayout(torahData, scrollData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
