@@ -169,14 +169,13 @@ describe('hebrewKeyboard', () => {
       expect(preventDefaultSpyI).toHaveBeenCalled();
       expect(input.value).toBe('');
 
-      // Try typing 'u' (letter not in transliteration map)
+      // Try typing 'u' (maps to ט tet)
       const eventU = new KeyboardEvent('keydown', { key: 'u', bubbles: true });
-      const preventDefaultSpyU = vi.spyOn(eventU, 'preventDefault');
+      Object.defineProperty(eventU, 'preventDefault', { value: vi.fn() });
       input.dispatchEvent(eventU);
 
-      // 'u' should be prevented (ignored)
-      expect(preventDefaultSpyU).toHaveBeenCalled();
-      expect(input.value).toBe('');
+      // 'u' should produce ט
+      expect(input.value).toBe('\u05d8');
     });
 
     it('does not intercept special keys', () => {

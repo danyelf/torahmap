@@ -853,10 +853,6 @@ export const searchOverlay: Overlay = {
       if (searchClear) {
         searchClear.style.display = query ? 'block' : 'none';
       }
-      // Disable toggle when text is non-empty (lock to current mode)
-      if (keyboardToggle) {
-        keyboardToggle.disabled = query.length > 0;
-      }
       doSearch(query);
     });
 
@@ -864,10 +860,6 @@ export const searchOverlay: Overlay = {
       if (searchInput) {
         searchInput.value = '';
         searchClear!.style.display = 'none';
-      }
-      // Re-enable toggle (input is now empty)
-      if (keyboardToggle) {
-        keyboardToggle.disabled = false;
       }
       // Update UI to reflect current mode (keyboard open or not)
       updateInputMode();

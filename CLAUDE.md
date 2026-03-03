@@ -47,6 +47,10 @@ npm run test:coverage # Coverage report
 
 A pre-commit hook automatically runs all tests. To bypass (not recommended): `git commit --no-verify`
 
+### Test Harness
+
+A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow (Hebrew keyboard, transliteration, search) without WebGL. Use this for visual testing of keyboard/search UI in headless browsers like Playwright where WebGL is unavailable. Source lives in `test-harness/`.
+
 ## Project Structure
 
 ```

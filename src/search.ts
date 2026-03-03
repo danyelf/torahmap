@@ -113,8 +113,15 @@ export function normalizeHebrewForSearch(text: string): string {
     const code = char.charCodeAt(0);
     // Skip nikkud marks but keep Hebrew letters and other characters
     if (code < NIKKUD_START || code > NIKKUD_END || code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6) {
-      // Normalize final forms to regular forms
-      result += FINAL_FORM_MAP[char] || char;
+      // Normalize maqaf (U+05BE ־), hyphens, and other non-letter Hebrew
+      // punctuation (paseq, sof pasuq, nun hafukha) to spaces so that
+      // keyboard space matches any word separator (e.g. "את יצחק" matches "את־יצחק")
+      if (code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6 || char === '-') {
+        result += ' ';
+      } else {
+        // Normalize final forms to regular forms
+        result += FINAL_FORM_MAP[char] || char;
+      }
     }
   }
   return result;
@@ -426,8 +433,18 @@ function searchByLemmas(lemmas: string[]): Set<string> {
 
 
 /**
+ * Test if a character is a word separator (whitespace, maqaf, or other
+ * Hebrew punctuation that normalizeHebrewForSearch converts to space)
+ */
+function isWordSeparator(char: string): boolean {
+  if (/\s/.test(char)) return true;
+  const code = char.charCodeAt(0);
+  return code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6 || char === '-';
+}
+
+/**
  * Get the start and end positions of a word at a given index in the text
- * Words are separated by whitespace
+ * Words are separated by whitespace, maqaf (U+05BE), and other Hebrew punctuation
  * Exported for testing
  */
 export function getWordBoundaries(text: string, wordIndex: number): { start: number; end: number } | null {
@@ -437,19 +454,19 @@ export function getWordBoundaries(text: string, wordIndex: number): { start: num
   let currentWord = 0;
   let start = 0;
 
-  // Skip leading whitespace
-  while (start < text.length && /\s/.test(text[start])) {
+  // Skip leading separators
+  while (start < text.length && isWordSeparator(text[start])) {
     start++;
   }
 
   // Find the word at the given index
   while (currentWord < wordIndex && start < text.length) {
     // Skip current word
-    while (start < text.length && !/\s/.test(text[start])) {
+    while (start < text.length && !isWordSeparator(text[start])) {
       start++;
     }
-    // Skip whitespace to next word
-    while (start < text.length && /\s/.test(text[start])) {
+    // Skip separators to next word
+    while (start < text.length && isWordSeparator(text[start])) {
       start++;
     }
     currentWord++;
@@ -459,7 +476,7 @@ export function getWordBoundaries(text: string, wordIndex: number): { start: num
 
   // Find end of this word
   let end = start;
-  while (end < text.length && !/\s/.test(text[end])) {
+  while (end < text.length && !isWordSeparator(text[end])) {
     end++;
   }
 
