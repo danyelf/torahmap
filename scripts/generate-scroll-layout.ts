@@ -128,11 +128,15 @@ function processLine(
 ): TikkunVerse {
   const isPetucha = line.isPetucha;
 
-  // Update current verse from the verses field
-  const verseQueue = [...line.verses];
-  if (verseQueue.length > 0) {
-    currentVerse = verseQueue.shift()!;
-  }
+  // Build queue of upcoming verse starts from the verses field.
+  // Don't override currentVerse — let sof pasuk tracking advance it naturally.
+  // This prevents off-by-one errors in shirah where frag 0 is the tail of
+  // the previous verse, not the start of the verse listed in the verses field.
+  const verseQueue = line.verses.filter(v =>
+    v.book > currentVerse.book ||
+    (v.book === currentVerse.book && v.chapter > currentVerse.chapter) ||
+    (v.book === currentVerse.book && v.chapter === currentVerse.chapter && v.verse > currentVerse.verse)
+  );
 
   // Check if the line has content
   const allText = line.text.flat().join('');
