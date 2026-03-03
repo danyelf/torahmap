@@ -1,5 +1,5 @@
 // Test fixtures for Torah Map tests
-import type { VerseLayout, TorahData, CommentaryData, VerseCommentary } from '../../types';
+import type { VerseLayout, LayoutSegment, TorahData, CommentaryData, VerseCommentary } from '../../types';
 
 /**
  * Creates a sample verse with default values that can be overridden
@@ -13,6 +13,19 @@ export function createVerse(overrides: Partial<VerseLayout> = {}): VerseLayout {
     y: 20,
     size: 6,
     ...overrides,
+  };
+}
+
+/**
+ * Creates a sample verse with segments for multi-segment layout testing
+ */
+export function createVerseWithSegments(
+  overrides: Partial<VerseLayout> = {},
+  segments: LayoutSegment[]
+): VerseLayout {
+  return {
+    ...createVerse(overrides),
+    segments,
   };
 }
 

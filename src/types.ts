@@ -47,6 +47,18 @@ export interface VerseIdentity {
 }
 
 /**
+ * A rectangular segment of a verse in the scroll layout.
+ * Torah verses may have multiple segments (one per line they span).
+ * Nevi'im/Ketuvim verses have no segments and use x/y/size as before.
+ */
+export interface LayoutSegment {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
  * Complete layout information for a verse.
  * Extends identity with spatial position computed during layout.
  * This data is immutable after initial layout computation.
@@ -55,6 +67,7 @@ export interface VerseLayout extends VerseIdentity {
   x: number;
   y: number;
   size: number;
+  segments?: LayoutSegment[];
 }
 
 /**
