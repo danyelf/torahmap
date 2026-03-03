@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { stripNikkud, normalizeHebrewForSearch, toDisplayHebrew, buildSearchIndex, search, findLemmasForWord } from '../../search';
+import { stripNikkud, normalizeHebrewForSearch, toDisplayHebrew, buildSearchIndex, search } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Hebrew Final Forms Normalization', () => {

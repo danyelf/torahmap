@@ -696,9 +696,7 @@ export const searchOverlay: Overlay = {
     if (hebrewModeContainer) {
       const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
       radioButtons.forEach(radio => {
-        if (radio.value === hebrewSearchMode) {
-          radio.checked = true;
-        }
+        radio.checked = radio.value === hebrewSearchMode;
       });
     }
 
@@ -1040,17 +1038,17 @@ export const searchOverlay: Overlay = {
       }
     }
 
-    // Restore Hebrew mode setting
+    // Restore Hebrew mode setting (default to substring if not specified)
     if (hebrewMode === 'word' || hebrewMode === 'root') {
       hebrewSearchMode = hebrewMode;
-      if (hebrewModeContainer) {
-        const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
-        radioButtons.forEach(radio => {
-          if (radio.value === hebrewMode) {
-            radio.checked = true;
-          }
-        });
-      }
+    } else {
+      hebrewSearchMode = 'substring';
+    }
+    if (hebrewModeContainer) {
+      const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+      radioButtons.forEach(radio => {
+        radio.checked = radio.value === hebrewSearchMode;
+      });
     }
 
     if (query) {
