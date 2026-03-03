@@ -34,7 +34,7 @@ function mockFetchForLemmaData() {
   const verseLemmas = JSON.parse(fs.readFileSync(verseLemmasPath, 'utf-8'));
   const strongsToRoot = JSON.parse(fs.readFileSync(strongsToRootPath, 'utf-8'));
 
-  global.fetch = vi.fn((url: string) => {
+  global.fetch = vi.fn(((url: string) => {
     let data: unknown;
     if (url.includes('word-lemmas')) data = wordLemmas;
     else if (url.includes('verse-lemmas')) data = verseLemmas;
@@ -46,7 +46,7 @@ function mockFetchForLemmaData() {
       status: 200,
       json: () => Promise.resolve(data),
     } as Response);
-  });
+  }) as typeof fetch);
 }
 
 describe.skipIf(!dataExists)('Root mode adjacency and related roots', () => {
@@ -154,8 +154,9 @@ describe.skipIf(!dataExists)('Root mode adjacency and related roots', () => {
 
         // Both should find neighbors of their own lemmas
         // but NOT transitively through a chain
-        const relatedFromAStrongs = new Set(relatedFromA.map(r => r.strongsNum));
-        const relatedFromCStrongs = new Set(relatedFromC.map(r => r.strongsNum));
+        // These sets are used implicitly by the assertions below
+        void new Set(relatedFromA.map(r => r.strongsNum));
+        void new Set(relatedFromC.map(r => r.strongsNum));
 
         // The related sets should not be identical (they have different inputs)
         // unless the lemma sets happen to overlap perfectly

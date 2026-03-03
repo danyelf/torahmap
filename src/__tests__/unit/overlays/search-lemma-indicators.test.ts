@@ -190,7 +190,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
   it('should show related roots section in root mode with related roots', () => {
     // Render controls
-    searchOverlay.renderControls(container);
+    searchOverlay.renderControls!(container);
 
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
     const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
@@ -205,7 +205,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Render legend
     const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
 
     // Check for related roots section
     const relatedSection = legendContainer.querySelector('.related-roots');
@@ -228,7 +228,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
   it('should not show related roots section in substring mode', () => {
     // Render controls
-    searchOverlay.renderControls(container);
+    searchOverlay.renderControls!(container);
 
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
     const substringModeRadio = container.querySelector('input[name="hebrew-mode"][value="substring"]') as HTMLInputElement;
@@ -243,7 +243,7 @@ describe('Search Overlay - Lemma Indicators', () => {
 
     // Render legend
     const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend(legendContainer);
+    searchOverlay.renderLegend!(legendContainer);
 
     // Should NOT have related roots section in substring mode
     const relatedSection = legendContainer.querySelector('.related-roots');
