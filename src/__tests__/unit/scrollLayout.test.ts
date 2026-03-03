@@ -44,15 +44,28 @@ describe('scrollLayout', () => {
       expect(pixel.y).toBe(expectedY);
     });
 
-    it('applies startFraction offset within column', () => {
+    it('applies startFraction with RTL mirroring within column', () => {
       const { COLUMN_WIDTH, COLUMN_GAP, COLUMNS_PER_ROW } = SCROLL_CONSTANTS;
       const seg: ScrollSegmentData = {
         b: 1, c: 1, v: 2, p: 1, l: 2, s: 0.4, w: 0.6,
       };
       const pixel = segmentToPixels(seg, 0);
       const colX = (COLUMNS_PER_ROW - 1) * (COLUMN_WIDTH + COLUMN_GAP);
-      expect(pixel.x).toBe(colX + 0.4 * COLUMN_WIDTH);
+      // RTL: x = colX + (1 - 0.4 - 0.6) * CW = colX + 0
+      expect(pixel.x).toBe(colX);
       expect(pixel.width).toBe(0.6 * COLUMN_WIDTH);
+    });
+
+    it('places start-of-line segment (s=0) at right edge of column', () => {
+      const { COLUMN_WIDTH, COLUMN_GAP, COLUMNS_PER_ROW } = SCROLL_CONSTANTS;
+      const seg: ScrollSegmentData = {
+        b: 1, c: 1, v: 1, p: 1, l: 0, s: 0, w: 0.3,
+      };
+      const pixel = segmentToPixels(seg, 0);
+      const colX = (COLUMNS_PER_ROW - 1) * (COLUMN_WIDTH + COLUMN_GAP);
+      // RTL: s=0 (start of reading) maps to right side
+      // x = colX + (1 - 0 - 0.3) * CW = colX + 0.7 * CW
+      expect(pixel.x).toBe(colX + 0.7 * COLUMN_WIDTH);
     });
 
     it('applies scrollYOffset', () => {

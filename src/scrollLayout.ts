@@ -51,7 +51,9 @@ export function segmentToPixels(
   const rowIndex = Math.floor(columnIndex / COLUMNS_PER_ROW);
   const colInRow = COLUMNS_PER_ROW - 1 - (columnIndex % COLUMNS_PER_ROW); // RTL
 
-  const x = colInRow * (COLUMN_WIDTH + COLUMN_GAP) + seg.s * COLUMN_WIDTH;
+  // Mirror within column for RTL: s=0 (start of reading) maps to right edge
+  const colX = colInRow * (COLUMN_WIDTH + COLUMN_GAP);
+  const x = colX + (1 - seg.s - seg.w) * COLUMN_WIDTH;
   const y = scrollYOffset + rowIndex * (LINES_PER_PAGE * LINE_HEIGHT + ROW_GAP) + seg.l * LINE_HEIGHT;
   const width = seg.w * COLUMN_WIDTH;
   const height = LINE_HEIGHT;
