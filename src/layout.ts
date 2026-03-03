@@ -4,6 +4,7 @@ import type { TorahData, VerseLayout, Bounds, Book } from './types.ts';
 import { seededRandom } from './utils/random.ts';
 import { getBookSection } from './constants/books.ts';
 import { JITTER_CENTER, JITTER_RANGE } from './constants/app.ts';
+import { buildScrollSegmentMap, getScrollSectionHeight, type ScrollLayoutData } from './scrollLayout.ts';
 
 const VERSE_SIZE = 6;           // pixels per verse square
 const CHAPTER_GAP = 2;          // gap between chapter rows
@@ -531,7 +532,52 @@ function layoutTorah(
   return height;
 }
 
-export function computeLayout(torahData: TorahData): VerseLayout[] {
+// Layout Torah using scroll layout data from tikkun.io
+function layoutTorahScroll(
+  books: Book[],
+  scrollData: ScrollLayoutData,
+  globalVerseIdx: { value: number },
+  verses: VerseLayout[]
+): number {
+  const segmentMap = buildScrollSegmentMap(scrollData, 0);
+
+  for (const book of books) {
+    for (let chapterIdx = 0; chapterIdx < book.chapters.length; chapterIdx++) {
+      const verseCount = book.chapters[chapterIdx];
+      for (let verseIdx = 0; verseIdx < verseCount; verseIdx++) {
+        const key = `${book.name}:${chapterIdx + 1}:${verseIdx + 1}`;
+        const segments = segmentMap.get(key);
+
+        if (segments && segments.length > 0) {
+          verses.push({
+            book: book.name,
+            chapter: chapterIdx + 1,
+            verse: verseIdx + 1,
+            x: segments[0].x,
+            y: segments[0].y,
+            size: VERSE_SIZE,
+            segments,
+          });
+        } else {
+          // Fallback: place at origin if missing from scroll data
+          verses.push({
+            book: book.name,
+            chapter: chapterIdx + 1,
+            verse: verseIdx + 1,
+            x: 0,
+            y: 0,
+            size: VERSE_SIZE,
+          });
+        }
+        globalVerseIdx.value++;
+      }
+    }
+  }
+
+  return getScrollSectionHeight(scrollData);
+}
+
+export function computeLayout(torahData: TorahData, scrollData?: ScrollLayoutData): VerseLayout[] {
   // Defensive: validate input structure
   if (!torahData || typeof torahData !== 'object') {
     console.error('Invalid torahData: not an object');
@@ -582,8 +628,13 @@ export function computeLayout(torahData: TorahData): VerseLayout[] {
   // Layout each section vertically stacked
   let sectionY = 0;
 
-  // Torah
-  const torahHeight = layoutTorah(torah, sectionY, globalVerseIdx, verses);
+  // Torah — use scroll layout if available, otherwise fall back to grid
+  let torahHeight: number;
+  if (scrollData) {
+    torahHeight = layoutTorahScroll(torah, scrollData, globalVerseIdx, verses);
+  } else {
+    torahHeight = layoutTorah(torah, sectionY, globalVerseIdx, verses);
+  }
   sectionY += torahHeight + SECTION_GAP;
 
   // Nevi'im
