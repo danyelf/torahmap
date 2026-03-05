@@ -72,7 +72,7 @@ describe('URL State Sync Integration', () => {
     });
 
     // Mock fetch for overlay data
-    global.fetch = vi.fn((url: string | Request) => {
+    globalThis.fetch = vi.fn((url: string | Request) => {
       const urlString = typeof url === 'string' ? url : url.url;
 
       let data: any;

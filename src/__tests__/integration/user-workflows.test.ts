@@ -70,7 +70,7 @@ describe('User Workflows Integration', () => {
     });
 
     // Mock fetch for overlay data
-    global.fetch = vi.fn((url: string | URL | Request) => {
+    globalThis.fetch = vi.fn((url: string | URL | Request) => {
       const urlString = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
 
       let data: any;

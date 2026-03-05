@@ -60,7 +60,7 @@ describe('Commentary Overlay', () => {
         json: () => Promise.resolve(testData),
       } as Response);
     });
-    global.fetch = mockFetch;
+    globalThis.fetch = mockFetch;
 
     // Configure overlay with test verses
     configure({ verses: testVerses });
