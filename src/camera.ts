@@ -11,23 +11,33 @@ export interface Camera {
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10.0;
 
+// Margin from right edge to keep Genesis 1:1 clear of the sidebar (280px + padding)
+const RIGHT_MARGIN = 320;
+// Top margin to leave room for book labels above the first row
+const TOP_MARGIN = 40;
+
 /**
- * Create initial camera state centered on the given bounds.
+ * Create initial camera state with Genesis 1:1 near the top-right,
+ * offset enough to clear the verse sidebar.
  * Always starts at 1.0 zoom to avoid moiré from fractional scaling.
  *
  * @param cssWidth - Window width in CSS pixels
  * @param cssHeight - Window height in CSS pixels
  * @param bounds - Bounding box of the visualization
- * @returns Camera state with 1.0 zoom, centered on bounds
+ * @returns Camera state with 1.0 zoom, Genesis 1:1 at top-right
  */
 export function createCamera(
   cssWidth: number,
-  cssHeight: number,
+  _cssHeight: number,
   bounds: Bounds
 ): Camera {
+  // At zoom=1, screenX = (worldX + pan.x) * 1 = worldX + pan.x
+  // Genesis 1:1 is near worldX ≈ bounds.width (rightmost after RTL mirror)
+  // We want it at screenX = cssWidth - RIGHT_MARGIN
+  // So pan.x = cssWidth - RIGHT_MARGIN - bounds.width
   return {
-    x: cssWidth / 2 - bounds.width / 2,
-    y: cssHeight / 2 - bounds.height / 2,
+    x: cssWidth - RIGHT_MARGIN - bounds.width,
+    y: TOP_MARGIN,
     zoom: 1.0,
   };
 }
