@@ -4,13 +4,13 @@ import type { Bounds } from '../../types';
 
 describe('camera', () => {
   describe('createCamera', () => {
-    it('creates camera centered on bounds with 1.0 zoom', () => {
+    it('positions Genesis 1:1 near top-right with sidebar clearance', () => {
       const bounds: Bounds = { width: 1000, height: 800 };
       const camera = createCamera(1920, 1080, bounds);
 
       expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(1920 / 2 - 1000 / 2); // 460
-      expect(camera.y).toBe(1080 / 2 - 800 / 2);  // 140
+      expect(camera.x).toBe(1920 - 320 - 1000); // 600
+      expect(camera.y).toBe(40);
     });
 
     it('handles small window size', () => {
@@ -18,8 +18,8 @@ describe('camera', () => {
       const camera = createCamera(800, 600, bounds);
 
       expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(800 / 2 - 1000 / 2);  // -100
-      expect(camera.y).toBe(600 / 2 - 800 / 2);   // -100
+      expect(camera.x).toBe(800 - 320 - 1000);  // -520
+      expect(camera.y).toBe(40);
     });
 
     it('handles large window size', () => {
@@ -27,8 +27,8 @@ describe('camera', () => {
       const camera = createCamera(3840, 2160, bounds);
 
       expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(3840 / 2 - 500 / 2);  // 1670
-      expect(camera.y).toBe(2160 / 2 - 400 / 2);  // 880
+      expect(camera.x).toBe(3840 - 320 - 500);  // 3020
+      expect(camera.y).toBe(40);
     });
 
     it('handles zero-sized bounds', () => {
@@ -36,8 +36,8 @@ describe('camera', () => {
       const camera = createCamera(1920, 1080, bounds);
 
       expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(1920 / 2);
-      expect(camera.y).toBe(1080 / 2);
+      expect(camera.x).toBe(1920 - 320);
+      expect(camera.y).toBe(40);
     });
 
     it('always returns 1.0 zoom regardless of input', () => {
