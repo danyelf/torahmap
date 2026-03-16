@@ -58,6 +58,7 @@ export function createBookLabels(
     // Hebrew name (always shown, without nikkud)
     const heSpan = document.createElement("span");
     heSpan.className = "book-label-he";
+    heSpan.style.fontFamily = '"Noto Sans Hebrew", system-ui, sans-serif';
     const heName = BOOK_HEBREW_NAMES[name];
     heSpan.textContent = heName ? stripNikkud(heName) : name;
     label.appendChild(heSpan);
@@ -66,7 +67,7 @@ export function createBookLabels(
     const enSpan = document.createElement("span");
     enSpan.className = "book-label-en";
     enSpan.textContent = ` ${name}`;
-    enSpan.style.cssText = "opacity:0.7;";
+    enSpan.style.cssText = "font-family:system-ui,sans-serif;opacity:0.7;";
     label.appendChild(enSpan);
 
     labels.appendChild(label);
