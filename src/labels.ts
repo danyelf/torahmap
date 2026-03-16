@@ -2,6 +2,7 @@
 
 import type { VerseLayout } from "./types.ts";
 import { BOOK_HEBREW_NAMES } from "./constants/books.ts";
+import { stripNikkud } from "./search.ts";
 
 interface BookBounds {
   minX: number;
@@ -54,18 +55,18 @@ export function createBookLabels(
     label.dataset.topY = String(pos.minY);
     label.dataset.bookWidth = String(pos.maxX - pos.minX);
 
-    // Hebrew name (always shown)
+    // Hebrew name (always shown, without nikkud)
     const heSpan = document.createElement("span");
     heSpan.className = "book-label-he";
-    heSpan.textContent = BOOK_HEBREW_NAMES[name] || name;
-    heSpan.style.fontFamily = "serif";
+    const heName = BOOK_HEBREW_NAMES[name];
+    heSpan.textContent = heName ? stripNikkud(heName) : name;
     label.appendChild(heSpan);
 
     // English name (shown when there's room)
     const enSpan = document.createElement("span");
     enSpan.className = "book-label-en";
     enSpan.textContent = ` ${name}`;
-    enSpan.style.cssText = "font-family:sans-serif;opacity:0.7;";
+    enSpan.style.cssText = "opacity:0.7;";
     label.appendChild(enSpan);
 
     labels.appendChild(label);

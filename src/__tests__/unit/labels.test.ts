@@ -89,7 +89,7 @@ describe('labels', () => {
         expect(labelTexts.some(t => t!.includes('Genesis'))).toBe(true);
         expect(labelTexts.some(t => t!.includes('Exodus'))).toBe(true);
         expect(labelTexts.some(t => t!.includes('Psalms'))).toBe(true);
-        expect(labelTexts.some(t => t!.includes('בְּרֵאשִׁית'))).toBe(true);
+        expect(labelTexts.some(t => t!.includes('בראשית'))).toBe(true);
       });
 
       it('applies correct styling to each label', () => {
@@ -102,11 +102,11 @@ describe('labels', () => {
         expect(label.style.color).toBe('#eee');
         expect(label.style.fontWeight).toBe('700');
         expect(label.style.whiteSpace).toBe('nowrap');
-        // Hebrew span uses serif, English span uses sans-serif
+        // Label contains Hebrew and English spans
         const heSpan = label.querySelector('.book-label-he') as HTMLElement;
         const enSpan = label.querySelector('.book-label-en') as HTMLElement;
-        expect(heSpan.style.fontFamily).toBe('serif');
-        expect(enSpan.style.fontFamily).toBe('sans-serif');
+        expect(heSpan).not.toBeNull();
+        expect(enSpan).not.toBeNull();
       });
 
       it('stores book name in dataset', () => {
@@ -283,7 +283,7 @@ describe('labels', () => {
         expect(labels.children.length).toBe(1);
         const label = labels.children[0] as HTMLElement;
         expect(label.textContent).toContain('Obadiah');
-        expect(label.textContent).toContain('עֹבַדְיָה');
+        expect(label.textContent).toContain('עבדיה');
       });
 
       it('handles book with many verses', () => {
@@ -303,7 +303,7 @@ describe('labels', () => {
 
         const label = labels.children[0] as HTMLElement;
         expect(label.textContent).toContain('Song of Songs');
-        expect(label.textContent).toContain('שִׁיר הַשִּׁירִים');
+        expect(label.textContent).toContain('שיר השירים');
         expect(label.dataset.bookName).toBe('Song of Songs');
       });
 
