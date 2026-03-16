@@ -68,7 +68,7 @@ export function createBookLabels(
     const enSpan = document.createElement("span");
     enSpan.className = "book-label-en";
     enSpan.textContent = ` ${name}`;
-    enSpan.style.cssText = "font-family:system-ui,sans-serif;opacity:0.7;";
+    enSpan.style.cssText = "font-family:system-ui,sans-serif;";
     label.appendChild(enSpan);
 
     labels.appendChild(label);
