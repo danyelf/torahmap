@@ -83,6 +83,9 @@ let lemmaAdjacency: Map<string, Set<string>> | null = null;
 // Reverse lookup: Strong's number -> shortest surface form that maps to it
 // Used to generate searchable terms when related-root chips are clicked
 let strongsToSurfaceForm: Map<string, string> | null = null;
+// Reverse lookup: normalized root text -> Strong's numbers
+// Used when user types a bare root form that isn't itself a surface form
+let rootToStrongsNumbers: Map<string, string[]> | null = null;
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
@@ -182,6 +185,9 @@ export async function loadLemmaData(): Promise<void> {
 
       // Build adjacency map: direct neighbors from 2-lemma surface forms
       buildLemmaAdjacency();
+
+      // Build reverse root index: root text -> Strong's numbers
+      buildRootToStrongsIndex();
     } else {
       console.warn('Failed to load lemma data, falling back to substring search');
       console.warn(`Response status: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
@@ -280,11 +286,42 @@ function buildLemmaAdjacency(): void {
 }
 
 /**
- * Try to find Strong's numbers (lemmas) for a Hebrew word
- * Tries:
- * 1. Direct lookup
- * 2. With common prefixes stripped (ו, ה, ב, ל, כ, מ, ש)
- * 3. With two-letter prefix combos stripped
+ * Build reverse index from normalized root text -> Strong's numbers.
+ * Enables lookup when user types a bare root form (e.g. בסס) that isn't
+ * itself a surface form in word-lemmas.json.
+ */
+function buildRootToStrongsIndex(): void {
+  if (!strongsToRoot) {
+    rootToStrongsNumbers = null;
+    return;
+  }
+
+  const startTime = performance.now();
+  rootToStrongsNumbers = new Map();
+
+  for (const [strongsNum, root] of Object.entries(strongsToRoot)) {
+    const normalized = normalizeHebrewForSearch(root);
+    let list = rootToStrongsNumbers.get(normalized);
+    if (!list) {
+      list = [];
+      rootToStrongsNumbers.set(normalized, list);
+    }
+    list.push(strongsNum);
+  }
+
+  const endTime = performance.now();
+  console.log(`✓ Built root→Strong's index: ${rootToStrongsNumbers.size} unique roots in ${(endTime - startTime).toFixed(2)}ms`);
+}
+
+/**
+ * Try to find Strong's numbers (lemmas) for a Hebrew word.
+ *
+ * Strategy: prefer interpretations that use more of the input.
+ * 1. Exact surface form lookup (word literally appears in the text)
+ * 2. Root reverse lookup (user typed a bare root)
+ * 3. Prefix stripping (longest first), retrying both surface + root lookup
+ *    on the remainder at each level
+ *
  * Exported for use in overlay UI to show which terms have lemma data
  */
 export function findLemmasForWord(hebrewWord: string): string[] | null {
@@ -295,38 +332,73 @@ export function findLemmasForWord(hebrewWord: string): string[] | null {
 
   // word-lemmas keys are medial-only (finals normalized at generation time),
   // so we normalize to medial here to match
-  const stripped = normalizeHebrewForSearch(hebrewWord);
-  console.log(`findLemmasForWord("${hebrewWord}") stripped to "${stripped}"`);
+  const normalized = normalizeHebrewForSearch(hebrewWord);
+  console.log(`findLemmasForWord("${hebrewWord}") normalized to "${normalized}"`);
 
-  // Try direct lookup
-  if (wordLemmas[stripped]) {
-    console.log(`  ✓ Found direct match: ${wordLemmas[stripped].length} lemmas`);
-    return wordLemmas[stripped];
-  }
+  // Try the full input as-is (surface form, then root)
+  const fullResult = lookupSurfaceOrRoot(normalized);
+  if (fullResult) return fullResult;
 
-  // Try stripping two-letter prefix combos first
+  // Try stripping prefixes (longest first), retrying both lookups on remainder.
+  // Two-letter combos first, then single-letter.
   for (const prefix of HEBREW_PREFIX_COMBOS) {
-    if (stripped.startsWith(prefix) && stripped.length > prefix.length + 1) {
-      const withoutPrefix = stripped.slice(prefix.length);
-      if (wordLemmas[withoutPrefix]) {
-        console.log(`  ✓ Found after stripping prefix "${prefix}": ${wordLemmas[withoutPrefix].length} lemmas`);
-        return wordLemmas[withoutPrefix];
+    if (normalized.startsWith(prefix) && normalized.length > prefix.length + 1) {
+      const remainder = normalized.slice(prefix.length);
+      const result = lookupSurfaceOrRoot(remainder);
+      if (result) {
+        console.log(`  ✓ Found after stripping prefix "${prefix}"`);
+        return result;
       }
     }
   }
 
-  // Try stripping single-letter prefixes
   for (const prefix of HEBREW_PREFIXES) {
-    if (stripped.startsWith(prefix) && stripped.length > 2) {
-      const withoutPrefix = stripped.slice(prefix.length);
-      if (wordLemmas[withoutPrefix]) {
-        console.log(`  ✓ Found after stripping prefix "${prefix}": ${wordLemmas[withoutPrefix].length} lemmas`);
-        return wordLemmas[withoutPrefix];
+    if (normalized.startsWith(prefix) && normalized.length > 2) {
+      const remainder = normalized.slice(prefix.length);
+      const result = lookupSurfaceOrRoot(remainder);
+      if (result) {
+        console.log(`  ✓ Found after stripping prefix "${prefix}"`);
+        return result;
       }
     }
   }
 
-  console.log(`  ✗ No lemmas found (tried direct and with prefixes stripped)`);
+  console.log(`  ✗ No lemmas found`);
+  return null;
+}
+
+/**
+ * Try to find lemmas for a normalized Hebrew string, first as a surface form
+ * in word-lemmas, then as a root (exact or prefix) in strongs-to-root.
+ */
+function lookupSurfaceOrRoot(term: string): string[] | null {
+  // Surface form lookup
+  if (wordLemmas && wordLemmas[term]) {
+    console.log(`  ✓ Surface form "${term}": ${wordLemmas[term].length} lemmas`);
+    return wordLemmas[term];
+  }
+
+  // Root reverse lookup
+  if (rootToStrongsNumbers) {
+    const exact = rootToStrongsNumbers.get(term);
+    if (exact && exact.length > 0) {
+      console.log(`  ✓ Root match "${term}" (exact): ${exact.length} Strong's numbers`);
+      return exact;
+    }
+
+    // Try as prefix of root forms (e.g. בסס matches root בססו)
+    const prefixMatches: string[] = [];
+    for (const [root, strongsNums] of rootToStrongsNumbers) {
+      if (root.startsWith(term) && root !== term) {
+        prefixMatches.push(...strongsNums);
+      }
+    }
+    if (prefixMatches.length > 0) {
+      console.log(`  ✓ Root match "${term}" (prefix): ${prefixMatches.length} Strong's numbers`);
+      return prefixMatches;
+    }
+  }
+
   return null;
 }
 
