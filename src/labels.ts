@@ -32,6 +32,7 @@ export function createBookLabels(
     if (!books[v.book]) {
       books[v.book] = { minX: v.x, maxX: v.x + v.size, minY: v.y };
     }
+    books[v.book].minX = Math.min(books[v.book].minX, v.x);
     books[v.book].maxX = Math.max(books[v.book].maxX, v.x + v.size);
     books[v.book].minY = Math.min(books[v.book].minY, v.y);
   }
