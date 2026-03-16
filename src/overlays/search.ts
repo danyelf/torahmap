@@ -7,6 +7,7 @@ import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQ
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
+import { trackSearchExecute, trackKeyboardToggle } from '../analytics.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
@@ -101,6 +102,12 @@ function doSearch(query: string): void {
     // Pass hebrewMode for Hebrew searches
     currentResults = search(query, useWholeWord, isHebrew ? hebrewSearchMode : 'substring');
     matchingTerms = getMatchingVerseTerms(currentResults);
+
+    // Track each search term
+    const mode = isHebrew ? hebrewSearchMode : (wholeWordEnabled ? 'word' : 'substring');
+    for (const term of currentTerms) {
+      trackSearchExecute(term, isHebrew ? 'he' : 'en', mode, currentResults.length);
+    }
   }
 
   renderResults();
@@ -921,9 +928,11 @@ export const searchOverlay: Overlay = {
         if (isKeyboardOpen()) {
           closeHebrewKeyboard();
           keyboardToggle!.classList.remove('active');
+          trackKeyboardToggle(false);
         } else {
           createHebrewKeyboard(searchInput);
           keyboardToggle!.classList.add('active');
+          trackKeyboardToggle(true);
         }
         // Update mode selector visibility after keyboard state changes
         updateInputMode();

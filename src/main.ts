@@ -7,6 +7,7 @@ import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLemmaData } from './search.ts';
 import { initHelp } from './help.ts';
+import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -186,6 +187,7 @@ async function main(): Promise<void> {
 
   // Helper: Pin a verse and update all dependent state
   function pinVerse(verse: VerseLayout, centerCamera: boolean = false): void {
+    trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
     if (centerCamera) {
@@ -231,7 +233,10 @@ async function main(): Promise<void> {
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
     debouncedSaveUrlState();
+    debouncedTrackZoom();
   }, { passive: false });
+
+  const debouncedTrackZoom = debounce(() => trackZoomLevel(camera.zoom), 1000);
 
   // Touch events for pinch-to-zoom
   canvas.addEventListener('touchstart', (e: TouchEvent) => {
@@ -504,7 +509,13 @@ async function main(): Promise<void> {
   const overlayControlsContainer = document.getElementById('overlay-controls');
   const overlayLegendContainer = document.getElementById('overlay-legend');
 
+  let currentOverlayId = 'none';
+
   function setOverlay(id: string, fromUrlRestore: boolean = false): void {
+    if (!fromUrlRestore) {
+      trackOverlaySwitch(id, currentOverlayId);
+    }
+    currentOverlayId = id;
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
 
