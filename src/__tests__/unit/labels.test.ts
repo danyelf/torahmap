@@ -85,9 +85,11 @@ describe('labels', () => {
         const labels = createBookLabels(verses, container);
 
         const labelTexts = Array.from(labels.children).map(child => child.textContent);
-        expect(labelTexts).toContain('Genesis');
-        expect(labelTexts).toContain('Exodus');
-        expect(labelTexts).toContain('Psalms');
+        // Labels contain Hebrew name + English name
+        expect(labelTexts.some(t => t!.includes('Genesis'))).toBe(true);
+        expect(labelTexts.some(t => t!.includes('Exodus'))).toBe(true);
+        expect(labelTexts.some(t => t!.includes('Psalms'))).toBe(true);
+        expect(labelTexts.some(t => t!.includes('בְּרֵאשִׁית'))).toBe(true);
       });
 
       it('applies correct styling to each label', () => {
@@ -98,10 +100,13 @@ describe('labels', () => {
         expect(label.style.position).toBe('absolute');
         // happy-dom keeps color as hex, while real browsers convert to rgb
         expect(label.style.color).toBe('#eee');
-        expect(label.style.fontFamily).toContain('sans-serif');
         expect(label.style.fontWeight).toBe('700');
         expect(label.style.whiteSpace).toBe('nowrap');
-        // fontSize is set dynamically in updateLabelPositions, not here
+        // Hebrew span uses serif, English span uses sans-serif
+        const heSpan = label.querySelector('.book-label-he') as HTMLElement;
+        const enSpan = label.querySelector('.book-label-en') as HTMLElement;
+        expect(heSpan.style.fontFamily).toBe('serif');
+        expect(enSpan.style.fontFamily).toBe('sans-serif');
       });
 
       it('stores book name in dataset', () => {
@@ -277,7 +282,8 @@ describe('labels', () => {
 
         expect(labels.children.length).toBe(1);
         const label = labels.children[0] as HTMLElement;
-        expect(label.textContent).toBe('Obadiah');
+        expect(label.textContent).toContain('Obadiah');
+        expect(label.textContent).toContain('עֹבַדְיָה');
       });
 
       it('handles book with many verses', () => {
@@ -288,7 +294,7 @@ describe('labels', () => {
 
         expect(labels.children.length).toBe(1);
         const label = labels.children[0] as HTMLElement;
-        expect(label.textContent).toBe('Psalms');
+        expect(label.textContent).toContain('Psalms');
       });
 
       it('handles books with spaces in names', () => {
@@ -296,7 +302,8 @@ describe('labels', () => {
         const labels = createBookLabels(verses, container);
 
         const label = labels.children[0] as HTMLElement;
-        expect(label.textContent).toBe('Song of Songs');
+        expect(label.textContent).toContain('Song of Songs');
+        expect(label.textContent).toContain('שִׁיר הַשִּׁירִים');
         expect(label.dataset.bookName).toBe('Song of Songs');
       });
 
@@ -305,7 +312,7 @@ describe('labels', () => {
         const labels = createBookLabels(verses, container);
 
         const label = labels.children[0] as HTMLElement;
-        expect(label.textContent).toBe('I-Chronicles');
+        expect(label.textContent).toContain('I-Chronicles');
       });
 
       it('handles fractional coordinates', () => {

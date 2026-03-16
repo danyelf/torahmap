@@ -2,59 +2,60 @@
 
 export interface BookDefinition {
   name: string;
+  nameHe: string;
   file: string;
   section: 'torah' | 'neviim' | 'ketuvim';
 }
 
 /**
  * All 39 books of the Tanakh in canonical order.
- * Each entry contains the display name, file prefix, and section.
+ * Each entry contains the display name, Hebrew name, file prefix, and section.
  */
 export const BOOKS: readonly BookDefinition[] = [
   // Torah (5 books)
-  { name: 'Genesis', file: 'genesis', section: 'torah' },
-  { name: 'Exodus', file: 'exodus', section: 'torah' },
-  { name: 'Leviticus', file: 'leviticus', section: 'torah' },
-  { name: 'Numbers', file: 'numbers', section: 'torah' },
-  { name: 'Deuteronomy', file: 'deuteronomy', section: 'torah' },
+  { name: 'Genesis', nameHe: 'בְּרֵאשִׁית', file: 'genesis', section: 'torah' },
+  { name: 'Exodus', nameHe: 'שְׁמוֹת', file: 'exodus', section: 'torah' },
+  { name: 'Leviticus', nameHe: 'וַיִּקְרָא', file: 'leviticus', section: 'torah' },
+  { name: 'Numbers', nameHe: 'בְּמִדְבַּר', file: 'numbers', section: 'torah' },
+  { name: 'Deuteronomy', nameHe: 'דְּבָרִים', file: 'deuteronomy', section: 'torah' },
   // Nevi'im - Former Prophets (6 books)
-  { name: 'Joshua', file: 'joshua', section: 'neviim' },
-  { name: 'Judges', file: 'judges', section: 'neviim' },
-  { name: 'I Samuel', file: 'i-samuel', section: 'neviim' },
-  { name: 'II Samuel', file: 'ii-samuel', section: 'neviim' },
-  { name: 'I Kings', file: 'i-kings', section: 'neviim' },
-  { name: 'II Kings', file: 'ii-kings', section: 'neviim' },
+  { name: 'Joshua', nameHe: 'יְהוֹשֻׁעַ', file: 'joshua', section: 'neviim' },
+  { name: 'Judges', nameHe: 'שׁוֹפְטִים', file: 'judges', section: 'neviim' },
+  { name: 'I Samuel', nameHe: 'שְׁמוּאֵל א', file: 'i-samuel', section: 'neviim' },
+  { name: 'II Samuel', nameHe: 'שְׁמוּאֵל ב', file: 'ii-samuel', section: 'neviim' },
+  { name: 'I Kings', nameHe: 'מְלָכִים א', file: 'i-kings', section: 'neviim' },
+  { name: 'II Kings', nameHe: 'מְלָכִים ב', file: 'ii-kings', section: 'neviim' },
   // Nevi'im - Latter Prophets (3 major)
-  { name: 'Isaiah', file: 'isaiah', section: 'neviim' },
-  { name: 'Jeremiah', file: 'jeremiah', section: 'neviim' },
-  { name: 'Ezekiel', file: 'ezekiel', section: 'neviim' },
+  { name: 'Isaiah', nameHe: 'יְשַׁעְיָהוּ', file: 'isaiah', section: 'neviim' },
+  { name: 'Jeremiah', nameHe: 'יִרְמְיָהוּ', file: 'jeremiah', section: 'neviim' },
+  { name: 'Ezekiel', nameHe: 'יְחֶזְקֵאל', file: 'ezekiel', section: 'neviim' },
   // Nevi'im - Twelve Minor Prophets
-  { name: 'Hosea', file: 'hosea', section: 'neviim' },
-  { name: 'Joel', file: 'joel', section: 'neviim' },
-  { name: 'Amos', file: 'amos', section: 'neviim' },
-  { name: 'Obadiah', file: 'obadiah', section: 'neviim' },
-  { name: 'Jonah', file: 'jonah', section: 'neviim' },
-  { name: 'Micah', file: 'micah', section: 'neviim' },
-  { name: 'Nahum', file: 'nahum', section: 'neviim' },
-  { name: 'Habakkuk', file: 'habakkuk', section: 'neviim' },
-  { name: 'Zephaniah', file: 'zephaniah', section: 'neviim' },
-  { name: 'Haggai', file: 'haggai', section: 'neviim' },
-  { name: 'Zechariah', file: 'zechariah', section: 'neviim' },
-  { name: 'Malachi', file: 'malachi', section: 'neviim' },
+  { name: 'Hosea', nameHe: 'הוֹשֵׁעַ', file: 'hosea', section: 'neviim' },
+  { name: 'Joel', nameHe: 'יוֹאֵל', file: 'joel', section: 'neviim' },
+  { name: 'Amos', nameHe: 'עָמוֹס', file: 'amos', section: 'neviim' },
+  { name: 'Obadiah', nameHe: 'עֹבַדְיָה', file: 'obadiah', section: 'neviim' },
+  { name: 'Jonah', nameHe: 'יוֹנָה', file: 'jonah', section: 'neviim' },
+  { name: 'Micah', nameHe: 'מִיכָה', file: 'micah', section: 'neviim' },
+  { name: 'Nahum', nameHe: 'נַחוּם', file: 'nahum', section: 'neviim' },
+  { name: 'Habakkuk', nameHe: 'חֲבַקּוּק', file: 'habakkuk', section: 'neviim' },
+  { name: 'Zephaniah', nameHe: 'צְפַנְיָה', file: 'zephaniah', section: 'neviim' },
+  { name: 'Haggai', nameHe: 'חַגַּי', file: 'haggai', section: 'neviim' },
+  { name: 'Zechariah', nameHe: 'זְכַרְיָה', file: 'zechariah', section: 'neviim' },
+  { name: 'Malachi', nameHe: 'מַלְאָכִי', file: 'malachi', section: 'neviim' },
   // Ketuvim - Writings (13 books)
-  { name: 'Psalms', file: 'psalms', section: 'ketuvim' },
-  { name: 'Proverbs', file: 'proverbs', section: 'ketuvim' },
-  { name: 'Job', file: 'job', section: 'ketuvim' },
-  { name: 'Song of Songs', file: 'song-of-songs', section: 'ketuvim' },
-  { name: 'Ruth', file: 'ruth', section: 'ketuvim' },
-  { name: 'Lamentations', file: 'lamentations', section: 'ketuvim' },
-  { name: 'Ecclesiastes', file: 'ecclesiastes', section: 'ketuvim' },
-  { name: 'Esther', file: 'esther', section: 'ketuvim' },
-  { name: 'Daniel', file: 'daniel', section: 'ketuvim' },
-  { name: 'Ezra', file: 'ezra', section: 'ketuvim' },
-  { name: 'Nehemiah', file: 'nehemiah', section: 'ketuvim' },
-  { name: 'I Chronicles', file: 'i-chronicles', section: 'ketuvim' },
-  { name: 'II Chronicles', file: 'ii-chronicles', section: 'ketuvim' },
+  { name: 'Psalms', nameHe: 'תְּהִלִּים', file: 'psalms', section: 'ketuvim' },
+  { name: 'Proverbs', nameHe: 'מִשְׁלֵי', file: 'proverbs', section: 'ketuvim' },
+  { name: 'Job', nameHe: 'אִיּוֹב', file: 'job', section: 'ketuvim' },
+  { name: 'Song of Songs', nameHe: 'שִׁיר הַשִּׁירִים', file: 'song-of-songs', section: 'ketuvim' },
+  { name: 'Ruth', nameHe: 'רוּת', file: 'ruth', section: 'ketuvim' },
+  { name: 'Lamentations', nameHe: 'אֵיכָה', file: 'lamentations', section: 'ketuvim' },
+  { name: 'Ecclesiastes', nameHe: 'קֹהֶלֶת', file: 'ecclesiastes', section: 'ketuvim' },
+  { name: 'Esther', nameHe: 'אֶסְתֵּר', file: 'esther', section: 'ketuvim' },
+  { name: 'Daniel', nameHe: 'דָּנִיֵּאל', file: 'daniel', section: 'ketuvim' },
+  { name: 'Ezra', nameHe: 'עֶזְרָא', file: 'ezra', section: 'ketuvim' },
+  { name: 'Nehemiah', nameHe: 'נְחֶמְיָה', file: 'nehemiah', section: 'ketuvim' },
+  { name: 'I Chronicles', nameHe: 'דִּבְרֵי הַיָּמִים א', file: 'i-chronicles', section: 'ketuvim' },
+  { name: 'II Chronicles', nameHe: 'דִּבְרֵי הַיָּמִים ב', file: 'ii-chronicles', section: 'ketuvim' },
 ] as const;
 
 // Derived constants for convenience
@@ -74,6 +75,10 @@ export const KETUVIM_BOOKS = new Set(
 
 export const BOOK_FILES: Record<string, string> = Object.fromEntries(
   BOOKS.map(b => [b.name, b.file])
+);
+
+export const BOOK_HEBREW_NAMES: Record<string, string> = Object.fromEntries(
+  BOOKS.map(b => [b.name, b.nameHe])
 );
 
 /**
