@@ -51,7 +51,7 @@ export function createBookLabels(
       line-height:1.2;
     `;
     label.dataset.bookName = name;
-    label.dataset.leftX = String(pos.minX);
+    label.dataset.rightX = String(pos.maxX);
     label.dataset.topY = String(pos.minY);
     label.dataset.bookWidth = String(pos.maxX - pos.minX);
 
@@ -93,15 +93,17 @@ export function updateLabelPositions(
 
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement) {
-      const leftX = parseFloat(label.dataset.leftX || "0");
+      const rightX = parseFloat(label.dataset.rightX || "0");
       const topY = parseFloat(label.dataset.topY || "0");
       const bookWidth = parseFloat(label.dataset.bookWidth || "0");
-      const screenX = (leftX + pan.x) * zoom;
+      // Position at book's right edge, label extends leftward via translateX(-100%)
+      const screenX = (rightX + pan.x) * zoom;
       // Position so the gap from label bottom to verse top scales with font size
       const screenY = (topY + pan.y) * zoom - fontSize - gap;
       label.style.left = screenX + "px";
       label.style.top = screenY + "px";
       label.style.fontSize = fontSize + "px";
+      label.style.transform = "translateX(-100%)";
 
       // Show English name only when the book is wide enough on screen
       const bookScreenWidth = bookWidth * zoom;

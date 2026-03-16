@@ -593,7 +593,29 @@ export function computeLayout(torahData: TorahData): VerseLayout[] {
   // Ketuvim
   layoutKetuvim(ketuvim, sectionY, globalVerseIdx, verses);
 
+  // Mirror x-coordinates for RTL layout: Genesis rightmost, verse 1 at right
+  // edge of each row, ragged chapter endings on the left.
+  mirrorX(verses);
+
   return verses;
+}
+
+/**
+ * Mirror all verse x-coordinates so the layout reads right-to-left.
+ * Transforms x → (maxX - x - size) so the rightmost extent stays the same
+ * but everything is horizontally flipped.
+ */
+function mirrorX(verses: VerseLayout[]): void {
+  if (verses.length === 0) return;
+
+  let maxX = 0;
+  for (const v of verses) {
+    maxX = Math.max(maxX, v.x + v.size);
+  }
+
+  for (const v of verses) {
+    v.x = maxX - v.x - v.size;
+  }
 }
 
 export function getLayoutBounds(verses: VerseLayout[]): Bounds {
