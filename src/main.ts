@@ -32,6 +32,7 @@ import {
   resetTouchState,
 } from './touchState.ts';
 import { versesEqual, nextVerse, prevVerse } from './types.ts';
+import { spawnLetterDust, clearLetterDustState } from './letterDust.ts';
 import { findVerseLayoutAtPoint } from './hitDetection.ts';
 import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
 import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame } from './rendering.ts';
@@ -457,6 +458,16 @@ async function main(): Promise<void> {
       if (hoverChanged || overlayWantsRerender) {
         applyOverlay();
         render();
+      }
+
+      // Letter dust effect on hover
+      if (hoverChanged && verse) {
+        const vt = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
+        if (vt?.he) {
+          spawnLetterDust(verse, vt.he, camera);
+        }
+      } else if (hoverChanged && !verse) {
+        clearLetterDustState();
       }
 
       if (pinnedVerse) {
