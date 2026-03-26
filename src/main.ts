@@ -71,6 +71,8 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from "./constants/app.ts";
+import { loadStoryData, renderStoryPanel, computeStopOffsets } from "./scrollytelling/storyPanel";
+import { computeInterpolatedState } from "./scrollytelling/controller";
 import "./styles/zoom-buttons.css";
 import "./styles/right-panel.css";
 import "./styles/verse-popup.css";
@@ -719,6 +721,35 @@ async function main(): Promise<void> {
   if (rightPanel) {
     initHelp(rightPanel);
   }
+
+  // Load story data and wire up scroll-driven camera
+  const storyData = await loadStoryData();
+  const storyContent = document.getElementById('story-content')!;
+  const stopElements = renderStoryPanel(storyContent, storyData.stops);
+
+  let scrollRAF: number | null = null;
+  storyContent.addEventListener('scroll', () => {
+    if (scrollRAF) return;
+    scrollRAF = requestAnimationFrame(() => {
+      scrollRAF = null;
+      const offsets = computeStopOffsets(stopElements);
+      const totalHeight = storyContent.scrollHeight;
+      const state = computeInterpolatedState(
+        storyData.stops,
+        offsets,
+        totalHeight,
+        storyContent.scrollTop,
+        storyData.defaults?.easing ?? 'ease-in-out'
+      );
+
+      // Apply interpolated camera
+      camera.x = state.camera.x;
+      camera.y = state.camera.y;
+      camera.zoom = state.camera.zoom;
+
+      render();
+    });
+  });
 
   // URL State Restoration
   // Restore overlay and its parameters from URL
