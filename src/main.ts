@@ -52,6 +52,7 @@ import {
   configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
+import { initWordClouds, updateWordClouds } from './wordClouds.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -196,6 +197,7 @@ async function main(): Promise<void> {
     applyOverlay();
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateWordClouds({ x: camera.x, y: camera.y }, camera.zoom);
     saveUrlState(true);
   }
 
@@ -213,6 +215,10 @@ async function main(): Promise<void> {
   // Book labels
   window.bookLabels = createBookLabels(verses, document.body);
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+
+  // Word clouds (visible at low zoom)
+  initWordClouds(verses, verseTexts, document.body);
+  updateWordClouds({ x: camera.x, y: camera.y }, camera.zoom);
 
   // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener('wheel', (e: WheelEvent) => {
@@ -232,6 +238,7 @@ async function main(): Promise<void> {
 
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateWordClouds({ x: camera.x, y: camera.y }, camera.zoom);
     debouncedSaveUrlState();
     debouncedTrackZoom();
   }, { passive: false });
@@ -271,6 +278,7 @@ async function main(): Promise<void> {
         camera.zoom = newZoom;
         render();
         updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+        updateWordClouds({ x: camera.x, y: camera.y }, camera.zoom);
       }
       touchState.lastPinchDistance = newDist;
     }
@@ -306,6 +314,7 @@ async function main(): Promise<void> {
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
       updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      updateWordClouds({ x: camera.x, y: camera.y }, camera.zoom);
     }
   });
 
@@ -561,6 +570,7 @@ async function main(): Promise<void> {
     resizeCanvas();
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateWordClouds({ x: camera.x, y: camera.y }, camera.zoom);
   });
 
   // Store for hover detection
@@ -653,6 +663,8 @@ async function main(): Promise<void> {
 
     applyOverlay();
     render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateWordClouds({ x: camera.x, y: camera.y }, camera.zoom);
   }
 
   // Restore state from URL on page load
