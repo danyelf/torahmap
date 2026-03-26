@@ -58,6 +58,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import { createWhisperOverlay, updateWhisper, repositionWhisper } from './verseWhisper.ts';
 
 // Extend window for global state
 declare global {
@@ -167,6 +168,9 @@ async function main(): Promise<void> {
 
   const touchState = createTouchState();
 
+  // Verse whisper overlay - shows Hebrew text flowing from hovered verse
+  const whisperState = createWhisperOverlay();
+
   // Tap detection for touch devices
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
   const TAP_THRESHOLD = 10; // max px movement to count as tap
@@ -232,6 +236,7 @@ async function main(): Promise<void> {
 
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    repositionWhisper(whisperState, camera);
     debouncedSaveUrlState();
     debouncedTrackZoom();
   }, { passive: false });
@@ -271,6 +276,7 @@ async function main(): Promise<void> {
         camera.zoom = newZoom;
         render();
         updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+        repositionWhisper(whisperState, camera);
       }
       touchState.lastPinchDistance = newDist;
     }
@@ -306,6 +312,7 @@ async function main(): Promise<void> {
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
       updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      repositionWhisper(whisperState, camera);
     }
   });
 
@@ -352,6 +359,9 @@ async function main(): Promise<void> {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
     canvas.style.cursor = 'default';
+
+    // Fade out verse whisper
+    updateWhisper(whisperState, null, camera, verseTexts);
 
     let overlayWantsRerender = false;
     if (currentOverlay?.setHoveredVerse) {
@@ -457,6 +467,11 @@ async function main(): Promise<void> {
       if (hoverChanged || overlayWantsRerender) {
         applyOverlay();
         render();
+      }
+
+      // Update verse whisper
+      if (hoverChanged) {
+        updateWhisper(whisperState, verse, camera, verseTexts);
       }
 
       if (pinnedVerse) {
