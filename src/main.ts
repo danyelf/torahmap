@@ -741,6 +741,8 @@ async function main(): Promise<void> {
     lastStoryScrollTop = storyContent.scrollTop;
     appMode = 'explore';
     switchToExplore(storyPanel, explorePanel);
+    // Update URL to explore mode (remove story param)
+    saveUrlState(true);
   });
 
   document.getElementById('back-to-story')?.addEventListener('click', (e) => {
@@ -782,6 +784,10 @@ async function main(): Promise<void> {
       rebuildGeometry(renderContext.gl, renderState, blendedColors);
 
       render();
+
+      // Update URL with current story stop
+      const currentStop = state.t > 0.5 ? state.toStop : state.fromStop;
+      updateUrl({ story: currentStop.id, overlayParams: {} }, false);
     });
   });
 
@@ -850,6 +856,23 @@ async function main(): Promise<void> {
 
   function restoreFromUrl(): void {
     const urlState = parseUrlState();
+
+    if (urlState.story) {
+      // Restore story mode
+      appMode = 'story';
+      switchToStory(storyPanel, explorePanel, storyContent, 0);
+      const stopIndex = storyData.stops.findIndex(s => s.id === urlState.story);
+      if (stopIndex >= 0 && stopElements[stopIndex]) {
+        stopElements[stopIndex].scrollIntoView();
+      }
+      return;
+    }
+
+    // Explore mode
+    if (urlState.overlay || urlState.verse) {
+      appMode = 'explore';
+      switchToExplore(storyPanel, explorePanel);
+    }
 
     restoreOverlayFromUrl(urlState);
     const hasVerse = restoreVerseFromUrl(urlState);
