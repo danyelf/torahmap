@@ -420,14 +420,15 @@ describe('createProgram', () => {
       expect(attribKeys).toContain('seed');
     });
 
-    it('uniforms contains all 3 uniforms', () => {
+    it('uniforms contains all 4 uniforms', () => {
       const program = createProgram(gl);
 
       const uniformKeys = Object.keys(program.uniforms);
-      expect(uniformKeys).toHaveLength(3);
+      expect(uniformKeys).toHaveLength(4);
       expect(uniformKeys).toContain('resolution');
       expect(uniformKeys).toContain('pan');
       expect(uniformKeys).toContain('zoom');
+      expect(uniformKeys).toContain('time');
     });
   });
 

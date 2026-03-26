@@ -6,6 +6,7 @@ const VERTEX_SHADER = `#version 300 es
   uniform vec2 u_resolution;
   uniform vec2 u_pan;
   uniform float u_zoom;
+  uniform float u_time;
 
   in vec2 a_position;
   in vec3 a_color;
@@ -23,6 +24,12 @@ const VERTEX_SHADER = `#version 300 es
   flat out int v_colorCount;
   out vec2 v_uv;
   out vec2 v_seed;
+  out float v_shimmer;
+
+  // Simple hash for per-verse phase and frequency variation
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  }
 
   void main() {
     vec2 pos = (a_position + u_pan) * u_zoom;
@@ -35,6 +42,13 @@ const VERTEX_SHADER = `#version 300 es
     v_colorCount = int(a_colorCount);
     v_uv = a_uv;
     v_seed = a_seed;
+
+    // Heat shimmer: per-verse brightness oscillation
+    // Phase and frequency derived from seed (verse position) for organic variation
+    float phase = hash(a_seed * 0.01) * 6.2832; // 0 to 2*PI
+    float freq = 0.8 + hash(a_seed * 0.02) * 0.6; // 0.8 to 1.4 rad/s (~4.5-8s cycle)
+    float amplitude = 0.05 + hash(a_seed * 0.03) * 0.03; // 0.05 to 0.08
+    v_shimmer = 1.0 + amplitude * sin(u_time * freq + phase);
   }
 `;
 
@@ -47,6 +61,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in int v_colorCount;
   in vec2 v_uv;
   in vec2 v_seed;
+  in float v_shimmer;
   out vec4 fragColor;
 
   // Simple hash for dithering noise and stipple selection
@@ -118,6 +133,9 @@ const FRAGMENT_SHADER = `#version 300 es
     vec2 noiseCoord = floor(v_uv * 12.0);
     float noise = (hash(noiseCoord + v_seed * 0.01) - 0.5) * 0.1;
     color = color + noise;
+
+    // Apply heat shimmer brightness modulation
+    color = color * v_shimmer;
 
     fragColor = vec4(color, 1.0);
   }
@@ -194,6 +212,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
+      time: gl.getUniformLocation(program, 'u_time'),
     }
   };
 }

@@ -58,6 +58,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import { startHeatShimmer } from './heatShimmer.ts';
 
 // Extend window for global state
 declare global {
@@ -209,6 +210,14 @@ async function main(): Promise<void> {
   }
 
   render();
+
+  // Start heat shimmer — subtle ambient brightness animation
+  startHeatShimmer(
+    renderContext.gl,
+    renderContext.programs.main.program,
+    renderContext.programs.main.uniforms.time,
+    render
+  );
 
   // Book labels
   window.bookLabels = createBookLabels(verses, document.body);

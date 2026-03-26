@@ -152,6 +152,7 @@ export interface ShaderProgram {
     resolution: WebGLUniformLocation | null;
     pan: WebGLUniformLocation | null;
     zoom: WebGLUniformLocation | null;
+    time: WebGLUniformLocation | null;
   };
 }
 
