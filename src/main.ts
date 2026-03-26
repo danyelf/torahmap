@@ -58,6 +58,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import { buildWordIndex, initThreadLines, setThreadLineHover, redrawThreadLines } from './threadLines.ts';
 
 // Extend window for global state
 declare global {
@@ -104,6 +105,9 @@ async function main(): Promise<void> {
 
   // Build search index
   buildSearchIndex(verseTexts);
+
+  // Build word index for thread lines (rare word connections)
+  buildWordIndex(verseTexts);
 
   // Register and initialize overlays
   registerOverlay(commentaryOverlay);
@@ -189,6 +193,8 @@ async function main(): Promise<void> {
   function pinVerse(verse: VerseLayout, centerCamera: boolean = false): void {
     trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
+    // Clear thread lines when pinning (pinned state takes over)
+    setThreadLineHover(null, camera);
     updateSidebarWrapper(verse, true);
     if (centerCamera) {
       centerOnVerse(verse);
@@ -214,6 +220,9 @@ async function main(): Promise<void> {
   window.bookLabels = createBookLabels(verses, document.body);
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
 
+  // Initialize thread lines overlay
+  initThreadLines(document.body, verses);
+
   // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
@@ -232,6 +241,7 @@ async function main(): Promise<void> {
 
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    redrawThreadLines(camera);
     debouncedSaveUrlState();
     debouncedTrackZoom();
   }, { passive: false });
@@ -271,6 +281,7 @@ async function main(): Promise<void> {
         camera.zoom = newZoom;
         render();
         updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+        redrawThreadLines(camera);
       }
       touchState.lastPinchDistance = newDist;
     }
@@ -306,6 +317,7 @@ async function main(): Promise<void> {
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
       updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      redrawThreadLines(camera);
     }
   });
 
@@ -357,6 +369,9 @@ async function main(): Promise<void> {
     if (currentOverlay?.setHoveredVerse) {
       overlayWantsRerender = currentOverlay.setHoveredVerse(null);
     }
+
+    // Fade out thread lines
+    setThreadLineHover(null, camera);
 
     if (wasHovering || overlayWantsRerender) {
       applyOverlay();
@@ -457,6 +472,11 @@ async function main(): Promise<void> {
       if (hoverChanged || overlayWantsRerender) {
         applyOverlay();
         render();
+      }
+
+      // Update thread lines on hover change (only when no verse is pinned)
+      if (hoverChanged && !pinnedVerse) {
+        setThreadLineHover(verse, camera);
       }
 
       if (pinnedVerse) {
@@ -561,6 +581,7 @@ async function main(): Promise<void> {
     resizeCanvas();
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    redrawThreadLines(camera);
   });
 
   // Store for hover detection

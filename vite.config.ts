@@ -19,6 +19,7 @@ export default defineConfig(({ command }) => ({
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
   },
+  css: { postcss: {} },
   build: {
     rollupOptions: {
       input: {
