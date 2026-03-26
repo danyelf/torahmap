@@ -58,6 +58,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import { initTorahRain } from './torahRain.ts';
 
 // Extend window for global state
 declare global {
@@ -587,6 +588,9 @@ async function main(): Promise<void> {
   if (controlsPanel) {
     initHelp(controlsPanel);
   }
+
+  // Start ambient Torah Rain effect
+  initTorahRain();
 
   // URL State Restoration
   // Restore overlay and its parameters from URL
