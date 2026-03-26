@@ -58,6 +58,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import { createBreathingText, updateBreathingText, clearBreathingText, repositionBreathingText } from './breathingText.ts';
 
 // Extend window for global state
 declare global {
@@ -214,6 +215,9 @@ async function main(): Promise<void> {
   window.bookLabels = createBookLabels(verses, document.body);
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
 
+  // Breathing text overlay (proximity-reveal of opening words)
+  const breathingText = createBreathingText(document.body);
+
   // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
@@ -232,6 +236,7 @@ async function main(): Promise<void> {
 
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    repositionBreathingText(breathingText, camera);
     debouncedSaveUrlState();
     debouncedTrackZoom();
   }, { passive: false });
@@ -271,6 +276,7 @@ async function main(): Promise<void> {
         camera.zoom = newZoom;
         render();
         updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+        repositionBreathingText(breathingText, camera);
       }
       touchState.lastPinchDistance = newDist;
     }
@@ -295,6 +301,7 @@ async function main(): Promise<void> {
     canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
     pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
+    clearBreathingText(breathingText);
   });
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
@@ -351,6 +358,7 @@ async function main(): Promise<void> {
   canvas.addEventListener('pointerleave', () => {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
+    clearBreathingText(breathingText);
     canvas.style.cursor = 'default';
 
     let overlayWantsRerender = false;
@@ -466,6 +474,9 @@ async function main(): Promise<void> {
       } else {
         updateSidebarWrapper(null);
       }
+
+      // Update breathing text overlay
+      updateBreathingText(breathingText, verse, verses, verseTexts, camera, false);
     }
   });
 
@@ -561,6 +572,7 @@ async function main(): Promise<void> {
     resizeCanvas();
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    repositionBreathingText(breathingText, camera);
   });
 
   // Store for hover detection
