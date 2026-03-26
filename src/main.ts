@@ -181,6 +181,11 @@ async function main(): Promise<void> {
   // Mode switching state (story vs explore)
   let appMode: AppMode = 'story';
   let lastStoryScrollTop = 0;
+  // Track whether user manually zoomed/panned during story mode.
+  // Cleared when the user scrolls the narrative, resuming scroll-driven camera.
+  // Currently write-only; reserved for future UI hints (e.g., "scroll to resume").
+  let manualOverride = false;
+  void manualOverride; // satisfy noUnusedLocals
 
   // Tap detection for touch devices
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
@@ -290,6 +295,7 @@ async function main(): Promise<void> {
   const zoomOutBtn = document.getElementById('zoom-out');
 
   zoomInBtn?.addEventListener('click', () => {
+
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_IN_FACTOR);
@@ -309,6 +315,7 @@ async function main(): Promise<void> {
   });
 
   zoomOutBtn?.addEventListener('click', () => {
+
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_OUT_FACTOR);
@@ -400,6 +407,7 @@ async function main(): Promise<void> {
 
   canvas.addEventListener("pointermove", (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
+  
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
       camera.x += dx / camera.zoom;
@@ -789,6 +797,13 @@ async function main(): Promise<void> {
       const currentStop = state.t > 0.5 ? state.toStop : state.fromStop;
       updateUrl({ story: currentStop.id, overlayParams: {} }, false);
     });
+  });
+
+  // Re-trigger scroll on resize to recompute story positions
+  window.addEventListener('resize', () => {
+    if (appMode === 'story') {
+      storyContent.dispatchEvent(new Event('scroll'));
+    }
   });
 
   // URL State Restoration
