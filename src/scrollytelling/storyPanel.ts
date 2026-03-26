@@ -1,9 +1,29 @@
 // src/scrollytelling/storyPanel.ts
 import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition } from './types';
+import { parseStoryMarkdown } from './storyParser';
 
 export async function loadStoryData(): Promise<StoryData> {
-  const response = await fetch('/data/story.json');
-  return response.json();
+  const response = await fetch('/data/story.md');
+  const markdown = await response.text();
+  return parseStoryMarkdown(markdown);
+}
+
+/**
+ * Minimal markdown-to-HTML for story text.
+ * Supports: **bold**, *italic*, [links](url), paragraphs, and raw HTML (e.g. <span>).
+ */
+function renderMarkdown(md: string): string {
+  return md
+    .split(/\n\n+/)
+    .map(paragraph => {
+      const html = paragraph
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        .replace(/\n/g, ' ');
+      return `<p>${html}</p>`;
+    })
+    .join('\n');
 }
 
 export function renderStoryPanel(
@@ -22,9 +42,10 @@ export function renderStoryPanel(
     title.textContent = stop.title;
     el.appendChild(title);
 
-    const text = document.createElement('p');
-    text.textContent = stop.text;
-    el.appendChild(text);
+    const textContainer = document.createElement('div');
+    textContainer.className = 'story-text';
+    textContainer.innerHTML = renderMarkdown(stop.text);
+    el.appendChild(textContainer);
 
     container.appendChild(el);
     stopElements.push(el);

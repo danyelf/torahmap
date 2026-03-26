@@ -772,13 +772,15 @@ async function main(): Promise<void> {
     scrollRAF = requestAnimationFrame(() => {
       scrollRAF = null;
       const offsets = computeStopOffsets(stopElements);
+      const heights = stopElements.map(el => el.offsetHeight);
       const totalHeight = storyContent.scrollHeight;
       const state = computeInterpolatedState(
         resolvedStops,
         offsets,
         totalHeight,
         storyContent.scrollTop,
-        storyData.defaults?.easing ?? 'ease-in-out'
+        storyData.defaults?.easing ?? 'ease-in-out',
+        heights
       );
 
       // Apply interpolated camera

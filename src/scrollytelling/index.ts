@@ -1,7 +1,8 @@
 export type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, InterpolatedState, EasingName } from './types';
 export type { AppMode } from './modeSwitch';
 export { loadStoryData, renderStoryPanel, computeStopOffsets, resolveStops } from './storyPanel';
-export { computeInterpolatedState } from './controller';
+export { computeInterpolatedState, computeStopCenters } from './controller';
+export { parseStoryMarkdown } from './storyParser';
 export { computeBlendedColors, getColorsForStop } from './overlayBlender';
 export { blendColorArrays } from './colorBlending';
 export { switchToExplore, switchToStory } from './modeSwitch';
