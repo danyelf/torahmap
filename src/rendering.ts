@@ -4,6 +4,7 @@ import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } f
 import { buildVerseGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
+import { updateWatermarkPositions } from './watermarks';
 import type { VerseLayout, ShaderProgram } from './types';
 import { versesEqual } from './types';
 import type { Camera } from './camera';
@@ -192,6 +193,11 @@ export function render(
   // Update book label positions
   if (window.bookLabels) {
     updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+  }
+
+  // Update book watermark positions
+  if (window.bookWatermarks) {
+    updateWatermarkPositions(window.bookWatermarks, { x: camera.x, y: camera.y }, camera.zoom);
   }
 }
 

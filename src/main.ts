@@ -4,6 +4,7 @@ declare const __GIT_BRANCH__: string;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
+import { createWatermarks, updateWatermarkPositions } from './watermarks.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLemmaData } from './search.ts';
 import { initHelp } from './help.ts';
@@ -63,6 +64,7 @@ import {
 declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
+    bookWatermarks?: HTMLDivElement;
     torahMap?: {
       verses: VerseLayout[];
       pan: { x: number; y: number };
@@ -196,6 +198,7 @@ async function main(): Promise<void> {
     applyOverlay();
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateWatermarkPositions(window.bookWatermarks!, { x: camera.x, y: camera.y }, camera.zoom);
     saveUrlState(true);
   }
 
@@ -213,6 +216,10 @@ async function main(): Promise<void> {
   // Book labels
   window.bookLabels = createBookLabels(verses, document.body);
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+
+  // Book watermarks (large faint names visible when zoomed out)
+  window.bookWatermarks = createWatermarks(verses, document.body);
+  updateWatermarkPositions(window.bookWatermarks, { x: camera.x, y: camera.y }, camera.zoom);
 
   // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener('wheel', (e: WheelEvent) => {
@@ -232,6 +239,7 @@ async function main(): Promise<void> {
 
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateWatermarkPositions(window.bookWatermarks!, { x: camera.x, y: camera.y }, camera.zoom);
     debouncedSaveUrlState();
     debouncedTrackZoom();
   }, { passive: false });
@@ -271,6 +279,7 @@ async function main(): Promise<void> {
         camera.zoom = newZoom;
         render();
         updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+        updateWatermarkPositions(window.bookWatermarks!, { x: camera.x, y: camera.y }, camera.zoom);
       }
       touchState.lastPinchDistance = newDist;
     }
@@ -306,6 +315,7 @@ async function main(): Promise<void> {
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
       updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      updateWatermarkPositions(window.bookWatermarks!, { x: camera.x, y: camera.y }, camera.zoom);
     }
   });
 
@@ -561,6 +571,7 @@ async function main(): Promise<void> {
     resizeCanvas();
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateWatermarkPositions(window.bookWatermarks!, { x: camera.x, y: camera.y }, camera.zoom);
   });
 
   // Store for hover detection
