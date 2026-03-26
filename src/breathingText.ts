@@ -1,6 +1,7 @@
 // Breathing Text - reverent proximity-reveal effect
-// When hovering over a verse, neighboring verses subtly reveal their opening Hebrew words.
-// Text fades in/out based on distance, like words barely visible beneath the surface.
+// When hovering over a verse, nearby verses in the SAME ROW (chapter) subtly reveal
+// their opening Hebrew word. Text fades in with a staggered upward drift animation,
+// showing only every Nth verse for a sparse, scroll-like feel.
 
 import type { VerseLayout } from './types.ts';
 import type { Camera } from './camera.ts';
@@ -8,27 +9,35 @@ import type { VerseTexts } from './verseTexts.ts';
 import { getVerseText } from './verseTexts.ts';
 
 // Configuration
-const RADIUS_IN_VERSES = 7;        // Radius in verse-size units
-const MAX_OPACITY = 0.55;          // Opacity at the hovered verse
-const MIN_OPACITY = 0.08;          // Opacity at the edge of the radius
-const TRANSITION_MS = 300;         // CSS transition duration
+const RADIUS_IN_VERSES = 10;       // Radius in verse-size units (along the row)
+const MAX_OPACITY = 0.3;           // Ghostly max opacity at the hovered verse
+const MIN_OPACITY = 0.05;          // Opacity at the edge of the radius
+const FADE_IN_MS = 400;            // CSS transition duration for fade in
+const FADE_OUT_MS = 250;           // CSS transition duration for fade out
 const MIN_ZOOM = 1.5;              // Only show when zoomed in enough
-const POOL_SIZE = 80;              // Max DOM elements in pool
-const OPENING_WORDS = 3;           // Number of Hebrew words to show
-const BASE_FONT_SIZE = 4.5;        // Font size at zoom=1 (in px, scales with zoom)
-const MIN_FONT_SIZE = 6;           // Minimum font size
-const MAX_FONT_SIZE = 28;          // Maximum font size
+const POOL_SIZE = 40;              // Max DOM elements in pool
+const OPENING_WORDS = 1;           // Show only the FIRST word of each verse
+const BASE_FONT_SIZE = 6;          // Larger font for readability at zoom=1
+const MIN_FONT_SIZE = 8;           // Minimum font size
+const MAX_FONT_SIZE = 32;          // Maximum font size
+const VERSE_SKIP = 3;              // Show every Nth verse (reduces density)
+const STAGGER_DELAY_MS = 80;       // Delay per unit of distance for staggered reveal
+const DRIFT_PX = 8;                // Upward drift distance for animation
+
+interface BreathingTextElement {
+  el: HTMLDivElement;
+  revealTimer: ReturnType<typeof setTimeout> | null;
+}
 
 interface BreathingTextState {
   container: HTMLDivElement;
-  pool: HTMLDivElement[];
+  pool: BreathingTextElement[];
   activeCount: number;
   currentHoveredVerse: VerseLayout | null;
 }
 
 /** Extract the first N Hebrew words from verse text */
 function getOpeningWords(text: string, count: number): string {
-  // Split on whitespace, take first N words
   const words = text.trim().split(/\s+/);
   return words.slice(0, count).join(' ');
 }
@@ -60,7 +69,7 @@ export function createBreathingText(container: HTMLElement): BreathingTextState 
   container.appendChild(overlayDiv);
 
   // Pre-allocate pool of DOM elements
-  const pool: HTMLDivElement[] = [];
+  const pool: BreathingTextElement[] = [];
   for (let i = 0; i < POOL_SIZE; i++) {
     const el = document.createElement('div');
     el.style.cssText = `
@@ -70,13 +79,14 @@ export function createBreathingText(container: HTMLElement): BreathingTextState 
       white-space:nowrap;
       pointer-events:none;
       opacity:0;
-      transition:opacity ${TRANSITION_MS}ms ease-out;
-      text-shadow:0 0 4px rgba(0,0,0,0.7), 0 0 8px rgba(0,0,0,0.4);
-      transform:translate(-50%, -50%);
+      transition:opacity ${FADE_OUT_MS}ms ease-out, transform ${FADE_IN_MS}ms ease-out;
+      text-shadow:0 0 6px rgba(0,0,0,0.8), 0 0 12px rgba(0,0,0,0.4);
+      transform:translate(-50%, -100%) translateY(${DRIFT_PX}px);
       direction:rtl;
+      will-change:opacity,transform;
     `;
     overlayDiv.appendChild(el);
-    pool.push(el);
+    pool.push({ el, revealTimer: null });
   }
 
   return {
@@ -87,24 +97,23 @@ export function createBreathingText(container: HTMLElement): BreathingTextState 
   };
 }
 
-/** Find verses within a radius of the target verse (in world units) */
-function findNeighbors(
+/** Find verses in the same chapter (row) within a horizontal radius */
+function findRowNeighbors(
   verses: VerseLayout[],
   target: VerseLayout,
   radiusWorld: number
 ): Array<{ verse: VerseLayout; dist: number }> {
   const cx = target.x + target.size / 2;
-  const cy = target.y + target.size / 2;
   const results: Array<{ verse: VerseLayout; dist: number }> = [];
 
   for (const v of verses) {
-    const vx = v.x + v.size / 2;
-    const vy = v.y + v.size / 2;
-    const dx = vx - cx;
-    const dy = vy - cy;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    // Only same book and chapter (same row)
+    if (v.book !== target.book || v.chapter !== target.chapter) continue;
 
-    if (dist <= radiusWorld) {
+    const vx = v.x + v.size / 2;
+    const dist = Math.abs(vx - cx);
+
+    if (dist <= radiusWorld && dist > 0) {
       results.push({ verse: v, dist });
     }
   }
@@ -132,9 +141,16 @@ export function updateBreathingText(
       state.currentHoveredVerse.book === hoveredVerse.book &&
       state.currentHoveredVerse.chapter === hoveredVerse.chapter &&
       state.currentHoveredVerse.verse === hoveredVerse.verse) {
-    // Just reposition existing elements
     repositionBreathingText(state, camera);
     return;
+  }
+
+  // Clear pending timers from previous hover
+  for (const item of state.pool) {
+    if (item.revealTimer !== null) {
+      clearTimeout(item.revealTimer);
+      item.revealTimer = null;
+    }
   }
 
   state.currentHoveredVerse = hoveredVerse;
@@ -142,19 +158,30 @@ export function updateBreathingText(
   // Calculate world-space radius
   const radiusWorld = RADIUS_IN_VERSES * hoveredVerse.size;
 
-  // Find neighbors
-  const neighbors = findNeighbors(verses, hoveredVerse, radiusWorld);
+  // Find neighbors along the same row (chapter)
+  const neighbors = findRowNeighbors(verses, hoveredVerse, radiusWorld);
 
-  // Sort by distance (closest first) and limit to pool size
+  // Sort by distance (closest first)
   neighbors.sort((a, b) => a.dist - b.dist);
-  const visible = neighbors.slice(0, POOL_SIZE);
+
+  // Sparse sampling: keep every Nth verse
+  const sparse = neighbors.filter((_, i) => i % VERSE_SKIP === 0);
+  const visible = sparse.slice(0, POOL_SIZE);
 
   const fontSize = Math.max(
     MIN_FONT_SIZE,
     Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * camera.zoom)
   );
 
-  // Assign pool elements
+  // First, hide all currently active elements immediately (set short fade-out)
+  for (let i = 0; i < state.activeCount; i++) {
+    const item = state.pool[i];
+    item.el.style.transition = `opacity ${FADE_OUT_MS}ms ease-out, transform ${FADE_OUT_MS}ms ease-out`;
+    item.el.style.opacity = '0';
+    item.el.style.transform = `translate(-50%, -100%) translateY(${DRIFT_PX}px)`;
+  }
+
+  // Assign pool elements with staggered reveal
   let activeIdx = 0;
   for (const { verse, dist } of visible) {
     const vt = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
@@ -165,10 +192,13 @@ export function updateBreathingText(
 
     if (activeIdx >= POOL_SIZE) break;
 
-    const el = state.pool[activeIdx];
+    const item = state.pool[activeIdx];
+    const el = item.el;
+
+    // Position text ABOVE the verse square (offset upward by verse height)
     const screenPos = worldToScreen(
       verse.x + verse.size / 2,
-      verse.y + verse.size / 2,
+      verse.y,  // top of the verse square
       camera
     );
 
@@ -178,19 +208,33 @@ export function updateBreathingText(
     el.style.left = screenPos.x + 'px';
     el.style.top = screenPos.y + 'px';
     el.style.fontSize = fontSize + 'px';
-    el.style.opacity = String(opacity);
+
+    // Start hidden and drifted up
+    el.style.transition = 'none';
+    el.style.opacity = '0';
+    el.style.transform = `translate(-50%, -100%) translateY(${DRIFT_PX}px)`;
 
     // Store world coordinates for repositioning during pan/zoom
     el.dataset.worldX = String(verse.x + verse.size / 2);
-    el.dataset.worldY = String(verse.y + verse.size / 2);
+    el.dataset.worldY = String(verse.y);
     el.dataset.targetOpacity = String(opacity);
+
+    // Staggered reveal: delay based on distance
+    const delay = Math.round((dist / hoveredVerse.size) * STAGGER_DELAY_MS);
+
+    item.revealTimer = setTimeout(() => {
+      el.style.transition = `opacity ${FADE_IN_MS}ms ease-out, transform ${FADE_IN_MS}ms ease-out`;
+      el.style.opacity = String(opacity);
+      el.style.transform = 'translate(-50%, -100%) translateY(0px)';
+      item.revealTimer = null;
+    }, delay);
 
     activeIdx++;
   }
 
   // Hide unused pool elements
   for (let i = activeIdx; i < state.activeCount; i++) {
-    state.pool[i].style.opacity = '0';
+    state.pool[i].el.style.opacity = '0';
   }
 
   state.activeCount = activeIdx;
@@ -212,7 +256,7 @@ export function repositionBreathingText(
   );
 
   for (let i = 0; i < state.activeCount; i++) {
-    const el = state.pool[i];
+    const el = state.pool[i].el;
     const worldX = parseFloat(el.dataset.worldX || '0');
     const worldY = parseFloat(el.dataset.worldY || '0');
     const screenPos = worldToScreen(worldX, worldY, camera);
@@ -228,7 +272,14 @@ export function clearBreathingText(state: BreathingTextState): void {
   if (state.activeCount === 0 && state.currentHoveredVerse === null) return;
 
   for (let i = 0; i < state.activeCount; i++) {
-    state.pool[i].style.opacity = '0';
+    const item = state.pool[i];
+    if (item.revealTimer !== null) {
+      clearTimeout(item.revealTimer);
+      item.revealTimer = null;
+    }
+    item.el.style.transition = `opacity ${FADE_OUT_MS}ms ease-out, transform ${FADE_OUT_MS}ms ease-out`;
+    item.el.style.opacity = '0';
+    item.el.style.transform = `translate(-50%, -100%) translateY(${DRIFT_PX}px)`;
   }
 
   state.activeCount = 0;

@@ -16,6 +16,7 @@ function getGitBranch(): string {
 export default defineConfig(({ command }) => ({
   // Use /torahmap/ base path only for production build
   base: command === "build" ? "/torahmap/" : "/",
+  css: { postcss: {} },
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
   },
