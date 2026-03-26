@@ -74,6 +74,8 @@ import {
 import { loadStoryData, renderStoryPanel, computeStopOffsets } from "./scrollytelling/storyPanel";
 import { computeInterpolatedState } from "./scrollytelling/controller";
 import { computeBlendedColors } from "./scrollytelling/overlayBlender";
+import { switchToExplore, switchToStory } from "./scrollytelling/modeSwitch";
+import type { AppMode } from "./scrollytelling/modeSwitch";
 import "./styles/zoom-buttons.css";
 import "./styles/right-panel.css";
 import "./styles/verse-popup.css";
@@ -175,6 +177,10 @@ async function main(): Promise<void> {
   const mouseState = createMouseState();
 
   const touchState = createTouchState();
+
+  // Mode switching state (story vs explore)
+  let appMode: AppMode = 'story';
+  let lastStoryScrollTop = 0;
 
   // Tap detection for touch devices
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
@@ -728,8 +734,26 @@ async function main(): Promise<void> {
   const storyContent = document.getElementById('story-content')!;
   const stopElements = renderStoryPanel(storyContent, storyData.stops);
 
+  const storyPanel = document.getElementById('story-panel')!;
+  const explorePanel = document.getElementById('explore-panel')!;
+
+  document.getElementById('exit-story')?.addEventListener('click', () => {
+    lastStoryScrollTop = storyContent.scrollTop;
+    appMode = 'explore';
+    switchToExplore(storyPanel, explorePanel);
+  });
+
+  document.getElementById('back-to-story')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    appMode = 'story';
+    switchToStory(storyPanel, explorePanel, storyContent, lastStoryScrollTop);
+    // Re-trigger scroll handler to restore map state
+    storyContent.dispatchEvent(new Event('scroll'));
+  });
+
   let scrollRAF: number | null = null;
   storyContent.addEventListener('scroll', () => {
+    if (appMode !== 'story') return;
     if (scrollRAF) return;
     scrollRAF = requestAnimationFrame(() => {
       scrollRAF = null;
