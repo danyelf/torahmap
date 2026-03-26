@@ -5,7 +5,7 @@ declare const __GIT_BRANCH__: string;
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { playScatterEffect } from './scatterEffect.ts';
+import { updateScatterHover } from './scatterEffect.ts';
 import { buildSearchIndex, loadLemmaData } from './search.ts';
 import { initHelp } from './help.ts';
 import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
@@ -189,12 +189,6 @@ async function main(): Promise<void> {
   // Helper: Pin a verse and update all dependent state
   function pinVerse(verse: VerseLayout, centerCamera: boolean = false): void {
     trackVerseClick(verse.book, verse.chapter, verse.verse);
-
-    // Play scatter animation (fire-and-forget)
-    const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
-    if (text?.he) {
-      playScatterEffect(verse, camera, text.he);
-    }
 
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
@@ -448,6 +442,14 @@ async function main(): Promise<void> {
       setHoveredVerse(mouseState, verse);
 
       const hoverChanged = !versesEqual(previousHover, verse);
+
+      // Update scatter effect on hover change
+      if (hoverChanged) {
+        const hebrewText = verse
+          ? getVerseText(verseTexts, verse.book, verse.chapter, verse.verse)?.he ?? null
+          : null;
+        updateScatterHover(verse, camera, hebrewText);
+      }
 
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
