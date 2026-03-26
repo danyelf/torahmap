@@ -32,7 +32,7 @@ import {
   resetTouchState,
 } from './touchState.ts';
 import { versesEqual, nextVerse, prevVerse } from './types.ts';
-import { spawnLetterDust, clearLetterDustState } from './letterDust.ts';
+import { triggerRipple, clearRippleState } from './rippleWords.ts';
 import { findVerseLayoutAtPoint } from './hitDetection.ts';
 import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
 import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame } from './rendering.ts';
@@ -460,14 +460,11 @@ async function main(): Promise<void> {
         render();
       }
 
-      // Letter dust effect on hover
+      // Ripple words effect on hover
       if (hoverChanged && verse) {
-        const vt = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
-        if (vt?.he) {
-          spawnLetterDust(verse, vt.he, camera);
-        }
+        triggerRipple(verse, verses, verseTexts, camera);
       } else if (hoverChanged && !verse) {
-        clearLetterDustState();
+        clearRippleState();
       }
 
       if (pinnedVerse) {
