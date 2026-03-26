@@ -722,6 +722,34 @@ async function main(): Promise<void> {
     bounds,
   };
 
+  // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
+  if (import.meta.hot) {
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        const x = Math.round(camera.x * 100) / 100;
+        const y = Math.round(camera.y * 100) / 100;
+        const zoom = Math.round(camera.zoom * 100) / 100;
+
+        // Build overlay portion
+        let overlayPart = '';
+        if (currentOverlay) {
+          overlayPart = ` | overlay: ${currentOverlay.id}`;
+          const params = currentOverlay.getUrlParams?.();
+          if (params) {
+            for (const [key, value] of Object.entries(params)) {
+              overlayPart += ` | ${key}: ${value}`;
+            }
+          }
+        }
+
+        const comment = `<!-- stop: STOP_ID | camera: ${x},${y},${zoom}${overlayPart} -->`;
+        navigator.clipboard.writeText(comment);
+        console.log(`[capture] Copied to clipboard:\n${comment}`);
+      }
+    });
+  }
+
   // Wire up search overlay callbacks
   configureSearch({
     verses,
@@ -739,11 +767,28 @@ async function main(): Promise<void> {
   }
 
   // Load story data and wire up scroll-driven camera
-  const storyData = await loadStoryData();
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
-  const resolvedStops = resolveStops(storyData.stops, initialCamera);
   const storyContent = document.getElementById('story-content')!;
-  const stopElements = renderStoryPanel(storyContent, storyData.stops);
+
+  let storyData = await loadStoryData();
+  let resolvedStops = resolveStops(storyData.stops, initialCamera);
+  let stopElements = renderStoryPanel(storyContent, storyData.stops);
+
+  async function reloadStory(): Promise<void> {
+    const scrollTop = storyContent.scrollTop;
+    storyData = await loadStoryData();
+    resolvedStops = resolveStops(storyData.stops, initialCamera);
+    stopElements = renderStoryPanel(storyContent, storyData.stops);
+    storyContent.scrollTop = scrollTop;
+    storyContent.dispatchEvent(new Event('scroll'));
+  }
+
+  // Hot-reload story.md in dev mode
+  if (import.meta.hot) {
+    import.meta.hot.on('story-update', () => {
+      reloadStory();
+    });
+  }
 
   const storyPanel = document.getElementById('story-panel')!;
   const explorePanel = document.getElementById('explore-panel')!;
