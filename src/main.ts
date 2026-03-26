@@ -71,6 +71,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from "./constants/app.ts";
+import "./styles/zoom-buttons.css";
 
 // Extend window for global state
 declare global {
@@ -274,6 +275,48 @@ async function main(): Promise<void> {
   );
 
   const debouncedTrackZoom = debounce(() => trackZoomLevel(camera.zoom), 1000);
+
+  // Zoom buttons
+  const zoomInBtn = document.getElementById('zoom-in');
+  const zoomOutBtn = document.getElementById('zoom-out');
+
+  zoomInBtn?.addEventListener('click', () => {
+    const centerX = canvas.clientWidth / 2;
+    const centerY = canvas.clientHeight / 2;
+    const newZoom = clampZoom(camera.zoom * ZOOM_IN_FACTOR);
+    const newPan = panForZoom(
+      { x: camera.x, y: camera.y },
+      camera.zoom,
+      newZoom,
+      centerX,
+      centerY
+    );
+    camera.x = newPan.x;
+    camera.y = newPan.y;
+    camera.zoom = newZoom;
+    render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    debouncedSaveUrlState();
+  });
+
+  zoomOutBtn?.addEventListener('click', () => {
+    const centerX = canvas.clientWidth / 2;
+    const centerY = canvas.clientHeight / 2;
+    const newZoom = clampZoom(camera.zoom * ZOOM_OUT_FACTOR);
+    const newPan = panForZoom(
+      { x: camera.x, y: camera.y },
+      camera.zoom,
+      newZoom,
+      centerX,
+      centerY
+    );
+    camera.x = newPan.x;
+    camera.y = newPan.y;
+    camera.zoom = newZoom;
+    render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    debouncedSaveUrlState();
+  });
 
   // Touch events for pinch-to-zoom
   canvas.addEventListener(
