@@ -18,27 +18,18 @@
 </head>
 <body>
   <canvas id="canvas" style="touch-action: none;"></canvas>
+
   <div id="zoom-controls">
     <button id="zoom-in" aria-label="Zoom in">+</button>
     <button id="zoom-out" aria-label="Zoom out">&minus;</button>
   </div>
-  <div id="controls">
-    <label>Overlay</label>
-    <select id="overlay-select">
-      <option value="none">None</option>
-      <option value="search">Text Search</option>
-      <option value="commentary">Commentary</option>
-      <option value="trop">Trop</option>
-      <option value="haftarah">Haftarah</option>
-      <option value="text-dating">Text Dating</option>
-      <option value="verse-length">Verse Length</option>
-    </select>
-    <div id="overlay-controls"></div>
-    <div id="overlay-legend"></div>
-  </div>
-  <div id="verse-sidebar">
-    <div class="bottom-sheet-handle"><span></span></div>
-    <div class="verse-ref"><span class="ref-text"></span><button class="close-btn">&times;</button></div>
+
+  <!-- Verse popup - bottom left of canvas -->
+  <div id="verse-popup">
+    <div class="verse-ref">
+      <span class="ref-text"></span>
+      <button class="close-btn">&times;</button>
+    </div>
     <div class="overlay-info"></div>
     <div class="verse-hebrew"></div>
     <div class="verse-english"></div>
@@ -46,6 +37,38 @@
       View on Sefaria
       <span class="link-subtitle"></span>
     </a>
+  </div>
+
+  <!-- Right panel -->
+  <div id="right-panel">
+    <!-- Story mode content -->
+    <div id="story-panel">
+      <div class="story-header">
+        <button id="exit-story">Explore freely</button>
+      </div>
+      <div id="story-content"></div>
+    </div>
+
+    <!-- Explore mode content (hidden by default) -->
+    <div id="explore-panel" style="display: none;">
+      <div class="explore-header">
+        <label>Overlay</label>
+        <select id="overlay-select">
+          <option value="none">None</option>
+          <option value="search">Text Search</option>
+          <option value="commentary">Commentary</option>
+          <option value="trop">Trop</option>
+          <option value="haftarah">Haftarah</option>
+          <option value="text-dating">Text Dating</option>
+          <option value="verse-length">Verse Length</option>
+        </select>
+      </div>
+      <div id="overlay-controls"></div>
+      <div id="overlay-legend"></div>
+      <div class="explore-footer">
+        <a href="#" id="back-to-story">Back to story</a>
+      </div>
+    </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
 </body>

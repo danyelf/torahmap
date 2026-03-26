@@ -72,6 +72,8 @@ import {
   URL_UPDATE_DEBOUNCE_MS,
 } from "./constants/app.ts";
 import "./styles/zoom-buttons.css";
+import "./styles/right-panel.css";
+import "./styles/verse-popup.css";
 
 // Extend window for global state
 declare global {
@@ -130,12 +132,10 @@ async function main(): Promise<void> {
   const dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas(): void {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = canvas.clientWidth || window.innerWidth;
+    const height = canvas.clientHeight || window.innerHeight;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
   }
   resizeCanvas();
 
@@ -476,7 +476,6 @@ async function main(): Promise<void> {
 
   // Sidebar for verse details
   const sidebarElements = getSidebarElements();
-  const controlsPanel = document.getElementById("controls");
 
   // URL State Management
   // Extract overlay params for URL encoding
@@ -606,12 +605,6 @@ async function main(): Promise<void> {
     unpinVerse();
   });
 
-  // Bottom sheet handle tap to dismiss
-  const bottomSheetHandle = document.querySelector(".bottom-sheet-handle");
-  bottomSheetHandle?.addEventListener("click", () => {
-    unpinVerse();
-  });
-
   // Keyboard navigation: arrow keys for next/previous verse, Escape to close
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     if (!pinnedVerse) return;
@@ -722,8 +715,9 @@ async function main(): Promise<void> {
   });
 
   // Initialize help modal
-  if (controlsPanel) {
-    initHelp(controlsPanel);
+  const rightPanel = document.getElementById('right-panel');
+  if (rightPanel) {
+    initHelp(rightPanel);
   }
 
   // URL State Restoration
