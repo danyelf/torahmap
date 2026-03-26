@@ -1,10 +1,10 @@
 // src/scrollytelling/controller.ts
 
-import type { StoryStop, InterpolatedState, EasingName } from './types';
+import type { ResolvedStoryStop, InterpolatedState, EasingName } from './types';
 import { lerpCamera, easingFunctions } from './interpolation';
 
 export function computeInterpolatedState(
-  stops: StoryStop[],
+  stops: ResolvedStoryStop[],
   stopOffsets: number[],
   totalHeight: number,
   scrollTop: number,

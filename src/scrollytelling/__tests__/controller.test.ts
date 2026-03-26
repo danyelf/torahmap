@@ -1,9 +1,9 @@
 // src/scrollytelling/__tests__/controller.test.ts
 import { describe, it, expect } from 'vitest';
 import { computeInterpolatedState } from '../controller';
-import type { StoryStop } from '../types';
+import type { ResolvedStoryStop } from '../types';
 
-const stops: StoryStop[] = [
+const stops: ResolvedStoryStop[] = [
   { id: 'a', title: 'A', text: 'First', camera: { x: 0, y: 0, zoom: 1 }, overlay: null },
   { id: 'b', title: 'B', text: 'Second', camera: { x: 100, y: 50, zoom: 3 }, overlay: 'search', overlayParams: { q: 'test' } },
   { id: 'c', title: 'C', text: 'Third', camera: { x: 0, y: 0, zoom: 1 }, overlay: 'haftarah' },

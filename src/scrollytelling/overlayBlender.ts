@@ -1,5 +1,5 @@
 // src/scrollytelling/overlayBlender.ts
-import type { StoryStop } from './types';
+import type { ResolvedStoryStop } from './types';
 import type { VerseLayout } from '../types';
 import { getOverlay } from '../overlays/registry';
 import { getDefaultColor } from '../verseColoring';
@@ -39,7 +39,7 @@ function objToTuple(c: Color): [number, number, number] {
  * Returns colors as { r, g, b } objects for blending compatibility.
  */
 export function getColorsForStop(
-  stop: StoryStop,
+  stop: ResolvedStoryStop,
   verses: VerseLayout[]
 ): (Color | Color[])[] {
   if (!stop.overlay) {
@@ -71,8 +71,8 @@ export function getColorsForStop(
  * Returns colors as tuples compatible with rebuildGeometry.
  */
 export function computeBlendedColors(
-  fromStop: StoryStop,
-  toStop: StoryStop,
+  fromStop: ResolvedStoryStop,
+  toStop: ResolvedStoryStop,
   t: number,
   verses: VerseLayout[]
 ): [number, number, number][] {

@@ -1,5 +1,5 @@
 // src/scrollytelling/storyPanel.ts
-import type { StoryData, StoryStop } from './types';
+import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition } from './types';
 
 export async function loadStoryData(): Promise<StoryData> {
   const response = await fetch('/data/story.json');
@@ -31,6 +31,19 @@ export function renderStoryPanel(
   }
 
   return stopElements;
+}
+
+/**
+ * Resolve "initial" camera references to actual coordinates.
+ */
+export function resolveStops(
+  stops: StoryStop[],
+  initialCamera: CameraPosition
+): ResolvedStoryStop[] {
+  return stops.map(stop => ({
+    ...stop,
+    camera: stop.camera === 'initial' ? { ...initialCamera } : stop.camera,
+  }));
 }
 
 /**

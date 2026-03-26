@@ -71,7 +71,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from "./constants/app.ts";
-import { loadStoryData, renderStoryPanel, computeStopOffsets } from "./scrollytelling/storyPanel";
+import { loadStoryData, renderStoryPanel, computeStopOffsets, resolveStops } from "./scrollytelling/storyPanel";
 import { computeInterpolatedState } from "./scrollytelling/controller";
 import { computeBlendedColors } from "./scrollytelling/overlayBlender";
 import { switchToExplore, switchToStory } from "./scrollytelling/modeSwitch";
@@ -740,6 +740,8 @@ async function main(): Promise<void> {
 
   // Load story data and wire up scroll-driven camera
   const storyData = await loadStoryData();
+  const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
+  const resolvedStops = resolveStops(storyData.stops, initialCamera);
   const storyContent = document.getElementById('story-content')!;
   const stopElements = renderStoryPanel(storyContent, storyData.stops);
 
@@ -772,7 +774,7 @@ async function main(): Promise<void> {
       const offsets = computeStopOffsets(stopElements);
       const totalHeight = storyContent.scrollHeight;
       const state = computeInterpolatedState(
-        storyData.stops,
+        resolvedStops,
         offsets,
         totalHeight,
         storyContent.scrollTop,
@@ -878,7 +880,7 @@ async function main(): Promise<void> {
       // Restore story mode
       appMode = 'story';
       switchToStory(storyPanel, explorePanel, storyContent, 0);
-      const stopIndex = storyData.stops.findIndex(s => s.id === urlState.story);
+      const stopIndex = resolvedStops.findIndex(s => s.id === urlState.story);
       if (stopIndex >= 0 && stopElements[stopIndex]) {
         stopElements[stopIndex].scrollIntoView();
       }
