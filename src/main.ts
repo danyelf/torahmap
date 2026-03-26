@@ -73,6 +73,7 @@ import {
 } from "./constants/app.ts";
 import { loadStoryData, renderStoryPanel, computeStopOffsets } from "./scrollytelling/storyPanel";
 import { computeInterpolatedState } from "./scrollytelling/controller";
+import { computeBlendedColors } from "./scrollytelling/overlayBlender";
 import "./styles/zoom-buttons.css";
 import "./styles/right-panel.css";
 import "./styles/verse-popup.css";
@@ -746,6 +747,15 @@ async function main(): Promise<void> {
       camera.x = state.camera.x;
       camera.y = state.camera.y;
       camera.zoom = state.camera.zoom;
+
+      // Apply interpolated overlay colors
+      const blendedColors = computeBlendedColors(
+        state.fromStop,
+        state.toStop,
+        state.t,
+        verses
+      );
+      rebuildGeometry(renderContext.gl, renderState, blendedColors);
 
       render();
     });
