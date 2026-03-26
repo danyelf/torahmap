@@ -257,6 +257,7 @@ async function main(): Promise<void> {
     "wheel",
     (e: WheelEvent) => {
       e.preventDefault();
+      if (appMode === "story") manualOverride = true;
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       const newZoom = clampZoom(camera.zoom * zoomFactor);
 
@@ -295,7 +296,7 @@ async function main(): Promise<void> {
   const zoomOutBtn = document.getElementById('zoom-out');
 
   zoomInBtn?.addEventListener('click', () => {
-
+    if (appMode === 'story') manualOverride = true;
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_IN_FACTOR);
@@ -315,7 +316,7 @@ async function main(): Promise<void> {
   });
 
   zoomOutBtn?.addEventListener('click', () => {
-
+    if (appMode === 'story') manualOverride = true;
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_OUT_FACTOR);
@@ -407,7 +408,7 @@ async function main(): Promise<void> {
 
   canvas.addEventListener("pointermove", (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
-  
+      if (appMode === 'story') manualOverride = true;
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
       camera.x += dx / camera.zoom;
@@ -764,6 +765,7 @@ async function main(): Promise<void> {
   let scrollRAF: number | null = null;
   storyContent.addEventListener('scroll', () => {
     if (appMode !== 'story') return;
+    manualOverride = false;
     if (scrollRAF) return;
     scrollRAF = requestAnimationFrame(() => {
       scrollRAF = null;
