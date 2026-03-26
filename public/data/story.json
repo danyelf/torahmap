@@ -1,0 +1,29 @@
+{
+  "stops": [
+    {
+      "id": "intro",
+      "title": "The Torah Map",
+      "text": "Every verse of the Tanakh — the Hebrew Bible's 23,000+ verses — is laid out here as a colored square. Torah on the right, Prophets in the middle, Writings on the left. Scroll down to explore.",
+      "camera": { "x": 0, "y": 0, "zoom": 1.0 },
+      "overlay": null
+    },
+    {
+      "id": "abraham",
+      "title": "Abraham's Journey",
+      "text": "Abraham first appears in Genesis 12. Watch how his name lights up across the Torah — and then echoes through the Prophets and Writings.",
+      "camera": { "x": 120, "y": 30, "zoom": 3.0 },
+      "overlay": "search",
+      "overlayParams": { "q": "אברהם" }
+    },
+    {
+      "id": "haftarah",
+      "title": "The Haftarah Portions",
+      "text": "Each week's Torah reading is paired with a passage from the Prophets. These pairings — the Haftarah — connect the Torah to the rest of the Bible.",
+      "camera": { "x": 0, "y": 0, "zoom": 1.0 },
+      "overlay": "haftarah"
+    }
+  ],
+  "defaults": {
+    "easing": "ease-in-out"
+  }
+}
