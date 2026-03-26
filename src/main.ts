@@ -58,6 +58,11 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import {
+  initGematriaConstellations,
+  updateGematriaHover,
+  redrawGematriaConstellations,
+} from './gematriaConstellations.ts';
 
 // Extend window for global state
 declare global {
@@ -104,6 +109,9 @@ async function main(): Promise<void> {
 
   // Build search index
   buildSearchIndex(verseTexts);
+
+  // Initialize gematria constellations
+  const gematriaState = initGematriaConstellations(verses, verseTexts);
 
   // Register and initialize overlays
   registerOverlay(commentaryOverlay);
@@ -232,6 +240,7 @@ async function main(): Promise<void> {
 
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    redrawGematriaConstellations(gematriaState, verses, camera);
     debouncedSaveUrlState();
     debouncedTrackZoom();
   }, { passive: false });
@@ -271,6 +280,7 @@ async function main(): Promise<void> {
         camera.zoom = newZoom;
         render();
         updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+        redrawGematriaConstellations(gematriaState, verses, camera);
       }
       touchState.lastPinchDistance = newDist;
     }
@@ -306,6 +316,7 @@ async function main(): Promise<void> {
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
       updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      redrawGematriaConstellations(gematriaState, verses, camera);
     }
   });
 
@@ -361,6 +372,11 @@ async function main(): Promise<void> {
     if (wasHovering || overlayWantsRerender) {
       applyOverlay();
       render();
+    }
+
+    // Clear gematria constellations on pointer leave
+    if (wasHovering) {
+      updateGematriaHover(gematriaState, verses, camera, null);
     }
   });
 
@@ -457,6 +473,11 @@ async function main(): Promise<void> {
       if (hoverChanged || overlayWantsRerender) {
         applyOverlay();
         render();
+      }
+
+      // Update gematria constellations on hover change
+      if (hoverChanged) {
+        updateGematriaHover(gematriaState, verses, camera, verse);
       }
 
       if (pinnedVerse) {
@@ -561,6 +582,7 @@ async function main(): Promise<void> {
     resizeCanvas();
     render();
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    redrawGematriaConstellations(gematriaState, verses, camera);
   });
 
   // Store for hover detection
