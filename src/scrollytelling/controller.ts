@@ -9,26 +9,17 @@ import { lerpCamera, easingFunctions } from './interpolation';
 const REST_ZONE_FRACTION = 0.4;
 
 /**
- * Compute the center scroll position for each stop (middle of its element).
+ * Compute the scrollTop at which each stop's content is centered in the viewport.
+ * This is the scrollTop where the stop's visual center aligns with the viewport center.
  */
-export function computeStopCenters(
+export function computeStopScrollCenters(
   stopOffsets: number[],
-  stopHeights: number[]
+  stopHeights: number[],
+  viewportHeight: number
 ): number[] {
-  return stopOffsets.map((offset, i) => offset + stopHeights[i] / 2);
-}
-
-/**
- * Compute the rest zone boundaries for each stop.
- * Returns [restStart, restEnd] pairs.
- */
-function computeRestZones(
-  stopCenters: number[],
-  stopHeights: number[]
-): [number, number][] {
-  return stopCenters.map((center, i) => {
-    const halfZone = (stopHeights[i] * REST_ZONE_FRACTION) / 2;
-    return [center - halfZone, center + halfZone];
+  return stopOffsets.map((offset, i) => {
+    const visualCenter = offset + stopHeights[i] / 2;
+    return visualCenter - viewportHeight / 2;
   });
 }
 
@@ -38,17 +29,29 @@ export function computeInterpolatedState(
   totalHeight: number,
   scrollTop: number,
   defaultEasing: EasingName = 'ease-in-out',
-  stopHeights?: number[]
+  stopHeights?: number[],
+  viewportHeight?: number
 ): InterpolatedState {
-  const clampedScroll = Math.max(0, Math.min(scrollTop, totalHeight));
+  const maxScroll = Math.max(0, totalHeight - (viewportHeight ?? 0));
+  const clampedScroll = Math.max(0, Math.min(scrollTop, maxScroll));
 
-  // If we don't have heights, fall back to offset-based calculation
   const heights = stopHeights ?? stopOffsets.map((offset, i) =>
     (i + 1 < stopOffsets.length ? stopOffsets[i + 1] : totalHeight) - offset
   );
+  const vpHeight = viewportHeight ?? heights[0] ?? 500;
 
-  const centers = computeStopCenters(stopOffsets, heights);
-  const restZones = computeRestZones(centers, heights);
+  // Compute the scrollTop where each stop is centered on screen
+  const scrollCenters = computeStopScrollCenters(stopOffsets, heights, vpHeight);
+
+  // Rest zone: a band of scroll positions around each center where we hold steady
+  // The band width is REST_ZONE_FRACTION of the stop's height
+  const restZones: [number, number][] = scrollCenters.map((center, i) => {
+    const halfZone = (heights[i] * REST_ZONE_FRACTION) / 2;
+    return [
+      Math.max(0, center - halfZone),
+      Math.min(maxScroll, center + halfZone),
+    ];
+  });
 
   // Find which stop's rest zone we're in (or between)
   for (let i = 0; i < stops.length; i++) {
@@ -63,7 +66,6 @@ export function computeInterpolatedState(
         };
       }
       if (i === 0) {
-        // Before first rest zone — hold at first stop
         return {
           camera: { ...stops[0].camera },
           fromStop: stops[0],
@@ -71,10 +73,12 @@ export function computeInterpolatedState(
           t: 0,
         };
       }
-      // Between rest zone of stop i-1 and stop i — transition
+      // Between rest zones — transition
       const transitionStart = restZones[i - 1][1];
       const transitionEnd = restZones[i][0];
-      const rawT = (clampedScroll - transitionStart) / (transitionEnd - transitionStart);
+      const rawT = transitionEnd > transitionStart
+        ? (clampedScroll - transitionStart) / (transitionEnd - transitionStart)
+        : 1;
 
       const easingName = stops[i].easing ?? defaultEasing;
       const easeFn = easingFunctions[easingName] ?? easingFunctions['ease-in-out'];

@@ -13,6 +13,7 @@ export interface StoryStop {
   camera: CameraPosition | 'initial';
   overlay: string | null;
   overlayParams?: Record<string, string>;
+  verse?: string; // "Genesis.1.1" format — pins this verse in the sidebar
   easing?: EasingName;
 }
 

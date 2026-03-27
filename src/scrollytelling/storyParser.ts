@@ -122,12 +122,16 @@ function parseStops(body: string): StoryStop[] {
     let overlay: string | null = null;
     let easing: EasingName | undefined;
 
+    let verse: string | undefined;
+
     for (const [key, value] of Object.entries(meta.params)) {
       if (key === 'camera') continue;
       if (key === 'overlay') {
         overlay = value;
       } else if (key === 'easing') {
         easing = value as EasingName;
+      } else if (key === 'verse') {
+        verse = value;
       } else {
         overlayParams[key] = value;
       }
@@ -140,6 +144,7 @@ function parseStops(body: string): StoryStop[] {
       camera,
       overlay,
       overlayParams: Object.keys(overlayParams).length > 0 ? overlayParams : undefined,
+      verse,
       easing,
     });
   }

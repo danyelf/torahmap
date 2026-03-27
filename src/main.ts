@@ -731,19 +731,23 @@ async function main(): Promise<void> {
         const y = Math.round(camera.y * 100) / 100;
         const zoom = Math.round(camera.zoom * 100) / 100;
 
-        // Build overlay portion
-        let overlayPart = '';
+        // Build optional parts
+        let extraParts = '';
         if (currentOverlay) {
-          overlayPart = ` | overlay: ${currentOverlay.id}`;
+          extraParts += ` | overlay: ${currentOverlay.id}`;
           const params = currentOverlay.getUrlParams?.();
           if (params) {
             for (const [key, value] of Object.entries(params)) {
-              overlayPart += ` | ${key}: ${value}`;
+              extraParts += ` | ${key}: ${value}`;
             }
           }
         }
+        if (pinnedVerse) {
+          const book = pinnedVerse.book.replace(/ /g, '.');
+          extraParts += ` | verse: ${book}.${pinnedVerse.chapter}.${pinnedVerse.verse}`;
+        }
 
-        const comment = `<!-- stop: STOP_ID | camera: ${x},${y},${zoom}${overlayPart} -->`;
+        const comment = `<!-- stop: STOP_ID | camera: ${x},${y},${zoom}${extraParts} -->`;
         navigator.clipboard.writeText(comment);
         console.log(`[capture] Copied to clipboard:\n${comment}`);
       }
@@ -825,7 +829,8 @@ async function main(): Promise<void> {
         totalHeight,
         storyContent.scrollTop,
         storyData.defaults?.easing ?? 'ease-in-out',
-        heights
+        heights,
+        storyContent.clientHeight
       );
 
       // Apply interpolated camera
@@ -842,10 +847,34 @@ async function main(): Promise<void> {
       );
       rebuildGeometry(renderContext.gl, renderState, blendedColors);
 
+      // Pin/unpin verse based on current stop
+      const currentStop = state.t > 0.5 ? state.toStop : state.fromStop;
+      const wantedVerse = currentStop.verse;
+      if (wantedVerse) {
+        const parsed = parseVerseFromUrl(wantedVerse);
+        if (parsed) {
+          const isAlreadyPinned = pinnedVerse &&
+            pinnedVerse.book === parsed.book &&
+            pinnedVerse.chapter === parsed.chapter &&
+            pinnedVerse.verse === parsed.verse;
+          if (!isAlreadyPinned) {
+            const verse = verses.find(
+              v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
+            );
+            if (verse) {
+              pinnedVerse = verse;
+              updateSidebarWrapper(verse, true);
+            }
+          }
+        }
+      } else if (pinnedVerse) {
+        pinnedVerse = null;
+        updateSidebarWrapper(null);
+      }
+
       render();
 
       // Update URL with current story stop
-      const currentStop = state.t > 0.5 ? state.toStop : state.fromStop;
       updateUrl({ story: currentStop.id, overlayParams: {} }, false);
     });
   });
@@ -957,6 +986,11 @@ async function main(): Promise<void> {
   subscribeToHashChange(() => {
     restoreFromUrl();
   });
+
+  // Apply first stop's state (verse pin, overlay) on initial load
+  if (appMode === 'story') {
+    storyContent.dispatchEvent(new Event('scroll'));
+  }
 }
 
 main().catch(console.error);

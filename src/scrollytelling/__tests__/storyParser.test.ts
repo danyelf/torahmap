@@ -85,6 +85,16 @@ World.`;
     expect(data.stops).toHaveLength(1);
   });
 
+  it('parses verse pin', () => {
+    const md = `<!-- stop: genesis | camera: initial | verse: Genesis.1.1 -->
+# Genesis
+
+In the beginning.`;
+
+    const data = parseStoryMarkdown(md);
+    expect(data.stops[0].verse).toBe('Genesis.1.1');
+  });
+
   it('handles stop with no overlay params', () => {
     const md = `<!-- stop: intro | camera: initial | overlay: haftarah -->
 # Haftarah
