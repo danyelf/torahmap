@@ -775,13 +775,13 @@ async function main(): Promise<void> {
   const storyContent = document.getElementById('story-content')!;
 
   let storyData = await loadStoryData();
-  let resolvedStops = resolveStops(storyData.stops, initialCamera);
+  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, canvas.clientWidth, canvas.clientHeight);
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
 
   async function reloadStory(): Promise<void> {
     const scrollTop = storyContent.scrollTop;
     storyData = await loadStoryData();
-    resolvedStops = resolveStops(storyData.stops, initialCamera);
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, canvas.clientWidth, canvas.clientHeight);
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     storyContent.scrollTop = scrollTop;
     storyContent.dispatchEvent(new Event('scroll'));

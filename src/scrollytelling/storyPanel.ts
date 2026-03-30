@@ -1,5 +1,7 @@
 // src/scrollytelling/storyPanel.ts
 import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition } from './types';
+import type { VerseLayout } from '../types';
+import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
 
 export async function loadStoryData(): Promise<StoryData> {
@@ -55,16 +57,55 @@ export function renderStoryPanel(
 }
 
 /**
- * Resolve "initial" camera references to actual coordinates.
+ * Compute camera position that centers on a verse.
+ */
+function cameraForVerse(
+  verse: VerseLayout,
+  zoom: number,
+  canvasWidth: number,
+  canvasHeight: number
+): CameraPosition {
+  return {
+    x: canvasWidth / 2 / zoom - verse.x - verse.size / 2,
+    y: canvasHeight / 2 / zoom - verse.y - verse.size / 2,
+    zoom,
+  };
+}
+
+/**
+ * Resolve camera references to actual coordinates.
+ * - "initial": use the app's default camera position
+ * - If the stop has a verse and camera is "initial", center on that verse
  */
 export function resolveStops(
   stops: StoryStop[],
-  initialCamera: CameraPosition
+  initialCamera: CameraPosition,
+  verses?: VerseLayout[],
+  canvasWidth?: number,
+  canvasHeight?: number
 ): ResolvedStoryStop[] {
-  return stops.map(stop => ({
-    ...stop,
-    camera: stop.camera === 'initial' ? { ...initialCamera } : stop.camera,
-  }));
+  return stops.map(stop => {
+    let camera: CameraPosition;
+
+    if (stop.camera !== 'initial') {
+      camera = stop.camera;
+    } else if (stop.verse && verses && canvasWidth && canvasHeight) {
+      // Center camera on the pinned verse
+      const parsed = parseVerseFromUrl(stop.verse);
+      const verseLayout = parsed && verses.find(
+        v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
+      );
+      if (verseLayout) {
+        camera = cameraForVerse(verseLayout, initialCamera.zoom, canvasWidth, canvasHeight);
+      } else {
+        camera = { ...initialCamera };
+      }
+    } else {
+      camera = { ...initialCamera };
+    }
+
+    return { ...stop, camera };
+  });
 }
 
 /**
