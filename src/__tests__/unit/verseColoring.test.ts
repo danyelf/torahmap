@@ -146,9 +146,9 @@ describe('verseColoring', () => {
 
   describe('applyHoverHighlight', () => {
     it('brightens single-color overlay verses by 1.5x', () => {
-      const baseColor: [number, number, number] = [0.6, 0.4, 0.2];
+      const resolvedColor: [number, number, number] = [0.6, 0.4, 0.2];
 
-      const highlighted = applyHoverHighlight(baseColor, true) as [number, number, number];
+      const highlighted = applyHoverHighlight(resolvedColor, true) as [number, number, number];
 
       expect(highlighted[0]).toBeCloseTo(0.9, 10);
       expect(highlighted[1]).toBeCloseTo(0.6, 10);
@@ -156,20 +156,20 @@ describe('verseColoring', () => {
     });
 
     it('clamps brightened colors to max 1.0', () => {
-      const baseColor: [number, number, number] = [0.8, 0.9, 1.0];
+      const resolvedColor: [number, number, number] = [0.8, 0.9, 1.0];
 
-      const highlighted = applyHoverHighlight(baseColor, true);
+      const highlighted = applyHoverHighlight(resolvedColor, true);
 
       expect(highlighted).toEqual([1.0, 1.0, 1.0]);
     });
 
     it('brightens multi-color overlay verses by 1.5x', () => {
-      const baseColor: [number, number, number][] = [
+      const resolvedColor: [number, number, number][] = [
         [0.4, 0.2, 0.6],
         [0.2, 0.8, 0.4],
       ];
 
-      const highlighted = applyHoverHighlight(baseColor, true) as [number, number, number][];
+      const highlighted = applyHoverHighlight(resolvedColor, true) as [number, number, number][];
 
       expect(highlighted[0][0]).toBeCloseTo(0.6, 10);
       expect(highlighted[0][1]).toBeCloseTo(0.3, 10);
@@ -180,17 +180,17 @@ describe('verseColoring', () => {
     });
 
     it('replaces background verses with highlight color', () => {
-      const baseColor: [number, number, number] = [0.5, 0.5, 0.5];
+      const resolvedColor: [number, number, number] = [0.5, 0.5, 0.5];
 
-      const highlighted = applyHoverHighlight(baseColor, false);
+      const highlighted = applyHoverHighlight(resolvedColor, false);
 
       expect(highlighted).toEqual([0.2, 0.9, 1.0]); // HIGHLIGHT_COLOR
     });
 
     it('returns same type as input for multi-color', () => {
-      const baseColor: [number, number, number][] = [[0.5, 0.5, 0.5]];
+      const resolvedColor: [number, number, number][] = [[0.5, 0.5, 0.5]];
 
-      const highlighted = applyHoverHighlight(baseColor, true);
+      const highlighted = applyHoverHighlight(resolvedColor, true);
 
       expect(Array.isArray(highlighted)).toBe(true);
       expect(Array.isArray(highlighted[0])).toBe(true);
@@ -221,7 +221,7 @@ describe('verseColoring', () => {
       const states = computeVerseStates(verses, mockOverlay, null, null);
 
       expect(states[0].hasOverlayColor).toBe(true);
-      expect(states[0].baseColor).toEqual([1, 0, 0]);
+      expect(states[0].resolvedColor).toEqual([1, 0, 0]);
     });
 
     it('computes hasOverlayColor as false when overlay returns null', () => {
@@ -239,10 +239,10 @@ describe('verseColoring', () => {
       const states = computeVerseStates(verses, mockOverlay, null, null);
 
       expect(states[0].hasOverlayColor).toBe(false);
-      const baseColor = states[0].baseColor as [number, number, number];
-      expect(baseColor[0]).toBeCloseTo(0.6, 10);
-      expect(baseColor[1]).toBeCloseTo(0.6, 10);
-      expect(baseColor[2]).toBeCloseTo(0.6, 10);
+      const resolvedColor = states[0].resolvedColor as [number, number, number];
+      expect(resolvedColor[0]).toBeCloseTo(0.6, 10);
+      expect(resolvedColor[1]).toBeCloseTo(0.6, 10);
+      expect(resolvedColor[2]).toBeCloseTo(0.6, 10);
     });
 
     it('uses default color when overlay is null', () => {
@@ -253,10 +253,10 @@ describe('verseColoring', () => {
       const states = computeVerseStates(verses, null, null, null);
 
       expect(states[0].hasOverlayColor).toBe(false);
-      const baseColor = states[0].baseColor as [number, number, number];
-      expect(baseColor[0]).toBeCloseTo(0.6, 10);
-      expect(baseColor[1]).toBeCloseTo(0.6, 10);
-      expect(baseColor[2]).toBeCloseTo(0.6, 10);
+      const resolvedColor = states[0].resolvedColor as [number, number, number];
+      expect(resolvedColor[0]).toBeCloseTo(0.6, 10);
+      expect(resolvedColor[1]).toBeCloseTo(0.6, 10);
+      expect(resolvedColor[2]).toBeCloseTo(0.6, 10);
     });
 
     it('identifies hovered verse correctly', () => {
@@ -339,51 +339,6 @@ describe('verseColoring', () => {
       expect(states.length).toBe(3);
     });
 
-    it('identifies isHoveredWhilePinned when hovering different verse than pinned', () => {
-      const verses: VerseLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
-      ];
-      const pinnedVerse = verses[0];
-      const hoveredVerse = verses[1];
-
-      const states = computeVerseStates(verses, null, hoveredVerse, pinnedVerse);
-
-      expect(states[0].isHovered).toBe(false);
-      expect(states[0].isPinned).toBe(true);
-      expect(states[0].isHoveredWhilePinned).toBe(false);
-
-      expect(states[1].isHovered).toBe(true);
-      expect(states[1].isPinned).toBe(false);
-      expect(states[1].isHoveredWhilePinned).toBe(true);
-    });
-
-    it('isHoveredWhilePinned is false when hovering the pinned verse', () => {
-      const verses: VerseLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
-      const pinnedVerse = verses[0];
-      const hoveredVerse = verses[0];
-
-      const states = computeVerseStates(verses, null, hoveredVerse, pinnedVerse);
-
-      expect(states[0].isHovered).toBe(true);
-      expect(states[0].isPinned).toBe(true);
-      expect(states[0].isHoveredWhilePinned).toBe(false);
-    });
-
-    it('isHoveredWhilePinned is false when no verse is pinned', () => {
-      const verses: VerseLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
-      const hoveredVerse = verses[0];
-
-      const states = computeVerseStates(verses, null, hoveredVerse, null);
-
-      expect(states[0].isHovered).toBe(true);
-      expect(states[0].isPinned).toBe(false);
-      expect(states[0].isHoveredWhilePinned).toBe(false);
-    });
   });
 
   describe('applyVerseColors', () => {
@@ -391,10 +346,9 @@ describe('verseColoring', () => {
       const states: VerseState[] = [
         {
           hasOverlayColor: true,
-          baseColor: [1, 0, 0],
+          resolvedColor: [1, 0, 0],
           isHovered: false,
           isPinned: false,
-          isHoveredWhilePinned: false,
         },
       ];
 
@@ -407,10 +361,9 @@ describe('verseColoring', () => {
       const states: VerseState[] = [
         {
           hasOverlayColor: true,
-          baseColor: [0.6, 0.4, 0.2],
+          resolvedColor: [0.6, 0.4, 0.2],
           isHovered: true,
           isPinned: false,
-          isHoveredWhilePinned: false,
         },
       ];
 
@@ -426,10 +379,9 @@ describe('verseColoring', () => {
       const states: VerseState[] = [
         {
           hasOverlayColor: true,
-          baseColor: [0.6, 0.4, 0.2],
+          resolvedColor: [0.6, 0.4, 0.2],
           isHovered: false,
           isPinned: false,
-          isHoveredWhilePinned: false,
         },
       ];
 
@@ -442,10 +394,9 @@ describe('verseColoring', () => {
       const states: VerseState[] = [
         {
           hasOverlayColor: false,
-          baseColor: [0.5, 0.5, 0.5],
+          resolvedColor: [0.5, 0.5, 0.5],
           isHovered: false,
           isPinned: false,
-          isHoveredWhilePinned: false,
         },
       ];
 
@@ -460,24 +411,21 @@ describe('verseColoring', () => {
       const states: VerseState[] = [
         {
           hasOverlayColor: false,
-          baseColor: [0.5, 0.5, 0.5],
+          resolvedColor: [0.5, 0.5, 0.5],
           isHovered: false,
           isPinned: false,
-          isHoveredWhilePinned: false,
         },
         {
           hasOverlayColor: true,
-          baseColor: [1, 0, 0],
+          resolvedColor: [1, 0, 0],
           isHovered: true,
           isPinned: false,
-          isHoveredWhilePinned: false,
         },
         {
           hasOverlayColor: true,
-          baseColor: [0, 1, 0],
+          resolvedColor: [0, 1, 0],
           isHovered: false,
           isPinned: true,
-          isHoveredWhilePinned: false,
         },
       ];
 
@@ -496,10 +444,9 @@ describe('verseColoring', () => {
       const states: VerseState[] = [
         {
           hasOverlayColor: true,
-          baseColor: multiColor,
+          resolvedColor: multiColor,
           isHovered: true,
           isPinned: false,
-          isHoveredWhilePinned: false,
         },
       ];
 
@@ -550,14 +497,14 @@ describe('verseColoring', () => {
       );
 
       expect(states[0].hasOverlayColor).toBe(true);
-      expect(states[0].baseColor).toEqual([1, 0, 0]);
+      expect(states[0].resolvedColor).toEqual([1, 0, 0]);
       expect(states[0].isHovered).toBe(false);
 
       expect(states[1].hasOverlayColor).toBe(false);
-      const baseColor = states[1].baseColor as [number, number, number];
-      expect(baseColor[0]).toBeCloseTo(0.6, 10);
-      expect(baseColor[1]).toBeCloseTo(0.6, 10);
-      expect(baseColor[2]).toBeCloseTo(0.6, 10);
+      const resolvedColor = states[1].resolvedColor as [number, number, number];
+      expect(resolvedColor[0]).toBeCloseTo(0.6, 10);
+      expect(resolvedColor[1]).toBeCloseTo(0.6, 10);
+      expect(resolvedColor[2]).toBeCloseTo(0.6, 10);
       expect(states[1].isHovered).toBe(true);
 
       // Second pass: apply colors

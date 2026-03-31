@@ -2,6 +2,24 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createBookLabels, updateLabelPositions } from '../../labels';
 import { createVerse, SAMPLE_VERSES } from '../helpers';
 
+// Hebrew names for test use (matching tanakh-structure.json hebrewName field)
+const HEBREW_NAMES: Record<string, string> = {
+  'Genesis': 'בראשית', 'Exodus': 'שמות', 'Leviticus': 'ויקרא',
+  'Numbers': 'במדבר', 'Deuteronomy': 'דברים', 'Joshua': 'יהושע',
+  'Judges': 'שופטים', 'I Samuel': 'שמואל א', 'II Samuel': 'שמואל ב',
+  'I Kings': 'מלכים א', 'II Kings': 'מלכים ב', 'Isaiah': 'ישעיהו',
+  'Jeremiah': 'ירמיהו', 'Ezekiel': 'יחזקאל', 'Hosea': 'הושע',
+  'Joel': 'יואל', 'Amos': 'עמוס', 'Obadiah': 'עובדיה',
+  'Jonah': 'יונה', 'Micah': 'מיכה', 'Nahum': 'נחום',
+  'Habakkuk': 'חבקוק', 'Zephaniah': 'צפניה', 'Haggai': 'חגי',
+  'Zechariah': 'זכריה', 'Malachi': 'מלאכי', 'Psalms': 'תהלים',
+  'Proverbs': 'משלי', 'Job': 'איוב', 'Song of Songs': 'שיר השירים',
+  'Ruth': 'רות', 'Lamentations': 'איכה', 'Ecclesiastes': 'קהלת',
+  'Esther': 'אסתר', 'Daniel': 'דניאל', 'Ezra': 'עזרא',
+  'Nehemiah': 'נחמיה', 'I Chronicles': 'דברי הימים א',
+  'II Chronicles': 'דברי הימים ב',
+};
+
 // Match constants from labels.ts implementation
 const BASE_LABEL_GAP = 10;
 const BASE_FONT_SIZE = 13;
@@ -82,7 +100,7 @@ describe('labels', () => {
           createVerse({ book: 'Exodus' }),
           createVerse({ book: 'Psalms' }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, HEBREW_NAMES);
 
         const labelTexts = Array.from(labels.children).map(child => child.textContent);
         // Labels contain Hebrew name + English name
@@ -277,12 +295,12 @@ describe('labels', () => {
     describe('edge cases', () => {
       it('handles book with single verse', () => {
         const verses = [createVerse({ book: 'Obadiah', x: 100, y: 200 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, HEBREW_NAMES);
 
         expect(labels.children.length).toBe(1);
         const label = labels.children[0] as HTMLElement;
         expect(label.textContent).toContain('Obadiah');
-        expect(label.textContent).toContain('עבדיה');
+        expect(label.textContent).toContain('עובדיה');
       });
 
       it('handles book with many verses', () => {
@@ -298,7 +316,7 @@ describe('labels', () => {
 
       it('handles books with spaces in names', () => {
         const verses = [createVerse({ book: 'Song of Songs', x: 100, y: 200 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, HEBREW_NAMES);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.textContent).toContain('Song of Songs');

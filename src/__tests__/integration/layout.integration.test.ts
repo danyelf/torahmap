@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { computeLayout, getSection, getLayoutBounds } from '../../layout';
+import { initBookData } from '../../constants/books';
 import type { TorahData, VerseLayout } from '../../types';
 
 describe('Layout Integration', () => {
@@ -12,6 +13,7 @@ describe('Layout Integration', () => {
     // Load the real tanakh structure data
     const dataPath = join(__dirname, '../../../public/data/tanakh-structure.json');
     torahData = JSON.parse(readFileSync(dataPath, 'utf-8'));
+    initBookData(torahData);
     verses = computeLayout(torahData);
   });
 

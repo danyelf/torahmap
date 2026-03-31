@@ -1,8 +1,6 @@
 // Render book labels as HTML overlays
 
 import type { VerseLayout } from "./types.ts";
-import { BOOK_HEBREW_NAMES } from "./constants/books.ts";
-import { stripNikkud } from "./search.ts";
 
 interface BookBounds {
   minX: number;
@@ -25,6 +23,7 @@ const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 export function createBookLabels(
   verses: VerseLayout[],
   container: HTMLElement,
+  hebrewNames?: Record<string, string>,
 ): HTMLDivElement {
   // Group verses by book to find column positions
   const books: Record<string, BookBounds> = {};
@@ -60,8 +59,7 @@ export function createBookLabels(
     const heSpan = document.createElement("span");
     heSpan.className = "book-label-he";
     heSpan.style.fontFamily = '"Noto Sans Hebrew", system-ui, sans-serif';
-    const heName = BOOK_HEBREW_NAMES[name];
-    heSpan.textContent = heName ? stripNikkud(heName) : name;
+    heSpan.textContent = hebrewNames?.[name] ?? name;
     label.appendChild(heSpan);
 
     // English name (shown when there's room)

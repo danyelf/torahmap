@@ -54,7 +54,8 @@
         22,
         33,
         26
-      ]
+      ],
+      "section": "torah"
     },
     {
       "name": "Exodus",
@@ -100,7 +101,8 @@
         31,
         43,
         38
-      ]
+      ],
+      "section": "torah"
     },
     {
       "name": "Leviticus",
@@ -133,7 +135,8 @@
         55,
         46,
         34
-      ]
+      ],
+      "section": "torah"
     },
     {
       "name": "Numbers",
@@ -175,7 +178,8 @@
         29,
         34,
         13
-      ]
+      ],
+      "section": "torah"
     },
     {
       "name": "Deuteronomy",
@@ -215,7 +219,8 @@
         52,
         29,
         12
-      ]
+      ],
+      "section": "torah"
     },
     {
       "name": "Joshua",
@@ -245,7 +250,8 @@
         34,
         16,
         33
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Judges",
@@ -272,7 +278,8 @@
         30,
         48,
         25
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "I Samuel",
@@ -309,7 +316,8 @@
         11,
         31,
         13
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "II Samuel",
@@ -339,7 +347,8 @@
         51,
         39,
         25
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "I Kings",
@@ -367,7 +376,8 @@
         43,
         29,
         54
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "II Kings",
@@ -398,7 +408,8 @@
         37,
         20,
         30
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Isaiah",
@@ -470,7 +481,8 @@
         11,
         25,
         24
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Jeremiah",
@@ -528,7 +540,8 @@
         46,
         64,
         34
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Ezekiel",
@@ -582,7 +595,8 @@
         24,
         23,
         35
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Hosea",
@@ -602,7 +616,8 @@
         15,
         15,
         10
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Joel",
@@ -612,7 +627,8 @@
         27,
         5,
         21
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Amos",
@@ -627,14 +643,16 @@
         17,
         14,
         15
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Obadiah",
       "hebrewName": "עובדיה",
       "chapters": [
         21
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Jonah",
@@ -644,7 +662,8 @@
         11,
         10,
         11
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Micah",
@@ -657,7 +676,8 @@
         14,
         16,
         20
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Nahum",
@@ -666,7 +686,8 @@
         14,
         14,
         19
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Habakkuk",
@@ -675,7 +696,8 @@
         17,
         20,
         19
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Zephaniah",
@@ -684,7 +706,8 @@
         18,
         15,
         20
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Haggai",
@@ -692,7 +715,8 @@
       "chapters": [
         15,
         23
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Zechariah",
@@ -712,7 +736,8 @@
         14,
         9,
         21
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Malachi",
@@ -721,7 +746,8 @@
         14,
         17,
         24
-      ]
+      ],
+      "section": "neviim"
     },
     {
       "name": "Psalms",
@@ -877,7 +903,8 @@
         14,
         9,
         6
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Proverbs",
@@ -914,7 +941,8 @@
         27,
         33,
         31
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Job",
@@ -962,7 +990,8 @@
         32,
         26,
         17
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Song of Songs",
@@ -976,7 +1005,8 @@
         12,
         14,
         14
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Ruth",
@@ -986,7 +1016,8 @@
         23,
         18,
         22
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Lamentations",
@@ -997,7 +1028,8 @@
         66,
         22,
         22
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Ecclesiastes",
@@ -1015,7 +1047,8 @@
         20,
         10,
         14
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Esther",
@@ -1031,7 +1064,8 @@
         17,
         32,
         3
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Daniel",
@@ -1049,7 +1083,8 @@
         21,
         45,
         13
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Ezra",
@@ -1065,7 +1100,8 @@
         36,
         15,
         44
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "Nehemiah",
@@ -1084,7 +1120,8 @@
         36,
         47,
         31
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "I Chronicles",
@@ -1119,7 +1156,8 @@
         34,
         21,
         30
-      ]
+      ],
+      "section": "ketuvim"
     },
     {
       "name": "II Chronicles",
@@ -1161,7 +1199,61 @@
         33,
         27,
         23
-      ]
+      ],
+      "section": "ketuvim"
     }
-  ]
+  ],
+  "layout": {
+    "minorProphetStacks": [
+      [
+        "Hosea",
+        "Joel"
+      ],
+      [
+        "Amos",
+        "Obadiah",
+        "Jonah"
+      ],
+      [
+        "Micah",
+        "Nahum",
+        "Habakkuk",
+        "Zephaniah",
+        "Haggai"
+      ],
+      [
+        "Zechariah",
+        "Malachi"
+      ]
+    ],
+    "ketuvimStacks": [
+      {
+        "books": [
+          "Song of Songs",
+          "Ruth",
+          "Lamentations"
+        ],
+        "insertAfter": "Job"
+      },
+      {
+        "books": [
+          "Ecclesiastes",
+          "Esther"
+        ],
+        "insertAfter": "Job"
+      },
+      {
+        "books": [
+          "Ezra",
+          "Nehemiah"
+        ],
+        "insertAfter": "Daniel"
+      }
+    ],
+    "multiColumnBooks": {
+      "Psalms": {
+        "splitAtChapter": 72
+      }
+    }
+  }
 }

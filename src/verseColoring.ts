@@ -1,10 +1,10 @@
 // Verse Coloring module - handles verse color computation and highlighting
 
-import type { VerseLayout, VerseIdentity, VerseState } from './types';
-import { versesEqual } from './types';
-import type { Overlay } from './overlays/types';
-import { seededRandom } from './utils/random';
-import { HIGHLIGHT_CONSTANTS } from './constants';
+import type { VerseLayout, VerseIdentity, VerseState } from "./types";
+import { versesEqual } from "./types";
+import type { Overlay } from "./overlays/types";
+import { seededRandom } from "./utils/random";
+import { HIGHLIGHT_CONSTANTS } from "./constants";
 
 /**
  * Get default gray color with brightness variation for a verse.
@@ -29,7 +29,7 @@ export function getDefaultColor(verseIndex: number): [number, number, number] {
  */
 export function getOverlayColor(
   overlay: Overlay | null,
-  verse: VerseIdentity
+  verse: VerseIdentity,
 ): [number, number, number] | [number, number, number][] | null {
   return overlay?.getVerseColor(verse) ?? null;
 }
@@ -46,7 +46,7 @@ export function getOverlayColor(
  */
 export function applyHoverHighlight(
   baseColor: [number, number, number] | [number, number, number][],
-  hasOverlayColor: boolean
+  hasOverlayColor: boolean,
 ): [number, number, number] | [number, number, number][] {
   if (hasOverlayColor) {
     // Brighten overlay-colored verses by 1.5x
@@ -58,7 +58,7 @@ export function applyHoverHighlight(
             Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
             Math.min(1, c[1] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
             Math.min(1, c[2] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-          ] as [number, number, number]
+          ] as [number, number, number],
       );
     } else {
       // Single color
@@ -77,7 +77,7 @@ export function applyHoverHighlight(
 
 /**
  * Compute semantic state for all verses.
- * First pass: determine what is true about each verse (hasOverlayColor, baseColor, isHovered, isPinned, isHoveredWhilePinned)
+ * First pass: determine what is true about each verse (hasOverlayColor, resolvedColor, isHovered, isPinned)
  * Returns array parallel to verses array.
  *
  * @param verses - All verses
@@ -90,24 +90,21 @@ export function computeVerseStates(
   verses: VerseLayout[],
   overlay: Overlay | null,
   hoveredVerse: VerseLayout | null,
-  pinnedVerse: VerseLayout | null
+  pinnedVerse: VerseLayout | null,
 ): VerseState[] {
   return verses.map((v, i) => {
     const overlayColor = getOverlayColor(overlay, v);
     const hasOverlayColor = overlayColor !== null;
-    const baseColor = hasOverlayColor ? overlayColor : getDefaultColor(i);
+    const resolvedColor = hasOverlayColor ? overlayColor : getDefaultColor(i);
 
     const isHovered = versesEqual(hoveredVerse, v);
     const isPinned = versesEqual(pinnedVerse, v);
-    // Hover state is different when another verse is pinned (and this is not the pinned verse)
-    const isHoveredWhilePinned = isHovered && pinnedVerse !== null && !isPinned;
 
     return {
       hasOverlayColor,
-      baseColor,
+      resolvedColor,
       isHovered,
       isPinned,
-      isHoveredWhilePinned,
     };
   });
 }
@@ -121,11 +118,11 @@ export function computeVerseStates(
  * @returns Array of final colors for each verse
  */
 export function applyVerseColors(
-  verseStates: VerseState[]
+  verseStates: VerseState[],
 ): ([number, number, number] | [number, number, number][])[] {
   return verseStates.map((state) => {
     // Start with base color
-    let finalColor = state.baseColor;
+    let finalColor = state.resolvedColor;
 
     // Apply hover highlighting if this verse is hovered
     if (state.isHovered) {

@@ -1,7 +1,7 @@
 // URL State Management
 // Handles parsing and serializing view state to/from URL hash
 
-import { MIN_ZOOM, MAX_ZOOM } from './camera.ts';
+import { MIN_ZOOM, MAX_ZOOM } from "./camera.ts";
 
 /**
  * Overlay-specific parameters that can be stored in the URL
@@ -52,7 +52,10 @@ function baseValidate(value: string | null, maxLength: number): string | null {
  * Rejects HTML tags, scripts, and excessively long strings
  * Only allows alphanumeric characters, spaces, and hyphens
  */
-function validateString(value: string | null, maxLength: number = MAX_STRING_LENGTH): string | null {
+function validateString(
+  value: string | null,
+  maxLength: number = MAX_STRING_LENGTH,
+): string | null {
   const trimmed = baseValidate(value, maxLength);
   if (!trimmed) return null;
 
@@ -81,7 +84,7 @@ function validateCategoryName(value: string | null): string | null {
  * Only allows letters, spaces, and dots (for I.Samuel format)
  */
 function validateBookName(book: string): boolean {
-  if (!book || book.trim() === '') return false;
+  if (!book || book.trim() === "") return false;
   // Only allow letters (including Unicode), spaces, and dots
   return /^[a-zA-Z\u0590-\u05FF\s.]+$/.test(book);
 }
@@ -90,7 +93,7 @@ function validateBookName(book: string): boolean {
  * Strip HTML tags from search query
  */
 function stripHtmlTags(value: string): string {
-  return value.replace(/<[^>]*>/g, '');
+  return value.replace(/<[^>]*>/g, "");
 }
 
 /**
@@ -123,7 +126,7 @@ export function parseUrlState(): UrlState {
   };
 
   // Core parameters
-  const overlay = params.get('overlay');
+  const overlay = params.get("overlay");
   const validatedOverlay = validateString(overlay);
   // Accept any validated overlay ID (for forward/backward compatibility)
   // The overlay registry will handle unknown IDs gracefully
@@ -131,11 +134,11 @@ export function parseUrlState(): UrlState {
     state.overlay = validatedOverlay;
   }
 
-  const verse = params.get('verse');
+  const verse = params.get("verse");
   const validatedVerse = validateString(verse, 100); // Allow longer for book names
   if (validatedVerse) state.verse = validatedVerse;
 
-  const zoom = params.get('zoom');
+  const zoom = params.get("zoom");
   if (zoom) {
     const parsed = parseFloat(zoom);
     if (!isNaN(parsed) && parsed >= MIN_ZOOM && parsed <= MAX_ZOOM) {
@@ -143,34 +146,42 @@ export function parseUrlState(): UrlState {
     }
   }
 
-  const x = params.get('x');
+  const x = params.get("x");
   if (x) {
     const parsed = parseFloat(x);
-    if (!isNaN(parsed) && isFinite(parsed) && Math.abs(parsed) <= MAX_PAN_POSITION) {
+    if (
+      !isNaN(parsed) &&
+      isFinite(parsed) &&
+      Math.abs(parsed) <= MAX_PAN_POSITION
+    ) {
       state.x = parsed;
     }
   }
 
-  const y = params.get('y');
+  const y = params.get("y");
   if (y) {
     const parsed = parseFloat(y);
-    if (!isNaN(parsed) && isFinite(parsed) && Math.abs(parsed) <= MAX_PAN_POSITION) {
+    if (
+      !isNaN(parsed) &&
+      isFinite(parsed) &&
+      Math.abs(parsed) <= MAX_PAN_POSITION
+    ) {
       state.y = parsed;
     }
   }
 
   // Overlay-specific parameters
-  const trop = params.get('trop');
+  const trop = params.get("trop");
   const validatedTrop = validateString(trop);
   if (validatedTrop) state.overlayParams.trop = validatedTrop;
 
-  const category = params.get('category');
+  const category = params.get("category");
   const validatedCategory = validateCategoryName(category);
   if (validatedCategory) {
     state.overlayParams.category = validatedCategory;
   }
 
-  const q = params.get('q');
+  const q = params.get("q");
   if (q) {
     // Search queries need HTML stripping but allow longer length
     const trimmed = q.trim();
@@ -180,15 +191,20 @@ export function parseUrlState(): UrlState {
   }
 
   // Search options
-  const ww = params.get('ww');
+  const ww = params.get("ww");
   if (ww) {
     state.overlayParams.ww = ww;
   }
 
-  const hm = params.get('hm');
+  const hm = params.get("hm");
   const validatedHm = validateString(hm);
   // Only accept valid Hebrew mode values
-  if (validatedHm && (validatedHm === 'substring' || validatedHm === 'word' || validatedHm === 'root')) {
+  if (
+    validatedHm &&
+    (validatedHm === "substring" ||
+      validatedHm === "word" ||
+      validatedHm === "root")
+  ) {
     state.overlayParams.hm = validatedHm;
   }
 
@@ -204,47 +220,47 @@ export function buildUrlHash(state: UrlState): string {
 
   // Core parameters (omit defaults)
   if (state.overlay) {
-    params.set('overlay', state.overlay);
+    params.set("overlay", state.overlay);
   }
 
   if (state.verse) {
-    params.set('verse', state.verse);
+    params.set("verse", state.verse);
   }
 
   if (state.zoom !== undefined && state.zoom !== 1.0) {
     // Round to 2 decimal places
-    params.set('zoom', state.zoom.toFixed(2).replace(/\.?0+$/, ''));
+    params.set("zoom", state.zoom.toFixed(2).replace(/\.?0+$/, ""));
   }
 
   // Only include pan if no verse (verse auto-centers)
   if (!state.verse) {
     if (state.x !== undefined) {
-      params.set('x', state.x.toFixed(1).replace(/\.?0+$/, ''));
+      params.set("x", state.x.toFixed(1).replace(/\.?0+$/, ""));
     }
     if (state.y !== undefined) {
-      params.set('y', state.y.toFixed(1).replace(/\.?0+$/, ''));
+      params.set("y", state.y.toFixed(1).replace(/\.?0+$/, ""));
     }
   }
 
   // Overlay-specific parameters
   if (state.overlayParams.trop) {
-    params.set('trop', state.overlayParams.trop);
+    params.set("trop", state.overlayParams.trop);
   }
-  if (state.overlayParams.category && state.overlayParams.category !== 'all') {
-    params.set('category', state.overlayParams.category);
+  if (state.overlayParams.category && state.overlayParams.category !== "all") {
+    params.set("category", state.overlayParams.category);
   }
   if (state.overlayParams.q) {
-    params.set('q', state.overlayParams.q);
+    params.set("q", state.overlayParams.q);
   }
   if (state.overlayParams.ww) {
-    params.set('ww', state.overlayParams.ww);
+    params.set("ww", state.overlayParams.ww);
   }
   if (state.overlayParams.hm) {
-    params.set('hm', state.overlayParams.hm);
+    params.set("hm", state.overlayParams.hm);
   }
 
   const hash = params.toString();
-  return hash ? `#${hash}` : '';
+  return hash ? `#${hash}` : "";
 }
 
 /**
@@ -258,9 +274,9 @@ export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   const newUrl = window.location.pathname + window.location.search + hash;
 
   if (pushHistory) {
-    history.pushState(null, '', newUrl);
+    history.pushState(null, "", newUrl);
   } else {
-    history.replaceState(null, '', newUrl);
+    history.replaceState(null, "", newUrl);
   }
 }
 
@@ -268,16 +284,20 @@ export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
  * Subscribe to hash/history changes (for browser back/forward)
  */
 export function subscribeToHashChange(callback: () => void): void {
-  window.addEventListener('popstate', callback);
-  window.addEventListener('hashchange', callback);
+  window.addEventListener("popstate", callback);
+  window.addEventListener("hashchange", callback);
 }
 
 /**
  * Convert verse reference to URL format
  * "I Samuel" 1:5 -> "I.Samuel.1.5"
  */
-export function verseToUrlFormat(book: string, chapter: number, verse: number): string {
-  const urlBook = book.replace(/ /g, '.');
+export function verseToUrlFormat(
+  book: string,
+  chapter: number,
+  verse: number,
+): string {
+  const urlBook = book.replace(/ /g, ".");
   return `${urlBook}.${chapter}.${verse}`;
 }
 
@@ -285,9 +305,11 @@ export function verseToUrlFormat(book: string, chapter: number, verse: number): 
  * Parse verse reference from URL format
  * "I.Samuel.1.5" -> { book: "I Samuel", chapter: 1, verse: 5 }
  */
-export function parseVerseFromUrl(verseStr: string): { book: string; chapter: number; verse: number } | null {
+export function parseVerseFromUrl(
+  verseStr: string,
+): { book: string; chapter: number; verse: number } | null {
   // Split from the end to handle book names with dots
-  const parts = verseStr.split('.');
+  const parts = verseStr.split(".");
   if (parts.length < 3) return null;
 
   // Ensure we only have book.chapter.verse format (no extra dots)
@@ -295,7 +317,7 @@ export function parseVerseFromUrl(verseStr: string): { book: string; chapter: nu
 
   const verseStr_ = parts.pop()!;
   const chapterStr = parts.pop()!;
-  const book = parts.join(' '); // Rejoin remaining parts as book name
+  const book = parts.join(" "); // Rejoin remaining parts as book name
 
   const verse = parseInt(verseStr_, 10);
   const chapter = parseInt(chapterStr, 10);
@@ -321,7 +343,7 @@ export function parseVerseFromUrl(verseStr: string): { book: string; chapter: nu
  */
 export function debounce<T extends (...args: unknown[]) => void>(
   fn: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -335,4 +357,3 @@ export function debounce<T extends (...args: unknown[]) => void>(
     }, delay);
   };
 }
-

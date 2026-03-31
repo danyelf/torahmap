@@ -2,12 +2,17 @@
 
 declare const __GIT_BRANCH__: string;
 
-import { computeLayout, getLayoutBounds } from './layout.ts';
-import { createBookLabels, updateLabelPositions } from './labels.ts';
-import { loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex, loadLemmaData } from './search.ts';
-import { initHelp } from './help.ts';
-import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
+import { computeLayout, getLayoutBounds } from "./layout.ts";
+import { createBookLabels, updateLabelPositions } from "./labels.ts";
+import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from "./verseTexts.ts";
+import { buildSearchIndex, loadLemmaData } from "./search.ts";
+import { initBookData } from "./constants/books.ts";
+import { initHelp } from "./help.ts";
+import {
+  trackOverlaySwitch,
+  trackVerseClick,
+  trackZoomLevel,
+} from "./analytics.ts";
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -16,13 +21,16 @@ import {
   verseToUrlFormat,
   debounce,
   type UrlState,
-} from './urlState.ts';
+} from "./urlState.ts";
+import { getSidebarElements, updateSidebar } from "./sidebar.ts";
+import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import {
-  getSidebarElements,
-  updateSidebar,
-} from './sidebar.ts';
-import { createCamera, clampZoom, panForZoom } from './camera.ts';
-import { createMouseState, startDrag, stopDrag, setHoveredVerse, clearHover } from './mouseState.ts';
+  createMouseState,
+  startDrag,
+  stopDrag,
+  setHoveredVerse,
+  clearHover,
+} from "./mouseState.ts";
 import {
   createTouchState,
   trackTouch,
@@ -30,12 +38,17 @@ import {
   getPinchDistance,
   getPinchCenter,
   resetTouchState,
-} from './touchState.ts';
-import { versesEqual, nextVerse, prevVerse } from './types.ts';
-import { findVerseLayoutAtPoint } from './hitDetection.ts';
-import { computeVerseStates, applyVerseColors } from './verseColoring.ts';
-import { createRenderContext, createRenderState, rebuildGeometry, render as renderFrame } from './rendering.ts';
-import type { VerseLayout, TorahData, Bounds } from './types.ts';
+} from "./touchState.ts";
+import { versesEqual, nextVerse, prevVerse } from "./types.ts";
+import { findVerseLayoutAtPoint } from "./hitDetection.ts";
+import { computeVerseStates, applyVerseColors } from "./verseColoring.ts";
+import {
+  createRenderContext,
+  createRenderState,
+  rebuildGeometry,
+  render as renderFrame,
+} from "./rendering.ts";
+import type { VerseLayout, Bounds } from "./types.ts";
 import {
   registerOverlay,
   getOverlay,
@@ -51,13 +64,13 @@ import {
   verseLengthOverlay,
   configureVerseLength,
   type Overlay,
-} from './overlays/index.ts';
+} from "./overlays/index.ts";
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
-} from './constants/app.ts';
+} from "./constants/app.ts";
 
 // Extend window for global state
 declare global {
@@ -74,33 +87,24 @@ declare global {
   }
 }
 
-
 async function main(): Promise<void> {
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load Tanakh structure, verse texts, and lemma data in parallel
-  const [torahResponse, verseTexts] = await Promise.all([
-    fetch(`${import.meta.env.BASE_URL}data/tanakh-structure.json`),
+  // Load all data in parallel: structure, verse texts, and lemma index
+  const [torahData, verseTexts] = await Promise.all([
+    loadTanakhStructure(),
     loadAllVerseTexts(),
-    loadLemmaData()
+    loadLemmaData(),
   ]);
 
-  if (!torahResponse.ok) {
-    throw new Error(`Failed to load tanakh-structure.json: ${torahResponse.status}`);
-  }
-
-  let torahData: TorahData;
-  try {
-    torahData = await torahResponse.json();
-  } catch (e) {
-    throw new Error(`Failed to parse tanakh-structure.json: ${e}`);
-  }
-
-  // Compute layout
+  // Initialize book metadata and compute layout
+  initBookData(torahData);
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
-  console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
+  console.log(
+    `Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`,
+  );
 
   // Build search index
   buildSearchIndex(verseTexts);
@@ -117,11 +121,11 @@ async function main(): Promise<void> {
   configureVerseLength({ verseTexts });
   // Note: configureSearch is called later after updateSidebar is defined
 
-  await Promise.all(getAllOverlays().map(o => o.init?.()));
+  await Promise.all(getAllOverlays().map((o) => o.init?.()));
 
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
-  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-  if (!canvas) throw new Error('Canvas not found');
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  if (!canvas) throw new Error("Canvas not found");
   const dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas(): void {
@@ -129,8 +133,8 @@ async function main(): Promise<void> {
     const height = window.innerHeight;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
   }
   resizeCanvas();
 
@@ -148,7 +152,7 @@ async function main(): Promise<void> {
       verses,
       currentOverlay,
       mouseState.hoveredVerse,
-      pinnedVerse
+      pinnedVerse,
     );
     const colors = applyVerseColors(verseStates);
 
@@ -174,7 +178,13 @@ async function main(): Promise<void> {
 
   // Render function
   function render(): void {
-    renderFrame(renderContext, renderState, camera, mouseState.hoveredVerse, pinnedVerse);
+    renderFrame(
+      renderContext,
+      renderState,
+      camera,
+      mouseState.hoveredVerse,
+      pinnedVerse,
+    );
   }
 
   // Helper: Center camera on a verse
@@ -195,7 +205,11 @@ async function main(): Promise<void> {
     }
     applyOverlay();
     render();
-    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateLabelPositions(
+      window.bookLabels!,
+      { x: camera.x, y: camera.y },
+      camera.zoom,
+    );
     saveUrlState(true);
   }
 
@@ -211,72 +225,105 @@ async function main(): Promise<void> {
   render();
 
   // Book labels
-  window.bookLabels = createBookLabels(verses, document.body);
-  updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+  const hebrewNames = Object.fromEntries(
+    torahData.books.map((b) => [b.name, b.hebrewName]),
+  );
+  window.bookLabels = createBookLabels(verses, document.body, hebrewNames);
+  updateLabelPositions(
+    window.bookLabels,
+    { x: camera.x, y: camera.y },
+    camera.zoom,
+  );
 
   // Smooth zooming with mouse wheel, centered on cursor
-  canvas.addEventListener('wheel', (e: WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
-    const newZoom = clampZoom(camera.zoom * zoomFactor);
+  canvas.addEventListener(
+    "wheel",
+    (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
+      const newZoom = clampZoom(camera.zoom * zoomFactor);
 
-    // Get mouse position in canvas coordinates
-    const mouseX = e.clientX;
-    const mouseY = e.clientY;
+      // Get mouse position in canvas coordinates
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
 
-    // Adjust pan so the world point under the mouse stays fixed
-    const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, mouseX, mouseY);
-    camera.x = newPan.x;
-    camera.y = newPan.y;
-    camera.zoom = newZoom;
+      // Adjust pan so the world point under the mouse stays fixed
+      const newPan = panForZoom(
+        { x: camera.x, y: camera.y },
+        camera.zoom,
+        newZoom,
+        mouseX,
+        mouseY,
+      );
+      camera.x = newPan.x;
+      camera.y = newPan.y;
+      camera.zoom = newZoom;
 
-    render();
-    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
-    debouncedSaveUrlState();
-    debouncedTrackZoom();
-  }, { passive: false });
+      render();
+      updateLabelPositions(
+        window.bookLabels!,
+        { x: camera.x, y: camera.y },
+        camera.zoom,
+      );
+      debouncedSaveUrlState();
+      debouncedTrackZoom();
+    },
+    { passive: false },
+  );
 
   const debouncedTrackZoom = debounce(() => trackZoomLevel(camera.zoom), 1000);
 
   // Touch events for pinch-to-zoom
-  canvas.addEventListener('touchstart', (e: TouchEvent) => {
-    for (const touch of e.changedTouches) {
-      trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
-    }
-    if (touchState.activeTouches.size === 2) {
-      touchState.lastPinchDistance = getPinchDistance(touchState);
-    }
-  }, { passive: true });
-
-  canvas.addEventListener('touchmove', (e: TouchEvent) => {
-    for (const touch of e.changedTouches) {
-      trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
-    }
-
-    if (touchState.activeTouches.size >= 2) {
-      const newDist = getPinchDistance(touchState);
-      const center = getPinchCenter(touchState);
-      if (newDist && center && touchState.lastPinchDistance) {
-        const scale = newDist / touchState.lastPinchDistance;
-        const newZoom = clampZoom(camera.zoom * scale);
-        const newPan = panForZoom(
-          { x: camera.x, y: camera.y },
-          camera.zoom,
-          newZoom,
-          center.x,
-          center.y
-        );
-        camera.x = newPan.x;
-        camera.y = newPan.y;
-        camera.zoom = newZoom;
-        render();
-        updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+  canvas.addEventListener(
+    "touchstart",
+    (e: TouchEvent) => {
+      for (const touch of e.changedTouches) {
+        trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
       }
-      touchState.lastPinchDistance = newDist;
-    }
-  }, { passive: true });
+      if (touchState.activeTouches.size === 2) {
+        touchState.lastPinchDistance = getPinchDistance(touchState);
+      }
+    },
+    { passive: true },
+  );
 
-  canvas.addEventListener('touchend', (e: TouchEvent) => {
+  canvas.addEventListener(
+    "touchmove",
+    (e: TouchEvent) => {
+      for (const touch of e.changedTouches) {
+        trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
+      }
+
+      if (touchState.activeTouches.size >= 2) {
+        const newDist = getPinchDistance(touchState);
+        const center = getPinchCenter(touchState);
+        if (newDist && center && touchState.lastPinchDistance) {
+          const scale = newDist / touchState.lastPinchDistance;
+          const newZoom = clampZoom(camera.zoom * scale);
+          const newPan = panForZoom(
+            { x: camera.x, y: camera.y },
+            camera.zoom,
+            newZoom,
+            center.x,
+            center.y,
+          );
+          camera.x = newPan.x;
+          camera.y = newPan.y;
+          camera.zoom = newZoom;
+          render();
+          updateLabelPositions(
+            window.bookLabels!,
+            { x: camera.x, y: camera.y },
+            camera.zoom,
+          );
+        }
+        touchState.lastPinchDistance = newDist;
+      }
+    },
+    { passive: true },
+  );
+
+  canvas.addEventListener("touchend", (e: TouchEvent) => {
     for (const touch of e.changedTouches) {
       releaseTouch(touchState, touch.identifier);
     }
@@ -285,19 +332,19 @@ async function main(): Promise<void> {
     }
   });
 
-  canvas.addEventListener('touchcancel', () => {
+  canvas.addEventListener("touchcancel", () => {
     resetTouchState(touchState);
   });
 
   // Pointer events for pan/drag (works for both mouse and touch)
-  canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+  canvas.addEventListener("pointerdown", (e: PointerEvent) => {
     startDrag(mouseState, e.clientX, e.clientY);
-    canvas.style.cursor = 'grabbing';
+    canvas.style.cursor = "grabbing";
     canvas.setPointerCapture(e.pointerId);
     pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
   });
 
-  canvas.addEventListener('pointermove', (e: PointerEvent) => {
+  canvas.addEventListener("pointermove", (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
@@ -305,11 +352,15 @@ async function main(): Promise<void> {
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
-      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      updateLabelPositions(
+        window.bookLabels!,
+        { x: camera.x, y: camera.y },
+        camera.zoom,
+      );
     }
   });
 
-  canvas.addEventListener('pointerup', (e: PointerEvent) => {
+  canvas.addEventListener("pointerup", (e: PointerEvent) => {
     const wasDragging = mouseState.isDragging;
     if (wasDragging) {
       stopDrag(mouseState);
@@ -322,8 +373,17 @@ async function main(): Promise<void> {
       const dy = Math.abs(e.clientY - pointerDownPos.y);
       const duration = Date.now() - pointerDownPos.time;
 
-      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
-        const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
+      if (
+        dx < TAP_THRESHOLD &&
+        dy < TAP_THRESHOLD &&
+        duration < TAP_MAX_DURATION
+      ) {
+        const verse = findVerseLayoutAtPoint(
+          verses,
+          camera,
+          e.clientX,
+          e.clientY,
+        );
         if (verse) {
           if (pinnedVerse && versesEqual(pinnedVerse, verse)) {
             unpinVerse();
@@ -339,19 +399,24 @@ async function main(): Promise<void> {
 
     // Reset cursor
     if (wasDragging) {
-      const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
+      const verse = findVerseLayoutAtPoint(
+        verses,
+        camera,
+        e.clientX,
+        e.clientY,
+      );
       if (pinnedVerse && verse) {
-        canvas.style.cursor = 'pointer';
+        canvas.style.cursor = "pointer";
       } else {
-        canvas.style.cursor = 'default';
+        canvas.style.cursor = "default";
       }
     }
   });
 
-  canvas.addEventListener('pointerleave', () => {
+  canvas.addEventListener("pointerleave", () => {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
-    canvas.style.cursor = 'default';
+    canvas.style.cursor = "default";
 
     let overlayWantsRerender = false;
     if (currentOverlay?.setHoveredVerse) {
@@ -366,7 +431,7 @@ async function main(): Promise<void> {
 
   // Sidebar for verse details
   const sidebarElements = getSidebarElements();
-  const controlsPanel = document.getElementById('controls');
+  const controlsPanel = document.getElementById("controls");
 
   // URL State Management
   // Extract overlay params for URL encoding
@@ -399,7 +464,11 @@ async function main(): Promise<void> {
 
     // Pinned verse
     if (pinnedVerse) {
-      state.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
+      state.verse = verseToUrlFormat(
+        pinnedVerse.book,
+        pinnedVerse.chapter,
+        pinnedVerse.verse,
+      );
     }
 
     // Zoom (only if not default)
@@ -423,30 +492,48 @@ async function main(): Promise<void> {
   }
 
   // Debounced version for pan/zoom (replaceState only)
-  const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
+  const debouncedSaveUrlState = debounce(
+    () => saveUrlState(false),
+    URL_UPDATE_DEBOUNCE_MS,
+  );
 
   // Update sidebar with verse info - wrapper for the extracted module function
-  function updateSidebarWrapper(verse: VerseLayout | null, isPinned: boolean = false): void {
-    updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
+  function updateSidebarWrapper(
+    verse: VerseLayout | null,
+    isPinned: boolean = false,
+  ): void {
+    updateSidebar(
+      sidebarElements,
+      verse,
+      verseTexts,
+      currentOverlay,
+      getVerseText,
+      isPinned,
+    );
   }
 
-  canvas.addEventListener('pointermove', (e: PointerEvent) => {
+  canvas.addEventListener("pointermove", (e: PointerEvent) => {
     // Skip hover logic on touch devices and during pinch
-    if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
+    if (e.pointerType === "touch" || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
-      const verse = findVerseLayoutAtPoint(verses, camera, e.clientX, e.clientY);
+      const verse = findVerseLayoutAtPoint(
+        verses,
+        camera,
+        e.clientX,
+        e.clientY,
+      );
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
       const hoverChanged = !versesEqual(previousHover, verse);
 
       if (pinnedVerse && verse) {
-        canvas.style.cursor = 'pointer';
+        canvas.style.cursor = "pointer";
       } else if (mouseState.isDragging) {
-        canvas.style.cursor = 'grabbing';
+        canvas.style.cursor = "grabbing";
       } else {
-        canvas.style.cursor = 'default';
+        canvas.style.cursor = "default";
       }
 
       let overlayWantsRerender = false;
@@ -470,30 +557,30 @@ async function main(): Promise<void> {
   });
 
   // Close button to unpin
-  sidebarElements.closeBtn?.addEventListener('click', () => {
+  sidebarElements.closeBtn?.addEventListener("click", () => {
     unpinVerse();
   });
 
   // Bottom sheet handle tap to dismiss
-  const bottomSheetHandle = document.querySelector('.bottom-sheet-handle');
-  bottomSheetHandle?.addEventListener('click', () => {
+  const bottomSheetHandle = document.querySelector(".bottom-sheet-handle");
+  bottomSheetHandle?.addEventListener("click", () => {
     unpinVerse();
   });
 
   // Keyboard navigation: arrow keys for next/previous verse, Escape to close
-  window.addEventListener('keydown', (e: KeyboardEvent) => {
+  window.addEventListener("keydown", (e: KeyboardEvent) => {
     if (!pinnedVerse) return;
 
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       unpinVerse();
       return;
     }
 
     let targetVerse: VerseLayout | null = null;
 
-    if (e.key === 'ArrowRight') {
+    if (e.key === "ArrowRight") {
       targetVerse = nextVerse(verses, pinnedVerse);
-    } else if (e.key === 'ArrowLeft') {
+    } else if (e.key === "ArrowLeft") {
       targetVerse = prevVerse(verses, pinnedVerse);
     }
 
@@ -503,13 +590,15 @@ async function main(): Promise<void> {
   });
 
   // UI elements
-  const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
+  const overlaySelect = document.getElementById(
+    "overlay-select",
+  ) as HTMLSelectElement;
 
   // Overlay controls container (will be populated by overlays)
-  const overlayControlsContainer = document.getElementById('overlay-controls');
-  const overlayLegendContainer = document.getElementById('overlay-legend');
+  const overlayControlsContainer = document.getElementById("overlay-controls");
+  const overlayLegendContainer = document.getElementById("overlay-legend");
 
-  let currentOverlayId = 'none';
+  let currentOverlayId = "none";
 
   function setOverlay(id: string, fromUrlRestore: boolean = false): void {
     if (!fromUrlRestore) {
@@ -524,7 +613,7 @@ async function main(): Promise<void> {
       applyOverlay();
       // Re-render legend when overlay updates (e.g., category changes)
       if (overlayLegendContainer) {
-        overlayLegendContainer.innerHTML = '';
+        overlayLegendContainer.innerHTML = "";
         currentOverlay?.renderLegend?.(overlayLegendContainer);
       }
       render();
@@ -534,11 +623,11 @@ async function main(): Promise<void> {
 
     // Clear and render overlay's UI
     if (overlayControlsContainer) {
-      overlayControlsContainer.innerHTML = '';
+      overlayControlsContainer.innerHTML = "";
       currentOverlay?.renderControls?.(overlayControlsContainer);
     }
     if (overlayLegendContainer) {
-      overlayLegendContainer.innerHTML = '';
+      overlayLegendContainer.innerHTML = "";
       currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
 
@@ -552,15 +641,19 @@ async function main(): Promise<void> {
   }
 
   // Overlay selector
-  overlaySelect?.addEventListener('change', () => {
+  overlaySelect?.addEventListener("change", () => {
     setOverlay(overlaySelect.value);
   });
 
   // Handle resize
-  window.addEventListener('resize', () => {
+  window.addEventListener("resize", () => {
     resizeCanvas();
     render();
-    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    updateLabelPositions(
+      window.bookLabels!,
+      { x: camera.x, y: camera.y },
+      camera.zoom,
+    );
   });
 
   // Store for hover detection
@@ -570,7 +663,7 @@ async function main(): Promise<void> {
     zoom: camera.zoom,
     render,
     canvas,
-    bounds
+    bounds,
   };
 
   // Wire up search overlay callbacks
@@ -601,11 +694,15 @@ async function main(): Promise<void> {
     // Apply overlay-specific params
     if (currentOverlay?.applyUrlParams) {
       const params = new URLSearchParams();
-      if (urlState.overlayParams.trop) params.set('trop', urlState.overlayParams.trop);
-      if (urlState.overlayParams.category) params.set('cat', urlState.overlayParams.category);
-      if (urlState.overlayParams.q) params.set('q', urlState.overlayParams.q);
-      if (urlState.overlayParams.ww) params.set('ww', urlState.overlayParams.ww);
-      if (urlState.overlayParams.hm) params.set('hm', urlState.overlayParams.hm);
+      if (urlState.overlayParams.trop)
+        params.set("trop", urlState.overlayParams.trop);
+      if (urlState.overlayParams.category)
+        params.set("cat", urlState.overlayParams.category);
+      if (urlState.overlayParams.q) params.set("q", urlState.overlayParams.q);
+      if (urlState.overlayParams.ww)
+        params.set("ww", urlState.overlayParams.ww);
+      if (urlState.overlayParams.hm)
+        params.set("hm", urlState.overlayParams.hm);
       currentOverlay.applyUrlParams(params);
     }
   }
@@ -619,7 +716,10 @@ async function main(): Promise<void> {
 
     // Find the verse in our list
     const verse = verses.find(
-      v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
+      (v) =>
+        v.book === parsed.book &&
+        v.chapter === parsed.chapter &&
+        v.verse === parsed.verse,
     );
     if (!verse) return false;
 

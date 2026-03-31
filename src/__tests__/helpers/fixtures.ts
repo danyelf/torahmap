@@ -61,24 +61,33 @@ export const SAMPLE_TORAH_DATA: TorahData = {
     {
       name: 'Genesis',
       hebrewName: 'בראשית',
+      section: 'torah',
       chapters: [31, 25, 24, 26, 32], // First 5 chapters
     },
     {
       name: 'Exodus',
       hebrewName: 'שמות',
+      section: 'torah',
       chapters: [22, 25, 22, 31, 23], // First 5 chapters
     },
     {
       name: 'Isaiah',
       hebrewName: 'ישעיהו',
+      section: 'neviim',
       chapters: [31, 22, 26], // First 3 chapters
     },
     {
       name: 'Psalms',
       hebrewName: 'תהלים',
+      section: 'ketuvim',
       chapters: [6, 12, 8, 8, 12], // First 5 chapters
     },
   ],
+  layout: {
+    minorProphetStacks: [],
+    ketuvimStacks: [],
+    multiColumnBooks: { Psalms: { splitAtChapter: 72 } },
+  },
 };
 
 /**

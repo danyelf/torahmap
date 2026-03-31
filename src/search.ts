@@ -2,9 +2,10 @@
 // Now with Hebrew lemmatization via morphhb Strong's numbers
 
 import type { VerseTexts } from './verseTexts';
-import { BOOK_ORDER } from './constants/books.ts';
+import { getBookOrder } from './constants/books.ts';
 import { getVerseKey } from './types.ts';
 import {
+  fetchData,
   MIN_SEARCH_TERM_LENGTH,
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
@@ -164,9 +165,9 @@ export async function loadLemmaData(): Promise<void> {
   try {
     console.log('Loading lemma data files...');
     const [wordRes, verseRes, strongsRes] = await Promise.all([
-      fetch('/data/word-lemmas.json'),
-      fetch('/data/verse-lemmas.json'),
-      fetch('/data/strongs-to-root.json'),
+      fetchData('word-lemmas.json'),
+      fetchData('verse-lemmas.json'),
+      fetchData('strongs-to-root.json'),
     ]);
 
     console.log(`Fetch results: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
@@ -432,7 +433,14 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
   searchIndex = [];
   verseKeyToEntry.clear();
 
-  for (const book of BOOK_ORDER) {
+  // Fallback to verseTexts keys for tests that build an index without loading full app data
+  let books: readonly string[];
+  try {
+    books = getBookOrder();
+  } catch {
+    books = Object.keys(verseTexts);
+  }
+  for (const book of books) {
     const chapters = verseTexts[book];
     if (!chapters) continue;
 
@@ -1105,9 +1113,4 @@ export function getMatchingVerseTerms(results: SearchResult[]): Map<string, numb
     map.set(key, r.matchingTerms.map(m => m.termIndex));
   }
   return map;
-}
-
-// Keep old function for backwards compatibility during transition
-export function getMatchingVerseKeys(results: SearchResult[]): Set<string> {
-  return new Set(getMatchingVerseTerms(results).keys());
 }

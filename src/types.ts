@@ -29,11 +29,19 @@
 export interface Book {
   name: string;
   hebrewName: string;
+  section: "torah" | "neviim" | "ketuvim";
   chapters: number[];
+}
+
+export interface LayoutConfig {
+  minorProphetStacks: string[][];
+  ketuvimStacks: Array<{ books: string[]; insertAfter: string }>;
+  multiColumnBooks: Record<string, { splitAtChapter: number }>;
 }
 
 export interface TorahData {
   books: Book[];
+  layout: LayoutConfig;
 }
 
 /**
@@ -65,7 +73,10 @@ export interface VerseLayout extends VerseIdentity {
  * @param b - Second verse identity (or null)
  * @returns true if both are null or both refer to same verse
  */
-export function versesEqual(a: VerseIdentity | null, b: VerseIdentity | null): boolean {
+export function versesEqual(
+  a: VerseIdentity | null,
+  b: VerseIdentity | null,
+): boolean {
   if (a === null && b === null) return true;
   if (a === null || b === null) return false;
   return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
@@ -78,9 +89,15 @@ export function versesEqual(a: VerseIdentity | null, b: VerseIdentity | null): b
  * @param current - Current verse
  * @returns Next verse or null if current is last verse or not found
  */
-export function nextVerse(verses: VerseLayout[], current: VerseIdentity): VerseLayout | null {
+export function nextVerse(
+  verses: VerseLayout[],
+  current: VerseIdentity,
+): VerseLayout | null {
   const currentIndex = verses.findIndex(
-    v => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse
+    (v) =>
+      v.book === current.book &&
+      v.chapter === current.chapter &&
+      v.verse === current.verse,
   );
 
   if (currentIndex === -1 || currentIndex >= verses.length - 1) {
@@ -97,9 +114,15 @@ export function nextVerse(verses: VerseLayout[], current: VerseIdentity): VerseL
  * @param current - Current verse
  * @returns Previous verse or null if current is first verse or not found
  */
-export function prevVerse(verses: VerseLayout[], current: VerseIdentity): VerseLayout | null {
+export function prevVerse(
+  verses: VerseLayout[],
+  current: VerseIdentity,
+): VerseLayout | null {
   const currentIndex = verses.findIndex(
-    v => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse
+    (v) =>
+      v.book === current.book &&
+      v.chapter === current.chapter &&
+      v.verse === current.verse,
   );
 
   if (currentIndex <= 0) {
@@ -115,11 +138,10 @@ export function prevVerse(verses: VerseLayout[], current: VerseIdentity): VerseL
  * Second pass: visual state (how to render it)
  */
 export interface VerseState {
-  hasOverlayColor: boolean;  // Does overlay provide a color?
-  baseColor: [number, number, number] | [number, number, number][]; // Overlay color or default gray
-  isHovered: boolean;         // Is mouse hovering this verse?
-  isPinned: boolean;          // Is this verse pinned in sidebar?
-  isHoveredWhilePinned: boolean; // Is mouse hovering a different verse while another is pinned?
+  hasOverlayColor: boolean; // Does overlay provide a color?
+  resolvedColor: [number, number, number] | [number, number, number][]; // Final color: overlay color if present, otherwise default gray
+  isHovered: boolean; // Is mouse hovering this verse?
+  isPinned: boolean; // Is this verse pinned in sidebar?
 }
 
 export interface Bounds {
@@ -133,7 +155,10 @@ export interface VerseCommentary {
   categories: Record<string, number>;
 }
 
-export type CommentaryData = Record<string, Record<string, Record<string, VerseCommentary>>>;
+export type CommentaryData = Record<
+  string,
+  Record<string, Record<string, VerseCommentary>>
+>;
 // Structure: { [book]: { [chapter]: { [verse]: VerseCommentary } } }
 
 export interface ShaderProgram {
@@ -156,11 +181,11 @@ export interface ShaderProgram {
 }
 
 // Trop index: maps trop unicode -> list of verse locations containing it
-export interface TropVerseLocation {
+interface TropVerseLocation {
   book: string;
   chapter: number;
   verse: number;
-  count: number;  // How many times this trop appears in this verse
+  count: number; // How many times this trop appears in this verse
 }
 
 export interface TropIndexEntry {
@@ -174,6 +199,10 @@ export interface TropIndexEntry {
 export type TropIndex = Map<string, TropIndexEntry>;
 
 // Verse key utilities for consistent key generation
-export function getVerseKey(book: string, chapter: number, verse: number): string {
+export function getVerseKey(
+  book: string,
+  chapter: number,
+  verse: number,
+): string {
   return `${book}:${chapter}:${verse}`;
 }

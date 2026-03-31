@@ -1,11 +1,12 @@
 // src/overlays/commentary.ts
-import '../styles/overlays/commentary.css';
-import type { Overlay, Color } from './types.ts';
-import type { VerseIdentity, VerseLayout, CommentaryData } from '../types.ts';
-import { heatmapColor } from '../utils/color.ts';
+import "../styles/overlays/commentary.css";
+import type { Overlay, Color } from "./types.ts";
+import type { VerseIdentity, VerseLayout, CommentaryData } from "../types.ts";
+import { heatmapColor } from "../utils/color.ts";
+import { fetchData } from "../constants/app.ts";
 
 let data: CommentaryData = {};
-let currentCategory = 'total';
+let currentCategory = "total";
 let updateCallback: (() => void) | null = null;
 
 // Cache max values per category to avoid recalculating
@@ -15,7 +16,7 @@ let verses: VerseLayout[] = [];
 function getCount(book: string, chapter: number, verse: number): number {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   if (!verseData) return 0;
-  if (currentCategory === 'total') return verseData.total;
+  if (currentCategory === "total") return verseData.total;
   return verseData.categories[currentCategory] || 0;
 }
 
@@ -33,19 +34,19 @@ function getMaxValue(): number {
 }
 
 export const commentaryOverlay: Overlay = {
-  id: 'commentary',
-  name: 'Commentary Density',
+  id: "commentary",
+  name: "Commentary Density",
 
   async init() {
     try {
-      const res = await fetch(`${import.meta.env.BASE_URL}data/commentary-counts.json`);
+      const res = await fetchData("commentary-counts.json");
       if (!res.ok) {
         console.error(`Failed to load commentary-counts.json: ${res.status}`);
         return;
       }
       data = await res.json();
     } catch (e) {
-      console.error('Failed to parse commentary-counts.json:', e);
+      console.error("Failed to parse commentary-counts.json:", e);
     }
   },
 
@@ -71,8 +72,8 @@ export const commentaryOverlay: Overlay = {
   },
 
   renderControls(container: HTMLElement) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'commentary-controls';
+    const wrapper = document.createElement("div");
+    wrapper.className = "commentary-controls";
     wrapper.innerHTML = `
       <label for="category-select">Category:</label>
       <select id="category-select">
@@ -86,9 +87,9 @@ export const commentaryOverlay: Overlay = {
         <option value="Musar">Musar</option>
       </select>
     `;
-    const select = wrapper.querySelector('select')!;
+    const select = wrapper.querySelector("select")!;
     select.value = currentCategory;
-    select.addEventListener('change', () => {
+    select.addEventListener("change", () => {
       currentCategory = select.value;
       cachedMaxValues = {}; // Clear cache on category change
       updateCallback?.();
@@ -114,19 +115,22 @@ export const commentaryOverlay: Overlay = {
     container.innerHTML = `
       <div class="legend-gradient"></div>
       <div class="legend-ticks">
-        ${ticks.map(val => {
-          const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
-          const label = val >= 1000 ? `${val / 1000}k` : String(val);
-          return `<span class="tick" style="left: ${pos}%">${label}</span>`;
-        }).join('')}
+        ${ticks
+          .map((val) => {
+            const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
+            const label = val >= 1000 ? `${val / 1000}k` : String(val);
+            return `<span class="tick" style="left: ${pos}%">${label}</span>`;
+          })
+          .join("")}
       </div>
     `;
   },
 
   getHoverInfo(verse: VerseIdentity): string | null {
-    const verseData = data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
+    const verseData =
+      data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
     if (!verseData) return null;
-    if (currentCategory === 'total') {
+    if (currentCategory === "total") {
       return `${verseData.total} links`;
     }
     const count = verseData.categories[currentCategory];
@@ -136,12 +140,12 @@ export const commentaryOverlay: Overlay = {
   // URL parameter uses 'cat' for brevity in shareable links,
   // while internal code uses 'category' for clarity
   getUrlParams(): Record<string, string> {
-    if (currentCategory === 'total') return {};
+    if (currentCategory === "total") return {};
     return { cat: currentCategory };
   },
 
   applyUrlParams(params: URLSearchParams): void {
-    const category = params.get('cat');
+    const category = params.get("cat");
     if (category) {
       currentCategory = category;
       cachedMaxValues = {};
@@ -153,7 +157,8 @@ export const commentaryOverlay: Overlay = {
     const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
     if (!count) return null;
 
-    const categoryName = currentCategory === 'total' ? 'linked texts' : `${currentCategory} links`;
+    const categoryName =
+      currentCategory === "total" ? "linked texts" : `${currentCategory} links`;
     return `${count} ${categoryName}`;
   },
 };
@@ -162,11 +167,15 @@ export function configure(config: { verses: VerseLayout[] }): void {
   verses = config.verses;
   cachedMaxValues = {};
   // Reset to default state for testing
-  currentCategory = 'total';
+  currentCategory = "total";
 }
 
 // Get total linked texts count for a verse (used by sidebar)
-export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
+export function getVerseLinkCount(
+  book: string,
+  chapter: number,
+  verse: number,
+): number | null {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   return verseData?.total ?? null;
 }
@@ -177,9 +186,13 @@ export function getCurrentCategory(): string {
 }
 
 // Get category-specific link count for a verse (used by sidebar)
-export function getVerseCategoryCount(book: string, chapter: number, verse: number): number | null {
+function getVerseCategoryCount(
+  book: string,
+  chapter: number,
+  verse: number,
+): number | null {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   if (!verseData) return null;
-  if (currentCategory === 'total') return verseData.total;
+  if (currentCategory === "total") return verseData.total;
   return verseData.categories[currentCategory] ?? null;
 }

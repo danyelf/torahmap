@@ -109,7 +109,7 @@ function switchTab(container: HTMLElement, tabId: TabId): void {
   body.innerHTML = TAB_CONTENT[tabId].content;
 }
 
-export function showHelp(): void {
+function showHelp(): void {
   if (!modal) {
     modal = createModal();
     document.body.appendChild(modal);
@@ -123,7 +123,7 @@ export function showHelp(): void {
   switchTab(modal, tabToShow);
 }
 
-export function hideHelp(): void {
+function hideHelp(): void {
   if (modal) {
     modal.classList.remove('visible');
     localStorage.setItem(STORAGE_KEY_SEEN, 'true');
