@@ -1,6 +1,6 @@
 // Touch State module - tracks active touches for pinch-to-zoom
 
-export interface TouchPoint {
+interface TouchPoint {
   x: number;
   y: number;
 }

@@ -1,6 +1,6 @@
 // src/overlays/types.ts
-import type { VerseIdentity, VerseLayout } from '../types.ts';
-import type { VerseTexts } from '../verseTexts.ts';
+import type { VerseIdentity, VerseLayout } from "../types.ts";
+import type { VerseTexts } from "../verseTexts.ts";
 
 export type Color = [number, number, number];
 
@@ -16,6 +16,8 @@ export interface OverlayConfig {
   };
 }
 
+// Each overlay manages its own module-level state. A factory-per-overlay pattern
+// would make destroy() cleaner, but the current approach is simpler for 6 stable overlays.
 export interface Overlay {
   id: string;
   name: string;
@@ -40,8 +42,7 @@ export interface Overlay {
 
   // Called when hover state changes - enables cross-highlighting
   // Returns true if overlay needs re-render, false otherwise
-  // Takes VerseLayout in case overlay needs spatial info for highlighting
-  setHoveredVerse?(verse: VerseLayout | null): boolean;
+  setHoveredVerse?(verse: VerseIdentity | null): boolean;
 
   // For dynamic overlays - register callback to trigger re-render
   onUpdate?(callback: () => void): void;
@@ -52,10 +53,16 @@ export interface Overlay {
 
   // Sidebar integration - for verse details display
   // Render overlay-specific info in the sidebar (e.g., dating info, parshah name)
-  renderSidebarInfo?(verse: VerseIdentity, isPinned: boolean): HTMLElement | string | null;
+  renderSidebarInfo?(
+    verse: VerseIdentity,
+    isPinned: boolean,
+  ): HTMLElement | string | null;
 
   // Highlight or modify verse text display (e.g., search terms, trop marks)
-  highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment | string;
+  highlightVerseText?(
+    text: string,
+    language: "he" | "en",
+  ): DocumentFragment | string;
 
   // Provide overlay-specific link subtitle (e.g., category-specific commentary counts)
   getLinkSubtitle?(verse: VerseIdentity): string | null;

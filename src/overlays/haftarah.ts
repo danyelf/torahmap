@@ -1,9 +1,10 @@
 // src/overlays/haftarah.ts
 import type { Overlay, Color } from './types.ts';
-import type { VerseIdentity, VerseLayout } from '../types.ts';
+import type { VerseIdentity } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { rgbToHsl, hslToRgb } from '../utils/color.ts';
+import { dataPath } from '../constants/app.ts';
 
 // Types for haftarah data
 interface VerseRef {
@@ -89,7 +90,7 @@ type Custom = 'ashkenazi' | 'sephardi';
 let data: HaftarahMappings | null = null;
 let structure: TanakhStructure | null = null;
 let currentCustom: Custom = 'ashkenazi';
-let hoveredVerse: VerseLayout | null = null;
+let hoveredVerse: VerseIdentity | null = null;
 let updateCallback: (() => void) | null = null;
 
 // Lookup indexes (built once on init, rebuilt on custom change)
@@ -210,8 +211,8 @@ export const haftarahOverlay: Overlay = {
     try {
       // Load both data files in parallel
       const [haftarahRes, structureRes] = await Promise.all([
-        fetch(`${import.meta.env.BASE_URL}data/haftarah-mappings.json`),
-        fetch(`${import.meta.env.BASE_URL}data/tanakh-structure.json`),
+        fetch(dataPath("haftarah-mappings.json")),
+        fetch(dataPath("tanakh-structure.json")),
       ]);
 
       if (!haftarahRes.ok) {
@@ -247,7 +248,7 @@ export const haftarahOverlay: Overlay = {
     updateCallback = callback;
   },
 
-  setHoveredVerse(verse: VerseLayout | null): boolean {
+  setHoveredVerse(verse: VerseIdentity | null): boolean {
     const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse) : false;
     const isRelevant = verse ? isRelevantVerse(verse) : false;
 

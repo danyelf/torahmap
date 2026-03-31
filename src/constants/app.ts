@@ -1,6 +1,16 @@
 // Application-wide constants
 // Extracted magic numbers with documentation explaining design choices
 
+// === Data Loading ===
+
+/**
+ * Build a URL to a data file under public/data/.
+ * Uses Vite's BASE_URL so the app works when deployed to a subdirectory.
+ */
+export function dataPath(filename: string): string {
+  return `${import.meta.env.BASE_URL}data/${filename}`;
+}
+
 // === Layout Constants ===
 
 /**
