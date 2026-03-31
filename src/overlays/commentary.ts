@@ -3,7 +3,7 @@ import "../styles/overlays/commentary.css";
 import type { Overlay, Color } from "./types.ts";
 import type { VerseIdentity, VerseLayout, CommentaryData } from "../types.ts";
 import { heatmapColor } from "../utils/color.ts";
-import { dataPath } from "../constants/app.ts";
+import { fetchData } from "../constants/app.ts";
 
 let data: CommentaryData = {};
 let currentCategory = "total";
@@ -39,9 +39,7 @@ export const commentaryOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetch(
-        dataPath("commentary-counts.json"),
-      );
+      const res = await fetchData("commentary-counts.json");
       if (!res.ok) {
         console.error(`Failed to load commentary-counts.json: ${res.status}`);
         return;

@@ -4,7 +4,7 @@ import type { VerseIdentity } from '../types.ts';
 import { getVerseKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { rgbToHsl, hslToRgb } from '../utils/color.ts';
-import { dataPath } from '../constants/app.ts';
+import { fetchData } from '../constants/app.ts';
 
 // Types for haftarah data
 interface VerseRef {
@@ -211,8 +211,8 @@ export const haftarahOverlay: Overlay = {
     try {
       // Load both data files in parallel
       const [haftarahRes, structureRes] = await Promise.all([
-        fetch(dataPath("haftarah-mappings.json")),
-        fetch(dataPath("tanakh-structure.json")),
+        fetchData("haftarah-mappings.json"),
+        fetchData("tanakh-structure.json"),
       ]);
 
       if (!haftarahRes.ok) {

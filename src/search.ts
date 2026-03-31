@@ -5,7 +5,7 @@ import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
 import { getVerseKey } from './types.ts';
 import {
-  dataPath,
+  fetchData,
   MIN_SEARCH_TERM_LENGTH,
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
@@ -165,9 +165,9 @@ export async function loadLemmaData(): Promise<void> {
   try {
     console.log('Loading lemma data files...');
     const [wordRes, verseRes, strongsRes] = await Promise.all([
-      fetch(dataPath('word-lemmas.json')),
-      fetch(dataPath('verse-lemmas.json')),
-      fetch(dataPath('strongs-to-root.json')),
+      fetchData('word-lemmas.json'),
+      fetchData('verse-lemmas.json'),
+      fetchData('strongs-to-root.json'),
     ]);
 
     console.log(`Fetch results: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);

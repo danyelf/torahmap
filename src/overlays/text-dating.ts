@@ -2,7 +2,7 @@
 import '../styles/overlays/text-dating.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity } from '../types.ts';
-import { dataPath } from '../constants/app.ts';
+import { fetchData } from '../constants/app.ts';
 
 // Data structure types
 interface TextDatingData {
@@ -109,7 +109,7 @@ export const textDatingOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetch(dataPath("text-dating.json"));
+      const res = await fetchData("text-dating.json");
       if (!res.ok) {
         console.error(`Failed to load text-dating.json: ${res.status}`);
         return;

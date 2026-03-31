@@ -4,11 +4,11 @@
 // === Data Loading ===
 
 /**
- * Build a URL to a data file under public/data/.
+ * Fetch a data file from public/data/.
  * Uses Vite's BASE_URL so the app works when deployed to a subdirectory.
  */
-export function dataPath(filename: string): string {
-  return `${import.meta.env.BASE_URL}data/${filename}`;
+export function fetchData(filename: string): Promise<Response> {
+  return fetch(`${import.meta.env.BASE_URL}data/${filename}`);
 }
 
 // === Layout Constants ===
