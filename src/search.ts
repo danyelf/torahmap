@@ -433,8 +433,13 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
   searchIndex = [];
   verseKeyToEntry.clear();
 
-  const bookOrder = getBookOrder();
-  const books = bookOrder.length > 0 ? bookOrder : Object.keys(verseTexts);
+  // Fallback to verseTexts keys for tests that build an index without loading full app data
+  let books: readonly string[];
+  try {
+    books = getBookOrder();
+  } catch {
+    books = Object.keys(verseTexts);
+  }
   for (const book of books) {
     const chapters = verseTexts[book];
     if (!chapters) continue;
