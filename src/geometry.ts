@@ -1,6 +1,6 @@
-// Build vertex buffer from verse layout
+// Build vertex buffer from spatial items (identity-agnostic)
 
-import type { VerseLayout } from './types.ts';
+import type { SpatialItem } from './types.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 type Color = [number, number, number];
@@ -10,8 +10,8 @@ function isColorArray(color: Color | Color[] | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
 
-export function buildVerseGeometry(
-  verses: VerseLayout[],
+export function buildVerseGeometry<T>(
+  verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
   baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR
 ): Float32Array {
