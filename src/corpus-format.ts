@@ -14,14 +14,15 @@ type LevelValue = string | number;
  * Format rule: first level followed by a space, then subsequent levels
  * separated by ":" except where concatWithPrevious is true (no separator).
  */
-export function formatReference<T extends Record<string, LevelValue>>(
+export function formatReference<T>(
   id: T,
   schema: CorpusSchema,
 ): string {
   const parts: string[] = [];
+  const idAny = id as Record<string, LevelValue>;
   for (let i = 0; i < schema.levels.length; i++) {
     const level = schema.levels[i];
-    const value = String(id[level.key as keyof T]);
+    const value = String(idAny[level.key]);
     if (i === 0) {
       parts.push(value);
     } else if (level.concatWithPrevious) {
@@ -41,14 +42,15 @@ export function formatReference<T extends Record<string, LevelValue>>(
  * Format rule: all levels separated by ":" except where concatWithPrevious
  * is true (no separator).
  */
-export function serializeToUrlHash<T extends Record<string, LevelValue>>(
+export function serializeToUrlHash<T>(
   id: T,
   schema: CorpusSchema,
 ): string {
   const parts: string[] = [];
+  const idAny = id as Record<string, LevelValue>;
   for (let i = 0; i < schema.levels.length; i++) {
     const level = schema.levels[i];
-    const value = String(id[level.key as keyof T]);
+    const value = String(idAny[level.key]);
     if (i === 0) {
       parts.push(value);
     } else if (level.concatWithPrevious) {
