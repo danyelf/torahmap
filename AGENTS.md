@@ -1,175 +1,125 @@
 # Agent Instructions
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
+This project tracks issues as plain markdown files in `issues/`. See `issues/README.md` for the format.
 
 ## How to Code
 
-When you start in a worktree, expect to work in that worktree as autonomously as you can on the corresponding bead and its dependencies.
+When you start in a worktree, expect to work in that worktree as autonomously as you can on the corresponding issue.
 
 **UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until Danyel has looked at it and agreed it's ready to close.
 
-## Quick Reference
+## Issue Tracking
 
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --status in_progress  # Claim work
-bd close <id>         # Complete work
-bd sync               # Sync with git
+There is no daemon, database, or CLI tool. Issues are markdown files. Status = which folder.
+
+```
+issues/
+  open/      # active work — one .md file per issue
+  closed/    # done, kept for searchable history
+  README.md  # format and conventions
 ```
 
+### Quick reference
+
+```bash
+# What's open, sorted by priority?
+./scripts/issues-ready.sh
+
+# Create a new issue
+./scripts/issues-new.sh "Title here" bug 1     # type and priority optional
+
+# Read an issue
+cat issues/open/tm-abc-*.md
+
+# Close an issue manually (land-issue.sh does this for you in worktrees)
+git mv issues/open/tm-abc-*.md issues/closed/
+# then edit frontmatter: change `status: open` to `status: closed`, add `closed: 2026-04-06`
+```
+
+### File format
+
+```markdown
+---
+id: tm-abc
+status: open
+priority: 2          # 0=critical, 1=high, 2=medium, 3=low, 4=backlog
+type: bug            # bug | feature | task | chore
+created: 2026-04-06
+---
+
+# Short title
+
+Why this exists, what done looks like, any context the next reader needs.
+```
+
+The `id` is a short random tag chosen at creation time to avoid collisions when parallel agents in different worktrees both create issues. Filename is `<id>-<slug>.md` where slug is human-readable.
+
+### Searching history
+
+Closed issues stay in `issues/closed/`. Use grep:
+
+```bash
+grep -rl "search overlay" issues/
+```
+
+For older history (before the migration off beads), see `.beads-archive/issues.jsonl` or `git log -- .beads-archive/`.
+
 ## Working in Worktrees
+
+This project does parallel agent work in git worktrees. Each issue gets its own worktree and branch.
 
 **Starting work:**
 
 ```bash
-./scripts/work-on-bead.sh tm-xxx
+./scripts/work-on-issue.sh tm-abc      # by id substring
+./scripts/work-on-issue.sh             # interactive picker
 ```
 
-This creates an isolated git worktree and launches Claude with full context.
+This creates an isolated git worktree at `../torahmap-worktrees/<id>` on a new branch named after the issue id, then launches Claude inside it.
 
-**Landing work (merge and cleanup):**
+**Landing work (merge and clean up):**
 
-When you're done with the work, run from within the worktree:
+From inside the worktree, when you're done and committed:
 
 ```bash
-./scripts/land-bead.sh --delete-branch
+./scripts/land-issue.sh
 ```
-
-The `--delete-branch` flag automatically deletes the feature branch (recommended for most cases).
-Omit it if you want to be prompted.
 
 This script will:
 
 1. Verify no uncommitted changes
-2. Sync beads changes to beads-sync branch
-3. Pull latest from remote
-4. Merge feature branch into main (only code changes, no beads files)
-5. Push to remote
-6. Close the bead and sync
-7. Clean up the worktree
-8. Delete the feature branch (if --delete-branch passed)
+2. Move `issues/open/<id>-*.md` → `issues/closed/` and commit (on the feature branch)
+3. Pull latest main, merge the feature branch, push
+4. Remove the worktree
+5. Delete the local feature branch (use `--keep-branch` to skip)
 
-**DO NOT try to merge manually** - use the land-bead.sh script to avoid beads conflicts.
-
-**Note:** The worktree directory will be removed after landing, so any commands after that will fail (this is expected).
-
-**CRITICAL RULES:**
-
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-
-<!-- BEGIN BEADS INTEGRATION -->
-## Issue Tracking with bd (beads)
-
-**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
-
-### Why bd?
-
-- Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Auto-syncs to JSONL for version control
-- Agent-optimized: JSON output, ready work detection, discovered-from links
-- Prevents duplicate tracking systems and confusion
-
-### Quick Start
-
-**Check for ready work:**
-
-```bash
-bd ready --json
-```
-
-**Create new issues:**
-
-```bash
-bd create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
-bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:bd-123 --json
-```
-
-**Claim and update:**
-
-```bash
-bd update bd-42 --status in_progress --json
-bd update bd-42 --priority 1 --json
-```
-
-**Complete work:**
-
-```bash
-bd close bd-42 --reason "Completed" --json
-```
-
-### Issue Types
-
-- `bug` - Something broken
-- `feature` - New functionality
-- `task` - Work item (tests, docs, refactoring)
-- `epic` - Large feature with subtasks
-- `chore` - Maintenance (dependencies, tooling)
-
-### Priorities
-
-- `0` - Critical (security, data loss, broken builds)
-- `1` - High (major features, important bugs)
-- `2` - Medium (default, nice-to-have)
-- `3` - Low (polish, optimization)
-- `4` - Backlog (future ideas)
-
-### Workflow for AI Agents
-
-1. **Check ready work**: `bd ready` shows unblocked issues
-2. **Claim your task**: `bd update <id> --status in_progress`
-3. **Work on it**: Implement, test, document
-4. **Discover new work?** Create linked issue:
-   - `bd create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
-5. **Complete**: `bd close <id> --reason "Done"`
-
-### Auto-Sync
-
-bd automatically syncs with git:
-
-- Exports to `.beads/issues.jsonl` after changes (5s debounce)
-- Imports from JSONL when newer (e.g., after `git pull`)
-- No manual export/import needed!
-
-### Important Rules
-
-- ✅ Use bd for ALL task tracking
-- ✅ Always use `--json` flag for programmatic use
-- ✅ Link discovered work with `discovered-from` dependencies
-- ✅ Check `bd ready` before asking "what should I work on?"
-- ❌ Do NOT create markdown TODO lists
-- ❌ Do NOT use external issue trackers
-- ❌ Do NOT duplicate tracking systems
-
-For more details, see README.md and docs/QUICKSTART.md.
-
-<!-- END BEADS INTEGRATION -->
+**DO NOT try to merge manually** — use `land-issue.sh` so the issue file gets moved to `closed/` consistently.
 
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+1. **File issues for remaining work** — `./scripts/issues-new.sh "Title"` for anything that needs follow-up
+2. **Run quality gates** (if code changed) — `npm test`, build, etc.
+3. **Update issue status** — close finished work by moving the file to `issues/closed/`
+4. **PUSH TO REMOTE** — mandatory:
    ```bash
    git pull --rebase
-   bd sync
    git push
-   git status  # MUST show "up to date with origin"
+   git status   # MUST show "up to date with origin"
    ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+5. **Clean up** — clear stashes, prune remote branches
+6. **Verify** — all changes committed AND pushed
 
 **CRITICAL RULES:**
+
 - Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
+- NEVER stop before pushing — that leaves work stranded locally
+- NEVER say "ready to push when you are" — YOU must push
 - If push fails, resolve and retry until it succeeds
+
+## Why not beads?
+
+Beads was the previous tracker. It had nice features (dependency graph, memories, sync) but for this solo project we weren't using the dep graph and the Dolt-backed daemon was too much infrastructure to babysit. A folder of markdown files is honest, git-native, and has zero moving parts.
+
+The old data lives in `.beads-archive/` for grep purposes. Don't run `bd` against it.
