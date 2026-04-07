@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Usage: land-issue.sh [--keep-branch]
-# Run from inside a worktree. Merges the worktree's branch into main, closes
-# the issue (moves issues/open/<id>-*.md -> issues/closed/), pushes, cleans up.
+# Usage: land-issue.sh
+# Run from inside a worktree. Closes the issue (moves issues/open/<id>-*.md ->
+# issues/closed/), pushes the feature branch, and opens a PR against main.
+# Main is protected — you merge the PR yourself.
 set -e
-
-KEEP_BRANCH=false
-[[ "${1:-}" == "--keep-branch" ]] && KEEP_BRANCH=true
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 BRANCH_NAME=$(git branch --show-current)
@@ -57,26 +55,29 @@ else
   echo "Note: no issue file matched issues/open/${ISSUE_ID}-*.md (skipping close step)"
 fi
 
-# 4. Switch to main repo, pull, merge, push
-cd "$MAIN_REPO"
-echo "Pulling latest from origin..."
-git pull --rebase
+# 4. Push feature branch
+echo "Pushing $BRANCH_NAME..."
+git push -u origin "$BRANCH_NAME"
 
-echo "Merging $BRANCH_NAME into main..."
-git merge "$BRANCH_NAME" --no-edit
-
-echo "Pushing..."
-git push
-
-# 5. Clean up worktree
-echo "Removing worktree $REPO_ROOT..."
-git worktree remove "$REPO_ROOT"
-
-# 6. Optionally delete branch
-if ! $KEEP_BRANCH; then
-  git branch -d "$BRANCH_NAME"
-  echo "Deleted branch $BRANCH_NAME"
+# 5. Open a PR against main (if one doesn't already exist)
+existing_pr=$(gh pr view "$BRANCH_NAME" --json url --jq .url 2>/dev/null || true)
+if [[ -n "$existing_pr" ]]; then
+  echo "PR already exists: $existing_pr"
+else
+  # Title: prefer the issue file's H1; fall back to the branch name
+  pr_title="$ISSUE_ID"
+  if (( ${#issue_files[@]} == 1 )); then
+    h1=$(grep -m1 '^# ' "$dst" | sed 's/^# //')
+    [[ -n "$h1" ]] && pr_title="$ISSUE_ID: $h1"
+  fi
+  echo "Opening PR..."
+  gh pr create \
+    --base main \
+    --head "$BRANCH_NAME" \
+    --title "$pr_title" \
+    --body "Closes \`$ISSUE_ID\`."
 fi
 
 echo ""
-echo "Landed $ISSUE_ID. You are now in $MAIN_REPO"
+echo "$ISSUE_ID: branch pushed and PR open. Merge it yourself, then run:"
+echo "  cd $MAIN_REPO && git worktree remove $REPO_ROOT && git branch -D $BRANCH_NAME"
