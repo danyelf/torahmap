@@ -1,8 +1,10 @@
 # Talmud Engine Exploration — Design
 
-**Bead:** tm-7la
+**Issue:** tm-7la
 **Date:** 2026-04-06
 **Status:** Closed — exploration complete (see memo at `2026-04-06-talmud-exploration-memo.md`)
+
+> **Note (added at landing):** This document was written as the design plan for an exploration issue. The terminology and structure reflect the planning state, not the final outcome. The exploration's actual conclusions and the as-built design are in the memo. The Phase-0 reconnaissance findings and key technical decisions captured below are still accurate; only the deliverables and follow-up sections were superseded by the memo.
 
 ## Goal
 
@@ -104,7 +106,7 @@ The memo at `docs/plans/2026-04-06-talmud-exploration-memo.md` will cover:
 - The SVG renders without errors and visually distinguishes Mishnah from Gemara.
 - A reader unfamiliar with the project can look at the SVG and identify perek boundaries and at least one daf number.
 - The memo states a clear recommendation, supported by the screenshots.
-- All follow-up beads are filed in `bd` before the bead is closed.
+- All follow-up issues are filed under `issues/open/` before this issue is closed.
 
 ## Risks and unknowns
 

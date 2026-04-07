@@ -8,13 +8,13 @@
 - Design doc at `docs/plans/2026-04-06-talmud-exploration-design.md`
 - Reference screenshot at `docs/plans/images/2026-04-06-talmud-exploration/berakhot-full-2x.png`
 
-A throwaway prototype was built to validate the design and produce the screenshot. It is **not committed to main** — exploration beads ship understanding, not infrastructure. The design doc contains enough detail for someone to rebuild the prototype in a few hours if needed; the integration follow-up bead (`beads_tm-two`) will write the production version from scratch using `src/`'s engine.
+A throwaway prototype was built to validate the design and produce the screenshot. It is **not committed to main** — exploration issues ship understanding, not infrastructure. The design doc contains enough detail for someone to rebuild the prototype in a few hours if needed; the integration follow-up `tm-f28x` will write the production version from scratch using `src/`'s engine.
 
 ---
 
 ## TL;DR
 
-**Recommendation: yes, pursue integration.** The Torah Map metaphor survives the translation to the Talmud, but only after reshaping the layout from "perek as a horizontal row" to "perek as a vertical block of amud-rows." The prototype renders all 2,749 segments of Berakhot in a readable, visually meaningful way with authoritative Mishnah/Gemara tagging and no live API dependencies. Follow-up beads are filed for full-Bavli scaling, Hebrew/Aramaic classifier, and several refinements.
+**Recommendation: yes, pursue integration.** The Torah Map metaphor survives the translation to the Talmud, but only after reshaping the layout from "perek as a horizontal row" to "perek as a vertical block of amud-rows." The prototype renders all 2,749 segments of Berakhot in a readable, visually meaningful way with authoritative Mishnah/Gemara tagging and no live API dependencies. Follow-up issues are filed for full-Bavli scaling, Hebrew/Aramaic classifier, and several refinements.
 
 ---
 
@@ -52,7 +52,7 @@ All data lives in a public GCS bucket backing the [Sefaria/Sefaria-Export](https
 
 **What's not available statically**: an explicit per-segment Mishnah/Gemara tag. We derive it from a marker walk over the segment stream — see below.
 
-**Risks for full Bavli**: we verified this data coverage only for Berakhot. Wikisource-specific completeness for other tractates is not yet known and is a precondition for the integration bead.
+**Risks for full Bavli**: we verified this data coverage only for Berakhot. Wikisource-specific completeness for other tractates is not yet known and is a precondition for the integration follow-up — see `tm-u7b1`.
 
 ---
 
@@ -129,51 +129,45 @@ But the signal is muted. Most Gemara segments are within ~1.5× of the median le
 
 1. **Yes on the metaphor.** Option C is a legitimate substrate for the Talmud. The "ragged paragraph blocks" reading is coherent, informative, and uses the same visual vocabulary as the existing Torah Map (colored squares as atoms, length-coded colors, section headers, distinct overlays).
 2. **Yes on the data pipeline.** Sefaria-Export's Wikisource JSON + schema file is a clean static input with no live API dependencies. The marker-walk approach (`מתני׳`/`גמ׳`) produces authoritative Mishnah/Gemara tagging without heuristics.
-3. **Yes on the next bead.** The integration bead should target all 37 tractates of Bavli. Its first task is verifying Wikisource completeness per tractate (one grep per file), and the second is deciding the seder/tractate layout (the analog of the Tanakh's three-section arrangement).
-4. **Cautious on timing.** The integration bead is not small. It touches layout, data loading, overlays, URL state, verse-text loading, search, and labels. The current prototype is **~600 lines of throwaway code**; a production integration behind a `?corpus=talmud` flag is probably an order of magnitude more. Budget accordingly.
+3. **Yes on the next issue.** The integration follow-up should target all 37 tractates of Bavli. Its first task is verifying Wikisource completeness per tractate (one grep per file), and the second is deciding the seder/tractate layout (the analog of the Tanakh's three-section arrangement).
+4. **Cautious on timing.** The integration is not small. It touches layout, data loading, overlays, URL state, verse-text loading, search, and labels. The exploration prototype was ~600 lines of throwaway code; a production integration behind a `?corpus=talmud` flag is probably an order of magnitude more. Budget accordingly.
 
-**If I had to pick one thing to validate before starting the integration**, it would be running the prototype's data pipeline against a few other tractates to confirm Wikisource coverage. That's a 30-minute task and it unblocks the planning.
+**If I had to pick one thing to validate before starting the integration**, it would be running the prototype's data pipeline against a few other tractates to confirm Wikisource coverage. That's a 30-minute task and it unblocks the planning. Filed as `tm-u7b1`.
 
 ---
 
-## Follow-up beads (to be filed during Phase 9 close-out)
+## Follow-up issues
 
-Each of these becomes a bead with `discovered-from:tm-7la`. The list is longer than any single integration can reasonably absorb — the integration bead (#1) is the gate, and the overlay/layout beads depend on it.
+Filed under `issues/open/`. The list is longer than any single integration can reasonably absorb — `tm-f28x` is the gate, and the overlay/layout issues depend on it.
 
 ### Infrastructure
 
-1. **Engine integration for full Bavli** *(priority 2, feature)*. Wire the prototype's data pipeline into the main app behind a corpus flag. Reuse `computeTalmudLayout` via code-lift (not import). Handle multi-tractate layout, Mishnah/Gemara as a first-class overlay, daf labels as a sparse reveal. First sub-task: verify Wikisource coverage for all 37 Bavli tractates.
-2. **Verify Wikisource coverage across all Bavli tractates** *(priority 2, task)*. Gating check for the integration bead. Fast: download each tractate's Wikisource JSON and check that segment counts and `מתני׳`/`גמ׳` marker counts look plausible.
-3. **Refine perek name label styling** *(priority 3, task)*. Current labels feel formal, large, and high. Experiment with smaller font, different vertical offset, or moving them inline with the first daf label of each perek. Discovered while reviewing the prototype.
+- **`tm-f28x` Engine integration for full Bavli** *(P2, feature)*. Wire the prototype's data pipeline into the main app behind a corpus flag. Reuse `computeTalmudLayout` via code-lift (not import). Handle multi-tractate layout, Mishnah/Gemara as a first-class overlay, daf labels as a sparse reveal. **Blocked by `tm-u7b1`.**
+- **`tm-u7b1` Verify Wikisource coverage across all Bavli tractates** *(P2, task)*. Gating check for the integration. Fast: download each tractate's Wikisource JSON and check that segment counts and `מתני׳`/`גמ׳` marker counts look plausible.
+- **`tm-56as` Refine perek name label styling** *(P3, task)*. Current labels feel formal, large, and high — flagged during the exploration. Experiment with smaller font, smaller vertical offset, or moving them inline with the first daf label of each perek.
 
 ### Content features (hover, detail, sidebar)
 
-4. **Load and display English translation in the hover box / sidebar** *(priority 2, feature)*. Sefaria-Export's bucket includes English versions (e.g., William Davidson English). The main app's sidebar already shows Hebrew + English for verses; do the same for segments.
+- **`tm-s6f5` Load and display English translation** *(P2, feature)*. Sefaria-Export's bucket includes English versions (William Davidson). The main app's sidebar already shows Hebrew + English for verses; do the same for segments.
 
 ### Overlays — text search and analytical patterns
 
-5. **Full-text search overlay** *(priority 2, feature)*. Analog of the existing Tanakh search. Hebrew-aware, nikud-insensitive, matches across the 2,749-segment substrate. Most likely the single most-used overlay once the integration ships.
-6. **Rabbinical name search** *(priority 2, feature)*. Distinct from general text search because rabbinical references follow stereotyped forms (`רַב`, `רַבִּי`, `ר׳`, `רבא`, etc.) and are a first-class Talmud interest. Given a name or name-pattern, highlight every segment that mentions it.
-7. **Argumentation-pattern overlays** *(priority 3, feature)*. Highlight segments containing canonical Gemara phrases. Starter set:
-   - `קל וחומר` (kal v'chomer — a fortiori argument)
-   - `לא קשיא` (lo kashya — "it is not difficult", a standard dialectical move)
-   - Citation-introduction formulas (`תַּנְיָא`, `אִתְּמַר`, `תָּנוּ רַבָּנָן`)
-   - Potential extensions: gezerah shavah, binyan av, other hermeneutic rules.
-
-   Each phrase becomes one highlight-all overlay. Cheap to compute (substring match over the segment stream) and visually striking — the overlay reveals the distribution of that rhetorical move across the tractate.
-8. **Hebrew/Aramaic classifier for Talmud** — *already filed as `beads_tm-dqv`* with a full design doc and working prototype at `scripts/hebrew-aramaic-prototype/`. Mentioned here for completeness; do not file a duplicate.
-9. **Commentary-link-count overlay for Talmud** *(priority 4, feature)*. The existing Torah Map has a commentary heatmap using Sefaria links data. Port it to the Talmud for analytical substrate depth.
+- **`tm-mhdo` Full-text search overlay for Talmud** *(P2, feature)*. Analog of the existing Tanakh search. Hebrew-aware, nikud-insensitive. Most likely the single most-used overlay once the integration ships.
+- **`tm-aooj` Rabbinical name search overlay** *(P2, feature)*. Distinct from general text search because rabbinical references follow stereotyped forms (`רַב`, `רַבִּי`, `ר׳`, `רבא`, etc.) and are a first-class Talmud interest. Foundation for `tm-5zen` (text dating).
+- **`tm-f28v` Argumentation-pattern overlays** *(P3, feature)*. Highlight segments containing canonical Gemara phrases. Starter set: `קל וחומר`, `לא קשיא`, citation formulas (`תַּנְיָא`, `אִתְּמַר`, `תָּנוּ רַבָּנָן`). Each phrase becomes one toggle. Cheap and visually striking.
+- **`tm-haar` Hebrew/Aramaic per-word classifier** *(P2, feature)*. Tracked separately. The design doc (`docs/plans/2026-04-06-hebrew-aramaic-classifier-design.md`), full design notes / cost analysis (`docs/plans/2026-04-06-hebrew-aramaic-classifier-bead.md`), and a working v1 prototype (`scripts/hebrew-aramaic-prototype/`) are all already committed. The recommended next step (per `tm-haar`) is a Haiku-generated lexicon pilot — ~$0.15 for Berakhot, ~$1 for full Bavli, type-coalesced.
+- **`tm-gko1` Commentary-link-count overlay** *(P4, feature)*. The existing Torah Map has a commentary heatmap using Sefaria links data. Port it to the Talmud for analytical substrate depth.
 
 ### Overlays — cross-corpus
 
-10. **Cross-reference to Torah with verse-color gradient** *(priority 3, feature)*. Highlight segments that quote or reference the Torah. Color each highlighted segment by the *location* of the cited Torah verse, so early-Genesis citations are one color and late-Deuteronomy citations are another. This turns the Bavli visualization into a distribution plot of "which parts of the Bavli draw from which parts of the Torah." Data source: Sefaria's links CSVs.
-11. **Text dating by rabbis mentioned** *(priority 3, feature)*. Analog of the existing Tanakh text-dating overlay, but using tanna/amora generations. Each named rabbi has a known generation (Tannaim 0–220 CE, Amoraim 220–500 CE, subdivided into generations). The "age" of a passage is the latest rabbi it mentions. Depends on the rabbinical-name-search bead (#6) for the name-detection infrastructure.
+- **`tm-dk9d` Cross-reference: Talmud → Torah with verse-color gradient** *(P3, feature)*. Highlight segments that quote the Torah, coloring each by the *location* of the cited verse so early-Genesis citations differ from late-Deuteronomy. Turns the Bavli visualization into a distribution plot of "which parts draw from which parts of the Torah." Data source: Sefaria's links CSVs.
+- **`tm-5zen` Text dating by rabbis mentioned** *(P3, feature)*. Analog of the Tanakh text-dating overlay, but using tanna/amora generations. The "age" of a passage is the latest rabbi it mentions. **Blocked by `tm-aooj`** for the name-detection infrastructure.
 
 ### Scope / layout questions
 
-12. **Multi-tractate / Seder layout question** *(priority 3, task)*. How do tractates arrange within a seder? How do the six sedarim arrange? The Tanakh's answer ("three horizontal sections") may or may not translate. Investigate layouts that treat tractates as "books in a section."
-13. **Mishnah-as-standalone-corpus question** *(priority 4, feature)*. The Mishnah exists independently of the Talmud (6 sedarim, 63 tractates, ~4,000 mishnayot). Would it be a separate visualization, a separate corpus toggle, or an overlay on top of the Talmud showing "here's where each Mishnah lives"?
-14. **Explore alternative layout schemes for Talmud** *(priority 4, task)*. Option C is one point in a large design space. Others worth prototyping: daf-as-tile grid (one tile per daf, perek as a colored frame), sugya-as-unit (requires sugya-boundary inference), or a seder-level mosaic where tractates tile hexagonally. Low-priority exploration — only after the integration and core overlays ship.
+- **`tm-txt2` Multi-tractate / Seder layout question** *(P3, task)*. How do tractates arrange within a seder, and how do the six sedarim arrange? The Tanakh's answer ("three horizontal sections") may or may not translate.
+- **`tm-0kyg` Mishnah-as-standalone-corpus question** *(P4, feature)*. The Mishnah exists independently of the Talmud (6 sedarim, 63 tractates, ~4,000 mishnayot). Separate visualization, overlay on the Bavli, or both?
+- **`tm-go93` Explore alternative layout schemes for Talmud** *(P4, task)*. Option C is one point in a design space. Others worth prototyping: daf-as-tile grid, sugya-as-unit (requires sugya-boundary inference), seder-level mosaic. Low-priority — only after the integration and core overlays ship.
 
 ---
 
@@ -187,4 +181,4 @@ Each of these becomes a bead with `discovered-from:tm-7la`. The list is longer t
 **Built but not committed (existed only in the tm-7la worktree during exploration):**
 - A throwaway prototype under `scripts/talmud-prototype/` — ~600 lines of TypeScript across `fetch.ts`, `parse.ts`, `layout.ts`, `colors.ts`, `render.ts`, `main.ts`, `snapshot.ts`, plus types and 37 vitest tests; cached Wikisource + schema JSON; the generated `berakhot.svg`. The prototype passed all 37 of its own tests and the full repo suite (1,443 tests across 46 files) before the exploration was closed.
 
-**To rebuild it**, the design doc has the data sources (URLs in §4), the layout algorithm (option C in §2), the marker-walk M/G rule (§3), and the SVG render approach. A fresh build is a few hours' work and is intentionally what the integration follow-up bead (`beads_tm-two`) will do, this time inside the main app's WebGL engine rather than as a standalone SVG generator.
+**To rebuild it**, the design doc has the data sources (URLs in §4), the layout algorithm (option C in §2), the marker-walk M/G rule (§3), and the SVG render approach. A fresh build is a few hours' work and is intentionally what the integration follow-up bead (`tm-f28x`) will do, this time inside the main app's WebGL engine rather than as a standalone SVG generator.
