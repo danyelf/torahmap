@@ -44,26 +44,62 @@ export interface TorahData {
   layout: LayoutConfig;
 }
 
+// ============================================================================
+// Corpus-generic identity types (Talmud integration — tm-f28x)
+// ============================================================================
+
 /**
- * Identity of a biblical verse.
- * The minimal information needed to uniquely identify a verse in Tanakh.
+ * A spatial item is any domain identity paired with 2D coordinates and a size.
+ * The rendering pipeline is generic over the identity type — it never reads
+ * domain fields, only x/y/size.
+ *
+ * Usage:
+ *   TanakhLayout = SpatialItem<TanakhIdentity>
+ *   TalmudLayout = SpatialItem<TalmudIdentity>
+ *
+ * Any new corpus needs only a concrete identity interface to produce a new
+ * SpatialItem<T> flavor; the spatial modules accept it via generics.
  */
-export interface VerseIdentity {
+export type SpatialItem<T> = T & {
+  x: number;
+  y: number;
+  size: number;
+};
+
+/**
+ * Identity of a Tanakh verse. Three levels: book, chapter, verse.
+ */
+export interface TanakhIdentity {
   book: string;
   chapter: number;
   verse: number;
 }
 
 /**
- * Complete layout information for a verse.
- * Extends identity with spatial position computed during layout.
- * This data is immutable after initial layout computation.
+ * Identity of a Talmud segment. Four levels: tractate, daf, amud, segment.
+ * Dapim start at 2 in standard printings (there is no daf 1).
  */
-export interface VerseLayout extends VerseIdentity {
-  x: number;
-  y: number;
-  size: number;
+export interface TalmudIdentity {
+  tractate: string;
+  daf: number;
+  amud: "a" | "b";
+  segment: number;
 }
+
+export type TanakhLayout = SpatialItem<TanakhIdentity>;
+export type TalmudLayout = SpatialItem<TalmudIdentity>;
+
+/**
+ * Identity of a biblical verse.
+ * @deprecated Use TanakhIdentity in new code. Alias kept for backwards compat.
+ */
+export type VerseIdentity = TanakhIdentity;
+
+/**
+ * Complete layout information for a verse.
+ * @deprecated Use TanakhLayout in new code. Alias kept for backwards compat.
+ */
+export type VerseLayout = SpatialItem<TanakhIdentity>;
 
 /**
  * Check if two verses refer to the same verse.
