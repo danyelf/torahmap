@@ -1,6 +1,7 @@
 ---
 id: tm-7la
-status: open
+status: closed
+closed: 2026-04-07
 priority: 4
 type: feature
 created: 2026-01-10
