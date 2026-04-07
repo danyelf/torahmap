@@ -82,7 +82,19 @@ async function main(): Promise<void> {
   const renderState = createRenderState(renderContext.gl, items, dpr);
 
   // --- Camera ---
+  // Start zoomed out to fit the whole bookshelf with a small margin.
+  // The Bavli total bounds are wide (4 tall shelves of tractates) so the
+  // default 1.0 zoom from createCamera is almost always too zoomed in.
   const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
+  const fitZoomX = (window.innerWidth - 80) / bounds.width;
+  const fitZoomY = (window.innerHeight - 80) / bounds.height;
+  const fitZoom = Math.min(fitZoomX, fitZoomY, 1.0);
+  if (fitZoom < 1.0 && fitZoom > 0) {
+    camera.zoom = fitZoom;
+    // Center the bounds in the viewport
+    camera.x = (window.innerWidth / fitZoom - bounds.width) / 2;
+    camera.y = (window.innerHeight / fitZoom - bounds.height) / 2;
+  }
 
   // --- State ---
   const mouseState = createMouseState();
@@ -357,6 +369,43 @@ async function main(): Promise<void> {
     doRender();
     updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
   });
+
+  // Expose a debug/test hook so screenshot scripts can drive the camera
+  // without having to simulate wheel events over moving content.
+  (window as unknown as { talmudMap: unknown }).talmudMap = {
+    camera,
+    items,
+    tractateBlocks,
+    setCameraForBounds(minX: number, minY: number, maxX: number, maxY: number, margin = 40): void {
+      const w = maxX - minX;
+      const h = maxY - minY;
+      const z = Math.min(
+        (window.innerWidth - margin * 2) / w,
+        (window.innerHeight - margin * 2) / h,
+      );
+      camera.zoom = Math.max(0.1, Math.min(10, z));
+      camera.x = (window.innerWidth / camera.zoom - w) / 2 - minX;
+      camera.y = (window.innerHeight / camera.zoom - h) / 2 - minY;
+      applyOverlay();
+      doRender();
+      updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
+    },
+    pin(id: TalmudIdentity): void {
+      const match = items.find(
+        (i) =>
+          i.tractate === id.tractate &&
+          i.daf === id.daf &&
+          i.amud === id.amud &&
+          i.segment === id.segment,
+      );
+      if (match) {
+        pinnedItem = match as TalmudLayoutItem;
+        updateTalmudSidebar(pinnedItem, structure, sidebarElements);
+        applyOverlay();
+        doRender();
+      }
+    },
+  };
 
   // Final paint after everything is wired
   applyOverlay();

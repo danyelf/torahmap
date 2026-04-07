@@ -206,13 +206,11 @@ export function processTractate(
   if (schemaNodes.length === 0) {
     throw new Error(`${tractateName}: schema has no perek nodes`);
   }
-  const firstRef = parseWholeRef(schemaNodes[0].wholeRef ?? "");
-  if (!firstRef) {
-    throw new Error(
-      `${tractateName}: cannot parse first perek wholeRef "${schemaNodes[0].wholeRef}"`,
-    );
-  }
-  const firstDaf = firstRef.startDaf;
+  // Sefaria-Export indexes its amud array starting from daf 1 (with 1a/1b
+  // as empty placeholders — the Talmud traditionally has no daf 1). So the
+  // firstDaf is always 1, and the schema's perek refs like "Berakhot 2a:1"
+  // are resolved against that origin via dafAmudToIdx(daf, amud, 1).
+  const firstDaf = 1;
 
   // Compute per-segment Mishnah mask via marker walk.
   const mishnahMask = walkMarkers(rawText);

@@ -67,6 +67,10 @@ interface AmudRow {
 function rowsForTractate(tractate: TalmudTractate): AmudRow[] {
   const rows: AmudRow[] = [];
   for (const amud of tractate.amudim) {
+    // Skip empty amudim (Sefaria-Export pads leading dapim 1a/1b with empty
+    // arrays so every Bavli tractate is indexed from daf 1).
+    if (amud.segmentCount === 0) continue;
+
     if (amud.perekBoundaryAt !== undefined && amud.perekBoundaryAt > 0) {
       const firstHalf: AmudRow = {
         daf: amud.daf,

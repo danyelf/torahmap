@@ -839,6 +839,33 @@ Three corrections had to be made to the verification script during the run, all 
 
 **Corpus stats from the passing report.** Marker counts range from Tamid (5/4/7) to Shabbat (137/137/24). Full-Bavli total is **~78,000 segments** across **37 tractates** — about 3× the Tanakh's 23,000 verses. The largest tractates (Shabbat, Chullin, Sanhedrin, Bava Batra, Yevamot) dominate. Combined Hebrew text bundle is likely ~30–50 MB raw, matching the design doc §3.3 expectation.
 
+#### 2026-04-07 — tm-f28x integration findings
+
+**Result: all 37 tractates render, visual parity with prototype, 1,470 tests pass.** PR ready for review.
+
+Corrections during integration:
+
+1. **Bundler `firstDaf` bug.** My first bundler used `firstDaf = schema.perakim[0].startDaf` (= 2 for Berakhot). Wrong: Sefaria-Export's Wikisource array is **always indexed from daf 1**, with 1a/1b as empty placeholders (the traditional Talmud has no daf 1). Fix: `firstDaf = 1` for all Bavli tractates. Layout now skips empty amudim (`segmentCount === 0`) so the placeholders take no vertical space.
+
+2. **Bundle script `parseWholeRef` needed a shorthand form.** Tamid's last perek has `wholeRef: "Tamid 33a:8-14"` (same daf, segment range only) rather than the usual `"Xa:Y-Zb:W"`. Added a second regex branch. Before the fix, Tamid was skipped and only 36/37 tractates bundled.
+
+3. **Initial camera: fit-to-bounds.** `createCamera()` was designed for the Tanakh (starts at zoom 1.0 with Genesis 1:1 near top-right). The Bavli's bounds are ~2,100 × 11,600 px — a 1:5.5 aspect ratio. At zoom 1.0 only a sliver is visible. `main-talmud.ts` now computes a fit-to-bounds zoom at startup. At that zoom the full bookshelf is visible but individual tractates are too small to read — users zoom in from there. **Open question:** a better "initial camera" might fit-to-width and show just the top shelves; filed as a tuning item for the cleanup round.
+
+4. **Spatial-layer refactor larger than initially estimated.** The design said the refactor was "nearly mechanical." In practice `rendering.ts` also had to become generic (`RenderState<T>`, `createRenderState<T>`, `render<T>`, `renderOutline<T>`) because it held `verses: VerseLayout[]`. The `render()` function also had an embedded `versesEqual(hoveredVerse, pinnedVerse)` call — replaced with an injected `itemsEqual` parameter defaulting to `versesEqual` so Tanakh callers are unchanged. And an embedded `updateLabelPositions(window.bookLabels, ...)` call — left as-is since `window.bookLabels` is optional and `main-talmud.ts` simply doesn't set it. Zero behavior change for the Tanakh path, but ~8 files touched instead of the ~4 I'd estimated.
+
+5. **`corpus-format`'s generic `T` constraint too tight.** First draft used `T extends Record<string, LevelValue>`, which `TanakhIdentity` satisfies structurally but `TalmudIdentity` doesn't (TS interfaces don't have implicit index signatures). Relaxed to just `<T>` with an internal cast.
+
+6. **Playwright screenshots needed software-WebGL flags.** Headless Chromium doesn't provide WebGL2 by default. Using `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist` enables it. Without these, the canvas is blank and main-talmud throws "WebGL2 not supported".
+
+7. **Screenshot automation needed a debug hook.** Simulating wheel-zoom via Playwright is fragile because the zoom center shifts off-content at deep zoom levels. Added `window.talmudMap = { camera, items, tractateBlocks, setCameraForBounds(), pin() }` as a debug handle the screenshot script drives directly. **Open question for cleanup:** should this be stripped behind `import.meta.env.DEV` for production? Currently always exposed.
+
+**Numbers:**
+- Final bundle: `public/data/talmud/structure.json` = 892 KB, `texts/*.json` = 16 MB across 37 files.
+- **1,470 tests pass** (1,419 pre-integration + 51 new across spatial-generic, corpus-format, bundle, data, layout).
+- Production build: `dist/talmud-*.js` = 12.6 KB (4.9 KB gzipped). Shared chunks with Tanakh.
+- **Zero console errors** on `talmud.html` page load.
+- Visual parity with the exploration prototype reference (`docs/plans/images/2026-04-06-talmud-exploration/berakhot-full-2x.png`).
+
 ---
 
 ## 7. Success criteria
