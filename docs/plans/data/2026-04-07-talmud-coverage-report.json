@@ -1,0 +1,748 @@
+{
+  "generatedAt": "2026-04-07T20:29:21.242Z",
+  "totalTractates": 37,
+  "passed": 37,
+  "failed": 0,
+  "tractates": [
+    {
+      "seder": "Seder Zeraim",
+      "tractate": "Berakhot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 127,
+        "segmentCount": 2749
+      },
+      "merged": {
+        "amudCount": 127,
+        "segmentCount": 2749
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 34,
+        "gemara": 34,
+        "hadran": 9
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Shabbat",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 314,
+        "segmentCount": 3778
+      },
+      "merged": {
+        "amudCount": 314,
+        "segmentCount": 3778
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 137,
+        "gemara": 137,
+        "hadran": 24
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Eruvin",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 209,
+        "segmentCount": 3646
+      },
+      "merged": {
+        "amudCount": 209,
+        "segmentCount": 3646
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 85,
+        "gemara": 85,
+        "hadran": 12
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Pesachim",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 242,
+        "segmentCount": 3519
+      },
+      "merged": {
+        "amudCount": 242,
+        "segmentCount": 3519
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 79,
+        "gemara": 78,
+        "hadran": 10
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Yoma",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 175,
+        "segmentCount": 2271
+      },
+      "merged": {
+        "amudCount": 175,
+        "segmentCount": 2271
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 41,
+        "gemara": 41,
+        "hadran": 8
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Sukkah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 112,
+        "segmentCount": 1361
+      },
+      "merged": {
+        "amudCount": 112,
+        "segmentCount": 1361
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 47,
+        "gemara": 47,
+        "hadran": 5
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Beitzah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 80,
+        "segmentCount": 1151
+      },
+      "merged": {
+        "amudCount": 80,
+        "segmentCount": 1151
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 48,
+        "gemara": 48,
+        "hadran": 6
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Rosh Hashanah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 69,
+        "segmentCount": 1025
+      },
+      "merged": {
+        "amudCount": 69,
+        "segmentCount": 1025
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 30,
+        "gemara": 29,
+        "hadran": 4
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Taanit",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 61,
+        "segmentCount": 895
+      },
+      "merged": {
+        "amudCount": 61,
+        "segmentCount": 895
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 8,
+        "gemara": 8,
+        "hadran": 4
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Megillah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 63,
+        "segmentCount": 1213
+      },
+      "merged": {
+        "amudCount": 63,
+        "segmentCount": 1213
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 32,
+        "gemara": 32,
+        "hadran": 4
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Moed Katan",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 57,
+        "segmentCount": 1026
+      },
+      "merged": {
+        "amudCount": 57,
+        "segmentCount": 1026
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 22,
+        "gemara": 22,
+        "hadran": 3
+      }
+    },
+    {
+      "seder": "Seder Moed",
+      "tractate": "Chagigah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 53,
+        "segmentCount": 735
+      },
+      "merged": {
+        "amudCount": 53,
+        "segmentCount": 735
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 16,
+        "gemara": 16,
+        "hadran": 3
+      }
+    },
+    {
+      "seder": "Seder Nashim",
+      "tractate": "Yevamot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 244,
+        "segmentCount": 3869
+      },
+      "merged": {
+        "amudCount": 244,
+        "segmentCount": 3869
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 97,
+        "gemara": 94,
+        "hadran": 16
+      }
+    },
+    {
+      "seder": "Seder Nashim",
+      "tractate": "Ketubot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 224,
+        "segmentCount": 3038
+      },
+      "merged": {
+        "amudCount": 224,
+        "segmentCount": 3038
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 94,
+        "gemara": 94,
+        "hadran": 13
+      }
+    },
+    {
+      "seder": "Seder Nashim",
+      "tractate": "Nedarim",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 182,
+        "segmentCount": 1509
+      },
+      "merged": {
+        "amudCount": 182,
+        "segmentCount": 1509
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 89,
+        "gemara": 88,
+        "hadran": 11
+      }
+    },
+    {
+      "seder": "Seder Nashim",
+      "tractate": "Nazir",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 132,
+        "segmentCount": 1299
+      },
+      "merged": {
+        "amudCount": 132,
+        "segmentCount": 1299
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 57,
+        "gemara": 57,
+        "hadran": 9
+      }
+    },
+    {
+      "seder": "Seder Nashim",
+      "tractate": "Sotah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 98,
+        "segmentCount": 1635
+      },
+      "merged": {
+        "amudCount": 98,
+        "segmentCount": 1635
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 30,
+        "gemara": 31,
+        "hadran": 9
+      }
+    },
+    {
+      "seder": "Seder Nashim",
+      "tractate": "Gittin",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 180,
+        "segmentCount": 2992
+      },
+      "merged": {
+        "amudCount": 180,
+        "segmentCount": 2992
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 81,
+        "gemara": 81,
+        "hadran": 10
+      }
+    },
+    {
+      "seder": "Seder Nashim",
+      "tractate": "Kiddushin",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 164,
+        "segmentCount": 2406
+      },
+      "merged": {
+        "amudCount": 164,
+        "segmentCount": 2406
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 47,
+        "gemara": 47,
+        "hadran": 4
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Bava Kamma",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 238,
+        "segmentCount": 4314
+      },
+      "merged": {
+        "amudCount": 238,
+        "segmentCount": 4314
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 80,
+        "gemara": 80,
+        "hadran": 10
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Bava Metzia",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 237,
+        "segmentCount": 3660
+      },
+      "merged": {
+        "amudCount": 237,
+        "segmentCount": 3660
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 96,
+        "gemara": 96,
+        "hadran": 10
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Bava Batra",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 352,
+        "segmentCount": 3804
+      },
+      "merged": {
+        "amudCount": 352,
+        "segmentCount": 3804
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 96,
+        "gemara": 98,
+        "hadran": 12
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Sanhedrin",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 226,
+        "segmentCount": 4171
+      },
+      "merged": {
+        "amudCount": 226,
+        "segmentCount": 4171
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 67,
+        "gemara": 67,
+        "hadran": 11
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Makkot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 48,
+        "segmentCount": 709
+      },
+      "merged": {
+        "amudCount": 48,
+        "segmentCount": 709
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 29,
+        "gemara": 29,
+        "hadran": 3
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Shevuot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 98,
+        "segmentCount": 1555
+      },
+      "merged": {
+        "amudCount": 98,
+        "segmentCount": 1555
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 21,
+        "gemara": 21,
+        "hadran": 8
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Avodah Zarah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 152,
+        "segmentCount": 2131
+      },
+      "merged": {
+        "amudCount": 152,
+        "segmentCount": 2131
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 53,
+        "gemara": 53,
+        "hadran": 5
+      }
+    },
+    {
+      "seder": "Seder Nezikin",
+      "tractate": "Horayot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 27,
+        "segmentCount": 451
+      },
+      "merged": {
+        "amudCount": 27,
+        "segmentCount": 451
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 19,
+        "gemara": 19,
+        "hadran": 3
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Zevachim",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 240,
+        "segmentCount": 3817
+      },
+      "merged": {
+        "amudCount": 240,
+        "segmentCount": 3817
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 67,
+        "gemara": 69,
+        "hadran": 14
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Menachot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 219,
+        "segmentCount": 3783
+      },
+      "merged": {
+        "amudCount": 219,
+        "segmentCount": 3783
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 98,
+        "gemara": 98,
+        "hadran": 13
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Chullin",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 283,
+        "segmentCount": 4393
+      },
+      "merged": {
+        "amudCount": 283,
+        "segmentCount": 4393
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 88,
+        "gemara": 87,
+        "hadran": 13
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Bekhorot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 121,
+        "segmentCount": 1957
+      },
+      "merged": {
+        "amudCount": 121,
+        "segmentCount": 1957
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 81,
+        "gemara": 80,
+        "hadran": 9
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Arakhin",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 67,
+        "segmentCount": 1183
+      },
+      "merged": {
+        "amudCount": 67,
+        "segmentCount": 1183
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 53,
+        "gemara": 52,
+        "hadran": 9
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Temurah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 67,
+        "segmentCount": 1150
+      },
+      "merged": {
+        "amudCount": 67,
+        "segmentCount": 1150
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 31,
+        "gemara": 31,
+        "hadran": 7
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Keritot",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 56,
+        "segmentCount": 1211
+      },
+      "merged": {
+        "amudCount": 56,
+        "segmentCount": 1211
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 30,
+        "gemara": 31,
+        "hadran": 6
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Meilah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 43,
+        "segmentCount": 515
+      },
+      "merged": {
+        "amudCount": 43,
+        "segmentCount": 515
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 32,
+        "gemara": 32,
+        "hadran": 6
+      }
+    },
+    {
+      "seder": "Seder Kodashim",
+      "tractate": "Tamid",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 66,
+        "segmentCount": 207
+      },
+      "merged": {
+        "amudCount": 66,
+        "segmentCount": 207
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 5,
+        "gemara": 4,
+        "hadran": 7
+      }
+    },
+    {
+      "seder": "Seder Tahorot",
+      "tractate": "Niddah",
+      "status": "pass",
+      "failures": [],
+      "wikisource": {
+        "amudCount": 145,
+        "segmentCount": 2665
+      },
+      "merged": {
+        "amudCount": 145,
+        "segmentCount": 2665
+      },
+      "shapeMatch": true,
+      "markers": {
+        "matnitin": 65,
+        "gemara": 65,
+        "hadran": 10
+      }
+    }
+  ]
+}
