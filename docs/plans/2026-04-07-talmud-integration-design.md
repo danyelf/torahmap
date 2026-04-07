@@ -822,7 +822,22 @@ No changes to `index.html`'s Tanakh-specific title.
 
 ### 6.3 Unexpected issues
 
-*(none yet)*
+#### 2026-04-07 — tm-u7b1 coverage run findings
+
+**Result: 37/37 tractates PASS.** Zero anomalies in the final report. No follow-up issues filed.
+
+Three corrections had to be made to the verification script during the run, all preserved in `docs/plans/data/2026-04-07-talmud-coverage-report.json`:
+
+1. **Seder Tahorot spelling.** My `BAVLI_TRACTATES` constant used "Seder Tohorot" (with 'o'). The Sefaria-Export bucket uses "Seder Tahorot" (with 'a'). Fixed; now Niddah loads correctly.
+
+2. **Schema URL convention.** The `schemas/<Tractate>.json` endpoint uses **underscores** for spaces in tractate names, not URL-encoded spaces. E.g. `Rosh_Hashanah.json`, `Bava_Kamma.json`. The content JSONs (Wikisource/merged) correctly use `%20`. Script now generates the schema URL with `tractate.replace(/ /g, "_")`. This affected 6 tractates with multi-word names.
+
+3. **Marker plausibility thresholds too tight.** I set `MARKER_MIN = 10` based on Berakhot's 34 markers. Two tractates are legitimately small and had fewer markers:
+   - **Tamid** — 5 matnitin / 4 gemara markers. Tamid has Gemara on only a few perakim (traditional; Tamid 25b onward has no Gemara at all). Real data.
+   - **Taanit** — 8 matnitin / 8 gemara markers. Small tractate (31 dapim vs. Berakhot's 64), legitimate marker density.
+   - Lowered `MARKER_MIN` to 3 and raised `MARKER_MAX` to 400. The bound is now catastrophe-catching only (e.g. 0 markers = data corruption), not small-tractate-rejecting.
+
+**Corpus stats from the passing report.** Marker counts range from Tamid (5/4/7) to Shabbat (137/137/24). Full-Bavli total is **~78,000 segments** across **37 tractates** — about 3× the Tanakh's 23,000 verses. The largest tractates (Shabbat, Chullin, Sanhedrin, Bava Batra, Yevamot) dominate. Combined Hebrew text bundle is likely ~30–50 MB raw, matching the design doc §3.3 expectation.
 
 ---
 
