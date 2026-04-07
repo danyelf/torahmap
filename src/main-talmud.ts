@@ -1,0 +1,368 @@
+// Entry point for the Talmud Map (talmud.html).
+//
+// Parallel to src/main.ts but for the Talmud corpus. Shares the spatial
+// rendering modules (camera, geometry, rendering, hitDetection) via their
+// generic <T> signatures.
+
+declare const __GIT_BRANCH__: string;
+
+import type { SpatialItem, TalmudIdentity } from "./types.ts";
+import { loadTalmudStructure, getTractateText, isSegmentMishnah } from "./talmud/data.ts";
+import { computeTalmudLayout, type TalmudLayoutItem } from "./talmud/layout.ts";
+import {
+  createRenderContext,
+  createRenderState,
+  rebuildGeometry,
+  render as renderFrame,
+} from "./rendering.ts";
+import { computeVerseStates, applyVerseColors } from "./verseColoring.ts";
+import { findVerseLayoutAtPoint } from "./hitDetection.ts";
+import { createCamera, clampZoom, panForZoom } from "./camera.ts";
+import { createMouseState, startDrag, stopDrag } from "./mouseState.ts";
+import type { Overlay } from "./overlays/types.ts";
+import { segmentLengthOverlay, ingestTractateLengths } from "./talmud/overlays/segment-length.ts";
+import {
+  startBackgroundPrefetch,
+  promoteTractateToFront,
+} from "./talmud/prefetch.ts";
+import { createTalmudLabels, updateTalmudLabelPositions, type DafRowAnchor } from "./talmud/talmudLabels.ts";
+import { getTalmudSidebarElements, updateTalmudSidebar } from "./talmud/sidebar.ts";
+import { parseTalmudUrlState, updateTalmudUrl } from "./talmud/urlState.ts";
+import { MISHNAH_BASE_COLOR, GEMARA_BASE_COLOR } from "./talmud/constants.ts";
+import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from "./constants/app.ts";
+
+// Debounce helper (local, to avoid importing the Tanakh urlState one)
+function debounce<F extends (...args: unknown[]) => void>(fn: F, ms: number): F {
+  let t: number | null = null;
+  return ((...args: unknown[]) => {
+    if (t !== null) window.clearTimeout(t);
+    t = window.setTimeout(() => fn(...args), ms);
+  }) as F;
+}
+
+function talmudSegmentsEqual(
+  a: TalmudIdentity | null,
+  b: TalmudIdentity | null,
+): boolean {
+  if (a === null && b === null) return true;
+  if (a === null || b === null) return false;
+  return (
+    a.tractate === b.tractate &&
+    a.daf === b.daf &&
+    a.amud === b.amud &&
+    a.segment === b.segment
+  );
+}
+
+async function main(): Promise<void> {
+  document.title = `Bavli Map [${__GIT_BRANCH__}]`;
+
+  // --- Load data and compute layout ---
+  const structure = await loadTalmudStructure();
+  const { items, tractateBlocks, bounds } = computeTalmudLayout(structure);
+  console.log(
+    `Loaded ${structure.tractates.length} tractates, ${items.length} segments, bounds: ${bounds.width}x${bounds.height}`,
+  );
+
+  // --- Canvas setup (mirrors main.ts) ---
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  if (!canvas) throw new Error("Canvas not found");
+  const dpr = window.devicePixelRatio || 1;
+
+  function resizeCanvas(): void {
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+  }
+  resizeCanvas();
+
+  // --- WebGL ---
+  const renderContext = createRenderContext(canvas);
+  const renderState = createRenderState(renderContext.gl, items, dpr);
+
+  // --- Camera ---
+  const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
+
+  // --- State ---
+  const mouseState = createMouseState();
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+  let hoveredItem: TalmudLayoutItem | null = null;
+  let pinnedItem: TalmudLayoutItem | null = null;
+  let currentOverlay: Overlay<TalmudIdentity> | null = null;
+
+  // --- Registry ---
+  const overlaysById = new Map<string, Overlay<TalmudIdentity>>();
+  overlaysById.set(segmentLengthOverlay.id, segmentLengthOverlay);
+
+  // --- Structural base colors: always-on M/G paint ---
+  // The overlay system returns null for segments where it has no data;
+  // for those, we paint the structural M/G color.
+  const mgBaseOverlay: Overlay<TalmudIdentity> = {
+    id: "_mg-base",
+    name: "__internal",
+    getVerseColor(id: TalmudIdentity) {
+      const mishnah = isSegmentMishnah(
+        structure,
+        id.tractate,
+        id.daf,
+        id.amud,
+        id.segment,
+      );
+      return mishnah
+        ? ([MISHNAH_BASE_COLOR[0], MISHNAH_BASE_COLOR[1], MISHNAH_BASE_COLOR[2]] as [number, number, number])
+        : ([GEMARA_BASE_COLOR[0], GEMARA_BASE_COLOR[1], GEMARA_BASE_COLOR[2]] as [number, number, number]);
+    },
+  };
+
+  // Compose base + user overlay: user overlay takes precedence when it has data.
+  function composedOverlay(): Overlay<TalmudIdentity> {
+    return {
+      id: "composed",
+      name: "composed",
+      getVerseColor(id: TalmudIdentity) {
+        if (currentOverlay) {
+          const c = currentOverlay.getVerseColor(id);
+          if (c !== null) return c;
+        }
+        return mgBaseOverlay.getVerseColor(id);
+      },
+    };
+  }
+
+  function applyOverlay(): void {
+    const states = computeVerseStates<TalmudIdentity>(
+      items,
+      composedOverlay(),
+      hoveredItem,
+      pinnedItem,
+      talmudSegmentsEqual,
+    );
+    const colors = applyVerseColors(states);
+    rebuildGeometry(renderContext.gl, renderState, colors);
+  }
+
+  function doRender(): void {
+    renderFrame<TalmudIdentity>(
+      renderContext,
+      renderState,
+      camera,
+      hoveredItem,
+      pinnedItem,
+      talmudSegmentsEqual,
+    );
+  }
+
+  // --- Labels (tractate + daf) ---
+  // Build daf-row anchors from the layout items.
+  const rowAnchors = new Map<string, DafRowAnchor>();
+  for (const item of items) {
+    const key = `${item.tractate}:${item.daf}${item.amud}`;
+    if (!rowAnchors.has(key)) {
+      rowAnchors.set(key, {
+        tractate: item.tractate,
+        daf: item.daf,
+        amud: item.amud,
+        rightX: item.x + item.size,
+        topY: item.y,
+      });
+    } else {
+      const row = rowAnchors.get(key)!;
+      if (item.x + item.size > row.rightX) row.rightX = item.x + item.size;
+    }
+  }
+  const labels = createTalmudLabels(tractateBlocks, Array.from(rowAnchors.values()), document.body);
+  updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
+
+  // --- Initial paint ---
+  applyOverlay();
+  doRender();
+
+  // --- Kick off background prefetch ---
+  const tractateNames = structure.tractates.map((t) => t.name);
+  startBackgroundPrefetch(tractateNames);
+
+  // Also ingest length data into the segment-length overlay as tractates load.
+  // (Simple polling hook: wrap getTractateText calls.)
+  (async () => {
+    for (const name of tractateNames) {
+      try {
+        const text = await getTractateText(name);
+        ingestTractateLengths(structure, text);
+      } catch {
+        /* prefetch already logged */
+      }
+    }
+  })();
+
+  // --- Sidebar elements ---
+  const sidebarElements = getTalmudSidebarElements();
+  const sidebarClose = sidebarElements.sidebar.querySelector(".close-btn") as HTMLElement | null;
+  sidebarClose?.addEventListener("click", () => {
+    pinnedItem = null;
+    updateTalmudSidebar(null, structure, sidebarElements);
+    applyOverlay();
+    doRender();
+    saveUrlStateDebounced();
+  });
+
+  // --- URL state: restore pinned segment if present ---
+  const initialUrl = parseTalmudUrlState();
+  if (initialUrl.overlay) {
+    const o = overlaysById.get(initialUrl.overlay);
+    if (o) {
+      currentOverlay = o;
+      const sel = document.getElementById("overlay-select") as HTMLSelectElement;
+      if (sel) sel.value = initialUrl.overlay;
+    }
+  }
+  if (initialUrl.segment) {
+    const match = items.find(
+      (i) =>
+        i.tractate === initialUrl.segment!.tractate &&
+        i.daf === initialUrl.segment!.daf &&
+        i.amud === initialUrl.segment!.amud &&
+        i.segment === initialUrl.segment!.segment,
+    );
+    if (match) {
+      pinnedItem = match;
+      await updateTalmudSidebar(pinnedItem, structure, sidebarElements);
+    }
+  }
+
+  function saveUrlState(): void {
+    updateTalmudUrl({
+      segment: pinnedItem
+        ? {
+            tractate: pinnedItem.tractate,
+            daf: pinnedItem.daf,
+            amud: pinnedItem.amud,
+            segment: pinnedItem.segment,
+          }
+        : null,
+      overlay: currentOverlay?.id ?? null,
+    });
+  }
+  const saveUrlStateDebounced = debounce(saveUrlState, URL_UPDATE_DEBOUNCE_MS);
+
+  // --- Wheel zoom ---
+  canvas.addEventListener(
+    "wheel",
+    (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
+      const newZoom = clampZoom(camera.zoom * zoomFactor);
+      const newPan = panForZoom(
+        { x: camera.x, y: camera.y },
+        camera.zoom,
+        newZoom,
+        e.clientX,
+        e.clientY,
+      );
+      camera.x = newPan.x;
+      camera.y = newPan.y;
+      camera.zoom = newZoom;
+      doRender();
+      updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
+    },
+    { passive: false },
+  );
+
+  // --- Mouse move: hover + drag-pan ---
+  canvas.addEventListener("mousemove", (e: MouseEvent) => {
+    if (mouseState.isDragging) {
+      camera.x += (e.clientX - lastMouseX) / camera.zoom;
+      camera.y += (e.clientY - lastMouseY) / camera.zoom;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      doRender();
+      updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
+      return;
+    }
+    // Hover detection
+    const hit = findVerseLayoutAtPoint<TalmudIdentity>(
+      items as SpatialItem<TalmudIdentity>[],
+      camera,
+      e.clientX,
+      e.clientY,
+    );
+    if (hit !== hoveredItem) {
+      hoveredItem = hit as TalmudLayoutItem | null;
+      applyOverlay();
+      doRender();
+    }
+  });
+
+  canvas.addEventListener("mousedown", (e: MouseEvent) => {
+    startDrag(mouseState, e.clientX, e.clientY);
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  });
+
+  canvas.addEventListener("mouseup", (e: MouseEvent) => {
+    const wasDragging = mouseState.isDragging;
+    const startX = mouseState.dragStart.x;
+    const startY = mouseState.dragStart.y;
+    stopDrag(mouseState);
+    if (wasDragging) {
+      const moved = Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY);
+      if (moved > 3) return; // treated as drag, not click
+    }
+    // Click handling
+    const hit = findVerseLayoutAtPoint<TalmudIdentity>(
+      items as SpatialItem<TalmudIdentity>[],
+      camera,
+      e.clientX,
+      e.clientY,
+    );
+    if (hit) {
+      if (pinnedItem && talmudSegmentsEqual(pinnedItem, hit)) {
+        // Clicking pinned = unpin
+        pinnedItem = null;
+        updateTalmudSidebar(null, structure, sidebarElements);
+      } else {
+        pinnedItem = hit as TalmudLayoutItem;
+        promoteTractateToFront(pinnedItem.tractate);
+        updateTalmudSidebar(pinnedItem, structure, sidebarElements);
+      }
+      applyOverlay();
+      doRender();
+      saveUrlState();
+    }
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    stopDrag(mouseState);
+    if (hoveredItem !== null) {
+      hoveredItem = null;
+      applyOverlay();
+      doRender();
+    }
+  });
+
+  // --- Overlay picker ---
+  const select = document.getElementById("overlay-select") as HTMLSelectElement;
+  select?.addEventListener("change", () => {
+    const id = select.value;
+    currentOverlay = id === "none" ? null : overlaysById.get(id) ?? null;
+    applyOverlay();
+    doRender();
+    saveUrlState();
+  });
+
+  // --- Window resize ---
+  window.addEventListener("resize", () => {
+    resizeCanvas();
+    doRender();
+    updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
+  });
+
+  // Final paint after everything is wired
+  applyOverlay();
+  doRender();
+}
+
+main().catch((err) => {
+  console.error("[main-talmud] failed:", err);
+});
