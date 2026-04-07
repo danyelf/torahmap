@@ -89,34 +89,39 @@ This script will:
 
 1. Verify no uncommitted changes
 2. Move `issues/open/<id>-*.md` → `issues/closed/` and commit (on the feature branch)
-3. Pull latest main, merge the feature branch, push
-4. Remove the worktree
-5. Delete the local feature branch (use `--keep-branch` to skip)
+3. Push the feature branch and open a PR against main via `gh`
 
-**DO NOT try to merge manually** — use `land-issue.sh` so the issue file gets moved to `closed/` consistently.
+Main is protected and requires PRs, so **Danyel merges the PR manually**. After
+the merge lands, clean up the worktree:
+
+```bash
+cd <main repo> && git worktree remove ../torahmap-worktrees/<id> && git branch -D <id>
+```
+
+**DO NOT try to merge locally** — use `land-issue.sh` so the issue file gets moved to `closed/` consistently and the PR gets opened.
 
 ## Landing the Plane (Session Completion)
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+**When ending a work session**, you MUST complete ALL steps below. Work on an issue is NOT complete until a PR is open against main. (Main is protected — Danyel merges the PR manually.)
 
 1. **File issues for remaining work** — `./scripts/issues-new.sh "Title"` for anything that needs follow-up
 2. **Run quality gates** (if code changed) — `npm test`, build, etc.
-3. **Update issue status** — close finished work by moving the file to `issues/closed/`
-4. **PUSH TO REMOTE** — mandatory:
+3. **Update issue status** — close finished work by moving the file to `issues/closed/` (or let `land-issue.sh` do it)
+4. **OPEN A PR** — mandatory. From inside the worktree:
    ```bash
-   git pull --rebase
-   git push
-   git status   # MUST show "up to date with origin"
+   ./scripts/land-issue.sh
    ```
-5. **Clean up** — clear stashes, prune remote branches
-6. **Verify** — all changes committed AND pushed
+   This pushes the feature branch and opens a PR. Confirm the PR URL is printed.
+5. **Verify** — branch pushed AND PR open against main. `gh pr view` should show it.
 
 **CRITICAL RULES:**
 
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing — that leaves work stranded locally
-- NEVER say "ready to push when you are" — YOU must push
-- If push fails, resolve and retry until it succeeds
+- Work is NOT complete until a PR is open against main
+- NEVER stop before running `land-issue.sh` — that leaves work stranded locally
+- NEVER say "ready to push when you are" — YOU must push and open the PR
+- NEVER try to push directly to main — it's protected
+- If push or PR creation fails, resolve and retry until it succeeds
+- Worktree cleanup happens AFTER Danyel merges the PR, not before
 
 ## Why not beads?
 
