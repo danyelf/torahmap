@@ -1,6 +1,6 @@
 // Verse Coloring module - handles verse color computation and highlighting
 
-import type { VerseLayout, VerseIdentity, VerseState } from "./types";
+import type { SpatialItem, VerseIdentity, VerseState } from "./types";
 import { versesEqual } from "./types";
 import type { Overlay } from "./overlays/types";
 import { seededRandom } from "./utils/random";
@@ -21,17 +21,13 @@ export function getDefaultColor(verseIndex: number): [number, number, number] {
 }
 
 /**
- * Get overlay-provided color for a verse, or null if overlay doesn't color it.
- *
- * @param overlay - Active overlay (or null)
- * @param verse - Verse identity to get color for
- * @returns Color from overlay, or null if overlay doesn't provide color
+ * Get overlay-provided color for a spatial item, or null if overlay doesn't color it.
  */
-export function getOverlayColor(
-  overlay: Overlay | null,
-  verse: VerseIdentity,
+export function getOverlayColor<T>(
+  overlay: Overlay<T> | null,
+  item: T,
 ): [number, number, number] | [number, number, number][] | null {
-  return overlay?.getVerseColor(verse) ?? null;
+  return overlay?.getVerseColor(item) ?? null;
 }
 
 /**
@@ -76,29 +72,31 @@ export function applyHoverHighlight(
 }
 
 /**
- * Compute semantic state for all verses.
- * First pass: determine what is true about each verse (hasOverlayColor, resolvedColor, isHovered, isPinned)
- * Returns array parallel to verses array.
+ * Compute semantic state for all items.
+ * First pass: determine what is true about each item (hasOverlayColor, resolvedColor, isHovered, isPinned).
+ * Returns array parallel to items array.
  *
- * @param verses - All verses
- * @param overlay - Active overlay (or null)
- * @param hoveredVerse - Currently hovered verse (or null)
- * @param pinnedVerse - Currently pinned verse (or null)
- * @returns Array of verse states
+ * Equality is injected as a parameter because each corpus has its own
+ * identity shape. Tanakh callers pass versesEqual; Talmud callers pass
+ * their equivalent.
  */
-export function computeVerseStates(
-  verses: VerseLayout[],
-  overlay: Overlay | null,
-  hoveredVerse: VerseLayout | null,
-  pinnedVerse: VerseLayout | null,
+export function computeVerseStates<T = VerseIdentity>(
+  items: SpatialItem<T>[],
+  overlay: Overlay<T> | null,
+  hoveredItem: SpatialItem<T> | null,
+  pinnedItem: SpatialItem<T> | null,
+  itemsEqual: (a: T | null, b: T | null) => boolean = versesEqual as unknown as (
+    a: T | null,
+    b: T | null,
+  ) => boolean,
 ): VerseState[] {
-  return verses.map((v, i) => {
+  return items.map((v, i) => {
     const overlayColor = getOverlayColor(overlay, v);
     const hasOverlayColor = overlayColor !== null;
     const resolvedColor = hasOverlayColor ? overlayColor : getDefaultColor(i);
 
-    const isHovered = versesEqual(hoveredVerse, v);
-    const isPinned = versesEqual(pinnedVerse, v);
+    const isHovered = itemsEqual(hoveredItem, v);
+    const isPinned = itemsEqual(pinnedItem, v);
 
     return {
       hasOverlayColor,
