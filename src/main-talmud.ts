@@ -28,7 +28,12 @@ import {
 import { createTalmudLabels, updateTalmudLabelPositions, type DafRowAnchor } from "./talmud/talmudLabels.ts";
 import { getTalmudSidebarElements, updateTalmudSidebar } from "./talmud/sidebar.ts";
 import { parseTalmudUrlState, updateTalmudUrl } from "./talmud/urlState.ts";
-import { MISHNAH_BASE_COLOR, GEMARA_BASE_COLOR } from "./talmud/constants.ts";
+import {
+  MISHNAH_BASE_COLOR,
+  GEMARA_BASE_COLOR,
+  BRIGHTNESS_JITTER,
+} from "./talmud/constants.ts";
+import { seededRandom } from "./utils/random.ts";
 import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from "./constants/app.ts";
 
 // Debounce helper (local, to avoid importing the Tanakh urlState one)
@@ -59,7 +64,7 @@ async function main(): Promise<void> {
 
   // --- Load data and compute layout ---
   const structure = await loadTalmudStructure();
-  const { items, tractateBlocks, bounds } = computeTalmudLayout(structure);
+  const { items, tractateBlocks, sederBlocks, perekAnchors, bounds } = computeTalmudLayout(structure);
   console.log(
     `Loaded ${structure.tractates.length} tractates, ${items.length} segments, bounds: ${bounds.width}x${bounds.height}`,
   );
@@ -110,7 +115,35 @@ async function main(): Promise<void> {
 
   // --- Structural base colors: always-on M/G paint ---
   // The overlay system returns null for segments where it has no data;
-  // for those, we paint the structural M/G color.
+  // for those, we paint the structural M/G color. We also fold in a
+  // deterministic per-segment brightness jitter so squares read as
+  // living rainfall instead of flat tiles (matches Torah behavior, where
+  // getDefaultColor adds the same kind of variation).
+  function segmentJitter(id: TalmudIdentity): number {
+    // Hash (tractate, daf, amud, segment) into a stable integer seed.
+    let h = 0;
+    for (let i = 0; i < id.tractate.length; i++) {
+      h = (h * 31 + id.tractate.charCodeAt(i)) | 0;
+    }
+    h = (h * 31 + id.daf) | 0;
+    h = (h * 31 + (id.amud === "b" ? 1 : 0)) | 0;
+    h = (h * 31 + id.segment) | 0;
+    // seededRandom returns [0,1); recenter to [-1,1] then scale.
+    return (seededRandom(h) - 0.5) * 2 * BRIGHTNESS_JITTER;
+  }
+  function jitteredColor(
+    base: readonly [number, number, number],
+    id: TalmudIdentity,
+  ): [number, number, number] {
+    const j = segmentJitter(id);
+    // Multiplicative jitter preserves hue; clamp to [0,1].
+    const f = 1 + j;
+    return [
+      Math.max(0, Math.min(1, base[0] * f)),
+      Math.max(0, Math.min(1, base[1] * f)),
+      Math.max(0, Math.min(1, base[2] * f)),
+    ];
+  }
   const mgBaseOverlay: Overlay<TalmudIdentity> = {
     id: "_mg-base",
     name: "__internal",
@@ -122,9 +155,10 @@ async function main(): Promise<void> {
         id.amud,
         id.segment,
       );
-      return mishnah
-        ? ([MISHNAH_BASE_COLOR[0], MISHNAH_BASE_COLOR[1], MISHNAH_BASE_COLOR[2]] as [number, number, number])
-        : ([GEMARA_BASE_COLOR[0], GEMARA_BASE_COLOR[1], GEMARA_BASE_COLOR[2]] as [number, number, number]);
+      return jitteredColor(
+        mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR,
+        id,
+      );
     },
   };
 
@@ -184,7 +218,13 @@ async function main(): Promise<void> {
       if (item.x + item.size > row.rightX) row.rightX = item.x + item.size;
     }
   }
-  const labels = createTalmudLabels(tractateBlocks, Array.from(rowAnchors.values()), document.body);
+  const labels = createTalmudLabels(
+    tractateBlocks,
+    sederBlocks,
+    perekAnchors,
+    Array.from(rowAnchors.values()),
+    document.body,
+  );
   updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
 
   // --- Initial paint ---

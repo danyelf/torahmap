@@ -60,7 +60,7 @@ describe("computeTalmudLayout", () => {
     ]);
   });
 
-  it("each amud row within a tractate shares the same right edge", () => {
+  it("each amud row within a tractate shares the same right edge (within ±jitter)", () => {
     const tractA = result.items.filter((i) => i.tractate === "TractA");
     const rows = new Map<string, typeof result.items>();
     for (const item of tractA) {
@@ -68,27 +68,33 @@ describe("computeTalmudLayout", () => {
       if (!rows.has(key)) rows.set(key, []);
       rows.get(key)!.push(item);
     }
-    const rightEdges = new Set<number>();
+    const rightEdges: number[] = [];
     for (const row of rows.values()) {
       const rightmost = row.reduce((acc, cur) =>
         cur.segment < acc.segment ? cur : acc,
       );
-      rightEdges.add(rightmost.x + rightmost.size);
+      rightEdges.push(rightmost.x + rightmost.size);
     }
-    expect(rightEdges.size).toBe(1);
+    // All right edges should fall inside a small jitter window (±2 × jitter,
+    // since both x and the size end can move).
+    const min = Math.min(...rightEdges);
+    const max = Math.max(...rightEdges);
+    expect(max - min).toBeLessThanOrEqual(2 * 2 * 1.5); // 2px jitter window per side, with margin
   });
 
-  it("row width equals segment count × SEGMENT_SIZE", () => {
+  it("row width equals segment count × SEGMENT_SIZE (within ±jitter)", () => {
     const row0 = result.items.filter(
       (i) => i.tractate === "TractA" && i.daf === 2 && i.amud === "a",
     );
     expect(row0.length).toBe(5);
     const minX = Math.min(...row0.map((i) => i.x));
     const maxX = Math.max(...row0.map((i) => i.x + i.size));
-    expect(maxX - minX).toBe(5 * SEGMENT_SIZE);
+    // ±POSITION_JITTER on both sides, so window is up to 2*2*jitter wide.
+    expect(maxX - minX).toBeGreaterThanOrEqual(5 * SEGMENT_SIZE - 4);
+    expect(maxX - minX).toBeLessThanOrEqual(5 * SEGMENT_SIZE + 4);
   });
 
-  it("places a PEREK_GAP between perakim", () => {
+  it("places a PEREK_GAP between perakim (within ±jitter)", () => {
     const perek0LastRow = result.items.filter(
       (i) => i.tractate === "TractA" && i.daf === 3 && i.amud === "a",
     );
@@ -97,7 +103,10 @@ describe("computeTalmudLayout", () => {
     );
     const perek0Bottom = Math.max(...perek0LastRow.map((i) => i.y + i.size));
     const perek1Top = Math.min(...perek1FirstRow.map((i) => i.y));
-    expect(perek1Top - perek0Bottom).toBe(PEREK_GAP);
+    const gap = perek1Top - perek0Bottom;
+    // PEREK_GAP ±jitter on each side.
+    expect(gap).toBeGreaterThanOrEqual(PEREK_GAP - 4);
+    expect(gap).toBeLessThanOrEqual(PEREK_GAP + 4);
   });
 
   it("places a SEDER_GAP between shelves", () => {

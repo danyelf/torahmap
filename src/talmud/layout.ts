@@ -12,14 +12,37 @@
 
 import type { SpatialItem, TalmudIdentity } from "../types.ts";
 import type { TalmudStructure, TalmudTractate } from "./data.ts";
+import { seededRandom } from "../utils/random.ts";
 import {
   SEGMENT_SIZE,
   PEREK_GAP,
   TRACTATE_GAP,
   SEDER_GAP,
   TRACTATE_LABEL_HEIGHT,
+  TRACTATE_WRAP_ROWS,
+  TRACTATE_COLUMN_GAP,
+  POSITION_JITTER,
   SEDER_ORDER,
 } from "./constants.ts";
+
+// Stable per-segment hash → seed for the jitter PRNG. Same shape as the
+// hash used in main-talmud.ts for color jitter so a future refactor can
+// pull both into a shared helper.
+function segmentSeed(
+  tractate: string,
+  daf: number,
+  amud: "a" | "b",
+  segment: number,
+): number {
+  let h = 0;
+  for (let i = 0; i < tractate.length; i++) {
+    h = (h * 31 + tractate.charCodeAt(i)) | 0;
+  }
+  h = (h * 31 + daf) | 0;
+  h = (h * 31 + (amud === "b" ? 1 : 0)) | 0;
+  h = (h * 31 + segment) | 0;
+  return h;
+}
 
 export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
 
@@ -42,10 +65,22 @@ export interface SederBlock {
   maxY: number;
 }
 
+export interface PerekAnchor {
+  tractate: string;
+  perekIdx: number;
+  hebrewName: string;
+  // The perek's first row in world coords, plus the max row width across
+  // the perek so labels can be centered like section titles.
+  rightX: number;
+  topY: number;
+  width: number;
+}
+
 export interface TalmudLayoutResult {
   items: TalmudLayoutItem[];
   tractateBlocks: TractateBlock[];
   sederBlocks: SederBlock[];
+  perekAnchors: PerekAnchor[];
   bounds: { width: number; height: number };
 }
 
@@ -116,56 +151,196 @@ function rowsForTractate(tractate: TalmudTractate): AmudRow[] {
   return rows;
 }
 
+interface LocalPerekAnchor {
+  perekIdx: number;
+  // Local coordinates of the right edge / top of the perek's first row.
+  // The right edge is the right edge of the column the perek starts in.
+  rightX: number;
+  topY: number;
+  width: number; // max row width of this perek inside this column
+}
+
 interface LaidOutTractate {
   name: string;
   hebrewName: string;
   seder: string;
   items: TalmudLayoutItem[];
+  perekAnchors: LocalPerekAnchor[];
   // Local coordinates: origin (0, 0) = top-right. x is <= 0; y is >= 0.
   width: number;
   height: number;
 }
 
 /**
+ * Distribute amud-rows into balanced columns when a tractate exceeds
+ * TRACTATE_WRAP_ROWS rows. Returns one or more arrays of rows; each
+ * sub-array becomes a vertical column inside the tractate block.
+ *
+ * Goals:
+ * - Don't wrap short tractates at all (single column).
+ * - For tall tractates, balance row count across columns so columns are
+ *   close to equal height (rather than first column always full).
+ * - Try to break between perakim when possible — if a candidate split
+ *   point falls inside a perek, nudge it to the nearest perek boundary
+ *   within ±TRACTATE_WRAP_SLACK rows.
+ */
+const TRACTATE_WRAP_SLACK = 6;
+
+function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
+  if (rows.length <= TRACTATE_WRAP_ROWS) return [rows];
+  const numCols = Math.ceil(rows.length / TRACTATE_WRAP_ROWS);
+  const target = Math.ceil(rows.length / numCols);
+
+  const columns: AmudRow[][] = [];
+  let cursor = 0;
+  for (let c = 0; c < numCols; c++) {
+    if (c === numCols - 1) {
+      columns.push(rows.slice(cursor));
+      break;
+    }
+    let split = cursor + target;
+    // Snap to nearest perek boundary within slack window.
+    const lo = Math.max(cursor + 1, split - TRACTATE_WRAP_SLACK);
+    const hi = Math.min(rows.length - 1, split + TRACTATE_WRAP_SLACK);
+    let best = split;
+    let bestDist = Infinity;
+    for (let i = lo; i <= hi; i++) {
+      if (rows[i].perekIdx !== rows[i - 1].perekIdx) {
+        const dist = Math.abs(i - split);
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = i;
+        }
+      }
+    }
+    split = best;
+    columns.push(rows.slice(cursor, split));
+    cursor = split;
+  }
+  return columns;
+}
+
+/**
  * Lay out one tractate in local coordinates (top-right at 0,0).
- * Each row grows leftward (RTL); rows stack top-to-bottom within a perek;
- * perakim are separated by PEREK_GAP.
+ *
+ * Each row grows leftward (RTL); rows stack top-to-bottom within a column;
+ * perakim are separated by PEREK_GAP. Tall tractates are split into
+ * multiple columns side-by-side (column 0 is rightmost / read first).
  */
 function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
-  const rows = rowsForTractate(tractate);
+  const allRows = rowsForTractate(tractate);
+  const columns = splitRowsIntoColumns(allRows);
   const items: TalmudLayoutItem[] = [];
+  const perekAnchors: LocalPerekAnchor[] = [];
 
-  let y = 0;
-  let lastPerekIdx = -1;
-  let maxWidth = 0;
+  // Pass 1: lay out each column in its own local frame (right edge at x=0).
+  // While iterating, capture a perek anchor at the y of each perek's first
+  // row. We record local-to-the-column coords; pass 2 will translate to
+  // tractate coords using the column's right-edge offset.
+  const columnFrames: {
+    items: TalmudLayoutItem[];
+    width: number;
+    height: number;
+    localPereks: LocalPerekAnchor[]; // anchors in column-local coords (rightX always 0)
+  }[] = [];
+  for (const colRows of columns) {
+    const colItems: TalmudLayoutItem[] = [];
+    const colPereks: LocalPerekAnchor[] = [];
+    let y = 0;
+    let lastPerekIdx = -1;
+    let colMaxWidth = 0;
+    for (const row of colRows) {
+      if (lastPerekIdx !== -1 && row.perekIdx !== lastPerekIdx) {
+        y += PEREK_GAP;
+      }
+      // Record an anchor when we cross into a new perek (and at the very
+      // first row of the column for whatever perek it belongs to — wrap
+      // splits can put the same perek across two columns and we want a
+      // continuation label at the top of the second column too).
+      if (row.perekIdx !== lastPerekIdx) {
+        colPereks.push({
+          perekIdx: row.perekIdx,
+          rightX: 0,
+          topY: y,
+          width: 0,
+        });
+      }
+      lastPerekIdx = row.perekIdx;
 
-  for (const row of rows) {
-    if (lastPerekIdx !== -1 && row.perekIdx !== lastPerekIdx) {
-      y += PEREK_GAP;
+      const rowWidth = row.segments.length * SEGMENT_SIZE;
+      if (rowWidth > colMaxWidth) colMaxWidth = rowWidth;
+      // Track per-perek max row width for centering perek labels.
+      const currentPerek = colPereks[colPereks.length - 1];
+      if (currentPerek && rowWidth > currentPerek.width) {
+        currentPerek.width = rowWidth;
+      }
+
+      for (let i = 0; i < row.segments.length; i++) {
+        const seg = row.segments[i];
+        const baseX = -(i + 1) * SEGMENT_SIZE;
+        // Per-segment positional jitter — break up the perfect grid.
+        const seed = segmentSeed(
+          tractate.name,
+          row.daf,
+          row.amud,
+          seg.segment,
+        );
+        const jx = (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER;
+        const jy = (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER;
+        colItems.push({
+          tractate: tractate.name,
+          daf: row.daf,
+          amud: row.amud,
+          segment: seg.segment,
+          x: baseX + jx,
+          y: y + jy,
+          size: SEGMENT_SIZE,
+        });
+      }
+      y += SEGMENT_SIZE;
     }
-    lastPerekIdx = row.perekIdx;
+    columnFrames.push({
+      items: colItems,
+      width: colMaxWidth,
+      height: y,
+      localPereks: colPereks,
+    });
+  }
 
-    const rowWidth = row.segments.length * SEGMENT_SIZE;
-    if (rowWidth > maxWidth) maxWidth = rowWidth;
-
-    // Segments flow right-to-left. Segment 1 is rightmost.
-    // Use x for the LEFT edge of each square. The rightmost segment's left
-    // edge is at x = -SEGMENT_SIZE (so its right edge is at x = 0).
-    for (let i = 0; i < row.segments.length; i++) {
-      const seg = row.segments[i];
-      const x = -(i + 1) * SEGMENT_SIZE;
+  // Pass 2: position columns side-by-side. Column 0 is rightmost (RTL).
+  // Each column's local right edge sits at columnRightEdge; its segments
+  // shift to columnRightEdge + local_x.
+  let columnRightEdge = 0;
+  let totalWidth = 0;
+  let maxHeight = 0;
+  for (let c = 0; c < columnFrames.length; c++) {
+    const frame = columnFrames[c];
+    for (const it of frame.items) {
       items.push({
-        tractate: tractate.name,
-        daf: row.daf,
-        amud: row.amud,
-        segment: seg.segment,
-        x,
-        y,
-        size: SEGMENT_SIZE,
+        ...it,
+        x: columnRightEdge + it.x,
+        y: it.y,
       });
     }
-
-    y += SEGMENT_SIZE;
+    for (const lp of frame.localPereks) {
+      perekAnchors.push({
+        perekIdx: lp.perekIdx,
+        rightX: columnRightEdge, // column right edge in tractate-local coords
+        topY: lp.topY,
+        width: lp.width,
+      });
+    }
+    if (frame.height > maxHeight) maxHeight = frame.height;
+    if (c === columnFrames.length - 1) {
+      totalWidth = -(columnRightEdge - frame.width);
+    }
+    columnRightEdge -= frame.width + TRACTATE_COLUMN_GAP;
+  }
+  // For the single-column case the loop sets totalWidth correctly via the
+  // last iteration; double-check in case columns is empty.
+  if (columnFrames.length === 0) {
+    totalWidth = 0;
+    maxHeight = 0;
   }
 
   return {
@@ -173,8 +348,9 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     hebrewName: tractate.hebrewName,
     seder: tractate.seder,
     items,
-    width: maxWidth,
-    height: y,
+    perekAnchors,
+    width: totalWidth,
+    height: maxHeight,
   };
 }
 
@@ -207,6 +383,16 @@ export function computeTalmudLayout(
   const allItems: TalmudLayoutItem[] = [];
   const tractateBlocks: TractateBlock[] = [];
   const sederBlocks: SederBlock[] = [];
+  const allPerekAnchors: PerekAnchor[] = [];
+
+  // Quick lookup for perek hebrew names per tractate.
+  const perekNamesByTractate = new Map<string, string[]>();
+  for (const t of structure.tractates) {
+    perekNamesByTractate.set(
+      t.name,
+      t.perakim.map((p) => p.hebrewName),
+    );
+  }
 
   let shelfY = 0;
   const sedarimInOrder = [
@@ -252,6 +438,20 @@ export function computeTalmudLayout(
         },
       });
 
+      // Translate the tractate's local perek anchors into world coords.
+      const perekNames = perekNamesByTractate.get(t.name) ?? [];
+      for (const lp of t.perekAnchors) {
+        const hebrew = perekNames[lp.perekIdx] ?? `פרק ${lp.perekIdx + 1}`;
+        allPerekAnchors.push({
+          tractate: t.name,
+          perekIdx: lp.perekIdx,
+          hebrewName: hebrew,
+          rightX: tractateRightEdge + lp.rightX,
+          topY: tractateTop + lp.topY,
+          width: lp.width,
+        });
+      }
+
       if (tractateBottom - shelfY > shelfMaxHeight) {
         shelfMaxHeight = tractateBottom - shelfY;
       }
@@ -288,6 +488,9 @@ export function computeTalmudLayout(
     block.minX += dx;
     block.maxX += dx;
   }
+  for (const a of allPerekAnchors) {
+    a.rightX += dx;
+  }
 
   // 5. Compute bounds
   let maxX = 0;
@@ -301,6 +504,7 @@ export function computeTalmudLayout(
     items: allItems,
     tractateBlocks,
     sederBlocks,
+    perekAnchors: allPerekAnchors,
     bounds: { width: maxX, height: maxY },
   };
 }
