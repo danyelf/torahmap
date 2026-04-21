@@ -59,7 +59,7 @@ WORKTREE_PATH="${WORKTREE_DIR}/${ISSUE_ID}"
 if [[ -d "$WORKTREE_PATH" ]]; then
   echo "Worktree already exists at $WORKTREE_PATH"
   cd "$WORKTREE_PATH"
-  exec claude --permission-mode bypassPermissions "Continue work on $ISSUE_ID: $TITLE"
+  claude --permission-mode bypassPermissions "Continue work on $ISSUE_ID: $TITLE"
 fi
 
 mkdir -p "$WORKTREE_DIR"
@@ -75,4 +75,4 @@ Issue file: $ISSUE_FILE (read this for full context)
 Branch: $BRANCH_NAME
 This is a git worktree. When done, run: ./scripts/land-issue.sh"
 
-exec claude --permission-mode bypassPermissions "$PROMPT"
+claude --permission-mode bypassPermissions "$PROMPT"
