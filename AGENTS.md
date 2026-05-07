@@ -1,6 +1,8 @@
 # Agent Instructions
 
-This project tracks issues as plain markdown files in `issues/`. See `issues/README.md` for the format.
+This project tracks issues on **GitHub Issues**: https://github.com/danyelf/torahmap/issues
+
+Closed pre-migration issues live in `issues/closed/` as a searchable archive (see `issues/README.md`). The `issues/MIGRATION-MAP.md` file maps old `tm-XXX` IDs to new GH numbers.
 
 ## How to Code
 
@@ -10,59 +12,40 @@ When you start in a worktree, expect to work in that worktree as autonomously as
 
 ## Issue Tracking
 
-There is no daemon, database, or CLI tool. Issues are markdown files. Status = which folder.
-
-```
-issues/
-  open/      # active work — one .md file per issue
-  closed/    # done, kept for searchable history
-  README.md  # format and conventions
-```
+Active issues live on GitHub. Use the `gh` CLI for everything.
 
 ### Quick reference
 
 ```bash
-# What's open, sorted by priority?
-./scripts/issues-ready.sh
-
-# Create a new issue
-./scripts/issues-new.sh "Title here" bug 1     # type and priority optional
+# What's open, sorted by priority label?
+gh issue list --state open --label P0,P1,P2 --limit 50
 
 # Read an issue
-cat issues/open/tm-abc-*.md
+gh issue view 42
 
-# Close an issue manually (land-issue.sh does this for you in worktrees)
-git mv issues/open/tm-abc-*.md issues/closed/
-# then edit frontmatter: change `status: open` to `status: closed`, add `closed: 2026-04-06`
+# Create a new issue
+gh issue create --title "Fix the zoom bug" --label bug,P1 --body "..."
+
+# Close an issue (usually via PR auto-close — see "Closes #N" in the PR body)
+gh issue close 42 --comment "..."
 ```
 
-### File format
+### Label conventions
 
-```markdown
----
-id: tm-abc
-status: open
-priority: 2          # 0=critical, 1=high, 2=medium, 3=low, 4=backlog
-type: bug            # bug | feature | task | chore
-created: 2026-04-06
----
+- **Type:** `bug`, `enhancement` (= feature), `task`, `chore`, `documentation`
+- **Priority:** `P0` (critical) → `P4` (backlog). Default is `P2`.
 
-# Short title
+These mirror the `priority`/`type` frontmatter from the old markdown system. Apply at least one priority and one type label when filing.
 
-Why this exists, what done looks like, any context the next reader needs.
-```
+### Searching closed history
 
-The `id` is a short random tag chosen at creation time to avoid collisions when parallel agents in different worktrees both create issues. Filename is `<id>-<slug>.md` where slug is human-readable.
-
-### Searching history
-
-Closed issues stay in `issues/closed/`. Use grep:
+Closed issues from the pre-migration era live in `issues/closed/`:
 
 ```bash
-grep -rl "search overlay" issues/
+grep -rl "search overlay" issues/closed/
 ```
 
-For older history (before the migration off beads), see `.beads-archive/issues.jsonl` or `git log -- .beads-archive/`.
+For pre-migration issue references in code or commits, look up the new GH number in `issues/MIGRATION-MAP.md`. For the older beads tracker before that, see `.beads-archive/`.
 
 ## Working in Worktrees
 
@@ -71,60 +54,54 @@ This project does parallel agent work in git worktrees. Each issue gets its own 
 **Starting work:**
 
 ```bash
-./scripts/work-on-issue.sh tm-abc      # by id substring
-./scripts/work-on-issue.sh             # interactive picker
+./scripts/work-on-issue.sh 42          # by issue number
+./scripts/work-on-issue.sh             # interactive picker (needs fzf)
 ```
 
-This creates an isolated git worktree at `../torahmap-worktrees/<id>` on a new branch named after the issue id, then launches Claude inside it.
+This creates an isolated git worktree at `../torahmap-worktrees/<N>-<slug>` on a new branch named `<N>-<slug>` (matching `gh issue develop`'s convention), then launches Claude inside it.
 
-**Landing work (merge and clean up):**
+**Landing work (push and open a PR):**
 
 From inside the worktree, when you're done and committed:
 
 ```bash
-./scripts/land-issue.sh
+git push -u origin "$(git branch --show-current)"
+gh pr create --base main --fill --body "Closes #<N>"
 ```
 
-This script will:
-
-1. Verify no uncommitted changes
-2. Move `issues/open/<id>-*.md` → `issues/closed/` and commit (on the feature branch)
-3. Push the feature branch and open a PR against main via `gh`
-
-Main is protected and requires PRs, so **Danyel merges the PR manually**. After
-the merge lands, clean up the worktree:
+The `Closes #N` line auto-closes the issue when the PR merges. Main is protected — **Danyel merges the PR manually**. After the merge lands, clean up the worktree from the main repo:
 
 ```bash
-cd <main repo> && git worktree remove ../torahmap-worktrees/<id> && git branch -D <id>
+git worktree remove ../torahmap-worktrees/<N>-<slug>
+git branch -D <N>-<slug>
 ```
 
-**DO NOT try to merge locally** — use `land-issue.sh` so the issue file gets moved to `closed/` consistently and the PR gets opened.
+**DO NOT try to merge locally** — main is protected.
 
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work on an issue is NOT complete until a PR is open against main. (Main is protected — Danyel merges the PR manually.)
 
-1. **File issues for remaining work** — `./scripts/issues-new.sh "Title"` for anything that needs follow-up
+1. **File follow-up issues** — `gh issue create --title "..." --label ...` for anything that needs follow-up.
 2. **Run quality gates** (if code changed) — `npm test`, build, etc.
-3. **Update issue status** — close finished work by moving the file to `issues/closed/` (or let `land-issue.sh` do it)
+3. **Commit your changes.**
 4. **OPEN A PR** — mandatory. From inside the worktree:
    ```bash
-   ./scripts/land-issue.sh
+   git push -u origin "$(git branch --show-current)"
+   gh pr create --base main --fill --body "Closes #<N>"
    ```
-   This pushes the feature branch and opens a PR. Confirm the PR URL is printed.
+   Confirm the PR URL is printed.
 5. **Verify** — branch pushed AND PR open against main. `gh pr view` should show it.
 
 **CRITICAL RULES:**
 
 - Work is NOT complete until a PR is open against main
-- NEVER stop before running `land-issue.sh` — that leaves work stranded locally
+- NEVER stop before opening the PR — that leaves work stranded locally
 - NEVER say "ready to push when you are" — YOU must push and open the PR
 - NEVER try to push directly to main — it's protected
 - If push or PR creation fails, resolve and retry until it succeeds
 - Worktree cleanup happens AFTER Danyel merges the PR, not before
 
-## Why not beads?
+## Tracker history
 
-Beads was the previous tracker. It had nice features (dependency graph, memories, sync) but for this solo project we weren't using the dep graph and the Dolt-backed daemon was too much infrastructure to babysit. A folder of markdown files is honest, git-native, and has zero moving parts.
-
-The old data lives in `.beads-archive/` for grep purposes. Don't run `bd` against it.
+GitHub Issues (current). Before that, plain markdown files under `issues/` (see `issues/README.md`). Before that, beads (archived in `.beads-archive/`). Don't run `bd` against the archive.

@@ -2,7 +2,7 @@
 /**
  * Verify Wikisource coverage across all Bavli tractates.
  *
- * Issue: tm-u7b1
+ * Issue: #45 (was tm-u7b1)
  * Design: docs/plans/2026-04-07-talmud-integration-design.md §2
  *
  * For each tractate:
@@ -14,7 +14,7 @@
  *   6. Emit report to data-transient/talmud-coverage-report.json
  *
  * Raw files cached under data-transient/talmud-raw/<Tractate>/ and reused
- * by scripts/talmud/bundle.ts in tm-f28x.
+ * by scripts/talmud/bundle.ts (built under issue #33, was tm-f28x).
  *
  * Usage:
  *   npx tsx scripts/talmud/verify-coverage.ts            # honor cache
