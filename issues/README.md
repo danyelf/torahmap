@@ -1,55 +1,54 @@
-# Issues
+# Issues — Archive
 
-Plain markdown issue tracker. One file per issue.
+Active issue tracking has moved to **GitHub Issues**: https://github.com/danyelf/torahmap/issues
+
+This directory is now read-only history.
 
 ## Layout
 
 ```
 issues/
-  open/      # active work
-  closed/    # done (kept for searchable history)
-  README.md  # this file
+  closed/           # 194 closed issues, kept for searchable history
+  MIGRATION-MAP.md  # tm-XXX → #N mapping for issues that were lifted to GH
+  README.md         # this file
 ```
 
-Status = which folder the file lives in. To close an issue, `git mv` it from `open/` to `closed/` and add a `closed:` line to the frontmatter.
+`open/` was deleted on 2026-05-07 — its 32 contents were migrated to GitHub Issues. The closed archive is preserved because it's full of useful context referenced from PRs, commit messages, and design docs.
 
-## File format
+## Searching the archive
 
-Filename: `<id>-<short-slug>.md` where id is a short random-ish tag (e.g. `tm-7ca`). Slug is for human grep, id is the stable handle.
+```bash
+# Find a closed issue by topic
+grep -rl "search overlay" issues/closed/
+
+# Find an issue by its old tm-XXX id
+grep -rl "id: tm-7la" issues/closed/
+
+# Look up where an old tm-XXX id went after migration
+grep '^| tm-' issues/MIGRATION-MAP.md | grep tm-7la
+```
+
+## File format (historical)
+
+Each archived file has YAML-like frontmatter and a `# Title` heading:
 
 ```markdown
 ---
 id: tm-abc
-status: open
-priority: 2          # 0=critical, 1=high, 2=medium, 3=low, 4=backlog
+status: closed
+priority: 2          # 0=critical .. 4=backlog
 type: bug            # bug | feature | task | chore
 created: 2026-04-06
+closed: 2026-04-10
 ---
 
 # Short title
 
-Why this exists. What "done" looks like. Any context the next reader (you or an agent) needs.
+Body.
 ```
 
-## Common operations
+## Why the migration?
 
-```bash
-# What's open?
-ls issues/open/
+Markdown-in-tree was clean for a solo workflow but fell down on **discoverability across in-flight branches** — branch B couldn't see issues filed on branch A until A merged. GitHub Issues gives global visibility, native PR cross-linking, and a UI for non-CLI usage. Closed issues are kept here because pulling 194 archived items into GH would create more noise than signal.
 
-# What's high priority?
-./scripts/issues-ready.sh
-
-# New issue
-./scripts/issues-new.sh "Fix the zoom bug" bug 1
-
-# Close
-git mv issues/open/tm-abc-*.md issues/closed/
-# then edit frontmatter: status: closed, add closed: 2026-04-06
-```
-
-## Why not beads?
-
-Beads was great in theory but spent too much time fighting Dolt, hooks, and sync. For a solo project with no real dependency graph, a folder of markdown wins on simplicity, git-friendliness, and zero infrastructure.
-
-History: see `.beads-archive/` (or git log) for the previous tracker.
+History: see `.beads-archive/` for the tracker before this one.
