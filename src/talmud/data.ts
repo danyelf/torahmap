@@ -76,6 +76,10 @@ export async function getTractateText(
     return res.json() as Promise<TalmudTractateText>;
   })();
   textCache.set(name, promise);
+  promise.catch(() => {
+    // Clear the rejected promise so callers can retry.
+    if (textCache.get(name) === promise) textCache.delete(name);
+  });
   const result = await promise;
   textCache.set(name, result); // replace promise with resolved value
   return result;

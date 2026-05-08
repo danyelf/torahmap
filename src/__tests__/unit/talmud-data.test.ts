@@ -43,6 +43,22 @@ describe("getTractateText", () => {
     expect(c).toEqual(fakeTractate);
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
+
+  it("retries fetch after a previous rejection (does not poison cache)", async () => {
+    resetTalmudDataCache();
+    const fetchSpy = vi.spyOn(globalThis, "fetch")
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ name: "Berakhot", amudim: [["x"]] }), {
+          status: 200,
+        }),
+      );
+
+    await expect(getTractateText("Berakhot")).rejects.toThrow();
+    const result = await getTractateText("Berakhot");
+    expect(result.name).toBe("Berakhot");
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("isSegmentMishnah", () => {
