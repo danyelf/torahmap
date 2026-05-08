@@ -1,7 +1,6 @@
 // Verse Coloring module - handles verse color computation and highlighting
 
-import type { SpatialItem, VerseIdentity, VerseState } from "./types";
-import { versesEqual } from "./types";
+import type { SpatialItem, VerseState } from "./types";
 import type { Overlay } from "./overlays/types";
 import { seededRandom } from "./utils/random";
 import { HIGHLIGHT_CONSTANTS } from "./constants";
@@ -80,15 +79,12 @@ export function applyHoverHighlight(
  * identity shape. Tanakh callers pass versesEqual; Talmud callers pass
  * their equivalent.
  */
-export function computeVerseStates<T = VerseIdentity>(
+export function computeVerseStates<T>(
   items: SpatialItem<T>[],
   overlay: Overlay<T> | null,
   hoveredItem: SpatialItem<T> | null,
   pinnedItem: SpatialItem<T> | null,
-  itemsEqual: (a: T | null, b: T | null) => boolean = versesEqual as unknown as (
-    a: T | null,
-    b: T | null,
-  ) => boolean,
+  itemsEqual: (a: T | null, b: T | null) => boolean,
 ): VerseState[] {
   return items.map((v, i) => {
     const overlayColor = getOverlayColor(overlay, v);

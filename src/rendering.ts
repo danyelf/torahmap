@@ -5,7 +5,6 @@ import { buildVerseGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
 import type { SpatialItem, VerseIdentity, ShaderProgram } from './types';
-import { versesEqual } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -108,16 +107,13 @@ export function rebuildGeometry<T>(
  * @param hoveredVerse - Currently hovered verse (or null)
  * @param pinnedVerse - Currently pinned verse (or null)
  */
-export function render<T = VerseIdentity>(
+export function render<T>(
   context: RenderContext,
   state: RenderState<T>,
   camera: Camera,
   hoveredVerse: SpatialItem<T> | null,
   pinnedVerse: SpatialItem<T> | null,
-  itemsEqual: (a: T | null, b: T | null) => boolean = versesEqual as unknown as (
-    a: T | null,
-    b: T | null,
-  ) => boolean,
+  itemsEqual: (a: T | null, b: T | null) => boolean,
 ): void {
   const { gl, programs, canvas } = context;
   const { buffer, verses, dpr } = state;

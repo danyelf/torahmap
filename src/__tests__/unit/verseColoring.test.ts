@@ -7,6 +7,7 @@ import {
   applyVerseColors,
 } from '../../verseColoring';
 import type { VerseLayout, VerseState } from '../../types';
+import { versesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
 
@@ -218,7 +219,7 @@ describe('verseColoring', () => {
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
       };
 
-      const states = computeVerseStates(verses, mockOverlay, null, null);
+      const states = computeVerseStates(verses, mockOverlay, null, null, versesEqual);
 
       expect(states[0].hasOverlayColor).toBe(true);
       expect(states[0].resolvedColor).toEqual([1, 0, 0]);
@@ -236,7 +237,7 @@ describe('verseColoring', () => {
         getVerseColor: vi.fn().mockReturnValue(null),
       };
 
-      const states = computeVerseStates(verses, mockOverlay, null, null);
+      const states = computeVerseStates(verses, mockOverlay, null, null, versesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -250,7 +251,7 @@ describe('verseColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeVerseStates(verses, null, null, null, versesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -266,7 +267,7 @@ describe('verseColoring', () => {
       ];
       const hoveredVerse = verses[1];
 
-      const states = computeVerseStates(verses, null, hoveredVerse, null);
+      const states = computeVerseStates(verses, null, hoveredVerse, null, versesEqual);
 
       expect(states[0].isHovered).toBe(false);
       expect(states[1].isHovered).toBe(true);
@@ -279,7 +280,7 @@ describe('verseColoring', () => {
       ];
       const pinnedVerse = verses[0];
 
-      const states = computeVerseStates(verses, null, null, pinnedVerse);
+      const states = computeVerseStates(verses, null, null, pinnedVerse, versesEqual);
 
       expect(states[0].isPinned).toBe(true);
       expect(states[1].isPinned).toBe(false);
@@ -290,7 +291,7 @@ describe('verseColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeVerseStates(verses, null, null, null, versesEqual);
 
       expect(states[0].isHovered).toBe(false);
     });
@@ -300,7 +301,7 @@ describe('verseColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeVerseStates(verses, null, null, null, versesEqual);
 
       expect(states[0].isPinned).toBe(false);
     });
@@ -320,7 +321,7 @@ describe('verseColoring', () => {
         size: 2,
       };
 
-      const states = computeVerseStates(verses, null, hoveredVerse, null);
+      const states = computeVerseStates(verses, null, hoveredVerse, null, versesEqual);
 
       expect(states[0].isHovered).toBe(true); // Same book/chapter/verse
       expect(states[1].isHovered).toBe(false); // Different verse
@@ -334,7 +335,7 @@ describe('verseColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 3, x: 20, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeVerseStates(verses, null, null, null, versesEqual);
 
       expect(states.length).toBe(3);
     });
@@ -493,7 +494,8 @@ describe('verseColoring', () => {
         verses,
         mockOverlay,
         hoveredVerse,
-        null
+        null,
+        versesEqual,
       );
 
       expect(states[0].hasOverlayColor).toBe(true);

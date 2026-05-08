@@ -153,6 +153,7 @@ async function main(): Promise<void> {
       currentOverlay,
       mouseState.hoveredVerse,
       pinnedVerse,
+      versesEqual,
     );
     const colors = applyVerseColors(verseStates);
 
@@ -184,6 +185,7 @@ async function main(): Promise<void> {
       camera,
       mouseState.hoveredVerse,
       pinnedVerse,
+      versesEqual,
     );
   }
 
