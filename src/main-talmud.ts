@@ -7,7 +7,7 @@
 declare const __GIT_BRANCH__: string;
 
 import type { SpatialItem, TalmudIdentity } from "./types.ts";
-import { loadTalmudStructure, getTractateText, isSegmentMishnah } from "./talmud/data.ts";
+import { loadTalmudStructure, isSegmentMishnah } from "./talmud/data.ts";
 import { computeTalmudLayout, type TalmudLayoutItem } from "./talmud/layout.ts";
 import {
   createRenderContext,
@@ -232,21 +232,13 @@ async function main(): Promise<void> {
   doRender();
 
   // --- Kick off background prefetch ---
+  // Ingest order = completion order (the prefetch queue may be reordered
+  // by `promoteTractateToFront` when the user clicks an unloaded tractate;
+  // we want the segment-length overlay to see those lengths first too).
   const tractateNames = structure.tractates.map((t) => t.name);
-  startBackgroundPrefetch(tractateNames);
-
-  // Also ingest length data into the segment-length overlay as tractates load.
-  // (Simple polling hook: wrap getTractateText calls.)
-  (async () => {
-    for (const name of tractateNames) {
-      try {
-        const text = await getTractateText(name);
-        ingestTractateLengths(structure, text);
-      } catch {
-        /* prefetch already logged */
-      }
-    }
-  })();
+  startBackgroundPrefetch(tractateNames, {
+    onLoaded: (_name, text) => ingestTractateLengths(structure, text),
+  });
 
   // --- Sidebar elements ---
   const sidebarElements = getTalmudSidebarElements();

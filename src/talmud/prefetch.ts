@@ -4,20 +4,34 @@
 
 import { getTractateText, hasTractateText } from "./data.ts";
 import { PREFETCH_CONCURRENCY } from "./constants.ts";
+import type { TalmudTractateText } from "./data.ts";
 
 let queue: string[] = [];
 let inFlight = 0;
+let onLoadedCb: ((name: string, text: TalmudTractateText) => void) | null = null;
+
+export interface PrefetchOptions {
+  concurrency?: number;
+  onLoaded?: (name: string, text: TalmudTractateText) => void;
+}
 
 /**
  * Kick off background prefetch of all listed tractates.
  * Honors a concurrency cap; calls getTractateText (which populates the cache).
+ *
+ * The optional `onLoaded` callback fires once per tractate in *completion
+ * order* (i.e. as fetches resolve), not in the order they were queued. This
+ * matters because `promoteTractateToFront` can reorder pending work in
+ * response to user clicks, and downstream consumers (e.g. the segment-length
+ * overlay's ingest) want to see prioritized tractates first.
  */
 export function startBackgroundPrefetch(
   tractateNames: string[],
-  concurrency: number = PREFETCH_CONCURRENCY,
+  options: PrefetchOptions = {},
 ): void {
   queue = [...tractateNames];
-  pump(concurrency);
+  onLoadedCb = options.onLoaded ?? null;
+  pump(options.concurrency ?? PREFETCH_CONCURRENCY);
 }
 
 /**
@@ -38,6 +52,9 @@ function pump(concurrency: number): void {
     if (hasTractateText(name)) continue;
     inFlight += 1;
     getTractateText(name)
+      .then((text) => {
+        onLoadedCb?.(name, text);
+      })
       .catch((err) => {
         console.warn(`[prefetch] ${name} failed:`, err);
       })
@@ -54,4 +71,5 @@ function pump(concurrency: number): void {
 export function resetPrefetchState(): void {
   queue = [];
   inFlight = 0;
+  onLoadedCb = null;
 }
