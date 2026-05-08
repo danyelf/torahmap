@@ -2,15 +2,11 @@
 //
 // Hash format: #segment=Berakhot:2a:1&overlay=segment-length
 //
-// Segment parsing is driven by TALMUD_SCHEMA via corpus-format so it stays
-// in sync with the reference formatter.
+// Segment parsing is delegated to talmudFormat so it stays in sync with the
+// reference formatter.
 
 import type { TalmudIdentity } from "../types.ts";
-import { TALMUD_SCHEMA } from "../corpusSchema.ts";
-import {
-  parseFromUrlHash,
-  serializeToUrlHash,
-} from "../corpus-format.ts";
+import { talmudFormat } from "./format.ts";
 
 export interface TalmudUrlState {
   segment: TalmudIdentity | null;
@@ -24,14 +20,9 @@ export function parseTalmudUrlState(): TalmudUrlState {
   const segmentStr = params.get("segment");
   let segment: TalmudIdentity | null = null;
   if (segmentStr) {
-    const parsed = parseFromUrlHash(segmentStr, TALMUD_SCHEMA);
+    const parsed = talmudFormat.parseHash(segmentStr);
     if (parsed) {
-      segment = {
-        tractate: parsed.tractate as string,
-        daf: parsed.daf as number,
-        amud: parsed.amud as "a" | "b",
-        segment: parsed.segment as number,
-      };
+      segment = parsed;
     }
   }
 
@@ -46,7 +37,7 @@ export function parseTalmudUrlState(): TalmudUrlState {
 export function buildTalmudUrlHash(state: TalmudUrlState): string {
   const params = new URLSearchParams();
   if (state.segment) {
-    params.set("segment", serializeToUrlHash(state.segment, TALMUD_SCHEMA));
+    params.set("segment", talmudFormat.serializeHash(state.segment));
   }
   if (state.overlay) {
     params.set("overlay", state.overlay);
