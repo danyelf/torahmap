@@ -4,8 +4,7 @@
 // Sefaria deep link. No English, no perek name (see design doc §3.9/Q16).
 
 import type { TalmudIdentity } from "../types.ts";
-import { TALMUD_SCHEMA } from "../corpusSchema.ts";
-import { formatReference } from "../corpus-format.ts";
+import { talmudFormat } from "./format.ts";
 import { getTractateText, type TalmudStructure, isSegmentMishnah } from "./data.ts";
 import { promoteTractateToFront } from "./prefetch.ts";
 
@@ -44,7 +43,7 @@ export async function updateTalmudSidebar(
   elements.sidebar.classList.add("visible");
 
   // Reference
-  elements.refText.textContent = formatReference(id, TALMUD_SCHEMA);
+  elements.refText.textContent = talmudFormat.format(id);
 
   // Mishnah / Gemara tag
   const mishnah = isSegmentMishnah(
