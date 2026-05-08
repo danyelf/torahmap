@@ -410,9 +410,11 @@ async function main(): Promise<void> {
     );
     if (match) {
       pinnedItem = match;
-      void updateTalmudSidebar(pinnedItem, structure, sidebarElements).then(() => {
-        applyOverlay();
-        doRender();
+      void updateTalmudSidebar(match, structure, sidebarElements).then(() => {
+        if (pinnedItem === match) {
+          applyOverlay();
+          doRender();
+        }
       });
     }
   }
