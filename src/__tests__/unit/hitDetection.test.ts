@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   screenToWorld,
-  isPointInVerseLayout,
+  isPointInItem,
   findExactHit,
   findFuzzyHit,
   findItemAtPoint,
@@ -66,7 +66,7 @@ describe('hitDetection', () => {
     });
   });
 
-  describe('isPointInVerseLayout', () => {
+  describe('isPointInItem', () => {
     const verse: TanakhLayout = {
       book: 'Genesis',
       chapter: 1,
@@ -77,30 +77,30 @@ describe('hitDetection', () => {
     };
 
     it('returns true when point is inside verse bounds', () => {
-      expect(isPointInVerseLayout(125, 225, verse)).toBe(true);
-      expect(isPointInVerseLayout(100, 200, verse)).toBe(true); // Top-left corner
-      expect(isPointInVerseLayout(149, 249, verse)).toBe(true); // Just inside
+      expect(isPointInItem(125, 225, verse)).toBe(true);
+      expect(isPointInItem(100, 200, verse)).toBe(true); // Top-left corner
+      expect(isPointInItem(149, 249, verse)).toBe(true); // Just inside
     });
 
     it('returns false when point is outside verse bounds', () => {
-      expect(isPointInVerseLayout(99, 225, verse)).toBe(false); // Left of verse
-      expect(isPointInVerseLayout(150, 199, verse)).toBe(false); // Above verse
-      expect(isPointInVerseLayout(125, 250, verse)).toBe(false); // Below verse (exclusive)
-      expect(isPointInVerseLayout(150, 225, verse)).toBe(false); // Right of verse (exclusive)
+      expect(isPointInItem(99, 225, verse)).toBe(false); // Left of verse
+      expect(isPointInItem(150, 199, verse)).toBe(false); // Above verse
+      expect(isPointInItem(125, 250, verse)).toBe(false); // Below verse (exclusive)
+      expect(isPointInItem(150, 225, verse)).toBe(false); // Right of verse (exclusive)
     });
 
     it('handles point at exact right edge (exclusive)', () => {
       // x + size is exclusive
-      expect(isPointInVerseLayout(150, 225, verse)).toBe(false);
+      expect(isPointInItem(150, 225, verse)).toBe(false);
     });
 
     it('handles point at exact bottom edge (exclusive)', () => {
       // y + size is exclusive
-      expect(isPointInVerseLayout(125, 250, verse)).toBe(false);
+      expect(isPointInItem(125, 250, verse)).toBe(false);
     });
 
     it('handles point at top-left corner (inclusive)', () => {
-      expect(isPointInVerseLayout(100, 200, verse)).toBe(true);
+      expect(isPointInItem(100, 200, verse)).toBe(true);
     });
 
     it('handles very small verse', () => {
@@ -113,9 +113,9 @@ describe('hitDetection', () => {
         size: 1,
       };
 
-      expect(isPointInVerseLayout(0, 0, smallVerse)).toBe(true);
-      expect(isPointInVerseLayout(0.5, 0.5, smallVerse)).toBe(true);
-      expect(isPointInVerseLayout(1, 0.5, smallVerse)).toBe(false);
+      expect(isPointInItem(0, 0, smallVerse)).toBe(true);
+      expect(isPointInItem(0.5, 0.5, smallVerse)).toBe(true);
+      expect(isPointInItem(1, 0.5, smallVerse)).toBe(false);
     });
   });
 

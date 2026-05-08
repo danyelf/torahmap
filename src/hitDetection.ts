@@ -26,7 +26,7 @@ export function screenToWorld(
 /**
  * Check if a point (in world coordinates) is inside a spatial item's bounds.
  */
-export function isPointInVerseLayout<T>(
+export function isPointInItem<T>(
   worldX: number,
   worldY: number,
   verse: SpatialItem<T>
@@ -48,7 +48,7 @@ export function findExactHit<T>(
   worldY: number
 ): SpatialItem<T> | null {
   for (const v of verses) {
-    if (isPointInVerseLayout(worldX, worldY, v)) {
+    if (isPointInItem(worldX, worldY, v)) {
       return v;
     }
   }
@@ -64,7 +64,7 @@ export function findFuzzyHit<T>(
   worldX: number,
   worldY: number
 ): SpatialItem<T> | null {
-  let nearestVerseLayout: SpatialItem<T> | null = null;
+  let nearestItem: SpatialItem<T> | null = null;
   let nearestDistSq =
     HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
 
@@ -80,12 +80,12 @@ export function findFuzzyHit<T>(
 
     // If within fuzzy radius and closer than previous best
     if (distSq < nearestDistSq) {
-      nearestVerseLayout = v;
+      nearestItem = v;
       nearestDistSq = distSq;
     }
   }
 
-  return nearestVerseLayout;
+  return nearestItem;
 }
 
 /**
