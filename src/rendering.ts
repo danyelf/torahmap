@@ -1,7 +1,7 @@
 // Rendering module - handles WebGL rendering state and operations
 
 import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } from './webgl';
-import { buildVerseGeometry, createBuffer } from './geometry';
+import { buildItemGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
 import type { SpatialItem, VerseIdentity, ShaderProgram } from './types';
@@ -68,7 +68,7 @@ export function createRenderState<T>(
   verses: SpatialItem<T>[],
   dpr: number
 ): RenderState<T> {
-  const geometry = buildVerseGeometry(verses);
+  const geometry = buildItemGeometry(verses);
   const buffer = createBuffer(gl, geometry);
 
   return {
@@ -92,7 +92,7 @@ export function rebuildGeometry<T>(
   state: RenderState<T>,
   colors?: ([number, number, number] | [number, number, number][])[]
 ): void {
-  const geometry = buildVerseGeometry(state.verses, colors);
+  const geometry = buildItemGeometry(state.verses, colors);
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }

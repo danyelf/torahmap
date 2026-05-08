@@ -10,7 +10,7 @@ function isColorArray(color: Color | Color[] | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
 
-export function buildVerseGeometry<T>(
+export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
   baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR
