@@ -15,7 +15,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from "./rendering.ts";
-import { computeVerseStates, applyVerseColors } from "./verseColoring.ts";
+import { computeVerseStates, applyItemColors } from "./verseColoring.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
 import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import { createMouseState, startDrag, stopDrag } from "./mouseState.ts";
@@ -185,7 +185,7 @@ async function main(): Promise<void> {
       pinnedItem,
       talmudSegmentsEqual,
     );
-    const colors = applyVerseColors(states);
+    const colors = applyItemColors(states);
     rebuildGeometry(renderContext.gl, renderState, colors);
   }
 

@@ -18,7 +18,7 @@ describe('Main Module Smoke Test', () => {
       'findVerseAtPoint',
       'versesEqual',
       'computeVerseStates',
-      'applyVerseColors',
+      'applyItemColors',
       'renderFrame',
       'createRenderContext',
       'createRenderState',

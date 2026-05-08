@@ -4,7 +4,7 @@ import {
   getOverlayColor,
   applyHoverHighlight,
   computeVerseStates,
-  applyVerseColors,
+  applyItemColors,
 } from '../../verseColoring';
 import type { VerseLayout, VerseState } from '../../types';
 import { versesEqual } from '../../types';
@@ -342,7 +342,7 @@ describe('verseColoring', () => {
 
   });
 
-  describe('applyVerseColors', () => {
+  describe('applyItemColors', () => {
     it('applies base colors', () => {
       const states: VerseState[] = [
         {
@@ -353,7 +353,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([1, 0, 0]);
     });
@@ -368,7 +368,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       const color = colors[0] as [number, number, number];
       expect(color[0]).toBeCloseTo(0.9, 10);
@@ -386,7 +386,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([0.6, 0.4, 0.2]); // Unchanged
     });
@@ -401,7 +401,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors).toBeInstanceOf(Array);
       expect(colors.length).toBe(1);
@@ -430,7 +430,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([0.5, 0.5, 0.5]);
       expect(colors[1]).toEqual([1, 0, 0]); // Hovered, already at max
@@ -451,7 +451,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       const color = colors[0] as [number, number, number][];
       expect(color[0][0]).toBeCloseTo(0.6, 10);
@@ -510,7 +510,7 @@ describe('verseColoring', () => {
       expect(states[1].isHovered).toBe(true);
 
       // Second pass: apply colors
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([1, 0, 0]); // Overlay color, not hovered
       expect(colors[1]).toEqual([0.2, 0.9, 1.0]); // Background hovered -> highlight

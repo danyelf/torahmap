@@ -41,7 +41,7 @@ import {
 } from "./touchState.ts";
 import { versesEqual, nextVerse, prevVerse } from "./types.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
-import { computeVerseStates, applyVerseColors } from "./verseColoring.ts";
+import { computeVerseStates, applyItemColors } from "./verseColoring.ts";
 import {
   createRenderContext,
   createRenderState,
@@ -155,7 +155,7 @@ async function main(): Promise<void> {
       pinnedVerse,
       versesEqual,
     );
-    const colors = applyVerseColors(verseStates);
+    const colors = applyItemColors(verseStates);
 
     // Rebuild geometry buffer with new colors
     rebuildGeometry(renderContext.gl, renderState, colors);

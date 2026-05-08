@@ -111,7 +111,7 @@ export function computeVerseStates<T>(
  * @param verseStates - Pre-computed verse states
  * @returns Array of final colors for each verse
  */
-export function applyVerseColors(
+export function applyItemColors(
   verseStates: VerseState[],
 ): ([number, number, number] | [number, number, number][])[] {
   return verseStates.map((state) => {
