@@ -15,7 +15,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from "./rendering.ts";
-import { computeItemStates, applyItemColors } from "./verseColoring.ts";
+import { computeItemStates, applyItemColors } from "./itemColoring.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
 import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import { createMouseState, startDrag, stopDrag } from "./mouseState.ts";

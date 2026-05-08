@@ -5,13 +5,13 @@ import {
   applyHoverHighlight,
   computeItemStates,
   applyItemColors,
-} from '../../verseColoring';
+} from '../../itemColoring';
 import type { VerseLayout, ItemState } from '../../types';
 import { versesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
 
-describe('verseColoring', () => {
+describe('itemColoring', () => {
   describe('getDefaultColor', () => {
     beforeEach(() => {
       // Mock seededRandom to return predictable values

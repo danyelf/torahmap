@@ -41,7 +41,7 @@ import {
 } from "./touchState.ts";
 import { versesEqual, nextVerse, prevVerse } from "./types.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
-import { computeItemStates, applyItemColors } from "./verseColoring.ts";
+import { computeItemStates, applyItemColors } from "./itemColoring.ts";
 import {
   createRenderContext,
   createRenderState,
