@@ -1,0 +1,24 @@
+Feedback:
+
+1. I really miss the stippling and the position jittering from the previous version -- the rectangles are really uniform. Try to pick up the way that each box in Torahmap is subtle differnt from each other.
+
+1. Ok, the slate blue is not nearly distinct enough from the background grey. Make it a bit brighter.
+
+1. If there's a subtle background color difference in this (or the torah!) I dont' see it
+
+1. We don't have section names showing. Nor do we have a seder name
+
+1. Zoom for amud could perhaps bring in more a little sooner -- maybe more gradually. appear by 3s or so in between? (So: 10a / 20a / 30a first; then 3a / 6a / 10a / 13a / 16a ...; and then every page)
+
+1. Some text issues: here's a random copy-paste from Sukkah 4a:8. In gneeral, I don't expect to see any English letters, hypertext, markdown, or angle brackets anywhere in the Talmud; if there are, there's been a parsing error.
+   היתה גבוהה מעשרים אמה ובנה בה איצטבא כנגד דופן האמצעי על פני כולה <img src="data:image/png;base64,....> ויש בה הכשר סוכה כשרה
+
+1. Probably because of that, the "passage lenght" is entirely broken, showing only a very few lines of any meaningful length.
+
+1. Lets talk about line wrap. While it's visually cool to see that (e.g.) Tractate Shabbat is so much longer than the others, it also makes things hard to read. I think we'd do ok by wrapping -- perhaps near Amud 50 or so. That would also wrap the longer Tractates in that section, but keep the msaller ones intanct. It would also wrap Berakhot.
+
+1. Lets also talk about the "bookshelf" metaphor. Maybe after adding wrapping it'll feel better, but I'm kinda thinking about getting the whole thing wider -- maybe stacking some sedarim next to each other.
+
+1. Some of the sections seem very short. Eg. whatever contains Yoma 62a:8-11, and the one vbefore it. Indeed, there's a common pattern of a long and then several shorts. I suspect there's a mistake somewhere.
+
+1. Leave us an issue to handle parens -- for example, yoma 68a:6 has a cross-reference embedded in the text. That doesn't seem quite right.

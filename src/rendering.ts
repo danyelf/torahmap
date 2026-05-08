@@ -1,11 +1,10 @@
 // Rendering module - handles WebGL rendering state and operations
 
 import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } from './webgl';
-import { buildVerseGeometry, createBuffer } from './geometry';
+import { buildItemGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
-import type { VerseLayout, ShaderProgram } from './types';
-import { versesEqual } from './types';
+import type { SpatialItem, TanakhIdentity, ShaderProgram } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -25,12 +24,16 @@ export interface RenderContext {
 /**
  * Mutable rendering state that changes during application lifecycle.
  * Contains vertex buffers, verse data, and display settings.
+ *
+ * Generic over T (the identity shape) with default TanakhIdentity so existing
+ * Tanakh callers keep their type inference. T is opaque — only x/y/size are
+ * read by the rendering code.
  */
-export interface RenderState {
+export interface RenderState<T = TanakhIdentity> {
   buffer: WebGLBuffer;
   outlineBuffer: WebGLBuffer | null;
   hoverOutlineBuffer: WebGLBuffer | null;
-  verses: VerseLayout[];
+  verses: SpatialItem<T>[];
   dpr: number;
 }
 
@@ -60,12 +63,12 @@ export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
  * @param dpr - Device pixel ratio for high-DPI displays
  * @returns RenderState with initialized buffers
  */
-export function createRenderState(
+export function createRenderState<T>(
   gl: WebGL2RenderingContext,
-  verses: VerseLayout[],
+  verses: SpatialItem<T>[],
   dpr: number
-): RenderState {
-  const geometry = buildVerseGeometry(verses);
+): RenderState<T> {
+  const geometry = buildItemGeometry(verses);
   const buffer = createBuffer(gl, geometry);
 
   return {
@@ -84,12 +87,12 @@ export function createRenderState(
  * @param gl - WebGL context
  * @param state - Render state containing buffer and verses
  */
-export function rebuildGeometry(
+export function rebuildGeometry<T>(
   gl: WebGL2RenderingContext,
-  state: RenderState,
+  state: RenderState<T>,
   colors?: ([number, number, number] | [number, number, number][])[]
 ): void {
-  const geometry = buildVerseGeometry(state.verses, colors);
+  const geometry = buildItemGeometry(state.verses, colors);
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
@@ -104,12 +107,13 @@ export function rebuildGeometry(
  * @param hoveredVerse - Currently hovered verse (or null)
  * @param pinnedVerse - Currently pinned verse (or null)
  */
-export function render(
+export function render<T>(
   context: RenderContext,
-  state: RenderState,
+  state: RenderState<T>,
   camera: Camera,
-  hoveredVerse: VerseLayout | null,
-  pinnedVerse: VerseLayout | null
+  hoveredVerse: SpatialItem<T> | null,
+  pinnedVerse: SpatialItem<T> | null,
+  itemsEqual: (a: T | null, b: T | null) => boolean,
 ): void {
   const { gl, programs, canvas } = context;
   const { buffer, verses, dpr } = state;
@@ -161,7 +165,7 @@ export function render(
   gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
 
   // Draw hover outline (if hovering and not same as pinned)
-  if (hoveredVerse && !versesEqual(hoveredVerse, pinnedVerse)) {
+  if (hoveredVerse && !itemsEqual(hoveredVerse, pinnedVerse)) {
     // Use different color when hovering while another verse is pinned
     const hoverColor = pinnedVerse
       ? HIGHLIGHT_CONSTANTS.HOVER_WHILE_PINNED_OUTLINE_COLOR
@@ -207,10 +211,10 @@ export function render(
  * @param camera - Camera position and zoom
  * @returns Updated or newly created buffer
  */
-export function renderOutline(
+export function renderOutline<T>(
   context: RenderContext,
-  state: RenderState,
-  verse: VerseLayout,
+  state: RenderState<T>,
+  verse: SpatialItem<T>,
   color: [number, number, number],
   buffer: WebGLBuffer | null,
   camera: Camera

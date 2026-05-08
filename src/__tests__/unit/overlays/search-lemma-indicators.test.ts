@@ -4,10 +4,10 @@ import { searchOverlay, configure } from '../../../overlays/search';
 import { buildSearchIndex, loadLemmaData } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import type { VerseTexts } from '../../../verseTexts';
-import type { VerseLayout } from '../../../types';
+import type { TanakhLayout } from '../../../types';
 
 describe('Search Overlay - Lemma Indicators', () => {
-  let testVerses: VerseLayout[];
+  let testVerses: TanakhLayout[];
   let mockVerseTexts: VerseTexts;
   let container: HTMLElement;
 

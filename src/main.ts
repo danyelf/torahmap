@@ -19,9 +19,9 @@ import {
   updateUrl,
   subscribeToHashChange,
   verseToUrlFormat,
-  debounce,
   type UrlState,
 } from "./urlState.ts";
+import { debounce } from "./utils/debounce.ts";
 import { getSidebarElements, updateSidebar } from "./sidebar.ts";
 import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import {
@@ -39,16 +39,16 @@ import {
   getPinchCenter,
   resetTouchState,
 } from "./touchState.ts";
-import { versesEqual, nextVerse, prevVerse } from "./types.ts";
-import { findVerseLayoutAtPoint } from "./hitDetection.ts";
-import { computeVerseStates, applyVerseColors } from "./verseColoring.ts";
+import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem } from "./types.ts";
+import { findItemAtPoint } from "./hitDetection.ts";
+import { computeItemStates, applyItemColors } from "./itemColoring.ts";
 import {
   createRenderContext,
   createRenderState,
   rebuildGeometry,
   render as renderFrame,
 } from "./rendering.ts";
-import type { VerseLayout, Bounds } from "./types.ts";
+import type { TanakhLayout, Bounds } from "./types.ts";
 import {
   registerOverlay,
   getOverlay,
@@ -77,7 +77,7 @@ declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
     torahMap?: {
-      verses: VerseLayout[];
+      verses: TanakhLayout[];
       pan: { x: number; y: number };
       zoom: number;
       render: () => void;
@@ -148,13 +148,14 @@ async function main(): Promise<void> {
   // Function to apply overlay colors
   function applyOverlay(): void {
     // Compute verse states and apply colors
-    const verseStates = computeVerseStates(
+    const verseStates = computeItemStates(
       verses,
       currentOverlay,
       mouseState.hoveredVerse,
       pinnedVerse,
+      tanakhIdentitiesEqual,
     );
-    const colors = applyVerseColors(verseStates);
+    const colors = applyItemColors(verseStates);
 
     // Rebuild geometry buffer with new colors
     rebuildGeometry(renderContext.gl, renderState, colors);
@@ -164,7 +165,7 @@ async function main(): Promise<void> {
   const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
 
   // Track pinned verse (click to persist)
-  let pinnedVerse: VerseLayout | null = null;
+  let pinnedVerse: TanakhLayout | null = null;
 
   // Mouse interaction state
   const mouseState = createMouseState();
@@ -184,11 +185,12 @@ async function main(): Promise<void> {
       camera,
       mouseState.hoveredVerse,
       pinnedVerse,
+      tanakhIdentitiesEqual,
     );
   }
 
   // Helper: Center camera on a verse
-  function centerOnVerse(verse: VerseLayout): void {
+  function centerOnVerse(verse: TanakhLayout): void {
     const cssWidth = window.innerWidth;
     const cssHeight = window.innerHeight;
     camera.x = cssWidth / 2 / camera.zoom - verse.x - verse.size / 2;
@@ -196,7 +198,7 @@ async function main(): Promise<void> {
   }
 
   // Helper: Pin a verse and update all dependent state
-  function pinVerse(verse: VerseLayout, centerCamera: boolean = false): void {
+  function pinVerse(verse: TanakhLayout, centerCamera: boolean = false): void {
     trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
@@ -378,14 +380,14 @@ async function main(): Promise<void> {
         dy < TAP_THRESHOLD &&
         duration < TAP_MAX_DURATION
       ) {
-        const verse = findVerseLayoutAtPoint(
+        const verse = findItemAtPoint(
           verses,
           camera,
           e.clientX,
           e.clientY,
         );
         if (verse) {
-          if (pinnedVerse && versesEqual(pinnedVerse, verse)) {
+          if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
             unpinVerse();
           } else {
             pinVerse(verse);
@@ -399,7 +401,7 @@ async function main(): Promise<void> {
 
     // Reset cursor
     if (wasDragging) {
-      const verse = findVerseLayoutAtPoint(
+      const verse = findItemAtPoint(
         verses,
         camera,
         e.clientX,
@@ -499,7 +501,7 @@ async function main(): Promise<void> {
 
   // Update sidebar with verse info - wrapper for the extracted module function
   function updateSidebarWrapper(
-    verse: VerseLayout | null,
+    verse: TanakhLayout | null,
     isPinned: boolean = false,
   ): void {
     updateSidebar(
@@ -517,7 +519,7 @@ async function main(): Promise<void> {
     if (e.pointerType === "touch" || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
-      const verse = findVerseLayoutAtPoint(
+      const verse = findItemAtPoint(
         verses,
         camera,
         e.clientX,
@@ -526,7 +528,7 @@ async function main(): Promise<void> {
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
-      const hoverChanged = !versesEqual(previousHover, verse);
+      const hoverChanged = !tanakhIdentitiesEqual(previousHover, verse);
 
       if (pinnedVerse && verse) {
         canvas.style.cursor = "pointer";
@@ -576,12 +578,12 @@ async function main(): Promise<void> {
       return;
     }
 
-    let targetVerse: VerseLayout | null = null;
+    let targetVerse: TanakhLayout | null = null;
 
     if (e.key === "ArrowRight") {
-      targetVerse = nextVerse(verses, pinnedVerse);
+      targetVerse = nextTanakhItem(verses, pinnedVerse);
     } else if (e.key === "ArrowLeft") {
-      targetVerse = prevVerse(verses, pinnedVerse);
+      targetVerse = prevTanakhItem(verses, pinnedVerse);
     }
 
     if (targetVerse) {
@@ -670,7 +672,7 @@ async function main(): Promise<void> {
   configureSearch({
     verses,
     callbacks: {
-      onVerseClick: (verse: VerseLayout) => {
+      onVerseClick: (verse: TanakhLayout) => {
         pinVerse(verse);
       },
     },

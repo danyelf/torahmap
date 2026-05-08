@@ -1,10 +1,10 @@
 // Test fixtures for Torah Map tests
-import type { VerseLayout, TorahData, CommentaryData, VerseCommentary } from '../../types';
+import type { TanakhLayout, TorahData, CommentaryData, TanakhCommentary } from '../../types';
 
 /**
  * Creates a sample verse with default values that can be overridden
  */
-export function createVerse(overrides: Partial<VerseLayout> = {}): VerseLayout {
+export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
     book: 'Genesis',
     chapter: 1,
@@ -19,7 +19,7 @@ export function createVerse(overrides: Partial<VerseLayout> = {}): VerseLayout {
 /**
  * Creates multiple sample verses
  */
-export function createVerses(count: number, baseOverrides: Partial<VerseLayout> = {}): VerseLayout[] {
+export function createVerses(count: number, baseOverrides: Partial<TanakhLayout> = {}): TanakhLayout[] {
   return Array.from({ length: count }, (_, i) =>
     createVerse({
       verse: i + 1,
@@ -33,7 +33,7 @@ export function createVerses(count: number, baseOverrides: Partial<VerseLayout> 
 /**
  * Sample verse data spanning multiple books and sections
  */
-export const SAMPLE_VERSES: VerseLayout[] = [
+export const SAMPLE_VERSES: TanakhLayout[] = [
   // Torah - Genesis
   createVerse({ book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20 }),
   createVerse({ book: 'Genesis', chapter: 1, verse: 2, x: 18, y: 20 }),
@@ -144,9 +144,9 @@ export const SAMPLE_VERSE_TEXTS = {
 };
 
 /**
- * Creates a sample VerseCommentary object
+ * Creates a sample TanakhCommentary object
  */
-export function createVerseCommentary(overrides: Partial<VerseCommentary> = {}): VerseCommentary {
+export function createTanakhCommentary(overrides: Partial<TanakhCommentary> = {}): TanakhCommentary {
   return {
     total: 50,
     categories: {

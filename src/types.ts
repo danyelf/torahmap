@@ -7,19 +7,19 @@
  * This enables future abstraction to other structured texts (Quran, Talmud, etc).
  *
  * DOMAIN LAYER (Torah-specific):
- * - VerseIdentity: References a biblical verse (book/chapter/verse)
+ * - TanakhIdentity: References a biblical verse (book/chapter/verse)
  * - Data loaders: layout.ts, verseTexts.ts, overlay data loading
  * - Overlays: Implement domain logic (commentary, trop, search, text dating, etc)
  * - Display: Sidebar, URL state (formatting "Genesis 1:1")
  *
  * SPATIAL LAYER (domain-agnostic):
- * - VerseLayout: Position and size in 2D space (x, y, size)
+ * - TanakhLayout: Position and size in 2D space (x, y, size)
  * - Rendering: geometry.ts, rendering.ts, webgl.ts
  * - Interaction: hitDetection.ts, mouse handling
  * - Camera: zoom, pan (camera.ts)
  *
  * To adapt this codebase for another text:
- * 1. Redefine VerseIdentity structure
+ * 1. Redefine TanakhIdentity structure
  * 2. Replace data loaders
  * 3. Implement domain-specific overlays
  * 4. Update display formatting
@@ -44,26 +44,50 @@ export interface TorahData {
   layout: LayoutConfig;
 }
 
+// ============================================================================
+// Corpus-generic identity types (Talmud integration — tm-f28x)
+// ============================================================================
+
 /**
- * Identity of a biblical verse.
- * The minimal information needed to uniquely identify a verse in Tanakh.
+ * A spatial item is any domain identity paired with 2D coordinates and a size.
+ * The rendering pipeline is generic over the identity type — it never reads
+ * domain fields, only x/y/size.
+ *
+ * Usage:
+ *   TanakhLayout = SpatialItem<TanakhIdentity>
+ *   TalmudLayout = SpatialItem<TalmudIdentity>
+ *
+ * Any new corpus needs only a concrete identity interface to produce a new
+ * SpatialItem<T> flavor; the spatial modules accept it via generics.
  */
-export interface VerseIdentity {
+export type SpatialItem<T> = T & {
+  x: number;
+  y: number;
+  size: number;
+};
+
+/**
+ * Identity of a Tanakh verse. Three levels: book, chapter, verse.
+ */
+export interface TanakhIdentity {
   book: string;
   chapter: number;
   verse: number;
 }
 
 /**
- * Complete layout information for a verse.
- * Extends identity with spatial position computed during layout.
- * This data is immutable after initial layout computation.
+ * Identity of a Talmud segment. Four levels: tractate, daf, amud, segment.
+ * Dapim start at 2 in standard printings (there is no daf 1).
  */
-export interface VerseLayout extends VerseIdentity {
-  x: number;
-  y: number;
-  size: number;
+export interface TalmudIdentity {
+  tractate: string;
+  daf: number;
+  amud: "a" | "b";
+  segment: number;
 }
+
+export type TanakhLayout = SpatialItem<TanakhIdentity>;
+export type TalmudLayout = SpatialItem<TalmudIdentity>;
 
 /**
  * Check if two verses refer to the same verse.
@@ -73,9 +97,9 @@ export interface VerseLayout extends VerseIdentity {
  * @param b - Second verse identity (or null)
  * @returns true if both are null or both refer to same verse
  */
-export function versesEqual(
-  a: VerseIdentity | null,
-  b: VerseIdentity | null,
+export function tanakhIdentitiesEqual(
+  a: TanakhIdentity | null,
+  b: TanakhIdentity | null,
 ): boolean {
   if (a === null && b === null) return true;
   if (a === null || b === null) return false;
@@ -89,10 +113,10 @@ export function versesEqual(
  * @param current - Current verse
  * @returns Next verse or null if current is last verse or not found
  */
-export function nextVerse(
-  verses: VerseLayout[],
-  current: VerseIdentity,
-): VerseLayout | null {
+export function nextTanakhItem(
+  verses: TanakhLayout[],
+  current: TanakhIdentity,
+): TanakhLayout | null {
   const currentIndex = verses.findIndex(
     (v) =>
       v.book === current.book &&
@@ -114,10 +138,10 @@ export function nextVerse(
  * @param current - Current verse
  * @returns Previous verse or null if current is first verse or not found
  */
-export function prevVerse(
-  verses: VerseLayout[],
-  current: VerseIdentity,
-): VerseLayout | null {
+export function prevTanakhItem(
+  verses: TanakhLayout[],
+  current: TanakhIdentity,
+): TanakhLayout | null {
   const currentIndex = verses.findIndex(
     (v) =>
       v.book === current.book &&
@@ -137,7 +161,7 @@ export function prevVerse(
  * First pass: semantic state (what is true about this verse)
  * Second pass: visual state (how to render it)
  */
-export interface VerseState {
+export interface ItemState {
   hasOverlayColor: boolean; // Does overlay provide a color?
   resolvedColor: [number, number, number] | [number, number, number][]; // Final color: overlay color if present, otherwise default gray
   isHovered: boolean; // Is mouse hovering this verse?
@@ -150,16 +174,16 @@ export interface Bounds {
 }
 
 // Commentary counts from Sefaria
-export interface VerseCommentary {
+export interface TanakhCommentary {
   total: number;
   categories: Record<string, number>;
 }
 
 export type CommentaryData = Record<
   string,
-  Record<string, Record<string, VerseCommentary>>
+  Record<string, Record<string, TanakhCommentary>>
 >;
-// Structure: { [book]: { [chapter]: { [verse]: VerseCommentary } } }
+// Structure: { [book]: { [chapter]: { [verse]: TanakhCommentary } } }
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -199,7 +223,7 @@ export interface TropIndexEntry {
 export type TropIndex = Map<string, TropIndexEntry>;
 
 // Verse key utilities for consistent key generation
-export function getVerseKey(
+export function tanakhKey(
   book: string,
   chapter: number,
   verse: number,

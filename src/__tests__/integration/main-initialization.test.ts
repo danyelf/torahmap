@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { createProgram, createOutlineProgram } from "../../webgl";
 import { buildOutlineGeometry } from "../../outline";
 import { createMockWebGL2Context } from "../helpers";
-import type { VerseLayout } from "../../types";
+import type { TanakhLayout } from "../../types";
 
 describe("Main Initialization Integration", () => {
   let gl: WebGL2RenderingContext;
@@ -35,7 +35,7 @@ describe("Main Initialization Integration", () => {
 
   describe("Render Loop Initialization", () => {
     it("renderOutline handles null and non-null pinnedVerse without error", () => {
-      let pinnedVerse: VerseLayout | null = null;
+      let pinnedVerse: TanakhLayout | null = null;
 
       // This simulates the render() function calling renderOutline(pinnedVerse)
       // where pinnedVerse might be null on initial render
@@ -73,7 +73,7 @@ describe("Main Initialization Integration", () => {
 
     it("renderOutline works with a valid verse", () => {
       const outlineProg = createOutlineProgram(gl);
-      const pinnedVerse: VerseLayout = {
+      const pinnedVerse: TanakhLayout = {
         book: "Genesis",
         chapter: 1,
         verse: 1,
@@ -107,7 +107,7 @@ describe("Main Initialization Integration", () => {
       // This test simulates the critical bug fix: pinnedVerse must be declared
       // before the render() function that references it
 
-      let pinnedVerse: VerseLayout | null = null;
+      let pinnedVerse: TanakhLayout | null = null;
 
       const render = () => {
         // Simulate render function accessing pinnedVerse
@@ -172,11 +172,11 @@ describe("Main Initialization Integration", () => {
   describe("Outline Rendering Flow", () => {
     it("complete outline rendering flow works end-to-end", () => {
       const outlineProg = createOutlineProgram(gl);
-      let pinnedVerse: VerseLayout | null = null;
+      let pinnedVerse: TanakhLayout | null = null;
       let outlineBuffer: WebGLBuffer | null = null;
 
       // Simulate the renderOutline function from main.ts
-      const renderOutline = (verse: VerseLayout | null) => {
+      const renderOutline = (verse: TanakhLayout | null) => {
         if (!verse) return;
 
         const geometry = buildOutlineGeometry({
@@ -238,7 +238,7 @@ describe("Main Initialization Integration", () => {
       const outlineProg = createOutlineProgram(gl);
 
       // This is the critical test: declare pinnedVerse, then immediately call render
-      let pinnedVerse: VerseLayout | null = null;
+      let pinnedVerse: TanakhLayout | null = null;
 
       const render = () => {
         gl.viewport(0, 0, 800, 600);
@@ -280,10 +280,10 @@ describe("Main Initialization Integration", () => {
   describe("Mouse Interaction Dependencies", () => {
     it("all variables needed by event handlers are available at initialization", () => {
       // Simulate the key variables that must be declared before event handlers
-      let pinnedVerse: VerseLayout | null = null;
+      let pinnedVerse: TanakhLayout | null = null;
       const pan = { x: 0, y: 0 };
       let zoom = 1.0;
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: "Genesis", chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
       ];
 

@@ -1,6 +1,6 @@
 // Hit Detection module - handles verse hit detection from screen coordinates
 
-import type { VerseLayout } from './types';
+import type { SpatialItem } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -24,17 +24,12 @@ export function screenToWorld(
 }
 
 /**
- * Check if a point (in world coordinates) is inside a verse's bounds.
- *
- * @param worldX - X coordinate in world space
- * @param worldY - Y coordinate in world space
- * @param verse - VerseLayout to test
- * @returns true if point is inside verse bounds
+ * Check if a point (in world coordinates) is inside a spatial item's bounds.
  */
-export function isPointInVerseLayout(
+export function isPointInItem<T>(
   worldX: number,
   worldY: number,
-  verse: VerseLayout
+  verse: SpatialItem<T>
 ): boolean {
   return (
     worldX >= verse.x &&
@@ -46,19 +41,14 @@ export function isPointInVerseLayout(
 
 /**
  * Find verse at exact world coordinates (no fuzzy matching).
- *
- * @param verses - All verses
- * @param worldX - X coordinate in world space
- * @param worldY - Y coordinate in world space
- * @returns VerseLayout at point, or null if none found
  */
-export function findExactHit(
-  verses: VerseLayout[],
+export function findExactHit<T>(
+  verses: SpatialItem<T>[],
   worldX: number,
   worldY: number
-): VerseLayout | null {
+): SpatialItem<T> | null {
   for (const v of verses) {
-    if (isPointInVerseLayout(worldX, worldY, v)) {
+    if (isPointInItem(worldX, worldY, v)) {
       return v;
     }
   }
@@ -68,18 +58,13 @@ export function findExactHit(
 /**
  * Find nearest verse within fuzzy radius from world coordinates.
  * Uses distance to verse center, not bounds.
- *
- * @param verses - All verses
- * @param worldX - X coordinate in world space
- * @param worldY - Y coordinate in world space
- * @returns Nearest verse within fuzzy radius, or null if none found
  */
-export function findFuzzyHit(
-  verses: VerseLayout[],
+export function findFuzzyHit<T>(
+  verses: SpatialItem<T>[],
   worldX: number,
   worldY: number
-): VerseLayout | null {
-  let nearestVerseLayout: VerseLayout | null = null;
+): SpatialItem<T> | null {
+  let nearestItem: SpatialItem<T> | null = null;
   let nearestDistSq =
     HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
 
@@ -95,30 +80,24 @@ export function findFuzzyHit(
 
     // If within fuzzy radius and closer than previous best
     if (distSq < nearestDistSq) {
-      nearestVerseLayout = v;
+      nearestItem = v;
       nearestDistSq = distSq;
     }
   }
 
-  return nearestVerseLayout;
+  return nearestItem;
 }
 
 /**
  * Find verse at screen coordinates.
  * First tries exact hit detection, then falls back to fuzzy matching.
- *
- * @param verses - All verses
- * @param camera - Camera state with pan and zoom
- * @param screenX - X coordinate in screen space
- * @param screenY - Y coordinate in screen space
- * @returns VerseLayout at point, or null if none found
  */
-export function findVerseLayoutAtPoint(
-  verses: VerseLayout[],
+export function findItemAtPoint<T>(
+  verses: SpatialItem<T>[],
   camera: Camera,
   screenX: number,
   screenY: number
-): VerseLayout | null {
+): SpatialItem<T> | null {
   // Convert screen coords to world coords
   const { x: worldX, y: worldY } = screenToWorld(screenX, screenY, camera);
 

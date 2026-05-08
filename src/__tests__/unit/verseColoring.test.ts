@@ -3,14 +3,15 @@ import {
   getDefaultColor,
   getOverlayColor,
   applyHoverHighlight,
-  computeVerseStates,
-  applyVerseColors,
-} from '../../verseColoring';
-import type { VerseLayout, VerseState } from '../../types';
+  computeItemStates,
+  applyItemColors,
+} from '../../itemColoring';
+import type { TanakhLayout, ItemState } from '../../types';
+import { tanakhIdentitiesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
 
-describe('verseColoring', () => {
+describe('itemColoring', () => {
   describe('getDefaultColor', () => {
     beforeEach(() => {
       // Mock seededRandom to return predictable values
@@ -58,7 +59,7 @@ describe('verseColoring', () => {
 
   describe('getOverlayColor', () => {
     it('returns null when overlay is null', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -73,7 +74,7 @@ describe('verseColoring', () => {
     });
 
     it('returns overlay color when overlay provides color', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -96,7 +97,7 @@ describe('verseColoring', () => {
     });
 
     it('returns null when overlay getVerseColor returns null', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -118,7 +119,7 @@ describe('verseColoring', () => {
     });
 
     it('handles multi-color verses', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -197,7 +198,7 @@ describe('verseColoring', () => {
     });
   });
 
-  describe('computeVerseStates', () => {
+  describe('computeItemStates', () => {
     beforeEach(() => {
       vi.spyOn(randomModule, 'seededRandom').mockReturnValue(0.5);
     });
@@ -207,7 +208,7 @@ describe('verseColoring', () => {
     });
 
     it('computes hasOverlayColor correctly when overlay provides color', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -218,14 +219,14 @@ describe('verseColoring', () => {
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
       };
 
-      const states = computeVerseStates(verses, mockOverlay, null, null);
+      const states = computeItemStates(verses, mockOverlay, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(true);
       expect(states[0].resolvedColor).toEqual([1, 0, 0]);
     });
 
     it('computes hasOverlayColor as false when overlay returns null', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -236,7 +237,7 @@ describe('verseColoring', () => {
         getVerseColor: vi.fn().mockReturnValue(null),
       };
 
-      const states = computeVerseStates(verses, mockOverlay, null, null);
+      const states = computeItemStates(verses, mockOverlay, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -246,11 +247,11 @@ describe('verseColoring', () => {
     });
 
     it('uses default color when overlay is null', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -260,58 +261,58 @@ describe('verseColoring', () => {
     });
 
     it('identifies hovered verse correctly', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
       const hoveredVerse = verses[1];
 
-      const states = computeVerseStates(verses, null, hoveredVerse, null);
+      const states = computeItemStates(verses, null, hoveredVerse, null, tanakhIdentitiesEqual);
 
       expect(states[0].isHovered).toBe(false);
       expect(states[1].isHovered).toBe(true);
     });
 
     it('identifies pinned verse correctly', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
       const pinnedVerse = verses[0];
 
-      const states = computeVerseStates(verses, null, null, pinnedVerse);
+      const states = computeItemStates(verses, null, null, pinnedVerse, tanakhIdentitiesEqual);
 
       expect(states[0].isPinned).toBe(true);
       expect(states[1].isPinned).toBe(false);
     });
 
     it('handles null hoveredVerse', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].isHovered).toBe(false);
     });
 
     it('handles null pinnedVerse', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].isPinned).toBe(false);
     });
 
     it('matches verses by book, chapter, and verse number', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
         { book: 'Exodus', chapter: 1, verse: 1, x: 0, y: 10, size: 1 },
       ];
-      const hoveredVerse: VerseLayout = {
+      const hoveredVerse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -320,7 +321,7 @@ describe('verseColoring', () => {
         size: 2,
       };
 
-      const states = computeVerseStates(verses, null, hoveredVerse, null);
+      const states = computeItemStates(verses, null, hoveredVerse, null, tanakhIdentitiesEqual);
 
       expect(states[0].isHovered).toBe(true); // Same book/chapter/verse
       expect(states[1].isHovered).toBe(false); // Different verse
@@ -328,22 +329,22 @@ describe('verseColoring', () => {
     });
 
     it('returns array parallel to verses', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 3, x: 20, y: 0, size: 1 },
       ];
 
-      const states = computeVerseStates(verses, null, null, null);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states.length).toBe(3);
     });
 
   });
 
-  describe('applyVerseColors', () => {
+  describe('applyItemColors', () => {
     it('applies base colors', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: [1, 0, 0],
@@ -352,13 +353,13 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([1, 0, 0]);
     });
 
     it('applies hover highlighting when verse is hovered', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: [0.6, 0.4, 0.2],
@@ -367,7 +368,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       const color = colors[0] as [number, number, number];
       expect(color[0]).toBeCloseTo(0.9, 10);
@@ -376,7 +377,7 @@ describe('verseColoring', () => {
     });
 
     it('does not apply hover highlighting when verse is not hovered', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: [0.6, 0.4, 0.2],
@@ -385,13 +386,13 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([0.6, 0.4, 0.2]); // Unchanged
     });
 
     it('returns immutable color array', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: false,
           resolvedColor: [0.5, 0.5, 0.5],
@@ -400,7 +401,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors).toBeInstanceOf(Array);
       expect(colors.length).toBe(1);
@@ -408,7 +409,7 @@ describe('verseColoring', () => {
     });
 
     it('handles multiple verses', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: false,
           resolvedColor: [0.5, 0.5, 0.5],
@@ -429,7 +430,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([0.5, 0.5, 0.5]);
       expect(colors[1]).toEqual([1, 0, 0]); // Hovered, already at max
@@ -441,7 +442,7 @@ describe('verseColoring', () => {
         [0.4, 0.2, 0.6],
         [0.2, 0.8, 0.4],
       ];
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: multiColor,
@@ -450,7 +451,7 @@ describe('verseColoring', () => {
         },
       ];
 
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       const color = colors[0] as [number, number, number][];
       expect(color[0][0]).toBeCloseTo(0.6, 10);
@@ -472,7 +473,7 @@ describe('verseColoring', () => {
     });
 
     it('supports full workflow: compute states then apply colors', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
@@ -489,11 +490,12 @@ describe('verseColoring', () => {
       const hoveredVerse = verses[1];
 
       // First pass: compute states
-      const states = computeVerseStates(
+      const states = computeItemStates(
         verses,
         mockOverlay,
         hoveredVerse,
-        null
+        null,
+        tanakhIdentitiesEqual,
       );
 
       expect(states[0].hasOverlayColor).toBe(true);
@@ -508,7 +510,7 @@ describe('verseColoring', () => {
       expect(states[1].isHovered).toBe(true);
 
       // Second pass: apply colors
-      const colors = applyVerseColors(states);
+      const colors = applyItemColors(states);
 
       expect(colors[0]).toEqual([1, 0, 0]); // Overlay color, not hovered
       expect(colors[1]).toEqual([0.2, 0.9, 1.0]); // Background hovered -> highlight

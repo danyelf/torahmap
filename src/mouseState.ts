@@ -1,13 +1,13 @@
 // Mouse State module - handles mouse interaction state
 
-import type { VerseLayout } from './types';
+import type { TanakhLayout } from './types';
 
 /**
  * Mouse interaction state
  */
 export interface MouseState {
   isDragging: boolean;
-  hoveredVerse: VerseLayout | null;
+  hoveredVerse: TanakhLayout | null;
   dragStart: { x: number; y: number };
 }
 
@@ -51,7 +51,7 @@ export function stopDrag(state: MouseState): void {
  * @param state - Mouse state to update
  * @param verse - Verse under mouse (or null)
  */
-export function setHoveredVerse(state: MouseState, verse: VerseLayout | null): void {
+export function setHoveredVerse(state: MouseState, verse: TanakhLayout | null): void {
   state.hoveredVerse = verse;
 }
 

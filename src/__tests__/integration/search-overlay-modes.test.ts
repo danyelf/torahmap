@@ -3,11 +3,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchOverlay, configure } from '../../overlays/search';
 import { buildSearchIndex } from '../../search';
-import type { VerseLayout } from '../../types';
+import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Search Overlay - Hebrew Mode Integration', () => {
-  let testVerses: VerseLayout[];
+  let testVerses: TanakhLayout[];
   let mockVerseTexts: VerseTexts;
   let container: HTMLElement;
 

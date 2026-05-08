@@ -24,6 +24,7 @@ export default defineConfig(({ command }) => ({
       input: {
         main: resolve(__dirname, "index.html"),
         "test-harness": resolve(__dirname, "test-harness/index.html"),
+        talmud: resolve(__dirname, "talmud.html"),
       },
     },
   },

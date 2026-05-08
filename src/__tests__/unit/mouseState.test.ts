@@ -6,8 +6,8 @@ import {
   setHoveredVerse,
   clearHover,
 } from '../../mouseState';
-import type { VerseLayout } from '../../types';
-import { versesEqual } from '../../types';
+import type { TanakhLayout } from '../../types';
+import { tanakhIdentitiesEqual } from '../../types';
 
 describe('mouseState', () => {
   describe('createMouseState', () => {
@@ -28,13 +28,13 @@ describe('mouseState', () => {
     });
   });
 
-  describe('versesEqual', () => {
+  describe('tanakhIdentitiesEqual', () => {
     it('returns true when both are null', () => {
-      expect(versesEqual(null, null)).toBe(true);
+      expect(tanakhIdentitiesEqual(null, null)).toBe(true);
     });
 
     it('returns false when only first is null', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -42,11 +42,11 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(null, verse)).toBe(false);
+      expect(tanakhIdentitiesEqual(null, verse)).toBe(false);
     });
 
     it('returns false when only second is null', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -54,11 +54,11 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse, null)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse, null)).toBe(false);
     });
 
     it('returns true when verses are the same', () => {
-      const verse1: VerseLayout = {
+      const verse1: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -66,7 +66,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: VerseLayout = {
+      const verse2: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -74,11 +74,11 @@ describe('mouseState', () => {
         y: 200,
         size: 2,
       };
-      expect(versesEqual(verse1, verse2)).toBe(true);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(true);
     });
 
     it('returns false when books differ', () => {
-      const verse1: VerseLayout = {
+      const verse1: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -86,7 +86,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: VerseLayout = {
+      const verse2: TanakhLayout = {
         book: 'Exodus',
         chapter: 1,
         verse: 1,
@@ -94,11 +94,11 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse1, verse2)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
     });
 
     it('returns false when chapters differ', () => {
-      const verse1: VerseLayout = {
+      const verse1: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -106,7 +106,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: VerseLayout = {
+      const verse2: TanakhLayout = {
         book: 'Genesis',
         chapter: 2,
         verse: 1,
@@ -114,11 +114,11 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse1, verse2)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
     });
 
     it('returns false when verse numbers differ', () => {
-      const verse1: VerseLayout = {
+      const verse1: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -126,7 +126,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: VerseLayout = {
+      const verse2: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 2,
@@ -134,7 +134,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse1, verse2)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
     });
   });
 
@@ -176,7 +176,7 @@ describe('mouseState', () => {
   describe('setHoveredVerse', () => {
     it('sets hovered verse', () => {
       const state = createMouseState();
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -192,7 +192,7 @@ describe('mouseState', () => {
 
     it('can set to null', () => {
       const state = createMouseState();
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -209,7 +209,7 @@ describe('mouseState', () => {
 
     it('can change from one verse to another', () => {
       const state = createMouseState();
-      const verse1: VerseLayout = {
+      const verse1: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -217,7 +217,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: VerseLayout = {
+      const verse2: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 2,
@@ -246,7 +246,7 @@ describe('mouseState', () => {
 
     it('clears hoveredVerse', () => {
       const state = createMouseState();
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -263,7 +263,7 @@ describe('mouseState', () => {
 
     it('clears both dragging and hover', () => {
       const state = createMouseState();
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -301,7 +301,7 @@ describe('mouseState', () => {
 
     it('supports typical hover workflow', () => {
       const state = createMouseState();
-      const verse1: VerseLayout = {
+      const verse1: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -309,7 +309,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      const verse2: VerseLayout = {
+      const verse2: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 2,
@@ -333,7 +333,7 @@ describe('mouseState', () => {
 
     it('supports drag while hovering', () => {
       const state = createMouseState();
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,

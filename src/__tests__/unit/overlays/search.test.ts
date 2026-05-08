@@ -7,12 +7,12 @@ import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import type { VerseLayout } from '../../../types';
+import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
 
 describe('Search Overlay', () => {
-  let testVerses: VerseLayout[];
+  let testVerses: TanakhLayout[];
   let mockVerseTexts: VerseTexts;
 
   beforeEach(() => {

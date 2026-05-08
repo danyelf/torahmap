@@ -1,6 +1,6 @@
 // Render book labels as HTML overlays
 
-import type { VerseLayout } from "./types.ts";
+import type { TanakhLayout } from "./types.ts";
 
 interface BookBounds {
   minX: number;
@@ -21,7 +21,7 @@ const MAX_FONT_SIZE = 50; // Maximum font size when zoomed in
 const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 
 export function createBookLabels(
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
   container: HTMLElement,
   hebrewNames?: Record<string, string>,
 ): HTMLDivElement {

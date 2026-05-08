@@ -1,5 +1,5 @@
 // src/overlays/types.ts
-import type { VerseIdentity, VerseLayout } from "../types.ts";
+import type { TanakhIdentity, TanakhLayout } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
 
 export type Color = [number, number, number];
@@ -9,16 +9,20 @@ export type Color = [number, number, number];
  * Use the configure() function exported by each overlay that needs this.
  */
 export interface OverlayConfig {
-  verses: VerseLayout[];
+  verses: TanakhLayout[];
   verseTexts: VerseTexts;
   callbacks?: {
-    onVerseClick?: (verse: VerseLayout) => void;
+    onVerseClick?: (verse: TanakhLayout) => void;
   };
 }
 
 // Each overlay manages its own module-level state. A factory-per-overlay pattern
 // would make destroy() cleaner, but the current approach is simpler for 6 stable overlays.
-export interface Overlay {
+//
+// Generic over the identity type T so that Talmud overlays can declare
+// Overlay<TalmudIdentity>. Defaults to TanakhIdentity so existing Tanakh
+// overlay imports compile unchanged.
+export interface Overlay<T = TanakhIdentity> {
   id: string;
   name: string;
 
@@ -29,20 +33,18 @@ export interface Overlay {
   // Core - called for each verse during applyOverlay
   // Return null to use default gray
   // Return Color[] for stipple effect (multiple colors shown via noise dithering)
-  // Takes VerseIdentity since overlays only need book/chapter/verse for domain logic
-  getVerseColor(verse: VerseIdentity): Color | Color[] | null;
+  getVerseColor(verse: T): Color | Color[] | null;
 
   // UI - called when overlay becomes active
   renderControls?(container: HTMLElement): void;
   renderLegend?(container: HTMLElement): void;
 
   // Hover - called when user hovers a verse
-  // Takes VerseIdentity since hover info is based on verse content, not position
-  getHoverInfo?(verse: VerseIdentity): string | null;
+  getHoverInfo?(verse: T): string | null;
 
   // Called when hover state changes - enables cross-highlighting
   // Returns true if overlay needs re-render, false otherwise
-  setHoveredVerse?(verse: VerseIdentity | null): boolean;
+  setHoveredVerse?(verse: T | null): boolean;
 
   // For dynamic overlays - register callback to trigger re-render
   onUpdate?(callback: () => void): void;
@@ -52,9 +54,8 @@ export interface Overlay {
   applyUrlParams?(params: URLSearchParams): void;
 
   // Sidebar integration - for verse details display
-  // Render overlay-specific info in the sidebar (e.g., dating info, parshah name)
   renderSidebarInfo?(
-    verse: VerseIdentity,
+    verse: T,
     isPinned: boolean,
   ): HTMLElement | string | null;
 
@@ -65,5 +66,5 @@ export interface Overlay {
   ): DocumentFragment | string;
 
   // Provide overlay-specific link subtitle (e.g., category-specific commentary counts)
-  getLinkSubtitle?(verse: VerseIdentity): string | null;
+  getLinkSubtitle?(verse: T): string | null;
 }

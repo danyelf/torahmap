@@ -1,8 +1,8 @@
 // src/overlays/trop.ts
 import '../styles/overlays/trop.css';
 import type { Overlay, Color } from './types.ts';
-import type { VerseIdentity, TropIndex, TropIndexEntry } from '../types.ts';
-import { getVerseKey } from '../types.ts';
+import type { TanakhIdentity, TropIndex, TropIndexEntry } from '../types.ts';
+import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
@@ -34,7 +34,7 @@ function updateCache(): void {
 
   // Build verse lookup once
   for (const loc of selectedTrop.verses) {
-    const key = getVerseKey(loc.book, loc.chapter, loc.verse);
+    const key = tanakhKey(loc.book, loc.chapter, loc.verse);
     cachedVerseLookup.set(key, loc.count);
   }
 
@@ -60,7 +60,7 @@ const COMMON_TROP_GRADIENT: ColorStop[] = [
 ];
 
 // Get verse color based on selected trop and rarity tier
-function getTropVerseColor(verse: VerseIdentity): Color | null {
+function getTropVerseColor(verse: TanakhIdentity): Color | null {
   if (!selectedTrop) return null;
 
   // Rebuild cache if it was cleared (e.g., after destroy)
@@ -68,7 +68,7 @@ function getTropVerseColor(verse: VerseIdentity): Color | null {
     updateCache();
   }
 
-  const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   const count = cachedVerseLookup.get(key) || 0;
 
   if (cachedTier === 'rare') {
@@ -186,7 +186,7 @@ export const tropOverlay: Overlay = {
     updateCallback = callback;
   },
 
-  getVerseColor(verse: VerseIdentity): Color | null {
+  getVerseColor(verse: TanakhIdentity): Color | null {
     return getTropVerseColor(verse);
   },
 
@@ -218,7 +218,7 @@ export const tropOverlay: Overlay = {
     }
   },
 
-  getHoverInfo(verse: VerseIdentity): string | null {
+  getHoverInfo(verse: TanakhIdentity): string | null {
     if (!selectedTrop) return null;
 
     const loc = selectedTrop.verses.find(
