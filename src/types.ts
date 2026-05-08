@@ -110,8 +110,8 @@ export type VerseLayout = SpatialItem<TanakhIdentity>;
  * @returns true if both are null or both refer to same verse
  */
 export function tanakhIdentitiesEqual(
-  a: VerseIdentity | null,
-  b: VerseIdentity | null,
+  a: TanakhIdentity | null,
+  b: TanakhIdentity | null,
 ): boolean {
   if (a === null && b === null) return true;
   if (a === null || b === null) return false;
@@ -127,7 +127,7 @@ export function tanakhIdentitiesEqual(
  */
 export function nextTanakhItem(
   verses: VerseLayout[],
-  current: VerseIdentity,
+  current: TanakhIdentity,
 ): VerseLayout | null {
   const currentIndex = verses.findIndex(
     (v) =>
@@ -152,7 +152,7 @@ export function nextTanakhItem(
  */
 export function prevTanakhItem(
   verses: VerseLayout[],
-  current: VerseIdentity,
+  current: TanakhIdentity,
 ): VerseLayout | null {
   const currentIndex = verses.findIndex(
     (v) =>

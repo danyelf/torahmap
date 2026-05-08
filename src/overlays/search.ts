@@ -1,7 +1,7 @@
 // Full-text search overlay
 import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
-import type { VerseIdentity, VerseLayout } from '../types.ts';
+import type { TanakhIdentity, VerseLayout } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRelatedRoots, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult, type RelatedRoot } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -597,7 +597,7 @@ export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
 
-  getVerseColor(verse: VerseIdentity): Color | Color[] | null {
+  getVerseColor(verse: TanakhIdentity): Color | Color[] | null {
     // No active search - use default colors
     if (currentTerms.length === 0) {
       return null;
@@ -946,7 +946,7 @@ export const searchOverlay: Overlay = {
     updateHitCaption();
   },
 
-  getHoverInfo(verse: VerseIdentity): string | null {
+  getHoverInfo(verse: TanakhIdentity): string | null {
     if (currentTerms.length === 0) return null;
 
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);

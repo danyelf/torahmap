@@ -1,7 +1,7 @@
 // src/overlays/commentary.ts
 import "../styles/overlays/commentary.css";
 import type { Overlay, Color } from "./types.ts";
-import type { VerseIdentity, VerseLayout, CommentaryData } from "../types.ts";
+import type { TanakhIdentity, VerseLayout, CommentaryData } from "../types.ts";
 import { heatmapColor } from "../utils/color.ts";
 import { fetchData } from "../constants/app.ts";
 
@@ -63,7 +63,7 @@ export const commentaryOverlay: Overlay = {
     updateCallback = callback;
   },
 
-  getVerseColor(verse: VerseIdentity): Color | null {
+  getVerseColor(verse: TanakhIdentity): Color | null {
     // Store reference to verses for max calculation
     // This is a bit awkward - we'll improve this in integration
     const count = getCount(verse.book, verse.chapter, verse.verse);
@@ -126,7 +126,7 @@ export const commentaryOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: VerseIdentity): string | null {
+  getHoverInfo(verse: TanakhIdentity): string | null {
     const verseData =
       data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
     if (!verseData) return null;
@@ -153,7 +153,7 @@ export const commentaryOverlay: Overlay = {
     }
   },
 
-  getLinkSubtitle(verse: VerseIdentity): string | null {
+  getLinkSubtitle(verse: TanakhIdentity): string | null {
     const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
     if (!count) return null;
 

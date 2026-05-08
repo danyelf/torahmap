@@ -1,7 +1,7 @@
 // src/overlays/text-dating.ts
 import '../styles/overlays/text-dating.css';
 import type { Overlay, Color } from './types.ts';
-import type { VerseIdentity } from '../types.ts';
+import type { TanakhIdentity } from '../types.ts';
 import { fetchData } from '../constants/app.ts';
 
 // Data structure types
@@ -92,7 +92,7 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
 /**
  * Get verse dating data
  */
-function getVerseData(verse: VerseIdentity): { d: [number, number]; n: number } | null {
+function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number } | null {
   const bookData = data.books[verse.book];
   if (!bookData) return null;
 
@@ -120,7 +120,7 @@ export const textDatingOverlay: Overlay = {
     }
   },
 
-  getVerseColor(verse: VerseIdentity): Color | null {
+  getVerseColor(verse: TanakhIdentity): Color | null {
     const verseData = getVerseData(verse);
     if (!verseData) return null;
 
@@ -151,7 +151,7 @@ export const textDatingOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: VerseIdentity): string | null {
+  getHoverInfo(verse: TanakhIdentity): string | null {
     const verseData = getVerseData(verse);
     if (!verseData) return null;
 
@@ -169,7 +169,7 @@ export const textDatingOverlay: Overlay = {
     return `${era.name} (${dateStr})\n${note}`;
   },
 
-  renderSidebarInfo(verse: VerseIdentity, isPinned: boolean): HTMLElement | string | null {
+  renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | string | null {
     // Only show detailed info when verse is pinned
     if (!isPinned) return null;
 

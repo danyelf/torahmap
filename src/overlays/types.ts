@@ -1,5 +1,5 @@
 // src/overlays/types.ts
-import type { VerseIdentity, VerseLayout } from "../types.ts";
+import type { TanakhIdentity, VerseLayout } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
 
 export type Color = [number, number, number];
@@ -20,9 +20,9 @@ export interface OverlayConfig {
 // would make destroy() cleaner, but the current approach is simpler for 6 stable overlays.
 //
 // Generic over the identity type T so that Talmud overlays can declare
-// Overlay<TalmudIdentity>. Defaults to VerseIdentity so existing Tanakh
+// Overlay<TalmudIdentity>. Defaults to TanakhIdentity so existing Tanakh
 // overlay imports compile unchanged.
-export interface Overlay<T = VerseIdentity> {
+export interface Overlay<T = TanakhIdentity> {
   id: string;
   name: string;
 

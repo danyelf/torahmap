@@ -4,7 +4,7 @@ import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } f
 import { buildItemGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
-import type { SpatialItem, VerseIdentity, ShaderProgram } from './types';
+import type { SpatialItem, TanakhIdentity, ShaderProgram } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -25,11 +25,11 @@ export interface RenderContext {
  * Mutable rendering state that changes during application lifecycle.
  * Contains vertex buffers, verse data, and display settings.
  *
- * Generic over T (the identity shape) with default VerseIdentity so existing
+ * Generic over T (the identity shape) with default TanakhIdentity so existing
  * Tanakh callers keep their type inference. T is opaque — only x/y/size are
  * read by the rendering code.
  */
-export interface RenderState<T = VerseIdentity> {
+export interface RenderState<T = TanakhIdentity> {
   buffer: WebGLBuffer;
   outlineBuffer: WebGLBuffer | null;
   hoverOutlineBuffer: WebGLBuffer | null;

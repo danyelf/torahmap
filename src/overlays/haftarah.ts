@@ -1,6 +1,6 @@
 // src/overlays/haftarah.ts
 import type { Overlay, Color } from './types.ts';
-import type { VerseIdentity } from '../types.ts';
+import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { rgbToHsl, hslToRgb } from '../utils/color.ts';
@@ -90,7 +90,7 @@ type Custom = 'ashkenazi' | 'sephardi';
 let data: HaftarahMappings | null = null;
 let structure: TanakhStructure | null = null;
 let currentCustom: Custom = 'ashkenazi';
-let hoveredVerse: VerseIdentity | null = null;
+let hoveredVerse: TanakhIdentity | null = null;
 let updateCallback: (() => void) | null = null;
 
 // Lookup indexes (built once on init, rebuilt on custom change)
@@ -198,7 +198,7 @@ function buildIndexes(): void {
 }
 
 // Check if a verse is relevant to the overlay (Torah or haftarah)
-function isRelevantVerse(verse: VerseIdentity): boolean {
+function isRelevantVerse(verse: TanakhIdentity): boolean {
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   return torahVerseToParsha.has(key) || haftarahVerseToItem.has(key);
 }
@@ -248,7 +248,7 @@ export const haftarahOverlay: Overlay = {
     updateCallback = callback;
   },
 
-  setHoveredVerse(verse: VerseIdentity | null): boolean {
+  setHoveredVerse(verse: TanakhIdentity | null): boolean {
     const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse) : false;
     const isRelevant = verse ? isRelevantVerse(verse) : false;
 
@@ -280,7 +280,7 @@ export const haftarahOverlay: Overlay = {
     return wasRelevant || isRelevant;
   },
 
-  getVerseColor(verse: VerseIdentity): Color | Color[] | null {
+  getVerseColor(verse: TanakhIdentity): Color | Color[] | null {
     if (!data) return null;
 
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);
@@ -415,7 +415,7 @@ export const haftarahOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: VerseIdentity): string | null {
+  getHoverInfo(verse: TanakhIdentity): string | null {
     if (!data) return null;
 
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);

@@ -1,6 +1,6 @@
 // Verse length overlay - visualizes word count per verse using square root scale
 import type { Overlay, Color } from "./types.ts";
-import type { VerseIdentity } from "../types.ts";
+import type { TanakhIdentity } from "../types.ts";
 import { tanakhKey } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
 
@@ -115,7 +115,7 @@ export function configure(config: { verseTexts: VerseTexts }): void {
  * Get color for a verse based on its word count
  * Uses square root scale and viridis color palette
  */
-function getVerseColorForWordCount(verse: VerseIdentity): Color | null {
+function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   const wordCount = wordCountCache.get(key);
 
@@ -142,7 +142,7 @@ export const verseLengthOverlay: Overlay = {
   id: "verse-length",
   name: "Verse Length",
 
-  getVerseColor(verse: VerseIdentity): Color | null {
+  getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);
   },
 
@@ -194,7 +194,7 @@ export const verseLengthOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: VerseIdentity): string | null {
+  getHoverInfo(verse: TanakhIdentity): string | null {
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);
     const wordCount = wordCountCache.get(key);
 
@@ -204,7 +204,7 @@ export const verseLengthOverlay: Overlay = {
     return `${wordCount} ${plural}`;
   },
 
-  renderSidebarInfo(verse: VerseIdentity): HTMLElement | string | null {
+  renderSidebarInfo(verse: TanakhIdentity): HTMLElement | string | null {
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);
     const wordCount = wordCountCache.get(key);
 
