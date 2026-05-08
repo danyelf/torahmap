@@ -95,6 +95,48 @@ In the beginning.`;
     expect(data.stops[0].verse).toBe('Genesis.1.1');
   });
 
+  it('parses camera as verse reference', () => {
+    const md = `<!-- stop: abram | camera: Genesis.12.1 -->
+# Abram
+
+Lekh lekha.`;
+
+    const data = parseStoryMarkdown(md);
+    expect(data.stops[0].camera).toEqual({ kind: 'verse', ref: 'Genesis.12.1' });
+    expect(data.stops[0].zoom).toBeUndefined();
+  });
+
+  it('parses camera as verse reference with explicit zoom', () => {
+    const md = `<!-- stop: friend | camera: Isaiah.41.8 | zoom: 6 -->
+# Friend
+
+Text.`;
+
+    const data = parseStoryMarkdown(md);
+    expect(data.stops[0].camera).toEqual({ kind: 'verse', ref: 'Isaiah.41.8' });
+    expect(data.stops[0].zoom).toBe(6);
+  });
+
+  it('parses multi-word book in verse-ref camera', () => {
+    const md = `<!-- stop: hannah | camera: I.Samuel.1.5 -->
+# Hannah
+
+Text.`;
+
+    const data = parseStoryMarkdown(md);
+    expect(data.stops[0].camera).toEqual({ kind: 'verse', ref: 'I.Samuel.1.5' });
+  });
+
+  it('falls back to initial when camera is unparseable', () => {
+    const md = `<!-- stop: bogus | camera: not-a-real-thing -->
+# Bogus
+
+Text.`;
+
+    const data = parseStoryMarkdown(md);
+    expect(data.stops[0].camera).toBe('initial');
+  });
+
   it('handles stop with no overlay params', () => {
     const md = `<!-- stop: intro | camera: initial | overlay: haftarah -->
 # Haftarah

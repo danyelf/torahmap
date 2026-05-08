@@ -1,5 +1,6 @@
 // Parse markdown story files into StoryData
-import type { StoryData, StoryStop, EasingName, CameraPosition } from './types';
+import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
+import { parseVerseFromUrl } from '../urlState';
 
 /**
  * Parse a markdown story file into StoryData.
@@ -73,7 +74,7 @@ function parseStopComment(id: string, paramsStr: string | undefined): { id: stri
   return { id: id.trim(), params };
 }
 
-function parseCamera(params: Record<string, string>): CameraPosition | 'initial' {
+function parseCamera(params: Record<string, string>): CameraRef {
   const cameraStr = params.camera;
   if (!cameraStr || cameraStr === 'initial') return 'initial';
 
@@ -82,6 +83,13 @@ function parseCamera(params: Record<string, string>): CameraPosition | 'initial'
   if (parts.length === 3 && parts.every(n => !isNaN(n))) {
     return { x: parts[0], y: parts[1], zoom: parts[2] };
   }
+
+  // Support verse-ref form, e.g. "Genesis.12.1" or "I.Samuel.1.5"
+  if (parseVerseFromUrl(cameraStr)) {
+    return { kind: 'verse', ref: cameraStr };
+  }
+
+  console.warn(`[story] unrecognized camera value "${cameraStr}", falling back to initial`);
   return 'initial';
 }
 
@@ -123,6 +131,7 @@ function parseStops(body: string): StoryStop[] {
     let easing: EasingName | undefined;
 
     let verse: string | undefined;
+    let zoom: number | undefined;
 
     for (const [key, value] of Object.entries(meta.params)) {
       if (key === 'camera') continue;
@@ -132,6 +141,9 @@ function parseStops(body: string): StoryStop[] {
         easing = value as EasingName;
       } else if (key === 'verse') {
         verse = value;
+      } else if (key === 'zoom') {
+        const z = parseFloat(value);
+        if (!isNaN(z)) zoom = z;
       } else {
         overlayParams[key] = value;
       }
@@ -146,6 +158,7 @@ function parseStops(body: string): StoryStop[] {
       overlayParams: Object.keys(overlayParams).length > 0 ? overlayParams : undefined,
       verse,
       easing,
+      zoom,
     });
   }
 

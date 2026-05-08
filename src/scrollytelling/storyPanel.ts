@@ -1,8 +1,12 @@
 // src/scrollytelling/storyPanel.ts
-import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition } from './types';
+import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
 import type { VerseLayout } from '../types';
 import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
+
+function isVerseRef(cam: CameraRef): cam is { kind: 'verse'; ref: string } {
+  return typeof cam === 'object' && 'kind' in cam && cam.kind === 'verse';
+}
 
 export async function loadStoryData(): Promise<StoryData> {
   const response = await fetch('/data/story.md');
@@ -85,10 +89,23 @@ export function resolveStops(
   canvasHeight?: number
 ): ResolvedStoryStop[] {
   return stops.map(stop => {
+    const cam = stop.camera;
     let camera: CameraPosition;
 
-    if (stop.camera !== 'initial') {
-      camera = stop.camera;
+    if (isVerseRef(cam)) {
+      // Verse-ref camera: look up world position, default zoom to 3 if not specified
+      const zoom = stop.zoom ?? 3;
+      const parsed = parseVerseFromUrl(cam.ref);
+      const verseLayout = parsed && verses && canvasWidth && canvasHeight
+        ? verses.find(v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse)
+        : undefined;
+      if (verseLayout && canvasWidth && canvasHeight) {
+        camera = cameraForVerse(verseLayout, zoom, canvasWidth, canvasHeight);
+      } else {
+        camera = { ...initialCamera };
+      }
+    } else if (cam !== 'initial') {
+      camera = cam;
     } else if (stop.verse && verses && canvasWidth && canvasHeight) {
       // Center camera on the pinned verse
       const parsed = parseVerseFromUrl(stop.verse);
