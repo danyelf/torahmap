@@ -16,7 +16,7 @@ describe('Main Module Smoke Test', () => {
       'createCamera',
       'createMouseState',
       'findVerseAtPoint',
-      'versesEqual',
+      'tanakhIdentitiesEqual',
       'computeItemStates',
       'applyItemColors',
       'renderFrame',

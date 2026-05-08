@@ -39,7 +39,7 @@ import {
   getPinchCenter,
   resetTouchState,
 } from "./touchState.ts";
-import { versesEqual, nextVerse, prevVerse } from "./types.ts";
+import { tanakhIdentitiesEqual, nextVerse, prevVerse } from "./types.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
 import { computeItemStates, applyItemColors } from "./itemColoring.ts";
 import {
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
       currentOverlay,
       mouseState.hoveredVerse,
       pinnedVerse,
-      versesEqual,
+      tanakhIdentitiesEqual,
     );
     const colors = applyItemColors(verseStates);
 
@@ -185,7 +185,7 @@ async function main(): Promise<void> {
       camera,
       mouseState.hoveredVerse,
       pinnedVerse,
-      versesEqual,
+      tanakhIdentitiesEqual,
     );
   }
 
@@ -387,7 +387,7 @@ async function main(): Promise<void> {
           e.clientY,
         );
         if (verse) {
-          if (pinnedVerse && versesEqual(pinnedVerse, verse)) {
+          if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
             unpinVerse();
           } else {
             pinVerse(verse);
@@ -528,7 +528,7 @@ async function main(): Promise<void> {
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
-      const hoverChanged = !versesEqual(previousHover, verse);
+      const hoverChanged = !tanakhIdentitiesEqual(previousHover, verse);
 
       if (pinnedVerse && verse) {
         canvas.style.cursor = "pointer";

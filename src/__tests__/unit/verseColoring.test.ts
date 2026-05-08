@@ -7,7 +7,7 @@ import {
   applyItemColors,
 } from '../../itemColoring';
 import type { VerseLayout, ItemState } from '../../types';
-import { versesEqual } from '../../types';
+import { tanakhIdentitiesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
 
@@ -219,7 +219,7 @@ describe('itemColoring', () => {
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
       };
 
-      const states = computeItemStates(verses, mockOverlay, null, null, versesEqual);
+      const states = computeItemStates(verses, mockOverlay, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(true);
       expect(states[0].resolvedColor).toEqual([1, 0, 0]);
@@ -237,7 +237,7 @@ describe('itemColoring', () => {
         getVerseColor: vi.fn().mockReturnValue(null),
       };
 
-      const states = computeItemStates(verses, mockOverlay, null, null, versesEqual);
+      const states = computeItemStates(verses, mockOverlay, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -251,7 +251,7 @@ describe('itemColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeItemStates(verses, null, null, null, versesEqual);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -267,7 +267,7 @@ describe('itemColoring', () => {
       ];
       const hoveredVerse = verses[1];
 
-      const states = computeItemStates(verses, null, hoveredVerse, null, versesEqual);
+      const states = computeItemStates(verses, null, hoveredVerse, null, tanakhIdentitiesEqual);
 
       expect(states[0].isHovered).toBe(false);
       expect(states[1].isHovered).toBe(true);
@@ -280,7 +280,7 @@ describe('itemColoring', () => {
       ];
       const pinnedVerse = verses[0];
 
-      const states = computeItemStates(verses, null, null, pinnedVerse, versesEqual);
+      const states = computeItemStates(verses, null, null, pinnedVerse, tanakhIdentitiesEqual);
 
       expect(states[0].isPinned).toBe(true);
       expect(states[1].isPinned).toBe(false);
@@ -291,7 +291,7 @@ describe('itemColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeItemStates(verses, null, null, null, versesEqual);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].isHovered).toBe(false);
     });
@@ -301,7 +301,7 @@ describe('itemColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
-      const states = computeItemStates(verses, null, null, null, versesEqual);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].isPinned).toBe(false);
     });
@@ -321,7 +321,7 @@ describe('itemColoring', () => {
         size: 2,
       };
 
-      const states = computeItemStates(verses, null, hoveredVerse, null, versesEqual);
+      const states = computeItemStates(verses, null, hoveredVerse, null, tanakhIdentitiesEqual);
 
       expect(states[0].isHovered).toBe(true); // Same book/chapter/verse
       expect(states[1].isHovered).toBe(false); // Different verse
@@ -335,7 +335,7 @@ describe('itemColoring', () => {
         { book: 'Genesis', chapter: 1, verse: 3, x: 20, y: 0, size: 1 },
       ];
 
-      const states = computeItemStates(verses, null, null, null, versesEqual);
+      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states.length).toBe(3);
     });
@@ -495,7 +495,7 @@ describe('itemColoring', () => {
         mockOverlay,
         hoveredVerse,
         null,
-        versesEqual,
+        tanakhIdentitiesEqual,
       );
 
       expect(states[0].hasOverlayColor).toBe(true);

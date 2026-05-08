@@ -76,7 +76,7 @@ export function applyHoverHighlight(
  * Returns array parallel to items array.
  *
  * Equality is injected as a parameter because each corpus has its own
- * identity shape. Tanakh callers pass versesEqual; Talmud callers pass
+ * identity shape. Tanakh callers pass tanakhIdentitiesEqual; Talmud callers pass
  * their equivalent.
  */
 export function computeItemStates<T>(

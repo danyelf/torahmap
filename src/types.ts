@@ -109,7 +109,7 @@ export type VerseLayout = SpatialItem<TanakhIdentity>;
  * @param b - Second verse identity (or null)
  * @returns true if both are null or both refer to same verse
  */
-export function versesEqual(
+export function tanakhIdentitiesEqual(
   a: VerseIdentity | null,
   b: VerseIdentity | null,
 ): boolean {

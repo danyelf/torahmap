@@ -9,7 +9,7 @@ import {
   type RenderState,
 } from '../../rendering';
 import type { Camera } from '../../camera';
-import { versesEqual } from '../../types';
+import { tanakhIdentitiesEqual } from '../../types';
 import { createMockCanvas, createMockWebGL2Context, createVerse, createVerses } from '../helpers';
 
 describe('rendering', () => {
@@ -173,7 +173,7 @@ describe('rendering', () => {
     });
 
     it('clears canvas and sets viewport', () => {
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.viewport).toHaveBeenCalledWith(0, 0, 800, 600);
       expect(context.gl.clearColor).toHaveBeenCalledWith(0.1, 0.1, 0.1, 1.0);
@@ -181,13 +181,13 @@ describe('rendering', () => {
     });
 
     it('uses main shader program', () => {
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
     });
 
     it('sets camera uniforms with dpr scaling', () => {
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.main.uniforms.resolution,
@@ -206,7 +206,7 @@ describe('rendering', () => {
     });
 
     it('binds vertex buffer', () => {
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.bindBuffer).toHaveBeenCalledWith(
         context.gl.ARRAY_BUFFER,
@@ -215,7 +215,7 @@ describe('rendering', () => {
     });
 
     it('enables all vertex attributes', () => {
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
         context.programs.main.attribs.position
@@ -229,7 +229,7 @@ describe('rendering', () => {
     });
 
     it('draws correct number of vertices', () => {
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       // 10 verses * 6 vertices per verse = 60 vertices
       expect(context.gl.drawArrays).toHaveBeenCalledWith(
@@ -243,7 +243,7 @@ describe('rendering', () => {
       const useProgram = context.gl.useProgram as any;
       useProgram.mockClear();
 
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       // Should only call useProgram once (for main shader, not outline)
       expect(useProgram).toHaveBeenCalledTimes(1);
@@ -253,7 +253,7 @@ describe('rendering', () => {
     it('renders hover outline when verse is hovered', () => {
       const hoveredVerse = state.verses[0];
 
-      render(context, state, camera, hoveredVerse, null, versesEqual);
+      render(context, state, camera, hoveredVerse, null, tanakhIdentitiesEqual);
 
       // Should have called useProgram for both main and outline shaders
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
@@ -263,7 +263,7 @@ describe('rendering', () => {
     it('renders pinned outline when verse is pinned', () => {
       const pinnedVerse = state.verses[2];
 
-      render(context, state, camera, null, pinnedVerse, versesEqual);
+      render(context, state, camera, null, pinnedVerse, tanakhIdentitiesEqual);
 
       // Should have called useProgram for both main and outline shaders
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
@@ -274,7 +274,7 @@ describe('rendering', () => {
       const verse = state.verses[0];
       (context.gl.useProgram as any).mockClear(); // Clear any previous calls
 
-      render(context, state, camera, verse, verse, versesEqual);
+      render(context, state, camera, verse, verse, tanakhIdentitiesEqual);
 
       // Should call useProgram 2 times total: once for main, once for pinned outline
       // Not for hover since hovered === pinned
@@ -288,7 +288,7 @@ describe('rendering', () => {
       const pinnedVerse = state.verses[1];
       (context.gl.useProgram as any).mockClear(); // Clear any previous calls
 
-      render(context, state, camera, hoveredVerse, pinnedVerse, versesEqual);
+      render(context, state, camera, hoveredVerse, pinnedVerse, tanakhIdentitiesEqual);
 
       // Should call useProgram 3 times total: main, hover outline, pinned outline
       expect(context.gl.useProgram).toHaveBeenCalledTimes(3);
@@ -299,7 +299,7 @@ describe('rendering', () => {
     it('handles zero verses', () => {
       state.verses = [];
 
-      expect(() => render(context, state, camera, null, null, versesEqual)).not.toThrow();
+      expect(() => render(context, state, camera, null, null, tanakhIdentitiesEqual)).not.toThrow();
       expect(context.gl.drawArrays).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 0);
     });
 
@@ -307,7 +307,7 @@ describe('rendering', () => {
       state.dpr = 3.0;
       camera.zoom = 2.0;
 
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.main.uniforms.zoom,
@@ -319,7 +319,7 @@ describe('rendering', () => {
       const mockLabels = document.createElement('div') as HTMLDivElement;
       window.bookLabels = mockLabels;
 
-      render(context, state, camera, null, null, versesEqual);
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       // Labels should be updated (exact behavior tested in labels.test.ts)
       expect(window.bookLabels).toBeDefined();
@@ -505,7 +505,7 @@ describe('rendering', () => {
 
       cameras.forEach((camera) => {
         vi.clearAllMocks();
-        render(context, state, camera, null, null, versesEqual);
+        render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
         expect(context.gl.uniform2f).toHaveBeenCalledWith(
           context.programs.main.uniforms.pan,
@@ -532,7 +532,7 @@ describe('rendering', () => {
         const state = createRenderState(context.gl, verses, dpr);
         const camera = { x: 0, y: 0, zoom };
 
-        render(context, state, camera, null, null, versesEqual);
+        render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
         expect(context.gl.uniform1f).toHaveBeenCalledWith(
           context.programs.main.uniforms.zoom,

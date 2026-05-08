@@ -7,7 +7,7 @@ import {
   clearHover,
 } from '../../mouseState';
 import type { VerseLayout } from '../../types';
-import { versesEqual } from '../../types';
+import { tanakhIdentitiesEqual } from '../../types';
 
 describe('mouseState', () => {
   describe('createMouseState', () => {
@@ -28,9 +28,9 @@ describe('mouseState', () => {
     });
   });
 
-  describe('versesEqual', () => {
+  describe('tanakhIdentitiesEqual', () => {
     it('returns true when both are null', () => {
-      expect(versesEqual(null, null)).toBe(true);
+      expect(tanakhIdentitiesEqual(null, null)).toBe(true);
     });
 
     it('returns false when only first is null', () => {
@@ -42,7 +42,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(null, verse)).toBe(false);
+      expect(tanakhIdentitiesEqual(null, verse)).toBe(false);
     });
 
     it('returns false when only second is null', () => {
@@ -54,7 +54,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse, null)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse, null)).toBe(false);
     });
 
     it('returns true when verses are the same', () => {
@@ -74,7 +74,7 @@ describe('mouseState', () => {
         y: 200,
         size: 2,
       };
-      expect(versesEqual(verse1, verse2)).toBe(true);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(true);
     });
 
     it('returns false when books differ', () => {
@@ -94,7 +94,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse1, verse2)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
     });
 
     it('returns false when chapters differ', () => {
@@ -114,7 +114,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse1, verse2)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
     });
 
     it('returns false when verse numbers differ', () => {
@@ -134,7 +134,7 @@ describe('mouseState', () => {
         y: 0,
         size: 1,
       };
-      expect(versesEqual(verse1, verse2)).toBe(false);
+      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
     });
   });
 
