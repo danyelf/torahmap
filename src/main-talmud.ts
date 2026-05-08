@@ -259,30 +259,6 @@ async function main(): Promise<void> {
     saveUrlStateDebounced();
   });
 
-  // --- URL state: restore pinned segment if present ---
-  const initialUrl = parseTalmudUrlState();
-  if (initialUrl.overlay) {
-    const o = overlaysById.get(initialUrl.overlay);
-    if (o) {
-      currentOverlay = o;
-      const sel = document.getElementById("overlay-select") as HTMLSelectElement;
-      if (sel) sel.value = initialUrl.overlay;
-    }
-  }
-  if (initialUrl.segment) {
-    const match = items.find(
-      (i) =>
-        i.tractate === initialUrl.segment!.tractate &&
-        i.daf === initialUrl.segment!.daf &&
-        i.amud === initialUrl.segment!.amud &&
-        i.segment === initialUrl.segment!.segment,
-    );
-    if (match) {
-      pinnedItem = match;
-      await updateTalmudSidebar(pinnedItem, structure, sidebarElements);
-    }
-  }
-
   function saveUrlState(): void {
     updateTalmudUrl({
       segment: pinnedItem
@@ -409,6 +385,37 @@ async function main(): Promise<void> {
     doRender();
     updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
   });
+
+  // --- URL state: restore pinned segment if present ---
+  // NOTE: this runs AFTER all listeners are wired so that a cold load with
+  // ?segment=... for an uncached tractate doesn't leave the canvas
+  // unresponsive while the network fetch resolves. Fire-and-forget so main()
+  // returns promptly and the initial paint isn't blocked.
+  const initialUrl = parseTalmudUrlState();
+  if (initialUrl.overlay) {
+    const o = overlaysById.get(initialUrl.overlay);
+    if (o) {
+      currentOverlay = o;
+      const sel = document.getElementById("overlay-select") as HTMLSelectElement;
+      if (sel) sel.value = initialUrl.overlay;
+    }
+  }
+  if (initialUrl.segment) {
+    const match = items.find(
+      (i) =>
+        i.tractate === initialUrl.segment!.tractate &&
+        i.daf === initialUrl.segment!.daf &&
+        i.amud === initialUrl.segment!.amud &&
+        i.segment === initialUrl.segment!.segment,
+    );
+    if (match) {
+      pinnedItem = match;
+      void updateTalmudSidebar(pinnedItem, structure, sidebarElements).then(() => {
+        applyOverlay();
+        doRender();
+      });
+    }
+  }
 
   // Expose a debug/test hook so screenshot scripts can drive the camera
   // without having to simulate wheel events over moving content.
