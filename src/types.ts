@@ -125,7 +125,7 @@ export function tanakhIdentitiesEqual(
  * @param current - Current verse
  * @returns Next verse or null if current is last verse or not found
  */
-export function nextVerse(
+export function nextTanakhItem(
   verses: VerseLayout[],
   current: VerseIdentity,
 ): VerseLayout | null {
@@ -150,7 +150,7 @@ export function nextVerse(
  * @param current - Current verse
  * @returns Previous verse or null if current is first verse or not found
  */
-export function prevVerse(
+export function prevTanakhItem(
   verses: VerseLayout[],
   current: VerseIdentity,
 ): VerseLayout | null {

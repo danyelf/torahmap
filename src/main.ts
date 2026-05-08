@@ -39,7 +39,7 @@ import {
   getPinchCenter,
   resetTouchState,
 } from "./touchState.ts";
-import { tanakhIdentitiesEqual, nextVerse, prevVerse } from "./types.ts";
+import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem } from "./types.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
 import { computeItemStates, applyItemColors } from "./itemColoring.ts";
 import {
@@ -581,9 +581,9 @@ async function main(): Promise<void> {
     let targetVerse: VerseLayout | null = null;
 
     if (e.key === "ArrowRight") {
-      targetVerse = nextVerse(verses, pinnedVerse);
+      targetVerse = nextTanakhItem(verses, pinnedVerse);
     } else if (e.key === "ArrowLeft") {
-      targetVerse = prevVerse(verses, pinnedVerse);
+      targetVerse = prevTanakhItem(verses, pinnedVerse);
     }
 
     if (targetVerse) {
