@@ -233,15 +233,11 @@ export const haftarahOverlay: Overlay = {
   },
 
   destroy() {
+    // Only clear ephemeral UI state. Lookup indexes are derived from data
+    // loaded once in init() (which doesn't re-run on re-activation), so clearing
+    // them here would leave the overlay broken if it gets re-activated later.
     hoveredVerse = null;
-    currentCustom = 'ashkenazi';
     updateCallback = null;
-    // Clear all lookup indexes
-    torahVerseToParsha.clear();
-    haftarahVerseToItem.clear();
-    isTorahVerse.clear();
-    isHaftarahVerse.clear();
-    itemToColor.clear();
   },
 
   onUpdate(callback) {

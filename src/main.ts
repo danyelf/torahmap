@@ -76,6 +76,7 @@ import { computeInterpolatedState } from "./scrollytelling/controller";
 import { computeBlendedColors } from "./scrollytelling/overlayBlender";
 import { switchToExplore, switchToStory } from "./scrollytelling/modeSwitch";
 import type { AppMode } from "./scrollytelling/modeSwitch";
+import type { ResolvedStoryStop } from "./scrollytelling/types";
 import "./styles/zoom-buttons.css";
 import "./styles/right-panel.css";
 import "./styles/verse-popup.css";
@@ -167,6 +168,52 @@ async function main(): Promise<void> {
     rebuildGeometry(renderContext.gl, renderState, colors);
   }
 
+  /**
+   * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
+   * Does NOT paint the buffer — caller decides (settled paints via applyOverlay,
+   * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
+   * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
+   * heading toward; otherwise hover events fired during a transition would call
+   * applyOverlay against a stale `currentOverlay` and clobber the blender's buffer.
+   */
+  function syncStoryStopState(stop: ResolvedStoryStop): void {
+    const wantedOverlay = stop.overlay ?? 'none';
+    if (wantedOverlay !== currentOverlayId) {
+      activateOverlay(wantedOverlay);
+    }
+
+    if (currentOverlay?.applyUrlParams) {
+      currentOverlay.applyUrlParams(new URLSearchParams(stop.overlayParams ?? {}));
+    }
+
+    // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
+    if (stop.verse) {
+      const parsed = parseVerseFromUrl(stop.verse);
+      if (parsed) {
+        const isAlreadyPinned =
+          pinnedVerse &&
+          pinnedVerse.book === parsed.book &&
+          pinnedVerse.chapter === parsed.chapter &&
+          pinnedVerse.verse === parsed.verse;
+        if (!isAlreadyPinned) {
+          const verse = verses.find(
+            (v) =>
+              v.book === parsed.book &&
+              v.chapter === parsed.chapter &&
+              v.verse === parsed.verse
+          );
+          if (verse) {
+            pinnedVerse = verse;
+            updateSidebarWrapper(verse, true);
+          }
+        }
+      }
+    } else if (pinnedVerse) {
+      pinnedVerse = null;
+      updateSidebarWrapper(null);
+    }
+  }
+
   // Camera state - start at 1:1 zoom, centered
   const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
 
@@ -181,6 +228,10 @@ async function main(): Promise<void> {
   // Mode switching state (story vs explore)
   let appMode: AppMode = 'story';
   let lastStoryScrollTop = 0;
+  // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
+  // is currently synced. Used to skip redundant resyncs every scroll frame.
+  // Reset on mode switches (explore may have changed overlay/pin out from under us).
+  let lastSyncedStopId: string | null = null;
   // Track whether user manually zoomed/panned during story mode.
   // Cleared when the user scrolls the narrative, resuming scroll-driven camera.
   // Currently write-only; reserved for future UI hints (e.g., "scroll to resume").
@@ -656,10 +707,11 @@ async function main(): Promise<void> {
 
   let currentOverlayId = "none";
 
-  function setOverlay(id: string, fromUrlRestore: boolean = false): void {
-    if (!fromUrlRestore) {
-      trackOverlaySwitch(id, currentOverlayId);
-    }
+  /**
+   * Internal: switch the active overlay without painting/rendering or writing URL.
+   * Used by both setOverlay (with side effects) and applyStoryStop (without).
+   */
+  function activateOverlay(id: string): void {
     currentOverlayId = id;
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
@@ -674,7 +726,10 @@ async function main(): Promise<void> {
       }
       render();
       // Save URL state when overlay params change (replaceState)
-      saveUrlState(false);
+      // Skip during story mode — story owns URL state via story stop ID.
+      if (appMode !== 'story') {
+        saveUrlState(false);
+      }
     });
 
     // Clear and render overlay's UI
@@ -686,6 +741,18 @@ async function main(): Promise<void> {
       overlayLegendContainer.innerHTML = "";
       currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
+  }
+
+  function setOverlay(
+    id: string,
+    opts: { fromUrlRestore?: boolean } = {}
+  ): void {
+    const { fromUrlRestore = false } = opts;
+    if (!fromUrlRestore) {
+      trackOverlaySwitch(id, currentOverlayId);
+    }
+
+    activateOverlay(id);
 
     applyOverlay();
     render();
@@ -784,6 +851,9 @@ async function main(): Promise<void> {
     resolvedStops = resolveStops(storyData.stops, initialCamera, verses, canvas.clientWidth, canvas.clientHeight);
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     storyContent.scrollTop = scrollTop;
+    // Force re-apply: stops may have changed (overlay/params/verse), and stop
+    // object identities are fresh after re-resolving.
+    lastSyncedStopId = null;
     storyContent.dispatchEvent(new Event('scroll'));
   }
 
@@ -808,6 +878,9 @@ async function main(): Promise<void> {
   document.getElementById('back-to-story')?.addEventListener('click', (e) => {
     e.preventDefault();
     appMode = 'story';
+    // Reset settled tracker — explore mode may have changed overlay/pin, so
+    // force the next settled frame to re-apply the resting stop's state.
+    lastSyncedStopId = null;
     switchToStory(storyPanel, explorePanel, storyContent, lastStoryScrollTop);
     // Re-trigger scroll handler to restore map state
     storyContent.dispatchEvent(new Event('scroll'));
@@ -838,44 +911,33 @@ async function main(): Promise<void> {
       camera.y = state.camera.y;
       camera.zoom = state.camera.zoom;
 
-      // Apply interpolated overlay colors
-      const blendedColors = computeBlendedColors(
-        state.fromStop,
-        state.toStop,
-        state.t,
-        verses
-      );
-      rebuildGeometry(renderContext.gl, renderState, blendedColors);
-
-      // Pin/unpin verse based on current stop
-      const currentStop = state.t > 0.5 ? state.toStop : state.fromStop;
-      const wantedVerse = currentStop.verse;
-      if (wantedVerse) {
-        const parsed = parseVerseFromUrl(wantedVerse);
-        if (parsed) {
-          const isAlreadyPinned = pinnedVerse &&
-            pinnedVerse.book === parsed.book &&
-            pinnedVerse.chapter === parsed.chapter &&
-            pinnedVerse.verse === parsed.verse;
-          if (!isAlreadyPinned) {
-            const verse = verses.find(
-              v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
-            );
-            if (verse) {
-              pinnedVerse = verse;
-              updateSidebarWrapper(verse, true);
-            }
-          }
-        }
-      } else if (pinnedVerse) {
-        pinnedVerse = null;
-        updateSidebarWrapper(null);
+      const settled = state.fromStop === state.toStop;
+      // Pick the stop whose state should be "current" — settled stop, or the
+      // dominant transitioning stop. Sync explore state to it on every change
+      // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
+      const dominantStop = settled
+        ? state.fromStop
+        : (state.t > 0.5 ? state.toStop : state.fromStop);
+      if (lastSyncedStopId !== dominantStop.id) {
+        syncStoryStopState(dominantStop);
+        lastSyncedStopId = dominantStop.id;
       }
 
+      if (settled) {
+        // At rest: paint via the explore-mode color pipeline.
+        applyOverlay();
+      } else {
+        // Mid-scroll: blender paints interpolated colors directly to the GPU buffer.
+        const blendedColors = computeBlendedColors(
+          state.fromStop,
+          state.toStop,
+          state.t,
+          verses
+        );
+        rebuildGeometry(renderContext.gl, renderState, blendedColors);
+      }
       render();
-
-      // Update URL with current story stop
-      updateUrl({ story: currentStop.id, overlayParams: {} }, false);
+      updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
     });
   });
 
@@ -891,7 +953,7 @@ async function main(): Promise<void> {
   function restoreOverlayFromUrl(urlState: UrlState): void {
     if (!urlState.overlay) return;
 
-    setOverlay(urlState.overlay, true);
+    setOverlay(urlState.overlay, { fromUrlRestore: true });
     if (overlaySelect) {
       overlaySelect.value = urlState.overlay;
     }
@@ -955,6 +1017,8 @@ async function main(): Promise<void> {
     if (urlState.story) {
       // Restore story mode
       appMode = 'story';
+      // Force the next settled scroll frame to apply the stop's state.
+      lastSyncedStopId = null;
       switchToStory(storyPanel, explorePanel, storyContent, 0);
       const stopIndex = resolvedStops.findIndex(s => s.id === urlState.story);
       if (stopIndex >= 0 && stopElements[stopIndex]) {
