@@ -2,7 +2,7 @@
 import '../styles/overlays/trop.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, TropIndex, TropIndexEntry } from '../types.ts';
-import { getVerseKey } from '../types.ts';
+import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
@@ -34,7 +34,7 @@ function updateCache(): void {
 
   // Build verse lookup once
   for (const loc of selectedTrop.verses) {
-    const key = getVerseKey(loc.book, loc.chapter, loc.verse);
+    const key = tanakhKey(loc.book, loc.chapter, loc.verse);
     cachedVerseLookup.set(key, loc.count);
   }
 
@@ -68,7 +68,7 @@ function getTropVerseColor(verse: VerseIdentity): Color | null {
     updateCache();
   }
 
-  const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   const count = cachedVerseLookup.get(key) || 0;
 
   if (cachedTier === 'rare') {

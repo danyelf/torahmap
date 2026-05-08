@@ -1,7 +1,7 @@
 // Verse length overlay - visualizes word count per verse using square root scale
 import type { Overlay, Color } from "./types.ts";
 import type { VerseIdentity } from "../types.ts";
-import { getVerseKey } from "../types.ts";
+import { tanakhKey } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
 
 // Color palettes (perceptually uniform, colorblind-friendly)
@@ -96,7 +96,7 @@ export function configure(config: { verseTexts: VerseTexts }): void {
         const hebrewText = verseText.he;
         const wordCount = countHebrewWords(hebrewText);
 
-        const key = getVerseKey(book, parseInt(chapter), parseInt(verse));
+        const key = tanakhKey(book, parseInt(chapter), parseInt(verse));
         wordCountCache.set(key, wordCount);
 
         if (wordCount > 0) {
@@ -116,7 +116,7 @@ export function configure(config: { verseTexts: VerseTexts }): void {
  * Uses square root scale and viridis color palette
  */
 function getVerseColorForWordCount(verse: VerseIdentity): Color | null {
-  const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   const wordCount = wordCountCache.get(key);
 
   if (wordCount === undefined || wordCount === 0) {
@@ -195,7 +195,7 @@ export const verseLengthOverlay: Overlay = {
   },
 
   getHoverInfo(verse: VerseIdentity): string | null {
-    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
     const wordCount = wordCountCache.get(key);
 
     if (wordCount === undefined) return null;
@@ -205,7 +205,7 @@ export const verseLengthOverlay: Overlay = {
   },
 
   renderSidebarInfo(verse: VerseIdentity): HTMLElement | string | null {
-    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
     const wordCount = wordCountCache.get(key);
 
     if (wordCount === undefined) return null;

@@ -2,7 +2,7 @@
 import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity, VerseLayout } from '../types.ts';
-import { getVerseKey } from '../types.ts';
+import { tanakhKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRelatedRoots, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult, type RelatedRoot } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
@@ -603,7 +603,7 @@ export const searchOverlay: Overlay = {
       return null;
     }
 
-    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
     const termIndices = matchingTerms.get(key);
 
     if (termIndices && termIndices.length > 0) {
@@ -949,7 +949,7 @@ export const searchOverlay: Overlay = {
   getHoverInfo(verse: VerseIdentity): string | null {
     if (currentTerms.length === 0) return null;
 
-    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
     const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 

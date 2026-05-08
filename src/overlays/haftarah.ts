@@ -1,7 +1,7 @@
 // src/overlays/haftarah.ts
 import type { Overlay, Color } from './types.ts';
 import type { VerseIdentity } from '../types.ts';
-import { getVerseKey } from '../types.ts';
+import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { rgbToHsl, hslToRgb } from '../utils/color.ts';
 import { fetchData } from '../constants/app.ts';
@@ -151,7 +151,7 @@ function buildIndexes(): void {
 
     // Index Torah verses
     forEachVerseInRange(parsha.torah, (book, ch, v) => {
-      const key = getVerseKey(book, ch, v);
+      const key = tanakhKey(book, ch, v);
       torahVerseToParsha.set(key, parsha);
       isTorahVerse.add(key);
     });
@@ -161,7 +161,7 @@ function buildIndexes(): void {
     const haftarahRanges = parsha.haftarah[currentCustom];
     for (const range of haftarahRanges) {
       forEachVerseInRange(range, (book, ch, v) => {
-        const key = getVerseKey(book, ch, v);
+        const key = tanakhKey(book, ch, v);
         const existing = haftarahVerseToItem.get(key);
         if (existing) {
           existing.push(parsha);
@@ -184,7 +184,7 @@ function buildIndexes(): void {
     const haftarahRanges = occasion.haftarah[currentCustom];
     for (const range of haftarahRanges) {
       forEachVerseInRange(range, (book, ch, v) => {
-        const key = getVerseKey(book, ch, v);
+        const key = tanakhKey(book, ch, v);
         const existing = haftarahVerseToItem.get(key);
         if (existing) {
           existing.push(occasion);
@@ -199,7 +199,7 @@ function buildIndexes(): void {
 
 // Check if a verse is relevant to the overlay (Torah or haftarah)
 function isRelevantVerse(verse: VerseIdentity): boolean {
-  const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   return torahVerseToParsha.has(key) || haftarahVerseToItem.has(key);
 }
 
@@ -263,10 +263,10 @@ export const haftarahOverlay: Overlay = {
     }
 
     const oldKey = hoveredVerse
-      ? getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse)
+      ? tanakhKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse)
       : null;
     const newKey = effectiveVerse
-      ? getVerseKey(effectiveVerse.book, effectiveVerse.chapter, effectiveVerse.verse)
+      ? tanakhKey(effectiveVerse.book, effectiveVerse.chapter, effectiveVerse.verse)
       : null;
 
     // If same effective verse, no change needed
@@ -283,7 +283,7 @@ export const haftarahOverlay: Overlay = {
   getVerseColor(verse: VerseIdentity): Color | Color[] | null {
     if (!data) return null;
 
-    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
 
     // Get the item(s) for this verse
     const parshaFromTorah = torahVerseToParsha.get(key);
@@ -299,7 +299,7 @@ export const haftarahOverlay: Overlay = {
       }
 
       // Check if hovered verse belongs to the same parsha
-      const hoverKey = getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
+      const hoverKey = tanakhKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
       const hoveredParshaTorah = torahVerseToParsha.get(hoverKey);
       const hoveredItemsHaftarah = haftarahVerseToItem.get(hoverKey);
 
@@ -328,7 +328,7 @@ export const haftarahOverlay: Overlay = {
       }
 
       // Check if hovered verse shares any item with this verse
-      const hoverKey = getVerseKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
+      const hoverKey = tanakhKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse);
       const hoveredParshaTorah = torahVerseToParsha.get(hoverKey);
       const hoveredItemsHaftarah = haftarahVerseToItem.get(hoverKey);
 
@@ -418,7 +418,7 @@ export const haftarahOverlay: Overlay = {
   getHoverInfo(verse: VerseIdentity): string | null {
     if (!data) return null;
 
-    const key = getVerseKey(verse.book, verse.chapter, verse.verse);
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
 
     // Torah verses - show parsha and its haftarah
     const parshaFromTorah = torahVerseToParsha.get(key);

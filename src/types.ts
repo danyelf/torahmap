@@ -235,7 +235,7 @@ export interface TropIndexEntry {
 export type TropIndex = Map<string, TropIndexEntry>;
 
 // Verse key utilities for consistent key generation
-export function getVerseKey(
+export function tanakhKey(
   book: string,
   chapter: number,
   verse: number,

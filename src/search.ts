@@ -3,7 +3,7 @@
 
 import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
-import { getVerseKey } from './types.ts';
+import { tanakhKey } from './types.ts';
 import {
   fetchData,
   MIN_SEARCH_TERM_LENGTH,
@@ -1109,7 +1109,7 @@ function createSnippet(text: string, matchIdx: number, matchLen: number, isHebre
 export function getMatchingVerseTerms(results: SearchResult[]): Map<string, number[]> {
   const map = new Map<string, number[]>();
   for (const r of results) {
-    const key = getVerseKey(r.book, r.chapter, r.verse);
+    const key = tanakhKey(r.book, r.chapter, r.verse);
     map.set(key, r.matchingTerms.map(m => m.termIndex));
   }
   return map;
