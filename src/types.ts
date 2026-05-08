@@ -7,19 +7,19 @@
  * This enables future abstraction to other structured texts (Quran, Talmud, etc).
  *
  * DOMAIN LAYER (Torah-specific):
- * - VerseIdentity: References a biblical verse (book/chapter/verse)
+ * - TanakhIdentity: References a biblical verse (book/chapter/verse)
  * - Data loaders: layout.ts, verseTexts.ts, overlay data loading
  * - Overlays: Implement domain logic (commentary, trop, search, text dating, etc)
  * - Display: Sidebar, URL state (formatting "Genesis 1:1")
  *
  * SPATIAL LAYER (domain-agnostic):
- * - VerseLayout: Position and size in 2D space (x, y, size)
+ * - TanakhLayout: Position and size in 2D space (x, y, size)
  * - Rendering: geometry.ts, rendering.ts, webgl.ts
  * - Interaction: hitDetection.ts, mouse handling
  * - Camera: zoom, pan (camera.ts)
  *
  * To adapt this codebase for another text:
- * 1. Redefine VerseIdentity structure
+ * 1. Redefine TanakhIdentity structure
  * 2. Replace data loaders
  * 3. Implement domain-specific overlays
  * 4. Update display formatting
@@ -88,18 +88,6 @@ export interface TalmudIdentity {
 
 export type TanakhLayout = SpatialItem<TanakhIdentity>;
 export type TalmudLayout = SpatialItem<TalmudIdentity>;
-
-/**
- * Identity of a biblical verse.
- * @deprecated Use TanakhIdentity in new code. Alias kept for backwards compat.
- */
-export type VerseIdentity = TanakhIdentity;
-
-/**
- * Complete layout information for a verse.
- * @deprecated Use TanakhLayout in new code. Alias kept for backwards compat.
- */
-export type VerseLayout = SpatialItem<TanakhIdentity>;
 
 /**
  * Check if two verses refer to the same verse.
