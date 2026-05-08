@@ -1,6 +1,6 @@
 // Verse Coloring module - handles verse color computation and highlighting
 
-import type { SpatialItem, VerseState } from "./types";
+import type { SpatialItem, ItemState } from "./types";
 import type { Overlay } from "./overlays/types";
 import { seededRandom } from "./utils/random";
 import { HIGHLIGHT_CONSTANTS } from "./constants";
@@ -85,7 +85,7 @@ export function computeItemStates<T>(
   hoveredItem: SpatialItem<T> | null,
   pinnedItem: SpatialItem<T> | null,
   itemsEqual: (a: T | null, b: T | null) => boolean,
-): VerseState[] {
+): ItemState[] {
   return items.map((v, i) => {
     const overlayColor = getOverlayColor(overlay, v);
     const hasOverlayColor = overlayColor !== null;
@@ -112,7 +112,7 @@ export function computeItemStates<T>(
  * @returns Array of final colors for each verse
  */
 export function applyItemColors(
-  verseStates: VerseState[],
+  verseStates: ItemState[],
 ): ([number, number, number] | [number, number, number][])[] {
   return verseStates.map((state) => {
     // Start with base color

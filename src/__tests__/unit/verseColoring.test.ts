@@ -6,7 +6,7 @@ import {
   computeItemStates,
   applyItemColors,
 } from '../../verseColoring';
-import type { VerseLayout, VerseState } from '../../types';
+import type { VerseLayout, ItemState } from '../../types';
 import { versesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
@@ -344,7 +344,7 @@ describe('verseColoring', () => {
 
   describe('applyItemColors', () => {
     it('applies base colors', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: [1, 0, 0],
@@ -359,7 +359,7 @@ describe('verseColoring', () => {
     });
 
     it('applies hover highlighting when verse is hovered', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: [0.6, 0.4, 0.2],
@@ -377,7 +377,7 @@ describe('verseColoring', () => {
     });
 
     it('does not apply hover highlighting when verse is not hovered', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: [0.6, 0.4, 0.2],
@@ -392,7 +392,7 @@ describe('verseColoring', () => {
     });
 
     it('returns immutable color array', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: false,
           resolvedColor: [0.5, 0.5, 0.5],
@@ -409,7 +409,7 @@ describe('verseColoring', () => {
     });
 
     it('handles multiple verses', () => {
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: false,
           resolvedColor: [0.5, 0.5, 0.5],
@@ -442,7 +442,7 @@ describe('verseColoring', () => {
         [0.4, 0.2, 0.6],
         [0.2, 0.8, 0.4],
       ];
-      const states: VerseState[] = [
+      const states: ItemState[] = [
         {
           hasOverlayColor: true,
           resolvedColor: multiColor,

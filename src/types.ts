@@ -173,7 +173,7 @@ export function prevVerse(
  * First pass: semantic state (what is true about this verse)
  * Second pass: visual state (how to render it)
  */
-export interface VerseState {
+export interface ItemState {
   hasOverlayColor: boolean; // Does overlay provide a color?
   resolvedColor: [number, number, number] | [number, number, number][]; // Final color: overlay color if present, otherwise default gray
   isHovered: boolean; // Is mouse hovering this verse?
@@ -186,16 +186,16 @@ export interface Bounds {
 }
 
 // Commentary counts from Sefaria
-export interface VerseCommentary {
+export interface TanakhCommentary {
   total: number;
   categories: Record<string, number>;
 }
 
 export type CommentaryData = Record<
   string,
-  Record<string, Record<string, VerseCommentary>>
+  Record<string, Record<string, TanakhCommentary>>
 >;
-// Structure: { [book]: { [chapter]: { [verse]: VerseCommentary } } }
+// Structure: { [book]: { [chapter]: { [verse]: TanakhCommentary } } }
 
 export interface ShaderProgram {
   program: WebGLProgram;

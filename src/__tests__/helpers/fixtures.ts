@@ -1,5 +1,5 @@
 // Test fixtures for Torah Map tests
-import type { VerseLayout, TorahData, CommentaryData, VerseCommentary } from '../../types';
+import type { VerseLayout, TorahData, CommentaryData, TanakhCommentary } from '../../types';
 
 /**
  * Creates a sample verse with default values that can be overridden
@@ -144,9 +144,9 @@ export const SAMPLE_VERSE_TEXTS = {
 };
 
 /**
- * Creates a sample VerseCommentary object
+ * Creates a sample TanakhCommentary object
  */
-export function createVerseCommentary(overrides: Partial<VerseCommentary> = {}): VerseCommentary {
+export function createTanakhCommentary(overrides: Partial<TanakhCommentary> = {}): TanakhCommentary {
   return {
     total: 50,
     categories: {
