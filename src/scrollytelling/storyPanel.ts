@@ -1,6 +1,6 @@
 // src/scrollytelling/storyPanel.ts
 import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
-import type { VerseLayout } from '../types';
+import type { TanakhLayout } from '../types';
 import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
 
@@ -64,7 +64,7 @@ export function renderStoryPanel(
  * Compute camera position that centers on a verse.
  */
 function cameraForVerse(
-  verse: VerseLayout,
+  verse: TanakhLayout,
   zoom: number,
   canvasWidth: number,
   canvasHeight: number
@@ -84,7 +84,7 @@ function cameraForVerse(
 export function resolveStops(
   stops: StoryStop[],
   initialCamera: CameraPosition,
-  verses?: VerseLayout[],
+  verses?: TanakhLayout[],
   canvasWidth?: number,
   canvasHeight?: number
 ): ResolvedStoryStop[] {

@@ -3,10 +3,10 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { computeBlendedColors } from '../overlayBlender';
 import { registerOverlay } from '../../overlays/registry';
 import type { ResolvedStoryStop } from '../types';
-import type { VerseLayout } from '../../types';
+import type { TanakhLayout } from '../../types';
 import type { Overlay } from '../../overlays/types';
 
-const verses: VerseLayout[] = [
+const verses: TanakhLayout[] = [
   { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
   { book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
 ];

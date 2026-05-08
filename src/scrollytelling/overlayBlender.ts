@@ -1,8 +1,8 @@
 // src/scrollytelling/overlayBlender.ts
 import type { ResolvedStoryStop } from './types';
-import type { VerseLayout } from '../types';
+import type { TanakhLayout } from '../types';
 import { getOverlay } from '../overlays/registry';
-import { getDefaultColor } from '../verseColoring';
+import { getDefaultColor } from '../itemColoring';
 import { blendColorArrays } from './colorBlending';
 
 type Color = { r: number; g: number; b: number };
@@ -40,7 +40,7 @@ function objToTuple(c: Color): [number, number, number] {
  */
 export function getColorsForStop(
   stop: ResolvedStoryStop,
-  verses: VerseLayout[]
+  verses: TanakhLayout[]
 ): (Color | Color[])[] {
   if (!stop.overlay) {
     return verses.map((_, i) => tupleToObj(getDefaultColor(i)));
@@ -76,7 +76,7 @@ export function computeBlendedColors(
   fromStop: ResolvedStoryStop,
   toStop: ResolvedStoryStop,
   t: number,
-  verses: VerseLayout[]
+  verses: TanakhLayout[]
 ): ([number, number, number] | [number, number, number][])[] {
   // If same stop or at rest, return that stop's colors (no blend needed)
   // Preserve stipple arrays so multi-color verses render correctly.
