@@ -68,46 +68,45 @@ export function getColorsForStop(
 
 /**
  * Compute blended colors for a scroll transition between two stops.
- * Returns colors as tuples compatible with rebuildGeometry.
+ * Stipple multi-color arrays are preserved at rest AND during in-progress
+ * transitions: each stipple slot lerps independently, and short sides pad
+ * with the default color so slots fade in/out cleanly.
  */
 export function computeBlendedColors(
   fromStop: ResolvedStoryStop,
   toStop: ResolvedStoryStop,
   t: number,
   verses: VerseLayout[]
-): [number, number, number][] {
+): ([number, number, number] | [number, number, number][])[] {
   // If same stop or at rest, return that stop's colors (no blend needed)
+  // Preserve stipple arrays so multi-color verses render correctly.
   if (fromStop === toStop || t === 0) {
-    return colorsToTuples(getColorsForStop(fromStop, verses));
+    return colorsToTuplesPreserveStipple(getColorsForStop(fromStop, verses));
   }
   if (t >= 1) {
-    return colorsToTuples(getColorsForStop(toStop, verses));
+    return colorsToTuplesPreserveStipple(getColorsForStop(toStop, verses));
   }
 
   const fromColors = getColorsForStop(fromStop, verses);
   const toColors = getColorsForStop(toStop, verses);
 
-  // blendColorArrays already flattens multi-colors to single colors
+  // blendColorArrays now lerps slot-by-slot, preserving stipple arrays.
   const blended = blendColorArrays(fromColors, toColors, t);
-  return blended.map(objToTuple);
+  return colorsToTuplesPreserveStipple(blended);
 }
 
 /**
- * Convert an array of Color-or-Color[] to tuples, averaging multi-colors.
+ * Convert an array of Color-or-Color[] objects to tuples, preserving stipple arrays.
+ * Multi-color verses remain as arrays so geometry.ts can render them as stipple.
  */
-function colorsToTuples(
+function colorsToTuplesPreserveStipple(
   colors: (Color | Color[])[]
-): [number, number, number][] {
+): ([number, number, number] | [number, number, number][])[] {
   return colors.map((c) => {
     if (Array.isArray(c)) {
       if (c.length === 0) return [0, 0, 0] as [number, number, number];
       if (c.length === 1) return objToTuple(c[0]);
-      // Average multi-colors for simplicity during transitions
-      const sum = c.reduce(
-        (acc, color) => ({ r: acc.r + color.r, g: acc.g + color.g, b: acc.b + color.b }),
-        { r: 0, g: 0, b: 0 }
-      );
-      return [sum.r / c.length, sum.g / c.length, sum.b / c.length] as [number, number, number];
+      return c.map(objToTuple);
     }
     return objToTuple(c);
   });
