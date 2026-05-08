@@ -15,7 +15,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from "./rendering.ts";
-import { computeVerseStates, applyItemColors } from "./verseColoring.ts";
+import { computeItemStates, applyItemColors } from "./verseColoring.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
 import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import { createMouseState, startDrag, stopDrag } from "./mouseState.ts";
@@ -178,7 +178,7 @@ async function main(): Promise<void> {
   }
 
   function applyOverlay(): void {
-    const states = computeVerseStates<TalmudIdentity>(
+    const states = computeItemStates<TalmudIdentity>(
       items,
       composedOverlay(),
       hoveredItem,

@@ -79,7 +79,7 @@ export function applyHoverHighlight(
  * identity shape. Tanakh callers pass versesEqual; Talmud callers pass
  * their equivalent.
  */
-export function computeVerseStates<T>(
+export function computeItemStates<T>(
   items: SpatialItem<T>[],
   overlay: Overlay<T> | null,
   hoveredItem: SpatialItem<T> | null,

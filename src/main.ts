@@ -41,7 +41,7 @@ import {
 } from "./touchState.ts";
 import { versesEqual, nextVerse, prevVerse } from "./types.ts";
 import { findItemAtPoint } from "./hitDetection.ts";
-import { computeVerseStates, applyItemColors } from "./verseColoring.ts";
+import { computeItemStates, applyItemColors } from "./verseColoring.ts";
 import {
   createRenderContext,
   createRenderState,
@@ -148,7 +148,7 @@ async function main(): Promise<void> {
   // Function to apply overlay colors
   function applyOverlay(): void {
     // Compute verse states and apply colors
-    const verseStates = computeVerseStates(
+    const verseStates = computeItemStates(
       verses,
       currentOverlay,
       mouseState.hoveredVerse,
