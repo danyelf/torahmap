@@ -40,7 +40,7 @@ import {
   resetTouchState,
 } from "./touchState.ts";
 import { versesEqual, nextVerse, prevVerse } from "./types.ts";
-import { findVerseLayoutAtPoint } from "./hitDetection.ts";
+import { findItemAtPoint } from "./hitDetection.ts";
 import { computeVerseStates, applyVerseColors } from "./verseColoring.ts";
 import {
   createRenderContext,
@@ -380,7 +380,7 @@ async function main(): Promise<void> {
         dy < TAP_THRESHOLD &&
         duration < TAP_MAX_DURATION
       ) {
-        const verse = findVerseLayoutAtPoint(
+        const verse = findItemAtPoint(
           verses,
           camera,
           e.clientX,
@@ -401,7 +401,7 @@ async function main(): Promise<void> {
 
     // Reset cursor
     if (wasDragging) {
-      const verse = findVerseLayoutAtPoint(
+      const verse = findItemAtPoint(
         verses,
         camera,
         e.clientX,
@@ -519,7 +519,7 @@ async function main(): Promise<void> {
     if (e.pointerType === "touch" || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
-      const verse = findVerseLayoutAtPoint(
+      const verse = findItemAtPoint(
         verses,
         camera,
         e.clientX,

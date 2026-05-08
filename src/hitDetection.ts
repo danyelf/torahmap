@@ -92,7 +92,7 @@ export function findFuzzyHit<T>(
  * Find verse at screen coordinates.
  * First tries exact hit detection, then falls back to fuzzy matching.
  */
-export function findVerseLayoutAtPoint<T>(
+export function findItemAtPoint<T>(
   verses: SpatialItem<T>[],
   camera: Camera,
   screenX: number,

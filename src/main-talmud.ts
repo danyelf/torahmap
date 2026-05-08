@@ -16,7 +16,7 @@ import {
   render as renderFrame,
 } from "./rendering.ts";
 import { computeVerseStates, applyVerseColors } from "./verseColoring.ts";
-import { findVerseLayoutAtPoint } from "./hitDetection.ts";
+import { findItemAtPoint } from "./hitDetection.ts";
 import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import { createMouseState, startDrag, stopDrag } from "./mouseState.ts";
 import type { Overlay } from "./overlays/types.ts";
@@ -301,7 +301,7 @@ async function main(): Promise<void> {
       return;
     }
     // Hover detection
-    const hit = findVerseLayoutAtPoint<TalmudIdentity>(
+    const hit = findItemAtPoint<TalmudIdentity>(
       items as SpatialItem<TalmudIdentity>[],
       camera,
       e.clientX,
@@ -330,7 +330,7 @@ async function main(): Promise<void> {
       if (moved > 3) return; // treated as drag, not click
     }
     // Click handling
-    const hit = findVerseLayoutAtPoint<TalmudIdentity>(
+    const hit = findItemAtPoint<TalmudIdentity>(
       items as SpatialItem<TalmudIdentity>[],
       camera,
       e.clientX,
