@@ -48,7 +48,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from "./rendering.ts";
-import type { VerseLayout, Bounds } from "./types.ts";
+import type { TanakhLayout, Bounds } from "./types.ts";
 import {
   registerOverlay,
   getOverlay,
@@ -77,7 +77,7 @@ declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
     torahMap?: {
-      verses: VerseLayout[];
+      verses: TanakhLayout[];
       pan: { x: number; y: number };
       zoom: number;
       render: () => void;
@@ -165,7 +165,7 @@ async function main(): Promise<void> {
   const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
 
   // Track pinned verse (click to persist)
-  let pinnedVerse: VerseLayout | null = null;
+  let pinnedVerse: TanakhLayout | null = null;
 
   // Mouse interaction state
   const mouseState = createMouseState();
@@ -190,7 +190,7 @@ async function main(): Promise<void> {
   }
 
   // Helper: Center camera on a verse
-  function centerOnVerse(verse: VerseLayout): void {
+  function centerOnVerse(verse: TanakhLayout): void {
     const cssWidth = window.innerWidth;
     const cssHeight = window.innerHeight;
     camera.x = cssWidth / 2 / camera.zoom - verse.x - verse.size / 2;
@@ -198,7 +198,7 @@ async function main(): Promise<void> {
   }
 
   // Helper: Pin a verse and update all dependent state
-  function pinVerse(verse: VerseLayout, centerCamera: boolean = false): void {
+  function pinVerse(verse: TanakhLayout, centerCamera: boolean = false): void {
     trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
@@ -501,7 +501,7 @@ async function main(): Promise<void> {
 
   // Update sidebar with verse info - wrapper for the extracted module function
   function updateSidebarWrapper(
-    verse: VerseLayout | null,
+    verse: TanakhLayout | null,
     isPinned: boolean = false,
   ): void {
     updateSidebar(
@@ -578,7 +578,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    let targetVerse: VerseLayout | null = null;
+    let targetVerse: TanakhLayout | null = null;
 
     if (e.key === "ArrowRight") {
       targetVerse = nextTanakhItem(verses, pinnedVerse);
@@ -672,7 +672,7 @@ async function main(): Promise<void> {
   configureSearch({
     verses,
     callbacks: {
-      onVerseClick: (verse: VerseLayout) => {
+      onVerseClick: (verse: TanakhLayout) => {
         pinVerse(verse);
       },
     },

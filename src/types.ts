@@ -126,9 +126,9 @@ export function tanakhIdentitiesEqual(
  * @returns Next verse or null if current is last verse or not found
  */
 export function nextTanakhItem(
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
   current: TanakhIdentity,
-): VerseLayout | null {
+): TanakhLayout | null {
   const currentIndex = verses.findIndex(
     (v) =>
       v.book === current.book &&
@@ -151,9 +151,9 @@ export function nextTanakhItem(
  * @returns Previous verse or null if current is first verse or not found
  */
 export function prevTanakhItem(
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
   current: TanakhIdentity,
-): VerseLayout | null {
+): TanakhLayout | null {
   const currentIndex = verses.findIndex(
     (v) =>
       v.book === current.book &&

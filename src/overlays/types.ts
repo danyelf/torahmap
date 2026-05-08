@@ -1,5 +1,5 @@
 // src/overlays/types.ts
-import type { TanakhIdentity, VerseLayout } from "../types.ts";
+import type { TanakhIdentity, TanakhLayout } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
 
 export type Color = [number, number, number];
@@ -9,10 +9,10 @@ export type Color = [number, number, number];
  * Use the configure() function exported by each overlay that needs this.
  */
 export interface OverlayConfig {
-  verses: VerseLayout[];
+  verses: TanakhLayout[];
   verseTexts: VerseTexts;
   callbacks?: {
-    onVerseClick?: (verse: VerseLayout) => void;
+    onVerseClick?: (verse: TanakhLayout) => void;
   };
 }
 

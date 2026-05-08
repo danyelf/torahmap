@@ -1,6 +1,6 @@
 // Custom assertions and matchers for Torah Map tests
 import { expect } from 'vitest';
-import type { VerseLayout } from '../../types';
+import type { TanakhLayout } from '../../types';
 
 /**
  * Asserts that a color is valid (all channels in [0, 1] range)
@@ -51,7 +51,7 @@ export function assertColorEquals(
 /**
  * Asserts that a verse has all required properties
  */
-export function assertValidVerse(verse: VerseLayout) {
+export function assertValidVerse(verse: TanakhLayout) {
   expect(verse.book).toBeDefined();
   expect(typeof verse.book).toBe('string');
   expect(verse.book.length).toBeGreaterThan(0);
@@ -74,13 +74,13 @@ export function assertValidVerse(verse: VerseLayout) {
   expect(typeof verse.size).toBe('number');
   expect(verse.size).toBeGreaterThan(0);
 
-  // Note: colors are no longer part of VerseLayout - they're computed separately
+  // Note: colors are no longer part of TanakhLayout - they're computed separately
 }
 
 /**
  * Asserts that all verses in an array are valid
  */
-export function assertValidVerses(verses: VerseLayout[]) {
+export function assertValidVerses(verses: TanakhLayout[]) {
   for (const verse of verses) {
     assertValidVerse(verse);
   }
@@ -89,7 +89,7 @@ export function assertValidVerses(verses: VerseLayout[]) {
 /**
  * Asserts that two verses represent the same location (book, chapter, verse)
  */
-export function assertSameVerseLocation(actual: VerseLayout, expected: VerseLayout) {
+export function assertSameVerseLocation(actual: TanakhLayout, expected: TanakhLayout) {
   expect(actual.book).toBe(expected.book);
   expect(actual.chapter).toBe(expected.chapter);
   expect(actual.verse).toBe(expected.verse);
@@ -107,8 +107,8 @@ export function assertInRange(value: number, min: number, max: number) {
  * Asserts that all verses have unique positions (no overlaps)
  * Allows for small floating point differences
  */
-export function assertUniquePositions(verses: VerseLayout[], tolerance: number = 0.01) {
-  const positions = new Map<string, VerseLayout>();
+export function assertUniquePositions(verses: TanakhLayout[], tolerance: number = 0.01) {
+  const positions = new Map<string, TanakhLayout>();
 
   for (const verse of verses) {
     const key = `${Math.round(verse.x / tolerance)},${Math.round(verse.y / tolerance)}`;

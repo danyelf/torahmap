@@ -3,13 +3,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { tropOverlay, configure, getSelectedTrop, highlightTropInText } from '../../../overlays/trop';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
 import { assertValidColor, assertApproximately } from '../../helpers/assertions';
-import type { VerseLayout } from '../../../types';
+import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { getRarityTier, RARITY_THRESHOLDS } from '../../../trop';
 
 describe('Trop Overlay', () => {
   let testVerseTexts: VerseTexts;
-  let testVerses: VerseLayout[];
+  let testVerses: TanakhLayout[];
   let updateCallback: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -304,7 +304,7 @@ describe('Trop Overlay', () => {
           (rareButton as HTMLButtonElement).click();
 
           // Find a verse that contains this trop
-          let verseWithTrop: VerseLayout | null = null;
+          let verseWithTrop: TanakhLayout | null = null;
           for (const verse of testVerses) {
             const color = tropOverlay.getVerseColor(verse) as [number, number, number] | null;
             if (color && color[0] > 0.9 && color[1] > 0.8) {
@@ -343,7 +343,7 @@ describe('Trop Overlay', () => {
           (rareButton as HTMLButtonElement).click();
 
           // Find a verse that doesn't contain this trop
-          let verseWithoutTrop: VerseLayout | null = null;
+          let verseWithoutTrop: TanakhLayout | null = null;
           for (const verse of testVerses) {
             const color = tropOverlay.getVerseColor(verse) as [number, number, number] | null;
             if (color && color[0] < 0.2) {

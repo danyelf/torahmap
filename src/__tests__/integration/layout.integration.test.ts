@@ -3,11 +3,11 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { computeLayout, getSection, getLayoutBounds } from '../../layout';
 import { initBookData } from '../../constants/books';
-import type { TorahData, VerseLayout } from '../../types';
+import type { TorahData, TanakhLayout } from '../../types';
 
 describe('Layout Integration', () => {
   let torahData: TorahData;
-  let verses: VerseLayout[];
+  let verses: TanakhLayout[];
 
   beforeAll(() => {
     // Load the real tanakh structure data
@@ -90,7 +90,7 @@ describe('Layout Integration', () => {
     it('no two verses share the exact same position', () => {
       // Since there's jitter, we check for unique (x, y) pairs
       // With jitter, exact overlaps should be impossible
-      const positions = new Map<string, VerseLayout>();
+      const positions = new Map<string, TanakhLayout>();
 
       for (const v of verses) {
         const key = `${v.x.toFixed(1)},${v.y.toFixed(1)}`;

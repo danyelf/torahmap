@@ -1,7 +1,7 @@
 // src/overlays/commentary.ts
 import "../styles/overlays/commentary.css";
 import type { Overlay, Color } from "./types.ts";
-import type { TanakhIdentity, VerseLayout, CommentaryData } from "../types.ts";
+import type { TanakhIdentity, TanakhLayout, CommentaryData } from "../types.ts";
 import { heatmapColor } from "../utils/color.ts";
 import { fetchData } from "../constants/app.ts";
 
@@ -11,7 +11,7 @@ let updateCallback: (() => void) | null = null;
 
 // Cache max values per category to avoid recalculating
 let cachedMaxValues: Record<string, number> = {};
-let verses: VerseLayout[] = [];
+let verses: TanakhLayout[] = [];
 
 function getCount(book: string, chapter: number, verse: number): number {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
@@ -163,7 +163,7 @@ export const commentaryOverlay: Overlay = {
   },
 };
 
-export function configure(config: { verses: VerseLayout[] }): void {
+export function configure(config: { verses: TanakhLayout[] }): void {
   verses = config.verses;
   cachedMaxValues = {};
   // Reset to default state for testing

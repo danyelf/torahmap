@@ -1,6 +1,6 @@
 // Layout algorithm: compute (x, y) position for every verse
 
-import type { TorahData, LayoutConfig, VerseLayout, Bounds, Book } from "./types.ts";
+import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from "./types.ts";
 import { seededRandom } from "./utils/random.ts";
 import { JITTER_CENTER, JITTER_RANGE } from "./constants/app.ts";
 
@@ -60,7 +60,7 @@ function layoutChapter(
   bookX: number,
   chapterY: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
 ): { width: number; height: number } {
   const wrapPoints = calculateWrapPoints(verseCount);
   let maxWidth = 0;
@@ -113,7 +113,7 @@ function layoutBook(
   bookX: number,
   bookY: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
 ): { width: number; height: number } {
   let maxWidth = 0;
   let currentY = bookY;
@@ -142,7 +142,7 @@ type BookLayoutFn = (
   x: number,
   y: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
 ) => { width: number; height: number };
 
 // Layout books horizontally in a row
@@ -152,7 +152,7 @@ function layoutBooksRow(
   y: number,
   gap: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
   bookLayoutFn: BookLayoutFn = layoutBook,
 ): { width: number; height: number; nextX: number } {
   let currentX = startX;
@@ -185,7 +185,7 @@ function layoutBooksStack(
   startY: number,
   gap: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
 ): { width: number; height: number } {
   let currentY = startY;
   let maxWidth = 0;
@@ -221,7 +221,7 @@ function layoutStacksRow(
   stackGap: number,
   columnGap: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
 ): { width: number; height: number } {
   let currentX = startX;
   let maxHeight = 0;
@@ -252,7 +252,7 @@ function layoutMultiColumn(
   bookX: number,
   bookY: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
   splitAtChapter: number,
 ): { width: number; height: number } {
   const splitPoint = Math.min(splitAtChapter, book.chapters.length);
@@ -311,7 +311,7 @@ function layoutNeviim(
   books: Book[],
   sectionY: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
   minorProphetStacks: string[][],
 ): number {
   const minorProphets = new Set(minorProphetStacks.flat());
@@ -351,7 +351,7 @@ function layoutKetuvim(
   books: Book[],
   sectionY: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
   layoutConfig: LayoutConfig,
 ): number {
   const stackedBooks = new Set(layoutConfig.ketuvimStacks.flatMap((c) => c.books));
@@ -398,7 +398,7 @@ function layoutTorah(
   books: Book[],
   sectionY: number,
   globalVerseIdx: { value: number },
-  verses: VerseLayout[],
+  verses: TanakhLayout[],
 ): number {
   const { height } = layoutBooksRow(
     books,
@@ -411,13 +411,13 @@ function layoutTorah(
   return height;
 }
 
-export function computeLayout(torahData: TorahData): VerseLayout[] {
+export function computeLayout(torahData: TorahData): TanakhLayout[] {
   if (torahData.books.length === 0) {
     console.warn("Empty books array in torahData");
     return [];
   }
 
-  const verses: VerseLayout[] = [];
+  const verses: TanakhLayout[] = [];
   const globalVerseIdx = { value: 0 };
 
   // Group books by section
@@ -457,7 +457,7 @@ export function computeLayout(torahData: TorahData): VerseLayout[] {
  * Transforms x → (maxX - x - size) so the rightmost extent stays the same
  * but everything is horizontally flipped.
  */
-function mirrorX(verses: VerseLayout[]): void {
+function mirrorX(verses: TanakhLayout[]): void {
   if (verses.length === 0) return;
 
   let maxX = 0;
@@ -470,7 +470,7 @@ function mirrorX(verses: VerseLayout[]): void {
   }
 }
 
-export function getLayoutBounds(verses: VerseLayout[]): Bounds {
+export function getLayoutBounds(verses: TanakhLayout[]): Bounds {
   if (verses.length === 0) {
     return { width: 0, height: 0 };
   }

@@ -6,7 +6,7 @@ import {
   findFuzzyHit,
   findItemAtPoint,
 } from '../../hitDetection';
-import type { VerseLayout } from '../../types';
+import type { TanakhLayout } from '../../types';
 import type { Camera } from '../../camera';
 
 describe('hitDetection', () => {
@@ -67,7 +67,7 @@ describe('hitDetection', () => {
   });
 
   describe('isPointInVerseLayout', () => {
-    const verse: VerseLayout = {
+    const verse: TanakhLayout = {
       book: 'Genesis',
       chapter: 1,
       verse: 1,
@@ -104,7 +104,7 @@ describe('hitDetection', () => {
     });
 
     it('handles very small verse', () => {
-      const smallVerse: VerseLayout = {
+      const smallVerse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -120,7 +120,7 @@ describe('hitDetection', () => {
   });
 
   describe('findExactHit', () => {
-    const verses: VerseLayout[] = [
+    const verses: TanakhLayout[] = [
       { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
       { book: 'Genesis', chapter: 1, verse: 2, x: 20, y: 0, size: 10 },
       { book: 'Genesis', chapter: 1, verse: 3, x: 40, y: 0, size: 10 },
@@ -145,7 +145,7 @@ describe('hitDetection', () => {
     });
 
     it('returns first match when verses overlap', () => {
-      const overlappingVerses: VerseLayout[] = [
+      const overlappingVerses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 20 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 10, size: 20 },
       ];
@@ -168,7 +168,7 @@ describe('hitDetection', () => {
   });
 
   describe('findFuzzyHit', () => {
-    const verses: VerseLayout[] = [
+    const verses: TanakhLayout[] = [
       { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
       { book: 'Genesis', chapter: 1, verse: 2, x: 20, y: 0, size: 10 },
       { book: 'Genesis', chapter: 1, verse: 3, x: 100, y: 100, size: 10 },
@@ -230,7 +230,7 @@ describe('hitDetection', () => {
   });
 
   describe('findItemAtPoint', () => {
-    const verses: VerseLayout[] = [
+    const verses: TanakhLayout[] = [
       { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
       { book: 'Genesis', chapter: 1, verse: 2, x: 20, y: 0, size: 10 },
     ];
@@ -311,7 +311,7 @@ describe('hitDetection', () => {
 
   describe('integration', () => {
     it('supports typical hover workflow with camera', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 100, y: 200, size: 10 },
       ];
       const camera: Camera = { x: 50, y: 100, zoom: 2.0 };
@@ -350,7 +350,7 @@ describe('hitDetection', () => {
 
     it('handles verse grid navigation', () => {
       // 3x3 grid of verses
-      const verses: VerseLayout[] = [];
+      const verses: TanakhLayout[] = [];
       for (let y = 0; y < 3; y++) {
         for (let x = 0; x < 3; x++) {
           verses.push({

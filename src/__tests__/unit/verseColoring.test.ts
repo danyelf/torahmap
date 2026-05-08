@@ -6,7 +6,7 @@ import {
   computeItemStates,
   applyItemColors,
 } from '../../itemColoring';
-import type { VerseLayout, ItemState } from '../../types';
+import type { TanakhLayout, ItemState } from '../../types';
 import { tanakhIdentitiesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
@@ -59,7 +59,7 @@ describe('itemColoring', () => {
 
   describe('getOverlayColor', () => {
     it('returns null when overlay is null', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -74,7 +74,7 @@ describe('itemColoring', () => {
     });
 
     it('returns overlay color when overlay provides color', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -97,7 +97,7 @@ describe('itemColoring', () => {
     });
 
     it('returns null when overlay getVerseColor returns null', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -119,7 +119,7 @@ describe('itemColoring', () => {
     });
 
     it('handles multi-color verses', () => {
-      const verse: VerseLayout = {
+      const verse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -208,7 +208,7 @@ describe('itemColoring', () => {
     });
 
     it('computes hasOverlayColor correctly when overlay provides color', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -226,7 +226,7 @@ describe('itemColoring', () => {
     });
 
     it('computes hasOverlayColor as false when overlay returns null', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -247,7 +247,7 @@ describe('itemColoring', () => {
     });
 
     it('uses default color when overlay is null', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -261,7 +261,7 @@ describe('itemColoring', () => {
     });
 
     it('identifies hovered verse correctly', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
@@ -274,7 +274,7 @@ describe('itemColoring', () => {
     });
 
     it('identifies pinned verse correctly', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];
@@ -287,7 +287,7 @@ describe('itemColoring', () => {
     });
 
     it('handles null hoveredVerse', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -297,7 +297,7 @@ describe('itemColoring', () => {
     });
 
     it('handles null pinnedVerse', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
       ];
 
@@ -307,12 +307,12 @@ describe('itemColoring', () => {
     });
 
     it('matches verses by book, chapter, and verse number', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
         { book: 'Exodus', chapter: 1, verse: 1, x: 0, y: 10, size: 1 },
       ];
-      const hoveredVerse: VerseLayout = {
+      const hoveredVerse: TanakhLayout = {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
@@ -329,7 +329,7 @@ describe('itemColoring', () => {
     });
 
     it('returns array parallel to verses', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 3, x: 20, y: 0, size: 1 },
@@ -473,7 +473,7 @@ describe('itemColoring', () => {
     });
 
     it('supports full workflow: compute states then apply colors', () => {
-      const verses: VerseLayout[] = [
+      const verses: TanakhLayout[] = [
         { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
         { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
       ];

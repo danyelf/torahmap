@@ -23,14 +23,14 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import type { VerseLayout } from '../../types';
+import type { TanakhLayout } from '../../types';
 
 /**
  * Integration tests for complete user workflows
  * Tests realistic multi-step user interactions from start to finish
  */
 describe('User Workflows Integration', () => {
-  let verses: VerseLayout[];
+  let verses: TanakhLayout[];
   let currentOverlay: Overlay | null = null;
   let mockControlsContainer: HTMLElement;
   let mockLegendContainer: HTMLElement;

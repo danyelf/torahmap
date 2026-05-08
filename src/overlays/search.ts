@@ -1,7 +1,7 @@
 // Full-text search overlay
 import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
-import type { TanakhIdentity, VerseLayout } from '../types.ts';
+import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRelatedRoots, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult, type RelatedRoot } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -14,7 +14,7 @@ function colorToCss(color: Color): string {
 }
 
 // State
-let verses: VerseLayout[] = [];
+let verses: TanakhLayout[] = [];
 let currentQuery = '';
 let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
@@ -22,7 +22,7 @@ let matchingTerms = new Map<string, number[]>();
 let wholeWordEnabled = false;
 let hebrewSearchMode: 'substring' | 'word' | 'root' = 'substring';
 let updateCallback: (() => void) | null = null;
-let onVerseClickCallback: ((verse: VerseLayout) => void) | null = null;
+let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
 // Track which terms have valid lemma data (for root mode visual indicators)
 let termLemmaStatus: boolean[] = [];
 // Track the lemmas found for each term (for root mode hover info)
@@ -47,7 +47,7 @@ let wholeWordCheckbox: HTMLInputElement | null = null;
 let hebrewModeContainer: HTMLDivElement | null = null;
 let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
-export function configure(config: { verses: VerseLayout[]; callbacks?: { onVerseClick?: (verse: VerseLayout) => void } }): void {
+export function configure(config: { verses: TanakhLayout[]; callbacks?: { onVerseClick?: (verse: TanakhLayout) => void } }): void {
   verses = config.verses;
   if (config.callbacks?.onVerseClick) {
     onVerseClickCallback = config.callbacks.onVerseClick;

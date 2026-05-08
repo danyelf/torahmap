@@ -130,7 +130,7 @@ describe('rendering', () => {
     });
 
     it('uses verses from state', () => {
-      // Update verse colors (TypeScript: these properties don't exist on VerseLayout,
+      // Update verse colors (TypeScript: these properties don't exist on TanakhLayout,
       // but the test is checking that rebuildGeometry uses state.verses)
       (state.verses[0] as any).color = [1, 0, 0];
       (state.verses[1] as any).color = [0, 1, 0];

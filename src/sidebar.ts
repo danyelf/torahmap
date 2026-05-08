@@ -1,6 +1,6 @@
 // Sidebar management for verse details display
 
-import type { VerseLayout } from './types.ts';
+import type { TanakhLayout } from './types.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { getVerseLinkCount } from './overlays/commentary.ts';
@@ -83,7 +83,7 @@ export function positionSidebar(
  */
 export function updateSidebar(
   elements: SidebarElements,
-  verse: VerseLayout | null,
+  verse: TanakhLayout | null,
   verseTexts: VerseTexts,
   currentOverlay: Overlay | null,
   getVerseText: (
