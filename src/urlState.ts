@@ -337,23 +337,3 @@ export function parseVerseFromUrl(
   return { book, chapter, verse };
 }
 
-/**
- * Create a debounced version of a function
- * Useful for pan/zoom URL updates
- */
-export function debounce<T extends (...args: unknown[]) => void>(
-  fn: T,
-  delay: number,
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-  return (...args: Parameters<T>) => {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    timeoutId = setTimeout(() => {
-      fn(...args);
-      timeoutId = null;
-    }, delay);
-  };
-}

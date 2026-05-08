@@ -19,9 +19,9 @@ import {
   updateUrl,
   subscribeToHashChange,
   verseToUrlFormat,
-  debounce,
   type UrlState,
 } from "./urlState.ts";
+import { debounce } from "./utils/debounce.ts";
 import { getSidebarElements, updateSidebar } from "./sidebar.ts";
 import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import {

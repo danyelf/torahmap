@@ -7,7 +7,7 @@
 declare const __GIT_BRANCH__: string;
 
 import type { SpatialItem, TalmudIdentity } from "./types.ts";
-import { loadTalmudStructure, isSegmentMishnah } from "./talmud/data.ts";
+import { loadTalmudStructure } from "./talmud/data.ts";
 import { computeTalmudLayout, type TalmudLayoutItem } from "./talmud/layout.ts";
 import {
   createRenderContext,
@@ -21,6 +21,7 @@ import { createCamera, clampZoom, panForZoom } from "./camera.ts";
 import { createMouseState, startDrag, stopDrag } from "./mouseState.ts";
 import type { Overlay } from "./overlays/types.ts";
 import { segmentLengthOverlay, ingestTractateLengths } from "./talmud/overlays/segment-length.ts";
+import { createMgBaseOverlay, composeWithMgBase } from "./talmud/overlays/mg-base.ts";
 import {
   startBackgroundPrefetch,
   promoteTractateToFront,
@@ -28,22 +29,8 @@ import {
 import { createTalmudLabels, updateTalmudLabelPositions, type DafRowAnchor } from "./talmud/talmudLabels.ts";
 import { getTalmudSidebarElements, updateTalmudSidebar } from "./talmud/sidebar.ts";
 import { parseTalmudUrlState, updateTalmudUrl } from "./talmud/urlState.ts";
-import {
-  MISHNAH_BASE_COLOR,
-  GEMARA_BASE_COLOR,
-  BRIGHTNESS_JITTER,
-} from "./talmud/constants.ts";
-import { seededRandom } from "./utils/random.ts";
+import { debounce } from "./utils/debounce.ts";
 import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from "./constants/app.ts";
-
-// Debounce helper (local, to avoid importing the Tanakh urlState one)
-function debounce<F extends (...args: unknown[]) => void>(fn: F, ms: number): F {
-  let t: number | null = null;
-  return ((...args: unknown[]) => {
-    if (t !== null) window.clearTimeout(t);
-    t = window.setTimeout(() => fn(...args), ms);
-  }) as F;
-}
 
 function talmudSegmentsEqual(
   a: TalmudIdentity | null,
@@ -113,74 +100,16 @@ async function main(): Promise<void> {
   const overlaysById = new Map<string, Overlay<TalmudIdentity>>();
   overlaysById.set(segmentLengthOverlay.id, segmentLengthOverlay);
 
-  // --- Structural base colors: always-on M/G paint ---
-  // The overlay system returns null for segments where it has no data;
-  // for those, we paint the structural M/G color. We also fold in a
-  // deterministic per-segment brightness jitter so squares read as
-  // living rainfall instead of flat tiles (matches Torah behavior, where
-  // getDefaultColor adds the same kind of variation).
-  function segmentJitter(id: TalmudIdentity): number {
-    // Hash (tractate, daf, amud, segment) into a stable integer seed.
-    let h = 0;
-    for (let i = 0; i < id.tractate.length; i++) {
-      h = (h * 31 + id.tractate.charCodeAt(i)) | 0;
-    }
-    h = (h * 31 + id.daf) | 0;
-    h = (h * 31 + (id.amud === "b" ? 1 : 0)) | 0;
-    h = (h * 31 + id.segment) | 0;
-    // seededRandom returns [0,1); recenter to [-1,1] then scale.
-    return (seededRandom(h) - 0.5) * 2 * BRIGHTNESS_JITTER;
-  }
-  function jitteredColor(
-    base: readonly [number, number, number],
-    id: TalmudIdentity,
-  ): [number, number, number] {
-    const j = segmentJitter(id);
-    // Multiplicative jitter preserves hue; clamp to [0,1].
-    const f = 1 + j;
-    return [
-      Math.max(0, Math.min(1, base[0] * f)),
-      Math.max(0, Math.min(1, base[1] * f)),
-      Math.max(0, Math.min(1, base[2] * f)),
-    ];
-  }
-  const mgBaseOverlay: Overlay<TalmudIdentity> = {
-    id: "_mg-base",
-    name: "__internal",
-    getVerseColor(id: TalmudIdentity) {
-      const mishnah = isSegmentMishnah(
-        structure,
-        id.tractate,
-        id.daf,
-        id.amud,
-        id.segment,
-      );
-      return jitteredColor(
-        mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR,
-        id,
-      );
-    },
-  };
-
-  // Compose base + user overlay: user overlay takes precedence when it has data.
-  function composedOverlay(): Overlay<TalmudIdentity> {
-    return {
-      id: "composed",
-      name: "composed",
-      getVerseColor(id: TalmudIdentity) {
-        if (currentOverlay) {
-          const c = currentOverlay.getVerseColor(id);
-          if (c !== null) return c;
-        }
-        return mgBaseOverlay.getVerseColor(id);
-      },
-    };
-  }
+  // --- Structural base coloring ---
+  // Talmud segments always carry M/G identity; we paint that distinction as
+  // the "default" color (parallel to getDefaultColor() on the Tanakh side).
+  // User overlays compose on top via composeWithMgBase().
+  const mgBaseOverlay = createMgBaseOverlay(structure);
 
   function applyOverlay(): void {
     const states = computeItemStates<TalmudIdentity>(
       items,
-      composedOverlay(),
+      composeWithMgBase(mgBaseOverlay, currentOverlay),
       hoveredItem,
       pinnedItem,
       talmudSegmentsEqual,
@@ -216,6 +145,7 @@ async function main(): Promise<void> {
     } else {
       const row = rowAnchors.get(key)!;
       if (item.x + item.size > row.rightX) row.rightX = item.x + item.size;
+      if (item.y < row.topY) row.topY = item.y;
     }
   }
   const labels = createTalmudLabels(

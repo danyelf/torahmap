@@ -13,6 +13,7 @@
 import type { SpatialItem, TalmudIdentity } from "../types.ts";
 import type { TalmudStructure, TalmudTractate } from "./data.ts";
 import { seededRandom } from "../utils/random.ts";
+import { segmentHash } from "./segmentHash.ts";
 import {
   SEGMENT_SIZE,
   PEREK_GAP,
@@ -24,25 +25,6 @@ import {
   POSITION_JITTER,
   SEDER_ORDER,
 } from "./constants.ts";
-
-// Stable per-segment hash → seed for the jitter PRNG. Same shape as the
-// hash used in main-talmud.ts for color jitter so a future refactor can
-// pull both into a shared helper.
-function segmentSeed(
-  tractate: string,
-  daf: number,
-  amud: "a" | "b",
-  segment: number,
-): number {
-  let h = 0;
-  for (let i = 0; i < tractate.length; i++) {
-    h = (h * 31 + tractate.charCodeAt(i)) | 0;
-  }
-  h = (h * 31 + daf) | 0;
-  h = (h * 31 + (amud === "b" ? 1 : 0)) | 0;
-  h = (h * 31 + segment) | 0;
-  return h;
-}
 
 export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
 
@@ -279,7 +261,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
         const seg = row.segments[i];
         const baseX = -(i + 1) * SEGMENT_SIZE;
         // Per-segment positional jitter — break up the perfect grid.
-        const seed = segmentSeed(
+        const seed = segmentHash(
           tractate.name,
           row.daf,
           row.amud,
