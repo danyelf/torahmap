@@ -95,3 +95,38 @@ export const THEMES: Partial<Record<ThemeId, CoreTheme>> = {
   },
   // newsprint, plum, oxblood, manuscript, okabe added in Tasks 7–11.
 };
+
+// Must stay in sync with the ThemeId union above. The `satisfies` check
+// catches typos (e.g. 'oxbloodd') but cannot detect missing entries.
+const VALID_ID_LIST = [
+  'refined-grey', 'newsprint', 'plum', 'oxblood', 'manuscript', 'okabe',
+] as const satisfies readonly ThemeId[];
+const VALID_IDS = new Set<ThemeId>(VALID_ID_LIST);
+
+function isThemeId(s: string | null | undefined): s is ThemeId {
+  return !!s && VALID_IDS.has(s as ThemeId);
+}
+
+export function resolveThemeId(): ThemeId {
+  const fromUrl = new URLSearchParams(globalThis.location?.search ?? '').get('theme');
+  if (isThemeId(fromUrl)) return fromUrl;
+  const fromStorage = globalThis.localStorage?.getItem('torahmap.theme') ?? null;
+  if (isThemeId(fromStorage)) return fromStorage;
+  return 'refined-grey';
+}
+
+// Single resolution at module load. A theme swap is a page reload.
+// THEMES['refined-grey'] is always defined (set in Task 1), so the non-null
+// assertion is safe and reflects the actual invariant.
+export const currentTheme: CoreTheme =
+  THEMES[resolveThemeId()] ?? THEMES['refined-grey']!;
+
+/**
+ * Look up an overlay's per-theme value, with polarity fallback. See
+ * `ThemedTable<T>` for the resolution order. Read once at the call site —
+ * `currentTheme` is fixed for the page's lifetime.
+ */
+export function pick<T>(t: ThemedTable<T>): T {
+  return t.byTheme[currentTheme.id]
+      ?? (currentTheme.polarity === 'light' ? t.lightFallback : t.byTheme['refined-grey']!);
+}
