@@ -4,7 +4,8 @@ import { searchOverlay, configure, highlightSearchTerms } from '../../../overlay
 import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
-import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
+import { SEARCH_COLORS } from '../../../utils/color';
+import { HIGHLIGHT_CONSTANTS } from '../../../constants';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
@@ -167,11 +168,11 @@ describe('Search Overlay', () => {
       expect(color).not.toBeNull();
       assertValidColor(color);
 
-      // Should be dimmed gray
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
-      expect(color[0]).toBeCloseTo(brightness, 2);
-      expect(color[1]).toBeCloseTo(brightness, 2);
-      expect(color[2]).toBeCloseTo(brightness, 2);
+      // Should be a uniform dim grey at DIM_BRIGHTNESS
+      const dim = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
+      expect(color[0]).toBeCloseTo(dim, 4);
+      expect(color[1]).toBeCloseTo(dim, 4);
+      expect(color[2]).toBeCloseTo(dim, 4);
     });
 
     it('uses correct color from SEARCH_COLORS palette', () => {
@@ -264,7 +265,7 @@ describe('Search Overlay', () => {
       const color = searchOverlay.getVerseColor(verse) as Color;
 
       expect(color).not.toBeNull();
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
+      const brightness = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
       expect(color[0]).toBeCloseTo(brightness, 2);
     });
 
@@ -887,7 +888,7 @@ describe('Search Overlay', () => {
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as Color;
         // All verses should be dimmed
-        const brightness = (0.4 + 0.2) * DIM_FACTOR;
+        const brightness = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
         expect(color[0]).toBeCloseTo(brightness, 2);
       }
     });
@@ -905,7 +906,7 @@ describe('Search Overlay', () => {
       const color = searchOverlay.getVerseColor(verse) as Color;
 
       // Should be dimmed
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
+      const brightness = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
       expect(color[0]).toBeCloseTo(brightness, 2);
     });
 

@@ -10,9 +10,19 @@ export const HIGHLIGHT_CONSTANTS = {
   // Fuzzy hit detection radius (world units / pixels at 1x zoom)
   FUZZY_RADIUS: 10,
 
-  // Default verse brightness range (random variation to reduce moiré)
-  MIN_BRIGHTNESS: 0.4,
-  BRIGHTNESS_RANGE: 0.4, // Result: 0.4 to 0.8
+  // Default verse brightness range (random variation to reduce moiré).
+  // Lifted from 0.40–0.80 so the dust separates more clearly from #1a1a1a.
+  MIN_BRIGHTNESS: 0.50,
+  BRIGHTNESS_RANGE: 0.42, // Result: 0.50 to 0.92
+
+  // WebGL canvas clear color — must visually match the CSS body bg
+  // (src/styles/main.css). Shows through gaps between verse squares.
+  CANVAS_BG_COLOR: [0.102, 0.102, 0.102] as Color, // #1a1a1a
+
+  // Uniform brightness for dimmed non-matching verses during active search.
+  // Replaces the older `mid-brightness * DIM_FACTOR` multiplication, which
+  // crushed verses to near-invisibility (rgb 46 against bg rgb 26).
+  DIM_BRIGHTNESS: 0.30, // rgb 76 against bg rgb 26 — clearly visible, clearly dimmed
 
   // Outline/border color for verses
   OUTLINE_COLOR: [0.6, 0.6, 0.6] as Color,

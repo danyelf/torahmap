@@ -617,9 +617,11 @@ export const searchOverlay: Overlay = {
       return colors.slice(0, 4) as Color[];
     }
 
-    // Dim non-matching verses
-    const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
-    return [brightness, brightness, brightness];
+    // Dim non-matching verses to a uniform brightness that remains clearly
+    // visible against the background while staying obviously deemphasized
+    // relative to the matched verses (which use SEARCH_COLORS).
+    const b = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
+    return [b, b, b];
   },
 
   renderControls(container: HTMLElement): void {

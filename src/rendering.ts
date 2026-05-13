@@ -120,7 +120,8 @@ export function render<T>(
 
   // Clear canvas
   gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.1, 0.1, 0.1, 1.0);
+  const bg = HIGHLIGHT_CONSTANTS.CANVAS_BG_COLOR;
+  gl.clearColor(bg[0], bg[1], bg[2], 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   // Use main shader program
