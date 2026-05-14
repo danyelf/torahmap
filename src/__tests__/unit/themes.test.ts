@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { THEMES, resolveThemeId, pick, type ThemeId, type ThemedTable } from '../../themes.ts';
+import { THEMES, resolveThemeId, pick, applyChromeVars, type ThemeId, type ThemedTable } from '../../themes.ts';
 import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';
 
 describe('themes registry', () => {
@@ -112,5 +112,18 @@ describe('pick', () => {
     // Dark polarity (refined-grey) must NOT pick lightFallback.
     expect(pick(table)).toBe('dark-value');
     expect(pick(table)).not.toBe('light-value');
+  });
+});
+
+describe('applyChromeVars', () => {
+  it('writes CSS custom properties on :root from the theme.chrome record', () => {
+    const refinedGrey = THEMES['refined-grey']!;
+    applyChromeVars(refinedGrey);
+    const root = document.documentElement;
+    expect(root.style.getPropertyValue('--bg')).toBe('#1a1a1a');
+    expect(root.style.getPropertyValue('--fg')).toBe('#fff');
+    expect(root.style.getPropertyValue('--sidebar-bg')).toBe('rgba(0, 0, 0, 0.85)');
+    expect(root.style.getPropertyValue('--sidebar-fg')).toBe('#aaa');
+    expect(root.style.getPropertyValue('--link')).toBe('#4ec3ff');
   });
 });

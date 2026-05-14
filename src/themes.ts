@@ -130,3 +130,21 @@ export function pick<T>(t: ThemedTable<T>): T {
   return t.byTheme[currentTheme.id]
       ?? (currentTheme.polarity === 'light' ? t.lightFallback : t.byTheme['refined-grey']!);
 }
+
+/**
+ * Write the theme's chrome colors to `:root` as CSS custom properties.
+ * Call once at app boot; the theme is fixed for the page lifetime.
+ *
+ * CSS files read these via `var(--bg)`, `var(--fg)`, etc. The body bg and
+ * chrome surfaces (controls, sidebar, help modal) consume them — keeping
+ * the WebGL canvas clear color (via currentTheme.bg) and the page bg
+ * (via this var) consistent without literal duplication.
+ */
+export function applyChromeVars(t: CoreTheme = currentTheme): void {
+  const root = document.documentElement;
+  root.style.setProperty('--bg', t.cssBg);
+  root.style.setProperty('--fg', t.chrome.fg);
+  root.style.setProperty('--sidebar-bg', t.chrome.sidebarBg);
+  root.style.setProperty('--sidebar-fg', t.chrome.sidebarFg);
+  root.style.setProperty('--link', t.chrome.link);
+}
