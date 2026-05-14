@@ -177,7 +177,35 @@ export const THEMES: Partial<Record<ThemeId, CoreTheme>> = {
       link: '#f4d35e',
     },
   },
-  // manuscript, okabe added in Tasks 10–11.
+  manuscript: {
+    id: 'manuscript',
+    name: 'Illuminated Manuscript',
+    polarity: 'light',
+    bg: [0.949, 0.906, 0.784],
+    cssBg: '#f2e7c8',
+    dust: { min: 0.18, max: 0.50, tint: [0.55, 0.45, 0.30] },
+    dim: 0.72,
+    searchHues: [
+      [0.784, 0.141, 0.102], // Vermillion
+      [0.102, 0.290, 0.541], // Lapis
+      [0.780, 0.576, 0.129], // Gold
+      [0.180, 0.427, 0.235], // Verdigris
+      [0.420, 0.102, 0.369], // Purple
+    ],
+    outlines: {
+      default: [0.40, 0.32, 0.20],
+      hover:   [0.20, 0.13, 0.06],
+      pin:     [0.55, 0.10, 0.05],
+      hoverWhilePinned: [0.60, 0.30, 0.05],
+    },
+    chrome: {
+      fg: '#2b1f0d',
+      sidebarBg: 'rgba(242, 231, 200, 0.92)',
+      sidebarFg: '#6b5530',
+      link: '#5a3a8a',
+    },
+  },
+  // okabe added in Task 11.
 };
 
 // Must stay in sync with the ThemeId union above. The `satisfies` check
