@@ -205,7 +205,34 @@ export const THEMES: Partial<Record<ThemeId, CoreTheme>> = {
       link: '#5a3a8a',
     },
   },
-  // okabe added in Task 11.
+  okabe: {
+    id: 'okabe',
+    name: 'Okabe-Ito',
+    polarity: 'dark',
+    bg: [0.039, 0.063, 0.125],
+    cssBg: '#0a1020',
+    dust: { min: 0.45, max: 0.88, tint: [0.62, 0.68, 0.85] },
+    dim: 0.42,
+    searchHues: [
+      [0.902, 0.624, 0.000], // Orange
+      [0.337, 0.706, 0.914], // Sky blue
+      [0.000, 0.620, 0.451], // Bluish green
+      [0.941, 0.894, 0.259], // Yellow
+      [0.800, 0.475, 0.655], // Reddish purple
+    ],
+    outlines: {
+      default: [0.50, 0.55, 0.65],
+      hover:   [0.95, 0.95, 1.00],
+      pin:     [0.902, 0.624, 0.000],
+      hoverWhilePinned: [0.941, 0.894, 0.259],
+    },
+    chrome: {
+      fg: '#dce4f5',
+      sidebarBg: 'rgba(10, 16, 32, 0.92)',
+      sidebarFg: '#8a9ac8',
+      link: '#56b4e9',
+    },
+  },
 };
 
 // Must stay in sync with the ThemeId union above. The `satisfies` check
