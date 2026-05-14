@@ -93,7 +93,35 @@ export const THEMES: Partial<Record<ThemeId, CoreTheme>> = {
       link: '#4ec3ff',
     },
   },
-  // newsprint, plum, oxblood, manuscript, okabe added in Tasks 7–11.
+  newsprint: {
+    id: 'newsprint',
+    name: 'Newsprint',
+    polarity: 'light',
+    bg: [0.957, 0.937, 0.902],
+    cssBg: '#f4efe6',
+    dust: { min: 0.10, max: 0.42, tint: [0.20, 0.16, 0.12] },
+    dim: 0.78,
+    searchHues: [
+      [0.722, 0.200, 0.118], // Vermillion
+      [0.122, 0.239, 0.416], // Lapis
+      [0.180, 0.420, 0.227], // Verdigris
+      [0.486, 0.227, 0.686], // Imperial
+      [0.784, 0.588, 0.122], // Ochre
+    ],
+    outlines: {
+      default: [0.30, 0.25, 0.20],
+      hover:   [0.10, 0.08, 0.06],
+      pin:     [0.45, 0.10, 0.05],
+      hoverWhilePinned: [0.55, 0.40, 0.05],
+    },
+    chrome: {
+      fg: '#1a1410',
+      sidebarBg: 'rgba(244, 239, 230, 0.92)',
+      sidebarFg: '#5a4a3a',
+      link: '#3a4a8a',
+    },
+  },
+  // plum, oxblood, manuscript, okabe added in Tasks 8–11.
 };
 
 // Must stay in sync with the ThemeId union above. The `satisfies` check
