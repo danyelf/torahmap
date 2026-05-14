@@ -16,7 +16,8 @@
     "validate:haftarah": "npx tsx scripts/generate-haftarah-mappings.ts",
     "generate:text-dating": "npx tsx scripts/generate-text-dating.ts",
     "palette:assert": "node scripts/palette-assert.mjs",
-    "palette:check": "npm run palette:assert"
+    "palette:verify": "node scripts/palette-verify.mjs",
+    "palette:check": "npm run palette:assert && npm run palette:verify"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
