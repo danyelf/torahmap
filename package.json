@@ -14,12 +14,15 @@
     "typecheck": "tsc --project tsconfig.build.json --noEmit",
     "test:ci": "npm run typecheck && npm run test",
     "validate:haftarah": "npx tsx scripts/generate-haftarah-mappings.ts",
-    "generate:text-dating": "npx tsx scripts/generate-text-dating.ts"
+    "generate:text-dating": "npx tsx scripts/generate-text-dating.ts",
+    "palette:assert": "node scripts/palette-assert.mjs",
+    "palette:check": "npm run palette:assert"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
     "happy-dom": "^20.1.0",
     "playwright": "^1.58.2",
+    "pngjs": "^7.0.0",
     "typescript": "^5.3.3",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
