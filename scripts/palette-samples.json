@@ -1,11 +1,11 @@
 {
   "default": [
-    { "label": "bg", "x": 2, "y": 2 },
-    { "label": "dust-genesis", "x": 150, "y": 100 }
+    { "label": "bg",           "x": 2,    "y": 2  },
+    { "label": "dust-genesis", "x": 1130, "y": 39 }
   ],
   "search-single": [
-    { "label": "bg", "x": 2, "y": 2 },
-    { "label": "non-match-genesis", "x": 150, "y": 100 }
+    { "label": "bg",                "x": 2,    "y": 2  },
+    { "label": "non-match-genesis", "x": 1130, "y": 39 }
   ],
   "search-multi": [
     { "label": "bg", "x": 2, "y": 2 }
