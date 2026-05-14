@@ -121,7 +121,35 @@ export const THEMES: Partial<Record<ThemeId, CoreTheme>> = {
       link: '#3a4a8a',
     },
   },
-  // plum, oxblood, manuscript, okabe added in Tasks 8–11.
+  plum: {
+    id: 'plum',
+    name: 'Risograph Plum',
+    polarity: 'dark',
+    bg: [0.118, 0.078, 0.161],
+    cssBg: '#1e1429',
+    dust: { min: 0.62, max: 0.95, tint: [1.0, 0.95, 0.85] },
+    dim: 0.40,
+    searchHues: [
+      [1.000, 0.369, 0.569], // Fluoro pink
+      [0.231, 0.420, 0.820], // Federal blue
+      [0.435, 0.831, 0.659], // Mint
+      [1.000, 0.761, 0.227], // Marigold
+      [0.169, 0.706, 0.659], // Teal
+    ],
+    outlines: {
+      default: [0.65, 0.60, 0.55],
+      hover:   [1.0, 0.95, 0.85],
+      pin:     [1.000, 0.369, 0.569],
+      hoverWhilePinned: [1.000, 0.761, 0.227],
+    },
+    chrome: {
+      fg: '#f5ecdc',
+      sidebarBg: 'rgba(30, 20, 41, 0.92)',
+      sidebarFg: '#b8a4c8',
+      link: '#ff8eb5',
+    },
+  },
+  // oxblood, manuscript, okabe added in Tasks 9–11.
 };
 
 // Must stay in sync with the ThemeId union above. The `satisfies` check
