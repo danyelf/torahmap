@@ -1,22 +1,14 @@
 // src/utils/color.ts
 import type { Color } from '../overlays/types.ts';
+import { currentTheme } from '../themes.ts';
 
 // Shared color constants
 export const HIGHLIGHT_COLOR: Color = [0.2, 0.9, 1.0]; // Bright cyan for search/selection
 export const DIM_FACTOR = 0.3; // Dimming factor for non-highlighted verses
 
-// Fixed palette for multi-term search.
-// Same hue identities as the original (cyan / orange / green / magenta / yellow)
-// but each pushed toward higher saturation, and "lime" shifted into pure green
-// so it stops shimmering with yellow. Each hue occupies a distinct luminance band
-// so any two are distinguishable on a screenshot even in grayscale.
-export const SEARCH_COLORS: Color[] = [
-  [0.00, 0.85, 1.00], // Cyan    — was [0.1, 0.7, 0.8]
-  [1.00, 0.55, 0.00], // Orange  — was [1.0, 0.5, 0.0]
-  [0.20, 1.00, 0.30], // Green   — was lime [0.5, 1.0, 0.2]
-  [1.00, 0.15, 0.85], // Magenta — was pink [1.0, 0.2, 0.8]
-  [1.00, 0.95, 0.05], // Yellow  — was [1.0, 1.0, 0.2]
-];
+// Search hue palette. Sourced from currentTheme.searchHues — see src/themes.ts
+// for the rationale on hue choices and luminance separation per theme.
+export const SEARCH_COLORS: Color[] = currentTheme.searchHues;
 
 /**
  * A color stop in a gradient (position + color)
