@@ -11,6 +11,7 @@ import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
+import { currentTheme } from '../../../themes';
 
 describe('Search Overlay', () => {
   let testVerses: TanakhLayout[];
@@ -173,6 +174,26 @@ describe('Search Overlay', () => {
       expect(color[0]).toBeCloseTo(dim, 4);
       expect(color[1]).toBeCloseTo(dim, 4);
       expect(color[2]).toBeCloseTo(dim, 4);
+    });
+
+    it('dimmed non-match colors honor currentTheme.dust.tint', () => {
+      const origTint = currentTheme.dust.tint;
+      try {
+        (currentTheme.dust as { tint?: Color }).tint = [1.0, 0.5, 0.4];
+
+        // Genesis 1:2 does not contain "God" — triggers non-match dim path
+        const verse = testVerses[1];
+        const color = searchOverlay.getVerseColor(verse) as Color;
+
+        expect(color).not.toBeNull();
+        // tint * DIM_BRIGHTNESS = [1.0*b, 0.5*b, 0.4*b]
+        const b = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
+        expect(color[0]).toBeCloseTo(1.0 * b, 10);
+        expect(color[1]).toBeCloseTo(0.5 * b, 10);
+        expect(color[2]).toBeCloseTo(0.4 * b, 10);
+      } finally {
+        (currentTheme.dust as { tint?: Color }).tint = origTint;
+      }
     });
 
     it('uses correct color from SEARCH_COLORS palette', () => {
