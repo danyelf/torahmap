@@ -149,7 +149,35 @@ export const THEMES: Partial<Record<ThemeId, CoreTheme>> = {
       link: '#ff8eb5',
     },
   },
-  // oxblood, manuscript, okabe added in Tasks 9–11.
+  oxblood: {
+    id: 'oxblood',
+    name: 'Oxblood Folio',
+    polarity: 'dark',
+    bg: [0.110, 0.078, 0.063],
+    cssBg: '#1c1410',
+    dust: { min: 0.30, max: 0.88, tint: [1.00, 0.55, 0.45] },
+    dim: 0.32,
+    searchHues: [
+      [0.306, 0.804, 0.769], // Teal
+      [0.957, 0.827, 0.369], // Gold
+      [0.655, 0.525, 0.875], // Violet
+      [0.616, 0.851, 0.953], // Ice-blue
+      [0.784, 0.910, 0.478], // Lime
+    ],
+    outlines: {
+      default: [0.55, 0.45, 0.40],
+      hover:   [0.92, 0.86, 0.78],
+      pin:     [0.957, 0.827, 0.369],
+      hoverWhilePinned: [0.306, 0.804, 0.769],
+    },
+    chrome: {
+      fg: '#ebdfd1',
+      sidebarBg: 'rgba(28, 20, 16, 0.92)',
+      sidebarFg: '#b39e88',
+      link: '#f4d35e',
+    },
+  },
+  // manuscript, okabe added in Tasks 10–11.
 };
 
 // Must stay in sync with the ThemeId union above. The `satisfies` check
