@@ -1,6 +1,6 @@
 // src/utils/color.ts
 import type { Color } from '../overlays/types.ts';
-import { currentTheme } from '../themes.ts';
+import { currentTheme, pick, type ThemedTable } from '../themes.ts';
 
 // Shared color constants
 export const HIGHLIGHT_COLOR: Color = [0.2, 0.9, 1.0]; // Bright cyan for search/selection
@@ -79,23 +79,37 @@ export function scaleToGradient(
   }
 }
 
+const HEATMAP: ThemedTable<ColorStop[]> = {
+  byTheme: {
+    'refined-grey': [
+      { t: 0,    color: [0.1,  0.13, 0.18] },
+      { t: 0.25, color: [0.1,  0.23, 0.38] },
+      { t: 0.5,  color: [0.2,  0.43, 0.33] },
+      { t: 0.75, color: [0.9,  0.33, 0.13] },
+      { t: 1.0,  color: [1.0,  0.23, 0.18] },
+    ],
+  },
+  lightFallback: [
+    { t: 0,    color: [0.92, 0.88, 0.78] }, // paper
+    { t: 0.25, color: [0.78, 0.72, 0.55] },
+    { t: 0.5,  color: [0.62, 0.45, 0.28] },
+    { t: 0.75, color: [0.55, 0.18, 0.10] },
+    { t: 1.0,  color: [0.42, 0.05, 0.02] }, // deep burgundy
+  ],
+};
+
+const HEATMAP_EMPTY: ThemedTable<Color> = {
+  byTheme: { 'refined-grey': [0.15, 0.15, 0.20] },
+  lightFallback: [0.92, 0.88, 0.78],
+};
+
 /**
  * Heatmap color scale: dark blue -> light blue -> teal -> orange -> red
  * Uses logarithmic scale for better distribution
  */
 export function heatmapColor(value: number, maxValue: number): Color {
-  if (value === 0) return [0.15, 0.15, 0.2]; // Very dark for no data
-
-  // Define gradient stops (5 colors across the range)
-  const stops: ColorStop[] = [
-    { t: 0, color: [0.1, 0.13, 0.18] },       // Dark blue
-    { t: 0.25, color: [0.1, 0.23, 0.38] },    // Light blue
-    { t: 0.5, color: [0.2, 0.43, 0.33] },     // Teal
-    { t: 0.75, color: [0.9, 0.33, 0.13] },    // Orange
-    { t: 1.0, color: [1.0, 0.23, 0.18] },     // Red
-  ];
-
-  return scaleToGradient(value, maxValue, stops, { useLog: true });
+  if (value === 0) return pick(HEATMAP_EMPTY);
+  return scaleToGradient(value, maxValue, pick(HEATMAP), { useLog: true });
 }
 
 interface HSL {
