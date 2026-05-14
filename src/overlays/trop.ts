@@ -11,6 +11,7 @@ import {
 } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { scaleToGradient, type ColorStop } from '../utils/color.ts';
+import { pick, type ThemedTable } from '../themes.ts';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
@@ -22,8 +23,49 @@ let cachedVerseLookup: Map<string, number> = new Map();
 let cachedMaxCount = 1;
 let cachedTier: 'rare' | 'uncommon' | 'common' = 'common';
 
-// Colors for trop visualization
-const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
+// Per-theme trop palette
+interface TropPalette {
+  defaultGradient: ColorStop[];
+  selectedGradient: ColorStop[];
+  rareMatch: Color;
+  emptyUncommon: Color;     // returned when uncommon-tier count = 0
+  emptyCommon: Color;       // returned when common-tier count = 0
+}
+
+const TROP: ThemedTable<TropPalette> = {
+  byTheme: {
+    'refined-grey': {
+      defaultGradient: [
+        { t: 0,    color: [0.4, 0.2, 0.6] },
+        { t: 1,    color: [0.9, 0.4, 0.95] },
+      ],
+      selectedGradient: [
+        { t: 0,    color: [0.2, 0.1, 0.3] },
+        { t: 0.33, color: [0.4, 0.2, 0.5] },
+        { t: 0.66, color: [0.7, 0.3, 0.7] },
+        { t: 1.0,  color: [0.95, 0.6, 0.9] },
+      ],
+      rareMatch: [1.0, 0.84, 0.0],
+      emptyUncommon: [0.25, 0.25, 0.28],
+      emptyCommon:   [0.25, 0.23, 0.28],
+    },
+  },
+  lightFallback: {
+    defaultGradient: [
+      { t: 0, color: [0.55, 0.35, 0.65] },
+      { t: 1, color: [0.30, 0.10, 0.45] },
+    ],
+    selectedGradient: [
+      { t: 0,    color: [0.75, 0.60, 0.80] },
+      { t: 0.33, color: [0.55, 0.35, 0.65] },
+      { t: 0.66, color: [0.35, 0.15, 0.50] },
+      { t: 1.0,  color: [0.20, 0.05, 0.35] },
+    ],
+    rareMatch: [0.60, 0.40, 0.05],
+    emptyUncommon: [0.78, 0.74, 0.68],
+    emptyCommon:   [0.78, 0.72, 0.66],
+  },
+};
 
 // Update cached values when trop selection changes
 function updateCache(): void {
@@ -45,20 +87,6 @@ function updateCache(): void {
   }
 }
 
-// Gradient for uncommon trop (linear purple gradient)
-const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
-  { t: 0, color: [0.4, 0.2, 0.6] },       // Dim purple
-  { t: 1, color: [0.9, 0.4, 0.95] },      // Bright purple
-];
-
-// Gradient for common trop (purple spectrum with log scale)
-const COMMON_TROP_GRADIENT: ColorStop[] = [
-  { t: 0, color: [0.2, 0.1, 0.3] },       // Dark purple
-  { t: 0.33, color: [0.4, 0.2, 0.5] },    // Purple
-  { t: 0.66, color: [0.7, 0.3, 0.7] },    // Magenta
-  { t: 1.0, color: [0.95, 0.6, 0.9] },    // Pink
-];
-
 // Get verse color based on selected trop and rarity tier
 function getTropVerseColor(verse: TanakhIdentity): Color | null {
   if (!selectedTrop) return null;
@@ -71,21 +99,22 @@ function getTropVerseColor(verse: TanakhIdentity): Color | null {
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   const count = cachedVerseLookup.get(key) || 0;
 
+  const trop = pick(TROP);
   if (cachedTier === 'rare') {
     // Binary highlight: bright gold for matches, dim gray for non-matches
-    return count > 0 ? RARE_MATCH_COLOR : HIGHLIGHT_CONSTANTS.RARE_NO_MATCH_COLOR;
+    return count > 0 ? trop.rareMatch : HIGHLIGHT_CONSTANTS.RARE_NO_MATCH_COLOR;
   } else if (cachedTier === 'uncommon') {
     // Linear gradient based on count
     if (count === 0) {
-      return [0.25, 0.25, 0.28];
+      return trop.emptyUncommon;
     }
-    return scaleToGradient(count, cachedMaxCount, UNCOMMON_TROP_GRADIENT);
+    return scaleToGradient(count, cachedMaxCount, trop.defaultGradient);
   } else {
     // Common: logarithmic heatmap
     if (count === 0) {
-      return [0.25, 0.23, 0.28];
+      return trop.emptyCommon;
     }
-    return scaleToGradient(count, cachedMaxCount, COMMON_TROP_GRADIENT, { useLog: true });
+    return scaleToGradient(count, cachedMaxCount, trop.selectedGradient, { useLog: true });
   }
 }
 
