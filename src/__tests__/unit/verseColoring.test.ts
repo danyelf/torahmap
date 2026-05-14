@@ -11,6 +11,7 @@ import { tanakhIdentitiesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
 import { HIGHLIGHT_CONSTANTS } from '../../constants';
+import { currentTheme } from '../../themes';
 
 describe('itemColoring', () => {
   describe('getDefaultColor', () => {
@@ -58,6 +59,21 @@ describe('itemColoring', () => {
       const color2 = getDefaultColor(3);
 
       expect(color1).toEqual(color2);
+    });
+
+    it('applies dust.tint multiplicatively when currentTheme has one', () => {
+      const origTint = currentTheme.dust.tint;
+      try {
+        (currentTheme.dust as { tint?: Color }).tint = [1.0, 0.5, 0.4];
+        vi.spyOn(randomModule, 'seededRandom').mockReturnValue(0.5);
+        const b = currentTheme.dust.min + 0.5 * (currentTheme.dust.max - currentTheme.dust.min);
+        const color = getDefaultColor(0);
+        expect(color[0]).toBeCloseTo(1.0 * b, 10);
+        expect(color[1]).toBeCloseTo(0.5 * b, 10);
+        expect(color[2]).toBeCloseTo(0.4 * b, 10);
+      } finally {
+        (currentTheme.dust as { tint?: Color }).tint = origTint;
+      }
     });
   });
 
