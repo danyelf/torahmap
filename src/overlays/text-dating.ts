@@ -3,6 +3,7 @@ import '../styles/overlays/text-dating.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { fetchData } from '../constants/app.ts';
+import { pick, type ThemedTable } from '../themes.ts';
 
 // Data structure types
 interface TextDatingData {
@@ -16,39 +17,59 @@ interface TextDatingData {
 interface EraInfo {
   name: string;
   dateRange: [number, number]; // [start BCE, end BCE]
-  baseColor: Color;
+}
+
+// Era ordering matches ERAS array indices (Pre-Monarchic, Early Monarchic,
+// Late Monarchic, Exilic, Persian, Hellenistic).
+const ERA_COLORS: ThemedTable<Color[]> = {
+  byTheme: {
+    'refined-grey': [
+      [0.60, 0.25, 0.15], // Pre-Monarchic
+      [0.75, 0.40, 0.20], // Early Monarchic
+      [0.85, 0.55, 0.25], // Late Monarchic
+      [0.85, 0.70, 0.35], // Exilic
+      [0.75, 0.75, 0.50], // Persian
+      [0.80, 0.80, 0.70], // Hellenistic
+    ],
+  },
+  lightFallback: [
+    [0.45, 0.15, 0.08], // Pre-Monarchic — deeper red-brown for light bg
+    [0.65, 0.30, 0.10],
+    [0.75, 0.45, 0.15],
+    [0.75, 0.60, 0.25],
+    [0.55, 0.55, 0.30],
+    [0.35, 0.30, 0.18], // Hellenistic — dark enough to read on cream
+  ],
+};
+
+function eraColors(): Color[] {
+  return pick(ERA_COLORS);
 }
 
 const ERAS: EraInfo[] = [
   {
     name: 'Pre-Monarchic',
     dateRange: [1400, 1000],
-    baseColor: [0.60, 0.25, 0.15], // Deep red-brown (oldest layer)
   },
   {
     name: 'Early Monarchic',
     dateRange: [1000, 722],
-    baseColor: [0.75, 0.40, 0.20], // Burnt orange
   },
   {
     name: 'Late Monarchic',
     dateRange: [722, 586],
-    baseColor: [0.85, 0.55, 0.25], // Bright orange
   },
   {
     name: 'Exilic',
     dateRange: [586, 538],
-    baseColor: [0.85, 0.70, 0.35], // Golden yellow
   },
   {
     name: 'Persian Period',
     dateRange: [538, 331],
-    baseColor: [0.75, 0.75, 0.50], // Pale gold
   },
   {
     name: 'Hellenistic',
     dateRange: [331, 164],
-    baseColor: [0.80, 0.80, 0.70], // Cream/beige (newest layer)
   },
 ];
 
@@ -74,6 +95,9 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
   const era = getEra(dateBCE);
   if (!era) return null;
 
+  const eraIndex = ERAS.indexOf(era);
+  const baseColor = eraColors()[eraIndex];
+
   const [rangeStart, rangeEnd] = era.dateRange;
 
   // Calculate position within era (0 = start, 1 = end)
@@ -83,9 +107,9 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
   const shadeFactor = 0.7 + (position * 0.3);
 
   return [
-    era.baseColor[0] * shadeFactor,
-    era.baseColor[1] * shadeFactor,
-    era.baseColor[2] * shadeFactor,
+    baseColor[0] * shadeFactor,
+    baseColor[1] * shadeFactor,
+    baseColor[2] * shadeFactor,
   ];
 }
 
@@ -132,8 +156,9 @@ export const textDatingOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement) {
-    const rows = ERAS.map((era) => {
-      const [r, g, b] = era.baseColor;
+    const colors = eraColors();
+    const rows = ERAS.map((era, i) => {
+      const [r, g, b] = colors[i];
       const rgb = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
       return `
         <div class="legend-row">
