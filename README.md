@@ -1,5 +1,7 @@
 # The Torah Map
 
+> **Note:** This branch is an abandoned experiment in a realistic Torah scroll layout. Kept for reference only — not merged.
+
 Danyel Fisher
 January 2026
 
