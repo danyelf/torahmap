@@ -40,6 +40,9 @@ const VERTEX_SHADER = `#version 300 es
 
 const FRAGMENT_SHADER = `#version 300 es
   precision mediump float;
+  uniform highp vec2 u_resolution;
+  uniform highp vec2 u_pan;
+  uniform highp float u_zoom;
   in vec3 v_color;
   in vec3 v_color2;
   in vec3 v_color3;
@@ -63,8 +66,22 @@ const FRAGMENT_SHADER = `#version 300 es
     vec3 color;
 
     if (v_colorCount <= 1) {
-      // Single color - use directly
       color = v_color;
+      // Tooth extension: if UV.y is outside [0,1], we're in the gap zone
+      // Teeth protrude outward from the line body - never cut into it
+      if (v_uv.y < 0.0 || v_uv.y > 1.0) {
+        // Fade teeth with zoom: full at zoom>=2, gone at zoom<=1.0
+        float toothZoneUV = 0.525 * smoothstep(1.0, 2.0, u_zoom);
+        if (toothZoneUV < 0.01) discard;
+        float dist = v_uv.y < 0.0 ? -v_uv.y / toothZoneUV : (v_uv.y - 1.0) / toothZoneUV;
+        // World-x teeth with per-line variation to break regularity
+        float worldX = gl_FragCoord.x / u_zoom - u_pan.x;
+        float toothScale = 0.35 + fract(v_seed.y * 0.271) * 0.1;
+        float toothX = floor(worldX * toothScale + fract(v_seed.x * 0.317) * 5.0);
+        float toothSeed = v_uv.y < 0.0 ? fract(v_seed.y * 0.137) : fract(v_seed.y * 0.137 + 5.7);
+        float noise = hash(vec2(toothX, toothSeed));
+        if (noise < dist) discard;
+      }
     } else {
       // Multiple colors with bleed effect
       // UV < 0 or > 1 means we're in the bleed zone

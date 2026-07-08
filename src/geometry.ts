@@ -79,27 +79,37 @@ export function buildVerseGeometry(
       ? v.segments.map(s => ({ x: s.x, y: s.y, w: s.width, h: s.height }))
       : [{ x: v.x, y: v.y, w: v.size, h: v.size }];
 
+    // Tooth extension: scroll segments (has segments) extend vertically into the gap
+    // to create jagged text-like edges that break moiré patterns
+    const hasSegments = !!v.segments;
+    const toothExtend = (hasSegments && !isMulticolor) ? 1.05 : 0;
+
     for (const rect of rects) {
       // For multicolor verses, expand bounds to allow bleed
       const bleed = isMulticolor ? HIGHLIGHT_CONSTANTS.BLEED_PIXELS : 0;
-      const x0 = rect.x - bleed;
-      const y0 = rect.y - bleed;
-      const x1 = rect.x + rect.w - 2 + bleed; // -2 for gap, +bleed for expansion
-      const y1 = rect.y + rect.h - 2 + bleed;
+      const innerW = rect.w - 2;
+      const innerH = rect.h - 2;
 
-      // UV coords need to account for bleed zone
-      const uvMin = isMulticolor ? -bleed / (rect.w - 2) : 0;
-      const uvMax = isMulticolor ? 1 + bleed / (rect.w - 2) : 1;
+      const x0 = rect.x - bleed;
+      const y0 = rect.y - bleed - toothExtend;
+      const x1 = rect.x + innerW + bleed; // -2 for gap, +bleed for expansion
+      const y1 = rect.y + innerH + bleed + toothExtend;
+
+      // UV coords: x accounts for bleed, y accounts for bleed + tooth extension
+      const uvXMin = isMulticolor ? -bleed / innerW : 0;
+      const uvXMax = isMulticolor ? 1 + bleed / innerW : 1;
+      const uvYMin = -(bleed + toothExtend) / innerH;
+      const uvYMax = 1 + (bleed + toothExtend) / innerH;
 
       // Triangle 1 (top-left, top-right, bottom-left)
-      writeVertex(x0, y0, uvMin, uvMin);
-      writeVertex(x1, y0, uvMax, uvMin);
-      writeVertex(x0, y1, uvMin, uvMax);
+      writeVertex(x0, y0, uvXMin, uvYMin);
+      writeVertex(x1, y0, uvXMax, uvYMin);
+      writeVertex(x0, y1, uvXMin, uvYMax);
 
       // Triangle 2 (bottom-left, top-right, bottom-right)
-      writeVertex(x0, y1, uvMin, uvMax);
-      writeVertex(x1, y0, uvMax, uvMin);
-      writeVertex(x1, y1, uvMax, uvMax);
+      writeVertex(x0, y1, uvXMin, uvYMax);
+      writeVertex(x1, y0, uvXMax, uvYMin);
+      writeVertex(x1, y1, uvXMax, uvYMax);
     }
   }
 
