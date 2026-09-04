@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Torah Map - Faceted Search Prototype</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #1a1a1a;
+      --panel: #232323;
+      --panel-2: #1e1e1e;
+      --line: #333;
+      --text: #ddd;
+      --muted: #888;
+      --dim: #666;
+      --accent: #6ab0f3;
+      --hebrew: 'SBL Hebrew', 'Times New Roman', serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      overflow: hidden;
+    }
+
+    #app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100%;
+    }
+
+    /* ---------- header ---------- */
+
+    header {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      background: var(--panel-2);
+    }
+
+    header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    header h1 span {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--dim);
+    }
+
+    #query {
+      width: 150px;
+      padding: 6px 10px;
+      background: #111;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: #e8c56a;
+      font-size: 18px;
+      font-family: var(--hebrew);
+      direction: rtl;
+      text-align: center;
+    }
+
+    .demo-words { display: flex; gap: 6px; }
+
+    .demo-words button {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: var(--hebrew);
+      font-size: 17px;
+      direction: rtl;
+    }
+    .demo-words button:hover { border-color: var(--accent); }
+    .demo-words button .cap {
+      display: block;
+      font-family: system-ui, sans-serif;
+      font-size: 9px;
+      color: var(--dim);
+      direction: ltr;
+    }
+
+    fieldset.modes {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 4px 10px 6px;
+    }
+    fieldset.modes legend { font-size: 10px; color: var(--dim); padding: 0 4px; }
+    fieldset.modes label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1.5;
+    }
+    fieldset.modes input { margin-right: 5px; vertical-align: middle; }
+    fieldset.modes label:hover { color: var(--text); }
+
+    #corpus-stat {
+      font-size: 11px;
+      color: var(--dim);
+      max-width: 320px;
+      line-height: 1.5;
+      border-left: 2px solid var(--line);
+      padding-left: 12px;
+    }
+    #corpus-stat b { color: var(--muted); font-weight: 600; }
+
+    /* ---------- body layout ---------- */
+
+    #body {
+      display: grid;
+      grid-template-columns: 300px 300px 1fr;
+      min-height: 0;
+    }
+
+    .facet-col {
+      border-right: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+      background: var(--panel-2);
+    }
+
+    .facet-head {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    .facet-head h2 {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .facet-head .sub { font-size: 10px; color: var(--dim); margin-top: 2px; }
+    .facet-head .actions { margin-top: 6px; display: flex; gap: 8px; }
+    .facet-head .actions button {
+      background: none;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .facet-head .actions button:hover { color: var(--text); border-color: var(--dim); }
+
+    .facet-list { overflow-y: auto; min-height: 0; padding: 4px 0 12px; }
+
+    .facet-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    .facet-row:hover { background: #2a2a2a; }
+    .facet-row input { cursor: pointer; margin: 0; }
+    .facet-row .swatch {
+      width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0;
+      background: #444;
+    }
+    .facet-row .label { flex: 1; min-width: 0; }
+    .facet-row .label .primary {
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .facet-row .label .secondary { font-size: 10px; color: var(--dim); }
+    .facet-row.hebrew .primary {
+      font-family: var(--hebrew);
+      font-size: 17px;
+      direction: rtl;
+      text-align: right;
+    }
+    .facet-row .count {
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    .facet-row.off .label, .facet-row.off .count { opacity: 0.4; }
+    .facet-row.invented .primary::after {
+      content: " ·";
+      color: #c98b3a;
+    }
+
+    .facet-note {
+      margin: 6px 12px 0;
+      padding: 6px 8px;
+      background: #2a2318;
+      border-left: 2px solid #c98b3a;
+      font-size: 10px;
+      line-height: 1.45;
+      color: #c9a86a;
+    }
+
+    /* ---------- right column ---------- */
+
+    #right {
+      display: grid;
+      grid-template-rows: 1fr auto 280px;
+      min-height: 0;
+    }
+
+    #map-wrap {
+      position: relative;
+      min-height: 0;
+      background: #141414;
+      overflow: hidden;
+    }
+    #map { display: block; width: 100%; height: 100%; }
+
+    #map-caption {
+      position: absolute;
+      left: 12px; top: 10px;
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(0,0,0,0.6);
+      padding: 5px 9px;
+      border-radius: 4px;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+    #map-caption b { color: var(--text); }
+
+    #tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.9);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      z-index: 5;
+    }
+
+    #results-head {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 7px 14px;
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--panel-2);
+    }
+
+    #results { overflow-y: auto; min-height: 0; padding: 4px 0 20px; }
+
+    .book-head {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding: 5px 14px 3px;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--dim);
+      border-bottom: 1px solid #262626;
+    }
+
+    .result-row {
+      padding: 5px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      border-bottom: 1px solid #202020;
+    }
+    .result-row .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    .result-row .ref { color: var(--muted); font-size: 11px; width: 110px; flex-shrink: 0; }
+    .result-row .he {
+      font-family: var(--hebrew);
+      font-size: 16px;
+      direction: rtl;
+      text-align: right;
+      flex: 1;
+      line-height: 1.6;
+      color: #cfcfcf;
+    }
+    .result-row .he mark {
+      background: none;
+      color: #ffd479;
+      font-weight: 600;
+    }
+
+    .empty { padding: 20px 14px; color: var(--dim); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Faceted search prototype<span>Dicta-style facets over a painted map — throwaway</span></h1>
+
+      <input id="query" value="עלה" spellcheck="false">
+
+      <div class="demo-words" id="demo-words"></div>
+
+      <fieldset class="modes">
+        <legend>a facet click should…</legend>
+        <label><input type="radio" name="mode" value="filter" checked> hide what is unchecked</label>
+        <label><input type="radio" name="mode" value="colour-meaning"> colour by meaning</label>
+        <label><input type="radio" name="mode" value="colour-form"> colour by word form</label>
+        <label><input type="radio" name="mode" value="emphasise"> dim what is unchecked</label>
+      </fieldset>
+
+      <div id="corpus-stat">measuring the corpus…</div>
+    </header>
+
+    <div id="body">
+      <section class="facet-col">
+        <div class="facet-head">
+          <h2>Meanings</h2>
+          <div class="sub" id="meanings-sub">—</div>
+          <div class="actions">
+            <button data-all="meanings">all</button>
+            <button data-none="meanings">none</button>
+          </div>
+        </div>
+        <div class="facet-list" id="meanings"></div>
+      </section>
+
+      <section class="facet-col">
+        <div class="facet-head">
+          <h2>Word forms</h2>
+          <div class="sub" id="forms-sub">—</div>
+          <div class="actions">
+            <button data-all="forms">all</button>
+            <button data-none="forms">none</button>
+          </div>
+        </div>
+        <div class="facet-list" id="forms"></div>
+      </section>
+
+      <div id="right">
+        <div id="map-wrap">
+          <canvas id="map"></canvas>
+          <div id="map-caption">loading the Tanakh…</div>
+          <div id="tooltip"></div>
+        </div>
+        <div id="results-head">Results</div>
+        <div id="results"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
