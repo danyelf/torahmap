@@ -112,10 +112,40 @@ paint every verse in the Tanakh sharing that root. The related-root chips
 already computed by `getRelatedRoots()` become the way a reader walks from one
 root to a neighbouring one.
 
-Clicking a word offers both readings of that word rather than picking one. The
-reader chooses the exact written form or the root, using the same control that
-already distinguishes the substring, word and root modes. The default is not
-decided here; the toggle is the point.
+### Clicking a word opens a menu, it does not leap
+
+A click on a word does not run a search. It opens a small menu naming the word
+it found:
+
+    Search for אברהם
+    Search for the root ברה
+    Add אברהם to the search
+
+Nothing happens until the reader picks one. The menu is what makes the
+interaction safe, and it does three jobs at once: it confirms which word was
+hit, since Hebrew words run together and a misfire should be visible before it
+costs anything; it is where the choice between the written form and the root
+lives, rather than a separate control elsewhere; and it is the moment the
+reader consents to a change of view.
+
+That last point matters more than it looks. Search is an overlay, and overlays
+are mutually exclusive. `setOverlay()` in `src/main.ts` calls `destroy()` on the
+outgoing overlay and empties its controls and legend. So a reader studying the
+Haftarah map who clicks a word would, without a menu, silently lose the
+Haftarah view and its settings — likewise a chosen cantillation mark, a
+commentary category, a dating period. A click is an ordinary gesture and must
+not be able to do that on its own.
+
+This is not solved with an undo button. The fix is that the leap never happens
+unasked. A reader who opens the menu and does not want it dismisses it and is
+exactly where they were.
+
+The menu's wording carries the warning where a reader will actually see it. If
+picking an item will replace the current view, the item says so.
+
+Adding a word to an existing search does not change overlays at all, since
+search is already the active overlay, so that item is offered whenever it
+applies.
 
 ### Results get room
 
@@ -235,9 +265,13 @@ still open.
 
 Remaining open questions:
 
-- Whether add-to-search or replace-search should be the primary click, and how
-  the other is reached. The spec assumes add, on the argument that comparison
-  is the point of a map, but this is untested with a reader.
+- The order of the items in the word menu, and which one reads as the obvious
+  default. Both the written form and the root are offered; which sits first is
+  a judgement to make against the real thing rather than on paper.
+- Whether the menu should appear on a plain click or need a deliberate gesture
+  such as a long press or a modifier. A plain click is more discoverable and
+  more likely to be triggered by accident; a dismissable menu makes the
+  accident cheap, which argues for the plain click.
 - Whether tying the result list to the viewport is worth building at all, and
   if so how the switch is worded so its state stays legible.
 - English search is untouched on the assumption it already works well enough.
