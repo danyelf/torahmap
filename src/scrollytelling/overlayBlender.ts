@@ -4,6 +4,7 @@ import type { TanakhLayout } from '../types';
 import { getOverlay } from '../overlays/registry';
 import { getDefaultColor } from '../itemColoring';
 import { blendColorArrays } from './colorBlending';
+import { applyOverlayParams } from '../overlays/applyParams';
 
 type Color = { r: number; g: number; b: number };
 
@@ -51,10 +52,10 @@ export function getColorsForStop(
     return verses.map((_, i) => tupleToObj(getDefaultColor(i)));
   }
 
-  // Apply overlay params
-  if (stop.overlayParams && overlay.applyUrlParams) {
-    const params = new URLSearchParams(stop.overlayParams);
-    overlay.applyUrlParams(params);
+  // Apply overlay params through the one door: validated against the overlay's
+  // own declaration, with URL writes off for the duration.
+  if (stop.overlayParams) {
+    applyOverlayParams(overlay, stop.overlayParams);
   }
 
   return verses.map((verse, i) => {

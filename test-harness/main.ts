@@ -6,9 +6,14 @@ import { loadAllVerseTexts } from '../src/verseTexts.ts';
 import { buildSearchIndex, loadLemmaData } from '../src/search.ts';
 import { isKeyboardOpen, createHebrewKeyboard } from '../src/hebrewKeyboard.ts';
 import {
-  searchOverlay,
+  registerAllOverlays,
+  getOverlay,
   configureSearch,
 } from '../src/overlays/index.ts';
+
+// The registry is where overlays come from — fill it the way the app does.
+registerAllOverlays();
+const searchOverlay = getOverlay('search')!;
 
 // --- Event log ---
 

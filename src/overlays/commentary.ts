@@ -1,9 +1,18 @@
 // src/overlays/commentary.ts
 import "../styles/overlays/commentary.css";
-import type { Overlay, Color } from "./types.ts";
+import type {
+  Overlay,
+  Color,
+  UrlParamSpec,
+  UrlParamValues,
+} from "./types.ts";
 import type { TanakhIdentity, TanakhLayout, CommentaryData } from "../types.ts";
 import { heatmapColor } from "../utils/color.ts";
 import { fetchData } from "../constants/app.ts";
+
+const URL_PARAMS = [
+  { key: "category", kind: "category" },
+] as const satisfies readonly UrlParamSpec[];
 
 let data: CommentaryData = {};
 let currentCategory = "total";
@@ -137,15 +146,16 @@ export const commentaryOverlay: Overlay = {
     return count ? `${count} ${currentCategory}` : `no ${currentCategory}`;
   },
 
-  // URL parameter uses 'cat' for brevity in shareable links,
-  // while internal code uses 'category' for clarity
+  urlParams: URL_PARAMS,
+
   getUrlParams(): Record<string, string> {
+    // "total" is the default, so it stays out of the URL
     if (currentCategory === "total") return {};
-    return { cat: currentCategory };
+    return { category: currentCategory };
   },
 
-  applyUrlParams(params: URLSearchParams): void {
-    const category = params.get("cat");
+  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
+    const category = params.category;
     if (category) {
       currentCategory = category;
       cachedMaxValues = {};

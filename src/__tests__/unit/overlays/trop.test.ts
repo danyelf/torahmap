@@ -1,11 +1,17 @@
 // Tests for trop overlay - trop mark selection, rarity-based coloring, verse filtering
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { tropOverlay, configure, getSelectedTrop, highlightTropInText } from '../../../overlays/trop';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure, getSelectedTrop, highlightTropInText } from '../../../overlays/trop';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const tropOverlay = getOverlay('trop')!;
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
 import { assertValidColor, assertApproximately } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { getRarityTier, RARITY_THRESHOLDS } from '../../../trop';
+import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 describe('Trop Overlay', () => {
   let testVerseTexts: VerseTexts;
@@ -874,7 +880,7 @@ describe('Trop Overlay', () => {
 
         // Apply URL params
         const urlParams = new URLSearchParams(`trop=${slug}`);
-        tropOverlay.applyUrlParams?.(urlParams);
+        applyOverlayParams(tropOverlay, urlParams);
 
         // Check that trop is selected
         const newSelected = getSelectedTrop();
@@ -901,7 +907,7 @@ describe('Trop Overlay', () => {
 
         // Apply URL params
         const urlParams = new URLSearchParams(`trop=${slug}`);
-        tropOverlay.applyUrlParams?.(urlParams);
+        applyOverlayParams(tropOverlay, urlParams);
 
         expect(updateCallback).toHaveBeenCalled();
       }
@@ -909,14 +915,14 @@ describe('Trop Overlay', () => {
 
     it('ignores invalid trop slug in URL params', () => {
       const urlParams = new URLSearchParams('trop=invalid-trop-name');
-      tropOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(tropOverlay, urlParams);
 
       expect(getSelectedTrop()).toBeNull();
     });
 
     it('handles missing trop param', () => {
       const urlParams = new URLSearchParams('other=value');
-      tropOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(tropOverlay, urlParams);
 
       expect(getSelectedTrop()).toBeNull();
     });

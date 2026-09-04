@@ -1,5 +1,5 @@
 // src/overlays/haftarah.ts
-import type { Overlay, Color } from './types.ts';
+import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
@@ -84,7 +84,12 @@ function desaturate(color: Color, factor: number): Color {
   return hslToRgb({ h, s: s * factor, l });
 }
 
-type Custom = 'ashkenazi' | 'sephardi';
+const CUSTOMS = ['ashkenazi', 'sephardi'] as const;
+type Custom = (typeof CUSTOMS)[number];
+
+const URL_PARAMS = [
+  { key: 'custom', kind: 'token', allowed: CUSTOMS },
+] as const satisfies readonly UrlParamSpec[];
 
 // Module state
 let data: HaftarahMappings | null = null;
@@ -372,7 +377,9 @@ export const haftarahOverlay: Overlay = {
 
   renderLegend(container: HTMLElement) {
     const customLabel = currentCustom === 'ashkenazi' ? 'Ashkenazi' : 'Sephardi';
-    const parshaCount = data?.parshiot.length || 54;
+    // The optional chain has to reach parshiot too: a failed or malformed
+    // fetch leaves data as an object without it.
+    const parshaCount = data?.parshiot?.length || 54;
     const occasionCount = data?.specialOccasions?.length || 0;
 
     // Generate a gradient showing the rainbow spectrum
@@ -453,21 +460,24 @@ export const haftarahOverlay: Overlay = {
     return null;
   },
 
+  urlParams: URL_PARAMS,
+
   getUrlParams(): Record<string, string> {
+    // Ashkenazi is the default, so it stays out of the URL
     if (currentCustom === 'ashkenazi') return {};
     return { custom: currentCustom };
   },
 
-  applyUrlParams(params: URLSearchParams): void {
-    const custom = params.get('custom');
-    if (custom === 'sephardi') {
-      currentCustom = 'sephardi';
-      buildIndexes();
-      // Update the dropdown if it exists
-      const select = document.querySelector('#custom-select') as HTMLSelectElement | null;
-      if (select) {
-        select.value = currentCustom;
-      }
+  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
+    const custom = params.custom;
+    if (!custom || custom === currentCustom) return;
+
+    currentCustom = custom;
+    buildIndexes();
+    // Update the dropdown if it exists
+    const select = document.querySelector('#custom-select') as HTMLSelectElement | null;
+    if (select) {
+      select.value = currentCustom;
     }
   },
 };

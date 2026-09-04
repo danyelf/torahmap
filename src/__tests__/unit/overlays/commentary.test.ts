@@ -1,10 +1,16 @@
 // Tests for commentary overlay - color computation, category filtering, logarithmic heatmap
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { commentaryOverlay, configure, getVerseLinkCount } from '../../../overlays/commentary';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure, getVerseLinkCount } from '../../../overlays/commentary';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const commentaryOverlay = getOverlay('commentary')!;
 import { heatmapColor } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { CommentaryData, TanakhLayout } from '../../../types';
+import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 describe('Commentary Overlay', () => {
   let testData: CommentaryData;
@@ -496,12 +502,23 @@ describe('Commentary Overlay', () => {
       select.dispatchEvent(new Event('change'));
 
       const params = commentaryOverlay.getUrlParams?.();
-      expect(params).toEqual({ cat: 'Midrash' });
+      expect(params).toEqual({ category: 'Midrash' });
+    });
+
+    it('declares the category key it owns', () => {
+      expect(commentaryOverlay.urlParams).toEqual([
+        { key: 'category', kind: 'category' },
+      ]);
+    });
+
+    it('applies category under its own key name', () => {
+      applyOverlayParams(commentaryOverlay, new URLSearchParams('category=Midrash'));
+      expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
     });
 
     it('applies category from URL params', () => {
-      const urlParams = new URLSearchParams('cat=Talmud');
-      commentaryOverlay.applyUrlParams?.(urlParams);
+      const urlParams = new URLSearchParams('category=Talmud');
+      applyOverlayParams(commentaryOverlay, urlParams);
 
       const verse = testVerses[0]; // Genesis 1:1, Talmud: 30
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -512,7 +529,7 @@ describe('Commentary Overlay', () => {
 
     it('ignores invalid URL params', () => {
       const urlParams = new URLSearchParams('other=value');
-      commentaryOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(commentaryOverlay, urlParams);
 
       const verse = testVerses[0];
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -525,8 +542,8 @@ describe('Commentary Overlay', () => {
       const updateCallback = vi.fn();
       commentaryOverlay.onUpdate?.(updateCallback);
 
-      const urlParams = new URLSearchParams('cat=Midrash');
-      commentaryOverlay.applyUrlParams?.(urlParams);
+      const urlParams = new URLSearchParams('category=Midrash');
+      applyOverlayParams(commentaryOverlay, urlParams);
 
       expect(updateCallback).toHaveBeenCalled();
     });
@@ -674,14 +691,14 @@ describe('Commentary Overlay', () => {
 
       // Verify category is set
       let params = commentaryOverlay.getUrlParams?.();
-      expect(params).toEqual({ cat: 'Midrash' });
+      expect(params).toEqual({ category: 'Midrash' });
 
       // Destroy (simulating overlay switch)
       commentaryOverlay.destroy?.();
 
       // Category should still be preserved internally
       params = commentaryOverlay.getUrlParams?.();
-      expect(params).toEqual({ cat: 'Midrash' });
+      expect(params).toEqual({ category: 'Midrash' });
 
       // Re-render controls (simulating switching back to commentary)
       const container2 = document.createElement('div');

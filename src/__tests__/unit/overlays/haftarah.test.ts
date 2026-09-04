@@ -1,8 +1,13 @@
 // Tests for haftarah overlay - parshiot and special occasions
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { haftarahOverlay } from '../../../overlays/haftarah';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const haftarahOverlay = getOverlay('haftarah')!;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
+import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 // Sample data matching the real structure
 const SAMPLE_HAFTARAH_DATA = {
@@ -134,6 +139,76 @@ describe('Haftarah Overlay', () => {
     it('has correct id and name', () => {
       expect(haftarahOverlay.id).toBe('haftarah');
       expect(haftarahOverlay.name).toBe('Haftarah');
+    });
+  });
+
+  describe('Custom setting in the URL', () => {
+    // Issue #66: the Ashkenazi/Sephardi choice used to be lost on reload
+    // because nothing carried it into the URL.
+    beforeEach(async () => {
+      await haftarahOverlay.init?.();
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));
+    });
+
+    it('declares the custom key it owns', () => {
+      expect(haftarahOverlay.urlParams).toEqual([
+        { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'] },
+      ]);
+    });
+
+    it('reports nothing while on the default (Ashkenazi)', () => {
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
+    });
+
+    it('reports the Sephardi custom once it is chosen', () => {
+      const container = document.createElement('div');
+      haftarahOverlay.renderControls?.(container);
+      const select = container.querySelector('select') as HTMLSelectElement;
+      select.value = 'sephardi';
+      select.dispatchEvent(new Event('change'));
+
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+    });
+
+    it('restores the Sephardi custom and reports it back', () => {
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+    });
+
+    it('switches back to Ashkenazi when asked to', () => {
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
+    });
+
+    it('leaves the setting alone when the value is not recognised', () => {
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=yemenite'));
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+    });
+
+    it('updates the dropdown when restoring from a link', () => {
+      const container = document.createElement('div');
+      haftarahOverlay.renderControls?.(container);
+      document.body.appendChild(container);
+
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+
+      const select = container.querySelector('select') as HTMLSelectElement;
+      expect(select.value).toBe('sephardi');
+      document.body.removeChild(container);
+    });
+
+    it('does not announce a settings change, leaving that to the restorer', () => {
+      // Restoring is not a change the reader made. The caller that read the
+      // link repaints; announcing it here would make the restore turn around
+      // and write the settings straight back into the URL.
+      const updateCallback = vi.fn();
+      haftarahOverlay.onUpdate?.(updateCallback);
+
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+
+      expect(updateCallback).not.toHaveBeenCalled();
     });
   });
 

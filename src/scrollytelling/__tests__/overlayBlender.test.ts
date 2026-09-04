@@ -115,3 +115,52 @@ describe('computeBlendedColors stipple preservation', () => {
   });
 
 });
+
+describe('story stop settings reach the overlay', () => {
+  let received: Record<string, string | undefined> | null = null;
+
+  const settingsOverlay: Overlay = {
+    id: 'test-settings',
+    name: 'Test Settings',
+    urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+    applyUrlParams: (params) => {
+      received = { ...params };
+    },
+    getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
+  };
+
+  function stopWith(overlayParams: Record<string, string>): ResolvedStoryStop {
+    return {
+      id: 's',
+      title: 'S',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-settings',
+      overlayParams,
+    };
+  }
+
+  beforeEach(() => {
+    registerOverlay(settingsOverlay);
+    received = null;
+  });
+
+  it('passes a declared setting through', () => {
+    const stop = stopWith({ mode: 'on' });
+    computeBlendedColors(stop, stop, 0, verses);
+    expect(received).toEqual({ mode: 'on' });
+  });
+
+  it('drops a value the overlay did not allow', () => {
+    // Story stops are hand-written, so they are checked like any link.
+    const stop = stopWith({ mode: 'sideways' });
+    computeBlendedColors(stop, stop, 0, verses);
+    expect(received).toEqual({});
+  });
+
+  it('drops a key the overlay never declared', () => {
+    const stop = stopWith({ mode: 'off', nonsense: 'x' });
+    computeBlendedColors(stop, stop, 0, verses);
+    expect(received).toEqual({ mode: 'off' });
+  });
+});

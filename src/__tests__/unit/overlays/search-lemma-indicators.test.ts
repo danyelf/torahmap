@@ -1,6 +1,11 @@
 // Tests for lemma indicator feature in search overlay
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { searchOverlay, configure } from '../../../overlays/search';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure } from '../../../overlays/search';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const searchOverlay = getOverlay('search')!;
 import { buildSearchIndex, loadLemmaData } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import type { VerseTexts } from '../../../verseTexts';

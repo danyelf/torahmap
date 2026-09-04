@@ -56,7 +56,7 @@ export function getSefariaUrl(
   // If viewing commentary overlay with a category filter, open to that category
   if (currentOverlay?.id === 'commentary') {
     const urlParams = currentOverlay.getUrlParams?.();
-    const category = urlParams?.cat;
+    const category = urlParams?.category;
     if (category) {
       return `${baseUrl}?with=${encodeURIComponent(category)}`;
     }

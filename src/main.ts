@@ -18,6 +18,7 @@ import {
   parseVerseFromUrl,
   updateUrl,
   subscribeToHashChange,
+  applyingExternalState,
   verseToUrlFormat,
   type UrlState,
 } from "./urlState.ts";
@@ -50,18 +51,13 @@ import {
 } from "./rendering.ts";
 import type { TanakhLayout, Bounds } from "./types.ts";
 import {
-  registerOverlay,
+  registerAllOverlays,
+  applyOverlayParams,
   getOverlay,
   getAllOverlays,
-  commentaryOverlay,
   configureCommentary,
-  tropOverlay,
   configureTrop,
-  searchOverlay,
   configureSearch,
-  haftarahOverlay,
-  textDatingOverlay,
-  verseLengthOverlay,
   configureVerseLength,
   type Overlay,
 } from "./overlays/index.ts";
@@ -119,12 +115,7 @@ async function main(): Promise<void> {
   buildSearchIndex(verseTexts);
 
   // Register and initialize overlays
-  registerOverlay(commentaryOverlay);
-  registerOverlay(tropOverlay);
-  registerOverlay(searchOverlay);
-  registerOverlay(haftarahOverlay);
-  registerOverlay(textDatingOverlay);
-  registerOverlay(verseLengthOverlay);
+  registerAllOverlays();
   configureCommentary({ verses });
   configureTrop({ verseTexts });
   configureVerseLength({ verseTexts });
@@ -175,16 +166,22 @@ async function main(): Promise<void> {
    * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
    * heading toward; otherwise hover events fired during a transition would call
    * applyOverlay against a stale `currentOverlay` and clobber the blender's buffer.
+   *
+   * The stop is external state, like a link, so URL writes are off throughout:
+   * in story mode the URL is the stop id, and the explore-mode URL that an
+   * overlay's update handler would write has no business overwriting it.
    */
   function syncStoryStopState(stop: ResolvedStoryStop): void {
+    applyingExternalState(() => syncStoryStopStateUnguarded(stop));
+  }
+
+  function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
     const wantedOverlay = stop.overlay ?? 'none';
     if (wantedOverlay !== currentOverlayId) {
       activateOverlay(wantedOverlay);
     }
 
-    if (currentOverlay?.applyUrlParams) {
-      currentOverlay.applyUrlParams(new URLSearchParams(stop.overlayParams ?? {}));
-    }
+    applyOverlayParams(currentOverlay, stop.overlayParams ?? {});
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -547,20 +544,9 @@ async function main(): Promise<void> {
   const sidebarElements = getSidebarElements();
 
   // URL State Management
-  // Extract overlay params for URL encoding
+  // The overlay reports its own settings; we pass them straight through.
   function buildOverlayParamsForUrl(): Record<string, string> {
-    if (!currentOverlay) return {};
-
-    const overlayParams = currentOverlay.getUrlParams?.() ?? {};
-    const result: Record<string, string> = {};
-
-    if (overlayParams.trop) result.trop = overlayParams.trop;
-    if (overlayParams.cat) result.category = overlayParams.cat;
-    if (overlayParams.q) result.q = overlayParams.q;
-    if (overlayParams.ww) result.ww = overlayParams.ww;
-    if (overlayParams.hm) result.hm = overlayParams.hm;
-
-    return result;
+    return currentOverlay?.getUrlParams?.() ?? {};
   }
 
   // Build current state for URL
@@ -725,11 +711,11 @@ async function main(): Promise<void> {
         currentOverlay?.renderLegend?.(overlayLegendContainer);
       }
       render();
-      // Save URL state when overlay params change (replaceState)
-      // Skip during story mode — story owns URL state via story stop ID.
-      if (appMode !== 'story') {
-        saveUrlState(false);
-      }
+      // Save URL state when overlay params change (replaceState).
+      // No guard needed here: applyingExternalState() turns URL writes off
+      // around every restore and every story stop, so an overlay announcing a
+      // change it was just handed cannot write it back.
+      saveUrlState(false);
     });
 
     // Clear and render overlay's UI
@@ -958,19 +944,19 @@ async function main(): Promise<void> {
       overlaySelect.value = urlState.overlay;
     }
 
-    // Apply overlay-specific params
+    // Hand the overlay back its own settings, already validated.
+    //
+    // activateOverlay drew the legend before this point, while the overlay was
+    // still on its defaults, so it has to be redrawn once the settings land.
+    // (Controls are left alone: each overlay updates its own inside
+    // applyUrlParams, and redrawing them here would throw away what it just
+    // put there.)
     if (currentOverlay?.applyUrlParams) {
-      const params = new URLSearchParams();
-      if (urlState.overlayParams.trop)
-        params.set("trop", urlState.overlayParams.trop);
-      if (urlState.overlayParams.category)
-        params.set("cat", urlState.overlayParams.category);
-      if (urlState.overlayParams.q) params.set("q", urlState.overlayParams.q);
-      if (urlState.overlayParams.ww)
-        params.set("ww", urlState.overlayParams.ww);
-      if (urlState.overlayParams.hm)
-        params.set("hm", urlState.overlayParams.hm);
-      currentOverlay.applyUrlParams(params);
+      applyOverlayParams(currentOverlay, urlState.overlayParams);
+      if (overlayLegendContainer) {
+        overlayLegendContainer.innerHTML = "";
+        currentOverlay.renderLegend?.(overlayLegendContainer);
+      }
     }
   }
 
@@ -1011,8 +997,14 @@ async function main(): Promise<void> {
     }
   }
 
+  // Everything this does came out of the URL, so nothing it does may write to
+  // the URL — see applyingExternalState in urlState.ts.
   function restoreFromUrl(): void {
-    const urlState = parseUrlState();
+    applyingExternalState(restoreFromUrlUnguarded);
+  }
+
+  function restoreFromUrlUnguarded(): void {
+    const urlState = parseUrlState((id) => getOverlay(id)?.urlParams);
 
     if (urlState.story) {
       // Restore story mode

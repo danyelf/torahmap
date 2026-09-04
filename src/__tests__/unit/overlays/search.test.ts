@@ -1,6 +1,11 @@
 // Tests for search overlay - verse highlighting based on search results, color computation
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { searchOverlay, configure, highlightSearchTerms } from '../../../overlays/search';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure, highlightSearchTerms } from '../../../overlays/search';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const searchOverlay = getOverlay('search')!;
 import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
@@ -10,6 +15,7 @@ import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
+import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 describe('Search Overlay', () => {
   let testVerses: TanakhLayout[];
@@ -720,7 +726,7 @@ describe('Search Overlay', () => {
 
     it('applies query from URL params', () => {
       const urlParams = new URLSearchParams('q=Isaiah');
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       // Isaiah 1:1 should be highlighted
       const verse = testVerses[6];
@@ -734,7 +740,7 @@ describe('Search Overlay', () => {
       searchOverlay.renderControls?.(container);
 
       const urlParams = new URLSearchParams('q=heavens');
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       expect(input.value).toBe('heavens');
@@ -745,7 +751,7 @@ describe('Search Overlay', () => {
       searchOverlay.renderControls?.(container);
 
       const urlParams = new URLSearchParams('q=test');
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       const clearBtn = container.querySelector('#search-clear') as HTMLElement;
       expect(clearBtn.style.display).toBe('block');
@@ -760,7 +766,7 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       const urlParams = new URLSearchParams();
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       const verse = testVerses[0];
       const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;

@@ -6,9 +6,16 @@ import {
   verseToUrlFormat,
   parseVerseFromUrl,
   subscribeToHashChange,
+  applyingExternalState,
+  isApplyingExternalState,
   type UrlState,
 } from '../../urlState';
 import { mockWindowLocation } from '../helpers/mocks';
+import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
+import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
 
 // Set up window object for tests
 beforeAll(() => {
@@ -32,7 +39,7 @@ describe('parseUrlState', () => {
 
   it('parses empty hash to minimal state', () => {
     mockWindowLocation('http://localhost:5173/');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state).toEqual({
       overlayParams: {},
     });
@@ -40,102 +47,102 @@ describe('parseUrlState', () => {
 
   it('parses overlay parameter', () => {
     mockWindowLocation('http://localhost:5173/#overlay=commentary');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBe('commentary');
   });
 
   it('parses verse parameter', () => {
     mockWindowLocation('http://localhost:5173/#verse=Genesis.1.1');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.verse).toBe('Genesis.1.1');
   });
 
   it('parses zoom parameter within valid range', () => {
     mockWindowLocation('http://localhost:5173/#zoom=2.5');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBe(2.5);
   });
 
   it('rejects zoom below minimum (0.1)', () => {
     mockWindowLocation('http://localhost:5173/#zoom=0.05');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBeUndefined();
   });
 
   it('rejects zoom above maximum (10)', () => {
     mockWindowLocation('http://localhost:5173/#zoom=15');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBeUndefined();
   });
 
   it('accepts zoom at boundary (0.1)', () => {
     mockWindowLocation('http://localhost:5173/#zoom=0.1');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBe(0.1);
   });
 
   it('accepts zoom at boundary (10)', () => {
     mockWindowLocation('http://localhost:5173/#zoom=10');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBe(10);
   });
 
   it('rejects non-numeric zoom', () => {
     mockWindowLocation('http://localhost:5173/#zoom=abc');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBeUndefined();
   });
 
   it('parses x and y pan positions', () => {
     mockWindowLocation('http://localhost:5173/#x=100.5&y=-50.25');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.x).toBe(100.5);
     expect(state.y).toBe(-50.25);
   });
 
   it('rejects non-numeric x and y', () => {
     mockWindowLocation('http://localhost:5173/#x=abc&y=def');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.x).toBeUndefined();
     expect(state.y).toBeUndefined();
   });
 
   it('parses trop overlay parameter', () => {
     mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBe('trop');
     expect(state.overlayParams.trop).toBe('etnachta');
   });
 
   it('parses category overlay parameter', () => {
     mockWindowLocation('http://localhost:5173/#overlay=commentary&category=Midrash');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBe('commentary');
     expect(state.overlayParams.category).toBe('Midrash');
   });
 
   it('parses search query parameter', () => {
     mockWindowLocation('http://localhost:5173/#overlay=search&q=בראשית');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBe('search');
     expect(state.overlayParams.q).toBe('בראשית');
   });
 
   it('parses search query with special characters', () => {
     mockWindowLocation('http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlayParams.q).toBe('בראשית');
   });
 
   it('parses search query with spaces', () => {
     mockWindowLocation('http://localhost:5173/#overlay=search&q=In%20the%20beginning');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlayParams.q).toBe('In the beginning');
   });
 
   it('parses complete state with all parameters', () => {
     mockWindowLocation('http://localhost:5173/#overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state).toEqual({
       overlay: 'commentary',
       verse: 'Exodus.20.1',
@@ -148,7 +155,7 @@ describe('parseUrlState', () => {
 
   it('handles malformed hash with missing values', () => {
     mockWindowLocation('http://localhost:5173/#overlay=&verse=&zoom=');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     // Empty strings should be ignored
     expect(state.overlay).toBeUndefined();
     expect(state.verse).toBeUndefined();
@@ -157,33 +164,33 @@ describe('parseUrlState', () => {
 
   it('ignores unknown parameters', () => {
     mockWindowLocation('http://localhost:5173/#overlay=trop&unknown=value&another=param');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBe('trop');
     expect((state as any).unknown).toBeUndefined();
   });
 
   it('handles negative zoom (invalid)', () => {
     mockWindowLocation('http://localhost:5173/#zoom=-1');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBeUndefined();
   });
 
   it('handles zero zoom (invalid)', () => {
     mockWindowLocation('http://localhost:5173/#zoom=0');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBeUndefined();
   });
 
   it('handles negative pan positions', () => {
     mockWindowLocation('http://localhost:5173/#x=-100&y=-200');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.x).toBe(-100);
     expect(state.y).toBe(-200);
   });
 
   it('handles verse with dots in book name', () => {
     mockWindowLocation('http://localhost:5173/#verse=I.Samuel.1.1');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.verse).toBe('I.Samuel.1.1');
   });
 });
@@ -309,15 +316,32 @@ describe('buildUrlHash', () => {
     expect(hash).toContain('category=Midrash');
   });
 
-  it('omits category parameter when set to "all"', () => {
+  it('omits overlay parameters with an empty value', () => {
+    // Overlays leave a setting out entirely when it is at its default, so an
+    // empty string means "nothing to say" rather than "set to empty".
     const state: UrlState = {
       overlay: 'commentary',
       overlayParams: {
-        category: 'all',
+        category: '',
       },
     };
     const hash = buildUrlHash(state);
     expect(hash).not.toContain('category=');
+  });
+
+  it('refuses overlay parameters that would collide with core keys', () => {
+    const state: UrlState = {
+      overlay: 'commentary',
+      zoom: 2,
+      overlayParams: {
+        zoom: '9',
+        verse: 'Genesis.1.1',
+      },
+    };
+    const hash = buildUrlHash(state);
+    expect(hash).toContain('zoom=2');
+    expect(hash).not.toContain('zoom=9');
+    expect(hash).not.toContain('verse=');
   });
 
   it('includes search query', () => {
@@ -387,7 +411,7 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
     const original: UrlState = { overlayParams: {} };
     const hash = buildUrlHash(original);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed).toEqual(original);
   });
 
@@ -402,7 +426,7 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
     };
     const hash = buildUrlHash(original);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed).toEqual(original);
   });
 
@@ -415,7 +439,7 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
     };
     const hash = buildUrlHash(original);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed).toEqual(original);
   });
 
@@ -428,7 +452,7 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
     };
     const hash = buildUrlHash(original);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed).toEqual(original);
   });
 
@@ -440,7 +464,7 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
     };
     const hash = buildUrlHash(original);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.x).toBe(100.5);
     expect(parsed.y).toBe(-50.2);
   });
@@ -654,21 +678,21 @@ describe('backward compatibility', () => {
   it('handles old URL format without overlay prefix', () => {
     // Old format might have been just the overlay name
     mockWindowLocation('http://localhost:5173/#commentary');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     // Should parse as empty since it's not a valid param
     expect(state).toEqual({ overlayParams: {} });
   });
 
   it('handles URLs with only verse (common sharing pattern)', () => {
     mockWindowLocation('http://localhost:5173/#verse=Psalms.23.1');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.verse).toBe('Psalms.23.1');
     expect(state.overlay).toBeUndefined();
   });
 
   it('gracefully handles malformed zoom values from old URLs', () => {
     mockWindowLocation('http://localhost:5173/#zoom=2.5x');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     // parseFloat('2.5x') returns 2.5, which is valid
     expect(state.zoom).toBe(2.5);
   });
@@ -676,7 +700,7 @@ describe('backward compatibility', () => {
   it('handles legacy category names', () => {
     // Assuming categories haven't changed, but testing robustness
     mockWindowLocation('http://localhost:5173/#overlay=commentary&category=Legacy%20Category');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlayParams.category).toBe('Legacy Category');
   });
 });
@@ -691,7 +715,7 @@ describe('special character encoding', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.q).toBe('בְּרֵאשִׁית בָּרָא אֱלֹהִים');
   });
 
@@ -704,7 +728,7 @@ describe('special character encoding', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.q).toBe('heaven & earth');
   });
 
@@ -717,7 +741,7 @@ describe('special character encoding', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.q).toBe('"In the beginning"');
   });
 
@@ -730,7 +754,7 @@ describe('special character encoding', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.q).toBe('word1, word2; word3!');
   });
 
@@ -743,7 +767,7 @@ describe('special character encoding', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.q).toBe('word+with+plus');
   });
 
@@ -756,7 +780,7 @@ describe('special character encoding', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.q).toBe('test=value');
   });
 
@@ -769,7 +793,7 @@ describe('special character encoding', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.category).toBe('Talmud/Mishnah');
   });
 });
@@ -783,51 +807,51 @@ describe('edge cases and error handling', () => {
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
-    const parsed = parseUrlState();
+    const parsed = parseUrlState(overlayUrlParams);
     expect(parsed.overlayParams.q).toBe(longQuery);
   });
 
   it('handles extreme zoom values at boundaries', () => {
     mockWindowLocation('http://localhost:5173/#zoom=0.1');
-    let state = parseUrlState();
+    let state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBe(0.1);
 
     mockWindowLocation('http://localhost:5173/#zoom=10');
-    state = parseUrlState();
+    state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBe(10);
 
     mockWindowLocation('http://localhost:5173/#zoom=0.09999');
-    state = parseUrlState();
+    state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBeUndefined();
 
     mockWindowLocation('http://localhost:5173/#zoom=10.0001');
-    state = parseUrlState();
+    state = parseUrlState(overlayUrlParams);
     expect(state.zoom).toBeUndefined();
   });
 
   it('handles very large pan positions', () => {
     mockWindowLocation('http://localhost:5173/#x=999999&y=-999999');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.x).toBe(999999);
     expect(state.y).toBe(-999999);
   });
 
   it('handles decimal pan positions', () => {
     mockWindowLocation('http://localhost:5173/#x=123.456789&y=987.654321');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.x).toBe(123.456789);
     expect(state.y).toBe(987.654321);
   });
 
   it('handles empty overlay parameter', () => {
     mockWindowLocation('http://localhost:5173/#overlay=');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBeUndefined();
   });
 
   it('handles multiple question marks (malformed)', () => {
     mockWindowLocation('http://localhost:5173/#overlay=trop&trop=???');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlayParams.trop).toBe('???');
   });
 
@@ -840,7 +864,7 @@ describe('edge cases and error handling', () => {
       };
       const hash = buildUrlHash(state);
       mockWindowLocation(`http://localhost:5173/${hash}`);
-      const parsed = parseUrlState();
+      const parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlayParams.trop).toBe(trop);
     });
   });
@@ -876,13 +900,260 @@ describe('edge cases and error handling', () => {
 
   it('handles URL with hash but no parameters', () => {
     mockWindowLocation('http://localhost:5173/#');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state).toEqual({ overlayParams: {} });
   });
 
   it('handles duplicate parameters (URLSearchParams takes first)', () => {
     mockWindowLocation('http://localhost:5173/#overlay=trop&overlay=search');
-    const state = parseUrlState();
+    const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBe('trop'); // URLSearchParams.get() returns first value
+  });
+});
+
+describe('overlay-supplied parameters', () => {
+  it('reads only the keys the active overlay declares', () => {
+    // "trop" belongs to the trop overlay, not to search
+    mockWindowLocation('http://localhost:5173/#overlay=search&q=light&trop=etnachta');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams).toEqual({ q: 'light' });
+  });
+
+  it('ignores keys no overlay declared', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta&nonsense=1');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams).toEqual({ trop: 'etnachta' });
+  });
+
+  it('reads nothing for an overlay that declares no parameters', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=text-dating&q=light');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams).toEqual({});
+  });
+
+  it('reads nothing when no overlay is active', () => {
+    mockWindowLocation('http://localhost:5173/#q=light&trop=etnachta');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams).toEqual({});
+  });
+
+  it('reads nothing when given no lookup at all', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta');
+    const state = parseUrlState();
+    expect(state.overlay).toBe('trop');
+    expect(state.overlayParams).toEqual({});
+  });
+
+  it('rejects a value outside the set the overlay allows', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=search&q=light&hm=sideways');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams.hm).toBeUndefined();
+    expect(state.overlayParams.q).toBe('light');
+  });
+
+  it('accepts every value in the set the overlay allows', () => {
+    for (const mode of ['substring', 'word', 'root']) {
+      mockWindowLocation(`http://localhost:5173/#overlay=search&q=light&hm=${mode}`);
+      const state = parseUrlState(overlayUrlParams);
+      expect(state.overlayParams.hm).toBe(mode);
+    }
+  });
+
+  it('refuses an overlay key that collides with a core key', () => {
+    const collidingLookup = () => [{ key: 'zoom', kind: 'token' } as const];
+    mockWindowLocation('http://localhost:5173/#overlay=trop&zoom=3');
+    const state = parseUrlState(collidingLookup);
+    expect(state.zoom).toBe(3);
+    expect(state.overlayParams).toEqual({});
+  });
+
+  it('writes back whatever the overlay reported, without inspecting it', () => {
+    const state: UrlState = {
+      overlay: 'brand-new-overlay',
+      overlayParams: { anything: 'at all', another: '7' },
+    };
+    const hash = buildUrlHash(state);
+    expect(hash).toContain('anything=at+all');
+    expect(hash).toContain('another=7');
+  });
+});
+
+describe('what every overlay must hold to', () => {
+  // The point of the redesign: an overlay that saves settings has to say which
+  // keys it uses, or urlState.ts will never read them back out of a link.
+  getAllOverlays().forEach((overlay) => {
+    const savesSettings = Boolean(overlay.getUrlParams || overlay.applyUrlParams);
+
+    it(`${overlay.id}: declares its keys if it saves any settings`, () => {
+      if (savesSettings) {
+        expect(overlay.urlParams, `${overlay.id} has no urlParams`).toBeDefined();
+        expect(overlay.urlParams!.length).toBeGreaterThan(0);
+      } else {
+        expect(overlay.urlParams).toBeUndefined();
+      }
+    });
+
+    it(`${overlay.id}: uses distinct keys that do not clash with the view state`, () => {
+      const keys = (overlay.urlParams ?? []).map((spec) => spec.key);
+      expect(new Set(keys).size).toBe(keys.length);
+      for (const key of keys) {
+        expect(['story', 'overlay', 'verse', 'zoom', 'x', 'y']).not.toContain(key);
+      }
+    });
+
+    it(`${overlay.id}: only reports settings under keys it declared`, () => {
+      const declared = new Set((overlay.urlParams ?? []).map((spec) => spec.key));
+      const reported = Object.keys(overlay.getUrlParams?.() ?? {});
+      for (const key of reported) {
+        expect(declared, `${overlay.id} reported undeclared "${key}"`).toContain(key);
+      }
+    });
+
+    it(`${overlay.id}: writes no URL state while being restored`, () => {
+      // Restoring a link must not rewrite the link, for every overlay, whether
+      // or not that overlay remembers to be careful. Two things are checked.
+      //
+      // First, that URL writes really are off for the whole time the overlay
+      // is being handed its settings — true for every overlay, including ones
+      // that ignore the particular values this test can invent.
+      //
+      // Second, end to end: an overlay announces a settings change by calling
+      // the handler the app gave it, and in the app that handler saves URL
+      // state. So wire up a handler that does exactly that and watch the
+      // history API. (Commentary and search do announce; that is what makes
+      // this half of the test bite.)
+      const pushState = vi.fn();
+      const replaceState = vi.fn();
+      globalThis.history = { pushState, replaceState } as any;
+      mockWindowLocation('http://localhost:5173/');
+
+      overlay.onUpdate?.(() => {
+        updateUrl({ overlay: overlay.id, overlayParams: {} }, false);
+      });
+
+      let writesWereSuspended: boolean | null = null;
+      if (overlay.applyUrlParams) {
+        const realApply = overlay.applyUrlParams.bind(overlay);
+        vi.spyOn(overlay, 'applyUrlParams').mockImplementation((params) => {
+          writesWereSuspended = isApplyingExternalState();
+          realApply(params);
+        });
+      }
+
+      // Feed it a plausible value for each key it declared.
+      const settings: Record<string, string> = {};
+      for (const spec of overlay.urlParams ?? []) {
+        settings[spec.key] = spec.allowed?.[0] ?? 'x';
+      }
+      applyOverlayParams(overlay, settings);
+
+      if (overlay.applyUrlParams) {
+        expect(
+          writesWereSuspended,
+          `${overlay.id} was given settings with URL writes still live`,
+        ).toBe(true);
+      }
+      expect(pushState, `${overlay.id} pushed a history entry`).not.toHaveBeenCalled();
+      expect(replaceState, `${overlay.id} wrote URL state`).not.toHaveBeenCalled();
+
+      vi.restoreAllMocks();
+    });
+  });
+});
+
+describe('the restore guard itself', () => {
+  it('lets URL writes through normally', () => {
+    const replaceState = vi.fn();
+    globalThis.history = { pushState: vi.fn(), replaceState } as any;
+    mockWindowLocation('http://localhost:5173/');
+
+    updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    expect(replaceState).toHaveBeenCalled();
+  });
+
+  it('blocks them inside applyingExternalState, and only inside', () => {
+    const replaceState = vi.fn();
+    globalThis.history = { pushState: vi.fn(), replaceState } as any;
+    mockWindowLocation('http://localhost:5173/');
+
+    applyingExternalState(() => {
+      expect(isApplyingExternalState()).toBe(true);
+      updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    });
+    expect(replaceState).not.toHaveBeenCalled();
+
+    expect(isApplyingExternalState()).toBe(false);
+    updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    expect(replaceState).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores writes even when the restore throws', () => {
+    expect(() =>
+      applyingExternalState(() => {
+        throw new Error('boom');
+      }),
+    ).toThrow('boom');
+    expect(isApplyingExternalState()).toBe(false);
+  });
+});
+
+describe('haftarah custom in the URL (issue #66)', () => {
+  it('parses the Sephardi custom', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=sephardi');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams.custom).toBe('sephardi');
+  });
+
+  it('parses the Ashkenazi custom', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=ashkenazi');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams.custom).toBe('ashkenazi');
+  });
+
+  it('rejects a custom that is not one of the two', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=yemenite');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams.custom).toBeUndefined();
+  });
+
+  it('roundtrips the Sephardi custom', () => {
+    const original: UrlState = {
+      overlay: 'haftarah',
+      overlayParams: { custom: 'sephardi' },
+    };
+    const hash = buildUrlHash(original);
+    expect(hash).toContain('custom=sephardi');
+    mockWindowLocation(`http://localhost:5173/${hash}`);
+    expect(parseUrlState(overlayUrlParams)).toEqual(original);
+  });
+});
+
+describe('whole links, parsed with the real overlay declarations', () => {
+  const links: Array<[string, Record<string, string>]> = [
+    ['#overlay=trop&trop=etnachta', { trop: 'etnachta' }],
+    ['#overlay=commentary&category=Midrash', { category: 'Midrash' }],
+    ['#overlay=commentary&category=Jewish%20Thought', { category: 'Jewish Thought' }],
+    ['#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', { q: 'בראשית' }],
+    ['#overlay=search&q=light&ww=1', { q: 'light', ww: '1' }],
+    ['#overlay=search&q=light&ww=1&hm=root', { q: 'light', ww: '1', hm: 'root' }],
+  ];
+
+  links.forEach(([hash, expected]) => {
+    it(`parses ${hash}`, () => {
+      mockWindowLocation(`http://localhost:5173/${hash}`);
+      const state = parseUrlState(overlayUrlParams);
+      expect(state.overlayParams).toEqual(expected);
+    });
+  });
+
+  it('keeps a full link intact through a parse and rebuild', () => {
+    const hash = '#overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud';
+    mockWindowLocation(`http://localhost:5173/${hash}`);
+    const state = parseUrlState(overlayUrlParams);
+    const rebuilt = buildUrlHash(state);
+    expect(rebuilt).toContain('overlay=commentary');
+    expect(rebuilt).toContain('verse=Exodus.20.1');
+    expect(rebuilt).toContain('zoom=3');
+    expect(rebuilt).toContain('category=Talmud');
   });
 });

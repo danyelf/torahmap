@@ -93,7 +93,7 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
  * Get verse dating data
  */
 function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number } | null {
-  const bookData = data.books[verse.book];
+  const bookData = data.books?.[verse.book];
   if (!bookData) return null;
 
   const chapterData = bookData[verse.chapter - 1];
@@ -161,7 +161,7 @@ export const textDatingOverlay: Overlay = {
 
     if (!era) return null;
 
-    const note = data.notes[verseData.n];
+    const note = data.notes?.[verseData.n];
     const dateStr = startBCE === endBCE
       ? `~${Math.abs(startBCE)} BCE`
       : `${Math.abs(startBCE)}-${Math.abs(endBCE)} BCE`;
@@ -221,6 +221,6 @@ export function getVerseDatingInfo(
     era: era.name,
     eraDateRange: era.dateRange,
     dateRange: [Math.abs(startBCE), Math.abs(endBCE)],
-    note: data.notes[verseData.n],
+    note: data.notes?.[verseData.n],
   };
 }

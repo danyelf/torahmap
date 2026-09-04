@@ -223,7 +223,7 @@ describe('sidebar', () => {
       it('adds ?with=Talmud when Talmud category is selected', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ cat: 'Talmud' }),
+          getUrlParams: () => ({ category: 'Talmud' }),
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Talmud');
@@ -232,7 +232,7 @@ describe('sidebar', () => {
       it('adds ?with=Midrash when Midrash category is selected', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ cat: 'Midrash' }),
+          getUrlParams: () => ({ category: 'Midrash' }),
         } as any;
         const url = getSefariaUrl('Exodus', 20, 2, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Exodus.20.2?with=Midrash');
@@ -241,7 +241,7 @@ describe('sidebar', () => {
       it('adds ?with=Halakhah when Halakhah category is selected', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ cat: 'Halakhah' }),
+          getUrlParams: () => ({ category: 'Halakhah' }),
         } as any;
         const url = getSefariaUrl('Leviticus', 19, 18, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Leviticus.19.18?with=Halakhah');
@@ -250,7 +250,7 @@ describe('sidebar', () => {
       it('encodes category names with spaces', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ cat: 'Jewish Thought' }),
+          getUrlParams: () => ({ category: 'Jewish Thought' }),
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Jewish%20Thought');
@@ -259,7 +259,7 @@ describe('sidebar', () => {
       it('adds ?with=Kabbalah when Kabbalah category is selected', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ cat: 'Kabbalah' }),
+          getUrlParams: () => ({ category: 'Kabbalah' }),
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Kabbalah');
@@ -268,7 +268,7 @@ describe('sidebar', () => {
       it('adds ?with=Chasidut when Chasidut category is selected', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ cat: 'Chasidut' }),
+          getUrlParams: () => ({ category: 'Chasidut' }),
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Chasidut');
@@ -277,7 +277,7 @@ describe('sidebar', () => {
       it('adds ?with=Musar when Musar category is selected', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ cat: 'Musar' }),
+          getUrlParams: () => ({ category: 'Musar' }),
         } as any;
         const url = getSefariaUrl('Proverbs', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Proverbs.1.1?with=Musar');
