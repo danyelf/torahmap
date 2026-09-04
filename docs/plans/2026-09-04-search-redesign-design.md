@@ -59,51 +59,39 @@ how a word is spelled, and it keeps alive the keyboard machinery this redesign
 exists to delete.
 
 **Two further facts shaped the scope.** 87.4% of surface forms map to exactly
-one Strong's number, so choosing between senses is a rare case rather than the
+one lexeme, so choosing between senses is a rare case rather than the
 common one — a picker would usually be a formality. And the number of surface
 forms per root has a median of 2 and a maximum of 290, so a word-form filter
 would usually show two things and occasionally show 290. Neither justifies new
 data.
 
-Strong's is a placeholder, not the destination. It is an 1894 concordance
-index, and it is being asked to do lexical semantics it was never designed for.
-The evidence is already visible in this project's own data: `על` resolves to
-seven different Strong's numbers spanning 4,607 verses, a fifth of the Tanakh;
-`שלם` is offered לבב, "heart", among its senses; and a prototype built over
-this data had to discard senses outright because their root was a different
-word. Those are not display problems to be styled around. They are the limits
-of the source.
+The word index this project shipped until now was derived from a 19th-century
+concordance numbering system, and it was being asked to do lexical semantics it
+was never designed for. The evidence was visible in the project's own data: the
+written form עלה was offered five entries, one of which was the Aramaic
+preposition "upon" — a different word that merely shares a spelling. A prototype
+built over that data had to discard candidate senses by comparing roots, to stop
+the interface offering words a reader would reject on sight. Those were not
+display problems to be styled around. They were the limits of the source.
 
-The intended direction is a modern linguistic dataset. ETCBC/BHSA is the
-target: it carries its own lexeme identification with homograph separation
+That index has been removed from the project. Words are identified by ETCBC/BHSA
+lexemes instead: a modern linguistic database that separates homographs properly
 across 8,769 lexemes, so רוח resolves to "wind" or "be spacious" by context
-rather than by inherited Victorian numbering. It also carries sentence
-structure — clause and phrase hierarchy, dependency edges, phrase functions —
-and a classification of roughly 33,000 proper nouns as person, place, gentilic
-or deity, which is an interesting thing to paint on a map in its own right.
+rather than by inherited numbering. It also carries sentence structure — clause
+and phrase hierarchy, dependency edges, phrase functions — and a classification
+of roughly 33,000 proper nouns as person, place, gentilic or deity, which is an
+interesting thing to paint on a map in its own right.
 
-Two practical facts about that move, both better than assumed. Its verse
+Two practical facts about the change, both better than assumed. ETCBC's verse
 numbering disagrees with Sefaria in three chapters out of 929 — Exodus 20,
-Deuteronomy 5 and Numbers 25, seven verses in total — which is a short list of
-rules rather than the text-matching subsystem morphhb required. And a derived
-index is about 0.89 MB over the wire against the 0.95 MB shipping today, so it
-costs nothing to deliver.
+Deuteronomy 5 and Numbers 25, seven verses in total — a short list of rules
+rather than the text-matching subsystem the old pipeline required. And a derived
+index is about 0.89 MB over the wire against the 0.95 MB that shipped before, so
+it costs nothing to deliver.
 
-Adopting it means giving up Strong's numbers, which the current pipeline is
-built on. That is the point of the move, not an obstacle to it, and it is why
-the dictionary interface described below is a prerequisite rather than a
-nicety.
-
-In the meantime, one cheap thing is worth doing: `scripts/generate-lemma-index.ts`
-reads each word from morphhb as a triple of written form, Strong's number, and
-morphology code, and never uses the third. Line 361 destructures it and nothing
-reads it again. Those codes are complete — `Vqp3ms` is verb, qal, perfect,
-third person, masculine, singular — and coverage is total, verified at 20,629
-of 20,629 words in Genesis. Recovering them yields grammatical-form filtering
-immediately, and it does not compete with the move to ETCBC, because
-grammatical form is the one thing the two sources agree on: their verb counts
-land within half a percent of each other, both parsing the same Leningrad
-Codex.
+ETCBC also carries morphology — verbal stem, tense, person, number, gender,
+state — so filtering by grammatical form needs no further data work when it is
+wanted.
 
 What ETCBC does not solve is filtering by meaning. Its node features include no
 sense field and no semantic domain — only one English gloss per lexeme. The
@@ -255,11 +243,10 @@ which uses the word for a fig leaf — is correctly excluded, because it does no
 carry that lemma.
 
 What verse-level data cannot do is say which word in a verse carries which
-sense. A verse's lemma count matches its word count in only about a quarter of
+sense. A verse's lexeme count matches its word count in only about a quarter of
 verses. That limits highlighting the right word inside a result snippet; it does
 not limit painting the map, because the map colours whole verses. Per-token
-identification would remove the limit, which is one more reason the move off
-Strong's is worth making.
+identification removes the limit.
 
 An earlier prototype appeared to show this filtering was impossible, painting
 474 verses when 261 were selected. That was a defect in the prototype, which
@@ -299,18 +286,12 @@ grouped result list.
 
 ### The dictionary layer must be replaceable
 
-Today those identifiers are Strong's numbers, and that assumption is spread
-through `src/search.ts`: `wordLemmas`, `strongsToRoot`, `lemmaToVerses`,
-`strongsToSurfaceForm` and `rootToStrongsNumbers` all name it directly, and
-`getRelatedRoots()` builds its neighbour map from the shape of Strong's data
-specifically.
-
-Strong's is a nineteenth-century concordance index and we will want something
-better. ETCBC is the likely successor. So the search code should depend on a
-small interface rather than on Strong's itself — given a written form, return
-the identifiers it might be; given an identifier, return its display form, its
-surface forms, and the verses it occurs in. Strong's becomes one implementation
-behind that interface.
+The identifiers are ETCBC lexemes. The search code should depend on a small
+interface rather than on any particular dictionary — given a written form,
+return the identifiers it might be; given an identifier, return its display
+form, its gloss, its written forms, and the verses it occurs in. ETCBC is one
+implementation behind that interface, and the project has now changed its word
+index once, which is the argument for keeping that seam.
 
 This is worth doing now, while the surface being changed is small. Retrofitting
 it after a Dicta-style interface is built on top would be considerably worse.
