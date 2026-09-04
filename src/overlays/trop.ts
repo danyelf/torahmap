@@ -227,6 +227,8 @@ export const tropOverlay: Overlay = {
     return loc ? `${selectedTrop.name} ×${loc.count}` : null;
   },
 
+  urlParams: [{ key: 'trop', kind: 'token' }],
+
   getUrlParams(): Record<string, string> {
     if (!selectedTrop) return {};
     // Use lowercase name with hyphens for URL-friendly format

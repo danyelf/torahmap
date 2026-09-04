@@ -23,6 +23,7 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
+import { overlayUrlParams } from '../helpers/overlayUrlParams';
 import type { TanakhLayout } from '../../types';
 
 /**
@@ -146,7 +147,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, true);
 
-      let parsed = parseUrlState();
+      let parsed = parseUrlState(overlayUrlParams);
       expect(parsed.verse).toBe(state.verse);
 
       // Step 2: Change to commentary overlay
@@ -157,7 +158,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, true);
 
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.verse).toBe(state.verse);
 
@@ -168,7 +169,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, false); // replaceState for zoom
 
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.zoom).toBe(2.5);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.verse).toBe(state.verse);
@@ -183,7 +184,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, true);
 
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlay).toBe('search');
       expect(parsed.overlayParams.q).toBe('moses');
       expect(parsed.zoom).toBe(2.5);
@@ -212,7 +213,7 @@ describe('User Workflows Integration', () => {
         };
         updateUrl(state, true);
 
-        const parsed = parseUrlState();
+        const parsed = parseUrlState(overlayUrlParams);
         expect(parsed.overlay).toBe(id);
 
         // Verify no leakage of previous overlay params
@@ -228,7 +229,7 @@ describe('User Workflows Integration', () => {
       }
 
       // Final state should be commentary with no params
-      const finalParsed = parseUrlState();
+      const finalParsed = parseUrlState(overlayUrlParams);
       expect(finalParsed.overlay).toBe('commentary');
       expect(finalParsed.overlayParams.trop).toBeUndefined();
       expect(finalParsed.overlayParams.q).toBeUndefined();
@@ -249,7 +250,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, false);
 
-      let parsed = parseUrlState();
+      let parsed = parseUrlState(overlayUrlParams);
       expect(parsed.zoom).toBe(8.0);
 
       // Pan while zoomed
@@ -261,7 +262,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, false);
 
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.zoom).toBe(8.0);
       expect(parsed.x).toBe(500);
       expect(parsed.y).toBe(300);
@@ -273,7 +274,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, false);
 
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.zoom).toBeUndefined(); // 1.0 is omitted as default
       expect(parsed.x).toBeUndefined();
       expect(parsed.y).toBeUndefined();
@@ -294,7 +295,7 @@ describe('User Workflows Integration', () => {
 
       // Simulate page refresh by re-parsing the URL
       mockWindowLocation(`http://localhost:5173/${hash}`);
-      const restored = parseUrlState();
+      const restored = parseUrlState(overlayUrlParams);
 
       expect(restored.overlay).toBe('commentary');
       expect(restored.overlayParams.category).toBe('midrash');
@@ -303,11 +304,10 @@ describe('User Workflows Integration', () => {
 
       // Verify overlay can be initialized with restored state
       const overlay = await switchToOverlay('commentary');
-      const params = new URLSearchParams(`cat=${restored.overlayParams.category}`);
-      overlay.applyUrlParams?.(params);
+      overlay.applyUrlParams?.(new URLSearchParams(restored.overlayParams));
 
       const resultParams = overlay.getUrlParams?.();
-      expect(resultParams?.cat).toBe('midrash');
+      expect(resultParams?.category).toBe('midrash');
     });
 
     it('maintains URL sync throughout full interaction cycle', async () => {
@@ -338,7 +338,7 @@ describe('User Workflows Integration', () => {
           expect(hash).toContain(expectedPart);
         }
 
-        const parsed = parseUrlState();
+        const parsed = parseUrlState(overlayUrlParams);
         expect(parsed.overlay).toBe(state.overlay);
         expect(parsed.zoom).toBe(state.zoom);
         expect(parsed.verse).toBe(state.verse);
@@ -358,20 +358,20 @@ describe('User Workflows Integration', () => {
       }
 
       // Verify final state
-      let parsed = parseUrlState();
+      let parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlay).toBe('search');
       expect(parsed.overlayParams.q).toBe('moses');
 
       // Simulate browser back (would change URL, we test parsing)
       mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta');
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlay).toBe('trop');
       expect(parsed.overlayParams.trop).toBe('etnachta');
       expect(parsed.overlayParams.q).toBeUndefined(); // No leakage
 
       // Simulate another back
       mockWindowLocation('http://localhost:5173/#overlay=commentary&category=talmud');
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('talmud');
       expect(parsed.overlayParams.trop).toBeUndefined();
@@ -486,7 +486,7 @@ describe('User Workflows Integration', () => {
 
       // Parse it back
       mockWindowLocation(`http://localhost:5173/${hash}`);
-      const parsed = parseUrlState();
+      const parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlayParams.q).toBe(longQuery);
     });
 
@@ -500,7 +500,7 @@ describe('User Workflows Integration', () => {
         };
 
         updateUrl(state, false);
-        const parsed = parseUrlState();
+        const parsed = parseUrlState(overlayUrlParams);
 
         if (zoom === 1.0) {
           // Default zoom is omitted
@@ -525,7 +525,7 @@ describe('User Workflows Integration', () => {
       }
 
       // Final state should be parseable
-      const parsed = parseUrlState();
+      const parsed = parseUrlState(overlayUrlParams);
       expect(parsed).toBeDefined();
     });
 
@@ -585,7 +585,7 @@ describe('User Workflows Integration', () => {
         const hash = buildUrlHash(state);
         mockWindowLocation(`http://localhost:5173/${hash}`);
 
-        const parsed = parseUrlState();
+        const parsed = parseUrlState(overlayUrlParams);
         expect(parsed.overlay).toBe(overlay);
 
         // Special characters should round-trip correctly
@@ -637,7 +637,7 @@ describe('User Workflows Integration', () => {
       updateUrl(state, false);
 
       // Verify final state
-      const parsed = parseUrlState();
+      const parsed = parseUrlState(overlayUrlParams);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('midrash');
       expect(parsed.verse).toBe('Genesis.1.1');
@@ -670,7 +670,7 @@ describe('User Workflows Integration', () => {
         };
         updateUrl(state, false);
 
-        const parsed = parseUrlState();
+        const parsed = parseUrlState(overlayUrlParams);
         expect(parsed.overlayParams.category).toBe(category);
       }
 
@@ -682,7 +682,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, true);
 
-      const parsed = parseUrlState();
+      const parsed = parseUrlState(overlayUrlParams);
       expect(parsed.verse).toBe('Deuteronomy.6.4');
       expect(parsed.zoom).toBe(3.0);
     });
@@ -704,7 +704,7 @@ describe('User Workflows Integration', () => {
 
       // Colleague opens link (simulate)
       mockWindowLocation(shareableUrl);
-      const restored = parseUrlState();
+      const restored = parseUrlState(overlayUrlParams);
 
       // State should be exactly restored
       expect(restored.overlay).toBe('trop');
@@ -745,7 +745,7 @@ describe('User Workflows Integration', () => {
 
       // User wants to reset - clears URL
       mockWindowLocation('http://localhost:5173/');
-      const parsed = parseUrlState();
+      const parsed = parseUrlState(overlayUrlParams);
 
       // Should return to default state
       expect(parsed.overlay).toBeUndefined();
@@ -773,7 +773,7 @@ describe('User Workflows Integration', () => {
         state = { ...state, zoom };
         updateUrl(state, false);
 
-        const parsed = parseUrlState();
+        const parsed = parseUrlState(overlayUrlParams);
         expect(parsed.overlay).toBe('commentary');
         expect(parsed.overlayParams.category).toBe('kabbalah');
         expect(parsed.zoom).toBe(zoom === 1.0 ? undefined : zoom); // 1.0 is omitted
@@ -795,7 +795,7 @@ describe('User Workflows Integration', () => {
         };
         updateUrl(state, false);
 
-        const parsed = parseUrlState();
+        const parsed = parseUrlState(overlayUrlParams);
         expect(parsed.verse).toBe(verse);
         expect(parsed.overlay).toBe(overlayId);
       }
@@ -810,7 +810,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, true);
 
-      let parsed = parseUrlState();
+      let parsed = parseUrlState(overlayUrlParams);
       expect(parsed.verse).toBe('Genesis.1.1');
 
       // Clear verse selection
@@ -820,7 +820,7 @@ describe('User Workflows Integration', () => {
       };
       updateUrl(state, false);
 
-      parsed = parseUrlState();
+      parsed = parseUrlState(overlayUrlParams);
       expect(parsed.verse).toBeUndefined();
     });
   });

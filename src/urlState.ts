@@ -4,20 +4,48 @@
 import { MIN_ZOOM, MAX_ZOOM } from "./camera.ts";
 
 /**
- * Overlay-specific parameters that can be stored in the URL
+ * Overlay-specific parameters, as plain key/value pairs.
+ *
+ * This module deliberately knows nothing about which keys any particular
+ * overlay uses. Each overlay declares its own keys (see `UrlParamSpec`);
+ * this module only decides whether a given value is safe and in range.
  */
-export interface OverlayParams {
-  /** Trop overlay: selected cantillation mark */
-  trop?: string;
-  /** Commentary overlay: selected category */
-  category?: string;
-  /** Search overlay: search query */
-  q?: string;
-  /** Search overlay: whole word matching */
-  ww?: string;
-  /** Search overlay: Hebrew search mode (substring, word, or root) */
-  hm?: string;
+export type OverlayParams = Record<string, string>;
+
+/**
+ * The kinds of value an overlay parameter can hold. The overlay picks a kind;
+ * this module decides what that kind allows.
+ *
+ * - `token`    short identifier, e.g. a slugified name or a mode word
+ * - `category` a name that may contain spaces and slashes, e.g. "Talmud/Mishnah"
+ * - `text`     free-form user text, e.g. a search query
+ */
+export type UrlParamKind = "token" | "category" | "text";
+
+/**
+ * An overlay's declaration of one URL parameter it owns.
+ */
+export interface UrlParamSpec {
+  /** The key used both in the URL hash and in the overlay's own params object */
+  key: string;
+  /** Which validation rules apply to the value */
+  kind: UrlParamKind;
+  /** When present, the value must be one of these after validation */
+  allowed?: readonly string[];
 }
+
+/**
+ * Looks up the parameter declarations for an overlay by its id.
+ * Supplied by the caller so that this module never imports overlays.
+ */
+export type OverlayParamSpecLookup = (
+  overlayId: string,
+) => readonly UrlParamSpec[] | undefined;
+
+/**
+ * Keys this module owns. An overlay may not claim one of these.
+ */
+const RESERVED_KEYS = new Set(["story", "overlay", "verse", "zoom", "x", "y"]);
 
 /**
  * Validation constants
@@ -80,6 +108,42 @@ function validateCategoryName(value: string | null): string | null {
 }
 
 /**
+ * Validate a single overlay parameter value against its declared kind.
+ * Returns the cleaned value, or null if the value should be dropped.
+ */
+function validateOverlayParam(
+  spec: UrlParamSpec,
+  raw: string | null,
+): string | null {
+  if (raw === null) return null;
+
+  let cleaned: string | null;
+  switch (spec.kind) {
+    case "category":
+      cleaned = validateCategoryName(raw);
+      break;
+    case "text": {
+      // Free text keeps punctuation and non-Latin scripts, but is length
+      // capped and has any HTML tags removed.
+      const trimmed = raw.trim();
+      cleaned =
+        trimmed && trimmed.length <= MAX_SEARCH_QUERY_LENGTH
+          ? stripHtmlTags(trimmed)
+          : null;
+      break;
+    }
+    case "token":
+    default:
+      cleaned = validateString(raw);
+      break;
+  }
+
+  if (!cleaned) return null;
+  if (spec.allowed && !spec.allowed.includes(cleaned)) return null;
+  return cleaned;
+}
+
+/**
  * Validate book name in verse reference
  * Only allows letters, spaces, and dots (for I.Samuel format)
  */
@@ -117,9 +181,15 @@ export interface UrlState {
 }
 
 /**
- * Parse the current URL hash into a UrlState object
+ * Parse the current URL hash into a UrlState object.
+ *
+ * @param lookupOverlayParams - given the overlay id found in the URL, returns
+ *   that overlay's parameter declarations. Without it, no overlay parameters
+ *   are read (the core view state still parses).
  */
-export function parseUrlState(): UrlState {
+export function parseUrlState(
+  lookupOverlayParams?: OverlayParamSpecLookup,
+): UrlState {
   const hash = window.location.hash.slice(1); // Remove leading #
   const params = new URLSearchParams(hash);
 
@@ -177,42 +247,15 @@ export function parseUrlState(): UrlState {
     }
   }
 
-  // Overlay-specific parameters
-  const trop = params.get("trop");
-  const validatedTrop = validateString(trop);
-  if (validatedTrop) state.overlayParams.trop = validatedTrop;
-
-  const category = params.get("category");
-  const validatedCategory = validateCategoryName(category);
-  if (validatedCategory) {
-    state.overlayParams.category = validatedCategory;
-  }
-
-  const q = params.get("q");
-  if (q) {
-    // Search queries need HTML stripping but allow longer length
-    const trimmed = q.trim();
-    if (trimmed && trimmed.length <= MAX_SEARCH_QUERY_LENGTH) {
-      state.overlayParams.q = stripHtmlTags(trimmed);
+  // Overlay-specific parameters: the active overlay says which keys it owns
+  // and what shape each value has; we decide whether the value is acceptable.
+  if (state.overlay) {
+    const specs = lookupOverlayParams?.(state.overlay) ?? [];
+    for (const spec of specs) {
+      if (RESERVED_KEYS.has(spec.key)) continue;
+      const value = validateOverlayParam(spec, params.get(spec.key));
+      if (value) state.overlayParams[spec.key] = value;
     }
-  }
-
-  // Search options
-  const ww = params.get("ww");
-  if (ww) {
-    state.overlayParams.ww = ww;
-  }
-
-  const hm = params.get("hm");
-  const validatedHm = validateString(hm);
-  // Only accept valid Hebrew mode values
-  if (
-    validatedHm &&
-    (validatedHm === "substring" ||
-      validatedHm === "word" ||
-      validatedHm === "root")
-  ) {
-    state.overlayParams.hm = validatedHm;
   }
 
   return state;
@@ -254,21 +297,12 @@ export function buildUrlHash(state: UrlState): string {
     }
   }
 
-  // Overlay-specific parameters
-  if (state.overlayParams.trop) {
-    params.set("trop", state.overlayParams.trop);
-  }
-  if (state.overlayParams.category && state.overlayParams.category !== "all") {
-    params.set("category", state.overlayParams.category);
-  }
-  if (state.overlayParams.q) {
-    params.set("q", state.overlayParams.q);
-  }
-  if (state.overlayParams.ww) {
-    params.set("ww", state.overlayParams.ww);
-  }
-  if (state.overlayParams.hm) {
-    params.set("hm", state.overlayParams.hm);
+  // Overlay-specific parameters, written through unchanged. Overlays omit
+  // their own defaults, so whatever arrives here belongs in the URL.
+  for (const [key, value] of Object.entries(state.overlayParams)) {
+    if (!value) continue;
+    if (RESERVED_KEYS.has(key)) continue;
+    params.set(key, value);
   }
 
   const hash = params.toString();

@@ -496,7 +496,23 @@ describe('Commentary Overlay', () => {
       select.dispatchEvent(new Event('change'));
 
       const params = commentaryOverlay.getUrlParams?.();
-      expect(params).toEqual({ cat: 'Midrash' });
+      expect(params).toEqual({ category: 'Midrash' });
+    });
+
+    it('declares the category key it owns', () => {
+      expect(commentaryOverlay.urlParams).toEqual([
+        { key: 'category', kind: 'category' },
+      ]);
+    });
+
+    it('applies category under its own key name', () => {
+      commentaryOverlay.applyUrlParams?.(new URLSearchParams('category=Midrash'));
+      expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
+    });
+
+    it('still accepts the older "cat" spelling', () => {
+      commentaryOverlay.applyUrlParams?.(new URLSearchParams('cat=Midrash'));
+      expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
     });
 
     it('applies category from URL params', () => {
@@ -674,14 +690,14 @@ describe('Commentary Overlay', () => {
 
       // Verify category is set
       let params = commentaryOverlay.getUrlParams?.();
-      expect(params).toEqual({ cat: 'Midrash' });
+      expect(params).toEqual({ category: 'Midrash' });
 
       // Destroy (simulating overlay switch)
       commentaryOverlay.destroy?.();
 
       // Category should still be preserved internally
       params = commentaryOverlay.getUrlParams?.();
-      expect(params).toEqual({ cat: 'Midrash' });
+      expect(params).toEqual({ category: 'Midrash' });
 
       // Re-render controls (simulating switching back to commentary)
       const container2 = document.createElement('div');

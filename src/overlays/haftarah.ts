@@ -453,21 +453,28 @@ export const haftarahOverlay: Overlay = {
     return null;
   },
 
+  urlParams: [
+    { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'] },
+  ],
+
   getUrlParams(): Record<string, string> {
+    // Ashkenazi is the default, so it stays out of the URL
     if (currentCustom === 'ashkenazi') return {};
     return { custom: currentCustom };
   },
 
   applyUrlParams(params: URLSearchParams): void {
     const custom = params.get('custom');
-    if (custom === 'sephardi') {
-      currentCustom = 'sephardi';
-      buildIndexes();
-      // Update the dropdown if it exists
-      const select = document.querySelector('#custom-select') as HTMLSelectElement | null;
-      if (select) {
-        select.value = currentCustom;
-      }
+    if (custom !== 'sephardi' && custom !== 'ashkenazi') return;
+    if (custom === currentCustom) return;
+
+    currentCustom = custom;
+    buildIndexes();
+    // Update the dropdown if it exists
+    const select = document.querySelector('#custom-select') as HTMLSelectElement | null;
+    if (select) {
+      select.value = currentCustom;
     }
+    updateCallback?.();
   },
 };

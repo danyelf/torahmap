@@ -137,15 +137,18 @@ export const commentaryOverlay: Overlay = {
     return count ? `${count} ${currentCategory}` : `no ${currentCategory}`;
   },
 
-  // URL parameter uses 'cat' for brevity in shareable links,
-  // while internal code uses 'category' for clarity
+  urlParams: [{ key: "category", kind: "category" }],
+
   getUrlParams(): Record<string, string> {
+    // "total" is the default, so it stays out of the URL
     if (currentCategory === "total") return {};
-    return { cat: currentCategory };
+    return { category: currentCategory };
   },
 
   applyUrlParams(params: URLSearchParams): void {
-    const category = params.get("cat");
+    // "cat" was an earlier internal spelling of the same setting; still accepted
+    // so that captured story stops written against it keep working.
+    const category = params.get("category") ?? params.get("cat");
     if (category) {
       currentCategory = category;
       cachedMaxValues = {};

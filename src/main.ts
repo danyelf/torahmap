@@ -547,20 +547,9 @@ async function main(): Promise<void> {
   const sidebarElements = getSidebarElements();
 
   // URL State Management
-  // Extract overlay params for URL encoding
+  // The overlay reports its own settings; we pass them straight through.
   function buildOverlayParamsForUrl(): Record<string, string> {
-    if (!currentOverlay) return {};
-
-    const overlayParams = currentOverlay.getUrlParams?.() ?? {};
-    const result: Record<string, string> = {};
-
-    if (overlayParams.trop) result.trop = overlayParams.trop;
-    if (overlayParams.cat) result.category = overlayParams.cat;
-    if (overlayParams.q) result.q = overlayParams.q;
-    if (overlayParams.ww) result.ww = overlayParams.ww;
-    if (overlayParams.hm) result.hm = overlayParams.hm;
-
-    return result;
+    return currentOverlay?.getUrlParams?.() ?? {};
   }
 
   // Build current state for URL
@@ -958,19 +947,9 @@ async function main(): Promise<void> {
       overlaySelect.value = urlState.overlay;
     }
 
-    // Apply overlay-specific params
+    // Hand the overlay back its own settings, under its own key names
     if (currentOverlay?.applyUrlParams) {
-      const params = new URLSearchParams();
-      if (urlState.overlayParams.trop)
-        params.set("trop", urlState.overlayParams.trop);
-      if (urlState.overlayParams.category)
-        params.set("cat", urlState.overlayParams.category);
-      if (urlState.overlayParams.q) params.set("q", urlState.overlayParams.q);
-      if (urlState.overlayParams.ww)
-        params.set("ww", urlState.overlayParams.ww);
-      if (urlState.overlayParams.hm)
-        params.set("hm", urlState.overlayParams.hm);
-      currentOverlay.applyUrlParams(params);
+      currentOverlay.applyUrlParams(new URLSearchParams(urlState.overlayParams));
     }
   }
 
@@ -1012,7 +991,7 @@ async function main(): Promise<void> {
   }
 
   function restoreFromUrl(): void {
-    const urlState = parseUrlState();
+    const urlState = parseUrlState((id) => getOverlay(id)?.urlParams);
 
     if (urlState.story) {
       // Restore story mode

@@ -1011,6 +1011,12 @@ export const searchOverlay: Overlay = {
     // These should persist across overlay switches so the user can return to their search.
   },
 
+  urlParams: [
+    { key: 'q', kind: 'text' },
+    { key: 'ww', kind: 'token', allowed: ['1'] },
+    { key: 'hm', kind: 'token', allowed: ['substring', 'word', 'root'] },
+  ],
+
   getUrlParams(): Record<string, string> {
     const params: Record<string, string> = {};
     if (currentQuery) {

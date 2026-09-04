@@ -1,6 +1,9 @@
 // src/overlays/types.ts
 import type { TanakhIdentity, TanakhLayout } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
+import type { UrlParamSpec } from "../urlState.ts";
+
+export type { UrlParamSpec, UrlParamKind } from "../urlState.ts";
 
 export type Color = [number, number, number];
 
@@ -49,7 +52,14 @@ export interface Overlay<T = TanakhIdentity> {
   // For dynamic overlays - register callback to trigger re-render
   onUpdate?(callback: () => void): void;
 
-  // URL state persistence - for shareable links
+  // URL state persistence - for shareable links.
+  //
+  // An overlay that has settings worth sharing declares them here. `urlParams`
+  // names the keys and says what shape each value has, so that urlState.ts can
+  // read them out of the hash and check them without knowing what they mean.
+  // getUrlParams() reports the current settings using those same keys, omitting
+  // any that are still at their default; applyUrlParams() takes them back.
+  urlParams?: readonly UrlParamSpec[];
   getUrlParams?(): Record<string, string>;
   applyUrlParams?(params: URLSearchParams): void;
 

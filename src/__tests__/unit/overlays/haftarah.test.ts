@@ -137,6 +137,73 @@ describe('Haftarah Overlay', () => {
     });
   });
 
+  describe('Custom setting in the URL', () => {
+    // Issue #66: the Ashkenazi/Sephardi choice used to be lost on reload
+    // because nothing carried it into the URL.
+    beforeEach(async () => {
+      await haftarahOverlay.init?.();
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=ashkenazi'));
+    });
+
+    it('declares the custom key it owns', () => {
+      expect(haftarahOverlay.urlParams).toEqual([
+        { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'] },
+      ]);
+    });
+
+    it('reports nothing while on the default (Ashkenazi)', () => {
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
+    });
+
+    it('reports the Sephardi custom once it is chosen', () => {
+      const container = document.createElement('div');
+      haftarahOverlay.renderControls?.(container);
+      const select = container.querySelector('select') as HTMLSelectElement;
+      select.value = 'sephardi';
+      select.dispatchEvent(new Event('change'));
+
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+    });
+
+    it('restores the Sephardi custom and reports it back', () => {
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+    });
+
+    it('switches back to Ashkenazi when asked to', () => {
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=ashkenazi'));
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
+    });
+
+    it('leaves the setting alone when the value is not recognised', () => {
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=yemenite'));
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+    });
+
+    it('updates the dropdown when restoring from a link', () => {
+      const container = document.createElement('div');
+      haftarahOverlay.renderControls?.(container);
+      document.body.appendChild(container);
+
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+
+      const select = container.querySelector('select') as HTMLSelectElement;
+      expect(select.value).toBe('sephardi');
+      document.body.removeChild(container);
+    });
+
+    it('asks for a repaint when the custom changes', () => {
+      const updateCallback = vi.fn();
+      haftarahOverlay.onUpdate?.(updateCallback);
+
+      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+
+      expect(updateCallback).toHaveBeenCalled();
+    });
+  });
+
   describe('Initialization', () => {
     it('loads haftarah mappings data on init', async () => {
       await haftarahOverlay.init?.();
