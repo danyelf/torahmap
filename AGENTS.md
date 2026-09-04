@@ -45,7 +45,7 @@ Closed issues from the pre-migration era live in `issues/closed/`:
 grep -rl "search overlay" issues/closed/
 ```
 
-For pre-migration issue references in code or commits, look up the new GH number in `issues/MIGRATION-MAP.md`. For the older beads tracker before that, see `.beads-archive/`.
+For pre-migration issue references in code or commits, look up the new GH number in `issues/MIGRATION-MAP.md`.
 
 ## Working in Worktrees
 
@@ -104,4 +104,4 @@ git branch -D <N>-<slug>
 
 ## Tracker history
 
-GitHub Issues (current). Before that, plain markdown files under `issues/` (see `issues/README.md`). Before that, beads (archived in `.beads-archive/`). Don't run `bd` against the archive.
+GitHub Issues (current). Before that, plain markdown files under `issues/` (see `issues/README.md`).
