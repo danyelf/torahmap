@@ -65,48 +65,52 @@ forms per root has a median of 2 and a maximum of 290, so a word-form filter
 would usually show two things and occasionally show 290. Neither justifies new
 data.
 
-Richer datasets were considered, investigated, and ruled out. The finding was
-that we already have what they would have provided.
+Strong's is a placeholder, not the destination. It is an 1894 concordance
+index, and it is being asked to do lexical semantics it was never designed for.
+The evidence is already visible in this project's own data: `על` resolves to
+seven different Strong's numbers spanning 4,607 verses, a fifth of the Tanakh;
+`שלם` is offered לבב, "heart", among its senses; and a prototype built over
+this data had to discard senses outright because their root was a different
+word. Those are not display problems to be styled around. They are the limits
+of the source.
 
-`scripts/generate-lemma-index.ts` reads each word from morphhb as a triple of
-written form, Strong's number, and morphology code, and then never uses the
-third one. Line 361 destructures it and nothing reads it again. Those codes are
-complete: `Vqp3ms` is verb, qal, perfect, third person, masculine, singular;
-`Td/Ncmpa` is definite article plus a common noun, masculine, plural, absolute.
-Coverage is total — every one of the 20,629 words in Genesis carries a code,
-and the same holds across the corpus.
+The intended direction is a modern linguistic dataset. ETCBC/BHSA is the
+target: it carries its own lexeme identification with homograph separation
+across 8,769 lexemes, so רוח resolves to "wind" or "be spacious" by context
+rather than by inherited Victorian numbering. It also carries sentence
+structure — clause and phrase hierarchy, dependency edges, phrase functions —
+and a classification of roughly 33,000 proper nouns as person, place, gentilic
+or deity, which is an interesting thing to paint on a map in its own right.
 
-So filtering by grammatical form needs no new data at all. It needs a lookup
-table and a splitter over a field already sitting in `node_modules`, already
-licensed CC BY 4.0, already aligned to Sefaria verse numbering by code in this
-repository that was written and debugged for that purpose.
+Two practical facts about that move, both better than assumed. Its verse
+numbering disagrees with Sefaria in three chapters out of 929 — Exodus 20,
+Deuteronomy 5 and Numbers 25, seven verses in total — which is a short list of
+rules rather than the text-matching subsystem morphhb required. And a derived
+index is about 0.89 MB over the wire against the 0.95 MB shipping today, so it
+costs nothing to deliver.
 
-ETCBC/BHSA was assessed as the alternative and is not worth adopting. It
-expresses the same grammatical information across separate fields and arrives
-at verb counts within half a percent of morphhb's, because both parse the same
-Leningrad Codex. It does not carry word senses either: its eighty node features
-include no sense field and no semantic domain, only a single English gloss per
-lexeme plus homograph separation — and morphhb already achieves that separation
-through Strong's numbers, 8,640 of them, with 3,194 spellings resolving to more
-than one. BHSA also carries a NonCommercial licence inherited from the
-Deutsche Bibelgesellschaft's copyright in the printed Biblia Hebraica
-Stuttgartensia, which would constrain how others could reuse this work. Since
-it offers nothing we lack, that constraint buys nothing.
+Adopting it means giving up Strong's numbers, which the current pipeline is
+built on. That is the point of the move, not an obstacle to it, and it is why
+the dictionary interface described below is a prerequisite rather than a
+nicety.
 
-Two things ETCBC does have that nothing else here does: sentence structure —
-clause and phrase hierarchy, dependency edges, phrase functions — and a
-classification of roughly 33,000 proper nouns as person, place, gentilic or
-deity. Neither is a facet anyone asked for, though the second is an interesting
-thing to paint on a map and is worth remembering. Against that, adopting ETCBC
-would mean losing Strong's numbers, which the current pipeline is built on.
+In the meantime, one cheap thing is worth doing: `scripts/generate-lemma-index.ts`
+reads each word from morphhb as a triple of written form, Strong's number, and
+morphology code, and never uses the third. Line 361 destructures it and nothing
+reads it again. Those codes are complete — `Vqp3ms` is verb, qal, perfect,
+third person, masculine, singular — and coverage is total, verified at 20,629
+of 20,629 words in Genesis. Recovering them yields grammatical-form filtering
+immediately, and it does not compete with the move to ETCBC, because
+grammatical form is the one thing the two sources agree on: their verb counts
+land within half a percent of each other, both parsing the same Leningrad
+Codex.
 
-If filtering by meaning is wanted later, the dataset to evaluate is MACULA
-Hebrew. It is CC BY 4.0, built on the public-domain Westminster Leningrad
-Codex, keeps Strong's numbers at full coverage so nothing here would have to be
-unpicked, and unlike either other source it carries actual word senses from the
-UBS semantic dictionary — a sense number on about 38% of tokens, a lexical
-domain on 51%, a core domain on 34%. Partial coverage, but real senses, which
-is more than ETCBC offers. Notably that project chose not to build on ETCBC.
+What ETCBC does not solve is filtering by meaning. Its node features include no
+sense field and no semantic domain — only one English gloss per lexeme. The
+dataset that does carry real word senses, from the UBS semantic dictionary, is
+MACULA Hebrew: a sense number on about 38% of tokens, a lexical domain on 51%,
+a core domain on 34%. Partial coverage, but actual senses. If the meanings
+facet is wanted, that is where it comes from.
 
 None of this belongs in the first release.
 
