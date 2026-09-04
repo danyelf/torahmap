@@ -45,7 +45,36 @@ npm run test:watch    # Watch mode for development
 npm run test:coverage # Coverage report
 ```
 
-A pre-commit hook automatically runs all tests. To bypass (not recommended): `git commit --no-verify`
+### The pre-commit hook
+
+A pre-commit hook runs `npm run typecheck` and the full test suite, and refuses
+the commit if either fails. The two together take about six seconds.
+
+The hook lives in `.githooks/pre-commit`, which is tracked in git. Git only
+looks there once `core.hooksPath` is set, and that setting is local to your
+clone — it cannot travel in a commit. **After cloning, run this once:**
+
+```bash
+./scripts/install-hooks.sh          # same as: git config core.hooksPath .githooks
+```
+
+It is also wired to npm's `prepare` script, so plain `npm install` usually does
+it for you. Do not count on that: if your npm config sets `ignore-scripts=true`
+(a reasonable supply-chain precaution, and the setting on Danyel's machine),
+npm skips `prepare` silently and you must run the script yourself. Running it
+twice is harmless.
+
+The path is stored as the relative string `.githooks`, which git resolves
+against whichever working tree is committing. One setting therefore covers the
+main checkout and every worktree, and each runs the hook checked out on its own
+branch. A branch that predates `.githooks` has no hook and commits without
+checks — rebase it onto main to get the gate back.
+
+To bypass deliberately (not recommended): `git commit --no-verify`
+
+If the hook stops with "Dependencies are not installed", that is not a problem
+with your code — the worktree has no `node_modules`. Run `npm install` and
+commit again.
 
 ### Test Harness
 
