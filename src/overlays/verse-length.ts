@@ -15,6 +15,11 @@ const _VIRIDIS_STOPS: Array<[number, Color]> = [
   [1.0, [253 / 255, 231 / 255, 37 / 255]], // yellow
 ];
 
+// Palette-agnostic by design: perceptually-uniform gradient with luminance
+// endpoints at L≈0.05 (dark indigo) and L≈0.55 (yellow), so both ends are
+// readable against any theme background. Do NOT add per-theme variants —
+// it would break the perceptual uniformity that makes the visualization
+// faithful to word-count differences.
 // Plasma: purple→pink→orange→yellow
 const PLASMA_STOPS: Array<[number, Color]> = [
   [0.0, [13 / 255, 8 / 255, 135 / 255]], // dark purple

@@ -4,6 +4,7 @@ import type { SpatialItem, ItemState } from "./types";
 import type { Overlay } from "./overlays/types";
 import { seededRandom } from "./utils/random";
 import { HIGHLIGHT_CONSTANTS } from "./constants";
+import { currentTheme } from "./themes";
 
 /**
  * Get default gray color with brightness variation for a verse.
@@ -13,10 +14,13 @@ import { HIGHLIGHT_CONSTANTS } from "./constants";
  * @returns RGB color tuple with brightness variation
  */
 export function getDefaultColor(verseIndex: number): [number, number, number] {
-  const brightness =
+  const b =
     HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
     seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
-  return [brightness, brightness, brightness];
+  const tint = currentTheme.dust.tint;
+  return tint
+    ? [tint[0] * b, tint[1] * b, tint[2] * b]
+    : [b, b, b];
 }
 
 /**

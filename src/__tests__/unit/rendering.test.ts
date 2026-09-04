@@ -10,6 +10,7 @@ import {
 } from '../../rendering';
 import type { Camera } from '../../camera';
 import { tanakhIdentitiesEqual } from '../../types';
+import { HIGHLIGHT_CONSTANTS } from '../../constants';
 import { createMockCanvas, createMockWebGL2Context, createVerse, createVerses } from '../helpers';
 
 describe('rendering', () => {
@@ -176,7 +177,8 @@ describe('rendering', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.viewport).toHaveBeenCalledWith(0, 0, 800, 600);
-      expect(context.gl.clearColor).toHaveBeenCalledWith(0.1, 0.1, 0.1, 1.0);
+      const [r, g, b] = HIGHLIGHT_CONSTANTS.CANVAS_BG_COLOR;
+      expect(context.gl.clearColor).toHaveBeenCalledWith(r, g, b, 1.0);
       expect(context.gl.clear).toHaveBeenCalled();
     });
 

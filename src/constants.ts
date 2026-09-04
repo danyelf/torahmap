@@ -2,48 +2,37 @@
 // Global constants for the application
 
 import type { Color } from './overlays/types.ts';
+import { currentTheme } from './themes.ts';
 
 /**
- * Highlight and rendering constants
+ * Highlight and rendering constants.
+ *
+ * Color-bearing fields are sourced from `currentTheme` (see src/themes.ts).
+ * Non-color constants (radii, factors, thicknesses) stay as literals because
+ * they don't vary by palette.
  */
 export const HIGHLIGHT_CONSTANTS = {
-  // Fuzzy hit detection radius (world units / pixels at 1x zoom)
+  // Non-color constants — palette-agnostic, stay as literals
   FUZZY_RADIUS: 10,
-
-  // Default verse brightness range (random variation to reduce moiré)
-  MIN_BRIGHTNESS: 0.4,
-  BRIGHTNESS_RANGE: 0.4, // Result: 0.4 to 0.8
-
-  // Outline/border color for verses
-  OUTLINE_COLOR: [0.6, 0.6, 0.6] as Color,
-
-  // Bleed distance for multicolor verses (pixels outside normal bounds)
   BLEED_PIXELS: 3,
-
-  // Highlight color for search/selection
-  HIGHLIGHT_COLOR: [0.2, 0.9, 1.0] as Color,
-
-  // Outline color for pinned verses
-  PINNED_OUTLINE_COLOR: [0.2, 0.9, 1.0] as Color,
-
-  // Outline color for hovered verses
-  HOVER_OUTLINE_COLOR: [1.0, 1.0, 1.0] as Color,
-
-  // Outline color for hovered verses when another verse is pinned
-  HOVER_WHILE_PINNED_OUTLINE_COLOR: [1.0, 0.8, 0.2] as Color,
-
-  // Outline thickness (extends outside verse bounds)
   OUTLINE_THICKNESS: 2,
-
-  // Dimming factor for non-highlighted verses
   DIM_FACTOR: 0.3,
-
-  // Brightness adjustment for haftarah hover
   BRIGHTNESS_FACTOR: 1.5,
-
-  // Desaturation factor for haftarah non-hover
   DESATURATE_FACTOR: 0.2,
 
-  // Color for rare trop marks with no matches
-  RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
+  // Color-bearing fields sourced from currentTheme. BRIGHTNESS_RANGE is
+  // computed from dust.max - dust.min; the result drifts from the literal
+  // 0.42 by ~5e-17 due to IEEE 754, which is invisible after 8-bit color
+  // quantization and unobservable by callers (seededRandom returns [0,1),
+  // so the upper bound is never exactly hit). Tests use toBeCloseTo.
+  MIN_BRIGHTNESS: currentTheme.dust.min,
+  BRIGHTNESS_RANGE: currentTheme.dust.max - currentTheme.dust.min,
+  CANVAS_BG_COLOR: currentTheme.bg,
+  DIM_BRIGHTNESS: currentTheme.dim,
+  OUTLINE_COLOR: currentTheme.outlines.default,
+  HIGHLIGHT_COLOR: currentTheme.outlines.pin,
+  PINNED_OUTLINE_COLOR: currentTheme.outlines.pin,
+  HOVER_OUTLINE_COLOR: currentTheme.outlines.hover,
+  HOVER_WHILE_PINNED_OUTLINE_COLOR: currentTheme.outlines.hoverWhilePinned,
+  RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color, // intentionally palette-agnostic (see Task 14)
 } as const;

@@ -10,6 +10,8 @@ import type { TanakhLayout, ItemState } from '../../types';
 import { tanakhIdentitiesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
+import { HIGHLIGHT_CONSTANTS } from '../../constants';
+import { currentTheme } from '../../themes';
 
 describe('itemColoring', () => {
   describe('getDefaultColor', () => {
@@ -22,13 +24,15 @@ describe('itemColoring', () => {
       vi.restoreAllMocks();
     });
 
-    it('returns gray color with brightness variation', () => {
+    it('returns a neutral grey color whose brightness varies per verse', () => {
+      const { MIN_BRIGHTNESS, BRIGHTNESS_RANGE } = HIGHLIGHT_CONSTANTS;
       const color = getDefaultColor(0);
 
-      // With random = 0.5, brightness = 0.4 + 0.5 * 0.4 = 0.6
-      expect(color[0]).toBeCloseTo(0.6, 10);
-      expect(color[1]).toBeCloseTo(0.6, 10);
-      expect(color[2]).toBeCloseTo(0.6, 10);
+      // With random = 0.5, brightness = MIN + 0.5 * RANGE.
+      const brightness = MIN_BRIGHTNESS + 0.5 * BRIGHTNESS_RANGE;
+      expect(color[0]).toBeCloseTo(brightness, 10);
+      expect(color[1]).toBeCloseTo(brightness, 10);
+      expect(color[2]).toBeCloseTo(brightness, 10);
     });
 
     it('uses seeded random based on verse index', () => {
@@ -38,14 +42,15 @@ describe('itemColoring', () => {
     });
 
     it('returns brightness within expected range', () => {
-      // Test with different random values
+      const { MIN_BRIGHTNESS, BRIGHTNESS_RANGE } = HIGHLIGHT_CONSTANTS;
+
       vi.spyOn(randomModule, 'seededRandom').mockReturnValue(0);
       const minColor = getDefaultColor(0);
-      expect(minColor[0]).toBe(0.4); // MIN_BRIGHTNESS
+      expect(minColor[0]).toBeCloseTo(MIN_BRIGHTNESS, 10);
 
       vi.spyOn(randomModule, 'seededRandom').mockReturnValue(1);
       const maxColor = getDefaultColor(0);
-      expect(maxColor[0]).toBe(0.8); // MIN_BRIGHTNESS + BRIGHTNESS_RANGE
+      expect(maxColor[0]).toBeCloseTo(MIN_BRIGHTNESS + BRIGHTNESS_RANGE, 10);
     });
 
     it('returns consistent results for same index', () => {
@@ -54,6 +59,21 @@ describe('itemColoring', () => {
       const color2 = getDefaultColor(3);
 
       expect(color1).toEqual(color2);
+    });
+
+    it('applies dust.tint multiplicatively when currentTheme has one', () => {
+      const origTint = currentTheme.dust.tint;
+      try {
+        (currentTheme.dust as { tint?: Color }).tint = [1.0, 0.5, 0.4];
+        vi.spyOn(randomModule, 'seededRandom').mockReturnValue(0.5);
+        const b = currentTheme.dust.min + 0.5 * (currentTheme.dust.max - currentTheme.dust.min);
+        const color = getDefaultColor(0);
+        expect(color[0]).toBeCloseTo(1.0 * b, 10);
+        expect(color[1]).toBeCloseTo(0.5 * b, 10);
+        expect(color[2]).toBeCloseTo(0.4 * b, 10);
+      } finally {
+        (currentTheme.dust as { tint?: Color }).tint = origTint;
+      }
     });
   });
 
@@ -240,10 +260,7 @@ describe('itemColoring', () => {
       const states = computeItemStates(verses, mockOverlay, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
-      const resolvedColor = states[0].resolvedColor as [number, number, number];
-      expect(resolvedColor[0]).toBeCloseTo(0.6, 10);
-      expect(resolvedColor[1]).toBeCloseTo(0.6, 10);
-      expect(resolvedColor[2]).toBeCloseTo(0.6, 10);
+      expect(states[0].resolvedColor).toEqual(getDefaultColor(0));
     });
 
     it('uses default color when overlay is null', () => {
@@ -254,10 +271,7 @@ describe('itemColoring', () => {
       const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
       expect(states[0].hasOverlayColor).toBe(false);
-      const resolvedColor = states[0].resolvedColor as [number, number, number];
-      expect(resolvedColor[0]).toBeCloseTo(0.6, 10);
-      expect(resolvedColor[1]).toBeCloseTo(0.6, 10);
-      expect(resolvedColor[2]).toBeCloseTo(0.6, 10);
+      expect(states[0].resolvedColor).toEqual(getDefaultColor(0));
     });
 
     it('identifies hovered verse correctly', () => {
@@ -503,10 +517,7 @@ describe('itemColoring', () => {
       expect(states[0].isHovered).toBe(false);
 
       expect(states[1].hasOverlayColor).toBe(false);
-      const resolvedColor = states[1].resolvedColor as [number, number, number];
-      expect(resolvedColor[0]).toBeCloseTo(0.6, 10);
-      expect(resolvedColor[1]).toBeCloseTo(0.6, 10);
-      expect(resolvedColor[2]).toBeCloseTo(0.6, 10);
+      expect(states[1].resolvedColor).toEqual(getDefaultColor(1));
       expect(states[1].isHovered).toBe(true);
 
       // Second pass: apply colors

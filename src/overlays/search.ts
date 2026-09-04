@@ -6,6 +6,7 @@ import { tanakhKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRelatedRoots, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult, type RelatedRoot } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
+import { currentTheme } from '../themes.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
 import { trackSearchExecute, trackKeyboardToggle } from '../analytics.ts';
 
@@ -617,9 +618,12 @@ export const searchOverlay: Overlay = {
       return colors.slice(0, 4) as Color[];
     }
 
-    // Dim non-matching verses
-    const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
-    return [brightness, brightness, brightness];
+    // Dim non-matching verses to a uniform brightness that remains clearly
+    // visible against the background while staying obviously deemphasized
+    // relative to the matched verses (which use SEARCH_COLORS).
+    const b = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
+    const tint = currentTheme.dust.tint;
+    return tint ? [tint[0] * b, tint[1] * b, tint[2] * b] : [b, b, b];
   },
 
   renderControls(container: HTMLElement): void {

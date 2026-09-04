@@ -1,0 +1,28 @@
+{
+  "default": [
+    { "label": "bg",           "x": 2,    "y": 2  },
+    { "label": "dust-genesis", "x": 1130, "y": 39 }
+  ],
+  "search-single": [
+    { "label": "bg",                "x": 2,    "y": 2  },
+    { "label": "non-match-genesis", "x": 1130, "y": 39 }
+  ],
+  "search-multi": [
+    { "label": "bg", "x": 2, "y": 2 }
+  ],
+  "commentary": [
+    { "label": "bg", "x": 2, "y": 2 }
+  ],
+  "trop": [
+    { "label": "bg", "x": 2, "y": 2 }
+  ],
+  "text-dating": [
+    { "label": "bg", "x": 2, "y": 2 }
+  ],
+  "haftarah": [
+    { "label": "bg", "x": 2, "y": 2 }
+  ],
+  "verse-length": [
+    { "label": "bg", "x": 2, "y": 2 }
+  ]
+}

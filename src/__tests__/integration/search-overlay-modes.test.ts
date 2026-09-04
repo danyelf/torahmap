@@ -3,6 +3,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchOverlay, configure } from '../../overlays/search';
 import { buildSearchIndex } from '../../search';
+import { HIGHLIGHT_CONSTANTS } from '../../constants';
 import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -240,9 +241,10 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(wordColor).not.toBeNull();
       expect(Array.isArray(wordColor)).toBe(true);
       const wc = wordColor as [number, number, number];
-      expect(wc[0]).toBeLessThan(1);
-      expect(wc[0]).toBe(wc[1]);
-      expect(wc[1]).toBe(wc[2]);
+      const dim = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
+      expect(wc[0]).toBeCloseTo(dim, 4);
+      expect(wc[1]).toBeCloseTo(dim, 4);
+      expect(wc[2]).toBeCloseTo(dim, 4);
     });
 
     it('word mode correctly matches proper nouns', () => {

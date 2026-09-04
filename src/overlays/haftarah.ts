@@ -78,7 +78,9 @@ function adjustBrightness(color: Color, factor: number): Color {
   ];
 }
 
-// Desaturate a color by reducing its saturation
+// Palette-agnostic: desaturate preserves L, lowers S. Renders OK on any bg
+// luminance because output L is determined by the input color, not the theme.
+// Re-audit when adding any chroma multiplier or bg-derived branching.
 function desaturate(color: Color, factor: number): Color {
   const { h, s, l } = rgbToHsl(color);
   return hslToRgb({ h, s: s * factor, l });

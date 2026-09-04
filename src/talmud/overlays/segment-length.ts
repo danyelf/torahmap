@@ -7,11 +7,21 @@
 import type { Overlay } from "../../overlays/types.ts";
 import type { TalmudIdentity } from "../../types.ts";
 import type { TalmudStructure, TalmudTractateText } from "../data.ts";
+import { currentTheme, pick, type ThemedTable, type TalmudTheme } from '../../themes.ts';
 
 type Color = [number, number, number];
 
-const PALE: Color = [0.95, 0.95, 0.6];
-const DARK: Color = [0.6, 0.15, 0.1];
+// Values intentionally mirror REFINED_GREY_TALMUD.segmentLength and
+// lightFallback.segmentLength in talmud/constants.ts. Cross-file import for a
+// 4-number literal is not worth the coupling; keep in sync manually when
+// adding new byTheme entries to either table.
+const SEGMENT_LENGTH_TABLE: ThemedTable<TalmudTheme['segmentLength']> = {
+  byTheme: { 'refined-grey': { pale: [0.95, 0.95, 0.6],  dark: [0.6, 0.15, 0.1] } },
+  lightFallback: { pale: [0.40, 0.32, 0.10], dark: [0.55, 0.10, 0.05] },
+};
+
+const { pale: PALE, dark: DARK } =
+  currentTheme.talmud?.segmentLength ?? pick(SEGMENT_LENGTH_TABLE);
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;

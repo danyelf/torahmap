@@ -71,6 +71,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from "./constants/app.ts";
+import { applyChromeVars } from "./themes.ts";
 
 // Extend window for global state
 declare global {
@@ -88,6 +89,9 @@ declare global {
 }
 
 async function main(): Promise<void> {
+  // Apply theme CSS variables to :root before any rendering or DOM setup.
+  applyChromeVars();
+
   // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 

@@ -4,12 +4,14 @@ import { searchOverlay, configure, highlightSearchTerms } from '../../../overlay
 import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
-import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
+import { SEARCH_COLORS } from '../../../utils/color';
+import { HIGHLIGHT_CONSTANTS } from '../../../constants';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
+import { currentTheme } from '../../../themes';
 
 describe('Search Overlay', () => {
   let testVerses: TanakhLayout[];
@@ -167,11 +169,31 @@ describe('Search Overlay', () => {
       expect(color).not.toBeNull();
       assertValidColor(color);
 
-      // Should be dimmed gray
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
-      expect(color[0]).toBeCloseTo(brightness, 2);
-      expect(color[1]).toBeCloseTo(brightness, 2);
-      expect(color[2]).toBeCloseTo(brightness, 2);
+      // Should be a uniform dim grey at DIM_BRIGHTNESS
+      const dim = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
+      expect(color[0]).toBeCloseTo(dim, 4);
+      expect(color[1]).toBeCloseTo(dim, 4);
+      expect(color[2]).toBeCloseTo(dim, 4);
+    });
+
+    it('dimmed non-match colors honor currentTheme.dust.tint', () => {
+      const origTint = currentTheme.dust.tint;
+      try {
+        (currentTheme.dust as { tint?: Color }).tint = [1.0, 0.5, 0.4];
+
+        // Genesis 1:2 does not contain "God" — triggers non-match dim path
+        const verse = testVerses[1];
+        const color = searchOverlay.getVerseColor(verse) as Color;
+
+        expect(color).not.toBeNull();
+        // tint * DIM_BRIGHTNESS = [1.0*b, 0.5*b, 0.4*b]
+        const b = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
+        expect(color[0]).toBeCloseTo(1.0 * b, 10);
+        expect(color[1]).toBeCloseTo(0.5 * b, 10);
+        expect(color[2]).toBeCloseTo(0.4 * b, 10);
+      } finally {
+        (currentTheme.dust as { tint?: Color }).tint = origTint;
+      }
     });
 
     it('uses correct color from SEARCH_COLORS palette', () => {
@@ -264,7 +286,7 @@ describe('Search Overlay', () => {
       const color = searchOverlay.getVerseColor(verse) as Color;
 
       expect(color).not.toBeNull();
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
+      const brightness = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
       expect(color[0]).toBeCloseTo(brightness, 2);
     });
 
@@ -887,7 +909,7 @@ describe('Search Overlay', () => {
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as Color;
         // All verses should be dimmed
-        const brightness = (0.4 + 0.2) * DIM_FACTOR;
+        const brightness = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
         expect(color[0]).toBeCloseTo(brightness, 2);
       }
     });
@@ -905,7 +927,7 @@ describe('Search Overlay', () => {
       const color = searchOverlay.getVerseColor(verse) as Color;
 
       // Should be dimmed
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
+      const brightness = HIGHLIGHT_CONSTANTS.DIM_BRIGHTNESS;
       expect(color[0]).toBeCloseTo(brightness, 2);
     });
 
