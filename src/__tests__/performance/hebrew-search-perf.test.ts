@@ -1,7 +1,7 @@
 // Performance diagnostic tests for Hebrew search
 // tm-6mw3: Gather evidence about where Hebrew search is slow
 import { describe, it, expect, beforeAll } from 'vitest';
-import { search, buildSearchIndex, findLemmasForWord } from '../../search';
+import { search, buildSearchIndex, findLexemesForWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Hebrew Search Performance Diagnostics', () => {
@@ -45,7 +45,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
     buildSearchIndex(mockVerseTexts);
     // Warmup: JIT-compile the search path before measuring
     search('אלהים', false, 'substring');
-    findLemmasForWord('אלהים');
+    findLexemesForWord('אלהים');
   });
 
   // Helper to measure execution time
@@ -59,22 +59,22 @@ describe('Hebrew Search Performance Diagnostics', () => {
   }
 
   describe('Performance: Root mode (default for Hebrew)', () => {
-    it('measures findLemmasForWord() performance for common word', () => {
+    it('measures findLexemesForWord() performance for common word', () => {
       const word = 'אלהים'; // God - very common word
 
       const { timeMs } = measureTime(() => {
-        return findLemmasForWord(word);
-      }, 'findLemmasForWord("אלהים")');
+        return findLexemesForWord(word);
+      }, 'findLexemesForWord("אלהים")');
 
       expect(timeMs).toBeLessThan(10);
     });
 
-    it('measures findLemmasForWord() performance for word with prefix', () => {
+    it('measures findLexemesForWord() performance for word with prefix', () => {
       const word = 'ואלהים'; // And God - word with prefix
 
       const { timeMs } = measureTime(() => {
-        return findLemmasForWord(word);
-      }, 'findLemmasForWord("ואלהים") - with prefix stripping');
+        return findLexemesForWord(word);
+      }, 'findLexemesForWord("ואלהים") - with prefix stripping');
 
       expect(timeMs).toBeLessThan(20);
     });

@@ -1511,10 +1511,10 @@ describe('Search Overlay', () => {
       }
     });
 
-    it('lemma-based search also computes correct highlight positions', () => {
-      // This test ensures that when lemma search is used, the highlight positions
+    it('lexeme-based search also computes correct highlight positions', () => {
+      // This test ensures that when lexeme search is used, the highlight positions
       // are still computed correctly (not left as 0,0)
-      // Note: This tests the code path even if lemma data isn't loaded in tests
+      // Note: This tests the code path even if the lexeme index isn't loaded in tests
       const results = search('אלהים');
 
       // Find any Hebrew result

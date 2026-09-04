@@ -17,7 +17,9 @@ The core design principle is **position stability** - each verse occupies a perm
 - **23,000+ verses** rendered as colored squares using WebGL (Torah → Nevi'im → Ketuvim)
 - **Smooth zoom/pan** with mouse wheel and drag
 - **Verse details** on hover/click with Hebrew text, English translation, and Sefaria link
-- **Full-text search** with Hebrew/English support, nikkud-insensitive
+- **Full-text search** with Hebrew/English support, nikkud-insensitive; root
+  mode resolves a written form to the dictionary words it can be, so every
+  inflected form is found and words that merely share a spelling stay apart
 - **Pluggable overlays**: Search, Commentary (8 categories), Trop (39 cantillation marks), Text Dating (6 historical periods), Haftarah
 
 ## Quick Start
@@ -99,7 +101,11 @@ A standalone test harness at `http://localhost:5173/test-harness/` provides the 
 │   ├── all-texts.json            # Bundled verse texts (generated)
 │   ├── tanakh-structure.json     # Verse counts per chapter per book
 │   ├── commentary-counts.json    # Sefaria link counts by category
-│   └── text-dating.json          # Estimated composition dates by verse
+│   ├── text-dating.json          # Estimated composition dates by verse
+│   ├── lexicon.json              # Hebrew/Aramaic dictionary from ETCBC BHSA
+│   ├── word-lexemes.json         # Written form -> the dictionary words it can be
+│   ├── verse-lexemes.json        # Verse -> the dictionary words occurring in it
+│   └── verse-morphology.json     # Grammatical parsing per word (not loaded by search)
 │
 ├── data/texts/           # Source Hebrew & English verse texts (78 files)
 │
@@ -108,6 +114,7 @@ A standalone test harness at `http://localhost:5173/test-harness/` provides the 
 │   ├── download-texts.sh             # Download texts from Sefaria
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
 │   ├── generate-text-dating.ts       # Generate text dating data from source ranges
+│   ├── generate-lexeme-index.py      # Build the Hebrew lexeme index from ETCBC BHSA
 │   ├── process_sefaria_links.py      # (Deprecated) Old commentary counts script
 │   └── process_sefaria_links_v2.py   # Generate commentary counts (USE THIS)
 │
@@ -143,7 +150,11 @@ The codebase follows a **functional, modular design** with clear separation of c
 
 ## Data
 
-All data comes from [Sefaria](https://www.sefaria.org/). See [DATA_REGENERATION.md](DATA_REGENERATION.md) for instructions on updating data files.
+Verse texts, structure and commentary counts come from
+[Sefaria](https://www.sefaria.org/). The Hebrew lexeme index behind root-mode
+search comes from the [ETCBC BHSA](https://github.com/ETCBC/bhsa) database, read
+through Text-Fabric. See [DATA_REGENERATION.md](DATA_REGENERATION.md) for
+instructions on updating data files.
 
 ## Interactions
 

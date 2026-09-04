@@ -526,7 +526,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       rootRadio!.checked = true;
       input.dispatchEvent(new Event('input'));
 
-      // Should find אברהם as whole word (lemma lookup fails, falls back to whole-word)
+      // Should find אברהם as whole word (lexeme lookup fails, falls back to whole-word)
       const gen175 = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
       const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
 

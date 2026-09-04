@@ -1,5 +1,5 @@
 // Full-text search with word-wheeling support for Hebrew and English
-// Now with Hebrew lemmatization via morphhb Strong's numbers
+// Hebrew root search resolves written forms to ETCBC BHSA lexemes
 
 import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
@@ -62,7 +62,7 @@ const MEDIAL_TO_FINAL_MAP: Record<string, string> = {
   'צ': 'ץ',
 };
 
-// Common Hebrew prefixes that can be stripped for lemma lookup
+// Common Hebrew prefixes that can be stripped when resolving a word to its lexeme
 const HEBREW_PREFIXES = ['ו', 'ה', 'ב', 'ל', 'כ', 'מ', 'ש'];
 // Two-letter prefix combinations
 const HEBREW_PREFIX_COMBOS = ['וב', 'וה', 'ול', 'וכ', 'ומ', 'וש', 'מה', 'שב', 'של', 'בה'];
@@ -71,22 +71,54 @@ let searchIndex: IndexEntry[] = [];
 // Fast lookup map: verse key -> index entry (avoids O(n) find() calls)
 let verseKeyToEntry: Map<string, IndexEntry> = new Map();
 
-// Lemma data loaded from morphhb
-let wordLemmas: Record<string, string[]> | null = null;  // Hebrew word -> Strong's numbers
-let verseLemmas: Record<string, string[]> | null = null; // verse key -> Strong's numbers
-let strongsToRoot: Record<string, string> | null = null; // Strong's number -> Hebrew root
-// Inverted index: Strong's number -> Set of verse keys (for fast lemma-based search)
-let lemmaToVerses: Map<string, Set<string>> | null = null;
-// Adjacency map: Strong's number -> Set of directly connected Strong's numbers
-// Two Strong's numbers are adjacent if they co-occur as lemmas for the same
-// surface form (with exactly 2 lemmas) in word-lemmas. NOT transitive.
-let lemmaAdjacency: Map<string, Set<string>> | null = null;
-// Reverse lookup: Strong's number -> shortest surface form that maps to it
-// Used to generate searchable terms when related-root chips are clicked
-let strongsToSurfaceForm: Map<string, string> | null = null;
-// Reverse lookup: normalized root text -> Strong's numbers
-// Used when user types a bare root form that isn't itself a surface form
-let rootToStrongsNumbers: Map<string, string[]> | null = null;
+/**
+ * A lexeme is a dictionary entry: one word of Hebrew or Aramaic, with its own
+ * meaning. Words that happen to be spelled alike are separate lexemes, so the
+ * preposition "upon" and the verb "ascend" never get mixed together.
+ *
+ * Lexemes are referred to by their position in the loaded dictionary.
+ */
+export type LexemeId = number;
+
+export interface Lexeme {
+  /** ETCBC identifier, e.g. "BR>[" for the verb ברא */
+  id: string;
+  /** vocalized dictionary form, for display */
+  form: string;
+  /** English gloss */
+  gloss: string;
+  /** part of speech: verb, subs, nmpr, prep, ... */
+  pos: string;
+  language: 'heb' | 'arc';
+  /** derivational root, in ETCBC transliteration, where BHSA records one */
+  root: string | null;
+}
+
+// The dictionary, loaded from lexicon.json.
+let lexicon: Lexeme[] | null = null;
+// Parts of speech left out of related-word suggestions (articles, conjunctions,
+// prepositions and the like make useless suggestions).
+let functionWordPos: Set<string> = new Set();
+// Consonantal spelling of each lexeme's dictionary form, in the same shape the
+// search box produces. Parallel to `lexicon`.
+let lexemeSpellings: string[] = [];
+
+// Written form (nikkud stripped, finals folded) -> the lexemes it can be,
+// likeliest reading first.
+let formToLexemes: Record<string, LexemeId[]> | null = null;
+// Verse key -> the lexemes occurring in that verse.
+let verseToLexemes: Record<string, LexemeId[]> | null = null;
+
+// Inverted index: lexeme -> the verses it occurs in. Turns a root-mode search
+// into one lookup per lexeme instead of a scan over every verse.
+let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
+// Root family: lexeme -> every lexeme sharing its derivational root.
+let lexemeFamilies: Map<LexemeId, LexemeId[]> | null = null;
+// Lexeme -> a written form that will find it again, for the related-word chips.
+let lexemeToSearchForm: Map<LexemeId, string> | null = null;
+// Consonantal dictionary spelling -> lexemes, for readers who type a bare root
+// that never appears on its own in the text.
+let spellingToLexemes: Map<string, LexemeId[]> | null = null;
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
@@ -158,245 +190,238 @@ export function parseSearchTerms(query: string): string[] {
     .filter(t => t.length >= MIN_SEARCH_TERM_LENGTH);
 }
 
+/** Row order of the lexeme records in lexicon.json */
+type LexemeRow = [
+  id: string,
+  form: string,
+  gloss: string,
+  pos: string,
+  language: 'heb' | 'arc',
+  root: string | null,
+];
+
+interface LexiconFile {
+  source: string;
+  fields: string[];
+  functionWordPos: string[];
+  lexemes: LexemeRow[];
+}
+
 /**
- * Load lemma data from morphhb (called during initialization)
+ * Load the lexeme index (called during initialization).
+ *
+ * Three files: the dictionary itself, written form -> lexeme, and
+ * verse -> lexeme. Everything else is derived from those here.
  */
-export async function loadLemmaData(): Promise<void> {
+export async function loadLexiconData(): Promise<void> {
   try {
-    console.log('Loading lemma data files...');
-    const [wordRes, verseRes, strongsRes] = await Promise.all([
-      fetchData('word-lemmas.json'),
-      fetchData('verse-lemmas.json'),
-      fetchData('strongs-to-root.json'),
+    console.log('Loading lexeme index...');
+    const [lexiconRes, formsRes, versesRes] = await Promise.all([
+      fetchData('lexicon.json'),
+      fetchData('word-lexemes.json'),
+      fetchData('verse-lexemes.json'),
     ]);
 
-    console.log(`Fetch results: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
-
-    if (wordRes.ok && verseRes.ok && strongsRes.ok) {
-      console.log('Parsing JSON...');
-      wordLemmas = await wordRes.json();
-      verseLemmas = await verseRes.json();
-      strongsToRoot = await strongsRes.json();
-
-      console.log(`✓ Loaded: ${Object.keys(wordLemmas || {}).length} words, ${Object.keys(verseLemmas || {}).length} verses, ${Object.keys(strongsToRoot || {}).length} Strong's numbers`);
-
-      // Build inverted index: Strong's number -> Set of verse keys
-      // This converts O(V) search-by-lemma to O(1) lookup
-      buildLemmaInvertedIndex();
-
-      // Build adjacency map: direct neighbors from 2-lemma surface forms
-      buildLemmaAdjacency();
-
-      // Build reverse root index: root text -> Strong's numbers
-      buildRootToStrongsIndex();
-    } else {
-      console.warn('Failed to load lemma data, falling back to substring search');
-      console.warn(`Response status: word=${wordRes.status}, verse=${verseRes.status}, strongs=${strongsRes.status}`);
-      console.warn(`URLs tried: ${wordRes.url}, ${verseRes.url}, ${strongsRes.url}`);
+    if (!lexiconRes.ok || !formsRes.ok || !versesRes.ok) {
+      console.warn('Failed to load lexeme index, falling back to whole-word search');
+      console.warn(`Response status: lexicon=${lexiconRes.status}, forms=${formsRes.status}, verses=${versesRes.status}`);
+      return;
     }
+
+    const lexiconFile: LexiconFile = await lexiconRes.json();
+    formToLexemes = await formsRes.json();
+    verseToLexemes = await versesRes.json();
+
+    lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language, root]) => ({
+      id, form, gloss, pos, language, root,
+    }));
+    functionWordPos = new Set(lexiconFile.functionWordPos ?? []);
+    lexemeSpellings = lexicon.map(entry => normalizeHebrewForSearch(entry.form));
+
+    console.log(
+      `✓ Loaded ${lexicon.length} lexemes (${lexiconFile.source}), ` +
+      `${Object.keys(formToLexemes || {}).length} written forms, ` +
+      `${Object.keys(verseToLexemes || {}).length} verses`
+    );
+
+    buildVerseIndex();
+    buildSpellingIndex();
+    buildRootFamilies();
+    buildSearchForms();
   } catch (err) {
-    console.warn('Error loading lemma data:', err);
+    console.warn('Error loading lexeme index:', err);
   }
 }
 
 /**
- * Build inverted index from verseLemmas: lemma -> Set<verseKey>
- * This enables O(1) lookup for lemma-based searches instead of O(n) iteration
+ * Invert verse -> lexemes into lexeme -> verses, so a root-mode search costs
+ * one lookup per lexeme rather than a pass over all 23,000 verses.
  */
-function buildLemmaInvertedIndex(): void {
-  if (!verseLemmas) {
-    lemmaToVerses = null;
-    console.warn('Cannot build lemma inverted index: verseLemmas is null');
+function buildVerseIndex(): void {
+  if (!verseToLexemes) {
+    lexemeToVerses = null;
     return;
   }
 
   const startTime = performance.now();
-  lemmaToVerses = new Map();
+  lexemeToVerses = new Map();
 
-  for (const [verseKey, lemmas] of Object.entries(verseLemmas)) {
-    for (const lemma of lemmas) {
-      let verses = lemmaToVerses.get(lemma);
+  for (const [verseKey, lexemes] of Object.entries(verseToLexemes)) {
+    for (const lexeme of lexemes) {
+      let verses = lexemeToVerses.get(lexeme);
       if (!verses) {
         verses = new Set();
-        lemmaToVerses.set(lemma, verses);
+        lexemeToVerses.set(lexeme, verses);
       }
       verses.add(verseKey);
     }
   }
 
   const endTime = performance.now();
-  console.log(`✓ Built lemma inverted index: ${lemmaToVerses.size} unique lemmas in ${(endTime - startTime).toFixed(2)}ms`);
+  console.log(`✓ Built verse index: ${lexemeToVerses.size} lexemes in ${(endTime - startTime).toFixed(2)}ms`);
 }
 
 /**
- * Build adjacency map from wordLemmas.
- * Two Strong's numbers are adjacent if they co-occur as lemmas for the same
- * surface form (restricted to forms with exactly 2 lemmas to avoid ambiguity).
- *
- * Unlike the old union-find approach, this is NOT transitive:
- * if A-B share a form and B-C share a different form, A and C are NOT linked.
- * Instead, related roots are surfaced as clickable UI suggestions.
- *
- * Also builds strongsToSurfaceForm: for each Strong's number, keeps the
- * shortest surface form that maps to it (for generating search terms).
+ * Index lexemes by the consonants of their dictionary form, so that a reader
+ * who types a bare root (בסס) finds it even though that spelling never stands
+ * alone in the text.
  */
-function buildLemmaAdjacency(): void {
-  if (!wordLemmas) {
-    lemmaAdjacency = null;
-    strongsToSurfaceForm = null;
+function buildSpellingIndex(): void {
+  if (!lexicon) {
+    spellingToLexemes = null;
     return;
   }
 
-  const startTime = performance.now();
-
-  lemmaAdjacency = new Map();
-  strongsToSurfaceForm = new Map();
-
-  for (const [surfaceForm, lemmas] of Object.entries(wordLemmas)) {
-    // Track shortest surface form per Strong's number
-    for (const lemma of lemmas) {
-      const existing = strongsToSurfaceForm.get(lemma);
-      if (!existing || surfaceForm.length < existing.length) {
-        strongsToSurfaceForm.set(lemma, surfaceForm);
-      }
-    }
-
-    // Only build adjacency from forms with exactly 2 lemmas
-    if (lemmas.length !== 2) continue;
-
-    const [a, b] = lemmas;
-
-    let neighborsA = lemmaAdjacency.get(a);
-    if (!neighborsA) {
-      neighborsA = new Set();
-      lemmaAdjacency.set(a, neighborsA);
-    }
-    neighborsA.add(b);
-
-    let neighborsB = lemmaAdjacency.get(b);
-    if (!neighborsB) {
-      neighborsB = new Set();
-      lemmaAdjacency.set(b, neighborsB);
-    }
-    neighborsB.add(a);
-  }
-
-  const endTime = performance.now();
-  const withNeighbors = [...lemmaAdjacency.values()].filter(s => s.size > 0).length;
-  console.log(`✓ Built lemma adjacency: ${withNeighbors} lemmas with neighbors in ${(endTime - startTime).toFixed(2)}ms`);
-}
-
-/**
- * Build reverse index from normalized root text -> Strong's numbers.
- * Enables lookup when user types a bare root form (e.g. בסס) that isn't
- * itself a surface form in word-lemmas.json.
- */
-function buildRootToStrongsIndex(): void {
-  if (!strongsToRoot) {
-    rootToStrongsNumbers = null;
-    return;
-  }
-
-  const startTime = performance.now();
-  rootToStrongsNumbers = new Map();
-
-  for (const [strongsNum, root] of Object.entries(strongsToRoot)) {
-    const normalized = normalizeHebrewForSearch(root);
-    let list = rootToStrongsNumbers.get(normalized);
+  spellingToLexemes = new Map();
+  for (let id = 0; id < lexicon.length; id++) {
+    const spelling = lexemeSpellings[id];
+    if (!spelling) continue;
+    let list = spellingToLexemes.get(spelling);
     if (!list) {
       list = [];
-      rootToStrongsNumbers.set(normalized, list);
+      spellingToLexemes.set(spelling, list);
     }
-    list.push(strongsNum);
+    list.push(id);
   }
-
-  const endTime = performance.now();
-  console.log(`✓ Built root→Strong's index: ${rootToStrongsNumbers.size} unique roots in ${(endTime - startTime).toFixed(2)}ms`);
+  console.log(`✓ Built spelling index: ${spellingToLexemes.size} distinct dictionary spellings`);
 }
 
 /**
- * Try to find Strong's numbers (lemmas) for a Hebrew word.
+ * Group lexemes into root families for the "Related" suggestions.
  *
- * Strategy: prefer interpretations that use more of the input.
- * 1. Exact surface form lookup (word literally appears in the text)
- * 2. Root reverse lookup (user typed a bare root)
- * 3. Prefix stripping (longest first), retrying both surface + root lookup
- *    on the remainder at each level
+ * Two lexemes belong to the same family when they share a derivational root:
+ * the root BHSA records for the lexeme, or, where BHSA records none, the
+ * lexeme's own consonantal skeleton with its part-of-speech marker removed.
+ * BHSA's homograph markers are deliberately kept, so דָּבָר "word" and דבר
+ * "speak" are family but דֶּבֶר "pest" is not.
  *
- * Exported for use in overlay UI to show which terms have lemma data
+ * Families are per language, and function words are left out: nobody wants
+ * "the" suggested as a related word.
  */
-export function findLemmasForWord(hebrewWord: string): string[] | null {
-  if (!wordLemmas) {
-    console.log(`findLemmasForWord("${hebrewWord}"): wordLemmas is null`);
-    return null;
+function buildRootFamilies(): void {
+  if (!lexicon) {
+    lexemeFamilies = null;
+    return;
   }
 
-  // word-lemmas keys are medial-only (finals normalized at generation time),
-  // so we normalize to medial here to match
+  const startTime = performance.now();
+  const byRoot = new Map<string, LexemeId[]>();
+
+  for (let id = 0; id < lexicon.length; id++) {
+    const entry = lexicon[id];
+    if (functionWordPos.has(entry.pos)) continue;
+    // "/" marks a noun and "[" a verb in ETCBC lexeme ids; both are notation,
+    // not part of the word.
+    const skeleton = entry.root ?? entry.id.replace(/[/[]/g, '');
+    const key = `${skeleton}|${entry.language}`;
+    let family = byRoot.get(key);
+    if (!family) {
+      family = [];
+      byRoot.set(key, family);
+    }
+    family.push(id);
+  }
+
+  lexemeFamilies = new Map();
+  let families = 0;
+  for (const family of byRoot.values()) {
+    if (family.length < 2) continue;
+    families++;
+    for (const id of family) {
+      lexemeFamilies.set(id, family);
+    }
+  }
+
+  const endTime = performance.now();
+  console.log(`✓ Built root families: ${lexemeFamilies.size} lexemes in ${families} families in ${(endTime - startTime).toFixed(2)}ms`);
+}
+
+/**
+ * Pick, for each lexeme, a written form that will find it again when a related
+ * word chip is clicked. Prefer a form whose likeliest reading is this lexeme,
+ * and among those the shortest.
+ */
+function buildSearchForms(): void {
+  if (!formToLexemes) {
+    lexemeToSearchForm = null;
+    return;
+  }
+
+  lexemeToSearchForm = new Map();
+  const unambiguous = new Set<LexemeId>();
+
+  for (const [form, lexemes] of Object.entries(formToLexemes)) {
+    for (let rank = 0; rank < lexemes.length; rank++) {
+      const id = lexemes[rank];
+      const isBestReading = rank === 0;
+      const existing = lexemeToSearchForm.get(id);
+      const existingIsBest = unambiguous.has(id);
+
+      if (existing === undefined) {
+        lexemeToSearchForm.set(id, form);
+        if (isBestReading) unambiguous.add(id);
+      } else if (isBestReading && !existingIsBest) {
+        lexemeToSearchForm.set(id, form);
+        unambiguous.add(id);
+      } else if (isBestReading === existingIsBest && form.length < existing.length) {
+        lexemeToSearchForm.set(id, form);
+      }
+    }
+  }
+}
+
+/**
+ * Find the lexemes a written Hebrew word can be.
+ *
+ * Prefer readings that account for more of what was typed:
+ * 1. the word exactly as it appears in the text
+ * 2. a bare dictionary spelling (the reader typed a root)
+ * 3. the same two lookups again after stripping a prefix, longest first
+ *
+ * Exported so the search overlay can tell which terms resolved to a lexeme.
+ */
+export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
+  if (!formToLexemes) return null;
+
+  // word-lexemes keys fold final letters to their medial shape, so the query
+  // has to be folded the same way.
   const normalized = normalizeHebrewForSearch(hebrewWord);
-  console.log(`findLemmasForWord("${hebrewWord}") normalized to "${normalized}"`);
 
-  // Try the full input as-is (surface form, then root)
-  const fullResult = lookupSurfaceOrRoot(normalized);
-  if (fullResult) return fullResult;
+  const direct = lookupFormOrSpelling(normalized);
+  if (direct) return direct;
 
-  // Try stripping prefixes (longest first), retrying both lookups on remainder.
-  // Two-letter combos first, then single-letter.
+  // Two-letter prefix combinations first, then single letters.
   for (const prefix of HEBREW_PREFIX_COMBOS) {
     if (normalized.startsWith(prefix) && normalized.length > prefix.length + 1) {
-      const remainder = normalized.slice(prefix.length);
-      const result = lookupSurfaceOrRoot(remainder);
-      if (result) {
-        console.log(`  ✓ Found after stripping prefix "${prefix}"`);
-        return result;
-      }
+      const result = lookupFormOrSpelling(normalized.slice(prefix.length));
+      if (result) return result;
     }
   }
 
   for (const prefix of HEBREW_PREFIXES) {
     if (normalized.startsWith(prefix) && normalized.length > 2) {
-      const remainder = normalized.slice(prefix.length);
-      const result = lookupSurfaceOrRoot(remainder);
-      if (result) {
-        console.log(`  ✓ Found after stripping prefix "${prefix}"`);
-        return result;
-      }
-    }
-  }
-
-  console.log(`  ✗ No lemmas found`);
-  return null;
-}
-
-/**
- * Try to find lemmas for a normalized Hebrew string, first as a surface form
- * in word-lemmas, then as a root (exact or prefix) in strongs-to-root.
- */
-function lookupSurfaceOrRoot(term: string): string[] | null {
-  // Surface form lookup
-  if (wordLemmas && wordLemmas[term]) {
-    console.log(`  ✓ Surface form "${term}": ${wordLemmas[term].length} lemmas`);
-    return wordLemmas[term];
-  }
-
-  // Root reverse lookup
-  if (rootToStrongsNumbers) {
-    const exact = rootToStrongsNumbers.get(term);
-    if (exact && exact.length > 0) {
-      console.log(`  ✓ Root match "${term}" (exact): ${exact.length} Strong's numbers`);
-      return exact;
-    }
-
-    // Try as prefix of root forms (e.g. בסס matches root בססו)
-    const prefixMatches: string[] = [];
-    for (const [root, strongsNums] of rootToStrongsNumbers) {
-      if (root.startsWith(term) && root !== term) {
-        prefixMatches.push(...strongsNums);
-      }
-    }
-    if (prefixMatches.length > 0) {
-      console.log(`  ✓ Root match "${term}" (prefix): ${prefixMatches.length} Strong's numbers`);
-      return prefixMatches;
+      const result = lookupFormOrSpelling(normalized.slice(prefix.length));
+      if (result) return result;
     }
   }
 
@@ -404,13 +429,43 @@ function lookupSurfaceOrRoot(term: string): string[] | null {
 }
 
 /**
- * Get the Hebrew root for a Strong's number (display form with proper finals)
- * Exported for use in overlay UI to show which root was matched
+ * Look a normalized Hebrew string up as a written form first, then as a bare
+ * dictionary spelling (exact, then as the start of a longer spelling).
  */
-export function getRootForStrongsNumber(strongsNum: string): string | null {
-  if (!strongsToRoot) return null;
-  const root = strongsToRoot[strongsNum];
-  return root ? toDisplayHebrew(root) : null;
+function lookupFormOrSpelling(term: string): LexemeId[] | null {
+  if (formToLexemes && formToLexemes[term]) {
+    return formToLexemes[term];
+  }
+
+  if (spellingToLexemes) {
+    const exact = spellingToLexemes.get(term);
+    if (exact && exact.length > 0) return exact;
+
+    const prefixMatches: LexemeId[] = [];
+    for (const [spelling, lexemes] of spellingToLexemes) {
+      if (spelling.startsWith(term) && spelling !== term) {
+        prefixMatches.push(...lexemes);
+      }
+    }
+    if (prefixMatches.length > 0) return prefixMatches;
+  }
+
+  return null;
+}
+
+/**
+ * Look up a lexeme's dictionary record: display form, English gloss, part of
+ * speech and language.
+ */
+export function getLexeme(id: LexemeId): Lexeme | null {
+  return lexicon?.[id] ?? null;
+}
+
+/**
+ * The vocalized Hebrew form of a lexeme, for showing which word was matched.
+ */
+export function getLexemeForm(id: LexemeId): string | null {
+  return lexicon?.[id]?.form ?? null;
 }
 
 /**
@@ -471,43 +526,32 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
 }
 
 /**
- * Search by Strong's numbers (lemmas) for Hebrew terms
- * Returns verse keys that contain any of the specified lemmas
- * Uses inverted index for O(1) lookup per lemma instead of O(V) iteration
+ * Verse keys containing any of the given lexemes.
+ * Uses the inverted index, so one lookup per lexeme rather than a full scan.
  */
-function searchByLemmas(lemmas: string[]): Set<string> {
+function searchByLexemes(lexemes: LexemeId[]): Set<string> {
   const matchingVerses = new Set<string>();
 
-  // Use inverted index if available (O(L) where L = number of lemmas)
-  if (lemmaToVerses) {
-    const startTime = performance.now();
-    for (const lemma of lemmas) {
-      const verses = lemmaToVerses.get(lemma);
+  if (lexemeToVerses) {
+    for (const lexeme of lexemes) {
+      const verses = lexemeToVerses.get(lexeme);
       if (verses) {
         for (const verseKey of verses) {
           matchingVerses.add(verseKey);
         }
       }
     }
-    const endTime = performance.now();
-    console.log(`  searchByLemmas (inverted index): ${(endTime - startTime).toFixed(2)}ms for ${lemmas.length} lemmas → ${matchingVerses.size} verses`);
     return matchingVerses;
   }
 
-  // Fallback to linear search if inverted index not available
-  console.warn('  searchByLemmas: Using SLOW fallback (inverted index not available)');
-  if (!verseLemmas) return matchingVerses;
-
-  const startTime = performance.now();
-  for (const [verseKey, verseLemmasList] of Object.entries(verseLemmas)) {
-    // Check if this verse contains any of the search lemmas
-    if (lemmas.some(lemma => verseLemmasList.includes(lemma))) {
+  // The inverted index is built at load time, so this only runs if loading
+  // failed partway through.
+  if (!verseToLexemes) return matchingVerses;
+  for (const [verseKey, verseLexemes] of Object.entries(verseToLexemes)) {
+    if (lexemes.some(lexeme => verseLexemes.includes(lexeme))) {
       matchingVerses.add(verseKey);
     }
   }
-  const endTime = performance.now();
-  console.log(`  searchByLemmas (fallback): ${(endTime - startTime).toFixed(2)}ms → ${matchingVerses.size} verses`);
-
   return matchingVerses;
 }
 
@@ -637,28 +681,30 @@ export function computeSnippetForMatch(
   const entry = verseKeyToEntry.get(verseKey);
   if (!entry) return null;
 
-  // Try lemma-based search first
-  const lemmas = findLemmasForWord(searchTerm);
-  if (lemmas && lemmas.length > 0) {
-    // Search the whitespace-split text for a word containing the root.
-    // We can't use findWordIndexByLemma here because morphhb word indices
-    // don't align with whitespace indices (maqaf-joined words like "בני־יוסף"
-    // are one whitespace token but multiple morphhb segments).
+  // Try lexeme-based highlighting first
+  const lexemes = findLexemesForWord(searchTerm);
+  if (lexemes && lexemes.length > 0) {
+    // Find the word in the verse that resolves to one of the same lexemes.
+    // Positions cannot be taken from the index: BHSA splits prefixes into
+    // separate words, so its word numbering does not line up with the
+    // whitespace tokens of the displayed text.
+    const wanted = new Set(lexemes);
     const words = entry.hebrewText.split(/\s+/);
-    let wordIndex = -1;
+    const normalizedSearch = normalizeHebrewForSearch(searchTerm);
 
-    // Try each lemma's root text as a substring within whitespace words
-    for (const lemma of lemmas) {
-      const root = strongsToRoot?.[lemma];
-      if (root) {
-        wordIndex = words.findIndex(w => w.includes(root));
-        if (wordIndex >= 0) break;
-      }
+    // Prefer the word the reader actually typed. A verse can hold several
+    // words that share a reading with the term, and highlighting the one
+    // spelled the same is the least surprising choice.
+    let wordIndex = words.indexOf(normalizedSearch);
+
+    if (wordIndex < 0) {
+      wordIndex = words.findIndex(word => {
+        const wordLexemes = findLexemesForWord(word);
+        return wordLexemes !== null && wordLexemes.some(id => wanted.has(id));
+      });
     }
 
-    // Fallback: try the search term itself
     if (wordIndex < 0) {
-      const normalizedSearch = normalizeHebrewForSearch(searchTerm);
       wordIndex = words.findIndex(w => w.includes(normalizedSearch));
     }
 
@@ -676,7 +722,8 @@ export function computeSnippetForMatch(
     }
   }
 
-  // Fallback to whole-word matching (when no lemmas or lemma search failed)
+  // Fallback to whole-word matching (when the term resolved to no lexeme, or
+  // no word in the verse matched one)
   const normalizedTerm = normalizeHebrewForSearch(searchTerm);
   const words = entry.hebrewText.split(/\s+/);
   const wordIndex = words.findIndex(word => word === normalizedTerm);
@@ -704,50 +751,63 @@ export function computeSnippetForMatch(
 }
 
 /**
- * Represents a related root that can be shown as a clickable chip in the UI
+ * A word from the same root family, offered as a clickable chip in the UI.
  */
-export interface RelatedRoot {
-  strongsNum: string;
-  rootText: string;       // Hebrew root from strongs-to-root.json
-  surfaceForm: string;    // representative word for searching
+export interface RelatedLexeme {
+  lexemeId: LexemeId;
+  form: string;        // vocalized Hebrew, shown on the chip
+  gloss: string;       // English gloss, shown on hover
+  searchForm: string;  // a written form that will find it
 }
 
 /**
- * Get depth-1 neighbors for a set of lemmas from the adjacency map.
- * Returns related roots (neighbors not in the input set), deduplicated by rootText.
- * Used for showing clickable "Related:" chips in the search legend.
+ * Words sharing a derivational root with the searched lexemes.
+ *
+ * Lexemes the search already resolved to are left out — those are readings of
+ * what was typed, not related words. The result is deduplicated by dictionary
+ * form and ordered so that the words the reader is likeliest to recognize come
+ * first (more frequent lexemes have lower indices in BHSA's dictionary order,
+ * which follows first occurrence, so we sort by how many verses each occurs in).
  */
-export function getRelatedRoots(lemmas: string[]): RelatedRoot[] {
-  if (!lemmaAdjacency || !strongsToRoot || !strongsToSurfaceForm) return [];
+export function getRelatedLexemes(lexemes: LexemeId[]): RelatedLexeme[] {
+  if (!lexemeFamilies || !lexicon || !lexemeToSearchForm) return [];
 
-  const inputSet = new Set(lemmas);
-  const seen = new Set<string>(); // deduplicate by rootText
-  const related: RelatedRoot[] = [];
+  const searched = new Set(lexemes);
+  const seen = new Set<string>();
+  const related: RelatedLexeme[] = [];
 
-  for (const lemma of lemmas) {
-    const neighbors = lemmaAdjacency.get(lemma);
-    if (!neighbors) continue;
+  for (const lexeme of lexemes) {
+    const family = lexemeFamilies.get(lexeme);
+    if (!family) continue;
 
-    for (const neighbor of neighbors) {
-      if (inputSet.has(neighbor)) continue;
+    for (const relative of family) {
+      if (searched.has(relative)) continue;
 
-      const rootText = strongsToRoot[neighbor];
-      if (!rootText || seen.has(rootText)) continue;
+      const entry = lexicon[relative];
+      if (!entry || seen.has(entry.form)) continue;
 
-      const surfaceForm = strongsToSurfaceForm.get(neighbor);
-      if (!surfaceForm) continue;
+      const searchForm = lexemeToSearchForm.get(relative);
+      if (!searchForm) continue;
 
-      seen.add(rootText);
-      related.push({ strongsNum: neighbor, rootText, surfaceForm });
+      seen.add(entry.form);
+      related.push({
+        lexemeId: relative,
+        form: entry.form,
+        gloss: entry.gloss,
+        searchForm,
+      });
     }
   }
 
+  related.sort((a, b) =>
+    (lexemeToVerses?.get(b.lexemeId)?.size ?? 0) - (lexemeToVerses?.get(a.lexemeId)?.size ?? 0)
+  );
   return related;
 }
 
 /**
- * Search Hebrew text by root (lemma) using morphhb Strong's numbers
- * Falls back to whole-word search if lemma is not found
+ * Search Hebrew text by lexeme, so that every inflected form of a word is found.
+ * Falls back to whole-word search when nothing in the text resolves the term.
  *
  * @param terms - Array of Hebrew search terms
  * @returns Array of SearchResults with matching verses (snippets NOT computed - use computeSnippetForMatch)
@@ -755,25 +815,23 @@ export function getRelatedRoots(lemmas: string[]): RelatedRoot[] {
 function searchByRootMode(terms: string[]): SearchResult[] {
   const resultMap = new Map<string, SearchResult>();
 
-  if (!wordLemmas || !verseLemmas) {
-    // No lemma data available, fall back to whole-word search (lazy version)
+  if (!formToLexemes || !verseToLexemes) {
+    // No lexeme data available, fall back to whole-word search (lazy version)
     return searchHebrewWholeWordLazy(terms);
   }
 
-  const termLemmas: Array<{ termIndex: number; lemmas: string[] }> = [];
+  const termLexemes: Array<{ termIndex: number; lexemes: LexemeId[] }> = [];
 
-  // Collect lemmas for each search term (direct lemmas only, no cluster expansion)
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-    const lemmas = findLemmasForWord(terms[termIndex]);
-    if (lemmas && lemmas.length > 0) {
-      termLemmas.push({ termIndex, lemmas });
+    const lexemes = findLexemesForWord(terms[termIndex]);
+    if (lexemes && lexemes.length > 0) {
+      termLexemes.push({ termIndex, lexemes });
     }
   }
 
-  // If we found lemmas for any terms, use lemma-based search
-  if (termLemmas.length > 0) {
-    for (const { termIndex, lemmas } of termLemmas) {
-      const matchingVerseKeys = searchByLemmas(lemmas);
+  if (termLexemes.length > 0) {
+    for (const { termIndex, lexemes } of termLexemes) {
+      const matchingVerseKeys = searchByLexemes(lexemes);
 
       for (const verseKey of matchingVerseKeys) {
         // Find the corresponding index entry using fast O(1) map lookup
@@ -806,13 +864,13 @@ function searchByRootMode(terms: string[]): SearchResult[] {
       }
     }
 
-    // If we got results from lemma search, return them
+    // If we got results from lexeme search, return them
     if (resultMap.size > 0) {
       return Array.from(resultMap.values());
     }
   }
 
-  // No lemmas found for any terms, fall back to whole-word search (lazy version)
+  // No lexemes found for any term, fall back to whole-word search (lazy version)
   return searchHebrewWholeWordLazy(terms);
 }
 
@@ -871,7 +929,7 @@ function searchHebrewWholeWordLazy(terms: string[]): SearchResult[] {
  * For Hebrew: Supports three modes:
  *   - 'substring': substring search (nikkud-insensitive)
  *   - 'word': whole-word matching only
- *   - 'root': lemma-based search via morphhb Strong's numbers (default)
+ *   - 'root': lexeme-based search via the ETCBC BHSA index (default)
  * For English: Uses substring search (optionally whole-word matching)
  */
 export function search(
@@ -971,7 +1029,7 @@ interface SnippetResult {
 
 /**
  * Create a snippet around a match when we already have positions in the original text
- * (no nikkud mapping needed - used for lemma-based word highlighting)
+ * (no nikkud mapping needed - used for lexeme-based word highlighting)
  */
 function createSnippetAtPosition(text: string, matchStart: number, matchLen: number): SnippetResult {
   const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
