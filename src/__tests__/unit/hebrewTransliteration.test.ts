@@ -4,19 +4,19 @@ import { transliterate, TRANSLITERATION_MAP, HEBREW_TO_ENGLISH } from '../../heb
 describe('hebrewTransliteration', () => {
   describe('TRANSLITERATION_MAP', () => {
     it('maps a to א (aleph)', () => {
-      expect(TRANSLITERATION_MAP.a).toBe('\u05d0');
+      expect(TRANSLITERATION_MAP.a).toBe('א');
     });
 
     it('maps x to ש (shin)', () => {
-      expect(TRANSLITERATION_MAP.x).toBe('\u05e9');
+      expect(TRANSLITERATION_MAP.x).toBe('ש');
     });
 
     it('maps m to מ (mem)', () => {
-      expect(TRANSLITERATION_MAP.m).toBe('\u05de');
+      expect(TRANSLITERATION_MAP.m).toBe('מ');
     });
 
     it('maps u to ט (tet)', () => {
-      expect(TRANSLITERATION_MAP.u).toBe('\u05d8');
+      expect(TRANSLITERATION_MAP.u).toBe('ט');
     });
 
     it('maps phonetic consonants (24 keys)', () => {
@@ -34,7 +34,7 @@ describe('hebrewTransliteration', () => {
     });
 
     it('maps Hebrew letters to valid Hebrew character range', () => {
-      const hebrewRange = /[\u05D0-\u05EA]/;
+      const hebrewRange = /[א-ת]/;
       for (const letter in TRANSLITERATION_MAP) {
         expect(TRANSLITERATION_MAP[letter]).toMatch(hebrewRange);
       }
@@ -43,11 +43,11 @@ describe('hebrewTransliteration', () => {
 
   describe('HEBREW_TO_ENGLISH', () => {
     it('maps א to a', () => {
-      expect(HEBREW_TO_ENGLISH['\u05d0']).toBe('a');
+      expect(HEBREW_TO_ENGLISH['א']).toBe('a');
     });
 
     it('maps ש to x', () => {
-      expect(HEBREW_TO_ENGLISH['\u05e9']).toBe('x');
+      expect(HEBREW_TO_ENGLISH['ש']).toBe('x');
     });
 
     it('maps Hebrew letters back to English keys', () => {
@@ -63,18 +63,18 @@ describe('hebrewTransliteration', () => {
 
   describe('transliterate', () => {
     it('transliterates single lowercase letter', () => {
-      expect(transliterate('a')).toBe('\u05d0'); // a -> א (aleph)
+      expect(transliterate('a')).toBe('א'); // a -> א (aleph)
     });
 
     it('transliterates single uppercase letter', () => {
-      expect(transliterate('A')).toBe('\u05d0'); // A -> א (aleph)
+      expect(transliterate('A')).toBe('א'); // A -> א (aleph)
     });
 
     it('transliterates "shalom" phonetically', () => {
       // "shalom" using phonetic transliteration:
       // x=ש (shin), l=ל (lamed), m=מ (mem)
       // But we don't have 'o' (vowel), so "shlm" -> שלמ
-      expect(transliterate('xlm')).toBe('\u05e9\u05dc\u05de');
+      expect(transliterate('xlm')).toBe('שלמ');
     });
 
     it('handles empty string', () => {
@@ -82,20 +82,24 @@ describe('hebrewTransliteration', () => {
     });
 
     it('preserves spaces', () => {
-      expect(transliterate('a b')).toBe('\u05d0 \u05d1'); // a=א, b=ב
+      expect(transliterate('a b')).toBe('א ב'); // a=א, b=ב
     });
 
     it('preserves non-alphabetic characters', () => {
-      expect(transliterate('a1b2c3')).toBe('\u05d01\u05d12\u05e63'); // a=א, b=ב, c=צ
+      expect(transliterate('a1b2c3')).toBe('א1ב2צ3'); // a=א, b=ב, c=צ
     });
 
     it('handles mixed case', () => {
-      expect(transliterate('AbC')).toBe('\u05d0\u05d1\u05e6'); // A=א, b=ב, C=צ
+      expect(transliterate('AbC')).toBe('אבצ'); // A=א, b=ב, C=צ
     });
 
     it('drops unmapped vowels i, o', () => {
       // s=ס, h=ה, a=א, l=ל, o=dropped, m=מ
-      expect(transliterate('shalom')).toBe('\u05e1\u05d4\u05d0\u05dc\u05de');
+      expect(transliterate('shalom')).toBe('סהאלמ');
+    });
+
+    it('transliterates u to tet', () => {
+      expect(transliterate('u')).toBe('ט');
     });
   });
 });

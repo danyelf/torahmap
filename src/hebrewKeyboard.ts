@@ -1,13 +1,14 @@
 // Hebrew virtual keyboard using simple-keyboard
-import Keyboard from 'simple-keyboard';
-import 'simple-keyboard/build/css/index.css';
-import './styles/hebrewKeyboard.css';
-import { TRANSLITERATION_MAP } from './hebrewTransliteration.ts';
+import Keyboard from "simple-keyboard";
+import "simple-keyboard/build/css/index.css";
+import "./styles/hebrewKeyboard.css";
+import { TRANSLITERATION_MAP } from "./hebrewTransliteration.ts";
 
 let keyboardInstance: Keyboard | null = null;
 let currentInput: HTMLInputElement | null = null;
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let pasteHandler: ((e: ClipboardEvent) => void) | null = null;
+let onCloseCallback: (() => void) | null = null;
 
 // Hebrew keyboard layout - 22 letters in Hebrew alphabetical order, RTL
 // CSS direction:rtl makes first item in each string appear on the right.
@@ -29,7 +30,7 @@ const hebrewLayout = {
 function setupTransliterationHandler(): void {
   // Remove existing handler if any
   if (keydownHandler) {
-    document.removeEventListener('keydown', keydownHandler);
+    document.removeEventListener("keydown", keydownHandler);
   }
 
   keydownHandler = (e: KeyboardEvent) => {
@@ -47,7 +48,8 @@ function setupTransliterationHandler(): void {
     const target = e.target as HTMLElement;
     if (
       target !== currentInput &&
-      (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+      (target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement)
     ) {
       return;
     }
@@ -62,29 +64,30 @@ function setupTransliterationHandler(): void {
       }
       // If keyboard is focused but user pressed a special key, redirect to input
       // For comma, space, etc., we need to manually insert them
-      if (key === ',' || key === ' ') {
+      if (key === "," || key === " ") {
         e.preventDefault();
         const start = currentInput.selectionStart ?? 0;
         const end = currentInput.selectionEnd ?? 0;
         const currentValue = currentInput.value;
-        const newValue = currentValue.slice(0, start) + key + currentValue.slice(end);
+        const newValue =
+          currentValue.slice(0, start) + key + currentValue.slice(end);
         currentInput.value = newValue;
         const newCursorPos = start + 1;
         currentInput.setSelectionRange(newCursorPos, newCursorPos);
         if (keyboardInstance) {
           keyboardInstance.setInput(newValue);
         }
-        currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+        currentInput.dispatchEvent(new Event("input", { bubbles: true }));
         return;
       }
       // Backspace: delegate to existing handler
-      if (key === 'backspace') {
+      if (key === "backspace") {
         e.preventDefault();
         handleBackspace();
         return;
       }
       // Forward delete
-      if (key === 'delete') {
+      if (key === "delete") {
         e.preventDefault();
         const start = currentInput.selectionStart ?? 0;
         const end = currentInput.selectionEnd ?? 0;
@@ -103,7 +106,7 @@ function setupTransliterationHandler(): void {
         currentInput.value = newValue;
         if (keyboardInstance) keyboardInstance.setInput(newValue);
         currentInput.setSelectionRange(newCursor, newCursor);
-        currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+        currentInput.dispatchEvent(new Event("input", { bubbles: true }));
         return;
       }
       // For other special keys (arrows, etc.), just ignore when keyboard focused
@@ -121,7 +124,8 @@ function setupTransliterationHandler(): void {
       const currentValue = currentInput.value;
 
       // Insert Hebrew character at cursor position
-      const newValue = currentValue.slice(0, start) + hebrewChar + currentValue.slice(end);
+      const newValue =
+        currentValue.slice(0, start) + hebrewChar + currentValue.slice(end);
       currentInput.value = newValue;
 
       // Set cursor position after inserted character
@@ -134,7 +138,7 @@ function setupTransliterationHandler(): void {
       }
 
       // Trigger input event to update search
-      currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+      currentInput.dispatchEvent(new Event("input", { bubbles: true }));
     } else {
       // Key is a letter but not in the map (e.g., 'i', 'o', 'u') - ignore it
       e.preventDefault();
@@ -142,11 +146,11 @@ function setupTransliterationHandler(): void {
   };
 
   // Listen at document level so it works even when keyboard has focus
-  document.addEventListener('keydown', keydownHandler);
+  document.addEventListener("keydown", keydownHandler);
 
   // Paste handler: redirect paste to input when keyboard is open
   if (pasteHandler) {
-    document.removeEventListener('paste', pasteHandler);
+    document.removeEventListener("paste", pasteHandler);
   }
 
   pasteHandler = (e: ClipboardEvent) => {
@@ -156,9 +160,13 @@ function setupTransliterationHandler(): void {
     // If input itself has focus, let its own paste handler work
     if (target === currentInput) return;
     // Skip if focus is on another text input
-    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement
+    )
+      return;
 
-    const text = e.clipboardData?.getData('text/plain');
+    const text = e.clipboardData?.getData("text/plain");
     if (!text) return;
 
     e.preventDefault();
@@ -166,7 +174,8 @@ function setupTransliterationHandler(): void {
     const start = currentInput.selectionStart ?? 0;
     const end = currentInput.selectionEnd ?? 0;
     const currentValue = currentInput.value;
-    currentInput.value = currentValue.slice(0, start) + text + currentValue.slice(end);
+    currentInput.value =
+      currentValue.slice(0, start) + text + currentValue.slice(end);
     const newCursorPos = start + text.length;
     currentInput.setSelectionRange(newCursorPos, newCursorPos);
 
@@ -175,42 +184,53 @@ function setupTransliterationHandler(): void {
     }
 
     // Dispatch input event — the search overlay's input handler strips nikkud
-    currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+    currentInput.dispatchEvent(new Event("input", { bubbles: true }));
   };
 
-  document.addEventListener('paste', pasteHandler);
+  document.addEventListener("paste", pasteHandler);
 }
 
-export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
+export function createHebrewKeyboard(
+  inputElement: HTMLInputElement,
+  onClose?: () => void,
+): void {
   currentInput = inputElement;
+  if (onClose) onCloseCallback = onClose;
 
-  // Create keyboard container if it doesn't exist
-  let container = document.getElementById('hebrew-keyboard-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'hebrew-keyboard-container';
-    container.className = 'hebrew-keyboard-container';
+  // Create wrapper and keyboard container if they don't exist
+  let wrapper = document.getElementById("hebrew-keyboard-wrapper");
+  let container = document.getElementById("hebrew-keyboard-container");
+  if (!wrapper) {
+    wrapper = document.createElement("div");
+    wrapper.id = "hebrew-keyboard-wrapper";
+    wrapper.className = "hebrew-keyboard-wrapper";
 
-    // Add close button - clicking it does the same as clicking the א toggle
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'hebrew-keyboard-close';
-    closeBtn.textContent = '✕';
-    closeBtn.title = 'Close keyboard';
-    closeBtn.addEventListener('click', () => {
-      const toggle = document.getElementById('keyboard-toggle');
-      if (toggle) toggle.click();
+    container = document.createElement("div");
+    container.id = "hebrew-keyboard-container";
+    container.className = "hebrew-keyboard-container";
+    wrapper.appendChild(container);
+
+    // Add close button to wrapper (outside the keyboard container)
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "hebrew-keyboard-close";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.title = "Close keyboard";
+    closeBtn.addEventListener("click", () => {
+      closeHebrewKeyboard();
+      onCloseCallback?.();
     });
-    container.appendChild(closeBtn);
+    wrapper.appendChild(closeBtn);
+
 
     // Append to body as a full popup overlay
-    document.body.appendChild(container);
+    document.body.appendChild(wrapper);
   }
 
   // Create or update keyboard instance
   if (!keyboardInstance) {
-    keyboardInstance = new Keyboard(container, {
+    keyboardInstance = new Keyboard(container!, {
       layout: hebrewLayout,
-      theme: 'hg-theme-default hebrew-keyboard-theme',
+      theme: "hg-theme-default hebrew-keyboard-theme",
       display: {
         '{bksp}': '⌫',
         '{space}': ' ',
@@ -245,14 +265,14 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
         if (currentInput) {
           currentInput.value = input;
           // Trigger input event so search updates
-          currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+          currentInput.dispatchEvent(new Event("input", { bubbles: true }));
         }
       },
       onKeyPress: (button: string) => {
-        if (button === '{bksp}') {
+        if (button === "{bksp}") {
           handleBackspace();
         }
-      }
+      },
     });
 
     // Style the keycap labels after keyboard is initialized
@@ -266,10 +286,10 @@ export function createHebrewKeyboard(inputElement: HTMLInputElement): void {
   keyboardInstance.setInput(inputElement.value);
 
   // Position keyboard next to the controls panel
-  positionKeyboard(inputElement, container);
+  positionKeyboard(inputElement, wrapper!);
 
   // Show keyboard
-  container.style.display = 'block';
+  wrapper!.style.display = "flex";
 
   // Setup transliteration handler for physical keyboard
   setupTransliterationHandler();
@@ -283,13 +303,15 @@ function styleKeycapLabels(): void {
   if (!keyboardInstance) return;
 
   // Get all keyboard buttons
-  const buttons = document.querySelectorAll<HTMLElement>('.hebrew-keyboard-theme .hg-button');
+  const buttons = document.querySelectorAll<HTMLElement>(
+    ".hebrew-keyboard-theme .hg-button",
+  );
 
-  buttons.forEach(button => {
+  buttons.forEach((button) => {
     const text = button.textContent;
-    if (!text || text.includes('{') || !text.includes('\n')) return;
+    if (!text || text.includes("{") || !text.includes("\n")) return;
 
-    const [english, hebrew] = text.split('\n');
+    const [english, hebrew] = text.split("\n");
     button.innerHTML = `
       <span>
         <span class="keycap-english">${english}</span>
@@ -299,16 +321,19 @@ function styleKeycapLabels(): void {
   });
 }
 
-function positionKeyboard(_inputElement: HTMLInputElement, container: HTMLElement): void {
+function positionKeyboard(
+  _inputElement: HTMLInputElement,
+  wrapper: HTMLElement,
+): void {
   // Get the controls panel position
-  const controlsPanel = document.getElementById('controls');
+  const controlsPanel = document.getElementById("controls");
   if (!controlsPanel) return;
 
   const controlsRect = controlsPanel.getBoundingClientRect();
 
   // Position keyboard to the right of controls panel with some gap
-  container.style.left = `${controlsRect.right + 16}px`;
-  container.style.top = `${controlsRect.top}px`;
+  wrapper.style.left = `${controlsRect.right + 16}px`;
+  wrapper.style.top = `${controlsRect.top}px`;
 }
 
 function handleBackspace(): void {
@@ -336,23 +361,23 @@ function handleBackspace(): void {
     currentInput.value = newValue;
     keyboardInstance.setInput(newValue);
     currentInput.setSelectionRange(newCursorPos, newCursorPos);
-    currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+    currentInput.dispatchEvent(new Event("input", { bubbles: true }));
   }
 }
 
 export function closeHebrewKeyboard(): void {
-  const container = document.getElementById('hebrew-keyboard-container');
-  if (container) {
-    container.style.display = 'none';
+  const wrapper = document.getElementById("hebrew-keyboard-wrapper");
+  if (wrapper) {
+    wrapper.style.display = "none";
   }
 
   // Remove document-level handlers
   if (keydownHandler) {
-    document.removeEventListener('keydown', keydownHandler);
+    document.removeEventListener("keydown", keydownHandler);
     keydownHandler = null;
   }
   if (pasteHandler) {
-    document.removeEventListener('paste', pasteHandler);
+    document.removeEventListener("paste", pasteHandler);
     pasteHandler = null;
   }
 
@@ -360,6 +385,6 @@ export function closeHebrewKeyboard(): void {
 }
 
 export function isKeyboardOpen(): boolean {
-  const container = document.getElementById('hebrew-keyboard-container');
-  return container ? container.style.display === 'block' : false;
+  const wrapper = document.getElementById("hebrew-keyboard-wrapper");
+  return wrapper ? wrapper.style.display === "flex" : false;
 }

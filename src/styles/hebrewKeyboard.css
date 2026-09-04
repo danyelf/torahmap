@@ -1,12 +1,16 @@
 /* Hebrew keyboard styling to match Torah Map theme */
 
-#hebrew-keyboard-container {
+.hebrew-keyboard-wrapper {
   position: fixed;
   /* Position is set dynamically in JS to be next to controls panel */
-  width: 650px;
-  max-width: calc(100vw - 320px); /* Leave room for controls panel + gap */
   z-index: 1000;
   display: none;
+  align-items: flex-start;
+}
+
+#hebrew-keyboard-container {
+  width: 650px;
+  max-width: calc(100vw - 360px); /* Leave room for controls panel + gap + close btn */
   background: rgba(0, 0, 0, 0.95);
   border: 1px solid #444;
   border-radius: 8px;

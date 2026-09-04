@@ -738,6 +738,12 @@ export const searchOverlay: Overlay = {
       }
     };
 
+    // Callback for when keyboard is closed (from close button or toggle)
+    const onKeyboardClose = () => {
+      if (keyboardToggle) keyboardToggle.classList.remove('active');
+      updateInputMode();
+    };
+
     // Handle pasted text: strip nikkud from Hebrew, auto-switch mode on paste into empty input
     searchInput?.addEventListener('paste', (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain');
@@ -750,7 +756,7 @@ export const searchOverlay: Overlay = {
       // Auto-switch mode when pasting into empty input
       if (inputIsEmpty) {
         if (pasteIsHebrew && !isKeyboardOpen()) {
-          createHebrewKeyboard(input);
+          createHebrewKeyboard(input, onKeyboardClose);
           if (keyboardToggle) keyboardToggle.classList.add('active');
           updateInputMode();
         } else if (!pasteIsHebrew && isKeyboardOpen()) {
@@ -819,39 +825,32 @@ export const searchOverlay: Overlay = {
         }
       }
 
-      // Script enforcement: reject wrong-script chars, auto-switch on paste into empty
+      // Script enforcement: reject mixed-script input
+      // When both Hebrew and Latin are present, keep the majority script
       const afterSanitize = input.value;
-      let kbOpen = isKeyboardOpen();
       if (afterSanitize) {
         const hasHebrew = /[\u05D0-\u05EA]/.test(afterSanitize);
         const hasLatin = /[a-zA-Z]/.test(afterSanitize);
 
-        // Auto-switch: pure wrong-script means paste into empty input — switch mode
-        if (hasHebrew && !hasLatin && !kbOpen) {
-          createHebrewKeyboard(input);
-          if (keyboardToggle) keyboardToggle.classList.add('active');
-          kbOpen = true;
-        } else if (hasLatin && !hasHebrew && kbOpen) {
-          closeHebrewKeyboard();
-          if (keyboardToggle) keyboardToggle.classList.remove('active');
-          kbOpen = false;
-        }
-
-        // Strip wrong-script characters (after potential mode switch)
-        const removePattern = kbOpen ? /[a-zA-Z]/g : /[\u05D0-\u05EA]/g;
-        const cleaned = afterSanitize.replace(removePattern, '');
-        if (cleaned !== afterSanitize) {
-          const cursor = input.selectionStart ?? afterSanitize.length;
-          let removedBeforeCursor = 0;
-          const charPattern = kbOpen ? /[a-zA-Z]/ : /[\u05D0-\u05EA]/;
-          for (let i = 0; i < Math.min(cursor, afterSanitize.length); i++) {
-            if (charPattern.test(afterSanitize[i])) {
-              removedBeforeCursor++;
+        if (hasHebrew && hasLatin) {
+          const hebrewCount = (afterSanitize.match(/[\u05D0-\u05EA]/g) || []).length;
+          const latinCount = (afterSanitize.match(/[a-zA-Z]/g) || []).length;
+          const keepHebrew = hebrewCount >= latinCount;
+          const removePattern = keepHebrew ? /[a-zA-Z]/g : /[\u05D0-\u05EA]/g;
+          const cleaned = afterSanitize.replace(removePattern, '');
+          if (cleaned !== afterSanitize) {
+            const cursor = input.selectionStart ?? afterSanitize.length;
+            let removedBeforeCursor = 0;
+            const charPattern = keepHebrew ? /[a-zA-Z]/ : /[\u05D0-\u05EA]/;
+            for (let i = 0; i < Math.min(cursor, afterSanitize.length); i++) {
+              if (charPattern.test(afterSanitize[i])) {
+                removedBeforeCursor++;
+              }
             }
+            input.value = cleaned;
+            const newPos = cursor - removedBeforeCursor;
+            input.setSelectionRange(newPos, newPos);
           }
-          input.value = cleaned;
-          const newPos = cursor - removedBeforeCursor;
-          input.setSelectionRange(newPos, newPos);
         }
       }
 
@@ -930,7 +929,7 @@ export const searchOverlay: Overlay = {
           keyboardToggle!.classList.remove('active');
           trackKeyboardToggle(false);
         } else {
-          createHebrewKeyboard(searchInput);
+          createHebrewKeyboard(searchInput, onKeyboardClose);
           keyboardToggle!.classList.add('active');
           trackKeyboardToggle(true);
         }

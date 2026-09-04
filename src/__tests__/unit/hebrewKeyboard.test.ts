@@ -17,19 +17,21 @@ describe('hebrewKeyboard', () => {
     if (input.parentNode) {
       input.parentNode.removeChild(input);
     }
-    // Remove keyboard container if it exists
-    const keyboardContainer = document.getElementById('hebrew-keyboard-container');
-    if (keyboardContainer && keyboardContainer.parentNode) {
-      keyboardContainer.parentNode.removeChild(keyboardContainer);
+    // Remove keyboard wrapper (contains both container and close button)
+    const keyboardWrapper = document.getElementById('hebrew-keyboard-wrapper');
+    if (keyboardWrapper && keyboardWrapper.parentNode) {
+      keyboardWrapper.parentNode.removeChild(keyboardWrapper);
     }
   });
 
   describe('createHebrewKeyboard', () => {
     it('creates keyboard container', () => {
       createHebrewKeyboard(input);
+      const wrapper = document.getElementById('hebrew-keyboard-wrapper');
       const container = document.getElementById('hebrew-keyboard-container');
+      expect(wrapper).toBeTruthy();
       expect(container).toBeTruthy();
-      expect(container?.style.display).toBe('block');
+      expect(wrapper?.style.display).toBe('flex');
     });
 
     it('sets up transliteration handler', () => {
@@ -45,12 +47,12 @@ describe('hebrewKeyboard', () => {
   });
 
   describe('closeHebrewKeyboard', () => {
-    it('hides keyboard container', () => {
+    it('hides keyboard wrapper', () => {
       createHebrewKeyboard(input);
       closeHebrewKeyboard();
 
-      const container = document.getElementById('hebrew-keyboard-container');
-      expect(container?.style.display).toBe('none');
+      const wrapper = document.getElementById('hebrew-keyboard-wrapper');
+      expect(wrapper?.style.display).toBe('none');
     });
 
     it('removes transliteration handler', () => {

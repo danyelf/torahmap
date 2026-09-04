@@ -32,6 +32,7 @@ export const TRANSLITERATION_MAP: Record<string, string> = {
   r: '\u05e8', // ר resh
   x: '\u05e9', // ש shin (phonetic 'sh' sound)
   t: '\u05ea', // ת tav
+  u: '\u05d8', // ט tet
 
   // No mappings for: i, o (these could be vowels in a full system)
 };

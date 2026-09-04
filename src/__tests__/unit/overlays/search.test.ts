@@ -104,9 +104,9 @@ describe('Search Overlay', () => {
 
     // Clean up Hebrew keyboard if open
     closeHebrewKeyboard();
-    const keyboardContainer = document.getElementById('hebrew-keyboard-container');
-    if (keyboardContainer?.parentNode) {
-      keyboardContainer.parentNode.removeChild(keyboardContainer);
+    const keyboardWrapper = document.getElementById('hebrew-keyboard-wrapper');
+    if (keyboardWrapper?.parentNode) {
+      keyboardWrapper.parentNode.removeChild(keyboardWrapper);
     }
   });
 
@@ -478,10 +478,13 @@ describe('Search Overlay', () => {
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
       // Simulate Hebrew mode (keyboard open) since input has Hebrew content
+      const kbWrapper = document.createElement('div');
+      kbWrapper.id = 'hebrew-keyboard-wrapper';
+      kbWrapper.style.display = 'flex';
       const kbContainer = document.createElement('div');
       kbContainer.id = 'hebrew-keyboard-container';
-      kbContainer.style.display = 'block';
-      document.body.appendChild(kbContainer);
+      kbWrapper.appendChild(kbContainer);
+      document.body.appendChild(kbWrapper);
 
       // Set initial value (Hebrew) and cursor position
       input.value = 'שלום  עולם';
@@ -511,8 +514,8 @@ describe('Search Overlay', () => {
       expect(input.selectionStart).toBe(5 + expectedStripped.length);
       expect(input.selectionEnd).toBe(5 + expectedStripped.length);
 
-      // Clean up keyboard container
-      kbContainer.remove();
+      // Clean up keyboard wrapper
+      kbWrapper.remove();
     });
 
     it('strips nikkud from typed Hebrew text', () => {
