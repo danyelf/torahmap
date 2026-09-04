@@ -93,9 +93,20 @@ Deutsche Bibelgesellschaft's copyright in the printed Biblia Hebraica
 Stuttgartensia, which would constrain how others could reuse this work. Since
 it offers nothing we lack, that constraint buys nothing.
 
+Two things ETCBC does have that nothing else here does: sentence structure —
+clause and phrase hierarchy, dependency edges, phrase functions — and a
+classification of roughly 33,000 proper nouns as person, place, gentilic or
+deity. Neither is a facet anyone asked for, though the second is an interesting
+thing to paint on a map and is worth remembering. Against that, adopting ETCBC
+would mean losing Strong's numbers, which the current pipeline is built on.
+
 If filtering by meaning is wanted later, the dataset to evaluate is MACULA
-Hebrew, which is CC BY 4.0 and built on the public-domain Westminster Leningrad
-Codex. Notably, that project chose not to build on ETCBC.
+Hebrew. It is CC BY 4.0, built on the public-domain Westminster Leningrad
+Codex, keeps Strong's numbers at full coverage so nothing here would have to be
+unpicked, and unlike either other source it carries actual word senses from the
+UBS semantic dictionary — a sense number on about 38% of tokens, a lexical
+domain on 51%, a core domain on 34%. Partial coverage, but real senses, which
+is more than ETCBC offers. Notably that project chose not to build on ETCBC.
 
 None of this belongs in the first release.
 
