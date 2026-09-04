@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getSidebarElements,
   getSefariaUrl,
-  positionSidebar,
   updateSidebar,
   type SidebarElements,
 } from '../../sidebar';
@@ -35,7 +34,7 @@ describe('sidebar', () => {
 
     beforeEach(() => {
       sidebar = document.createElement('div');
-      sidebar.id = 'verse-sidebar';
+      sidebar.id = 'verse-popup';
       document.body.appendChild(sidebar);
     });
 
@@ -286,98 +285,6 @@ describe('sidebar', () => {
     });
   });
 
-  describe('positionSidebar', () => {
-    let sidebar: HTMLElement;
-    let controlsPanel: HTMLElement;
-
-    beforeEach(() => {
-      sidebar = document.createElement('div');
-      sidebar.id = 'verse-sidebar';
-      sidebar.style.position = 'fixed';
-      controlsPanel = document.createElement('div');
-      controlsPanel.id = 'controls';
-      document.body.append(sidebar, controlsPanel);
-    });
-
-    afterEach(() => {
-      document.body.removeChild(sidebar);
-      document.body.removeChild(controlsPanel);
-    });
-
-    it('positions sidebar below controls panel', () => {
-      // Mock getBoundingClientRect
-      vi.spyOn(controlsPanel, 'getBoundingClientRect').mockReturnValue({
-        bottom: 100,
-        top: 0,
-        left: 0,
-        right: 0,
-        width: 0,
-        height: 100,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      });
-
-      positionSidebar(sidebar, controlsPanel);
-
-      expect(sidebar.style.top).toBe('110px'); // bottom (100) + 10
-    });
-
-    it('handles large control panel heights', () => {
-      vi.spyOn(controlsPanel, 'getBoundingClientRect').mockReturnValue({
-        bottom: 500,
-        top: 0,
-        left: 0,
-        right: 0,
-        width: 0,
-        height: 500,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      });
-
-      positionSidebar(sidebar, controlsPanel);
-
-      expect(sidebar.style.top).toBe('510px');
-    });
-
-    it('handles small control panel heights', () => {
-      vi.spyOn(controlsPanel, 'getBoundingClientRect').mockReturnValue({
-        bottom: 20,
-        top: 0,
-        left: 0,
-        right: 0,
-        width: 0,
-        height: 20,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      });
-
-      positionSidebar(sidebar, controlsPanel);
-
-      expect(sidebar.style.top).toBe('30px');
-    });
-
-    it('does nothing when sidebar is null', () => {
-      expect(() => {
-        positionSidebar(null, controlsPanel);
-      }).not.toThrow();
-    });
-
-    it('does nothing when controlsPanel is null', () => {
-      expect(() => {
-        positionSidebar(sidebar, null);
-      }).not.toThrow();
-    });
-
-    it('does nothing when both are null', () => {
-      expect(() => {
-        positionSidebar(null, null);
-      }).not.toThrow();
-    });
-  });
-
   describe('updateSidebar', () => {
     let elements: SidebarElements;
     let verseTexts: VerseTexts;
@@ -385,7 +292,7 @@ describe('sidebar', () => {
 
     beforeEach(() => {
       const sidebar = document.createElement('div');
-      sidebar.id = 'verse-sidebar';
+      sidebar.id = 'verse-popup';
       const ref = document.createElement('div');
       ref.className = 'ref-text';
       const overlayInfo = document.createElement('div');

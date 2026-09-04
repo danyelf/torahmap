@@ -1,0 +1,118 @@
+#verse-popup {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  z-index: 15;
+  display: none;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+}
+
+#verse-popup.visible {
+  display: block;
+}
+
+#verse-popup.pinned {
+  border-color: rgba(106, 176, 243, 0.3);
+}
+
+#verse-popup .verse-ref {
+  padding: 12px 14px;
+  padding-right: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+#verse-popup .close-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+  line-height: 1;
+}
+
+#verse-popup .close-btn:hover {
+  color: #fff;
+}
+
+#verse-popup.pinned .close-btn {
+  display: block;
+}
+
+#verse-popup .overlay-info {
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6ab0f3;
+  background: rgba(106, 176, 243, 0.1);
+  border-bottom: 1px solid rgba(106, 176, 243, 0.2);
+  font-style: italic;
+  display: none;
+}
+
+#verse-popup .overlay-info:not(:empty) {
+  display: block;
+}
+
+#verse-popup .verse-hebrew {
+  padding: 14px;
+  font-family: "SBL Hebrew", "Ezra SIL", "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.6;
+  direction: rtl;
+  text-align: right;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#verse-popup .verse-english {
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ccc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#verse-popup .sefaria-link {
+  padding: 12px 14px;
+  display: block;
+  color: #6ab0f3;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+#verse-popup .sefaria-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+#verse-popup .sefaria-link .link-subtitle {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  #verse-popup {
+    left: 10px;
+    bottom: calc(50vh + 10px);
+    width: calc(100vw - 20px);
+    max-height: 200px;
+  }
+}

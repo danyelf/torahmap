@@ -100,6 +100,8 @@ function stripHtmlTags(value: string): string {
  * Complete URL state representation
  */
 export interface UrlState {
+  /** Story stop ID (story mode) */
+  story?: string;
   /** Active overlay ID (undefined = no overlay) */
   overlay?: string;
   /** Selected verse in "Book.Chapter.Verse" format */
@@ -124,6 +126,11 @@ export function parseUrlState(): UrlState {
   const state: UrlState = {
     overlayParams: {},
   };
+
+  // Story mode parameter
+  const story = params.get('story');
+  const validatedStory = validateString(story);
+  if (validatedStory) state.story = validatedStory;
 
   // Core parameters
   const overlay = params.get("overlay");
@@ -216,6 +223,11 @@ export function parseUrlState(): UrlState {
  * Omits default values to keep URLs clean
  */
 export function buildUrlHash(state: UrlState): string {
+  // Story mode: simple URL with just the stop ID
+  if (state.story) {
+    return `#story=${encodeURIComponent(state.story)}`;
+  }
+
   const params = new URLSearchParams();
 
   // Core parameters (omit defaults)

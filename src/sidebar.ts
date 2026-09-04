@@ -23,7 +23,7 @@ export interface SidebarElements {
  * Get references to all sidebar DOM elements
  */
 export function getSidebarElements(): SidebarElements {
-  const sidebar = document.getElementById('verse-sidebar');
+  const sidebar = document.getElementById('verse-popup');
 
   return {
     sidebar,
@@ -64,18 +64,6 @@ export function getSefariaUrl(
 
   // Default: show all connections (since we display link counts in sidebar)
   return `${baseUrl}?with=all`;
-}
-
-/**
- * Position sidebar below controls panel
- */
-export function positionSidebar(
-  sidebar: HTMLElement | null,
-  controlsPanel: HTMLElement | null
-): void {
-  if (!sidebar || !controlsPanel) return;
-  const controlsRect = controlsPanel.getBoundingClientRect();
-  sidebar.style.top = `${controlsRect.bottom + 10}px`;
 }
 
 /**

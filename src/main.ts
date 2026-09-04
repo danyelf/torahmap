@@ -71,6 +71,15 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from "./constants/app.ts";
+import { loadStoryData, renderStoryPanel, computeStopOffsets, resolveStops } from "./scrollytelling/storyPanel";
+import { computeInterpolatedState } from "./scrollytelling/controller";
+import { computeBlendedColors } from "./scrollytelling/overlayBlender";
+import { switchToExplore, switchToStory } from "./scrollytelling/modeSwitch";
+import type { AppMode } from "./scrollytelling/modeSwitch";
+import type { ResolvedStoryStop } from "./scrollytelling/types";
+import "./styles/zoom-buttons.css";
+import "./styles/right-panel.css";
+import "./styles/verse-popup.css";
 
 // Extend window for global state
 declare global {
@@ -129,12 +138,10 @@ async function main(): Promise<void> {
   const dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas(): void {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const width = canvas.clientWidth || window.innerWidth;
+    const height = canvas.clientHeight || window.innerHeight;
     canvas.width = width * dpr;
     canvas.height = height * dpr;
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
   }
   resizeCanvas();
 
@@ -161,6 +168,52 @@ async function main(): Promise<void> {
     rebuildGeometry(renderContext.gl, renderState, colors);
   }
 
+  /**
+   * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
+   * Does NOT paint the buffer — caller decides (settled paints via applyOverlay,
+   * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
+   * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
+   * heading toward; otherwise hover events fired during a transition would call
+   * applyOverlay against a stale `currentOverlay` and clobber the blender's buffer.
+   */
+  function syncStoryStopState(stop: ResolvedStoryStop): void {
+    const wantedOverlay = stop.overlay ?? 'none';
+    if (wantedOverlay !== currentOverlayId) {
+      activateOverlay(wantedOverlay);
+    }
+
+    if (currentOverlay?.applyUrlParams) {
+      currentOverlay.applyUrlParams(new URLSearchParams(stop.overlayParams ?? {}));
+    }
+
+    // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
+    if (stop.verse) {
+      const parsed = parseVerseFromUrl(stop.verse);
+      if (parsed) {
+        const isAlreadyPinned =
+          pinnedVerse &&
+          pinnedVerse.book === parsed.book &&
+          pinnedVerse.chapter === parsed.chapter &&
+          pinnedVerse.verse === parsed.verse;
+        if (!isAlreadyPinned) {
+          const verse = verses.find(
+            (v) =>
+              v.book === parsed.book &&
+              v.chapter === parsed.chapter &&
+              v.verse === parsed.verse
+          );
+          if (verse) {
+            pinnedVerse = verse;
+            updateSidebarWrapper(verse, true);
+          }
+        }
+      }
+    } else if (pinnedVerse) {
+      pinnedVerse = null;
+      updateSidebarWrapper(null);
+    }
+  }
+
   // Camera state - start at 1:1 zoom, centered
   const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
 
@@ -171,6 +224,19 @@ async function main(): Promise<void> {
   const mouseState = createMouseState();
 
   const touchState = createTouchState();
+
+  // Mode switching state (story vs explore)
+  let appMode: AppMode = 'story';
+  let lastStoryScrollTop = 0;
+  // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
+  // is currently synced. Used to skip redundant resyncs every scroll frame.
+  // Reset on mode switches (explore may have changed overlay/pin out from under us).
+  let lastSyncedStopId: string | null = null;
+  // Track whether user manually zoomed/panned during story mode.
+  // Cleared when the user scrolls the narrative, resuming scroll-driven camera.
+  // Currently write-only; reserved for future UI hints (e.g., "scroll to resume").
+  let manualOverride = false;
+  void manualOverride; // satisfy noUnusedLocals
 
   // Tap detection for touch devices
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
@@ -242,6 +308,7 @@ async function main(): Promise<void> {
     "wheel",
     (e: WheelEvent) => {
       e.preventDefault();
+      if (appMode === "story") manualOverride = true;
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       const newZoom = clampZoom(camera.zoom * zoomFactor);
 
@@ -274,6 +341,50 @@ async function main(): Promise<void> {
   );
 
   const debouncedTrackZoom = debounce(() => trackZoomLevel(camera.zoom), 1000);
+
+  // Zoom buttons
+  const zoomInBtn = document.getElementById('zoom-in');
+  const zoomOutBtn = document.getElementById('zoom-out');
+
+  zoomInBtn?.addEventListener('click', () => {
+    if (appMode === 'story') manualOverride = true;
+    const centerX = canvas.clientWidth / 2;
+    const centerY = canvas.clientHeight / 2;
+    const newZoom = clampZoom(camera.zoom * ZOOM_IN_FACTOR);
+    const newPan = panForZoom(
+      { x: camera.x, y: camera.y },
+      camera.zoom,
+      newZoom,
+      centerX,
+      centerY
+    );
+    camera.x = newPan.x;
+    camera.y = newPan.y;
+    camera.zoom = newZoom;
+    render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    debouncedSaveUrlState();
+  });
+
+  zoomOutBtn?.addEventListener('click', () => {
+    if (appMode === 'story') manualOverride = true;
+    const centerX = canvas.clientWidth / 2;
+    const centerY = canvas.clientHeight / 2;
+    const newZoom = clampZoom(camera.zoom * ZOOM_OUT_FACTOR);
+    const newPan = panForZoom(
+      { x: camera.x, y: camera.y },
+      camera.zoom,
+      newZoom,
+      centerX,
+      centerY
+    );
+    camera.x = newPan.x;
+    camera.y = newPan.y;
+    camera.zoom = newZoom;
+    render();
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    debouncedSaveUrlState();
+  });
 
   // Touch events for pinch-to-zoom
   canvas.addEventListener(
@@ -348,6 +459,7 @@ async function main(): Promise<void> {
 
   canvas.addEventListener("pointermove", (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
+      if (appMode === 'story') manualOverride = true;
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
       camera.x += dx / camera.zoom;
@@ -433,7 +545,6 @@ async function main(): Promise<void> {
 
   // Sidebar for verse details
   const sidebarElements = getSidebarElements();
-  const controlsPanel = document.getElementById("controls");
 
   // URL State Management
   // Extract overlay params for URL encoding
@@ -563,12 +674,6 @@ async function main(): Promise<void> {
     unpinVerse();
   });
 
-  // Bottom sheet handle tap to dismiss
-  const bottomSheetHandle = document.querySelector(".bottom-sheet-handle");
-  bottomSheetHandle?.addEventListener("click", () => {
-    unpinVerse();
-  });
-
   // Keyboard navigation: arrow keys for next/previous verse, Escape to close
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     if (!pinnedVerse) return;
@@ -602,10 +707,11 @@ async function main(): Promise<void> {
 
   let currentOverlayId = "none";
 
-  function setOverlay(id: string, fromUrlRestore: boolean = false): void {
-    if (!fromUrlRestore) {
-      trackOverlaySwitch(id, currentOverlayId);
-    }
+  /**
+   * Internal: switch the active overlay without painting/rendering or writing URL.
+   * Used by both setOverlay (with side effects) and applyStoryStop (without).
+   */
+  function activateOverlay(id: string): void {
     currentOverlayId = id;
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
@@ -620,7 +726,10 @@ async function main(): Promise<void> {
       }
       render();
       // Save URL state when overlay params change (replaceState)
-      saveUrlState(false);
+      // Skip during story mode — story owns URL state via story stop ID.
+      if (appMode !== 'story') {
+        saveUrlState(false);
+      }
     });
 
     // Clear and render overlay's UI
@@ -632,6 +741,18 @@ async function main(): Promise<void> {
       overlayLegendContainer.innerHTML = "";
       currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
+  }
+
+  function setOverlay(
+    id: string,
+    opts: { fromUrlRestore?: boolean } = {}
+  ): void {
+    const { fromUrlRestore = false } = opts;
+    if (!fromUrlRestore) {
+      trackOverlaySwitch(id, currentOverlayId);
+    }
+
+    activateOverlay(id);
 
     applyOverlay();
     render();
@@ -668,6 +789,38 @@ async function main(): Promise<void> {
     bounds,
   };
 
+  // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
+  if (import.meta.hot) {
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        const x = Math.round(camera.x * 100) / 100;
+        const y = Math.round(camera.y * 100) / 100;
+        const zoom = Math.round(camera.zoom * 100) / 100;
+
+        // Build optional parts
+        let extraParts = '';
+        if (currentOverlay) {
+          extraParts += ` | overlay: ${currentOverlay.id}`;
+          const params = currentOverlay.getUrlParams?.();
+          if (params) {
+            for (const [key, value] of Object.entries(params)) {
+              extraParts += ` | ${key}: ${value}`;
+            }
+          }
+        }
+        if (pinnedVerse) {
+          const book = pinnedVerse.book.replace(/ /g, '.');
+          extraParts += ` | verse: ${book}.${pinnedVerse.chapter}.${pinnedVerse.verse}`;
+        }
+
+        const comment = `<!-- stop: STOP_ID | camera: ${x},${y},${zoom}${extraParts} -->`;
+        navigator.clipboard.writeText(comment);
+        console.log(`[capture] Copied to clipboard:\n${comment}`);
+      }
+    });
+  }
+
   // Wire up search overlay callbacks
   configureSearch({
     verses,
@@ -679,16 +832,128 @@ async function main(): Promise<void> {
   });
 
   // Initialize help modal
-  if (controlsPanel) {
-    initHelp(controlsPanel);
+  const rightPanel = document.getElementById('right-panel');
+  if (rightPanel) {
+    initHelp(rightPanel);
   }
+
+  // Load story data and wire up scroll-driven camera
+  const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
+  const storyContent = document.getElementById('story-content')!;
+
+  let storyData = await loadStoryData();
+  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, canvas.clientWidth, canvas.clientHeight);
+  let stopElements = renderStoryPanel(storyContent, storyData.stops);
+
+  async function reloadStory(): Promise<void> {
+    const scrollTop = storyContent.scrollTop;
+    storyData = await loadStoryData();
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, canvas.clientWidth, canvas.clientHeight);
+    stopElements = renderStoryPanel(storyContent, storyData.stops);
+    storyContent.scrollTop = scrollTop;
+    // Force re-apply: stops may have changed (overlay/params/verse), and stop
+    // object identities are fresh after re-resolving.
+    lastSyncedStopId = null;
+    storyContent.dispatchEvent(new Event('scroll'));
+  }
+
+  // Hot-reload story.md in dev mode
+  if (import.meta.hot) {
+    import.meta.hot.on('story-update', () => {
+      reloadStory();
+    });
+  }
+
+  const storyPanel = document.getElementById('story-panel')!;
+  const explorePanel = document.getElementById('explore-panel')!;
+
+  document.getElementById('exit-story')?.addEventListener('click', () => {
+    lastStoryScrollTop = storyContent.scrollTop;
+    appMode = 'explore';
+    switchToExplore(storyPanel, explorePanel);
+    // Update URL to explore mode (remove story param)
+    saveUrlState(true);
+  });
+
+  document.getElementById('back-to-story')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    appMode = 'story';
+    // Reset settled tracker — explore mode may have changed overlay/pin, so
+    // force the next settled frame to re-apply the resting stop's state.
+    lastSyncedStopId = null;
+    switchToStory(storyPanel, explorePanel, storyContent, lastStoryScrollTop);
+    // Re-trigger scroll handler to restore map state
+    storyContent.dispatchEvent(new Event('scroll'));
+  });
+
+  let scrollRAF: number | null = null;
+  storyContent.addEventListener('scroll', () => {
+    if (appMode !== 'story') return;
+    manualOverride = false;
+    if (scrollRAF) return;
+    scrollRAF = requestAnimationFrame(() => {
+      scrollRAF = null;
+      const offsets = computeStopOffsets(stopElements);
+      const heights = stopElements.map(el => el.offsetHeight);
+      const totalHeight = storyContent.scrollHeight;
+      const state = computeInterpolatedState(
+        resolvedStops,
+        offsets,
+        totalHeight,
+        storyContent.scrollTop,
+        storyData.defaults?.easing ?? 'ease-in-out',
+        heights,
+        storyContent.clientHeight
+      );
+
+      // Apply interpolated camera
+      camera.x = state.camera.x;
+      camera.y = state.camera.y;
+      camera.zoom = state.camera.zoom;
+
+      const settled = state.fromStop === state.toStop;
+      // Pick the stop whose state should be "current" — settled stop, or the
+      // dominant transitioning stop. Sync explore state to it on every change
+      // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
+      const dominantStop = settled
+        ? state.fromStop
+        : (state.t > 0.5 ? state.toStop : state.fromStop);
+      if (lastSyncedStopId !== dominantStop.id) {
+        syncStoryStopState(dominantStop);
+        lastSyncedStopId = dominantStop.id;
+      }
+
+      if (settled) {
+        // At rest: paint via the explore-mode color pipeline.
+        applyOverlay();
+      } else {
+        // Mid-scroll: blender paints interpolated colors directly to the GPU buffer.
+        const blendedColors = computeBlendedColors(
+          state.fromStop,
+          state.toStop,
+          state.t,
+          verses
+        );
+        rebuildGeometry(renderContext.gl, renderState, blendedColors);
+      }
+      render();
+      updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
+    });
+  });
+
+  // Re-trigger scroll on resize to recompute story positions
+  window.addEventListener('resize', () => {
+    if (appMode === 'story') {
+      storyContent.dispatchEvent(new Event('scroll'));
+    }
+  });
 
   // URL State Restoration
   // Restore overlay and its parameters from URL
   function restoreOverlayFromUrl(urlState: UrlState): void {
     if (!urlState.overlay) return;
 
-    setOverlay(urlState.overlay, true);
+    setOverlay(urlState.overlay, { fromUrlRestore: true });
     if (overlaySelect) {
       overlaySelect.value = urlState.overlay;
     }
@@ -749,6 +1014,25 @@ async function main(): Promise<void> {
   function restoreFromUrl(): void {
     const urlState = parseUrlState();
 
+    if (urlState.story) {
+      // Restore story mode
+      appMode = 'story';
+      // Force the next settled scroll frame to apply the stop's state.
+      lastSyncedStopId = null;
+      switchToStory(storyPanel, explorePanel, storyContent, 0);
+      const stopIndex = resolvedStops.findIndex(s => s.id === urlState.story);
+      if (stopIndex >= 0 && stopElements[stopIndex]) {
+        stopElements[stopIndex].scrollIntoView();
+      }
+      return;
+    }
+
+    // Explore mode
+    if (urlState.overlay || urlState.verse) {
+      appMode = 'explore';
+      switchToExplore(storyPanel, explorePanel);
+    }
+
     restoreOverlayFromUrl(urlState);
     const hasVerse = restoreVerseFromUrl(urlState);
     restoreCameraFromUrl(urlState, hasVerse);
@@ -766,6 +1050,11 @@ async function main(): Promise<void> {
   subscribeToHashChange(() => {
     restoreFromUrl();
   });
+
+  // Apply first stop's state (verse pin, overlay) on initial load
+  if (appMode === 'story') {
+    storyContent.dispatchEvent(new Event('scroll'));
+  }
 }
 
 main().catch(console.error);
