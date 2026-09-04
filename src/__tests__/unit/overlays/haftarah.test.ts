@@ -1,6 +1,10 @@
 // Tests for haftarah overlay - parshiot and special occasions
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { haftarahOverlay } from '../../../overlays/haftarah';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const haftarahOverlay = getOverlay('haftarah')!;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';

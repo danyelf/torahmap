@@ -1,6 +1,11 @@
 // Tests for commentary overlay - color computation, category filtering, logarithmic heatmap
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { commentaryOverlay, configure, getVerseLinkCount } from '../../../overlays/commentary';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure, getVerseLinkCount } from '../../../overlays/commentary';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const commentaryOverlay = getOverlay('commentary')!;
 import { heatmapColor } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
@@ -502,7 +507,7 @@ describe('Commentary Overlay', () => {
 
     it('declares the category key it owns', () => {
       expect(commentaryOverlay.urlParams).toEqual([
-        { key: 'category', kind: 'category', legacyKeys: ['cat'] },
+        { key: 'category', kind: 'category' },
       ]);
     });
 
@@ -511,13 +516,8 @@ describe('Commentary Overlay', () => {
       expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
     });
 
-    it('still accepts the older "cat" spelling', () => {
-      applyOverlayParams(commentaryOverlay, new URLSearchParams('cat=Midrash'));
-      expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
-    });
-
     it('applies category from URL params', () => {
-      const urlParams = new URLSearchParams('cat=Talmud');
+      const urlParams = new URLSearchParams('category=Talmud');
       applyOverlayParams(commentaryOverlay, urlParams);
 
       const verse = testVerses[0]; // Genesis 1:1, Talmud: 30
@@ -542,7 +542,7 @@ describe('Commentary Overlay', () => {
       const updateCallback = vi.fn();
       commentaryOverlay.onUpdate?.(updateCallback);
 
-      const urlParams = new URLSearchParams('cat=Midrash');
+      const urlParams = new URLSearchParams('category=Midrash');
       applyOverlayParams(commentaryOverlay, urlParams);
 
       expect(updateCallback).toHaveBeenCalled();

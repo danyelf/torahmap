@@ -30,8 +30,6 @@ export interface UrlParamSpec<
   readonly kind: UrlParamKind;
   /** When present, the value must be one of these after validation */
   readonly allowed?: readonly V[];
-  /** Older spellings of this key, still read from links but never written */
-  readonly legacyKeys?: readonly string[];
 }
 
 /**
@@ -187,14 +185,7 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   const values: Record<string, string> = {};
   for (const spec of specs ?? []) {
     if (RESERVED_KEYS.has(spec.key)) continue;
-
-    // The current spelling wins; older ones are a fallback for existing links.
-    let value = validateOneParam(spec, read(spec.key));
-    for (const legacyKey of spec.legacyKeys ?? []) {
-      if (value) break;
-      value = validateOneParam(spec, read(legacyKey));
-    }
-
+    const value = validateOneParam(spec, read(spec.key));
     if (value) values[spec.key] = value;
   }
   // The one assertion in the chain, and the place it belongs: the loop above
@@ -367,12 +358,46 @@ export function buildUrlHash(state: UrlState): string {
 }
 
 /**
- * Update the URL with new state
+ * How many nested applyingExternalState() calls are in progress.
+ */
+let urlWritesSuspended = 0;
+
+/**
+ * Run something that puts state *into* the app from outside — a link being
+ * restored, a story stop being applied — with URL writes turned off.
+ *
+ * This is the one place the rule lives. Anything an overlay does in response,
+ * including calling its own update handler, cannot reach the URL from in here,
+ * so no overlay has to be careful about it and a new overlay gets the same
+ * treatment without anyone remembering to give it.
+ */
+export function applyingExternalState<T>(apply: () => T): T {
+  urlWritesSuspended++;
+  try {
+    return apply();
+  } finally {
+    urlWritesSuspended--;
+  }
+}
+
+/** Whether URL writes are currently suspended. For tests and assertions. */
+export function isApplyingExternalState(): boolean {
+  return urlWritesSuspended > 0;
+}
+
+/**
+ * Update the URL with new state.
+ *
+ * Does nothing while external state is being applied — see
+ * applyingExternalState().
+ *
  * @param state - The new URL state
  * @param pushHistory - If true, creates a new history entry (for significant changes like overlay/verse)
  *                      If false, replaces current entry (for pan/zoom)
  */
 export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
+  if (urlWritesSuspended > 0) return;
+
   const hash = buildUrlHash(state);
   const newUrl = window.location.pathname + window.location.search + hash;
 

@@ -10,10 +10,8 @@ import type { TanakhIdentity, TanakhLayout, CommentaryData } from "../types.ts";
 import { heatmapColor } from "../utils/color.ts";
 import { fetchData } from "../constants/app.ts";
 
-// "cat" was an earlier spelling of this setting. It is still read from links
-// and story stops written against it, but only "category" is ever written.
 const URL_PARAMS = [
-  { key: "category", kind: "category", legacyKeys: ["cat"] },
+  { key: "category", kind: "category" },
 ] as const satisfies readonly UrlParamSpec[];
 
 let data: CommentaryData = {};

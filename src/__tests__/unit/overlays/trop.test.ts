@@ -1,6 +1,11 @@
 // Tests for trop overlay - trop mark selection, rarity-based coloring, verse filtering
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { tropOverlay, configure, getSelectedTrop, highlightTropInText } from '../../../overlays/trop';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure, getSelectedTrop, highlightTropInText } from '../../../overlays/trop';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const tropOverlay = getOverlay('trop')!;
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
 import { assertValidColor, assertApproximately } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';

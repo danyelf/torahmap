@@ -1,6 +1,11 @@
 // Tests for search overlay - verse highlighting based on search results, color computation
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { searchOverlay, configure, highlightSearchTerms } from '../../../overlays/search';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure, highlightSearchTerms } from '../../../overlays/search';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const searchOverlay = getOverlay('search')!;
 import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';

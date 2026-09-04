@@ -6,10 +6,16 @@ import {
   verseToUrlFormat,
   parseVerseFromUrl,
   subscribeToHashChange,
+  applyingExternalState,
+  isApplyingExternalState,
   type UrlState,
 } from '../../urlState';
 import { mockWindowLocation } from '../helpers/mocks';
-import { overlayUrlParams, ALL_OVERLAYS } from '../helpers/allOverlays';
+import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
+import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
 
 // Set up window object for tests
 beforeAll(() => {
@@ -975,7 +981,7 @@ describe('overlay-supplied parameters', () => {
 describe('what every overlay must hold to', () => {
   // The point of the redesign: an overlay that saves settings has to say which
   // keys it uses, or urlState.ts will never read them back out of a link.
-  ALL_OVERLAYS.forEach((overlay) => {
+  getAllOverlays().forEach((overlay) => {
     const savesSettings = Boolean(overlay.getUrlParams || overlay.applyUrlParams);
 
     it(`${overlay.id}: declares its keys if it saves any settings`, () => {
@@ -1002,6 +1008,92 @@ describe('what every overlay must hold to', () => {
         expect(declared, `${overlay.id} reported undeclared "${key}"`).toContain(key);
       }
     });
+
+    it(`${overlay.id}: writes no URL state while being restored`, () => {
+      // Restoring a link must not rewrite the link, for every overlay, whether
+      // or not that overlay remembers to be careful. Two things are checked.
+      //
+      // First, that URL writes really are off for the whole time the overlay
+      // is being handed its settings — true for every overlay, including ones
+      // that ignore the particular values this test can invent.
+      //
+      // Second, end to end: an overlay announces a settings change by calling
+      // the handler the app gave it, and in the app that handler saves URL
+      // state. So wire up a handler that does exactly that and watch the
+      // history API. (Commentary and search do announce; that is what makes
+      // this half of the test bite.)
+      const pushState = vi.fn();
+      const replaceState = vi.fn();
+      globalThis.history = { pushState, replaceState } as any;
+      mockWindowLocation('http://localhost:5173/');
+
+      overlay.onUpdate?.(() => {
+        updateUrl({ overlay: overlay.id, overlayParams: {} }, false);
+      });
+
+      let writesWereSuspended: boolean | null = null;
+      if (overlay.applyUrlParams) {
+        const realApply = overlay.applyUrlParams.bind(overlay);
+        vi.spyOn(overlay, 'applyUrlParams').mockImplementation((params) => {
+          writesWereSuspended = isApplyingExternalState();
+          realApply(params);
+        });
+      }
+
+      // Feed it a plausible value for each key it declared.
+      const settings: Record<string, string> = {};
+      for (const spec of overlay.urlParams ?? []) {
+        settings[spec.key] = spec.allowed?.[0] ?? 'x';
+      }
+      applyOverlayParams(overlay, settings);
+
+      if (overlay.applyUrlParams) {
+        expect(
+          writesWereSuspended,
+          `${overlay.id} was given settings with URL writes still live`,
+        ).toBe(true);
+      }
+      expect(pushState, `${overlay.id} pushed a history entry`).not.toHaveBeenCalled();
+      expect(replaceState, `${overlay.id} wrote URL state`).not.toHaveBeenCalled();
+
+      vi.restoreAllMocks();
+    });
+  });
+});
+
+describe('the restore guard itself', () => {
+  it('lets URL writes through normally', () => {
+    const replaceState = vi.fn();
+    globalThis.history = { pushState: vi.fn(), replaceState } as any;
+    mockWindowLocation('http://localhost:5173/');
+
+    updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    expect(replaceState).toHaveBeenCalled();
+  });
+
+  it('blocks them inside applyingExternalState, and only inside', () => {
+    const replaceState = vi.fn();
+    globalThis.history = { pushState: vi.fn(), replaceState } as any;
+    mockWindowLocation('http://localhost:5173/');
+
+    applyingExternalState(() => {
+      expect(isApplyingExternalState()).toBe(true);
+      updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    });
+    expect(replaceState).not.toHaveBeenCalled();
+
+    expect(isApplyingExternalState()).toBe(false);
+    updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    expect(replaceState).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores writes even when the restore throws', () => {
+    expect(() =>
+      applyingExternalState(() => {
+        throw new Error('boom');
+      }),
+    ).toThrow('boom');
+    expect(isApplyingExternalState()).toBe(false);
   });
 });
 
@@ -1036,10 +1128,8 @@ describe('haftarah custom in the URL (issue #66)', () => {
   });
 });
 
-describe('links shared before this refactor still work', () => {
-  // Every parameter name the app has ever written into a hash, parsed with the
-  // overlay declarations the app ships with today.
-  const legacyLinks: Array<[string, Record<string, string>]> = [
+describe('whole links, parsed with the real overlay declarations', () => {
+  const links: Array<[string, Record<string, string>]> = [
     ['#overlay=trop&trop=etnachta', { trop: 'etnachta' }],
     ['#overlay=commentary&category=Midrash', { category: 'Midrash' }],
     ['#overlay=commentary&category=Jewish%20Thought', { category: 'Jewish Thought' }],
@@ -1048,7 +1138,7 @@ describe('links shared before this refactor still work', () => {
     ['#overlay=search&q=light&ww=1&hm=root', { q: 'light', ww: '1', hm: 'root' }],
   ];
 
-  legacyLinks.forEach(([hash, expected]) => {
+  links.forEach(([hash, expected]) => {
     it(`parses ${hash}`, () => {
       mockWindowLocation(`http://localhost:5173/${hash}`);
       const state = parseUrlState(overlayUrlParams);
@@ -1056,28 +1146,7 @@ describe('links shared before this refactor still work', () => {
     });
   });
 
-  it('reads the older "cat" spelling and stores it under the current key', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=commentary&cat=Talmud');
-    const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams).toEqual({ category: 'Talmud' });
-  });
-
-  it('prefers the current spelling when a link carries both', () => {
-    mockWindowLocation(
-      'http://localhost:5173/#overlay=commentary&cat=Talmud&category=Midrash',
-    );
-    const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams).toEqual({ category: 'Midrash' });
-  });
-
-  it('writes only the current spelling back out', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=commentary&cat=Talmud');
-    const hash = buildUrlHash(parseUrlState(overlayUrlParams));
-    expect(hash).toContain('category=Talmud');
-    expect(hash).not.toMatch(/[#&]cat=/);
-  });
-
-  it('keeps a full legacy link intact through a parse and rebuild', () => {
+  it('keeps a full link intact through a parse and rebuild', () => {
     const hash = '#overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud';
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const state = parseUrlState(overlayUrlParams);

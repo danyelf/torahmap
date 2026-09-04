@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
-  registerOverlay,
+  registerAllOverlays,
   getOverlay,
-  commentaryOverlay,
-  tropOverlay,
-  searchOverlay,
   configureCommentary,
   configureTrop,
   configureSearch,
@@ -23,8 +20,7 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/allOverlays';
-import { applyOverlayParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
 import type { TanakhLayout } from '../../types';
 
 /**
@@ -90,9 +86,7 @@ describe('User Workflows Integration', () => {
     }) as typeof fetch;
 
     // Register overlays
-    registerOverlay(commentaryOverlay);
-    registerOverlay(tropOverlay);
-    registerOverlay(searchOverlay);
+    registerAllOverlays();
 
     // Configure overlays
     configureCommentary({ verses });

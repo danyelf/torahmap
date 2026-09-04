@@ -18,7 +18,7 @@ import {
   parseVerseFromUrl,
   updateUrl,
   subscribeToHashChange,
-  validateOverlayParams,
+  applyingExternalState,
   verseToUrlFormat,
   type UrlState,
 } from "./urlState.ts";
@@ -51,8 +51,8 @@ import {
 } from "./rendering.ts";
 import type { TanakhLayout, Bounds } from "./types.ts";
 import {
-  ALL_OVERLAYS,
-  registerOverlay,
+  registerAllOverlays,
+  applyOverlayParams,
   getOverlay,
   getAllOverlays,
   configureCommentary,
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
   buildSearchIndex(verseTexts);
 
   // Register and initialize overlays
-  ALL_OVERLAYS.forEach(registerOverlay);
+  registerAllOverlays();
   configureCommentary({ verses });
   configureTrop({ verseTexts });
   configureVerseLength({ verseTexts });
@@ -166,18 +166,22 @@ async function main(): Promise<void> {
    * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
    * heading toward; otherwise hover events fired during a transition would call
    * applyOverlay against a stale `currentOverlay` and clobber the blender's buffer.
+   *
+   * The stop is external state, like a link, so URL writes are off throughout:
+   * in story mode the URL is the stop id, and the explore-mode URL that an
+   * overlay's update handler would write has no business overwriting it.
    */
   function syncStoryStopState(stop: ResolvedStoryStop): void {
+    applyingExternalState(() => syncStoryStopStateUnguarded(stop));
+  }
+
+  function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
     const wantedOverlay = stop.overlay ?? 'none';
     if (wantedOverlay !== currentOverlayId) {
       activateOverlay(wantedOverlay);
     }
 
-    if (currentOverlay?.applyUrlParams) {
-      currentOverlay.applyUrlParams(
-        validateOverlayParams(currentOverlay.urlParams, stop.overlayParams ?? {}),
-      );
-    }
+    applyOverlayParams(currentOverlay, stop.overlayParams ?? {});
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -689,10 +693,6 @@ async function main(): Promise<void> {
 
   let currentOverlayId = "none";
 
-  // True only while settings read out of the URL are being applied, so that an
-  // overlay reacting to them does not turn around and rewrite the URL.
-  let restoringFromUrl = false;
-
   /**
    * Internal: switch the active overlay without painting/rendering or writing URL.
    * Used by both setOverlay (with side effects) and applyStoryStop (without).
@@ -712,12 +712,10 @@ async function main(): Promise<void> {
       }
       render();
       // Save URL state when overlay params change (replaceState).
-      // Skip during story mode — story owns URL state via story stop ID.
-      // Skip while restoring — those settings came out of the URL, and writing
-      // them straight back would have the restore fight the history entry.
-      if (appMode !== 'story' && !restoringFromUrl) {
-        saveUrlState(false);
-      }
+      // No guard needed here: applyingExternalState() turns URL writes off
+      // around every restore and every story stop, so an overlay announcing a
+      // change it was just handed cannot write it back.
+      saveUrlState(false);
     });
 
     // Clear and render overlay's UI
@@ -950,21 +948,11 @@ async function main(): Promise<void> {
     //
     // activateOverlay drew the legend before this point, while the overlay was
     // still on its defaults, so it has to be redrawn once the settings land.
-    // Overlays announce a settings change by calling their onUpdate handler,
-    // which also saves the URL — unwanted here, since these settings came from
-    // the URL in the first place. So the save is suppressed for the duration of
-    // the restore, and the legend is redrawn directly. (Controls are left
-    // alone: each overlay updates its own inside applyUrlParams, and redrawing
-    // them here would throw away what it just put there.)
+    // (Controls are left alone: each overlay updates its own inside
+    // applyUrlParams, and redrawing them here would throw away what it just
+    // put there.)
     if (currentOverlay?.applyUrlParams) {
-      restoringFromUrl = true;
-      try {
-        currentOverlay.applyUrlParams(
-          validateOverlayParams(currentOverlay.urlParams, urlState.overlayParams),
-        );
-      } finally {
-        restoringFromUrl = false;
-      }
+      applyOverlayParams(currentOverlay, urlState.overlayParams);
       if (overlayLegendContainer) {
         overlayLegendContainer.innerHTML = "";
         currentOverlay.renderLegend?.(overlayLegendContainer);
@@ -1009,7 +997,13 @@ async function main(): Promise<void> {
     }
   }
 
+  // Everything this does came out of the URL, so nothing it does may write to
+  // the URL — see applyingExternalState in urlState.ts.
   function restoreFromUrl(): void {
+    applyingExternalState(restoreFromUrlUnguarded);
+  }
+
+  function restoreFromUrlUnguarded(): void {
     const urlState = parseUrlState((id) => getOverlay(id)?.urlParams);
 
     if (urlState.story) {

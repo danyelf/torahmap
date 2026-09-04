@@ -9,11 +9,8 @@ import {
   type UrlState,
 } from '../../urlState';
 import {
-  registerOverlay,
+  registerAllOverlays,
   getOverlay,
-  commentaryOverlay,
-  tropOverlay,
-  searchOverlay,
   configureCommentary,
   configureTrop,
   configureSearch,
@@ -24,8 +21,7 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/allOverlays';
-import { applyOverlayParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
 
 /**
  * Integration test for URL state synchronization with overlay system
@@ -91,10 +87,8 @@ describe('URL State Sync Integration', () => {
       } as Response);
     }) as any;
 
-    // Register overlays
-    registerOverlay(commentaryOverlay);
-    registerOverlay(tropOverlay);
-    registerOverlay(searchOverlay);
+    // Register overlays the way the app does
+    registerAllOverlays();
 
     // Configure overlays with sample data
     configureCommentary({ verses: SAMPLE_VERSES });
@@ -327,7 +321,7 @@ describe('URL State Sync Integration', () => {
       // to say", so it reports no parameters at all.
       const state: UrlState = {
         overlay: 'commentary',
-        overlayParams: commentaryOverlay.getUrlParams?.() ?? {},
+        overlayParams: getOverlay('commentary')?.getUrlParams?.() ?? {},
       };
 
       const hash = buildUrlHash(state);

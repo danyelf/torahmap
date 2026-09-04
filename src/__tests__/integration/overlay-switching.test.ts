@@ -1,11 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
+  registerAllOverlays,
   registerOverlay,
   getOverlay,
   getAllOverlays,
-  commentaryOverlay,
-  tropOverlay,
-  searchOverlay,
   configureCommentary,
   configureTrop,
   configureSearch,
@@ -59,9 +57,7 @@ describe('Overlay Switching Integration', () => {
     }) as typeof fetch;
 
     // Register overlays fresh
-    registerOverlay(commentaryOverlay);
-    registerOverlay(tropOverlay);
-    registerOverlay(searchOverlay);
+    registerAllOverlays();
 
     // Configure overlays with sample data
     configureCommentary({ verses: SAMPLE_VERSES });
@@ -501,7 +497,9 @@ describe('Overlay Switching Integration', () => {
       const overlay = await switchToOverlay('trop');
 
       // Should not throw
-      expect(() => applyOverlayParams(overlay, 'trop=tipcha')).not.toThrow();
+      expect(() =>
+        applyOverlayParams(overlay, new URLSearchParams('trop=tipcha')),
+      ).not.toThrow();
     });
 
     it('handles switching overlays with different URL params', async () => {

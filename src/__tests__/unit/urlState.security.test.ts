@@ -4,7 +4,11 @@ import {
   parseVerseFromUrl,
 } from '../../urlState';
 import { mockWindowLocation } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/allOverlays';
+import { registerAllOverlays } from '../../overlays/index';
+import { overlayUrlParams } from '../helpers/overlayUrlParams';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
 
 describe('URL Parameter Security Validation', () => {
   describe('XSS Prevention', () => {

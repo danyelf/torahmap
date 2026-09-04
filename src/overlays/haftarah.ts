@@ -377,7 +377,9 @@ export const haftarahOverlay: Overlay = {
 
   renderLegend(container: HTMLElement) {
     const customLabel = currentCustom === 'ashkenazi' ? 'Ashkenazi' : 'Sephardi';
-    const parshaCount = data?.parshiot.length || 54;
+    // The optional chain has to reach parshiot too: a failed or malformed
+    // fetch leaves data as an object without it.
+    const parshaCount = data?.parshiot?.length || 54;
     const occasionCount = data?.specialOccasions?.length || 0;
 
     // Generate a gradient showing the rainbow spectrum

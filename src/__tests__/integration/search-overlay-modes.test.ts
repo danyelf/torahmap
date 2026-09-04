@@ -1,11 +1,16 @@
 // Integration tests for search overlay Hebrew mode switching
 // tm-z8ru: Tests for UI mode switching, URL persistence, and mode behavior
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { searchOverlay, configure } from '../../overlays/search';
+import { registerAllOverlays, getOverlay } from '../../overlays/index';
+import { configure } from '../../overlays/search';
 import { buildSearchIndex } from '../../search';
 import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
 import { applyOverlayParams } from '../helpers/overlayUrlParams';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const searchOverlay = getOverlay('search')!;
 
 describe('Search Overlay - Hebrew Mode Integration', () => {
   let testVerses: TanakhLayout[];

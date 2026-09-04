@@ -1,6 +1,11 @@
 // Tests for text-dating overlay - era detection, color computation, date ranges
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { textDatingOverlay, getVerseDatingInfo } from '../../../overlays/text-dating';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { getVerseDatingInfo } from '../../../overlays/text-dating';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const textDatingOverlay = getOverlay('text-dating')!;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { Color } from '../../../overlays/types';

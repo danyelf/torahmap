@@ -4,7 +4,7 @@ import type { TanakhLayout } from '../types';
 import { getOverlay } from '../overlays/registry';
 import { getDefaultColor } from '../itemColoring';
 import { blendColorArrays } from './colorBlending';
-import { validateOverlayParams } from '../urlState';
+import { applyOverlayParams } from '../overlays/applyParams';
 
 type Color = { r: number; g: number; b: number };
 
@@ -52,12 +52,10 @@ export function getColorsForStop(
     return verses.map((_, i) => tupleToObj(getDefaultColor(i)));
   }
 
-  // Apply overlay params. Story stops are hand-written, so they go through the
-  // same validation as a link before the overlay is allowed to trust them.
-  if (stop.overlayParams && overlay.applyUrlParams) {
-    overlay.applyUrlParams(
-      validateOverlayParams(overlay.urlParams, stop.overlayParams),
-    );
+  // Apply overlay params through the one door: validated against the overlay's
+  // own declaration, with URL writes off for the duration.
+  if (stop.overlayParams) {
+    applyOverlayParams(overlay, stop.overlayParams);
   }
 
   return verses.map((verse, i) => {

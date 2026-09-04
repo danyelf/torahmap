@@ -1,24 +1,17 @@
-// Handing settings to an overlay the way the app does.
+// Test-side plumbing for overlay URL parameters.
 //
-// Kept deliberately light: it pulls in urlState and nothing else, so a test for
-// one overlay does not end up loading all six. Loading the whole overlay barrel
-// into a single-overlay test drags in the search overlay's on-screen-keyboard
-// dependency, after which happy-dom's NodeList.forEach visits nothing and
-// unrelated DOM tests start failing. The list of every overlay therefore lives
-// in allOverlays.ts, imported only by tests that genuinely need all of them.
+// applyOverlayParams is the app's own function, re-exported so that tests use
+// the same door the app uses rather than a look-alike.
 
-import type { Overlay } from '../../overlays/types.ts';
-import { validateOverlayParams } from '../../urlState.ts';
+import { getOverlay } from '../../overlays/registry.ts';
+import type { OverlayParamSpecLookup } from '../../urlState.ts';
+
+export { applyOverlayParams } from '../../overlays/applyParams.ts';
 
 /**
- * Hand an overlay some settings the way the app does: through the validator,
- * so a test never gives an overlay a value the app could not have given it.
+ * The lookup parseUrlState takes, resolved through the registry — exactly what
+ * main.ts passes. Requires the registry to be populated first, normally with
+ * registerAllOverlays().
  */
-export function applyOverlayParams(
-  overlay: Overlay | undefined | null,
-  raw: string | URLSearchParams | Record<string, string>,
-): void {
-  if (!overlay?.applyUrlParams) return;
-  const params = typeof raw === 'string' ? new URLSearchParams(raw) : raw;
-  overlay.applyUrlParams(validateOverlayParams(overlay.urlParams, params));
-}
+export const overlayUrlParams: OverlayParamSpecLookup = (id) =>
+  getOverlay(id)?.urlParams;
