@@ -4,7 +4,7 @@ import {
   parseVerseFromUrl,
 } from '../../urlState';
 import { mockWindowLocation } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/allOverlays';
 
 describe('URL Parameter Security Validation', () => {
   describe('XSS Prevention', () => {

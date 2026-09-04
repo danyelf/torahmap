@@ -1,6 +1,6 @@
 // Full-text search overlay
 import '../styles/overlays/search.css';
-import type { Overlay, Color } from './types.ts';
+import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRelatedRoots, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult, type RelatedRoot } from '../search.ts';
@@ -20,7 +20,15 @@ let currentTerms: string[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
 let wholeWordEnabled = false;
-let hebrewSearchMode: 'substring' | 'word' | 'root' = 'substring';
+const HEBREW_SEARCH_MODES = ['substring', 'word', 'root'] as const;
+
+const URL_PARAMS = [
+  { key: 'q', kind: 'text' },
+  { key: 'ww', kind: 'token', allowed: ['1'] },
+  { key: 'hm', kind: 'token', allowed: HEBREW_SEARCH_MODES },
+] as const satisfies readonly UrlParamSpec[];
+
+let hebrewSearchMode: (typeof HEBREW_SEARCH_MODES)[number] = 'substring';
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
 // Track which terms have valid lemma data (for root mode visual indicators)
@@ -1011,11 +1019,7 @@ export const searchOverlay: Overlay = {
     // These should persist across overlay switches so the user can return to their search.
   },
 
-  urlParams: [
-    { key: 'q', kind: 'text' },
-    { key: 'ww', kind: 'token', allowed: ['1'] },
-    { key: 'hm', kind: 'token', allowed: ['substring', 'word', 'root'] },
-  ],
+  urlParams: URL_PARAMS,
 
   getUrlParams(): Record<string, string> {
     const params: Record<string, string> = {};
@@ -1032,10 +1036,10 @@ export const searchOverlay: Overlay = {
     return params;
   },
 
-  applyUrlParams(params: URLSearchParams): void {
-    const query = params.get('q');
-    const wholeWord = params.get('ww');
-    const hebrewMode = params.get('hm');
+  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
+    const query = params.q;
+    const wholeWord = params.ww;
+    const hebrewMode = params.hm;
 
     // Restore whole-word setting
     if (wholeWord === '1') {
@@ -1046,11 +1050,7 @@ export const searchOverlay: Overlay = {
     }
 
     // Restore Hebrew mode setting (default to substring if not specified)
-    if (hebrewMode === 'word' || hebrewMode === 'root') {
-      hebrewSearchMode = hebrewMode;
-    } else {
-      hebrewSearchMode = 'substring';
-    }
+    hebrewSearchMode = hebrewMode ?? 'substring';
     if (hebrewModeContainer) {
       const radioButtons = hebrewModeContainer.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
       radioButtons.forEach(radio => {

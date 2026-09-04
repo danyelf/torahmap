@@ -5,6 +5,7 @@ import { heatmapColor } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { CommentaryData, TanakhLayout } from '../../../types';
+import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 describe('Commentary Overlay', () => {
   let testData: CommentaryData;
@@ -501,23 +502,23 @@ describe('Commentary Overlay', () => {
 
     it('declares the category key it owns', () => {
       expect(commentaryOverlay.urlParams).toEqual([
-        { key: 'category', kind: 'category' },
+        { key: 'category', kind: 'category', legacyKeys: ['cat'] },
       ]);
     });
 
     it('applies category under its own key name', () => {
-      commentaryOverlay.applyUrlParams?.(new URLSearchParams('category=Midrash'));
+      applyOverlayParams(commentaryOverlay, new URLSearchParams('category=Midrash'));
       expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
     });
 
     it('still accepts the older "cat" spelling', () => {
-      commentaryOverlay.applyUrlParams?.(new URLSearchParams('cat=Midrash'));
+      applyOverlayParams(commentaryOverlay, new URLSearchParams('cat=Midrash'));
       expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
     });
 
     it('applies category from URL params', () => {
       const urlParams = new URLSearchParams('cat=Talmud');
-      commentaryOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(commentaryOverlay, urlParams);
 
       const verse = testVerses[0]; // Genesis 1:1, Talmud: 30
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -528,7 +529,7 @@ describe('Commentary Overlay', () => {
 
     it('ignores invalid URL params', () => {
       const urlParams = new URLSearchParams('other=value');
-      commentaryOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(commentaryOverlay, urlParams);
 
       const verse = testVerses[0];
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -542,7 +543,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.onUpdate?.(updateCallback);
 
       const urlParams = new URLSearchParams('cat=Midrash');
-      commentaryOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(commentaryOverlay, urlParams);
 
       expect(updateCallback).toHaveBeenCalled();
     });

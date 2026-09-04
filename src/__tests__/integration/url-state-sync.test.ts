@@ -24,7 +24,8 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/allOverlays';
+import { applyOverlayParams } from '../helpers/overlayUrlParams';
 
 /**
  * Integration test for URL state synchronization with overlay system
@@ -416,7 +417,7 @@ describe('URL State Sync Integration', () => {
 
       // Apply URL params
       const params = new URLSearchParams('category=talmud');
-      overlay?.applyUrlParams?.(params);
+      applyOverlayParams(overlay, params);
 
       // Get URL params back
       const urlParams = overlay?.getUrlParams?.();
@@ -429,7 +430,7 @@ describe('URL State Sync Integration', () => {
 
       // Apply URL params
       const params = new URLSearchParams('trop=tipcha');
-      overlay?.applyUrlParams?.(params);
+      applyOverlayParams(overlay, params);
 
       // Get URL params back
       const urlParams = overlay?.getUrlParams?.();
@@ -442,7 +443,7 @@ describe('URL State Sync Integration', () => {
 
       // Apply URL params
       const params = new URLSearchParams('q=moses');
-      overlay?.applyUrlParams?.(params);
+      applyOverlayParams(overlay, params);
 
       // Get URL params back
       const urlParams = overlay?.getUrlParams?.();
@@ -723,7 +724,7 @@ describe('URL State Sync Integration', () => {
 
       // Apply initial state
       const params1 = new URLSearchParams('category=talmud');
-      overlay?.applyUrlParams?.(params1);
+      applyOverlayParams(overlay, params1);
 
       // Get URL params
       const urlParams1 = overlay?.getUrlParams?.();

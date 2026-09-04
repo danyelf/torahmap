@@ -9,7 +9,7 @@ import {
   type UrlState,
 } from '../../urlState';
 import { mockWindowLocation } from '../helpers/mocks';
-import { overlayUrlParams, allOverlays } from '../helpers/overlayUrlParams';
+import { overlayUrlParams, ALL_OVERLAYS } from '../helpers/allOverlays';
 
 // Set up window object for tests
 beforeAll(() => {
@@ -975,7 +975,7 @@ describe('overlay-supplied parameters', () => {
 describe('what every overlay must hold to', () => {
   // The point of the redesign: an overlay that saves settings has to say which
   // keys it uses, or urlState.ts will never read them back out of a link.
-  allOverlays.forEach((overlay) => {
+  ALL_OVERLAYS.forEach((overlay) => {
     const savesSettings = Boolean(overlay.getUrlParams || overlay.applyUrlParams);
 
     it(`${overlay.id}: declares its keys if it saves any settings`, () => {
@@ -1054,6 +1054,27 @@ describe('links shared before this refactor still work', () => {
       const state = parseUrlState(overlayUrlParams);
       expect(state.overlayParams).toEqual(expected);
     });
+  });
+
+  it('reads the older "cat" spelling and stores it under the current key', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=commentary&cat=Talmud');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams).toEqual({ category: 'Talmud' });
+  });
+
+  it('prefers the current spelling when a link carries both', () => {
+    mockWindowLocation(
+      'http://localhost:5173/#overlay=commentary&cat=Talmud&category=Midrash',
+    );
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams).toEqual({ category: 'Midrash' });
+  });
+
+  it('writes only the current spelling back out', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=commentary&cat=Talmud');
+    const hash = buildUrlHash(parseUrlState(overlayUrlParams));
+    expect(hash).toContain('category=Talmud');
+    expect(hash).not.toMatch(/[#&]cat=/);
   });
 
   it('keeps a full legacy link intact through a parse and rebuild', () => {

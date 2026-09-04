@@ -5,6 +5,7 @@ import { searchOverlay, configure } from '../../overlays/search';
 import { buildSearchIndex } from '../../search';
 import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
+import { applyOverlayParams } from '../helpers/overlayUrlParams';
 
 describe('Search Overlay - Hebrew Mode Integration', () => {
   let testVerses: TanakhLayout[];
@@ -208,7 +209,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Use applyUrlParams to switch to word mode with a query
       // (applyUrlParams directly sets hebrewSearchMode and calls doSearch)
       updateCallback.mockClear();
-      searchOverlay.applyUrlParams?.(new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
 
       expect(updateCallback).toHaveBeenCalled();
     });
@@ -231,7 +232,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(Array.isArray(substringColor)).toBe(true);
 
       // Switch to word mode via applyUrlParams (directly sets hebrewSearchMode)
-      searchOverlay.applyUrlParams?.(new URLSearchParams('q=אלה&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אלה&hm=word'));
 
       const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
@@ -326,7 +327,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Set mode via applyUrlParams (directly sets hebrewSearchMode)
-      searchOverlay.applyUrlParams?.(new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
 
       const params = searchOverlay.getUrlParams?.();
 
@@ -339,7 +340,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Set mode via applyUrlParams (directly sets hebrewSearchMode)
-      searchOverlay.applyUrlParams?.(new URLSearchParams('q=אברהם&hm=root'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=root'));
 
       const params = searchOverlay.getUrlParams?.();
 
@@ -352,7 +353,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Use applyUrlParams without hm to ensure substring mode (resets from any prior test)
-      searchOverlay.applyUrlParams?.(new URLSearchParams('q=אברהם'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם'));
 
       // Substring is default, should not be in URL
       const params = searchOverlay.getUrlParams?.();
@@ -380,7 +381,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       const urlParams = new URLSearchParams('q=אברהם&hm=word');
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       // Check that input has query
       const input = container.querySelector('#search-input') as HTMLInputElement;
@@ -400,7 +401,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       const urlParams = new URLSearchParams('q=אברהם&hm=root');
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       // Verify mode was set via getUrlParams
       const params = searchOverlay.getUrlParams?.();
@@ -411,7 +412,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       const urlParams = new URLSearchParams('q=אברהם');
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       // Check that substring mode is selected (default)
       const substringRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="substring"]');
@@ -422,7 +423,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       const urlParams = new URLSearchParams('q=אברהם&hm=invalid');
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       // Should default to substring mode
       const substringRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="substring"]');
@@ -433,7 +434,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Set initial state via applyUrlParams
-      searchOverlay.applyUrlParams?.(new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
 
       // Get URL params
       const params = searchOverlay.getUrlParams?.();
@@ -451,7 +452,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
-      searchOverlay.applyUrlParams?.(urlParams);
+      applyOverlayParams(searchOverlay, urlParams);
 
       // Verify restored state
       const restoredInput = container.querySelector('#search-input') as HTMLInputElement;
@@ -468,7 +469,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Set mode via applyUrlParams (directly sets hebrewSearchMode)
-      searchOverlay.applyUrlParams?.(new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
 
       // Verify mode was set
       const params = searchOverlay.getUrlParams?.();

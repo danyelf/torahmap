@@ -18,6 +18,7 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { restoreAllMocks } from '../helpers/mocks';
+import { applyOverlayParams } from '../helpers/overlayUrlParams';
 
 /**
  * Integration test for overlay switching behavior
@@ -499,16 +500,12 @@ describe('Overlay Switching Integration', () => {
     it('applies URL params when restoring overlay state', async () => {
       const overlay = await switchToOverlay('trop');
 
-      if (overlay.applyUrlParams) {
-        const params = new URLSearchParams('trop=tipcha');
-
-        // Should not throw
-        expect(() => overlay.applyUrlParams!(params)).not.toThrow();
-      }
+      // Should not throw
+      expect(() => applyOverlayParams(overlay, 'trop=tipcha')).not.toThrow();
     });
 
     it('handles switching overlays with different URL params', async () => {
-      // Commentary uses 'cat' param
+      // Commentary uses the 'category' param
       await switchToOverlay('commentary');
       const commentaryParams = currentOverlay?.getUrlParams?.();
 
@@ -521,7 +518,7 @@ describe('Overlay Switching Integration', () => {
       expect(tropParams).toBeDefined();
 
       // Params may be empty objects if no selection made, but structure should differ
-      // Commentary has 'cat', trop has 'trop'
+      // Commentary has 'category', trop has 'trop'
       const commentaryKeys = Object.keys(commentaryParams || {});
       const tropKeys = Object.keys(tropParams || {});
 

@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { haftarahOverlay } from '../../../overlays/haftarah';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
+import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 // Sample data matching the real structure
 const SAMPLE_HAFTARAH_DATA = {
@@ -142,7 +143,7 @@ describe('Haftarah Overlay', () => {
     // because nothing carried it into the URL.
     beforeEach(async () => {
       await haftarahOverlay.init?.();
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=ashkenazi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));
     });
 
     it('declares the custom key it owns', () => {
@@ -166,19 +167,19 @@ describe('Haftarah Overlay', () => {
     });
 
     it('restores the Sephardi custom and reports it back', () => {
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
       expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
     });
 
     it('switches back to Ashkenazi when asked to', () => {
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=ashkenazi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));
       expect(haftarahOverlay.getUrlParams?.()).toEqual({});
     });
 
     it('leaves the setting alone when the value is not recognised', () => {
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=yemenite'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=yemenite'));
       expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
     });
 
@@ -187,20 +188,23 @@ describe('Haftarah Overlay', () => {
       haftarahOverlay.renderControls?.(container);
       document.body.appendChild(container);
 
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
 
       const select = container.querySelector('select') as HTMLSelectElement;
       expect(select.value).toBe('sephardi');
       document.body.removeChild(container);
     });
 
-    it('asks for a repaint when the custom changes', () => {
+    it('does not announce a settings change, leaving that to the restorer', () => {
+      // Restoring is not a change the reader made. The caller that read the
+      // link repaints; announcing it here would make the restore turn around
+      // and write the settings straight back into the URL.
       const updateCallback = vi.fn();
       haftarahOverlay.onUpdate?.(updateCallback);
 
-      haftarahOverlay.applyUrlParams?.(new URLSearchParams('custom=sephardi'));
+      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
 
-      expect(updateCallback).toHaveBeenCalled();
+      expect(updateCallback).not.toHaveBeenCalled();
     });
   });
 

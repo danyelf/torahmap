@@ -1,5 +1,5 @@
 // src/overlays/haftarah.ts
-import type { Overlay, Color } from './types.ts';
+import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
@@ -84,7 +84,12 @@ function desaturate(color: Color, factor: number): Color {
   return hslToRgb({ h, s: s * factor, l });
 }
 
-type Custom = 'ashkenazi' | 'sephardi';
+const CUSTOMS = ['ashkenazi', 'sephardi'] as const;
+type Custom = (typeof CUSTOMS)[number];
+
+const URL_PARAMS = [
+  { key: 'custom', kind: 'token', allowed: CUSTOMS },
+] as const satisfies readonly UrlParamSpec[];
 
 // Module state
 let data: HaftarahMappings | null = null;
@@ -453,9 +458,7 @@ export const haftarahOverlay: Overlay = {
     return null;
   },
 
-  urlParams: [
-    { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'] },
-  ],
+  urlParams: URL_PARAMS,
 
   getUrlParams(): Record<string, string> {
     // Ashkenazi is the default, so it stays out of the URL
@@ -463,10 +466,9 @@ export const haftarahOverlay: Overlay = {
     return { custom: currentCustom };
   },
 
-  applyUrlParams(params: URLSearchParams): void {
-    const custom = params.get('custom');
-    if (custom !== 'sephardi' && custom !== 'ashkenazi') return;
-    if (custom === currentCustom) return;
+  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
+    const custom = params.custom;
+    if (!custom || custom === currentCustom) return;
 
     currentCustom = custom;
     buildIndexes();
@@ -475,6 +477,5 @@ export const haftarahOverlay: Overlay = {
     if (select) {
       select.value = currentCustom;
     }
-    updateCallback?.();
   },
 };

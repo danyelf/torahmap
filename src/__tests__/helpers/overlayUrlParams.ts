@@ -1,28 +1,24 @@
-// A URL-parameter lookup wired to the real overlays.
+// Handing settings to an overlay the way the app does.
 //
-// URL tests use this instead of a hand-written table so that they exercise the
-// same parameter declarations the app ships with. If an overlay changes which
-// keys it owns, these tests see the change.
+// Kept deliberately light: it pulls in urlState and nothing else, so a test for
+// one overlay does not end up loading all six. Loading the whole overlay barrel
+// into a single-overlay test drags in the search overlay's on-screen-keyboard
+// dependency, after which happy-dom's NodeList.forEach visits nothing and
+// unrelated DOM tests start failing. The list of every overlay therefore lives
+// in allOverlays.ts, imported only by tests that genuinely need all of them.
 
 import type { Overlay } from '../../overlays/types.ts';
-import type { OverlayParamSpecLookup } from '../../urlState.ts';
-import { commentaryOverlay } from '../../overlays/commentary.ts';
-import { tropOverlay } from '../../overlays/trop.ts';
-import { searchOverlay } from '../../overlays/search.ts';
-import { haftarahOverlay } from '../../overlays/haftarah.ts';
-import { textDatingOverlay } from '../../overlays/text-dating.ts';
-import { verseLengthOverlay } from '../../overlays/verse-length.ts';
+import { validateOverlayParams } from '../../urlState.ts';
 
-export const allOverlays: Overlay[] = [
-  commentaryOverlay,
-  tropOverlay,
-  searchOverlay,
-  haftarahOverlay,
-  textDatingOverlay,
-  verseLengthOverlay,
-];
-
-const byId = new Map(allOverlays.map((overlay) => [overlay.id, overlay]));
-
-export const overlayUrlParams: OverlayParamSpecLookup = (id) =>
-  byId.get(id)?.urlParams;
+/**
+ * Hand an overlay some settings the way the app does: through the validator,
+ * so a test never gives an overlay a value the app could not have given it.
+ */
+export function applyOverlayParams(
+  overlay: Overlay | undefined | null,
+  raw: string | URLSearchParams | Record<string, string>,
+): void {
+  if (!overlay?.applyUrlParams) return;
+  const params = typeof raw === 'string' ? new URLSearchParams(raw) : raw;
+  overlay.applyUrlParams(validateOverlayParams(overlay.urlParams, params));
+}

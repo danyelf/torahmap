@@ -1,9 +1,20 @@
 // src/overlays/commentary.ts
 import "../styles/overlays/commentary.css";
-import type { Overlay, Color } from "./types.ts";
+import type {
+  Overlay,
+  Color,
+  UrlParamSpec,
+  UrlParamValues,
+} from "./types.ts";
 import type { TanakhIdentity, TanakhLayout, CommentaryData } from "../types.ts";
 import { heatmapColor } from "../utils/color.ts";
 import { fetchData } from "../constants/app.ts";
+
+// "cat" was an earlier spelling of this setting. It is still read from links
+// and story stops written against it, but only "category" is ever written.
+const URL_PARAMS = [
+  { key: "category", kind: "category", legacyKeys: ["cat"] },
+] as const satisfies readonly UrlParamSpec[];
 
 let data: CommentaryData = {};
 let currentCategory = "total";
@@ -137,7 +148,7 @@ export const commentaryOverlay: Overlay = {
     return count ? `${count} ${currentCategory}` : `no ${currentCategory}`;
   },
 
-  urlParams: [{ key: "category", kind: "category" }],
+  urlParams: URL_PARAMS,
 
   getUrlParams(): Record<string, string> {
     // "total" is the default, so it stays out of the URL
@@ -145,10 +156,8 @@ export const commentaryOverlay: Overlay = {
     return { category: currentCategory };
   },
 
-  applyUrlParams(params: URLSearchParams): void {
-    // "cat" was an earlier internal spelling of the same setting; still accepted
-    // so that captured story stops written against it keep working.
-    const category = params.get("category") ?? params.get("cat");
+  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
+    const category = params.category;
     if (category) {
       currentCategory = category;
       cachedMaxValues = {};

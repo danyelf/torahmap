@@ -18,6 +18,7 @@ import {
   parseVerseFromUrl,
   updateUrl,
   subscribeToHashChange,
+  validateOverlayParams,
   verseToUrlFormat,
   type UrlState,
 } from "./urlState.ts";
@@ -50,18 +51,13 @@ import {
 } from "./rendering.ts";
 import type { TanakhLayout, Bounds } from "./types.ts";
 import {
+  ALL_OVERLAYS,
   registerOverlay,
   getOverlay,
   getAllOverlays,
-  commentaryOverlay,
   configureCommentary,
-  tropOverlay,
   configureTrop,
-  searchOverlay,
   configureSearch,
-  haftarahOverlay,
-  textDatingOverlay,
-  verseLengthOverlay,
   configureVerseLength,
   type Overlay,
 } from "./overlays/index.ts";
@@ -119,12 +115,7 @@ async function main(): Promise<void> {
   buildSearchIndex(verseTexts);
 
   // Register and initialize overlays
-  registerOverlay(commentaryOverlay);
-  registerOverlay(tropOverlay);
-  registerOverlay(searchOverlay);
-  registerOverlay(haftarahOverlay);
-  registerOverlay(textDatingOverlay);
-  registerOverlay(verseLengthOverlay);
+  ALL_OVERLAYS.forEach(registerOverlay);
   configureCommentary({ verses });
   configureTrop({ verseTexts });
   configureVerseLength({ verseTexts });
@@ -183,7 +174,9 @@ async function main(): Promise<void> {
     }
 
     if (currentOverlay?.applyUrlParams) {
-      currentOverlay.applyUrlParams(new URLSearchParams(stop.overlayParams ?? {}));
+      currentOverlay.applyUrlParams(
+        validateOverlayParams(currentOverlay.urlParams, stop.overlayParams ?? {}),
+      );
     }
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
@@ -696,6 +689,10 @@ async function main(): Promise<void> {
 
   let currentOverlayId = "none";
 
+  // True only while settings read out of the URL are being applied, so that an
+  // overlay reacting to them does not turn around and rewrite the URL.
+  let restoringFromUrl = false;
+
   /**
    * Internal: switch the active overlay without painting/rendering or writing URL.
    * Used by both setOverlay (with side effects) and applyStoryStop (without).
@@ -714,9 +711,11 @@ async function main(): Promise<void> {
         currentOverlay?.renderLegend?.(overlayLegendContainer);
       }
       render();
-      // Save URL state when overlay params change (replaceState)
+      // Save URL state when overlay params change (replaceState).
       // Skip during story mode — story owns URL state via story stop ID.
-      if (appMode !== 'story') {
+      // Skip while restoring — those settings came out of the URL, and writing
+      // them straight back would have the restore fight the history entry.
+      if (appMode !== 'story' && !restoringFromUrl) {
         saveUrlState(false);
       }
     });
@@ -947,9 +946,29 @@ async function main(): Promise<void> {
       overlaySelect.value = urlState.overlay;
     }
 
-    // Hand the overlay back its own settings, under its own key names
+    // Hand the overlay back its own settings, already validated.
+    //
+    // activateOverlay drew the legend before this point, while the overlay was
+    // still on its defaults, so it has to be redrawn once the settings land.
+    // Overlays announce a settings change by calling their onUpdate handler,
+    // which also saves the URL — unwanted here, since these settings came from
+    // the URL in the first place. So the save is suppressed for the duration of
+    // the restore, and the legend is redrawn directly. (Controls are left
+    // alone: each overlay updates its own inside applyUrlParams, and redrawing
+    // them here would throw away what it just put there.)
     if (currentOverlay?.applyUrlParams) {
-      currentOverlay.applyUrlParams(new URLSearchParams(urlState.overlayParams));
+      restoringFromUrl = true;
+      try {
+        currentOverlay.applyUrlParams(
+          validateOverlayParams(currentOverlay.urlParams, urlState.overlayParams),
+        );
+      } finally {
+        restoringFromUrl = false;
+      }
+      if (overlayLegendContainer) {
+        overlayLegendContainer.innerHTML = "";
+        currentOverlay.renderLegend?.(overlayLegendContainer);
+      }
     }
   }
 

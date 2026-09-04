@@ -23,7 +23,8 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/allOverlays';
+import { applyOverlayParams } from '../helpers/overlayUrlParams';
 import type { TanakhLayout } from '../../types';
 
 /**
@@ -304,7 +305,7 @@ describe('User Workflows Integration', () => {
 
       // Verify overlay can be initialized with restored state
       const overlay = await switchToOverlay('commentary');
-      overlay.applyUrlParams?.(new URLSearchParams(restored.overlayParams));
+      applyOverlayParams(overlay, restored.overlayParams as Record<string, string>);
 
       const resultParams = overlay.getUrlParams?.();
       expect(resultParams?.category).toBe('midrash');
@@ -714,8 +715,7 @@ describe('User Workflows Integration', () => {
 
       // Overlay should be functional with restored state
       const overlay = await switchToOverlay('trop');
-      const params = new URLSearchParams(`trop=${restored.overlayParams.trop}`);
-      overlay.applyUrlParams?.(params);
+      applyOverlayParams(overlay, `trop=${restored.overlayParams.trop}`);
 
       // Verify overlay has the applyUrlParams method (functional)
       expect(overlay.applyUrlParams).toBeDefined();

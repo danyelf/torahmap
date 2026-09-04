@@ -1,9 +1,9 @@
 // src/overlays/types.ts
 import type { TanakhIdentity, TanakhLayout } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
-import type { UrlParamSpec } from "../urlState.ts";
+import type { UrlParamSpec, UrlParamValues } from "../urlState.ts";
 
-export type { UrlParamSpec, UrlParamKind } from "../urlState.ts";
+export type { UrlParamSpec, UrlParamKind, UrlParamValues } from "../urlState.ts";
 
 export type Color = [number, number, number];
 
@@ -56,12 +56,17 @@ export interface Overlay<T = TanakhIdentity> {
   //
   // An overlay that has settings worth sharing declares them here. `urlParams`
   // names the keys and says what shape each value has, so that urlState.ts can
-  // read them out of the hash and check them without knowing what they mean.
+  // read them out of a link and check them without knowing what they mean.
+  //
   // getUrlParams() reports the current settings using those same keys, omitting
-  // any that are still at their default; applyUrlParams() takes them back.
+  // any that are still at their default. applyUrlParams() receives them back
+  // already validated: only declared keys are present, and a key that named a
+  // set of allowed values holds one of them. An overlay should annotate its own
+  // parameter as UrlParamValues<typeof ITS_SPECS> and then just use the values,
+  // rather than checking again what its declaration already promised.
   urlParams?: readonly UrlParamSpec[];
   getUrlParams?(): Record<string, string>;
-  applyUrlParams?(params: URLSearchParams): void;
+  applyUrlParams?(params: UrlParamValues): void;
 
   // Sidebar integration - for verse details display
   renderSidebarInfo?(

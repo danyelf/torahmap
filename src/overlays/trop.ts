@@ -1,6 +1,6 @@
 // src/overlays/trop.ts
 import '../styles/overlays/trop.css';
-import type { Overlay, Color } from './types.ts';
+import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
@@ -14,6 +14,10 @@ import { scaleToGradient, type ColorStop } from '../utils/color.ts';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
+const URL_PARAMS = [
+  { key: 'trop', kind: 'token' },
+] as const satisfies readonly UrlParamSpec[];
+
 let selectedTrop: TropIndexEntry | null = null;
 let updateCallback: (() => void) | null = null;
 
@@ -227,7 +231,7 @@ export const tropOverlay: Overlay = {
     return loc ? `${selectedTrop.name} ×${loc.count}` : null;
   },
 
-  urlParams: [{ key: 'trop', kind: 'token' }],
+  urlParams: URL_PARAMS,
 
   getUrlParams(): Record<string, string> {
     if (!selectedTrop) return {};
@@ -236,8 +240,8 @@ export const tropOverlay: Overlay = {
     return { trop: slug };
   },
 
-  applyUrlParams(params: URLSearchParams): void {
-    const slug = params.get('trop');
+  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
+    const slug = params.trop;
     if (slug) {
       // Match against slugified name
       const entry = tropByFrequency.find(t =>

@@ -4,15 +4,6 @@
 import { MIN_ZOOM, MAX_ZOOM } from "./camera.ts";
 
 /**
- * Overlay-specific parameters, as plain key/value pairs.
- *
- * This module deliberately knows nothing about which keys any particular
- * overlay uses. Each overlay declares its own keys (see `UrlParamSpec`);
- * this module only decides whether a given value is safe and in range.
- */
-export type OverlayParams = Record<string, string>;
-
-/**
  * The kinds of value an overlay parameter can hold. The overlay picks a kind;
  * this module decides what that kind allows.
  *
@@ -24,15 +15,50 @@ export type UrlParamKind = "token" | "category" | "text";
 
 /**
  * An overlay's declaration of one URL parameter it owns.
+ *
+ * Declare the list with `as const satisfies readonly UrlParamSpec[]` so that
+ * the key names and the allowed values survive as literal types; that is what
+ * lets `UrlParamValues` hand the overlay a record it can trust.
  */
-export interface UrlParamSpec {
-  /** The key used both in the URL hash and in the overlay's own params object */
-  key: string;
+export interface UrlParamSpec<
+  K extends string = string,
+  V extends string = string,
+> {
+  /** The key used both in the URL hash and in the record the overlay receives */
+  readonly key: K;
   /** Which validation rules apply to the value */
-  kind: UrlParamKind;
+  readonly kind: UrlParamKind;
   /** When present, the value must be one of these after validation */
-  allowed?: readonly string[];
+  readonly allowed?: readonly V[];
+  /** Older spellings of this key, still read from links but never written */
+  readonly legacyKeys?: readonly string[];
 }
+
+/**
+ * The record an overlay receives: exactly the keys it declared, already
+ * validated, and narrowed to the allowed values where it named a set.
+ *
+ * With no specs to go on this widens to "some strings, or nothing", which is
+ * what the `Overlay` interface has to promise before it knows the overlay.
+ */
+export type UrlParamValues<
+  S extends readonly UrlParamSpec[] = readonly UrlParamSpec[],
+> = {
+  readonly [P in S[number] as P["key"]]?: P extends {
+    allowed: readonly (infer V extends string)[];
+  }
+    ? V
+    : string;
+};
+
+/**
+ * Overlay-specific settings held alongside the view state.
+ *
+ * This module knows nothing about which keys any particular overlay uses;
+ * each overlay declares its own (see `UrlParamSpec`), and this module only
+ * decides whether a given value is safe and in range.
+ */
+export type OverlayParams = UrlParamValues;
 
 /**
  * Looks up the parameter declarations for an overlay by its id.
@@ -111,11 +137,11 @@ function validateCategoryName(value: string | null): string | null {
  * Validate a single overlay parameter value against its declared kind.
  * Returns the cleaned value, or null if the value should be dropped.
  */
-function validateOverlayParam(
+function validateOneParam(
   spec: UrlParamSpec,
-  raw: string | null,
+  raw: string | null | undefined,
 ): string | null {
-  if (raw === null) return null;
+  if (raw === null || raw === undefined) return null;
 
   let cleaned: string | null;
   switch (spec.kind) {
@@ -141,6 +167,39 @@ function validateOverlayParam(
   if (!cleaned) return null;
   if (spec.allowed && !spec.allowed.includes(cleaned)) return null;
   return cleaned;
+}
+
+/**
+ * Turn raw key/value pairs into the record an overlay can trust: only the keys
+ * it declared, each one validated, each one narrowed to the values it allows.
+ *
+ * This is the single door into an overlay's settings. Everything that reaches
+ * an overlay — a URL hash, a story stop — comes through here, so an overlay
+ * never has to re-check what its own declaration already promised.
+ */
+export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
+  specs: S | undefined,
+  raw: URLSearchParams | Readonly<Record<string, string | undefined>>,
+): UrlParamValues<S> {
+  const read = (key: string): string | null | undefined =>
+    raw instanceof URLSearchParams ? raw.get(key) : raw[key];
+
+  const values: Record<string, string> = {};
+  for (const spec of specs ?? []) {
+    if (RESERVED_KEYS.has(spec.key)) continue;
+
+    // The current spelling wins; older ones are a fallback for existing links.
+    let value = validateOneParam(spec, read(spec.key));
+    for (const legacyKey of spec.legacyKeys ?? []) {
+      if (value) break;
+      value = validateOneParam(spec, read(legacyKey));
+    }
+
+    if (value) values[spec.key] = value;
+  }
+  // The one assertion in the chain, and the place it belongs: the loop above
+  // is what makes the claim true, and every caller inherits it from here.
+  return values as UrlParamValues<S>;
 }
 
 /**
@@ -250,12 +309,10 @@ export function parseUrlState(
   // Overlay-specific parameters: the active overlay says which keys it owns
   // and what shape each value has; we decide whether the value is acceptable.
   if (state.overlay) {
-    const specs = lookupOverlayParams?.(state.overlay) ?? [];
-    for (const spec of specs) {
-      if (RESERVED_KEYS.has(spec.key)) continue;
-      const value = validateOverlayParam(spec, params.get(spec.key));
-      if (value) state.overlayParams[spec.key] = value;
-    }
+    state.overlayParams = validateOverlayParams(
+      lookupOverlayParams?.(state.overlay),
+      params,
+    );
   }
 
   return state;
