@@ -3,7 +3,7 @@
 // No WebGL, no map, no verse layout — just the input pipeline
 
 import { loadAllVerseTexts } from '../src/verseTexts.ts';
-import { buildSearchIndex, loadLemmaData } from '../src/search.ts';
+import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
 import { isKeyboardOpen, createHebrewKeyboard } from '../src/hebrewKeyboard.ts';
 import {
   searchOverlay,
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
   // Load data in parallel
   const [verseTexts] = await Promise.all([
     loadAllVerseTexts(),
-    loadLemmaData(),
+    loadLexiconData(),
   ]);
 
   logEvent('init', `Loaded verse texts (${Object.keys(verseTexts).length} books)`);

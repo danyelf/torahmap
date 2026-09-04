@@ -17,7 +17,7 @@ input { width: 100%; padding: 12px; font-size: 18px; direction: rtl; margin: 20p
 <div id="results" style="margin-top: 20px; font-size: 18px;"></div>
 
 <script type="module">
-import { search, buildSearchIndex, loadLemmaData, findLemmasForWord } from './src/search.ts';
+import { search, buildSearchIndex, loadLexiconData, findLexemesForWord } from './src/search.ts';
 
 const statusDiv = document.getElementById('status');
 
@@ -35,23 +35,23 @@ const verseTexts = await response.json();
 buildSearchIndex(verseTexts);
 addStatus('✓ Verse texts loaded and index built', 'good');
 
-// Check 2: Load lemma data
-addStatus('⏳ Loading lemma data (this enables inverted index)...', 'warn');
+// Check 2: Load the lexeme index
+addStatus('⏳ Loading lexeme index (this enables the inverted index)...', 'warn');
 try {
-  await loadLemmaData();
-  addStatus('✓ Lemma data loaded', 'good');
+  await loadLexiconData();
+  addStatus('✓ Lexeme index loaded', 'good');
 } catch (err) {
-  addStatus(`✗ Lemma data failed to load: ${err}`, 'bad');
+  addStatus(`✗ Lexeme index failed to load: ${err}`, 'bad');
 }
 
 // Check 3: Test if inverted index is being used
 addStatus('⏳ Testing if inverted index is working...', 'warn');
 const testWord = 'אלהים';
-const lemmas = findLemmasForWord(testWord);
-if (lemmas && lemmas.length > 0) {
-  addStatus(`✓ Inverted index working! Found ${lemmas.length} lemmas for "${testWord}": ${lemmas.join(', ')}`, 'good');
+const lexemes = findLexemesForWord(testWord);
+if (lexemes && lexemes.length > 0) {
+  addStatus(`✓ Inverted index working! Found ${lexemes.length} dictionary words for "${testWord}": ${lexemes.join(', ')}`, 'good');
 } else {
-  addStatus(`✗ Inverted index NOT working - no lemmas found for "${testWord}"`, 'bad');
+  addStatus(`✗ Inverted index NOT working - no dictionary word found for "${testWord}"`, 'bad');
   addStatus('This means search will fall back to slower whole-word mode', 'warn');
 }
 
@@ -82,11 +82,11 @@ searchInput.addEventListener('input', (e) => {
     return;
   }
 
-  // Test if this word has lemmas
-  const hasLemmas = findLemmasForWord(query);
-  const lemmaStatus = hasLemmas ?
-    `Using inverted index (${hasLemmas.length} lemmas)` :
-    'No lemmas found - using fallback';
+  // Test whether this word resolves to a dictionary word
+  const resolved = findLexemesForWord(query);
+  const lookupStatus = resolved ?
+    `Using inverted index (${resolved.length} dictionary words)` :
+    'Not in the dictionary - using fallback';
 
   const start = performance.now();
   const results = search(query, false, 'root');
@@ -98,11 +98,11 @@ searchInput.addEventListener('input', (e) => {
     <div style="color:${color};font-size:24px;margin-bottom:10px">
       ${time.toFixed(2)}ms for ${results.length} results
     </div>
-    <div style="color:#666;margin-bottom:10px">${lemmaStatus}</div>
+    <div style="color:#666;margin-bottom:10px">${lookupStatus}</div>
     <div>${results.slice(0, 5).map(r => `${r.book} ${r.chapter}:${r.verse}`).join('<br>')}</div>
   `;
 
-  console.log(`"${query}": ${time.toFixed(2)}ms, ${results.length} results, lemmas: ${hasLemmas ? hasLemmas.join(',') : 'none'}`);
+  console.log(`"${query}": ${time.toFixed(2)}ms, ${results.length} results, words: ${resolved ? resolved.join(',') : 'none'}`);
 });
 
 addStatus('✓ Ready! Type "פסח" to test', 'good');

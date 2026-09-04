@@ -1,10 +1,13 @@
 # Data Regeneration Guide
 
-All data comes from [Sefaria](https://www.sefaria.org/):
+Most data comes from [Sefaria](https://www.sefaria.org/):
 
 - **Verse texts**: [Sefaria-Export](https://github.com/Sefaria/Sefaria-Export) GitHub repository
 - **Structure data**: Sefaria `/api/shape/` endpoint
 - **Commentary links**: Sefaria Links CSV exports
+
+The Hebrew lexeme index behind root-mode search comes from the
+[ETCBC BHSA](https://github.com/ETCBC/bhsa) database instead.
 
 ## Verse Texts
 
@@ -22,6 +25,42 @@ npx tsx scripts/bundle-texts.ts
 # Regenerate structure from Sefaria API
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 ```
+
+## Hebrew Lexeme Index
+
+Root-mode search needs to know which dictionary word each written form can be.
+That comes from the ETCBC BHSA database, read through Text-Fabric.
+
+### First-time setup
+
+```bash
+# Text-Fabric is a Python toolchain; keep it out of your system Python
+python3 -m venv .venv
+.venv/bin/pip install text-fabric
+
+# Download BHSA (~270MB) into ~/text-fabric-data/
+.venv/bin/text-fabric ETCBC/bhsa
+```
+
+### Generate the index
+
+```bash
+.venv/bin/python scripts/generate-lexeme-index.py
+```
+
+This writes four files into `public/data/`:
+
+| File | What it holds |
+| --- | --- |
+| `lexicon.json` | one row per dictionary word: display form, English gloss, part of speech, language, root |
+| `word-lexemes.json` | written form → the dictionary words it can be, likeliest first |
+| `verse-lexemes.json` | verse key → the dictionary words occurring in it |
+| `verse-morphology.json` | every word occurrence with its grammatical parsing; not loaded by search |
+
+The script checks its own output: it fails if the verse keys it produced disagree
+with `tanakh-structure.json`. BHSA and Sefaria number the verses identically
+except in Exodus 20, Deuteronomy 5 and Numbers 25, and the script carries an
+explicit mapping for those three chapters.
 
 ## Text Dating Data
 
