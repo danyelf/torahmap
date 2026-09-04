@@ -231,6 +231,41 @@ what is listed.
 Two filters come from data already on disk: which root is selected, and which
 related roots are included. Both change the painting and the list together.
 
+### Colour belongs to the word; meaning is a filter inside it
+
+Each search term gets its own colour, as it does today. Senses do not get
+colours. Within a single term, the reader may optionally narrow which of its
+verses are painted by choosing among that word's meanings.
+
+This matters because the two models behave completely differently at the edges.
+Colouring by sense exhausts the palette immediately — שלם carries ten senses
+against five available colours. Filtering within a term does not: ten senses
+still paint one colour, and the filter only decides which verses that colour
+covers. The palette limit applies to how many words can be compared at once,
+which is the thing it should limit.
+
+The filter is optional and off by default. 87.4% of written forms carry exactly
+one sense, so for most words there is nothing to choose and the control simply
+does not appear.
+
+Verse-level data is the right granularity for this. `verse-lemmas.json` records
+which senses occur in each verse, so narrowing to a sense is a set intersection:
+restricting עלה to its burnt-offering sense yields 262 verses, and Genesis 3:7 —
+which uses the word for a fig leaf — is correctly excluded, because it does not
+carry that lemma.
+
+What verse-level data cannot do is say which word in a verse carries which
+sense. A verse's lemma count matches its word count in only about a quarter of
+verses. That limits highlighting the right word inside a result snippet; it does
+not limit painting the map, because the map colours whole verses. Per-token
+identification would remove the limit, which is one more reason the move off
+Strong's is worth making.
+
+An earlier prototype appeared to show this filtering was impossible, painting
+474 verses when 261 were selected. That was a defect in the prototype, which
+anchored its hits on the written form rather than intersecting with the chosen
+sense. The data supports the filter correctly.
+
 A third, filtering by section of the Tanakh, is listed here as a possibility
 rather than a commitment, and an earlier draft of this document described it
 carelessly as "which section is in view". That phrasing ran together two
