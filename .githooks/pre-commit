@@ -41,6 +41,16 @@ if [ ! -d node_modules ] || [ ! -x node_modules/.bin/vitest ]; then
   Then commit again."
 fi
 
+# The typecheck and the tests are run as two separate steps rather than through
+# the composite `npm run test:ci`, deliberately. This hook's whole job is to
+# tell whoever is committing what went wrong, and running the stages separately
+# is what lets it say which one failed; test:ci collapses both into a single
+# exit code. The two also announce themselves as they start, so a commit that
+# pauses for several seconds does not look hung.
+#
+# This is not duplication that can drift: test:ci and this hook are both
+# defined in terms of the same `typecheck` and `test` scripts, so redefining
+# either one flows through to both.
 echo "pre-commit: typechecking..."
 if ! npm run --silent typecheck; then
   fail "Type errors. See the tsc output above."

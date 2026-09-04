@@ -62,7 +62,12 @@ It is also wired to npm's `prepare` script, so plain `npm install` usually does
 it for you. Do not count on that: if your npm config sets `ignore-scripts=true`
 (a reasonable supply-chain precaution, and the setting on Danyel's machine),
 npm skips `prepare` silently and you must run the script yourself. Running it
-twice is harmless.
+twice is harmless — and re-running repairs a hook whose executable bit got
+lost, which git would otherwise skip without saying anything.
+
+If `core.hooksPath` is already set to something else, the script refuses rather
+than clobber what may be a global or organisation-wide setting. It prints what
+is set and tells you to re-run with `--force` if that value is stale.
 
 The path is stored as the relative string `.githooks`, which git resolves
 against whichever working tree is committing. One setting therefore covers the

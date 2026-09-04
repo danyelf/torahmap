@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "prepare": "sh scripts/install-hooks.sh",
+    "prepare": "sh scripts/install-hooks.sh --warn-only",
     "dev": "vite",
     "harness": "vite --open /test-harness/",
     "build": "tsc --project tsconfig.build.json && vite build",

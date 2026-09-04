@@ -72,7 +72,10 @@ npm install
 
 # npm's "prepare" script would normally do this, but npm skips it when
 # ignore-scripts is set, so call it directly. Idempotent.
-sh scripts/install-hooks.sh
+if ! sh scripts/install-hooks.sh --warn-only; then
+  echo "warning: git hooks were not installed in this worktree, so commits here"
+  echo "warning: will NOT be checked. See scripts/install-hooks.sh."
+fi
 
 echo -ne "\033]0;${REPO_NAME}: #${ISSUE_NUM}\007"
 
