@@ -65,11 +65,39 @@ forms per root has a median of 2 and a maximum of 290, so a word-form filter
 would usually show two things and occasionally show 290. Neither justifies new
 data.
 
-Richer datasets were considered and deferred. ETCBC/BHSA would supply genuine
-grammatical facets, but it brings a Python toolchain, a fresh verse-alignment
-problem against Sefaria numbering, and a licensing question to confirm. morphhb
-already ships morphology codes that `scripts/generate-lemma-index.ts` discards,
-which is the cheaper route if we ever want word forms. Both are post-launch.
+Richer datasets were considered, investigated, and ruled out. The finding was
+that we already have what they would have provided.
+
+`scripts/generate-lemma-index.ts` reads each word from morphhb as a triple of
+written form, Strong's number, and morphology code, and then never uses the
+third one. Line 361 destructures it and nothing reads it again. Those codes are
+complete: `Vqp3ms` is verb, qal, perfect, third person, masculine, singular;
+`Td/Ncmpa` is definite article plus a common noun, masculine, plural, absolute.
+Coverage is total — every one of the 20,629 words in Genesis carries a code,
+and the same holds across the corpus.
+
+So filtering by grammatical form needs no new data at all. It needs a lookup
+table and a splitter over a field already sitting in `node_modules`, already
+licensed CC BY 4.0, already aligned to Sefaria verse numbering by code in this
+repository that was written and debugged for that purpose.
+
+ETCBC/BHSA was assessed as the alternative and is not worth adopting. It
+expresses the same grammatical information across separate fields and arrives
+at verb counts within half a percent of morphhb's, because both parse the same
+Leningrad Codex. It does not carry word senses either: its eighty node features
+include no sense field and no semantic domain, only a single English gloss per
+lexeme plus homograph separation — and morphhb already achieves that separation
+through Strong's numbers, 8,640 of them, with 3,194 spellings resolving to more
+than one. BHSA also carries a NonCommercial licence inherited from the
+Deutsche Bibelgesellschaft's copyright in the printed Biblia Hebraica
+Stuttgartensia, which would constrain how others could reuse this work. Since
+it offers nothing we lack, that constraint buys nothing.
+
+If filtering by meaning is wanted later, the dataset to evaluate is MACULA
+Hebrew, which is CC BY 4.0 and built on the public-domain Westminster Leningrad
+Codex. Notably, that project chose not to build on ETCBC.
+
+None of this belongs in the first release.
 
 ## What gets removed
 
