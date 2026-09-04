@@ -65,6 +65,18 @@ echo "Creating worktree for #$ISSUE_NUM at $WORKTREE_PATH"
 git worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH" origin/main
 cd "$WORKTREE_PATH"
 
+# A fresh worktree has no node_modules, so tests, typecheck and the pre-commit
+# hook all fail confusingly until this runs.
+echo "Installing dependencies in the new worktree..."
+npm install
+
+# npm's "prepare" script would normally do this, but npm skips it when
+# ignore-scripts is set, so call it directly. Idempotent.
+if ! sh scripts/install-hooks.sh --warn-only; then
+  echo "warning: git hooks were not installed in this worktree, so commits here"
+  echo "warning: will NOT be checked. See scripts/install-hooks.sh."
+fi
+
 echo -ne "\033]0;${REPO_NAME}: #${ISSUE_NUM}\007"
 
 PROMPT="Work on GitHub issue #$ISSUE_NUM: $TITLE
