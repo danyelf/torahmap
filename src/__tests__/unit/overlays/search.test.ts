@@ -14,7 +14,6 @@ import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
-import { closeHebrewKeyboard, isKeyboardOpen } from '../../../hebrewKeyboard';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 describe('Search Overlay', () => {
@@ -107,13 +106,6 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
     }
     searchOverlay.destroy?.();
-
-    // Clean up Hebrew keyboard if open
-    closeHebrewKeyboard();
-    const keyboardContainer = document.getElementById('hebrew-keyboard-container');
-    if (keyboardContainer?.parentNode) {
-      keyboardContainer.parentNode.removeChild(keyboardContainer);
-    }
   });
 
   describe('Overlay Interface', () => {
@@ -365,32 +357,22 @@ describe('Search Overlay', () => {
       expect(clearBtn.style.display).toBe('none');
     });
 
-    it('preserves Hebrew mode when clear button is clicked', () => {
+    it('returns to left-to-right when a Hebrew query is cleared', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       const clearBtn = container.querySelector('#search-clear') as HTMLButtonElement;
-      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
 
-      // Open Hebrew keyboard
-      keyboardToggle.click();
-      expect(isKeyboardOpen()).toBe(true);
-      expect(keyboardToggle.classList.contains('active')).toBe(true);
-
-      // Type some Hebrew text
       input.value = 'אלהים';
       input.dispatchEvent(new Event('input'));
       expect(input.dir).toBe('rtl');
 
-      // Click clear button
       clearBtn.click();
 
-      // Verify keyboard stays open and direction stays RTL
-      expect(isKeyboardOpen()).toBe(true);
-      expect(keyboardToggle.classList.contains('active')).toBe(true);
-      expect(input.dir).toBe('rtl');
+      // An empty box has no Hebrew in it, so it reads left to right again
       expect(input.value).toBe('');
+      expect(input.dir).toBe('ltr');
     });
 
     it('triggers update callback on search', () => {
@@ -567,83 +549,33 @@ describe('Search Overlay', () => {
     });
   });
 
-  describe('Hebrew keyboard is opened only by the toggle button', () => {
-    it('stays closed when Hebrew is typed', () => {
+  describe('Plain search box with no script mode', () => {
+    it('renders no Hebrew keyboard toggle', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      expect(container.querySelector('#keyboard-toggle')).toBeNull();
+    });
+
+    it('adds no virtual keyboard to the page when Hebrew is typed', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
-      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
-
       input.value = 'אלהים';
       input.dispatchEvent(new Event('input', { bubbles: true }));
 
-      expect(isKeyboardOpen()).toBe(false);
-      expect(keyboardToggle.classList.contains('active')).toBe(false);
-    });
-
-    it('stays closed when Hebrew is pasted into an empty input', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-
-      const clipboardData = new DataTransfer();
-      clipboardData.setData('text/plain', 'אלהים');
-      input.dispatchEvent(new ClipboardEvent('paste', {
-        clipboardData,
-        bubbles: true,
-        cancelable: true,
-      }));
-
-      expect(input.value).toBe('אלהים');
-      expect(isKeyboardOpen()).toBe(false);
-    });
-
-    it('opens and closes on the toggle button', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
-
-      keyboardToggle.click();
-      expect(isKeyboardOpen()).toBe(true);
-
-      keyboardToggle.click();
-      expect(isKeyboardOpen()).toBe(false);
-    });
-
-    it('leaves Hebrew text alone after the keyboard is closed again', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
-
-      keyboardToggle.click();
-      input.value = 'אלהים';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-
-      keyboardToggle.click();
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-
-      expect(isKeyboardOpen()).toBe(false);
+      expect(document.getElementById('hebrew-keyboard-container')).toBeNull();
       expect(input.value).toBe('אלהים');
     });
-  });
 
-  describe('Typed and pasted characters are never discarded', () => {
-    it('keeps Latin letters typed while the keyboard is open', () => {
+    it('types Hebrew letters as themselves, not transliterated from Latin keys', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
-      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
-
-      keyboardToggle.click();
-      expect(isKeyboardOpen()).toBe(true);
-
       input.value = 'light';
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', bubbles: true }));
       input.dispatchEvent(new Event('input', { bubbles: true }));
 
       expect(input.value).toBe('light');
@@ -654,7 +586,6 @@ describe('Search Overlay', () => {
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
-
       input.value = 'god אלהים';
       input.dispatchEvent(new Event('input', { bubbles: true }));
 
@@ -666,7 +597,6 @@ describe('Search Overlay', () => {
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
-
       input.value = 'god ';
       input.setSelectionRange(4, 4);
 
@@ -679,6 +609,21 @@ describe('Search Overlay', () => {
       }));
 
       expect(input.value).toBe('god אלהים');
+    });
+
+    it('follows the text for direction, Hebrew then English', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      input.value = 'אלהים';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(input.dir).toBe('rtl');
+
+      input.value = 'light';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(input.dir).toBe('ltr');
     });
   });
 

@@ -28,9 +28,6 @@ export function trackSearchExecute(
   });
 }
 
-export function trackKeyboardToggle(visible: boolean): void {
-  track('keyboard_toggle', { visible });
-}
 
 export function trackVerseClick(book: string, chapter: number, verse: number): void {
   track('verse_click', { book, chapter, verse });

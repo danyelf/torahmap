@@ -4,7 +4,6 @@
 
 import { loadAllVerseTexts } from '../src/verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
-import { isKeyboardOpen, createHebrewKeyboard } from '../src/hebrewKeyboard.ts';
 import {
   registerAllOverlays,
   getOverlay,
@@ -40,7 +39,6 @@ clearLogBtn.addEventListener('click', () => {
 
 const statusFocus = document.getElementById('status-focus')!;
 const statusDir = document.getElementById('status-dir')!;
-const statusKeyboard = document.getElementById('status-keyboard')!;
 const statusSelection = document.getElementById('status-selection')!;
 const statusText = document.getElementById('status-text')!;
 
@@ -51,8 +49,6 @@ function updateStatus(): void {
   // Focus
   if (focused === input) {
     statusFocus.textContent = '#search-input';
-  } else if (focused?.closest('#hebrew-keyboard-container')) {
-    statusFocus.textContent = 'keyboard';
   } else {
     statusFocus.textContent = focused?.id || focused?.tagName?.toLowerCase() || 'none';
   }
@@ -61,9 +57,6 @@ function updateStatus(): void {
   if (input) {
     statusDir.textContent = input.dir || 'ltr';
   }
-
-  // Keyboard state
-  statusKeyboard.textContent = isKeyboardOpen() ? 'open' : 'closed';
 
   // Selection
   if (input) {
@@ -81,7 +74,7 @@ function updateStatus(): void {
   }
 }
 
-// Poll status (handles focus, keyboard state, selection changes)
+// Poll status (handles focus, direction, selection changes)
 setInterval(updateStatus, 100);
 
 // --- Wire up event logging on the search input ---
@@ -167,16 +160,7 @@ async function main(): Promise<void> {
   // Instrument the input for event logging
   instrumentInput();
 
-  // Auto-open Hebrew keyboard so it's always visible in the harness
-  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-  if (searchInput) {
-    createHebrewKeyboard(searchInput);
-    // Mark the toggle button active to stay in sync
-    const toggle = document.getElementById('keyboard-toggle');
-    if (toggle) toggle.classList.add('active');
-  }
-
-  logEvent('init', 'Ready — keyboard open, type to search');
+  logEvent('init', 'Ready — type to search');
 }
 
 main().catch((err) => {

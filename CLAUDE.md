@@ -85,7 +85,7 @@ commit again.
 
 ### Test Harness
 
-A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow (Hebrew keyboard, transliteration, search) without WebGL. Use this for visual testing of keyboard/search UI in headless browsers like Playwright where WebGL is unavailable. Source lives in `test-harness/`.
+A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow without WebGL. Use this for visual testing of the search UI in headless browsers like Playwright where WebGL is unavailable. Source lives in `test-harness/`.
 
 ## Project Structure
 

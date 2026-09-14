@@ -6,8 +6,7 @@ import { tanakhKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLexemesForWord, getLexemeForm, computeSnippetForMatch, type SearchResult, type LexemeId } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
-import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
-import { trackSearchExecute, trackKeyboardToggle } from '../analytics.ts';
+import { trackSearchExecute } from '../analytics.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
@@ -47,7 +46,6 @@ let scrollHandler: (() => void) | null = null;
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
-let keyboardToggle: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
@@ -595,8 +593,7 @@ export const searchOverlay: Overlay = {
   renderControls(container: HTMLElement): void {
     container.innerHTML = `
       <div id="search-container">
-        <input type="text" id="search-input" class="keyboardInput" placeholder="Search Hebrew or English...">
-        <button id="keyboard-toggle" title="Toggle Hebrew keyboard">א</button>
+        <input type="text" id="search-input" placeholder="Search Hebrew or English...">
         <button id="search-clear">&times;</button>
       </div>
       <div id="search-options">
@@ -627,7 +624,6 @@ export const searchOverlay: Overlay = {
 
     searchInput = container.querySelector('#search-input');
     searchClear = container.querySelector('#search-clear');
-    keyboardToggle = container.querySelector('#keyboard-toggle');
     searchResults = container.querySelector('#search-results');
     searchHitCaption = container.querySelector('#search-hit-caption');
     wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
@@ -681,19 +677,11 @@ export const searchOverlay: Overlay = {
     const updateInputMode = () => {
       if (!searchInput) return;
       const query = searchInput.value;
-      const queryIsHebrew = query.length > 0 && isHebrewQuery(query);
-      // The query text decides. An empty box has nothing to go on, so fall back to
-      // whether the on-screen Hebrew keyboard is showing — a display hint only.
-      const isHebrew = queryIsHebrew || (query.length === 0 && isKeyboardOpen());
+      // The text in the box is the only signal: Hebrew reads right to left,
+      // anything else (including an empty box) reads left to right.
+      const isHebrew = query.length > 0 && isHebrewQuery(query);
 
-      // Set text direction
-      if (query.length === 0) {
-        searchInput.dir = isKeyboardOpen() ? 'rtl' : 'ltr';
-      } else if (queryIsHebrew) {
-        searchInput.dir = 'rtl';
-      } else {
-        searchInput.dir = 'ltr';
-      }
+      searchInput.dir = isHebrew ? 'rtl' : 'ltr';
 
       // Hide checkbox for Hebrew (whole-word doesn't apply)
       if (wholeWordCheckbox) {
@@ -830,22 +818,6 @@ export const searchOverlay: Overlay = {
       }
     });
 
-    // Toggle Hebrew keyboard on button click
-    keyboardToggle?.addEventListener('click', () => {
-      if (searchInput) {
-        if (isKeyboardOpen()) {
-          closeHebrewKeyboard();
-          keyboardToggle!.classList.remove('active');
-          trackKeyboardToggle(false);
-        } else {
-          createHebrewKeyboard(searchInput);
-          keyboardToggle!.classList.add('active');
-          trackKeyboardToggle(true);
-        }
-        // Update mode selector visibility after keyboard state changes
-        updateInputMode();
-      }
-    });
   },
 
   renderLegend(_container: HTMLElement): void {
@@ -891,8 +863,6 @@ export const searchOverlay: Overlay = {
   },
 
   destroy(): void {
-    // Close Hebrew keyboard
-    closeHebrewKeyboard();
     // Clean up event listeners
     if (scrollHandler && searchResults) {
       searchResults.removeEventListener('scroll', scrollHandler);
@@ -905,7 +875,6 @@ export const searchOverlay: Overlay = {
     // Clear DOM references (for memory cleanup)
     searchInput = null;
     searchClear = null;
-    keyboardToggle = null;
     searchResults = null;
     searchHitCaption = null;
     wholeWordCheckbox = null;
