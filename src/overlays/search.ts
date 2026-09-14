@@ -566,6 +566,14 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
 export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
+  credits: [
+    {
+      source: 'ETCBC BHSA (2021), read through Text-Fabric',
+      url: 'https://github.com/ETCBC/bhsa',
+      license: 'CC BY-NC 4.0',
+      note: 'The Hebrew dictionary behind root mode. Cite 10.17026/dans-z6y-skyh.',
+    },
+  ],
 
   getVerseColor(verse: TanakhIdentity): Color | Color[] | null {
     // No active search - use default colors

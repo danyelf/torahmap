@@ -2,8 +2,10 @@
 import type { TanakhIdentity, TanakhLayout } from "../types.ts";
 import type { VerseTexts } from "../verseTexts.ts";
 import type { UrlParamSpec, UrlParamValues } from "../urlState.ts";
+import type { Credit } from "../credits.ts";
 
 export type { UrlParamSpec, UrlParamKind, UrlParamValues } from "../urlState.ts";
+export type { Credit } from "../credits.ts";
 
 export type Color = [number, number, number];
 
@@ -82,4 +84,14 @@ export interface Overlay<T = TanakhIdentity> {
 
   // Provide overlay-specific link subtitle (e.g., category-specific commentary counts)
   getLinkSubtitle?(verse: T): string | null;
+
+  // The outside sources this overlay depends on, shown in the help modal's
+  // Credits tab under the overlay's own name. Declare data only: the modal
+  // owns the markup, the same way urlParams declares settings and urlState
+  // owns the link.
+  //
+  // Leave it out when the overlay derives everything from text that is already
+  // credited. A test checks that any overlay not on that short list declares
+  // something, so a new data source cannot arrive uncredited.
+  credits?: readonly Credit[];
 }

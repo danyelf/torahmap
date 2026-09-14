@@ -211,6 +211,14 @@ function isRelevantVerse(verse: TanakhIdentity): boolean {
 export const haftarahOverlay: Overlay = {
   id: 'haftarah',
   name: 'Haftarah',
+  credits: [
+    {
+      source: 'Mechon Mamre, Weekly Torah Readings',
+      url: 'https://mechon-mamre.org/jewfaq/readings.htm',
+      license: '© Mechon Mamre 2013',
+      collected: 'January 2026',
+    },
+  ],
 
   async init() {
     try {

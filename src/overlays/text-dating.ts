@@ -106,6 +106,13 @@ function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number }
 export const textDatingOverlay: Overlay = {
   id: 'text-dating',
   name: 'Text Dating',
+  credits: [
+    {
+      source: 'Wikipedia, "Dating the Bible"',
+      url: 'https://en.wikipedia.org/wiki/Dating_the_Bible',
+      license: 'CC BY-SA',
+    },
+  ],
 
   async init() {
     try {

@@ -45,6 +45,15 @@ function getMaxValue(): number {
 export const commentaryOverlay: Overlay = {
   id: "commentary",
   name: "Commentary",
+  credits: [
+    {
+      source: 'Sefaria link exports',
+      url: 'https://www.sefaria.org/',
+      license: "Sefaria's terms",
+      collected: 'January 2026',
+      note: 'Sefaria re-exports these monthly, so counts trail the live site.',
+    },
+  ],
 
   async init() {
     try {
