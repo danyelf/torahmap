@@ -80,7 +80,7 @@ describe('Commentary Overlay', () => {
   describe('Overlay Interface', () => {
     it('has correct id and name', () => {
       expect(commentaryOverlay.id).toBe('commentary');
-      expect(commentaryOverlay.name).toBe('Commentary Density');
+      expect(commentaryOverlay.name).toBe('Commentary');
     });
   });
 

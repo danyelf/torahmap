@@ -687,6 +687,16 @@ async function main(): Promise<void> {
     "overlay-select",
   ) as HTMLSelectElement;
 
+  // Fill the overlay menu from the registry, after the "None" option the page
+  // starts with. The registry is the only list of overlays; the menu follows it,
+  // so adding an overlay to overlays/index.ts is enough to make it choosable.
+  for (const overlay of getAllOverlays()) {
+    const option = document.createElement("option");
+    option.value = overlay.id;
+    option.textContent = overlay.name;
+    overlaySelect?.appendChild(option);
+  }
+
   // Overlay controls container (will be populated by overlays)
   const overlayControlsContainer = document.getElementById("overlay-controls");
   const overlayLegendContainer = document.getElementById("overlay-legend");

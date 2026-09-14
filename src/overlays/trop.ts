@@ -168,7 +168,7 @@ function createTropChart(container: HTMLElement): void {
 
 export const tropOverlay: Overlay = {
   id: 'trop',
-  name: 'Cantillation (Trop)',
+  name: 'Trop',
 
   async init() {
     // Trop index is built from verse texts, not loaded from file

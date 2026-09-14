@@ -18,15 +18,15 @@ export { getVerseDatingInfo } from './text-dating.ts';
 export { configure as configureVerseLength } from './verse-length.ts';
 
 /**
- * Every overlay the app ships, in the order they appear to the reader.
+ * Every overlay the app ships, in the order the reader sees them in the menu.
  *
  * This is the input to registration and nothing else. Code that wants an
  * overlay asks the registry for it; only registerAllOverlays reads this list.
  */
 const ALL_OVERLAYS: readonly Overlay[] = [
+  searchOverlay,
   commentaryOverlay,
   tropOverlay,
-  searchOverlay,
   haftarahOverlay,
   textDatingOverlay,
   verseLengthOverlay,

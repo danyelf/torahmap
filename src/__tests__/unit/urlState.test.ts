@@ -993,6 +993,11 @@ describe('what every overlay must hold to', () => {
       }
     });
 
+    it(`${overlay.id}: has a name, which is what the menu shows`, () => {
+      // main.ts builds the overlay menu out of the registry, using this name.
+      expect(overlay.name?.trim()).toBeTruthy();
+    });
+
     it(`${overlay.id}: uses distinct keys that do not clash with the view state`, () => {
       const keys = (overlay.urlParams ?? []).map((spec) => spec.key);
       expect(new Set(keys).size).toBe(keys.length);

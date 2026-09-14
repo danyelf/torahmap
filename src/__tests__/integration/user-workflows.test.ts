@@ -683,11 +683,16 @@ describe('User Workflows Integration', () => {
     });
 
     it('scenario: Scholar shares specific view with colleague', async () => {
-      // Scholar finds interesting trop pattern
-      await switchToOverlay('trop');
+      // Scholar finds interesting trop pattern: pick one out of the overlay's
+      // own controls, so the mark shared is one that really exists here.
+      const scholarsOverlay = await switchToOverlay('trop');
+      (mockControlsContainer.querySelector('button') as HTMLButtonElement).click();
+      const chosen = scholarsOverlay.getUrlParams?.().trop;
+      expect(chosen, 'the trop overlay reported no selection').toBeTruthy();
+
       const state: UrlState = {
         overlay: 'trop',
-        overlayParams: { trop: 'shalshelet' },
+        overlayParams: { trop: chosen! },
         verse: 'Genesis.39.8',
         zoom: 4.0,
       };
@@ -703,21 +708,21 @@ describe('User Workflows Integration', () => {
 
       // State should be exactly restored
       expect(restored.overlay).toBe('trop');
-      expect(restored.overlayParams.trop).toBe('shalshelet');
+      expect(restored.overlayParams.trop).toBe(chosen);
       expect(restored.verse).toBe('Genesis.39.8');
       expect(restored.zoom).toBe(4.0);
 
-      // Overlay should be functional with restored state
+      // The colleague's overlay ends up on the mark the scholar was looking at.
+      // Clear the selection first (clicking a selected mark deselects it), so
+      // that the assertion below is about the restore and not about state the
+      // overlay happened to be carrying already.
       const overlay = await switchToOverlay('trop');
-      applyOverlayParams(overlay, `trop=${restored.overlayParams.trop}`);
+      (mockControlsContainer.querySelector('button') as HTMLButtonElement).click();
+      expect(overlay.getUrlParams?.().trop, 'failed to clear the selection').toBeUndefined();
 
-      // Verify overlay has the applyUrlParams method (functional)
-      expect(overlay.applyUrlParams).toBeDefined();
-      expect(overlay.getUrlParams).toBeDefined();
+      applyOverlayParams(overlay, restored.overlayParams);
 
-      // Note: actual trop mark might not exist in sample data, but URL params should round-trip
-      const resultParams = overlay.getUrlParams?.();
-      expect(resultParams).toBeDefined();
+      expect(overlay.getUrlParams?.().trop).toBe(chosen);
     });
 
     it('scenario: User explores with random clicks and recovers', async () => {

@@ -20,16 +20,13 @@ export type UrlParamKind = "token" | "category" | "text";
  * the key names and the allowed values survive as literal types; that is what
  * lets `UrlParamValues` hand the overlay a record it can trust.
  */
-export interface UrlParamSpec<
-  K extends string = string,
-  V extends string = string,
-> {
+export interface UrlParamSpec {
   /** The key used both in the URL hash and in the record the overlay receives */
-  readonly key: K;
+  readonly key: string;
   /** Which validation rules apply to the value */
   readonly kind: UrlParamKind;
   /** When present, the value must be one of these after validation */
-  readonly allowed?: readonly V[];
+  readonly allowed?: readonly string[];
 }
 
 /**

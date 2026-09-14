@@ -44,7 +44,7 @@ function getMaxValue(): number {
 
 export const commentaryOverlay: Overlay = {
   id: "commentary",
-  name: "Commentary Density",
+  name: "Commentary",
 
   async init() {
     try {

@@ -93,7 +93,7 @@ describe('Trop Overlay', () => {
   describe('Overlay Interface', () => {
     it('has correct id and name', () => {
       expect(tropOverlay.id).toBe('trop');
-      expect(tropOverlay.name).toBe('Cantillation (Trop)');
+      expect(tropOverlay.name).toBe('Trop');
     });
   });
 

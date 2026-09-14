@@ -128,7 +128,7 @@ describe('Overlay Switching Integration', () => {
       const overlay = await switchToOverlay('commentary');
 
       expect(overlay.id).toBe('commentary');
-      expect(overlay.name).toBe('Commentary Density');
+      expect(overlay.name).toBe('Commentary');
       expectColorsApplied();
     });
 
@@ -141,7 +141,7 @@ describe('Overlay Switching Integration', () => {
       await switchToOverlay('trop');
 
       expect(currentOverlay?.id).toBe('trop');
-      expect(currentOverlay?.name).toBe('Cantillation (Trop)');
+      expect(currentOverlay?.name).toBe('Trop');
 
       // Colors should have changed (trop may return null without selected mark)
       expect(lastColors.length).toBe(verses.length);
