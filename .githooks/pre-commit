@@ -1,0 +1,64 @@
+#!/usr/bin/env sh
+#
+# Torah Map pre-commit gate.
+#
+# Runs the type checker and the full test suite before every commit and
+# refuses the commit if either fails. Together they take about six seconds.
+#
+# This file is tracked in git. It runs because core.hooksPath points at
+# .githooks (see scripts/install-hooks.sh). Because that path is relative,
+# every git worktree runs the copy checked out on its own branch.
+#
+# To skip deliberately:  git commit --no-verify
+
+set -u
+
+# Run from the top of whichever worktree is committing.
+repo_root=$(git rev-parse --show-toplevel) || exit 1
+cd "$repo_root" || exit 1
+
+fail() {
+  echo ""
+  echo "  COMMIT BLOCKED --------------------------------------------------"
+  echo "  $1"
+  echo ""
+  echo "  Fix it, or bypass deliberately with: git commit --no-verify"
+  echo "  -----------------------------------------------------------------"
+  echo ""
+  exit 1
+}
+
+# Dependencies missing is the single most common cause of confusing failures
+# here: a fresh worktree has no node_modules, and the type checker then reports
+# "Cannot find type definition file for 'vite/client'", which reads like a code
+# error but is not. Catch it up front and say so plainly.
+if [ ! -d node_modules ] || [ ! -x node_modules/.bin/vitest ]; then
+  fail "Dependencies are not installed in this worktree, so the tests and
+  type checker cannot run. This is not a problem with your code.
+
+      cd $repo_root && npm install
+
+  Then commit again."
+fi
+
+# The typecheck and the tests are run as two separate steps rather than through
+# the composite `npm run test:ci`, deliberately. This hook's whole job is to
+# tell whoever is committing what went wrong, and running the stages separately
+# is what lets it say which one failed; test:ci collapses both into a single
+# exit code. The two also announce themselves as they start, so a commit that
+# pauses for several seconds does not look hung.
+#
+# This is not duplication that can drift: test:ci and this hook are both
+# defined in terms of the same `typecheck` and `test` scripts, so redefining
+# either one flows through to both.
+echo "pre-commit: typechecking..."
+if ! npm run --silent typecheck; then
+  fail "Type errors. See the tsc output above."
+fi
+
+echo "pre-commit: running tests..."
+if ! npm run --silent test; then
+  fail "Tests failed. See the vitest output above."
+fi
+
+echo "pre-commit: typecheck and tests passed."
