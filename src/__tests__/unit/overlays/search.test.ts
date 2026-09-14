@@ -483,12 +483,6 @@ describe('Search Overlay', () => {
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
-      // Simulate Hebrew mode (keyboard open) since input has Hebrew content
-      const kbContainer = document.createElement('div');
-      kbContainer.id = 'hebrew-keyboard-container';
-      kbContainer.style.display = 'block';
-      document.body.appendChild(kbContainer);
-
       // Set initial value (Hebrew) and cursor position
       input.value = 'שלום  עולם';
       input.setSelectionRange(5, 5); // Position cursor between words
@@ -516,9 +510,6 @@ describe('Search Overlay', () => {
       // Verify cursor is after inserted text
       expect(input.selectionStart).toBe(5 + expectedStripped.length);
       expect(input.selectionEnd).toBe(5 + expectedStripped.length);
-
-      // Clean up keyboard container
-      kbContainer.remove();
     });
 
     it('strips nikkud from typed Hebrew text', () => {
@@ -573,6 +564,121 @@ describe('Search Overlay', () => {
 
       // English text should remain unchanged
       expect(input.value).toBe(englishText);
+    });
+  });
+
+  describe('Hebrew keyboard is opened only by the toggle button', () => {
+    it('stays closed when Hebrew is typed', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
+
+      input.value = 'אלהים';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      expect(isKeyboardOpen()).toBe(false);
+      expect(keyboardToggle.classList.contains('active')).toBe(false);
+    });
+
+    it('stays closed when Hebrew is pasted into an empty input', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', 'אלהים');
+      input.dispatchEvent(new ClipboardEvent('paste', {
+        clipboardData,
+        bubbles: true,
+        cancelable: true,
+      }));
+
+      expect(input.value).toBe('אלהים');
+      expect(isKeyboardOpen()).toBe(false);
+    });
+
+    it('opens and closes on the toggle button', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
+
+      keyboardToggle.click();
+      expect(isKeyboardOpen()).toBe(true);
+
+      keyboardToggle.click();
+      expect(isKeyboardOpen()).toBe(false);
+    });
+
+    it('leaves Hebrew text alone after the keyboard is closed again', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
+
+      keyboardToggle.click();
+      input.value = 'אלהים';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      keyboardToggle.click();
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      expect(isKeyboardOpen()).toBe(false);
+      expect(input.value).toBe('אלהים');
+    });
+  });
+
+  describe('Typed and pasted characters are never discarded', () => {
+    it('keeps Latin letters typed while the keyboard is open', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const keyboardToggle = container.querySelector('#keyboard-toggle') as HTMLButtonElement;
+
+      keyboardToggle.click();
+      expect(isKeyboardOpen()).toBe(true);
+
+      input.value = 'light';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      expect(input.value).toBe('light');
+    });
+
+    it('keeps a mix of Hebrew and Latin letters', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      input.value = 'god אלהים';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      expect(input.value).toBe('god אלהים');
+    });
+
+    it('accepts Hebrew pasted into an input that already holds English', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      input.value = 'god ';
+      input.setSelectionRange(4, 4);
+
+      const clipboardData = new DataTransfer();
+      clipboardData.setData('text/plain', 'אֱלֹהִים');
+      input.dispatchEvent(new ClipboardEvent('paste', {
+        clipboardData,
+        bubbles: true,
+        cancelable: true,
+      }));
+
+      expect(input.value).toBe('god אלהים');
     });
   });
 

@@ -682,8 +682,9 @@ export const searchOverlay: Overlay = {
       if (!searchInput) return;
       const query = searchInput.value;
       const queryIsHebrew = query.length > 0 && isHebrewQuery(query);
-      // Consider it Hebrew mode if the query is Hebrew OR the keyboard is open
-      const isHebrew = queryIsHebrew || isKeyboardOpen();
+      // The query text decides. An empty box has nothing to go on, so fall back to
+      // whether the on-screen Hebrew keyboard is showing — a display hint only.
+      const isHebrew = queryIsHebrew || (query.length === 0 && isKeyboardOpen());
 
       // Set text direction
       if (query.length === 0) {
@@ -702,46 +703,19 @@ export const searchOverlay: Overlay = {
         }
       }
 
-      // Show Hebrew mode selector for Hebrew queries or when keyboard is open
+      // Show Hebrew mode selector for Hebrew queries
       if (hebrewModeContainer) {
         hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
       }
     };
 
-    // Handle pasted text: strip nikkud from Hebrew, auto-switch mode on paste into empty input
+    // Handle pasted text: strip nikkud from Hebrew
     searchInput?.addEventListener('paste', (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain');
       if (!text) return;
 
       const input = searchInput!;
       const pasteIsHebrew = isHebrewQuery(text);
-      const inputIsEmpty = input.value.length === 0;
-
-      // Auto-switch mode when pasting into empty input
-      if (inputIsEmpty) {
-        if (pasteIsHebrew && !isKeyboardOpen()) {
-          createHebrewKeyboard(input);
-          if (keyboardToggle) keyboardToggle.classList.add('active');
-          updateInputMode();
-        } else if (!pasteIsHebrew && isKeyboardOpen()) {
-          closeHebrewKeyboard();
-          if (keyboardToggle) keyboardToggle.classList.remove('active');
-          updateInputMode();
-        }
-      }
-
-      // Reject paste if script doesn't match current mode (non-empty input)
-      if (!inputIsEmpty) {
-        const kbOpen = isKeyboardOpen();
-        if (pasteIsHebrew && !kbOpen) {
-          e.preventDefault();
-          return;
-        }
-        if (!pasteIsHebrew && kbOpen) {
-          e.preventDefault();
-          return;
-        }
-      }
 
       // For Hebrew text, strip nikkud and insert manually
       if (pasteIsHebrew) {
@@ -786,42 +760,6 @@ export const searchOverlay: Overlay = {
           // Restore cursor position
           const newCursorPos = cursorPos - nikkudBeforeCursor;
           input.setSelectionRange(newCursorPos, newCursorPos);
-        }
-      }
-
-      // Script enforcement: reject wrong-script chars, auto-switch on paste into empty
-      const afterSanitize = input.value;
-      let kbOpen = isKeyboardOpen();
-      if (afterSanitize) {
-        const hasHebrew = /[\u05D0-\u05EA]/.test(afterSanitize);
-        const hasLatin = /[a-zA-Z]/.test(afterSanitize);
-
-        // Auto-switch: pure wrong-script means paste into empty input — switch mode
-        if (hasHebrew && !hasLatin && !kbOpen) {
-          createHebrewKeyboard(input);
-          if (keyboardToggle) keyboardToggle.classList.add('active');
-          kbOpen = true;
-        } else if (hasLatin && !hasHebrew && kbOpen) {
-          closeHebrewKeyboard();
-          if (keyboardToggle) keyboardToggle.classList.remove('active');
-          kbOpen = false;
-        }
-
-        // Strip wrong-script characters (after potential mode switch)
-        const removePattern = kbOpen ? /[a-zA-Z]/g : /[\u05D0-\u05EA]/g;
-        const cleaned = afterSanitize.replace(removePattern, '');
-        if (cleaned !== afterSanitize) {
-          const cursor = input.selectionStart ?? afterSanitize.length;
-          let removedBeforeCursor = 0;
-          const charPattern = kbOpen ? /[a-zA-Z]/ : /[\u05D0-\u05EA]/;
-          for (let i = 0; i < Math.min(cursor, afterSanitize.length); i++) {
-            if (charPattern.test(afterSanitize[i])) {
-              removedBeforeCursor++;
-            }
-          }
-          input.value = cleaned;
-          const newPos = cursor - removedBeforeCursor;
-          input.setSelectionRange(newPos, newPos);
         }
       }
 
