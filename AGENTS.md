@@ -2,8 +2,6 @@
 
 This project tracks issues on **GitHub Issues**: https://github.com/danyelf/torahmap/issues
 
-Closed pre-migration issues live in `issues/closed/` as a searchable archive (see `issues/README.md`). The `issues/MIGRATION-MAP.md` file maps old `tm-XXX` IDs to new GH numbers.
-
 ## How to Code
 
 When you start in a worktree, expect to work in that worktree as autonomously as you can on the corresponding issue.
@@ -35,48 +33,7 @@ gh issue close 42 --comment "..."
 - **Type:** `bug`, `enhancement` (= feature), `task`, `chore`, `documentation`
 - **Priority:** `P0` (critical) → `P4` (backlog). Default is `P2`.
 
-These mirror the `priority`/`type` frontmatter from the old markdown system. Apply at least one priority and one type label when filing.
-
-### Searching closed history
-
-Closed issues from the pre-migration era live in `issues/closed/`:
-
-```bash
-grep -rl "search overlay" issues/closed/
-```
-
-For pre-migration issue references in code or commits, look up the new GH number in `issues/MIGRATION-MAP.md`.
-
-## Working in Worktrees
-
-This project does parallel agent work in git worktrees. Each issue gets its own worktree and branch.
-
-**Starting work:**
-
-```bash
-./scripts/work-on-issue.sh 42          # by issue number
-./scripts/work-on-issue.sh             # interactive picker (needs fzf)
-```
-
-This creates an isolated git worktree at `../torahmap-worktrees/<N>-<slug>` on a new branch named `<N>-<slug>` (matching `gh issue develop`'s convention), then launches Claude inside it.
-
-**Landing work (push and open a PR):**
-
-From inside the worktree, when you're done and committed:
-
-```bash
-git push -u origin "$(git branch --show-current)"
-gh pr create --base main --fill --body "Closes #<N>"
-```
-
-The `Closes #N` line auto-closes the issue when the PR merges. Main is protected — **Danyel merges the PR manually**. After the merge lands, clean up the worktree from the main repo:
-
-```bash
-git worktree remove ../torahmap-worktrees/<N>-<slug>
-git branch -D <N>-<slug>
-```
-
-**DO NOT try to merge locally** — main is protected.
+Apply at least one priority and one type label when filing.
 
 ## Landing the Plane (Session Completion)
 
@@ -101,7 +58,3 @@ git branch -D <N>-<slug>
 - NEVER try to push directly to main — it's protected
 - If push or PR creation fails, resolve and retry until it succeeds
 - Worktree cleanup happens AFTER Danyel merges the PR, not before
-
-## Tracker history
-
-GitHub Issues (current). Before that, plain markdown files under `issues/` (see `issues/README.md`).

@@ -150,8 +150,7 @@ A standalone test harness at `http://localhost:5173/test-harness/` provides the 
 │   ├── download-texts.sh             # Download texts from Sefaria
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
 │   ├── generate-text-dating.ts       # Generate text dating data from source ranges
-│   ├── process_sefaria_links.py      # (Deprecated) Old commentary counts script
-│   ├── process_sefaria_links_v2.py   # Generate commentary counts (USE THIS)
+│   ├── process_sefaria_links.py      # Generate commentary counts
 │   └── search/
 │       └── generate-lexeme-index.py  # Build the Hebrew lexeme index from ETCBC BHSA
 │

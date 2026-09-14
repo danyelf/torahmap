@@ -49,8 +49,6 @@ npm run generate:text-dating
 
 ## Commentary Counts
 
-**IMPORTANT: Use the v2 script** - the old `process_sefaria_links.py` is deprecated.
-
 ### First-time setup (download CSV files):
 
 ```bash
@@ -67,14 +65,14 @@ This downloads ~470MB of CSV files.
 ### Generate commentary counts:
 
 ```bash
-python3 scripts/process_sefaria_links_v2.py
+python3 scripts/process_sefaria_links.py
 ```
 
-### What v2 does differently:
+### What the script does:
 
-- **Drops "Tanakh" category** - verse cross-references were confusing
+- **Drops the "Tanakh" category** - verse cross-references were confusing
 - **Filters Talmud** - shows only direct text references (not Steinsaltz, Rashi on Talmud, etc.)
-- **Uses local CSV files** from `data/sefaria-links/` instead of downloading on each run
+- **Reads local CSV files** from `data/sefaria-links/` rather than downloading on each run
 - **Result:** Closer match to Sefaria's website counts (e.g., Exodus 23:5 shows 24 Talmud vs 28 on Sefaria)
 
 ### Data Staleness

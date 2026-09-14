@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """
 Process Sefaria links data to count commentary per Tanakh verse by category.
-Downloads CSV files from Sefaria-Export repo and aggregates.
+Reads from locally downloaded CSV files in data/sefaria-links/
+
+Changes from v1:
+- Drops "Tanakh" category (verse cross-references are confusing)
+- Filters commentaries from Talmud category to show only direct Talmud text
+- Uses local CSV files instead of downloading
 """
 
 import csv
 import json
 import re
-import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-# Torah books
-TORAH_BOOKS = {"Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"}
-
-# All Tanakh books for detecting direct cross-references
+# All Tanakh books for detecting verses
 TANAKH_BOOKS = {
     # Torah
     "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
@@ -29,32 +30,26 @@ TANAKH_BOOKS = {
     "I Chronicles", "II Chronicles"
 }
 
-# Major categories we care about
+# Major categories we care about (removed "Tanakh")
 MAJOR_CATEGORIES = {
     "Talmud",
     "Midrash",
     "Halakhah",
-    "Tanakh",
     "Jewish Thought",
     "Responsa",
     "Kabbalah",
     "Chasidut",
     "Musar",
-    "Commentary",  # General commentary
+    "Commentary",
 }
 
-BASE_URL = "https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/links"
-
 # Track seen link pairs globally to avoid double-counting bidirectional entries
-# Key: frozenset({citation1, citation2}) - normalized pair
 seen_link_pairs: set[frozenset[str]] = set()
 
 def parse_verse_ref(citation: str) -> tuple[str, int, int] | None:
-    """Extract (book, chapter, verse) from a citation like 'Genesis 1:2' or 'Psalms 23:1'."""
-    # Check each Tanakh book - use longest match first to handle "I Samuel" vs "I"
+    """Extract (book, chapter, verse) from a citation like 'Genesis 1:2'."""
     for book in sorted(TANAKH_BOOKS, key=len, reverse=True):
         if citation.startswith(book + " "):
-            # Extract chapter:verse after the book name
             after_book = citation[len(book) + 1:]
             match = re.match(r'^(\d+):(\d+)', after_book)
             if match:
@@ -64,93 +59,113 @@ def parse_verse_ref(citation: str) -> tuple[str, int, int] | None:
     return None
 
 
-def is_direct_tanakh_ref(citation: str) -> bool:
+def is_direct_talmud(citation: str) -> bool:
     """
-    Check if a citation is a direct Tanakh verse reference (like "Amos 1:1")
-    vs a commentary on a Tanakh book (like "Abarbanel on Amos 1:1:1").
+    Check if citation is a direct Talmud text reference vs a commentary on Talmud.
 
-    Only direct verse references should be counted in the "Tanakh" category.
-    Commentary-on-Tanakh should be counted as "Commentary".
+    Direct Talmud: "Bava Metzia 32a:17", "Tractate Derekh Eretz Zuta", "Introductions to..."
+    Commentary: "Steinsaltz on Bava Metzia 32a:17", "Rashi on Pesachim 113b:4"
+
+    Note: We match Sefaria's categorization, which includes:
+    - Standard Babylonian Talmud tractates
+    - Jerusalem Talmud
+    - Minor tractates (Derekh Eretz, etc.)
+    - Introductions to Talmudic literature (when marked as Talmud category)
     """
-    for book in TANAKH_BOOKS:
-        # Check if citation starts with "BookName " followed by chapter:verse
-        if citation.startswith(book + " "):
-            # Get the part after the book name
-            after_book = citation[len(book) + 1:]
-            # Should start with a digit (chapter number)
-            if after_book and after_book[0].isdigit():
-                return True
-    return False
+    # Exclude clear commentary patterns - commentaries ON Talmud texts
+    exclude_patterns = [
+        r'^Steinsaltz on',
+        r'^Rashi on',
+        r'^Tosafot on',
+        r'^Reshimot Shiurim on',
+        r'^Ohr LaYesharim on',
+        r'^Rif ',  # Rif is an abbreviation/commentary
+    ]
 
-def download_and_process_file(file_num: int) -> dict:
-    """Download and process a single links file."""
+    for pattern in exclude_patterns:
+        if re.match(pattern, citation, re.IGNORECASE):
+            return False
+
+    # If Sefaria categorizes it as "Talmud", we trust that
+    # This includes:
+    # - Babylonian Talmud: "Bava Metzia 32a:17"
+    # - Jerusalem Talmud: "Jerusalem Talmud Bava Metzia 2:10:3"
+    # - Minor tractates: "Tractate Derekh Eretz Zuta, Section on Peace 4"
+    # - Introductions: "Introductions to Tanaitic Literature..."
+    return True
+
+
+def process_file(filepath: Path) -> dict:
+    """Process a single links CSV file."""
     global seen_link_pairs
-    url = f"{BASE_URL}/links{file_num}.csv"
-    print(f"Processing {url}...")
 
     # verse_counts[book][chapter][verse][category] = count
     verse_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int))))
     duplicates_skipped = 0
 
-    try:
-        with urllib.request.urlopen(url) as response:
-            lines = response.read().decode('utf-8').splitlines()
-            reader = csv.reader(lines)
-            header = next(reader)  # Skip header
+    print(f"Processing {filepath.name}...")
 
-            for row in reader:
-                if len(row) < 7:
+    with open(filepath, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        next(reader)  # Skip header
+
+        for row in reader:
+            if len(row) < 7:
+                continue
+
+            citation1, citation2, conn_type, text1, text2, cat1, cat2 = row[:7]
+
+            # Create normalized key for deduplication
+            link_pair = frozenset({citation1, citation2})
+            if link_pair in seen_link_pairs:
+                duplicates_skipped += 1
+                continue
+            seen_link_pairs.add(link_pair)
+
+            # Check if citation2 is a Tanakh verse
+            verse_ref = parse_verse_ref(citation2)
+            if verse_ref:
+                book, chapter, verse = verse_ref
+                category = cat1.strip()
+
+                # Skip Tanakh category entirely
+                if category == "Tanakh":
                     continue
 
-                citation1, citation2, conn_type, text1, text2, cat1, cat2 = row[:7]
-
-                # Create a normalized key for this link pair to detect duplicates
-                # This handles cases where Sefaria has both A→B and B→A as separate rows
-                link_pair = frozenset({citation1, citation2})
-                if link_pair in seen_link_pairs:
-                    duplicates_skipped += 1
+                # Filter Talmud to only direct text references
+                if category == "Talmud" and not is_direct_talmud(citation1):
                     continue
-                seen_link_pairs.add(link_pair)
 
-                # Check if citation2 is a Torah verse
-                verse_ref = parse_verse_ref(citation2)
-                if verse_ref:
-                    book, chapter, verse = verse_ref
-                    category = cat1.strip()
+                # Count it
+                if category in MAJOR_CATEGORIES:
+                    verse_counts[book][chapter][verse][category] += 1
+                else:
+                    verse_counts[book][chapter][verse]["Other"] += 1
 
-                    # Fix: Only count as "Tanakh" if citation1 is a direct verse reference
-                    # Commentary-on-Tanakh (like "Abarbanel on Amos") should count as Commentary
-                    if category == "Tanakh" and not is_direct_tanakh_ref(citation1):
-                        category = "Commentary"
+            # Also check citation1 (links are bidirectional)
+            verse_ref = parse_verse_ref(citation1)
+            if verse_ref:
+                book, chapter, verse = verse_ref
+                category = cat2.strip()
 
-                    # Normalize category
-                    if category in MAJOR_CATEGORIES:
-                        verse_counts[book][chapter][verse][category] += 1
-                    else:
-                        verse_counts[book][chapter][verse]["Other"] += 1
+                # Skip Tanakh category entirely
+                if category == "Tanakh":
+                    continue
 
-                # Also check citation1 (links are bidirectional)
-                verse_ref = parse_verse_ref(citation1)
-                if verse_ref:
-                    book, chapter, verse = verse_ref
-                    category = cat2.strip()
+                # Filter Talmud to only direct text references
+                if category == "Talmud" and not is_direct_talmud(citation2):
+                    continue
 
-                    # Fix: Only count as "Tanakh" if citation2 is a direct verse reference
-                    if category == "Tanakh" and not is_direct_tanakh_ref(citation2):
-                        category = "Commentary"
-
-                    if category in MAJOR_CATEGORIES:
-                        verse_counts[book][chapter][verse][category] += 1
-                    else:
-                        verse_counts[book][chapter][verse]["Other"] += 1
-
-    except Exception as e:
-        print(f"Error processing {url}: {e}")
+                if category in MAJOR_CATEGORIES:
+                    verse_counts[book][chapter][verse][category] += 1
+                else:
+                    verse_counts[book][chapter][verse]["Other"] += 1
 
     if duplicates_skipped > 0:
         print(f"  Skipped {duplicates_skipped} duplicate link pairs")
 
     return verse_counts
+
 
 def merge_counts(target: dict, source: dict):
     """Merge source counts into target."""
@@ -168,22 +183,41 @@ def merge_counts(target: dict, source: dict):
                         target[book][chapter][verse][cat] = 0
                     target[book][chapter][verse][cat] += count
 
+
 def main():
     global seen_link_pairs
     all_counts = {}
 
-    # Reset seen pairs for fresh run
+    # Reset seen pairs
     seen_link_pairs = set()
 
-    # Process all link files (0-12)
-    for i in range(13):
-        counts = download_and_process_file(i)
+    # Find local CSV files
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    links_dir = project_root / "data" / "sefaria-links"
+
+    if not links_dir.exists():
+        print(f"ERROR: Links directory not found: {links_dir}")
+        print("Please download the CSV files first using:")
+        print("  mkdir -p data/sefaria-links && cd data/sefaria-links")
+        print("  for i in {0..12}; do curl -O https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/links/links$i.csv; done")
+        return
+
+    # Process all CSV files
+    csv_files = sorted(links_dir.glob("links*.csv"))
+    if not csv_files:
+        print(f"ERROR: No CSV files found in {links_dir}")
+        return
+
+    print(f"Found {len(csv_files)} CSV files")
+
+    for filepath in csv_files:
+        counts = process_file(filepath)
         merge_counts(all_counts, counts)
 
     print(f"\nTotal unique link pairs processed: {len(seen_link_pairs)}")
 
-    # Convert to more compact format for the frontend
-    # Structure: { "Genesis": { "1": { "1": { "total": N, "categories": {...} } } } }
+    # Convert to compact format for frontend
     output = {}
     for book, chapters in all_counts.items():
         output[book] = {}
@@ -197,7 +231,7 @@ def main():
                 }
 
     # Write output
-    output_path = Path(__file__).parent.parent / "public" / "data" / "commentary-counts.json"
+    output_path = project_root / "public" / "data" / "commentary-counts.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, 'w') as f:
@@ -205,7 +239,7 @@ def main():
 
     print(f"\nWritten to {output_path}")
 
-    # Print some stats
+    # Print stats
     total_verses = sum(
         len(verses)
         for chapters in output.values()
@@ -220,9 +254,10 @@ def main():
     print(f"Total verses with links: {total_verses}")
     print(f"Total links: {total_links}")
 
-    # Sample output
-    if "Genesis" in output and "9" in output["Genesis"] and "1" in output["Genesis"]["9"]:
-        print(f"\nSample - Genesis 9:1: {output['Genesis']['9']['1']}")
+    # Sample: Exodus 23:5
+    if "Exodus" in output and "23" in output["Exodus"] and "5" in output["Exodus"]["23"]:
+        print(f"\nSample - Exodus 23:5: {output['Exodus']['23']['5']}")
+
 
 if __name__ == "__main__":
     main()
