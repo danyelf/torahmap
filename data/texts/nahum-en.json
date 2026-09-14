@@ -1,8 +1,25 @@
 {
-    "title": "Nahum",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Nahum",
+    "title": "Nahum",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "status": "locked",
+    "priority": 3.0,
+    "license": "CC-BY-NC",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "heTitle": "נחום",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "A pronouncement on Nineveh: The Book of the Prophecy of Nahum the Elkoshite.",
@@ -57,17 +74,6 @@
             "<span class=\"poetry indentAll\">Your shepherds are slumbering,</span><br><span class=\"poetry indentAll\">O king of Assyria;</span><br><span class=\"poetry indentAll\">Your sheepmasters are lying inert;</span><sup class=\"footnote-marker\">h</sup><i class=\"footnote\"><b>lying inert </b>Lit. “dwelling”; emendation yields “asleep.”</i> <br><span class=\"poetry indentAll\">Your people are scattered</span><sup class=\"footnote-marker\">i</sup><i class=\"footnote\"><b>scattered </b>Meaning of Heb. uncertain.</i> over the hills,<br><span class=\"poetry indentAll\">And there is none to gather them.</span>",
             "<span class=\"poetry indentAll\">There is no healing</span><sup class=\"footnote-marker\">j</sup><i class=\"footnote\"><b>healing </b>Heb. <i>kehah</i>, a variant of <i>gehah</i>; see Prov. 17.22.</i> for your injury;<br><span class=\"poetry indentAll\">Your wound is grievous.</span><br><span class=\"poetry indentAll\">All who hear the news about you</span><br><span class=\"poetry indentAll\">Clap their hands over you.</span><br><span class=\"poetry indentAll\">For who has not suffered</span><br><span class=\"poetry indentAll\">From your constant malice?</span>"
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "נחום",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",

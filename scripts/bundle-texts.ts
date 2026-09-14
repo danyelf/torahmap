@@ -15,8 +15,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 interface SefariaTextFile {
   title: string;
   language: string;
+  versionTitle: string;
   text: string[][];
 }
+
+// The two editions scripts/download-texts.sh asks for by name. Every source
+// file carries the edition it came from, so checking it here means a stale or
+// wrong download stops the build instead of turning up later as text nobody
+// chose. Keep these in step with the script.
+const HEBREW_VERSION = 'Miqra according to the Masorah';
+const ENGLISH_VERSION = 'THE JPS TANAKH: Gender-Sensitive Edition';
 
 interface VerseText {
   he: string;
@@ -83,12 +91,28 @@ function cleanText(text: string): string {
     .trim();
 }
 
+function checkVersion(
+  filePath: string,
+  data: SefariaTextFile,
+  expected: string
+): void {
+  if (data.versionTitle !== expected) {
+    throw new Error(
+      `${path.basename(filePath)} holds "${data.versionTitle}", expected ` +
+        `"${expected}". Re-run scripts/download-texts.sh.`
+    );
+  }
+}
+
 function loadBook(dataDir: string, filePrefix: string): BookTexts {
   const hePath = path.join(dataDir, `${filePrefix}-he.json`);
   const enPath = path.join(dataDir, `${filePrefix}-en.json`);
 
   const heData: SefariaTextFile = JSON.parse(fs.readFileSync(hePath, 'utf-8'));
   const enData: SefariaTextFile = JSON.parse(fs.readFileSync(enPath, 'utf-8'));
+
+  checkVersion(hePath, heData, HEBREW_VERSION);
+  checkVersion(enPath, enData, ENGLISH_VERSION);
 
   const bookTexts: BookTexts = {};
 

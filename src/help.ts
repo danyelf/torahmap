@@ -20,6 +20,13 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
       </ul>
       <p>Switch between different analytical overlays to reveal patterns across 23,000+ verses.</p>
       <p class="credits">
+        Hebrew text is
+        <a href="https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94" target="_blank">Miqra according to the Masorah</a> (CC BY-SA).
+        English is
+        <a href="https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/" target="_blank">THE JPS TANAKH: Gender-Sensitive Edition</a>,
+        Jewish Publication Society (CC BY-NC).
+      </p>
+      <p class="credits">
         By <a href="https://danyelfisher.info" target="_blank">Danyel Fisher</a> ·
         <a href="https://github.com/danyelf/torahmap" target="_blank">GitHub</a> ·
         Data from <a href="https://www.sefaria.org/" target="_blank">Sefaria</a>

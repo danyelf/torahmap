@@ -1,8 +1,25 @@
 {
-    "title": "Habakkuk",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Habakkuk",
+    "title": "Habakkuk",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "status": "locked",
+    "priority": 3.0,
+    "license": "CC-BY-NC",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "heTitle": "חבקוק",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "The pronouncement made by the prophet Habakkuk.",
@@ -66,17 +83,6 @@
             "<span class=\"poetry indentAll\">Yet will I rejoice in </span> G<small>OD</small>,<br><span class=\"poetry indentAll\">Exult in the God who delivers me.</span>",
             "<span class=\"poetry indentAll\">The Sovereign </span> G<small>OD</small> is my strength,<br><span class=\"poetry indentAll\">Making my feet like the deer’s</span><br><span class=\"poetry indentAll\">And letting me stride upon the heights.</span><br><span class=\"poetry indentAll\">For the leader; with instrumental music.</span><sup class=\"footnote-marker\">m</sup><i class=\"footnote\"><b>For the leader; with instrumental music </b>Meaning of Heb. uncertain.</i> "
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "חבקוק",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",

@@ -1,8 +1,24 @@
 {
-    "title": "Jonah",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Jonah",
+    "title": "Jonah",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "priority": 3.0,
+    "license": "unknown",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "heTitle": "יונה",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "The word of G<small>OD</small> came to Jonah<sup class=\"footnote-marker\">a</sup><i class=\"footnote\"><b>Jonah </b>Mentioned in 2 Kings 14.25.</i> son of Amittai: ",
@@ -60,17 +76,6 @@
             "Then G<small>OD</small> said: “You cared about the plant, which you did not work for and which you did not grow, which appeared overnight and perished overnight. ",
             "And should not I care about Nineveh, that great city, in which there are more than a hundred and twenty thousand persons who do not yet know their right hand from their left, and many animals as well!”<sup class=\"footnote-marker\">c</sup><i class=\"footnote\">I.e., infants and animals are not held responsible for their actions.</i> "
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "יונה",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",

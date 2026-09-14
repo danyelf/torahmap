@@ -1,8 +1,25 @@
 {
-    "title": "I Kings",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/I_Kings",
+    "title": "I Kings",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "status": "locked",
+    "priority": 3.0,
+    "license": "CC-BY-NC",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "heTitle": "מלכים א",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "King David was now old, advanced in years; and though they covered him with bedclothes, he never felt warm. ",
@@ -139,11 +156,11 @@
         ],
         [
             "King Solomon was now king over all Israel.",
-            "These were his officials:Azariah son of Zadok—the priest;",
-            "Elihoreph and Ahijah sons of Shisha—scribes;Jehoshaphat son of Ahilud—recorder;",
-            "Benaiah son of Jehoiada—over the army;Zadok and Abiathar—priests;",
-            "Azariah son of Nathan—in charge of the prefects;Zabud son of Nathan the priest—companion of the king;",
-            "Ahishar—in charge of the palace; andAdoniram son of Abda—in charge of the forced labor.",
+            "These were his officials:<br><span class=\"poetry indentAllDouble\">Azariah son of Zadok—the priest;</span>",
+            "<span class=\"poetry indentAllDouble\">Elihoreph and Ahijah sons of Shisha—scribes;<br>Jehoshaphat son of Ahilud—recorder;</span>",
+            "<span class=\"poetry indentAllDouble\">Benaiah son of Jehoiada—over the army;<br>Zadok and Abiathar—priests;</span>",
+            "<span class=\"poetry indentAllDouble\">Azariah son of Nathan—in charge of the prefects;<br>Zabud son of Nathan the priest—companion of the king;</span>",
+            "<span class=\"poetry indentAllDouble\">Ahishar—in charge of the palace; and<br>Adoniram son of Abda—in charge of the forced labor.</span>",
             "Solomon had twelve prefects governing all Israel, who provided food for the king and his household; each had to provide food for one month in the year. ",
             "And these were their names: Ben-hur, in the hill country of Ephraim; ",
             "Ben-deker, in Makaz, Shaalbim, Beth-shemesh, and Elon-beth-hanan; ",
@@ -865,17 +882,6 @@
             "He did what was displeasing to G<small>OD</small>, following in the footsteps of his father and his mother, and in those of Jeroboam son of Nebat who had caused Israel to sin. ",
             "He worshiped Baal and bowed down to him; he provoked the anger of the E<small>TERNAL</small>, the God of Israel, just as his father had done."
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "מלכים א",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",

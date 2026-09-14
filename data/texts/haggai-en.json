@@ -1,8 +1,24 @@
 {
-    "title": "Haggai",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Haggai",
+    "title": "Haggai",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "priority": 3.0,
+    "license": "CC-BY-NC",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "heTitle": "חגי",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "In the second year of King Darius, on the first day of the sixth month, this word of G<small>OD</small> came through the prophet Haggai to Zerubbabel son of Shealtiel, the governor of Judah, and to Joshua son of Jehozadak, the high priest:",
@@ -46,17 +62,6 @@
             "And I will overturn the thrones of kingdoms and destroy the might of the kingdoms of the nations. I will overturn chariots and their drivers. Horses and their riders shall fall, each by the sword of his fellow. ",
             "On that day—declares G<small>OD</small> of Hosts—I will take you, O My servant Zerubbabel son of Shealtiel—declares G<small>OD</small>—and make you as a signet;<sup class=\"footnote-marker\">d</sup><i class=\"footnote\"><b>make you as a signet </b>I.e., bring you close to Me; contrast Jer. 22.24–30.</i> for I have chosen you—declares G<small>OD</small> of Hosts."
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "חגי",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",
