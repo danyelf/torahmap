@@ -256,7 +256,9 @@
   color: #8a8a8a;
 }
 
-.credit-rows {
+/* Outranks the generic `.help-body ul`, which would otherwise indent every row
+   away from the heading above it. */
+.help-body .credit-rows {
   margin: 0;
   padding: 0;
   list-style: none;

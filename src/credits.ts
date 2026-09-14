@@ -41,7 +41,7 @@ export const APP_CREDITS: readonly Credit[] = [
     url: 'https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94',
     license: 'CC BY-SA',
     collected: 'September 2026',
-    note: 'The Hebrew text, from Hebrew Wikisource. The marks the Trop overlay shows are part of it, and Hebrew search matches this text with its vowels and cantillation ignored.',
+    note: 'The Hebrew text, from Hebrew Wikisource. The Trop overlay reads its cantillation marks out of this edition, and Hebrew search matches it with vowels and cantillation ignored.',
   },
   {
     source: 'THE JPS TANAKH: Gender-Sensitive Edition',
