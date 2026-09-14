@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { tanakhKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLexemesForWord, getRelatedLexemes, getLexemeForm, computeSnippetForMatch, type SearchResult, type RelatedLexeme, type LexemeId } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLexemesForWord, getLexemeForm, computeSnippetForMatch, type SearchResult, type LexemeId } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -30,7 +30,6 @@ let termLexemes: Array<LexemeId[] | null> = [];
 // The dictionary form shown for each term in the legend
 let termForms: Array<string | null> = [];
 // Words from the same root family, offered as clickable chips
-let relatedLexemes: RelatedLexeme[] = [];
 
 // Incremental rendering state
 const RESULTS_BATCH_SIZE = 50;
@@ -64,7 +63,6 @@ function doSearch(query: string): void {
     termHasLexeme = [];
     termLexemes = [];
     termForms = [];
-    relatedLexemes = [];
   } else {
     const isHebrew = isHebrewQuery(currentTerms[0]);
 
@@ -73,7 +71,6 @@ function doSearch(query: string): void {
       termHasLexeme = [];
       termLexemes = [];
       termForms = [];
-      const allLexemes: LexemeId[] = [];
       for (const term of currentTerms) {
         const lexemes = findLexemesForWord(term);
         termHasLexeme.push(lexemes !== null && lexemes.length > 0);
@@ -82,17 +79,14 @@ function doSearch(query: string): void {
         // Show the likeliest reading's dictionary form in the legend
         if (lexemes && lexemes.length > 0) {
           termForms.push(getLexemeForm(lexemes[0]));
-          allLexemes.push(...lexemes);
         } else {
           termForms.push(null);
         }
       }
-      relatedLexemes = getRelatedLexemes(allLexemes);
     } else {
       termHasLexeme = [];
       termLexemes = [];
       termForms = [];
-      relatedLexemes = [];
     }
 
     // Only use wholeWord for English queries
@@ -154,35 +148,6 @@ function updateHitCaption(): void {
       }
     }
 
-    // Related roots chips (only in root mode with results)
-    let relatedDiv: HTMLDivElement | null = null;
-    if (hebrewSearchMode === 'root' && relatedLexemes.length > 0) {
-      relatedDiv = document.createElement('div');
-      relatedDiv.className = 'related-roots';
-
-      const label = document.createElement('span');
-      label.className = 'related-roots-label';
-      label.textContent = 'Related:';
-      relatedDiv.appendChild(label);
-
-      for (const related of relatedLexemes) {
-        const chip = document.createElement('button');
-        chip.className = 'root-chip';
-        chip.textContent = related.form;
-        chip.title = related.gloss
-          ? `${related.gloss} \u2014 add "${related.searchForm}" to search`
-          : `Add "${related.searchForm}" to search`;
-        chip.addEventListener('click', () => {
-          if (searchInput) {
-            const current = searchInput.value.trim();
-            searchInput.value = current ? `${current},${related.searchForm}` : related.searchForm;
-            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-        });
-        relatedDiv.appendChild(chip);
-      }
-    }
-
     const countDiv = document.createElement('div');
     countDiv.style.color = '#888';
     countDiv.style.fontSize = '11px';
@@ -190,9 +155,6 @@ function updateHitCaption(): void {
     countDiv.textContent = `${currentResults.length} matching verses`;
 
     searchHitCaption.appendChild(legendDiv);
-    if (relatedDiv) {
-      searchHitCaption.appendChild(relatedDiv);
-    }
     searchHitCaption.appendChild(countDiv);
   } else if (currentQuery.length > 0 && currentTerms.length === 0) {
     const hintDiv = document.createElement('div');

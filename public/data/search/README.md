@@ -27,6 +27,12 @@ occurrence. Nothing else we looked at has all three.
 Lexemes are referred to throughout by their position in the `lexicon.json`
 array rather than by name, which is what keeps the two per-verse files small.
 
+Two things in `lexicon.json` are written but no longer read: the `root` column
+and the `functionWordPos` list. Both existed to group words into root families
+for a "related words" suggestion that has since been removed. They are harmless
+where they are, and the generator still produces them; drop them if you ever
+rebuild the index and want the file smaller.
+
 ## Regenerating them
 
 One-time setup — Text-Fabric is a Python toolchain, so keep it out of your

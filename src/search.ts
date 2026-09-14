@@ -87,9 +87,6 @@ export interface Lexeme {
 
 // The dictionary, loaded from lexicon.json.
 let lexicon: Lexeme[] | null = null;
-// Parts of speech left out of related-word suggestions (articles, conjunctions,
-// prepositions and the like make useless suggestions).
-let functionWordPos: Set<string> = new Set();
 // Consonantal spelling of each lexeme's dictionary form, in the same shape the
 // search box produces. Parallel to `lexicon`.
 let lexemeSpellings: string[] = [];
@@ -103,10 +100,6 @@ let verseToLexemes: Record<string, LexemeId[]> | null = null;
 // Inverted index: lexeme -> the verses it occurs in. Turns a root-mode search
 // into one lookup per lexeme instead of a scan over every verse.
 let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
-// Root family: lexeme -> every lexeme sharing its derivational root.
-let lexemeFamilies: Map<LexemeId, LexemeId[]> | null = null;
-// Lexeme -> a written form that will find it again, for the related-word chips.
-let lexemeToSearchForm: Map<LexemeId, string> | null = null;
 // Consonantal dictionary spelling -> lexemes, for readers who type a bare root
 // that never appears on its own in the text.
 let spellingToLexemes: Map<string, LexemeId[]> | null = null;
@@ -178,7 +171,6 @@ type LexemeRow = [
 interface LexiconFile {
   source: string;
   fields: string[];
-  functionWordPos: string[];
   lexemes: LexemeRow[];
 }
 
@@ -210,7 +202,6 @@ export async function loadLexiconData(): Promise<void> {
     lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language, root]) => ({
       id, form, gloss, pos, language, root,
     }));
-    functionWordPos = new Set(lexiconFile.functionWordPos ?? []);
     lexemeSpellings = lexicon.map(entry => normalizeHebrewForSearch(entry.form));
 
     console.log(
@@ -221,8 +212,6 @@ export async function loadLexiconData(): Promise<void> {
 
     buildVerseIndex();
     buildSpellingIndex();
-    buildRootFamilies();
-    buildSearchForms();
   } catch (err) {
     console.warn('Error loading lexeme index:', err);
   }
@@ -279,90 +268,6 @@ function buildSpellingIndex(): void {
     list.push(id);
   }
   console.log(`✓ Built spelling index: ${spellingToLexemes.size} distinct dictionary spellings`);
-}
-
-/**
- * Group lexemes into root families for the "Related" suggestions.
- *
- * Two lexemes belong to the same family when they share a derivational root:
- * the root BHSA records for the lexeme, or, where BHSA records none, the
- * lexeme's own consonantal skeleton with its part-of-speech marker removed.
- * BHSA's homograph markers are deliberately kept, so דָּבָר "word" and דבר
- * "speak" are family but דֶּבֶר "pest" is not.
- *
- * Families are per language, and function words are left out: nobody wants
- * "the" suggested as a related word.
- */
-function buildRootFamilies(): void {
-  if (!lexicon) {
-    lexemeFamilies = null;
-    return;
-  }
-
-  const startTime = performance.now();
-  const byRoot = new Map<string, LexemeId[]>();
-
-  for (let id = 0; id < lexicon.length; id++) {
-    const entry = lexicon[id];
-    if (functionWordPos.has(entry.pos)) continue;
-    // "/" marks a noun and "[" a verb in ETCBC lexeme ids; both are notation,
-    // not part of the word.
-    const skeleton = entry.root ?? entry.id.replace(/[/[]/g, '');
-    const key = `${skeleton}|${entry.language}`;
-    let family = byRoot.get(key);
-    if (!family) {
-      family = [];
-      byRoot.set(key, family);
-    }
-    family.push(id);
-  }
-
-  lexemeFamilies = new Map();
-  let families = 0;
-  for (const family of byRoot.values()) {
-    if (family.length < 2) continue;
-    families++;
-    for (const id of family) {
-      lexemeFamilies.set(id, family);
-    }
-  }
-
-  const endTime = performance.now();
-  console.log(`✓ Built root families: ${lexemeFamilies.size} lexemes in ${families} families in ${(endTime - startTime).toFixed(2)}ms`);
-}
-
-/**
- * Pick, for each lexeme, a written form that will find it again when a related
- * word chip is clicked. Prefer a form whose likeliest reading is this lexeme,
- * and among those the shortest.
- */
-function buildSearchForms(): void {
-  if (!formToLexemes) {
-    lexemeToSearchForm = null;
-    return;
-  }
-
-  lexemeToSearchForm = new Map();
-  const unambiguous = new Set<LexemeId>();
-
-  for (const [form, lexemes] of Object.entries(formToLexemes)) {
-    for (let rank = 0; rank < lexemes.length; rank++) {
-      const id = lexemes[rank];
-      const isBestReading = rank === 0;
-      const existing = lexemeToSearchForm.get(id);
-      const existingIsBest = unambiguous.has(id);
-
-      if (existing === undefined) {
-        lexemeToSearchForm.set(id, form);
-        if (isBestReading) unambiguous.add(id);
-      } else if (isBestReading && !existingIsBest) {
-        lexemeToSearchForm.set(id, form);
-        unambiguous.add(id);
-      } else if (isBestReading === existingIsBest && form.length < existing.length) {
-        lexemeToSearchForm.set(id, form);
-      }
-    }
-  }
 }
 
 /**
@@ -723,61 +628,6 @@ export function computeSnippetForMatch(
     matchStart: 0,
     matchEnd: 0,
   };
-}
-
-/**
- * A word from the same root family, offered as a clickable chip in the UI.
- */
-export interface RelatedLexeme {
-  lexemeId: LexemeId;
-  form: string;        // vocalized Hebrew, shown on the chip
-  gloss: string;       // English gloss, shown on hover
-  searchForm: string;  // a written form that will find it
-}
-
-/**
- * Words sharing a derivational root with the searched lexemes.
- *
- * Lexemes the search already resolved to are left out — those are readings of
- * what was typed, not related words. The result is deduplicated by dictionary
- * form and ordered so that the words the reader is likeliest to recognize come
- * first (more frequent lexemes have lower indices in BHSA's dictionary order,
- * which follows first occurrence, so we sort by how many verses each occurs in).
- */
-export function getRelatedLexemes(lexemes: LexemeId[]): RelatedLexeme[] {
-  if (!lexemeFamilies || !lexicon || !lexemeToSearchForm) return [];
-
-  const searched = new Set(lexemes);
-  const seen = new Set<string>();
-  const related: RelatedLexeme[] = [];
-
-  for (const lexeme of lexemes) {
-    const family = lexemeFamilies.get(lexeme);
-    if (!family) continue;
-
-    for (const relative of family) {
-      if (searched.has(relative)) continue;
-
-      const entry = lexicon[relative];
-      if (!entry || seen.has(entry.form)) continue;
-
-      const searchForm = lexemeToSearchForm.get(relative);
-      if (!searchForm) continue;
-
-      seen.add(entry.form);
-      related.push({
-        lexemeId: relative,
-        form: entry.form,
-        gloss: entry.gloss,
-        searchForm,
-      });
-    }
-  }
-
-  related.sort((a, b) =>
-    (lexemeToVerses?.get(b.lexemeId)?.size ?? 0) - (lexemeToVerses?.get(a.lexemeId)?.size ?? 0)
-  );
-  return related;
 }
 
 /**

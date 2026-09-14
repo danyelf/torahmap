@@ -1,14 +1,8 @@
-// Root-mode search and related-word suggestions, exercised against the real
-// generated lexeme index.
+// Root-mode search, exercised against the real generated lexeme index.
 //
-// Two ideas are being tested and they are easy to confuse:
-//
-//   readings   -- the dictionary words a written form could be. עלה could be
-//                 the verb "ascend", the noun "burnt-offering", the noun
-//                 "leafage", and more. A root-mode search looks for all of them.
-//   relatives  -- words built from the same root as one of those readings.
-//                 They are offered as clickable suggestions, never folded into
-//                 the results.
+// The idea under test is a reading: one of the dictionary words a written form
+// could be. עלה could be the verb "ascend", the noun "burnt-offering", the noun
+// "leafage", and more. A root-mode search looks for all of them.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
@@ -17,7 +11,6 @@ import {
   findLexemesForWord,
   getLexeme,
   getLexemeForm,
-  getRelatedLexemes,
   loadLexiconData,
   computeSnippetForMatch,
   stripNikkud,
@@ -159,74 +152,6 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     it('falls back to whole-word search for a term with no reading', () => {
       // A nonsense string finds nothing rather than throwing.
       expect(search('קקקקקקק', false, 'root')).toEqual([]);
-    });
-  });
-
-  describe('related words', () => {
-    const familyOf = (word: string) => getRelatedLexemes(findLexemesForWord(word)!);
-
-    it('suggests words built from the same root (מלכ -> kingdom)', () => {
-      const glosses = familyOf('מלכ').map(r => r.gloss);
-      expect(glosses).toContain('kingdom');
-    });
-
-    it('suggests derived nouns for a verb (זכר -> remembrance)', () => {
-      const glosses = familyOf('זכר').map(r => r.gloss);
-      expect(glosses).toContain('remembrance');
-    });
-
-    it('never suggests a word the search already resolved to', () => {
-      const readings = findLexemesForWord('דבר')!;
-      const suggested = new Set(getRelatedLexemes(readings).map(r => r.lexemeId));
-      for (const reading of readings) {
-        expect(suggested.has(reading)).toBe(false);
-      }
-    });
-
-    it('suggests only words that actually share a root', () => {
-      // דבר is spelled the same as דֶּבֶר "pest" and the place name Debir.
-      // Those are readings of the written form, not relatives, and nothing
-      // outside the root family may be suggested.
-      const readings = findLexemesForWord('דבר')!;
-      const rootsSearched = new Set(
-        readings.map(id => {
-          const lexeme = getLexeme(id)!;
-          return `${lexeme.root ?? lexeme.id.replace(/[/[]/g, '')}|${lexeme.language}`;
-        })
-      );
-      for (const related of getRelatedLexemes(readings)) {
-        const lexeme = getLexeme(related.lexemeId)!;
-        const key = `${lexeme.root ?? lexeme.id.replace(/[/[]/g, '')}|${lexeme.language}`;
-        expect(rootsSearched.has(key)).toBe(true);
-      }
-    });
-
-    it('never suggests a function word', () => {
-      for (const word of ['מלכ', 'זכר', 'דבר', 'ספר', 'עלה']) {
-        for (const related of familyOf(word)) {
-          expect(getLexeme(related.lexemeId)!.pos).not.toBe('prep');
-          expect(getLexeme(related.lexemeId)!.pos).not.toBe('conj');
-          expect(getLexeme(related.lexemeId)!.pos).not.toBe('art');
-        }
-      }
-    });
-
-    it('offers a written form that finds the suggested word again', () => {
-      for (const related of familyOf('מלכ')) {
-        expect(related.searchForm).toBeTruthy();
-        const found = findLexemesForWord(related.searchForm);
-        expect(found).not.toBeNull();
-        expect(found).toContain(related.lexemeId);
-      }
-    });
-
-    it('lists each dictionary form once', () => {
-      const forms = familyOf('ספר').map(r => r.form);
-      expect(forms.length).toBe(new Set(forms).size);
-    });
-
-    it('returns nothing for a lexeme that does not exist', () => {
-      expect(getRelatedLexemes([999999])).toEqual([]);
     });
   });
 });
