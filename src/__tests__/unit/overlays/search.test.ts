@@ -569,7 +569,7 @@ describe('Search Overlay', () => {
       expect(input.value).toBe('אלהים');
     });
 
-    it('types Hebrew letters as themselves, not transliterated from Latin keys', () => {
+    it('installs no key handler that rewrites what you type', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
@@ -578,6 +578,12 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new KeyboardEvent('keydown', { key: 'g', bubbles: true }));
       input.dispatchEvent(new Event('input', { bubbles: true }));
 
+      // Narrow on purpose. happy-dom does not turn a KeyboardEvent into text,
+      // so the only thing that could change the value here is a handler that
+      // rewrites it — which is the shape transliteration would come back in.
+      // It does not prove transliteration is gone: the old one lived on a
+      // document listener that only existed while the keyboard was open, and
+      // this test never opened it.
       expect(input.value).toBe('light');
     });
 
