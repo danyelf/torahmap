@@ -367,12 +367,15 @@ describe('Search Overlay', () => {
       input.value = 'אלהים';
       input.dispatchEvent(new Event('input'));
       expect(input.dir).toBe('rtl');
+      expect(searchOverlay.getVerseColor(testVerses[0])).not.toBeNull();
 
       clearBtn.click();
 
       // An empty box has no Hebrew in it, so it reads left to right again
       expect(input.value).toBe('');
       expect(input.dir).toBe('ltr');
+      // ...and the search is actually re-run, so nothing stays highlighted
+      expect(searchOverlay.getVerseColor(testVerses[0])).toBeNull();
     });
 
     it('triggers update callback on search', () => {
