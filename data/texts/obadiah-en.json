@@ -1,8 +1,25 @@
 {
-    "title": "Obadiah",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Obadiah",
+    "title": "Obadiah",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "status": "locked",
+    "priority": 3.0,
+    "license": "CC-BY-NC",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "heTitle": "עובדיה",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "The prophecy of Obadiah.<br><span class=\"poetry indentAll\">We have received tidings from </span> G<small>OD</small>,<br><span class=\"poetry indentAll\">And an envoy has been sent out among the nations:</span><br><span class=\"poetry indentAll\">“Up! Let us rise up against her for battle.”</span><br><span class=\"poetry indentAll\">Thus said the Sovereign </span> G<small>OD</small> concerning Edom:",
@@ -27,17 +44,6 @@
             "And that exiled force of Israelites [shall possess] what belongs to the Phoenicians as far as Zarephath,<sup class=\"footnote-marker\">j</sup><i class=\"footnote\"><b>Zarephath </b>A town in southern Phoenicia; see 1 Kings 17.9.</i> while the Jerusalemite exile community of Sepharad<sup class=\"footnote-marker\">k</sup><i class=\"footnote\"><b>Sepharad </b>Probably Asia Minor, called Saparda in Persian cuneiform inscriptions.</i> shall possess the towns of the Negeb. ",
             "For liberators shall march up<sup class=\"footnote-marker\">l</sup><i class=\"footnote\"><b>liberators shall march up </b>Several ancient versions read “they [the exiles from Jerusalem named in the preceding verse] shall march up victorious.”</i> on Mount Zion to wreak judgment on Mount Esau; and dominion shall be G<small>OD</small>’s."
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "עובדיה",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",

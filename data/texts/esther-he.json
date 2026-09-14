@@ -1,8 +1,23 @@
 {
-    "title": "Esther",
     "language": "he",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Esther",
+    "title": "Esther",
+    "versionSource": "https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94",
+    "versionTitle": "Miqra according to the Masorah",
+    "actualLanguage": "he",
+    "languageFamilyName": "hebrew",
+    "isSource": true,
+    "isPrimary": true,
+    "direction": "rtl",
+    "status": "locked",
+    "priority": 2.0,
+    "license": "CC-BY-SA",
+    "versionNotes": "<i>Miqra According to the Masorah</i> (MAM) is a digital Hebrew edition of the Tanakh based on the Aleppo Codex and related manuscripts. It is designed for readers, and as such it contains added elements to aid vocalization of the text. For instance: When an accent is marked in an unstressed syllable, an extra accent is added in the proper place (<i>pashta</i>, <i>zarqa</i>, <i>segol</i>, <i>telisha</i>). <i>Legarmeih</i> and <i>paseq</i> are visibly distinguished. <i>Qamaz qatan</i> is indicated by its designated Unicode character (alternatives are documented where traditions differ about its application).<br>The text of MAM is fully documented. The <a href=\"https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94/%D7%9E%D7%99%D7%93%D7%A2_%D7%A2%D7%9C_%D7%9E%D7%94%D7%93%D7%95%D7%A8%D7%94_%D7%96%D7%95\">complete introduction</a> to the edition (Hebrew) explains the types of editorial decisions that have been made and the reasons for them (<a href=\"https://en.wikisource.org/wiki/User:Dovi/Miqra_according_to_the_Masorah#About_this_Edition_(English_Abstract)\">English abstract</a>). In addition, every word in the Bible about which there is some textual concern or ambiguity includes a documentation note; these notes can be viewed conveniently <a href=\"https://bdenckla.github.io/MAM-with-doc/\">here</a>. If an error is discovered, it may be reported to <a href=\"https://he.wikisource.org/wiki/%D7%A9%D7%99%D7%97%D7%AA_%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi\">User:Dovi</a> at Hebrew Wikisource. Please check the documentation notes before reporting an error.",
+    "versionTitleInHebrew": "מקרא על פי המסורה",
+    "heTitle": "אסתר",
+    "categories": [
+        "Tanakh",
+        "Writings"
+    ],
     "text": [
         [
             "וַיְהִ֖י בִּימֵ֣י אֲחַשְׁוֵר֑וֹשׁ ה֣וּא אֲחַשְׁוֵר֗וֹשׁ הַמֹּלֵךְ֙ מֵהֹ֣דּוּ וְעַד־כּ֔וּשׁ שֶׁ֛בַע וְעֶשְׂרִ֥ים וּמֵאָ֖ה מְדִינָֽה׃",
@@ -191,17 +206,6 @@
             "וְכׇל־מַעֲשֵׂ֤ה תׇקְפּוֹ֙ וּגְב֣וּרָת֔וֹ וּפָרָשַׁת֙ גְּדֻלַּ֣ת מׇרְדֳּכַ֔י אֲשֶׁ֥ר גִּדְּל֖וֹ הַמֶּ֑לֶךְ הֲלוֹא־הֵ֣ם כְּתוּבִ֗ים עַל־סֵ֙פֶר֙ דִּבְרֵ֣י הַיָּמִ֔ים לְמַלְכֵ֖י מָדַ֥י וּפָרָֽס׃",
             "כִּ֣י&thinsp;<b>׀</b> מׇרְדֳּכַ֣י הַיְּהוּדִ֗י מִשְׁנֶה֙ לַמֶּ֣לֶךְ אֲחַשְׁוֵר֔וֹשׁ וְגָדוֹל֙ לַיְּהוּדִ֔ים וְרָצ֖וּי לְרֹ֣ב אֶחָ֑יו דֹּרֵ֥שׁ טוֹב֙ לְעַמּ֔וֹ וְדֹבֵ֥ר שָׁל֖וֹם לְכׇל־זַרְעֽוֹ׃"
         ]
-    ],
-    "versions": [
-        [
-            "Miqra according to the Masorah",
-            "https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94"
-        ]
-    ],
-    "heTitle": "אסתר",
-    "categories": [
-        "Tanakh",
-        "Writings"
     ],
     "sectionNames": [
         "Chapter",

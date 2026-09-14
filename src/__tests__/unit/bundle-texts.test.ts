@@ -216,5 +216,72 @@ describe('cleanText', () => {
 
       expect(violations).toHaveLength(0);
     });
+
+    it('ensures every verse has English text', () => {
+      // A partial download leaves verses with nothing in the English pane, and
+      // the search index is built from this file, so those verses would simply
+      // never match anything.
+      const dataPath = path.resolve(__dirname, '../../../public/data/all-texts.json');
+      const allTexts = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+
+      const violations: string[] = [];
+
+      for (const [book, chapters] of Object.entries(allTexts)) {
+        for (const [chapter, verses] of Object.entries(chapters as Record<string, Record<string, { he: string; en: string }>>)) {
+          for (const [verse, text] of Object.entries(verses)) {
+            if (typeof text === 'object' && (!text.en || text.en.trim() === '')) {
+              violations.push(`${book} ${chapter}:${verse} - English text is empty`);
+            }
+          }
+        }
+      }
+
+      if (violations.length > 0) {
+        console.error('Found verses with no English text:');
+        violations.slice(0, 10).forEach(v => console.error(`  - ${v}`));
+        if (violations.length > 10) {
+          console.error(`  ... and ${violations.length - 10} more`);
+        }
+      }
+
+      expect(violations).toHaveLength(0);
+    });
+
+    it('ensures English text contains Latin letters', () => {
+      // The mirror of the Hebrew check above: it catches a version in the wrong
+      // script landing in the English pane.
+      //
+      // Note this is not "contains no Hebrew". Some English verses carry Hebrew
+      // by design: the divine name appears as GOD [יהוה], and alphabetic psalms
+      // keep their acrostic letters inline. What would be wrong is an English
+      // verse with no Latin letters at all.
+      const dataPath = path.resolve(__dirname, '../../../public/data/all-texts.json');
+      const allTexts = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+
+      const latinLetterRegex = /[a-zA-Z]/;
+      const violations: string[] = [];
+
+      for (const [book, chapters] of Object.entries(allTexts)) {
+        for (const [chapter, verses] of Object.entries(chapters as Record<string, Record<string, { he: string; en: string }>>)) {
+          for (const [verse, text] of Object.entries(verses)) {
+            if (typeof text === 'object' && text.en && !latinLetterRegex.test(text.en)) {
+              // Allow the dash that marks omitted verses (e.g., Joshua 21:36-37),
+              // the same exemption the Hebrew check above makes.
+              if (text.en.trim() === '—' || text.en.trim() === '--') {
+                continue;
+              }
+              violations.push(`${book} ${chapter}:${verse} - English text has no Latin letters: "${text.en}"`);
+            }
+          }
+        }
+      }
+
+      if (violations.length > 0) {
+        console.error('Found English text without Latin letters:');
+        violations.slice(0, 10).forEach(v => console.error(`  - ${v}`));
+      }
+
+      expect(violations).toHaveLength(0);
+    });
   });
 });

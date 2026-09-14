@@ -1,8 +1,25 @@
 {
-    "title": "Zephaniah",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Zephaniah",
+    "title": "Zephaniah",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "status": "locked",
+    "priority": 3.0,
+    "license": "CC-BY-NC",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "heTitle": "צפניה",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "The word of G<small>OD</small> that came to Zephaniah son of Cushi son of Gedaliah son of Amariah son of Hezekiah, during the reign of King Josiah son of Amon of Judah.",
@@ -63,17 +80,6 @@
             "<span class=\"poetry indentAll\">At that time I will make [an end]</span><br><span class=\"poetry indentAll\">Of all who afflicted you.</span><br><span class=\"poetry indentAll\">And I will rescue the lame [sheep]</span><br><span class=\"poetry indentAll\">And gather the strayed;</span><br><span class=\"poetry indentAll\">And I will exchange their disgrace</span><br><span class=\"poetry indentAll\">For fame and renown in all the earth.</span>",
             "<span class=\"poetry indentAll\">At that time I will gather you,</span><br><span class=\"poetry indentAll\">And at [that] time I will bring you [home];</span><br><span class=\"poetry indentAll\">For I will make you renowned and famous</span><br><span class=\"poetry indentAll\">Among all the peoples on earth,</span><br><span class=\"poetry indentAll\">When I restore your fortunes</span><br><span class=\"poetry indentAll\">Before their</span><sup class=\"footnote-marker\">n</sup><i class=\"footnote\"><b>their </b>Heb. “your.”</i> very eyes<br><span class=\"poetry indentAllDouble\">—said </span> G<small>OD</small>."
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "צפניה",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",

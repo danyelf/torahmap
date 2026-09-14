@@ -1,8 +1,25 @@
 {
-    "title": "Amos",
     "language": "en",
-    "versionTitle": "merged",
-    "versionSource": "https://www.sefaria.org/Amos",
+    "title": "Amos",
+    "versionSource": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "versionTitle": "THE JPS TANAKH: Gender-Sensitive Edition",
+    "status": "locked",
+    "priority": 3.0,
+    "license": "CC-BY-NC",
+    "versionNotes": "<a href=\"https://purl.org/jps/rjps-preface\">Preface</a>\n<br><br>\n<a href=\"https://purl.org/jps/gender\">Notes on Gender in Translation</a>\n<br><br>\n<a href=\"https://purl.org/scholar/rjps-comm\">Commentary on Translation Choices in the JPS TANAKH (RJPS)</a>",
+    "shortVersionTitle": "Revised JPS, 2023",
+    "purchaseInformationImage": "https://storage.googleapis.com/sefaria-physical-editions/JPS-Tanakh-Gender-Sensitive-Edition-Cover-300x450.jpg",
+    "purchaseInformationURL": "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/",
+    "actualLanguage": "en",
+    "languageFamilyName": "english",
+    "isSource": false,
+    "isPrimary": false,
+    "direction": "ltr",
+    "heTitle": "עמוס",
+    "categories": [
+        "Tanakh",
+        "Prophets"
+    ],
     "text": [
         [
             "The words of Amos, a sheep breeder from Tekoa, who prophesied concerning Israel in the reigns of Kings Uzziah of Judah and Jeroboam son of Joash of Israel, two years before the earthquake.<sup class=\"footnote-marker\">a</sup><i class=\"footnote\"><b>the earthquake </b>See Zech. 14.5.</i> ",
@@ -168,17 +185,6 @@
             "<span class=\"poetry indentAll\">I will restore My people Israel.</span><br><span class=\"poetry indentAll\">They shall rebuild ruined cities and inhabit them;</span><br><span class=\"poetry indentAll\">They shall plant vineyards and drink their wine;</span><br><span class=\"poetry indentAll\">They shall till gardens and eat their fruits.</span>",
             "<span class=\"poetry indentAll\">And I will plant them upon their soil,</span><br><span class=\"poetry indentAll\">Nevermore to be uprooted</span><br><span class=\"poetry indentAll\">From the soil I have given them</span><br><span class=\"poetry indentAllDouble\">—said </span> the E<small>TERNAL</small> your God."
         ]
-    ],
-    "versions": [
-        [
-            "THE JPS TANAKH: Gender-Sensitive Edition",
-            "https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/"
-        ]
-    ],
-    "heTitle": "עמוס",
-    "categories": [
-        "Tanakh",
-        "Prophets"
     ],
     "sectionNames": [
         "Chapter",
