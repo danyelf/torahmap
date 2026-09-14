@@ -7,11 +7,11 @@
 ## Problem
 
 The current Hebrew search has confusing automatic behavior:
-- Attempts lemma-based (root) search automatically if morphhb data is available
-- Falls back to substring search if lemma not found
+- Attempts dictionary-word (root) search automatically if the lexeme index is available
+- Falls back to substring search if the word is not found
 - Users have no visibility into which mode is active
 - Users cannot explicitly choose substring-only or whole-word matching
-- The automatic lemma search was doing root matching invisibly
+- The automatic dictionary-word search was doing root matching invisibly
 
 ## Solution
 
@@ -19,7 +19,7 @@ Add **explicit search mode selection** for Hebrew with three modes:
 
 1. **Substring** - Matches anywhere in words (e.g., "הלכ" matches "הלכה", "להלך")
 2. **Whole word** - Matches complete words only (e.g., "הלך" matches "הלך" but not "הלכה" or "ההלך")
-3. **Root (שרש)** - Uses morphhb lemma data to match all forms of a root (e.g., "הלך" finds all H1980 forms)
+3. **Root (שרש)** - Uses the lexeme index to match every inflected form of a word (e.g., "הלך" finds all forms of the verb "walk")
 
 English search remains unchanged (simple checkbox for whole-word matching).
 
@@ -38,7 +38,7 @@ Search mode:
 
 - Default: **Substring** (maintains current fallback behavior)
 - Radio buttons only appear when Hebrew text is detected
-- Term "שרש" (root) is more user-friendly than "lemma"
+- Term "שרש" (root) is more user-friendly than "lexeme"
 
 ### English Search Controls
 
@@ -77,9 +77,9 @@ export function search(
    - Use existing logic with wholeWord parameter
 4. If Hebrew:
    - Branch on hebrewMode:
-     a. 'substring' → Simple substring search (skip lemma lookup)
+     a. 'substring' → Simple substring search (skip dictionary lookup)
      b. 'word' → Whole-word boundary matching
-     c. 'root' → Lemma-based search with whole-word fallback
+     c. 'root' → Dictionary-word search with whole-word fallback
 ```
 
 ### 2. Whole-Word Search Implementation
@@ -107,13 +107,13 @@ function searchHebrewWholeWord(
 
 ### 3. Root (שרש) Mode Enhancement
 
-**Current lemma search (lines 285-368):**
-- Auto-tries lemma lookup
-- Falls back to substring if no lemma found
+**Current dictionary search (lines 285-368):**
+- Auto-tries a dictionary lookup
+- Falls back to substring if the word is not found
 
 **Enhanced root mode:**
-- Extract existing lemma search into `searchByRootMode()` helper
-- Change fallback: If lemma NOT found → use **whole-word** search instead of substring
+- Extract the existing dictionary search into a `searchByRootMode()` helper
+- Change fallback: if the word is NOT found → use **whole-word** search instead of substring
 - Rationale: Root mode implies "match complete units" (better for proper nouns like "אברהם")
 
 **Fallback chain:**
@@ -122,9 +122,9 @@ Root mode requested
   ↓
 Try findLemmasForWord()
   ↓
-Lemma found? → searchByLemmas() (existing)
+Word found? → searchByLexemes() (existing)
   ↓
-Lemma NOT found? → searchHebrewWholeWord() (new, not substring)
+Word NOT found? → searchHebrewWholeWord() (new, not substring)
 ```
 
 **No changes needed to:**
@@ -197,7 +197,7 @@ let hebrewSearchMode: 'substring' | 'word' | 'root' = 'substring';
 **Unit tests (`search.test.ts`):**
 - `searchHebrewWholeWord()` with various inputs
 - Mode parameter correctly passed through
-- Fallback behavior (lemma not found → whole-word)
+- Fallback behavior (word not found → whole-word)
 
 **Integration tests:**
 - Mode switching updates results correctly
@@ -216,7 +216,7 @@ let hebrewSearchMode: 'substring' | 'word' | 'root' = 'substring';
 - Default Hebrew mode is `substring` (current behavior)
 - URLs without `mode` parameter default to substring
 - English search completely unchanged
-- Existing lemma search code reused (not rewritten)
+- Existing dictionary search code reused (not rewritten)
 
 ## Success Criteria
 

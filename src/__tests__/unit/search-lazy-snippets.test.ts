@@ -50,7 +50,7 @@ describe('Lazy Snippet Evaluation', () => {
 
   describe('SearchResult with optional snippet fields', () => {
     it('root mode search returns results without snippets initially', () => {
-      // When searching in root mode (which falls back to whole-word without lemma data),
+      // When searching in root mode (which falls back to whole-word without the lexeme index),
       // results should be returned WITHOUT snippet computation
       const results = search('אלהים', false, 'root');
 

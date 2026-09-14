@@ -6,9 +6,9 @@ Fixed laggy Hebrew search performance by optimizing the root mode search algorit
 
 ## Problem Identified
 
-The original `searchByLemmas()` function used a naive O(V × L × W) algorithm:
+The original search-by-word function used a naive O(V × L × W) algorithm:
 - V = number of verses (~23,000)
-- L = number of search lemmas (typically 1-5)
+- L = number of dictionary words the term resolved to (typically 1-5)
 - W = average words per verse (~20-30)
 
 For a common word like "אלהים" (God):
@@ -19,13 +19,13 @@ For a common word like "אלהים" (God):
 
 Added two key optimizations:
 
-### 1. Inverted Index (lemma → verses)
+### 1. Inverted Index (word → verses)
 ```typescript
-let lemmaToVerses: Map<string, Set<string>>
+let lexemeToVerses: Map<LexemeId, Set<string>>
 ```
-- Maps Strong's numbers to sets of verse keys
-- Built once during `loadLemmaData()`
-- Enables O(1) lookup per lemma instead of O(V) iteration
+- Maps each dictionary word to the set of verses it occurs in
+- Built once during `loadLexiconData()`
+- Enables O(1) lookup per word instead of O(V) iteration
 
 ### 2. Verse Key Map (verseKey → entry)
 ```typescript
@@ -44,7 +44,7 @@ let verseKeyToEntry: Map<string, IndexEntry>
 
 **After optimization:**
 - Common word search: ~16ms
-- Algorithm complexity: O(L × M) where M = avg matches per lemma
+- Algorithm complexity: O(L × M) where M = avg matches per word
 - ~7,800 operations for "אלהים" (217x reduction!)
 
 **Test results:**
@@ -73,10 +73,10 @@ npm test -- search-performance.test.ts  # Performance regression tests
 ## Files Changed
 
 - `src/search.ts`:
-  - Added `lemmaToVerses` inverted index
+  - Added the `lexemeToVerses` inverted index
   - Added `verseKeyToEntry` fast lookup map
-  - Added `buildLemmaInvertedIndex()` function
-  - Optimized `searchByLemmas()` to use inverted index
+  - Added the `buildVerseIndex()` function
+  - Optimized search-by-word to use the inverted index
   - Optimized `searchByRootMode()` to use verse key map
 
 - New test files:
@@ -88,15 +88,15 @@ npm test -- search-performance.test.ts  # Performance regression tests
 
 ### Inverted Index Build (happens once at startup)
 ```typescript
-function buildLemmaInvertedIndex(): void {
-  lemmaToVerses = new Map();
+function buildVerseIndex(): void {
+  lexemeToVerses = new Map();
 
-  for (const [verseKey, lemmas] of Object.entries(verseLemmas)) {
-    for (const lemma of lemmas) {
-      let verses = lemmaToVerses.get(lemma);
+  for (const [verseKey, lexemes] of Object.entries(verseToLexemes)) {
+    for (const lexeme of lexemes) {
+      let verses = lexemeToVerses.get(lexeme);
       if (!verses) {
         verses = new Set();
-        lemmaToVerses.set(lemma, verses);
+        lexemeToVerses.set(lexeme, verses);
       }
       verses.add(verseKey);
     }
@@ -107,15 +107,15 @@ function buildLemmaInvertedIndex(): void {
 ### Optimized Search (happens on every keystroke)
 ```typescript
 // Before: O(V × L × W) - iterate all 23,000 verses
-for (const [verseKey, verseLemmasList] of Object.entries(verseLemmas)) {
-  if (lemmas.some(lemma => verseLemmasList.includes(lemma))) {
+for (const [verseKey, verseWords] of Object.entries(verseToLexemes)) {
+  if (lexemes.some(lexeme => verseWords.includes(lexeme))) {
     matchingVerses.add(verseKey);
   }
 }
 
 // After: O(L × M) - lookup only matching verses
-for (const lemma of lemmas) {
-  const verses = lemmaToVerses.get(lemma);  // O(1)
+for (const lexeme of lexemes) {
+  const verses = lexemeToVerses.get(lexeme);  // O(1)
   if (verses) {
     for (const verseKey of verses) {
       matchingVerses.add(verseKey);
