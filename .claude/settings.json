@@ -11,11 +11,5 @@
       "Bash(pgrep:*)",
       "Bash(ps:*)"
     ]
-  },
-  "env": {
-    "TRACE_TO_LANGFUSE": "true",
-    "LANGFUSE_SECRET_KEY": "sk-lf-39142a59-aea1-4066-a72a-23f198d837c2",
-    "LANGFUSE_PUBLIC_KEY": "pk-lf-bd59b534-00c5-448d-9a49-ce9f53051558",
-    "LANGFUSE_BASE_URL": "http://localhost:3000"
   }
 }
