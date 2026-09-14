@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     environment: 'happy-dom',
+    setupFiles: ['./src/__tests__/setup.ts'],
     // Limit worker pool to prevent zombie processes
     pool: 'forks',
     poolOptions: {

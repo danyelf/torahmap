@@ -1,6 +1,11 @@
 // Tests for verse-length overlay - word counting, logarithmic color gradient, legend rendering
 import { describe, it, expect, beforeEach } from 'vitest';
-import { verseLengthOverlay, configure } from '../../../overlays/verse-length';
+import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { configure } from '../../../overlays/verse-length';
+
+// The registry is where overlays come from — populate it the way the app does.
+registerAllOverlays();
+const verseLengthOverlay = getOverlay('verse-length')!;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { VerseTexts } from '../../../verseTexts';
