@@ -159,36 +159,3 @@ export function hslToRgb(hsl: HSL): Color {
     hueToRgb(p, q, hNorm - 1/3),
   ];
 }
-
-/**
- * Circular mean for hue values (handles wraparound correctly)
- */
-function circularMeanHue(hues: number[]): number {
-  let sinSum = 0;
-  let cosSum = 0;
-  for (const h of hues) {
-    const rad = (h * Math.PI) / 180;
-    sinSum += Math.sin(rad);
-    cosSum += Math.cos(rad);
-  }
-  const avgRad = Math.atan2(sinSum / hues.length, cosSum / hues.length);
-  let avgDeg = (avgRad * 180) / Math.PI;
-  if (avgDeg < 0) avgDeg += 360;
-  return avgDeg;
-}
-
-/**
- * Blend multiple colors using HSL averaging (circular mean for hue)
- */
-export function blendColorsHSL(colors: Color[]): Color {
-  if (colors.length === 0) return [0, 0, 0];
-  if (colors.length === 1) return colors[0];
-
-  const hslColors = colors.map(rgbToHsl);
-
-  const avgHue = circularMeanHue(hslColors.map(c => c.h));
-  const avgSat = hslColors.reduce((sum, c) => sum + c.s, 0) / hslColors.length;
-  const avgLight = hslColors.reduce((sum, c) => sum + c.l, 0) / hslColors.length;
-
-  return hslToRgb({ h: avgHue, s: avgSat, l: avgLight });
-}

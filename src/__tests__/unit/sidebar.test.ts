@@ -25,7 +25,6 @@ vi.mock('../../overlays/search.ts', () => ({
 
 vi.mock('../../overlays/commentary.ts', () => ({
   getVerseLinkCount: vi.fn(() => 0),
-  getCurrentCategory: vi.fn(() => 'total'),
 }));
 
 describe('sidebar', () => {

@@ -190,11 +190,6 @@ export function getVerseLinkCount(
   return verseData?.total ?? null;
 }
 
-// Get current category (used for Sefaria URL generation and sidebar display)
-export function getCurrentCategory(): string {
-  return currentCategory;
-}
-
 // Get category-specific link count for a verse (used by sidebar)
 function getVerseCategoryCount(
   book: string,

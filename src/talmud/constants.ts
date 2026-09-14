@@ -7,7 +7,6 @@ export const SEGMENT_SIZE = 6;                   // px per segment square
 export const PEREK_GAP = 30;                     // vertical gap between perakim within a tractate
 export const TRACTATE_GAP = 90;                  // horizontal gap between tractates on a shelf (extra room now that wide tractates wrap into multi-column blocks)
 export const SEDER_GAP = 120;                    // vertical gap between shelves (sedarim)
-export const DAF_LABEL_COLUMN_WIDTH = 30;        // space reserved for daf labels on the right of each tractate
 export const TRACTATE_LABEL_HEIGHT = 24;         // space above each tractate block for its Hebrew name label
 
 // Tractates taller than this row count get wrapped into multiple columns
