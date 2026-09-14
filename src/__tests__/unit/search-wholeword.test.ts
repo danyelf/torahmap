@@ -131,8 +131,8 @@ describe('Whole Word Search', () => {
   });
 
   describe('Hebrew search ignores whole-word setting', () => {
-    it('Hebrew search uses lemma-based search regardless of whole-word', () => {
-      // Hebrew should use lemma-based search and ignore whole-word parameter
+    it('Hebrew search uses lexeme-based search regardless of whole-word', () => {
+      // Hebrew should use lexeme-based search and ignore whole-word parameter
       const resultsWithoutWW = search('אלהים', false);
       const resultsWithWW = search('אלהים', true);
 

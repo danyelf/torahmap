@@ -203,7 +203,7 @@ describe('sidebar', () => {
 
     it('adds ?with=all when commentary overlay shows all categories', () => {
       const mockOverlay = { id: 'commentary' } as any;
-      // When getCurrentCategory returns 'total', should use ?with=all
+      // No category filter is set, so the link opens to all commentary
       const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
       expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
     });

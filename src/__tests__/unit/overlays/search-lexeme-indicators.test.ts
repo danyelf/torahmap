@@ -1,4 +1,4 @@
-// Tests for lemma indicator feature in search overlay
+// Tests for the lexeme indicator feature in the search overlay
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
 import { configure } from '../../../overlays/search';
@@ -6,19 +6,19 @@ import { configure } from '../../../overlays/search';
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
 const searchOverlay = getOverlay('search')!;
-import { buildSearchIndex, loadLemmaData } from '../../../search';
+import { buildSearchIndex, loadLexiconData } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import type { VerseTexts } from '../../../verseTexts';
 import type { TanakhLayout } from '../../../types';
 
-describe('Search Overlay - Lemma Indicators', () => {
+describe('Search Overlay - Lexeme Indicators', () => {
   let testVerses: TanakhLayout[];
   let mockVerseTexts: VerseTexts;
   let container: HTMLElement;
 
   beforeEach(async () => {
-    // Load actual lemma data (if available)
-    await loadLemmaData();
+    // Load the real lexeme index (if available)
+    await loadLexiconData();
 
     // Setup test verses
     testVerses = [
@@ -59,7 +59,7 @@ describe('Search Overlay - Lemma Indicators', () => {
     }
   });
 
-  it('should show lemma indicators in root mode for Hebrew search', () => {
+  it('should show lexeme indicators in root mode for Hebrew search', () => {
     // Render controls
     searchOverlay.renderControls!(container);
 
@@ -82,27 +82,26 @@ describe('Search Overlay - Lemma Indicators', () => {
     const legendContainer = document.createElement('div');
     searchOverlay.renderLegend!(legendContainer);
 
-    // Check legend content - should show either root text or fallback indicator
+    // Check legend content - should show either a dictionary form or the fallback indicator
     const legendText = legendContainer.textContent || '';
 
-    // If lemma data is available, we should see either:
-    // 1. Root text with "(from ...)" format for terms with lemmas
-    // 2. Hook arrow indicator (↪) for terms without lemmas
+    // With the lexeme index loaded we should see either:
+    // 1. a dictionary form in the "(from ...)" shape for terms that resolved
+    // 2. the hook arrow (↪) for terms that did not
     if (legendText.includes('(from')) {
-      // Root text format is present - verify structure
       expect(legendText).toMatch(/".+"\s*\(from\s*".+"\)/);
     }
 
-    // Check for fallback indicators (only shown for terms without root data)
-    const indicators = legendContainer.querySelectorAll('.lemma-indicator');
+    // Check for fallback indicators (only shown for unresolved terms)
+    const indicators = legendContainer.querySelectorAll('.lexeme-indicator');
     indicators.forEach(indicator => {
       const text = indicator.textContent?.trim();
       expect(text).toBe('↪'); // Only fallback indicator should be present
-      expect(indicator.getAttribute('title')).toBe('No root data, using whole-word search');
+      expect(indicator.getAttribute('title')).toBe('Not found in the dictionary, using whole-word search');
     });
   });
 
-  it('should not show lemma indicators in substring mode', () => {
+  it('should not show lexeme indicators in substring mode', () => {
     // Render controls
     searchOverlay.renderControls!(container);
 
@@ -125,12 +124,12 @@ describe('Search Overlay - Lemma Indicators', () => {
     const legendContainer = document.createElement('div');
     searchOverlay.renderLegend!(legendContainer);
 
-    // Should NOT have lemma indicators in substring mode
-    const indicators = legendContainer.querySelectorAll('.lemma-indicator');
+    // Should NOT have lexeme indicators in substring mode
+    const indicators = legendContainer.querySelectorAll('.lexeme-indicator');
     expect(indicators.length).toBe(0);
   });
 
-  it('should not show lemma indicators for English search', () => {
+  it('should not show lexeme indicators for English search', () => {
     // Render controls
     searchOverlay.renderControls!(container);
 
@@ -146,8 +145,8 @@ describe('Search Overlay - Lemma Indicators', () => {
     const legendContainer = document.createElement('div');
     searchOverlay.renderLegend!(legendContainer);
 
-    // Should NOT have lemma indicators for English
-    const indicators = legendContainer.querySelectorAll('.lemma-indicator');
+    // Should NOT have lexeme indicators for English
+    const indicators = legendContainer.querySelectorAll('.lexeme-indicator');
     expect(indicators.length).toBe(0);
   });
 
@@ -170,7 +169,7 @@ describe('Search Overlay - Lemma Indicators', () => {
     // Check root mode - may have indicators
     let legendContainer = document.createElement('div');
     searchOverlay.renderLegend!(legendContainer);
-    const indicatorsInRootMode = legendContainer.querySelectorAll('.lemma-indicator').length;
+    const indicatorsInRootMode = legendContainer.querySelectorAll('.lexeme-indicator').length;
 
     // Switch to substring mode
     substringModeRadio.checked = true;
@@ -180,7 +179,7 @@ describe('Search Overlay - Lemma Indicators', () => {
     // Check substring mode - should have no indicators
     legendContainer = document.createElement('div');
     searchOverlay.renderLegend!(legendContainer);
-    expect(legendContainer.querySelectorAll('.lemma-indicator').length).toBe(0);
+    expect(legendContainer.querySelectorAll('.lexeme-indicator').length).toBe(0);
 
     // Switch back to root mode
     rootModeRadio.checked = true;
@@ -190,72 +189,10 @@ describe('Search Overlay - Lemma Indicators', () => {
     // Check root mode again - should match original count
     legendContainer = document.createElement('div');
     searchOverlay.renderLegend!(legendContainer);
-    expect(legendContainer.querySelectorAll('.lemma-indicator').length).toBe(indicatorsInRootMode);
+    expect(legendContainer.querySelectorAll('.lexeme-indicator').length).toBe(indicatorsInRootMode);
   });
 
-  it('should show related roots section in root mode with related roots', () => {
-    // Render controls
-    searchOverlay.renderControls!(container);
-
-    const searchInput = container.querySelector('#search-input') as HTMLInputElement;
-    const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
-
-    // Set to root mode
-    rootModeRadio.checked = true;
-    rootModeRadio.dispatchEvent(new Event('change'));
-
-    // Perform Hebrew search with a term that has related roots
-    searchInput.value = 'אלהים';
-    searchInput.dispatchEvent(new Event('input'));
-
-    // Render legend
-    const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend!(legendContainer);
-
-    // Check for related roots section
-    const relatedSection = legendContainer.querySelector('.related-roots');
-    if (relatedSection) {
-      // If related roots exist, verify structure
-      const label = relatedSection.querySelector('.related-roots-label');
-      expect(label?.textContent).toBe('Related:');
-
-      const chips = relatedSection.querySelectorAll('.root-chip');
-      expect(chips.length).toBeGreaterThan(0);
-
-      // Each chip should be a button
-      chips.forEach(chip => {
-        expect(chip.tagName).toBe('BUTTON');
-        expect(chip.textContent?.length).toBeGreaterThan(0);
-      });
-    }
-    // If no related roots, the section won't be present (also valid)
-  });
-
-  it('should not show related roots section in substring mode', () => {
-    // Render controls
-    searchOverlay.renderControls!(container);
-
-    const searchInput = container.querySelector('#search-input') as HTMLInputElement;
-    const substringModeRadio = container.querySelector('input[name="hebrew-mode"][value="substring"]') as HTMLInputElement;
-
-    // Set to substring mode
-    substringModeRadio.checked = true;
-    substringModeRadio.dispatchEvent(new Event('change'));
-
-    // Perform Hebrew search
-    searchInput.value = 'אלהים';
-    searchInput.dispatchEvent(new Event('input'));
-
-    // Render legend
-    const legendContainer = document.createElement('div');
-    searchOverlay.renderLegend!(legendContainer);
-
-    // Should NOT have related roots section in substring mode
-    const relatedSection = legendContainer.querySelector('.related-roots');
-    expect(relatedSection).toBeNull();
-  });
-
-  it('should have proper styling for lemma indicators', () => {
+  it('should have proper styling for lexeme indicators', () => {
     // Render controls
     searchOverlay.renderControls!(container);
 
@@ -274,14 +211,14 @@ describe('Search Overlay - Lemma Indicators', () => {
     const legendContainer = document.createElement('div');
     searchOverlay.renderLegend!(legendContainer);
 
-    // Check styling - only fallback indicators have .lemma-indicator class
-    const indicators = legendContainer.querySelectorAll('.lemma-indicator');
+    // Check styling - only fallback indicators carry the .lexeme-indicator class
+    const indicators = legendContainer.querySelectorAll('.lexeme-indicator');
     indicators.forEach(indicator => {
       const element = indicator as HTMLElement;
       // Should have color styling (orange for fallback)
       expect(element.style.color).toBe('rgb(255, 152, 0)'); // #FF9800
       // Should have title attribute for tooltip
-      expect(element.title).toBe('No root data, using whole-word search');
+      expect(element.title).toBe('Not found in the dictionary, using whole-word search');
     });
   });
 });

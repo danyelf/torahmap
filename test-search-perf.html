@@ -83,7 +83,7 @@
   <div id="results" style="margin-top: 20px;"></div>
 
   <script type="module">
-    import { search, buildSearchIndex, loadLemmaData, parseSearchTerms } from './src/search.ts';
+    import { search, buildSearchIndex, loadLexiconData, parseSearchTerms } from './src/search.ts';
     import { BOOK_ORDER } from './src/constants/books.ts';
 
     console.log('Loading verse texts and building index...');
@@ -93,8 +93,8 @@
     const verseTexts = await response.json();
     buildSearchIndex(verseTexts);
 
-    console.log('Loading lemma data...');
-    await loadLemmaData();
+    console.log('Loading lexeme index...');
+    await loadLexiconData();
 
     const loadEnd = performance.now();
     console.log(`Data loaded in ${(loadEnd - loadStart).toFixed(2)}ms`);

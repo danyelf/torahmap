@@ -176,8 +176,8 @@ describe('Hebrew Search Modes', () => {
   });
 
   describe('search() mode parameter - root mode', () => {
-    it('root mode falls back to whole-word when no lemma found', () => {
-      // Since we don't load lemma data in tests, root mode should fall back to whole-word
+    it('root mode falls back to whole-word when the term resolves to no lexeme', () => {
+      // The lexeme index is not loaded here, so root mode falls back to whole-word
       const rootResults = search('אברהם', false, 'root');
       const wordResults = search('אברהם', false, 'word');
 
@@ -186,7 +186,7 @@ describe('Hebrew Search Modes', () => {
     });
 
     it('root mode fallback finds proper nouns correctly', () => {
-      // Even without lemma data, should find "אברהם" as whole word
+      // Even without the lexeme index, should find "אברהם" as whole word
       const results = search('אברהם', false, 'root');
 
       const gen175 = results.find(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);

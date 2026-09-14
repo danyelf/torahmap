@@ -1,10 +1,13 @@
 # Data Regeneration Guide
 
-All data comes from [Sefaria](https://www.sefaria.org/):
+Most data comes from [Sefaria](https://www.sefaria.org/):
 
 - **Verse texts**: [Sefaria-Export](https://github.com/Sefaria/Sefaria-Export) GitHub repository
 - **Structure data**: Sefaria `/api/shape/` endpoint
 - **Commentary links**: Sefaria Links CSV exports
+
+The Hebrew lexeme index behind root-mode search comes from the
+[ETCBC BHSA](https://github.com/ETCBC/bhsa) database instead.
 
 ## Verse Texts
 
@@ -21,6 +24,20 @@ npx tsx scripts/bundle-texts.ts
 ```bash
 # Regenerate structure from Sefaria API
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
+```
+
+## Hebrew Lexeme Index
+
+Root-mode search needs to know which dictionary word each written form can be.
+That comes from the ETCBC BHSA database, read through Text-Fabric.
+
+The four files live in `public/data/search/`, and
+**[public/data/search/README.md](public/data/search/README.md)** is the full
+account: where BHSA comes from, what each file holds, and how to set up
+Text-Fabric the first time. Once that setup is done:
+
+```bash
+.venv/bin/python scripts/search/generate-lexeme-index.py
 ```
 
 ## Text Dating Data

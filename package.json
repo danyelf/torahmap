@@ -26,7 +26,6 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "morphhb": "^2.0.2",
     "simple-keyboard": "^3.8.93"
   }
 }

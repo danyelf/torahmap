@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { stripNikkud, normalizeHebrewForSearch, toDisplayHebrew, buildSearchIndex, search } from '../../search';
+import { stripNikkud, normalizeHebrewForSearch, buildSearchIndex, search } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Hebrew Final Forms Normalization', () => {
@@ -54,28 +54,6 @@ describe('Hebrew Final Forms Normalization', () => {
 
     it('should normalize final forms even with nikkud present', () => {
       expect(normalizeHebrewForSearch('שָׁלוֹם')).toBe('שלומ'); // Remove nikkud AND normalize ם → מ
-    });
-  });
-
-  describe('toDisplayHebrew (restores final forms at word endings)', () => {
-    it('should restore mem sofit at word end', () => {
-      expect(toDisplayHebrew('שלומ')).toBe('שלום'); // מ → ם at end
-    });
-
-    it('should restore kaf sofit at word end', () => {
-      expect(toDisplayHebrew('מלכ')).toBe('מלך'); // כ → ך at end
-    });
-
-    it('should restore finals in multi-word text', () => {
-      expect(toDisplayHebrew('מלכ הארצ')).toBe('מלך הארץ'); // כ→ך, צ→ץ
-    });
-
-    it('should not change medial letters mid-word', () => {
-      expect(toDisplayHebrew('כנפי')).toBe('כנפי'); // פ stays medial (not at end)
-    });
-
-    it('should not change letters that have no final form', () => {
-      expect(toDisplayHebrew('דבר')).toBe('דבר'); // ר has no final form
     });
   });
 
@@ -160,20 +138,20 @@ describe('Hebrew Final Forms Normalization', () => {
       });
     });
 
-    describe('findLemmasForWord with medial-only input', () => {
-      it('should find lemmas when input uses medial forms (no finals)', () => {
-        // findLemmasForWord depends on loaded wordLemmas data.
-        // When data is null it returns null, so we test normalisation logic
-        // by verifying medial-form and final-form inputs both normalise to the
-        // same key, which is what the lookup uses.
+    describe('findLexemesForWord with medial-only input', () => {
+      it('should find lexemes when input uses medial forms (no finals)', () => {
+        // findLexemesForWord depends on the loaded written-form index.
+        // When it is not loaded the function returns null, so we test the
+        // normalisation instead: medial-form and final-form input must produce
+        // the same key, which is what the lookup uses.
         const medial = normalizeHebrewForSearch('אלהימ'); // typed with regular mem
         const withFinal = normalizeHebrewForSearch('אלהים'); // with final mem
         expect(medial).toBe(withFinal);
         expect(medial).toBe('אלהימ'); // both become medial-only
       });
 
-      it('should normalise final-form input to match medial-only word-lemma keys', () => {
-        // Ensure findLemmasForWord normalises its input so that
+      it('should normalise final-form input to match medial-only written forms', () => {
+        // Ensure findLexemesForWord normalises its input so that
         // typing "ארץ" (with final tzadi) still matches key "ארצ"
         const medial = normalizeHebrewForSearch('ארץ');
         expect(medial).toBe('ארצ');

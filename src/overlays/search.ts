@@ -3,7 +3,7 @@ import '../styles/overlays/search.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { tanakhKey } from '../types.ts';
-import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLemmasForWord, getRelatedRoots, getRootForStrongsNumber, computeSnippetForMatch, type SearchResult, type RelatedRoot } from '../search.ts';
+import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLexemesForWord, getLexemeForm, computeSnippetForMatch, type SearchResult, type LexemeId } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
@@ -31,14 +31,13 @@ const URL_PARAMS = [
 let hebrewSearchMode: (typeof HEBREW_SEARCH_MODES)[number] = 'substring';
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
-// Track which terms have valid lemma data (for root mode visual indicators)
-let termLemmaStatus: boolean[] = [];
-// Track the lemmas found for each term (for root mode hover info)
-let termLemmas: Array<string[] | null> = [];
-// Track the Hebrew root text for each term (for legend display)
-let termRoots: Array<string | null> = [];
-// Track related roots for UI suggestion chips (depth-1 neighbors)
-let relatedRoots: RelatedRoot[] = [];
+// Which terms resolved to a lexeme (for root mode visual indicators)
+let termHasLexeme: boolean[] = [];
+// The lexemes each term resolved to (for root mode hover info and colouring)
+let termLexemes: Array<LexemeId[] | null> = [];
+// The dictionary form shown for each term in the legend
+let termForms: Array<string | null> = [];
+// Words from the same root family, offered as clickable chips
 
 // Incremental rendering state
 const RESULTS_BATCH_SIZE = 50;
@@ -69,40 +68,33 @@ function doSearch(query: string): void {
   if (currentTerms.length === 0) {
     currentResults = [];
     matchingTerms = new Map();
-    termLemmaStatus = [];
-    termLemmas = [];
-    termRoots = [];
-    relatedRoots = [];
+    termHasLexeme = [];
+    termLexemes = [];
+    termForms = [];
   } else {
     const isHebrew = isHebrewQuery(currentTerms[0]);
 
-    // Check which terms have lemma data (only relevant for Hebrew root mode)
+    // Resolve each term to its lexemes (only relevant for Hebrew root mode)
     if (isHebrew && hebrewSearchMode === 'root') {
-      termLemmaStatus = [];
-      termLemmas = [];
-      termRoots = [];
-      const allLemmasForRelated: string[] = [];
+      termHasLexeme = [];
+      termLexemes = [];
+      termForms = [];
       for (const term of currentTerms) {
-        const lemmas = findLemmasForWord(term);
-        termLemmaStatus.push(lemmas !== null && lemmas.length > 0);
-        termLemmas.push(lemmas);
+        const lexemes = findLexemesForWord(term);
+        termHasLexeme.push(lexemes !== null && lexemes.length > 0);
+        termLexemes.push(lexemes);
 
-        // Get the Hebrew root text for the first lemma (most relevant)
-        if (lemmas && lemmas.length > 0) {
-          const rootText = getRootForStrongsNumber(lemmas[0]);
-          termRoots.push(rootText);
-          allLemmasForRelated.push(...lemmas);
+        // Show the likeliest reading's dictionary form in the legend
+        if (lexemes && lexemes.length > 0) {
+          termForms.push(getLexemeForm(lexemes[0]));
         } else {
-          termRoots.push(null);
+          termForms.push(null);
         }
       }
-      // Compute related roots (depth-1 neighbors) for UI chips
-      relatedRoots = getRelatedRoots(allLemmasForRelated);
     } else {
-      termLemmaStatus = [];
-      termLemmas = [];
-      termRoots = [];
-      relatedRoots = [];
+      termHasLexeme = [];
+      termLexemes = [];
+      termForms = [];
     }
 
     // Only use wholeWord for English queries
@@ -142,15 +134,15 @@ function updateHitCaption(): void {
       swatch.style.background = colorToCss(color);
       termSpan.appendChild(swatch);
 
-      if (hebrewSearchMode === 'root' && termLemmaStatus.length > 0) {
-        if (termLemmaStatus[i] && termRoots[i]) {
-          termSpan.appendChild(document.createTextNode(`"${termRoots[i]}" (from "${term}")`));
+      if (hebrewSearchMode === 'root' && termHasLexeme.length > 0) {
+        if (termHasLexeme[i] && termForms[i]) {
+          termSpan.appendChild(document.createTextNode(`"${termForms[i]}" (from "${term}")`));
         } else {
           termSpan.appendChild(document.createTextNode(`"${term}"`));
           const indicator = document.createElement('span');
-          indicator.className = 'lemma-indicator';
+          indicator.className = 'lexeme-indicator';
           indicator.textContent = ' \u21AA';
-          indicator.title = 'No root data, using whole-word search';
+          indicator.title = 'Not found in the dictionary, using whole-word search';
           indicator.style.color = '#FF9800';
           termSpan.appendChild(indicator);
         }
@@ -164,33 +156,6 @@ function updateHitCaption(): void {
       }
     }
 
-    // Related roots chips (only in root mode with results)
-    let relatedDiv: HTMLDivElement | null = null;
-    if (hebrewSearchMode === 'root' && relatedRoots.length > 0) {
-      relatedDiv = document.createElement('div');
-      relatedDiv.className = 'related-roots';
-
-      const label = document.createElement('span');
-      label.className = 'related-roots-label';
-      label.textContent = 'Related:';
-      relatedDiv.appendChild(label);
-
-      for (const related of relatedRoots) {
-        const chip = document.createElement('button');
-        chip.className = 'root-chip';
-        chip.textContent = related.rootText;
-        chip.title = `Add "${related.surfaceForm}" to search`;
-        chip.addEventListener('click', () => {
-          if (searchInput) {
-            const current = searchInput.value.trim();
-            searchInput.value = current ? `${current},${related.surfaceForm}` : related.surfaceForm;
-            searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-        });
-        relatedDiv.appendChild(chip);
-      }
-    }
-
     const countDiv = document.createElement('div');
     countDiv.style.color = '#888';
     countDiv.style.fontSize = '11px';
@@ -198,9 +163,6 @@ function updateHitCaption(): void {
     countDiv.textContent = `${currentResults.length} matching verses`;
 
     searchHitCaption.appendChild(legendDiv);
-    if (relatedDiv) {
-      searchHitCaption.appendChild(relatedDiv);
-    }
     searchHitCaption.appendChild(countDiv);
   } else if (currentQuery.length > 0 && currentTerms.length === 0) {
     const hintDiv = document.createElement('div');
@@ -458,10 +420,10 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
         });
       }
     } else if (isHebrew && hebrewSearchMode === 'root') {
-      // Hebrew root mode - match words with same lemmas
-      const searchLemmas = termLemmas[termIndex];
-      if (!searchLemmas || searchLemmas.length === 0) {
-        // No lemmas for search term, fall back to word matching
+      // Hebrew root mode - match words resolving to the same lexemes
+      const searchLexemes = termLexemes[termIndex];
+      if (!searchLexemes || searchLexemes.length === 0) {
+        // Term resolved to no lexeme, fall back to word matching
         const wordEntries = splitIntoWords(normalizedText);
 
         for (const {word, start} of wordEntries) {
@@ -472,14 +434,14 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
           }
         }
       } else {
-        // Match words that share the same lemmas
+        // Match words that resolve to one of the same lexemes
         const wordEntries = splitIntoWords(normalizedText);
+        const wanted = new Set(searchLexemes);
 
         for (const {word, start} of wordEntries) {
-          // Look up this word's lemmas
-          const wordLemmas = findLemmasForWord(word);
-          if (wordLemmas && wordLemmas.some(lemma => searchLemmas.includes(lemma))) {
-            // This word shares a lemma with the search term
+          const wordLexemes = findLexemesForWord(word);
+          if (wordLexemes && wordLexemes.some(id => wanted.has(id))) {
+            // This word is the same dictionary word as the search term
             const origStart = mapNormalizedToOriginalPosition(text, start);
             const origEnd = mapNormalizedToOriginalPosition(text, start + word.length);
             matches.push({ start: origStart, end: origEnd, termIndex });
@@ -965,15 +927,14 @@ export const searchOverlay: Overlay = {
     const isHebrew = isHebrewQuery(currentTerms[0]);
 
     if (isHebrew && hebrewSearchMode === 'root') {
-      // For root mode, show which roots were matched
+      // For root mode, show which dictionary words were matched
       const matchedTerms = termIndices.map(i => {
-        const lemmas = termLemmas[i];
-        const root = termRoots[i];
-        if (lemmas && lemmas.length > 0 && root) {
-          // Found a root - show the actual root from Strong's
-          return `"${root}"`;
+        const lexemes = termLexemes[i];
+        const form = termForms[i];
+        if (lexemes && lexemes.length > 0 && form) {
+          return `"${form}"`;
         } else {
-          // No root found, fell back to word search
+          // Term resolved to no lexeme, fell back to word search
           return `"${currentTerms[i]}"`;
         }
       }).join(', ');
