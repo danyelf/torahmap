@@ -3,10 +3,10 @@
 Process Sefaria links data to count commentary per Tanakh verse by category.
 Reads from locally downloaded CSV files in data/sefaria-links/
 
-Changes from v1:
-- Drops "Tanakh" category (verse cross-references are confusing)
-- Filters commentaries from Talmud category to show only direct Talmud text
-- Uses local CSV files instead of downloading
+- Drops the "Tanakh" category (verse cross-references are confusing)
+- Filters the Talmud category to direct Talmud text, not commentaries on it
+- Counts a citation towards every verse it covers, up to MAX_RANGE_VERSES;
+  longer ranges name a whole portion rather than a passage and are ignored
 """
 
 import csv
@@ -46,17 +46,83 @@ MAJOR_CATEGORIES = {
 # Track seen link pairs globally to avoid double-counting bidirectional entries
 seen_link_pairs: set[frozenset[str]] = set()
 
-def parse_verse_ref(citation: str) -> tuple[str, int, int] | None:
-    """Extract (book, chapter, verse) from a citation like 'Genesis 1:2'."""
-    for book in sorted(TANAKH_BOOKS, key=len, reverse=True):
-        if citation.startswith(book + " "):
-            after_book = citation[len(book) + 1:]
-            match = re.match(r'^(\d+):(\d+)', after_book)
-            if match:
-                chapter = int(match.group(1))
-                verse = int(match.group(2))
-                return (book, chapter, verse)
-    return None
+# A citation may name one verse, a short passage, or a sweep of text so large
+# that it is really a catalogue entry. Up to this many verses we treat the
+# citation as a claim about each verse it covers; beyond it we ignore the
+# citation entirely.
+#
+# The cutoff is not delicate. Anything between five and twenty produces
+# essentially the same map, because half of all ranges are five verses or
+# fewer and a fifth cover more than a hundred. Ten sits in the empty middle.
+MAX_RANGE_VERSES = 10
+
+BOOKS_LONGEST_FIRST = sorted(TANAKH_BOOKS, key=len, reverse=True)
+
+# "1:2", "1:2-5" or "1:2-3:4", and nothing trailing: a citation like
+# "Rashi on Genesis 1:1:1" names a comment, not a verse, and must not match.
+_REF_RE = re.compile(r'^(\d+):(\d+)(?:-(?:(\d+):)?(\d+))?$')
+
+_chapter_lengths: dict[str, list[int]] | None = None
+
+
+def chapter_lengths() -> dict[str, list[int]]:
+    """Verse count for every chapter of every book, from tanakh-structure.json."""
+    global _chapter_lengths
+    if _chapter_lengths is None:
+        path = Path(__file__).parent.parent / "public" / "data" / "tanakh-structure.json"
+        with open(path) as f:
+            structure = json.load(f)
+        _chapter_lengths = {b["name"]: b["chapters"] for b in structure["books"]}
+    return _chapter_lengths
+
+
+def parse_verse_refs(citation: str) -> list[tuple[str, int, int]]:
+    """
+    Every verse a citation refers to, as (book, chapter, verse).
+
+    A single verse gives one entry. A range gives one entry per verse it
+    covers, so a comment on "Deuteronomy 6:4-9" counts towards all six verses
+    of the Shema rather than piling onto the first. A range longer than
+    MAX_RANGE_VERSES gives nothing: "Genesis 1:1-6:8" is a pointer to the whole
+    of Bereshit, and crediting it anywhere invents commentary that is not there.
+
+    Returns an empty list for anything that is not a Tanakh verse reference.
+    """
+    for book in BOOKS_LONGEST_FIRST:
+        if not citation.startswith(book + " "):
+            continue
+
+        match = _REF_RE.match(citation[len(book) + 1:])
+        if not match:
+            return []
+
+        start_chapter, start_verse = int(match.group(1)), int(match.group(2))
+        if match.group(4) is None:
+            end_chapter, end_verse = start_chapter, start_verse
+        else:
+            end_chapter = int(match.group(3)) if match.group(3) else start_chapter
+            end_verse = int(match.group(4))
+
+        lengths = chapter_lengths().get(book)
+        if not lengths:
+            return []
+        if not 1 <= start_chapter <= len(lengths) or not 1 <= end_chapter <= len(lengths):
+            return []
+        if (end_chapter, end_verse) < (start_chapter, start_verse):
+            return []
+
+        verses = []
+        for chapter in range(start_chapter, end_chapter + 1):
+            first = start_verse if chapter == start_chapter else 1
+            # A citation can run past the end of a chapter. Take what exists.
+            last = min(end_verse if chapter == end_chapter else lengths[chapter - 1],
+                       lengths[chapter - 1])
+            verses.extend((book, chapter, v) for v in range(first, last + 1))
+            if len(verses) > MAX_RANGE_VERSES:
+                return []
+
+        return verses
+    return []
 
 
 def is_direct_talmud(citation: str) -> bool:
@@ -123,9 +189,8 @@ def process_file(filepath: Path) -> dict:
             seen_link_pairs.add(link_pair)
 
             # Check if citation2 is a Tanakh verse
-            verse_ref = parse_verse_ref(citation2)
-            if verse_ref:
-                book, chapter, verse = verse_ref
+            verse_refs = parse_verse_refs(citation2)
+            if verse_refs:
                 category = cat1.strip()
 
                 # Skip Tanakh category entirely
@@ -136,16 +201,14 @@ def process_file(filepath: Path) -> dict:
                 if category == "Talmud" and not is_direct_talmud(citation1):
                     continue
 
-                # Count it
-                if category in MAJOR_CATEGORIES:
-                    verse_counts[book][chapter][verse][category] += 1
-                else:
-                    verse_counts[book][chapter][verse]["Other"] += 1
+                # Count it against every verse the citation covers
+                bucket = category if category in MAJOR_CATEGORIES else "Other"
+                for book, chapter, verse in verse_refs:
+                    verse_counts[book][chapter][verse][bucket] += 1
 
             # Also check citation1 (links are bidirectional)
-            verse_ref = parse_verse_ref(citation1)
-            if verse_ref:
-                book, chapter, verse = verse_ref
+            verse_refs = parse_verse_refs(citation1)
+            if verse_refs:
                 category = cat2.strip()
 
                 # Skip Tanakh category entirely
@@ -156,10 +219,9 @@ def process_file(filepath: Path) -> dict:
                 if category == "Talmud" and not is_direct_talmud(citation2):
                     continue
 
-                if category in MAJOR_CATEGORIES:
-                    verse_counts[book][chapter][verse][category] += 1
-                else:
-                    verse_counts[book][chapter][verse]["Other"] += 1
+                bucket = category if category in MAJOR_CATEGORIES else "Other"
+                for book, chapter, verse in verse_refs:
+                    verse_counts[book][chapter][verse][bucket] += 1
 
     if duplicates_skipped > 0:
         print(f"  Skipped {duplicates_skipped} duplicate link pairs")
