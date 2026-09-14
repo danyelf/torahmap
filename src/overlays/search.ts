@@ -6,8 +6,7 @@ import { tanakhKey } from '../types.ts';
 import { search, getMatchingVerseTerms, parseSearchTerms, stripNikkud, isHebrewQuery, findLexemesForWord, getLexemeForm, computeSnippetForMatch, type SearchResult, type LexemeId } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
-import { createHebrewKeyboard, closeHebrewKeyboard, isKeyboardOpen } from '../hebrewKeyboard.ts';
-import { trackSearchExecute, trackKeyboardToggle } from '../analytics.ts';
+import { trackSearchExecute } from '../analytics.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
@@ -47,7 +46,6 @@ let scrollHandler: (() => void) | null = null;
 // DOM references (for cleanup)
 let searchInput: HTMLInputElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
-let keyboardToggle: HTMLButtonElement | null = null;
 let searchResults: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
@@ -595,8 +593,7 @@ export const searchOverlay: Overlay = {
   renderControls(container: HTMLElement): void {
     container.innerHTML = `
       <div id="search-container">
-        <input type="text" id="search-input" class="keyboardInput" placeholder="Search Hebrew or English...">
-        <button id="keyboard-toggle" title="Toggle Hebrew keyboard">א</button>
+        <input type="text" id="search-input" placeholder="Search Hebrew or English...">
         <button id="search-clear">&times;</button>
       </div>
       <div id="search-options">
@@ -627,7 +624,6 @@ export const searchOverlay: Overlay = {
 
     searchInput = container.querySelector('#search-input');
     searchClear = container.querySelector('#search-clear');
-    keyboardToggle = container.querySelector('#keyboard-toggle');
     searchResults = container.querySelector('#search-results');
     searchHitCaption = container.querySelector('#search-hit-caption');
     wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
@@ -681,67 +677,38 @@ export const searchOverlay: Overlay = {
     const updateInputMode = () => {
       if (!searchInput) return;
       const query = searchInput.value;
-      const queryIsHebrew = query.length > 0 && isHebrewQuery(query);
-      // Consider it Hebrew mode if the query is Hebrew OR the keyboard is open
-      const isHebrew = queryIsHebrew || isKeyboardOpen();
 
-      // Set text direction
-      if (query.length === 0) {
-        searchInput.dir = isKeyboardOpen() ? 'rtl' : 'ltr';
-      } else if (queryIsHebrew) {
-        searchInput.dir = 'rtl';
-      } else {
-        searchInput.dir = 'ltr';
-      }
+      // Direction answers "what am I looking at", so it follows the raw text and
+      // flips on the first Hebrew letter, before there is enough to search for.
+      searchInput.dir = isHebrewQuery(query) ? 'rtl' : 'ltr';
 
-      // Hide checkbox for Hebrew (whole-word doesn't apply)
+      // The options describe what the search will do, so they follow the same
+      // rule it does: terms split on commas and the first one picks the path.
+      // Reading the raw text here instead would offer Hebrew options for
+      // "god, אלהים", which searches the English text.
+      const terms = parseSearchTerms(query);
+      const searchesHebrew = terms.length > 0 && isHebrewQuery(terms[0]);
+
+      // Whole-word matching doesn't apply to the Hebrew paths
       if (wholeWordCheckbox) {
         const optionsContainer = wholeWordCheckbox.closest('#search-options') as HTMLElement;
         if (optionsContainer) {
-          optionsContainer.style.display = isHebrew ? 'none' : 'block';
+          optionsContainer.style.display = searchesHebrew ? 'none' : 'block';
         }
       }
 
-      // Show Hebrew mode selector for Hebrew queries or when keyboard is open
       if (hebrewModeContainer) {
-        hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
+        hebrewModeContainer.style.display = searchesHebrew ? 'block' : 'none';
       }
     };
 
-    // Handle pasted text: strip nikkud from Hebrew, auto-switch mode on paste into empty input
+    // Handle pasted text: strip nikkud from Hebrew
     searchInput?.addEventListener('paste', (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain');
       if (!text) return;
 
       const input = searchInput!;
       const pasteIsHebrew = isHebrewQuery(text);
-      const inputIsEmpty = input.value.length === 0;
-
-      // Auto-switch mode when pasting into empty input
-      if (inputIsEmpty) {
-        if (pasteIsHebrew && !isKeyboardOpen()) {
-          createHebrewKeyboard(input);
-          if (keyboardToggle) keyboardToggle.classList.add('active');
-          updateInputMode();
-        } else if (!pasteIsHebrew && isKeyboardOpen()) {
-          closeHebrewKeyboard();
-          if (keyboardToggle) keyboardToggle.classList.remove('active');
-          updateInputMode();
-        }
-      }
-
-      // Reject paste if script doesn't match current mode (non-empty input)
-      if (!inputIsEmpty) {
-        const kbOpen = isKeyboardOpen();
-        if (pasteIsHebrew && !kbOpen) {
-          e.preventDefault();
-          return;
-        }
-        if (!pasteIsHebrew && kbOpen) {
-          e.preventDefault();
-          return;
-        }
-      }
 
       // For Hebrew text, strip nikkud and insert manually
       if (pasteIsHebrew) {
@@ -789,42 +756,6 @@ export const searchOverlay: Overlay = {
         }
       }
 
-      // Script enforcement: reject wrong-script chars, auto-switch on paste into empty
-      const afterSanitize = input.value;
-      let kbOpen = isKeyboardOpen();
-      if (afterSanitize) {
-        const hasHebrew = /[\u05D0-\u05EA]/.test(afterSanitize);
-        const hasLatin = /[a-zA-Z]/.test(afterSanitize);
-
-        // Auto-switch: pure wrong-script means paste into empty input — switch mode
-        if (hasHebrew && !hasLatin && !kbOpen) {
-          createHebrewKeyboard(input);
-          if (keyboardToggle) keyboardToggle.classList.add('active');
-          kbOpen = true;
-        } else if (hasLatin && !hasHebrew && kbOpen) {
-          closeHebrewKeyboard();
-          if (keyboardToggle) keyboardToggle.classList.remove('active');
-          kbOpen = false;
-        }
-
-        // Strip wrong-script characters (after potential mode switch)
-        const removePattern = kbOpen ? /[a-zA-Z]/g : /[\u05D0-\u05EA]/g;
-        const cleaned = afterSanitize.replace(removePattern, '');
-        if (cleaned !== afterSanitize) {
-          const cursor = input.selectionStart ?? afterSanitize.length;
-          let removedBeforeCursor = 0;
-          const charPattern = kbOpen ? /[a-zA-Z]/ : /[\u05D0-\u05EA]/;
-          for (let i = 0; i < Math.min(cursor, afterSanitize.length); i++) {
-            if (charPattern.test(afterSanitize[i])) {
-              removedBeforeCursor++;
-            }
-          }
-          input.value = cleaned;
-          const newPos = cursor - removedBeforeCursor;
-          input.setSelectionRange(newPos, newPos);
-        }
-      }
-
       const query = input.value.trim();
       updateInputMode();
       if (searchClear) {
@@ -838,7 +769,7 @@ export const searchOverlay: Overlay = {
         searchInput.value = '';
         searchClear!.style.display = 'none';
       }
-      // Update UI to reflect current mode (keyboard open or not)
+      // An emptied box has no Hebrew in it, so it reads left to right again
       updateInputMode();
       doSearch('');
     });
@@ -892,22 +823,6 @@ export const searchOverlay: Overlay = {
       }
     });
 
-    // Toggle Hebrew keyboard on button click
-    keyboardToggle?.addEventListener('click', () => {
-      if (searchInput) {
-        if (isKeyboardOpen()) {
-          closeHebrewKeyboard();
-          keyboardToggle!.classList.remove('active');
-          trackKeyboardToggle(false);
-        } else {
-          createHebrewKeyboard(searchInput);
-          keyboardToggle!.classList.add('active');
-          trackKeyboardToggle(true);
-        }
-        // Update mode selector visibility after keyboard state changes
-        updateInputMode();
-      }
-    });
   },
 
   renderLegend(_container: HTMLElement): void {
@@ -953,8 +868,6 @@ export const searchOverlay: Overlay = {
   },
 
   destroy(): void {
-    // Close Hebrew keyboard
-    closeHebrewKeyboard();
     // Clean up event listeners
     if (scrollHandler && searchResults) {
       searchResults.removeEventListener('scroll', scrollHandler);
@@ -967,7 +880,6 @@ export const searchOverlay: Overlay = {
     // Clear DOM references (for memory cleanup)
     searchInput = null;
     searchClear = null;
-    keyboardToggle = null;
     searchResults = null;
     searchHitCaption = null;
     wholeWordCheckbox = null;

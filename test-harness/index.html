@@ -29,13 +29,6 @@
       margin-bottom: 24px;
     }
 
-    /* Top row: controls + keyboard side by side */
-    .harness-top {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-    }
-
     /* Re-create the controls panel styling inline */
     #controls {
       position: static;
@@ -43,15 +36,6 @@
       padding: 12px;
       border-radius: 8px;
       width: 320px;
-      flex-shrink: 0;
-    }
-
-    /* Override keyboard positioning: inline in flex row, always visible */
-    #hebrew-keyboard-container {
-      position: relative !important;
-      left: auto !important;
-      top: auto !important;
-      margin-top: 0 !important;
       flex-shrink: 0;
     }
 
@@ -159,15 +143,9 @@
     <h1>Input Test Harness</h1>
     <div class="subtitle">Standalone search input flow — no WebGL, no map</div>
 
-    <div class="harness-top">
-      <div id="controls">
-        <div id="overlay-controls"></div>
-        <div id="overlay-legend"></div>
-      </div>
-
-      <!-- Pre-create keyboard container so it sits in the flex row
-           instead of being appended to body as a fixed overlay -->
-      <div id="hebrew-keyboard-container" class="hebrew-keyboard-container"></div>
+    <div id="controls">
+      <div id="overlay-controls"></div>
+      <div id="overlay-legend"></div>
     </div>
 
     <div id="status-line">
@@ -178,10 +156,6 @@
       <span class="status-item">
         <span class="status-label">Dir: </span>
         <span class="status-value" id="status-dir">ltr</span>
-      </span>
-      <span class="status-item">
-        <span class="status-label">Keyboard: </span>
-        <span class="status-value" id="status-keyboard">closed</span>
       </span>
       <span class="status-item">
         <span class="status-label">Selection: </span>
