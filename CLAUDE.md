@@ -102,10 +102,12 @@ A standalone test harness at `http://localhost:5173/test-harness/` provides the 
 │   ├── tanakh-structure.json     # Verse counts per chapter per book
 │   ├── commentary-counts.json    # Sefaria link counts by category
 │   ├── text-dating.json          # Estimated composition dates by verse
-│   ├── lexicon.json              # Hebrew/Aramaic dictionary from ETCBC BHSA
-│   ├── word-lexemes.json         # Written form -> the dictionary words it can be
-│   ├── verse-lexemes.json        # Verse -> the dictionary words occurring in it
-│   └── verse-morphology.json     # Grammatical parsing per word (not loaded by search)
+│   └── search/                   # Lexeme index for root-mode search (see its README)
+│       ├── README.md             # Where this data comes from and how to rebuild it
+│       ├── lexicon.json          # Hebrew/Aramaic dictionary from ETCBC BHSA
+│       ├── word-lexemes.json     # Written form -> the dictionary words it can be
+│       ├── verse-lexemes.json    # Verse -> the dictionary words occurring in it
+│       └── verse-morphology.json # Grammatical parsing per word (not loaded by search)
 │
 ├── data/texts/           # Source Hebrew & English verse texts (78 files)
 │
@@ -114,9 +116,10 @@ A standalone test harness at `http://localhost:5173/test-harness/` provides the 
 │   ├── download-texts.sh             # Download texts from Sefaria
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
 │   ├── generate-text-dating.ts       # Generate text dating data from source ranges
-│   ├── generate-lexeme-index.py      # Build the Hebrew lexeme index from ETCBC BHSA
 │   ├── process_sefaria_links.py      # (Deprecated) Old commentary counts script
-│   └── process_sefaria_links_v2.py   # Generate commentary counts (USE THIS)
+│   ├── process_sefaria_links_v2.py   # Generate commentary counts (USE THIS)
+│   └── search/
+│       └── generate-lexeme-index.py  # Build the Hebrew lexeme index from ETCBC BHSA
 │
 ```
 

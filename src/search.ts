@@ -192,9 +192,9 @@ export async function loadLexiconData(): Promise<void> {
   try {
     console.log('Loading lexeme index...');
     const [lexiconRes, formsRes, versesRes] = await Promise.all([
-      fetchData('lexicon.json'),
-      fetchData('word-lexemes.json'),
-      fetchData('verse-lexemes.json'),
+      fetchData('search/lexicon.json'),
+      fetchData('search/word-lexemes.json'),
+      fetchData('search/verse-lexemes.json'),
     ]);
 
     if (!lexiconRes.ok || !formsRes.ok || !versesRes.ok) {

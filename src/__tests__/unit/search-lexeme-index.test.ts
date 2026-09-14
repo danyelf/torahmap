@@ -5,16 +5,17 @@
 // generated files directly and assert the properties search.ts relies on.
 //
 // Regenerate the files with:
-//   python3 scripts/generate-lexeme-index.py
+//   .venv/bin/python scripts/search/generate-lexeme-index.py
 
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
-const lexiconPath = path.join(dataDir, 'lexicon.json');
-const formsPath = path.join(dataDir, 'word-lexemes.json');
-const versesPath = path.join(dataDir, 'verse-lexemes.json');
+const searchDataDir = path.join(dataDir, 'search');
+const lexiconPath = path.join(searchDataDir, 'lexicon.json');
+const formsPath = path.join(searchDataDir, 'word-lexemes.json');
+const versesPath = path.join(searchDataDir, 'verse-lexemes.json');
 
 const dataExists =
   fs.existsSync(lexiconPath) && fs.existsSync(formsPath) && fs.existsSync(versesPath);

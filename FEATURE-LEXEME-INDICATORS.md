@@ -96,9 +96,10 @@ being resolved.
 ### Where the Data Comes From
 
 The lexeme index is built from the ETCBC BHSA database and loaded from
-`/data/lexicon.json`, `/data/word-lexemes.json` and `/data/verse-lexemes.json`.
-Regenerate it with `python3 scripts/generate-lexeme-index.py`; see
-DATA_REGENERATION.md.
+`/data/search/lexicon.json`, `/data/search/word-lexemes.json` and
+`/data/search/verse-lexemes.json`. Regenerate it with
+`.venv/bin/python scripts/search/generate-lexeme-index.py`; see
+`public/data/search/README.md`.
 
 ### Performance
 

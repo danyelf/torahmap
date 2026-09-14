@@ -28,9 +28,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
-const lexiconPath = path.join(dataDir, 'lexicon.json');
-const formsPath = path.join(dataDir, 'word-lexemes.json');
-const versesPath = path.join(dataDir, 'verse-lexemes.json');
+const searchDataDir = path.join(dataDir, 'search');
+const lexiconPath = path.join(searchDataDir, 'lexicon.json');
+const formsPath = path.join(searchDataDir, 'word-lexemes.json');
+const versesPath = path.join(searchDataDir, 'verse-lexemes.json');
 const allTextsPath = path.join(dataDir, 'all-texts.json');
 
 const dataExists =

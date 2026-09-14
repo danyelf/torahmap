@@ -2,37 +2,18 @@
 """
 Build the Hebrew lexeme index used by Torah Map's root-mode search.
 
-Source: the ETCBC BHSA database (Biblia Hebraica Stuttgartensia Amstelodamensis),
-read through Text-Fabric. BHSA identifies every word in the Hebrew Bible with a
-lexeme -- a dictionary entry -- and keeps homographs apart, so the preposition
-"upon" and the verb "ascend" are separate entries even where they are spelled
-alike. It also carries an English gloss per lexeme and the grammatical parsing of
-each occurrence.
-
-Outputs, all under public/data/:
-
-  lexicon.json          the dictionary: one row per lexeme, holding its
-                        vocalized display form, English gloss, part of speech,
-                        language and (where BHSA supplies one) the derivational
-                        root
-  word-lexemes.json     written form (nikkud stripped, final letters folded to
-                        their medial shape) -> the lexemes it can be, most
-                        frequent reading first
-  verse-lexemes.json    verse key -> the distinct lexemes occurring in it
-  verse-morphology.json every word occurrence in order, with its lexeme and its
-                        grammatical parsing, for a future grammatical-form
-                        filter. Search does not load this file.
-
-Lexemes are referred to by their position in the lexicon.json array, which keeps
-the two large per-verse files compact.
+Reads the ETCBC BHSA database through Text-Fabric and writes four files into
+public/data/search/. What each file holds, where BHSA comes from and how to set
+up Text-Fabric are all documented in public/data/search/README.md — read that
+first.
 
 Prerequisites:
-  pip install text-fabric
+  .venv/bin/pip install text-fabric
   The BHSA data must be present under ~/text-fabric-data/github/ETCBC/bhsa
-  (Text-Fabric downloads it with: text-fabric ETCBC/bhsa)
+  (Text-Fabric downloads it with: .venv/bin/text-fabric ETCBC/bhsa)
 
 Usage:
-  python3 scripts/generate-lexeme-index.py
+  .venv/bin/python scripts/search/generate-lexeme-index.py
 """
 
 import collections
@@ -49,8 +30,11 @@ except ImportError:  # pragma: no cover - operator-facing message
         "  python3 -m venv .venv && .venv/bin/pip install text-fabric"
     )
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(REPO_ROOT, "public", "data")
+# The four generated files live in their own folder, alongside a README that
+# records where they came from.
+OUT_DIR = os.path.join(DATA_DIR, "search")
 BHSA_VERSION = "2021"
 BHSA_LOCATION = os.path.expanduser(
     f"~/text-fabric-data/github/ETCBC/bhsa/tf/{BHSA_VERSION}"
@@ -373,11 +357,12 @@ def main():
 
     # ---- write ----------------------------------------------------------
     def write(name, payload):
-        path = os.path.join(DATA_DIR, name)
+        path = os.path.join(OUT_DIR, name)
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(payload, fh, ensure_ascii=False, separators=(",", ":"))
         print(f"  wrote {name} ({os.path.getsize(path) / 1024:.0f} KB)")
 
+    os.makedirs(OUT_DIR, exist_ok=True)
     print("\nWriting:")
     write(
         "lexicon.json",
