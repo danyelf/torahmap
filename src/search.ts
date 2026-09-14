@@ -765,7 +765,9 @@ export function search(
   const terms = parseSearchTerms(query);
   if (terms.length === 0) return [];
 
-  // Determine language from first term (all terms use same language)
+  // The first term picks the path for the whole query. A query that mixes
+  // scripts searches whichever text its first term points at, so the other
+  // terms simply find nothing.
   const isHebrew = isHebrewQuery(terms[0]);
 
   // For Hebrew, dispatch based on mode

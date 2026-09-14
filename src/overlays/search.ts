@@ -677,23 +677,28 @@ export const searchOverlay: Overlay = {
     const updateInputMode = () => {
       if (!searchInput) return;
       const query = searchInput.value;
-      // The text in the box is the only signal: Hebrew reads right to left,
-      // anything else (including an empty box) reads left to right.
-      const isHebrew = query.length > 0 && isHebrewQuery(query);
 
-      searchInput.dir = isHebrew ? 'rtl' : 'ltr';
+      // Direction answers "what am I looking at", so it follows the raw text and
+      // flips on the first Hebrew letter, before there is enough to search for.
+      searchInput.dir = isHebrewQuery(query) ? 'rtl' : 'ltr';
 
-      // Hide checkbox for Hebrew (whole-word doesn't apply)
+      // The options describe what the search will do, so they follow the same
+      // rule it does: terms split on commas and the first one picks the path.
+      // Reading the raw text here instead would offer Hebrew options for
+      // "god, אלהים", which searches the English text.
+      const terms = parseSearchTerms(query);
+      const searchesHebrew = terms.length > 0 && isHebrewQuery(terms[0]);
+
+      // Whole-word matching doesn't apply to the Hebrew paths
       if (wholeWordCheckbox) {
         const optionsContainer = wholeWordCheckbox.closest('#search-options') as HTMLElement;
         if (optionsContainer) {
-          optionsContainer.style.display = isHebrew ? 'none' : 'block';
+          optionsContainer.style.display = searchesHebrew ? 'none' : 'block';
         }
       }
 
-      // Show Hebrew mode selector for Hebrew queries
       if (hebrewModeContainer) {
-        hebrewModeContainer.style.display = isHebrew ? 'block' : 'none';
+        hebrewModeContainer.style.display = searchesHebrew ? 'block' : 'none';
       }
     };
 
@@ -764,7 +769,7 @@ export const searchOverlay: Overlay = {
         searchInput.value = '';
         searchClear!.style.display = 'none';
       }
-      // Update UI to reflect current mode (keyboard open or not)
+      // An emptied box has no Hebrew in it, so it reads left to right again
       updateInputMode();
       doSearch('');
     });

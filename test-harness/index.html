@@ -29,13 +29,6 @@
       margin-bottom: 24px;
     }
 
-    /* Top row: controls panel */
-    .harness-top {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-    }
-
     /* Re-create the controls panel styling inline */
     #controls {
       position: static;
@@ -150,11 +143,9 @@
     <h1>Input Test Harness</h1>
     <div class="subtitle">Standalone search input flow — no WebGL, no map</div>
 
-    <div class="harness-top">
-      <div id="controls">
-        <div id="overlay-controls"></div>
-        <div id="overlay-legend"></div>
-      </div>
+    <div id="controls">
+      <div id="overlay-controls"></div>
+      <div id="overlay-legend"></div>
     </div>
 
     <div id="status-line">

@@ -28,7 +28,6 @@ export function trackSearchExecute(
   });
 }
 
-
 export function trackVerseClick(book: string, chapter: number, verse: number): void {
   track('verse_click', { book, chapter, verse });
 }

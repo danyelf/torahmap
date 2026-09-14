@@ -625,6 +625,50 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input', { bubbles: true }));
       expect(input.dir).toBe('ltr');
     });
+
+    it('shows the Hebrew options only when the search will take the Hebrew path', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const hebrewModes = container.querySelector('#hebrew-mode-container') as HTMLElement;
+
+      // Terms split on commas, and the search picks its path from the first
+      // term, so a leading English term means an English search even though
+      // there is Hebrew later in the box.
+      input.value = 'god, אלהים';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      expect(hebrewModes.style.display).toBe('none');
+    });
+
+    it('turns right to left on the very first Hebrew letter typed', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+
+      // One letter is too short to be a search term, but the box should still
+      // read right to left as soon as there is Hebrew in it.
+      input.value = 'א';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      expect(input.dir).toBe('rtl');
+    });
+
+    it('shows the Hebrew options when the first term is Hebrew', () => {
+      const container = document.createElement('div');
+      searchOverlay.renderControls?.(container);
+
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const hebrewModes = container.querySelector('#hebrew-mode-container') as HTMLElement;
+
+      input.value = 'אלהים, god';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+
+      expect(hebrewModes.style.display).toBe('block');
+      expect(input.dir).toBe('rtl');
+    });
   });
 
   describe('Render Legend', () => {
