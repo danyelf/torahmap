@@ -1,12 +1,14 @@
 // Help modal for Torah Map
 import './styles/help.css';
+import { renderCreditsHtml } from './credits.ts';
+import { getAllOverlays } from './overlays/registry.ts';
 
 const STORAGE_KEY_SEEN = 'torahMap.helpSeen';
 const STORAGE_KEY_TAB = 'torahMap.helpTab';
 
-type TabId = 'overview' | 'controls' | 'overlays';
+type TabId = 'overview' | 'controls' | 'overlays' | 'credits';
 
-const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
+const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => string) }> = {
   overview: {
     title: 'Overview',
     content: `
@@ -20,16 +22,9 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
       </ul>
       <p>Switch between different analytical overlays to reveal patterns across 23,000+ verses.</p>
       <p class="credits">
-        Hebrew text is
-        <a href="https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94" target="_blank">Miqra according to the Masorah</a> (CC BY-SA).
-        English is
-        <a href="https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/" target="_blank">THE JPS TANAKH: Gender-Sensitive Edition</a>,
-        Jewish Publication Society (CC BY-NC).
-      </p>
-      <p class="credits">
-        By <a href="https://danyelfisher.info" target="_blank">Danyel Fisher</a> ·
-        <a href="https://github.com/danyelf/torahmap" target="_blank">GitHub</a> ·
-        Data from <a href="https://www.sefaria.org/" target="_blank">Sefaria</a>
+        By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a> ·
+        <a href="https://github.com/danyelf/torahmap" target="_blank" rel="noopener noreferrer">GitHub</a> ·
+        <button type="button" class="link-button" data-goto-tab="credits">Sources and credits</button>
       </p>
     `,
   },
@@ -62,6 +57,14 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string }> = {
       </dl>
     `,
   },
+  credits: {
+    title: 'Credits',
+    content: () => `
+      <p>The map is built out of other people's work. Several of these sources
+      ask to be named, and this is where that happens.</p>
+      ${renderCreditsHtml(getAllOverlays())}
+    `,
+  },
 };
 
 let modal: HTMLDivElement | null = null;
@@ -78,6 +81,7 @@ function createModal(): HTMLDivElement {
           <button class="help-tab active" data-tab="overview">Overview</button>
           <button class="help-tab" data-tab="controls">Controls</button>
           <button class="help-tab" data-tab="overlays">Overlays</button>
+          <button class="help-tab" data-tab="credits">Credits</button>
         </div>
         <button class="help-close">&times;</button>
       </div>
@@ -100,6 +104,14 @@ function createModal(): HTMLDivElement {
     });
   });
 
+  // Anything inside the body is replaced whenever the tab changes, so a control
+  // that switches tabs is handled here rather than bound to the element.
+  const body = container.querySelector('.help-body') as HTMLElement;
+  body.addEventListener('click', (event) => {
+    const target = (event.target as HTMLElement).closest('[data-goto-tab]');
+    if (target) switchTab(container, (target as HTMLElement).dataset.gotoTab as TabId);
+  });
+
   return container;
 }
 
@@ -111,9 +123,11 @@ function switchTab(container: HTMLElement, tabId: TabId): void {
     tab.classList.toggle('active', (tab as HTMLElement).dataset.tab === tabId);
   });
 
-  // Update body content
+  // Update body content. A tab whose content depends on state gathered at
+  // runtime supplies a function; the rest are plain strings.
   const body = container.querySelector('.help-body') as HTMLElement;
-  body.innerHTML = TAB_CONTENT[tabId].content;
+  const { content } = TAB_CONTENT[tabId];
+  body.innerHTML = typeof content === 'function' ? content() : content;
 }
 
 function showHelp(): void {

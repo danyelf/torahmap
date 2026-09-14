@@ -16,6 +16,15 @@ from the bucket, which needs no credentials.
 The Hebrew lexeme index behind root-mode search comes from the
 [ETCBC BHSA](https://github.com/ETCBC/bhsa) database instead.
 
+Every source named here is also credited in the app, in the Credits tab of the
+help modal. The collection dates shown there are hand-maintained strings in
+`src/credits.ts`: no data file carries a generation timestamp, and a git commit
+date cannot stand in for one, because a commit that merely moves or refactors a
+data file would claim it had been re-collected that month. **Whenever you run
+one of the commands below, update that source's `collected` date in
+`src/credits.ts`.** Where no date is recorded the tab says so rather than
+guessing.
+
 ## Verse Texts
 
 ```bash
@@ -25,6 +34,8 @@ bash scripts/download-texts.sh
 # Bundle verse texts into single file (required after downloading)
 npx tsx scripts/bundle-texts.ts
 ```
+
+Then update `collected` for both editions in `src/credits.ts`.
 
 ### Which editions
 
@@ -61,6 +72,8 @@ thing afterwards.
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 ```
 
+Then update Sefaria's `collected` date in `src/credits.ts`.
+
 ## Hebrew Lexeme Index
 
 Root-mode search needs to know which dictionary word each written form can be.
@@ -74,6 +87,8 @@ Text-Fabric the first time. Once that setup is done:
 ```bash
 .venv/bin/python scripts/search/generate-lexeme-index.py
 ```
+
+Then update the BHSA `collected` date in `src/overlays/search.ts`.
 
 ## Text Dating Data
 
@@ -102,6 +117,9 @@ This downloads ~470MB of CSV files.
 ```bash
 python3 scripts/process_sefaria_links.py
 ```
+
+Then update the `collected` date in `src/overlays/commentary.ts`. It should say
+when the CSVs were downloaded, not when the script last ran.
 
 ### What the script does:
 

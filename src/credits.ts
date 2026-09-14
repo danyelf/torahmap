@@ -122,5 +122,5 @@ export function renderCreditsHtml(
     ...overlays.map((o) => renderCreditBlock(o.name, o.credits ?? [])),
   ];
 
-  return `<div class="credits">${blocks.join('')}</div>`;
+  return `<div class="credits-list">${blocks.join('')}</div>`;
 }
