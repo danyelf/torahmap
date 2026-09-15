@@ -28,7 +28,15 @@ interface ParshaData {
   };
 }
 
-type OccasionCategory = 'rosh-chodesh' | 'four-shabbatot' | 'high-holidays' | 'sukkot' | 'pesach' | 'shavuot' | 'fast-days' | 'other';
+type OccasionCategory =
+  | 'rosh-chodesh'
+  | 'four-shabbatot'
+  | 'high-holidays'
+  | 'sukkot'
+  | 'pesach'
+  | 'shavuot'
+  | 'fast-days'
+  | 'other';
 
 interface SpecialOccasionData {
   name: string;
@@ -121,7 +129,7 @@ function getVerseCount(book: string, chapter: number): number {
 // Iterate over all verses in a range, calling callback for each
 function forEachVerseInRange(
   range: VerseRange,
-  callback: (book: string, chapter: number, verse: number) => void
+  callback: (book: string, chapter: number, verse: number) => void,
 ): void {
   for (let ch = range.start.chapter; ch <= range.end.chapter; ch++) {
     const startV = ch === range.start.chapter ? range.start.verse : 1;
@@ -220,8 +228,8 @@ export const haftarahOverlay: Overlay = {
     try {
       // Load both data files in parallel
       const [haftarahRes, structureRes] = await Promise.all([
-        fetchData("haftarah-mappings.json"),
-        fetchData("tanakh-structure.json"),
+        fetchData('haftarah-mappings.json'),
+        fetchData('tanakh-structure.json'),
       ]);
 
       if (!haftarahRes.ok) {
@@ -339,11 +347,12 @@ export const haftarahOverlay: Overlay = {
 
       const isHoveredItem =
         (hoveredParshaTorah && itemsFromHaftarah.includes(hoveredParshaTorah)) ||
-        (hoveredItemsHaftarah &&
-          hoveredItemsHaftarah.some((hi) => itemsFromHaftarah.includes(hi)));
+        (hoveredItemsHaftarah && hoveredItemsHaftarah.some((hi) => itemsFromHaftarah.includes(hi)));
 
       if (isHoveredItem) {
-        const brightColors = colors.map((c) => adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR));
+        const brightColors = colors.map((c) =>
+          adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
+        );
         return brightColors.length === 1 ? brightColors[0] : brightColors;
       }
 
@@ -391,7 +400,7 @@ export const haftarahOverlay: Overlay = {
     const numStops = 10;
     for (let i = 0; i < numStops; i++) {
       const color = getItemColor(i * (totalItems / numStops), totalItems || 81);
-      const rgb = color.map(c => Math.round(c * 255)).join(', ');
+      const rgb = color.map((c) => Math.round(c * 255)).join(', ');
       const percent = (i / (numStops - 1)) * 100;
       gradientStops.push(`rgb(${rgb}) ${percent}%`);
     }

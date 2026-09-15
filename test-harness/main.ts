@@ -4,11 +4,7 @@
 
 import { loadAllVerseTexts } from '../src/verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
-import {
-  registerAllOverlays,
-  getOverlay,
-  configureSearch,
-} from '../src/overlays/index.ts';
+import { registerAllOverlays, getOverlay, configureSearch } from '../src/overlays/index.ts';
 
 // The registry is where overlays come from — fill it the way the app does.
 registerAllOverlays();
@@ -88,13 +84,21 @@ function instrumentInput(): void {
 
   input.addEventListener('input', () => {
     const val = input.value;
-    logEvent('input', `value="${esc(val)}" dir=${input.dir} cursor=${input.selectionStart}`, isHeb(val));
+    logEvent(
+      'input',
+      `value="${esc(val)}" dir=${input.dir} cursor=${input.selectionStart}`,
+      isHeb(val),
+    );
   });
 
-  input.addEventListener('paste', (e: ClipboardEvent) => {
-    const text = e.clipboardData?.getData('text/plain') ?? '';
-    logEvent('paste', `"${esc(text)}"`, isHeb(text));
-  }, { capture: true }); // capture to log BEFORE the overlay's handler strips nikkud
+  input.addEventListener(
+    'paste',
+    (e: ClipboardEvent) => {
+      const text = e.clipboardData?.getData('text/plain') ?? '';
+      logEvent('paste', `"${esc(text)}"`, isHeb(text));
+    },
+    { capture: true },
+  ); // capture to log BEFORE the overlay's handler strips nikkud
 
   input.addEventListener('compositionstart', (e) => {
     logEvent('comp-start', `data="${esc(e.data ?? '')}"`);
@@ -112,9 +116,13 @@ function instrumentInput(): void {
     logEvent('blur', '#search-input');
   });
 
-  input.addEventListener('keydown', (e) => {
-    logEvent('keydown', `key="${e.key}" code=${e.code} prevent=${e.defaultPrevented}`);
-  }, { capture: true });
+  input.addEventListener(
+    'keydown',
+    (e) => {
+      logEvent('keydown', `key="${e.key}" code=${e.code} prevent=${e.defaultPrevented}`);
+    },
+    { capture: true },
+  );
 }
 
 // --- Main ---
@@ -124,10 +132,7 @@ async function main(): Promise<void> {
   logEvent('init', 'Loading data...');
 
   // Load data in parallel
-  const [verseTexts] = await Promise.all([
-    loadAllVerseTexts(),
-    loadLexiconData(),
-  ]);
+  const [verseTexts] = await Promise.all([loadAllVerseTexts(), loadLexiconData()]);
 
   logEvent('init', `Loaded verse texts (${Object.keys(verseTexts).length} books)`);
 

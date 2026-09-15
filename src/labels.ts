@@ -1,6 +1,6 @@
 // Render book labels as HTML overlays
 
-import type { TanakhLayout } from "./types.ts";
+import type { TanakhLayout } from './types.ts';
 
 interface BookBounds {
   minX: number;
@@ -36,12 +36,12 @@ export function createBookLabels(
     books[v.book].minY = Math.min(books[v.book].minY, v.y);
   }
 
-  const labels = document.createElement("div");
-  labels.id = "book-labels";
-  labels.style.cssText = "position:fixed;top:0;left:0;pointer-events:none;";
+  const labels = document.createElement('div');
+  labels.id = 'book-labels';
+  labels.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;';
 
   for (const [name, pos] of Object.entries(books)) {
-    const label = document.createElement("div");
+    const label = document.createElement('div');
     label.style.cssText = `
       position:absolute;
       color:#eee;
@@ -56,17 +56,17 @@ export function createBookLabels(
     label.dataset.bookWidth = String(pos.maxX - pos.minX);
 
     // Hebrew name (always shown, without nikkud)
-    const heSpan = document.createElement("span");
-    heSpan.className = "book-label-he";
+    const heSpan = document.createElement('span');
+    heSpan.className = 'book-label-he';
     heSpan.style.fontFamily = '"Noto Sans Hebrew", system-ui, sans-serif';
     heSpan.textContent = hebrewNames?.[name] ?? name;
     label.appendChild(heSpan);
 
     // English name (shown when there's room)
-    const enSpan = document.createElement("span");
-    enSpan.className = "book-label-en";
+    const enSpan = document.createElement('span');
+    enSpan.className = 'book-label-en';
     enSpan.textContent = ` ${name}`;
-    enSpan.style.cssText = "font-family:system-ui,sans-serif;";
+    enSpan.style.cssText = 'font-family:system-ui,sans-serif;';
     label.appendChild(enSpan);
 
     labels.appendChild(label);
@@ -76,39 +76,32 @@ export function createBookLabels(
   return labels;
 }
 
-export function updateLabelPositions(
-  labelsContainer: HTMLElement,
-  pan: Pan,
-  zoom: number,
-): void {
+export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
   // Scale font size with zoom, clamped to prevent extremes
-  const fontSize = Math.max(
-    MIN_FONT_SIZE,
-    Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom),
-  );
+  const fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
 
   // Scale gap proportionally to font size
   const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
 
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement) {
-      const rightX = parseFloat(label.dataset.rightX || "0");
-      const topY = parseFloat(label.dataset.topY || "0");
-      const bookWidth = parseFloat(label.dataset.bookWidth || "0");
+      const rightX = parseFloat(label.dataset.rightX || '0');
+      const topY = parseFloat(label.dataset.topY || '0');
+      const bookWidth = parseFloat(label.dataset.bookWidth || '0');
       // Position at book's right edge, label extends leftward via translateX(-100%)
       const screenX = (rightX + pan.x) * zoom;
       // Position so the gap from label bottom to verse top scales with font size
       const screenY = (topY + pan.y) * zoom - fontSize - gap;
-      label.style.left = screenX + "px";
-      label.style.top = screenY + "px";
-      label.style.fontSize = fontSize + "px";
-      label.style.transform = "translateX(-100%)";
+      label.style.left = screenX + 'px';
+      label.style.top = screenY + 'px';
+      label.style.fontSize = fontSize + 'px';
+      label.style.transform = 'translateX(-100%)';
 
       // Show English name only when the book is wide enough on screen
       const bookScreenWidth = bookWidth * zoom;
-      const enSpan = label.querySelector<HTMLElement>(".book-label-en");
+      const enSpan = label.querySelector<HTMLElement>('.book-label-en');
       if (enSpan) {
-        enSpan.style.display = bookScreenWidth >= ENGLISH_MIN_BOOK_WIDTH_PX ? "" : "none";
+        enSpan.style.display = bookScreenWidth >= ENGLISH_MIN_BOOK_WIDTH_PX ? '' : 'none';
       }
     }
   }

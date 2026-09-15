@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  parseUrlState,
-  parseVerseFromUrl,
-} from '../../urlState';
+import { parseUrlState, parseVerseFromUrl } from '../../urlState';
 import { mockWindowLocation } from '../helpers/mocks';
 import { registerAllOverlays } from '../../overlays/index';
 import { overlayUrlParams } from '../helpers/overlayUrlParams';
@@ -150,7 +147,7 @@ describe('URL Parameter Security Validation', () => {
   describe('Overlay Name Validation', () => {
     it('accepts valid overlay names', () => {
       const validOverlays = ['commentary', 'trop', 'search'];
-      validOverlays.forEach(overlay => {
+      validOverlays.forEach((overlay) => {
         mockWindowLocation(`http://localhost:5173/#overlay=${overlay}`);
         const state = parseUrlState(overlayUrlParams);
         expect(state.overlay).toBe(overlay);
@@ -171,7 +168,7 @@ describe('URL Parameter Security Validation', () => {
         'overlay;command',
         'overlay|pipe',
       ];
-      invalidOverlays.forEach(overlay => {
+      invalidOverlays.forEach((overlay) => {
         mockWindowLocation(`http://localhost:5173/#overlay=${encodeURIComponent(overlay)}`);
         const state = parseUrlState(overlayUrlParams);
         expect(state.overlay).toBeUndefined();
@@ -206,8 +203,10 @@ describe('URL Parameter Security Validation', () => {
         'Tanakh',
         'all',
       ];
-      validCategories.forEach(category => {
-        mockWindowLocation(`http://localhost:5173/#overlay=commentary&category=${encodeURIComponent(category)}`);
+      validCategories.forEach((category) => {
+        mockWindowLocation(
+          `http://localhost:5173/#overlay=commentary&category=${encodeURIComponent(category)}`,
+        );
         const state = parseUrlState(overlayUrlParams);
         expect(state.overlayParams.category).toBe(category);
       });
@@ -239,7 +238,7 @@ describe('URL Parameter Security Validation', () => {
         'munach',
         'pashta',
       ];
-      validTrops.forEach(trop => {
+      validTrops.forEach((trop) => {
         mockWindowLocation(`http://localhost:5173/#overlay=trop&trop=${trop}`);
         const state = parseUrlState(overlayUrlParams);
         expect(state.overlayParams.trop).toBe(trop);
@@ -262,7 +261,9 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Search Query Validation', () => {
     it('accepts search query with Hebrew text', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
+      mockWindowLocation(
+        'http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA',
+      );
       const state = parseUrlState(overlayUrlParams);
       expect(state.overlayParams.q).toBe('בראשית');
     });

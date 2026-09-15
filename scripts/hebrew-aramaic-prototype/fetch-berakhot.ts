@@ -2,16 +2,16 @@
  * Fetch and cache the Wikisource Talmud Bavli Berakhot JSON
  * from the public Sefaria-Export GCS bucket.
  */
-import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const BERAKHOT_URL =
-  "https://storage.googleapis.com/sefaria-export/json/Talmud/Bavli/Seder%20Zeraim/Berakhot/Hebrew/Wikisource%20Talmud%20Bavli.json";
+  'https://storage.googleapis.com/sefaria-export/json/Talmud/Bavli/Seder%20Zeraim/Berakhot/Hebrew/Wikisource%20Talmud%20Bavli.json';
 
-const CACHE_PATH = join(__dirname, "cache", "berakhot.json");
+const CACHE_PATH = join(__dirname, 'cache', 'berakhot.json');
 
 /**
  * Wikisource Talmud Bavli JSON shape (relevant subset):
@@ -31,7 +31,7 @@ export interface WikisourceTalmud {
 export async function fetchBerakhot(): Promise<WikisourceTalmud> {
   try {
     await stat(CACHE_PATH);
-    const cached = await readFile(CACHE_PATH, "utf-8");
+    const cached = await readFile(CACHE_PATH, 'utf-8');
     return JSON.parse(cached);
   } catch {
     // Cache miss — fetch
@@ -44,7 +44,7 @@ export async function fetchBerakhot(): Promise<WikisourceTalmud> {
   }
   const text = await response.text();
   await mkdir(dirname(CACHE_PATH), { recursive: true });
-  await writeFile(CACHE_PATH, text, "utf-8");
+  await writeFile(CACHE_PATH, text, 'utf-8');
   console.error(`Cached to ${CACHE_PATH} (${(text.length / 1024).toFixed(0)} KB)`);
   return JSON.parse(text);
 }
@@ -68,11 +68,11 @@ export function flattenBerakhot(data: WikisourceTalmud): BerakhotSegment[] {
     // Wikisource pads indices 0–1 with empty arrays (no daf 1).
     // amudIndex 2 = daf 2a, 3 = 2b, 4 = 3a, 5 = 3b, …
     const dafNum = Math.floor(amudIndex / 2) + 1;
-    const side = amudIndex % 2 === 0 ? "a" : "b";
+    const side = amudIndex % 2 === 0 ? 'a' : 'b';
     const daf = `${dafNum}${side}`;
     for (let segmentIndex = 0; segmentIndex < amud.length; segmentIndex++) {
       const text = amud[segmentIndex];
-      if (typeof text !== "string" || text.length === 0) continue;
+      if (typeof text !== 'string' || text.length === 0) continue;
       out.push({ amudIndex, segmentIndex, daf, text });
     }
   }

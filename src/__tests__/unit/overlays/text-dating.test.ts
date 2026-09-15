@@ -109,9 +109,7 @@ describe('Text Dating Overlay', () => {
     it('loads text-dating data on init', async () => {
       await textDatingOverlay.init?.();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/text-dating.json')
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('data/text-dating.json'));
     });
 
     it('handles fetch errors gracefully', async () => {
@@ -146,7 +144,8 @@ describe('Text Dating Overlay', () => {
 
     it('assigns Pre-Monarchic era color (oldest)', () => {
       const verse = createVerse({ book: 'Judges', chapter: 5, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       assertValidColor(color!);
       expect(color).toBeDefined();
@@ -172,7 +171,8 @@ describe('Text Dating Overlay', () => {
       // Re-init with new data
       return textDatingOverlay.init?.().then(() => {
         const verse = createVerse({ book: 'Exodus', chapter: 1, verse: 1 });
-        const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+        const color = textDatingOverlay.getVerseColor?.(verse) as
+          [number, number, number] | null | undefined;
 
         assertValidColor(color!);
         expect(color).toBeDefined();
@@ -181,7 +181,8 @@ describe('Text Dating Overlay', () => {
 
     it('assigns Late Monarchic era color', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 2, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       assertValidColor(color!);
       expect(color).toBeDefined();
@@ -194,7 +195,8 @@ describe('Text Dating Overlay', () => {
 
     it('assigns Exilic era color', () => {
       const verse = createVerse({ book: 'Isaiah', chapter: 40, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       assertValidColor(color!);
       expect(color).toBeDefined();
@@ -202,7 +204,8 @@ describe('Text Dating Overlay', () => {
 
     it('assigns Persian Period era color', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       assertValidColor(color!);
       expect(color).toBeDefined();
@@ -210,7 +213,8 @@ describe('Text Dating Overlay', () => {
 
     it('assigns Hellenistic era color (newest)', () => {
       const verse = createVerse({ book: 'Daniel', chapter: 1, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       assertValidColor(color!);
       expect(color).toBeDefined();
@@ -218,21 +222,24 @@ describe('Text Dating Overlay', () => {
 
     it('returns null for verse without dating data', () => {
       const verse = createVerse({ book: 'UnknownBook', chapter: 1, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       expect(color).toBeNull();
     });
 
     it('returns null for missing chapter in book', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 50, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       expect(color).toBeNull();
     });
 
     it('returns null for missing verse in chapter', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 999 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       expect(color).toBeNull();
     });
@@ -274,15 +281,23 @@ describe('Text Dating Overlay', () => {
         const earlierVerse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
         const laterVerse = createVerse({ book: 'TestBook', chapter: 1, verse: 2 });
 
-        const earlierColor = textDatingOverlay.getVerseColor?.(earlierVerse) as [number, number, number] | null | undefined;
-        const laterColor = textDatingOverlay.getVerseColor?.(laterVerse) as [number, number, number] | null | undefined;
+        const earlierColor = textDatingOverlay.getVerseColor?.(earlierVerse) as
+          [number, number, number] | null | undefined;
+        const laterColor = textDatingOverlay.getVerseColor?.(laterVerse) as
+          [number, number, number] | null | undefined;
 
         assertValidColor(earlierColor!);
         assertValidColor(laterColor!);
 
         // Later verse should be lighter (larger RGB values)
-        const earlierBrightness = (earlierColor as [number, number, number])[0] + (earlierColor as [number, number, number])[1] + (earlierColor as [number, number, number])[2];
-        const laterBrightness = (laterColor as [number, number, number])[0] + (laterColor as [number, number, number])[1] + (laterColor as [number, number, number])[2];
+        const earlierBrightness =
+          (earlierColor as [number, number, number])[0] +
+          (earlierColor as [number, number, number])[1] +
+          (earlierColor as [number, number, number])[2];
+        const laterBrightness =
+          (laterColor as [number, number, number])[0] +
+          (laterColor as [number, number, number])[1] +
+          (laterColor as [number, number, number])[2];
 
         expect(laterBrightness).toBeGreaterThanOrEqual(earlierBrightness);
       });
@@ -306,16 +321,27 @@ describe('Text Dating Overlay', () => {
         const verse1 = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
         const verse2 = createVerse({ book: 'TestBook', chapter: 1, verse: 2 });
 
-        const color1 = textDatingOverlay.getVerseColor?.(verse1) as [number, number, number] | null | undefined;
-        const color2 = textDatingOverlay.getVerseColor?.(verse2) as [number, number, number] | null | undefined;
+        const color1 = textDatingOverlay.getVerseColor?.(verse1) as
+          [number, number, number] | null | undefined;
+        const color2 = textDatingOverlay.getVerseColor?.(verse2) as
+          [number, number, number] | null | undefined;
 
         assertValidColor(color1!);
         assertValidColor(color2!);
 
         // Should be identical (or very close)
-        expect((color1 as [number, number, number])[0]).toBeCloseTo((color2 as [number, number, number])[0], 5);
-        expect((color1 as [number, number, number])[1]).toBeCloseTo((color2 as [number, number, number])[1], 5);
-        expect((color1 as [number, number, number])[2]).toBeCloseTo((color2 as [number, number, number])[2], 5);
+        expect((color1 as [number, number, number])[0]).toBeCloseTo(
+          (color2 as [number, number, number])[0],
+          5,
+        );
+        expect((color1 as [number, number, number])[1]).toBeCloseTo(
+          (color2 as [number, number, number])[1],
+          5,
+        );
+        expect((color1 as [number, number, number])[2]).toBeCloseTo(
+          (color2 as [number, number, number])[2],
+          5,
+        );
       });
     });
   });
@@ -503,7 +529,8 @@ describe('Text Dating Overlay', () => {
 
     it('handles empty chapters array gracefully', () => {
       const verse = createVerse({ book: 'Isaiah', chapter: 2, verse: 1 });
-      const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+      const color = textDatingOverlay.getVerseColor?.(verse) as
+        [number, number, number] | null | undefined;
 
       expect(color).toBeNull();
     });
@@ -537,10 +564,10 @@ describe('Text Dating Overlay', () => {
       testData.books['TestBook'] = [
         [
           { d: [-1000, -1000], n: 0 }, // Exactly at Pre-Monarchic/Early Monarchic boundary
-          { d: [-722, -722], n: 0 },   // Exactly at Early/Late Monarchic boundary
-          { d: [-586, -586], n: 0 },   // Exactly at Late Monarchic/Exilic boundary
-          { d: [-538, -538], n: 0 },   // Exactly at Exilic/Persian boundary
-          { d: [-331, -331], n: 0 },   // Exactly at Persian/Hellenistic boundary
+          { d: [-722, -722], n: 0 }, // Exactly at Early/Late Monarchic boundary
+          { d: [-586, -586], n: 0 }, // Exactly at Late Monarchic/Exilic boundary
+          { d: [-538, -538], n: 0 }, // Exactly at Exilic/Persian boundary
+          { d: [-331, -331], n: 0 }, // Exactly at Persian/Hellenistic boundary
         ],
       ];
 
@@ -553,7 +580,8 @@ describe('Text Dating Overlay', () => {
         // All boundary dates should have valid colors
         for (let verse = 1; verse <= 5; verse++) {
           const v = createVerse({ book: 'TestBook', chapter: 1, verse });
-          const color = textDatingOverlay.getVerseColor?.(v) as [number, number, number] | null | undefined;
+          const color = textDatingOverlay.getVerseColor?.(v) as
+            [number, number, number] | null | undefined;
           assertValidColor(color!);
         }
       });
@@ -573,7 +601,8 @@ describe('Text Dating Overlay', () => {
 
       return textDatingOverlay.init?.().then(() => {
         const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
-        const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+        const color = textDatingOverlay.getVerseColor?.(verse) as
+          [number, number, number] | null | undefined;
 
         assertValidColor(color!);
 
@@ -598,7 +627,8 @@ describe('Text Dating Overlay', () => {
       ];
 
       verses.forEach((verse) => {
-        const color = textDatingOverlay.getVerseColor?.(verse) as [number, number, number] | null | undefined;
+        const color = textDatingOverlay.getVerseColor?.(verse) as
+          [number, number, number] | null | undefined;
         assertValidColor(color!);
 
         if (color) {
@@ -612,13 +642,13 @@ describe('Text Dating Overlay', () => {
 
     it('produces distinguishable colors across eras', () => {
       const preMonarchic = textDatingOverlay.getVerseColor?.(
-        createVerse({ book: 'Judges', chapter: 5, verse: 1 })
+        createVerse({ book: 'Judges', chapter: 5, verse: 1 }),
       ) as [number, number, number] | null;
       const persian = textDatingOverlay.getVerseColor?.(
-        createVerse({ book: 'Genesis', chapter: 1, verse: 1 })
+        createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
       ) as [number, number, number] | null;
       const hellenistic = textDatingOverlay.getVerseColor?.(
-        createVerse({ book: 'Daniel', chapter: 1, verse: 1 })
+        createVerse({ book: 'Daniel', chapter: 1, verse: 1 }),
       ) as [number, number, number] | null;
 
       assertValidColor(preMonarchic!);
@@ -628,9 +658,7 @@ describe('Text Dating Overlay', () => {
       // Colors should be different enough to distinguish
       const colorDistance = (c1: Color, c2: Color) => {
         return Math.sqrt(
-          Math.pow(c1[0] - c2[0], 2) +
-          Math.pow(c1[1] - c2[1], 2) +
-          Math.pow(c1[2] - c2[2], 2)
+          Math.pow(c1[0] - c2[0], 2) + Math.pow(c1[1] - c2[1], 2) + Math.pow(c1[2] - c2[2], 2),
         );
       };
 

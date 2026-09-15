@@ -18,7 +18,7 @@ type Color = { r: number; g: number; b: number };
 export function blendColorArrays(
   from: (Color | Color[])[],
   to: (Color | Color[])[],
-  t: number
+  t: number,
 ): (Color | Color[])[] {
   const len = Math.max(from.length, to.length);
   const result: (Color | Color[])[] = new Array(len);

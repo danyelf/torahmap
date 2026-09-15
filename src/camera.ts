@@ -3,9 +3,9 @@
 import type { Bounds } from './types';
 
 export interface Camera {
-  x: number;     // pan x position
-  y: number;     // pan y position
-  zoom: number;  // zoom level (0.1 - 10.0)
+  x: number; // pan x position
+  y: number; // pan y position
+  zoom: number; // zoom level (0.1 - 10.0)
 }
 
 export const MIN_ZOOM = 0.1;
@@ -26,11 +26,7 @@ const TOP_MARGIN = 40;
  * @param bounds - Bounding box of the visualization
  * @returns Camera state with 1.0 zoom, Genesis 1:1 at top-right
  */
-export function createCamera(
-  cssWidth: number,
-  _cssHeight: number,
-  bounds: Bounds
-): Camera {
+export function createCamera(cssWidth: number, _cssHeight: number, bounds: Bounds): Camera {
   // At zoom=1, screenX = (worldX + pan.x) * 1 = worldX + pan.x
   // Genesis 1:1 is near worldX ≈ bounds.width (rightmost after RTL mirror)
   // We want it at screenX = cssWidth - RIGHT_MARGIN
@@ -72,7 +68,7 @@ export function panForZoom(
   oldZoom: number,
   newZoom: number,
   mouseX: number,
-  mouseY: number
+  mouseY: number,
 ): { x: number; y: number } {
   return {
     x: pan.x + mouseX * (1 / newZoom - 1 / oldZoom),

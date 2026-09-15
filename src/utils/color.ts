@@ -7,19 +7,19 @@ export const DIM_FACTOR = 0.3; // Dimming factor for non-highlighted verses
 
 // Fixed palette for multi-term search (cyan, orange, lime, pink, yellow)
 export const SEARCH_COLORS: Color[] = [
-  [0.1, 0.7, 0.8],   // Cyan (dimmed for luminance balance)
-  [1.0, 0.5, 0.0],   // Orange
-  [0.5, 1.0, 0.2],   // Lime
-  [1.0, 0.2, 0.8],   // Pink
-  [1.0, 1.0, 0.2],   // Yellow
+  [0.1, 0.7, 0.8], // Cyan (dimmed for luminance balance)
+  [1.0, 0.5, 0.0], // Orange
+  [0.5, 1.0, 0.2], // Lime
+  [1.0, 0.2, 0.8], // Pink
+  [1.0, 1.0, 0.2], // Yellow
 ];
 
 /**
  * A color stop in a gradient (position + color)
  */
 export interface ColorStop {
-  t: number;     // Position in [0, 1]
-  color: Color;  // RGB color at this position
+  t: number; // Position in [0, 1]
+  color: Color; // RGB color at this position
 }
 
 /**
@@ -67,7 +67,7 @@ export function scaleToGradient(
   value: number,
   maxValue: number,
   stops: ColorStop[],
-  options?: { useLog?: boolean }
+  options?: { useLog?: boolean },
 ): Color {
   const useLog = options?.useLog ?? false;
 
@@ -92,11 +92,11 @@ export function heatmapColor(value: number, maxValue: number): Color {
 
   // Define gradient stops (5 colors across the range)
   const stops: ColorStop[] = [
-    { t: 0, color: [0.1, 0.13, 0.18] },       // Dark blue
-    { t: 0.25, color: [0.1, 0.23, 0.38] },    // Light blue
-    { t: 0.5, color: [0.2, 0.43, 0.33] },     // Teal
-    { t: 0.75, color: [0.9, 0.33, 0.13] },    // Orange
-    { t: 1.0, color: [1.0, 0.23, 0.18] },     // Red
+    { t: 0, color: [0.1, 0.13, 0.18] }, // Dark blue
+    { t: 0.25, color: [0.1, 0.23, 0.38] }, // Light blue
+    { t: 0.5, color: [0.2, 0.43, 0.33] }, // Teal
+    { t: 0.75, color: [0.9, 0.33, 0.13] }, // Orange
+    { t: 1.0, color: [1.0, 0.23, 0.18] }, // Red
   ];
 
   return scaleToGradient(value, maxValue, stops, { useLog: true });
@@ -143,9 +143,9 @@ export function hslToRgb(hsl: HSL): Color {
   const hueToRgb = (p: number, q: number, t: number): number => {
     if (t < 0) t += 1;
     if (t > 1) t -= 1;
-    if (t < 1/6) return p + (q - p) * 6 * t;
-    if (t < 1/2) return q;
-    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
     return p;
   };
 
@@ -153,9 +153,5 @@ export function hslToRgb(hsl: HSL): Color {
   const p = 2 * l - q;
   const hNorm = h / 360;
 
-  return [
-    hueToRgb(p, q, hNorm + 1/3),
-    hueToRgb(p, q, hNorm),
-    hueToRgb(p, q, hNorm - 1/3),
-  ];
+  return [hueToRgb(p, q, hNorm + 1 / 3), hueToRgb(p, q, hNorm), hueToRgb(p, q, hNorm - 1 / 3)];
 }

@@ -25,7 +25,10 @@ describe('Commentary Overlay', () => {
     testData = {
       'Genesis': {
         '1': {
-          '1': { total: 150, categories: { 'Midrash': 50, 'Talmud': 30, 'Chasidut': 20, 'Tanakh': 50 } },
+          '1': {
+            total: 150,
+            categories: { 'Midrash': 50, 'Talmud': 30, 'Chasidut': 20, 'Tanakh': 50 },
+          },
           '2': { total: 45, categories: { 'Midrash': 20, 'Talmud': 15, 'Kabbalah': 10 } },
           '3': { total: 0, categories: {} }, // Edge case: zero counts
         },
@@ -89,7 +92,7 @@ describe('Commentary Overlay', () => {
       await commentaryOverlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/commentary-counts.json')
+        expect.stringContaining('data/commentary-counts.json'),
       );
     });
 
@@ -134,7 +137,7 @@ describe('Commentary Overlay', () => {
 
     it('returns different colors for different commentary counts', () => {
       const highVerse = testVerses[0]; // Genesis 1:1, total: 150
-      const lowVerse = testVerses[5];  // Exodus 1:2, total: 5
+      const lowVerse = testVerses[5]; // Exodus 1:2, total: 5
 
       const highColor = commentaryOverlay.getVerseColor(highVerse) as [number, number, number];
       const lowColor = commentaryOverlay.getVerseColor(lowVerse) as [number, number, number];
@@ -266,7 +269,8 @@ describe('Commentary Overlay', () => {
       // Switch to Midrash
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
-      const midrashColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const midrashColor = commentaryOverlay.getVerseColor(verse) as
+        [number, number, number] | null;
       assertValidColor(midrashColor as [number, number, number]);
 
       // Switch to Talmud
@@ -313,7 +317,8 @@ describe('Commentary Overlay', () => {
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
-      const midrashColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const midrashColor = commentaryOverlay.getVerseColor(verse) as
+        [number, number, number] | null;
 
       // Colors should be different because relative positions differ
       // In total: 45/150 = 0.3, in Midrash: 20/50 = 0.4
@@ -340,7 +345,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.renderControls?.(container);
 
       const select = container.querySelector('select') as HTMLSelectElement;
-      const options = Array.from(select.options).map(opt => opt.value);
+      const options = Array.from(select.options).map((opt) => opt.value);
 
       expect(options).toContain('total');
       expect(options).toContain('Talmud');
@@ -506,9 +511,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('declares the category key it owns', () => {
-      expect(commentaryOverlay.urlParams).toEqual([
-        { key: 'category', kind: 'category' },
-      ]);
+      expect(commentaryOverlay.urlParams).toEqual([{ key: 'category', kind: 'category' }]);
     });
 
     it('applies category under its own key name', () => {
@@ -737,7 +740,7 @@ describe('Commentary Overlay', () => {
       'Tanakh',
     ];
 
-    categories.forEach(category => {
+    categories.forEach((category) => {
       it(`filters by ${category} category correctly`, () => {
         const container = document.createElement('div');
         commentaryOverlay.renderControls?.(container);

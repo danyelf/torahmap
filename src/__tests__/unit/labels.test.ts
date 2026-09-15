@@ -4,19 +4,44 @@ import { createVerse, SAMPLE_VERSES } from '../helpers';
 
 // Hebrew names for test use (matching tanakh-structure.json hebrewName field)
 const HEBREW_NAMES: Record<string, string> = {
-  'Genesis': 'בראשית', 'Exodus': 'שמות', 'Leviticus': 'ויקרא',
-  'Numbers': 'במדבר', 'Deuteronomy': 'דברים', 'Joshua': 'יהושע',
-  'Judges': 'שופטים', 'I Samuel': 'שמואל א', 'II Samuel': 'שמואל ב',
-  'I Kings': 'מלכים א', 'II Kings': 'מלכים ב', 'Isaiah': 'ישעיהו',
-  'Jeremiah': 'ירמיהו', 'Ezekiel': 'יחזקאל', 'Hosea': 'הושע',
-  'Joel': 'יואל', 'Amos': 'עמוס', 'Obadiah': 'עובדיה',
-  'Jonah': 'יונה', 'Micah': 'מיכה', 'Nahum': 'נחום',
-  'Habakkuk': 'חבקוק', 'Zephaniah': 'צפניה', 'Haggai': 'חגי',
-  'Zechariah': 'זכריה', 'Malachi': 'מלאכי', 'Psalms': 'תהלים',
-  'Proverbs': 'משלי', 'Job': 'איוב', 'Song of Songs': 'שיר השירים',
-  'Ruth': 'רות', 'Lamentations': 'איכה', 'Ecclesiastes': 'קהלת',
-  'Esther': 'אסתר', 'Daniel': 'דניאל', 'Ezra': 'עזרא',
-  'Nehemiah': 'נחמיה', 'I Chronicles': 'דברי הימים א',
+  'Genesis': 'בראשית',
+  'Exodus': 'שמות',
+  'Leviticus': 'ויקרא',
+  'Numbers': 'במדבר',
+  'Deuteronomy': 'דברים',
+  'Joshua': 'יהושע',
+  'Judges': 'שופטים',
+  'I Samuel': 'שמואל א',
+  'II Samuel': 'שמואל ב',
+  'I Kings': 'מלכים א',
+  'II Kings': 'מלכים ב',
+  'Isaiah': 'ישעיהו',
+  'Jeremiah': 'ירמיהו',
+  'Ezekiel': 'יחזקאל',
+  'Hosea': 'הושע',
+  'Joel': 'יואל',
+  'Amos': 'עמוס',
+  'Obadiah': 'עובדיה',
+  'Jonah': 'יונה',
+  'Micah': 'מיכה',
+  'Nahum': 'נחום',
+  'Habakkuk': 'חבקוק',
+  'Zephaniah': 'צפניה',
+  'Haggai': 'חגי',
+  'Zechariah': 'זכריה',
+  'Malachi': 'מלאכי',
+  'Psalms': 'תהלים',
+  'Proverbs': 'משלי',
+  'Job': 'איוב',
+  'Song of Songs': 'שיר השירים',
+  'Ruth': 'רות',
+  'Lamentations': 'איכה',
+  'Ecclesiastes': 'קהלת',
+  'Esther': 'אסתר',
+  'Daniel': 'דניאל',
+  'Ezra': 'עזרא',
+  'Nehemiah': 'נחמיה',
+  'I Chronicles': 'דברי הימים א',
   'II Chronicles': 'דברי הימים ב',
 };
 
@@ -102,12 +127,12 @@ describe('labels', () => {
         ];
         const labels = createBookLabels(verses, container, HEBREW_NAMES);
 
-        const labelTexts = Array.from(labels.children).map(child => child.textContent);
+        const labelTexts = Array.from(labels.children).map((child) => child.textContent);
         // Labels contain Hebrew name + English name
-        expect(labelTexts.some(t => t!.includes('Genesis'))).toBe(true);
-        expect(labelTexts.some(t => t!.includes('Exodus'))).toBe(true);
-        expect(labelTexts.some(t => t!.includes('Psalms'))).toBe(true);
-        expect(labelTexts.some(t => t!.includes('בראשית'))).toBe(true);
+        expect(labelTexts.some((t) => t!.includes('Genesis'))).toBe(true);
+        expect(labelTexts.some((t) => t!.includes('Exodus'))).toBe(true);
+        expect(labelTexts.some((t) => t!.includes('Psalms'))).toBe(true);
+        expect(labelTexts.some((t) => t!.includes('בראשית'))).toBe(true);
       });
 
       it('applies correct styling to each label', () => {
@@ -168,7 +193,7 @@ describe('labels', () => {
       it('calculates minY from topmost verse in book', () => {
         const verses = [
           createVerse({ book: 'Genesis', y: 100 }),
-          createVerse({ book: 'Genesis', y: 50 }),  // topmost
+          createVerse({ book: 'Genesis', y: 50 }), // topmost
           createVerse({ book: 'Genesis', y: 150 }),
         ];
         const labels = createBookLabels(verses, container);
@@ -187,16 +212,16 @@ describe('labels', () => {
         const labels = createBookLabels(verses, container);
 
         const genesisLabel = Array.from(labels.children).find(
-          (child) => (child as HTMLElement).dataset.bookName === 'Genesis'
+          (child) => (child as HTMLElement).dataset.bookName === 'Genesis',
         ) as HTMLElement;
         const exodusLabel = Array.from(labels.children).find(
-          (child) => (child as HTMLElement).dataset.bookName === 'Exodus'
+          (child) => (child as HTMLElement).dataset.bookName === 'Exodus',
         ) as HTMLElement;
 
         // rightX = max(x + size), minY = min(y)
-        expect(genesisLabel.dataset.rightX).toBe('16');  // max(16, 11)
+        expect(genesisLabel.dataset.rightX).toBe('16'); // max(16, 11)
         expect(genesisLabel.dataset.topY).toBe('20');
-        expect(exodusLabel.dataset.rightX).toBe('116');  // max(106, 116)
+        expect(exodusLabel.dataset.rightX).toBe('116'); // max(106, 116)
         expect(exodusLabel.dataset.topY).toBe('25');
       });
 
@@ -228,7 +253,7 @@ describe('labels', () => {
       });
     });
 
-    describe('different sections (Torah, Nevi\'im, Ketuvim)', () => {
+    describe("different sections (Torah, Nevi'im, Ketuvim)", () => {
       it('handles Torah books', () => {
         const verses = [
           createVerse({ book: 'Genesis', x: 10, y: 20 }),
@@ -239,14 +264,14 @@ describe('labels', () => {
 
         expect(labels.children.length).toBe(3);
         const bookNames = Array.from(labels.children).map(
-          (child) => (child as HTMLElement).dataset.bookName
+          (child) => (child as HTMLElement).dataset.bookName,
         );
         expect(bookNames).toContain('Genesis');
         expect(bookNames).toContain('Exodus');
         expect(bookNames).toContain('Leviticus');
       });
 
-      it('handles Nevi\'im books', () => {
+      it("handles Nevi'im books", () => {
         const verses = [
           createVerse({ book: 'Joshua', x: 10, y: 500 }),
           createVerse({ book: 'Isaiah', x: 100, y: 500 }),
@@ -256,7 +281,7 @@ describe('labels', () => {
 
         expect(labels.children.length).toBe(3);
         const bookNames = Array.from(labels.children).map(
-          (child) => (child as HTMLElement).dataset.bookName
+          (child) => (child as HTMLElement).dataset.bookName,
         );
         expect(bookNames).toContain('Joshua');
         expect(bookNames).toContain('Isaiah');
@@ -273,7 +298,7 @@ describe('labels', () => {
 
         expect(labels.children.length).toBe(3);
         const bookNames = Array.from(labels.children).map(
-          (child) => (child as HTMLElement).dataset.bookName
+          (child) => (child as HTMLElement).dataset.bookName,
         );
         expect(bookNames).toContain('Psalms');
         expect(bookNames).toContain('Proverbs');
@@ -282,9 +307,9 @@ describe('labels', () => {
 
       it('handles books from all three sections', () => {
         const verses = [
-          createVerse({ book: 'Genesis', x: 10, y: 20 }),     // Torah
-          createVerse({ book: 'Isaiah', x: 10, y: 500 }),     // Nevi'im
-          createVerse({ book: 'Psalms', x: 10, y: 1000 }),    // Ketuvim
+          createVerse({ book: 'Genesis', x: 10, y: 20 }), // Torah
+          createVerse({ book: 'Isaiah', x: 10, y: 500 }), // Nevi'im
+          createVerse({ book: 'Psalms', x: 10, y: 1000 }), // Ketuvim
         ];
         const labels = createBookLabels(verses, container);
 
@@ -305,7 +330,7 @@ describe('labels', () => {
 
       it('handles book with many verses', () => {
         const verses = Array.from({ length: 100 }, (_, i) =>
-          createVerse({ book: 'Psalms', x: (i % 10) * 10, y: Math.floor(i / 10) * 10 })
+          createVerse({ book: 'Psalms', x: (i % 10) * 10, y: Math.floor(i / 10) * 10 }),
         );
         const labels = createBookLabels(verses, container);
 
@@ -368,7 +393,7 @@ describe('labels', () => {
         expect(labels.children.length).toBeGreaterThanOrEqual(3);
 
         const bookNames = Array.from(labels.children).map(
-          (child) => (child as HTMLElement).dataset.bookName
+          (child) => (child as HTMLElement).dataset.bookName,
         );
         expect(bookNames).toContain('Genesis');
       });
@@ -750,7 +775,7 @@ describe('labels', () => {
     describe('performance', () => {
       it('handles many labels efficiently', () => {
         const verses = Array.from({ length: 100 }, (_, i) =>
-          createVerse({ book: `Book${i}`, x: i * 10, y: i * 20 })
+          createVerse({ book: `Book${i}`, x: i * 10, y: i * 20 }),
         );
         const manyLabels = createBookLabels(verses, container);
 

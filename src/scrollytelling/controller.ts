@@ -15,7 +15,7 @@ const REST_ZONE_FRACTION = 0.4;
 export function computeStopScrollCenters(
   stopOffsets: number[],
   stopHeights: number[],
-  viewportHeight: number
+  viewportHeight: number,
 ): number[] {
   return stopOffsets.map((offset, i) => {
     const visualCenter = offset + stopHeights[i] / 2;
@@ -30,14 +30,16 @@ export function computeInterpolatedState(
   scrollTop: number,
   defaultEasing: EasingName = 'ease-in-out',
   stopHeights?: number[],
-  viewportHeight?: number
+  viewportHeight?: number,
 ): InterpolatedState {
   const maxScroll = Math.max(0, totalHeight - (viewportHeight ?? 0));
   const clampedScroll = Math.max(0, Math.min(scrollTop, maxScroll));
 
-  const heights = stopHeights ?? stopOffsets.map((offset, i) =>
-    (i + 1 < stopOffsets.length ? stopOffsets[i + 1] : totalHeight) - offset
-  );
+  const heights =
+    stopHeights ??
+    stopOffsets.map(
+      (offset, i) => (i + 1 < stopOffsets.length ? stopOffsets[i + 1] : totalHeight) - offset,
+    );
   const vpHeight = viewportHeight ?? heights[0] ?? 500;
 
   // Compute the scrollTop where each stop is centered on screen
@@ -47,10 +49,7 @@ export function computeInterpolatedState(
   // The band width is REST_ZONE_FRACTION of the stop's height
   const restZones: [number, number][] = scrollCenters.map((center, i) => {
     const halfZone = (heights[i] * REST_ZONE_FRACTION) / 2;
-    return [
-      Math.max(0, center - halfZone),
-      Math.min(maxScroll, center + halfZone),
-    ];
+    return [Math.max(0, center - halfZone), Math.min(maxScroll, center + halfZone)];
   });
 
   // Find which stop's rest zone we're in (or between)
@@ -76,9 +75,10 @@ export function computeInterpolatedState(
       // Between rest zones — transition
       const transitionStart = restZones[i - 1][1];
       const transitionEnd = restZones[i][0];
-      const rawT = transitionEnd > transitionStart
-        ? (clampedScroll - transitionStart) / (transitionEnd - transitionStart)
-        : 1;
+      const rawT =
+        transitionEnd > transitionStart
+          ? (clampedScroll - transitionStart) / (transitionEnd - transitionStart)
+          : 1;
 
       const easingName = stops[i].easing ?? defaultEasing;
       const easeFn = easingFunctions[easingName] ?? easingFunctions['ease-in-out'];

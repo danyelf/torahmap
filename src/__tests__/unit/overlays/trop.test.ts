@@ -140,7 +140,7 @@ describe('Trop Overlay', () => {
       expect(buttons.length).toBeGreaterThan(0);
 
       // All buttons should have text starting with bet (ב)
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         expect(button.textContent).toMatch(/^ב/);
       });
     });
@@ -234,7 +234,7 @@ describe('Trop Overlay', () => {
       const buttons = container.querySelectorAll('button');
 
       // Find a rare trop button (check dataset for count info)
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         if (button.classList.contains('rare')) {
           // Found a rare trop button
         }
@@ -255,7 +255,8 @@ describe('Trop Overlay', () => {
       button.dispatchEvent(new MouseEvent('mouseenter'));
 
       const text = info.textContent || '';
-      const hasRarityLabel = text.includes('Rare') || text.includes('Uncommon') || text.includes('Common');
+      const hasRarityLabel =
+        text.includes('Rare') || text.includes('Uncommon') || text.includes('Common');
       expect(hasRarityLabel).toBe(true);
     });
 
@@ -274,7 +275,7 @@ describe('Trop Overlay', () => {
       // Find the button with same unicode
       const buttons = container.querySelectorAll('button');
       let restoredButton: HTMLButtonElement | null = null;
-      buttons.forEach(btn => {
+      buttons.forEach((btn) => {
         if ((btn as HTMLButtonElement).dataset.unicode === unicode) {
           restoredButton = btn as HTMLButtonElement;
         }
@@ -300,7 +301,7 @@ describe('Trop Overlay', () => {
         const buttons = container.querySelectorAll('button');
         let rareButton: HTMLButtonElement | null = null;
 
-        buttons.forEach(button => {
+        buttons.forEach((button) => {
           if (button.classList.contains('rare')) {
             rareButton = button as HTMLButtonElement;
           }
@@ -321,7 +322,8 @@ describe('Trop Overlay', () => {
           }
 
           if (verseWithTrop) {
-            const color = tropOverlay.getVerseColor(verseWithTrop) as [number, number, number] | null;
+            const color = tropOverlay.getVerseColor(verseWithTrop) as
+              [number, number, number] | null;
             expect(color).not.toBeNull();
 
             // Gold color: [1.0, 0.84, 0.0]
@@ -339,7 +341,7 @@ describe('Trop Overlay', () => {
         const buttons = container.querySelectorAll('button');
         let rareButton: HTMLButtonElement | null = null;
 
-        buttons.forEach(button => {
+        buttons.forEach((button) => {
           if (button.classList.contains('rare')) {
             rareButton = button as HTMLButtonElement;
           }
@@ -360,7 +362,8 @@ describe('Trop Overlay', () => {
           }
 
           if (verseWithoutTrop) {
-            const color = tropOverlay.getVerseColor(verseWithoutTrop) as [number, number, number] | null;
+            const color = tropOverlay.getVerseColor(verseWithoutTrop) as
+              [number, number, number] | null;
             expect(color).not.toBeNull();
 
             // Dim gray (more visible): [0.25, 0.25, 0.25]
@@ -378,7 +381,7 @@ describe('Trop Overlay', () => {
         const buttons = container.querySelectorAll('button');
         let rareButton: HTMLButtonElement | null = null;
 
-        buttons.forEach(button => {
+        buttons.forEach((button) => {
           if (button.classList.contains('rare')) {
             rareButton = button as HTMLButtonElement;
           }
@@ -387,8 +390,12 @@ describe('Trop Overlay', () => {
         if (rareButton) {
           (rareButton as HTMLButtonElement).click();
 
-          const colors = testVerses.map(v => tropOverlay.getVerseColor(v) as [number, number, number] | null);
-          const uniqueColors = new Set(colors.filter(c => c !== null).map(c => JSON.stringify(c)));
+          const colors = testVerses.map(
+            (v) => tropOverlay.getVerseColor(v) as [number, number, number] | null,
+          );
+          const uniqueColors = new Set(
+            colors.filter((c) => c !== null).map((c) => JSON.stringify(c)),
+          );
 
           // For rare trop, we should have at most 2 unique colors (gold and dim gray)
           expect(uniqueColors.size).toBeLessThanOrEqual(2);
@@ -412,11 +419,13 @@ describe('Trop Overlay', () => {
           const selected = getSelectedTrop();
           if (selected && getRarityTier(selected.totalCount) === 'uncommon') {
             // Check that verses have purple-ish colors
-            const colors = testVerses.map(v => tropOverlay.getVerseColor(v) as [number, number, number] | null).filter(c => c !== null);
+            const colors = testVerses
+              .map((v) => tropOverlay.getVerseColor(v) as [number, number, number] | null)
+              .filter((c) => c !== null);
 
             if (colors.length > 0) {
               // At least some colors should be purple-ish (higher blue channel)
-              const hasPurple = colors.some(c => c![2] > 0.4);
+              const hasPurple = colors.some((c) => c![2] > 0.4);
               expect(hasPurple).toBe(true);
             }
 
@@ -438,13 +447,14 @@ describe('Trop Overlay', () => {
           const selected = getSelectedTrop();
           if (selected && getRarityTier(selected.totalCount) === 'uncommon') {
             // Find a verse without this trop
-            const verseWithoutTrop = testVerses.find(v => {
+            const verseWithoutTrop = testVerses.find((v) => {
               const color = tropOverlay.getVerseColor(v) as [number, number, number] | null;
               return color && color[0] < 0.2 && color[1] < 0.2 && color[2] < 0.2;
             });
 
             if (verseWithoutTrop) {
-              const color = tropOverlay.getVerseColor(verseWithoutTrop) as [number, number, number] | null;
+              const color = tropOverlay.getVerseColor(verseWithoutTrop) as
+                [number, number, number] | null;
               expect(color).not.toBeNull();
 
               // Dim color (more visible): [0.25, 0.25, 0.28]
@@ -475,11 +485,17 @@ describe('Trop Overlay', () => {
           if (selected && getRarityTier(selected.totalCount) === 'uncommon') {
             // Get all non-zero colors
             const nonZeroColors = testVerses
-              .map(v => ({
+              .map((v) => ({
                 verse: v,
                 color: tropOverlay.getVerseColor(v) as [number, number, number] | null,
               }))
-              .filter(({ color }) => color && ((color as [number, number, number])[0] > 0.2 || (color as [number, number, number])[1] > 0.2 || (color as [number, number, number])[2] > 0.2));
+              .filter(
+                ({ color }) =>
+                  color &&
+                  ((color as [number, number, number])[0] > 0.2 ||
+                    (color as [number, number, number])[1] > 0.2 ||
+                    (color as [number, number, number])[2] > 0.2),
+              );
 
             if (nonZeroColors.length > 1) {
               // Check that colors vary (not all the same)
@@ -507,11 +523,13 @@ describe('Trop Overlay', () => {
           const selected = getSelectedTrop();
           if (selected && getRarityTier(selected.totalCount) === 'common') {
             // Check that we have a range of colors
-            const colors = testVerses.map(v => tropOverlay.getVerseColor(v) as [number, number, number] | null).filter(c => c !== null);
+            const colors = testVerses
+              .map((v) => tropOverlay.getVerseColor(v) as [number, number, number] | null)
+              .filter((c) => c !== null);
 
             if (colors.length > 0) {
               // Should have purple spectrum colors
-              const hasPurple = colors.some(c => c![2] > 0.3);
+              const hasPurple = colors.some((c) => c![2] > 0.3);
               expect(hasPurple).toBe(true);
             }
 
@@ -531,7 +549,11 @@ describe('Trop Overlay', () => {
           btn.click();
 
           const selected = getSelectedTrop();
-          if (selected && getRarityTier(selected.totalCount) === 'common' && selected.verses.length > 2) {
+          if (
+            selected &&
+            getRarityTier(selected.totalCount) === 'common' &&
+            selected.verses.length > 2
+          ) {
             // Get verses with different counts
             const sortedVerses = [...selected.verses].sort((a, b) => a.count - b.count);
 
@@ -541,25 +563,37 @@ describe('Trop Overlay', () => {
               const high = sortedVerses[sortedVerses.length - 1];
 
               const lowVerse = testVerses.find(
-                v => v.book === low.book && v.chapter === low.chapter && v.verse === low.verse
+                (v) => v.book === low.book && v.chapter === low.chapter && v.verse === low.verse,
               );
               const midVerse = testVerses.find(
-                v => v.book === mid.book && v.chapter === mid.chapter && v.verse === mid.verse
+                (v) => v.book === mid.book && v.chapter === mid.chapter && v.verse === mid.verse,
               );
               const highVerse = testVerses.find(
-                v => v.book === high.book && v.chapter === high.chapter && v.verse === high.verse
+                (v) => v.book === high.book && v.chapter === high.chapter && v.verse === high.verse,
               );
 
               if (lowVerse && midVerse && highVerse) {
-                const lowColor = tropOverlay.getVerseColor(lowVerse) as [number, number, number] | null;
-                const midColor = tropOverlay.getVerseColor(midVerse) as [number, number, number] | null;
-                const highColor = tropOverlay.getVerseColor(highVerse) as [number, number, number] | null;
+                const lowColor = tropOverlay.getVerseColor(lowVerse) as
+                  [number, number, number] | null;
+                const midColor = tropOverlay.getVerseColor(midVerse) as
+                  [number, number, number] | null;
+                const highColor = tropOverlay.getVerseColor(highVerse) as
+                  [number, number, number] | null;
 
                 // Check that colors progress from dark to light
                 if (lowColor && midColor && highColor) {
-                  const lowBrightness = (lowColor as [number, number, number])[0] + (lowColor as [number, number, number])[1] + (lowColor as [number, number, number])[2];
-                  const midBrightness = (midColor as [number, number, number])[0] + (midColor as [number, number, number])[1] + (midColor as [number, number, number])[2];
-                  const highBrightness = (highColor as [number, number, number])[0] + (highColor as [number, number, number])[1] + (highColor as [number, number, number])[2];
+                  const lowBrightness =
+                    (lowColor as [number, number, number])[0] +
+                    (lowColor as [number, number, number])[1] +
+                    (lowColor as [number, number, number])[2];
+                  const midBrightness =
+                    (midColor as [number, number, number])[0] +
+                    (midColor as [number, number, number])[1] +
+                    (midColor as [number, number, number])[2];
+                  const highBrightness =
+                    (highColor as [number, number, number])[0] +
+                    (highColor as [number, number, number])[1] +
+                    (highColor as [number, number, number])[2];
 
                   expect(midBrightness).toBeGreaterThanOrEqual(lowBrightness);
                   expect(highBrightness).toBeGreaterThanOrEqual(midBrightness);
@@ -618,7 +652,7 @@ describe('Trop Overlay', () => {
       button.click();
 
       // All verses should get colors
-      testVerses.forEach(verse => {
+      testVerses.forEach((verse) => {
         const color = tropOverlay.getVerseColor(verse) as [number, number, number] | null;
         expect(color).not.toBeNull();
         assertValidColor(color!);
@@ -638,7 +672,10 @@ describe('Trop Overlay', () => {
       // Verses in the selected trop's list should get highlighted colors
       const verseInList = selected!.verses[0];
       const verse = testVerses.find(
-        v => v.book === verseInList.book && v.chapter === verseInList.chapter && v.verse === verseInList.verse
+        (v) =>
+          v.book === verseInList.book &&
+          v.chapter === verseInList.chapter &&
+          v.verse === verseInList.verse,
       );
 
       if (verse) {
@@ -685,7 +722,7 @@ describe('Trop Overlay', () => {
       const buttons = controlContainer.querySelectorAll('button');
       let rareButton: HTMLButtonElement | null = null;
 
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         if (button.classList.contains('rare')) {
           rareButton = button as HTMLButtonElement;
         }
@@ -711,7 +748,7 @@ describe('Trop Overlay', () => {
 
       // Find a non-rare button
       let nonRareButton: HTMLButtonElement | null = null;
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         if (!button.classList.contains('rare')) {
           nonRareButton = button as HTMLButtonElement;
         }
@@ -736,7 +773,7 @@ describe('Trop Overlay', () => {
       const buttons = controlContainer.querySelectorAll('button');
       let nonRareButton: HTMLButtonElement | null = null;
 
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         if (!button.classList.contains('rare')) {
           nonRareButton = button as HTMLButtonElement;
         }
@@ -781,7 +818,10 @@ describe('Trop Overlay', () => {
 
       const verseInList = selected!.verses[0];
       const verse = testVerses.find(
-        v => v.book === verseInList.book && v.chapter === verseInList.chapter && v.verse === verseInList.verse
+        (v) =>
+          v.book === verseInList.book &&
+          v.chapter === verseInList.chapter &&
+          v.verse === verseInList.verse,
       );
 
       if (verse) {
@@ -815,7 +855,10 @@ describe('Trop Overlay', () => {
       if (selected && selected.verses.length > 0) {
         const verseInList = selected.verses[0];
         const verse = testVerses.find(
-          v => v.book === verseInList.book && v.chapter === verseInList.chapter && v.verse === verseInList.verse
+          (v) =>
+            v.book === verseInList.book &&
+            v.chapter === verseInList.chapter &&
+            v.verse === verseInList.verse,
         );
 
         if (verse) {
@@ -964,13 +1007,13 @@ describe('Trop Overlay', () => {
       const selected = getSelectedTrop();
       if (selected) {
         // Find a verse with count > 1
-        const verseWithMultiple = selected.verses.find(v => v.count > 1);
+        const verseWithMultiple = selected.verses.find((v) => v.count > 1);
         if (verseWithMultiple) {
           const verse = testVerses.find(
-            v =>
+            (v) =>
               v.book === verseWithMultiple.book &&
               v.chapter === verseWithMultiple.chapter &&
-              v.verse === verseWithMultiple.verse
+              v.verse === verseWithMultiple.verse,
           );
 
           if (verse) {
@@ -995,7 +1038,7 @@ describe('Trop Overlay', () => {
       let rarestButton: HTMLButtonElement | null = null;
       let minCount = Infinity;
 
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         const btn = button as HTMLButtonElement;
         btn.click();
         const selected = getSelectedTrop();
@@ -1009,8 +1052,10 @@ describe('Trop Overlay', () => {
         (rarestButton as HTMLButtonElement).click();
 
         // Should use binary coloring
-        const colors = testVerses.map(v => tropOverlay.getVerseColor(v) as [number, number, number] | null).filter(c => c !== null);
-        const uniqueColors = new Set(colors.map(c => JSON.stringify(c)));
+        const colors = testVerses
+          .map((v) => tropOverlay.getVerseColor(v) as [number, number, number] | null)
+          .filter((c) => c !== null);
+        const uniqueColors = new Set(colors.map((c) => JSON.stringify(c)));
 
         expect(uniqueColors.size).toBeLessThanOrEqual(2);
       }

@@ -1,7 +1,7 @@
 // URL State Management
 // Handles parsing and serializing view state to/from URL hash
 
-import { MIN_ZOOM, MAX_ZOOM } from "./camera.ts";
+import { MIN_ZOOM, MAX_ZOOM } from './camera.ts';
 
 /**
  * The kinds of value an overlay parameter can hold. The overlay picks a kind;
@@ -11,7 +11,7 @@ import { MIN_ZOOM, MAX_ZOOM } from "./camera.ts";
  * - `category` a name that may contain spaces and slashes, e.g. "Talmud/Mishnah"
  * - `text`     free-form user text, e.g. a search query
  */
-export type UrlParamKind = "token" | "category" | "text";
+export type UrlParamKind = 'token' | 'category' | 'text';
 
 /**
  * An overlay's declaration of one URL parameter it owns.
@@ -36,10 +36,8 @@ export interface UrlParamSpec {
  * With no specs to go on this widens to "some strings, or nothing", which is
  * what the `Overlay` interface has to promise before it knows the overlay.
  */
-export type UrlParamValues<
-  S extends readonly UrlParamSpec[] = readonly UrlParamSpec[],
-> = {
-  readonly [P in S[number] as P["key"]]?: P extends {
+export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> = {
+  readonly [P in S[number] as P['key']]?: P extends {
     allowed: readonly (infer V extends string)[];
   }
     ? V
@@ -59,14 +57,12 @@ export type OverlayParams = UrlParamValues;
  * Looks up the parameter declarations for an overlay by its id.
  * Supplied by the caller so that this module never imports overlays.
  */
-export type OverlayParamSpecLookup = (
-  overlayId: string,
-) => readonly UrlParamSpec[] | undefined;
+export type OverlayParamSpecLookup = (overlayId: string) => readonly UrlParamSpec[] | undefined;
 
 /**
  * Keys this module owns. An overlay may not claim one of these.
  */
-const RESERVED_KEYS = new Set(["story", "overlay", "verse", "zoom", "x", "y"]);
+const RESERVED_KEYS = new Set(['story', 'overlay', 'verse', 'zoom', 'x', 'y']);
 
 /**
  * Validation constants
@@ -132,28 +128,23 @@ function validateCategoryName(value: string | null): string | null {
  * Validate a single overlay parameter value against its declared kind.
  * Returns the cleaned value, or null if the value should be dropped.
  */
-function validateOneParam(
-  spec: UrlParamSpec,
-  raw: string | null | undefined,
-): string | null {
+function validateOneParam(spec: UrlParamSpec, raw: string | null | undefined): string | null {
   if (raw === null || raw === undefined) return null;
 
   let cleaned: string | null;
   switch (spec.kind) {
-    case "category":
+    case 'category':
       cleaned = validateCategoryName(raw);
       break;
-    case "text": {
+    case 'text': {
       // Free text keeps punctuation and non-Latin scripts, but is length
       // capped and has any HTML tags removed.
       const trimmed = raw.trim();
       cleaned =
-        trimmed && trimmed.length <= MAX_SEARCH_QUERY_LENGTH
-          ? stripHtmlTags(trimmed)
-          : null;
+        trimmed && trimmed.length <= MAX_SEARCH_QUERY_LENGTH ? stripHtmlTags(trimmed) : null;
       break;
     }
-    case "token":
+    case 'token':
     default:
       cleaned = validateString(raw);
       break;
@@ -195,7 +186,7 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
  * Only allows letters, spaces, and dots (for I.Samuel format)
  */
 function validateBookName(book: string): boolean {
-  if (!book || book.trim() === "") return false;
+  if (!book || book.trim() === '') return false;
   // Only allow letters (including Unicode), spaces, and dots
   return /^[a-zA-Z\u0590-\u05FF\s.]+$/.test(book);
 }
@@ -204,7 +195,7 @@ function validateBookName(book: string): boolean {
  * Strip HTML tags from search query
  */
 function stripHtmlTags(value: string): string {
-  return value.replace(/<[^>]*>/g, "");
+  return value.replace(/<[^>]*>/g, '');
 }
 
 /**
@@ -234,9 +225,7 @@ export interface UrlState {
  *   that overlay's parameter declarations. Without it, no overlay parameters
  *   are read (the core view state still parses).
  */
-export function parseUrlState(
-  lookupOverlayParams?: OverlayParamSpecLookup,
-): UrlState {
+export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): UrlState {
   const hash = window.location.hash.slice(1); // Remove leading #
   const params = new URLSearchParams(hash);
 
@@ -250,7 +239,7 @@ export function parseUrlState(
   if (validatedStory) state.story = validatedStory;
 
   // Core parameters
-  const overlay = params.get("overlay");
+  const overlay = params.get('overlay');
   const validatedOverlay = validateString(overlay);
   // Accept any validated overlay ID (for forward/backward compatibility)
   // The overlay registry will handle unknown IDs gracefully
@@ -258,11 +247,11 @@ export function parseUrlState(
     state.overlay = validatedOverlay;
   }
 
-  const verse = params.get("verse");
+  const verse = params.get('verse');
   const validatedVerse = validateString(verse, 100); // Allow longer for book names
   if (validatedVerse) state.verse = validatedVerse;
 
-  const zoom = params.get("zoom");
+  const zoom = params.get('zoom');
   if (zoom) {
     const parsed = parseFloat(zoom);
     if (!isNaN(parsed) && parsed >= MIN_ZOOM && parsed <= MAX_ZOOM) {
@@ -270,26 +259,18 @@ export function parseUrlState(
     }
   }
 
-  const x = params.get("x");
+  const x = params.get('x');
   if (x) {
     const parsed = parseFloat(x);
-    if (
-      !isNaN(parsed) &&
-      isFinite(parsed) &&
-      Math.abs(parsed) <= MAX_PAN_POSITION
-    ) {
+    if (!isNaN(parsed) && isFinite(parsed) && Math.abs(parsed) <= MAX_PAN_POSITION) {
       state.x = parsed;
     }
   }
 
-  const y = params.get("y");
+  const y = params.get('y');
   if (y) {
     const parsed = parseFloat(y);
-    if (
-      !isNaN(parsed) &&
-      isFinite(parsed) &&
-      Math.abs(parsed) <= MAX_PAN_POSITION
-    ) {
+    if (!isNaN(parsed) && isFinite(parsed) && Math.abs(parsed) <= MAX_PAN_POSITION) {
       state.y = parsed;
     }
   }
@@ -297,10 +278,7 @@ export function parseUrlState(
   // Overlay-specific parameters: the active overlay says which keys it owns
   // and what shape each value has; we decide whether the value is acceptable.
   if (state.overlay) {
-    state.overlayParams = validateOverlayParams(
-      lookupOverlayParams?.(state.overlay),
-      params,
-    );
+    state.overlayParams = validateOverlayParams(lookupOverlayParams?.(state.overlay), params);
   }
 
   return state;
@@ -320,25 +298,25 @@ export function buildUrlHash(state: UrlState): string {
 
   // Core parameters (omit defaults)
   if (state.overlay) {
-    params.set("overlay", state.overlay);
+    params.set('overlay', state.overlay);
   }
 
   if (state.verse) {
-    params.set("verse", state.verse);
+    params.set('verse', state.verse);
   }
 
   if (state.zoom !== undefined && state.zoom !== 1.0) {
     // Round to 2 decimal places
-    params.set("zoom", state.zoom.toFixed(2).replace(/\.?0+$/, ""));
+    params.set('zoom', state.zoom.toFixed(2).replace(/\.?0+$/, ''));
   }
 
   // Only include pan if no verse (verse auto-centers)
   if (!state.verse) {
     if (state.x !== undefined) {
-      params.set("x", state.x.toFixed(1).replace(/\.?0+$/, ""));
+      params.set('x', state.x.toFixed(1).replace(/\.?0+$/, ''));
     }
     if (state.y !== undefined) {
-      params.set("y", state.y.toFixed(1).replace(/\.?0+$/, ""));
+      params.set('y', state.y.toFixed(1).replace(/\.?0+$/, ''));
     }
   }
 
@@ -351,7 +329,7 @@ export function buildUrlHash(state: UrlState): string {
   }
 
   const hash = params.toString();
-  return hash ? `#${hash}` : "";
+  return hash ? `#${hash}` : '';
 }
 
 /**
@@ -399,9 +377,9 @@ export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   const newUrl = window.location.pathname + window.location.search + hash;
 
   if (pushHistory) {
-    history.pushState(null, "", newUrl);
+    history.pushState(null, '', newUrl);
   } else {
-    history.replaceState(null, "", newUrl);
+    history.replaceState(null, '', newUrl);
   }
 }
 
@@ -409,20 +387,16 @@ export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
  * Subscribe to hash/history changes (for browser back/forward)
  */
 export function subscribeToHashChange(callback: () => void): void {
-  window.addEventListener("popstate", callback);
-  window.addEventListener("hashchange", callback);
+  window.addEventListener('popstate', callback);
+  window.addEventListener('hashchange', callback);
 }
 
 /**
  * Convert verse reference to URL format
  * "I Samuel" 1:5 -> "I.Samuel.1.5"
  */
-export function verseToUrlFormat(
-  book: string,
-  chapter: number,
-  verse: number,
-): string {
-  const urlBook = book.replace(/ /g, ".");
+export function verseToUrlFormat(book: string, chapter: number, verse: number): string {
+  const urlBook = book.replace(/ /g, '.');
   return `${urlBook}.${chapter}.${verse}`;
 }
 
@@ -434,7 +408,7 @@ export function parseVerseFromUrl(
   verseStr: string,
 ): { book: string; chapter: number; verse: number } | null {
   // Split from the end to handle book names with dots
-  const parts = verseStr.split(".");
+  const parts = verseStr.split('.');
   if (parts.length < 3) return null;
 
   // Ensure we only have book.chapter.verse format (no extra dots)
@@ -442,7 +416,7 @@ export function parseVerseFromUrl(
 
   const verseStr_ = parts.pop()!;
   const chapterStr = parts.pop()!;
-  const book = parts.join(" "); // Rejoin remaining parts as book name
+  const book = parts.join(' '); // Rejoin remaining parts as book name
 
   const verse = parseInt(verseStr_, 10);
   const chapter = parseInt(chapterStr, 10);
@@ -461,4 +435,3 @@ export function parseVerseFromUrl(
 
   return { book, chapter, verse };
 }
-

@@ -192,39 +192,36 @@ describe('rendering', () => {
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.main.uniforms.resolution,
         800,
-        600
+        600,
       );
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.main.uniforms.pan,
         100,
-        200
+        200,
       );
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.main.uniforms.zoom,
-        1.5 * 2.0 // zoom * dpr
+        1.5 * 2.0, // zoom * dpr
       );
     });
 
     it('binds vertex buffer', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
-      expect(context.gl.bindBuffer).toHaveBeenCalledWith(
-        context.gl.ARRAY_BUFFER,
-        state.buffer
-      );
+      expect(context.gl.bindBuffer).toHaveBeenCalledWith(context.gl.ARRAY_BUFFER, state.buffer);
     });
 
     it('enables all vertex attributes', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
-        context.programs.main.attribs.position
+        context.programs.main.attribs.position,
       );
       expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
-        context.programs.main.attribs.color
+        context.programs.main.attribs.color,
       );
       expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
-        context.programs.main.attribs.uv
+        context.programs.main.attribs.uv,
       );
     });
 
@@ -232,11 +229,7 @@ describe('rendering', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       // 10 verses * 6 vertices per verse = 60 vertices
-      expect(context.gl.drawArrays).toHaveBeenCalledWith(
-        context.gl.TRIANGLES,
-        0,
-        60
-      );
+      expect(context.gl.drawArrays).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 60);
     });
 
     it('does not render outline when no verses hovered or pinned', () => {
@@ -311,7 +304,7 @@ describe('rendering', () => {
 
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.main.uniforms.zoom,
-        6.0 // 2.0 * 3.0
+        6.0, // 2.0 * 3.0
       );
     });
 
@@ -373,16 +366,16 @@ describe('rendering', () => {
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.outline.uniforms.resolution,
         800,
-        600
+        600,
       );
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.outline.uniforms.pan,
         50,
-        100
+        100,
       );
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.outline.uniforms.zoom,
-        1.0 * 2.0 // zoom * dpr
+        1.0 * 2.0, // zoom * dpr
       );
     });
 
@@ -394,7 +387,7 @@ describe('rendering', () => {
         context.programs.outline.uniforms.color,
         0.5,
         0.7,
-        0.9
+        0.9,
       );
     });
 
@@ -414,7 +407,7 @@ describe('rendering', () => {
       renderOutline(context, state, verse, [1, 0, 0], null, camera);
 
       expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
-        context.programs.outline.attribs.position
+        context.programs.outline.attribs.position,
       );
     });
 
@@ -432,8 +425,12 @@ describe('rendering', () => {
       const smallVerse = createVerse({ size: 4 });
       const largeVerse = createVerse({ size: 10 });
 
-      expect(() => renderOutline(context, state, smallVerse, [1, 0, 0], null, camera)).not.toThrow();
-      expect(() => renderOutline(context, state, largeVerse, [1, 0, 0], null, camera)).not.toThrow();
+      expect(() =>
+        renderOutline(context, state, smallVerse, [1, 0, 0], null, camera),
+      ).not.toThrow();
+      expect(() =>
+        renderOutline(context, state, largeVerse, [1, 0, 0], null, camera),
+      ).not.toThrow();
     });
 
     it('handles different colors', () => {
@@ -451,7 +448,7 @@ describe('rendering', () => {
 
         expect(context.gl.uniform3f).toHaveBeenCalledWith(
           context.programs.outline.uniforms.color,
-          ...color
+          ...color,
         );
       });
     });
@@ -510,7 +507,7 @@ describe('rendering', () => {
         expect(context.gl.uniform2f).toHaveBeenCalledWith(
           context.programs.main.uniforms.pan,
           camera.x,
-          camera.y
+          camera.y,
         );
       });
     });
@@ -536,7 +533,7 @@ describe('rendering', () => {
 
         expect(context.gl.uniform1f).toHaveBeenCalledWith(
           context.programs.main.uniforms.zoom,
-          expected
+          expected,
         );
       });
     });

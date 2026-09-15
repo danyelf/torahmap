@@ -7,10 +7,7 @@ export interface CameraPosition {
 }
 
 /** Camera reference: an explicit position, the app's initial camera, or a verse to center on. */
-export type CameraRef =
-  | CameraPosition
-  | 'initial'
-  | { kind: 'verse'; ref: string }; // ref in URL format, e.g. "Genesis.12.1"
+export type CameraRef = CameraPosition | 'initial' | { kind: 'verse'; ref: string }; // ref in URL format, e.g. "Genesis.12.1"
 
 export interface StoryStop {
   id: string;

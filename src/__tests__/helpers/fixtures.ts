@@ -19,14 +19,17 @@ export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout
 /**
  * Creates multiple sample verses
  */
-export function createVerses(count: number, baseOverrides: Partial<TanakhLayout> = {}): TanakhLayout[] {
+export function createVerses(
+  count: number,
+  baseOverrides: Partial<TanakhLayout> = {},
+): TanakhLayout[] {
   return Array.from({ length: count }, (_, i) =>
     createVerse({
       verse: i + 1,
       x: (i % 10) * 8,
       y: Math.floor(i / 10) * 8,
       ...baseOverrides,
-    })
+    }),
   );
 }
 
@@ -96,7 +99,10 @@ export const SAMPLE_TORAH_DATA: TorahData = {
 export const SAMPLE_COMMENTARY_DATA: CommentaryData = {
   'Genesis': {
     '1': {
-      '1': { total: 150, categories: { 'Midrash': 50, 'Talmud': 30, 'Chasidut': 20, 'Tanakh': 50 } },
+      '1': {
+        total: 150,
+        categories: { 'Midrash': 50, 'Talmud': 30, 'Chasidut': 20, 'Tanakh': 50 },
+      },
       '2': { total: 45, categories: { 'Midrash': 20, 'Talmud': 15, 'Kabbalah': 10 } },
     },
     '2': {
@@ -146,7 +152,9 @@ export const SAMPLE_VERSE_TEXTS = {
 /**
  * Creates a sample TanakhCommentary object
  */
-export function createTanakhCommentary(overrides: Partial<TanakhCommentary> = {}): TanakhCommentary {
+export function createTanakhCommentary(
+  overrides: Partial<TanakhCommentary> = {},
+): TanakhCommentary {
   return {
     total: 50,
     categories: {

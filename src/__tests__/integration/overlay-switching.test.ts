@@ -106,7 +106,7 @@ describe('Overlay Switching Integration', () => {
     overlay.renderLegend?.(mockLegendContainer);
 
     // Apply colors
-    lastColors = verses.map(v => overlay.getVerseColor(v));
+    lastColors = verses.map((v) => overlay.getVerseColor(v));
 
     currentOverlay = overlay;
     return overlay;
@@ -118,7 +118,7 @@ describe('Overlay Switching Integration', () => {
   function expectColorsApplied(colorCount: number = verses.length): void {
     expect(lastColors.length).toBe(verses.length);
 
-    const nonNullColors = lastColors.filter(c => c !== null);
+    const nonNullColors = lastColors.filter((c) => c !== null);
     expect(nonNullColors.length).toBeGreaterThan(0);
     expect(nonNullColors.length).toBeLessThanOrEqual(colorCount);
   }
@@ -171,7 +171,7 @@ describe('Overlay Switching Integration', () => {
 
         // For overlays that match our test data, verify at least some colors
         if (id === 'commentary') {
-          const nonNullColors = lastColors.filter(c => c !== null);
+          const nonNullColors = lastColors.filter((c) => c !== null);
           expect(nonNullColors.length).toBeGreaterThan(0);
         }
       }
@@ -262,7 +262,6 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Legend Rendering', () => {
-
     it('renders legend for commentary overlay', async () => {
       await switchToOverlay('commentary');
 
@@ -294,7 +293,9 @@ describe('Overlay Switching Integration', () => {
       await switchToOverlay('commentary');
 
       // Check that verses with commentary get heatmap colors
-      const genesisVerse = verses.find(v => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1);
+      const genesisVerse = verses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
+      );
       if (genesisVerse) {
         const color = currentOverlay!.getVerseColor(genesisVerse);
         expect(color).not.toBeNull();
@@ -305,7 +306,7 @@ describe('Overlay Switching Integration', () => {
       await switchToOverlay('trop');
 
       // Trop may not have data for all verses in test fixtures
-      const verse = verses.find(v => v.book === 'Psalms' && v.chapter === 119);
+      const verse = verses.find((v) => v.book === 'Psalms' && v.chapter === 119);
       if (verse) {
         const color = currentOverlay!.getVerseColor(verse);
         // Color may be null if no trop mark is selected
@@ -316,7 +317,9 @@ describe('Overlay Switching Integration', () => {
     it('recalculates colors after state change', async () => {
       const overlay = await switchToOverlay('commentary');
 
-      const genesisVerse = verses.find(v => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1)!;
+      const genesisVerse = verses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
+      )!;
       overlay.getVerseColor(genesisVerse);
 
       // Simulate category change (would trigger different color calculation)
@@ -330,7 +333,9 @@ describe('Overlay Switching Integration', () => {
     it('provides hover info for commentary overlay', async () => {
       await switchToOverlay('commentary');
 
-      const genesisVerse = verses.find(v => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1);
+      const genesisVerse = verses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
+      );
       if (genesisVerse && currentOverlay?.getHoverInfo) {
         const info = currentOverlay.getHoverInfo!(genesisVerse);
         expect(info).toBeTruthy();
@@ -340,7 +345,7 @@ describe('Overlay Switching Integration', () => {
 
     it('clears hover info when switching overlays', async () => {
       await switchToOverlay('commentary');
-      const verse = verses.find(v => v.book === 'Genesis')!;
+      const verse = verses.find((v) => v.book === 'Genesis')!;
 
       const commentaryInfo = currentOverlay?.getHoverInfo?.(verse);
 
@@ -497,9 +502,7 @@ describe('Overlay Switching Integration', () => {
       const overlay = await switchToOverlay('trop');
 
       // Should not throw
-      expect(() =>
-        applyOverlayParams(overlay, new URLSearchParams('trop=tipcha')),
-      ).not.toThrow();
+      expect(() => applyOverlayParams(overlay, new URLSearchParams('trop=tipcha'))).not.toThrow();
     });
 
     it('handles switching overlays with different URL params', async () => {
@@ -562,7 +565,7 @@ describe('Overlay Switching Integration', () => {
 
     it('overlay IDs are unique', () => {
       const allOverlays = getAllOverlays();
-      const ids = allOverlays.map(o => o.id);
+      const ids = allOverlays.map((o) => o.id);
       const uniqueIds = new Set(ids);
 
       expect(uniqueIds.size).toBe(ids.length);
@@ -600,11 +603,13 @@ describe('Overlay Switching Integration', () => {
     it('handles fetch failure gracefully during init', async () => {
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       // Mock fetch to fail
-      globalThis.fetch = vi.fn(() => Promise.resolve({
-        ok: false,
-        status: 404,
-        json: () => Promise.reject(new Error('Not found')),
-      } as Response));
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          status: 404,
+          json: () => Promise.reject(new Error('Not found')),
+        } as Response),
+      );
 
       // Should not throw
       await expect(switchToOverlay('commentary')).resolves.toBeDefined();
@@ -618,17 +623,19 @@ describe('Overlay Switching Integration', () => {
 
     it('handles malformed data gracefully', async () => {
       // Mock fetch to return invalid data
-      globalThis.fetch = vi.fn(() => Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ invalidKey: 'invalid data' }),
-      } as Response));
+      globalThis.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ invalidKey: 'invalid data' }),
+        } as Response),
+      );
 
       await switchToOverlay('commentary');
 
       // Should not throw when trying to get colors
       expect(() => {
-        verses.forEach(v => currentOverlay!.getVerseColor(v));
+        verses.forEach((v) => currentOverlay!.getVerseColor(v));
       }).not.toThrow();
 
       // Should provide valid colors even with malformed data

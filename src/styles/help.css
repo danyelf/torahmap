@@ -194,7 +194,9 @@
   text-decoration-thickness: 1px;
   text-decoration-color: rgba(142, 197, 247, 0.45);
   text-underline-offset: 2px;
-  transition: color 0.15s, text-decoration-color 0.15s;
+  transition:
+    color 0.15s,
+    text-decoration-color 0.15s;
 }
 
 .help-body a:hover,

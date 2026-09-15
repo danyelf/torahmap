@@ -1,10 +1,10 @@
 // Book ordering and section classification
 // Populated at runtime from tanakh-structure.json via initBookData()
 
-import type { TorahData } from "../types.ts";
+import type { TorahData } from '../types.ts';
 
 let bookOrder: string[] = [];
-const sectionMap = new Map<string, "torah" | "neviim" | "ketuvim">();
+const sectionMap = new Map<string, 'torah' | 'neviim' | 'ketuvim'>();
 let initialized = false;
 
 /**
@@ -22,7 +22,7 @@ export function initBookData(data: TorahData): void {
 
 function assertInitialized(): void {
   if (!initialized) {
-    throw new Error("initBookData() must be called before using book lookups");
+    throw new Error('initBookData() must be called before using book lookups');
   }
 }
 
@@ -31,9 +31,7 @@ export function getBookOrder(): readonly string[] {
   return bookOrder;
 }
 
-export function getBookSection(
-  bookName: string,
-): "torah" | "neviim" | "ketuvim" {
+export function getBookSection(bookName: string): 'torah' | 'neviim' | 'ketuvim' {
   assertInitialized();
-  return sectionMap.get(bookName) ?? "neviim";
+  return sectionMap.get(bookName) ?? 'neviim';
 }

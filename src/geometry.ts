@@ -13,7 +13,7 @@ function isColorArray(color: Color | Color[] | undefined): color is Color[] {
 export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
-  baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR
+  baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR,
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
   // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY

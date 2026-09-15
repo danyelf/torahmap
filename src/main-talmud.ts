@@ -6,43 +6,38 @@
 
 declare const __GIT_BRANCH__: string;
 
-import type { SpatialItem, TalmudIdentity } from "./types.ts";
-import { loadTalmudStructure } from "./talmud/data.ts";
-import { computeTalmudLayout, type TalmudLayoutItem } from "./talmud/layout.ts";
+import type { SpatialItem, TalmudIdentity } from './types.ts';
+import { loadTalmudStructure } from './talmud/data.ts';
+import { computeTalmudLayout, type TalmudLayoutItem } from './talmud/layout.ts';
 import {
   createRenderContext,
   createRenderState,
   rebuildGeometry,
   render as renderFrame,
-} from "./rendering.ts";
-import { computeItemStates, applyItemColors } from "./itemColoring.ts";
-import { findItemAtPoint } from "./hitDetection.ts";
-import { createCamera, clampZoom, panForZoom } from "./camera.ts";
-import { createMouseState, startDrag, stopDrag } from "./mouseState.ts";
-import type { Overlay } from "./overlays/types.ts";
-import { segmentLengthOverlay, ingestTractateLengths } from "./talmud/overlays/segment-length.ts";
-import { createMgBaseOverlay, composeWithMgBase } from "./talmud/overlays/mg-base.ts";
+} from './rendering.ts';
+import { computeItemStates, applyItemColors } from './itemColoring.ts';
+import { findItemAtPoint } from './hitDetection.ts';
+import { createCamera, clampZoom, panForZoom } from './camera.ts';
+import { createMouseState, startDrag, stopDrag } from './mouseState.ts';
+import type { Overlay } from './overlays/types.ts';
+import { segmentLengthOverlay, ingestTractateLengths } from './talmud/overlays/segment-length.ts';
+import { createMgBaseOverlay, composeWithMgBase } from './talmud/overlays/mg-base.ts';
+import { startBackgroundPrefetch, promoteTractateToFront } from './talmud/prefetch.ts';
 import {
-  startBackgroundPrefetch,
-  promoteTractateToFront,
-} from "./talmud/prefetch.ts";
-import { createTalmudLabels, updateTalmudLabelPositions, type DafRowAnchor } from "./talmud/talmudLabels.ts";
-import { getTalmudSidebarElements, updateTalmudSidebar } from "./talmud/sidebar.ts";
-import { parseTalmudUrlState, updateTalmudUrl } from "./talmud/urlState.ts";
-import { debounce } from "./utils/debounce.ts";
-import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from "./constants/app.ts";
+  createTalmudLabels,
+  updateTalmudLabelPositions,
+  type DafRowAnchor,
+} from './talmud/talmudLabels.ts';
+import { getTalmudSidebarElements, updateTalmudSidebar } from './talmud/sidebar.ts';
+import { parseTalmudUrlState, updateTalmudUrl } from './talmud/urlState.ts';
+import { debounce } from './utils/debounce.ts';
+import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from './constants/app.ts';
 
-function talmudSegmentsEqual(
-  a: TalmudIdentity | null,
-  b: TalmudIdentity | null,
-): boolean {
+function talmudSegmentsEqual(a: TalmudIdentity | null, b: TalmudIdentity | null): boolean {
   if (a === null && b === null) return true;
   if (a === null || b === null) return false;
   return (
-    a.tractate === b.tractate &&
-    a.daf === b.daf &&
-    a.amud === b.amud &&
-    a.segment === b.segment
+    a.tractate === b.tractate && a.daf === b.daf && a.amud === b.amud && a.segment === b.segment
   );
 }
 
@@ -51,21 +46,22 @@ async function main(): Promise<void> {
 
   // --- Load data and compute layout ---
   const structure = await loadTalmudStructure();
-  const { items, tractateBlocks, sederBlocks, perekAnchors, bounds } = computeTalmudLayout(structure);
+  const { items, tractateBlocks, sederBlocks, perekAnchors, bounds } =
+    computeTalmudLayout(structure);
   console.log(
     `Loaded ${structure.tractates.length} tractates, ${items.length} segments, bounds: ${bounds.width}x${bounds.height}`,
   );
 
   // --- Canvas setup (mirrors main.ts) ---
-  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  if (!canvas) throw new Error("Canvas not found");
+  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+  if (!canvas) throw new Error('Canvas not found');
   const dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas(): void {
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
-    canvas.style.width = window.innerWidth + "px";
-    canvas.style.height = window.innerHeight + "px";
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
   }
   resizeCanvas();
 
@@ -172,8 +168,8 @@ async function main(): Promise<void> {
 
   // --- Sidebar elements ---
   const sidebarElements = getTalmudSidebarElements();
-  const sidebarClose = sidebarElements.sidebar.querySelector(".close-btn") as HTMLElement | null;
-  sidebarClose?.addEventListener("click", () => {
+  const sidebarClose = sidebarElements.sidebar.querySelector('.close-btn') as HTMLElement | null;
+  sidebarClose?.addEventListener('click', () => {
     pinnedItem = null;
     updateTalmudSidebar(null, structure, sidebarElements);
     applyOverlay();
@@ -198,7 +194,7 @@ async function main(): Promise<void> {
 
   // --- Wheel zoom ---
   canvas.addEventListener(
-    "wheel",
+    'wheel',
     (e: WheelEvent) => {
       e.preventDefault();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
@@ -220,7 +216,7 @@ async function main(): Promise<void> {
   );
 
   // --- Mouse move: hover + drag-pan ---
-  canvas.addEventListener("mousemove", (e: MouseEvent) => {
+  canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (mouseState.isDragging) {
       camera.x += (e.clientX - lastMouseX) / camera.zoom;
       camera.y += (e.clientY - lastMouseY) / camera.zoom;
@@ -244,13 +240,13 @@ async function main(): Promise<void> {
     }
   });
 
-  canvas.addEventListener("mousedown", (e: MouseEvent) => {
+  canvas.addEventListener('mousedown', (e: MouseEvent) => {
     startDrag(mouseState, e.clientX, e.clientY);
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
   });
 
-  canvas.addEventListener("mouseup", (e: MouseEvent) => {
+  canvas.addEventListener('mouseup', (e: MouseEvent) => {
     const wasDragging = mouseState.isDragging;
     const startX = mouseState.dragStart.x;
     const startY = mouseState.dragStart.y;
@@ -282,7 +278,7 @@ async function main(): Promise<void> {
     }
   });
 
-  canvas.addEventListener("mouseleave", () => {
+  canvas.addEventListener('mouseleave', () => {
     stopDrag(mouseState);
     if (hoveredItem !== null) {
       hoveredItem = null;
@@ -292,17 +288,17 @@ async function main(): Promise<void> {
   });
 
   // --- Overlay picker ---
-  const select = document.getElementById("overlay-select") as HTMLSelectElement;
-  select?.addEventListener("change", () => {
+  const select = document.getElementById('overlay-select') as HTMLSelectElement;
+  select?.addEventListener('change', () => {
     const id = select.value;
-    currentOverlay = id === "none" ? null : overlaysById.get(id) ?? null;
+    currentOverlay = id === 'none' ? null : (overlaysById.get(id) ?? null);
     applyOverlay();
     doRender();
     saveUrlState();
   });
 
   // --- Window resize ---
-  window.addEventListener("resize", () => {
+  window.addEventListener('resize', () => {
     resizeCanvas();
     doRender();
     updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
@@ -318,7 +314,7 @@ async function main(): Promise<void> {
     const o = overlaysById.get(initialUrl.overlay);
     if (o) {
       currentOverlay = o;
-      const sel = document.getElementById("overlay-select") as HTMLSelectElement;
+      const sel = document.getElementById('overlay-select') as HTMLSelectElement;
       if (sel) sel.value = initialUrl.overlay;
     }
   }
@@ -384,5 +380,5 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error("[main-talmud] failed:", err);
+  console.error('[main-talmud] failed:', err);
 });

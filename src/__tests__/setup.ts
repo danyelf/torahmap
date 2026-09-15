@@ -29,21 +29,14 @@ function readPublicFile(rawUrl: string): string | null {
 
   const resolved = normalize(join(publicDir, decodeURIComponent(path)));
   const contents =
-    resolved.startsWith(publicDir) && existsSync(resolved)
-      ? readFileSync(resolved, 'utf8')
-      : null;
+    resolved.startsWith(publicDir) && existsSync(resolved) ? readFileSync(resolved, 'utf8') : null;
 
   fileCache.set(path, contents);
   return contents;
 }
 
 globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
-  const url =
-    typeof input === 'string'
-      ? input
-      : input instanceof URL
-        ? input.href
-        : input.url;
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
 
   const body = readPublicFile(url);
   if (body === null) {

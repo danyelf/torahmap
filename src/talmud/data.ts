@@ -2,11 +2,11 @@
 // Loads public/data/talmud/structure.json eagerly at startup and per-tractate
 // text files lazily with in-memory caching.
 
-import { fetchData } from "../constants/app.ts";
+import { fetchData } from '../constants/app.ts';
 
 export interface TalmudAmud {
   daf: number;
-  amud: "a" | "b";
+  amud: 'a' | 'b';
   segmentCount: number;
   perekIdx: number;
   perekBoundaryAt?: number;
@@ -43,7 +43,7 @@ export interface TalmudTractateText {
  * Load the all-tractates structure file. Called once at page load.
  */
 export async function loadTalmudStructure(): Promise<TalmudStructure> {
-  const res = await fetchData("talmud/structure.json");
+  const res = await fetchData('talmud/structure.json');
   if (!res.ok) {
     throw new Error(`Failed to load talmud/structure.json: ${res.status}`);
   }
@@ -61,9 +61,7 @@ const textCache = new Map<string, TalmudTractateText | Promise<TalmudTractateTex
  * awaits an in-flight fetch if one exists, otherwise starts a new fetch.
  * Dedupes concurrent callers automatically.
  */
-export async function getTractateText(
-  name: string,
-): Promise<TalmudTractateText> {
+export async function getTractateText(name: string): Promise<TalmudTractateText> {
   const existing = textCache.get(name);
   if (existing) {
     return await existing;
@@ -108,12 +106,12 @@ export function isSegmentMishnah(
   structure: TalmudStructure,
   tractateName: string,
   daf: number,
-  amud: "a" | "b",
+  amud: 'a' | 'b',
   segment: number,
 ): boolean {
   const tractate = structure.tractates.find((t) => t.name === tractateName);
   if (!tractate) return false;
-  const amudIdx = (daf - tractate.firstDaf) * 2 + (amud === "b" ? 1 : 0);
+  const amudIdx = (daf - tractate.firstDaf) * 2 + (amud === 'b' ? 1 : 0);
   const amudEntry = tractate.amudim[amudIdx];
   if (!amudEntry) return false;
   return amudEntry.mishnahMask[segment - 1] ?? false;

@@ -78,7 +78,9 @@ describe('Hebrew Search Modes', () => {
       const results = search('אלה', false, 'substring');
 
       // Should find "ואלה" because substring mode matches anywhere
-      const exodusMatch = results.find(r => r.book === 'Exodus' && r.chapter === 1 && r.verse === 1);
+      const exodusMatch = results.find(
+        (r) => r.book === 'Exodus' && r.chapter === 1 && r.verse === 1,
+      );
       expect(exodusMatch).toBeDefined();
     });
 
@@ -96,7 +98,7 @@ describe('Hebrew Search Modes', () => {
       // Should match both "ברא" (created) and "בראשית" (beginning)
       expect(results.length).toBeGreaterThanOrEqual(1);
 
-      const gen11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+      const gen11 = results.find((r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
       expect(gen11).toBeDefined(); // Has both "בְּרֵאשִׁית" and "בָּרָא"
     });
 
@@ -108,8 +110,12 @@ describe('Hebrew Search Modes', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should find Genesis 12:1 (אברם) and 17:5 (אברהם and אברם)
-      const hasGen121 = results.some(r => r.book === 'Genesis' && r.chapter === 12 && r.verse === 1);
-      const hasGen175 = results.some(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+      const hasGen121 = results.some(
+        (r) => r.book === 'Genesis' && r.chapter === 12 && r.verse === 1,
+      );
+      const hasGen175 = results.some(
+        (r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5,
+      );
 
       expect(hasGen121).toBe(true);
       expect(hasGen175).toBe(true);
@@ -122,7 +128,9 @@ describe('Hebrew Search Modes', () => {
       const results = search('אלה', false, 'word');
 
       // "ואלה" is a whole word (includes prefix), so "אלה" won't match
-      const exodusMatch = results.find(r => r.book === 'Exodus' && r.chapter === 1 && r.verse === 1);
+      const exodusMatch = results.find(
+        (r) => r.book === 'Exodus' && r.chapter === 1 && r.verse === 1,
+      );
       expect(exodusMatch).toBeUndefined();
     });
 
@@ -133,7 +141,7 @@ describe('Hebrew Search Modes', () => {
       // Should match verses with standalone "אלהים"
       expect(results.length).toBeGreaterThan(0);
 
-      const gen11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+      const gen11 = results.find((r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
       expect(gen11).toBeDefined(); // Contains "אֱלֹהִים"
     });
 
@@ -142,8 +150,8 @@ describe('Hebrew Search Modes', () => {
       const results = search('אברהם', false, 'word');
 
       // Should match Genesis 17:5 and Exodus 3:6 where אברהם appears as whole word
-      const gen175 = results.find(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
-      const ex36 = results.find(r => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
+      const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+      const ex36 = results.find((r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
 
       expect(gen175).toBeDefined();
       expect(ex36).toBeDefined();
@@ -156,7 +164,9 @@ describe('Hebrew Search Modes', () => {
 
       // Verify they find different sets of verses
       // Abraham should be in Gen 17:5 and Ex 3:6
-      const hasAbrahamGen175 = resultsAbraham.some(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+      const hasAbrahamGen175 = resultsAbraham.some(
+        (r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5,
+      );
       expect(hasAbrahamGen175).toBe(true);
 
       // Note: Genesis 17:5 contains BOTH אברם and אברהם in the text
@@ -170,7 +180,7 @@ describe('Hebrew Search Modes', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Verify it matches אֱלֹהִים (with nikkud)
-      const gen11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+      const gen11 = results.find((r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
       expect(gen11).toBeDefined();
     });
   });
@@ -189,8 +199,8 @@ describe('Hebrew Search Modes', () => {
       // Even without the lexeme index, should find "אברהם" as whole word
       const results = search('אברהם', false, 'root');
 
-      const gen175 = results.find(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
-      const ex36 = results.find(r => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
+      const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+      const ex36 = results.find((r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
 
       expect(gen175).toBeDefined();
       expect(ex36).toBeDefined();
@@ -292,8 +302,12 @@ describe('Hebrew Search Modes', () => {
       // Search for "אבר" - should find in "אברהם" and "אברם"
       const results = search('אבר', false, 'substring');
 
-      const hasAbraham = results.some(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
-      const hasAbram = results.some(r => r.book === 'Genesis' && r.chapter === 12 && r.verse === 1);
+      const hasAbraham = results.some(
+        (r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5,
+      );
+      const hasAbram = results.some(
+        (r) => r.book === 'Genesis' && r.chapter === 12 && r.verse === 1,
+      );
 
       expect(hasAbraham).toBe(true);
       expect(hasAbram).toBe(true);
@@ -304,8 +318,12 @@ describe('Hebrew Search Modes', () => {
       const abrahamResults = search('אברהם', false, 'word');
 
       // אברהם appears in Genesis 17:5, Exodus 3:6
-      const hasAbrahamGen = abrahamResults.some(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
-      const hasAbrahamEx = abrahamResults.some(r => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
+      const hasAbrahamGen = abrahamResults.some(
+        (r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5,
+      );
+      const hasAbrahamEx = abrahamResults.some(
+        (r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6,
+      );
 
       expect(hasAbrahamGen).toBe(true);
       expect(hasAbrahamEx).toBe(true);
@@ -320,8 +338,8 @@ describe('Hebrew Search Modes', () => {
     it('root mode finds אברהם correctly (via whole-word fallback)', () => {
       const results = search('אברהם', false, 'root');
 
-      const gen175 = results.find(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
-      const ex36 = results.find(r => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
+      const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+      const ex36 = results.find((r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
 
       expect(gen175).toBeDefined();
       expect(ex36).toBeDefined();
@@ -337,7 +355,7 @@ describe('Hebrew Search Modes', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Check that we have matches for both terms
-      const hasTerms = results.some(r => r.matchingTerms.length > 0);
+      const hasTerms = results.some((r) => r.matchingTerms.length > 0);
       expect(hasTerms).toBe(true);
     });
 
@@ -365,7 +383,7 @@ describe('Hebrew Search Modes', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Genesis 2:7 has both אלהים and האדם
-      const gen27 = results.find(r => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
+      const gen27 = results.find((r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
       expect(gen27).toBeDefined();
     });
   });
@@ -452,7 +470,7 @@ describe('searchHebrewWholeWord() - Direct Function Tests', () => {
     const results = searchHebrewWholeWord(['אברהם']);
 
     expect(results.length).toBeGreaterThan(0);
-    const gen175 = results.find(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+    const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
     expect(gen175).toBeDefined();
   });
 
@@ -460,7 +478,9 @@ describe('searchHebrewWholeWord() - Direct Function Tests', () => {
     // Search for "אבר" should NOT match "אברהם" as whole word
     const results = searchHebrewWholeWord(['אבר']);
 
-    const hasAbraham = results.some(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+    const hasAbraham = results.some(
+      (r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5,
+    );
     expect(hasAbraham).toBe(false);
   });
 
@@ -469,7 +489,9 @@ describe('searchHebrewWholeWord() - Direct Function Tests', () => {
     const abrahamResults = searchHebrewWholeWord(['אברהם']);
 
     // אברהם in Genesis 17:5
-    const hasAbraham = abrahamResults.some(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+    const hasAbraham = abrahamResults.some(
+      (r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5,
+    );
     expect(hasAbraham).toBe(true);
 
     // Both should find results
@@ -487,7 +509,7 @@ describe('searchHebrewWholeWord() - Direct Function Tests', () => {
     expect(results.length).toBeGreaterThan(0);
 
     // Genesis 17:5 should match BOTH terms (has both אברם and אברהם in the verse)
-    const gen175 = results.find(r => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
+    const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
     expect(gen175).toBeDefined();
 
     // It should have matches for both terms since the verse contains both names

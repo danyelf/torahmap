@@ -3,28 +3,28 @@
 
 // --- Layout constants ---
 
-export const SEGMENT_SIZE = 6;                   // px per segment square
-export const PEREK_GAP = 30;                     // vertical gap between perakim within a tractate
-export const TRACTATE_GAP = 90;                  // horizontal gap between tractates on a shelf (extra room now that wide tractates wrap into multi-column blocks)
-export const SEDER_GAP = 120;                    // vertical gap between shelves (sedarim)
-export const TRACTATE_LABEL_HEIGHT = 24;         // space above each tractate block for its Hebrew name label
+export const SEGMENT_SIZE = 6; // px per segment square
+export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
+export const TRACTATE_GAP = 90; // horizontal gap between tractates on a shelf (extra room now that wide tractates wrap into multi-column blocks)
+export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
+export const TRACTATE_LABEL_HEIGHT = 24; // space above each tractate block for its Hebrew name label
 
 // Tractates taller than this row count get wrapped into multiple columns
 // inside their own block. (Shabbat, Yevamot, Bava Batra, Sanhedrin, etc.)
 // The threshold is in *display rows*, which roughly corresponds to half-
 // dapim plus a few perek-boundary splits.
 export const TRACTATE_WRAP_ROWS = 50;
-export const TRACTATE_COLUMN_GAP = 14;            // horizontal gap between wrap columns
+export const TRACTATE_COLUMN_GAP = 14; // horizontal gap between wrap columns
 
 // --- Canonical seder order (top-to-bottom shelf order) ---
 
 export const SEDER_ORDER: readonly string[] = [
-  "Seder Zeraim",
-  "Seder Moed",
-  "Seder Nashim",
-  "Seder Nezikin",
-  "Seder Kodashim",
-  "Seder Tahorot",
+  'Seder Zeraim',
+  'Seder Moed',
+  'Seder Nashim',
+  'Seder Nezikin',
+  'Seder Kodashim',
+  'Seder Tahorot',
 ];
 
 // --- Base colors (muted, similar, "rainfall over both") ---
@@ -56,16 +56,17 @@ export const POSITION_JITTER = 0.7;
 // enough to read against the dark canvas + flat verse colors. The first
 // pass used near-white values (0.97...) which were invisible.
 
-export const SEDER_BACKGROUND_COLORS: Readonly<Record<string, readonly [number, number, number]>> = {
-  "Seder Zeraim":   [0.45, 0.65, 0.40], // green
-  "Seder Moed":     [0.35, 0.55, 0.85], // blue
-  "Seder Nashim":   [0.85, 0.50, 0.55], // rose
-  "Seder Nezikin":  [0.85, 0.70, 0.30], // amber
-  "Seder Kodashim": [0.55, 0.40, 0.75], // violet
-  "Seder Tahorot":  [0.40, 0.75, 0.75], // teal
-};
+export const SEDER_BACKGROUND_COLORS: Readonly<Record<string, readonly [number, number, number]>> =
+  {
+    'Seder Zeraim': [0.45, 0.65, 0.4], // green
+    'Seder Moed': [0.35, 0.55, 0.85], // blue
+    'Seder Nashim': [0.85, 0.5, 0.55], // rose
+    'Seder Nezikin': [0.85, 0.7, 0.3], // amber
+    'Seder Kodashim': [0.55, 0.4, 0.75], // violet
+    'Seder Tahorot': [0.4, 0.75, 0.75], // teal
+  };
 
-export const SEDER_BACKGROUND_OPACITY = 0.10;
+export const SEDER_BACKGROUND_OPACITY = 0.1;
 
 // --- Zoom thresholds for daf label density ---
 //   < LOW   no labels

@@ -10,10 +10,10 @@
 // - Final coordinates have minX >= 0 (shifted into the first quadrant for
 //   compatibility with the existing camera/render pipeline).
 
-import type { SpatialItem, TalmudIdentity } from "../types.ts";
-import type { TalmudStructure, TalmudTractate } from "./data.ts";
-import { seededRandom } from "../utils/random.ts";
-import { segmentHash } from "./segmentHash.ts";
+import type { SpatialItem, TalmudIdentity } from '../types.ts';
+import type { TalmudStructure, TalmudTractate } from './data.ts';
+import { seededRandom } from '../utils/random.ts';
+import { segmentHash } from './segmentHash.ts';
 import {
   SEGMENT_SIZE,
   PEREK_GAP,
@@ -24,7 +24,7 @@ import {
   TRACTATE_COLUMN_GAP,
   POSITION_JITTER,
   SEDER_ORDER,
-} from "./constants.ts";
+} from './constants.ts';
 
 export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
 
@@ -72,7 +72,7 @@ export interface TalmudLayoutResult {
 
 interface AmudRow {
   daf: number;
-  amud: "a" | "b";
+  amud: 'a' | 'b';
   segments: Array<{ segment: number; isMishnah: boolean }>;
   perekIdx: number;
 }
@@ -261,12 +261,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
         const seg = row.segments[i];
         const baseX = -(i + 1) * SEGMENT_SIZE;
         // Per-segment positional jitter — break up the perfect grid.
-        const seed = segmentHash(
-          tractate.name,
-          row.daf,
-          row.amud,
-          seg.segment,
-        );
+        const seed = segmentHash(tractate.name, row.daf, row.amud, seg.segment);
         const jx = (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER;
         const jy = (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER;
         colItems.push({
@@ -340,9 +335,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
 // Bookshelf arrangement
 // ============================================================================
 
-export function computeTalmudLayout(
-  structure: TalmudStructure,
-): TalmudLayoutResult {
+export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutResult {
   // 1. Lay out each tractate in local coordinates.
   const laid = structure.tractates.map(layoutTractate);
 

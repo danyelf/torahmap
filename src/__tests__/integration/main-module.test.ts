@@ -47,7 +47,7 @@ describe('Main Module Smoke Test', () => {
       for (const functionName of requiredImports) {
         expect(
           message,
-          `Missing import detected: ${functionName} is used but not imported`
+          `Missing import detected: ${functionName} is used but not imported`,
         ).not.toMatch(new RegExp(`${functionName} is not defined`));
       }
     }

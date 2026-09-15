@@ -113,7 +113,6 @@ describe('computeBlendedColors stipple preservation', () => {
       [0, 0, 1],
     ]);
   });
-
 });
 
 describe('story stop settings reach the overlay', () => {

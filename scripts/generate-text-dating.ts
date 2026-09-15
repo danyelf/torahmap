@@ -8,8 +8,8 @@
  * Output format uses note_id references to deduplicated notes for compact storage.
  */
 
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { dirname } from "node:path";
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
 // New format from Wikipedia baseline data
 interface WikipediaSourceEntry {
@@ -68,38 +68,28 @@ function parseVerseRange(range: string, verseCount: number): number[] {
   range = range.trim();
 
   // Wildcard: all verses
-  if (range === "*") {
+  if (range === '*') {
     return Array.from({ length: verseCount }, (_, i) => i + 1);
   }
 
   // Single verse
-  if (!range.includes("-")) {
+  if (!range.includes('-')) {
     const verse = parseInt(range, 10);
     if (isNaN(verse) || verse < 1 || verse > verseCount) {
-      throw new Error(
-        `Invalid verse number: ${range} (chapter has ${verseCount} verses)`
-      );
+      throw new Error(`Invalid verse number: ${range} (chapter has ${verseCount} verses)`);
     }
     return [verse];
   }
 
   // Range: "1-11" or "6-end"
-  const [startStr, endStr] = range.split("-");
+  const [startStr, endStr] = range.split('-');
   const start = parseInt(startStr.trim(), 10);
 
   // Handle "end" keyword
-  const end = endStr.trim() === "end" ? verseCount : parseInt(endStr.trim(), 10);
+  const end = endStr.trim() === 'end' ? verseCount : parseInt(endStr.trim(), 10);
 
-  if (
-    isNaN(start) ||
-    isNaN(end) ||
-    start < 1 ||
-    end > verseCount ||
-    start > end
-  ) {
-    throw new Error(
-      `Invalid verse range: ${range} (chapter has ${verseCount} verses)`
-    );
+  if (isNaN(start) || isNaN(end) || start < 1 || end > verseCount || start > end) {
+    throw new Error(`Invalid verse range: ${range} (chapter has ${verseCount} verses)`);
   }
 
   return Array.from({ length: end - start + 1 }, (_, i) => start + i);
@@ -108,11 +98,7 @@ function parseVerseRange(range: string, verseCount: number): number[] {
 /**
  * Get verse count for a specific chapter
  */
-function getVerseCount(
-  structure: TanakhStructure,
-  bookName: string,
-  chapterNum: number
-): number {
+function getVerseCount(structure: TanakhStructure, bookName: string, chapterNum: number): number {
   const book = structure.books.find((b) => b.name === bookName);
   if (!book) {
     throw new Error(`Book not found: ${bookName}`);
@@ -120,7 +106,7 @@ function getVerseCount(
 
   if (chapterNum < 1 || chapterNum > book.chapters.length) {
     throw new Error(
-      `Invalid chapter ${chapterNum} for ${bookName} (has ${book.chapters.length} chapters)`
+      `Invalid chapter ${chapterNum} for ${bookName} (has ${book.chapters.length} chapters)`,
     );
   }
 
@@ -133,10 +119,10 @@ function getVerseCount(
  */
 function normalizeWikipediaEntry(
   wiki: WikipediaSourceEntry,
-  structure: TanakhStructure
+  structure: TanakhStructure,
 ): SourceEntry[] {
   // Convert "all" to "*" (wildcard)
-  const verses = wiki.verses === "all" ? "*" : wiki.verses;
+  const verses = wiki.verses === 'all' ? '*' : wiki.verses;
 
   // Convert single date to range (±25 years for uncertainty)
   const dateBce = Math.abs(wiki.date_bce);
@@ -145,9 +131,7 @@ function normalizeWikipediaEntry(
   const max = -(dateBce - uncertainty);
 
   // Augment note with citation if present
-  const note = wiki.citation
-    ? `${wiki.note} [Source](${wiki.citation})`
-    : wiki.note;
+  const note = wiki.citation ? `${wiki.note} [Source](${wiki.citation})` : wiki.note;
 
   // Get book structure for chapter expansions
   const book = structure.books.find((b) => b.name === wiki.book);
@@ -156,7 +140,7 @@ function normalizeWikipediaEntry(
   }
 
   // Handle chapters: "all" by expanding to all chapters in the book
-  if (wiki.chapters === "all") {
+  if (wiki.chapters === 'all') {
     return book.chapters.map((_, chapterIndex) => ({
       book: wiki.book,
       chapter: chapterIndex + 1,
@@ -167,14 +151,14 @@ function normalizeWikipediaEntry(
   }
 
   // Handle comma-separated chapter ranges: "1-14,16-40" or "1-4,6-21"
-  if (wiki.chapters.includes(",")) {
-    const ranges = wiki.chapters.split(",").map((r) => r.trim());
+  if (wiki.chapters.includes(',')) {
+    const ranges = wiki.chapters.split(',').map((r) => r.trim());
     const results: SourceEntry[] = [];
 
     for (const range of ranges) {
-      if (range.includes("-")) {
+      if (range.includes('-')) {
         // Range like "1-14"
-        const [startStr, endStr] = range.split("-");
+        const [startStr, endStr] = range.split('-');
         const startChapter = parseInt(startStr.trim(), 10);
         const endChapter = parseInt(endStr.trim(), 10);
 
@@ -186,7 +170,7 @@ function normalizeWikipediaEntry(
           startChapter > endChapter
         ) {
           throw new Error(
-            `Invalid chapter range: ${range} in ${wiki.chapters} for book ${wiki.book}`
+            `Invalid chapter range: ${range} in ${wiki.chapters} for book ${wiki.book}`,
           );
         }
 
@@ -204,7 +188,7 @@ function normalizeWikipediaEntry(
         const chapter = parseInt(range, 10);
         if (isNaN(chapter) || chapter < 1 || chapter > book.chapters.length) {
           throw new Error(
-            `Invalid chapter number: ${range} in ${wiki.chapters} for book ${wiki.book}`
+            `Invalid chapter number: ${range} in ${wiki.chapters} for book ${wiki.book}`,
           );
         }
         results.push({
@@ -221,8 +205,8 @@ function normalizeWikipediaEntry(
   }
 
   // Handle single chapter range: "2-9"
-  if (wiki.chapters.includes("-")) {
-    const [startStr, endStr] = wiki.chapters.split("-");
+  if (wiki.chapters.includes('-')) {
+    const [startStr, endStr] = wiki.chapters.split('-');
     const startChapter = parseInt(startStr.trim(), 10);
     const endChapter = parseInt(endStr.trim(), 10);
 
@@ -234,20 +218,17 @@ function normalizeWikipediaEntry(
       startChapter > endChapter
     ) {
       throw new Error(
-        `Invalid chapter range: ${wiki.chapters} for book ${wiki.book} (has ${book.chapters.length} chapters)`
+        `Invalid chapter range: ${wiki.chapters} for book ${wiki.book} (has ${book.chapters.length} chapters)`,
       );
     }
 
-    return Array.from(
-      { length: endChapter - startChapter + 1 },
-      (_, i) => ({
-        book: wiki.book,
-        chapter: startChapter + i,
-        verses,
-        dating: { min, max },
-        note,
-      })
-    );
+    return Array.from({ length: endChapter - startChapter + 1 }, (_, i) => ({
+      book: wiki.book,
+      chapter: startChapter + i,
+      verses,
+      dating: { min, max },
+      note,
+    }));
   }
 
   // Single chapter
@@ -270,10 +251,7 @@ function normalizeWikipediaEntry(
 /**
  * Normalize source data to array of SourceEntry
  */
-function normalizeSourceData(
-  data: SourceData,
-  structure: TanakhStructure
-): SourceEntry[] {
+function normalizeSourceData(data: SourceData, structure: TanakhStructure): SourceEntry[] {
   if (Array.isArray(data)) {
     // Wikipedia format: array of WikipediaSourceEntry
     // Flatten because normalizeWikipediaEntry can return multiple entries
@@ -285,21 +263,18 @@ function normalizeSourceData(
 }
 
 async function main() {
-  console.log("Generating text-dating data...\n");
+  console.log('Generating text-dating data...\n');
 
   // Load tanakh structure first (needed for normalization)
-  const structurePath = new URL(
-    "../public/data/tanakh-structure.json",
-    import.meta.url
-  );
+  const structurePath = new URL('../public/data/tanakh-structure.json', import.meta.url);
   console.log(`Reading structure: ${structurePath.pathname}`);
-  const structureJson = await readFile(structurePath, "utf-8");
+  const structureJson = await readFile(structurePath, 'utf-8');
   const structure: TanakhStructure = JSON.parse(structureJson);
 
   // Load source data
-  const sourcePath = new URL("../data/text-dating-source.json", import.meta.url);
+  const sourcePath = new URL('../data/text-dating-source.json', import.meta.url);
   console.log(`Reading source: ${sourcePath.pathname}`);
-  const sourceJson = await readFile(sourcePath, "utf-8");
+  const sourceJson = await readFile(sourcePath, 'utf-8');
   const rawSourceData: SourceData = JSON.parse(sourceJson);
 
   // Normalize source data to standard format
@@ -314,7 +289,7 @@ async function main() {
   // Initialize book structure (all null initially)
   for (const book of structure.books) {
     books[book.name] = book.chapters.map((verseCount) =>
-      Array.from({ length: verseCount }, () => null as VerseDating | null)
+      Array.from({ length: verseCount }, () => null as VerseDating | null),
     );
   }
 
@@ -365,7 +340,7 @@ async function main() {
     }
 
     console.log(
-      `  ${entry.book} ${entry.chapter}:${entry.verses} -> ${verses.length} verses (${entry.dating.min} to ${entry.dating.max})`
+      `  ${entry.book} ${entry.chapter}:${entry.verses} -> ${verses.length} verses (${entry.dating.min} to ${entry.dating.max})`,
     );
   }
 
@@ -374,9 +349,7 @@ async function main() {
   // For now, keep full structure but remove books with no data
   const booksWithData: { [bookName: string]: VerseDating[][] } = {};
   for (const [bookName, chapters] of Object.entries(books)) {
-    const hasData = chapters.some((chapter) =>
-      chapter.some((verse) => verse !== null)
-    );
+    const hasData = chapters.some((chapter) => chapter.some((verse) => verse !== null));
     if (hasData) {
       booksWithData[bookName] = chapters;
     }
@@ -388,10 +361,7 @@ async function main() {
   };
 
   // Ensure output directory exists
-  const outputPath = new URL(
-    "../public/data/text-dating.json",
-    import.meta.url
-  );
+  const outputPath = new URL('../public/data/text-dating.json', import.meta.url);
   const outputDir = dirname(outputPath.pathname);
   await mkdir(outputDir, { recursive: true });
 
@@ -408,6 +378,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Error:", err);
+  console.error('Error:', err);
   process.exit(1);
 });

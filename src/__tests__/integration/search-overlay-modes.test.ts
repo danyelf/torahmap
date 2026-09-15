@@ -180,10 +180,12 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אברהם';
       input.dispatchEvent(new Event('input'));
 
-      const radioButtons = container.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
+      const radioButtons = container.querySelectorAll<HTMLInputElement>(
+        'input[name="hebrew-mode"]',
+      );
       expect(radioButtons.length).toBe(3);
 
-      const values = Array.from(radioButtons).map(r => r.value);
+      const values = Array.from(radioButtons).map((r) => r.value);
       expect(values).toContain('substring');
       expect(values).toContain('word');
       expect(values).toContain('root');
@@ -196,8 +198,10 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אברהם';
       input.dispatchEvent(new Event('input'));
 
-      const radioButtons = container.querySelectorAll<HTMLInputElement>('input[name="hebrew-mode"]');
-      const checkedButton = Array.from(radioButtons).find(r => r.checked);
+      const radioButtons = container.querySelectorAll<HTMLInputElement>(
+        'input[name="hebrew-mode"]',
+      );
+      const checkedButton = Array.from(radioButtons).find((r) => r.checked);
 
       expect(checkedButton).toBeDefined();
       expect(checkedButton?.value).toBe('substring');
@@ -229,7 +233,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.dispatchEvent(new Event('input'));
 
       // Check results (Exodus 1:1 has "ואלה" - substring match)
-      const verse = testVerses.find(v => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
+      const verse = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
       const substringColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
       // Should be highlighted (matched as substring)
@@ -258,13 +262,17 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אברהם';
 
       // Set to word mode
-      const wordRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="word"]');
+      const wordRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="word"]',
+      );
       wordRadio!.checked = true;
       input.dispatchEvent(new Event('input'));
 
       // Genesis 17:5 and Exodus 3:6 should match (have אברהם)
-      const gen175 = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
-      const ex36 = testVerses.find(v => v.book === 'Exodus' && v.chapter === 3 && v.verse === 6);
+      const gen175 = testVerses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
+      );
+      const ex36 = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 3 && v.verse === 6);
 
       const color175 = searchOverlay.getVerseColor(gen175!);
       const color36 = searchOverlay.getVerseColor(ex36!);
@@ -284,14 +292,18 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אברם'; // Search for Abram
 
       // Set to word mode
-      const wordRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="word"]');
+      const wordRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="word"]',
+      );
       wordRadio!.checked = true;
       input.dispatchEvent(new Event('input'));
 
       // Genesis 17:5 has אברהם but NOT אברם alone in that form
       // (Actually it has both אברם and אברהם in the verse text)
       // Genesis 12:1 has אברם
-      const gen121 = testVerses.find(v => v.book === 'Genesis' && v.chapter === 12 && v.verse === 1);
+      const gen121 = testVerses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 12 && v.verse === 1,
+      );
 
       const color121 = searchOverlay.getVerseColor(gen121!);
 
@@ -307,15 +319,21 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אברהם';
 
       // Test word mode first
-      const wordRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="word"]');
+      const wordRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="word"]',
+      );
       wordRadio!.checked = true;
       input.dispatchEvent(new Event('input'));
 
-      const verse = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
+      const verse = testVerses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
+      );
       const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
       // Now test root mode
-      const rootRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="root"]');
+      const rootRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="root"]',
+      );
       rootRadio!.checked = true;
       rootRadio!.dispatchEvent(new Event('change'));
 
@@ -397,7 +415,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(params!.hm).toBe('word');
 
       // Verify search executed in word mode
-      const gen175 = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
+      const gen175 = testVerses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
+      );
       const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
       expect(color).not.toBeNull();
     });
@@ -420,7 +440,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       applyOverlayParams(searchOverlay, urlParams);
 
       // Check that substring mode is selected (default)
-      const substringRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="substring"]');
+      const substringRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="substring"]',
+      );
       expect(substringRadio?.checked).toBe(true);
     });
 
@@ -431,7 +453,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       applyOverlayParams(searchOverlay, urlParams);
 
       // Should default to substring mode
-      const substringRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="substring"]');
+      const substringRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="substring"]',
+      );
       expect(substringRadio?.checked).toBe(true);
     });
 
@@ -528,12 +552,16 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אברהם';
 
       // Set to root mode
-      const rootRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="root"]');
+      const rootRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="root"]',
+      );
       rootRadio!.checked = true;
       input.dispatchEvent(new Event('input'));
 
       // Should find אברהם as whole word (lexeme lookup fails, falls back to whole-word)
-      const gen175 = testVerses.find(v => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5);
+      const gen175 = testVerses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
+      );
       const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
@@ -550,24 +578,32 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אלה';
 
       // Set to root mode
-      const rootRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="root"]');
+      const rootRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="root"]',
+      );
       rootRadio!.checked = true;
       input.dispatchEvent(new Event('input'));
 
       // Exodus 1:1 has "ואלה" - should NOT match in root mode
-      const ex11 = testVerses.find(v => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
+      const ex11 = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
       const rootColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
 
       // Switch to substring mode
-      const substringRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="substring"]');
+      const substringRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="substring"]',
+      );
       substringRadio!.checked = true;
       substringRadio!.dispatchEvent(new Event('change'));
 
       const substringColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
 
       // Substring should match, root should not (dimmed)
-      if (Array.isArray(rootColor) && typeof rootColor[0] === 'number' &&
-          Array.isArray(substringColor) && typeof substringColor[0] === 'number') {
+      if (
+        Array.isArray(rootColor) &&
+        typeof rootColor[0] === 'number' &&
+        Array.isArray(substringColor) &&
+        typeof substringColor[0] === 'number'
+      ) {
         // Root mode should be dimmed (not matched)
         expect(rootColor[0]).toBeLessThan(1);
 
@@ -589,7 +625,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       const modes = ['substring', 'word', 'root'];
       for (const mode of modes) {
-        const radio = container.querySelector<HTMLInputElement>(`input[name="hebrew-mode"][value="${mode}"]`);
+        const radio = container.querySelector<HTMLInputElement>(
+          `input[name="hebrew-mode"][value="${mode}"]`,
+        );
         if (radio) {
           radio.checked = true;
           radio.dispatchEvent(new Event('change'));
@@ -609,7 +647,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Switch modes without entering query
       const modes = ['word', 'root', 'substring'];
       for (const mode of modes) {
-        const radio = container.querySelector<HTMLInputElement>(`input[name="hebrew-mode"][value="${mode}"]`);
+        const radio = container.querySelector<HTMLInputElement>(
+          `input[name="hebrew-mode"][value="${mode}"]`,
+        );
         if (radio) {
           radio.checked = true;
           radio.dispatchEvent(new Event('change'));
@@ -629,13 +669,17 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       const modes = ['word', 'root', 'substring', 'word', 'root'];
       for (const mode of modes) {
-        const radio = container.querySelector<HTMLInputElement>(`input[name="hebrew-mode"][value="${mode}"]`);
+        const radio = container.querySelector<HTMLInputElement>(
+          `input[name="hebrew-mode"][value="${mode}"]`,
+        );
         radio!.checked = true;
         radio!.dispatchEvent(new Event('change'));
       }
 
       // Should not crash and final mode should be 'root'
-      const rootRadio = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"][value="root"]');
+      const rootRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="root"]',
+      );
       expect(rootRadio?.checked).toBe(true);
     });
   });

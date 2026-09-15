@@ -1,8 +1,8 @@
 // Layout algorithm: compute (x, y) position for every verse
 
-import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from "./types.ts";
-import { seededRandom } from "./utils/random.ts";
-import { JITTER_CENTER, JITTER_RANGE } from "./constants/app.ts";
+import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from './types.ts';
+import { seededRandom } from './utils/random.ts';
+import { JITTER_CENTER, JITTER_RANGE } from './constants/app.ts';
 
 const VERSE_SIZE = 6; // pixels per verse square
 const CHAPTER_GAP = 2; // gap between chapter rows
@@ -15,8 +15,8 @@ const MIN_WRAP_VERSES = 3; // minimum verses on a wrapped line (avoid widows)
 const PSALMS_COLUMN_GAP = 15; // gap between Psalms columns
 
 // Re-export for tests
-export { seededRandom } from "./utils/random.ts";
-export { getBookSection as getSection } from "./constants/books.ts";
+export { seededRandom } from './utils/random.ts';
+export { getBookSection as getSection } from './constants/books.ts';
 
 // Calculate wrap points for a chapter, avoiding widow lines (< MIN_WRAP_VERSES)
 function calculateWrapPoints(verseCount: number): number[] {
@@ -73,11 +73,8 @@ function layoutChapter(
 
     for (let lineVerseIdx = 0; lineVerseIdx < lineLength; lineVerseIdx++) {
       // Position jitter (±1px) to break up regular grid
-      const jitterX =
-        (seededRandom(globalVerseIdx.value * 2) - JITTER_CENTER) * JITTER_RANGE;
-      const jitterY =
-        (seededRandom(globalVerseIdx.value * 2 + 1) - JITTER_CENTER) *
-        JITTER_RANGE;
+      const jitterX = (seededRandom(globalVerseIdx.value * 2) - JITTER_CENTER) * JITTER_RANGE;
+      const jitterY = (seededRandom(globalVerseIdx.value * 2 + 1) - JITTER_CENTER) * JITTER_RANGE;
 
       const x = bookX + lineIndent + lineVerseIdx * VERSE_SIZE + jitterX;
 
@@ -90,10 +87,7 @@ function layoutChapter(
         size: VERSE_SIZE,
       });
 
-      maxWidth = Math.max(
-        maxWidth,
-        lineIndent + (lineVerseIdx + 1) * VERSE_SIZE,
-      );
+      maxWidth = Math.max(maxWidth, lineIndent + (lineVerseIdx + 1) * VERSE_SIZE);
       verseIdx++;
       globalVerseIdx.value++;
     }
@@ -159,13 +153,7 @@ function layoutBooksRow(
   let maxHeight = 0;
 
   for (const book of books) {
-    const { width, height } = bookLayoutFn(
-      book,
-      currentX,
-      y,
-      globalVerseIdx,
-      verses,
-    );
+    const { width, height } = bookLayoutFn(book, currentX, y, globalVerseIdx, verses);
     maxHeight = Math.max(maxHeight, height);
     currentX += width + gap;
   }
@@ -197,13 +185,7 @@ function layoutBooksStack(
       continue;
     }
 
-    const { width, height } = layoutBook(
-      book,
-      x,
-      currentY,
-      globalVerseIdx,
-      verses,
-    );
+    const { width, height } = layoutBook(book, x, currentY, globalVerseIdx, verses);
     maxWidth = Math.max(maxWidth, width);
     currentY += height + gap;
   }
@@ -280,11 +262,7 @@ function layoutMultiColumn(
   const colBX = bookX + colAWidth + PSALMS_COLUMN_GAP;
   let colBY = bookY;
   let colBWidth = 0;
-  for (
-    let chapterIdx = splitPoint;
-    chapterIdx < book.chapters.length;
-    chapterIdx++
-  ) {
+  for (let chapterIdx = splitPoint; chapterIdx < book.chapters.length; chapterIdx++) {
     const verseCount = book.chapters[chapterIdx];
     const { width, height } = layoutChapter(
       book.name,
@@ -400,20 +378,13 @@ function layoutTorah(
   globalVerseIdx: { value: number },
   verses: TanakhLayout[],
 ): number {
-  const { height } = layoutBooksRow(
-    books,
-    0,
-    sectionY,
-    BOOK_GAP,
-    globalVerseIdx,
-    verses,
-  );
+  const { height } = layoutBooksRow(books, 0, sectionY, BOOK_GAP, globalVerseIdx, verses);
   return height;
 }
 
 export function computeLayout(torahData: TorahData): TanakhLayout[] {
   if (torahData.books.length === 0) {
-    console.warn("Empty books array in torahData");
+    console.warn('Empty books array in torahData');
     return [];
   }
 
@@ -426,8 +397,8 @@ export function computeLayout(torahData: TorahData): TanakhLayout[] {
   const ketuvim: Book[] = [];
 
   for (const book of torahData.books) {
-    if (book.section === "torah") torah.push(book);
-    else if (book.section === "neviim") neviim.push(book);
+    if (book.section === 'torah') torah.push(book);
+    else if (book.section === 'neviim') neviim.push(book);
     else ketuvim.push(book);
   }
 
@@ -439,7 +410,13 @@ export function computeLayout(torahData: TorahData): TanakhLayout[] {
   sectionY += torahHeight + SECTION_GAP;
 
   // Nevi'im
-  const neviimHeight = layoutNeviim(neviim, sectionY, globalVerseIdx, verses, torahData.layout.minorProphetStacks);
+  const neviimHeight = layoutNeviim(
+    neviim,
+    sectionY,
+    globalVerseIdx,
+    verses,
+    torahData.layout.minorProphetStacks,
+  );
   sectionY += neviimHeight + SECTION_GAP;
 
   // Ketuvim

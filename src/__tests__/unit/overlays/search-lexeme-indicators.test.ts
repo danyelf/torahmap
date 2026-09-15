@@ -65,7 +65,9 @@ describe('Search Overlay - Lexeme Indicators', () => {
 
     // Get search input and mode selector
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
-    const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
+    const rootModeRadio = container.querySelector(
+      'input[name="hebrew-mode"][value="root"]',
+    ) as HTMLInputElement;
 
     expect(searchInput).toBeTruthy();
     expect(rootModeRadio).toBeTruthy();
@@ -94,10 +96,12 @@ describe('Search Overlay - Lexeme Indicators', () => {
 
     // Check for fallback indicators (only shown for unresolved terms)
     const indicators = legendContainer.querySelectorAll('.lexeme-indicator');
-    indicators.forEach(indicator => {
+    indicators.forEach((indicator) => {
       const text = indicator.textContent?.trim();
       expect(text).toBe('↪'); // Only fallback indicator should be present
-      expect(indicator.getAttribute('title')).toBe('Not found in the dictionary, using whole-word search');
+      expect(indicator.getAttribute('title')).toBe(
+        'Not found in the dictionary, using whole-word search',
+      );
     });
   });
 
@@ -107,7 +111,9 @@ describe('Search Overlay - Lexeme Indicators', () => {
 
     // Get search input and mode selector
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
-    const substringModeRadio = container.querySelector('input[name="hebrew-mode"][value="substring"]') as HTMLInputElement;
+    const substringModeRadio = container.querySelector(
+      'input[name="hebrew-mode"][value="substring"]',
+    ) as HTMLInputElement;
 
     expect(searchInput).toBeTruthy();
     expect(substringModeRadio).toBeTruthy();
@@ -155,8 +161,12 @@ describe('Search Overlay - Lexeme Indicators', () => {
     searchOverlay.renderControls!(container);
 
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
-    const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
-    const substringModeRadio = container.querySelector('input[name="hebrew-mode"][value="substring"]') as HTMLInputElement;
+    const rootModeRadio = container.querySelector(
+      'input[name="hebrew-mode"][value="root"]',
+    ) as HTMLInputElement;
+    const substringModeRadio = container.querySelector(
+      'input[name="hebrew-mode"][value="substring"]',
+    ) as HTMLInputElement;
 
     // Start with root mode
     rootModeRadio.checked = true;
@@ -197,7 +207,9 @@ describe('Search Overlay - Lexeme Indicators', () => {
     searchOverlay.renderControls!(container);
 
     const searchInput = container.querySelector('#search-input') as HTMLInputElement;
-    const rootModeRadio = container.querySelector('input[name="hebrew-mode"][value="root"]') as HTMLInputElement;
+    const rootModeRadio = container.querySelector(
+      'input[name="hebrew-mode"][value="root"]',
+    ) as HTMLInputElement;
 
     // Set to root mode
     rootModeRadio.checked = true;
@@ -213,7 +225,7 @@ describe('Search Overlay - Lexeme Indicators', () => {
 
     // Check styling - only fallback indicators carry the .lexeme-indicator class
     const indicators = legendContainer.querySelectorAll('.lexeme-indicator');
-    indicators.forEach(indicator => {
+    indicators.forEach((indicator) => {
       const element = indicator as HTMLElement;
       // Should have color styling (orange for fallback)
       expect(element.style.color).toBe('rgb(255, 152, 0)'); // #FF9800

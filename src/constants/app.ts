@@ -18,8 +18,8 @@ export function fetchData(filename: string): Promise<Response> {
  * Applies random offset of ±1px to break up regular grid and reduce moiré patterns
  * Formula: (seededRandom() - JITTER_CENTER) * JITTER_RANGE
  */
-export const JITTER_CENTER = 0.5;  // Center point for jitter calculation (produces range -0.5 to +0.5)
-export const JITTER_RANGE = 2.0;   // Multiplier to scale to ±1px range
+export const JITTER_CENTER = 0.5; // Center point for jitter calculation (produces range -0.5 to +0.5)
+export const JITTER_RANGE = 2.0; // Multiplier to scale to ±1px range
 
 // === Camera/Zoom Constants ===
 
@@ -27,8 +27,8 @@ export const JITTER_RANGE = 2.0;   // Multiplier to scale to ±1px range
  * Zoom step multipliers for mouse wheel
  * Chosen for smooth, intuitive zooming with mouse wheel
  */
-export const ZOOM_OUT_FACTOR = 0.9;  // 10% zoom out per wheel tick
-export const ZOOM_IN_FACTOR = 1.1;   // 10% zoom in per wheel tick
+export const ZOOM_OUT_FACTOR = 0.9; // 10% zoom out per wheel tick
+export const ZOOM_IN_FACTOR = 1.1; // 10% zoom in per wheel tick
 
 /**
  * Default zoom level (1:1 scale)

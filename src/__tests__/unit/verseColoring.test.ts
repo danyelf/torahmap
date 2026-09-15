@@ -339,7 +339,6 @@ describe('itemColoring', () => {
 
       expect(states.length).toBe(3);
     });
-
   });
 
   describe('applyItemColors', () => {
@@ -483,7 +482,7 @@ describe('itemColoring', () => {
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn((v) => {
-          return v.verse === 1 ? [1, 0, 0] as Color : null;
+          return v.verse === 1 ? ([1, 0, 0] as Color) : null;
         }),
       };
 

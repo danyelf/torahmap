@@ -18,9 +18,7 @@ function tupleToObj(c: [number, number, number]): Color {
 /**
  * Convert a tuple-or-tuple-array to Color-or-Color-array.
  */
-function toObjColor(
-  c: [number, number, number] | [number, number, number][]
-): Color | Color[] {
+function toObjColor(c: [number, number, number] | [number, number, number][]): Color | Color[] {
   if (c.length === 0) return { r: 0, g: 0, b: 0 };
   if (typeof c[0] === 'number') {
     return tupleToObj(c as [number, number, number]);
@@ -41,7 +39,7 @@ function objToTuple(c: Color): [number, number, number] {
  */
 export function getColorsForStop(
   stop: ResolvedStoryStop,
-  verses: TanakhLayout[]
+  verses: TanakhLayout[],
 ): (Color | Color[])[] {
   if (!stop.overlay) {
     return verses.map((_, i) => tupleToObj(getDefaultColor(i)));
@@ -77,7 +75,7 @@ export function computeBlendedColors(
   fromStop: ResolvedStoryStop,
   toStop: ResolvedStoryStop,
   t: number,
-  verses: TanakhLayout[]
+  verses: TanakhLayout[],
 ): ([number, number, number] | [number, number, number][])[] {
   // If same stop or at rest, return that stop's colors (no blend needed)
   // Preserve stipple arrays so multi-color verses render correctly.
@@ -101,7 +99,7 @@ export function computeBlendedColors(
  * Multi-color verses remain as arrays so geometry.ts can render them as stipple.
  */
 function colorsToTuplesPreserveStipple(
-  colors: (Color | Color[])[]
+  colors: (Color | Color[])[],
 ): ([number, number, number] | [number, number, number][])[] {
   return colors.map((c) => {
     if (Array.isArray(c)) {

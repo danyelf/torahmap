@@ -66,7 +66,7 @@ export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
 export function createRenderState<T>(
   gl: WebGL2RenderingContext,
   verses: SpatialItem<T>[],
-  dpr: number
+  dpr: number,
 ): RenderState<T> {
   const geometry = buildItemGeometry(verses);
   const buffer = createBuffer(gl, geometry);
@@ -90,7 +90,7 @@ export function createRenderState<T>(
 export function rebuildGeometry<T>(
   gl: WebGL2RenderingContext,
   state: RenderState<T>,
-  colors?: ([number, number, number] | [number, number, number][])[]
+  colors?: ([number, number, number] | [number, number, number][])[],
 ): void {
   const geometry = buildItemGeometry(state.verses, colors);
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
@@ -177,7 +177,7 @@ export function render<T>(
       hoveredVerse,
       hoverColor,
       state.hoverOutlineBuffer,
-      camera
+      camera,
     );
   }
 
@@ -189,7 +189,7 @@ export function render<T>(
       pinnedVerse,
       HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
       state.outlineBuffer,
-      camera
+      camera,
     );
   }
 
@@ -217,7 +217,7 @@ export function renderOutline<T>(
   verse: SpatialItem<T>,
   color: [number, number, number],
   buffer: WebGLBuffer | null,
-  camera: Camera
+  camera: Camera,
 ): WebGLBuffer {
   const { gl, programs, canvas } = context;
   const { dpr } = state;
@@ -232,7 +232,7 @@ export function renderOutline<T>(
     {
       thickness: 2,
       color: color,
-    }
+    },
   );
 
   // Create or update outline buffer

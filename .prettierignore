@@ -5,3 +5,10 @@ coverage
 # Generated or downloaded data. Large, and not ours to reformat.
 data/
 public/data/
+
+# Markdown. Prettier aligns table columns by counting characters, but these
+# tables hold Hebrew and em-dashes, which are not one column wide -- so it
+# produces rows that are less aligned than before and hundreds of characters
+# long. The archived designs under docs/plans/ are also a record of what was
+# decided when, and should not churn.
+*.md

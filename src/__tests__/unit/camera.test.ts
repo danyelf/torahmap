@@ -18,7 +18,7 @@ describe('camera', () => {
       const camera = createCamera(800, 600, bounds);
 
       expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(800 - 320 - 1000);  // -520
+      expect(camera.x).toBe(800 - 320 - 1000); // -520
       expect(camera.y).toBe(40);
     });
 
@@ -27,7 +27,7 @@ describe('camera', () => {
       const camera = createCamera(3840, 2160, bounds);
 
       expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(3840 - 320 - 500);  // 3020
+      expect(camera.x).toBe(3840 - 320 - 500); // 3020
       expect(camera.y).toBe(40);
     });
 

@@ -18,8 +18,8 @@
  * Excluded: tractates that failed verification.
  */
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 // ============================================================================
 // Pure helpers (unit-tested)
@@ -59,7 +59,7 @@ const WRAPPED_MARKER_RE =
   /^[\s\[\(]*(?:<[^>]+>[\s\[\(]*)*<big[^>]*>(?:[\s\(]*<strong[^>]*>)?[\s\(]*(מתני׳|גמ׳)/;
 const BARE_LEADING_MARKER_RE = /^[\s\[\(]*(מתני׳|גמ׳)(?:\s|$)/;
 
-function detectMarker(seg: string): "M" | "G" | null {
+function detectMarker(seg: string): 'M' | 'G' | null {
   // Strip nikkud first — Sefaria's merged ("Steinsaltz") source carries
   // full vowel pointing on every word, including the marker words
   // (מַתְנִי׳ / גְּמָ׳). The bare wikisource source doesn't, but
@@ -70,7 +70,7 @@ function detectMarker(seg: string): "M" | "G" | null {
   // Form 1: marker is wrapped in <big><strong>...</strong></big>.
   const wrapped = s.match(WRAPPED_MARKER_RE);
   if (wrapped) {
-    return wrapped[1] === "מתני׳" ? "M" : "G";
+    return wrapped[1] === 'מתני׳' ? 'M' : 'G';
   }
   // Form 2: marker is bare at the very start, and the first content
   // word IS wrapped in <big>. We require the wrap to appear within the
@@ -78,7 +78,7 @@ function detectMarker(seg: string): "M" | "G" | null {
   // later in the text.
   const bare = s.match(BARE_LEADING_MARKER_RE);
   if (bare && /<big[^>]*>/.test(s.slice(0, 80))) {
-    return bare[1] === "מתני׳" ? "M" : "G";
+    return bare[1] === 'מתני׳' ? 'M' : 'G';
   }
   return null;
 }
@@ -90,8 +90,8 @@ export function walkMarkers(text: string[][]): boolean[][] {
     const row: boolean[] = [];
     for (const seg of amud) {
       const m = detectMarker(seg);
-      if (m === "M") isMishnah = true;
-      else if (m === "G") isMishnah = false;
+      if (m === 'M') isMishnah = true;
+      else if (m === 'G') isMishnah = false;
       row.push(isMishnah);
     }
     result.push(row);
@@ -168,26 +168,21 @@ export function walkMarkersWithBudget(
 
       const seg = amud[si];
       const m = detectMarker(seg);
-      if (m === "M") {
+      if (m === 'M') {
         isMishnah = true;
         // Reset run counter — each marker gets a fresh budget.
         charsConsumedInRun = 0;
         runForceFlipped = false;
-      } else if (m === "G") {
+      } else if (m === 'G') {
         isMishnah = false;
         charsConsumedInRun = 0;
         runForceFlipped = false;
       }
 
       if (isMishnah) {
-        const clean = stripNikkud(stripHtml(seg))
-          .replace(/[\s\.,;:׃״׳"׳']/g, "");
+        const clean = stripNikkud(stripHtml(seg)).replace(/[\s\.,;:׃״׳"׳']/g, '');
         charsConsumedInRun += clean.length;
-        if (
-          !runForceFlipped &&
-          currentBudget > 0 &&
-          charsConsumedInRun > currentBudget
-        ) {
+        if (!runForceFlipped && currentBudget > 0 && charsConsumedInRun > currentBudget) {
           // We've consumed more characters than the largest plausible
           // mishnah in this perek. Assume the source is missing a גמ׳
           // marker and force-flip back to gemara from here.
@@ -209,10 +204,7 @@ export function walkMarkersWithBudget(
  */
 export function perekUnitCharCounts(mishnahText: string[][]): number[][] {
   return mishnahText.map((perek) =>
-    perek.map(
-      (unit) =>
-        stripNikkud(stripHtml(unit)).replace(/[\s\.,;:׃״׳"׳']/g, "").length,
-    ),
+    perek.map((unit) => stripNikkud(stripHtml(unit)).replace(/[\s\.,;:׃״׳"׳']/g, '').length),
   );
 }
 
@@ -223,7 +215,7 @@ export function perekUnitCharCounts(mishnahText: string[][]): number[][] {
  */
 export function stripNikkud(s: string): string {
   // Hebrew points: U+0591..U+05C7 (cantillation + nikkud + punctuation marks)
-  return s.replace(/[\u0591-\u05C7]/g, "");
+  return s.replace(/[\u0591-\u05C7]/g, '');
 }
 
 /**
@@ -236,18 +228,20 @@ export function stripNikkud(s: string): string {
  * counts characters, so a base64 blob would dwarf real content).
  */
 export function stripHtml(s: string): string {
-  return s
-    .replace(/<br\s*\/?>/gi, " ")
-    // Drop entire <img ...> tags including ones whose attributes contain
-    // base64 data: URIs that may span tens of thousands of characters.
-    .replace(/<img\b[^>]*>/gi, "")
-    // Drop any other tag (open, close, or self-closing). At this point
-    // anything in angle brackets is presentational/structural noise.
-    .replace(/<\/?[a-zA-Z][^>]*>/g, "")
-    // Markdown links: [label](href) → label.
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    s
+      .replace(/<br\s*\/?>/gi, ' ')
+      // Drop entire <img ...> tags including ones whose attributes contain
+      // base64 data: URIs that may span tens of thousands of characters.
+      .replace(/<img\b[^>]*>/gi, '')
+      // Drop any other tag (open, close, or self-closing). At this point
+      // anything in angle brackets is presentational/structural noise.
+      .replace(/<\/?[a-zA-Z][^>]*>/g, '')
+      // Markdown links: [label](href) → label.
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 // ============================================================================
@@ -256,7 +250,7 @@ export function stripHtml(s: string): string {
 
 export interface TalmudAmud {
   daf: number;
-  amud: "a" | "b";
+  amud: 'a' | 'b';
   segmentCount: number;
   perekIdx: number;
   perekBoundaryAt?: number;
@@ -313,7 +307,7 @@ interface CoverageReport {
   tractates: Array<{
     seder: string;
     tractate: string;
-    status: "pass" | "hard-fail" | "soft-fail";
+    status: 'pass' | 'hard-fail' | 'soft-fail';
   }>;
 }
 
@@ -326,14 +320,12 @@ interface CoverageReport {
  *
  * Returns null if the format is unrecognized.
  */
-export function parseWholeRef(
-  ref: string,
-): {
+export function parseWholeRef(ref: string): {
   startDaf: number;
-  startAmud: "a" | "b";
+  startAmud: 'a' | 'b';
   startSegment: number;
   endDaf: number;
-  endAmud: "a" | "b";
+  endAmud: 'a' | 'b';
   endSegment: number;
 } | null {
   // Full form: "... 2a:1-13a:15"
@@ -341,10 +333,10 @@ export function parseWholeRef(
   if (full) {
     return {
       startDaf: parseInt(full[1], 10),
-      startAmud: full[2] as "a" | "b",
+      startAmud: full[2] as 'a' | 'b',
       startSegment: parseInt(full[3], 10),
       endDaf: parseInt(full[4], 10),
-      endAmud: full[5] as "a" | "b",
+      endAmud: full[5] as 'a' | 'b',
       endSegment: parseInt(full[6], 10),
     };
   }
@@ -352,7 +344,7 @@ export function parseWholeRef(
   const shorthand = ref.match(/\s(\d+)([ab]):(\d+)-(\d+)$/);
   if (shorthand) {
     const daf = parseInt(shorthand[1], 10);
-    const amud = shorthand[2] as "a" | "b";
+    const amud = shorthand[2] as 'a' | 'b';
     return {
       startDaf: daf,
       startAmud: amud,
@@ -368,12 +360,8 @@ export function parseWholeRef(
 /**
  * Convert (daf, amud) to an amud index, given the tractate's firstDaf.
  */
-export function dafAmudToIdx(
-  daf: number,
-  amud: "a" | "b",
-  firstDaf: number,
-): number {
-  return (daf - firstDaf) * 2 + (amud === "b" ? 1 : 0);
+export function dafAmudToIdx(daf: number, amud: 'a' | 'b', firstDaf: number): number {
+  return (daf - firstDaf) * 2 + (amud === 'b' ? 1 : 0);
 }
 
 // ============================================================================
@@ -405,9 +393,7 @@ export function processTractate(
   // (verify-coverage.ts confirms amudCount + segmentCount per tractate),
   // so we can index into it with the same coordinates.
   const markerText: string[][] =
-    merged && merged.text && merged.text.length === rawText.length
-      ? merged.text
-      : rawText;
+    merged && merged.text && merged.text.length === rawText.length ? merged.text : rawText;
 
   const schemaNodes = schema.alts?.Chapters?.nodes ?? [];
   if (schemaNodes.length === 0) {
@@ -426,11 +412,9 @@ export function processTractate(
 
   for (let pi = 0; pi < schemaNodes.length; pi++) {
     const node = schemaNodes[pi];
-    const ref = parseWholeRef(node.wholeRef ?? "");
+    const ref = parseWholeRef(node.wholeRef ?? '');
     if (!ref) {
-      throw new Error(
-        `${tractateName}: cannot parse perek ${pi} wholeRef "${node.wholeRef}"`,
-      );
+      throw new Error(`${tractateName}: cannot parse perek ${pi} wholeRef "${node.wholeRef}"`);
     }
     const startIdx = dafAmudToIdx(ref.startDaf, ref.startAmud, firstDaf);
     const endIdx = dafAmudToIdx(ref.endDaf, ref.endAmud, firstDaf);
@@ -474,12 +458,7 @@ export function processTractate(
   let mishnahMask: boolean[][];
   if (mishnah && mishnah.text && mishnah.text.length > 0) {
     const unitChars = perekUnitCharCounts(mishnah.text);
-    mishnahMask = walkMarkersWithBudget(
-      markerText,
-      amudPerekIdx,
-      unitChars,
-      amudPerekBoundary,
-    );
+    mishnahMask = walkMarkersWithBudget(markerText, amudPerekIdx, unitChars, amudPerekBoundary);
   } else {
     mishnahMask = walkMarkers(markerText);
   }
@@ -487,9 +466,7 @@ export function processTractate(
   // Strip markers and HTML from text before storing.
   const cleanText: string[][] = rawText.map((amud) =>
     amud.map((seg) =>
-      stripHtml(
-        seg.replace(/מתני׳/g, "").replace(/גמ׳/g, "").replace(/הדרן/g, ""),
-      ),
+      stripHtml(seg.replace(/מתני׳/g, '').replace(/גמ׳/g, '').replace(/הדרן/g, '')),
     ),
   );
 
@@ -498,7 +475,7 @@ export function processTractate(
   for (let ai = 0; ai < rawText.length; ai++) {
     const segmentCount = rawText[ai].length;
     const daf = firstDaf + Math.floor(ai / 2);
-    const amud: "a" | "b" = ai % 2 === 0 ? "a" : "b";
+    const amud: 'a' | 'b' = ai % 2 === 0 ? 'a' : 'b';
     const boundary = amudPerekBoundary.get(ai);
     amudim.push({
       daf,
@@ -530,20 +507,20 @@ export function processTractate(
 // Main script
 // ============================================================================
 
-const CACHE_ROOT = "data-transient/talmud-raw";
-const MISHNAH_CACHE = "data-transient/mishnah-raw";
-const COVERAGE_REPORT = "docs/plans/data/2026-04-07-talmud-coverage-report.json";
-const OUTPUT_DIR = "public/data/talmud";
-const TEXTS_DIR = join(OUTPUT_DIR, "texts");
+const CACHE_ROOT = 'data-transient/talmud-raw';
+const MISHNAH_CACHE = 'data-transient/mishnah-raw';
+const COVERAGE_REPORT = 'docs/plans/data/2026-04-07-talmud-coverage-report.json';
+const OUTPUT_DIR = 'public/data/talmud';
+const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
 
 async function main(): Promise<void> {
-  console.log("Loading coverage report...");
-  const reportText = await readFile(COVERAGE_REPORT, "utf-8");
+  console.log('Loading coverage report...');
+  const reportText = await readFile(COVERAGE_REPORT, 'utf-8');
   const report: CoverageReport = JSON.parse(reportText);
 
-  const passed = report.tractates.filter((t) => t.status === "pass");
+  const passed = report.tractates.filter((t) => t.status === 'pass');
   console.log(`${passed.length} passed tractates to bundle`);
-  console.log("");
+  console.log('');
 
   await mkdir(OUTPUT_DIR, { recursive: true });
   await mkdir(TEXTS_DIR, { recursive: true });
@@ -553,14 +530,8 @@ async function main(): Promise<void> {
   for (const ref of passed) {
     process.stdout.write(`  ${ref.tractate.padEnd(20)} ... `);
     try {
-      const wsText = await readFile(
-        join(CACHE_ROOT, ref.tractate, "wikisource.json"),
-        "utf-8",
-      );
-      const scText = await readFile(
-        join(CACHE_ROOT, ref.tractate, "schema.json"),
-        "utf-8",
-      );
+      const wsText = await readFile(join(CACHE_ROOT, ref.tractate, 'wikisource.json'), 'utf-8');
+      const scText = await readFile(join(CACHE_ROOT, ref.tractate, 'schema.json'), 'utf-8');
       const ws: WikisourceJson = JSON.parse(wsText);
       const sc: SchemaJson = JSON.parse(scText);
 
@@ -569,10 +540,7 @@ async function main(): Promise<void> {
       // mismatched.
       let merged: MergedJson | null = null;
       try {
-        const mergedRaw = await readFile(
-          join(CACHE_ROOT, ref.tractate, "merged.json"),
-          "utf-8",
-        );
+        const mergedRaw = await readFile(join(CACHE_ROOT, ref.tractate, 'merged.json'), 'utf-8');
         merged = JSON.parse(mergedRaw) as MergedJson;
       } catch {
         /* fall back to wikisource markers */
@@ -582,30 +550,30 @@ async function main(): Promise<void> {
       // It's optional — if missing we fall back to the marker-only walker.
       let mishnah: MishnahJson | null = null;
       try {
-        const mishText = await readFile(
-          join(MISHNAH_CACHE, `${ref.tractate}.json`),
-          "utf-8",
-        );
+        const mishText = await readFile(join(MISHNAH_CACHE, `${ref.tractate}.json`), 'utf-8');
         mishnah = JSON.parse(mishText) as MishnahJson;
       } catch {
         /* no standalone mishnah; walker falls back to marker-only mode */
       }
 
-      const { structure: tractateStructure, text: tractateText } =
-        processTractate(ref.seder, ref.tractate, ws, sc, mishnah, merged);
+      const { structure: tractateStructure, text: tractateText } = processTractate(
+        ref.seder,
+        ref.tractate,
+        ws,
+        sc,
+        mishnah,
+        merged,
+      );
 
       structure.tractates.push(tractateStructure);
 
       await writeFile(
         join(TEXTS_DIR, `${ref.tractate}.json`),
         JSON.stringify(tractateText),
-        "utf-8",
+        'utf-8',
       );
 
-      const segCount = tractateStructure.amudim.reduce(
-        (a, b) => a + b.segmentCount,
-        0,
-      );
+      const segCount = tractateStructure.amudim.reduce((a, b) => a + b.segmentCount, 0);
       console.log(
         `OK (${tractateStructure.amudim.length} amudim, ${segCount} segments, ${tractateStructure.perakim.length} perakim)`,
       );
@@ -614,21 +582,17 @@ async function main(): Promise<void> {
     }
   }
 
-  await writeFile(
-    join(OUTPUT_DIR, "structure.json"),
-    JSON.stringify(structure),
-    "utf-8",
-  );
+  await writeFile(join(OUTPUT_DIR, 'structure.json'), JSON.stringify(structure), 'utf-8');
 
-  console.log("");
-  console.log(`Structure: ${join(OUTPUT_DIR, "structure.json")}`);
+  console.log('');
+  console.log(`Structure: ${join(OUTPUT_DIR, 'structure.json')}`);
   console.log(`Texts: ${TEXTS_DIR}/*.json (${structure.tractates.length} files)`);
 }
 
 // Only run main() when invoked as a script, not when imported for testing.
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch((err) => {
-    console.error("bundle failed:", err);
+    console.error('bundle failed:', err);
     process.exit(1);
   });
 }

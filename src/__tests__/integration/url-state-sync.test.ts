@@ -15,11 +15,7 @@ import {
   configureTrop,
   configureSearch,
 } from '../../overlays/index';
-import {
-  SAMPLE_VERSES,
-  SAMPLE_COMMENTARY_DATA,
-  SAMPLE_VERSE_TEXTS,
-} from '../helpers/fixtures';
+import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
 
@@ -48,7 +44,9 @@ describe('URL State Sync Integration', () => {
       // Update mock location
       if (url) {
         const urlString = typeof url === 'string' ? url : url.toString();
-        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
+        const fullUrl = urlString.startsWith('http')
+          ? urlString
+          : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalPushState(state, title, url);
@@ -63,7 +61,9 @@ describe('URL State Sync Integration', () => {
       // Update mock location
       if (url) {
         const urlString = typeof url === 'string' ? url : url.toString();
-        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
+        const fullUrl = urlString.startsWith('http')
+          ? urlString
+          : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalReplaceState(state, title, url);
@@ -138,7 +138,9 @@ describe('URL State Sync Integration', () => {
     });
 
     it('parses search query with special characters', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
+      mockWindowLocation(
+        'http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA',
+      );
       const state = parseUrlState(overlayUrlParams);
 
       expect(state.overlay).toBe('search');
@@ -175,7 +177,9 @@ describe('URL State Sync Integration', () => {
     });
 
     it('parses complete state with all parameters', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=commentary&category=midrash&verse=Genesis.1.1&zoom=1.5&x=50&y=75');
+      mockWindowLocation(
+        'http://localhost:5173/#overlay=commentary&category=midrash&verse=Genesis.1.1&zoom=1.5&x=50&y=75',
+      );
       const state = parseUrlState(overlayUrlParams);
 
       expect(state.overlay).toBe('commentary');
@@ -443,7 +447,6 @@ describe('URL State Sync Integration', () => {
       const urlParams = overlay?.getUrlParams?.();
       expect(urlParams).toEqual({ q: 'moses' });
     });
-
 
     it('handles overlay switch in URL', async () => {
       // Start with commentary

@@ -21,7 +21,7 @@ export async function loadStoryData(): Promise<StoryData> {
 function renderMarkdown(md: string): string {
   return md
     .split(/\n\n+/)
-    .map(paragraph => {
+    .map((paragraph) => {
       const html = paragraph
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
@@ -32,10 +32,7 @@ function renderMarkdown(md: string): string {
     .join('\n');
 }
 
-export function renderStoryPanel(
-  container: HTMLElement,
-  stops: StoryStop[]
-): HTMLElement[] {
+export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HTMLElement[] {
   container.innerHTML = '';
   const stopElements: HTMLElement[] = [];
 
@@ -67,7 +64,7 @@ function cameraForVerse(
   verse: TanakhLayout,
   zoom: number,
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
 ): CameraPosition {
   return {
     x: canvasWidth / 2 / zoom - verse.x - verse.size / 2,
@@ -86,9 +83,9 @@ export function resolveStops(
   initialCamera: CameraPosition,
   verses?: TanakhLayout[],
   canvasWidth?: number,
-  canvasHeight?: number
+  canvasHeight?: number,
 ): ResolvedStoryStop[] {
-  return stops.map(stop => {
+  return stops.map((stop) => {
     const cam = stop.camera;
     let camera: CameraPosition;
 
@@ -96,9 +93,13 @@ export function resolveStops(
       // Verse-ref camera: look up world position, default zoom to 3 if not specified
       const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
-      const verseLayout = parsed && verses && canvasWidth && canvasHeight
-        ? verses.find(v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse)
-        : undefined;
+      const verseLayout =
+        parsed && verses && canvasWidth && canvasHeight
+          ? verses.find(
+              (v) =>
+                v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
+            )
+          : undefined;
       if (verseLayout && canvasWidth && canvasHeight) {
         camera = cameraForVerse(verseLayout, zoom, canvasWidth, canvasHeight);
       } else {
@@ -109,9 +110,11 @@ export function resolveStops(
     } else if (stop.verse && verses && canvasWidth && canvasHeight) {
       // Center camera on the pinned verse
       const parsed = parseVerseFromUrl(stop.verse);
-      const verseLayout = parsed && verses.find(
-        v => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse
-      );
+      const verseLayout =
+        parsed &&
+        verses.find(
+          (v) => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
+        );
       if (verseLayout) {
         camera = cameraForVerse(verseLayout, initialCamera.zoom, canvasWidth, canvasHeight);
       } else {

@@ -2,8 +2,9 @@
 #
 # Torah Map pre-commit gate.
 #
-# Runs the type checker and the full test suite before every commit and
-# refuses the commit if either fails. Together they take about six seconds.
+# Checks formatting on the staged files, then runs the type checker and the
+# full test suite, and refuses the commit if any of the three fails. Together
+# they take about six seconds.
 #
 # This file is tracked in git. It runs because core.hooksPath points at
 # .githooks (see scripts/install-hooks.sh). Because that path is relative,
@@ -32,13 +33,39 @@ fail() {
 # here: a fresh worktree has no node_modules, and the type checker then reports
 # "Cannot find type definition file for 'vite/client'", which reads like a code
 # error but is not. Catch it up front and say so plainly.
-if [ ! -d node_modules ] || [ ! -x node_modules/.bin/vitest ]; then
-  fail "Dependencies are not installed in this worktree, so the tests and
-  type checker cannot run. This is not a problem with your code.
+if [ ! -d node_modules ] || [ ! -x node_modules/.bin/vitest ] ||
+  [ ! -x node_modules/.bin/prettier ]; then
+  fail "Dependencies are not installed in this worktree, so the formatter,
+  tests and type checker cannot run. This is not a problem with your code.
 
       cd $repo_root && npm install
 
   Then commit again."
+fi
+
+# Formatting runs first because it is by far the cheapest of the three and has
+# a one-line fix, so a badly formatted file should not cost a full test run to
+# find out about.
+#
+# Only the staged files are checked, not the whole tree, so that a branch which
+# predates the bulk reformat can still commit the files it actually touches.
+# --ignore-unknown skips anything prettier has no parser for (images, .sh, and
+# so on) and honours .prettierignore, so the list can be passed in raw.
+#
+# Prettier reads the working tree rather than the index, so a file staged in
+# part is judged on the version on disk. That is the version you are about to
+# keep working in, and the check stays a single command.
+echo "pre-commit: checking formatting..."
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -n "$staged" ]; then
+  if ! printf '%s\n' "$staged" | tr '\n' '\0' |
+    xargs -0 node_modules/.bin/prettier --check --ignore-unknown; then
+    fail "Formatting. Fix the files listed above with:
+
+      npm run format
+
+  Then stage them and commit again."
+  fi
 fi
 
 # The typecheck and the tests are run as two separate steps rather than through
@@ -61,4 +88,4 @@ if ! npm run --silent test; then
   fail "Tests failed. See the vitest output above."
 fi
 
-echo "pre-commit: typecheck and tests passed."
+echo "pre-commit: formatting, typecheck and tests passed."

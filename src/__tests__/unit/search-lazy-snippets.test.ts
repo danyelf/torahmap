@@ -1,12 +1,7 @@
 // Tests for lazy snippet evaluation performance optimization
 // tm-6mw3: Hebrew search performance improvement via lazy snippet computation
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  search,
-  buildSearchIndex,
-  computeSnippetForMatch,
-  type SearchResult,
-} from '../../search';
+import { search, buildSearchIndex, computeSnippetForMatch, type SearchResult } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Lazy Snippet Evaluation', () => {
@@ -132,7 +127,7 @@ describe('Lazy Snippet Evaluation', () => {
       const results = search('אלהים', false, 'root');
       expect(results.length).toBeGreaterThanOrEqual(2);
 
-      const gen11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+      const gen11 = results.find((r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
       expect(gen11).toBeDefined();
 
       const match = gen11!.matchingTerms[0];
@@ -143,7 +138,7 @@ describe('Lazy Snippet Evaluation', () => {
       // Extract highlighted portion
       const highlighted = snippetData!.snippet.slice(
         snippetData!.matchStart,
-        snippetData!.matchEnd
+        snippetData!.matchEnd,
       );
 
       // Should contain the base letters א, ל, ה, י, ם (may have nikkud)
@@ -221,7 +216,7 @@ describe('Lazy Snippet Evaluation', () => {
       const results = search('אלהים, אדם', false, 'root');
 
       // Genesis 2:7 has both אלהים and אדם
-      const gen27 = results.find(r => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
+      const gen27 = results.find((r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
 
       if (gen27 && gen27.matchingTerms.length > 1) {
         // Both terms should have no snippets initially
@@ -233,14 +228,18 @@ describe('Lazy Snippet Evaluation', () => {
 
     it('computes snippets independently for each term', () => {
       const results = search('אלהים, אדם', false, 'root');
-      const gen27 = results.find(r => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
+      const gen27 = results.find((r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
 
       if (gen27 && gen27.matchingTerms.length > 1) {
         // Compute snippet for first term only
         const firstMatch = gen27.matchingTerms[0];
         const searchTerms = ['אלהים', 'אדם'];
 
-        const snippet1 = computeSnippetForMatch(gen27, firstMatch.termIndex, searchTerms[firstMatch.termIndex]);
+        const snippet1 = computeSnippetForMatch(
+          gen27,
+          firstMatch.termIndex,
+          searchTerms[firstMatch.termIndex],
+        );
         expect(snippet1).not.toBeNull();
 
         // Second term still has no snippet

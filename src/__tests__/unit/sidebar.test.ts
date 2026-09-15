@@ -287,7 +287,12 @@ describe('sidebar', () => {
   describe('updateSidebar', () => {
     let elements: SidebarElements;
     let verseTexts: VerseTexts;
-    let mockGetVerseText: (texts: VerseTexts, book: string, chapter: number, verse: number) => VerseText | null;
+    let mockGetVerseText: (
+      texts: VerseTexts,
+      book: string,
+      chapter: number,
+      verse: number,
+    ) => VerseText | null;
 
     beforeEach(() => {
       const sidebar = document.createElement('div');
@@ -324,9 +329,9 @@ describe('sidebar', () => {
       verseTexts = {
         'Genesis': {
           '1': {
-            '1': { he: 'בְּרֵאשִׁית', en: 'In the beginning' }
-          }
-        }
+            '1': { he: 'בְּרֵאשִׁית', en: 'In the beginning' },
+          },
+        },
       };
 
       mockGetVerseText = vi.fn((texts, book, chapter, verse) => {
@@ -604,8 +609,8 @@ describe('sidebar', () => {
       it('handles verse with spaces in book name', () => {
         verseTexts['Song of Songs'] = {
           '1': {
-            '1': { he: 'שיר השירים', en: 'Song of Songs' }
-          }
+            '1': { he: 'שיר השירים', en: 'Song of Songs' },
+          },
         };
         const verse = createVerse({ book: 'Song of Songs', chapter: 1, verse: 1 });
 

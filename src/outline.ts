@@ -25,7 +25,7 @@ export interface OutlineOptions {
  */
 export function buildOutlineGeometry(
   bounds: OutlineBounds,
-  options: OutlineOptions = {}
+  options: OutlineOptions = {},
 ): Float32Array {
   const thickness = options.thickness ?? 2;
   const color = options.color ?? HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;

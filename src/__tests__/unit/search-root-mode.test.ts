@@ -55,7 +55,7 @@ function mockFetchForLexiconData() {
 }
 
 const keys = (results: Array<{ book: string; chapter: number; verse: number }>) =>
-  new Set(results.map(r => `${r.book}:${r.chapter}:${r.verse}`));
+  new Set(results.map((r) => `${r.book}:${r.chapter}:${r.verse}`));
 
 describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
   beforeEach(async () => {
@@ -72,12 +72,12 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     it('finds the verb צחק "laugh"', () => {
       const readings = findLexemesForWord('צחק');
       expect(readings).not.toBeNull();
-      expect(readings!.map(id => getLexeme(id)!.gloss)).toContain('laugh');
+      expect(readings!.map((id) => getLexeme(id)!.gloss)).toContain('laugh');
     });
 
     it('finds both Isaac and "laugh" for יצחק, which is spelled alike', () => {
       const readings = findLexemesForWord('יצחק')!;
-      const glosses = readings.map(id => getLexeme(id)!.gloss);
+      const glosses = readings.map((id) => getLexeme(id)!.gloss);
       expect(glosses).toContain('Isaac');
       expect(glosses).toContain('laugh');
     });
@@ -85,13 +85,13 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     it('strips a prefix when the word as typed is not in the text (ובראשית)', () => {
       const readings = findLexemesForWord('ובראשית');
       expect(readings).not.toBeNull();
-      expect(readings!.map(id => getLexeme(id)!.gloss)).toContain('beginning');
+      expect(readings!.map((id) => getLexeme(id)!.gloss)).toContain('beginning');
     });
 
     it('accepts a bare dictionary spelling that never stands alone (מלוכה)', () => {
       const readings = findLexemesForWord('מלוכה');
       expect(readings).not.toBeNull();
-      expect(readings!.map(id => getLexeme(id)!.gloss)).toContain('kingship');
+      expect(readings!.map((id) => getLexeme(id)!.gloss)).toContain('kingship');
     });
 
     it('returns null for something that is not a Hebrew word', () => {
@@ -120,18 +120,18 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     it('marks a verse with every term that matched it', () => {
       const results = search('צחק,יצחק', false, 'root');
       const gen1914 = results.find(
-        r => r.book === 'Genesis' && r.chapter === 19 && r.verse === 14
+        (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 14,
       );
       expect(gen1914).toBeDefined();
-      expect(gen1914!.matchingTerms.map(m => m.termIndex).sort()).toEqual([0, 1]);
+      expect(gen1914!.matchingTerms.map((m) => m.termIndex).sort()).toEqual([0, 1]);
     });
 
     it('does not drag the Hebrew preposition על into a search for עלה', () => {
       // This is the failure the old concordance numbering forced: על "upon"
       // occurs some 5,700 times, so folding it into עלה swamped the results.
       const readings = findLexemesForWord('עלה')!;
-      expect(readings.map(id => getLexeme(id)!.pos)).not.toContain('prep');
-      expect(readings.map(id => getLexeme(id)!.gloss)).toContain('ascend');
+      expect(readings.map((id) => getLexeme(id)!.pos)).not.toContain('prep');
+      expect(readings.map((id) => getLexeme(id)!.gloss)).toContain('ascend');
 
       const ascend = keys(search('עלה', false, 'root'));
       const upon = keys(search('על', false, 'root'));
@@ -141,7 +141,7 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     it('highlights the word that was typed, not another word sharing a reading', () => {
       // Genesis 19:28 has both עַל and עָלָה. A search for עלה must land on עלה.
       const [result] = search('עלה', false, 'root').filter(
-        r => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28
+        (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
       );
       expect(result).toBeDefined();
       const snippet = computeSnippetForMatch(result, 0, 'עלה')!;

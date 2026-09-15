@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 #
-# Point git at the tracked hooks in .githooks/.
+# Point git at the tracked hooks in .githooks/, and tell git blame to skip the
+# formatting-only commits.
 #
 # Run once per clone:   ./scripts/install-hooks.sh
 # Re-running is harmless, and repairs a hook whose executable bit was lost.
@@ -8,6 +9,9 @@
 #   --force      replace a core.hooksPath that is already set to something else
 #   --warn-only  for unattended callers: warn instead of failing when another
 #                hooks path is already configured
+#
+# Both are local git config, which cannot travel in a commit, so they have to be
+# applied once per clone -- which is what this script is for.
 #
 # core.hooksPath is repository-wide config, shared by every worktree. We set it
 # to the RELATIVE path ".githooks", which git resolves against the top of
@@ -26,7 +30,7 @@ for arg in "$@"; do
     -f | --force) force=1 ;;
     --warn-only) warn_only=1 ;;
     -h | --help)
-      sed -n '2,17p' "$0" | sed 's/^#\{1,2\} \{0,1\}//'
+      sed -n '2,20p' "$0" | sed 's/^#\{1,2\} \{0,1\}//'
       exit 0
       ;;
     *)
@@ -47,6 +51,34 @@ root=$(git rev-parse --show-toplevel 2>/dev/null) || root=""
 if [ -z "$root" ]; then
   echo "install-hooks: not inside a git working tree; skipping hook installation." >&2
   exit 0
+fi
+
+# Tell git blame to skip the formatting-only commits listed in
+# .git-blame-ignore-revs, so that a line still names whoever wrote it rather
+# than the reformat that rewrapped the whole repository at once.
+#
+# This runs before the hooks work and independently of it: the two settings
+# have nothing to do with each other, and a clone whose core.hooksPath is
+# already spoken for still wants working blame from the path that exits early.
+#
+# Skip it when the file is not on this branch. Git does not ignore a missing
+# revs file quietly -- it fails every `git blame` outright -- and this is
+# repository-wide config, so a worktree on a branch from before the file
+# existed would start failing too. Rebasing that branch fixes it.
+BLAME_FILE=".git-blame-ignore-revs"
+if [ -f "$root/$BLAME_FILE" ]; then
+  blame_current=$(git config --get blame.ignoreRevsFile 2>/dev/null || true)
+  if [ -z "$blame_current" ]; then
+    if git config blame.ignoreRevsFile "$BLAME_FILE"; then
+      echo "install-hooks: blame.ignoreRevsFile = $BLAME_FILE."
+    else
+      echo "install-hooks: could not set blame.ignoreRevsFile; set it by hand:" >&2
+      echo "install-hooks:     git config blame.ignoreRevsFile $BLAME_FILE" >&2
+    fi
+  elif [ "$blame_current" != "$BLAME_FILE" ]; then
+    echo "install-hooks: blame.ignoreRevsFile is already '$blame_current';" >&2
+    echo "install-hooks: leaving it alone." >&2
+  fi
 fi
 
 current=$(git config --get core.hooksPath 2>/dev/null || true)

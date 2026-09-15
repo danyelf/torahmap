@@ -10,16 +10,12 @@
 // overlay color (when it has data for the segment) and falls back to the
 // structural M/G paint.
 
-import type { TalmudIdentity } from "../../types.ts";
-import type { Overlay } from "../../overlays/types.ts";
-import { isSegmentMishnah, type TalmudStructure } from "../data.ts";
-import { seededRandom } from "../../utils/random.ts";
-import { segmentHashId } from "../segmentHash.ts";
-import {
-  MISHNAH_BASE_COLOR,
-  GEMARA_BASE_COLOR,
-  BRIGHTNESS_JITTER,
-} from "../constants.ts";
+import type { TalmudIdentity } from '../../types.ts';
+import type { Overlay } from '../../overlays/types.ts';
+import { isSegmentMishnah, type TalmudStructure } from '../data.ts';
+import { seededRandom } from '../../utils/random.ts';
+import { segmentHashId } from '../segmentHash.ts';
+import { MISHNAH_BASE_COLOR, GEMARA_BASE_COLOR, BRIGHTNESS_JITTER } from '../constants.ts';
 
 function jitteredColor(
   base: readonly [number, number, number],
@@ -36,24 +32,13 @@ function jitteredColor(
   ];
 }
 
-export function createMgBaseOverlay(
-  structure: TalmudStructure,
-): Overlay<TalmudIdentity> {
+export function createMgBaseOverlay(structure: TalmudStructure): Overlay<TalmudIdentity> {
   return {
-    id: "_mg-base",
-    name: "__internal",
+    id: '_mg-base',
+    name: '__internal',
     getVerseColor(id: TalmudIdentity) {
-      const mishnah = isSegmentMishnah(
-        structure,
-        id.tractate,
-        id.daf,
-        id.amud,
-        id.segment,
-      );
-      return jitteredColor(
-        mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR,
-        id,
-      );
+      const mishnah = isSegmentMishnah(structure, id.tractate, id.daf, id.amud, id.segment);
+      return jitteredColor(mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR, id);
     },
   };
 }
@@ -68,8 +53,8 @@ export function composeWithMgBase(
 ): Overlay<TalmudIdentity> {
   if (userOverlay === null) return base;
   return {
-    id: "composed",
-    name: "composed",
+    id: 'composed',
+    name: 'composed',
     getVerseColor(id: TalmudIdentity) {
       const c = userOverlay.getVerseColor(id);
       if (c !== null) return c;

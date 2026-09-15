@@ -13,12 +13,12 @@
  * Outputs: data-transient/mishnah-raw/<Tractate>.json
  */
 
-import { mkdir, readFile, writeFile, access } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { join } from 'node:path';
 
-const GCS = "https://storage.googleapis.com/sefaria-export";
-const COVERAGE = "data-transient/talmud-coverage-report.json";
-const OUT = "data-transient/mishnah-raw";
+const GCS = 'https://storage.googleapis.com/sefaria-export';
+const COVERAGE = 'data-transient/talmud-coverage-report.json';
+const OUT = 'data-transient/mishnah-raw';
 
 // A few standalone-Mishnah names don't follow the "Mishnah <Tractate>"
 // pattern. Add overrides here as we discover them.
@@ -56,15 +56,13 @@ async function fetchOne(seder: string, tractate: string): Promise<void> {
     throw new Error(`HTTP ${res.status} fetching ${url}`);
   }
   const text = await res.text();
-  await writeFile(out, text, "utf-8");
+  await writeFile(out, text, 'utf-8');
 }
 
 async function main(): Promise<void> {
   await mkdir(OUT, { recursive: true });
-  const report: CoverageReport = JSON.parse(
-    await readFile(COVERAGE, "utf-8"),
-  );
-  const passed = report.tractates.filter((t) => t.status === "pass");
+  const report: CoverageReport = JSON.parse(await readFile(COVERAGE, 'utf-8'));
+  const passed = report.tractates.filter((t) => t.status === 'pass');
   console.log(`Fetching standalone Mishnah for ${passed.length} tractates...`);
   let ok = 0;
   let fail = 0;
@@ -72,7 +70,7 @@ async function main(): Promise<void> {
     process.stdout.write(`  ${t.tractate.padEnd(20)} ... `);
     try {
       await fetchOne(t.seder, t.tractate);
-      console.log("OK");
+      console.log('OK');
       ok++;
     } catch (err) {
       console.log(`FAIL: ${(err as Error).message}`);

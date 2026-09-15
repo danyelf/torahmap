@@ -29,7 +29,7 @@
 export interface Book {
   name: string;
   hebrewName: string;
-  section: "torah" | "neviim" | "ketuvim";
+  section: 'torah' | 'neviim' | 'ketuvim';
   chapters: number[];
 }
 
@@ -82,7 +82,7 @@ export interface TanakhIdentity {
 export interface TalmudIdentity {
   tractate: string;
   daf: number;
-  amud: "a" | "b";
+  amud: 'a' | 'b';
   segment: number;
 }
 
@@ -97,10 +97,7 @@ export type TalmudLayout = SpatialItem<TalmudIdentity>;
  * @param b - Second verse identity (or null)
  * @returns true if both are null or both refer to same verse
  */
-export function tanakhIdentitiesEqual(
-  a: TanakhIdentity | null,
-  b: TanakhIdentity | null,
-): boolean {
+export function tanakhIdentitiesEqual(a: TanakhIdentity | null, b: TanakhIdentity | null): boolean {
   if (a === null && b === null) return true;
   if (a === null || b === null) return false;
   return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
@@ -118,10 +115,7 @@ export function nextTanakhItem(
   current: TanakhIdentity,
 ): TanakhLayout | null {
   const currentIndex = verses.findIndex(
-    (v) =>
-      v.book === current.book &&
-      v.chapter === current.chapter &&
-      v.verse === current.verse,
+    (v) => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse,
   );
 
   if (currentIndex === -1 || currentIndex >= verses.length - 1) {
@@ -143,10 +137,7 @@ export function prevTanakhItem(
   current: TanakhIdentity,
 ): TanakhLayout | null {
   const currentIndex = verses.findIndex(
-    (v) =>
-      v.book === current.book &&
-      v.chapter === current.chapter &&
-      v.verse === current.verse,
+    (v) => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse,
   );
 
   if (currentIndex <= 0) {
@@ -179,10 +170,7 @@ export interface TanakhCommentary {
   categories: Record<string, number>;
 }
 
-export type CommentaryData = Record<
-  string,
-  Record<string, Record<string, TanakhCommentary>>
->;
+export type CommentaryData = Record<string, Record<string, Record<string, TanakhCommentary>>>;
 // Structure: { [book]: { [chapter]: { [verse]: TanakhCommentary } } }
 
 export interface ShaderProgram {
@@ -223,10 +211,6 @@ export interface TropIndexEntry {
 export type TropIndex = Map<string, TropIndexEntry>;
 
 // Verse key utilities for consistent key generation
-export function tanakhKey(
-  book: string,
-  chapter: number,
-  verse: number,
-): string {
+export function tanakhKey(book: string, chapter: number, verse: number): string {
   return `${book}:${chapter}:${verse}`;
 }
