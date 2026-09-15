@@ -371,7 +371,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.renderControls?.(container);
 
       const select = container.querySelector('select') as HTMLSelectElement;
-      const options = Array.from(select.options).map(opt => opt.value);
+      const options = Array.from(select.options).map((opt) => opt.value);
 
       expect(options).toEqual([
         'total',
