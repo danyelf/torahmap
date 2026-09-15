@@ -105,6 +105,12 @@ npx tsx scripts/generate-haftarah-mappings.ts
 
 Then set the hebcal `collected` date in `src/overlays/haftarah.ts`.
 
+The portion names are not hebcal's. They come from Sefaria, out of the Parasha
+structure in its schema export — `schemas/Genesis.json` and the other four
+books, under `https://storage.googleapis.com/sefaria-export/`. They live in the
+`PARSHIOT` table in the generator, and only three rows need to say what hebcal
+calls the portion, because everywhere else the two agree.
+
 Expect the tests to speak up. `src/__tests__/unit/haftarah-data.test.ts` pins
 several readings by name, so if hebcal has changed its mind about one of them
 the test fails and tells you which. That is the intended way to find out;

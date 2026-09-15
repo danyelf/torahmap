@@ -91,23 +91,49 @@ describe('the haftarah readings the app ships', () => {
       );
     });
 
-    it('reads Amos for Acharei, not Ezekiel', () => {
-      expect(format(parsha('Acharei').haftarah.ashkenazi)).toBe(
+    it('reads Amos for Achrei Mot, not Ezekiel', () => {
+      expect(format(parsha('Achrei Mot').haftarah.ashkenazi)).toBe(
         'Amos 9:7-9:15'
       );
     });
 
-    it('reads Ezekiel for Qedoshim, not Amos', () => {
-      expect(format(parsha('Qedoshim').haftarah.ashkenazi)).toBe(
+    it('reads Ezekiel for Kedoshim, not Amos', () => {
+      expect(format(parsha('Kedoshim').haftarah.ashkenazi)).toBe(
         'Ezekiel 22:1-22:19'
       );
     });
 
-    it("gives Vayeilekh its own reading rather than Shabbat Shuvah's", () => {
-      expect(format(parsha('Vayeilekh').haftarah.ashkenazi)).toBe(
+    it("gives Vayeilech its own reading rather than Shabbat Shuvah's", () => {
+      expect(format(parsha('Vayeilech').haftarah.ashkenazi)).toBe(
         'Isaiah 55:6-56:8'
       );
     });
+  });
+
+  // The portions are named as Sefaria names them, so that a reference here and
+  // a reference on Sefaria are the same string. These five are the spellings
+  // that most obviously separate Sefaria's vocabulary from the transliteration
+  // the map used before, and from hebcal's, which differs on three of its own.
+  it('names the portions as Sefaria names them', () => {
+    const named = (n: string) => mappings.parshiot.some((p) => p.name === n);
+    for (const name of [
+      'Bereshit',
+      'Lech Lecha',
+      "Sh'lach",
+      "Ha'Azinu",
+      'V\'Zot HaBerachah',
+    ]) {
+      expect(named(name), `expected a portion named "${name}"`).toBe(true);
+    }
+  });
+
+  it('names the portions in Hebrew as Sefaria does, defective spellings and all', () => {
+    const hebrew = new Map(mappings.parshiot.map((p) => [p.name, p.hebrewName]));
+    expect(hebrew.get('Chukat')).toBe('חקת');
+    expect(hebrew.get('Korach')).toBe('קרח');
+    expect(hebrew.get('Pinchas')).toBe('פנחס');
+    expect(hebrew.get('Bechukotai')).toBe('בחוקתי');
+    expect(hebrew.get('Lech Lecha')).toBe('לך לך');
   });
 
   describe('special occasions', () => {

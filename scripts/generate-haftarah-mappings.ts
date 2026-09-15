@@ -82,71 +82,76 @@ interface HebcalHoliday {
 const TORAH_BOOKS = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'];
 
 /**
- * The 54 weekly portions, in the order they are read, each tied to its key in
- * hebcal's table. The English spellings are the app's own and predate this
- * source, so they are kept rather than replaced with hebcal's; the mapping
- * exists to hold the two vocabularies together.
+ * The 54 weekly portions, in the order they are read.
+ *
+ * The names are Sefaria's, taken from the Parasha structure inside its schema
+ * export (storage.googleapis.com/sefaria-export/schemas/Genesis.json and the
+ * other four books). The map links out to Sefaria, so a portion should be
+ * called here what it is called there, down to the spelling.
+ *
+ * `hebcal` is the key to look the portion up under in the leyning tables,
+ * needed only for the three where hebcal spells it differently.
  */
-const PARSHIOT: Array<{ hebcal: string; name: string; hebrewName: string }> = [
+const PARSHIOT: Array<{ hebcal?: string; name: string; hebrewName: string }> = [
   // Genesis
-  { hebcal: 'Bereshit', name: 'Bereishit', hebrewName: 'בראשית' },
-  { hebcal: 'Noach', name: 'Noach', hebrewName: 'נח' },
-  { hebcal: 'Lech-Lecha', name: 'Lekh Lekha', hebrewName: 'לך־לך' },
-  { hebcal: 'Vayera', name: 'Vayeira', hebrewName: 'וירא' },
-  { hebcal: 'Chayei Sara', name: 'Chayei Sarah', hebrewName: 'חיי שרה' },
-  { hebcal: 'Toldot', name: 'Toldot', hebrewName: 'תולדות' },
-  { hebcal: 'Vayetzei', name: 'Vayeitzei', hebrewName: 'ויצא' },
-  { hebcal: 'Vayishlach', name: 'Vayishlach', hebrewName: 'וישלח' },
-  { hebcal: 'Vayeshev', name: 'Vayyeshev', hebrewName: 'וישב' },
-  { hebcal: 'Miketz', name: 'Miqeitz', hebrewName: 'מקץ' },
-  { hebcal: 'Vayigash', name: 'Vayigash', hebrewName: 'ויגש' },
-  { hebcal: 'Vayechi', name: 'Vayechi', hebrewName: 'ויחי' },
+  { name: 'Bereshit', hebrewName: 'בראשית' },
+  { name: 'Noach', hebrewName: 'נח' },
+  { hebcal: 'Lech-Lecha', name: 'Lech Lecha', hebrewName: 'לך לך' },
+  { name: 'Vayera', hebrewName: 'וירא' },
+  { name: 'Chayei Sara', hebrewName: 'חיי שרה' },
+  { name: 'Toldot', hebrewName: 'תולדות' },
+  { name: 'Vayetzei', hebrewName: 'ויצא' },
+  { name: 'Vayishlach', hebrewName: 'וישלח' },
+  { name: 'Vayeshev', hebrewName: 'וישב' },
+  { name: 'Miketz', hebrewName: 'מקץ' },
+  { name: 'Vayigash', hebrewName: 'ויגש' },
+  { name: 'Vayechi', hebrewName: 'ויחי' },
   // Exodus
-  { hebcal: 'Shemot', name: 'Shemot', hebrewName: 'שמות' },
-  { hebcal: 'Vaera', name: "Va'eira", hebrewName: 'וארא' },
-  { hebcal: 'Bo', name: 'Bo', hebrewName: 'בא' },
-  { hebcal: 'Beshalach', name: 'Beshalach', hebrewName: 'בשלח' },
-  { hebcal: 'Yitro', name: 'Yitro', hebrewName: 'יתרו' },
-  { hebcal: 'Mishpatim', name: 'Mishpatim', hebrewName: 'משפטים' },
-  { hebcal: 'Terumah', name: 'Terumah', hebrewName: 'תרומה' },
-  { hebcal: 'Tetzaveh', name: 'Tetzaveh', hebrewName: 'תצוה' },
-  { hebcal: 'Ki Tisa', name: 'Ki Tisa', hebrewName: 'כי תשא' },
-  { hebcal: 'Vayakhel', name: 'Vayaqhel', hebrewName: 'ויקהל' },
-  { hebcal: 'Pekudei', name: 'Pequdei', hebrewName: 'פקודי' },
+  { name: 'Shemot', hebrewName: 'שמות' },
+  { name: 'Vaera', hebrewName: 'וארא' },
+  { name: 'Bo', hebrewName: 'בא' },
+  { name: 'Beshalach', hebrewName: 'בשלח' },
+  { name: 'Yitro', hebrewName: 'יתרו' },
+  { name: 'Mishpatim', hebrewName: 'משפטים' },
+  { name: 'Terumah', hebrewName: 'תרומה' },
+  { name: 'Tetzaveh', hebrewName: 'תצוה' },
+  { name: 'Ki Tisa', hebrewName: 'כי תשא' },
+  { name: 'Vayakhel', hebrewName: 'ויקהל' },
+  { name: 'Pekudei', hebrewName: 'פקודי' },
   // Leviticus
-  { hebcal: 'Vayikra', name: 'Vayiqra', hebrewName: 'ויקרא' },
-  { hebcal: 'Tzav', name: 'Tzav', hebrewName: 'צו' },
-  { hebcal: 'Shmini', name: 'Shemini', hebrewName: 'שמיני' },
-  { hebcal: 'Tazria', name: 'Tazria', hebrewName: 'תזריע' },
-  { hebcal: 'Metzora', name: 'Metzora', hebrewName: 'מצורע' },
-  { hebcal: 'Achrei Mot', name: 'Acharei', hebrewName: 'אחרי מות' },
-  { hebcal: 'Kedoshim', name: 'Qedoshim', hebrewName: 'קדושים' },
-  { hebcal: 'Emor', name: 'Emor', hebrewName: 'אמור' },
-  { hebcal: 'Behar', name: 'Behar', hebrewName: 'בהר' },
-  { hebcal: 'Bechukotai', name: 'Bechuqotai', hebrewName: 'בחוקותי' },
+  { name: 'Vayikra', hebrewName: 'ויקרא' },
+  { name: 'Tzav', hebrewName: 'צו' },
+  { name: 'Shmini', hebrewName: 'שמיני' },
+  { name: 'Tazria', hebrewName: 'תזריע' },
+  { name: 'Metzora', hebrewName: 'מצורע' },
+  { name: 'Achrei Mot', hebrewName: 'אחרי מות' },
+  { name: 'Kedoshim', hebrewName: 'קדושים' },
+  { name: 'Emor', hebrewName: 'אמור' },
+  { name: 'Behar', hebrewName: 'בהר' },
+  { name: 'Bechukotai', hebrewName: 'בחוקתי' },
   // Numbers
-  { hebcal: 'Bamidbar', name: 'Bamidbar', hebrewName: 'במדבר' },
-  { hebcal: 'Nasso', name: 'Nasso', hebrewName: 'נשא' },
-  { hebcal: "Beha'alotcha", name: "Beha'alotkha", hebrewName: 'בהעלותך' },
-  { hebcal: "Sh'lach", name: 'Shelach', hebrewName: 'שלח' },
-  { hebcal: 'Korach', name: 'Qorach', hebrewName: 'קורח' },
-  { hebcal: 'Chukat', name: 'Chuqat', hebrewName: 'חוקת' },
-  { hebcal: 'Balak', name: 'Balaq', hebrewName: 'בלק' },
-  { hebcal: 'Pinchas', name: 'Pinchas', hebrewName: 'פינחס' },
-  { hebcal: 'Matot', name: 'Mattot', hebrewName: 'מטות' },
-  { hebcal: 'Masei', name: 'Masei', hebrewName: 'מסעי' },
+  { name: 'Bamidbar', hebrewName: 'במדבר' },
+  { name: 'Nasso', hebrewName: 'נשא' },
+  { name: "Beha'alotcha", hebrewName: 'בהעלותך' },
+  { name: "Sh'lach", hebrewName: 'שלח' },
+  { name: 'Korach', hebrewName: 'קרח' },
+  { name: 'Chukat', hebrewName: 'חקת' },
+  { name: 'Balak', hebrewName: 'בלק' },
+  { name: 'Pinchas', hebrewName: 'פנחס' },
+  { name: 'Matot', hebrewName: 'מטות' },
+  { name: 'Masei', hebrewName: 'מסעי' },
   // Deuteronomy
-  { hebcal: 'Devarim', name: 'Devarim', hebrewName: 'דברים' },
-  { hebcal: 'Vaetchanan', name: "Va'etchanan", hebrewName: 'ואתחנן' },
-  { hebcal: 'Eikev', name: 'Eiqev', hebrewName: 'עקב' },
-  { hebcal: "Re'eh", name: "Re'eh", hebrewName: 'ראה' },
-  { hebcal: 'Shoftim', name: 'Shoftim', hebrewName: 'שופטים' },
-  { hebcal: 'Ki Teitzei', name: 'Ki Teitzei', hebrewName: 'כי תצא' },
-  { hebcal: 'Ki Tavo', name: 'Ki Tavo', hebrewName: 'כי תבוא' },
-  { hebcal: 'Nitzavim', name: 'Nitzavim', hebrewName: 'נצבים' },
-  { hebcal: 'Vayeilech', name: 'Vayeilekh', hebrewName: 'וילך' },
-  { hebcal: "Ha'azinu", name: "Ha'azinu", hebrewName: 'האזינו' },
-  { hebcal: 'Vezot Haberakhah', name: 'Vezot Haberakhah', hebrewName: 'וזאת הברכה' },
+  { name: 'Devarim', hebrewName: 'דברים' },
+  { name: 'Vaetchanan', hebrewName: 'ואתחנן' },
+  { name: 'Eikev', hebrewName: 'עקב' },
+  { name: "Re'eh", hebrewName: 'ראה' },
+  { name: 'Shoftim', hebrewName: 'שופטים' },
+  { name: 'Ki Teitzei', hebrewName: 'כי תצא' },
+  { name: 'Ki Tavo', hebrewName: 'כי תבוא' },
+  { name: 'Nitzavim', hebrewName: 'נצבים' },
+  { name: 'Vayeilech', hebrewName: 'וילך' },
+  { hebcal: "Ha'azinu", name: "Ha'Azinu", hebrewName: 'האזינו' },
+  { hebcal: 'Vezot Haberakhah', name: "V'Zot HaBerachah", hebrewName: 'וזאת הברכה' },
 ];
 
 /**
@@ -434,9 +439,10 @@ async function main() {
   console.log('=== PARSHIOT ===\n');
 
   const parshiot: Parsha[] = PARSHIOT.map(({ hebcal, name, hebrewName }) => {
-    const entry = aliyot[hebcal];
+    const key = hebcal ?? name;
+    const entry = aliyot[key];
     if (!entry) {
-      throw new Error(`hebcal has no portion named "${hebcal}" (for ${name})`);
+      throw new Error(`hebcal has no portion named "${key}" (for ${name})`);
     }
 
     const torah = torahSpan(entry, name);

@@ -1,7 +1,7 @@
 {
   "parshiot": [
     {
-      "name": "Bereishit",
+      "name": "Bereshit",
       "hebrewName": "בראשית",
       "torah": {
         "book": "Genesis",
@@ -87,8 +87,8 @@
       }
     },
     {
-      "name": "Lekh Lekha",
-      "hebrewName": "לך־לך",
+      "name": "Lech Lecha",
+      "hebrewName": "לך לך",
       "torah": {
         "book": "Genesis",
         "start": {
@@ -130,7 +130,7 @@
       }
     },
     {
-      "name": "Vayeira",
+      "name": "Vayera",
       "hebrewName": "וירא",
       "torah": {
         "book": "Genesis",
@@ -173,7 +173,7 @@
       }
     },
     {
-      "name": "Chayei Sarah",
+      "name": "Chayei Sara",
       "hebrewName": "חיי שרה",
       "torah": {
         "book": "Genesis",
@@ -259,7 +259,7 @@
       }
     },
     {
-      "name": "Vayeitzei",
+      "name": "Vayetzei",
       "hebrewName": "ויצא",
       "torah": {
         "book": "Genesis",
@@ -345,7 +345,7 @@
       }
     },
     {
-      "name": "Vayyeshev",
+      "name": "Vayeshev",
       "hebrewName": "וישב",
       "torah": {
         "book": "Genesis",
@@ -388,7 +388,7 @@
       }
     },
     {
-      "name": "Miqeitz",
+      "name": "Miketz",
       "hebrewName": "מקץ",
       "torah": {
         "book": "Genesis",
@@ -571,7 +571,7 @@
       }
     },
     {
-      "name": "Va'eira",
+      "name": "Vaera",
       "hebrewName": "וארא",
       "torah": {
         "book": "Exodus",
@@ -948,7 +948,7 @@
       }
     },
     {
-      "name": "Vayaqhel",
+      "name": "Vayakhel",
       "hebrewName": "ויקהל",
       "torah": {
         "book": "Exodus",
@@ -991,7 +991,7 @@
       }
     },
     {
-      "name": "Pequdei",
+      "name": "Pekudei",
       "hebrewName": "פקודי",
       "torah": {
         "book": "Exodus",
@@ -1034,7 +1034,7 @@
       }
     },
     {
-      "name": "Vayiqra",
+      "name": "Vayikra",
       "hebrewName": "ויקרא",
       "torah": {
         "book": "Leviticus",
@@ -1142,7 +1142,7 @@
       }
     },
     {
-      "name": "Shemini",
+      "name": "Shmini",
       "hebrewName": "שמיני",
       "torah": {
         "book": "Leviticus",
@@ -1271,7 +1271,7 @@
       }
     },
     {
-      "name": "Acharei",
+      "name": "Achrei Mot",
       "hebrewName": "אחרי מות",
       "torah": {
         "book": "Leviticus",
@@ -1314,7 +1314,7 @@
       }
     },
     {
-      "name": "Qedoshim",
+      "name": "Kedoshim",
       "hebrewName": "קדושים",
       "torah": {
         "book": "Leviticus",
@@ -1443,8 +1443,8 @@
       }
     },
     {
-      "name": "Bechuqotai",
-      "hebrewName": "בחוקותי",
+      "name": "Bechukotai",
+      "hebrewName": "בחוקתי",
       "torah": {
         "book": "Leviticus",
         "start": {
@@ -1572,7 +1572,7 @@
       }
     },
     {
-      "name": "Beha'alotkha",
+      "name": "Beha'alotcha",
       "hebrewName": "בהעלותך",
       "torah": {
         "book": "Numbers",
@@ -1615,7 +1615,7 @@
       }
     },
     {
-      "name": "Shelach",
+      "name": "Sh'lach",
       "hebrewName": "שלח",
       "torah": {
         "book": "Numbers",
@@ -1658,8 +1658,8 @@
       }
     },
     {
-      "name": "Qorach",
-      "hebrewName": "קורח",
+      "name": "Korach",
+      "hebrewName": "קרח",
       "torah": {
         "book": "Numbers",
         "start": {
@@ -1701,8 +1701,8 @@
       }
     },
     {
-      "name": "Chuqat",
-      "hebrewName": "חוקת",
+      "name": "Chukat",
+      "hebrewName": "חקת",
       "torah": {
         "book": "Numbers",
         "start": {
@@ -1744,7 +1744,7 @@
       }
     },
     {
-      "name": "Balaq",
+      "name": "Balak",
       "hebrewName": "בלק",
       "torah": {
         "book": "Numbers",
@@ -1788,7 +1788,7 @@
     },
     {
       "name": "Pinchas",
-      "hebrewName": "פינחס",
+      "hebrewName": "פנחס",
       "torah": {
         "book": "Numbers",
         "start": {
@@ -1830,7 +1830,7 @@
       }
     },
     {
-      "name": "Mattot",
+      "name": "Matot",
       "hebrewName": "מטות",
       "torah": {
         "book": "Numbers",
@@ -1981,7 +1981,7 @@
       }
     },
     {
-      "name": "Va'etchanan",
+      "name": "Vaetchanan",
       "hebrewName": "ואתחנן",
       "torah": {
         "book": "Deuteronomy",
@@ -2024,7 +2024,7 @@
       }
     },
     {
-      "name": "Eiqev",
+      "name": "Eikev",
       "hebrewName": "עקב",
       "torah": {
         "book": "Deuteronomy",
@@ -2282,7 +2282,7 @@
       }
     },
     {
-      "name": "Vayeilekh",
+      "name": "Vayeilech",
       "hebrewName": "וילך",
       "torah": {
         "book": "Deuteronomy",
@@ -2325,7 +2325,7 @@
       }
     },
     {
-      "name": "Ha'azinu",
+      "name": "Ha'Azinu",
       "hebrewName": "האזינו",
       "torah": {
         "book": "Deuteronomy",
@@ -2368,7 +2368,7 @@
       }
     },
     {
-      "name": "Vezot Haberakhah",
+      "name": "V'Zot HaBerachah",
       "hebrewName": "וזאת הברכה",
       "torah": {
         "book": "Deuteronomy",
