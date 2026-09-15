@@ -24,10 +24,11 @@ export interface Credit {
    * the licence alongside the attribution, so this is an obligation rather
    * than a convenience.
    *
-   * Set it only where the version is actually established. Sefaria records
-   * "CC-BY-SA" and "CC-BY-NC" with no version and no URL of its own, so a
-   * versioned deed link is asserted only where the upstream says which version
-   * it means. Where it does not, the licence shows as plain text.
+   * Set it only where the version is actually established. Sefaria's export
+   * metadata and its API record "CC-BY-SA" and "CC-BY-NC" with no version, so
+   * the version comes from the source itself: its page on Sefaria, the
+   * upstream repository, or the project's own terms. Where none of those name
+   * a version, the licence shows as plain text rather than guessing one.
    */
   licenseUrl?: string;
   /**
@@ -58,7 +59,8 @@ export const APP_CREDITS: readonly Credit[] = [
   {
     source: 'THE JPS TANAKH: Gender-Sensitive Edition',
     url: 'https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/',
-    license: 'CC BY-NC',
+    license: 'CC BY-NC 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
     collected: 'September 2026',
     note: 'The English text, from the Jewish Publication Society, downloaded via Sefaria. The English search index is built from it.',
   },

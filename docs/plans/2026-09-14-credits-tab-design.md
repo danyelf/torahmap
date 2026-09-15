@@ -115,14 +115,18 @@ Creative Commons 4.0 asks for a link to the licence alongside the attribution,
 so `Credit` carries an optional `licenseUrl` and the pill renders as an anchor
 when it is set.
 
-It is set only where the version is actually established. Sefaria records
-`CC-BY-SA` and `CC-BY-NC` with no version and no URL of its own — checked in
-both the downloaded files and its API — so the JPS edition shows a plain,
-unlinked `CC BY-NC`. The Hebrew edition and the Wikipedia article come from
-Wikimedia projects, whose text has been CC BY-SA 4.0 since June 2023, and BHSA
-states CC BY-NC 4.0 upstream; those three link their deeds. A version we are
-confident enough to print is a version we are confident enough to link, and a
-test enforces exactly that.
+It is set only where the version is actually established, and the version does
+not come from Sefaria's metadata: both the downloaded files and its API record
+`CC-BY-SA` and `CC-BY-NC` with no version at all. It comes from each source
+instead. The JPS edition's page on Sefaria links CC BY-NC 4.0. BHSA states
+CC BY-NC 4.0 in its upstream repository. The Hebrew edition and the Wikipedia
+article come from Wikimedia projects, whose text has been CC BY-SA 4.0 since
+June 2023.
+
+All four therefore link their deeds. A version we are confident enough to print
+is a version we are confident enough to link, and a test enforces exactly that
+— it fails on any licence that prints a version without a deed link, so the
+unlinked case remains available for a source that genuinely names none.
 
 ## Where the collection dates come from
 
