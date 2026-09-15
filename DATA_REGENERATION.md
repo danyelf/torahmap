@@ -94,18 +94,20 @@ Then set the BHSA `collected` date in `src/overlays/search.ts`.
 ## Haftarah Readings
 
 Which passage is read on which occasion comes from hebcal's leyning tables,
-vendored as three files in `data/hebcal/`.
-**[data/hebcal/README.md](data/hebcal/README.md)** is the full account: the
+vendored as three files in `data/overlays/haftarah/hebcal/`.
+**[data/overlays/haftarah/hebcal/README.md](data/overlays/haftarah/hebcal/README.md)**
+is the full account: the
 commit they were taken from, how to read an entry, and the curl commands that
 refresh them. Once the files are refreshed:
 
 ```bash
-npx tsx scripts/generate-haftarah-mappings.ts
+npx tsx scripts/overlays/haftarah/generate.ts
 ```
 
 Then set the hebcal `collected` date in `src/overlays/haftarah.ts`.
 
-The names are not hebcal's, and they live in `data/haftarah-names.json` rather
+The names are not hebcal's, and they live in `data/overlays/haftarah/names.json`
+rather
 than in the generator: the 54 portions in reading order, then the 29 occasions,
 each with the key to find it under in the leyning tables. Edit that file to
 change a label; the generator refuses to run on a blank name, an unknown
@@ -117,7 +119,7 @@ export — `schemas/Genesis.json` and the other four books, under
 what hebcal calls the portion, because everywhere else the two agree. The
 occasion names are our own; no source publishes a canonical list of them.
 
-Expect the tests to speak up. `src/__tests__/unit/haftarah-data.test.ts` pins
+Expect the tests to speak up. `src/__tests__/unit/overlays/haftarah-data.test.ts` pins
 several readings by name, so if hebcal has changed its mind about one of them
 the test fails and tells you which. That is the intended way to find out;
 decide whether to follow the change before editing the test to match.

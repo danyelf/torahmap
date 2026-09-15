@@ -1,8 +1,8 @@
 # Hebcal leyning data
 
 Three files copied unchanged from hebcal's leyning package. They are the source
-`scripts/generate-haftarah-mappings.ts` reads to build
-`public/data/haftarah-mappings.json`. Do not hand-edit them: edit them and the
+`scripts/overlays/haftarah/generate.ts` reads to build
+`public/data/overlays/haftarah/mappings.json`. Do not hand-edit them: edit them and the
 next refresh silently throws your changes away.
 
 ## Where they come from
@@ -49,7 +49,7 @@ end of the seventh.
 
 Hebcal keys some occasions by the calendar accident that produces them —
 `"Chanukah Day 4 (on Shabbat)"`, `"Shabbat Shekalim (on Rosh Chodesh)"`. Which
-of those keys we take is recorded in `../haftarah-names.json`, and the rows
+of those keys we take is recorded in `../names.json`, and the rows
 whose choice is not obvious carry a `note` saying why.
 
 ## Refreshing them
@@ -57,13 +57,13 @@ whose choice is not obvious carry a `note` saying why.
 ```bash
 SHA=<commit to pin to>
 for f in aliyot.json holiday-readings.json; do
-  curl -sL -o "data/hebcal/$f" \
+  curl -sL -o "data/overlays/haftarah/hebcal/$f" \
     "https://raw.githubusercontent.com/hebcal/hebcal-leyning/$SHA/src/$f"
 done
-curl -sL -o data/hebcal/LICENSE \
+curl -sL -o data/overlays/haftarah/hebcal/LICENSE \
   "https://raw.githubusercontent.com/hebcal/hebcal-leyning/$SHA/LICENSE"
 
-npx tsx scripts/generate-haftarah-mappings.ts
+npx tsx scripts/overlays/haftarah/generate.ts
 ```
 
 Then update the commit hash above, and the `collected` date on the hebcal
@@ -71,6 +71,6 @@ credit in `src/overlays/haftarah.ts`.
 
 The generator fails rather than writing a bad file if hebcal renames a key it
 looks for, or if any reference falls outside the verse counts in
-`public/data/tanakh-structure.json`. `src/__tests__/unit/haftarah-data.test.ts`
+`public/data/tanakh-structure.json`. `src/__tests__/unit/overlays/haftarah-data.test.ts`
 checks the generated file independently, so run the tests after a refresh: a
 changed reading will show up there as a failure, which is the point.

@@ -1,7 +1,7 @@
 /**
- * Generates haftarah-mappings.json from hebcal's leyning tables.
+ * Generates the Haftarah overlay's mappings from hebcal's leyning tables.
  *
- * Reads the two vendored JSON files under data/hebcal/ — see the README there
+ * Reads the two vendored JSON files under hebcal/ — see the README there
  * for where they came from and how to refresh them — and rewrites them into
  * the shape the Haftarah overlay expects: a Torah range and an Ashkenazi and
  * Sephardi haftarah for each of the 54 weekly portions, plus the haftarot read
@@ -10,7 +10,7 @@
  * Every reference is checked against tanakh-structure.json before anything is
  * written, so a mangled range fails here rather than in the browser.
  *
- * Run with: npx tsx scripts/generate-haftarah-mappings.ts
+ * Run with: npx tsx scripts/overlays/haftarah/generate.ts
  */
 
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
@@ -84,7 +84,7 @@ const TORAH_BOOKS = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']
 /**
  * What the map shows and what it calls each thing: the 54 weekly portions in
  * the order they are read, then the 29 occasions outside the weekly cycle that
- * have a haftarah of their own. Held in data/haftarah-names.json so that
+ * have a haftarah of their own. Held in the overlay's names.json so that
  * editing a label does not mean editing this script.
  *
  * The portion names are Sefaria's, from the Parasha structure in its schema
@@ -128,7 +128,7 @@ const CATEGORIES: ReadonlyArray<SpecialOccasion['category']> = [
  */
 function checkNames(rows: ReadingName[], kind: 'portion' | 'occasion'): ReadingName[] {
   if (rows.length === 0) {
-    throw new Error(`data/haftarah-names.json lists no ${kind}s`);
+    throw new Error(`names.json lists no ${kind}s`);
   }
 
   rows.forEach((row, i) => {
@@ -149,9 +149,7 @@ function checkNames(rows: ReadingName[], kind: 'portion' | 'occasion'): ReadingN
 
   const duplicated = rows.map((r) => r.name).filter((n, i, all) => all.indexOf(n) !== i);
   if (duplicated.length > 0) {
-    throw new Error(
-      `data/haftarah-names.json names the same ${kind} twice: ${duplicated.join(', ')}`,
-    );
+    throw new Error(`names.json names the same ${kind} twice: ${duplicated.join(', ')}`);
   }
 
   return rows;
@@ -272,13 +270,15 @@ async function readJson<T>(relativePath: string): Promise<T> {
 async function main() {
   console.log("Generating haftarah mappings from hebcal's leyning tables...\n");
 
-  const aliyot = await readJson<Record<string, HebcalParsha>>('../data/hebcal/aliyot.json');
-  const holidays = await readJson<Record<string, HebcalHoliday>>(
-    '../data/hebcal/holiday-readings.json',
+  const aliyot = await readJson<Record<string, HebcalParsha>>(
+    '../../../data/overlays/haftarah/hebcal/aliyot.json',
   );
-  const structure = await readJson<TanakhStructure>('../public/data/tanakh-structure.json');
+  const holidays = await readJson<Record<string, HebcalHoliday>>(
+    '../../../data/overlays/haftarah/hebcal/holiday-readings.json',
+  );
+  const structure = await readJson<TanakhStructure>('../../../public/data/tanakh-structure.json');
   const names = await readJson<{ parshiot: ReadingName[]; occasions: ReadingName[] }>(
-    '../data/haftarah-names.json',
+    '../../../data/overlays/haftarah/names.json',
   );
   const parshaNames = checkNames(names.parshiot, 'portion');
   const occasionNames = checkNames(names.occasions, 'occasion');
@@ -357,7 +357,10 @@ async function main() {
 
   console.log('\n✅ Every reference checks out against tanakh-structure.json');
 
-  const outputPath = new URL('../public/data/haftarah-mappings.json', import.meta.url);
+  const outputPath = new URL(
+    '../../../public/data/overlays/haftarah/mappings.json',
+    import.meta.url,
+  );
   await mkdir(dirname(outputPath.pathname), { recursive: true });
   await writeFile(outputPath, JSON.stringify({ parshiot, specialOccasions }, null, 2));
 

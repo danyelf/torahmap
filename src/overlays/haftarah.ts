@@ -238,12 +238,12 @@ export const haftarahOverlay: Overlay = {
     try {
       // Load both data files in parallel
       const [haftarahRes, structureRes] = await Promise.all([
-        fetchData('haftarah-mappings.json'),
+        fetchData('overlays/haftarah/mappings.json'),
         fetchData('tanakh-structure.json'),
       ]);
 
       if (!haftarahRes.ok) {
-        console.error(`Failed to load haftarah-mappings.json: ${haftarahRes.status}`);
+        console.error(`Failed to load overlays/haftarah/mappings.json: ${haftarahRes.status}`);
         return;
       }
       if (!structureRes.ok) {

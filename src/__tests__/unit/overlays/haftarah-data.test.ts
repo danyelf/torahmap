@@ -1,12 +1,13 @@
 // Quality checks on the generated haftarah mappings.
 //
-// The readings come from hebcal's leyning tables, vendored under data/hebcal/.
+// The readings come from hebcal's leyning tables, vendored under
+// data/overlays/haftarah/hebcal/.
 // These tests read the generated file directly: they check that it still says
 // what hebcal says, and that every reference it contains points at a verse the
 // Tanakh actually has.
 //
 // Regenerate the file with:
-//   npx tsx scripts/generate-haftarah-mappings.ts
+//   npx tsx scripts/overlays/haftarah/generate.ts
 
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
@@ -36,7 +37,7 @@ interface Parsha extends Reading {
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
 const mappings = JSON.parse(
-  fs.readFileSync(path.join(dataDir, 'haftarah-mappings.json'), 'utf-8'),
+  fs.readFileSync(path.join(dataDir, 'overlays', 'haftarah', 'mappings.json'), 'utf-8'),
 ) as { parshiot: Parsha[]; specialOccasions: Reading[] };
 
 const structure = JSON.parse(
