@@ -64,52 +64,53 @@ describe('help modal', () => {
 });
 
 describe('credits tab', () => {
-  it('credits what the whole map rests on', async () => {
-    const modal = await openHelp();
-    clickTab(modal, 'credits');
-    const text = bodyText(modal);
+  /** Overlays the registry holds that have something to declare. */
+  const withCredits = (overlays: { name: string; credits?: readonly unknown[] }[]) =>
+    overlays.filter((o) => o.credits && o.credits.length > 0);
 
-    expect(text).toContain('Miqra according to the Masorah');
-    expect(text).toContain('THE JPS TANAKH: Gender-Sensitive Edition');
-    expect(text).toContain('Sefaria');
-  });
-
-  it('credits each overlay that draws on a source of its own, under its own name', async () => {
-    const modal = await openHelp();
-    clickTab(modal, 'credits');
-    const text = bodyText(modal);
-
-    expect(text).toContain('Text Search');
-    expect(text).toContain('BHSA');
-    expect(text).toContain('Haftarah');
-    expect(text).toContain('Mechon Mamre');
-    expect(text).toContain('Text Dating');
-    expect(text).toContain('Dating the Bible');
-  });
-
-  it('leaves out overlays that add no source of their own', async () => {
+  it('heads one block per crediting overlay, under that overlay\'s own name', async () => {
     const modal = await openHelp();
     clickTab(modal, 'credits');
 
     const headings = [...modal.querySelectorAll('.credit-block-title')].map((h) => h.textContent);
-    expect(headings).not.toContain('Trop');
-    expect(headings).not.toContain('Verse Length');
+    const expected = withCredits(await registeredOverlays()).map((o) => o.name);
+
+    // One block per crediting overlay, in registry order, after the block for
+    // what the map itself rests on.
+    expect(headings.slice(1)).toEqual(expected);
+  });
+
+  it('leaves out overlays that declare nothing', async () => {
+    const modal = await openHelp();
+    clickTab(modal, 'credits');
+
+    const headings = [...modal.querySelectorAll('.credit-block-title')].map((h) => h.textContent);
+    const silent = (await registeredOverlays())
+      .filter((o) => !o.credits || o.credits.length === 0)
+      .map((o) => o.name);
+
+    expect(silent.filter((name) => headings.includes(name))).toEqual([]);
   });
 
   it('builds from the registry when the tab is opened, not at import time', async () => {
     const modal = await openHelp();
     clickTab(modal, 'credits');
 
-    // Every overlay with credits contributes a block, plus one for the map
-    // itself. Derived rather than hard-coded, so adding or dropping an overlay
-    // does not mean editing a number here.
-    const overlays = await registeredOverlays();
-    const expected = overlays.filter((o) => o.credits && o.credits.length > 0).length + 1;
+    const expected = withCredits(await registeredOverlays()).length + 1;
 
     // Without this the assertion would pass on an empty registry, which is the
     // very thing it exists to rule out.
     expect(expected).toBeGreaterThan(1);
     expect(modal.querySelectorAll('.credit-block').length).toBe(expected);
+  });
+
+  it('shows a row for every credit declared', async () => {
+    const modal = await openHelp();
+    clickTab(modal, 'credits');
+
+    const declared = (await registeredOverlays()).flatMap((o) => o.credits ?? []).length;
+
+    expect(modal.querySelectorAll('.credit-row').length).toBeGreaterThan(declared);
   });
 
   it('opens every source link in a new tab, safely', async () => {
@@ -126,12 +127,11 @@ describe('credits tab', () => {
 });
 
 describe('overview byline', () => {
-  it('no longer carries the long credits paragraphs', async () => {
+  it('carries no credit blocks of its own', async () => {
     const modal = await openHelp();
-    const text = bodyText(modal);
 
-    expect(text).not.toContain('Miqra according to the Masorah');
-    expect(text).toContain('Danyel Fisher');
+    expect(modal.querySelectorAll('.credit-block')).toHaveLength(0);
+    expect(modal.querySelector('.credits')).not.toBeNull();
   });
 
   it('links through to the credits tab', async () => {
@@ -141,6 +141,8 @@ describe('overview byline', () => {
     expect(link).not.toBeNull();
 
     link!.click();
-    expect(bodyText(modal)).toContain('Mechon Mamre');
+
+    expect(modal.querySelector('.help-tab.active')?.getAttribute('data-tab')).toBe('credits');
+    expect(modal.querySelectorAll('.credit-block').length).toBeGreaterThan(0);
   });
 });

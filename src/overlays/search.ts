@@ -568,11 +568,11 @@ export const searchOverlay: Overlay = {
   name: 'Text Search',
   credits: [
     {
-      source: 'ETCBC BHSA (2021), read through Text-Fabric',
-      url: 'https://github.com/ETCBC/bhsa',
+      source: 'Eep Talstra Centre for Bible and Computer, Biblia Hebraica Stuttgartensia',
+      url: 'https://dx.doi.org/10.17026/dans-z6y-skyh',
       license: 'CC BY-NC 4.0',
       collected: 'September 2026',
-      note: 'The Hebrew dictionary behind root mode. Cite 10.17026/dans-z6y-skyh.',
+      note: 'Available on Github at https://github.com/ETCBC/bhsa',
     },
   ],
 

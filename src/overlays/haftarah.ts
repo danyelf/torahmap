@@ -211,17 +211,10 @@ function isRelevantVerse(verse: TanakhIdentity): boolean {
 export const haftarahOverlay: Overlay = {
   id: 'haftarah',
   name: 'Haftarah',
-  credits: [
-    {
-      source: 'Mechon Mamre, Weekly Torah Readings',
-      url: 'https://mechon-mamre.org/jewfaq/readings.htm',
-      collected: 'January 2026',
-      // No licence field: the page states a copyright notice and grants no
-      // permission, and a notice shown in the licence pill would read as a
-      // grant beside the real CC ones.
-      note: '© Mechon Mamre 2013. The page states no licence.',
-    },
-  ],
+  // Nothing to credit: which passage is read on which occasion is recorded in
+  // many places, so the readings are not one source's work. Empty rather than
+  // absent, to say this was decided rather than overlooked.
+  credits: [],
 
   async init() {
     try {

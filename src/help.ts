@@ -60,8 +60,7 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => strin
   credits: {
     title: 'Credits',
     content: () => `
-      <p>The map is built out of other people's work. Several of these sources
-      ask to be named, and this is where that happens.</p>
+      <p>Data Sources for the Torah Map.</p>
       ${renderCreditsHtml(getAllOverlays())}
     `,
   },

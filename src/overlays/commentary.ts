@@ -48,10 +48,8 @@ export const commentaryOverlay: Overlay = {
   credits: [
     {
       source: 'Sefaria link exports',
-      url: 'https://www.sefaria.org/',
-      license: "Sefaria's terms",
-      collected: 'January 2026',
-      note: 'Sefaria re-exports these monthly, so counts trail the live site.',
+      url: 'https://github.com/Sefaria/Sefaria-Export',
+      collected: 'September 2026',
     },
   ],
 
