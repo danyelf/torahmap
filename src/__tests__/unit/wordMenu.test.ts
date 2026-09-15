@@ -352,7 +352,13 @@ describe('other readings escape hatch', () => {
 });
 
 describe('a spelling the verse cannot settle', () => {
-  it('offers the readings the spelling allows instead of denying the word exists', () => {
+  // Nearly nine in ten of these clicks are a function word carrying a prefix or
+  // a suffix - את alone is more than half of them - and the generator leaves
+  // those readings out of the spelling map on purpose. So the candidates the
+  // spelling allows are usually unrelated words that happen to be written the
+  // same way, and searching the spelling as written is what actually works.
+
+  it('offers the spelling as written, and nothing else until asked', () => {
     openWordMenu({
       word: 'אתו',
       meanings: [],
@@ -365,19 +371,15 @@ describe('a spelling the verse cannot settle', () => {
     });
 
     const menu = document.querySelector('.word-menu')!;
-    expect(menu.textContent).not.toContain('Not in the dictionary');
+    expect(menu.textContent).toContain('Not found as a dictionary word.');
 
-    const choices = [...document.querySelectorAll('.word-menu-choice')];
-    expect(choices.some((c) => c.textContent?.includes('leafage'))).toBe(true);
-    expect(choices.some((c) => c.textContent?.includes('ascend'))).toBe(true);
+    const choices = [...document.querySelectorAll<HTMLElement>('.word-menu-choice')];
+    expect(choices).toHaveLength(1);
+    expect(choices[0].textContent).toContain('אתו');
+    expect(choices[0].textContent).toContain('as written');
   });
 
-  it('still offers the spelling as written, since the readings are usually not it', () => {
-    // Almost nine in ten of these words are a function word carrying a prefix
-    // or a suffix - את alone is more than half of them - and the generator
-    // leaves those out of the spelling map on purpose. So the readings on offer
-    // are usually unrelated words that happen to be spelled the same, and the
-    // reader needs a way past them.
+  it('searches the spelling when that choice is taken', () => {
     const onChoose = vi.fn();
     openWordMenu({
       word: 'אתו',
@@ -390,19 +392,54 @@ describe('a spelling the verse cannot settle', () => {
       onChoose,
     });
 
-    const choices = [...document.querySelectorAll<HTMLElement>('.word-menu-choice')];
-    expect(choices).toHaveLength(3);
-    expect(choices.some((c) => c.textContent?.includes('leafage'))).toBe(true);
-    expect(choices.some((c) => c.textContent?.includes('ascend'))).toBe(true);
+    document.querySelector<HTMLElement>('.word-menu-choice')!.click();
 
-    const literal = choices.find((c) => c.textContent?.includes('as written'))!;
-    expect(literal.textContent).toContain('אתו');
-
-    literal.click();
     expect(onChoose).toHaveBeenCalledWith(null);
   });
 
-  it('still says so when the spelling really is unknown', () => {
+  it('keeps the candidate readings one click away', () => {
+    openWordMenu({
+      word: 'אתו',
+      meanings: [],
+      otherReadings: [leaf, ascend],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose: vi.fn(),
+    });
+
+    const expandButton = document.querySelector<HTMLElement>('.word-menu-expand-other')!;
+    expect(expandButton).not.toBeNull();
+
+    expandButton.click();
+
+    const choices = [...document.querySelectorAll('.word-menu-choice')];
+    expect(choices.some((c) => c.textContent?.includes('leafage'))).toBe(true);
+    expect(choices.some((c) => c.textContent?.includes('ascend'))).toBe(true);
+  });
+
+  it('hands back an expanded reading when one is chosen', () => {
+    const onChoose = vi.fn();
+    openWordMenu({
+      word: 'אתו',
+      meanings: [],
+      otherReadings: [leaf, ascend],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose,
+    });
+
+    document.querySelector<HTMLElement>('.word-menu-expand-other')!.click();
+    const choices = [...document.querySelectorAll<HTMLElement>('.word-menu-choice')];
+    choices.find((c) => c.textContent?.includes('ascend'))!.click();
+
+    expect(onChoose).toHaveBeenCalledWith(ascend);
+  });
+
+  it('offers no disclosure when the spelling allows nothing either', () => {
     openWordMenu({
       word: 'לו',
       meanings: [],
@@ -414,7 +451,11 @@ describe('a spelling the verse cannot settle', () => {
       onChoose: vi.fn(),
     });
 
-    expect(document.querySelector('.word-menu')!.textContent).toContain('Not in the dictionary');
+    expect(document.querySelector('.word-menu')!.textContent).toContain(
+      'Not found as a dictionary word.',
+    );
+    expect(document.querySelector('.word-menu-expand-other')).toBeNull();
+    expect(document.querySelectorAll('.word-menu-choice')).toHaveLength(1);
   });
 });
 

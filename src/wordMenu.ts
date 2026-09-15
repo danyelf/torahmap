@@ -55,11 +55,48 @@ function choice(label: HTMLElement, onPick: () => void): HTMLButtonElement {
 /** Search the spelling exactly as the verse writes it, meanings aside. */
 function literalChoice(options: WordMenuOptions): HTMLButtonElement {
   const label = document.createElement('span');
-  label.textContent = `Search for ${options.word} as written`;
+  label.textContent = `Search ${options.word} as written`;
   return choice(label, () => {
     options.onChoose(null);
     closeWordMenu();
   });
+}
+
+/**
+ * The "other readings" disclosure: a button that replaces itself with the rows
+ * it stands for.
+ *
+ * Both branches of the panel need it, and they need it for the same reason:
+ * these are readings worth offering but not worth putting first. Where the
+ * verse settled the word they are the readings it ruled out; where it could not
+ * they are the whole candidate list, which is usually not the word in front of
+ * the reader. What differs between the branches is which choice is primary, not
+ * how the rest of them are reached.
+ */
+function appendOtherReadings(
+  menu: HTMLElement,
+  readings: Meaning[],
+  options: WordMenuOptions,
+): void {
+  if (readings.length === 0) return;
+
+  const expandButton = document.createElement('button');
+  expandButton.type = 'button';
+  expandButton.className = 'word-menu-expand-other';
+  expandButton.textContent = 'other readings';
+  expandButton.addEventListener('click', () => {
+    // The button stands in for the rows, so it gives up its place to them.
+    expandButton.remove();
+    for (const reading of readings) {
+      menu.appendChild(
+        choice(meaningLabel(reading), () => {
+          options.onChoose(reading);
+          closeWordMenu();
+        }),
+      );
+    }
+  });
+  menu.appendChild(expandButton);
 }
 
 function meaningLabel(meaning: Meaning): HTMLElement {
@@ -108,39 +145,31 @@ export function openWordMenu(options: WordMenuOptions): void {
     note.className = 'word-menu-note';
     note.textContent = 'Five words are already on the map. Remove one to add another.';
     menu.appendChild(note);
-  } else if (options.meanings.length === 0 && options.otherReadings.length === 0) {
+  } else if (options.meanings.length === 0) {
+    // The verse cannot say which word this is, and for nearly nine clicks in
+    // ten the reason is that the true word is a function word carrying a prefix
+    // or a suffix - the object marker את on its own is more than half of them.
+    // The generator leaves those out of the spelling map deliberately, so the
+    // candidates the spelling allows are mostly unrelated words that happen to
+    // be written the same way. Searching the spelling as written is the thing
+    // that actually works here, so it is the choice on offer; the minority of
+    // words the candidate list does suit are one click further on.
     const note = document.createElement('div');
     note.className = 'word-menu-note';
-    note.textContent = 'Not in the dictionary.';
+    note.textContent = 'Not found as a dictionary word.';
     menu.appendChild(note);
 
     menu.appendChild(literalChoice(options));
+    appendOtherReadings(menu, options.otherReadings, options);
   } else {
-    // With nothing the verse confirms, the spelling's own candidates are what
-    // there is to offer. Saying the word is not in the dictionary would be
-    // untrue: the spelling is there, and it is the verse that cannot say which
-    // of its readings this is. The reader is better placed to judge than we
-    // are, so they get the list rather than a denial - and, below it, the
-    // literal search, because the list is usually not the answer. Nearly nine
-    // in ten of these words are a function word carrying a prefix or a suffix,
-    // and the generator leaves those out of the spelling map deliberately, so
-    // what is on offer is unrelated words that happen to share the spelling.
-    const settled = options.meanings.length > 0;
-    const readings = settled ? options.meanings : options.otherReadings;
-
-    if (!settled) {
-      const note = document.createElement('div');
-      note.className = 'word-menu-note';
-      note.textContent = 'The verse does not say which of these it is.';
-      menu.appendChild(note);
-    } else if (readings.length > 1) {
+    if (options.meanings.length > 1) {
       const note = document.createElement('div');
       note.className = 'word-menu-note';
       note.textContent = 'This verse carries more than one of these.';
       menu.appendChild(note);
     }
 
-    for (const meaning of readings) {
+    for (const meaning of options.meanings) {
       menu.appendChild(
         choice(meaningLabel(meaning), () => {
           options.onChoose(meaning);
@@ -155,35 +184,13 @@ export function openWordMenu(options: WordMenuOptions): void {
     // whenever the verse lacks the group's earliest member, and comparing first
     // keys would offer the reader the same reading twice under a different
     // verse count.
-    const extraReadings = settled
-      ? options.otherReadings.filter(
-          (reading) => !readings.some((shown) => sameMeaning(reading, shown.keys)),
-        )
-      : [];
-
-    if (extraReadings.length > 0) {
-      const expandButton = document.createElement('button');
-      expandButton.type = 'button';
-      expandButton.className = 'word-menu-expand-other';
-      expandButton.textContent = 'other readings';
-      expandButton.addEventListener('click', () => {
-        // Replace the expand button with the extra readings.
-        expandButton.remove();
-        for (const reading of extraReadings) {
-          menu.appendChild(
-            choice(meaningLabel(reading), () => {
-              options.onChoose(reading);
-              closeWordMenu();
-            }),
-          );
-        }
-      });
-      menu.appendChild(expandButton);
-    }
-
-    if (!settled) {
-      menu.appendChild(literalChoice(options));
-    }
+    appendOtherReadings(
+      menu,
+      options.otherReadings.filter(
+        (reading) => !options.meanings.some((shown) => sameMeaning(reading, shown.keys)),
+      ),
+      options,
+    );
   }
 
   if (options.replacesOverlay) {
