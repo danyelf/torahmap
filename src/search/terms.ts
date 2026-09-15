@@ -7,7 +7,7 @@
 // lands silently on a different word. So a term is an object with an identity,
 // and these functions are pure — each returns a new list.
 
-import { meaningsFor, type Meaning } from './dictionary.ts';
+import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 
 export interface SearchTerm {
@@ -171,9 +171,9 @@ export function applyMeanings(terms: SearchTerm[], encoded: string): SearchTerm[
     const entry = perTerm[i];
     if (!entry) return term;
 
-    const named = new Set(entry.split('|'));
+    const named = entry.split('|');
     const selected = new Set(
-      term.meanings.filter((m) => m.keys.some((k) => named.has(k))).map((m) => m.keys[0]),
+      term.meanings.filter((m) => sameMeaning(m, named)).map((m) => m.keys[0]),
     );
 
     return selected.size === 0 ? term : { ...term, selected };
@@ -181,13 +181,30 @@ export function applyMeanings(terms: SearchTerm[], encoded: string): SearchTerm[
 }
 
 /**
- * Narrow a term to a single meaning.
+ * Narrow a term to a single meaning, named by any of the lexemes it stands for.
  *
  * Unchecking the others one at a time is fine for the 91% of ambiguous forms
  * that offer two or three, and tedious for the rest — אלה offers ten.
+ *
+ * The keys can come from a row this term does not hold. A reader choosing from
+ * the word panel picks a row the verse built, and the verse's list can head a
+ * reading with a different lexeme than the term's own list does. So the row is
+ * found by any shared lexeme, and what goes into `selected` is that row's own
+ * first key rather than whichever key was handed in: `selectedKeys`, the
+ * checkboxes and the URL all read `selected` as first keys of this term's rows,
+ * and a key belonging to some other list would be silently absent from all of
+ * them.
  */
-export function onlyMeaning(terms: SearchTerm[], id: string, key: string): SearchTerm[] {
-  return terms.map((t) => (t.id === id ? { ...t, selected: new Set([key]) } : t));
+export function onlyMeaning(
+  terms: SearchTerm[],
+  id: string,
+  keys: readonly string[],
+): SearchTerm[] {
+  return terms.map((t) => {
+    if (t.id !== id) return t;
+    const row = t.meanings.find((m) => sameMeaning(m, keys));
+    return row ? { ...t, selected: new Set([row.keys[0]]) } : t;
+  });
 }
 
 /** Put every meaning back, undoing a narrowing. */

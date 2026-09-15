@@ -509,13 +509,17 @@ describe('sidebar', () => {
 
     describe('special text highlighting', () => {
       it('highlights trop marks when trop overlay is active', () => {
+        // A real overlay marks up the same text it was given rather than
+        // replacing it, so the mock does too - otherwise this test would
+        // exercise the wrapWordsInFragment mismatch guard instead of the
+        // highlighting path it's named for.
         const mockOverlay: Overlay = {
           id: 'trop',
           name: 'Trop Overlay',
           getVerseColor: () => null,
           highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
             if (language === 'he') {
-              return '<span>highlighted</span>';
+              return `<mark>${text}</mark>`;
             }
             return text;
           }),
@@ -525,7 +529,11 @@ describe('sidebar', () => {
         updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
 
         expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he');
-        expect(elements.hebrew?.innerHTML).toBe('<span>highlighted</span>');
+        // The mark reaches the popup, and the text inside it is still wrapped
+        // into a clickable word rather than the guard refusing to touch it.
+        expect(elements.hebrew?.querySelector('mark')).not.toBeNull();
+        expect(elements.hebrew?.querySelector('mark .verse-word')).not.toBeNull();
+        expect(elements.hebrew?.textContent).toBe('בְּרֵאשִׁית');
       });
 
       it('highlights search terms when search overlay is active', () => {

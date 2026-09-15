@@ -9,6 +9,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData } from '../../search.ts';
+import { meaningsInVerse } from '../../search/dictionary.ts';
 import {
   addTerm,
   removeTerm,
@@ -238,7 +239,7 @@ describe('showing only one meaning', () => {
     let terms = addTerm([], 'עלה');
     const burntOffering = terms[0].meanings.find((m) => m.gloss === 'burnt-offering')!;
 
-    terms = onlyMeaning(terms, terms[0].id, burntOffering.keys[0]);
+    terms = onlyMeaning(terms, terms[0].id, burntOffering.keys);
 
     expect(terms[0].selected.size).toBe(1);
     expect(selectedKeys(terms[0])).toEqual(['<LH/@heb']);
@@ -249,16 +250,31 @@ describe('showing only one meaning', () => {
     let terms = addTerm([], 'שכם');
     const merged = terms[0].meanings.find((m) => m.keys.length > 1)!;
 
-    terms = onlyMeaning(terms, terms[0].id, merged.keys[0]);
+    terms = onlyMeaning(terms, terms[0].id, merged.keys);
 
     expect(selectedKeys(terms[0])).toEqual(merged.keys);
+  });
+
+  it('finds the row by any of its lexemes, not only the one it happens to head', () => {
+    // A row stands for every lexeme merged into it, and which of them comes
+    // first depends on the list the row was built from. כוש in Genesis 10:7 is
+    // the case: the verse offers one reading, Cush, headed by the lexeme the
+    // verse contains, while the term's own list heads the same reading with
+    // the other one. Matching on the head alone leaves the term selecting
+    // nothing, which searches for nothing.
+    const chosen = meaningsInVerse('כוש', 'Genesis:10:7')[0];
+    let terms = addTerm([], 'כוש');
+
+    terms = onlyMeaning(terms, terms[0].id, chosen.keys);
+
+    expect(selectedKeys(terms[0])).toContain(chosen.keys[0]);
   });
 
   it('does not disturb another term', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'מלך');
     const before = terms[1].selected.size;
 
-    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[1].keys[0]);
+    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[1].keys);
 
     expect(terms[1].selected.size).toBe(before);
   });
@@ -267,7 +283,7 @@ describe('showing only one meaning', () => {
 describe('getting back to all of them', () => {
   it('restores every meaning', () => {
     let terms = addTerm([], 'עלה');
-    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[1].keys[0]);
+    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[1].keys);
 
     terms = allMeanings(terms, terms[0].id);
 
@@ -278,7 +294,7 @@ describe('getting back to all of them', () => {
     let terms = addTerm([], 'עלה');
     expect(isNarrowed(terms[0])).toBe(false);
 
-    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[0].keys[0]);
+    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[0].keys);
 
     expect(isNarrowed(terms[0])).toBe(true);
   });

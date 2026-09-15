@@ -6,6 +6,9 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
+import { lookupForm } from './verseWords.ts';
+import { meaningsInVerse } from './search/dictionary.ts';
+import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
 import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
@@ -19,7 +22,7 @@ import {
   type UrlState,
 } from './urlState.ts';
 import { debounce } from './utils/debounce.ts';
-import { getSidebarElements, updateSidebar } from './sidebar.ts';
+import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import {
   createMouseState,
@@ -36,7 +39,7 @@ import {
   getPinchCenter,
   resetTouchState,
 } from './touchState.ts';
-import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem } from './types.ts';
+import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem, tanakhKey } from './types.ts';
 import { findItemAtPoint } from './hitDetection.ts';
 import { computeItemStates, applyItemColors } from './itemColoring.ts';
 import {
@@ -57,6 +60,7 @@ import {
   configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
+import { searchForMeaning, canAddTerm } from './overlays/search.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -674,6 +678,41 @@ async function main(): Promise<void> {
       saveUrlState(true);
     }
   }
+
+  // Clicking a word in the verse popup.
+  //
+  // The panel is what makes this safe: switching to search destroys whichever
+  // overlay is showing, and a click on a word is too ordinary a gesture to be
+  // allowed to do that on its own.
+  setWordClickHandler((click) => {
+    const word = lookupForm(click.text);
+    const meanings = meaningsInVerse(word, tanakhKey(click.book, click.chapter, click.verse));
+
+    openWordMenu({
+      word: click.text,
+      meanings,
+      anchor: click.element,
+      paletteFull: !canAddTerm(),
+      onChoose: (meaning) => {
+        // Ask before anything is spent. setOverlay() destroys the outgoing
+        // overlay and its settings, so a search that is going to be refused
+        // must be refused first - otherwise the reader loses their Haftarah
+        // view and gains nothing. The panel's own count was taken when it
+        // opened, and a keyboard reader can add a word in between.
+        if (!canAddTerm()) return;
+
+        if (currentOverlayId !== 'search') {
+          setOverlay('search');
+          if (overlaySelect) overlaySelect.value = 'search';
+        }
+
+        // No repaint here, and no second history entry: running the search
+        // announces itself through the overlay's update callback, which paints
+        // the map and writes the URL over whatever setOverlay just pushed.
+        searchForMeaning(word, meaning?.keys ?? null);
+      },
+    });
+  });
 
   // Overlay selector
   overlaySelect?.addEventListener('change', () => {
