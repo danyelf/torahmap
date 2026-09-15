@@ -211,6 +211,10 @@ function isRelevantVerse(verse: TanakhIdentity): boolean {
 export const haftarahOverlay: Overlay = {
   id: 'haftarah',
   name: 'Haftarah',
+  // Nothing to credit: which passage is read on which occasion is recorded in
+  // many places, so the readings are not one source's work. Empty rather than
+  // absent, to say this was decided rather than overlooked.
+  credits: [],
 
   async init() {
     try {

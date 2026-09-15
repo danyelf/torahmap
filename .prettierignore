@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+
+# Generated or downloaded data. Large, and not ours to reformat.
+data/
+public/data/

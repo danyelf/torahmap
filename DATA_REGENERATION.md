@@ -16,6 +16,15 @@ from the bucket, which needs no credentials.
 The Hebrew lexeme index behind root-mode search comes from the
 [ETCBC BHSA](https://github.com/ETCBC/bhsa) database instead.
 
+Every source named here is also credited in the app, in the Credits tab of the
+help modal. The collection dates shown there are hand-maintained strings in
+`src/credits.ts`: no data file carries a generation timestamp, and a git commit
+date cannot stand in for one, because a commit that merely moves or refactors a
+data file would claim it had been re-collected that month. **Whenever you run
+one of the commands below, set that source's `collected` date.** A source with
+no `collected` line shows as "collection date not recorded" rather than
+guessing; add the field when you are the one collecting.
+
 ## Verse Texts
 
 ```bash
@@ -25,6 +34,8 @@ bash scripts/download-texts.sh
 # Bundle verse texts into single file (required after downloading)
 npx tsx scripts/bundle-texts.ts
 ```
+
+Then set `collected` for both editions in `src/credits.ts`.
 
 ### Which editions
 
@@ -61,6 +72,9 @@ thing afterwards.
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 ```
 
+The verse counts have no credit row of their own, so there is no date to
+update here.
+
 ## Hebrew Lexeme Index
 
 Root-mode search needs to know which dictionary word each written form can be.
@@ -75,12 +89,19 @@ Text-Fabric the first time. Once that setup is done:
 .venv/bin/python scripts/search/generate-lexeme-index.py
 ```
 
+Then set the BHSA `collected` date in `src/overlays/search.ts`.
+
 ## Text Dating Data
 
 ```bash
 # Regenerate text dating data (requires data/text-dating-source.json)
 npm run generate:text-dating
 ```
+
+This reads the hand-curated ranges in `data/text-dating-source.json` rather than
+fetching anything, so it does not change when the Wikipedia article behind those
+ranges was last consulted. Set `collected` in `src/overlays/text-dating.ts` only
+if you actually revisit the article.
 
 ## Commentary Counts
 
@@ -97,6 +118,10 @@ regenerates `public/data/commentary-counts.json`, and prints what moved. Pass
 
 Sefaria re-exports on the 1st of each month, and the script prints the export
 date it found, so there is nothing to gain by running this more than monthly.
+
+Set the `collected` date in `src/overlays/commentary.ts` to the export date the
+script printed. That is what the Credits tab shows, and it is the date of the
+export rather than of the run.
 
 The CSVs total about 650MB. `data/sefaria-links/` is gitignored, so a fresh
 clone downloads all of it; a second run re-downloads only what changed.

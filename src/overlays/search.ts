@@ -564,6 +564,18 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
 export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
+  credits: [
+    {
+      source:
+        'Eep Talstra Centre for Bible and Computer, ' +
+        'Biblia Hebraica Stuttgartensia Amstelodamensis (2021)',
+      url: 'https://doi.org/10.17026/dans-z6y-skyh',
+      license: 'CC BY-NC 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
+      collected: 'September 2026',
+      note: 'Cite 10.17026/dans-z6y-skyh. Available on GitHub at github.com/ETCBC/bhsa.',
+    },
+  ],
 
   getVerseColor(verse: TanakhIdentity): Color | Color[] | null {
     // No active search - use default colors
