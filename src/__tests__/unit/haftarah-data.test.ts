@@ -36,20 +36,17 @@ interface Parsha extends Reading {
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
 const mappings = JSON.parse(
-  fs.readFileSync(path.join(dataDir, 'haftarah-mappings.json'), 'utf-8')
+  fs.readFileSync(path.join(dataDir, 'haftarah-mappings.json'), 'utf-8'),
 ) as { parshiot: Parsha[]; specialOccasions: Reading[] };
 
 const structure = JSON.parse(
-  fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8')
+  fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8'),
 ) as { books: Array<{ name: string; chapters: number[] }> };
 
 /** "Isaiah 42:5-43:10", the form used in these tests' expectations. */
 function format(ranges: VerseRange[]): string {
   return ranges
-    .map(
-      (r) =>
-        `${r.book} ${r.start.chapter}:${r.start.verse}-${r.end.chapter}:${r.end.verse}`
-    )
+    .map((r) => `${r.book} ${r.start.chapter}:${r.start.verse}-${r.end.chapter}:${r.end.verse}`)
     .join(', ');
 }
 
@@ -86,27 +83,19 @@ describe('the haftarah readings the app ships', () => {
   // from something else, these are the first assertions to break.
   describe('follows hebcal where the two sources disagree', () => {
     it('reads Obadiah for Vayishlach', () => {
-      expect(format(parsha('Vayishlach').haftarah.ashkenazi)).toBe(
-        'Obadiah 1:1-1:21'
-      );
+      expect(format(parsha('Vayishlach').haftarah.ashkenazi)).toBe('Obadiah 1:1-1:21');
     });
 
     it('reads Amos for Achrei Mot, not Ezekiel', () => {
-      expect(format(parsha('Achrei Mot').haftarah.ashkenazi)).toBe(
-        'Amos 9:7-9:15'
-      );
+      expect(format(parsha('Achrei Mot').haftarah.ashkenazi)).toBe('Amos 9:7-9:15');
     });
 
     it('reads Ezekiel for Kedoshim, not Amos', () => {
-      expect(format(parsha('Kedoshim').haftarah.ashkenazi)).toBe(
-        'Ezekiel 22:1-22:19'
-      );
+      expect(format(parsha('Kedoshim').haftarah.ashkenazi)).toBe('Ezekiel 22:1-22:19');
     });
 
     it("gives Vayeilech its own reading rather than Shabbat Shuvah's", () => {
-      expect(format(parsha('Vayeilech').haftarah.ashkenazi)).toBe(
-        'Isaiah 55:6-56:8'
-      );
+      expect(format(parsha('Vayeilech').haftarah.ashkenazi)).toBe('Isaiah 55:6-56:8');
     });
   });
 
@@ -116,13 +105,7 @@ describe('the haftarah readings the app ships', () => {
   // the map used before, and from hebcal's, which differs on three of its own.
   it('names the portions as Sefaria names them', () => {
     const named = (n: string) => mappings.parshiot.some((p) => p.name === n);
-    for (const name of [
-      'Bereshit',
-      'Lech Lecha',
-      "Sh'lach",
-      "Ha'Azinu",
-      'V\'Zot HaBerachah',
-    ]) {
+    for (const name of ['Bereshit', 'Lech Lecha', "Sh'lach", "Ha'Azinu", "V'Zot HaBerachah"]) {
       expect(named(name), `expected a portion named "${name}"`).toBe(true);
     }
   });
@@ -143,19 +126,14 @@ describe('the haftarah readings the app ships', () => {
 
     it('keeps the four special Shabbatot together', () => {
       const four = mappings.specialOccasions.filter(
-        (o) => (o as Reading & { category: string }).category === 'four-shabbatot'
+        (o) => (o as Reading & { category: string }).category === 'four-shabbatot',
       );
-      expect(four.map((o) => o.name)).toEqual([
-        'Sheqalim',
-        'Zakhor',
-        'Parah',
-        'Ha-Chodesh',
-      ]);
+      expect(four.map((o) => o.name)).toEqual(['Sheqalim', 'Zakhor', 'Parah', 'Ha-Chodesh']);
     });
 
     it('reads Jonah at Yom Kippur afternoon', () => {
       expect(format(occasion('Yom Kippur, Afternoon').haftarah.ashkenazi)).toBe(
-        'Jonah 1:1-4:11, Micah 7:18-7:20'
+        'Jonah 1:1-4:11, Micah 7:18-7:20',
       );
     });
   });
@@ -195,7 +173,7 @@ describe('the haftarah readings the app ships', () => {
             outside.push(`${context}: ${range.book} has no chapter ${chapter}`);
           } else if (verse < 1 || verse > verseCount) {
             outside.push(
-              `${context}: ${range.book} ${chapter} has ${verseCount} verses, not ${verse}`
+              `${context}: ${range.book} ${chapter} has ${verseCount} verses, not ${verse}`,
             );
           }
         }
@@ -209,8 +187,7 @@ describe('the haftarah readings the app ships', () => {
         .filter(
           ({ range }) =>
             range.start.chapter > range.end.chapter ||
-            (range.start.chapter === range.end.chapter &&
-              range.start.verse > range.end.verse)
+            (range.start.chapter === range.end.chapter && range.start.verse > range.end.verse),
         )
         .map(({ context }) => context);
       expect(backwards).toEqual([]);
@@ -221,9 +198,7 @@ describe('the haftarah readings the app ships', () => {
     it('gives each portion a passage for both customs', () => {
       const missing = [...mappings.parshiot, ...mappings.specialOccasions]
         .filter(
-          (item) =>
-            item.haftarah.ashkenazi.length === 0 ||
-            item.haftarah.sephardi.length === 0
+          (item) => item.haftarah.ashkenazi.length === 0 || item.haftarah.sephardi.length === 0,
         )
         .map((item) => item.name);
       expect(missing).toEqual([]);

@@ -230,8 +230,7 @@ export const haftarahOverlay: Overlay = {
       license: 'BSD 2-Clause',
       licenseUrl: 'https://github.com/hebcal/hebcal-leyning/blob/main/LICENSE',
       collected: 'September 2026',
-      note:
-        'Which passage is read on which occasion.',
+      note: 'Which passage is read on which occasion.',
     },
   ],
 
