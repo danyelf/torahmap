@@ -58,3 +58,22 @@
   font-size: 11px;
   white-space: nowrap;
 }
+
+.word-menu-expand-other {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: #888;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.word-menu-expand-other:hover {
+  background: rgba(106, 176, 243, 0.18);
+  color: #aaa;
+}

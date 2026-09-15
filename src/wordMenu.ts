@@ -12,7 +12,10 @@ import type { Meaning } from './search/dictionary.ts';
 
 export interface WordMenuOptions {
   word: string;
+  /** What the verse supports: usually one, sometimes a few, sometimes none. */
   meanings: Meaning[];
+  /** Every reading the spelling allows, whatever the verse says. */
+  otherReadings: Meaning[];
   anchor: HTMLElement;
   replacesOverlay: string | null;
   paletteFull: boolean;
@@ -54,7 +57,8 @@ function meaningLabel(meaning: Meaning): HTMLElement {
 
   const count = document.createElement('span');
   count.className = 'word-menu-count';
-  count.textContent = `${meaning.verseCount} verses`;
+  const verseSuffix = meaning.verseCount === 1 ? 'verse' : 'verses';
+  count.textContent = `${meaning.verseCount} ${verseSuffix}`;
 
   label.append(form, gloss, count);
   return label;
@@ -104,6 +108,31 @@ export function openWordMenu(options: WordMenuOptions): void {
           closeWordMenu();
         }),
       );
+    }
+
+    // Find other readings not already shown.
+    const shownKeys = new Set(options.meanings.map((m) => m.keys[0]));
+    const extraReadings = options.otherReadings.filter((m) => !shownKeys.has(m.keys[0]));
+
+    // Only show the expand button if there are extra readings and the palette is not full.
+    if (extraReadings.length > 0) {
+      const expandButton = document.createElement('button');
+      expandButton.type = 'button';
+      expandButton.className = 'word-menu-expand-other';
+      expandButton.textContent = 'other readings';
+      expandButton.addEventListener('click', () => {
+        // Replace the expand button with the extra readings.
+        expandButton.remove();
+        for (const reading of extraReadings) {
+          menu.appendChild(
+            choice(meaningLabel(reading), () => {
+              options.onChoose(reading);
+              closeWordMenu();
+            }),
+          );
+        }
+      });
+      menu.appendChild(expandButton);
     }
   }
 
