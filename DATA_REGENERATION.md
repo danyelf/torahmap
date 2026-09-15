@@ -105,37 +105,98 @@ if you actually revisit the article.
 
 ## Commentary Counts
 
-### First-time setup (download CSV files):
+### Refreshing
 
 ```bash
-mkdir -p data/sefaria-links
-cd data/sefaria-links
-for i in {0..12}; do
-  curl -O "https://storage.googleapis.com/sefaria-export/links/links$i.csv"
-done
-cd ../..
+scripts/refresh-commentary-counts.sh
 ```
 
-This downloads ~470MB of CSV files.
+That is the whole procedure. The script asks the bucket how many files the
+export has, downloads any that are missing or stale into `data/sefaria-links/`,
+regenerates `public/data/commentary-counts.json`, and prints what moved. Pass
+`--force` to re-download files that are already present.
 
-### Generate commentary counts:
+Sefaria re-exports on the 1st of each month, and the script prints the export
+date it found, so there is nothing to gain by running this more than monthly.
+
+Set the `collected` date in `src/overlays/commentary.ts` to the export date the
+script printed. That is what the Credits tab shows, and it is the date of the
+export rather than of the run.
+
+The CSVs total about 650MB. `data/sefaria-links/` is gitignored, so a fresh
+clone downloads all of it; a second run re-downloads only what changed.
+
+### Do not hardcode the file count
+
+The export had thirteen files (`links0`–`links12`) for a long time and now has
+seventeen. The old instructions here looped over `{0..12}`, and after the count
+grew that fetched a partial corpus — which still processed cleanly and produced
+a counts file that looked entirely normal.
+
+It was not normal. The CSVs are split alphabetically by source text, so the
+missing files were a coherent slice of the library rather than a random sample.
+Kabbalah counts in Psalms fell by 87% while Genesis was barely touched, because
+the Zohar sorts near the end of the alphabet. Nothing in the output said so.
+
+This is why the script discovers the count instead of assuming it. If you fetch
+the files by hand, count them first.
+
+### Checking the result is sane
 
 ```bash
-python3 scripts/process_sefaria_links.py
+python3 scripts/verify-against-sefaria.py
 ```
 
-Then set the `collected` date in `src/overlays/commentary.ts`. It should say
-when the CSVs were downloaded, not when the script last ran.
+This samples twenty-six verses across Torah, Nevi'im and Ketuvim, compares each
+against Sefaria's live site, and fails if the differences run in both
+directions.
 
-### What the script does:
+The counts we generate are not expected to match Sefaria's live site exactly —
+the script drops Tanakh cross-references and filters Talmud by design, and the
+export is up to a month behind. What they should be is *consistently* close.
 
-- **Drops the "Tanakh" category** - verse cross-references were confusing
-- **Filters Talmud** - shows only direct text references (not Steinsaltz, Rashi on Talmud, etc.)
-- **Reads local CSV files** from `data/sefaria-links/` rather than downloading on each run
-- **Result:** Closer match to Sefaria's website counts (e.g., Exodus 23:5 shows 24 Talmud vs 28 on Sefaria)
+A healthy refresh sits at or slightly above the live `/api/related` totals for
+the categories that map cleanly onto ours, across verses from all three
+sections. Counts scattered in both directions — some verses far under live,
+others far over — mean something is wrong with the inputs, not that the data is
+stale. Staleness is uniform and always undercounts; a partial corpus is not.
 
-### Data Staleness
+### What the generator does
 
-The CSV files in the export bucket are regenerated monthly. Our commentary counts will be behind Sefaria's live website by however long since the last CSV export.
+- **Drops the "Tanakh" category** — verse cross-references were confusing
+- **Filters Talmud** — direct text references only, not Steinsaltz or Rashi on Talmud
+- **Reads local CSVs** from `data/sefaria-links/` rather than downloading each run
+- **Counts each link once**, deduplicating the two directions of a bidirectional link
+- **Spreads short ranges, drops long ones** — see below
 
-This is an acceptable trade-off for having fast, offline-capable data. To update to the latest counts, re-download the CSV files and re-run the script.
+### How a range of verses is counted
+
+A citation can name one verse (`Genesis 1:2`), a passage (`Deuteronomy 6:4-9`),
+or a sweep of text so large it is really an index entry (`Genesis 1:1-6:8`, the
+whole of Bereshit).
+
+A citation covering **ten verses or fewer** counts towards every verse it
+covers, so a comment on the Shema credits all six of its verses. A longer one is
+ignored completely: "all of Psalm 76" is no more a claim about a particular
+verse than "all of Bereshit" is, and crediting it anywhere invents a
+concentration of commentary that is not there.
+
+The cutoff is not delicate. Half of all ranges are five verses or fewer and a
+fifth cover more than a hundred, so anything between five and twenty produces
+essentially the same map; ten sits in the empty middle.
+
+The generator used to credit a whole range to its first verse. That put 46,000
+citations on the opening verses of weekly portions, and after the September
+refresh it made Deuteronomy 11:26 the brightest point on the map at 2,525 links
+— purely because Re'eh begins there. Since the heatmap is normalised to its
+maximum, that one verse flattened everything else.
+
+### Data staleness
+
+Our counts trail Sefaria's live site by however long it has been since the last
+monthly export, plus however long since we last ran the refresh. That is an
+accepted trade for fast, offline-capable data.
+
+The gap is not negligible. Between the January 2026 and September 2026 exports
+the total link count grew 24%, unevenly: Jewish Thought more than doubled while
+Midrash grew 22%. The shape of the heatmap moves, not just its scale.
