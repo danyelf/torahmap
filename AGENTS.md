@@ -4,7 +4,12 @@ This project tracks issues on **GitHub Issues**: https://github.com/danyelf/tora
 
 ## How to Code
 
-When you start in a worktree, expect to work in that worktree as autonomously as you can on the corresponding issue.
+**Always work in a worktree.** Issue work never happens in the primary checkout — branching there
+leaves Danyel's main directory sitting on a branch he didn't put it on. Create the worktree before
+your first edit: the `EnterWorktree` tool is the easy path, because it also installs dependencies,
+and `git worktree add <path> -b <branch>` works when the path matters. A `PreToolUse` hook enforces
+this, so a `git checkout -b` in the primary checkout will simply be refused. Once you are in a
+worktree, work there as autonomously as you can on the corresponding issue.
 
 **UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until Danyel has looked at it and agreed it's ready to close.
 
