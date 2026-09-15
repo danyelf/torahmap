@@ -2,17 +2,27 @@
 //
 // ETCBC spells ayin `<` and aleph `>`, so two lexeme keys side by side read as
 // an HTML tag: `<LH/@heb,>MR[@heb` is burnt-offering followed by "say". The URL
-// layer strips tags out of free text, which would take the first key, the
-// separator and half the second with them — and applyMeanings, finding nothing
-// it recognises, would quietly fall back to every meaning. The reader would
-// open the link and see a different search, with nothing saying so.
+// layer strips tags out of free text, and `m` was declared free text, so the
+// first key, the separator and half the second were deleted in transit —
+// leaving applyMeanings nothing it recognised, and falling back to every
+// meaning. The reader opened the link and saw a different search, with nothing
+// saying so, which is the failure the meaning filter exists to prevent.
+//
+// `m` is a `names` parameter now, which is the declaration that keeps the
+// stripper away from it.
 
 import { describe, it, expect } from 'vitest';
 import { validateOverlayParams } from '../../urlState';
+import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { addTerm, applyMeanings, encodeMeanings, selectedKeys } from '../../search/terms';
 import type { SearchTerm } from '../../search/terms';
 
-const SPEC = [{ key: 'm', kind: 'text' }] as const;
+registerAllOverlays();
+
+// The overlay's own declaration, not a copy of it: declaring `m` as free text
+// again is the mistake this file exists to catch, and a hand-written spec here
+// would go on passing while the app broke.
+const SPEC = getOverlay('search')!.urlParams!;
 
 /** A term standing in for a resolved word, narrowed to the keys given. */
 function narrowedTerm(keys: string[], all: string[]): SearchTerm {
@@ -57,27 +67,25 @@ describe('sharing a narrowed search', () => {
     expect(selectedKeys(restored[1])).toEqual(['>MR[@heb']);
   });
 
-  it('writes nothing a tag-stripper can recognise', () => {
+  it('reaches the overlay with its brackets intact', () => {
     const terms = [narrowedTerm(['<LH/@heb'], ['<LH/@heb', '>MR[@heb'])];
-    expect(encodeMeanings(terms)).not.toMatch(/[<>]/);
+    const written = encodeMeanings(terms);
+
+    expect(written).toBe('<LH/@heb');
+    expect(validateOverlayParams(SPEC, { m: written }).m).toBe(written);
   });
 
-  it('still reads a link written before the keys were encoded', () => {
-    // A one-key link with no closing bracket came through the stripper intact,
-    // so those links exist and must keep working.
+  it('refuses a value carrying anything a lexeme name cannot hold', () => {
+    // Refused whole rather than edited, so a tampered link cannot half-apply.
+    expect(validateOverlayParams(SPEC, { m: '<script>alert(1)</script>' }).m).toBeUndefined();
+    expect(validateOverlayParams(SPEC, { m: '<LH/@heb but with spaces' }).m).toBeUndefined();
+  });
+
+  it('falls back to every meaning when the link names nothing it knows', () => {
     const terms = [narrowedTerm(['<LH/@heb'], ['<LH/@heb', '<LH=/@heb'])];
     const restored = applyMeanings(
       terms.map((t) => ({ ...t, selected: new Set(t.meanings.map((m) => m.keys[0])) })),
-      '<LH/@heb',
-    );
-    expect(selectedKeys(restored[0])).toEqual(['<LH/@heb']);
-  });
-
-  it('falls back to every meaning rather than throwing on a broken escape', () => {
-    const terms = [narrowedTerm(['<LH/@heb'], ['<LH/@heb', '<LH=/@heb'])];
-    const restored = applyMeanings(
-      terms.map((t) => ({ ...t, selected: new Set(t.meanings.map((m) => m.keys[0])) })),
-      '%ZZ',
+      'NOPE/@heb',
     );
     expect(selectedKeys(restored[0])).toEqual(['<LH/@heb', '<LH=/@heb']);
   });

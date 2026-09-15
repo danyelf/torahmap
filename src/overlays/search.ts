@@ -52,7 +52,7 @@ const URL_PARAMS = [
   { key: 'q', kind: 'text' },
   { key: 'ww', kind: 'token', allowed: ['1'] },
   { key: 'hm', kind: 'token', allowed: HEBREW_SEARCH_MODES },
-  { key: 'm', kind: 'text' },
+  { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
 
 // Root is the default: substring matches inside longer words that have nothing
