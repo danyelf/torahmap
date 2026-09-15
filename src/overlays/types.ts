@@ -31,6 +31,16 @@ export interface Overlay<T = TanakhIdentity> {
   id: string;
   name: string;
 
+  // What this overlay shows, in a sentence or two, written for a reader who has
+  // never opened the map. The help modal's Overlays tab is built out of these,
+  // so an overlay the reader can choose needs one; a test checks that every
+  // overlay the app registers has said something. Plain text, not markup: the
+  // modal owns the markup, the same way it does for credits below.
+  //
+  // Optional because the type also covers overlays that are never offered to a
+  // reader, such as the internal ones the Talmud view composes.
+  description?: string;
+
   // Lifecycle - called once when app starts
   init?(): Promise<void>;
   destroy?(): void;

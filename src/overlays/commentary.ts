@@ -40,6 +40,10 @@ function getMaxValue(): number {
 export const commentaryOverlay: Overlay = {
   id: 'commentary',
   name: 'Commentary',
+  description:
+    'Shades each verse by how much has been written about it: the brighter the verse, ' +
+    'the more commentary Sefaria records on it. Choose a kind of commentary to count ' +
+    'only that one.',
   credits: [
     {
       source: 'Sefaria link exports',

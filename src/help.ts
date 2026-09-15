@@ -2,11 +2,35 @@
 import './styles/help.css';
 import { renderCreditsHtml } from './credits.ts';
 import { getAllOverlays } from './overlays/registry.ts';
+import { escapeHtml } from './utils/html.ts';
 
 const STORAGE_KEY_SEEN = 'torahMap.helpSeen';
 const STORAGE_KEY_TAB = 'torahMap.helpTab';
 
 type TabId = 'overview' | 'controls' | 'overlays' | 'credits';
+
+/**
+ * The Overlays tab: one entry per overlay the app has registered, in the order
+ * the reader meets them in the menu.
+ *
+ * The list is built from the registry rather than written out here, so that
+ * adding an overlay adds it to the help by itself. Each overlay carries its own
+ * sentence, next to the code that sentence describes; this only lays them out.
+ *
+ * An overlay with nothing to say is skipped rather than shown with an empty
+ * description. That is a mistake, not a choice — the tests catch it, the way
+ * they catch an overlay with an undeclared data source.
+ */
+function renderOverlayListHtml(
+  overlays: readonly { name: string; description?: string }[],
+): string {
+  const entries = overlays
+    .filter((o) => o.description)
+    .map((o) => `<dt>${escapeHtml(o.name)}</dt><dd>${escapeHtml(o.description!)}</dd>`)
+    .join('');
+
+  return `<dl class="overlay-list">${entries}</dl>`;
+}
 
 const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => string) }> = {
   overview: {
@@ -44,18 +68,7 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => strin
   },
   overlays: {
     title: 'Overlays',
-    content: `
-      <dl class="overlay-list">
-        <dt>Text Search</dt>
-        <dd>Search Hebrew or English text. Matching verses are highlighted on the map.</dd>
-
-        <dt>Commentary</dt>
-        <dd>Heatmap showing commentary density from Sefaria. Filter by source type.</dd>
-
-        <dt>Trop</dt>
-        <dd>Visualize cantillation marks (trope). Select a mark to see where it appears.</dd>
-      </dl>
-    `,
+    content: () => renderOverlayListHtml(getAllOverlays()),
   },
   credits: {
     title: 'Credits',

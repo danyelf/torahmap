@@ -141,6 +141,9 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
 export const verseLengthOverlay: Overlay = {
   id: 'verse-length',
   name: 'Verse Length',
+  description:
+    'Shades each verse by how many Hebrew words it has, the shortest dark and the ' +
+    'longest bright.',
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);
