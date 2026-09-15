@@ -150,7 +150,7 @@ describe('Haftarah Overlay', () => {
     vi.clearAllMocks();
 
     mockFetch = vi.fn((url: string) => {
-      if (url.includes('haftarah-mappings.json')) {
+      if (url.includes('overlays/haftarah/mappings.json')) {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -259,7 +259,7 @@ describe('Haftarah Overlay', () => {
       await haftarahOverlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/haftarah-mappings.json'),
+        expect.stringContaining('data/overlays/haftarah/mappings.json'),
       );
     });
 

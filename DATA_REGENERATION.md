@@ -91,6 +91,39 @@ Text-Fabric the first time. Once that setup is done:
 
 Then set the BHSA `collected` date in `src/overlays/search.ts`.
 
+## Haftarah Readings
+
+Which passage is read on which occasion comes from hebcal's leyning tables,
+vendored as three files in `data/overlays/haftarah/hebcal/`.
+**[data/overlays/haftarah/hebcal/README.md](data/overlays/haftarah/hebcal/README.md)**
+is the full account: the
+commit they were taken from, how to read an entry, and the curl commands that
+refresh them. Once the files are refreshed:
+
+```bash
+npx tsx scripts/overlays/haftarah/generate.ts
+```
+
+Then set the hebcal `collected` date in `src/overlays/haftarah.ts`.
+
+The names are not hebcal's, and they live in `data/overlays/haftarah/names.json`
+rather
+than in the generator: the 54 portions in reading order, then the 29 occasions,
+each with the key to find it under in the leyning tables. Edit that file to
+change a label; the generator refuses to run on a blank name, an unknown
+category or a duplicate, and says which row is at fault.
+
+The portion names come from Sefaria, out of the Parasha structure in its schema
+export — `schemas/Genesis.json` and the other four books, under
+`https://storage.googleapis.com/sefaria-export/`. Only three rows need to say
+what hebcal calls the portion, because everywhere else the two agree. The
+occasion names are our own; no source publishes a canonical list of them.
+
+Expect the tests to speak up. `src/__tests__/unit/overlays/haftarah-data.test.ts` pins
+several readings by name, so if hebcal has changed its mind about one of them
+the test fails and tells you which. That is the intended way to find out;
+decide whether to follow the change before editing the test to match.
+
 ## Text Dating Data
 
 ```bash
@@ -108,13 +141,16 @@ if you actually revisit the article.
 ### Refreshing
 
 ```bash
-scripts/refresh-commentary-counts.sh
+scripts/overlays/commentary/refresh.sh
 ```
 
-That is the whole procedure. The script asks the bucket how many files the
-export has, downloads any that are missing or stale into `data/sefaria-links/`,
-regenerates `public/data/commentary-counts.json`, and prints what moved. Pass
-`--force` to re-download files that are already present.
+That is the whole procedure. Everything this overlay downloads lives under
+`data/overlays/commentary/`, and what it produces lives under
+`public/data/overlays/commentary/`. The script asks the bucket how many files
+the export has, downloads any that are missing or stale into `sefaria-links/`,
+fetches Sefaria's index of the library to `sefaria-index.json`, regenerates
+`counts.json`, and prints what moved. Pass `--force` to re-download files that
+are already present.
 
 Sefaria re-exports on the 1st of each month, and the script prints the export
 date it found, so there is nothing to gain by running this more than monthly.
@@ -123,8 +159,10 @@ Set the `collected` date in `src/overlays/commentary.ts` to the export date the
 script printed. That is what the Credits tab shows, and it is the date of the
 export rather than of the run.
 
-The CSVs total about 650MB. `data/sefaria-links/` is gitignored, so a fresh
-clone downloads all of it; a second run re-downloads only what changed.
+The CSVs total about 650MB and the index is 4MB. Both live under `data/` and
+both are gitignored, so a fresh clone downloads all of it; a second run
+re-downloads only the CSVs that changed, and always re-fetches the index, which
+is small and has to describe the same library the links describe.
 
 ### Do not hardcode the file count
 
@@ -144,30 +182,128 @@ the files by hand, count them first.
 ### Checking the result is sane
 
 ```bash
-python3 scripts/verify-against-sefaria.py
+python3 scripts/overlays/commentary/verify-against-sefaria.py
 ```
 
-This samples twenty-six verses across Torah, Nevi'im and Ketuvim, compares each
-against Sefaria's live site, and fails if the differences run in both
-directions.
+This samples twenty-six verses across Torah, Nevi'im and Ketuvim and compares
+each against Sefaria's live site. It reports rather than judges: read the shape
+of the numbers, not any one of them.
 
 The counts we generate are not expected to match Sefaria's live site exactly —
-the script drops Tanakh cross-references and filters Talmud by design, and the
-export is up to a month behind. What they should be is *consistently* close.
+the script drops translations, dictionary lookups and cross-references by
+design, and the export is up to a month behind. What they should be is
+*consistently* close.
 
-A healthy refresh sits at or slightly above the live `/api/related` totals for
-the categories that map cleanly onto ours, across verses from all three
-sections. Counts scattered in both directions — some verses far under live,
-others far over — mean something is wrong with the inputs, not that the data is
-stale. Staleness is uniform and always undercounts; a partial corpus is not.
+A healthy refresh sits at or just below the live `/api/related` totals on every
+category, across verses from all three sections — within a few percent, since
+the only thing separating us from the site on those categories is how old the
+export is.
+
+What is worth chasing is a verse that has come adrift from its neighbours, which
+the script names for you. The export is split alphabetically by source text, so
+an incomplete download takes out a coherent slice of the library rather than a
+random sample: a few verses land far from the site while the ones beside them
+sit at zero. If several outliers share a part of the library, suspect the
+download before the data.
+
+The script used to run 7% to 47% *above* the site, varying verse by verse in a
+way nobody could explain. That was commentaries being counted under the shelf
+they are filed on rather than as commentaries: Sefaria's Mishnah figure for
+Genesis 1:1 was 4 and ours was 64, of which 63 were commentaries on Pirkei
+Avot. Reading each text's category out of Sefaria's index closed it.
 
 ### What the generator does
 
-- **Drops the "Tanakh" category** — verse cross-references were confusing
-- **Filters Talmud** — direct text references only, not Steinsaltz or Rashi on Talmud
-- **Reads local CSVs** from `data/sefaria-links/` rather than downloading each run
+Two functions in `scripts/overlays/commentary/process_sefaria_links.py` carry all the judgement.
+Read them before changing anything here.
+
+**`resolve_shelf()` asks what a text actually is.** The links export labels
+each side of a link with the shelf the text is filed on — and a commentary is
+filed on the shelf of whatever it comments on. Rashi comes back as Tanakh. Ben
+Yehoyada on Sanhedrin comes back as Talmud. Derekh Chayyim, the Maharal on
+Pirkei Avot, comes back as Mishnah. Counting those under the shelf they are
+filed on means a category called Mishnah is mostly not the Mishnah.
+
+Sefaria publishes the answer. `data/overlays/commentary/sefaria-index.json` gives every text a
+`primary_category` — `Commentary`, `Targum`, `Talmud`, `Mishnah` and so on —
+and it is the same field the website itself uses. The export usually names a
+node inside a book (`Midrash Lekach Tov, Genesis`) where the index names the
+book, so trailing section names come off one at a time until something matches.
+
+One shelf needs a correction the index does not make. Sefaria keeps the
+thirty-nine books and a handful of modern commentaries together under Tanakh,
+and marks only some of the commentaries as commentaries — David Zvi Hoffmann on
+Exodus, Steinsaltz's introductions and Nechama Leibowitz arrive as plain
+Tanakh. A title on that shelf that is not simply a book's name is one of those.
+What is left is the books themselves, so a link from a verse to one of them is
+a cross-reference between two verses, and is dropped.
+
+The test is the whole title, never its opening words. Several books are named
+after people, and other works begin with those names without being them:
+`Esther Rabbah` is a midrash on Esther, `Ruth Rabbah` a midrash on Ruth, and
+`Ezra ben Solomon` a kabbalist who wrote about Song of Songs. Matching on a
+prefix would pull 2,569 links out of Midrash and Commentary.
+
+A string test on the title was tried and rejected. Reading `X on Y` as "a
+commentary on Y" misclassifies about 166,000 links: it wrongly catches
+`Yalkut Shimoni on Torah` (16,190 links — a midrash in its own right),
+`Midrash Tannaim on Deuteronomy` and every `Targum Jonathan on <book>`, while
+missing Rabbeinu Bahya, Chizkuni, Siftei Chakhamim, Mizrachi, Malbim and
+Derekh Chayyim, none of which have "on" in the title.
+
+**`link_bucket()` decides what a link means.** A commentary can either be
+writing about this verse or citing it in passing, and the export's connection
+type says which — the same column Sefaria reads to split its own Commentary and
+Quoting Commentary sections:
+
+| the work is | connection type | bucket |
+|---|---|---|
+| a commentary | `commentary` | **Commentary** — written about this verse |
+| a commentary | anything else | **Quoting Commentary** — cited while writing about something else |
+| a translation | — | dropped |
+| anything else | — | its own shelf: Talmud, Midrash, Mishnah, … |
+
+When Abarbanel, in the middle of his commentary on Amos, reaches for Genesis
+49:28, that is a real fact about Genesis 49:28 — but it is not commentary on
+it, and a map of which verses commentators reach for is a different map from
+one of which verses they write about. Both count towards the total.
+
+Quoting Commentary is not confined to commentaries on the Tanakh: a Zohar
+commentary, a Talmud commentary and a commentary on Pirkei Avot can all cite a
+verse, and all of them land here.
+
+Dropped on purpose:
+
+- **Translations.** Nearly every verse has one, the Torah has three, and the
+  books already written partly in Aramaic have none — so counting them maps
+  which books were translated rather than anything about the verses.
+- **Dictionary lookups**, the `Reference` shelf: BDB, Jastrow, Klein, Sefer
+  HaShorashim. A quarter of all links to verses, recording which words a verse
+  contains rather than what anyone wrote about it.
+- **Verse-to-verse cross-references**, which is what the original rule was
+  aimed at. About twelve thousand of them — against six hundred thousand
+  commentary links that were being discarded alongside, until this was fixed.
+- **Citations covering more than ten verses**, which name a whole portion
+  rather than a passage — see below.
+
+There used to be a hand-written list of Talmud commentaries here, so that the
+Talmud figure would mean Talmud text. It has been deleted. A list maintained by
+hand is wrong the moment Sefaria adds a text, and this one was: `Ben Yehoyada
+on Sanhedrin` was never on it, so 1,406 links were counted as Talmud. The index
+knows without being told.
+
+Also:
+
+- **Reads local files** from `data/` rather than downloading each run
 - **Counts each link once**, deduplicating the two directions of a bidirectional link
 - **Spreads short ranges, drops long ones** — see below
+
+### Read the totals it prints
+
+The generator prints how many links landed in each category, and names any
+category that got none. This is worth a glance every refresh. `Commentary` sat
+in the category list for months with zero links in it, because every commentary
+was arriving under the Tanakh label and being thrown away, and nothing said so.
 
 ### How a range of verses is counted
 

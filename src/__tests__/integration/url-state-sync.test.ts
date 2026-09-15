@@ -74,7 +74,7 @@ describe('URL State Sync Integration', () => {
       const urlString = typeof url === 'string' ? url : url.url;
 
       let data: any;
-      if (urlString.includes('commentary-counts.json')) {
+      if (urlString.includes('overlays/commentary/counts.json')) {
         data = SAMPLE_COMMENTARY_DATA;
       } else {
         data = {};

@@ -1,22 +1,24 @@
 #!/usr/bin/env bash
 #
-# Refresh public/data/commentary-counts.json from Sefaria's links export.
+# Refresh public/data/overlays/commentary/counts.json from Sefaria's links export.
 #
 # Downloads the links CSVs (skipping any already present at the right size),
 # regenerates the counts, and reports what moved. Sefaria re-exports on the 1st
 # of each month, so there is no point running this more often than monthly.
 #
 # Usage:
-#   scripts/refresh-commentary-counts.sh            # refresh
-#   scripts/refresh-commentary-counts.sh --force    # re-download everything
+#   scripts/overlays/commentary/refresh.sh            # refresh
+#   scripts/overlays/commentary/refresh.sh --force    # re-download everything
 #
 set -euo pipefail
 
 BUCKET="https://storage.googleapis.com/sefaria-export/links"
+INDEX_URL="https://www.sefaria.org/api/index/"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-LINKS_DIR="$PROJECT_ROOT/data/sefaria-links"
-COUNTS="$PROJECT_ROOT/public/data/commentary-counts.json"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+LINKS_DIR="$PROJECT_ROOT/data/overlays/commentary/sefaria-links"
+INDEX="$PROJECT_ROOT/data/overlays/commentary/sefaria-index.json"
+COUNTS="$PROJECT_ROOT/public/data/overlays/commentary/counts.json"
 
 FORCE=0
 [[ "${1:-}" == "--force" ]] && FORCE=1
@@ -71,6 +73,26 @@ total_mb=$(du -smL "$LINKS_DIR" | cut -f1)
 echo
 echo "Links CSVs: ${total_mb}MB in $LINKS_DIR (gitignored)"
 
+# Sefaria's index of the library. The links export says which shelf a text is
+# filed on, which for a commentary is the shelf of whatever it comments on —
+# Rashi comes back as Tanakh, Ben Yehoyada as Talmud. The index says what each
+# text actually is, and without it a category called Mishnah is mostly not the
+# Mishnah. Fetched every time: it is 4MB and it must describe the same library
+# the links describe.
+echo
+echo "Downloading Sefaria's library index..."
+if ! curl -sf --max-time 300 -o "$INDEX.tmp" "$INDEX_URL"; then
+  rm -f "$INDEX.tmp"
+  echo "Could not download $INDEX_URL" >&2
+  exit 1
+fi
+mv "$INDEX.tmp" "$INDEX"
+# Whether it is really the index, rather than merely valid JSON, is checked by
+# shelves() in process_sefaria_links.py, which refuses to run on a file that
+# does not look like one. Getting that wrong silently reverts every commentary
+# in the library to the shelf it is filed on.
+echo "Library index: $(( $(wc -c < "$INDEX") / 1024 ))KB in $INDEX (gitignored)"
+
 # Keep the outgoing counts so we can say what the refresh actually changed.
 previous=""
 if [[ -f "$COUNTS" ]]; then
@@ -86,8 +108,8 @@ if [[ -n "$previous" ]]; then
   echo "=============================================================="
   echo "What changed"
   echo "=============================================================="
-  python3 "$SCRIPT_DIR/compare_commentary_counts.py" "$previous" "$COUNTS"
+  python3 "$SCRIPT_DIR/compare_counts.py" "$previous" "$COUNTS"
   rm -f "$previous"
 fi
 
-echo "Done. Review the diff to public/data/commentary-counts.json before committing."
+echo "Done. Review the diff to public/data/overlays/commentary/counts.json before committing."

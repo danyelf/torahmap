@@ -8,11 +8,10 @@ registerAllOverlays();
 /**
  * Overlays that owe no credit. Trop reads the cantillation marks out of the
  * Hebrew edition and Verse Length counts characters, so both derive everything
- * from text that is already credited. Haftarah is a different case: which
- * passage is read on which occasion is recorded in many places, so the readings
- * are not any one source's work. Anything else in the registry owes a credit.
+ * from text that is already credited. Anything else in the registry owes a
+ * credit.
  */
-const OVERLAYS_WITHOUT_OWN_SOURCE = ['trop', 'verse-length', 'haftarah'];
+const OVERLAYS_WITHOUT_OWN_SOURCE = ['trop', 'verse-length'];
 
 const block = (credits: readonly Credit[]) => renderCreditBlock('A Heading', credits);
 

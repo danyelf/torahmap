@@ -219,21 +219,31 @@ function isRelevantVerse(verse: TanakhIdentity): boolean {
 export const haftarahOverlay: Overlay = {
   id: 'haftarah',
   name: 'Haftarah',
-  // Nothing to credit: which passage is read on which occasion is recorded in
-  // many places, so the readings are not one source's work. Empty rather than
-  // absent, to say this was decided rather than overlooked.
-  credits: [],
+  description:
+    'The weekly Torah portion read in synagogue and the passage from the Prophets read ' +
+    'after it, shown in the same colour so the pairing is visible. Ashkenazi and ' +
+    'Sephardi custom differ, and you can switch between them.',
+  credits: [
+    {
+      source: 'Hebcal leyning tables',
+      url: 'https://github.com/hebcal/hebcal-leyning',
+      license: 'BSD 2-Clause',
+      licenseUrl: 'https://github.com/hebcal/hebcal-leyning/blob/main/LICENSE',
+      collected: 'September 2026',
+      note: 'Which passage is read on which occasion.',
+    },
+  ],
 
   async init() {
     try {
       // Load both data files in parallel
       const [haftarahRes, structureRes] = await Promise.all([
-        fetchData('haftarah-mappings.json'),
+        fetchData('overlays/haftarah/mappings.json'),
         fetchData('tanakh-structure.json'),
       ]);
 
       if (!haftarahRes.ok) {
-        console.error(`Failed to load haftarah-mappings.json: ${haftarahRes.status}`);
+        console.error(`Failed to load overlays/haftarah/mappings.json: ${haftarahRes.status}`);
         return;
       }
       if (!structureRes.ok) {

@@ -1,0 +1,403 @@
+{
+  "parshiot": [
+    {
+      "name": "Bereshit",
+      "hebrewName": "בראשית"
+    },
+    {
+      "name": "Noach",
+      "hebrewName": "נח"
+    },
+    {
+      "name": "Lech Lecha",
+      "hebrewName": "לך לך",
+      "hebcal": "Lech-Lecha"
+    },
+    {
+      "name": "Vayera",
+      "hebrewName": "וירא"
+    },
+    {
+      "name": "Chayei Sara",
+      "hebrewName": "חיי שרה"
+    },
+    {
+      "name": "Toldot",
+      "hebrewName": "תולדות"
+    },
+    {
+      "name": "Vayetzei",
+      "hebrewName": "ויצא"
+    },
+    {
+      "name": "Vayishlach",
+      "hebrewName": "וישלח"
+    },
+    {
+      "name": "Vayeshev",
+      "hebrewName": "וישב"
+    },
+    {
+      "name": "Miketz",
+      "hebrewName": "מקץ"
+    },
+    {
+      "name": "Vayigash",
+      "hebrewName": "ויגש"
+    },
+    {
+      "name": "Vayechi",
+      "hebrewName": "ויחי"
+    },
+    {
+      "name": "Shemot",
+      "hebrewName": "שמות"
+    },
+    {
+      "name": "Vaera",
+      "hebrewName": "וארא"
+    },
+    {
+      "name": "Bo",
+      "hebrewName": "בא"
+    },
+    {
+      "name": "Beshalach",
+      "hebrewName": "בשלח"
+    },
+    {
+      "name": "Yitro",
+      "hebrewName": "יתרו"
+    },
+    {
+      "name": "Mishpatim",
+      "hebrewName": "משפטים"
+    },
+    {
+      "name": "Terumah",
+      "hebrewName": "תרומה"
+    },
+    {
+      "name": "Tetzaveh",
+      "hebrewName": "תצוה"
+    },
+    {
+      "name": "Ki Tisa",
+      "hebrewName": "כי תשא"
+    },
+    {
+      "name": "Vayakhel",
+      "hebrewName": "ויקהל"
+    },
+    {
+      "name": "Pekudei",
+      "hebrewName": "פקודי"
+    },
+    {
+      "name": "Vayikra",
+      "hebrewName": "ויקרא"
+    },
+    {
+      "name": "Tzav",
+      "hebrewName": "צו"
+    },
+    {
+      "name": "Shmini",
+      "hebrewName": "שמיני"
+    },
+    {
+      "name": "Tazria",
+      "hebrewName": "תזריע"
+    },
+    {
+      "name": "Metzora",
+      "hebrewName": "מצורע"
+    },
+    {
+      "name": "Achrei Mot",
+      "hebrewName": "אחרי מות"
+    },
+    {
+      "name": "Kedoshim",
+      "hebrewName": "קדושים"
+    },
+    {
+      "name": "Emor",
+      "hebrewName": "אמור"
+    },
+    {
+      "name": "Behar",
+      "hebrewName": "בהר"
+    },
+    {
+      "name": "Bechukotai",
+      "hebrewName": "בחוקתי"
+    },
+    {
+      "name": "Bamidbar",
+      "hebrewName": "במדבר"
+    },
+    {
+      "name": "Nasso",
+      "hebrewName": "נשא"
+    },
+    {
+      "name": "Beha'alotcha",
+      "hebrewName": "בהעלותך"
+    },
+    {
+      "name": "Sh'lach",
+      "hebrewName": "שלח"
+    },
+    {
+      "name": "Korach",
+      "hebrewName": "קרח"
+    },
+    {
+      "name": "Chukat",
+      "hebrewName": "חקת"
+    },
+    {
+      "name": "Balak",
+      "hebrewName": "בלק"
+    },
+    {
+      "name": "Pinchas",
+      "hebrewName": "פנחס"
+    },
+    {
+      "name": "Matot",
+      "hebrewName": "מטות"
+    },
+    {
+      "name": "Masei",
+      "hebrewName": "מסעי"
+    },
+    {
+      "name": "Devarim",
+      "hebrewName": "דברים"
+    },
+    {
+      "name": "Vaetchanan",
+      "hebrewName": "ואתחנן"
+    },
+    {
+      "name": "Eikev",
+      "hebrewName": "עקב"
+    },
+    {
+      "name": "Re'eh",
+      "hebrewName": "ראה"
+    },
+    {
+      "name": "Shoftim",
+      "hebrewName": "שופטים"
+    },
+    {
+      "name": "Ki Teitzei",
+      "hebrewName": "כי תצא"
+    },
+    {
+      "name": "Ki Tavo",
+      "hebrewName": "כי תבוא"
+    },
+    {
+      "name": "Nitzavim",
+      "hebrewName": "נצבים"
+    },
+    {
+      "name": "Vayeilech",
+      "hebrewName": "וילך"
+    },
+    {
+      "name": "Ha'Azinu",
+      "hebrewName": "האזינו",
+      "hebcal": "Ha'azinu"
+    },
+    {
+      "name": "V'Zot HaBerachah",
+      "hebrewName": "וזאת הברכה",
+      "hebcal": "Vezot Haberakhah"
+    }
+  ],
+  "occasions": [
+    {
+      "name": "Rosh Hashanah, Day 1",
+      "hebrewName": "ראש השנה יום א׳",
+      "category": "high-holidays",
+      "hebcal": "Rosh Hashana I"
+    },
+    {
+      "name": "Rosh Hashanah, Day 2",
+      "hebrewName": "ראש השנה יום ב׳",
+      "category": "high-holidays",
+      "hebcal": "Rosh Hashana II"
+    },
+    {
+      "name": "Shabbat Shuvah",
+      "hebrewName": "שבת שובה",
+      "category": "high-holidays",
+      "hebcal": "Shabbat Shuva"
+    },
+    {
+      "name": "Yom Kippur, Morning",
+      "hebrewName": "יום כיפור שחרית",
+      "category": "high-holidays",
+      "hebcal": "Yom Kippur"
+    },
+    {
+      "name": "Yom Kippur, Afternoon",
+      "hebrewName": "יום כיפור מנחה",
+      "category": "high-holidays",
+      "hebcal": "Yom Kippur (Mincha, Traditional)"
+    },
+    {
+      "name": "Sukkot, Day 1",
+      "hebrewName": "סוכות יום א׳",
+      "category": "sukkot",
+      "hebcal": "Sukkot I"
+    },
+    {
+      "name": "Sukkot, Day 2",
+      "hebrewName": "סוכות יום ב׳",
+      "category": "sukkot",
+      "hebcal": "Sukkot II"
+    },
+    {
+      "name": "Sukkot, Intermediate Sabbath",
+      "hebrewName": "שבת חול המועד סוכות",
+      "category": "sukkot",
+      "hebcal": "Sukkot Shabbat Chol ha-Moed"
+    },
+    {
+      "name": "Shemini Atzeret",
+      "hebrewName": "שמיני עצרת",
+      "category": "sukkot",
+      "hebcal": "Shmini Atzeret"
+    },
+    {
+      "name": "Simchat Torah",
+      "hebrewName": "שמחת תורה",
+      "category": "sukkot",
+      "hebcal": "Simchat Torah"
+    },
+    {
+      "name": "Chanukkah, First Sabbath",
+      "hebrewName": "שבת חנוכה א׳",
+      "category": "other",
+      "hebcal": "Chanukah Day 1 (on Shabbat)",
+      "note": "Hebcal keys Chanukah by which of the eight days falls on Shabbat. Days one through seven all read Zechariah, so day one stands for the first Shabbat of the festival."
+    },
+    {
+      "name": "Chanukkah, Second Sabbath",
+      "hebrewName": "שבת חנוכה ב׳",
+      "category": "other",
+      "hebcal": "Chanukah Day 8 (on Shabbat)",
+      "note": "The second Shabbat of Chanukah can only be the eighth day, which is the one day that reads I Kings instead of Zechariah."
+    },
+    {
+      "name": "Sheqalim",
+      "hebrewName": "שבת שקלים",
+      "category": "four-shabbatot",
+      "hebcal": "Shabbat Shekalim"
+    },
+    {
+      "name": "Zakhor",
+      "hebrewName": "שבת זכור",
+      "category": "four-shabbatot",
+      "hebcal": "Shabbat Zachor"
+    },
+    {
+      "name": "Parah",
+      "hebrewName": "שבת פרה",
+      "category": "four-shabbatot",
+      "hebcal": "Shabbat Parah"
+    },
+    {
+      "name": "Ha-Chodesh",
+      "hebrewName": "שבת החודש",
+      "category": "four-shabbatot",
+      "hebcal": "Shabbat HaChodesh"
+    },
+    {
+      "name": "Shabbat Ha-Gadol",
+      "hebrewName": "שבת הגדול",
+      "category": "other",
+      "hebcal": "Shabbat HaGadol"
+    },
+    {
+      "name": "Passover, Day 1",
+      "hebrewName": "פסח יום א׳",
+      "category": "pesach",
+      "hebcal": "Pesach I"
+    },
+    {
+      "name": "Passover, Day 2",
+      "hebrewName": "פסח יום ב׳",
+      "category": "pesach",
+      "hebcal": "Pesach II"
+    },
+    {
+      "name": "Passover, Intermediate Sabbath",
+      "hebrewName": "שבת חול המועד פסח",
+      "category": "pesach",
+      "hebcal": "Pesach Shabbat Chol ha-Moed"
+    },
+    {
+      "name": "Passover, Day 7",
+      "hebrewName": "פסח יום ז׳",
+      "category": "pesach",
+      "hebcal": "Pesach VII"
+    },
+    {
+      "name": "Passover, Day 8",
+      "hebrewName": "פסח יום ח׳",
+      "category": "pesach",
+      "hebcal": "Pesach VIII"
+    },
+    {
+      "name": "Shavu'ot, Day 1",
+      "hebrewName": "שבועות יום א׳",
+      "category": "shavuot",
+      "hebcal": "Shavuot I"
+    },
+    {
+      "name": "Shavu'ot, Day 2",
+      "hebrewName": "שבועות יום ב׳",
+      "category": "shavuot",
+      "hebcal": "Shavuot II"
+    },
+    {
+      "name": "Tisha B'Av, Morning",
+      "hebrewName": "תשעה באב שחרית",
+      "category": "fast-days",
+      "hebcal": "Tish'a B'Av"
+    },
+    {
+      "name": "Tisha B'Av, Afternoon",
+      "hebrewName": "תשעה באב מנחה",
+      "category": "fast-days",
+      "hebcal": "Fast Day (Afternoon)",
+      "note": "Hebcal has no entry for the afternoon of the Ninth of Av, so this takes the general fast-day afternoon reading. Sharing a hebcal key with the row below is deliberate, not a duplicate to tidy away; whether the Sephardi reading should differ here is open in issue #117."
+    },
+    {
+      "name": "Minor Fasts, Afternoon",
+      "hebrewName": "צום קל מנחה",
+      "category": "fast-days",
+      "hebcal": "Fast Day (Afternoon)",
+      "note": "Shares hebcal’s general fast-day afternoon entry with the Ninth of Av above. Deliberate — see the note there."
+    },
+    {
+      "name": "Shabbat on Eve of Rosh Chodesh",
+      "hebrewName": "שבת מחר חודש",
+      "category": "rosh-chodesh",
+      "hebcal": "Shabbat Machar Chodesh"
+    },
+    {
+      "name": "Shabbat Rosh Chodesh",
+      "hebrewName": "שבת ראש חודש",
+      "category": "rosh-chodesh",
+      "hebcal": "Shabbat Rosh Chodesh"
+    }
+  ]
+}

@@ -9,9 +9,12 @@
 // and then one block per overlay, so the reader sees what everything stands on
 // before what each feature adds.
 //
-// This module imports nothing. In particular it does not import Overlay, since
-// overlays/types.ts imports Credit from here and that would close a loop; the
-// renderer takes the smallest shape it actually needs instead.
+// This module imports nothing but a leaf utility. In particular it does not
+// import Overlay, since overlays/types.ts imports Credit from here and that
+// would close a loop; the renderer takes the smallest shape it actually needs
+// instead.
+
+import { escapeHtml } from './utils/html.ts';
 
 export interface Credit {
   /** How the source should be named. Some licences require a specific wording. */
@@ -65,14 +68,6 @@ export const APP_CREDITS: readonly Credit[] = [
     note: 'The English text, from the Jewish Publication Society, downloaded via Sefaria. The English search index is built from it.',
   },
 ];
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 /**
  * Text in `className`, linked when there is somewhere to link it. One helper so

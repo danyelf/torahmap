@@ -237,7 +237,7 @@ export function mockFetch(responses: Record<string, any> = {}) {
   const defaultResponses: Record<string, any> = {
     '/data/tanakh-structure.json': { books: [] },
     '/data/all-texts.json': {},
-    '/data/commentary-counts.json': {},
+    '/data/overlays/commentary/counts.json': {},
     ...responses,
   };
 

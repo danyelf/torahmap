@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 """
-Check a regenerated commentary-counts.json against Sefaria's live site.
+Check regenerated commentary counts against Sefaria's live site.
 
-    python3 scripts/verify-against-sefaria.py
+    python3 scripts/overlays/commentary/verify-against-sefaria.py
 
 Run this after a refresh. It is the check that catches a bad refresh, and it
 catches a specific failure this project has already hit once: downloading only
 part of the links export produces a counts file that looks completely normal.
 
-What to look for is the *direction* of the difference, not its size.
+This reports rather than judges. Read the shape of the numbers, not any one of
+them.
 
-Our numbers are not supposed to match the website. We drop Tanakh
-cross-references, filter Talmud to direct references, ignore citations covering
-more than ten verses, and work from a monthly export rather than the live
-database. Roughly 70% of the site's total is normal and fine.
+Our totals are not supposed to match the website. We drop translations,
+dictionary lookups and verse-to-verse cross-references, ignore citations
+covering more than ten verses, and work from a monthly export rather than the
+live database. On the categories that mean the same thing on both sides, which
+since we started reading Sefaria's own index is nearly all of them, a few
+percent below the site is the export's age and nothing more.
 
-What is not fine is inconsistency. Stale or filtered data is wrong in one
-direction for every verse. A partial corpus is wrong in both directions at
-once — some verses far under the site, others far over — because the export is
-split alphabetically by source text, so a missing file removes a coherent slice
-of the library rather than a random sample. If the "shared categories" column
-below scatters, suspect the download before you suspect the data.
+What is worth chasing is a verse that has come adrift from its neighbours. The
+export is split alphabetically by source text, so an incomplete download takes
+out a coherent slice of the library rather than a random sample: some verses
+land far from the site while the ones beside them sit at zero. If several
+outliers share a part of the library, suspect the download before the data.
 """
 
 import json
@@ -32,12 +34,17 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-# The categories that mean the same thing on both sides. Our "Other" bucket and
-# the site's Commentary/Quoting Commentary have no clean correspondence, so
-# comparing them would only add noise.
+# The categories that mean the same thing on both sides — which is now all of
+# them, because we read a text's category out of Sefaria's own index rather
+# than guessing it from the links export.
+#
+# Only Targum, Reference and Tanakh are missing, and those we drop on purpose.
 SHARED_CATEGORIES = {
-    "Talmud", "Midrash", "Halakhah", "Jewish Thought",
-    "Responsa", "Kabbalah", "Chasidut", "Musar",
+    "Commentary", "Quoting Commentary",
+    "Talmud", "Midrash", "Mishnah", "Tosefta",
+    "Halakhah", "Responsa", "Jewish Thought",
+    "Kabbalah", "Chasidut", "Musar",
+    "Liturgy", "Second Temple",
 }
 
 # Spread across Torah, Nevi'im and Ketuvim, and across heavily and lightly
@@ -69,10 +76,10 @@ def live_counts(book: str, chapter: int, verse: int) -> dict[str, int]:
 
 
 def main() -> int:
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).resolve().parents[3]
     counts_path = (
         Path(sys.argv[1]) if len(sys.argv) > 1
-        else project_root / "public" / "data" / "commentary-counts.json"
+        else project_root / "public" / "data" / "overlays" / "commentary" / "counts.json"
     )
     if not counts_path.exists():
         print(f"No such file: {counts_path}")
@@ -87,6 +94,7 @@ def main() -> int:
     print("-" * len(header))
 
     shared_diffs: list[float] = []
+    labels: list[str] = []
     unreachable: list[str] = []
 
     for book, chapter, verse in SAMPLE:
@@ -109,6 +117,7 @@ def main() -> int:
         if live_shared:
             diff = (our_shared - live_shared) / live_shared * 100
             shared_diffs.append(diff)
+            labels.append(label)
             diff_text = f"{diff:+.0f}%"
         else:
             diff_text = "-"
@@ -129,24 +138,23 @@ def main() -> int:
         print("Nothing could be compared.")
         return 1
 
-    below = [d for d in shared_diffs if d < -5]
-    above = [d for d in shared_diffs if d > 5]
-    print(f"compared {len(shared_diffs)} verses on shared categories: "
-          f"{len(below)} below the site, {len(above)} above, "
-          f"{len(shared_diffs) - len(below) - len(above)} within 5%")
-    print(f"range: {min(shared_diffs):+.0f}% to {max(shared_diffs):+.0f}%")
+    print(f"compared {len(shared_diffs)} verses on shared categories")
+    print(f"range: {min(shared_diffs):+.0f}% to {max(shared_diffs):+.0f}%, "
+          f"median {sorted(shared_diffs)[len(shared_diffs) // 2]:+.0f}%")
 
-    if below and above:
-        print(
-            "\nDifferences run in BOTH directions. That is the signature of an\n"
-            "incomplete links export, not of stale data. Check that you have\n"
-            "every links CSV the bucket offers before trusting these counts:\n"
-            "  scripts/refresh-commentary-counts.sh"
-        )
-        return 1
-
-    print("\nDifferences are consistent in one direction, which is what a good "
-          "refresh looks like.")
+    # Read the shape, not any single number. A few percent either way is the
+    # export's age and nothing more. What matters is a verse, or a run of
+    # verses, that has come adrift from the rest — the export is split
+    # alphabetically by source text, so a missing file takes out a coherent
+    # slice of the library rather than a random sample, and shows up as some
+    # verses far from the site while their neighbours sit at zero.
+    adrift = [(label, d) for label, d in zip(labels, shared_diffs) if abs(d) > 20]
+    if adrift:
+        print("\nWell away from the site, worth a look:")
+        for label, d in adrift:
+            print(f"  {label:<22} {d:+.0f}%")
+        print("If several of these share a part of the library, suspect the\n"
+              "download before the data: scripts/overlays/commentary/refresh.sh")
     return 0
 
 
