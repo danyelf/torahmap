@@ -120,7 +120,11 @@ export function openWordMenu(options: WordMenuOptions): void {
     // there is to offer. Saying the word is not in the dictionary would be
     // untrue: the spelling is there, and it is the verse that cannot say which
     // of its readings this is. The reader is better placed to judge than we
-    // are, so they get the list rather than a denial.
+    // are, so they get the list rather than a denial - and, below it, the
+    // literal search, because the list is usually not the answer. Nearly nine
+    // in ten of these words are a function word carrying a prefix or a suffix,
+    // and the generator leaves those out of the spelling map deliberately, so
+    // what is on offer is unrelated words that happen to share the spelling.
     const settled = options.meanings.length > 0;
     const readings = settled ? options.meanings : options.otherReadings;
 
@@ -175,6 +179,10 @@ export function openWordMenu(options: WordMenuOptions): void {
         }
       });
       menu.appendChild(expandButton);
+    }
+
+    if (!settled) {
+      menu.appendChild(literalChoice(options));
     }
   }
 

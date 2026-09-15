@@ -372,6 +372,36 @@ describe('a spelling the verse cannot settle', () => {
     expect(choices.some((c) => c.textContent?.includes('ascend'))).toBe(true);
   });
 
+  it('still offers the spelling as written, since the readings are usually not it', () => {
+    // Almost nine in ten of these words are a function word carrying a prefix
+    // or a suffix - את alone is more than half of them - and the generator
+    // leaves those out of the spelling map on purpose. So the readings on offer
+    // are usually unrelated words that happen to be spelled the same, and the
+    // reader needs a way past them.
+    const onChoose = vi.fn();
+    openWordMenu({
+      word: 'אתו',
+      meanings: [],
+      otherReadings: [leaf, ascend],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose,
+    });
+
+    const choices = [...document.querySelectorAll<HTMLElement>('.word-menu-choice')];
+    expect(choices).toHaveLength(3);
+    expect(choices.some((c) => c.textContent?.includes('leafage'))).toBe(true);
+    expect(choices.some((c) => c.textContent?.includes('ascend'))).toBe(true);
+
+    const literal = choices.find((c) => c.textContent?.includes('as written'))!;
+    expect(literal.textContent).toContain('אתו');
+
+    literal.click();
+    expect(onChoose).toHaveBeenCalledWith(null);
+  });
+
   it('still says so when the spelling really is unknown', () => {
     openWordMenu({
       word: 'לו',
