@@ -223,10 +223,19 @@ export const haftarahOverlay: Overlay = {
     'The weekly Torah portion read in synagogue and the passage from the Prophets read ' +
     'after it, shown in the same colour so the pairing is visible. Ashkenazi and ' +
     'Sephardi custom differ, and you can switch between them.',
-  // Nothing to credit: which passage is read on which occasion is recorded in
-  // many places, so the readings are not one source's work. Empty rather than
-  // absent, to say this was decided rather than overlooked.
-  credits: [],
+  credits: [
+    {
+      source: 'Hebcal leyning tables',
+      url: 'https://github.com/hebcal/hebcal-leyning',
+      license: 'BSD 2-Clause',
+      licenseUrl: 'https://github.com/hebcal/hebcal-leyning/blob/main/LICENSE',
+      collected: 'September 2026',
+      note:
+        'Which passage is read on which occasion. The licence asks that its ' +
+        'copyright notice travel with the data, so a copy sits beside it in ' +
+        'data/hebcal/. Hebcal states no source of its own for the readings.',
+    },
+  ],
 
   async init() {
     try {

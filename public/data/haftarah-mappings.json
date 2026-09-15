@@ -318,14 +318,14 @@
       "haftarah": {
         "ashkenazi": [
           {
-            "book": "Hosea",
+            "book": "Obadiah",
             "start": {
-              "chapter": 11,
-              "verse": 7
+              "chapter": 1,
+              "verse": 1
             },
             "end": {
-              "chapter": 12,
-              "verse": 12
+              "chapter": 1,
+              "verse": 21
             }
           }
         ],
@@ -1287,14 +1287,14 @@
       "haftarah": {
         "ashkenazi": [
           {
-            "book": "Ezekiel",
+            "book": "Amos",
             "start": {
-              "chapter": 22,
-              "verse": 1
+              "chapter": 9,
+              "verse": 7
             },
             "end": {
-              "chapter": 22,
-              "verse": 16
+              "chapter": 9,
+              "verse": 15
             }
           }
         ],
@@ -1330,14 +1330,14 @@
       "haftarah": {
         "ashkenazi": [
           {
-            "book": "Amos",
+            "book": "Ezekiel",
             "start": {
-              "chapter": 9,
-              "verse": 7
+              "chapter": 22,
+              "verse": 1
             },
             "end": {
-              "chapter": 9,
-              "verse": 15
+              "chapter": 22,
+              "verse": 19
             }
           }
         ],
@@ -1898,6 +1898,17 @@
               "chapter": 2,
               "verse": 28
             }
+          },
+          {
+            "book": "Jeremiah",
+            "start": {
+              "chapter": 3,
+              "verse": 4
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 4
+            }
           }
         ],
         "sephardi": [
@@ -2287,49 +2298,27 @@
       "haftarah": {
         "ashkenazi": [
           {
-            "book": "Hosea",
+            "book": "Isaiah",
             "start": {
-              "chapter": 14,
-              "verse": 2
+              "chapter": 55,
+              "verse": 6
             },
             "end": {
-              "chapter": 14,
-              "verse": 10
-            }
-          },
-          {
-            "book": "Joel",
-            "start": {
-              "chapter": 2,
-              "verse": 15
-            },
-            "end": {
-              "chapter": 2,
-              "verse": 27
+              "chapter": 56,
+              "verse": 8
             }
           }
         ],
         "sephardi": [
           {
-            "book": "Hosea",
+            "book": "Isaiah",
             "start": {
-              "chapter": 14,
-              "verse": 2
+              "chapter": 55,
+              "verse": 6
             },
             "end": {
-              "chapter": 14,
-              "verse": 10
-            }
-          },
-          {
-            "book": "Micah",
-            "start": {
-              "chapter": 7,
-              "verse": 18
-            },
-            "end": {
-              "chapter": 7,
-              "verse": 20
+              "chapter": 56,
+              "verse": 8
             }
           }
         ]
@@ -2507,6 +2496,17 @@
             }
           },
           {
+            "book": "Micah",
+            "start": {
+              "chapter": 7,
+              "verse": 18
+            },
+            "end": {
+              "chapter": 7,
+              "verse": 20
+            }
+          },
+          {
             "book": "Joel",
             "start": {
               "chapter": 2,
@@ -2539,6 +2539,17 @@
             "end": {
               "chapter": 7,
               "verse": 20
+            }
+          },
+          {
+            "book": "Joel",
+            "start": {
+              "chapter": 2,
+              "verse": 15
+            },
+            "end": {
+              "chapter": 2,
+              "verse": 27
             }
           }
         ]
@@ -2744,8 +2755,8 @@
               "verse": 54
             },
             "end": {
-              "chapter": 9,
-              "verse": 1
+              "chapter": 8,
+              "verse": 66
             }
           }
         ],
@@ -2757,8 +2768,8 @@
               "verse": 54
             },
             "end": {
-              "chapter": 9,
-              "verse": 1
+              "chapter": 8,
+              "verse": 66
             }
           }
         ]
@@ -2791,7 +2802,7 @@
             },
             "end": {
               "chapter": 1,
-              "verse": 9
+              "verse": 18
             }
           }
         ]
@@ -3037,12 +3048,34 @@
           {
             "book": "Joshua",
             "start": {
+              "chapter": 3,
+              "verse": 5
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 7
+            }
+          },
+          {
+            "book": "Joshua",
+            "start": {
               "chapter": 5,
               "verse": 2
             },
             "end": {
               "chapter": 6,
               "verse": 1
+            }
+          },
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 6,
+              "verse": 27
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 27
             }
           }
         ],
@@ -3056,6 +3089,17 @@
             "end": {
               "chapter": 6,
               "verse": 1
+            }
+          },
+          {
+            "book": "Joshua",
+            "start": {
+              "chapter": 6,
+              "verse": 27
+            },
+            "end": {
+              "chapter": 6,
+              "verse": 27
             }
           }
         ]
@@ -3231,6 +3275,17 @@
               "chapter": 1,
               "verse": 28
             }
+          },
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 3,
+              "verse": 12
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 12
+            }
           }
         ],
         "sephardi": [
@@ -3243,6 +3298,17 @@
             "end": {
               "chapter": 1,
               "verse": 28
+            }
+          },
+          {
+            "book": "Ezekiel",
+            "start": {
+              "chapter": 3,
+              "verse": 12
+            },
+            "end": {
+              "chapter": 3,
+              "verse": 12
             }
           }
         ]
@@ -3334,25 +3400,14 @@
         ],
         "sephardi": [
           {
-            "book": "Hosea",
+            "book": "Isaiah",
             "start": {
-              "chapter": 14,
-              "verse": 2
+              "chapter": 55,
+              "verse": 6
             },
             "end": {
-              "chapter": 14,
-              "verse": 10
-            }
-          },
-          {
-            "book": "Micah",
-            "start": {
-              "chapter": 7,
-              "verse": 18
-            },
-            "end": {
-              "chapter": 7,
-              "verse": 20
+              "chapter": 56,
+              "verse": 8
             }
           }
         ]

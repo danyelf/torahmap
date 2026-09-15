@@ -179,6 +179,7 @@ ignored: large, generated, and not ours to reformat.
 │   │                         # directory per overlay for what only it reads.
 │   ├── all-texts.json            # Bundled verse texts (generated)
 │   ├── tanakh-structure.json     # Verse counts per chapter per book
+│   ├── haftarah-mappings.json    # Torah portions and their haftarot (generated)
 │   ├── text-dating.json          # Estimated composition dates by verse
 │   ├── overlays/
 │   │   └── commentary/
@@ -192,6 +193,7 @@ ignored: large, generated, and not ours to reformat.
 │
 ├── data/                     # Sources and downloads, not shipped. Same shape.
 │   ├── texts/                    # Hebrew & English verse texts (78 files)
+│   ├── hebcal/                   # Leyning tables from hebcal (see its README)
 │   └── overlays/
 │       └── commentary/           # Gitignored; see DATA_REGENERATION.md
 │           ├── sefaria-links/    # The links export, ~650MB of CSV
@@ -202,6 +204,7 @@ ignored: large, generated, and not ours to reformat.
 │   ├── bundle-texts.ts               # Bundle all verse texts into one file
 │   ├── download-texts.sh             # Download texts from Sefaria
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
+│   ├── generate-haftarah-mappings.ts # Build haftarah mappings from the hebcal tables
 │   ├── generate-text-dating.ts       # Generate text dating data from source ranges
 │   ├── overlays/
 │   │   └── commentary/
@@ -248,8 +251,10 @@ The codebase follows a **functional, modular design** with clear separation of c
 Verse texts, structure and commentary counts come from
 [Sefaria](https://www.sefaria.org/). The Hebrew lexeme index behind root-mode
 search comes from the [ETCBC BHSA](https://github.com/ETCBC/bhsa) database, read
-through Text-Fabric. See [DATA_REGENERATION.md](DATA_REGENERATION.md) for
-instructions on updating data files.
+through Text-Fabric. The haftarah readings come from
+[hebcal's leyning tables](https://github.com/hebcal/hebcal-leyning). See
+[DATA_REGENERATION.md](DATA_REGENERATION.md) for instructions on updating data
+files.
 
 ## Interactions
 
