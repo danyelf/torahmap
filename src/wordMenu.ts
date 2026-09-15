@@ -45,7 +45,11 @@ function choice(label: HTMLElement, onPick: () => void): HTMLButtonElement {
 }
 
 function meaningLabel(meaning: Meaning): HTMLElement {
+  // Make the wrapper itself a flex container so the button's flex sees three children
+  // (form, gloss, count) rather than just one wrapper span. This allows gap spacing
+  // and flex: 1 on gloss to work correctly.
   const label = document.createElement('span');
+  label.className = 'word-menu-label';
 
   const form = document.createElement('span');
   form.className = 'word-menu-form';

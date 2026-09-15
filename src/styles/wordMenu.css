@@ -27,7 +27,6 @@
 .word-menu-choice {
   display: flex;
   align-items: baseline;
-  gap: 8px;
   width: 100%;
   padding: 8px;
   background: none;
@@ -43,14 +42,24 @@
   background: rgba(106, 176, 243, 0.18);
 }
 
+.word-menu-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
+}
+
 .word-menu-form {
   font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
   font-size: 16px;
   direction: rtl;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .word-menu-gloss {
   flex: 1;
+  min-width: 0;
 }
 
 .word-menu-count {

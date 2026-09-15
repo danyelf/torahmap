@@ -188,6 +188,35 @@ describe('when the palette is full', () => {
   });
 });
 
+describe('layout', () => {
+  it('separates form, gloss and count into distinct flex items', () => {
+    openWordMenu({
+      word: 'עלה',
+      meanings: [leaf],
+      otherReadings: [],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      onChoose: vi.fn(),
+    });
+
+    const choice = document.querySelector('.word-menu-choice')!;
+    const label = choice.querySelector('.word-menu-label')!;
+
+    // The label wrapper should be a flex container with three direct children.
+    const children = [...label.children];
+    expect(children).toHaveLength(3);
+    expect(children[0].className).toContain('word-menu-form');
+    expect(children[1].className).toContain('word-menu-gloss');
+    expect(children[2].className).toContain('word-menu-count');
+
+    // Verify they have content.
+    expect(children[0].textContent).toBe('עָלֶה');
+    expect(children[1].textContent).toBe('leafage');
+    expect(children[2].textContent).toContain('13');
+  });
+});
+
 describe('other readings escape hatch', () => {
   it('shows the button when there are extra readings', () => {
     openWordMenu({
