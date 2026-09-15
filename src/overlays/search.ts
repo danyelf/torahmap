@@ -571,6 +571,7 @@ export const searchOverlay: Overlay = {
       source: 'ETCBC BHSA (2021), read through Text-Fabric',
       url: 'https://github.com/ETCBC/bhsa',
       license: 'CC BY-NC 4.0',
+      collected: 'September 2026',
       note: 'The Hebrew dictionary behind root mode. Cite 10.17026/dans-z6y-skyh.',
     },
   ],

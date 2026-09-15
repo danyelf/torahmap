@@ -21,10 +21,9 @@ help modal. The collection dates shown there are hand-maintained strings in
 `src/credits.ts`: no data file carries a generation timestamp, and a git commit
 date cannot stand in for one, because a commit that merely moves or refactors a
 data file would claim it had been re-collected that month. **Whenever you run
-one of the commands below, set that source's `collected` date.** Several
-sources have no `collected` line today, because no past commit is plainly a
-collection event; add the field when you are the one collecting. Where it is
-absent the tab says the date is not recorded rather than guessing.
+one of the commands below, set that source's `collected` date.** A source with
+no `collected` line shows as "collection date not recorded" rather than
+guessing; add the field when you are the one collecting.
 
 ## Verse Texts
 
@@ -73,8 +72,8 @@ thing afterwards.
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 ```
 
-Then set Sefaria's `collected` date in `src/credits.ts`. There is no such
-line yet — add one.
+The verse counts have no credit row of their own, so there is no date to
+update here.
 
 ## Hebrew Lexeme Index
 
@@ -90,8 +89,7 @@ Text-Fabric the first time. Once that setup is done:
 .venv/bin/python scripts/search/generate-lexeme-index.py
 ```
 
-Then set the BHSA `collected` date in `src/overlays/search.ts`. There is no
-such line yet — add one to that credit.
+Then set the BHSA `collected` date in `src/overlays/search.ts`.
 
 ## Text Dating Data
 

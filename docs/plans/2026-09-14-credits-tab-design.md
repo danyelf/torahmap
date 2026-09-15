@@ -90,18 +90,17 @@ From `APP_CREDITS` in `src/credits.ts`, rendered above the overlay blocks.
 
 | Source | Licence | Collected | Note |
 | --- | --- | --- | --- |
-| Miqra according to the Masorah, Hebrew Wikisource | CC BY-SA | September 2026 | The Hebrew text. The marks the Trop overlay shows are part of it, and Hebrew search matches it with vowels and cantillation ignored. |
-| THE JPS TANAKH: Gender-Sensitive Edition, Jewish Publication Society | CC BY-NC | September 2026 | The English text, and what the English search index is built from. |
-| Sefaria | Sefaria's terms | not recorded | Both editions are downloaded from Sefaria, which also supplies the chapter and verse counts the layout rests on. |
+| Miqra according to the Masorah, Hebrew Wikisource | CC BY-SA | September 2026 | The Hebrew text, downloaded via Sefaria. The Trop overlay reads its cantillation marks out of this edition, and Hebrew search matches it with vowels and cantillation ignored. |
+| THE JPS TANAKH: Gender-Sensitive Edition, Jewish Publication Society | CC BY-NC | September 2026 | The English text, downloaded via Sefaria. The English search index is built from it. |
 
 ### One block per overlay
 
 | Overlay | Source | Licence | Collected | Note |
 | --- | --- | --- | --- | --- |
-| Text Search | ETCBC BHSA (2021), read through Text-Fabric | CC BY-NC 4.0 | not recorded | Cite 10.17026/dans-z6y-skyh |
+| Text Search | ETCBC BHSA (2021), read through Text-Fabric | CC BY-NC 4.0 | September 2026 | Cite 10.17026/dans-z6y-skyh |
 | Commentary | Sefaria link exports | Sefaria's terms | January 2026 | Sefaria regenerates these monthly, so counts trail the live site. |
 | Haftarah | Mechon Mamre, Weekly Torah Readings | none stated | January 2026 | © Mechon Mamre 2013. The page states no licence. |
-| Text Dating | Wikipedia, "Dating the Bible" | CC BY-SA | not recorded | — |
+| Text Dating | Wikipedia, "Dating the Bible" | CC BY-SA | January 2026 | — |
 
 Trop and Verse Length declare no credits and do not appear. Both derive
 everything from text that is already credited: Trop reads the cantillation
@@ -128,8 +127,18 @@ A date is therefore given only where a commit plainly is a collection event:
   themselves are not in the repository, but Sefaria re-exports them monthly, so
   the counts are at most about a month older than the file.
 
-Everything else renders as "collection date not recorded" until the next
-regeneration sets it.
+Two further dates come from Danyel directly rather than from the repository:
+BHSA was pulled in September 2026, and the Wikipedia article was read in
+January 2026. Neither is recoverable from git, which is the whole reason the
+field is hand-maintained.
+
+No entry then reads "collection date not recorded". `tanakh-structure.json`
+would have been the one, but Sefaria has no row of its own: a row covering both
+the export bucket and the verse counts could only carry one date between two
+things collected at different times, and it confused every reader who met it.
+Sefaria is still credited in two places: each edition's note says it was
+downloaded via Sefaria, and the Commentary block credits Sefaria's link exports,
+where it is the actual source rather than the delivery mechanism.
 
 `DATA_REGENERATION.md` gains a line beside each regeneration command reminding
 whoever runs it to update the date in `src/credits.ts`. Nothing enforces that,

@@ -104,8 +104,13 @@ describe('APP_CREDITS', () => {
     expect(sources).toContain('THE JPS TANAKH: Gender-Sensitive Edition');
   });
 
-  it('credits Sefaria, which delivers the texts and the verse counts', () => {
-    expect(APP_CREDITS.some((c) => c.source.includes('Sefaria'))).toBe(true);
+});
+
+describe('Sefaria', () => {
+  it('is credited somewhere, whichever block it sits in', () => {
+    const all = [...APP_CREDITS, ...getAllOverlays().flatMap((o) => o.credits ?? [])];
+
+    expect(all.some((c) => c.source.includes('Sefaria'))).toBe(true);
   });
 });
 
