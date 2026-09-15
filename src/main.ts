@@ -7,7 +7,7 @@ import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { lookupForm } from './verseWords.ts';
-import { meaningsInVerse, meaningsFor } from './search/dictionary.ts';
+import { meaningsInVerse } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
@@ -60,7 +60,7 @@ import {
   configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
-import { searchForMeaning, canAddTerm, clickWouldSwitchMode } from './overlays/search.ts';
+import { searchForMeaning, canAddTerm, searchModeWouldChange } from './overlays/search.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -687,16 +687,15 @@ async function main(): Promise<void> {
   setWordClickHandler((click) => {
     const word = lookupForm(click.text);
     const meanings = meaningsInVerse(word, tanakhKey(click.book, click.chapter, click.verse));
-    const otherReadings = meaningsFor(word);
 
     openWordMenu({
       word: click.text,
       meanings,
-      otherReadings,
       anchor: click.element,
       replacesOverlay:
         currentOverlay && currentOverlay.id !== 'search' ? currentOverlay.name : null,
-      switchesToRootMode: clickWouldSwitchMode(),
+      switchesToRootMode: searchModeWouldChange('root'),
+      switchesToWordMode: searchModeWouldChange('word'),
       paletteFull: !canAddTerm(),
       onChoose: (meaning) => {
         // Ask before anything is spent. setOverlay() destroys the outgoing

@@ -8,19 +8,20 @@
 // misfire should be visible before it costs anything.
 
 import './styles/wordMenu.css';
-import { sameMeaning, type Meaning } from './search/dictionary.ts';
+import type { Meaning } from './search/dictionary.ts';
 
 export interface WordMenuOptions {
   word: string;
   /** What the verse supports: usually one, sometimes a few, sometimes none. */
   meanings: Meaning[];
-  /** Every reading the spelling allows, whatever the verse says. */
-  otherReadings: Meaning[];
   anchor: HTMLElement;
   replacesOverlay: string | null;
   /** True when choosing a meaning would move Hebrew search into root mode. */
   switchesToRootMode: boolean;
+  /** True when searching the written form would move Hebrew search to whole word. */
+  switchesToWordMode: boolean;
   paletteFull: boolean;
+  /** A reading of the word, or null for the written form itself. */
   onChoose: (meaning: Meaning | null) => void;
 }
 
@@ -52,51 +53,20 @@ function choice(label: HTMLElement, onPick: () => void): HTMLButtonElement {
   return button;
 }
 
-/** Search the spelling exactly as the verse writes it, meanings aside. */
-function literalChoice(options: WordMenuOptions): HTMLButtonElement {
+/**
+ * Search this written form and no other, with the dictionary left out of it.
+ *
+ * Every panel offers this, because it is what a reader does when the reading we
+ * named is not the word they meant. The word is shown exactly as the verse
+ * writes it, points and all, since that is what is being searched for.
+ */
+function exactChoice(options: WordMenuOptions): HTMLButtonElement {
   const label = document.createElement('span');
-  label.textContent = `Search ${options.word} as written`;
+  label.textContent = `Search ${options.word} exactly`;
   return choice(label, () => {
     options.onChoose(null);
     closeWordMenu();
   });
-}
-
-/**
- * The "other readings" disclosure: a button that replaces itself with the rows
- * it stands for.
- *
- * Both branches of the panel need it, and they need it for the same reason:
- * these are readings worth offering but not worth putting first. Where the
- * verse settled the word they are the readings it ruled out; where it could not
- * they are the whole candidate list, which is usually not the word in front of
- * the reader. What differs between the branches is which choice is primary, not
- * how the rest of them are reached.
- */
-function appendOtherReadings(
-  menu: HTMLElement,
-  readings: Meaning[],
-  options: WordMenuOptions,
-): void {
-  if (readings.length === 0) return;
-
-  const expandButton = document.createElement('button');
-  expandButton.type = 'button';
-  expandButton.className = 'word-menu-expand-other';
-  expandButton.textContent = 'other readings';
-  expandButton.addEventListener('click', () => {
-    // The button stands in for the rows, so it gives up its place to them.
-    expandButton.remove();
-    for (const reading of readings) {
-      menu.appendChild(
-        choice(meaningLabel(reading), () => {
-          options.onChoose(reading);
-          closeWordMenu();
-        }),
-      );
-    }
-  });
-  menu.appendChild(expandButton);
 }
 
 function meaningLabel(meaning: Meaning): HTMLElement {
@@ -132,11 +102,6 @@ export function openWordMenu(options: WordMenuOptions): void {
   menu.className = 'word-menu';
   menu.setAttribute('role', 'dialog');
 
-  // Whether a reading is on offer at all, which is what the warnings below are
-  // about: nothing is at stake in a panel that only says the palette is full.
-  const offersMeaning =
-    !options.paletteFull && (options.meanings.length > 0 || options.otherReadings.length > 0);
-
   if (options.paletteFull) {
     // Five colours, five words. A sixth would repeat a colour and the map could
     // no longer say which word is which, so this says so rather than offering a
@@ -145,24 +110,17 @@ export function openWordMenu(options: WordMenuOptions): void {
     note.className = 'word-menu-note';
     note.textContent = 'Five words are already on the map. Remove one to add another.';
     menu.appendChild(note);
-  } else if (options.meanings.length === 0) {
-    // The verse cannot say which word this is, and for nearly nine clicks in
-    // ten the reason is that the true word is a function word carrying a prefix
-    // or a suffix - the object marker את on its own is more than half of them.
-    // The generator leaves those out of the spelling map deliberately, so the
-    // candidates the spelling allows are mostly unrelated words that happen to
-    // be written the same way. Searching the spelling as written is the thing
-    // that actually works here, so it is the choice on offer; the minority of
-    // words the candidate list does suit are one click further on.
-    const note = document.createElement('div');
-    note.className = 'word-menu-note';
-    note.textContent = 'Not found as a dictionary word.';
-    menu.appendChild(note);
-
-    menu.appendChild(literalChoice(options));
-    appendOtherReadings(menu, options.otherReadings, options);
   } else {
-    if (options.meanings.length > 1) {
+    if (options.meanings.length === 0) {
+      const note = document.createElement('div');
+      note.className = 'word-menu-note';
+      note.textContent = 'Not found as a dictionary word.';
+      menu.appendChild(note);
+    } else if (options.meanings.length > 1) {
+      // Not a list of words that happen to share a spelling: the verse really
+      // does contain both, as Genesis 8:20 contains the burnt-offering and the
+      // verb. That is the word's own ambiguity, so it is offered without a
+      // default rather than resolved on the reader's behalf.
       const note = document.createElement('div');
       note.className = 'word-menu-note';
       note.textContent = 'This verse carries more than one of these.';
@@ -178,19 +136,7 @@ export function openWordMenu(options: WordMenuOptions): void {
       );
     }
 
-    // What the spelling allows that the verse did not already put on offer. A
-    // reading counts as shown when it shares a lexeme with one above, not when
-    // it shares a first key: the two lists head a merged reading differently
-    // whenever the verse lacks the group's earliest member, and comparing first
-    // keys would offer the reader the same reading twice under a different
-    // verse count.
-    appendOtherReadings(
-      menu,
-      options.otherReadings.filter(
-        (reading) => !options.meanings.some((shown) => sameMeaning(reading, shown.keys)),
-      ),
-      options,
-    );
+    menu.appendChild(exactChoice(options));
   }
 
   if (options.replacesOverlay) {
@@ -200,13 +146,20 @@ export function openWordMenu(options: WordMenuOptions): void {
     menu.appendChild(warning);
   }
 
-  if (offersMeaning && options.switchesToRootMode) {
+  if (!options.paletteFull && options.meanings.length > 0 && options.switchesToRootMode) {
     // A meaning is not something a substring can express, so choosing one has
     // to move the Hebrew search into root mode. The reader chose the mode they
     // are in, so they are told before the click rather than after it.
     const warning = document.createElement('div');
     warning.className = 'word-menu-warning';
     warning.textContent = 'Searching a meaning switches Hebrew search to Root.';
+    menu.appendChild(warning);
+  }
+
+  if (!options.paletteFull && options.switchesToWordMode) {
+    const warning = document.createElement('div');
+    warning.className = 'word-menu-warning';
+    warning.textContent = 'Searching exactly switches Hebrew search to Whole word.';
     menu.appendChild(warning);
   }
 

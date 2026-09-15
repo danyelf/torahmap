@@ -107,11 +107,27 @@ describe('searching for a clicked word', () => {
     elsewhere.remove();
   });
 
-  it('searches the spelling as written when there is no meaning', () => {
+  it('searches the written form itself when no meaning is chosen', () => {
     const container = render();
 
     expect(searchForMeaning('לו', null)).toBe(true);
     expect(container.querySelector<HTMLInputElement>('.term-input')!.value).toBe('לו');
+  });
+
+  it('matches whole words when the written form is what was asked for', () => {
+    // The reader asked for this spelling and no other. Left in substring mode
+    // it would match inside longer words, and left in root mode a known word
+    // would be resolved to its dictionary entry - neither is what "exactly"
+    // means.
+    const container = render();
+    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+
+    searchForMeaning('עלה', null);
+
+    expect(searchOverlay.getUrlParams!().hm).toBe('word');
+    expect(
+      container.querySelector<HTMLInputElement>('input[name="hebrew-mode"]:checked')!.value,
+    ).toBe('word');
   });
 
   it('refuses a sixth word, because the palette holds five', () => {

@@ -218,9 +218,13 @@ function runSearch(): void {
  * when the palette is full, so the caller can say so rather than dropping the
  * click silently.
  *
- * A meaning can only be searched for in root mode - "the burnt-offering
- * reading" cannot be expressed as a substring - so a click moves the mode
- * there. The panel tells the reader before the click is made.
+ * Either way the click settles the Hebrew mode, and the panel says so before
+ * the click is made. A meaning can only be searched for in root mode - "the
+ * burnt-offering reading" cannot be expressed as a substring. The written form
+ * is the opposite request, for this spelling and no other, so it goes to whole
+ * word: substring mode would match it inside longer words, and root mode would
+ * resolve a known spelling to its dictionary entry and find the readings the
+ * reader just declined.
  *
  * The meaning arrives as every lexeme its row stands for, not as one key. The
  * reader chose from a list the verse built, and a row the verse built can be
@@ -249,9 +253,11 @@ export function searchForMeaning(text: string, meaningKeys: readonly string[] | 
 
   if (meaningKeys && meaningKeys.length > 0) {
     hebrewSearchMode = 'root';
-    syncHebrewModeRadios();
     terms = onlyMeaning(terms, id, meaningKeys);
+  } else {
+    hebrewSearchMode = 'word';
   }
+  syncHebrewModeRadios();
 
   renderTermRows();
   runSearch();
@@ -259,13 +265,16 @@ export function searchForMeaning(text: string, meaningKeys: readonly string[] | 
 }
 
 /**
- * Would choosing a meaning move the Hebrew search out of the mode it is in?
+ * Would a click that searches this way move the Hebrew search out of the mode
+ * it is in?
  *
  * Asked before a click is offered, so the panel can say the mode will change
- * rather than changing it behind the reader's back.
+ * rather than changing it behind the reader's back. Each of the panel's two
+ * actions settles the mode, and they settle it differently, so each asks about
+ * the mode it would leave the search in.
  */
-export function clickWouldSwitchMode(): boolean {
-  return hebrewSearchMode !== 'root';
+export function searchModeWouldChange(target: 'root' | 'word'): boolean {
+  return hebrewSearchMode !== target;
 }
 
 /**
