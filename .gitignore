@@ -6,9 +6,13 @@ dist
 .agents
 .csb
 coverage
-data/sefaria-links/
+# No trailing slash: in a worktree this is usually a symlink to the copy in the
+# main checkout, rather than 650MB of CSVs downloaded a second time.
+data/overlays/commentary/sefaria-links
+data/overlays/commentary/sefaria-index.json
 .DS_Store
 .claude/worktrees
+__pycache__/
 
 # Talmud verification cache — regenerable via scripts/talmud/verify-coverage.ts
 data-transient/

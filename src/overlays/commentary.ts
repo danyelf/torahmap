@@ -50,14 +50,14 @@ export const commentaryOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetchData('commentary-counts.json');
+      const res = await fetchData('overlays/commentary/counts.json');
       if (!res.ok) {
-        console.error(`Failed to load commentary-counts.json: ${res.status}`);
+        console.error(`Failed to load the commentary counts: ${res.status}`);
         return;
       }
       data = await res.json();
     } catch (e) {
-      console.error('Failed to parse commentary-counts.json:', e);
+      console.error('Failed to parse the commentary counts:', e);
     }
   },
 
@@ -88,14 +88,27 @@ export const commentaryOverlay: Overlay = {
     wrapper.innerHTML = `
       <label for="category-select">Category:</label>
       <select id="category-select">
-        <option value="total">All Commentary</option>
-        <option value="Talmud">Talmud</option>
-        <option value="Midrash">Midrash</option>
-        <option value="Halakhah">Halakhah</option>
-        <option value="Jewish Thought">Jewish Thought</option>
-        <option value="Chasidut">Chasidut</option>
-        <option value="Kabbalah">Kabbalah</option>
-        <option value="Musar">Musar</option>
+        <option value="total">All linked texts</option>
+        <optgroup label="Verse commentary">
+          <option value="Commentary">Commentary</option>
+          <option value="Quoting Commentary">Quoting Commentary</option>
+        </optgroup>
+        <optgroup label="Rabbinic">
+          <option value="Talmud">Talmud</option>
+          <option value="Midrash">Midrash</option>
+          <option value="Mishnah">Mishnah</option>
+          <option value="Tosefta">Tosefta</option>
+        </optgroup>
+        <optgroup label="Law, thought and practice">
+          <option value="Halakhah">Halakhah</option>
+          <option value="Responsa">Responsa</option>
+          <option value="Jewish Thought">Jewish Thought</option>
+          <option value="Kabbalah">Kabbalah</option>
+          <option value="Chasidut">Chasidut</option>
+          <option value="Musar">Musar</option>
+          <option value="Liturgy">Liturgy</option>
+          <option value="Second Temple">Second Temple</option>
+        </optgroup>
       </select>
     `;
     const select = wrapper.querySelector('select')!;

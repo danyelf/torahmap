@@ -92,7 +92,7 @@ describe('Commentary Overlay', () => {
       await commentaryOverlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/commentary-counts.json'),
+        expect.stringContaining('data/overlays/commentary/counts.json'),
       );
     });
 
@@ -355,6 +355,41 @@ describe('Commentary Overlay', () => {
       expect(options).toContain('Chasidut');
       expect(options).toContain('Kabbalah');
       expect(options).toContain('Musar');
+    });
+
+    it('offers every category worth looking at', () => {
+      // The menu and the generating script have drifted apart before: Responsa
+      // was counted for months without ever appearing here, so nobody could
+      // look at it.
+      //
+      // "Other" is the deliberate exception. It is the generator's catch-all
+      // for a shelf we do not recognise, so that such a shelf shows up in the
+      // regeneration output instead of vanishing. Today it holds Sefaria's
+      // "Guides" — introductions to the Talmud — and it is a diagnostic for
+      // whoever refreshes the data, not a lens anyone would choose.
+      const container = document.createElement('div');
+      commentaryOverlay.renderControls?.(container);
+
+      const select = container.querySelector('select') as HTMLSelectElement;
+      const options = Array.from(select.options).map((opt) => opt.value);
+
+      expect(options).toEqual([
+        'total',
+        'Commentary',
+        'Quoting Commentary',
+        'Talmud',
+        'Midrash',
+        'Mishnah',
+        'Tosefta',
+        'Halakhah',
+        'Responsa',
+        'Jewish Thought',
+        'Kabbalah',
+        'Chasidut',
+        'Musar',
+        'Liturgy',
+        'Second Temple',
+      ]);
     });
 
     it('sets initial value to current category', () => {
