@@ -212,6 +212,58 @@ function runSearch(): void {
 }
 
 /**
+ * Search for a word a reader clicked, narrowed to one of its meanings.
+ *
+ * Adds a term rather than replacing the search: the existing words keep their
+ * colours, which is what makes two words comparable on one map. Returns false
+ * when the palette is full, so the caller can say so rather than dropping the
+ * click silently.
+ *
+ * A meaning can only be searched for in root mode - "the burnt-offering
+ * reading" cannot be expressed as a substring - so a click moves the mode
+ * there. The panel tells the reader before the click is made.
+ */
+export function searchForMeaning(text: string, meaningKey: string | null): boolean {
+  const typed = typedTerms();
+  if (typed.length >= MAX_TERMS) return false;
+
+  // The list always holds one empty row to type into. Fill it rather than
+  // leaving an empty row above the new word. setTermText replaces a term in
+  // place, so the filled row keeps its position - track it by id rather than
+  // assuming it lands last, which is wrong whenever the empty row was not the
+  // last one (a reader who cleared an earlier box while a later one still
+  // held a word).
+  const empty = terms.find((term) => term.text.trim() === '');
+  let id: string;
+  if (empty) {
+    id = empty.id;
+    terms = setTermText(terms, id, text);
+  } else {
+    terms = addTerm(terms, text);
+    id = terms[terms.length - 1].id;
+  }
+
+  if (meaningKey) {
+    hebrewSearchMode = 'root';
+    terms = onlyMeaning(terms, id, meaningKey);
+  }
+
+  renderTermRows();
+  runSearch();
+  return true;
+}
+
+/**
+ * Is there a colour left for another word?
+ *
+ * Asked before a click is offered, so the panel can say the palette is full
+ * rather than showing a button that would quietly do nothing.
+ */
+export function canAddTerm(): boolean {
+  return typedTerms().length < MAX_TERMS;
+}
+
+/**
  * How many verses one term accounts for on its own.
  *
  * Takes the term, not a row number. Results are indexed by a term's position
