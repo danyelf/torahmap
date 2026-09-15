@@ -19,6 +19,7 @@ import type { VerseTexts } from '../../verseTexts';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { searchInRootMode } from '../helpers/rootSearch';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 const searchDataDir = path.join(dataDir, 'search');
@@ -108,17 +109,17 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
   describe('searching', () => {
     it('finds every inflected form of a verb, not just the one typed', () => {
       // Genesis 1:3 has וַיֹּאמֶר; the search term is the bare verb.
-      const results = keys(search('אמר', false, 'root'));
+      const results = keys(searchInRootMode('אמר'));
       expect(results.has('Genesis:1:3')).toBe(true);
       expect(results.size).toBeGreaterThan(2000);
     });
 
     it('finds Genesis 19:14 when searching צחק (it has כִּמְצַחֵק)', () => {
-      expect(keys(search('צחק', false, 'root')).has('Genesis:19:14')).toBe(true);
+      expect(keys(searchInRootMode('צחק')).has('Genesis:19:14')).toBe(true);
     });
 
     it('marks a verse with every term that matched it', () => {
-      const results = search('צחק,יצחק', false, 'root');
+      const results = searchInRootMode('צחק,יצחק');
       const gen1914 = results.find(
         (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 14,
       );
@@ -133,14 +134,14 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
       expect(readings.map((id) => getLexeme(id)!.pos)).not.toContain('prep');
       expect(readings.map((id) => getLexeme(id)!.gloss)).toContain('ascend');
 
-      const ascend = keys(search('עלה', false, 'root'));
-      const upon = keys(search('על', false, 'root'));
+      const ascend = keys(searchInRootMode('עלה'));
+      const upon = keys(searchInRootMode('על'));
       expect(ascend.size).toBeLessThan(upon.size / 2);
     });
 
     it('highlights the word that was typed, not another word sharing a reading', () => {
       // Genesis 19:28 has both עַל and עָלָה. A search for עלה must land on עלה.
-      const [result] = search('עלה', false, 'root').filter(
+      const [result] = searchInRootMode('עלה').filter(
         (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
       );
       expect(result).toBeDefined();
@@ -151,7 +152,7 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
 
     it('falls back to whole-word search for a term with no reading', () => {
       // A nonsense string finds nothing rather than throwing.
-      expect(search('קקקקקקק', false, 'root')).toEqual([]);
+      expect(searchInRootMode('קקקקקקק')).toEqual([]);
     });
   });
 });

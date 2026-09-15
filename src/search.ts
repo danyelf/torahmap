@@ -697,40 +697,6 @@ export function computeSnippetForMatch(
 }
 
 /**
- * Search Hebrew text by lexeme, so that every inflected form of a word is found.
- * Falls back to whole-word search when nothing in the text resolves the term.
- *
- * @param terms - Array of Hebrew search terms
- * @returns Array of SearchResults with matching verses (snippets NOT computed - use computeSnippetForMatch)
- */
-/**
- * Turn per-term sets of verse keys into search results.
- *
- * Root mode used to resolve a term's text to lexemes and union their verses
- * inside search(). Once the reader can choose which of a word's meanings the
- * term stands for, that resolution belongs where the choice lives, so the sets
- * arrive already decided. Snippets are left for computeSnippetForMatch, as
- * root mode has always done.
- *
- * A term with no hits simply contributes nothing; term indices are positions
- * in the caller's list, so the gap keeps every other term's colour in place.
- */
-/**
- * Verse keys for one Hebrew term matched as a whole word.
- *
- * Root mode's fallback. The lexeme index is fetched at startup and can fail, or
- * simply not know a word; root mode is the default now, so without this a
- * missing index would mean a Hebrew search quietly finding nothing at all.
- */
-export function verseKeysForWholeWord(term: string): Set<string> {
-  const keys = new Set<string>();
-  for (const result of searchHebrewWholeWordLazy([term])) {
-    keys.add(tanakhKey(result.book, result.chapter, result.verse));
-  }
-  return keys;
-}
-
-/**
  * The verses each term matches, decided term by term.
  *
  * The language of a search used to be read off its first term, so a Hebrew
@@ -757,6 +723,18 @@ export function verseSetsForTerms(
   });
 }
 
+/**
+ * Turn per-term sets of verse keys into search results.
+ *
+ * Root mode used to resolve a term's text to lexemes and union their verses
+ * inside search(). Once the reader can choose which of a word's meanings the
+ * term stands for, that resolution belongs where the choice lives, so the sets
+ * arrive already decided. Snippets are left for computeSnippetForMatch, as
+ * root mode has always done.
+ *
+ * A term with no hits simply contributes nothing; term indices are positions
+ * in the caller's list, so the gap keeps every other term's colour in place.
+ */
 export function resultsForVerseSets(
   termVerseKeys: Array<Set<string>>,
   termLanguages?: Array<'he' | 'en'>,
@@ -790,86 +768,6 @@ export function resultsForVerseSets(
   return Array.from(resultMap.values());
 }
 
-function searchByRootMode(terms: string[]): SearchResult[] {
-  if (!formToLexemes || !verseToLexemes) {
-    // No lexeme data available, fall back to whole-word search (lazy version)
-    return searchHebrewWholeWordLazy(terms);
-  }
-
-  const termLexemes: Array<{ termIndex: number; lexemes: LexemeId[] }> = [];
-
-  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-    const lexemes = findLexemesForWord(terms[termIndex]);
-    if (lexemes && lexemes.length > 0) {
-      termLexemes.push({ termIndex, lexemes });
-    }
-  }
-
-  if (termLexemes.length > 0) {
-    // Positional, so a term that resolved to nothing keeps its index.
-    const perTerm: Array<Set<string>> = terms.map(() => new Set<string>());
-    for (const { termIndex, lexemes } of termLexemes) {
-      perTerm[termIndex] = searchByLexemes(lexemes);
-    }
-
-    const results = resultsForVerseSets(perTerm);
-    if (results.length > 0) {
-      return results;
-    }
-  }
-
-  // No lexemes found for any term, fall back to whole-word search (lazy version)
-  return searchHebrewWholeWordLazy(terms);
-}
-
-/**
- * Search Hebrew text for whole-word matches only (LAZY - no snippets computed)
- * Returns verse indices that match complete words
- * Snippets must be computed on-demand with computeSnippetForMatch
- */
-function searchHebrewWholeWordLazy(terms: string[]): SearchResult[] {
-  const resultMap = new Map<string, SearchResult>();
-
-  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-    const term = terms[termIndex];
-    const normalizedTerm = normalizeHebrewForSearch(term);
-
-    for (const entry of searchIndex) {
-      const words = entry.hebrewText.split(/\s+/);
-
-      // Find word index that matches exactly
-      const wordIndex = words.findIndex((word) => word === normalizedTerm);
-
-      if (wordIndex !== -1) {
-        const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
-
-        let result = resultMap.get(key);
-        if (!result) {
-          result = {
-            book: entry.book,
-            chapter: entry.chapter,
-            verse: entry.verse,
-            language: 'he',
-            matchingTerms: [],
-          };
-          resultMap.set(key, result);
-        }
-
-        // Only add if this term hasn't matched this verse yet
-        if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
-          // Only track that this term matched - NO SNIPPET COMPUTATION
-          result.matchingTerms.push({
-            termIndex,
-            // snippet, matchStart, matchEnd omitted (will be computed lazily)
-          });
-        }
-      }
-    }
-  }
-
-  return Array.from(resultMap.values());
-}
-
 /**
  * Search for verses matching any of the comma-separated terms
  * Returns ALL matching verses with info about which terms matched
@@ -883,7 +781,7 @@ function searchHebrewWholeWordLazy(terms: string[]): SearchResult[] {
 export function search(
   query: string,
   wholeWord: boolean = false,
-  hebrewMode: 'substring' | 'word' | 'root' = 'substring',
+  hebrewMode: 'substring' | 'word' = 'substring',
 ): SearchResult[] {
   const terms = parseSearchTerms(query);
   if (terms.length === 0) return [];
@@ -898,8 +796,6 @@ export function search(
     switch (hebrewMode) {
       case 'word':
         return searchHebrewWholeWord(terms);
-      case 'root':
-        return searchByRootMode(terms);
       case 'substring':
       default:
         // Fall through to substring search below

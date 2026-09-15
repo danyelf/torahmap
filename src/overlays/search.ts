@@ -67,9 +67,23 @@ let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
  *
  * Short ones are left out for the same reason parseSearchTerms drops them: a
  * single letter matches most of the corpus and is almost never meant.
+ *
+ * The answer is kept until the term list is replaced. getVerseColor asks once
+ * per verse, so applyOverlay asks 23,000 times, and it runs on every hover
+ * change — filtering the list that often was enough work to show in a frame.
+ * Every function in terms.ts returns a new list rather than editing one, so
+ * the identity of `terms` is a sound thing to hang the answer on.
  */
+let activeTermsCache: { of: SearchTerm[]; value: SearchTerm[] } | null = null;
+
 function activeTerms(): SearchTerm[] {
-  return terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+  if (activeTermsCache?.of !== terms) {
+    activeTermsCache = {
+      of: terms,
+      value: terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH),
+    };
+  }
+  return activeTermsCache.value;
 }
 
 /** Terms holding something, including ones too short to search on. */
@@ -150,21 +164,21 @@ function runSearch(): void {
 
   // Every term is matched on its own, in its own language. Only a Hebrew term
   // in root mode consults the chosen meanings; everything else is text.
-  const textOnly = verseSetsForTerms(
-    active.map((term) => term.text.trim()),
-    {
+  // Matching text scans the corpus, so it is done only for the terms that need
+  // it — a Hebrew term answered from the dictionary never pays for it.
+  const textVerses = (term: SearchTerm): Set<string> =>
+    verseSetsForTerms([term.text.trim()], {
       wholeWordEnglish: wholeWordEnabled,
       hebrewMode: hebrewSearchMode === 'root' ? 'word' : hebrewSearchMode,
-    },
-  );
+    })[0];
 
   currentResults = resultsForVerseSets(
-    active.map((term, i) => {
-      if (!termIsHebrew(term) || hebrewSearchMode !== 'root') return textOnly[i];
+    active.map((term) => {
+      if (!termIsHebrew(term) || hebrewSearchMode !== 'root') return textVerses(term);
       // A term the dictionary does not know falls back to whole-word matching,
       // as root mode always has. Root is the default now, so a lexeme index
       // that failed to load must not mean Hebrew silently finds nothing.
-      return term.meanings.length > 0 ? versesFor(selectedKeys(term)) : textOnly[i];
+      return term.meanings.length > 0 ? versesFor(selectedKeys(term)) : textVerses(term);
     }),
     active.map((term) => (termIsHebrew(term) ? 'he' : 'en')),
   );
@@ -246,7 +260,6 @@ function buildMeaningRow(
   box.type = 'checkbox';
   box.addEventListener('change', () => {
     terms = toggleMeaning(terms, term.id, meaning.keys[0]);
-    renderTermRows();
     runSearch();
   });
   row.appendChild(box);
@@ -276,7 +289,6 @@ function buildMeaningRow(
     e.preventDefault();
     e.stopPropagation();
     terms = onlyMeaning(terms, term.id, meaning.keys[0]);
-    renderTermRows();
     runSearch();
   });
   row.appendChild(only);
@@ -406,7 +418,6 @@ function buildTermRow(term: SearchTerm, index: number): HTMLDivElement {
   all.title = 'Put every meaning back';
   all.addEventListener('click', () => {
     terms = allMeanings(terms, term.id);
-    renderTermRows();
     runSearch();
   });
   head.appendChild(all);
@@ -418,7 +429,6 @@ function buildTermRow(term: SearchTerm, index: number): HTMLDivElement {
   remove.textContent = '\u00d7';
   remove.addEventListener('click', () => {
     terms = terms.length > 1 ? removeTerm(terms, term.id) : setTermText(terms, term.id, '');
-    renderTermRows();
     runSearch();
   });
   head.appendChild(remove);
@@ -463,7 +473,6 @@ function onTermInput(id: string, input: HTMLInputElement): void {
     input.setSelectionRange(caret, caret);
   }
   terms = setTermText(terms, id, input.value);
-  renderTermRows();
   runSearch();
 }
 
@@ -1051,12 +1060,6 @@ export const searchOverlay: Overlay = {
     updateOptionVisibility();
     updateHitCaption();
     if (currentResults.length > 0) renderResults();
-  },
-
-  renderLegend(container: HTMLElement): void {
-    // The swatch, the word and its count all live on the term row itself now,
-    // so there is nothing left for a separate legend to say.
-    container.textContent = '';
   },
 
   getHoverInfo(verse: TanakhIdentity): string | null {
