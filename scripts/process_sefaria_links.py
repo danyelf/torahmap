@@ -3,7 +3,8 @@
 Process Sefaria links data to count commentary per Tanakh verse by category.
 Reads from locally downloaded CSV files in data/sefaria-links/
 
-- Drops the "Tanakh" category (verse cross-references are confusing)
+- Sorts each link into a category with link_bucket() below, which is where the
+  judgement calls about what counts as commentary live
 - Filters the Talmud category to direct Talmud text, not commentaries on it
 - Counts a citation towards every verse it covers, up to MAX_RANGE_VERSES;
   longer ranges name a whole portion rather than a passage and are ignored
@@ -30,8 +31,11 @@ TANAKH_BOOKS = {
     "I Chronicles", "II Chronicles"
 }
 
-# Major categories we care about (removed "Tanakh")
-MAJOR_CATEGORIES = {
+# Shelves of the library that keep their own name in the counts. Anything not
+# listed here, and not handled specially below, is counted under "Other" so
+# that a shelf we have never seen shows up somewhere visible instead of
+# disappearing.
+COUNTED_CATEGORIES = {
     "Talmud",
     "Midrash",
     "Halakhah",
@@ -40,8 +44,21 @@ MAJOR_CATEGORIES = {
     "Kabbalah",
     "Chasidut",
     "Musar",
-    "Commentary",
+    "Mishnah",
+    "Liturgy",
+    "Tosefta",
+    "Second Temple",
 }
+
+# Dictionary and lexicon lookups: BDB, Jastrow, Klein, Sefer HaShorashim. They
+# are roughly a quarter of all links to verses, and they record which words a
+# verse contains rather than anything anyone wrote about it.
+IGNORED_CATEGORIES = {"Reference"}
+
+# The two buckets we produce ourselves rather than read off a shelf. Both come
+# from texts filed under Tanakh; see link_bucket() for how they are told apart.
+COMMENTARY = "Commentary"
+QUOTING_COMMENTARY = "Quoting Commentary"
 
 # Track seen link pairs globally to avoid double-counting bidirectional entries
 seen_link_pairs: set[frozenset[str]] = set()
@@ -161,6 +178,60 @@ def is_direct_talmud(citation: str) -> bool:
     return True
 
 
+def link_bucket(citation: str, category: str, connection: str) -> str | None:
+    """
+    Which category a link to a verse counts towards, or None if it does not
+    count at all.
+
+    The three arguments describe the far end of the link from the verse: the
+    citation ("Rashi on Genesis 1:1:1"), the shelf its text sits on as the
+    export records it ("Tanakh"), and the connection type ("commentary").
+
+    The export's category column says where a text lives in the library, not
+    what kind of link this is. Every classical verse commentary — Rashi, Ibn
+    Ezra, Ramban, Sforno, Ba'al HaTurim — lives under Tanakh, and so arrives
+    carrying the same label as a plain cross-reference from one verse to
+    another. The connection type is what separates them, and it separates them
+    three ways:
+
+      commentary    someone wrote about this verse
+      targum        someone translated this verse
+      anything else someone writing about a different verse cited this one
+
+    The third case is worth keeping and worth naming. When Abarbanel, in the
+    middle of his commentary on Amos, reaches for Genesis 49:28, that is a real
+    fact about Genesis 49:28 — but it is not commentary on it, and a map of
+    which verses commentators reach for is a different map from one of which
+    verses they write about.
+
+    Translations are dropped. Almost every verse has one, the Torah has three,
+    and the books already written partly in Aramaic have none, so counting them
+    paints a picture of which books were translated rather than of the verses.
+
+    Outside Tanakh the connection type is left alone, and a link counts under
+    its own shelf whatever kind it is. Chasidut and Midrash works do use the
+    commentary connection, but on well under a fifth of their links, where
+    under Tanakh it is two thirds of them.
+    """
+    category = category.strip()
+    connection = connection.strip()
+
+    if category in IGNORED_CATEGORIES:
+        return None
+
+    if category == "Tanakh":
+        if parse_verse_refs(citation):
+            return None  # a cross-reference to another verse
+        if connection == "targum":
+            return None
+        return COMMENTARY if connection == "commentary" else QUOTING_COMMENTARY
+
+    if category == "Talmud" and not is_direct_talmud(citation):
+        return None
+
+    return category if category in COUNTED_CATEGORIES else "Other"
+
+
 def process_file(filepath: Path) -> dict:
     """Process a single links CSV file."""
     global seen_link_pairs
@@ -179,7 +250,7 @@ def process_file(filepath: Path) -> dict:
             if len(row) < 7:
                 continue
 
-            citation1, citation2, conn_type, text1, text2, cat1, cat2 = row[:7]
+            citation1, citation2, connection, _text1, _text2, cat1, cat2 = row[:7]
 
             # Create normalized key for deduplication
             link_pair = frozenset({citation1, citation2})
@@ -188,38 +259,19 @@ def process_file(filepath: Path) -> dict:
                 continue
             seen_link_pairs.add(link_pair)
 
-            # Check if citation2 is a Tanakh verse
-            verse_refs = parse_verse_refs(citation2)
-            if verse_refs:
-                category = cat1.strip()
-
-                # Skip Tanakh category entirely
-                if category == "Tanakh":
+            # A link is written once but read from both ends: either citation
+            # may be the verse, and each verse it covers is credited with the
+            # text at the other end.
+            for verse_side, other_side, other_category in (
+                (citation2, citation1, cat1),
+                (citation1, citation2, cat2),
+            ):
+                verse_refs = parse_verse_refs(verse_side)
+                if not verse_refs:
                     continue
-
-                # Filter Talmud to only direct text references
-                if category == "Talmud" and not is_direct_talmud(citation1):
+                bucket = link_bucket(other_side, other_category, connection)
+                if bucket is None:
                     continue
-
-                # Count it against every verse the citation covers
-                bucket = category if category in MAJOR_CATEGORIES else "Other"
-                for book, chapter, verse in verse_refs:
-                    verse_counts[book][chapter][verse][bucket] += 1
-
-            # Also check citation1 (links are bidirectional)
-            verse_refs = parse_verse_refs(citation1)
-            if verse_refs:
-                category = cat2.strip()
-
-                # Skip Tanakh category entirely
-                if category == "Tanakh":
-                    continue
-
-                # Filter Talmud to only direct text references
-                if category == "Talmud" and not is_direct_talmud(citation2):
-                    continue
-
-                bucket = category if category in MAJOR_CATEGORIES else "Other"
                 for book, chapter, verse in verse_refs:
                     verse_counts[book][chapter][verse][bucket] += 1
 
@@ -315,6 +367,25 @@ def main():
     )
     print(f"Total verses with links: {total_verses}")
     print(f"Total links: {total_links}")
+
+    # What landed in each bucket. This is the check that would have caught the
+    # commentaries going missing: "Commentary" sat in the category list for
+    # months with zero links in it, because every commentary was arriving under
+    # the Tanakh label and being thrown away. An empty bucket, or a surprising
+    # one, should be visible the moment the counts are regenerated.
+    by_bucket: dict[str, int] = defaultdict(int)
+    for chapters in output.values():
+        for verses in chapters.values():
+            for data in verses.values():
+                for bucket, count in data["categories"].items():
+                    by_bucket[bucket] += count
+
+    print("\nLinks by category:")
+    for bucket, count in sorted(by_bucket.items(), key=lambda item: -item[1]):
+        print(f"  {count:>9,}  {bucket}")
+    for bucket in sorted(COUNTED_CATEGORIES | {COMMENTARY, QUOTING_COMMENTARY}):
+        if bucket not in by_bucket:
+            print(f"  {'0':>9}  {bucket}   <- nothing landed here, check why")
 
     # Sample: Exodus 23:5
     if "Exodus" in output and "23" in output["Exodus"] and "5" in output["Exodus"]["23"]:

@@ -13,7 +13,7 @@ concentration of commentary that is not there.
 
 import pytest
 
-from process_sefaria_links import MAX_RANGE_VERSES, parse_verse_refs
+from process_sefaria_links import MAX_RANGE_VERSES, link_bucket, parse_verse_refs
 
 
 def test_single_verse():
@@ -119,3 +119,78 @@ def test_backwards_range_is_rejected():
 def test_unknown_chapter_is_rejected():
     # Genesis has 50 chapters.
     assert parse_verse_refs("Genesis 99:1-99:3") == []
+
+
+# Which category a link counts towards.
+#
+# Sefaria's export gives each side of a link the category of the shelf its text
+# sits on, not the kind of link it is. Rashi sits under Tanakh, so a link from
+# Genesis 1:1 to Rashi's comment on it arrives labelled "Tanakh" — the same
+# label a plain cross-reference to another verse carries. The connection-type
+# column is what tells them apart, and it is the same column Sefaria's own site
+# reads to build its Commentary and Quoting Commentary sections.
+
+
+def test_rashi_is_commentary():
+    assert link_bucket("Rashi on Genesis 1:1:1", "Tanakh", "commentary") == "Commentary"
+
+
+def test_a_commentary_citing_a_verse_it_is_not_written_on():
+    # Abarbanel, writing about Amos, reaches for Genesis 49:28. That says
+    # something about Genesis 49:28, but it is not commentary on it.
+    assert link_bucket("Abarbanel on Amos 1:11:1", "Tanakh", "") == "Quoting Commentary"
+
+
+@pytest.mark.parametrize("connection", ["", "parshanut", "quotation", "quotation_auto"])
+def test_every_other_connection_type_is_quoting_commentary(connection):
+    assert link_bucket("Sforno on Genesis 1:16:1", "Tanakh", connection) == (
+        "Quoting Commentary"
+    )
+
+
+def test_verse_to_verse_cross_reference_is_not_counted():
+    # Both ends are bare verses, so this is the map pointing at itself.
+    assert link_bucket("Psalms 33:6", "Tanakh", "related") is None
+
+
+def test_targum_is_not_counted():
+    # Almost every verse has a targum, and the Torah has three, so counting
+    # them draws a band across the Torah that is about which books were
+    # translated rather than about the verses.
+    assert link_bucket("Onkelos Genesis 1:1:1", "Tanakh", "targum") is None
+
+
+def test_dictionary_entries_are_not_counted():
+    # BDB, Jastrow, Klein and Sefer HaShorashim are lexicon lookups.
+    assert link_bucket("BDB, בְּרֵאשִׁית", "Reference", "reference") is None
+
+
+def test_talmud_text_is_counted():
+    assert link_bucket("Bava Metzia 32a:17", "Talmud", "") == "Talmud"
+
+
+def test_commentary_on_the_talmud_is_not_counted_as_talmud():
+    assert link_bucket("Steinsaltz on Bava Metzia 32a:17", "Talmud", "") is None
+
+
+@pytest.mark.parametrize(
+    "category", ["Mishnah", "Liturgy", "Tosefta", "Second Temple"]
+)
+def test_corpora_that_used_to_land_in_other_are_named(category):
+    assert link_bucket("Mishnah Berakhot 1:1", category, "") == category
+
+
+def test_a_category_we_have_never_seen_lands_in_other():
+    # A later export can introduce a shelf we do not know about. It should show
+    # up in a bucket someone can notice, not vanish.
+    assert link_bucket("Something 1:1", "A New Shelf", "") == "Other"
+
+
+def test_a_commentary_connection_outside_tanakh_keeps_its_own_category():
+    # Chasidut and Midrash works do use the commentary connection type, on a
+    # small share of their links. We do not split those out: for them the
+    # distinction is a thin tail, where under Tanakh it is two thirds of the
+    # links and the whole point of the category.
+    assert link_bucket("Sefat Emet, Genesis, Bereshit 1:4", "Chasidut", "commentary") == (
+        "Chasidut"
+    )

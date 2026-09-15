@@ -152,8 +152,9 @@ against Sefaria's live site, and fails if the differences run in both
 directions.
 
 The counts we generate are not expected to match Sefaria's live site exactly —
-the script drops Tanakh cross-references and filters Talmud by design, and the
-export is up to a month behind. What they should be is *consistently* close.
+the script drops translations, dictionary lookups and cross-references by
+design, and the export is up to a month behind. What they should be is
+*consistently* close.
 
 A healthy refresh sits at or slightly above the live `/api/related` totals for
 the categories that map cleanly onto ours, across verses from all three
@@ -163,11 +164,55 @@ stale. Staleness is uniform and always undercounts; a partial corpus is not.
 
 ### What the generator does
 
-- **Drops the "Tanakh" category** — verse cross-references were confusing
-- **Filters Talmud** — direct text references only, not Steinsaltz or Rashi on Talmud
+Every link is sorted into a category by `link_bucket()` in
+`scripts/process_sefaria_links.py`. That function is where the judgement calls
+live; read it before changing anything here.
+
+The export labels each side of a link with the shelf its text sits on, not with
+what kind of link it is. Every classical verse commentary — Rashi, Ibn Ezra,
+Ramban, Sforno, Ba'al HaTurim — sits under Tanakh, so it arrives wearing the
+same label as a plain cross-reference from one verse to another. The connection
+type column is what tells them apart, and it splits the Tanakh shelf three ways:
+
+| connection type | bucket |
+|---|---|
+| `commentary` | **Commentary** — someone wrote about this verse |
+| `targum` | dropped |
+| anything else | **Quoting Commentary** — someone writing about a different verse cited this one |
+
+When Abarbanel, in the middle of his commentary on Amos, reaches for Genesis
+49:28, that is a real fact about Genesis 49:28 — but it is not commentary on it,
+and a map of which verses commentators reach for is a different map from one of
+which verses they write about. Both count towards the total.
+
+Dropped on purpose:
+
+- **Translations.** Nearly every verse has one, the Torah has three, and the
+  books already written partly in Aramaic have none — so counting them maps
+  which books were translated rather than anything about the verses.
+- **Dictionary lookups**, the `Reference` shelf: BDB, Jastrow, Klein, Sefer
+  HaShorashim. A quarter of all links to verses, recording which words a verse
+  contains rather than what anyone wrote about it.
+- **Verse-to-verse cross-references**, which is what the original rule was
+  aimed at. About twelve thousand of them — against six hundred thousand
+  commentary links that were being discarded alongside, until this was fixed.
+- **Commentaries on the Talmud** (Steinsaltz, Rashi on the Talmud, Tosafot), so
+  that the Talmud figure means Talmud text.
+- **Citations covering more than ten verses**, which name a whole portion
+  rather than a passage — see below.
+
+Also:
+
 - **Reads local CSVs** from `data/sefaria-links/` rather than downloading each run
 - **Counts each link once**, deduplicating the two directions of a bidirectional link
 - **Spreads short ranges, drops long ones** — see below
+
+### Read the totals it prints
+
+The generator prints how many links landed in each category, and names any
+category that got none. This is worth a glance every refresh. `Commentary` sat
+in the category list for months with zero links in it, because every commentary
+was arriving under the Tanakh label and being thrown away, and nothing said so.
 
 ### How a range of verses is counted
 

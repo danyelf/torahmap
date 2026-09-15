@@ -357,6 +357,36 @@ describe('Commentary Overlay', () => {
       expect(options).toContain('Musar');
     });
 
+    it('offers every category the counts file can contain', () => {
+      // The menu and the generating script have drifted apart before: Responsa
+      // was counted for months without ever appearing here, so nobody could
+      // look at it. Anything process_sefaria_links.py can produce belongs in
+      // this list.
+      const container = document.createElement('div');
+      commentaryOverlay.renderControls?.(container);
+
+      const select = container.querySelector('select') as HTMLSelectElement;
+      const options = Array.from(select.options).map(opt => opt.value);
+
+      expect(options).toEqual([
+        'total',
+        'Commentary',
+        'Quoting Commentary',
+        'Talmud',
+        'Midrash',
+        'Mishnah',
+        'Tosefta',
+        'Halakhah',
+        'Responsa',
+        'Jewish Thought',
+        'Kabbalah',
+        'Chasidut',
+        'Musar',
+        'Liturgy',
+        'Second Temple',
+      ]);
+    });
+
     it('sets initial value to current category', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderControls?.(container);

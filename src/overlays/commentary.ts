@@ -88,14 +88,27 @@ export const commentaryOverlay: Overlay = {
     wrapper.innerHTML = `
       <label for="category-select">Category:</label>
       <select id="category-select">
-        <option value="total">All Commentary</option>
-        <option value="Talmud">Talmud</option>
-        <option value="Midrash">Midrash</option>
-        <option value="Halakhah">Halakhah</option>
-        <option value="Jewish Thought">Jewish Thought</option>
-        <option value="Chasidut">Chasidut</option>
-        <option value="Kabbalah">Kabbalah</option>
-        <option value="Musar">Musar</option>
+        <option value="total">All linked texts</option>
+        <optgroup label="Verse commentary">
+          <option value="Commentary">Commentary</option>
+          <option value="Quoting Commentary">Quoting Commentary</option>
+        </optgroup>
+        <optgroup label="Rabbinic">
+          <option value="Talmud">Talmud</option>
+          <option value="Midrash">Midrash</option>
+          <option value="Mishnah">Mishnah</option>
+          <option value="Tosefta">Tosefta</option>
+        </optgroup>
+        <optgroup label="Law, thought and practice">
+          <option value="Halakhah">Halakhah</option>
+          <option value="Responsa">Responsa</option>
+          <option value="Jewish Thought">Jewish Thought</option>
+          <option value="Kabbalah">Kabbalah</option>
+          <option value="Chasidut">Chasidut</option>
+          <option value="Musar">Musar</option>
+          <option value="Liturgy">Liturgy</option>
+          <option value="Second Temple">Second Temple</option>
+        </optgroup>
       </select>
     `;
     const select = wrapper.querySelector('select')!;
