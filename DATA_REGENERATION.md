@@ -91,6 +91,39 @@ Text-Fabric the first time. Once that setup is done:
 
 Then set the BHSA `collected` date in `src/overlays/search.ts`.
 
+## Haftarah Readings
+
+Which passage is read on which occasion comes from hebcal's leyning tables,
+vendored as three files in `data/overlays/haftarah/hebcal/`.
+**[data/overlays/haftarah/hebcal/README.md](data/overlays/haftarah/hebcal/README.md)**
+is the full account: the
+commit they were taken from, how to read an entry, and the curl commands that
+refresh them. Once the files are refreshed:
+
+```bash
+npx tsx scripts/overlays/haftarah/generate.ts
+```
+
+Then set the hebcal `collected` date in `src/overlays/haftarah.ts`.
+
+The names are not hebcal's, and they live in `data/overlays/haftarah/names.json`
+rather
+than in the generator: the 54 portions in reading order, then the 29 occasions,
+each with the key to find it under in the leyning tables. Edit that file to
+change a label; the generator refuses to run on a blank name, an unknown
+category or a duplicate, and says which row is at fault.
+
+The portion names come from Sefaria, out of the Parasha structure in its schema
+export — `schemas/Genesis.json` and the other four books, under
+`https://storage.googleapis.com/sefaria-export/`. Only three rows need to say
+what hebcal calls the portion, because everywhere else the two agree. The
+occasion names are our own; no source publishes a canonical list of them.
+
+Expect the tests to speak up. `src/__tests__/unit/overlays/haftarah-data.test.ts` pins
+several readings by name, so if hebcal has changed its mind about one of them
+the test fails and tells you which. That is the intended way to find out;
+decide whether to follow the change before editing the test to match.
+
 ## Text Dating Data
 
 ```bash

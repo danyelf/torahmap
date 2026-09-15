@@ -181,8 +181,10 @@ ignored: large, generated, and not ours to reformat.
 │   ├── tanakh-structure.json     # Verse counts per chapter per book
 │   ├── text-dating.json          # Estimated composition dates by verse
 │   ├── overlays/
-│   │   └── commentary/
-│   │       └── counts.json       # Sefaria link counts by category
+│   │   ├── commentary/
+│   │   │   └── counts.json       # Sefaria link counts by category
+│   │   └── haftarah/
+│   │       └── mappings.json     # Portions, occasions and their haftarot (generated)
 │   └── search/                   # Lexeme index for root-mode search (see its README)
 │       ├── README.md             # Where this data comes from and how to rebuild it
 │       ├── lexicon.json          # Hebrew/Aramaic dictionary from ETCBC BHSA
@@ -193,9 +195,12 @@ ignored: large, generated, and not ours to reformat.
 ├── data/                     # Sources and downloads, not shipped. Same shape.
 │   ├── texts/                    # Hebrew & English verse texts (78 files)
 │   └── overlays/
-│       └── commentary/           # Gitignored; see DATA_REGENERATION.md
-│           ├── sefaria-links/    # The links export, ~650MB of CSV
-│           └── sefaria-index.json # What kind of text each work in the library is
+│       ├── commentary/           # Gitignored; see DATA_REGENERATION.md
+│       │   ├── sefaria-links/    # The links export, ~650MB of CSV
+│       │   └── sefaria-index.json # What kind of text each work in the library is
+│       └── haftarah/
+│           ├── names.json        # What each reading is called, and its hebcal key
+│           └── hebcal/           # Leyning tables from hebcal (see its README)
 │
 ├── scripts/                  # Shared tooling at the top, one directory per
 │   │                         # overlay for what only it needs.
@@ -204,12 +209,14 @@ ignored: large, generated, and not ours to reformat.
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
 │   ├── generate-text-dating.ts       # Generate text dating data from source ranges
 │   ├── overlays/
-│   │   └── commentary/
-│   │       ├── refresh.sh            # The whole procedure: download, count, report
-│   │       ├── process_sefaria_links.py     # Turn the links export into counts
-│   │       ├── test_process_sefaria_links.py
-│   │       ├── verify-against-sefaria.py    # Compare the counts to the live site
-│   │       └── compare_counts.py            # Say what a refresh changed
+│   │   ├── commentary/
+│   │   │   ├── refresh.sh            # The whole procedure: download, count, report
+│   │   │   ├── process_sefaria_links.py     # Turn the links export into counts
+│   │   │   ├── test_process_sefaria_links.py
+│   │   │   ├── verify-against-sefaria.py    # Compare the counts to the live site
+│   │   │   └── compare_counts.py            # Say what a refresh changed
+│   │   └── haftarah/
+│   │       └── generate.ts           # Build the mappings from the hebcal tables
 │   └── search/
 │       └── generate-lexeme-index.py  # Build the Hebrew lexeme index from ETCBC BHSA
 │
@@ -248,8 +255,10 @@ The codebase follows a **functional, modular design** with clear separation of c
 Verse texts, structure and commentary counts come from
 [Sefaria](https://www.sefaria.org/). The Hebrew lexeme index behind root-mode
 search comes from the [ETCBC BHSA](https://github.com/ETCBC/bhsa) database, read
-through Text-Fabric. See [DATA_REGENERATION.md](DATA_REGENERATION.md) for
-instructions on updating data files.
+through Text-Fabric. The haftarah readings come from
+[hebcal's leyning tables](https://github.com/hebcal/hebcal-leyning). See
+[DATA_REGENERATION.md](DATA_REGENERATION.md) for instructions on updating data
+files.
 
 ## Interactions
 
