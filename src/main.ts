@@ -5,7 +5,8 @@ declare const __GIT_BRANCH__: string;
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex, loadLexiconData, normalizeHebrewForSearch } from './search.ts';
+import { buildSearchIndex, loadLexiconData } from './search.ts';
+import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, meaningsFor } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
@@ -59,7 +60,7 @@ import {
   configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
-import { searchForMeaning, canAddTerm } from './overlays/search.ts';
+import { searchForMeaning, canAddTerm, clickWouldSwitchMode } from './overlays/search.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -684,17 +685,7 @@ async function main(): Promise<void> {
   // overlay is showing, and a click on a word is too ordinary a gesture to be
   // allowed to do that on its own.
   setWordClickHandler((click) => {
-    // Sefaria writes some words as parenthesised alternates, such as (לא) or
-    // (אנתה). The parentheses are part of the displayed text but not part of
-    // the word, and the dictionary has no key with brackets in it - so they
-    // come off before lookup, while the panel keeps showing the word as it
-    // appears in the verse.
-    let lookupText = click.text;
-    if (lookupText.startsWith('(') && lookupText.endsWith(')')) {
-      lookupText = lookupText.slice(1, -1);
-    }
-
-    const word = normalizeHebrewForSearch(lookupText);
+    const word = lookupForm(click.text);
     const meanings = meaningsInVerse(word, tanakhKey(click.book, click.chapter, click.verse));
     const otherReadings = meaningsFor(word);
 
@@ -705,14 +696,22 @@ async function main(): Promise<void> {
       anchor: click.element,
       replacesOverlay:
         currentOverlay && currentOverlay.id !== 'search' ? currentOverlay.name : null,
+      switchesToRootMode: clickWouldSwitchMode(),
       paletteFull: !canAddTerm(),
       onChoose: (meaning) => {
+        // Ask before anything is spent. setOverlay() destroys the outgoing
+        // overlay and its settings, so a search that is going to be refused
+        // must be refused first - otherwise the reader loses their Haftarah
+        // view and gains nothing. The panel's own count was taken when it
+        // opened, and a keyboard reader can add a word in between.
+        if (!canAddTerm()) return;
+
         if (currentOverlayId !== 'search') {
           setOverlay('search');
           if (overlaySelect) overlaySelect.value = 'search';
         }
 
-        if (!searchForMeaning(word, meaning?.keys[0] ?? null)) return;
+        if (!searchForMeaning(word, meaning?.keys ?? null)) return;
 
         applyOverlay();
         render();

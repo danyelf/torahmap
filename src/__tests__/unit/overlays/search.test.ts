@@ -1101,15 +1101,20 @@ describe('Search Overlay', () => {
   });
 
   describe('Destroy', () => {
-    it('cleans up event listeners', () => {
+    it('listens for no clicks on the document, so none can outlive it', () => {
+      // The results box sits in the controls panel and is shown or hidden by
+      // whether the search found anything. It used to float over the map, and
+      // a document-level click handler put it away; that handler also caught
+      // the click that chose a meaning in the word panel, hiding the list at
+      // the moment it was filled.
       const container = document.createElement('div');
+      const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
+
       searchOverlay.renderControls?.(container);
 
-      const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
-
+      expect(addEventListenerSpy).not.toHaveBeenCalledWith('click', expect.any(Function));
       searchOverlay.destroy?.();
-
-      expect(removeEventListenerSpy).toHaveBeenCalled();
+      addEventListenerSpy.mockRestore();
     });
 
     it('clears DOM references', () => {
@@ -1128,32 +1133,6 @@ describe('Search Overlay', () => {
 
       // Should not throw
       expect(true).toBe(true);
-    });
-
-    it('removes old document click handler before adding new one when re-rendering controls', () => {
-      const container = document.createElement('div');
-      const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
-      const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
-
-      // First render - should add listener
-      searchOverlay.renderControls?.(container);
-      expect(addEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
-      const firstCallCount = addEventListenerSpy.mock.calls.length;
-
-      // Second render - should remove old listener before adding new one
-      searchOverlay.renderControls?.(container);
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
-      expect(addEventListenerSpy).toHaveBeenCalledTimes(firstCallCount + 1);
-
-      // Third render - verify pattern continues
-      searchOverlay.renderControls?.(container);
-      expect(removeEventListenerSpy).toHaveBeenCalledTimes(2);
-      expect(addEventListenerSpy).toHaveBeenCalledTimes(firstCallCount + 2);
-
-      // Cleanup
-      searchOverlay.destroy?.();
-      addEventListenerSpy.mockRestore();
-      removeEventListenerSpy.mockRestore();
     });
 
     it('preserves search state across destroy/recreate cycles (tm-oof3)', () => {

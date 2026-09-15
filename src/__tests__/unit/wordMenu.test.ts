@@ -26,6 +26,14 @@ const ascend: Meaning = {
   verseCount: 818,
 };
 
+// The same reading as `ascend`, but headed by the other lexeme of its group.
+// rowsFor() keeps whichever member came first in the list it was given, so the
+// verse's list and the spelling's list can head one reading two ways.
+const ascendOtherHead: Meaning = {
+  ...ascend,
+  keys: ['<LH-OTHER@heb', '<LH[@heb'],
+};
+
 const rare: Meaning = {
   keys: ['@UNIQUE@heb'],
   form: 'נָדִיר',
@@ -55,6 +63,7 @@ describe('one certain meaning', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -74,6 +83,7 @@ describe('one certain meaning', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose,
     });
 
@@ -90,6 +100,7 @@ describe('one certain meaning', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -108,6 +119,7 @@ describe('when the verse cannot choose', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -128,6 +140,7 @@ describe('a word the dictionary does not know', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose,
     });
 
@@ -148,6 +161,7 @@ describe('when searching costs the current view', () => {
       anchor: anchor(),
       replacesOverlay: 'Haftarah',
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -165,6 +179,7 @@ describe('when the palette is full', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: true,
+      switchesToRootMode: false,
       onChoose,
     });
 
@@ -181,6 +196,7 @@ describe('when the palette is full', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: true,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -197,6 +213,7 @@ describe('layout', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -226,6 +243,7 @@ describe('other readings escape hatch', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -241,6 +259,7 @@ describe('other readings escape hatch', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -255,6 +274,26 @@ describe('other readings escape hatch', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
+      onChoose: vi.fn(),
+    });
+
+    expect(document.querySelector('.word-menu-expand-other')).toBeNull();
+  });
+
+  it('does not repeat a reading that is already shown under a different lexeme', () => {
+    // The two lists head the same reading differently whenever the verse does
+    // not contain the group's first lexeme. Comparing heads would show the
+    // reading the reader has just been offered a second time, with a different
+    // verse count beside it.
+    openWordMenu({
+      word: 'עלה',
+      meanings: [ascend],
+      otherReadings: [ascendOtherHead],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -269,6 +308,7 @@ describe('other readings escape hatch', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 
@@ -295,6 +335,7 @@ describe('other readings escape hatch', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose,
     });
 
@@ -310,6 +351,75 @@ describe('other readings escape hatch', () => {
   });
 });
 
+describe('a spelling the verse cannot settle', () => {
+  it('offers the readings the spelling allows instead of denying the word exists', () => {
+    openWordMenu({
+      word: 'אתו',
+      meanings: [],
+      otherReadings: [leaf, ascend],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose: vi.fn(),
+    });
+
+    const menu = document.querySelector('.word-menu')!;
+    expect(menu.textContent).not.toContain('Not in the dictionary');
+
+    const choices = [...document.querySelectorAll('.word-menu-choice')];
+    expect(choices.some((c) => c.textContent?.includes('leafage'))).toBe(true);
+    expect(choices.some((c) => c.textContent?.includes('ascend'))).toBe(true);
+  });
+
+  it('still says so when the spelling really is unknown', () => {
+    openWordMenu({
+      word: 'לו',
+      meanings: [],
+      otherReadings: [],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose: vi.fn(),
+    });
+
+    expect(document.querySelector('.word-menu')!.textContent).toContain('Not in the dictionary');
+  });
+});
+
+describe('when searching costs the current Hebrew mode', () => {
+  it('says the mode will change before the reader chooses', () => {
+    openWordMenu({
+      word: 'עלה',
+      meanings: [leaf],
+      otherReadings: [],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: true,
+      onChoose: vi.fn(),
+    });
+
+    expect(document.querySelector('.word-menu')!.textContent).toContain('Root');
+  });
+
+  it('says nothing about the mode when the search is already in it', () => {
+    openWordMenu({
+      word: 'עלה',
+      meanings: [leaf],
+      otherReadings: [],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose: vi.fn(),
+    });
+
+    expect(document.querySelector('.word-menu')!.textContent).not.toContain('Root');
+  });
+});
+
 describe('dismissing', () => {
   it('leaves nothing behind and chooses nothing', () => {
     const onChoose = vi.fn();
@@ -320,6 +430,7 @@ describe('dismissing', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose,
     });
 
@@ -337,6 +448,7 @@ describe('dismissing', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
     openWordMenu({
@@ -346,6 +458,7 @@ describe('dismissing', () => {
       anchor: anchor(),
       replacesOverlay: null,
       paletteFull: false,
+      switchesToRootMode: false,
       onChoose: vi.fn(),
     });
 

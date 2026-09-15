@@ -5,7 +5,7 @@
 // click looks up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { splitVerseText } from '../../verseWords';
+import { splitVerseText, lookupForm } from '../../verseWords';
 
 const words = (text: string) =>
   splitVerseText(text)
@@ -52,5 +52,27 @@ describe('splitting a verse', () => {
 
   it('handles an empty verse without inventing a piece', () => {
     expect(splitVerseText('')).toEqual([]);
+  });
+});
+
+describe('the spelling a click looks up', () => {
+  it('leaves an ordinary word alone, apart from its points', () => {
+    expect(lookupForm('בְּרֵאשִׁ֖ית')).toBe('בראשית');
+  });
+
+  it('drops the parentheses around the written form of a variant', () => {
+    expect(lookupForm('(הוצא)')).toBe('הוצא');
+  });
+
+  it('drops the square brackets around the form that is actually read', () => {
+    // Sefaria writes a textual variant as a pair, the written form in
+    // parentheses and the spoken one in square brackets. Both kinds of bracket
+    // are punctuation the verse displays, not letters of the word, and no
+    // dictionary key carries either.
+    expect(lookupForm('[הַיְצֵ֣א]')).toBe('היצא');
+  });
+
+  it('does not treat a stray bracket as a wrapper', () => {
+    expect(lookupForm('(הוצא')).toBe('(הוצא');
   });
 });

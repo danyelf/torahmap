@@ -8,7 +8,7 @@
 // misfire should be visible before it costs anything.
 
 import './styles/wordMenu.css';
-import type { Meaning } from './search/dictionary.ts';
+import { sameMeaning, type Meaning } from './search/dictionary.ts';
 
 export interface WordMenuOptions {
   word: string;
@@ -18,6 +18,8 @@ export interface WordMenuOptions {
   otherReadings: Meaning[];
   anchor: HTMLElement;
   replacesOverlay: string | null;
+  /** True when choosing a meaning would move Hebrew search into root mode. */
+  switchesToRootMode: boolean;
   paletteFull: boolean;
   onChoose: (meaning: Meaning | null) => void;
 }
@@ -42,6 +44,16 @@ function choice(label: HTMLElement, onPick: () => void): HTMLButtonElement {
   button.appendChild(label);
   button.addEventListener('click', onPick);
   return button;
+}
+
+/** Search the spelling exactly as the verse writes it, meanings aside. */
+function literalChoice(options: WordMenuOptions): HTMLButtonElement {
+  const label = document.createElement('span');
+  label.textContent = `Search for ${options.word} as written`;
+  return choice(label, () => {
+    options.onChoose(null);
+    closeWordMenu();
+  });
 }
 
 function meaningLabel(meaning: Meaning): HTMLElement {
@@ -75,6 +87,11 @@ export function openWordMenu(options: WordMenuOptions): void {
   menu.className = 'word-menu';
   menu.setAttribute('role', 'dialog');
 
+  // Whether a reading is on offer at all, which is what the warnings below are
+  // about: nothing is at stake in a panel that only says the palette is full.
+  const offersMeaning =
+    !options.paletteFull && (options.meanings.length > 0 || options.otherReadings.length > 0);
+
   if (options.paletteFull) {
     // Five colours, five words. A sixth would repeat a colour and the map could
     // no longer say which word is which, so this says so rather than offering a
@@ -83,29 +100,35 @@ export function openWordMenu(options: WordMenuOptions): void {
     note.className = 'word-menu-note';
     note.textContent = 'Five words are already on the map. Remove one to add another.';
     menu.appendChild(note);
-  } else if (options.meanings.length === 0) {
+  } else if (options.meanings.length === 0 && options.otherReadings.length === 0) {
     const note = document.createElement('div');
     note.className = 'word-menu-note';
     note.textContent = 'Not in the dictionary.';
     menu.appendChild(note);
 
-    const label = document.createElement('span');
-    label.textContent = `Search for ${options.word} as written`;
-    menu.appendChild(
-      choice(label, () => {
-        options.onChoose(null);
-        closeWordMenu();
-      }),
-    );
+    menu.appendChild(literalChoice(options));
   } else {
-    if (options.meanings.length > 1) {
+    // With nothing the verse confirms, the spelling's own candidates are what
+    // there is to offer. Saying the word is not in the dictionary would be
+    // untrue: the spelling is there, and it is the verse that cannot say which
+    // of its readings this is. The reader is better placed to judge than we
+    // are, so they get the list rather than a denial.
+    const settled = options.meanings.length > 0;
+    const readings = settled ? options.meanings : options.otherReadings;
+
+    if (!settled) {
+      const note = document.createElement('div');
+      note.className = 'word-menu-note';
+      note.textContent = 'The verse does not say which of these it is.';
+      menu.appendChild(note);
+    } else if (readings.length > 1) {
       const note = document.createElement('div');
       note.className = 'word-menu-note';
       note.textContent = 'This verse carries more than one of these.';
       menu.appendChild(note);
     }
 
-    for (const meaning of options.meanings) {
+    for (const meaning of readings) {
       menu.appendChild(
         choice(meaningLabel(meaning), () => {
           options.onChoose(meaning);
@@ -114,11 +137,18 @@ export function openWordMenu(options: WordMenuOptions): void {
       );
     }
 
-    // Find other readings not already shown.
-    const shownKeys = new Set(options.meanings.map((m) => m.keys[0]));
-    const extraReadings = options.otherReadings.filter((m) => !shownKeys.has(m.keys[0]));
+    // What the spelling allows that the verse did not already put on offer. A
+    // reading counts as shown when it shares a lexeme with one above, not when
+    // it shares a first key: the two lists head a merged reading differently
+    // whenever the verse lacks the group's earliest member, and comparing first
+    // keys would offer the reader the same reading twice under a different
+    // verse count.
+    const extraReadings = settled
+      ? options.otherReadings.filter(
+          (reading) => !readings.some((shown) => sameMeaning(reading, shown.keys)),
+        )
+      : [];
 
-    // Only show the expand button if there are extra readings and the palette is not full.
     if (extraReadings.length > 0) {
       const expandButton = document.createElement('button');
       expandButton.type = 'button';
@@ -144,6 +174,16 @@ export function openWordMenu(options: WordMenuOptions): void {
     const warning = document.createElement('div');
     warning.className = 'word-menu-warning';
     warning.textContent = `Searching replaces the ${options.replacesOverlay} view.`;
+    menu.appendChild(warning);
+  }
+
+  if (offersMeaning && options.switchesToRootMode) {
+    // A meaning is not something a substring can express, so choosing one has
+    // to move the Hebrew search into root mode. The reader chose the mode they
+    // are in, so they are told before the click rather than after it.
+    const warning = document.createElement('div');
+    warning.className = 'word-menu-warning';
+    warning.textContent = 'Searching a meaning switches Hebrew search to Root.';
     menu.appendChild(warning);
   }
 

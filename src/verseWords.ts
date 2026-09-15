@@ -5,6 +5,8 @@
 // and points and accents belong to the word they sit on. If the two drift
 // apart, a click resolves the wrong word and nothing says so.
 
+import { normalizeHebrewForSearch } from './search.ts';
+
 /** Maqaf, paseq, sof pasuq, nun hafukha - the separators search folds to spaces. */
 const SEPARATORS = new Set([0x05be, 0x05c0, 0x05c3, 0x05c6]);
 
@@ -41,6 +43,32 @@ export function splitVerseText(text: string): VersePiece[] {
   }
 
   return pieces;
+}
+
+/**
+ * The spelling to look a clicked word up under.
+ *
+ * Sefaria writes a textual variant as a pair of words: the form the scribes
+ * wrote, in round brackets, followed by the form that is actually read aloud,
+ * in square brackets. Neither kind of bracket is a letter of the word, and no
+ * dictionary key contains one, so a wrapped word has to be unwrapped before it
+ * is looked up - while the verse and the panel go on showing it exactly as it
+ * is written, brackets and all, because that is what the reader clicked.
+ *
+ * A bracket that does not have its partner at the other end of the word is
+ * left alone. Those occur where a bracketed phrase runs over two words, and
+ * neither half resolves whatever is done to it.
+ */
+export function lookupForm(displayed: string): string {
+  for (const [open, close] of [
+    ['(', ')'],
+    ['[', ']'],
+  ]) {
+    if (displayed.length > 1 && displayed.startsWith(open) && displayed.endsWith(close)) {
+      return normalizeHebrewForSearch(displayed.slice(1, -1));
+    }
+  }
+  return normalizeHebrewForSearch(displayed);
 }
 
 /**

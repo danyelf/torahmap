@@ -115,6 +115,22 @@ function rowsFor(ids: LexemeId[]): Meaning[] {
 }
 
 /**
+ * Is this row the reading these keys name?
+ *
+ * A row is not identified by its first key. It stands for every lexeme merged
+ * into it, and `rowsFor` keeps whichever of them came first in the list it was
+ * handed - so the same reading comes back from `meaningsFor` and
+ * `meaningsInVerse` under two different first keys whenever the verse does not
+ * contain the group's earliest member. Anything that compares first keys
+ * across those two lists will miss, and a reader who picks a reading from one
+ * list gets a search built from the other. Sharing a single lexeme is what
+ * makes two rows the same reading.
+ */
+export function sameMeaning(meaning: Meaning, keys: readonly string[]): boolean {
+  return meaning.keys.some((key) => keys.includes(key));
+}
+
+/**
  * The dictionary words a written form could be, likeliest reading first.
  *
  * "Likeliest" means how often that spelling is read as that word, which is not

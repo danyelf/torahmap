@@ -6,9 +6,9 @@
 // not.
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { loadLexiconData, normalizeHebrewForSearch } from '../../../search';
+import { loadLexiconData } from '../../../search';
 import { meaningsInVerse, meaningsFor } from '../../../search/dictionary';
-import { splitVerseText } from '../../../verseWords';
+import { splitVerseText, lookupForm } from '../../../verseWords';
 
 beforeAll(async () => {
   await loadLexiconData();
@@ -61,6 +61,15 @@ describe('resolving a word against its verse', () => {
     }
   });
 
+  it('reads the bracketed form of a variant, which is the one said aloud', () => {
+    // Genesis 8:17 offers both spellings of the same word: (הוצא) as written and
+    // [הַיְצֵ֣א] as read. The lexeme index carries the one that is read, so a
+    // click on it resolves only if the brackets come off first.
+    const meanings = meaningsInVerse(lookupForm('[הַיְצֵ֣א]'), 'Genesis:8:17');
+
+    expect(meanings.length).toBeGreaterThan(0);
+  });
+
   it('returns nothing for a verse it has no data for', () => {
     expect(meaningsInVerse('עלה', 'Nowhere:1:1')).toEqual([]);
   });
@@ -81,7 +90,7 @@ describe('coverage across the whole text', () => {
         for (const [verse, text] of Object.entries(verses)) {
           const key = `${book}:${chapter}:${verse}`;
           for (const word of splitVerseText(text.he).filter((p) => p.kind === 'word')) {
-            const n = meaningsInVerse(normalizeHebrewForSearch(word.text), key).length;
+            const n = meaningsInVerse(lookupForm(word.text), key).length;
             if (n === 1) resolved++;
             else if (n > 1) ambiguous++;
             else unknown++;

@@ -48,7 +48,7 @@ describe('searching for a clicked word', () => {
     const container = render();
     const leaf = meaningsInVerse('עלה', 'Genesis:3:7')[0];
 
-    expect(searchForMeaning('עלה', leaf.keys[0])).toBe(true);
+    expect(searchForMeaning('עלה', leaf.keys)).toBe(true);
 
     const rows = [...container.querySelectorAll('.term-row')];
     expect(rows).toHaveLength(1);
@@ -61,7 +61,7 @@ describe('searching for a clicked word', () => {
 
   it('adds a second word rather than replacing the first', () => {
     const container = render();
-    searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys[0]);
+    searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
     searchForMeaning('רוח', null);
 
     expect(container.querySelectorAll('.term-row')).toHaveLength(2);
@@ -71,9 +71,40 @@ describe('searching for a clicked word', () => {
     render();
     applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
 
-    searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys[0]);
+    searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
     expect(searchOverlay.getUrlParams!().hm).toBeUndefined(); // root is the default, so it is not written
+  });
+
+  it('leaves the mode radios showing the mode the search is now in', () => {
+    const container = render();
+    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+
+    searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
+
+    const checked = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"]:checked');
+    expect(checked?.value).toBe('root');
+  });
+
+  it('keeps the results list on screen after the click that filled it', () => {
+    // The choice is made in a panel on document.body, so the click carries on
+    // bubbling to document after the search has run. Anything listening there
+    // for "a click outside the controls" sees this one and puts the list away
+    // the instant it was filled.
+    const container = render();
+    document.body.appendChild(container);
+
+    searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
+    const results = container.querySelector('#search-results')!;
+    expect(results.classList.contains('visible')).toBe(true);
+
+    const elsewhere = document.createElement('div');
+    document.body.appendChild(elsewhere);
+    elsewhere.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(results.classList.contains('visible')).toBe(true);
+    container.remove();
+    elsewhere.remove();
   });
 
   it('searches the spelling as written when there is no meaning', () => {
@@ -99,7 +130,7 @@ describe('searching for a clicked word', () => {
     // no longer the last row. A reader gets here by clearing an earlier box
     // while a later one still holds a word.
     const firstMeaning = meaningsInVerse('עלה', 'Genesis:3:7')[0];
-    searchForMeaning('עלה', firstMeaning.keys[0]);
+    searchForMeaning('עלה', firstMeaning.keys);
     searchForMeaning('רוח', null);
 
     const inputsBeforeClear = [...container.querySelectorAll<HTMLInputElement>('.term-input')];
@@ -111,7 +142,7 @@ describe('searching for a clicked word', () => {
     // "the last term" instead of the term it actually filled, this narrowing
     // lands on the second term (still holding 'רוח') instead of the first.
     const secondMeaning = meaningsInVerse('עלה', 'Genesis:8:20')[0];
-    searchForMeaning('עלה', secondMeaning.keys[0]);
+    searchForMeaning('עלה', secondMeaning.keys);
 
     const inputs = [...container.querySelectorAll<HTMLInputElement>('.term-input')];
     expect(inputs).toHaveLength(2);
