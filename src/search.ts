@@ -45,6 +45,11 @@ const HEBREW_RANGE_END = 0x05ff;
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05c7;
 
+// U+034F COMBINING GRAPHEME JOINER. Sefaria writes ירושל͏ם with one inside the
+// word, where it renders as nothing and matches nothing; without this, every
+// lookup of Jerusalem misses.
+const GRAPHEME_JOINER = 0x034f;
+
 // Hebrew final forms (sofit) - map final form to regular form
 const FINAL_FORM_MAP: Record<string, string> = {
   'ך': 'כ', // kaf sofit (U+05DA) → kaf (U+05DB)
@@ -139,6 +144,7 @@ export function normalizeHebrewForSearch(text: string): string {
   let result = '';
   for (const char of text) {
     const code = char.charCodeAt(0);
+    if (code === GRAPHEME_JOINER) continue;
     // Skip nikkud marks but keep Hebrew letters and other characters
     if (
       code < NIKKUD_START ||
