@@ -3,6 +3,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { search, buildSearchIndex, findLexemesForWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
+import { searchInRootMode } from '../helpers/rootSearch';
 
 describe('Hebrew Search Performance Diagnostics', () => {
   beforeAll(() => {
@@ -83,7 +84,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
       const term = 'אלהים'; // God - appears in ~2600 verses
 
       const { result } = measureTime(() => {
-        return search(term, false, 'root');
+        return searchInRootMode(term);
       }, 'search("אלהים", root mode) - ~2600 results');
 
       console.log(`  Found ${result.length} results`);
@@ -97,7 +98,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
       const terms = 'אלהים, יהוה'; // God, LORD
 
       const { result } = measureTime(() => {
-        return search(terms, false, 'root');
+        return searchInRootMode(terms);
       }, 'search("אלהים, יהוה", root mode) - multiple terms');
 
       console.log(`  Found ${result.length} results`);
@@ -140,7 +141,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
 
       const substring = measureTime(() => search(term, false, 'substring'), 'Substring');
       const word = measureTime(() => search(term, false, 'word'), 'Word');
-      const root = measureTime(() => search(term, false, 'root'), 'Root');
+      const root = measureTime(() => searchInRootMode(term), 'Root');
 
       console.log('\nMode comparison:');
       console.log(
@@ -163,7 +164,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
       console.log('\nSimulating typing (root mode):');
       for (const partial of chars) {
         const { result, timeMs } = measureTime(() => {
-          return search(partial, false, 'root');
+          return searchInRootMode(partial);
         }, `  "${partial}"`);
 
         console.log(`    -> ${result.length} results in ${timeMs.toFixed(2)}ms`);

@@ -287,35 +287,6 @@
   color: #000;
 }
 
-.search-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 11px;
-}
-
-.legend-term {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #ccc;
-}
-
-.color-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-}
-
-.lexeme-indicator {
-  font-size: 11px;
-  font-weight: bold;
-  cursor: help;
-  padding: 0 2px;
-  display: inline-block;
-}
-
 /* Sidebar search term highlighting */
 #verse-popup mark.term-0 {
   background: rgba(51, 230, 255, 0.4);

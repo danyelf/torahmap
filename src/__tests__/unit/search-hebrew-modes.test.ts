@@ -3,6 +3,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, searchHebrewWholeWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
+import { searchInRootMode } from '../helpers/rootSearch';
 
 describe('Hebrew Search Modes', () => {
   let mockVerseTexts: VerseTexts;
@@ -185,10 +186,10 @@ describe('Hebrew Search Modes', () => {
     });
   });
 
-  describe('search() mode parameter - root mode', () => {
+  describe('root mode - resolved through the dictionary, not search()', () => {
     it('root mode falls back to whole-word when the term resolves to no lexeme', () => {
       // The lexeme index is not loaded here, so root mode falls back to whole-word
-      const rootResults = search('אברהם', false, 'root');
+      const rootResults = searchInRootMode('אברהם');
       const wordResults = search('אברהם', false, 'word');
 
       // Should behave identically to word mode (fallback)
@@ -197,7 +198,7 @@ describe('Hebrew Search Modes', () => {
 
     it('root mode fallback finds proper nouns correctly', () => {
       // Even without the lexeme index, should find "אברהם" as whole word
-      const results = search('אברהם', false, 'root');
+      const results = searchInRootMode('אברהם');
 
       const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
       const ex36 = results.find((r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
@@ -208,7 +209,7 @@ describe('Hebrew Search Modes', () => {
 
     it('root mode does NOT fall back to substring', () => {
       // Root mode should fall back to whole-word, NOT substring
-      const rootResults = search('אלה', false, 'root');
+      const rootResults = searchInRootMode('אלה');
       const substringResults = search('אלה', false, 'substring');
 
       // Root mode should NOT match "ואלה" (requires whole word)
@@ -217,7 +218,7 @@ describe('Hebrew Search Modes', () => {
     });
 
     it('root mode returns valid search results', () => {
-      const results = search('אלהים', false, 'root');
+      const results = searchInRootMode('אלהים');
 
       expect(results.length).toBeGreaterThan(0);
       for (const result of results) {
@@ -248,7 +249,7 @@ describe('Hebrew Search Modes', () => {
 
       const substring = search(term, false, 'substring');
       const word = search(term, false, 'word');
-      const root = search(term, false, 'root');
+      const root = searchInRootMode(term);
 
       // All should find matches (nikkud-insensitive)
       expect(substring.length).toBeGreaterThan(0);
@@ -257,7 +258,7 @@ describe('Hebrew Search Modes', () => {
     });
 
     it('modes return language="he" for Hebrew results', () => {
-      const modes: Array<'substring' | 'word' | 'root'> = ['substring', 'word', 'root'];
+      const modes: Array<'substring' | 'word'> = ['substring', 'word'];
 
       for (const mode of modes) {
         const results = search('אלהים', false, mode);
@@ -266,6 +267,10 @@ describe('Hebrew Search Modes', () => {
         for (const result of results) {
           expect(result.language).toBe('he');
         }
+      }
+
+      for (const result of searchInRootMode('אלהים')) {
+        expect(result.language).toBe('he');
       }
     });
 
@@ -288,7 +293,7 @@ describe('Hebrew Search Modes', () => {
       }
 
       // Root mode uses lazy evaluation - snippets are undefined initially
-      const rootResults = search('אלהים', false, 'root');
+      const rootResults = searchInRootMode('אלהים');
       expect(rootResults.length).toBeGreaterThan(0);
       const rootMatch = rootResults[0].matchingTerms[0];
       expect(rootMatch.snippet).toBeUndefined();
@@ -336,7 +341,7 @@ describe('Hebrew Search Modes', () => {
     });
 
     it('root mode finds אברהם correctly (via whole-word fallback)', () => {
-      const results = search('אברהם', false, 'root');
+      const results = searchInRootMode('אברהם');
 
       const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
       const ex36 = results.find((r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
@@ -377,7 +382,7 @@ describe('Hebrew Search Modes', () => {
     });
 
     it('root mode applies to all terms', () => {
-      const results = search('אלהים, אדם', false, 'root');
+      const results = searchInRootMode('אלהים, אדם');
 
       // Should find verses with either term (via whole-word fallback)
       expect(results.length).toBeGreaterThan(0);
@@ -390,35 +395,41 @@ describe('Hebrew Search Modes', () => {
 
   describe('Edge cases with modes', () => {
     it('handles empty query in all modes', () => {
-      const modes: Array<'substring' | 'word' | 'root'> = ['substring', 'word', 'root'];
+      const modes: Array<'substring' | 'word'> = ['substring', 'word'];
 
       for (const mode of modes) {
         const results = search('', false, mode);
         expect(results.length).toBe(0);
       }
+
+      expect(searchInRootMode('').length).toBe(0);
     });
 
     it('handles single-character query in all modes', () => {
-      const modes: Array<'substring' | 'word' | 'root'> = ['substring', 'word', 'root'];
+      const modes: Array<'substring' | 'word'> = ['substring', 'word'];
 
       for (const mode of modes) {
         // Single character is below MIN_SEARCH_TERM_LENGTH (2)
         const results = search('א', false, mode);
         expect(results.length).toBe(0);
       }
+
+      expect(searchInRootMode('א').length).toBe(0);
     });
 
     it('handles query with no matches in all modes', () => {
-      const modes: Array<'substring' | 'word' | 'root'> = ['substring', 'word', 'root'];
+      const modes: Array<'substring' | 'word'> = ['substring', 'word'];
 
       for (const mode of modes) {
         const results = search('xyz123', false, mode);
         expect(results.length).toBe(0);
       }
+
+      expect(searchInRootMode('xyz123').length).toBe(0);
     });
 
     it('handles query with only nikkud characters', () => {
-      const modes: Array<'substring' | 'word' | 'root'> = ['substring', 'word', 'root'];
+      const modes: Array<'substring' | 'word'> = ['substring', 'word'];
 
       for (const mode of modes) {
         const results = search('\u05B0\u05B1', false, mode);
@@ -428,6 +439,8 @@ describe('Hebrew Search Modes', () => {
         // If the stripped term is empty or too short, it won't match
         expect(results).toBeDefined();
       }
+
+      expect(searchInRootMode('\u05B0\u05B1')).toBeDefined();
     });
   });
 });

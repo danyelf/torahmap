@@ -76,7 +76,8 @@
     <div id="results"></div>
 
     <script type="module">
-      import { search, buildSearchIndex } from '/src/search.ts';
+      import { buildSearchIndex } from '/src/search.ts';
+      import { searchInRootMode } from '/src/__tests__/helpers/rootSearch.ts';
       import { BOOK_ORDER } from '/src/constants/books.ts';
 
       // Load data and build index
@@ -122,7 +123,7 @@
 
         // Measure search time
         const searchStart = performance.now();
-        const results = search(query, false, 'root');
+        const results = searchInRootMode(query);
         const searchEnd = performance.now();
         const searchTime = searchEnd - searchStart;
 

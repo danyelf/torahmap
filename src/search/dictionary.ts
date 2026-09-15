@@ -82,43 +82,40 @@ export function meaningsFor(writtenForm: string): Meaning[] {
 
   // Merge as we go, so a merged row keeps the position of its likeliest member
   // and the order stays the order the data gave us.
-  const byAppearance = new Map<string, Meaning>();
-  const merged: LexemeId[][] = [];
+  const rows = new Map<string, { meaning: Meaning; group: LexemeId[] }>();
 
   for (const id of ids) {
     const lexeme = getLexeme(id);
     const key = keyOf(id);
     if (!lexeme || key === null) continue;
 
-    const seen = byAppearance.get(renderedAs(lexeme));
-    if (seen) {
-      seen.keys.push(key);
-      merged[[...byAppearance.values()].indexOf(seen)].push(id);
+    const row = rows.get(renderedAs(lexeme));
+    if (row) {
+      row.meaning.keys.push(key);
+      row.group.push(id);
       continue;
     }
 
-    const meaning: Meaning = {
-      keys: [key],
-      form: lexeme.form,
-      gloss: lexeme.gloss,
-      pos: lexeme.pos,
-      language: lexeme.language,
-      verseCount: 0,
-    };
-    byAppearance.set(renderedAs(lexeme), meaning);
-    merged.push([id]);
+    rows.set(renderedAs(lexeme), {
+      meaning: {
+        keys: [key],
+        form: lexeme.form,
+        gloss: lexeme.gloss,
+        pos: lexeme.pos,
+        language: lexeme.language,
+        // A merged row's verses are the union of its members', not the sum:
+        // the two Shechems share two verses, so adding would report 56 where
+        // there are 54. Filled in below, once the group is complete.
+        verseCount: 0,
+      },
+      group: [id],
+    });
   }
 
-  // A merged row's verses are the union of its members', not the sum: the two
-  // Shechems share two verses, so adding would report 56 where there are 54.
-  const meanings = [...byAppearance.values()];
-  meanings.forEach((meaning, i) => {
-    const group = merged[i];
-    meaning.verseCount =
-      group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size;
-  });
-
-  return meanings;
+  return [...rows.values()].map(({ meaning, group }) => ({
+    ...meaning,
+    verseCount: group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
+  }));
 }
 
 /**

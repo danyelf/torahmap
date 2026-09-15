@@ -2,6 +2,7 @@
 // tm-6mw3: Verify UI properly computes snippets on-demand
 import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, computeSnippetForMatch } from '../../../search';
+import { searchInRootMode } from '../../helpers/rootSearch';
 import type { VerseTexts } from '../../../verseTexts';
 
 describe('Search Overlay - Lazy Snippet Integration', () => {
@@ -29,7 +30,7 @@ describe('Search Overlay - Lazy Snippet Integration', () => {
   it('root mode returns results without snippets, UI computes on-demand', () => {
     // Simulate what the UI does:
     // 1. Search returns results (root mode - lazy)
-    const results = search('אלהים', false, 'root');
+    const results = searchInRootMode('אלהים');
 
     expect(results.length).toBeGreaterThan(0);
     const firstResult = results[0];
@@ -53,7 +54,7 @@ describe('Search Overlay - Lazy Snippet Integration', () => {
   it('computes snippets only for displayed results (not all 2000+ results)', () => {
     const BATCH_SIZE = 50; // Matches RESULTS_BATCH_SIZE in search overlay
     // Search that returns many results
-    const results = search('אלהים', false, 'root');
+    const results = searchInRootMode('אלהים');
 
     // Simulate UI rendering first batch (incremental scroll)
     const displayResults = results.slice(0, BATCH_SIZE);
