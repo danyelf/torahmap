@@ -22,10 +22,64 @@ occurrence. Nothing else we looked at has all three.
 | `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech, language, and the derivational root where BHSA supplies one. |
 | `word-lexemes.json` | Written form → the lexemes it could be, most frequent reading first. Keys have their points stripped and their final letters folded to the medial shape, matching what the search box does to what you type. |
 | `verse-lexemes.json` | Verse key → the distinct lexemes occurring in that verse. This is what search actually queries. |
-| `verse-morphology.json` | Every word occurrence in text order with its lexeme and its grammatical parsing. Kept for a future grammatical-form filter; search does not load it. |
+| `verse-morphology.json` | Every word of every verse in text order with its lexeme and its grammatical parsing, and where each printed word begins and ends. Kept for a future grammatical-form filter; search does not load it. See below — its units are not the words you see on the page. |
 
 Lexemes are referred to throughout by their position in the `lexicon.json`
 array rather than by name, which is what keeps the two per-verse files small.
+
+## Morphemes are not words
+
+ETCBC counts in morphemes, not in printed words. The בְּ of בְּרֵאשִׁית, the הַ of
+הַשָּׁמַיִם and the וְ of וְאֵת are each a unit of their own, so the seven words of
+Genesis 1:1 are eleven units. Over the whole Tanakh there are 426,590 units
+against 305,509 printed words. Reading the file as a list of words, which its
+old description invited, silently shifts every word after the first prefix.
+
+So each verse in `verse-morphology.json` is three arrays rather than one:
+
+```json
+"Genesis:1:1": [ [[0,0],[1,1],[2,2], ...],   // morphemes, in text order
+                 [2,1,1,1,2,2,2],          // morphemes per printed word
+                 [] ]                      // words a maqaf follows
+```
+
+`words` sums to the length of `morphemes`. A **0** means the printed word is a
+further part of the dictionary word before it: תּוּבַל קַיִן is one entry in the
+dictionary and two words on the page, so the second gets no morphemes of its
+own.
+
+A printed word ends at a space **or at a maqaf**, the hyphen in כָּל־הָאָרֶץ. That
+keeps "all" and "the earth" apart, which is the point — they are two dictionary
+words. `joined` lists the positions a maqaf rather than a space follows, so
+anything that wants the whole printed unit back can rejoin them.
+
+### Verses that do not line up
+
+`misaligned` names 64 verses — 0.28% — where the word count here differs from
+the Hebrew in `all-texts.json`. Almost all are compound proper names the two
+sources divide differently: BHSA writes צוּרִי־שַׁדָּי with a maqaf where Sefaria
+writes צוּרִישַׁדָּי solid. Joshua 21:36 and 21:37 are there because Sefaria ships no
+Hebrew for them.
+
+Nothing can reconcile these from BHSA alone, so they are named instead. Anything
+matching positions in this file against displayed text should skip those verses
+and fall back to looking the spelling up in `word-lexemes.json`, rather than
+labelling a word confidently wrong.
+
+### Splitting the displayed text the same way
+
+To line up against the Hebrew in `all-texts.json`, fold it the way
+`displayed_words()` in the generator does, or the counts will not match:
+
+- drop the scribal paragraph marks `{ס}` and `{פ}` — there are 3,552, and each
+  one shifts everything after it;
+- drop the ketiv, which Sefaria prints in round brackets beside the qere in
+  square ones; BHSA carries only the word that is read;
+- split on whitespace and maqaf, and keep only Hebrew letters.
+
+`src/__tests__/unit/search-lexeme-index.test.ts` asserts that every verse not in
+`misaligned` lines up under exactly those rules, so a change to either copy of
+them fails the test suite with the offending verses named.
 
 Two things in `lexicon.json` are written but no longer read: the `root` column
 and the `functionWordPos` list. Both existed to group words into root families
@@ -62,3 +116,9 @@ those three chapters.
 `src/search.ts` must fold Hebrew the same way. If they drift apart, every
 lookup misses and search silently falls back to whole-word matching. Change one
 and you have to change the other.
+
+The same goes for which characters separate one word from the next — maqaf,
+paseq, sof pasuq and nun hafukha. The generator's `SEPARATORS` and the set
+`normalizeHebrewForSearch()` turns into spaces have to hold the same four
+codepoints, and the word boundaries above are only true while they do. There is
+a test for it now, in `search-lexeme-index.test.ts`.
