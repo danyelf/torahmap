@@ -27,6 +27,16 @@ async function openHelp(): Promise<HTMLElement> {
   return document.getElementById('help-modal') as HTMLElement;
 }
 
+/**
+ * The registry help.ts is reading. It must be fetched after openHelp, from the
+ * same post-reset module graph — a static import would hold a different,
+ * empty copy.
+ */
+async function registeredOverlays() {
+  const { getAllOverlays } = await import('../../overlays/index');
+  return getAllOverlays();
+}
+
 function clickTab(modal: HTMLElement, tab: string): void {
   modal.querySelector<HTMLElement>(`.help-tab[data-tab="${tab}"]`)!.click();
 }
@@ -90,8 +100,16 @@ describe('credits tab', () => {
     const modal = await openHelp();
     clickTab(modal, 'credits');
 
-    // Every overlay with credits contributes a block, plus one for the map itself.
-    expect(modal.querySelectorAll('.credit-block').length).toBe(5);
+    // Every overlay with credits contributes a block, plus one for the map
+    // itself. Derived rather than hard-coded, so adding or dropping an overlay
+    // does not mean editing a number here.
+    const overlays = await registeredOverlays();
+    const expected = overlays.filter((o) => o.credits && o.credits.length > 0).length + 1;
+
+    // Without this the assertion would pass on an empty registry, which is the
+    // very thing it exists to rule out.
+    expect(expected).toBeGreaterThan(1);
+    expect(modal.querySelectorAll('.credit-block').length).toBe(expected);
   });
 
   it('opens every source link in a new tab, safely', async () => {
