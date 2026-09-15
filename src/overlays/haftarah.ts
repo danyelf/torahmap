@@ -231,9 +231,7 @@ export const haftarahOverlay: Overlay = {
       licenseUrl: 'https://github.com/hebcal/hebcal-leyning/blob/main/LICENSE',
       collected: 'September 2026',
       note:
-        'Which passage is read on which occasion. The licence asks that its ' +
-        'copyright notice travel with the data, so a copy sits beside it in ' +
-        'data/hebcal/. Hebcal states no source of its own for the readings.',
+        'Which passage is read on which occasion.',
     },
   ],
 
