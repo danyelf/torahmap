@@ -100,7 +100,7 @@ From `APP_CREDITS` in `src/credits.ts`, rendered above the overlay blocks.
 | --- | --- | --- | --- | --- |
 | Text Search | ETCBC BHSA (2021), read through Text-Fabric | CC BY-NC 4.0 | not recorded | Cite 10.17026/dans-z6y-skyh |
 | Commentary | Sefaria link exports | Sefaria's terms | January 2026 | Sefaria regenerates these monthly, so counts trail the live site. |
-| Haftarah | Mechon Mamre, Weekly Torah Readings | © Mechon Mamre 2013 | January 2026 | — |
+| Haftarah | Mechon Mamre, Weekly Torah Readings | none stated | January 2026 | © Mechon Mamre 2013. The page states no licence. |
 | Text Dating | Wikipedia, "Dating the Bible" | CC BY-SA | not recorded | — |
 
 Trop and Verse Length declare no credits and do not appear. Both derive

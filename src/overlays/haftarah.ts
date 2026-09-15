@@ -215,8 +215,11 @@ export const haftarahOverlay: Overlay = {
     {
       source: 'Mechon Mamre, Weekly Torah Readings',
       url: 'https://mechon-mamre.org/jewfaq/readings.htm',
-      license: '© Mechon Mamre 2013',
       collected: 'January 2026',
+      // No licence field: the page states a copyright notice and grants no
+      // permission, and a notice shown in the licence pill would read as a
+      // grant beside the real CC ones.
+      note: '© Mechon Mamre 2013. The page states no licence.',
     },
   ],
 

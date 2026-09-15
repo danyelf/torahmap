@@ -34,9 +34,11 @@ describe('renderCreditBlock', () => {
   });
 
   it('renders a source without a url as plain text, not an empty link', () => {
-    const html = block([{ source: 'Sefaria link exports' }]);
-    expect(html).toContain('Sefaria link exports');
-    expect(html).not.toContain('<a ');
+    const el = document.createElement('div');
+    el.innerHTML = block([{ source: 'Sefaria link exports' }]);
+
+    expect(el.textContent).toContain('Sefaria link exports');
+    expect(el.querySelectorAll('a')).toHaveLength(0);
   });
 
   it('shows the licence when there is one and omits the pill when there is not', () => {
