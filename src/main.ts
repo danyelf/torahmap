@@ -711,11 +711,10 @@ async function main(): Promise<void> {
           if (overlaySelect) overlaySelect.value = 'search';
         }
 
-        if (!searchForMeaning(word, meaning?.keys ?? null)) return;
-
-        applyOverlay();
-        render();
-        saveUrlState(true);
+        // No repaint here, and no second history entry: running the search
+        // announces itself through the overlay's update callback, which paints
+        // the map and writes the URL over whatever setOverlay just pushed.
+        searchForMeaning(word, meaning?.keys ?? null);
       },
     });
   });

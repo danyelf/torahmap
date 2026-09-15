@@ -440,6 +440,40 @@ describe('dismissing', () => {
     expect(onChoose).not.toHaveBeenCalled();
   });
 
+  it('closes when the page navigates, so it cannot describe a verse that has gone', () => {
+    openWordMenu({
+      word: 'עלה',
+      meanings: [leaf],
+      otherReadings: [],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose: vi.fn(),
+    });
+
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(document.querySelector('.word-menu')).toBeNull();
+  });
+
+  it('closes when the window is resized, since it is positioned in fixed pixels', () => {
+    openWordMenu({
+      word: 'עלה',
+      meanings: [leaf],
+      otherReadings: [],
+      anchor: anchor(),
+      replacesOverlay: null,
+      paletteFull: false,
+      switchesToRootMode: false,
+      onChoose: vi.fn(),
+    });
+
+    window.dispatchEvent(new Event('resize'));
+
+    expect(document.querySelector('.word-menu')).toBeNull();
+  });
+
   it('replaces an open menu rather than stacking a second one', () => {
     openWordMenu({
       word: 'עלה',

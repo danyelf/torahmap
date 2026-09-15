@@ -26,6 +26,7 @@ export interface WordMenuOptions {
 
 let open: HTMLElement | null = null;
 let dismiss: ((event: MouseEvent | KeyboardEvent) => void) | null = null;
+let goStale: (() => void) | null = null;
 
 export function closeWordMenu(): void {
   open?.remove();
@@ -34,6 +35,11 @@ export function closeWordMenu(): void {
     document.removeEventListener('mousedown', dismiss as EventListener);
     document.removeEventListener('keydown', dismiss as EventListener);
     dismiss = null;
+  }
+  if (goStale) {
+    window.removeEventListener('popstate', goStale);
+    window.removeEventListener('resize', goStale);
+    goStale = null;
   }
 }
 
@@ -57,9 +63,11 @@ function literalChoice(options: WordMenuOptions): HTMLButtonElement {
 }
 
 function meaningLabel(meaning: Meaning): HTMLElement {
-  // Make the wrapper itself a flex container so the button's flex sees three children
-  // (form, gloss, count) rather than just one wrapper span. This allows gap spacing
-  // and flex: 1 on gloss to work correctly.
+  // The dictionary form, the gloss and the verse count are three separate
+  // spans, and the wrapper holding them is a flex container of its own, so that
+  // the gloss can take the slack between the form and the count. Putting all
+  // three in one span would let the count drift away from the right edge and
+  // stop the readings from lining up down the panel.
   const label = document.createElement('span');
   label.className = 'word-menu-label';
 
@@ -209,4 +217,13 @@ export function openWordMenu(options: WordMenuOptions): void {
   };
   document.addEventListener('mousedown', dismiss as EventListener);
   document.addEventListener('keydown', dismiss as EventListener);
+
+  // The panel names one word of one verse and sits at pixel coordinates taken
+  // when it opened. Going Back can put a different verse in the popup, and a
+  // resize moves the word out from under it; in both cases what is left
+  // describes something that is no longer on screen, and choosing from it still
+  // adds a term. So it goes away instead.
+  goStale = () => closeWordMenu();
+  window.addEventListener('popstate', goStale);
+  window.addEventListener('resize', goStale);
 }
