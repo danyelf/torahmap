@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from '../../sidebar';
 import { createVerse } from '../helpers/fixtures';
 import type { VerseTexts } from '../../verseTexts';
+import type { Overlay } from '../../overlays/types';
 
 const texts: VerseTexts = {
   Genesis: { 1: { 2: { he: 'וְר֣וּחַ אֱלֹהִ֔ים מְרַחֶ֖פֶת', en: 'a wind from God sweeping' } } },
@@ -102,5 +103,58 @@ describe('words in the verse popup', () => {
     expect(() =>
       document.querySelector<HTMLElement>('[data-word-index="0"]')!.click(),
     ).not.toThrow();
+  });
+
+  it('reports the whole word when a click lands inside an overlay mark', () => {
+    // Search wraps a match in <mark>, and trop marks a single accent - either
+    // way the mark can land inside a word rather than around the whole thing,
+    // same as the interrupted-word case in verseWords-dom.test.ts. The word
+    // index is shared across the pieces precisely so a click on either half
+    // still resolves to the whole word: that's the case this test covers.
+    const handler = vi.fn();
+    setWordClickHandler(handler);
+
+    const mockOverlay: Overlay = {
+      id: 'test-overlay',
+      name: 'Test overlay',
+      getVerseColor: () => null,
+      highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
+        if (language !== 'he') return text;
+        // Mark the first three characters of the first word - interior to
+        // the word, not at a word boundary - leaving the rest of the text
+        // untouched so it still matches the source exactly.
+        return `<mark>${text.slice(0, 3)}</mark>${text.slice(3)}`;
+      }),
+    };
+
+    const elements = getSidebarElements();
+    updateSidebar(
+      elements,
+      createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
+      texts,
+      mockOverlay,
+      getVerseText,
+      true,
+    );
+
+    const hebrew = document.querySelector('.verse-hebrew')!;
+    expect(hebrew.querySelector('mark')).not.toBeNull();
+
+    // Word 0 should be split into (at least) two spans sharing one index.
+    const word0Spans = [...hebrew.querySelectorAll('[data-word-index="0"]')];
+    expect(word0Spans.length).toBeGreaterThanOrEqual(2);
+
+    const insideMark = hebrew.querySelector<HTMLElement>('mark .verse-word')!;
+    expect(insideMark).not.toBeNull();
+    insideMark.click();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler.mock.calls[0][0]).toMatchObject({
+      text: 'וְר֣וּחַ',
+      index: 0,
+      book: 'Genesis',
+      chapter: 1,
+      verse: 2,
+    });
   });
 });
