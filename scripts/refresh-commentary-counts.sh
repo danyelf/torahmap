@@ -86,14 +86,11 @@ if ! curl -sf --max-time 300 -o "$INDEX.tmp" "$INDEX_URL"; then
   echo "Could not download $INDEX_URL" >&2
   exit 1
 fi
-# A truncated or error response parses as neither, and silently wrong here
-# means every commentary in the library gets miscategorised.
-if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$INDEX.tmp"; then
-  rm -f "$INDEX.tmp"
-  echo "The index did not come back as JSON. Try again." >&2
-  exit 1
-fi
 mv "$INDEX.tmp" "$INDEX"
+# Whether it is really the index, rather than merely valid JSON, is checked by
+# shelves() in process_sefaria_links.py, which refuses to run on a file that
+# does not look like one. Getting that wrong silently reverts every commentary
+# in the library to the shelf it is filed on.
 echo "Library index: $(( $(wc -c < "$INDEX") / 1024 ))KB in $INDEX (gitignored)"
 
 # Keep the outgoing counts so we can say what the refresh actually changed.

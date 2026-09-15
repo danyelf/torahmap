@@ -357,11 +357,16 @@ describe('Commentary Overlay', () => {
       expect(options).toContain('Musar');
     });
 
-    it('offers every category the counts file can contain', () => {
+    it('offers every category worth looking at', () => {
       // The menu and the generating script have drifted apart before: Responsa
       // was counted for months without ever appearing here, so nobody could
-      // look at it. Anything process_sefaria_links.py can produce belongs in
-      // this list.
+      // look at it.
+      //
+      // "Other" is the deliberate exception. It is the generator's catch-all
+      // for a shelf we do not recognise, so that such a shelf shows up in the
+      // regeneration output instead of vanishing. Today it holds Sefaria's
+      // "Guides" — introductions to the Talmud — and it is a diagnostic for
+      // whoever refreshes the data, not a lens anyone would choose.
       const container = document.createElement('div');
       commentaryOverlay.renderControls?.(container);
 

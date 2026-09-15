@@ -190,6 +190,20 @@ and it is the same field the website itself uses. The export usually names a
 node inside a book (`Midrash Lekach Tov, Genesis`) where the index names the
 book, so trailing section names come off one at a time until something matches.
 
+One shelf needs a correction the index does not make. Sefaria keeps the
+thirty-nine books and a handful of modern commentaries together under Tanakh,
+and marks only some of the commentaries as commentaries — David Zvi Hoffmann on
+Exodus, Steinsaltz's introductions and Nechama Leibowitz arrive as plain
+Tanakh. A title on that shelf that is not simply a book's name is one of those.
+What is left is the books themselves, so a link from a verse to one of them is
+a cross-reference between two verses, and is dropped.
+
+The test is the whole title, never its opening words. Several books are named
+after people, and other works begin with those names without being them:
+`Esther Rabbah` is a midrash on Esther, `Ruth Rabbah` a midrash on Ruth, and
+`Ezra ben Solomon` a kabbalist who wrote about Song of Songs. Matching on a
+prefix would pull 2,569 links out of Midrash and Commentary.
+
 A string test on the title was tried and rejected. Reading `X on Y` as "a
 commentary on Y" misclassifies about 166,000 links: it wrongly catches
 `Yalkut Shimoni on Torah` (16,190 links — a midrash in its own right),

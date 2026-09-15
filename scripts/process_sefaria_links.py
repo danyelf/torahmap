@@ -186,6 +186,20 @@ def shelves() -> dict[str, str]:
 
         with open(path, encoding="utf-8") as f:
             walk(json.load(f))
+
+        # A response that parses but is not the index — an error object, a
+        # truncation landing on valid JSON, a change of shape — would leave
+        # this map empty or nearly so. Every work would then fall back to the
+        # shelf the export files it on, which is exactly the bug the index is
+        # here to fix, and the run would finish and overwrite the counts
+        # without complaint. Refuse instead.
+        if found.get("Rashi on Genesis") != "Commentary" or len(found) < 1000:
+            raise SystemExit(
+                f"ERROR: {path} does not look like Sefaria's library index.\n"
+                f"Found {len(found)} titles; expected several thousand, with\n"
+                "'Rashi on Genesis' among them. Download it again with:\n"
+                "  scripts/refresh-commentary-counts.sh"
+            )
         _shelves = found
     return _shelves
 
@@ -207,32 +221,49 @@ def resolve_shelf(work: str, fallback: str, index: dict[str, str]) -> str:
     off one at a time until something matches. Every work in the export
     resolves this way; the fallback is for texts added since the index was
     downloaded.
+
+    One shelf needs a correction the index does not make. Sefaria keeps the
+    thirty-nine books and a handful of modern commentaries together under
+    Tanakh, and marks only some of the commentaries as commentaries. David Zvi
+    Hoffmann on Exodus, Steinsaltz's introductions and Nechama Leibowitz arrive
+    as plain Tanakh. A title that is not simply a book's name is one of those,
+    so the rest of the shelf is the books themselves, and a link from a verse
+    to one of the books is a cross-reference between two verses.
+
+    The test is the whole title, not its opening words. Several books are named
+    after people, and other works begin with those names without being them:
+    Esther Rabbah is a midrash on Esther, Ruth Rabbah a midrash on Ruth, and
+    Ezra ben Solomon a kabbalist who wrote about Song of Songs.
     """
     name = work.strip()
+    shelf = fallback.strip()
     while name:
         category = index.get(name)
         if category is not None:
-            return category
+            shelf = category
+            break
         if "," not in name:
             break
         name = name.rsplit(",", 1)[0].strip()
-    return fallback.strip()
+
+    if shelf == "Tanakh" and work.strip() not in TANAKH_BOOKS:
+        return "Commentary"
+    return shelf
 
 
-def link_bucket(citation: str, shelf: str, connection: str) -> str | None:
+def link_bucket(shelf: str, connection: str) -> str | None:
     """
     Which category a link to a verse counts towards, or None if it does not
     count at all.
 
-    The arguments describe the far end of the link from the verse: the citation
-    ("Rashi on Genesis 1:1:1"), what kind of text it is as resolve_shelf()
-    determined ("Commentary"), and the export's connection type ("commentary").
+    Takes what kind of text sits at the far end of the link, as resolve_shelf()
+    determined it, and the export's connection type for the link itself.
 
     Two different questions, answered from two different places. Whether a work
-    is a commentary at all comes from Sefaria's index. Whether *this particular
-    link* is a comment on *this verse*, rather than a passing citation of it,
-    comes from the connection type — the same column Sefaria's own site reads
-    to split its Commentary and Quoting Commentary sections.
+    is a commentary at all comes from Sefaria's index, above. Whether *this
+    particular link* is a comment on *this verse*, rather than a passing
+    citation of it, comes from the connection type — the same column Sefaria's
+    own site reads to split its Commentary and Quoting Commentary sections.
 
     So a commentary splits two ways:
 
@@ -259,13 +290,9 @@ def link_bucket(citation: str, shelf: str, connection: str) -> str | None:
         return COMMENTARY if connection == "commentary" else QUOTING_COMMENTARY
 
     if shelf == "Tanakh":
-        if parse_verse_refs(citation):
-            return None  # a cross-reference from one verse to another
-        # A handful of modern Torah commentaries sit on the Tanakh shelf
-        # without being marked as commentaries — David Zvi Hoffmann, Nechama
-        # Leibowitz, Steinsaltz's introductions. The citation is not a bare
-        # verse, so they are not cross-references. Treat them as what they are.
-        return COMMENTARY if connection == "commentary" else QUOTING_COMMENTARY
+        # resolve_shelf() has moved every commentary off this shelf, so what is
+        # left is one of the thirty-nine books: one verse pointing at another.
+        return None
 
     return shelf if shelf in COUNTED_CATEGORIES else "Other"
 
@@ -301,15 +328,15 @@ def process_file(filepath: Path) -> dict:
             # A link is written once but read from both ends: either citation
             # may be the verse, and each verse it covers is credited with the
             # text at the other end.
-            for verse_side, other_side, other_work, other_category in (
-                (citation2, citation1, work1, cat1),
-                (citation1, citation2, work2, cat2),
+            for verse_side, other_work, other_category in (
+                (citation2, work1, cat1),
+                (citation1, work2, cat2),
             ):
                 verse_refs = parse_verse_refs(verse_side)
                 if not verse_refs:
                     continue
                 shelf = resolve_shelf(other_work, other_category, index)
-                bucket = link_bucket(other_side, shelf, connection)
+                bucket = link_bucket(shelf, connection)
                 if bucket is None:
                     continue
                 for book, chapter, verse in verse_refs:
