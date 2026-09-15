@@ -83,10 +83,21 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
       expect(glosses).toContain('laugh');
     });
 
-    it('strips a prefix when the word as typed is not in the text (ובראשית)', () => {
-      const readings = findLexemesForWord('ובראשית');
+    it('resolves a prefixed word straight from the table (בראשית)', () => {
+      // The whole printed word is filed under the lexeme of its stem, so
+      // nothing here has to notice the ב. Prefix stripping used to redo that by
+      // string surgery, and has gone.
+      const readings = findLexemesForWord('בראשית');
       expect(readings).not.toBeNull();
-      expect(readings!.map((id) => getLexeme(id)!.gloss)).toContain('beginning');
+      expect(readings!.map((id) => getLexeme(id)!.gloss)).toEqual(['beginning']);
+    });
+
+    it('returns null for a form that is never printed (ובראשית)', () => {
+      // ובראשית appears nowhere in the Tanakh. Stripping the ו and answering
+      // with ראשית would be a guess about a word the reader cannot have copied
+      // off the page. Null sends the caller to plain text matching instead,
+      // which shows the term as unresolved rather than confidently wrong.
+      expect(findLexemesForWord('ובראשית')).toBeNull();
     });
 
     it('accepts a bare dictionary spelling that never stands alone (מלוכה)', () => {
@@ -129,9 +140,16 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
 
     it('does not drag the Hebrew preposition על into a search for עלה', () => {
       // This is the failure the old concordance numbering forced: על "upon"
-      // occurs some 5,700 times, so folding it into עלה swamped the results.
+      // occurs in 4,487 verses, so folding it into עלה swamped the results. It
+      // cannot be written עלה and is not offered.
+      //
+      // The Aramaic preposition is offered, and should be: with a suffix it is
+      // written this way, it is a word, and it is worth 86 verses. Keeping it
+      // out was what the generator's exclusion list was for, and the exclusion
+      // cost far more than the collision did.
       const readings = findLexemesForWord('עלה')!;
-      expect(readings.map((id) => getLexeme(id)!.pos)).not.toContain('prep');
+      const prepositions = readings.map((id) => getLexeme(id)!).filter((l) => l.pos === 'prep');
+      expect(prepositions.map((l) => l.language)).toEqual(['arc']);
       expect(readings.map((id) => getLexeme(id)!.gloss)).toContain('ascend');
 
       const ascend = keys(searchInRootMode('עלה'));

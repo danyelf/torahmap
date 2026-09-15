@@ -15,13 +15,18 @@ beforeAll(async () => {
 });
 
 describe('meaningsFor', () => {
-  it('offers the four dictionary words that עלה can be', () => {
+  it('offers the five dictionary words that עלה can be', () => {
+    // The fifth is the Aramaic preposition על carrying a pronominal suffix,
+    // "upon him", which is written exactly this way. The generator used to
+    // withhold it, to keep 86 Aramaic verses out of a search for the verb; the
+    // withholding cost עליו, בו and every other suffixed preposition.
     const meanings = meaningsFor('עלה');
     expect(meanings.map((m) => m.gloss)).toEqual([
       'ascend',
       'burnt-offering',
       'leafage',
       'pretext',
+      'upon',
     ]);
   });
 
@@ -38,7 +43,7 @@ describe('meaningsFor', () => {
 
   it('counts the verses each meaning occurs in', () => {
     const meanings = meaningsFor('עלה');
-    expect(meanings.map((m) => m.verseCount)).toEqual([818, 260, 13, 2]);
+    expect(meanings.map((m) => m.verseCount)).toEqual([818, 260, 13, 2, 86]);
   });
 
   it('absorbs prefixes, so the first word of Genesis is unambiguous', () => {
@@ -85,7 +90,9 @@ describe('versesFor', () => {
     const all = versesFor(meaningsFor('עלה').flatMap((m) => m.keys));
     const burntOffering = versesFor(['<LH/@heb']);
 
-    expect(all.size).toBe(1028);
+    // 1,112 rather than 1,028: the Aramaic preposition brings 86 verses of its
+    // own, two of which already carried one of the other four readings.
+    expect(all.size).toBe(1112);
     expect(burntOffering.size).toBe(260);
   });
 
