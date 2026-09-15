@@ -4,7 +4,7 @@
 // Words have to become clickable in all three without changing what the
 // overlays produce.
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { splitVerseText, wrapWordsInFragment } from '../../verseWords';
 
 function fragmentOf(...nodes: Node[]): DocumentFragment {
@@ -70,5 +70,23 @@ describe('wrapping words in a highlighted fragment', () => {
     const first = [...wrapped.querySelectorAll('[data-word-index="0"]')];
     expect(first.map((s) => s.textContent).join('')).toBe('ברא');
     expect(wrapped.textContent).toBe(text);
+  });
+
+  it('wraps nothing when the fragment text does not match the verse', () => {
+    // If an overlay ever hands back text that has drifted from the verse it
+    // was built from, a click would resolve against the wrong offsets and
+    // report the wrong word. Refusing to wrap makes that failure visible -
+    // the words are simply not clickable - instead of silently wrong.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const text = 'ברא אלהים';
+    const fragment = fragmentOf(document.createTextNode('something else entirely'));
+    const wrapped = wrapWordsInFragment(fragment, text);
+
+    expect(wrapped.textContent).toBe('something else entirely');
+    expect(wrapped.querySelectorAll('.verse-word')).toHaveLength(0);
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    warn.mockRestore();
   });
 });

@@ -4,6 +4,57 @@ import type { TanakhLayout } from './types.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { getVerseLinkCount } from './overlays/commentary.ts';
+import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
+
+/** A click on a word in the verse popup's Hebrew text. */
+export interface WordClick {
+  /** The word exactly as displayed, points and all. */
+  text: string;
+  /** Its position among the verse's words. */
+  index: number;
+  book: string;
+  chapter: number;
+  verse: number;
+  /** The span that was clicked, for anchoring a popover. */
+  element: HTMLElement;
+}
+
+let wordClickHandler: ((click: WordClick) => void) | null = null;
+
+/**
+ * Listen for clicks on words in the verse popup.
+ *
+ * The sidebar reports which word was clicked and leaves the meaning of that to
+ * the caller, so that the Hebrew stays clickable whatever overlay is active.
+ */
+export function setWordClickHandler(handler: ((click: WordClick) => void) | null): void {
+  wordClickHandler = handler;
+}
+
+/** One listener on the container, so re-rendering the verse cannot pile them up. */
+function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLayout): void {
+  const words = splitVerseText(text).filter((piece) => piece.kind === 'word');
+
+  container.onclick = (event) => {
+    if (!wordClickHandler) return;
+
+    const span = (event.target as HTMLElement)?.closest?.('.verse-word');
+    if (!(span instanceof HTMLElement)) return;
+
+    const index = Number(span.dataset.wordIndex);
+    const word = words[index];
+    if (!word) return;
+
+    wordClickHandler({
+      text: word.text,
+      index,
+      book: verse.book,
+      chapter: verse.chapter,
+      verse: verse.verse,
+      element: span,
+    });
+  };
+}
 
 /**
  * DOM elements that make up the verse details sidebar
@@ -115,15 +166,24 @@ export function updateSidebar(
   if (hebrew) {
     const hebrewText = text?.he || 'Loading...';
     const highlighted = currentOverlay?.highlightVerseText?.(hebrewText, 'he');
+
+    // Whatever the overlay produced, words are wrapped afterwards, so a click
+    // finds a word whether or not anything is highlighting the text.
+    const fragment = document.createDocumentFragment();
     if (highlighted && highlighted !== hebrewText) {
       if (typeof highlighted === 'string') {
-        hebrew.innerHTML = highlighted;
+        const holder = document.createElement('div');
+        holder.innerHTML = highlighted;
+        fragment.append(...holder.childNodes);
       } else {
-        hebrew.replaceChildren(highlighted);
+        fragment.appendChild(highlighted);
       }
     } else {
-      hebrew.textContent = hebrewText;
+      fragment.appendChild(document.createTextNode(hebrewText));
     }
+
+    hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
+    attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
   }
   if (english) {
     const englishText = text?.en || 'Loading...';

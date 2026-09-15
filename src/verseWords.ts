@@ -57,6 +57,19 @@ export function splitVerseText(text: string): VersePiece[] {
  * own text: one word, one answer, however many pieces it arrived in.
  */
 export function wrapWordsInFragment(fragment: DocumentFragment, text: string): DocumentFragment {
+  // The walk below trusts that offsets into `text` line up with the
+  // fragment's own text nodes. Nothing upstream guarantees that - an overlay
+  // could hand back text that has drifted from the verse it was built from -
+  // so check it here. Wrapping nothing leaves the words visibly inert rather
+  // than clickable and wrong.
+  if (fragment.textContent !== text) {
+    console.warn(
+      'wrapWordsInFragment: fragment text does not match verse text, leaving words unwrapped',
+      { fragmentText: fragment.textContent, verseText: text },
+    );
+    return fragment;
+  }
+
   const words = splitVerseText(text).filter((piece) => piece.kind === 'word');
 
   // Which word covers a given offset, or null between words. Offsets are
