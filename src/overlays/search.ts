@@ -599,8 +599,7 @@ export const searchOverlay: Overlay = {
   name: 'Text Search',
   description:
     'Lights up every verse holding the word you type, in the Hebrew or in the English. ' +
-    'A Hebrew word is looked up as a dictionary word by default, so every form it takes ' +
-    'is found, and words that merely share a spelling stay apart.',
+    'Supports exact string search as well as roots.'
   credits: [
     {
       source:
