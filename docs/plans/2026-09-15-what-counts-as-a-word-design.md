@@ -43,9 +43,16 @@ the first three:
 Step 3 is doing the damage, and it is worth being precise about how. It does
 not rescue a failing lookup. Without it, עליו would resolve to nothing, root
 mode would fall back to whole-word matching, and the reader would get all 368
-verses with the honest fallback marker beside the term — which is exactly what
-happens today for רבשקה. Step 3 converts a correct fallback into a confident
-wrong answer and suppresses the signal that would have flagged it.
+verses — which is exactly what happens today for רבשקה, a name the dictionary
+does not carry. Step 3 converts a correct fallback into a confident wrong
+answer.
+
+An earlier draft of this document said the fallback shows a marker beside the
+term. Checked in the running app: it does not. A term that resolved to a lexeme
+and a term that fell through to text matching look exactly alike, and only the
+meaning chooser appearing or not hints at the difference. That is worth fixing
+and is filed separately; it does not change the argument here, because a wrong
+answer is worse than a right one that says nothing about itself.
 
 It is also the behaviour already ruled out on design grounds: offering עֶלְיֹון
 for עליו is a path to a neighbouring word that merely shares a spelling prefix.
