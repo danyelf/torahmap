@@ -20,7 +20,7 @@ The core design principle is **position stability** - each verse occupies a perm
 - **Full-text search** with Hebrew/English support, nikkud-insensitive; root
   mode resolves a written form to the dictionary words it can be, so every
   inflected form is found and words that merely share a spelling stay apart
-- **Pluggable overlays**: Search, Commentary (8 categories), Trop (39 cantillation marks), Text Dating (6 historical periods), Haftarah
+- **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (7 source categories plus a combined total), Trop (33 cantillation marks), Haftarah (Ashkenazi and Sephardi), Text Dating (6 historical periods), Verse Length. Each overlay carries its own one-sentence description, and the help modal's Overlays tab is built from them.
 
 ## Quick Start
 
@@ -164,10 +164,12 @@ ignored: large, generated, and not ours to reformat.
 │   │   ├── trop.ts          # Cantillation mark visualizer
 │   │   ├── search.ts        # Full-text search overlay
 │   │   ├── haftarah.ts      # Haftarah portions overlay
-│   │   └── text-dating.ts   # Text dating visualization
+│   │   ├── text-dating.ts   # Text dating visualization
+│   │   └── verse-length.ts  # Word count per verse
 │   │
 │   ├── utils/               # Utility functions
 │   │   ├── color.ts         # Color manipulation utilities
+│   │   ├── html.ts          # Escaping for the places that build HTML as a string
 │   │   └── random.ts        # Seeded random number generation
 │   │
 │   └── constants/           # Shared constants

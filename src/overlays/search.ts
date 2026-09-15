@@ -597,6 +597,9 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
 export const searchOverlay: Overlay = {
   id: 'search',
   name: 'Text Search',
+  description:
+    'Lights up every verse holding the word you type, in the Hebrew or in the English. ' +
+    'Supports exact string search as well as roots.'
   credits: [
     {
       source:

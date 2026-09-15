@@ -63,6 +63,51 @@ describe('help modal', () => {
   });
 });
 
+describe('overlays tab', () => {
+  it('names every overlay the app registers, in the order the menu offers them', async () => {
+    const modal = await openHelp();
+    clickTab(modal, 'overlays');
+
+    const named = [...modal.querySelectorAll('.overlay-list dt')].map((dt) => dt.textContent);
+    const registered = (await registeredOverlays()).map((o) => o.name);
+
+    // Without this the assertion would pass on an empty registry and an empty
+    // tab, which is the very thing it exists to rule out.
+    expect(registered.length).toBeGreaterThan(1);
+    expect(named).toEqual(registered);
+  });
+
+  it('gives every overlay a description of its own', async () => {
+    const overlays = await registeredOverlays();
+
+    // An overlay that says nothing about itself is skipped by the renderer, so
+    // it would go missing from the tab quietly. This is where that fails.
+    const silent = overlays.filter((o) => !o.description?.trim()).map((o) => o.name);
+    expect(silent).toEqual([]);
+  });
+
+  it('shows each description under its overlay', async () => {
+    const modal = await openHelp();
+    clickTab(modal, 'overlays');
+
+    const shown = [...modal.querySelectorAll('.overlay-list dd')].map((dd) => dd.textContent);
+    const declared = (await registeredOverlays()).map((o) => o.description);
+
+    expect(shown).toEqual(declared);
+  });
+
+  it('builds from the registry when the tab is opened, not at import time', async () => {
+    // openHelp imports help.ts against an empty registry and registers
+    // afterwards, so a tab built at import time would come out empty here.
+    const modal = await openHelp();
+    clickTab(modal, 'overlays');
+
+    expect(modal.querySelectorAll('.overlay-list dt').length).toBe(
+      (await registeredOverlays()).length,
+    );
+  });
+});
+
 describe('credits tab', () => {
   /** Overlays the registry holds that have something to declare. */
   const withCredits = (overlays: { name: string; credits?: readonly unknown[] }[]) =>
