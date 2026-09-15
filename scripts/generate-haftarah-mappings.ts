@@ -82,227 +82,80 @@ interface HebcalHoliday {
 const TORAH_BOOKS = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'];
 
 /**
- * The 54 weekly portions, in the order they are read.
+ * What the map shows and what it calls each thing: the 54 weekly portions in
+ * the order they are read, then the 29 occasions outside the weekly cycle that
+ * have a haftarah of their own. Held in data/haftarah-names.json so that
+ * editing a label does not mean editing this script.
  *
- * The names are Sefaria's, taken from the Parasha structure inside its schema
- * export (storage.googleapis.com/sefaria-export/schemas/Genesis.json and the
- * other four books). The map links out to Sefaria, so a portion should be
- * called here what it is called there, down to the spelling.
+ * The portion names are Sefaria's, from the Parasha structure in its schema
+ * export. The map links out to Sefaria, so a portion should be called here
+ * what it is called there, down to the spelling. The occasion names are our
+ * own: they label a legend rather than naming a division of any text, and no
+ * source publishes a canonical list of them.
  *
- * `hebcal` is the key to look the portion up under in the leyning tables,
- * needed only for the three where hebcal spells it differently.
+ * `hebcal` is the key to look the reading up under in the leyning tables. Every
+ * occasion needs one; a portion needs one only where hebcal spells it
+ * differently, which is three of the 54.
+ *
+ * Where hebcal lists a separate entry for a festival day that happens to fall
+ * on Shabbat, both entries name the same haftarah, so the plain key is the one
+ * taken. The rows whose key is stranger than that carry a `note` saying why.
  */
-const PARSHIOT: Array<{ hebcal?: string; name: string; hebrewName: string }> = [
-  // Genesis
-  { name: 'Bereshit', hebrewName: 'בראשית' },
-  { name: 'Noach', hebrewName: 'נח' },
-  { hebcal: 'Lech-Lecha', name: 'Lech Lecha', hebrewName: 'לך לך' },
-  { name: 'Vayera', hebrewName: 'וירא' },
-  { name: 'Chayei Sara', hebrewName: 'חיי שרה' },
-  { name: 'Toldot', hebrewName: 'תולדות' },
-  { name: 'Vayetzei', hebrewName: 'ויצא' },
-  { name: 'Vayishlach', hebrewName: 'וישלח' },
-  { name: 'Vayeshev', hebrewName: 'וישב' },
-  { name: 'Miketz', hebrewName: 'מקץ' },
-  { name: 'Vayigash', hebrewName: 'ויגש' },
-  { name: 'Vayechi', hebrewName: 'ויחי' },
-  // Exodus
-  { name: 'Shemot', hebrewName: 'שמות' },
-  { name: 'Vaera', hebrewName: 'וארא' },
-  { name: 'Bo', hebrewName: 'בא' },
-  { name: 'Beshalach', hebrewName: 'בשלח' },
-  { name: 'Yitro', hebrewName: 'יתרו' },
-  { name: 'Mishpatim', hebrewName: 'משפטים' },
-  { name: 'Terumah', hebrewName: 'תרומה' },
-  { name: 'Tetzaveh', hebrewName: 'תצוה' },
-  { name: 'Ki Tisa', hebrewName: 'כי תשא' },
-  { name: 'Vayakhel', hebrewName: 'ויקהל' },
-  { name: 'Pekudei', hebrewName: 'פקודי' },
-  // Leviticus
-  { name: 'Vayikra', hebrewName: 'ויקרא' },
-  { name: 'Tzav', hebrewName: 'צו' },
-  { name: 'Shmini', hebrewName: 'שמיני' },
-  { name: 'Tazria', hebrewName: 'תזריע' },
-  { name: 'Metzora', hebrewName: 'מצורע' },
-  { name: 'Achrei Mot', hebrewName: 'אחרי מות' },
-  { name: 'Kedoshim', hebrewName: 'קדושים' },
-  { name: 'Emor', hebrewName: 'אמור' },
-  { name: 'Behar', hebrewName: 'בהר' },
-  { name: 'Bechukotai', hebrewName: 'בחוקתי' },
-  // Numbers
-  { name: 'Bamidbar', hebrewName: 'במדבר' },
-  { name: 'Nasso', hebrewName: 'נשא' },
-  { name: "Beha'alotcha", hebrewName: 'בהעלותך' },
-  { name: "Sh'lach", hebrewName: 'שלח' },
-  { name: 'Korach', hebrewName: 'קרח' },
-  { name: 'Chukat', hebrewName: 'חקת' },
-  { name: 'Balak', hebrewName: 'בלק' },
-  { name: 'Pinchas', hebrewName: 'פנחס' },
-  { name: 'Matot', hebrewName: 'מטות' },
-  { name: 'Masei', hebrewName: 'מסעי' },
-  // Deuteronomy
-  { name: 'Devarim', hebrewName: 'דברים' },
-  { name: 'Vaetchanan', hebrewName: 'ואתחנן' },
-  { name: 'Eikev', hebrewName: 'עקב' },
-  { name: "Re'eh", hebrewName: 'ראה' },
-  { name: 'Shoftim', hebrewName: 'שופטים' },
-  { name: 'Ki Teitzei', hebrewName: 'כי תצא' },
-  { name: 'Ki Tavo', hebrewName: 'כי תבוא' },
-  { name: 'Nitzavim', hebrewName: 'נצבים' },
-  { name: 'Vayeilech', hebrewName: 'וילך' },
-  { hebcal: "Ha'azinu", name: "Ha'Azinu", hebrewName: 'האזינו' },
-  { hebcal: 'Vezot Haberakhah', name: "V'Zot HaBerachah", hebrewName: 'וזאת הברכה' },
+interface ReadingName {
+  name: string;
+  hebrewName: string;
+  hebcal?: string;
+  category?: SpecialOccasion['category'];
+  /** Why this row's hebcal key is not the obvious one. Read by people, not code. */
+  note?: string;
+}
+
+const CATEGORIES: ReadonlyArray<SpecialOccasion['category']> = [
+  'rosh-chodesh',
+  'four-shabbatot',
+  'high-holidays',
+  'sukkot',
+  'pesach',
+  'shavuot',
+  'fast-days',
+  'other',
 ];
 
 /**
- * The occasions outside the weekly cycle that have a haftarah of their own,
- * tied to their key in hebcal's holiday table.
- *
- * hebcal keys some occasions by the calendar accident that produces them, so a
- * few need explanation. It lists a separate entry for a festival day that
- * falls on Shabbat, but those name the same haftarah, so the plain key is
- * taken. It keys Chanukah by which of the eight days lands on Shabbat: days
- * one through seven all read Zechariah, so day one stands for the first
- * Shabbat of the festival, and the second Shabbat can only be day eight. It
- * has no separate entry for the afternoon of the Ninth of Av, which therefore
- * shares the general fast-day afternoon reading.
+ * Reads the names file, complaining about anything the generator would
+ * otherwise turn into a silently wrong entry — a blank label, a category that
+ * does not exist, an occasion with no hebcal key to look up.
  */
-const OCCASIONS: Array<{
-  hebcal: string;
-  name: string;
-  hebrewName: string;
-  category: SpecialOccasion['category'];
-}> = [
-  {
-    hebcal: 'Rosh Hashana I',
-    name: 'Rosh Hashanah, Day 1',
-    hebrewName: 'ראש השנה יום א׳',
-    category: 'high-holidays',
-  },
-  {
-    hebcal: 'Rosh Hashana II',
-    name: 'Rosh Hashanah, Day 2',
-    hebrewName: 'ראש השנה יום ב׳',
-    category: 'high-holidays',
-  },
-  {
-    hebcal: 'Shabbat Shuva',
-    name: 'Shabbat Shuvah',
-    hebrewName: 'שבת שובה',
-    category: 'high-holidays',
-  },
-  {
-    hebcal: 'Yom Kippur',
-    name: 'Yom Kippur, Morning',
-    hebrewName: 'יום כיפור שחרית',
-    category: 'high-holidays',
-  },
-  {
-    hebcal: 'Yom Kippur (Mincha, Traditional)',
-    name: 'Yom Kippur, Afternoon',
-    hebrewName: 'יום כיפור מנחה',
-    category: 'high-holidays',
-  },
-  { hebcal: 'Sukkot I', name: 'Sukkot, Day 1', hebrewName: 'סוכות יום א׳', category: 'sukkot' },
-  { hebcal: 'Sukkot II', name: 'Sukkot, Day 2', hebrewName: 'סוכות יום ב׳', category: 'sukkot' },
-  {
-    hebcal: 'Sukkot Shabbat Chol ha-Moed',
-    name: 'Sukkot, Intermediate Sabbath',
-    hebrewName: 'שבת חול המועד סוכות',
-    category: 'sukkot',
-  },
-  {
-    hebcal: 'Shmini Atzeret',
-    name: 'Shemini Atzeret',
-    hebrewName: 'שמיני עצרת',
-    category: 'sukkot',
-  },
-  { hebcal: 'Simchat Torah', name: 'Simchat Torah', hebrewName: 'שמחת תורה', category: 'sukkot' },
-  {
-    hebcal: 'Chanukah Day 1 (on Shabbat)',
-    name: 'Chanukkah, First Sabbath',
-    hebrewName: 'שבת חנוכה א׳',
-    category: 'other',
-  },
-  {
-    hebcal: 'Chanukah Day 8 (on Shabbat)',
-    name: 'Chanukkah, Second Sabbath',
-    hebrewName: 'שבת חנוכה ב׳',
-    category: 'other',
-  },
-  {
-    hebcal: 'Shabbat Shekalim',
-    name: 'Sheqalim',
-    hebrewName: 'שבת שקלים',
-    category: 'four-shabbatot',
-  },
-  { hebcal: 'Shabbat Zachor', name: 'Zakhor', hebrewName: 'שבת זכור', category: 'four-shabbatot' },
-  { hebcal: 'Shabbat Parah', name: 'Parah', hebrewName: 'שבת פרה', category: 'four-shabbatot' },
-  {
-    hebcal: 'Shabbat HaChodesh',
-    name: 'Ha-Chodesh',
-    hebrewName: 'שבת החודש',
-    category: 'four-shabbatot',
-  },
-  {
-    hebcal: 'Shabbat HaGadol',
-    name: 'Shabbat Ha-Gadol',
-    hebrewName: 'שבת הגדול',
-    category: 'other',
-  },
-  { hebcal: 'Pesach I', name: 'Passover, Day 1', hebrewName: 'פסח יום א׳', category: 'pesach' },
-  { hebcal: 'Pesach II', name: 'Passover, Day 2', hebrewName: 'פסח יום ב׳', category: 'pesach' },
-  {
-    hebcal: 'Pesach Shabbat Chol ha-Moed',
-    name: 'Passover, Intermediate Sabbath',
-    hebrewName: 'שבת חול המועד פסח',
-    category: 'pesach',
-  },
-  { hebcal: 'Pesach VII', name: 'Passover, Day 7', hebrewName: 'פסח יום ז׳', category: 'pesach' },
-  { hebcal: 'Pesach VIII', name: 'Passover, Day 8', hebrewName: 'פסח יום ח׳', category: 'pesach' },
-  {
-    hebcal: 'Shavuot I',
-    name: "Shavu'ot, Day 1",
-    hebrewName: 'שבועות יום א׳',
-    category: 'shavuot',
-  },
-  {
-    hebcal: 'Shavuot II',
-    name: "Shavu'ot, Day 2",
-    hebrewName: 'שבועות יום ב׳',
-    category: 'shavuot',
-  },
-  {
-    hebcal: "Tish'a B'Av",
-    name: "Tisha B'Av, Morning",
-    hebrewName: 'תשעה באב שחרית',
-    category: 'fast-days',
-  },
-  {
-    hebcal: 'Fast Day (Afternoon)',
-    name: "Tisha B'Av, Afternoon",
-    hebrewName: 'תשעה באב מנחה',
-    category: 'fast-days',
-  },
-  {
-    hebcal: 'Fast Day (Afternoon)',
-    name: 'Minor Fasts, Afternoon',
-    hebrewName: 'צום קל מנחה',
-    category: 'fast-days',
-  },
-  {
-    hebcal: 'Shabbat Machar Chodesh',
-    name: 'Shabbat on Eve of Rosh Chodesh',
-    hebrewName: 'שבת מחר חודש',
-    category: 'rosh-chodesh',
-  },
-  {
-    hebcal: 'Shabbat Rosh Chodesh',
-    name: 'Shabbat Rosh Chodesh',
-    hebrewName: 'שבת ראש חודש',
-    category: 'rosh-chodesh',
-  },
-];
+function checkNames(rows: ReadingName[], kind: 'portion' | 'occasion'): ReadingName[] {
+  if (rows.length === 0) {
+    throw new Error(`data/haftarah-names.json lists no ${kind}s`);
+  }
+
+  rows.forEach((row, i) => {
+    const where = `${kind} ${i + 1} (${row.name ?? 'unnamed'})`;
+    if (!row.name?.trim()) throw new Error(`${where}: no name`);
+    if (!row.hebrewName?.trim()) throw new Error(`${where}: no Hebrew name`);
+
+    if (kind === 'occasion') {
+      if (!row.hebcal?.trim()) throw new Error(`${where}: no hebcal key`);
+      if (!row.category) throw new Error(`${where}: no category`);
+      if (!CATEGORIES.includes(row.category)) {
+        throw new Error(
+          `${where}: category "${row.category}" is not one of ${CATEGORIES.join(', ')}`,
+        );
+      }
+    }
+  });
+
+  const duplicated = rows.map((r) => r.name).filter((n, i, all) => all.indexOf(n) !== i);
+  if (duplicated.length > 0) {
+    throw new Error(
+      `data/haftarah-names.json names the same ${kind} twice: ${duplicated.join(', ')}`,
+    );
+  }
+
+  return rows;
+}
 
 /** Turns hebcal's "42:5" into a chapter and verse. */
 function parseRef(ref: string, context: string): VerseRef {
@@ -424,6 +277,11 @@ async function main() {
     '../data/hebcal/holiday-readings.json',
   );
   const structure = await readJson<TanakhStructure>('../public/data/tanakh-structure.json');
+  const names = await readJson<{ parshiot: ReadingName[]; occasions: ReadingName[] }>(
+    '../data/haftarah-names.json',
+  );
+  const parshaNames = checkNames(names.parshiot, 'portion');
+  const occasionNames = checkNames(names.occasions, 'occasion');
 
   const errors: string[] = [];
   const check = (ranges: VerseRange[], context: string) => {
@@ -438,7 +296,7 @@ async function main() {
 
   console.log('=== PARSHIOT ===\n');
 
-  const parshiot: Parsha[] = PARSHIOT.map(({ hebcal, name, hebrewName }) => {
+  const parshiot: Parsha[] = parshaNames.map(({ hebcal, name, hebrewName }) => {
     const key = hebcal ?? name;
     const entry = aliyot[key];
     if (!entry) {
@@ -464,14 +322,16 @@ async function main() {
 
   console.log('\n=== SPECIAL OCCASIONS ===\n');
 
-  const specialOccasions: SpecialOccasion[] = OCCASIONS.map(
+  const specialOccasions: SpecialOccasion[] = occasionNames.map(
     ({ hebcal, name, hebrewName, category }) => {
-      const entry = holidays[hebcal];
+      // checkNames has already refused an occasion missing either of these.
+      const key = hebcal!;
+      const entry = holidays[key];
       if (!entry) {
-        throw new Error(`hebcal has no occasion named "${hebcal}" (for ${name})`);
+        throw new Error(`hebcal has no occasion named "${key}" (for ${name})`);
       }
       if (!entry.haft) {
-        throw new Error(`hebcal records no haftarah for "${hebcal}"`);
+        throw new Error(`hebcal records no haftarah for "${key}"`);
       }
 
       const haftarah = readBothCustoms(entry, name);
@@ -485,7 +345,7 @@ async function main() {
         console.log(`  Sephardi:  ${describe(haftarah.sephardi)}`);
       }
 
-      return { name, hebrewName, category, haftarah };
+      return { name, hebrewName, category: category!, haftarah };
     },
   );
 

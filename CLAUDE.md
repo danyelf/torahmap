@@ -194,6 +194,7 @@ ignored: large, generated, and not ours to reformat.
 ├── data/                     # Sources and downloads, not shipped. Same shape.
 │   ├── texts/                    # Hebrew & English verse texts (78 files)
 │   ├── hebcal/                   # Leyning tables from hebcal (see its README)
+│   ├── haftarah-names.json       # What each reading is called, and its hebcal key
 │   └── overlays/
 │       └── commentary/           # Gitignored; see DATA_REGENERATION.md
 │           ├── sefaria-links/    # The links export, ~650MB of CSV

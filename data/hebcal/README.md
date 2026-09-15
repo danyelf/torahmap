@@ -49,7 +49,8 @@ end of the seventh.
 
 Hebcal keys some occasions by the calendar accident that produces them —
 `"Chanukah Day 4 (on Shabbat)"`, `"Shabbat Shekalim (on Rosh Chodesh)"`. Which
-of those keys we take, and why, is set out in `OCCASIONS` in the generator.
+of those keys we take is recorded in `../haftarah-names.json`, and the rows
+whose choice is not obvious carry a `note` saying why.
 
 ## Refreshing them
 
