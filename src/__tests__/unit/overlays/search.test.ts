@@ -24,6 +24,10 @@ describe('Search Overlay', () => {
     // Reset mocks
     vi.clearAllMocks();
 
+    // The search is a list of terms that survives an overlay switch, so it also
+    // survives from one test to the next. Clear it the way the app would.
+    applyOverlayParams(searchOverlay, { q: '' });
+
     // Setup test verses
     testVerses = [
       createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
@@ -637,20 +641,21 @@ describe('Search Overlay', () => {
       expect(input.dir).toBe('ltr');
     });
 
-    it('shows the Hebrew options only when the search will take the Hebrew path', () => {
+    it('shows both sets of options when the search mixes languages', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       const hebrewModes = container.querySelector('#hebrew-mode-container') as HTMLElement;
 
-      // Terms split on commas, and the search picks its path from the first
-      // term, so a leading English term means an English search even though
-      // there is Hebrew later in the box.
+      // A mixed search shows both sets of options, because each one acts on
+      // the terms it can act on. Which term comes first decides nothing.
       input.value = 'god, אלהים';
       input.dispatchEvent(new Event('input', { bubbles: true }));
 
-      expect(hebrewModes.style.display).toBe('none');
+      const englishOptions = container.querySelector('#search-options') as HTMLElement;
+      expect(hebrewModes.style.display).toBe('block');
+      expect(englishOptions.style.display).toBe('block');
     });
 
     it('turns right to left on the very first Hebrew letter typed', () => {
@@ -698,7 +703,7 @@ describe('Search Overlay', () => {
       expect(hitCaption.innerHTML).toContain('Type to search');
     });
 
-    it('renders term indicators when search is active', () => {
+    it('names the searched word on its own row, not in the caption', () => {
       const controlsContainer = document.createElement('div');
       searchOverlay.renderControls?.(controlsContainer);
 
@@ -706,22 +711,26 @@ describe('Search Overlay', () => {
       input.value = 'God';
       input.dispatchEvent(new Event('input'));
 
-      const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
-      expect(hitCaption.innerHTML).toContain('"God"');
+      const rows = [...controlsContainer.querySelectorAll('.term-row .term-input')];
+      expect(rows.map((r) => (r as HTMLInputElement).value)).toEqual(['God']);
     });
 
-    it('renders multiple terms with color swatches', () => {
+    it('gives each term its own row, swatch and count', () => {
       const controlsContainer = document.createElement('div');
       searchOverlay.renderControls?.(controlsContainer);
 
       const input = controlsContainer.querySelector('#search-input') as HTMLInputElement;
+      // A comma still means another word, but it now makes a second row.
       input.value = 'God, earth';
       input.dispatchEvent(new Event('input'));
 
-      const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
-      expect(hitCaption.innerHTML).toContain('"God"');
-      expect(hitCaption.innerHTML).toContain('"earth"');
-      expect(hitCaption.innerHTML).toContain('color-swatch');
+      const rows = [...controlsContainer.querySelectorAll('.term-row')];
+      expect(rows.map((r) => (r.querySelector('.term-input') as HTMLInputElement).value)).toEqual([
+        'God',
+        'earth',
+      ]);
+      expect(rows.every((r) => r.querySelector('.term-swatch'))).toBe(true);
+      expect(rows.map((r) => r.querySelector('.term-count')?.textContent)).not.toContain('');
     });
 
     it('displays result count', () => {

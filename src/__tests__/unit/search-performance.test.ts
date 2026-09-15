@@ -4,6 +4,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { search, buildSearchIndex } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 import { seededRandom } from '../../utils/random';
+import { searchInRootMode } from '../helpers/rootSearch';
 
 describe('Search Performance', () => {
   // Use beforeAll — building a 23k-verse index once is enough,
@@ -41,7 +42,7 @@ describe('Search Performance', () => {
 
     // Warmup: JIT-compile the search path before measuring
     search('אלהים', false, 'substring');
-    search('אלהים', false, 'root');
+    searchInRootMode('אלהים');
   });
 
   it('substring mode should complete in under 200ms for common word', () => {
@@ -64,7 +65,7 @@ describe('Search Performance', () => {
 
   it('root mode should complete in under 200ms for common word', () => {
     const start = performance.now();
-    const results = search('אלהים', false, 'root');
+    const results = searchInRootMode('אלהים');
     const duration = performance.now() - start;
 
     expect(results.length).toBeGreaterThan(0);
@@ -73,7 +74,7 @@ describe('Search Performance', () => {
 
   it('multiple search terms in root mode should complete in under 200ms', () => {
     const start = performance.now();
-    const results = search('אלהים, יהוה', false, 'root');
+    const results = searchInRootMode('אלהים, יהוה');
     const duration = performance.now() - start;
 
     expect(results.length).toBeGreaterThan(0);

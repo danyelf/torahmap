@@ -1,13 +1,33 @@
 /* Search Overlay Styles */
 
-#search-container {
-  position: relative;
-  margin-bottom: 12px;
+/* A search is a list of terms. Each gets a row: its colour, its box, how many
+   verses it accounts for, and a way to remove it. */
+
+#search-terms {
+  margin-bottom: 8px;
 }
 
-#search-input {
-  width: 100%;
-  padding: 8px 32px 8px 10px;
+.term-row {
+  margin-bottom: 10px;
+}
+
+.term-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.term-swatch {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.term-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 9px;
   border-radius: 4px;
   border: 1px solid #444;
   background: #222;
@@ -15,31 +35,167 @@
   font-size: 14px;
 }
 
-#search-input::placeholder {
+.term-input::placeholder {
   color: #666;
 }
 
-#search-input:focus {
+.term-input:focus {
   outline: none;
   border-color: #6ab0f3;
 }
 
-#search-clear {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
+.term-count {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+  text-align: right;
+}
+
+.term-remove {
+  flex: 0 0 auto;
   background: none;
   border: none;
   color: #666;
   font-size: 16px;
+  line-height: 1;
   cursor: pointer;
-  display: none;
-  padding: 2px 6px;
+  padding: 2px 4px;
 }
 
-#search-clear:hover {
+.term-remove:hover {
   color: #fff;
+}
+
+/* The meanings of one term. Absent for the 88% of words that mean one thing. */
+.term-meanings {
+  margin: 6px 0 0 16px;
+  border-left: 1px solid #333;
+  padding-left: 10px;
+}
+
+.meaning-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 12px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.meaning-row input {
+  cursor: pointer;
+  margin: 0;
+}
+
+.meaning-row input {
+  accent-color: #6ab0f3;
+}
+
+/* The only meaning left checked: still plainly on, but not turn-off-able. */
+.meaning-row.locked input {
+  pointer-events: none;
+}
+
+.meaning-row.locked {
+  cursor: default;
+}
+
+/* The pointed Hebrew reads right to left inside a left-to-right row. */
+.meaning-form {
+  direction: rtl;
+  unicode-bidi: isolate;
+  font-size: 14px;
+  color: #fff;
+  min-width: 56px;
+}
+
+.meaning-tag {
+  color: #777;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.meaning-gloss {
+  flex: 1 1 auto;
+  color: #bbb;
+}
+
+/* "Show only this one". Quiet until wanted, but never hover-only: it stays
+   reachable by keyboard, and on touch, where there is no hover at all. */
+.meaning-only {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  padding: 0 4px;
+  font: inherit;
+  font-size: 11px;
+  color: #6ab0f3;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.meaning-row:hover .meaning-only,
+.meaning-row:focus-within .meaning-only,
+.meaning-only:focus {
+  opacity: 1;
+}
+
+.meaning-only:hover {
+  text-decoration: underline;
+}
+
+@media (hover: none) {
+  .meaning-only {
+    opacity: 1;
+  }
+}
+
+/* Undo a narrowing. Hidden until there is something to undo. */
+.term-all {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font: inherit;
+  font-size: 11px;
+  color: #6ab0f3;
+  cursor: pointer;
+}
+
+.term-all:hover {
+  text-decoration: underline;
+}
+
+.meaning-count {
+  color: #888;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#add-term {
+  background: none;
+  border: 1px dashed #444;
+  border-radius: 4px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 5px 10px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+#add-term:hover:not(:disabled) {
+  color: #fff;
+  border-color: #666;
+}
+
+#add-term:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 #search-results {
@@ -129,35 +285,6 @@
 .search-result .snippet mark.term-4 {
   background: rgba(255, 255, 51, 0.4);
   color: #000;
-}
-
-.search-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 11px;
-}
-
-.legend-term {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #ccc;
-}
-
-.color-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-}
-
-.lexeme-indicator {
-  font-size: 11px;
-  font-weight: bold;
-  cursor: help;
-  padding: 0 2px;
-  display: inline-block;
 }
 
 /* Sidebar search term highlighting */

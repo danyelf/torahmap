@@ -191,7 +191,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(values).toContain('root');
     });
 
-    it('defaults to substring mode', () => {
+    it('defaults to root mode, where the meaning filter lives', () => {
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
@@ -204,7 +204,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       const checkedButton = Array.from(radioButtons).find((r) => r.checked);
 
       expect(checkedButton).toBeDefined();
-      expect(checkedButton?.value).toBe('substring');
+      expect(checkedButton?.value).toBe('root');
     });
   });
 
@@ -359,17 +359,25 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(params!.hm).toBe('word');
     });
 
-    it('getUrlParams includes Hebrew mode for root search', () => {
+    it('getUrlParams leaves out the mode when it is the default', () => {
       searchOverlay.renderControls?.(container);
 
-      // Set mode via applyUrlParams (directly sets hebrewSearchMode)
       applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=root'));
 
       const params = searchOverlay.getUrlParams?.();
 
       expect(params).toBeDefined();
       expect(params!.q).toBe('אברהם');
-      expect(params!.hm).toBe('root');
+      // Root is the default now, so it is substring and word that need saying.
+      expect(params!.hm).toBeUndefined();
+    });
+
+    it('getUrlParams names the mode when it is not the default', () => {
+      searchOverlay.renderControls?.(container);
+
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=substring'));
+
+      expect(searchOverlay.getUrlParams?.().hm).toBe('substring');
     });
 
     it('getUrlParams does NOT include mode for substring (default)', () => {
@@ -422,41 +430,40 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(color).not.toBeNull();
     });
 
-    it('applyUrlParams restores Hebrew root mode', () => {
+    it('applyUrlParams restores a mode that is not the default', () => {
       searchOverlay.renderControls?.(container);
 
-      const urlParams = new URLSearchParams('q=אברהם&hm=root');
-      applyOverlayParams(searchOverlay, urlParams);
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
 
-      // Verify mode was set via getUrlParams
-      const params = searchOverlay.getUrlParams?.();
-      expect(params!.hm).toBe('root');
+      const wordRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="word"]',
+      );
+      expect(wordRadio?.checked).toBe(true);
     });
 
-    it('applyUrlParams defaults to substring when mode not specified', () => {
+    it('applyUrlParams falls back to root when no mode is given', () => {
       searchOverlay.renderControls?.(container);
 
-      const urlParams = new URLSearchParams('q=אברהם');
-      applyOverlayParams(searchOverlay, urlParams);
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם'));
 
-      // Check that substring mode is selected (default)
-      const substringRadio = container.querySelector<HTMLInputElement>(
-        'input[name="hebrew-mode"][value="substring"]',
+      // An absent parameter means whatever the default currently is, so links
+      // written before the default changed now paint as root. That is the
+      // decision recorded in 2026-09-14-search-meaning-filter-design.md.
+      const rootRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="root"]',
       );
-      expect(substringRadio?.checked).toBe(true);
+      expect(rootRadio?.checked).toBe(true);
     });
 
-    it('applyUrlParams ignores invalid Hebrew mode', () => {
+    it('applyUrlParams ignores an unknown mode', () => {
       searchOverlay.renderControls?.(container);
 
-      const urlParams = new URLSearchParams('q=אברהם&hm=invalid');
-      applyOverlayParams(searchOverlay, urlParams);
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=invalid'));
 
-      // Should default to substring mode
-      const substringRadio = container.querySelector<HTMLInputElement>(
-        'input[name="hebrew-mode"][value="substring"]',
+      const rootRadio = container.querySelector<HTMLInputElement>(
+        'input[name="hebrew-mode"][value="root"]',
       );
-      expect(substringRadio?.checked).toBe(true);
+      expect(rootRadio?.checked).toBe(true);
     });
 
     it('round-trips URL state correctly', () => {
