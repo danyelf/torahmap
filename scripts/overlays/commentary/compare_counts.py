@@ -5,7 +5,7 @@ Compare two commentary counts files and report what moved.
 Run this after regenerating the counts, passing the previous version, to see
 whether a refresh was worth it and where the links actually grew:
 
-    python3 scripts/compare_commentary_counts.py old.json [new.json]
+    python3 scripts/overlays/commentary/compare_counts.py old.json [new.json]
 
 `new.json` defaults to the file currently in public/data/.
 """
@@ -64,7 +64,7 @@ def main() -> int:
         print(__doc__.strip())
         return 1
 
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).resolve().parents[3]
     old_path = Path(sys.argv[1])
     new_path = (
         Path(sys.argv[2])

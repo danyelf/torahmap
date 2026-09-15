@@ -3,7 +3,7 @@
 Process Sefaria links data to count commentary per Tanakh verse by category.
 
 Reads two things, both under data/overlays/commentary/ and both downloaded by
-scripts/refresh-commentary-counts.sh: the links export in sefaria-links/, and
+scripts/overlays/commentary/refresh.sh: the links export in sefaria-links/, and
 Sefaria's index of the library in sefaria-index.json.
 
 - resolve_shelf() asks the index what a work actually is, because the export's
@@ -94,7 +94,8 @@ _shelves: dict[str, str] | None = None
 
 # Everything this overlay downloads or produces lives under its own name, so
 # that one overlay's data is one directory.
-PROJECT_ROOT = Path(__file__).parent.parent
+# scripts/overlays/commentary/ -> the repository root is three levels up.
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 COMMENTARY_DATA = PROJECT_ROOT / "data" / "overlays" / "commentary"
 COMMENTARY_COUNTS = PROJECT_ROOT / "public" / "data" / "overlays" / "commentary" / "counts.json"
 
@@ -162,7 +163,7 @@ def parse_verse_refs(citation: str) -> list[tuple[str, int, int]]:
 def shelves() -> dict[str, str]:
     """Every text in Sefaria's library, mapped to what kind of text it is.
 
-    Read from sefaria-index.json, which refresh-commentary-counts.sh downloads
+    Read from sefaria-index.json, which refresh.sh downloads
     alongside the links. The value is Sefaria's own primary_category:
     "Commentary", "Targum", "Talmud", "Mishnah", "Midrash" and so on.
     """
@@ -174,7 +175,7 @@ def shelves() -> dict[str, str]:
                 f"ERROR: Sefaria's library index is not at {path}.\n"
                 "It says which texts are commentaries, which the links export\n"
                 "does not. Download it with:\n"
-                "  scripts/refresh-commentary-counts.sh"
+                "  scripts/overlays/commentary/refresh.sh"
             )
         found: dict[str, str] = {}
 
@@ -204,7 +205,7 @@ def shelves() -> dict[str, str]:
                 f"ERROR: {path} does not look like Sefaria's library index.\n"
                 f"Found {len(found)} titles; expected several thousand, with\n"
                 "'Rashi on Genesis' among them. Download it again with:\n"
-                "  scripts/refresh-commentary-counts.sh"
+                "  scripts/overlays/commentary/refresh.sh"
             )
         _shelves = found
     return _shelves
@@ -384,7 +385,7 @@ def main():
     if not links_dir.exists():
         print(f"ERROR: Links directory not found: {links_dir}")
         print("Download the export first:")
-        print("  scripts/refresh-commentary-counts.sh")
+        print("  scripts/overlays/commentary/refresh.sh")
         return
 
     # Process all CSV files

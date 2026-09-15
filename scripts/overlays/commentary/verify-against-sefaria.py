@@ -2,7 +2,7 @@
 """
 Check regenerated commentary counts against Sefaria's live site.
 
-    python3 scripts/verify-against-sefaria.py
+    python3 scripts/overlays/commentary/verify-against-sefaria.py
 
 Run this after a refresh. It is the check that catches a bad refresh, and it
 catches a specific failure this project has already hit once: downloading only
@@ -76,7 +76,7 @@ def live_counts(book: str, chapter: int, verse: int) -> dict[str, int]:
 
 
 def main() -> int:
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).resolve().parents[3]
     counts_path = (
         Path(sys.argv[1]) if len(sys.argv) > 1
         else project_root / "public" / "data" / "overlays" / "commentary" / "counts.json"
@@ -154,7 +154,7 @@ def main() -> int:
         for label, d in adrift:
             print(f"  {label:<22} {d:+.0f}%")
         print("If several of these share a part of the library, suspect the\n"
-              "download before the data: scripts/refresh-commentary-counts.sh")
+              "download before the data: scripts/overlays/commentary/refresh.sh")
     return 0
 
 

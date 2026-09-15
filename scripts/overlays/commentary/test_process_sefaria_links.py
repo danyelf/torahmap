@@ -2,7 +2,7 @@
 """
 Tests for how citations are turned into verses.
 
-Run with:  python3 -m pytest scripts/test_process_sefaria_links.py
+Run with:  python3 -m pytest scripts/overlays/commentary/test_process_sefaria_links.py
 
 The interesting cases are all about ranges. A citation can name one verse
 ("Genesis 1:2"), a short passage ("Deuteronomy 6:4-9"), or an entire weekly

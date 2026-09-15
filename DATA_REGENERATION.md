@@ -108,7 +108,7 @@ if you actually revisit the article.
 ### Refreshing
 
 ```bash
-scripts/refresh-commentary-counts.sh
+scripts/overlays/commentary/refresh.sh
 ```
 
 That is the whole procedure. Everything this overlay downloads lives under
@@ -149,7 +149,7 @@ the files by hand, count them first.
 ### Checking the result is sane
 
 ```bash
-python3 scripts/verify-against-sefaria.py
+python3 scripts/overlays/commentary/verify-against-sefaria.py
 ```
 
 This samples twenty-six verses across Torah, Nevi'im and Ketuvim and compares
@@ -181,7 +181,7 @@ Avot. Reading each text's category out of Sefaria's index closed it.
 
 ### What the generator does
 
-Two functions in `scripts/process_sefaria_links.py` carry all the judgement.
+Two functions in `scripts/overlays/commentary/process_sefaria_links.py` carry all the judgement.
 Read them before changing anything here.
 
 **`resolve_shelf()` asks what a text actually is.** The links export labels

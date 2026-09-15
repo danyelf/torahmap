@@ -195,12 +195,19 @@ ignored: large, generated, and not ours to reformat.
 │           ├── sefaria-links/    # The links export, ~650MB of CSV
 │           └── sefaria-index.json # What kind of text each work in the library is
 │
-├── scripts/
+├── scripts/                  # Shared tooling at the top, one directory per
+│   │                         # overlay for what only it needs.
 │   ├── bundle-texts.ts               # Bundle all verse texts into one file
 │   ├── download-texts.sh             # Download texts from Sefaria
 │   ├── fetch-tanakh-structure.js     # Generate structure JSON from API
 │   ├── generate-text-dating.ts       # Generate text dating data from source ranges
-│   ├── process_sefaria_links.py      # Generate commentary counts
+│   ├── overlays/
+│   │   └── commentary/
+│   │       ├── refresh.sh            # The whole procedure: download, count, report
+│   │       ├── process_sefaria_links.py     # Turn the links export into counts
+│   │       ├── test_process_sefaria_links.py
+│   │       ├── verify-against-sefaria.py    # Compare the counts to the live site
+│   │       └── compare_counts.py            # Say what a refresh changed
 │   └── search/
 │       └── generate-lexeme-index.py  # Build the Hebrew lexeme index from ETCBC BHSA
 │

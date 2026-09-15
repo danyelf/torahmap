@@ -7,15 +7,15 @@
 # of each month, so there is no point running this more often than monthly.
 #
 # Usage:
-#   scripts/refresh-commentary-counts.sh            # refresh
-#   scripts/refresh-commentary-counts.sh --force    # re-download everything
+#   scripts/overlays/commentary/refresh.sh            # refresh
+#   scripts/overlays/commentary/refresh.sh --force    # re-download everything
 #
 set -euo pipefail
 
 BUCKET="https://storage.googleapis.com/sefaria-export/links"
 INDEX_URL="https://www.sefaria.org/api/index/"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 LINKS_DIR="$PROJECT_ROOT/data/overlays/commentary/sefaria-links"
 INDEX="$PROJECT_ROOT/data/overlays/commentary/sefaria-index.json"
 COUNTS="$PROJECT_ROOT/public/data/overlays/commentary/counts.json"
@@ -108,7 +108,7 @@ if [[ -n "$previous" ]]; then
   echo "=============================================================="
   echo "What changed"
   echo "=============================================================="
-  python3 "$SCRIPT_DIR/compare_commentary_counts.py" "$previous" "$COUNTS"
+  python3 "$SCRIPT_DIR/compare_counts.py" "$previous" "$COUNTS"
   rm -f "$previous"
 fi
 
