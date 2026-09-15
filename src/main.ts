@@ -5,7 +5,9 @@ declare const __GIT_BRANCH__: string;
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { buildSearchIndex, loadLexiconData } from './search.ts';
+import { buildSearchIndex, loadLexiconData, normalizeHebrewForSearch } from './search.ts';
+import { meaningsInVerse, meaningsFor } from './search/dictionary.ts';
+import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
 import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
@@ -19,7 +21,7 @@ import {
   type UrlState,
 } from './urlState.ts';
 import { debounce } from './utils/debounce.ts';
-import { getSidebarElements, updateSidebar } from './sidebar.ts';
+import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import {
   createMouseState,
@@ -36,7 +38,7 @@ import {
   getPinchCenter,
   resetTouchState,
 } from './touchState.ts';
-import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem } from './types.ts';
+import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem, tanakhKey } from './types.ts';
 import { findItemAtPoint } from './hitDetection.ts';
 import { computeItemStates, applyItemColors } from './itemColoring.ts';
 import {
@@ -57,6 +59,7 @@ import {
   configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
+import { searchForMeaning, canAddTerm } from './overlays/search.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -674,6 +677,49 @@ async function main(): Promise<void> {
       saveUrlState(true);
     }
   }
+
+  // Clicking a word in the verse popup.
+  //
+  // The panel is what makes this safe: switching to search destroys whichever
+  // overlay is showing, and a click on a word is too ordinary a gesture to be
+  // allowed to do that on its own.
+  setWordClickHandler((click) => {
+    // Sefaria writes some words as parenthesised alternates, such as (לא) or
+    // (אנתה). The parentheses are part of the displayed text but not part of
+    // the word, and the dictionary has no key with brackets in it - so they
+    // come off before lookup, while the panel keeps showing the word as it
+    // appears in the verse.
+    let lookupText = click.text;
+    if (lookupText.startsWith('(') && lookupText.endsWith(')')) {
+      lookupText = lookupText.slice(1, -1);
+    }
+
+    const word = normalizeHebrewForSearch(lookupText);
+    const meanings = meaningsInVerse(word, tanakhKey(click.book, click.chapter, click.verse));
+    const otherReadings = meaningsFor(word);
+
+    openWordMenu({
+      word: click.text,
+      meanings,
+      otherReadings,
+      anchor: click.element,
+      replacesOverlay:
+        currentOverlay && currentOverlay.id !== 'search' ? currentOverlay.name : null,
+      paletteFull: !canAddTerm(),
+      onChoose: (meaning) => {
+        if (currentOverlayId !== 'search') {
+          setOverlay('search');
+          if (overlaySelect) overlaySelect.value = 'search';
+        }
+
+        if (!searchForMeaning(word, meaning?.keys[0] ?? null)) return;
+
+        applyOverlay();
+        render();
+        saveUrlState(true);
+      },
+    });
+  });
 
   // Overlay selector
   overlaySelect?.addEventListener('change', () => {
