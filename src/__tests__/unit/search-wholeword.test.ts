@@ -54,7 +54,7 @@ describe('Whole Word Search', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should match both "heavens" (Gen 1:1) and "heavens" (Gen 2:1)
-      const genesisMatches = results.filter(r => r.book === 'Genesis');
+      const genesisMatches = results.filter((r) => r.book === 'Genesis');
       expect(genesisMatches.length).toBe(2);
     });
 
@@ -70,7 +70,7 @@ describe('Whole Word Search', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Should match "heavens" in Gen 1:1 and Gen 2:1
-      const genesisMatches = results.filter(r => r.book === 'Genesis');
+      const genesisMatches = results.filter((r) => r.book === 'Genesis');
       expect(genesisMatches.length).toBe(2);
     });
 
@@ -99,7 +99,7 @@ describe('Whole Word Search', () => {
       const results = search('God', true);
 
       // Should match "God" even when followed by punctuation
-      const matches = results.filter(r => r.book === 'Genesis');
+      const matches = results.filter((r) => r.book === 'Genesis');
       expect(matches.length).toBeGreaterThan(0);
     });
 
@@ -116,15 +116,15 @@ describe('Whole Word Search', () => {
     it('substring vs whole-word: clear difference with "ear" (earth vs ear)', () => {
       // Substring should find "earth" (contains "ear")
       const substringResults = search('ear', false);
-      const earthMatches = substringResults.filter(r =>
-        r.book === 'Genesis' && r.chapter === 1 && r.verse === 2
+      const earthMatches = substringResults.filter(
+        (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2,
       );
       expect(earthMatches.length).toBe(1); // "earth" contains "ear"
 
       // Whole-word should NOT find "earth" when searching for "ear"
       const wholeWordResults = search('ear', true);
-      const earthMatchesWW = wholeWordResults.filter(r =>
-        r.book === 'Genesis' && r.chapter === 1 && r.verse === 2
+      const earthMatchesWW = wholeWordResults.filter(
+        (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2,
       );
       expect(earthMatchesWW.length).toBe(0); // "earth" is not "ear"
     });
@@ -193,7 +193,7 @@ describe('searchHebrewWholeWord()', () => {
     expect(results.length).toBe(2);
 
     // Check that both Genesis 1:1 and 1:3 are found
-    const verseKeys = results.map(r => `${r.book}:${r.chapter}:${r.verse}`);
+    const verseKeys = results.map((r) => `${r.book}:${r.chapter}:${r.verse}`);
     expect(verseKeys).toContain('Genesis:1:1');
     expect(verseKeys).toContain('Genesis:1:3');
   });
@@ -233,12 +233,12 @@ describe('searchHebrewWholeWord()', () => {
     expect(results.length).toBe(2);
 
     // Genesis 1:1 should have both terms matching
-    const gen11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+    const gen11 = results.find((r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
     expect(gen11).toBeDefined();
     expect(gen11?.matchingTerms.length).toBe(2);
 
     // Genesis 1:3 should have only one term matching
-    const gen13 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 3);
+    const gen13 = results.find((r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 3);
     expect(gen13).toBeDefined();
     expect(gen13?.matchingTerms.length).toBe(1);
   });

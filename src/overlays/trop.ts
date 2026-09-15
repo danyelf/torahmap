@@ -4,19 +4,13 @@ import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
-import {
-  buildTropIndex,
-  getTropByFrequency,
-  getRarityTier,
-} from '../trop.ts';
+import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { scaleToGradient, type ColorStop } from '../utils/color.ts';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
-const URL_PARAMS = [
-  { key: 'trop', kind: 'token' },
-] as const satisfies readonly UrlParamSpec[];
+const URL_PARAMS = [{ key: 'trop', kind: 'token' }] as const satisfies readonly UrlParamSpec[];
 
 let selectedTrop: TropIndexEntry | null = null;
 let updateCallback: (() => void) | null = null;
@@ -51,16 +45,16 @@ function updateCache(): void {
 
 // Gradient for uncommon trop (linear purple gradient)
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
-  { t: 0, color: [0.4, 0.2, 0.6] },       // Dim purple
-  { t: 1, color: [0.9, 0.4, 0.95] },      // Bright purple
+  { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
+  { t: 1, color: [0.9, 0.4, 0.95] }, // Bright purple
 ];
 
 // Gradient for common trop (purple spectrum with log scale)
 const COMMON_TROP_GRADIENT: ColorStop[] = [
-  { t: 0, color: [0.2, 0.1, 0.3] },       // Dark purple
-  { t: 0.33, color: [0.4, 0.2, 0.5] },    // Purple
-  { t: 0.66, color: [0.7, 0.3, 0.7] },    // Magenta
-  { t: 1.0, color: [0.95, 0.6, 0.9] },    // Pink
+  { t: 0, color: [0.2, 0.1, 0.3] }, // Dark purple
+  { t: 0.33, color: [0.4, 0.2, 0.5] }, // Purple
+  { t: 0.66, color: [0.7, 0.3, 0.7] }, // Magenta
+  { t: 1.0, color: [0.95, 0.6, 0.9] }, // Pink
 ];
 
 // Get verse color based on selected trop and rarity tier
@@ -126,10 +120,11 @@ function createTropChart(container: HTMLElement): void {
         info.textContent = '';
       } else {
         // Restore selected info
-        const selEntry = tropByFrequency.find(e => e.unicode === selectedButton?.dataset.unicode);
+        const selEntry = tropByFrequency.find((e) => e.unicode === selectedButton?.dataset.unicode);
         if (selEntry) {
           const selTier = getRarityTier(selEntry.totalCount);
-          const tierLabel = selTier === 'rare' ? 'Rare' : selTier === 'uncommon' ? 'Uncommon' : 'Common';
+          const tierLabel =
+            selTier === 'rare' ? 'Rare' : selTier === 'uncommon' ? 'Uncommon' : 'Common';
           info.textContent = `${selEntry.name} (${selEntry.hebrewName}) · ${selEntry.totalCount.toLocaleString()} · ${tierLabel}`;
         }
       }
@@ -200,7 +195,8 @@ export const tropOverlay: Overlay = {
 
   renderLegend(container: HTMLElement) {
     if (!selectedTrop) {
-      container.innerHTML = '<div style="color: #666; font-size: 11px;">Select a trop mark above</div>';
+      container.innerHTML =
+        '<div style="color: #666; font-size: 11px;">Select a trop mark above</div>';
       return;
     }
 
@@ -226,7 +222,7 @@ export const tropOverlay: Overlay = {
     if (!selectedTrop) return null;
 
     const loc = selectedTrop.verses.find(
-      v => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse
+      (v) => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse,
     );
     return loc ? `${selectedTrop.name} ×${loc.count}` : null;
   },
@@ -244,9 +240,7 @@ export const tropOverlay: Overlay = {
     const slug = params.trop;
     if (slug) {
       // Match against slugified name
-      const entry = tropByFrequency.find(t =>
-        t.name.toLowerCase().replace(/\s+/g, '-') === slug
-      );
+      const entry = tropByFrequency.find((t) => t.name.toLowerCase().replace(/\s+/g, '-') === slug);
       if (entry) {
         selectedTrop = entry;
         updateCache();
@@ -296,7 +290,7 @@ export function highlightTropInText(hebrewText: string, tropUnicode: string): st
           const last = result[result.length - 1];
           const lastCode = last.codePointAt(0) || 0;
           // Keep popping combining characters
-          if (lastCode >= 0x0591 && lastCode <= 0x05C7) {
+          if (lastCode >= 0x0591 && lastCode <= 0x05c7) {
             highlighted.unshift(result.pop()!);
           } else {
             // This is the base letter

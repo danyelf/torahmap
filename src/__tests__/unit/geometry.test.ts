@@ -72,8 +72,8 @@ describe('buildItemGeometry', () => {
       const buffer = buildItemGeometry([verse]);
 
       // First vertex (top-left): should be at (100, 200)
-      expect(buffer[0]).toBe(100);  // x
-      expect(buffer[1]).toBe(200);  // y
+      expect(buffer[0]).toBe(100); // x
+      expect(buffer[1]).toBe(200); // y
     });
 
     it('applies 2px gap to verse size', () => {
@@ -116,8 +116,10 @@ describe('buildItemGeometry', () => {
       const buffer = buildItemGeometry([verse]);
 
       const floatsPerVertex = 19;
-      const x0 = 10, y0 = 20;
-      const x1 = 10 + 8 - 2, y1 = 20 + 8 - 2;
+      const x0 = 10,
+        y0 = 20;
+      const x1 = 10 + 8 - 2,
+        y1 = 20 + 8 - 2;
 
       // Vertex 0: top-left
       expect(buffer[0]).toBe(x0);
@@ -137,8 +139,10 @@ describe('buildItemGeometry', () => {
       const buffer = buildItemGeometry([verse]);
 
       const floatsPerVertex = 19;
-      const x0 = 10, y0 = 20;
-      const x1 = 10 + 8 - 2, y1 = 20 + 8 - 2;
+      const x0 = 10,
+        y0 = 20;
+      const x1 = 10 + 8 - 2,
+        y1 = 20 + 8 - 2;
 
       // Vertex 3: bottom-left
       expect(buffer[floatsPerVertex * 3]).toBe(x0);
@@ -167,7 +171,7 @@ describe('buildItemGeometry', () => {
       }
 
       // Should have 4 unique corners
-      const uniqueCorners = new Set(corners.map(c => `${c.x},${c.y}`));
+      const uniqueCorners = new Set(corners.map((c) => `${c.x},${c.y}`));
       expect(uniqueCorners.size).toBe(4);
     });
   });
@@ -181,7 +185,7 @@ describe('buildItemGeometry', () => {
       const colorOffset = 2;
 
       // First color slot should be red
-      expect(buffer[colorOffset]).toBe(1);     // r
+      expect(buffer[colorOffset]).toBe(1); // r
       expect(buffer[colorOffset + 1]).toBe(0); // g
       expect(buffer[colorOffset + 2]).toBe(0); // b
     });
@@ -246,7 +250,7 @@ describe('buildItemGeometry', () => {
       // Check all 6 vertices have the same color
       for (let v = 0; v < 6; v++) {
         const offset = v * floatsPerVertex + colorOffset;
-        expect(buffer[offset]).toBe(1);     // r
+        expect(buffer[offset]).toBe(1); // r
         expect(buffer[offset + 1]).toBe(0); // g
         expect(buffer[offset + 2]).toBe(0); // b
       }
@@ -281,13 +285,16 @@ describe('buildItemGeometry', () => {
 
     it('handles 3 colors correctly', () => {
       const verse = createVerse();
-      const buffer = buildItemGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE]]);
+      const buffer = buildItemGeometry(
+        [verse],
+        [[TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE]],
+      );
 
       const colorOffset = 2;
       const colorCountOffset = 14;
 
       // Check all 3 colors
-      expect(buffer[colorOffset]).toBe(1);     // red
+      expect(buffer[colorOffset]).toBe(1); // red
       expect(buffer[colorOffset + 3]).toBe(0); // green
       expect(buffer[colorOffset + 4]).toBe(1);
       expect(buffer[colorOffset + 6]).toBe(0); // blue
@@ -298,30 +305,38 @@ describe('buildItemGeometry', () => {
 
     it('handles 4 colors correctly', () => {
       const verse = createVerse();
-      const buffer = buildItemGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE, TEST_COLORS.YELLOW]]);
+      const buffer = buildItemGeometry(
+        [verse],
+        [[TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE, TEST_COLORS.YELLOW]],
+      );
 
       const colorOffset = 2;
       const colorCountOffset = 14;
 
       // Check all 4 colors present
-      expect(buffer[colorOffset]).toBe(1);      // red
-      expect(buffer[colorOffset + 3]).toBe(0);  // green
-      expect(buffer[colorOffset + 6]).toBe(0);  // blue
-      expect(buffer[colorOffset + 9]).toBe(1);  // yellow
+      expect(buffer[colorOffset]).toBe(1); // red
+      expect(buffer[colorOffset + 3]).toBe(0); // green
+      expect(buffer[colorOffset + 6]).toBe(0); // blue
+      expect(buffer[colorOffset + 9]).toBe(1); // yellow
 
       expect(buffer[colorCountOffset]).toBe(4);
     });
 
     it('caps at 4 colors when more provided', () => {
       const verse = createVerse();
-      const buffer = buildItemGeometry([verse], [[
-        TEST_COLORS.RED,
-        TEST_COLORS.GREEN,
-        TEST_COLORS.BLUE,
-        TEST_COLORS.YELLOW,
-        TEST_COLORS.PURPLE, // This should be ignored
-        TEST_COLORS.WHITE,  // This should be ignored
-      ]]);
+      const buffer = buildItemGeometry(
+        [verse],
+        [
+          [
+            TEST_COLORS.RED,
+            TEST_COLORS.GREEN,
+            TEST_COLORS.BLUE,
+            TEST_COLORS.YELLOW,
+            TEST_COLORS.PURPLE, // This should be ignored
+            TEST_COLORS.WHITE, // This should be ignored
+          ],
+        ],
+      );
 
       const colorCountOffset = 14;
       // Should still be 4, not 6
@@ -329,11 +344,7 @@ describe('buildItemGeometry', () => {
     });
 
     it('sets correct colorCount for multiple colors', () => {
-      const verses = [
-        createVerse(),
-        createVerse(),
-        createVerse(),
-      ];
+      const verses = [createVerse(), createVerse(), createVerse()];
       const colors = [
         [TEST_COLORS.RED, TEST_COLORS.BLUE],
         [TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE],
@@ -521,7 +532,7 @@ describe('buildItemGeometry', () => {
         createVerse(), // double
         createVerse(), // default
       ];
-      const colors: (typeof TEST_COLORS.RED | typeof TEST_COLORS.RED[] | undefined)[] = [
+      const colors: (typeof TEST_COLORS.RED | (typeof TEST_COLORS.RED)[] | undefined)[] = [
         TEST_COLORS.RED,
         [TEST_COLORS.BLUE, TEST_COLORS.GREEN],
         undefined,

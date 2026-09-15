@@ -129,7 +129,9 @@ describe('parseUrlState', () => {
   });
 
   it('parses search query with special characters', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
+    mockWindowLocation(
+      'http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA',
+    );
     const state = parseUrlState(overlayUrlParams);
     expect(state.overlayParams.q).toBe('בראשית');
   });
@@ -141,7 +143,9 @@ describe('parseUrlState', () => {
   });
 
   it('parses complete state with all parameters', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud');
+    mockWindowLocation(
+      'http://localhost:5173/#overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud',
+    );
     const state = parseUrlState(overlayUrlParams);
     expect(state).toEqual({
       overlay: 'commentary',
@@ -253,7 +257,7 @@ describe('buildUrlHash', () => {
     hash = buildUrlHash(state);
     expect(hash).toBe('#zoom=2');
 
-    state.zoom = 2.10;
+    state.zoom = 2.1;
     hash = buildUrlHash(state);
     expect(hash).toBe('#zoom=2.1');
   });
@@ -506,7 +510,11 @@ describe('updateUrl', () => {
       overlayParams: {},
     };
     updateUrl(state);
-    expect(history.replaceState).toHaveBeenCalledWith(null, '', '/index.html?debug=true#overlay=trop');
+    expect(history.replaceState).toHaveBeenCalledWith(
+      null,
+      '',
+      '/index.html?debug=true#overlay=trop',
+    );
   });
 
   it('removes hash when state is empty', () => {
@@ -857,7 +865,7 @@ describe('edge cases and error handling', () => {
 
   it('preserves exact trop mark names', () => {
     const tropMarks = ['sof-pasuk', 'etnachta', 'segol', 'zakef-katan', 'pashta'];
-    tropMarks.forEach(trop => {
+    tropMarks.forEach((trop) => {
       const state: UrlState = {
         overlay: 'trop',
         overlayParams: { trop },

@@ -64,14 +64,14 @@ describe('Search Overlay - Lazy Snippet Integration', () => {
     }
 
     // Compute snippets only for displayed batch
-    const computedSnippets = displayResults.map(result => {
+    const computedSnippets = displayResults.map((result) => {
       const match = result.matchingTerms[0];
       return computeSnippetForMatch(result, match.termIndex, 'אלהים');
     });
 
     // Verify only the batch's snippets computed
     expect(computedSnippets.length).toBe(Math.min(BATCH_SIZE, results.length));
-    expect(computedSnippets.every(s => s !== null)).toBe(true);
+    expect(computedSnippets.every((s) => s !== null)).toBe(true);
 
     // Verify remaining results still have no snippets
     for (let i = BATCH_SIZE; i < results.length; i++) {

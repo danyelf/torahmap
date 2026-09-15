@@ -194,7 +194,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
-    }
+    },
   };
 }
 
@@ -235,6 +235,6 @@ export function createOutlineProgram(gl: WebGL2RenderingContext): OutlineProgram
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
       color: gl.getUniformLocation(program, 'u_color'),
-    }
+    },
   };
 }

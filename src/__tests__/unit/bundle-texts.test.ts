@@ -24,7 +24,8 @@ function cleanText(text: string): string {
 describe('cleanText', () => {
   describe('HTML entity handling', () => {
     it('replaces &thinsp; with space (fixes tm-1my bug)', () => {
-      const input = 'אֲמָרַ֖י הַאֲזִ֥ינָה&thinsp;<small>׀</small>&thinsp;יְהֹוָ֗ה בִּ֣ינָה הֲגִיגִֽי׃';
+      const input =
+        'אֲמָרַ֖י הַאֲזִ֥ינָה&thinsp;<small>׀</small>&thinsp;יְהֹוָ֗ה בִּ֣ינָה הֲגִיגִֽי׃';
       const result = cleanText(input);
 
       // Should have proper spacing around the vertical bar
@@ -76,7 +77,8 @@ describe('cleanText', () => {
     });
 
     it('removes footnote content (<i class="footnote">)', () => {
-      const input = 'When God began to create<sup class="footnote-marker">*</sup><i class="footnote"><b>When God began to create </b>Others "In the beginning God created."</i> heaven';
+      const input =
+        'When God began to create<sup class="footnote-marker">*</sup><i class="footnote"><b>When God began to create </b>Others "In the beginning God created."</i> heaven';
       const result = cleanText(input);
       expect(result).toBe('When God began to create heaven');
     });
@@ -102,7 +104,8 @@ describe('cleanText', () => {
     });
 
     it('removes poetry span tags', () => {
-      const input = '<span class="poetry indentAll">Thus said </span> G<small>OD</small>:<br><span class="poetry indentAll">For three transgressions</span>';
+      const input =
+        '<span class="poetry indentAll">Thus said </span> G<small>OD</small>:<br><span class="poetry indentAll">For three transgressions</span>';
       const result = cleanText(input);
       expect(result).toBe('Thus said GOD: For three transgressions');
     });
@@ -116,19 +119,22 @@ describe('cleanText', () => {
     });
 
     it('handles Psalms 5:2 with small tag and thinsp', () => {
-      const input = 'אֲמָרַ֖י הַאֲזִ֥ינָה&thinsp;<small>׀</small>&thinsp;יְהֹוָ֗ה בִּ֣ינָה הֲגִיגִֽי׃';
+      const input =
+        'אֲמָרַ֖י הַאֲזִ֥ינָה&thinsp;<small>׀</small>&thinsp;יְהֹוָ֗ה בִּ֣ינָה הֲגִיגִֽי׃';
       const result = cleanText(input);
       expect(result).toBe('אֲמָרַ֖י הַאֲזִ֥ינָה ׀ יְהֹוָ֗ה בִּ֣ינָה הֲגִיגִֽי׃');
     });
 
     it('handles Amos poetry with complex formatting', () => {
-      const input = 'He proclaimed:<br><span class="poetry indentAll"> \nG<small>OD</small>\n </span> roars from Zion,<br><span class="poetry indentAll">Shouts aloud from Jerusalem;</span>';
+      const input =
+        'He proclaimed:<br><span class="poetry indentAll"> \nG<small>OD</small>\n </span> roars from Zion,<br><span class="poetry indentAll">Shouts aloud from Jerusalem;</span>';
       const result = cleanText(input);
       expect(result).toBe('He proclaimed: GOD roars from Zion, Shouts aloud from Jerusalem;');
     });
 
     it('handles verse with footnote, nested tags, and entities', () => {
-      const input = '<span class="poetry indentAll">Thus said </span> G<small>OD</small>:<br><span class="poetry indentAll">For three transgressions of Damascus,</span><br><sup class="footnote-marker">b</sup><i class="footnote"><b>the decree </b>Of punishment.</i>';
+      const input =
+        '<span class="poetry indentAll">Thus said </span> G<small>OD</small>:<br><span class="poetry indentAll">For three transgressions of Damascus,</span><br><sup class="footnote-marker">b</sup><i class="footnote"><b>the decree </b>Of punishment.</i>';
       const result = cleanText(input);
       expect(result).toBe('Thus said GOD: For three transgressions of Damascus,');
     });
@@ -165,10 +171,14 @@ describe('cleanText', () => {
 
       // Check every verse in every book
       for (const [book, chapters] of Object.entries(allTexts)) {
-        for (const [chapter, verses] of Object.entries(chapters as Record<string, Record<string, { he: string; en: string }>>)) {
+        for (const [chapter, verses] of Object.entries(
+          chapters as Record<string, Record<string, { he: string; en: string }>>,
+        )) {
           for (const [verse, text] of Object.entries(verses)) {
             if (typeof text === 'object' && text.he && englishLetterRegex.test(text.he)) {
-              violations.push(`${book} ${chapter}:${verse} - Hebrew text contains English: "${text.he}"`);
+              violations.push(
+                `${book} ${chapter}:${verse} - Hebrew text contains English: "${text.he}"`,
+              );
             }
           }
         }
@@ -177,7 +187,7 @@ describe('cleanText', () => {
       // Report first 10 violations for debugging
       if (violations.length > 0) {
         console.error('Found English characters in Hebrew text:');
-        violations.slice(0, 10).forEach(v => console.error(`  - ${v}`));
+        violations.slice(0, 10).forEach((v) => console.error(`  - ${v}`));
         if (violations.length > 10) {
           console.error(`  ... and ${violations.length - 10} more`);
         }
@@ -196,14 +206,18 @@ describe('cleanText', () => {
       const violations: string[] = [];
 
       for (const [book, chapters] of Object.entries(allTexts)) {
-        for (const [chapter, verses] of Object.entries(chapters as Record<string, Record<string, { he: string; en: string }>>)) {
+        for (const [chapter, verses] of Object.entries(
+          chapters as Record<string, Record<string, { he: string; en: string }>>,
+        )) {
           for (const [verse, text] of Object.entries(verses)) {
             if (typeof text === 'object' && text.he && !hebrewCharRegex.test(text.he)) {
               // Allow em-dash "—" which marks omitted verses (e.g., Joshua 21:36-37)
               if (text.he.trim() === '—' || text.he.trim() === '--') {
                 continue;
               }
-              violations.push(`${book} ${chapter}:${verse} - Hebrew text missing Hebrew characters: "${text.he}"`);
+              violations.push(
+                `${book} ${chapter}:${verse} - Hebrew text missing Hebrew characters: "${text.he}"`,
+              );
             }
           }
         }
@@ -211,7 +225,7 @@ describe('cleanText', () => {
 
       if (violations.length > 0) {
         console.error('Found Hebrew text without Hebrew characters:');
-        violations.slice(0, 10).forEach(v => console.error(`  - ${v}`));
+        violations.slice(0, 10).forEach((v) => console.error(`  - ${v}`));
       }
 
       expect(violations).toHaveLength(0);
@@ -227,7 +241,9 @@ describe('cleanText', () => {
       const violations: string[] = [];
 
       for (const [book, chapters] of Object.entries(allTexts)) {
-        for (const [chapter, verses] of Object.entries(chapters as Record<string, Record<string, { he: string; en: string }>>)) {
+        for (const [chapter, verses] of Object.entries(
+          chapters as Record<string, Record<string, { he: string; en: string }>>,
+        )) {
           for (const [verse, text] of Object.entries(verses)) {
             if (typeof text === 'object' && (!text.en || text.en.trim() === '')) {
               violations.push(`${book} ${chapter}:${verse} - English text is empty`);
@@ -238,7 +254,7 @@ describe('cleanText', () => {
 
       if (violations.length > 0) {
         console.error('Found verses with no English text:');
-        violations.slice(0, 10).forEach(v => console.error(`  - ${v}`));
+        violations.slice(0, 10).forEach((v) => console.error(`  - ${v}`));
         if (violations.length > 10) {
           console.error(`  ... and ${violations.length - 10} more`);
         }
@@ -262,7 +278,9 @@ describe('cleanText', () => {
       const violations: string[] = [];
 
       for (const [book, chapters] of Object.entries(allTexts)) {
-        for (const [chapter, verses] of Object.entries(chapters as Record<string, Record<string, { he: string; en: string }>>)) {
+        for (const [chapter, verses] of Object.entries(
+          chapters as Record<string, Record<string, { he: string; en: string }>>,
+        )) {
           for (const [verse, text] of Object.entries(verses)) {
             if (typeof text === 'object' && text.en && !latinLetterRegex.test(text.en)) {
               // Allow the dash that marks omitted verses (e.g., Joshua 21:36-37),
@@ -270,7 +288,9 @@ describe('cleanText', () => {
               if (text.en.trim() === '—' || text.en.trim() === '--') {
                 continue;
               }
-              violations.push(`${book} ${chapter}:${verse} - English text has no Latin letters: "${text.en}"`);
+              violations.push(
+                `${book} ${chapter}:${verse} - English text has no Latin letters: "${text.en}"`,
+              );
             }
           }
         }
@@ -278,7 +298,7 @@ describe('cleanText', () => {
 
       if (violations.length > 0) {
         console.error('Found English text without Latin letters:');
-        violations.slice(0, 10).forEach(v => console.error(`  - ${v}`));
+        violations.slice(0, 10).forEach((v) => console.error(`  - ${v}`));
       }
 
       expect(violations).toHaveLength(0);

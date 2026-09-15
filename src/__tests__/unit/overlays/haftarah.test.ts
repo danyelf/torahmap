@@ -13,81 +13,97 @@ import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 const SAMPLE_HAFTARAH_DATA = {
   parshiot: [
     {
-      name: "Bereshit",
-      hebrewName: "בראשית",
+      name: 'Bereshit',
+      hebrewName: 'בראשית',
       torah: {
-        book: "Genesis",
+        book: 'Genesis',
         start: { chapter: 1, verse: 1 },
         end: { chapter: 6, verse: 8 },
       },
       haftarah: {
-        ashkenazi: [{
-          book: "Isaiah",
-          start: { chapter: 42, verse: 5 },
-          end: { chapter: 42, verse: 21 },
-        }],
-        sephardi: [{
-          book: "Isaiah",
-          start: { chapter: 42, verse: 5 },
-          end: { chapter: 43, verse: 10 },
-        }],
+        ashkenazi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 42, verse: 5 },
+            end: { chapter: 42, verse: 21 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 42, verse: 5 },
+            end: { chapter: 43, verse: 10 },
+          },
+        ],
       },
     },
     {
-      name: "Noach",
-      hebrewName: "נח",
+      name: 'Noach',
+      hebrewName: 'נח',
       torah: {
-        book: "Genesis",
+        book: 'Genesis',
         start: { chapter: 6, verse: 9 },
         end: { chapter: 11, verse: 32 },
       },
       haftarah: {
-        ashkenazi: [{
-          book: "Isaiah",
-          start: { chapter: 54, verse: 1 },
-          end: { chapter: 55, verse: 5 },
-        }],
-        sephardi: [{
-          book: "Isaiah",
-          start: { chapter: 54, verse: 1 },
-          end: { chapter: 54, verse: 10 },
-        }],
+        ashkenazi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 54, verse: 1 },
+            end: { chapter: 55, verse: 5 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 54, verse: 1 },
+            end: { chapter: 54, verse: 10 },
+          },
+        ],
       },
     },
   ],
   specialOccasions: [
     {
-      name: "Shabbat Rosh Chodesh",
-      hebrewName: "שבת ראש חודש",
-      category: "rosh-chodesh",
+      name: 'Shabbat Rosh Chodesh',
+      hebrewName: 'שבת ראש חודש',
+      category: 'rosh-chodesh',
       haftarah: {
-        ashkenazi: [{
-          book: "Isaiah",
-          start: { chapter: 66, verse: 1 },
-          end: { chapter: 66, verse: 24 },
-        }],
-        sephardi: [{
-          book: "Isaiah",
-          start: { chapter: 66, verse: 1 },
-          end: { chapter: 66, verse: 24 },
-        }],
+        ashkenazi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 66, verse: 1 },
+            end: { chapter: 66, verse: 24 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 66, verse: 1 },
+            end: { chapter: 66, verse: 24 },
+          },
+        ],
       },
     },
     {
-      name: "Rosh Hashanah Day 1",
-      hebrewName: "ראש השנה יום א׳",
-      category: "high-holidays",
+      name: 'Rosh Hashanah Day 1',
+      hebrewName: 'ראש השנה יום א׳',
+      category: 'high-holidays',
       haftarah: {
-        ashkenazi: [{
-          book: "I Samuel",
-          start: { chapter: 1, verse: 1 },
-          end: { chapter: 2, verse: 10 },
-        }],
-        sephardi: [{
-          book: "I Samuel",
-          start: { chapter: 1, verse: 1 },
-          end: { chapter: 2, verse: 10 },
-        }],
+        ashkenazi: [
+          {
+            book: 'I Samuel',
+            start: { chapter: 1, verse: 1 },
+            end: { chapter: 2, verse: 10 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'I Samuel',
+            start: { chapter: 1, verse: 1 },
+            end: { chapter: 2, verse: 10 },
+          },
+        ],
       },
     },
   ],
@@ -95,9 +111,35 @@ const SAMPLE_HAFTARAH_DATA = {
 
 const SAMPLE_STRUCTURE = {
   books: [
-    { name: "Genesis", hebrewName: "בראשית", section: "torah", chapters: [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26] },
-    { name: "Isaiah", hebrewName: "ישעיהו", section: "neviim", chapters: [31, 22, 26, 6, 30, 13, 25, 23, 20, 34, 16, 6, 22, 32, 9, 14, 14, 7, 25, 6, 17, 25, 18, 23, 12, 21, 13, 29, 24, 33, 9, 20, 24, 17, 10, 22, 38, 22, 8, 31, 29, 25, 28, 28, 25, 13, 15, 22, 26, 11, 23, 15, 12, 17, 13, 12, 21, 14, 21, 22, 11, 12, 19, 12, 25, 24] },
-    { name: "I Samuel", hebrewName: "שמואל א", section: "neviim", chapters: [28, 36, 21, 22, 12, 21, 17, 22, 27, 27, 15, 25, 23, 52, 35, 23, 58, 30, 24, 43, 15, 23, 28, 23, 44, 25, 12, 25, 11, 31, 13] },
+    {
+      name: 'Genesis',
+      hebrewName: 'בראשית',
+      section: 'torah',
+      chapters: [
+        31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20,
+        67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34,
+        31, 22, 33, 26,
+      ],
+    },
+    {
+      name: 'Isaiah',
+      hebrewName: 'ישעיהו',
+      section: 'neviim',
+      chapters: [
+        31, 22, 26, 6, 30, 13, 25, 23, 20, 34, 16, 6, 22, 32, 9, 14, 14, 7, 25, 6, 17, 25, 18, 23,
+        12, 21, 13, 29, 24, 33, 9, 20, 24, 17, 10, 22, 38, 22, 8, 31, 29, 25, 28, 28, 25, 13, 15,
+        22, 26, 11, 23, 15, 12, 17, 13, 12, 21, 14, 21, 22, 11, 12, 19, 12, 25, 24,
+      ],
+    },
+    {
+      name: 'I Samuel',
+      hebrewName: 'שמואל א',
+      section: 'neviim',
+      chapters: [
+        28, 36, 21, 22, 12, 21, 17, 22, 27, 27, 15, 25, 23, 52, 35, 23, 58, 30, 24, 43, 15, 23, 28,
+        23, 44, 25, 12, 25, 11, 31, 13,
+      ],
+    },
   ],
 };
 
@@ -217,16 +259,14 @@ describe('Haftarah Overlay', () => {
       await haftarahOverlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/haftarah-mappings.json')
+        expect.stringContaining('data/haftarah-mappings.json'),
       );
     });
 
     it('loads tanakh structure data on init', async () => {
       await haftarahOverlay.init?.();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/tanakh-structure.json')
-      );
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('data/tanakh-structure.json'));
     });
 
     it('handles fetch errors gracefully', async () => {
@@ -293,8 +333,10 @@ describe('Haftarah Overlay', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const haftarahVerse = createVerse({ book: 'Isaiah', chapter: 42, verse: 10 });
 
-      const torahColor = haftarahOverlay.getVerseColor(torahVerse) as [number, number, number] | null;
-      const haftarahColor = haftarahOverlay.getVerseColor(haftarahVerse) as [number, number, number] | null;
+      const torahColor = haftarahOverlay.getVerseColor(torahVerse) as
+        [number, number, number] | null;
+      const haftarahColor = haftarahOverlay.getVerseColor(haftarahVerse) as
+        [number, number, number] | null;
 
       expect(torahColor).toEqual(haftarahColor);
     });
@@ -327,8 +369,10 @@ describe('Haftarah Overlay', () => {
       const parshaVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const occasionVerse = createVerse({ book: 'Isaiah', chapter: 66, verse: 10 });
 
-      const parshaColor = haftarahOverlay.getVerseColor(parshaVerse) as [number, number, number] | null;
-      const occasionColor = haftarahOverlay.getVerseColor(occasionVerse) as [number, number, number] | null;
+      const parshaColor = haftarahOverlay.getVerseColor(parshaVerse) as
+        [number, number, number] | null;
+      const occasionColor = haftarahOverlay.getVerseColor(occasionVerse) as
+        [number, number, number] | null;
 
       expect(parshaColor).not.toEqual(occasionColor);
     });
@@ -542,14 +586,16 @@ describe('Haftarah Overlay', () => {
       const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
       // Get base color (no hover)
-      const baseColor = haftarahOverlay.getVerseColor(torahVerse) as [number, number, number] | null;
+      const baseColor = haftarahOverlay.getVerseColor(torahVerse) as
+        [number, number, number] | null;
 
       // Hover relevant verse, then non-relevant verse
       haftarahOverlay.setHoveredVerse?.(torahVerse);
       haftarahOverlay.setHoveredVerse?.(psalmsVerse);
 
       // After moving to non-relevant verse, should see base color (not desaturated)
-      const colorAfterNonRelevant = haftarahOverlay.getVerseColor(torahVerse) as [number, number, number] | null;
+      const colorAfterNonRelevant = haftarahOverlay.getVerseColor(torahVerse) as
+        [number, number, number] | null;
 
       expect(colorAfterNonRelevant).toEqual(baseColor);
     });

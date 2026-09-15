@@ -279,7 +279,7 @@ describe('buildOutlineGeometry', () => {
       // Check all 4 color slots have the same green color
       for (let slot = 0; slot < 4; slot++) {
         const offset = colorOffset + slot * 3;
-        expect(buffer[offset]).toBe(0);     // r
+        expect(buffer[offset]).toBe(0); // r
         expect(buffer[offset + 1]).toBe(1); // g
         expect(buffer[offset + 2]).toBe(0); // b
       }
@@ -296,7 +296,7 @@ describe('buildOutlineGeometry', () => {
       // Check all 24 vertices have the same color
       for (let v = 0; v < 24; v++) {
         const offset = v * floatsPerVertex + colorOffset;
-        expect(buffer[offset]).toBe(1);     // r
+        expect(buffer[offset]).toBe(1); // r
         expect(buffer[offset + 1]).toBe(1); // g
         expect(buffer[offset + 2]).toBe(0); // b
       }
@@ -334,7 +334,7 @@ describe('buildOutlineGeometry', () => {
       // Check all vertices have u=0, v=0
       for (let v = 0; v < 24; v++) {
         const offset = v * floatsPerVertex + uvOffset;
-        expect(buffer[offset]).toBe(0);     // u
+        expect(buffer[offset]).toBe(0); // u
         expect(buffer[offset + 1]).toBe(0); // v
       }
     });
@@ -349,7 +349,7 @@ describe('buildOutlineGeometry', () => {
       // Check all vertices have same seed (verse position)
       for (let v = 0; v < 24; v++) {
         const offset = v * floatsPerVertex + seedOffset;
-        expect(buffer[offset]).toBe(123);     // seedX
+        expect(buffer[offset]).toBe(123); // seedX
         expect(buffer[offset + 1]).toBe(456); // seedY
       }
     });
@@ -528,7 +528,7 @@ describe('buildOutlineGeometry', () => {
         }
 
         // Should have 4 unique corners (2 triangles sharing vertices)
-        const uniqueCorners = new Set(corners.map(c => `${c.x},${c.y}`));
+        const uniqueCorners = new Set(corners.map((c) => `${c.x},${c.y}`));
         expect(uniqueCorners.size).toBe(4);
       }
     });

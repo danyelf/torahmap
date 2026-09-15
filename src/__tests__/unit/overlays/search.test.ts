@@ -611,11 +611,13 @@ describe('Search Overlay', () => {
 
       const clipboardData = new DataTransfer();
       clipboardData.setData('text/plain', 'אֱלֹהִים');
-      input.dispatchEvent(new ClipboardEvent('paste', {
-        clipboardData,
-        bubbles: true,
-        cancelable: true,
-      }));
+      input.dispatchEvent(
+        new ClipboardEvent('paste', {
+          clipboardData,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
 
       expect(input.value).toBe('god אלהים');
     });
@@ -1367,7 +1369,9 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       // Switch to word mode
-      const wordRadio = container.querySelector('input[name="hebrew-mode"][value="word"]') as HTMLInputElement;
+      const wordRadio = container.querySelector(
+        'input[name="hebrew-mode"][value="word"]',
+      ) as HTMLInputElement;
       wordRadio.checked = true;
       wordRadio.dispatchEvent(new Event('change'));
 
@@ -1420,7 +1424,9 @@ describe('Search Overlay', () => {
       input.dispatchEvent(new Event('input'));
 
       // Switch to word mode
-      const wordRadio = container.querySelector('input[name="hebrew-mode"][value="word"]') as HTMLInputElement;
+      const wordRadio = container.querySelector(
+        'input[name="hebrew-mode"][value="word"]',
+      ) as HTMLInputElement;
       wordRadio.checked = true;
       wordRadio.dispatchEvent(new Event('change'));
 
@@ -1559,7 +1565,9 @@ describe('Search Overlay', () => {
       const results = search('אלהים');
 
       // Find result for Genesis 1:1 which has: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים'
-      const genesis11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+      const genesis11 = results.find(
+        (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
+      );
       expect(genesis11).toBeDefined();
 
       const firstMatch = genesis11!.matchingTerms[0];
@@ -1589,7 +1597,7 @@ describe('Search Overlay', () => {
 
       // Isaiah 1:2 has 'שִׁמְעוּ שָׁמַיִם' (shim'u shamayim - hear heavens)
       const results = search('שמים');
-      const isaiah12 = results.find(r => r.book === 'Isaiah' && r.chapter === 1 && r.verse === 2);
+      const isaiah12 = results.find((r) => r.book === 'Isaiah' && r.chapter === 1 && r.verse === 2);
 
       if (isaiah12) {
         const firstMatch = isaiah12.matchingTerms[0];
@@ -1607,7 +1615,9 @@ describe('Search Overlay', () => {
     it('match positions account for nikkud characters', () => {
       // Test that positions in original text correctly span the match including nikkud
       const results = search('אלהים');
-      const genesis11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+      const genesis11 = results.find(
+        (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
+      );
 
       if (genesis11) {
         const firstMatch = genesis11.matchingTerms[0];
@@ -1628,7 +1638,7 @@ describe('Search Overlay', () => {
       const results = search('אלהים');
 
       // Find any Hebrew result
-      const hebrewResult = results.find(r => r.language === 'he');
+      const hebrewResult = results.find((r) => r.language === 'he');
       if (hebrewResult) {
         const firstMatch = hebrewResult.matchingTerms[0];
 
@@ -1637,7 +1647,10 @@ describe('Search Overlay', () => {
         if (firstMatch.matchStart !== 0 || firstMatch.matchEnd !== 0) {
           // Verify the highlighted portion contains the search term
           expect(firstMatch.snippet).toBeDefined();
-          const highlighted = firstMatch.snippet!.slice(firstMatch.matchStart!, firstMatch.matchEnd!);
+          const highlighted = firstMatch.snippet!.slice(
+            firstMatch.matchStart!,
+            firstMatch.matchEnd!,
+          );
           const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
           expect(strippedHighlight).toContain('אלהים');
         }

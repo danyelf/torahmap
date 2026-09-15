@@ -13,5 +13,4 @@ export { applyOverlayParams } from '../../overlays/applyParams.ts';
  * main.ts passes. Requires the registry to be populated first, normally with
  * registerAllOverlays().
  */
-export const overlayUrlParams: OverlayParamSpecLookup = (id) =>
-  getOverlay(id)?.urlParams;
+export const overlayUrlParams: OverlayParamSpecLookup = (id) => getOverlay(id)?.urlParams;

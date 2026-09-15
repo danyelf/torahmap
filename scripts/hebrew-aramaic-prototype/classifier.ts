@@ -14,19 +14,19 @@
 // Contracts
 // =============================================================================
 
-export type Label = "A" | "H" | "N" | "?";
+export type Label = 'A' | 'H' | 'N' | '?';
 
 export interface Token {
-  raw: string;        // with niqqud, as it appears in source
-  stripped: string;   // niqqud removed, ready for matching
-  start: number;      // char offset in original line
+  raw: string; // with niqqud, as it appears in source
+  stripped: string; // niqqud removed, ready for matching
+  start: number; // char offset in original line
   end: number;
 }
 
 export interface ClassifierResult {
-  labels: Label[];                                                  // length === tokens.length
-  probabilities?: Array<{ A: number; H: number; N: number }>;       // optional
-  evidence?: string[];                                              // optional, for debugging
+  labels: Label[]; // length === tokens.length
+  probabilities?: Array<{ A: number; H: number; N: number }>; // optional
+  evidence?: string[]; // optional, for debugging
 }
 
 export interface LanguageClassifier {
@@ -47,7 +47,7 @@ const NIQQUD_RE = /[\u0591-\u05C7]/g;
 const HEBREW_LETTER = /[\u05D0-\u05EA]/;
 
 export function stripNiqqud(s: string): string {
-  return s.normalize("NFKD").replace(NIQQUD_RE, "");
+  return s.normalize('NFKD').replace(NIQQUD_RE, '');
 }
 
 /**
@@ -57,7 +57,7 @@ export function stripNiqqud(s: string): string {
  */
 export function tokenize(line: string): Token[] {
   // Drop HTML tags first (Wikisource includes <big>, <small>, etc.)
-  const cleaned = line.replace(/<[^>]+>/g, " ");
+  const cleaned = line.replace(/<[^>]+>/g, ' ');
 
   const tokens: Token[] = [];
   let i = 0;
@@ -71,10 +71,7 @@ export function tokenize(line: string): Token[] {
     // Read a word: Hebrew letters + interspersed niqqud, until we hit
     // a non-letter/non-niqqud (whitespace, punctuation, maqaf, etc.)
     const start = i;
-    while (
-      i < cleaned.length &&
-      (HEBREW_LETTER.test(cleaned[i]) || NIQQUD_RE.test(cleaned[i]))
-    ) {
+    while (i < cleaned.length && (HEBREW_LETTER.test(cleaned[i]) || NIQQUD_RE.test(cleaned[i]))) {
       // NIQQUD_RE has /g flag — reset lastIndex
       NIQQUD_RE.lastIndex = 0;
       i++;
@@ -98,35 +95,102 @@ export function tokenize(line: string): Token[] {
  */
 const ARAMAIC_LEXICON_STRIPPED = new Set([
   // Discourse particles & question words
-  "אילימא", "אלמא", "אי", "אילו",
-  "מאי", "מאן", "מנא", "מנלן", "מנהני", "מנהמילי",
-  "היכי", "היכא", "הכא", "התם", "הכי",
-  "איכא", "ליכא", "לית", "אית",
-  "קא", "קמא", "קמייתא",
+  'אילימא',
+  'אלמא',
+  'אי',
+  'אילו',
+  'מאי',
+  'מאן',
+  'מנא',
+  'מנלן',
+  'מנהני',
+  'מנהמילי',
+  'היכי',
+  'היכא',
+  'הכא',
+  'התם',
+  'הכי',
+  'איכא',
+  'ליכא',
+  'לית',
+  'אית',
+  'קא',
+  'קמא',
+  'קמייתא',
   // Citation / discussion formulas
-  "תנינא", "תנן", "תניא", "איתמר", "אמרינן", "אמרת",
-  "דאמר", "דאמרי", "דאמרינן", "דתניא", "דתנן",
-  "דלמא", "דילמא",
+  'תנינא',
+  'תנן',
+  'תניא',
+  'איתמר',
+  'אמרינן',
+  'אמרת',
+  'דאמר',
+  'דאמרי',
+  'דאמרינן',
+  'דתניא',
+  'דתנן',
+  'דלמא',
+  'דילמא',
   // Pronouns / demonstratives
-  "איהו", "איהי", "אנא", "אנן", "את", "אתון",
-  "האי", "הני", "הנך", "ההוא", "ההיא", "הא",
+  'איהו',
+  'איהי',
+  'אנא',
+  'אנן',
+  'את',
+  'אתון',
+  'האי',
+  'הני',
+  'הנך',
+  'ההוא',
+  'ההיא',
+  'הא',
   // Common verbs / nouns / titles
-  "הוי", "הוה", "הואי", "ליהוי", "תיהוי",
-  "מילתא", "גברא", "מר", "מרי", "רבנן", "רבא", "אביי",
-  "נמי", "טפי", "מאד",
+  'הוי',
+  'הוה',
+  'הואי',
+  'ליהוי',
+  'תיהוי',
+  'מילתא',
+  'גברא',
+  'מר',
+  'מרי',
+  'רבנן',
+  'רבא',
+  'אביי',
+  'נמי',
+  'טפי',
+  'מאד',
 ]);
 
 const HEBREW_LEXICON_STRIPPED = new Set([
   // Function words
-  "אשר", "ש", "אין", "יש", "אם", "אך", "גם", "רק", "אכן",
-  "אלא", // primarily Mishnaic Hebrew "rather/but"
-  "ואין", "ויש", "ולא", // ולא is ambiguous with Aramaic ולא; minimal pair below disambiguates with niqqud
+  'אשר',
+  'ש',
+  'אין',
+  'יש',
+  'אם',
+  'אך',
+  'גם',
+  'רק',
+  'אכן',
+  'אלא', // primarily Mishnaic Hebrew "rather/but"
+  'ואין',
+  'ויש',
+  'ולא', // ולא is ambiguous with Aramaic ולא; minimal pair below disambiguates with niqqud
   // Decisive Mishnaic markers
-  "אלו", "הללו",
+  'אלו',
+  'הללו',
   // Common Hebrew verbs/nouns that don't appear in Aramaic in the same form
-  "היה", "היתה", "היו", "תהיה", "יהיה",
-  "אמרו", "אמרתי", "אמרת",
-  "לפיכך", "אבל",
+  'היה',
+  'היתה',
+  'היו',
+  'תהיה',
+  'יהיה',
+  'אמרו',
+  'אמרתי',
+  'אמרת',
+  'לפיכך',
+  'אבל',
 ]);
 
 /**
@@ -134,13 +198,36 @@ const HEBREW_LEXICON_STRIPPED = new Set([
  * These get label N (neutral) and don't vote in aggregates.
  */
 const NEUTRAL_LEXICON_STRIPPED = new Set([
-  "אמר", "אמרו", "אמרה",
-  "או", "אז", "עם", "עד", "על", "אל", "את", "בין", "ל", "ב", "כ", "מ", "ו",
-  "כל", "כלם", "כולם", "כלן",
-  "לא", // ambiguous when stripped; minimal pair below uses niqqud
-  "זה", "זאת", "אלה",
-  "רב", "רבי", "ר",
-  "תורה", "מצוה", "מצוות",
+  'אמר',
+  'אמרו',
+  'אמרה',
+  'או',
+  'אז',
+  'עם',
+  'עד',
+  'על',
+  'אל',
+  'את',
+  'בין',
+  'ל',
+  'ב',
+  'כ',
+  'מ',
+  'ו',
+  'כל',
+  'כלם',
+  'כולם',
+  'כלן',
+  'לא', // ambiguous when stripped; minimal pair below uses niqqud
+  'זה',
+  'זאת',
+  'אלה',
+  'רב',
+  'רבי',
+  'ר',
+  'תורה',
+  'מצוה',
+  'מצוות',
 ]);
 
 /**
@@ -149,16 +236,16 @@ const NEUTRAL_LEXICON_STRIPPED = new Set([
  */
 const MINIMAL_PAIRS: Record<string, Label> = {
   // לא: Hebrew לֹא vs Aramaic לָא
-  "לֹא": "H",
-  "וְלֹא": "H",
-  "לָא": "A",
-  "וְלָא": "A",
+  'לֹא': 'H',
+  'וְלֹא': 'H',
+  'לָא': 'A',
+  'וְלָא': 'A',
   // הוא: Hebrew הוּא vs Aramaic אִיהוּ (different word, but listed for completeness)
-  "הוּא": "H",
-  "אִיהוּ": "A",
+  'הוּא': 'H',
+  'אִיהוּ': 'A',
   // אני vs אנא
-  "אֲנִי": "H",
-  "אֲנָא": "A",
+  'אֲנִי': 'H',
+  'אֲנָא': 'A',
 };
 
 // =============================================================================
@@ -166,8 +253,8 @@ const MINIMAL_PAIRS: Record<string, Label> = {
 // =============================================================================
 
 export class LexiconClassifier implements LanguageClassifier {
-  readonly name = "lexicon";
-  readonly version = "0.1.0";
+  readonly name = 'lexicon';
+  readonly version = '0.1.0';
 
   classify(tokens: Token[]): ClassifierResult {
     const labels: Label[] = [];
@@ -190,13 +277,13 @@ export class LexiconClassifier implements LanguageClassifier {
 
     // 2. Lexicon hit on stripped form
     if (ARAMAIC_LEXICON_STRIPPED.has(tok.stripped)) {
-      return { label: "A", why: `lex-A:${tok.stripped}` };
+      return { label: 'A', why: `lex-A:${tok.stripped}` };
     }
     if (HEBREW_LEXICON_STRIPPED.has(tok.stripped)) {
-      return { label: "H", why: `lex-H:${tok.stripped}` };
+      return { label: 'H', why: `lex-H:${tok.stripped}` };
     }
     if (NEUTRAL_LEXICON_STRIPPED.has(tok.stripped)) {
-      return { label: "N", why: `lex-N:${tok.stripped}` };
+      return { label: 'N', why: `lex-N:${tok.stripped}` };
     }
 
     // 3. Weak morphological features
@@ -204,19 +291,19 @@ export class LexiconClassifier implements LanguageClassifier {
 
     // Leading דְ on a longer word → Aramaic relative/genitive
     // (Don't fire on standalone דְ — that's handled by lexicon as bare ד not present.)
-    if (s.length >= 4 && s.startsWith("ד") && !s.startsWith("דב") && !s.startsWith("דע")) {
+    if (s.length >= 4 && s.startsWith('ד') && !s.startsWith('דב') && !s.startsWith('דע')) {
       // Heuristic: ד-prefix on a 4+ letter word is usually Aramaic.
       // Excludes common Hebrew words starting with ד (דבר, דעת, ...).
-      return { label: "A", why: `pfx-d:${s}` };
+      return { label: 'A', why: `pfx-d:${s}` };
     }
 
     // Definite ה־ on a longer word → Hebrew (Aramaic uses suffix א instead)
-    if (s.length >= 4 && s.startsWith("ה") && !s.startsWith("הו") && !s.startsWith("הי")) {
-      return { label: "H", why: `pfx-h:${s}` };
+    if (s.length >= 4 && s.startsWith('ה') && !s.startsWith('הו') && !s.startsWith('הי')) {
+      return { label: 'H', why: `pfx-h:${s}` };
     }
 
     // No signal
-    return { label: "?", why: "none" };
+    return { label: '?', why: 'none' };
   }
 }
 
@@ -234,21 +321,17 @@ export class LexiconClassifier implements LanguageClassifier {
  * accepting an optional `evidence` array — if a label has weak evidence and
  * is sandwiched between opposite labels, it flips.
  */
-export function smooth(
-  labels: Label[],
-  window: number = 4,
-  evidence?: string[],
-): Label[] {
+export function smooth(labels: Label[], window: number = 4, evidence?: string[]): Label[] {
   const out: Label[] = [...labels];
 
   // Pass 1: fill N/? from neighbors
   for (let i = 0; i < out.length; i++) {
-    if (out[i] !== "N" && out[i] !== "?") continue;
+    if (out[i] !== 'N' && out[i] !== '?') continue;
 
     let leftLabel: Label | null = null;
     let leftDist = Infinity;
     for (let j = i - 1; j >= Math.max(0, i - window); j--) {
-      if (labels[j] === "A" || labels[j] === "H") {
+      if (labels[j] === 'A' || labels[j] === 'H') {
         leftLabel = labels[j];
         leftDist = i - j;
         break;
@@ -258,7 +341,7 @@ export function smooth(
     let rightLabel: Label | null = null;
     let rightDist = Infinity;
     for (let j = i + 1; j <= Math.min(labels.length - 1, i + window); j++) {
-      if (labels[j] === "A" || labels[j] === "H") {
+      if (labels[j] === 'A' || labels[j] === 'H') {
         rightLabel = labels[j];
         rightDist = j - i;
         break;
@@ -279,12 +362,12 @@ export function smooth(
   if (evidence) {
     for (let i = 1; i < out.length - 1; i++) {
       const cur = out[i];
-      if (cur !== "A" && cur !== "H") continue;
-      const opposite: Label = cur === "A" ? "H" : "A";
+      if (cur !== 'A' && cur !== 'H') continue;
+      const opposite: Label = cur === 'A' ? 'H' : 'A';
       if (out[i - 1] === opposite && out[i + 1] === opposite) {
         // Check evidence — only flip if weak (suffix-based, not lexicon)
-        const ev = evidence[i] || "";
-        if (ev.startsWith("pfx-") || ev === "none") {
+        const ev = evidence[i] || '';
+        if (ev.startsWith('pfx-') || ev === 'none') {
           out[i] = opposite;
         }
       }
@@ -332,15 +415,15 @@ export function aggregate(labels: Label[] | string): {
   total: number;
   voting: number;
 } {
-  const arr = typeof labels === "string" ? labels.split("") as Label[] : labels;
+  const arr = typeof labels === 'string' ? (labels.split('') as Label[]) : labels;
   let a = 0;
   let h = 0;
   let n = 0;
   let unknown = 0;
   for (const l of arr) {
-    if (l === "A") a++;
-    else if (l === "H") h++;
-    else if (l === "N") n++;
+    if (l === 'A') a++;
+    else if (l === 'H') h++;
+    else if (l === 'N') n++;
     else unknown++;
   }
   const total = arr.length;
@@ -358,5 +441,5 @@ export function aggregate(labels: Label[] | string): {
  * Pack a label array into a string (one char per token).
  */
 export function packLabels(labels: Label[]): string {
-  return labels.join("");
+  return labels.join('');
 }

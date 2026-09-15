@@ -8,8 +8,8 @@
  * Cached locally for offline generation and version control.
  */
 
-import { writeFile, mkdir, readFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
 interface VerseRef {
   chapter: number;
@@ -36,14 +36,14 @@ interface SpecialOccasion {
   name: string;
   hebrewName: string;
   category:
-    | "rosh-chodesh"
-    | "four-shabbatot"
-    | "high-holidays"
-    | "sukkot"
-    | "pesach"
-    | "shavuot"
-    | "fast-days"
-    | "other";
+    | 'rosh-chodesh'
+    | 'four-shabbatot'
+    | 'high-holidays'
+    | 'sukkot'
+    | 'pesach'
+    | 'shavuot'
+    | 'fast-days'
+    | 'other';
   haftarah: {
     ashkenazi: VerseRange[];
     sephardi: VerseRange[];
@@ -53,164 +53,158 @@ interface SpecialOccasion {
 // Hebrew names for parshiot (mapping from mechon-mamre English transliteration)
 const HEBREW_NAMES: Record<string, string> = {
   // Genesis
-  Bereishit: "בראשית",
-  Noach: "נח",
-  "Lekh Lekha": "לך־לך",
-  Vayeira: "וירא",
-  "Chayei Sarah": "חיי שרה",
-  Toldot: "תולדות",
-  Vayeitzei: "ויצא",
-  Vayishlach: "וישלח",
-  Vayyeshev: "וישב",
-  Miqeitz: "מקץ",
-  Vayigash: "ויגש",
-  Vayechi: "ויחי",
+  Bereishit: 'בראשית',
+  Noach: 'נח',
+  'Lekh Lekha': 'לך־לך',
+  Vayeira: 'וירא',
+  'Chayei Sarah': 'חיי שרה',
+  Toldot: 'תולדות',
+  Vayeitzei: 'ויצא',
+  Vayishlach: 'וישלח',
+  Vayyeshev: 'וישב',
+  Miqeitz: 'מקץ',
+  Vayigash: 'ויגש',
+  Vayechi: 'ויחי',
   // Exodus
-  Shemot: "שמות",
-  "Va'eira": "וארא",
-  Bo: "בא",
-  Beshalach: "בשלח",
-  Yitro: "יתרו",
-  Mishpatim: "משפטים",
-  Terumah: "תרומה",
-  Tetzaveh: "תצוה",
-  "Ki Tisa": "כי תשא",
-  Vayaqhel: "ויקהל",
-  Pequdei: "פקודי",
+  Shemot: 'שמות',
+  "Va'eira": 'וארא',
+  Bo: 'בא',
+  Beshalach: 'בשלח',
+  Yitro: 'יתרו',
+  Mishpatim: 'משפטים',
+  Terumah: 'תרומה',
+  Tetzaveh: 'תצוה',
+  'Ki Tisa': 'כי תשא',
+  Vayaqhel: 'ויקהל',
+  Pequdei: 'פקודי',
   // Leviticus
-  Vayiqra: "ויקרא",
-  Tzav: "צו",
-  Shemini: "שמיני",
-  Tazria: "תזריע",
-  Metzora: "מצורע",
-  Acharei: "אחרי מות",
-  Qedoshim: "קדושים",
-  Emor: "אמור",
-  Behar: "בהר",
-  Bechuqotai: "בחוקותי",
+  Vayiqra: 'ויקרא',
+  Tzav: 'צו',
+  Shemini: 'שמיני',
+  Tazria: 'תזריע',
+  Metzora: 'מצורע',
+  Acharei: 'אחרי מות',
+  Qedoshim: 'קדושים',
+  Emor: 'אמור',
+  Behar: 'בהר',
+  Bechuqotai: 'בחוקותי',
   // Numbers
-  Bamidbar: "במדבר",
-  Nasso: "נשא",
-  "Beha'alotkha": "בהעלותך",
-  Shelach: "שלח",
-  Qorach: "קורח",
-  Chuqat: "חוקת",
-  Balaq: "בלק",
-  Pinchas: "פינחס",
-  Mattot: "מטות",
-  Masei: "מסעי",
+  Bamidbar: 'במדבר',
+  Nasso: 'נשא',
+  "Beha'alotkha": 'בהעלותך',
+  Shelach: 'שלח',
+  Qorach: 'קורח',
+  Chuqat: 'חוקת',
+  Balaq: 'בלק',
+  Pinchas: 'פינחס',
+  Mattot: 'מטות',
+  Masei: 'מסעי',
   // Deuteronomy
-  Devarim: "דברים",
-  "Va'etchanan": "ואתחנן",
-  Eiqev: "עקב",
-  "Re'eh": "ראה",
-  Shoftim: "שופטים",
-  "Ki Teitzei": "כי תצא",
-  "Ki Tavo": "כי תבוא",
-  Nitzavim: "נצבים",
-  Vayeilekh: "וילך",
-  "Ha'azinu": "האזינו",
-  "Vezot Haberakhah": "וזאת הברכה",
+  Devarim: 'דברים',
+  "Va'etchanan": 'ואתחנן',
+  Eiqev: 'עקב',
+  "Re'eh": 'ראה',
+  Shoftim: 'שופטים',
+  'Ki Teitzei': 'כי תצא',
+  'Ki Tavo': 'כי תבוא',
+  Nitzavim: 'נצבים',
+  Vayeilekh: 'וילך',
+  "Ha'azinu": 'האזינו',
+  'Vezot Haberakhah': 'וזאת הברכה',
 };
 
 // Hebrew names for special occasions
 const SPECIAL_HEBREW_NAMES: Record<string, string> = {
-  "Rosh Hashanah, Day 1": "ראש השנה יום א׳",
-  "Rosh Hashanah, Day 2": "ראש השנה יום ב׳",
-  "Shabbat Shuvah": "שבת שובה",
-  "Yom Kippur, Morning": "יום כיפור שחרית",
-  "Yom Kippur, Afternoon": "יום כיפור מנחה",
-  "Sukkot, Day 1": "סוכות יום א׳",
-  "Sukkot, Day 2": "סוכות יום ב׳",
-  "Sukkot, Intermediate Sabbath": "שבת חול המועד סוכות",
-  "Shemini Atzeret": "שמיני עצרת",
-  "Simchat Torah": "שמחת תורה",
-  "Chanukkah, First Sabbath": "שבת חנוכה א׳",
-  "Chanukkah, Second Sabbath": "שבת חנוכה ב׳",
-  Sheqalim: "שבת שקלים",
-  Zakhor: "שבת זכור",
-  Purim: "פורים",
-  Parah: "שבת פרה",
-  "Ha-Chodesh": "שבת החודש",
-  "Shabbat Ha-Gadol": "שבת הגדול",
-  "Passover, Day 1": "פסח יום א׳",
-  "Passover, Day 2": "פסח יום ב׳",
-  "Passover, Intermediate Sabbath": "שבת חול המועד פסח",
-  "Passover, Day 7": "פסח יום ז׳",
-  "Passover, Day 8": "פסח יום ח׳",
-  "Shavu'ot, Day 1": "שבועות יום א׳",
-  "Shavu'ot, Day 2": "שבועות יום ב׳",
-  "Tisha B'Av, Morning": "תשעה באב שחרית",
-  "Tisha B'Av, Afternoon": "תשעה באב מנחה",
-  "Minor Fasts, Morning": "צום קל שחרית",
-  "Minor Fasts, Afternoon": "צום קל מנחה",
-  "Rosh Chodesh (weekday)": "ראש חודש",
-  "Shabbat on Eve of Rosh Chodesh": "שבת מחר חודש",
-  "Shabbat Rosh Chodesh": "שבת ראש חודש",
+  'Rosh Hashanah, Day 1': 'ראש השנה יום א׳',
+  'Rosh Hashanah, Day 2': 'ראש השנה יום ב׳',
+  'Shabbat Shuvah': 'שבת שובה',
+  'Yom Kippur, Morning': 'יום כיפור שחרית',
+  'Yom Kippur, Afternoon': 'יום כיפור מנחה',
+  'Sukkot, Day 1': 'סוכות יום א׳',
+  'Sukkot, Day 2': 'סוכות יום ב׳',
+  'Sukkot, Intermediate Sabbath': 'שבת חול המועד סוכות',
+  'Shemini Atzeret': 'שמיני עצרת',
+  'Simchat Torah': 'שמחת תורה',
+  'Chanukkah, First Sabbath': 'שבת חנוכה א׳',
+  'Chanukkah, Second Sabbath': 'שבת חנוכה ב׳',
+  Sheqalim: 'שבת שקלים',
+  Zakhor: 'שבת זכור',
+  Purim: 'פורים',
+  Parah: 'שבת פרה',
+  'Ha-Chodesh': 'שבת החודש',
+  'Shabbat Ha-Gadol': 'שבת הגדול',
+  'Passover, Day 1': 'פסח יום א׳',
+  'Passover, Day 2': 'פסח יום ב׳',
+  'Passover, Intermediate Sabbath': 'שבת חול המועד פסח',
+  'Passover, Day 7': 'פסח יום ז׳',
+  'Passover, Day 8': 'פסח יום ח׳',
+  "Shavu'ot, Day 1": 'שבועות יום א׳',
+  "Shavu'ot, Day 2": 'שבועות יום ב׳',
+  "Tisha B'Av, Morning": 'תשעה באב שחרית',
+  "Tisha B'Av, Afternoon": 'תשעה באב מנחה',
+  'Minor Fasts, Morning': 'צום קל שחרית',
+  'Minor Fasts, Afternoon': 'צום קל מנחה',
+  'Rosh Chodesh (weekday)': 'ראש חודש',
+  'Shabbat on Eve of Rosh Chodesh': 'שבת מחר חודש',
+  'Shabbat Rosh Chodesh': 'שבת ראש חודש',
 };
 
 // Category mapping for special occasions
-const SPECIAL_CATEGORIES: Record<
-  string,
-  SpecialOccasion["category"]
-> = {
-  "Rosh Hashanah, Day 1": "high-holidays",
-  "Rosh Hashanah, Day 2": "high-holidays",
-  "Shabbat Shuvah": "high-holidays",
-  "Yom Kippur, Morning": "high-holidays",
-  "Yom Kippur, Afternoon": "high-holidays",
-  "Sukkot, Day 1": "sukkot",
-  "Sukkot, Day 2": "sukkot",
-  "Sukkot, Intermediate Sabbath": "sukkot",
-  "Shemini Atzeret": "sukkot",
-  "Simchat Torah": "sukkot",
-  "Chanukkah, First Sabbath": "other",
-  "Chanukkah, Second Sabbath": "other",
-  Sheqalim: "four-shabbatot",
-  Zakhor: "four-shabbatot",
-  Purim: "other",
-  Parah: "four-shabbatot",
-  "Ha-Chodesh": "four-shabbatot",
-  "Shabbat Ha-Gadol": "other",
-  "Passover, Day 1": "pesach",
-  "Passover, Day 2": "pesach",
-  "Passover, Intermediate Sabbath": "pesach",
-  "Passover, Day 7": "pesach",
-  "Passover, Day 8": "pesach",
-  "Shavu'ot, Day 1": "shavuot",
-  "Shavu'ot, Day 2": "shavuot",
-  "Tisha B'Av, Morning": "fast-days",
-  "Tisha B'Av, Afternoon": "fast-days",
-  "Minor Fasts, Morning": "fast-days",
-  "Minor Fasts, Afternoon": "fast-days",
-  "Rosh Chodesh (weekday)": "rosh-chodesh",
-  "Shabbat on Eve of Rosh Chodesh": "rosh-chodesh",
-  "Shabbat Rosh Chodesh": "rosh-chodesh",
+const SPECIAL_CATEGORIES: Record<string, SpecialOccasion['category']> = {
+  'Rosh Hashanah, Day 1': 'high-holidays',
+  'Rosh Hashanah, Day 2': 'high-holidays',
+  'Shabbat Shuvah': 'high-holidays',
+  'Yom Kippur, Morning': 'high-holidays',
+  'Yom Kippur, Afternoon': 'high-holidays',
+  'Sukkot, Day 1': 'sukkot',
+  'Sukkot, Day 2': 'sukkot',
+  'Sukkot, Intermediate Sabbath': 'sukkot',
+  'Shemini Atzeret': 'sukkot',
+  'Simchat Torah': 'sukkot',
+  'Chanukkah, First Sabbath': 'other',
+  'Chanukkah, Second Sabbath': 'other',
+  Sheqalim: 'four-shabbatot',
+  Zakhor: 'four-shabbatot',
+  Purim: 'other',
+  Parah: 'four-shabbatot',
+  'Ha-Chodesh': 'four-shabbatot',
+  'Shabbat Ha-Gadol': 'other',
+  'Passover, Day 1': 'pesach',
+  'Passover, Day 2': 'pesach',
+  'Passover, Intermediate Sabbath': 'pesach',
+  'Passover, Day 7': 'pesach',
+  'Passover, Day 8': 'pesach',
+  "Shavu'ot, Day 1": 'shavuot',
+  "Shavu'ot, Day 2": 'shavuot',
+  "Tisha B'Av, Morning": 'fast-days',
+  "Tisha B'Av, Afternoon": 'fast-days',
+  'Minor Fasts, Morning': 'fast-days',
+  'Minor Fasts, Afternoon': 'fast-days',
+  'Rosh Chodesh (weekday)': 'rosh-chodesh',
+  'Shabbat on Eve of Rosh Chodesh': 'rosh-chodesh',
+  'Shabbat Rosh Chodesh': 'rosh-chodesh',
 };
 
 // Normalize book names from mechon-mamre format to our format
 function normalizeBookName(name: string): string {
   // Replace non-breaking space with regular space and normalize
-  name = name.replace(/\u00A0/g, " ").trim();
+  name = name.replace(/\u00A0/g, ' ').trim();
 
   // Map numeric prefixes to Roman numerals
   const bookMappings: Record<string, string> = {
-    "1 Kings": "I Kings",
-    "2 Kings": "II Kings",
-    "1 Samuel": "I Samuel",
-    "2 Samuel": "II Samuel",
-    "1 Chronicles": "I Chronicles",
-    "2 Chronicles": "II Chronicles",
+    '1 Kings': 'I Kings',
+    '2 Kings': 'II Kings',
+    '1 Samuel': 'I Samuel',
+    '2 Samuel': 'II Samuel',
+    '1 Chronicles': 'I Chronicles',
+    '2 Chronicles': 'II Chronicles',
   };
 
   return bookMappings[name] || name;
 }
 
 // Parse a verse reference like "42,5-43,10" or "42,5-21" into start/end
-function parseVerseRef(
-  book: string,
-  refStr: string
-): VerseRange {
+function parseVerseRef(book: string, refStr: string): VerseRange {
   // Format: "startCh,startV-endCh,endV" or "startCh,startV-endV" (same chapter)
   const match = refStr.match(/(\d+),(\d+)-(\d+)(?:,(\d+))?/);
   if (!match) {
@@ -258,13 +252,13 @@ function parseHaftarahCell(cellHtml: string): {
 
   // Parse Sephardi - either from parenthetical or same as Ashkenazi
   let sephardi: VerseRange[];
-  if (sephardiHtml && sephardiHtml.includes("(")) {
+  if (sephardiHtml && sephardiHtml.includes('(')) {
     // Extract content from parentheses
     const parenMatch = sephardiHtml.match(/\(([^)]+)\)/);
     if (parenMatch) {
       const parenContent = parenMatch[1].trim();
       // Handle "(none)" case - Sephardic don't read a haftarah
-      if (parenContent.toLowerCase() === "none") {
+      if (parenContent.toLowerCase() === 'none') {
         sephardi = [...ashkenazi]; // Fall back to Ashkenazi
       } else {
         sephardi = parseHaftarahReferences(parenMatch[1]);
@@ -292,18 +286,16 @@ function parseHaftarahReferences(html: string): VerseRange[] {
   // Or continuation: ; <A HREF="...">Chapter,Verse-Verse</A>
 
   // Remove parentheses (Sephardic marker)
-  html = html.replace(/[()]/g, "");
+  html = html.replace(/[()]/g, '');
 
   // Split by semicolon to get segments
   const segments = html.split(/;\s*/);
 
-  let lastBook = "";
+  let lastBook = '';
 
   for (const segment of segments) {
     // Extract the anchor content
-    const anchorMatch = segment.match(
-      /<A[^>]*>([^<]+)<\/A>/i
-    );
+    const anchorMatch = segment.match(/<A[^>]*>([^<]+)<\/A>/i);
     if (!anchorMatch) continue;
 
     const text = anchorMatch[1].trim();
@@ -311,9 +303,9 @@ function parseHaftarahReferences(html: string): VerseRange[] {
     // Check if this segment has a book name or just verse references
     // Book names may start with a digit (e.g., "2 Kings") or letter
     // Replace non-breaking space with regular space for matching
-    const normalizedText = text.replace(/\u00A0/g, " ");
+    const normalizedText = text.replace(/\u00A0/g, ' ');
     const bookMatch = normalizedText.match(
-      /^([12]?\s*[A-Za-z][A-Za-z\s]*?)\s+(\d+,\d+-\d+(?:,\d+)?)/
+      /^([12]?\s*[A-Za-z][A-Za-z\s]*?)\s+(\d+,\d+-\d+(?:,\d+)?)/,
     );
 
     if (bookMatch) {
@@ -335,15 +327,11 @@ function parseHaftarahReferences(html: string): VerseRange[] {
 // Parse Torah reference from HTML cell
 function parseTorahRef(cellHtml: string): VerseRange | null {
   // Extract first anchor with Torah reference
-  const anchorMatch = cellHtml.match(
-    /<A[^>]*>([^<]+)<\/A>/i
-  );
+  const anchorMatch = cellHtml.match(/<A[^>]*>([^<]+)<\/A>/i);
   if (!anchorMatch) return null;
 
   const text = anchorMatch[1].trim();
-  const bookMatch = text.match(
-    /^([A-Za-z]+)\s+(\d+,\d+-\d+(?:,\d+)?)/
-  );
+  const bookMatch = text.match(/^([A-Za-z]+)\s+(\d+,\d+-\d+(?:,\d+)?)/);
 
   if (!bookMatch) return null;
 
@@ -351,9 +339,7 @@ function parseTorahRef(cellHtml: string): VerseRange | null {
 }
 
 // Extract rows from HTML table
-function extractTableRows(
-  tableHtml: string
-): Array<{ cells: string[] }> {
+function extractTableRows(tableHtml: string): Array<{ cells: string[] }> {
   const rows: Array<{ cells: string[] }> = [];
 
   // Split by <TR to get individual row segments
@@ -388,17 +374,15 @@ function extractParshaName(cellHtml: string): string {
   // For special occasions, the cell may have format like:
   // <A HREF="...">Rosh Hashanah</A>, Day 1
   // So we strip all HTML tags and get the full text
-  const fullText = cellHtml.replace(/<[^>]+>/g, "").trim();
+  const fullText = cellHtml.replace(/<[^>]+>/g, '').trim();
 
   // If it's a name with suffix (like ", Day 1"), return full text
-  if (fullText.includes(",")) {
+  if (fullText.includes(',')) {
     return fullText;
   }
 
   // For regular parshiot, try to extract from anchor NAME attribute first
-  const anchorMatch = cellHtml.match(
-    /<A[^>]*NAME="([^"]+)"[^>]*>([^<]*)<\/A>/i
-  );
+  const anchorMatch = cellHtml.match(/<A[^>]*NAME="([^"]+)"[^>]*>([^<]*)<\/A>/i);
   if (anchorMatch) {
     return anchorMatch[2].trim() || anchorMatch[1].trim();
   }
@@ -416,19 +400,12 @@ interface TanakhStructure {
 }
 
 async function loadTanakhStructure(): Promise<TanakhStructure> {
-  const structurePath = new URL(
-    "../public/data/tanakh-structure.json",
-    import.meta.url
-  );
-  const content = await readFile(structurePath, "utf-8");
+  const structurePath = new URL('../public/data/tanakh-structure.json', import.meta.url);
+  const content = await readFile(structurePath, 'utf-8');
   return JSON.parse(content);
 }
 
-function validateVerseRange(
-  range: VerseRange,
-  structure: TanakhStructure,
-  context: string
-): void {
+function validateVerseRange(range: VerseRange, structure: TanakhStructure, context: string): void {
   const bookData = structure.books.find((b) => b.name === range.book);
   if (!bookData) {
     throw new Error(`${context}: Unknown book "${range.book}"`);
@@ -441,55 +418,49 @@ function validateVerseRange(
     throw new Error(`${context}: ${range.book} end verse is undefined/null`);
   }
 
-  if (
-    range.start.chapter < 1 ||
-    range.start.chapter > bookData.chapters.length
-  ) {
+  if (range.start.chapter < 1 || range.start.chapter > bookData.chapters.length) {
     throw new Error(
-      `${context}: ${range.book} start chapter ${range.start.chapter} out of range (1-${bookData.chapters.length})`
+      `${context}: ${range.book} start chapter ${range.start.chapter} out of range (1-${bookData.chapters.length})`,
     );
   }
   if (range.end.chapter < 1 || range.end.chapter > bookData.chapters.length) {
     throw new Error(
-      `${context}: ${range.book} end chapter ${range.end.chapter} out of range (1-${bookData.chapters.length})`
+      `${context}: ${range.book} end chapter ${range.end.chapter} out of range (1-${bookData.chapters.length})`,
     );
   }
 
   const startChapterVerseCount = bookData.chapters[range.start.chapter - 1];
   if (range.start.verse < 1 || range.start.verse > startChapterVerseCount) {
     throw new Error(
-      `${context}: ${range.book} ${range.start.chapter}:${range.start.verse} out of range (1-${startChapterVerseCount})`
+      `${context}: ${range.book} ${range.start.chapter}:${range.start.verse} out of range (1-${startChapterVerseCount})`,
     );
   }
 
   const endChapterVerseCount = bookData.chapters[range.end.chapter - 1];
   if (range.end.verse < 1 || range.end.verse > endChapterVerseCount) {
     throw new Error(
-      `${context}: ${range.book} ${range.end.chapter}:${range.end.verse} out of range (1-${endChapterVerseCount})`
+      `${context}: ${range.book} ${range.end.chapter}:${range.end.verse} out of range (1-${endChapterVerseCount})`,
     );
   }
 
   if (range.start.chapter > range.end.chapter) {
     throw new Error(
-      `${context}: ${range.book} start chapter ${range.start.chapter} > end chapter ${range.end.chapter}`
+      `${context}: ${range.book} start chapter ${range.start.chapter} > end chapter ${range.end.chapter}`,
     );
   }
-  if (
-    range.start.chapter === range.end.chapter &&
-    range.start.verse > range.end.verse
-  ) {
+  if (range.start.chapter === range.end.chapter && range.start.verse > range.end.verse) {
     throw new Error(
-      `${context}: ${range.book} ${range.start.chapter}:${range.start.verse} > ${range.end.chapter}:${range.end.verse}`
+      `${context}: ${range.book} ${range.start.chapter}:${range.start.verse} > ${range.end.chapter}:${range.end.verse}`,
     );
   }
 }
 
 async function main() {
-  console.log("Generating haftarah mappings from mechon-mamre HTML...\n");
+  console.log('Generating haftarah mappings from mechon-mamre HTML...\n');
 
   // Load HTML
-  const htmlPath = new URL("../data/readings.html", import.meta.url);
-  const html = await readFile(htmlPath, "utf-8");
+  const htmlPath = new URL('../data/readings.html', import.meta.url);
+  const html = await readFile(htmlPath, 'utf-8');
 
   // Load structure for validation
   const structure = await loadTanakhStructure();
@@ -504,9 +475,7 @@ async function main() {
   }
 
   if (tables.length < 2) {
-    throw new Error(
-      `Expected 2 tables with border="1", found ${tables.length}`
-    );
+    throw new Error(`Expected 2 tables with border="1", found ${tables.length}`);
   }
 
   const weeklyTable = tables[0];
@@ -517,7 +486,7 @@ async function main() {
   const weeklyRows = extractTableRows(weeklyTable);
   let errors = 0;
 
-  console.log("=== PARSHIOT ===\n");
+  console.log('=== PARSHIOT ===\n');
 
   for (const row of weeklyRows) {
     const name = extractParshaName(row.cells[0]);
@@ -547,7 +516,7 @@ async function main() {
     // Validate
     console.log(`${name} (${parsha.hebrewName})`);
     console.log(
-      `  Torah: ${torah.book} ${torah.start.chapter}:${torah.start.verse}-${torah.end.chapter}:${torah.end.verse}`
+      `  Torah: ${torah.book} ${torah.start.chapter}:${torah.start.verse}-${torah.end.chapter}:${torah.end.verse}`,
     );
 
     try {
@@ -562,9 +531,7 @@ async function main() {
       try {
         validateVerseRange(range, structure, `${name} Ashkenazi[${i}]`);
       } catch (err) {
-        console.error(
-          `  ❌ ${err instanceof Error ? err.message : String(err)}`
-        );
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
         errors++;
       }
     }
@@ -574,20 +541,16 @@ async function main() {
       try {
         validateVerseRange(range, structure, `${name} Sephardi[${i}]`);
       } catch (err) {
-        console.error(
-          `  ❌ ${err instanceof Error ? err.message : String(err)}`
-        );
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
         errors++;
       }
     }
 
-    const ashkBooks = haftarah.ashkenazi.map((r) => r.book).join(", ");
+    const ashkBooks = haftarah.ashkenazi.map((r) => r.book).join(', ');
     console.log(`  Haftarah (Ashk): ${ashkBooks}`);
 
-    if (
-      JSON.stringify(haftarah.ashkenazi) !== JSON.stringify(haftarah.sephardi)
-    ) {
-      const sephBooks = haftarah.sephardi.map((r) => r.book).join(", ");
+    if (JSON.stringify(haftarah.ashkenazi) !== JSON.stringify(haftarah.sephardi)) {
+      const sephBooks = haftarah.sephardi.map((r) => r.book).join(', ');
       console.log(`  Haftarah (Seph): ${sephBooks}`);
     }
 
@@ -598,14 +561,14 @@ async function main() {
   const specialOccasions: SpecialOccasion[] = [];
   const specialRows = extractTableRows(specialTable);
 
-  console.log("\n=== SPECIAL OCCASIONS ===\n");
+  console.log('\n=== SPECIAL OCCASIONS ===\n');
 
   for (const row of specialRows) {
     const name = extractParshaName(row.cells[0]);
     const haftarahHtml = row.cells[2];
 
     // Skip rows without haftarah (empty cell or just whitespace/nbsp)
-    if (!haftarahHtml || haftarahHtml.replace(/[\s\u00A0]/g, "") === "") {
+    if (!haftarahHtml || haftarahHtml.replace(/[\s\u00A0]/g, '') === '') {
       console.log(`${name}: No haftarah, skipping`);
       continue;
     }
@@ -637,7 +600,7 @@ async function main() {
     const occasion: SpecialOccasion = {
       name,
       hebrewName: hebrewName || name,
-      category: category || "other",
+      category: category || 'other',
       haftarah,
     };
 
@@ -648,9 +611,7 @@ async function main() {
       try {
         validateVerseRange(range, structure, `${name} Ashkenazi[${i}]`);
       } catch (err) {
-        console.error(
-          `  ❌ ${err instanceof Error ? err.message : String(err)}`
-        );
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
         errors++;
       }
     }
@@ -660,20 +621,16 @@ async function main() {
       try {
         validateVerseRange(range, structure, `${name} Sephardi[${i}]`);
       } catch (err) {
-        console.error(
-          `  ❌ ${err instanceof Error ? err.message : String(err)}`
-        );
+        console.error(`  ❌ ${err instanceof Error ? err.message : String(err)}`);
         errors++;
       }
     }
 
-    const ashkBooks = haftarah.ashkenazi.map((r) => r.book).join(", ");
+    const ashkBooks = haftarah.ashkenazi.map((r) => r.book).join(', ');
     console.log(`  Haftarah (Ashk): ${ashkBooks}`);
 
-    if (
-      JSON.stringify(haftarah.ashkenazi) !== JSON.stringify(haftarah.sephardi)
-    ) {
-      const sephBooks = haftarah.sephardi.map((r) => r.book).join(", ");
+    if (JSON.stringify(haftarah.ashkenazi) !== JSON.stringify(haftarah.sephardi)) {
+      const sephBooks = haftarah.sephardi.map((r) => r.book).join(', ');
       console.log(`  Haftarah (Seph): ${sephBooks}`);
     }
 
@@ -685,13 +642,10 @@ async function main() {
     process.exit(1);
   }
 
-  console.log("\n✅ All ranges validated successfully");
+  console.log('\n✅ All ranges validated successfully');
 
   // Ensure output directory exists
-  const outputPath = new URL(
-    "../public/data/haftarah-mappings.json",
-    import.meta.url
-  );
+  const outputPath = new URL('../public/data/haftarah-mappings.json', import.meta.url);
   const outputDir = dirname(outputPath.pathname);
   await mkdir(outputDir, { recursive: true });
 
@@ -704,11 +658,11 @@ async function main() {
   console.log(`\nTotal parshiot: ${parshiot.length}`);
   console.log(`Total special occasions: ${specialOccasions.length}`);
   console.log(
-    `Total items (parshiot + special occasions): ${parshiot.length + specialOccasions.length}`
+    `Total items (parshiot + special occasions): ${parshiot.length + specialOccasions.length}`,
   );
 }
 
 main().catch((err) => {
-  console.error("Error:", err);
+  console.error('Error:', err);
   process.exit(1);
 });

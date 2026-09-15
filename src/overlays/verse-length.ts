@@ -1,8 +1,8 @@
 // Verse length overlay - visualizes word count per verse using square root scale
-import type { Overlay, Color } from "./types.ts";
-import type { TanakhIdentity } from "../types.ts";
-import { tanakhKey } from "../types.ts";
-import type { VerseTexts } from "../verseTexts.ts";
+import type { Overlay, Color } from './types.ts';
+import type { TanakhIdentity } from '../types.ts';
+import { tanakhKey } from '../types.ts';
+import type { VerseTexts } from '../verseTexts.ts';
 
 // Color palettes (perceptually uniform, colorblind-friendly)
 
@@ -139,8 +139,8 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
 }
 
 export const verseLengthOverlay: Overlay = {
-  id: "verse-length",
-  name: "Verse Length",
+  id: 'verse-length',
+  name: 'Verse Length',
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);
@@ -153,17 +153,16 @@ export const verseLengthOverlay: Overlay = {
     for (let i = 0; i < numStops; i++) {
       const t = i / (numStops - 1);
       const color = getPaletteColor(t);
-      const rgb = color.map((c) => Math.round(c * 255)).join(", ");
+      const rgb = color.map((c) => Math.round(c * 255)).join(', ');
       const percent = (i / (numStops - 1)) * 100;
       gradientStops.push(`rgb(${rgb}) ${percent}%`);
     }
-    const gradient = gradientStops.join(", ");
+    const gradient = gradientStops.join(', ');
 
     // Determine palette name for display
-    const paletteName = COLOR_STOPS === PLASMA_STOPS ? "Plasma" : "Viridis";
-    const lowColor = COLOR_STOPS === PLASMA_STOPS ? "Purple" : "Purple/blue";
-    const highColor =
-      COLOR_STOPS === PLASMA_STOPS ? "Orange/yellow" : "Green/yellow";
+    const paletteName = COLOR_STOPS === PLASMA_STOPS ? 'Plasma' : 'Viridis';
+    const lowColor = COLOR_STOPS === PLASMA_STOPS ? 'Purple' : 'Purple/blue';
+    const highColor = COLOR_STOPS === PLASMA_STOPS ? 'Orange/yellow' : 'Green/yellow';
 
     // Suppress unused variable warning (reference for alternative palette)
     void _VIRIDIS_STOPS;
@@ -200,7 +199,7 @@ export const verseLengthOverlay: Overlay = {
 
     if (wordCount === undefined) return null;
 
-    const plural = wordCount === 1 ? "word" : "words";
+    const plural = wordCount === 1 ? 'word' : 'words';
     return `${wordCount} ${plural}`;
   },
 
@@ -210,18 +209,18 @@ export const verseLengthOverlay: Overlay = {
 
     if (wordCount === undefined) return null;
 
-    const plural = wordCount === 1 ? "word" : "words";
+    const plural = wordCount === 1 ? 'word' : 'words';
 
-    const div = document.createElement("div");
+    const div = document.createElement('div');
     div.style.cssText =
-      "margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;";
+      'margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;';
 
-    const label = document.createElement("div");
-    label.style.cssText = "font-size: 11px; color: #888; margin-bottom: 4px;";
-    label.textContent = "Verse Length:";
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size: 11px; color: #888; margin-bottom: 4px;';
+    label.textContent = 'Verse Length:';
 
-    const value = document.createElement("div");
-    value.style.cssText = "font-size: 13px; color: #ddd;";
+    const value = document.createElement('div');
+    value.style.cssText = 'font-size: 13px; color: #ddd;';
     value.textContent = `${wordCount} ${plural}`;
 
     div.appendChild(label);

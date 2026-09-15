@@ -1,21 +1,16 @@
 // src/overlays/commentary.ts
-import "../styles/overlays/commentary.css";
-import type {
-  Overlay,
-  Color,
-  UrlParamSpec,
-  UrlParamValues,
-} from "./types.ts";
-import type { TanakhIdentity, TanakhLayout, CommentaryData } from "../types.ts";
-import { heatmapColor } from "../utils/color.ts";
-import { fetchData } from "../constants/app.ts";
+import '../styles/overlays/commentary.css';
+import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
+import type { TanakhIdentity, TanakhLayout, CommentaryData } from '../types.ts';
+import { heatmapColor } from '../utils/color.ts';
+import { fetchData } from '../constants/app.ts';
 
 const URL_PARAMS = [
-  { key: "category", kind: "category" },
+  { key: 'category', kind: 'category' },
 ] as const satisfies readonly UrlParamSpec[];
 
 let data: CommentaryData = {};
-let currentCategory = "total";
+let currentCategory = 'total';
 let updateCallback: (() => void) | null = null;
 
 // Cache max values per category to avoid recalculating
@@ -25,7 +20,7 @@ let verses: TanakhLayout[] = [];
 function getCount(book: string, chapter: number, verse: number): number {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   if (!verseData) return 0;
-  if (currentCategory === "total") return verseData.total;
+  if (currentCategory === 'total') return verseData.total;
   return verseData.categories[currentCategory] || 0;
 }
 
@@ -43,8 +38,8 @@ function getMaxValue(): number {
 }
 
 export const commentaryOverlay: Overlay = {
-  id: "commentary",
-  name: "Commentary",
+  id: 'commentary',
+  name: 'Commentary',
   credits: [
     {
       source: 'Sefaria link exports',
@@ -55,14 +50,14 @@ export const commentaryOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetchData("commentary-counts.json");
+      const res = await fetchData('commentary-counts.json');
       if (!res.ok) {
         console.error(`Failed to load commentary-counts.json: ${res.status}`);
         return;
       }
       data = await res.json();
     } catch (e) {
-      console.error("Failed to parse commentary-counts.json:", e);
+      console.error('Failed to parse commentary-counts.json:', e);
     }
   },
 
@@ -88,8 +83,8 @@ export const commentaryOverlay: Overlay = {
   },
 
   renderControls(container: HTMLElement) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "commentary-controls";
+    const wrapper = document.createElement('div');
+    wrapper.className = 'commentary-controls';
     wrapper.innerHTML = `
       <label for="category-select">Category:</label>
       <select id="category-select">
@@ -103,9 +98,9 @@ export const commentaryOverlay: Overlay = {
         <option value="Musar">Musar</option>
       </select>
     `;
-    const select = wrapper.querySelector("select")!;
+    const select = wrapper.querySelector('select')!;
     select.value = currentCategory;
-    select.addEventListener("change", () => {
+    select.addEventListener('change', () => {
       currentCategory = select.value;
       cachedMaxValues = {}; // Clear cache on category change
       updateCallback?.();
@@ -137,16 +132,15 @@ export const commentaryOverlay: Overlay = {
             const label = val >= 1000 ? `${val / 1000}k` : String(val);
             return `<span class="tick" style="left: ${pos}%">${label}</span>`;
           })
-          .join("")}
+          .join('')}
       </div>
     `;
   },
 
   getHoverInfo(verse: TanakhIdentity): string | null {
-    const verseData =
-      data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
+    const verseData = data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
     if (!verseData) return null;
-    if (currentCategory === "total") {
+    if (currentCategory === 'total') {
       return `${verseData.total} links`;
     }
     const count = verseData.categories[currentCategory];
@@ -157,7 +151,7 @@ export const commentaryOverlay: Overlay = {
 
   getUrlParams(): Record<string, string> {
     // "total" is the default, so it stays out of the URL
-    if (currentCategory === "total") return {};
+    if (currentCategory === 'total') return {};
     return { category: currentCategory };
   },
 
@@ -174,8 +168,7 @@ export const commentaryOverlay: Overlay = {
     const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
     if (!count) return null;
 
-    const categoryName =
-      currentCategory === "total" ? "linked texts" : `${currentCategory} links`;
+    const categoryName = currentCategory === 'total' ? 'linked texts' : `${currentCategory} links`;
     return `${count} ${categoryName}`;
   },
 };
@@ -184,27 +177,19 @@ export function configure(config: { verses: TanakhLayout[] }): void {
   verses = config.verses;
   cachedMaxValues = {};
   // Reset to default state for testing
-  currentCategory = "total";
+  currentCategory = 'total';
 }
 
 // Get total linked texts count for a verse (used by sidebar)
-export function getVerseLinkCount(
-  book: string,
-  chapter: number,
-  verse: number,
-): number | null {
+export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   return verseData?.total ?? null;
 }
 
 // Get category-specific link count for a verse (used by sidebar)
-function getVerseCategoryCount(
-  book: string,
-  chapter: number,
-  verse: number,
-): number | null {
+function getVerseCategoryCount(book: string, chapter: number, verse: number): number | null {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   if (!verseData) return null;
-  if (currentCategory === "total") return verseData.total;
+  if (currentCategory === 'total') return verseData.total;
   return verseData.categories[currentCategory] ?? null;
 }

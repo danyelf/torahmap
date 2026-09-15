@@ -7,12 +7,7 @@ import {
   configureSearch,
   type Overlay,
 } from '../../overlays/index';
-import {
-  parseUrlState,
-  buildUrlHash,
-  updateUrl,
-  type UrlState,
-} from '../../urlState';
+import { parseUrlState, buildUrlHash, updateUrl, type UrlState } from '../../urlState';
 import {
   createVerses,
   SAMPLE_VERSES,
@@ -52,7 +47,9 @@ describe('User Workflows Integration', () => {
     vi.spyOn(history, 'pushState').mockImplementation((state, title, url) => {
       if (url) {
         const urlString = url.toString();
-        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
+        const fullUrl = urlString.startsWith('http')
+          ? urlString
+          : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalPushState(state, title, url);
@@ -61,7 +58,9 @@ describe('User Workflows Integration', () => {
     vi.spyOn(history, 'replaceState').mockImplementation((state, title, url) => {
       if (url) {
         const urlString = url.toString();
-        const fullUrl = urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
+        const fullUrl = urlString.startsWith('http')
+          ? urlString
+          : `http://localhost:5173${urlString}`;
         mockWindowLocation(fullUrl);
       }
       return originalReplaceState(state, title, url);
@@ -213,8 +212,8 @@ describe('User Workflows Integration', () => {
 
         // Verify no leakage of previous overlay params
         const otherParams = overlaySequence
-          .filter(o => o.id !== id)
-          .flatMap(o => Object.keys(o.params));
+          .filter((o) => o.id !== id)
+          .flatMap((o) => Object.keys(o.params));
 
         for (const paramKey of otherParams) {
           if (!Object.keys(params).includes(paramKey)) {
@@ -382,7 +381,7 @@ describe('User Workflows Integration', () => {
 
       // Simulate color calculation for all verses
       await switchToOverlay('commentary');
-      const colors = largeVerseSet.map(v => currentOverlay!.getVerseColor(v));
+      const colors = largeVerseSet.map((v) => currentOverlay!.getVerseColor(v));
 
       const endTime = performance.now();
       const duration = endTime - startTime;
@@ -404,7 +403,7 @@ describe('User Workflows Integration', () => {
           await switchToOverlay(overlayId);
 
           // Verify overlay is functional
-          const colors = verses.map(v => currentOverlay!.getVerseColor(v));
+          const colors = verses.map((v) => currentOverlay!.getVerseColor(v));
           expect(colors.length).toBe(verses.length);
 
           // Destroy and verify cleanup
@@ -428,7 +427,7 @@ describe('User Workflows Integration', () => {
 
       // Simulate deep zoom (would show many verses)
       await switchToOverlay('commentary');
-      const colors = largeVerseSet.map(v => currentOverlay!.getVerseColor(v));
+      const colors = largeVerseSet.map((v) => currentOverlay!.getVerseColor(v));
 
       const endTime = performance.now();
       const duration = endTime - startTime;

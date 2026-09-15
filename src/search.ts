@@ -30,19 +30,19 @@ interface IndexEntry {
   book: string;
   chapter: number;
   verse: number;
-  hebrewText: string;      // nikkud-stripped
-  hebrewOriginal: string;  // original for display
-  englishText: string;     // lowercased
+  hebrewText: string; // nikkud-stripped
+  hebrewOriginal: string; // original for display
+  englishText: string; // lowercased
   englishOriginal: string; // original for display
 }
 
 // Unicode range for Hebrew characters
 const HEBREW_RANGE_START = 0x0590;
-const HEBREW_RANGE_END = 0x05FF;
+const HEBREW_RANGE_END = 0x05ff;
 
 // Nikkud (vowel marks) range
 const NIKKUD_START = 0x0591;
-const NIKKUD_END = 0x05C7;
+const NIKKUD_END = 0x05c7;
 
 // Hebrew final forms (sofit) - map final form to regular form
 const FINAL_FORM_MAP: Record<string, string> = {
@@ -112,7 +112,14 @@ export function stripNikkud(text: string): string {
   for (const char of text) {
     const code = char.charCodeAt(0);
     // Skip nikkud marks but keep Hebrew letters and other characters
-    if (code < NIKKUD_START || code > NIKKUD_END || code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6) {
+    if (
+      code < NIKKUD_START ||
+      code > NIKKUD_END ||
+      code === 0x05be ||
+      code === 0x05c0 ||
+      code === 0x05c3 ||
+      code === 0x05c6
+    ) {
       result += char;
     }
   }
@@ -132,11 +139,24 @@ export function normalizeHebrewForSearch(text: string): string {
   for (const char of text) {
     const code = char.charCodeAt(0);
     // Skip nikkud marks but keep Hebrew letters and other characters
-    if (code < NIKKUD_START || code > NIKKUD_END || code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6) {
+    if (
+      code < NIKKUD_START ||
+      code > NIKKUD_END ||
+      code === 0x05be ||
+      code === 0x05c0 ||
+      code === 0x05c3 ||
+      code === 0x05c6
+    ) {
       // Normalize maqaf (U+05BE ־), hyphens, and other non-letter Hebrew
       // punctuation (paseq, sof pasuq, nun hafukha) to spaces so that
       // keyboard space matches any word separator (e.g. "את יצחק" matches "את־יצחק")
-      if (code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6 || char === '-') {
+      if (
+        code === 0x05be ||
+        code === 0x05c0 ||
+        code === 0x05c3 ||
+        code === 0x05c6 ||
+        char === '-'
+      ) {
         result += ' ';
       } else {
         // Normalize final forms to regular forms
@@ -153,9 +173,9 @@ export function normalizeHebrewForSearch(text: string): string {
  */
 export function parseSearchTerms(query: string): string[] {
   return query
-    .split(/[,،‎\u05F4]/)  // Split on English comma, Arabic comma, or Hebrew Gershayim
-    .map(t => t.trim())
-    .filter(t => t.length >= MIN_SEARCH_TERM_LENGTH);
+    .split(/[,،‎\u05F4]/) // Split on English comma, Arabic comma, or Hebrew Gershayim
+    .map((t) => t.trim())
+    .filter((t) => t.length >= MIN_SEARCH_TERM_LENGTH);
 }
 
 /** Row order of the lexeme records in lexicon.json */
@@ -191,7 +211,9 @@ export async function loadLexiconData(): Promise<void> {
 
     if (!lexiconRes.ok || !formsRes.ok || !versesRes.ok) {
       console.warn('Failed to load lexeme index, falling back to whole-word search');
-      console.warn(`Response status: lexicon=${lexiconRes.status}, forms=${formsRes.status}, verses=${versesRes.status}`);
+      console.warn(
+        `Response status: lexicon=${lexiconRes.status}, forms=${formsRes.status}, verses=${versesRes.status}`,
+      );
       return;
     }
 
@@ -200,14 +222,19 @@ export async function loadLexiconData(): Promise<void> {
     verseToLexemes = await versesRes.json();
 
     lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language, root]) => ({
-      id, form, gloss, pos, language, root,
+      id,
+      form,
+      gloss,
+      pos,
+      language,
+      root,
     }));
-    lexemeSpellings = lexicon.map(entry => normalizeHebrewForSearch(entry.form));
+    lexemeSpellings = lexicon.map((entry) => normalizeHebrewForSearch(entry.form));
 
     console.log(
       `✓ Loaded ${lexicon.length} lexemes (${lexiconFile.source}), ` +
-      `${Object.keys(formToLexemes || {}).length} written forms, ` +
-      `${Object.keys(verseToLexemes || {}).length} verses`
+        `${Object.keys(formToLexemes || {}).length} written forms, ` +
+        `${Object.keys(verseToLexemes || {}).length} verses`,
     );
 
     buildVerseIndex();
@@ -242,7 +269,9 @@ function buildVerseIndex(): void {
   }
 
   const endTime = performance.now();
-  console.log(`✓ Built verse index: ${lexemeToVerses.size} lexemes in ${(endTime - startTime).toFixed(2)}ms`);
+  console.log(
+    `✓ Built verse index: ${lexemeToVerses.size} lexemes in ${(endTime - startTime).toFixed(2)}ms`,
+  );
 }
 
 /**
@@ -379,10 +408,14 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
     const chapters = verseTexts[book];
     if (!chapters) continue;
 
-    const chapterNums = Object.keys(chapters).map(Number).sort((a, b) => a - b);
+    const chapterNums = Object.keys(chapters)
+      .map(Number)
+      .sort((a, b) => a - b);
     for (const chapter of chapterNums) {
       const verses = chapters[String(chapter)];
-      const verseNums = Object.keys(verses).map(Number).sort((a, b) => a - b);
+      const verseNums = Object.keys(verses)
+        .map(Number)
+        .sort((a, b) => a - b);
 
       for (const verse of verseNums) {
         const { he, en } = verses[String(verse)];
@@ -428,13 +461,12 @@ function searchByLexemes(lexemes: LexemeId[]): Set<string> {
   // failed partway through.
   if (!verseToLexemes) return matchingVerses;
   for (const [verseKey, verseLexemes] of Object.entries(verseToLexemes)) {
-    if (lexemes.some(lexeme => verseLexemes.includes(lexeme))) {
+    if (lexemes.some((lexeme) => verseLexemes.includes(lexeme))) {
       matchingVerses.add(verseKey);
     }
   }
   return matchingVerses;
 }
-
 
 /**
  * Test if a character is a word separator (whitespace, maqaf, or other
@@ -443,7 +475,7 @@ function searchByLexemes(lexemes: LexemeId[]): Set<string> {
 function isWordSeparator(char: string): boolean {
   if (/\s/.test(char)) return true;
   const code = char.charCodeAt(0);
-  return code === 0x05BE || code === 0x05C0 || code === 0x05C3 || code === 0x05C6 || char === '-';
+  return code === 0x05be || code === 0x05c0 || code === 0x05c3 || code === 0x05c6 || char === '-';
 }
 
 /**
@@ -451,7 +483,10 @@ function isWordSeparator(char: string): boolean {
  * Words are separated by whitespace, maqaf (U+05BE), and other Hebrew punctuation
  * Exported for testing
  */
-export function getWordBoundaries(text: string, wordIndex: number): { start: number; end: number } | null {
+export function getWordBoundaries(
+  text: string,
+  wordIndex: number,
+): { start: number; end: number } | null {
   // Bounds check: wordIndex must be non-negative
   if (wordIndex < 0) return null;
 
@@ -502,7 +537,7 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
       const words = entry.hebrewText.split(/\s+/);
 
       // Find word index that matches exactly
-      const wordIndex = words.findIndex(word => word === normalizedTerm);
+      const wordIndex = words.findIndex((word) => word === normalizedTerm);
 
       if (wordIndex !== -1) {
         // Found a match - use getWordBoundaries to find position in original text
@@ -524,9 +559,13 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
           }
 
           // Only add if this term hasn't matched this verse yet
-          if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+          if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
             const wordLen = wordBounds.end - wordBounds.start;
-            const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
+            const snippet = createSnippetAtPosition(
+              entry.hebrewOriginal,
+              wordBounds.start,
+              wordLen,
+            );
             result.matchingTerms.push({
               termIndex,
               snippet: snippet.text,
@@ -554,7 +593,7 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
 export function computeSnippetForMatch(
   result: SearchResult,
   _termIndex: number,
-  searchTerm: string
+  searchTerm: string,
 ): { snippet: string; matchStart: number; matchEnd: number } | null {
   // Find verse text
   const verseKey = `${result.book}:${result.chapter}:${result.verse}`;
@@ -578,14 +617,14 @@ export function computeSnippetForMatch(
     let wordIndex = words.indexOf(normalizedSearch);
 
     if (wordIndex < 0) {
-      wordIndex = words.findIndex(word => {
+      wordIndex = words.findIndex((word) => {
         const wordLexemes = findLexemesForWord(word);
-        return wordLexemes !== null && wordLexemes.some(id => wanted.has(id));
+        return wordLexemes !== null && wordLexemes.some((id) => wanted.has(id));
       });
     }
 
     if (wordIndex < 0) {
-      wordIndex = words.findIndex(w => w.includes(normalizedSearch));
+      wordIndex = words.findIndex((w) => w.includes(normalizedSearch));
     }
 
     if (wordIndex >= 0) {
@@ -606,7 +645,7 @@ export function computeSnippetForMatch(
   // no word in the verse matched one)
   const normalizedTerm = normalizeHebrewForSearch(searchTerm);
   const words = entry.hebrewText.split(/\s+/);
-  const wordIndex = words.findIndex(word => word === normalizedTerm);
+  const wordIndex = words.findIndex((word) => word === normalizedTerm);
 
   if (wordIndex !== -1) {
     // Found whole-word match - get position in original text
@@ -676,7 +715,7 @@ function searchByRootMode(terms: string[]): SearchResult[] {
           }
 
           // Only add if this term hasn't matched this verse yet
-          const shouldAdd = !result.matchingTerms.some(m => m.termIndex === termIndex);
+          const shouldAdd = !result.matchingTerms.some((m) => m.termIndex === termIndex);
 
           if (shouldAdd) {
             // Only track that this term matched - NO SNIPPET COMPUTATION
@@ -715,7 +754,7 @@ function searchHebrewWholeWordLazy(terms: string[]): SearchResult[] {
       const words = entry.hebrewText.split(/\s+/);
 
       // Find word index that matches exactly
-      const wordIndex = words.findIndex(word => word === normalizedTerm);
+      const wordIndex = words.findIndex((word) => word === normalizedTerm);
 
       if (wordIndex !== -1) {
         const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
@@ -733,7 +772,7 @@ function searchHebrewWholeWordLazy(terms: string[]): SearchResult[] {
         }
 
         // Only add if this term hasn't matched this verse yet
-        if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+        if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
           // Only track that this term matched - NO SNIPPET COMPUTATION
           result.matchingTerms.push({
             termIndex,
@@ -760,7 +799,7 @@ function searchHebrewWholeWordLazy(terms: string[]): SearchResult[] {
 export function search(
   query: string,
   wholeWord: boolean = false,
-  hebrewMode: 'substring' | 'word' | 'root' = 'substring'
+  hebrewMode: 'substring' | 'word' | 'root' = 'substring',
 ): SearchResult[] {
   const terms = parseSearchTerms(query);
   if (terms.length === 0) return [];
@@ -833,7 +872,7 @@ export function search(
         }
 
         // Only add if this term hasn't matched this verse yet
-        if (!result.matchingTerms.some(m => m.termIndex === termIndex)) {
+        if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
           result.matchingTerms.push({
             termIndex,
             snippet: snippet.text,
@@ -858,7 +897,11 @@ interface SnippetResult {
  * Create a snippet around a match when we already have positions in the original text
  * (no nikkud mapping needed - used for lexeme-based word highlighting)
  */
-function createSnippetAtPosition(text: string, matchStart: number, matchLen: number): SnippetResult {
+function createSnippetAtPosition(
+  text: string,
+  matchStart: number,
+  matchLen: number,
+): SnippetResult {
   const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
   const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
 
@@ -907,8 +950,13 @@ function mapStrippedToOriginal(original: string, strippedPos: number): number {
       return i;
     }
     const code = original.charCodeAt(i);
-    const isNikkud = code >= NIKKUD_START && code <= NIKKUD_END &&
-                     code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+    const isNikkud =
+      code >= NIKKUD_START &&
+      code <= NIKKUD_END &&
+      code !== 0x05be &&
+      code !== 0x05c0 &&
+      code !== 0x05c3 &&
+      code !== 0x05c6;
     if (!isNikkud) {
       normalizedPos++;
     }
@@ -929,8 +977,13 @@ function countNikkudInRange(text: string, start: number, strippedLen: number): n
   let nonNikkudCount = 0;
   for (let i = start; i < text.length && nonNikkudCount < strippedLen; i++) {
     const code = text.charCodeAt(i);
-    const isNikkud = code >= NIKKUD_START && code <= NIKKUD_END &&
-                     code !== 0x05BE && code !== 0x05C0 && code !== 0x05C3 && code !== 0x05C6;
+    const isNikkud =
+      code >= NIKKUD_START &&
+      code <= NIKKUD_END &&
+      code !== 0x05be &&
+      code !== 0x05c0 &&
+      code !== 0x05c3 &&
+      code !== 0x05c6;
     if (isNikkud) {
       nikkudCount++;
     } else {
@@ -944,7 +997,12 @@ function countNikkudInRange(text: string, start: number, strippedLen: number): n
  * Create a snippet around the match position
  * For Hebrew, matchIdx/matchLen refer to positions in the nikkud-stripped text
  */
-function createSnippet(text: string, matchIdx: number, matchLen: number, isHebrew: boolean = false): SnippetResult {
+function createSnippet(
+  text: string,
+  matchIdx: number,
+  matchLen: number,
+  isHebrew: boolean = false,
+): SnippetResult {
   const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
   const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
 
@@ -995,7 +1053,10 @@ export function getMatchingVerseTerms(results: SearchResult[]): Map<string, numb
   const map = new Map<string, number[]>();
   for (const r of results) {
     const key = tanakhKey(r.book, r.chapter, r.verse);
-    map.set(key, r.matchingTerms.map(m => m.termIndex));
+    map.set(
+      key,
+      r.matchingTerms.map((m) => m.termIndex),
+    );
   }
   return map;
 }

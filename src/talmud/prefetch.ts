@@ -2,9 +2,9 @@
 //
 // Design: docs/plans/2026-04-07-talmud-integration-design.md §3.12
 
-import { getTractateText, hasTractateText } from "./data.ts";
-import { PREFETCH_CONCURRENCY } from "./constants.ts";
-import type { TalmudTractateText } from "./data.ts";
+import { getTractateText, hasTractateText } from './data.ts';
+import { PREFETCH_CONCURRENCY } from './constants.ts';
+import type { TalmudTractateText } from './data.ts';
 
 let queue: string[] = [];
 let inFlight = 0;

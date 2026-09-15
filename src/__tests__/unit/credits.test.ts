@@ -79,8 +79,9 @@ describe('renderCreditBlock', () => {
   });
 
   it('shows a note when one is given', () => {
-    expect(block([{ source: 'S', note: 'Cite 10.17026/dans-z6y-skyh' }]))
-      .toContain('Cite 10.17026/dans-z6y-skyh');
+    expect(block([{ source: 'S', note: 'Cite 10.17026/dans-z6y-skyh' }])).toContain(
+      'Cite 10.17026/dans-z6y-skyh',
+    );
   });
 
   it('escapes values rather than letting them become markup', () => {
@@ -119,10 +120,7 @@ describe('renderCreditsHtml', () => {
 });
 
 describe('the credits the app ships', () => {
-  const everyCredit = () => [
-    ...APP_CREDITS,
-    ...getAllOverlays().flatMap((o) => o.credits ?? []),
-  ];
+  const everyCredit = () => [...APP_CREDITS, ...getAllOverlays().flatMap((o) => o.credits ?? [])];
 
   it('credits every overlay that draws on a source of its own', () => {
     const uncredited = getAllOverlays()

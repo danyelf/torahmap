@@ -6,7 +6,9 @@ import type { TanakhLayout } from '../../types';
  * Asserts that a color is valid (all channels in [0, 1] range)
  * Accepts Color | Color[] from overlay getVerseColor return type
  */
-export function assertValidColor(color: number[] | [number, number, number] | (number[] | [number, number, number])[]) {
+export function assertValidColor(
+  color: number[] | [number, number, number] | (number[] | [number, number, number])[],
+) {
   // If it's an array of colors, validate the first one
   if (Array.isArray(color) && Array.isArray(color[0])) {
     const firstColor = color[0] as number[] | [number, number, number];
@@ -39,7 +41,7 @@ export function assertValidColors(colors: (number[] | [number, number, number])[
 export function assertColorEquals(
   actual: number[] | [number, number, number],
   expected: number[] | [number, number, number],
-  epsilon: number = 0.01
+  epsilon: number = 0.01,
 ) {
   expect(actual).toHaveLength(3);
   expect(expected).toHaveLength(3);
@@ -122,8 +124,8 @@ export function assertUniquePositions(verses: TanakhLayout[], tolerance: number 
       if (xDiff < tolerance && yDiff < tolerance) {
         throw new Error(
           `Overlapping verses found: ${existing.book} ${existing.chapter}:${existing.verse} ` +
-          `at (${existing.x}, ${existing.y}) and ${verse.book} ${verse.chapter}:${verse.verse} ` +
-          `at (${verse.x}, ${verse.y})`
+            `at (${existing.x}, ${existing.y}) and ${verse.book} ${verse.chapter}:${verse.verse} ` +
+            `at (${verse.x}, ${verse.y})`,
         );
       }
     }
@@ -155,7 +157,9 @@ export function assertContains<T>(array: T[], predicate: (item: T) => boolean) {
 export function assertAll<T>(array: T[], predicate: (item: T) => boolean) {
   for (let i = 0; i < array.length; i++) {
     if (!predicate(array[i])) {
-      throw new Error(`Element at index ${i} does not match predicate: ${JSON.stringify(array[i])}`);
+      throw new Error(
+        `Element at index ${i} does not match predicate: ${JSON.stringify(array[i])}`,
+      );
     }
   }
 }
@@ -175,10 +179,7 @@ export function assertURLHasParams(url: string, expectedParams: Record<string, s
 /**
  * Asserts that an object has specific properties
  */
-export function assertHasProperties<T extends object>(
-  obj: T,
-  properties: (keyof T)[]
-) {
+export function assertHasProperties<T extends object>(obj: T, properties: (keyof T)[]) {
   for (const prop of properties) {
     expect(obj).toHaveProperty(String(prop));
     expect(obj[prop]).toBeDefined();
@@ -200,7 +201,7 @@ export function assertGrayscale(color: [number, number, number], epsilon: number
 export function assertSortedBy<T, K extends keyof T>(
   items: T[],
   property: K,
-  order: 'asc' | 'desc' = 'asc'
+  order: 'asc' | 'desc' = 'asc',
 ) {
   for (let i = 1; i < items.length; i++) {
     const prev = items[i - 1][property] as number | bigint;

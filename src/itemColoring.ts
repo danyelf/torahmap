@@ -1,9 +1,9 @@
 // Verse Coloring module - handles verse color computation and highlighting
 
-import type { SpatialItem, ItemState } from "./types";
-import type { Overlay } from "./overlays/types";
-import { seededRandom } from "./utils/random";
-import { HIGHLIGHT_CONSTANTS } from "./constants";
+import type { SpatialItem, ItemState } from './types';
+import type { Overlay } from './overlays/types';
+import { seededRandom } from './utils/random';
+import { HIGHLIGHT_CONSTANTS } from './constants';
 
 /**
  * Get default gray color with brightness variation for a verse.

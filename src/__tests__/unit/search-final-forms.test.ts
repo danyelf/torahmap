@@ -84,14 +84,18 @@ describe('Hebrew Final Forms Normalization', () => {
         // Genesis 1:1 has אֱלֹהִים (Elohim) ending with ם (mem sofit)
         // User types אלהימ (with regular mem) - should still match
         const results = search('אלהימ', false, 'substring');
-        const genesis11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+        const genesis11 = results.find(
+          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
+        );
         expect(genesis11).toBeDefined();
       });
 
       it('should find אלהים when searching with final mem (אלהים)', () => {
         // Searching with correct final form should also work
         const results = search('אלהים', false, 'substring');
-        const genesis11 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
+        const genesis11 = results.find(
+          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
+        );
         expect(genesis11).toBeDefined();
       });
 
@@ -99,28 +103,36 @@ describe('Hebrew Final Forms Normalization', () => {
         // Genesis 1:2 has הָאָרֶץ (the earth) ending with ץ (tzadi sofit)
         // User types הארצ (with regular tzadi) - should still match
         const results = search('הארצ', false, 'substring');
-        const genesis12 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2);
+        const genesis12 = results.find(
+          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2,
+        );
         expect(genesis12).toBeDefined();
       });
 
       it('should find הארץ when searching with final tzadi (הארץ)', () => {
         // Searching with correct final form should also work
         const results = search('הארץ', false, 'substring');
-        const genesis12 = results.find(r => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2);
+        const genesis12 = results.find(
+          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2,
+        );
         expect(genesis12).toBeDefined();
       });
 
       it('should find השמים (with final mem) when searching with regular mem (השמימ)', () => {
         // Genesis 2:1 has הַשָּׁמַיִם (the heavens) ending with ם (mem sofit)
         const results = search('השמימ', false, 'substring');
-        const genesis21 = results.find(r => r.book === 'Genesis' && r.chapter === 2 && r.verse === 1);
+        const genesis21 = results.find(
+          (r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 1,
+        );
         expect(genesis21).toBeDefined();
       });
 
       it('should find שמות (with final tav) when searching either way', () => {
         // Exodus 1:1 has שְׁמוֹת (names) - tav doesn't have a final form, but testing consistency
         const results = search('שמות', false, 'substring');
-        const exodus11 = results.find(r => r.book === 'Exodus' && r.chapter === 1 && r.verse === 1);
+        const exodus11 = results.find(
+          (r) => r.book === 'Exodus' && r.chapter === 1 && r.verse === 1,
+        );
         expect(exodus11).toBeDefined();
       });
     });
@@ -130,7 +142,7 @@ describe('Hebrew Final Forms Normalization', () => {
         // Exodus 1:1 has שְׁמוֹת (names) with final tav
         // Searching with either form should match the same verses
         const resultsWithRegular = search('אלהימ', false, 'word'); // regular mem
-        const resultsWithFinal = search('אלהים', false, 'word');   // final mem
+        const resultsWithFinal = search('אלהים', false, 'word'); // final mem
 
         // Both should find the same verses
         expect(resultsWithRegular.length).toBe(resultsWithFinal.length);
@@ -162,21 +174,21 @@ describe('Hebrew Final Forms Normalization', () => {
       const finalFormsTest = [
         {
           withRegular: 'אלהימ', // typed with regular mem
-          withFinal: 'אלהים',   // typed with final mem
+          withFinal: 'אלהים', // typed with final mem
           expectedWord: 'אלהים',
-          verse: { book: 'Genesis', chapter: 1, verse: 1 }
+          verse: { book: 'Genesis', chapter: 1, verse: 1 },
         },
         {
-          withRegular: 'הארצ',  // typed with regular tzadi
-          withFinal: 'הארץ',    // typed with final tzadi
+          withRegular: 'הארצ', // typed with regular tzadi
+          withFinal: 'הארץ', // typed with final tzadi
           expectedWord: 'הארץ',
-          verse: { book: 'Genesis', chapter: 1, verse: 2 }
+          verse: { book: 'Genesis', chapter: 1, verse: 2 },
         },
         {
           withRegular: 'השמימ', // typed with regular mem
-          withFinal: 'השמים',   // typed with final mem
+          withFinal: 'השמים', // typed with final mem
           expectedWord: 'השמים',
-          verse: { book: 'Genesis', chapter: 2, verse: 1 }
+          verse: { book: 'Genesis', chapter: 2, verse: 1 },
         },
       ];
 
@@ -186,10 +198,10 @@ describe('Hebrew Final Forms Normalization', () => {
           const resultsFinal = search(withFinal, false, 'substring');
 
           const foundWithRegular = resultsRegular.find(
-            r => r.book === verse.book && r.chapter === verse.chapter && r.verse === verse.verse
+            (r) => r.book === verse.book && r.chapter === verse.chapter && r.verse === verse.verse,
           );
           const foundWithFinal = resultsFinal.find(
-            r => r.book === verse.book && r.chapter === verse.chapter && r.verse === verse.verse
+            (r) => r.book === verse.book && r.chapter === verse.chapter && r.verse === verse.verse,
           );
 
           expect(foundWithRegular).toBeDefined();

@@ -1,15 +1,15 @@
-import { defineConfig, type Plugin } from "vite";
-import { execSync } from "child_process";
-import { resolve } from "path";
+import { defineConfig, type Plugin } from 'vite';
+import { execSync } from 'child_process';
+import { resolve } from 'path';
 
 // Get the current git branch name
 function getGitBranch(): string {
   try {
-    return execSync("git rev-parse --abbrev-ref HEAD", {
-      encoding: "utf8",
+    return execSync('git rev-parse --abbrev-ref HEAD', {
+      encoding: 'utf8',
     }).trim();
   } catch {
-    return "unknown";
+    return 'unknown';
   }
 }
 
@@ -19,12 +19,12 @@ function getGitBranch(): string {
  */
 function storyHotReload(): Plugin {
   return {
-    name: "story-hot-reload",
+    name: 'story-hot-reload',
     configureServer(server) {
-      server.watcher.add(resolve(__dirname, "public/data/story.md"));
-      server.watcher.on("change", (file) => {
-        if (file.endsWith("story.md")) {
-          server.ws.send({ type: "custom", event: "story-update" });
+      server.watcher.add(resolve(__dirname, 'public/data/story.md'));
+      server.watcher.on('change', (file) => {
+        if (file.endsWith('story.md')) {
+          server.ws.send({ type: 'custom', event: 'story-update' });
         }
       });
     },
@@ -33,7 +33,7 @@ function storyHotReload(): Plugin {
 
 export default defineConfig(({ command }) => ({
   // Use /torahmap/ base path only for production build
-  base: command === "build" ? "/torahmap/" : "/",
+  base: command === 'build' ? '/torahmap/' : '/',
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
   },
@@ -41,9 +41,9 @@ export default defineConfig(({ command }) => ({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "index.html"),
-        "test-harness": resolve(__dirname, "test-harness/index.html"),
-        talmud: resolve(__dirname, "talmud.html"),
+        main: resolve(__dirname, 'index.html'),
+        'test-harness': resolve(__dirname, 'test-harness/index.html'),
+        talmud: resolve(__dirname, 'talmud.html'),
       },
     },
   },

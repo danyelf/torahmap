@@ -23,12 +23,12 @@ const ERAS: EraInfo[] = [
   {
     name: 'Pre-Monarchic',
     dateRange: [1400, 1000],
-    baseColor: [0.60, 0.25, 0.15], // Deep red-brown (oldest layer)
+    baseColor: [0.6, 0.25, 0.15], // Deep red-brown (oldest layer)
   },
   {
     name: 'Early Monarchic',
     dateRange: [1000, 722],
-    baseColor: [0.75, 0.40, 0.20], // Burnt orange
+    baseColor: [0.75, 0.4, 0.2], // Burnt orange
   },
   {
     name: 'Late Monarchic',
@@ -38,17 +38,17 @@ const ERAS: EraInfo[] = [
   {
     name: 'Exilic',
     dateRange: [586, 538],
-    baseColor: [0.85, 0.70, 0.35], // Golden yellow
+    baseColor: [0.85, 0.7, 0.35], // Golden yellow
   },
   {
     name: 'Persian Period',
     dateRange: [538, 331],
-    baseColor: [0.75, 0.75, 0.50], // Pale gold
+    baseColor: [0.75, 0.75, 0.5], // Pale gold
   },
   {
     name: 'Hellenistic',
     dateRange: [331, 164],
-    baseColor: [0.80, 0.80, 0.70], // Cream/beige (newest layer)
+    baseColor: [0.8, 0.8, 0.7], // Cream/beige (newest layer)
   },
 ];
 
@@ -80,7 +80,7 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
   const position = (rangeStart - dateBCE) / (rangeStart - rangeEnd);
 
   // Darken toward end of era (0.7 at start, 1.0 at end)
-  const shadeFactor = 0.7 + (position * 0.3);
+  const shadeFactor = 0.7 + position * 0.3;
 
   return [
     era.baseColor[0] * shadeFactor,
@@ -118,7 +118,7 @@ export const textDatingOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetchData("text-dating.json");
+      const res = await fetchData('text-dating.json');
       if (!res.ok) {
         console.error(`Failed to load text-dating.json: ${res.status}`);
         return;
@@ -171,9 +171,10 @@ export const textDatingOverlay: Overlay = {
     if (!era) return null;
 
     const note = data.notes?.[verseData.n];
-    const dateStr = startBCE === endBCE
-      ? `~${Math.abs(startBCE)} BCE`
-      : `${Math.abs(startBCE)}-${Math.abs(endBCE)} BCE`;
+    const dateStr =
+      startBCE === endBCE
+        ? `~${Math.abs(startBCE)} BCE`
+        : `${Math.abs(startBCE)}-${Math.abs(endBCE)} BCE`;
 
     return `${era.name} (${dateStr})\n${note}`;
   },
@@ -185,14 +186,15 @@ export const textDatingOverlay: Overlay = {
     const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
     if (!datingInfo) return null;
 
-    const dateStr = datingInfo.dateRange[0] === datingInfo.dateRange[1]
-      ? `~${datingInfo.dateRange[0]} BCE`
-      : `${datingInfo.dateRange[0]}-${datingInfo.dateRange[1]} BCE`;
+    const dateStr =
+      datingInfo.dateRange[0] === datingInfo.dateRange[1]
+        ? `~${datingInfo.dateRange[0]} BCE`
+        : `${datingInfo.dateRange[0]}-${datingInfo.dateRange[1]} BCE`;
 
     // Parse citation links from note (format: [text](url))
     const noteHtml = datingInfo.note.replace(
       /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" target="_blank" rel="noopener">$1</a>'
+      '<a href="$2" target="_blank" rel="noopener">$1</a>',
     );
 
     return `
@@ -215,7 +217,7 @@ export interface VerseDatingInfo {
 export function getVerseDatingInfo(
   book: string,
   chapter: number,
-  verse: number
+  verse: number,
 ): VerseDatingInfo | null {
   const verseData = getVerseData({ book, chapter, verse });
   if (!verseData) return null;

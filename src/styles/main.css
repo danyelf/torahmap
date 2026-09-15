@@ -1,9 +1,18 @@
 /* Torah Map - Main Styles */
 
 /* Base styles */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #1a1a1a; overflow: hidden; }
-canvas { display: block; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  background: #1a1a1a;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+}
 
 /* Overlay legend container (generic) */
 #overlay-legend {

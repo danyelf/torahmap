@@ -25,7 +25,7 @@ describe('Layout Integration', () => {
     it('total verses matches sum from structure data', () => {
       const expectedTotal = torahData.books.reduce(
         (sum, book) => sum + book.chapters.reduce((s, c) => s + c, 0),
-        0
+        0,
       );
       expect(verses.length).toBe(expectedTotal);
     });
@@ -49,22 +49,22 @@ describe('Layout Integration', () => {
   });
 
   describe('Section Ordering', () => {
-    it('Torah appears before Nevi\'im', () => {
-      const torahVerses = verses.filter(v => getSection(v.book) === 'torah');
-      const neviimVerses = verses.filter(v => getSection(v.book) === 'neviim');
+    it("Torah appears before Nevi'im", () => {
+      const torahVerses = verses.filter((v) => getSection(v.book) === 'torah');
+      const neviimVerses = verses.filter((v) => getSection(v.book) === 'neviim');
 
-      const maxTorahY = Math.max(...torahVerses.map(v => v.y));
-      const minNeviimY = Math.min(...neviimVerses.map(v => v.y));
+      const maxTorahY = Math.max(...torahVerses.map((v) => v.y));
+      const minNeviimY = Math.min(...neviimVerses.map((v) => v.y));
 
       expect(maxTorahY).toBeLessThan(minNeviimY);
     });
 
-    it('Nevi\'im appears before Ketuvim', () => {
-      const neviimVerses = verses.filter(v => getSection(v.book) === 'neviim');
-      const ketuvimVerses = verses.filter(v => getSection(v.book) === 'ketuvim');
+    it("Nevi'im appears before Ketuvim", () => {
+      const neviimVerses = verses.filter((v) => getSection(v.book) === 'neviim');
+      const ketuvimVerses = verses.filter((v) => getSection(v.book) === 'ketuvim');
 
-      const maxNeviimY = Math.max(...neviimVerses.map(v => v.y));
-      const minKetuvimY = Math.min(...ketuvimVerses.map(v => v.y));
+      const maxNeviimY = Math.max(...neviimVerses.map((v) => v.y));
+      const minKetuvimY = Math.min(...ketuvimVerses.map((v) => v.y));
 
       expect(maxNeviimY).toBeLessThan(minKetuvimY);
     });
@@ -73,15 +73,15 @@ describe('Layout Integration', () => {
   describe('Book Structure', () => {
     it('contains all 5 Torah books', () => {
       const torahBooks = new Set(
-        verses.filter(v => getSection(v.book) === 'torah').map(v => v.book)
+        verses.filter((v) => getSection(v.book) === 'torah').map((v) => v.book),
       );
-      expect(torahBooks).toEqual(new Set([
-        'Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'
-      ]));
+      expect(torahBooks).toEqual(
+        new Set(['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy']),
+      );
     });
 
     it('contains all 39 books', () => {
-      const allBooks = new Set(verses.map(v => v.book));
+      const allBooks = new Set(verses.map((v) => v.book));
       expect(allBooks.size).toBe(39);
     });
   });
@@ -109,14 +109,12 @@ describe('Layout Integration', () => {
 
   describe('Psalm 119 Handling', () => {
     it('Psalm 119 (176 verses) wraps to multiple lines', () => {
-      const psalm119Verses = verses.filter(
-        v => v.book === 'Psalms' && v.chapter === 119
-      );
+      const psalm119Verses = verses.filter((v) => v.book === 'Psalms' && v.chapter === 119);
 
       expect(psalm119Verses.length).toBe(176);
 
       // Check that verses span multiple Y positions
-      const uniqueYs = new Set(psalm119Verses.map(v => Math.round(v.y)));
+      const uniqueYs = new Set(psalm119Verses.map((v) => Math.round(v.y)));
       expect(uniqueYs.size).toBeGreaterThan(1);
     });
   });

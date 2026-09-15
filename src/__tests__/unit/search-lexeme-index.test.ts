@@ -60,7 +60,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
     });
 
     it('gives nearly every lexeme an English gloss', () => {
-      const withGloss = lexemes.filter(row => row[2].length > 0).length;
+      const withGloss = lexemes.filter((row) => row[2].length > 0).length;
       expect(withGloss / lexemes.length).toBeGreaterThan(0.99);
     });
   });
@@ -68,7 +68,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
   describe('written forms', () => {
     it('are stored with final letters folded to their medial shape', () => {
       const finals = /[ךםןףץ]/;
-      const offenders = Object.keys(forms).filter(form => finals.test(form));
+      const offenders = Object.keys(forms).filter((form) => finals.test(form));
       expect(offenders).toEqual([]);
     });
 
@@ -94,7 +94,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       expect(new Set(glosses).size).toBe(glosses.length);
 
       // No preposition of either language is among them: עלה is a content word.
-      expect(ids.map(id => lexemes[id][3])).not.toContain('prep');
+      expect(ids.map((id) => lexemes[id][3])).not.toContain('prep');
     });
 
     it('indexes a function word only under its own spelling', () => {
@@ -103,15 +103,15 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       // its occurrences to a search for the verb עלה "ascend", so suffixed and
       // prefixed forms of function words are left out of the index. The bare
       // spelling still resolves.
-      expect(forms['על'].map(id => lexemes[id][3])).toContain('prep');
+      expect(forms['על'].map((id) => lexemes[id][3])).toContain('prep');
       expect(forms['עליו']).toBeUndefined();
       expect(forms['בו']).toBeUndefined();
     });
 
     it('separates the noun דבר "word" from the verb דבר "speak"', () => {
       const ids = forms['דבר'];
-      const noun = ids.find(id => etcbcId(id) === 'DBR/');
-      const verb = ids.find(id => etcbcId(id) === 'DBR[');
+      const noun = ids.find((id) => etcbcId(id) === 'DBR/');
+      const verb = ids.find((id) => etcbcId(id) === 'DBR[');
       expect(noun).toBeDefined();
       expect(verb).toBeDefined();
       expect(noun).not.toBe(verb);
@@ -147,7 +147,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
   describe('verse keys', () => {
     it('covers every verse of the Tanakh the app displays', () => {
       const structure = JSON.parse(
-        fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8')
+        fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8'),
       ) as { books: Array<{ name: string; chapters: number[] }> };
 
       const missing: string[] = [];

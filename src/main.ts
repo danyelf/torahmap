@@ -2,17 +2,13 @@
 
 declare const __GIT_BRANCH__: string;
 
-import { computeLayout, getLayoutBounds } from "./layout.ts";
-import { createBookLabels, updateLabelPositions } from "./labels.ts";
-import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from "./verseTexts.ts";
-import { buildSearchIndex, loadLexiconData } from "./search.ts";
-import { initBookData } from "./constants/books.ts";
-import { initHelp } from "./help.ts";
-import {
-  trackOverlaySwitch,
-  trackVerseClick,
-  trackZoomLevel,
-} from "./analytics.ts";
+import { computeLayout, getLayoutBounds } from './layout.ts';
+import { createBookLabels, updateLabelPositions } from './labels.ts';
+import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
+import { buildSearchIndex, loadLexiconData } from './search.ts';
+import { initBookData } from './constants/books.ts';
+import { initHelp } from './help.ts';
+import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -21,17 +17,17 @@ import {
   applyingExternalState,
   verseToUrlFormat,
   type UrlState,
-} from "./urlState.ts";
-import { debounce } from "./utils/debounce.ts";
-import { getSidebarElements, updateSidebar } from "./sidebar.ts";
-import { createCamera, clampZoom, panForZoom } from "./camera.ts";
+} from './urlState.ts';
+import { debounce } from './utils/debounce.ts';
+import { getSidebarElements, updateSidebar } from './sidebar.ts';
+import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import {
   createMouseState,
   startDrag,
   stopDrag,
   setHoveredVerse,
   clearHover,
-} from "./mouseState.ts";
+} from './mouseState.ts';
 import {
   createTouchState,
   trackTouch,
@@ -39,17 +35,17 @@ import {
   getPinchDistance,
   getPinchCenter,
   resetTouchState,
-} from "./touchState.ts";
-import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem } from "./types.ts";
-import { findItemAtPoint } from "./hitDetection.ts";
-import { computeItemStates, applyItemColors } from "./itemColoring.ts";
+} from './touchState.ts';
+import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem } from './types.ts';
+import { findItemAtPoint } from './hitDetection.ts';
+import { computeItemStates, applyItemColors } from './itemColoring.ts';
 import {
   createRenderContext,
   createRenderState,
   rebuildGeometry,
   render as renderFrame,
-} from "./rendering.ts";
-import type { TanakhLayout, Bounds } from "./types.ts";
+} from './rendering.ts';
+import type { TanakhLayout, Bounds } from './types.ts';
 import {
   registerAllOverlays,
   applyOverlayParams,
@@ -60,22 +56,27 @@ import {
   configureSearch,
   configureVerseLength,
   type Overlay,
-} from "./overlays/index.ts";
+} from './overlays/index.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
-} from "./constants/app.ts";
-import { loadStoryData, renderStoryPanel, computeStopOffsets, resolveStops } from "./scrollytelling/storyPanel";
-import { computeInterpolatedState } from "./scrollytelling/controller";
-import { computeBlendedColors } from "./scrollytelling/overlayBlender";
-import { switchToExplore, switchToStory } from "./scrollytelling/modeSwitch";
-import type { AppMode } from "./scrollytelling/modeSwitch";
-import type { ResolvedStoryStop } from "./scrollytelling/types";
-import "./styles/zoom-buttons.css";
-import "./styles/right-panel.css";
-import "./styles/verse-popup.css";
+} from './constants/app.ts';
+import {
+  loadStoryData,
+  renderStoryPanel,
+  computeStopOffsets,
+  resolveStops,
+} from './scrollytelling/storyPanel';
+import { computeInterpolatedState } from './scrollytelling/controller';
+import { computeBlendedColors } from './scrollytelling/overlayBlender';
+import { switchToExplore, switchToStory } from './scrollytelling/modeSwitch';
+import type { AppMode } from './scrollytelling/modeSwitch';
+import type { ResolvedStoryStop } from './scrollytelling/types';
+import './styles/zoom-buttons.css';
+import './styles/right-panel.css';
+import './styles/verse-popup.css';
 
 // Extend window for global state
 declare global {
@@ -107,9 +108,7 @@ async function main(): Promise<void> {
   initBookData(torahData);
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
-  console.log(
-    `Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`,
-  );
+  console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
   // Build search index
   buildSearchIndex(verseTexts);
@@ -124,8 +123,8 @@ async function main(): Promise<void> {
   await Promise.all(getAllOverlays().map((o) => o.init?.()));
 
   // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
-  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  if (!canvas) throw new Error("Canvas not found");
+  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+  if (!canvas) throw new Error('Canvas not found');
   const dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas(): void {
@@ -195,9 +194,7 @@ async function main(): Promise<void> {
         if (!isAlreadyPinned) {
           const verse = verses.find(
             (v) =>
-              v.book === parsed.book &&
-              v.chapter === parsed.chapter &&
-              v.verse === parsed.verse
+              v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
           );
           if (verse) {
             pinnedVerse = verse;
@@ -270,11 +267,7 @@ async function main(): Promise<void> {
     }
     applyOverlay();
     render();
-    updateLabelPositions(
-      window.bookLabels!,
-      { x: camera.x, y: camera.y },
-      camera.zoom,
-    );
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
     saveUrlState(true);
   }
 
@@ -290,22 +283,16 @@ async function main(): Promise<void> {
   render();
 
   // Book labels
-  const hebrewNames = Object.fromEntries(
-    torahData.books.map((b) => [b.name, b.hebrewName]),
-  );
+  const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
   window.bookLabels = createBookLabels(verses, document.body, hebrewNames);
-  updateLabelPositions(
-    window.bookLabels,
-    { x: camera.x, y: camera.y },
-    camera.zoom,
-  );
+  updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
 
   // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener(
-    "wheel",
+    'wheel',
     (e: WheelEvent) => {
       e.preventDefault();
-      if (appMode === "story") manualOverride = true;
+      if (appMode === 'story') manualOverride = true;
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       const newZoom = clampZoom(camera.zoom * zoomFactor);
 
@@ -314,23 +301,13 @@ async function main(): Promise<void> {
       const mouseY = e.clientY;
 
       // Adjust pan so the world point under the mouse stays fixed
-      const newPan = panForZoom(
-        { x: camera.x, y: camera.y },
-        camera.zoom,
-        newZoom,
-        mouseX,
-        mouseY,
-      );
+      const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, mouseX, mouseY);
       camera.x = newPan.x;
       camera.y = newPan.y;
       camera.zoom = newZoom;
 
       render();
-      updateLabelPositions(
-        window.bookLabels!,
-        { x: camera.x, y: camera.y },
-        camera.zoom,
-      );
+      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
       debouncedSaveUrlState();
       debouncedTrackZoom();
     },
@@ -348,13 +325,7 @@ async function main(): Promise<void> {
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_IN_FACTOR);
-    const newPan = panForZoom(
-      { x: camera.x, y: camera.y },
-      camera.zoom,
-      newZoom,
-      centerX,
-      centerY
-    );
+    const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, centerX, centerY);
     camera.x = newPan.x;
     camera.y = newPan.y;
     camera.zoom = newZoom;
@@ -368,13 +339,7 @@ async function main(): Promise<void> {
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_OUT_FACTOR);
-    const newPan = panForZoom(
-      { x: camera.x, y: camera.y },
-      camera.zoom,
-      newZoom,
-      centerX,
-      centerY
-    );
+    const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, centerX, centerY);
     camera.x = newPan.x;
     camera.y = newPan.y;
     camera.zoom = newZoom;
@@ -385,7 +350,7 @@ async function main(): Promise<void> {
 
   // Touch events for pinch-to-zoom
   canvas.addEventListener(
-    "touchstart",
+    'touchstart',
     (e: TouchEvent) => {
       for (const touch of e.changedTouches) {
         trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
@@ -398,7 +363,7 @@ async function main(): Promise<void> {
   );
 
   canvas.addEventListener(
-    "touchmove",
+    'touchmove',
     (e: TouchEvent) => {
       for (const touch of e.changedTouches) {
         trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
@@ -421,11 +386,7 @@ async function main(): Promise<void> {
           camera.y = newPan.y;
           camera.zoom = newZoom;
           render();
-          updateLabelPositions(
-            window.bookLabels!,
-            { x: camera.x, y: camera.y },
-            camera.zoom,
-          );
+          updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
         }
         touchState.lastPinchDistance = newDist;
       }
@@ -433,7 +394,7 @@ async function main(): Promise<void> {
     { passive: true },
   );
 
-  canvas.addEventListener("touchend", (e: TouchEvent) => {
+  canvas.addEventListener('touchend', (e: TouchEvent) => {
     for (const touch of e.changedTouches) {
       releaseTouch(touchState, touch.identifier);
     }
@@ -442,19 +403,19 @@ async function main(): Promise<void> {
     }
   });
 
-  canvas.addEventListener("touchcancel", () => {
+  canvas.addEventListener('touchcancel', () => {
     resetTouchState(touchState);
   });
 
   // Pointer events for pan/drag (works for both mouse and touch)
-  canvas.addEventListener("pointerdown", (e: PointerEvent) => {
+  canvas.addEventListener('pointerdown', (e: PointerEvent) => {
     startDrag(mouseState, e.clientX, e.clientY);
-    canvas.style.cursor = "grabbing";
+    canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
     pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
   });
 
-  canvas.addEventListener("pointermove", (e: PointerEvent) => {
+  canvas.addEventListener('pointermove', (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
       if (appMode === 'story') manualOverride = true;
       const dx = e.clientX - mouseState.dragStart.x;
@@ -463,15 +424,11 @@ async function main(): Promise<void> {
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
-      updateLabelPositions(
-        window.bookLabels!,
-        { x: camera.x, y: camera.y },
-        camera.zoom,
-      );
+      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
     }
   });
 
-  canvas.addEventListener("pointerup", (e: PointerEvent) => {
+  canvas.addEventListener('pointerup', (e: PointerEvent) => {
     const wasDragging = mouseState.isDragging;
     if (wasDragging) {
       stopDrag(mouseState);
@@ -484,17 +441,8 @@ async function main(): Promise<void> {
       const dy = Math.abs(e.clientY - pointerDownPos.y);
       const duration = Date.now() - pointerDownPos.time;
 
-      if (
-        dx < TAP_THRESHOLD &&
-        dy < TAP_THRESHOLD &&
-        duration < TAP_MAX_DURATION
-      ) {
-        const verse = findItemAtPoint(
-          verses,
-          camera,
-          e.clientX,
-          e.clientY,
-        );
+      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
+        const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
         if (verse) {
           if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
             unpinVerse();
@@ -510,24 +458,19 @@ async function main(): Promise<void> {
 
     // Reset cursor
     if (wasDragging) {
-      const verse = findItemAtPoint(
-        verses,
-        camera,
-        e.clientX,
-        e.clientY,
-      );
+      const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
       if (pinnedVerse && verse) {
-        canvas.style.cursor = "pointer";
+        canvas.style.cursor = 'pointer';
       } else {
-        canvas.style.cursor = "default";
+        canvas.style.cursor = 'default';
       }
     }
   });
 
-  canvas.addEventListener("pointerleave", () => {
+  canvas.addEventListener('pointerleave', () => {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
-    canvas.style.cursor = "default";
+    canvas.style.cursor = 'default';
 
     let overlayWantsRerender = false;
     if (currentOverlay?.setHoveredVerse) {
@@ -563,11 +506,7 @@ async function main(): Promise<void> {
 
     // Pinned verse
     if (pinnedVerse) {
-      state.verse = verseToUrlFormat(
-        pinnedVerse.book,
-        pinnedVerse.chapter,
-        pinnedVerse.verse,
-      );
+      state.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
     }
 
     // Zoom (only if not default)
@@ -591,48 +530,30 @@ async function main(): Promise<void> {
   }
 
   // Debounced version for pan/zoom (replaceState only)
-  const debouncedSaveUrlState = debounce(
-    () => saveUrlState(false),
-    URL_UPDATE_DEBOUNCE_MS,
-  );
+  const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
 
   // Update sidebar with verse info - wrapper for the extracted module function
-  function updateSidebarWrapper(
-    verse: TanakhLayout | null,
-    isPinned: boolean = false,
-  ): void {
-    updateSidebar(
-      sidebarElements,
-      verse,
-      verseTexts,
-      currentOverlay,
-      getVerseText,
-      isPinned,
-    );
+  function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
+    updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
   }
 
-  canvas.addEventListener("pointermove", (e: PointerEvent) => {
+  canvas.addEventListener('pointermove', (e: PointerEvent) => {
     // Skip hover logic on touch devices and during pinch
-    if (e.pointerType === "touch" || touchState.activeTouches.size >= 2) return;
+    if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
-      const verse = findItemAtPoint(
-        verses,
-        camera,
-        e.clientX,
-        e.clientY,
-      );
+      const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
       const hoverChanged = !tanakhIdentitiesEqual(previousHover, verse);
 
       if (pinnedVerse && verse) {
-        canvas.style.cursor = "pointer";
+        canvas.style.cursor = 'pointer';
       } else if (mouseState.isDragging) {
-        canvas.style.cursor = "grabbing";
+        canvas.style.cursor = 'grabbing';
       } else {
-        canvas.style.cursor = "default";
+        canvas.style.cursor = 'default';
       }
 
       let overlayWantsRerender = false;
@@ -656,24 +577,24 @@ async function main(): Promise<void> {
   });
 
   // Close button to unpin
-  sidebarElements.closeBtn?.addEventListener("click", () => {
+  sidebarElements.closeBtn?.addEventListener('click', () => {
     unpinVerse();
   });
 
   // Keyboard navigation: arrow keys for next/previous verse, Escape to close
-  window.addEventListener("keydown", (e: KeyboardEvent) => {
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (!pinnedVerse) return;
 
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       unpinVerse();
       return;
     }
 
     let targetVerse: TanakhLayout | null = null;
 
-    if (e.key === "ArrowRight") {
+    if (e.key === 'ArrowRight') {
       targetVerse = nextTanakhItem(verses, pinnedVerse);
-    } else if (e.key === "ArrowLeft") {
+    } else if (e.key === 'ArrowLeft') {
       targetVerse = prevTanakhItem(verses, pinnedVerse);
     }
 
@@ -683,25 +604,23 @@ async function main(): Promise<void> {
   });
 
   // UI elements
-  const overlaySelect = document.getElementById(
-    "overlay-select",
-  ) as HTMLSelectElement;
+  const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
 
   // Fill the overlay menu from the registry, after the "None" option the page
   // starts with. The registry is the only list of overlays; the menu follows it,
   // so adding an overlay to overlays/index.ts is enough to make it choosable.
   for (const overlay of getAllOverlays()) {
-    const option = document.createElement("option");
+    const option = document.createElement('option');
     option.value = overlay.id;
     option.textContent = overlay.name;
     overlaySelect?.appendChild(option);
   }
 
   // Overlay controls container (will be populated by overlays)
-  const overlayControlsContainer = document.getElementById("overlay-controls");
-  const overlayLegendContainer = document.getElementById("overlay-legend");
+  const overlayControlsContainer = document.getElementById('overlay-controls');
+  const overlayLegendContainer = document.getElementById('overlay-legend');
 
-  let currentOverlayId = "none";
+  let currentOverlayId = 'none';
 
   /**
    * Internal: switch the active overlay without painting/rendering or writing URL.
@@ -717,7 +636,7 @@ async function main(): Promise<void> {
       applyOverlay();
       // Re-render legend when overlay updates (e.g., category changes)
       if (overlayLegendContainer) {
-        overlayLegendContainer.innerHTML = "";
+        overlayLegendContainer.innerHTML = '';
         currentOverlay?.renderLegend?.(overlayLegendContainer);
       }
       render();
@@ -730,19 +649,16 @@ async function main(): Promise<void> {
 
     // Clear and render overlay's UI
     if (overlayControlsContainer) {
-      overlayControlsContainer.innerHTML = "";
+      overlayControlsContainer.innerHTML = '';
       currentOverlay?.renderControls?.(overlayControlsContainer);
     }
     if (overlayLegendContainer) {
-      overlayLegendContainer.innerHTML = "";
+      overlayLegendContainer.innerHTML = '';
       currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
   }
 
-  function setOverlay(
-    id: string,
-    opts: { fromUrlRestore?: boolean } = {}
-  ): void {
+  function setOverlay(id: string, opts: { fromUrlRestore?: boolean } = {}): void {
     const { fromUrlRestore = false } = opts;
     if (!fromUrlRestore) {
       trackOverlaySwitch(id, currentOverlayId);
@@ -760,19 +676,15 @@ async function main(): Promise<void> {
   }
 
   // Overlay selector
-  overlaySelect?.addEventListener("change", () => {
+  overlaySelect?.addEventListener('change', () => {
     setOverlay(overlaySelect.value);
   });
 
   // Handle resize
-  window.addEventListener("resize", () => {
+  window.addEventListener('resize', () => {
     resizeCanvas();
     render();
-    updateLabelPositions(
-      window.bookLabels!,
-      { x: camera.x, y: camera.y },
-      camera.zoom,
-    );
+    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
   });
 
   // Store for hover detection
@@ -838,13 +750,25 @@ async function main(): Promise<void> {
   const storyContent = document.getElementById('story-content')!;
 
   let storyData = await loadStoryData();
-  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, canvas.clientWidth, canvas.clientHeight);
+  let resolvedStops = resolveStops(
+    storyData.stops,
+    initialCamera,
+    verses,
+    canvas.clientWidth,
+    canvas.clientHeight,
+  );
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
 
   async function reloadStory(): Promise<void> {
     const scrollTop = storyContent.scrollTop;
     storyData = await loadStoryData();
-    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, canvas.clientWidth, canvas.clientHeight);
+    resolvedStops = resolveStops(
+      storyData.stops,
+      initialCamera,
+      verses,
+      canvas.clientWidth,
+      canvas.clientHeight,
+    );
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     storyContent.scrollTop = scrollTop;
     // Force re-apply: stops may have changed (overlay/params/verse), and stop
@@ -890,7 +814,7 @@ async function main(): Promise<void> {
     scrollRAF = requestAnimationFrame(() => {
       scrollRAF = null;
       const offsets = computeStopOffsets(stopElements);
-      const heights = stopElements.map(el => el.offsetHeight);
+      const heights = stopElements.map((el) => el.offsetHeight);
       const totalHeight = storyContent.scrollHeight;
       const state = computeInterpolatedState(
         resolvedStops,
@@ -899,7 +823,7 @@ async function main(): Promise<void> {
         storyContent.scrollTop,
         storyData.defaults?.easing ?? 'ease-in-out',
         heights,
-        storyContent.clientHeight
+        storyContent.clientHeight,
       );
 
       // Apply interpolated camera
@@ -911,9 +835,7 @@ async function main(): Promise<void> {
       // Pick the stop whose state should be "current" — settled stop, or the
       // dominant transitioning stop. Sync explore state to it on every change
       // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
-      const dominantStop = settled
-        ? state.fromStop
-        : (state.t > 0.5 ? state.toStop : state.fromStop);
+      const dominantStop = settled ? state.fromStop : state.t > 0.5 ? state.toStop : state.fromStop;
       if (lastSyncedStopId !== dominantStop.id) {
         syncStoryStopState(dominantStop);
         lastSyncedStopId = dominantStop.id;
@@ -924,12 +846,7 @@ async function main(): Promise<void> {
         applyOverlay();
       } else {
         // Mid-scroll: blender paints interpolated colors directly to the GPU buffer.
-        const blendedColors = computeBlendedColors(
-          state.fromStop,
-          state.toStop,
-          state.t,
-          verses
-        );
+        const blendedColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses);
         rebuildGeometry(renderContext.gl, renderState, blendedColors);
       }
       render();
@@ -964,7 +881,7 @@ async function main(): Promise<void> {
     if (currentOverlay?.applyUrlParams) {
       applyOverlayParams(currentOverlay, urlState.overlayParams);
       if (overlayLegendContainer) {
-        overlayLegendContainer.innerHTML = "";
+        overlayLegendContainer.innerHTML = '';
         currentOverlay.renderLegend?.(overlayLegendContainer);
       }
     }
@@ -979,10 +896,7 @@ async function main(): Promise<void> {
 
     // Find the verse in our list
     const verse = verses.find(
-      (v) =>
-        v.book === parsed.book &&
-        v.chapter === parsed.chapter &&
-        v.verse === parsed.verse,
+      (v) => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
     );
     if (!verse) return false;
 
@@ -1022,7 +936,7 @@ async function main(): Promise<void> {
       // Force the next settled scroll frame to apply the stop's state.
       lastSyncedStopId = null;
       switchToStory(storyPanel, explorePanel, storyContent, 0);
-      const stopIndex = resolvedStops.findIndex(s => s.id === urlState.story);
+      const stopIndex = resolvedStops.findIndex((s) => s.id === urlState.story);
       if (stopIndex >= 0 && stopElements[stopIndex]) {
         stopElements[stopIndex].scrollIntoView();
       }

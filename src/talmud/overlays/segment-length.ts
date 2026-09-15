@@ -4,9 +4,9 @@
 // Paints both Mishnah and Gemara (per design doc §3.7 — overlays paint
 // over both M and G substrates; length is computed the same way).
 
-import type { Overlay } from "../../overlays/types.ts";
-import type { TalmudIdentity } from "../../types.ts";
-import type { TalmudStructure, TalmudTractateText } from "../data.ts";
+import type { Overlay } from '../../overlays/types.ts';
+import type { TalmudIdentity } from '../../types.ts';
+import type { TalmudStructure, TalmudTractateText } from '../data.ts';
 
 type Color = [number, number, number];
 
@@ -19,11 +19,7 @@ function lerp(a: number, b: number, t: number): number {
 
 function lengthToColor(length: number, maxLength: number): Color {
   const t = Math.min(1, length / Math.max(1, maxLength));
-  return [
-    lerp(PALE[0], DARK[0], t),
-    lerp(PALE[1], DARK[1], t),
-    lerp(PALE[2], DARK[2], t),
-  ];
+  return [lerp(PALE[0], DARK[0], t), lerp(PALE[1], DARK[1], t), lerp(PALE[2], DARK[2], t)];
 }
 
 // Module-level cache keyed by "Tractate:dafamud:seg" for fast lookup.
@@ -38,10 +34,7 @@ function cacheKey(id: TalmudIdentity): string {
  * Populate the length cache from loaded tractate texts. Call once per
  * tractate after its text file loads.
  */
-export function ingestTractateLengths(
-  structure: TalmudStructure,
-  text: TalmudTractateText,
-): void {
+export function ingestTractateLengths(structure: TalmudStructure, text: TalmudTractateText): void {
   const tractate = structure.tractates.find((t) => t.name === text.name);
   if (!tractate) return;
   text.amudim.forEach((amudText, amudIdx) => {
@@ -56,8 +49,8 @@ export function ingestTractateLengths(
 }
 
 export const segmentLengthOverlay: Overlay<TalmudIdentity> = {
-  id: "segment-length",
-  name: "Segment Length",
+  id: 'segment-length',
+  name: 'Segment Length',
   getVerseColor(id: TalmudIdentity): Color | null {
     const length = lengthCache.get(cacheKey(id));
     if (length === undefined) return null;

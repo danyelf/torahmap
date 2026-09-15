@@ -143,7 +143,9 @@ describe('Hebrew Search Performance Diagnostics', () => {
       const root = measureTime(() => search(term, false, 'root'), 'Root');
 
       console.log('\nMode comparison:');
-      console.log(`  Substring: ${substring.timeMs.toFixed(2)}ms (${substring.result.length} results)`);
+      console.log(
+        `  Substring: ${substring.timeMs.toFixed(2)}ms (${substring.result.length} results)`,
+      );
       console.log(`  Word:      ${word.timeMs.toFixed(2)}ms (${word.result.length} results)`);
       console.log(`  Root:      ${root.timeMs.toFixed(2)}ms (${root.result.length} results)`);
 

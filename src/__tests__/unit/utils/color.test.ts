@@ -15,14 +15,14 @@ import type { Color } from '../../../overlays/types';
 
 describe('interpolateGradient', () => {
   const simpleGradient: ColorStop[] = [
-    { t: 0, color: [0, 0, 0] },      // Black
-    { t: 1, color: [1, 1, 1] },      // White
+    { t: 0, color: [0, 0, 0] }, // Black
+    { t: 1, color: [1, 1, 1] }, // White
   ];
 
   const multiStopGradient: ColorStop[] = [
-    { t: 0, color: [1, 0, 0] },      // Red
-    { t: 0.5, color: [0, 1, 0] },    // Green
-    { t: 1, color: [0, 0, 1] },      // Blue
+    { t: 0, color: [1, 0, 0] }, // Red
+    { t: 0.5, color: [0, 1, 0] }, // Green
+    { t: 1, color: [0, 0, 1] }, // Blue
   ];
 
   it('returns first color at t=0', () => {
@@ -100,8 +100,8 @@ describe('interpolateGradient', () => {
     for (let i = 1; i < colors.length; i++) {
       const distance = Math.sqrt(
         Math.pow(colors[i][0] - colors[i - 1][0], 2) +
-        Math.pow(colors[i][1] - colors[i - 1][1], 2) +
-        Math.pow(colors[i][2] - colors[i - 1][2], 2)
+          Math.pow(colors[i][1] - colors[i - 1][1], 2) +
+          Math.pow(colors[i][2] - colors[i - 1][2], 2),
       );
       expect(distance).toBeLessThan(0.3);
     }
@@ -287,9 +287,9 @@ describe('heatmapColor', () => {
     // Test that we get different colors in different gradient ranges
     const max = 1000;
     const color25pct = heatmapColor(Math.floor(max * 0.25), max); // First stop
-    const color50pct = heatmapColor(Math.floor(max * 0.5), max);  // Second stop
+    const color50pct = heatmapColor(Math.floor(max * 0.5), max); // Second stop
     const color75pct = heatmapColor(Math.floor(max * 0.75), max); // Third stop
-    const color100pct = heatmapColor(max, max);                   // Fourth stop
+    const color100pct = heatmapColor(max, max); // Fourth stop
 
     // All should be different
     expect(color25pct).not.toEqual(color50pct);
@@ -317,8 +317,8 @@ describe('heatmapColor', () => {
       const curr = colors[i];
       const distance = Math.sqrt(
         Math.pow(curr[0] - prev[0], 2) +
-        Math.pow(curr[1] - prev[1], 2) +
-        Math.pow(curr[2] - prev[2], 2)
+          Math.pow(curr[1] - prev[1], 2) +
+          Math.pow(curr[2] - prev[2], 2),
       );
       expect(distance).toBeGreaterThan(0.01); // Colors should be visibly different
     }
@@ -377,12 +377,12 @@ describe('rgbToHsl', () => {
 
   it('returns hue in 0-360 range', () => {
     const colors: Color[] = [
-      [1, 0, 0],    // Red
-      [0, 1, 0],    // Green
-      [0, 0, 1],    // Blue
-      [1, 1, 0],    // Yellow
-      [1, 0, 1],    // Magenta
-      [0, 1, 1],    // Cyan
+      [1, 0, 0], // Red
+      [0, 1, 0], // Green
+      [0, 0, 1], // Blue
+      [1, 1, 0], // Yellow
+      [1, 0, 1], // Magenta
+      [0, 1, 1], // Cyan
     ];
 
     for (const color of colors) {

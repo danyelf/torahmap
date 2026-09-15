@@ -12,9 +12,9 @@ describe('verseTexts', () => {
       vi.stubGlobal('import', {
         meta: {
           env: {
-            BASE_URL: '/'
-          }
-        }
+            BASE_URL: '/',
+          },
+        },
       });
     });
 
@@ -30,9 +30,9 @@ describe('verseTexts', () => {
         const mockData: VerseTexts = {
           'Genesis': {
             '1': {
-              '1': { he: 'בְּרֵאשִׁית', en: 'In the beginning' }
-            }
-          }
+              '1': { he: 'בְּרֵאשִׁית', en: 'In the beginning' },
+            },
+          },
         };
 
         globalThis.fetch = vi.fn(() =>
@@ -40,7 +40,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(mockData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -53,7 +53,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve({}),
-          } as Response)
+          } as Response),
         );
         globalThis.fetch = fetchSpy;
 
@@ -70,7 +70,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve({}),
-          } as Response)
+          } as Response),
         );
         globalThis.fetch = fetchSpy;
 
@@ -89,8 +89,8 @@ describe('verseTexts', () => {
             },
             '2': {
               '1': { he: 'text3', en: 'text3' },
-            }
-          }
+            },
+          },
         };
 
         globalThis.fetch = vi.fn(() =>
@@ -98,7 +98,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(mockData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -121,7 +121,7 @@ describe('verseTexts', () => {
             for (let v = 1; v <= 20; v++) {
               largeData[bookName][String(c)][String(v)] = {
                 he: `hebrew${b}-${c}-${v}`,
-                en: `english${b}-${c}-${v}`
+                en: `english${b}-${c}-${v}`,
               };
             }
           }
@@ -132,7 +132,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(largeData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -150,7 +150,7 @@ describe('verseTexts', () => {
             ok: false,
             status: 404,
             json: () => Promise.resolve(null),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -167,7 +167,7 @@ describe('verseTexts', () => {
             ok: false,
             status: 500,
             json: () => Promise.resolve(null),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -184,7 +184,7 @@ describe('verseTexts', () => {
             ok: false,
             status: 0,
             json: () => Promise.resolve(null),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -206,7 +206,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.reject(new Error('Invalid JSON')),
-          } as Response)
+          } as Response),
         );
 
         await expect(loadAllVerseTexts()).rejects.toThrow('Invalid JSON');
@@ -219,7 +219,7 @@ describe('verseTexts', () => {
             ok: false,
             status: 404,
             json: () => Promise.resolve(null),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -237,10 +237,10 @@ describe('verseTexts', () => {
             '1': {
               '1': {
                 he: 'בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים',
-                en: 'In the beginning God created'
-              }
-            }
-          }
+                en: 'In the beginning God created',
+              },
+            },
+          },
         };
 
         globalThis.fetch = vi.fn(() =>
@@ -248,7 +248,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(mockData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -263,10 +263,10 @@ describe('verseTexts', () => {
             '1': {
               '1': {
                 he: 'text',
-                en: 'In the beginning, God created the heaven and the earth.'
-              }
-            }
-          }
+                en: 'In the beginning, God created the heaven and the earth.',
+              },
+            },
+          },
         };
 
         globalThis.fetch = vi.fn(() =>
@@ -274,13 +274,13 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(mockData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
 
         expect(result['Genesis']['1']['1'].en).toBe(
-          'In the beginning, God created the heaven and the earth.'
+          'In the beginning, God created the heaven and the earth.',
         );
       });
 
@@ -288,9 +288,9 @@ describe('verseTexts', () => {
         const mockData: VerseTexts = {
           'Genesis': {
             '1': {
-              '1': { he: '', en: 'Some text' }
-            }
-          }
+              '1': { he: '', en: 'Some text' },
+            },
+          },
         };
 
         globalThis.fetch = vi.fn(() =>
@@ -298,7 +298,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(mockData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -311,9 +311,9 @@ describe('verseTexts', () => {
         const mockData: VerseTexts = {
           'Genesis': {
             '1': {
-              '1': { he: 'עברית', en: '' }
-            }
-          }
+              '1': { he: 'עברית', en: '' },
+            },
+          },
         };
 
         globalThis.fetch = vi.fn(() =>
@@ -321,7 +321,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(mockData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -333,12 +333,13 @@ describe('verseTexts', () => {
       it('handles books with mixed chapter/verse ranges', async () => {
         const mockData: VerseTexts = {
           'Psalms': {
-            '1': { '1': { he: 'a', en: 'a' } },  // Short chapter
-            '119': {  // Long chapter
+            '1': { '1': { he: 'a', en: 'a' } }, // Short chapter
+            '119': {
+              // Long chapter
               '1': { he: 'b', en: 'b' },
-              '176': { he: 'c', en: 'c' },  // Last verse
-            }
-          }
+              '176': { he: 'c', en: 'c' }, // Last verse
+            },
+          },
         };
 
         globalThis.fetch = vi.fn(() =>
@@ -346,7 +347,7 @@ describe('verseTexts', () => {
             ok: true,
             status: 200,
             json: () => Promise.resolve(mockData),
-          } as Response)
+          } as Response),
         );
 
         const result = await loadAllVerseTexts();
@@ -366,19 +367,19 @@ describe('verseTexts', () => {
         },
         '2': {
           '1': { he: 'וַיְכֻלּוּ', en: 'Thus were finished' },
-        }
+        },
       },
       'Exodus': {
         '1': {
           '1': { he: 'וְאֵלֶּה', en: 'Now these are' },
-        }
+        },
       },
       'Psalms': {
         '119': {
           '1': { he: 'אַשְׁרֵי', en: 'Blessed are' },
           '176': { he: 'תָּעִיתִי', en: 'I have gone astray' },
-        }
-      }
+        },
+      },
     };
 
     describe('successful retrieval', () => {
@@ -494,9 +495,9 @@ describe('verseTexts', () => {
         const verseTexts: VerseTexts = {
           'Song of Songs': {
             '1': {
-              '1': { he: 'שִׁיר', en: 'The song' }
-            }
-          }
+              '1': { he: 'שִׁיר', en: 'The song' },
+            },
+          },
         };
 
         const result = getVerseText(verseTexts, 'Song of Songs', 1, 1);
@@ -510,9 +511,9 @@ describe('verseTexts', () => {
         const verseTexts: VerseTexts = {
           'Test': {
             '1': {
-              '1': { he: '', en: 'English only' }
-            }
-          }
+              '1': { he: '', en: 'English only' },
+            },
+          },
         };
 
         const result = getVerseText(verseTexts, 'Test', 1, 1);
@@ -524,9 +525,9 @@ describe('verseTexts', () => {
         const verseTexts: VerseTexts = {
           'Test': {
             '1': {
-              '1': { he: 'עברית בלבד', en: '' }
-            }
-          }
+              '1': { he: 'עברית בלבד', en: '' },
+            },
+          },
         };
 
         const result = getVerseText(verseTexts, 'Test', 1, 1);
@@ -538,9 +539,9 @@ describe('verseTexts', () => {
         const verseTexts: VerseTexts = {
           'Test': {
             '1': {
-              '1': { he: '', en: '' }
-            }
-          }
+              '1': { he: '', en: '' },
+            },
+          },
         };
 
         const result = getVerseText(verseTexts, 'Test', 1, 1);
@@ -553,9 +554,9 @@ describe('verseTexts', () => {
         const verseTexts: VerseTexts = {
           'Test': {
             '1': {
-              '1': { he: longText, en: longText }
-            }
-          }
+              '1': { he: longText, en: longText },
+            },
+          },
         };
 
         const result = getVerseText(verseTexts, 'Test', 1, 1);
@@ -569,10 +570,10 @@ describe('verseTexts', () => {
             '1': {
               '1': {
                 he: 'עברית עם ״ציטוט״',
-                en: 'English with "quotes" and \'apostrophes\''
-              }
-            }
-          }
+                en: 'English with "quotes" and \'apostrophes\'',
+              },
+            },
+          },
         };
 
         const result = getVerseText(verseTexts, 'Test', 1, 1);
@@ -587,10 +588,10 @@ describe('verseTexts', () => {
             '1': {
               '1': {
                 he: 'עברית 🙏',
-                en: 'English 📖'
-              }
-            }
-          }
+                en: 'English 📖',
+              },
+            },
+          },
         };
 
         const result = getVerseText(verseTexts, 'Test', 1, 1);
@@ -692,7 +693,7 @@ describe('verseTexts', () => {
 
       it('handles lookups across many verses', () => {
         const largeData: VerseTexts = {
-          'Book': {}
+          'Book': {},
         };
 
         // Create 150 chapters with 50 verses each
@@ -701,7 +702,7 @@ describe('verseTexts', () => {
           for (let v = 1; v <= 50; v++) {
             largeData['Book'][String(c)][String(v)] = {
               he: `he-${c}-${v}`,
-              en: `en-${c}-${v}`
+              en: `en-${c}-${v}`,
             };
           }
         }
@@ -721,9 +722,9 @@ describe('verseTexts', () => {
       const mockData: VerseTexts = {
         'Genesis': {
           '1': {
-            '1': { he: 'בְּרֵאשִׁית', en: 'In the beginning' }
-          }
-        }
+            '1': { he: 'בְּרֵאשִׁית', en: 'In the beginning' },
+          },
+        },
       };
 
       globalThis.fetch = vi.fn(() =>
@@ -731,7 +732,7 @@ describe('verseTexts', () => {
           ok: true,
           status: 200,
           json: () => Promise.resolve(mockData),
-        } as Response)
+        } as Response),
       );
 
       const verseTexts = await loadAllVerseTexts();
@@ -749,7 +750,7 @@ describe('verseTexts', () => {
           ok: false,
           status: 404,
           json: () => Promise.resolve(null),
-        } as Response)
+        } as Response),
       );
 
       const verseTexts = await loadAllVerseTexts();
@@ -765,13 +766,13 @@ describe('verseTexts', () => {
           '1': {
             '1': { he: 'verse1', en: 'verse1' },
             '2': { he: 'verse2', en: 'verse2' },
-          }
+          },
         },
         'Exodus': {
           '1': {
-            '1': { he: 'verse3', en: 'verse3' }
-          }
-        }
+            '1': { he: 'verse3', en: 'verse3' },
+          },
+        },
       };
 
       globalThis.fetch = vi.fn(() =>
@@ -779,7 +780,7 @@ describe('verseTexts', () => {
           ok: true,
           status: 200,
           json: () => Promise.resolve(mockData),
-        } as Response)
+        } as Response),
       );
 
       const verseTexts = await loadAllVerseTexts();

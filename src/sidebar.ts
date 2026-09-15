@@ -48,7 +48,7 @@ export function getSefariaUrl(
   book: string,
   chapter: number,
   verse: number,
-  currentOverlay: Overlay | null = null
+  currentOverlay: Overlay | null = null,
 ): string {
   const sefariaBook = book.replace(/ /g, '_');
   const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
@@ -78,9 +78,9 @@ export function updateSidebar(
     texts: VerseTexts,
     book: string,
     chapter: number,
-    verse: number
+    verse: number,
   ) => VerseText | null,
-  isPinned: boolean = false
+  isPinned: boolean = false,
 ): void {
   const { sidebar, ref, overlayInfo, hebrew, english, link, linkSubtitle } = elements;
 

@@ -1,4 +1,11 @@
-export type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, InterpolatedState, EasingName } from './types';
+export type {
+  StoryData,
+  StoryStop,
+  ResolvedStoryStop,
+  CameraPosition,
+  InterpolatedState,
+  EasingName,
+} from './types';
 export type { AppMode } from './modeSwitch';
 export { loadStoryData, renderStoryPanel, computeStopOffsets, resolveStops } from './storyPanel';
 export { computeInterpolatedState, computeStopScrollCenters } from './controller';

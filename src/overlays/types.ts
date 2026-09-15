@@ -1,11 +1,11 @@
 // src/overlays/types.ts
-import type { TanakhIdentity, TanakhLayout } from "../types.ts";
-import type { VerseTexts } from "../verseTexts.ts";
-import type { UrlParamSpec, UrlParamValues } from "../urlState.ts";
-import type { Credit } from "../credits.ts";
+import type { TanakhIdentity, TanakhLayout } from '../types.ts';
+import type { VerseTexts } from '../verseTexts.ts';
+import type { UrlParamSpec, UrlParamValues } from '../urlState.ts';
+import type { Credit } from '../credits.ts';
 
-export type { UrlParamSpec, UrlParamKind, UrlParamValues } from "../urlState.ts";
-export type { Credit } from "../credits.ts";
+export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '../urlState.ts';
+export type { Credit } from '../credits.ts';
 
 export type Color = [number, number, number];
 
@@ -71,16 +71,10 @@ export interface Overlay<T = TanakhIdentity> {
   applyUrlParams?(params: UrlParamValues): void;
 
   // Sidebar integration - for verse details display
-  renderSidebarInfo?(
-    verse: T,
-    isPinned: boolean,
-  ): HTMLElement | string | null;
+  renderSidebarInfo?(verse: T, isPinned: boolean): HTMLElement | string | null;
 
   // Highlight or modify verse text display (e.g., search terms, trop marks)
-  highlightVerseText?(
-    text: string,
-    language: "he" | "en",
-  ): DocumentFragment | string;
+  highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment | string;
 
   // Provide overlay-specific link subtitle (e.g., category-specific commentary counts)
   getLinkSubtitle?(verse: T): string | null;

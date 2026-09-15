@@ -91,15 +91,11 @@ function cleanText(text: string): string {
     .trim();
 }
 
-function checkVersion(
-  filePath: string,
-  data: SefariaTextFile,
-  expected: string
-): void {
+function checkVersion(filePath: string, data: SefariaTextFile, expected: string): void {
   if (data.versionTitle !== expected) {
     throw new Error(
       `${path.basename(filePath)} holds "${data.versionTitle}", expected ` +
-        `"${expected}". Re-run scripts/download-texts.sh.`
+        `"${expected}". Re-run scripts/download-texts.sh.`,
     );
   }
 }
@@ -152,10 +148,7 @@ function main() {
     const bookTexts = loadBook(dataDir, book.file);
     allTexts[book.name] = bookTexts;
 
-    const verses = Object.values(bookTexts).reduce(
-      (sum, ch) => sum + Object.keys(ch).length,
-      0
-    );
+    const verses = Object.values(bookTexts).reduce((sum, ch) => sum + Object.keys(ch).length, 0);
     totalVerses += verses;
     console.log(` ${verses} verses`);
   }

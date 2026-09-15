@@ -68,7 +68,7 @@ describe('credits tab', () => {
   const withCredits = (overlays: { name: string; credits?: readonly unknown[] }[]) =>
     overlays.filter((o) => o.credits && o.credits.length > 0);
 
-  it('heads one block per crediting overlay, under that overlay\'s own name', async () => {
+  it("heads one block per crediting overlay, under that overlay's own name", async () => {
     const modal = await openHelp();
     clickTab(modal, 'credits');
 

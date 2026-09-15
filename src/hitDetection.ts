@@ -15,7 +15,7 @@ import { HIGHLIGHT_CONSTANTS } from './constants';
 export function screenToWorld(
   screenX: number,
   screenY: number,
-  camera: Camera
+  camera: Camera,
 ): { x: number; y: number } {
   return {
     x: screenX / camera.zoom - camera.x,
@@ -26,11 +26,7 @@ export function screenToWorld(
 /**
  * Check if a point (in world coordinates) is inside a spatial item's bounds.
  */
-export function isPointInItem<T>(
-  worldX: number,
-  worldY: number,
-  verse: SpatialItem<T>
-): boolean {
+export function isPointInItem<T>(worldX: number, worldY: number, verse: SpatialItem<T>): boolean {
   return (
     worldX >= verse.x &&
     worldX < verse.x + verse.size &&
@@ -45,7 +41,7 @@ export function isPointInItem<T>(
 export function findExactHit<T>(
   verses: SpatialItem<T>[],
   worldX: number,
-  worldY: number
+  worldY: number,
 ): SpatialItem<T> | null {
   for (const v of verses) {
     if (isPointInItem(worldX, worldY, v)) {
@@ -62,11 +58,10 @@ export function findExactHit<T>(
 export function findFuzzyHit<T>(
   verses: SpatialItem<T>[],
   worldX: number,
-  worldY: number
+  worldY: number,
 ): SpatialItem<T> | null {
   let nearestItem: SpatialItem<T> | null = null;
-  let nearestDistSq =
-    HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
+  let nearestDistSq = HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
 
   for (const v of verses) {
     // Find center of verse square
@@ -96,7 +91,7 @@ export function findItemAtPoint<T>(
   verses: SpatialItem<T>[],
   camera: Camera,
   screenX: number,
-  screenY: number
+  screenY: number,
 ): SpatialItem<T> | null {
   // Convert screen coords to world coords
   const { x: worldX, y: worldY } = screenToWorld(screenX, screenY, camera);

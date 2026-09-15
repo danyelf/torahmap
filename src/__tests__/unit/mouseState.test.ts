@@ -70,7 +70,7 @@ describe('mouseState', () => {
         book: 'Genesis',
         chapter: 1,
         verse: 1,
-        x: 100,  // Different position - doesn't matter
+        x: 100, // Different position - doesn't matter
         y: 200,
         size: 2,
       };

@@ -59,7 +59,10 @@ interface StopMeta {
   contentStart: number;
 }
 
-function parseStopComment(id: string, paramsStr: string | undefined): { id: string; params: Record<string, string> } {
+function parseStopComment(
+  id: string,
+  paramsStr: string | undefined,
+): { id: string; params: Record<string, string> } {
   const params: Record<string, string> = {};
   if (paramsStr) {
     for (const part of paramsStr.split('|')) {
@@ -79,8 +82,8 @@ function parseCamera(params: Record<string, string>): CameraRef {
   if (!cameraStr || cameraStr === 'initial') return 'initial';
 
   // Support "x,y,zoom" format
-  const parts = cameraStr.split(',').map(s => parseFloat(s.trim()));
-  if (parts.length === 3 && parts.every(n => !isNaN(n))) {
+  const parts = cameraStr.split(',').map((s) => parseFloat(s.trim()));
+  if (parts.length === 3 && parts.every((n) => !isNaN(n))) {
     return { x: parts[0], y: parts[1], zoom: parts[2] };
   }
 
@@ -111,7 +114,8 @@ function parseStops(body: string): StoryStop[] {
 
   for (let i = 0; i < metas.length; i++) {
     const meta = metas[i];
-    const contentEnd = i + 1 < metas.length ? body.lastIndexOf('<!--', metas[i + 1].contentStart) : body.length;
+    const contentEnd =
+      i + 1 < metas.length ? body.lastIndexOf('<!--', metas[i + 1].contentStart) : body.length;
     const rawContent = body.slice(meta.contentStart, contentEnd).trim();
 
     // Extract title from first # heading

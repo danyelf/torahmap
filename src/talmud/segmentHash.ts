@@ -3,12 +3,12 @@
 // same hash so the two random offsets are uncorrelated only via PRNG
 // reseeding, not via two different hash schemes.
 
-import type { TalmudIdentity } from "../types.ts";
+import type { TalmudIdentity } from '../types.ts';
 
 export function segmentHash(
   tractate: string,
   daf: number,
-  amud: "a" | "b",
+  amud: 'a' | 'b',
   segment: number,
 ): number {
   let h = 0;
@@ -16,7 +16,7 @@ export function segmentHash(
     h = (h * 31 + tractate.charCodeAt(i)) | 0;
   }
   h = (h * 31 + daf) | 0;
-  h = (h * 31 + (amud === "b" ? 1 : 0)) | 0;
+  h = (h * 31 + (amud === 'b' ? 1 : 0)) | 0;
   h = (h * 31 + segment) | 0;
   return h;
 }
