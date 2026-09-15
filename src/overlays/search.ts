@@ -86,6 +86,19 @@ function activeTerms(): SearchTerm[] {
   return activeTermsCache.value;
 }
 
+/**
+ * The colour slot a term occupies, given its position among the searched terms.
+ *
+ * A result, a snippet and a highlight all name a term by its position in the
+ * searched list; the swatch and the map ask the term itself. Those were the
+ * same number until a term gained a colour that survives its neighbours being
+ * edited — delete the first of two terms and the survivor keeps colour 1 while
+ * moving to position 0 — so the translation belongs in one place.
+ */
+function termColorIndex(position: number): number {
+  return activeTerms()[position]?.colorIndex ?? 0;
+}
+
 /** Terms holding something, including ones too short to search on. */
 function typedTerms(): SearchTerm[] {
   return terms.filter((t) => t.text.trim().length > 0);
@@ -553,7 +566,7 @@ function createResultElement(result: SearchResult): HTMLDivElement {
   for (const m of result.matchingTerms) {
     const dot = document.createElement('span');
     dot.className = 'term-dot';
-    const color = SEARCH_COLORS[m.termIndex % SEARCH_COLORS.length];
+    const color = SEARCH_COLORS[termColorIndex(m.termIndex)];
     dot.style.background = colorToCss(color);
     termIndicators.appendChild(dot);
   }
@@ -671,7 +684,7 @@ function createHighlightedText(
   }
 
   const mark = document.createElement('mark');
-  mark.className = `term-${termIndex % 5}`;
+  mark.className = `term-${termColorIndex(termIndex)}`;
   mark.textContent = text.slice(start, end);
   fragment.appendChild(mark);
 
@@ -878,7 +891,7 @@ function buildHighlightedDomFragment(text: string, matches: Match[]): DocumentFr
 
     // Add highlighted match
     const mark = document.createElement('mark');
-    mark.className = `term-${m.termIndex % 5}`;
+    mark.className = `term-${termColorIndex(m.termIndex)}`;
     mark.textContent = text.slice(m.start, m.end);
     fragment.appendChild(mark);
 
