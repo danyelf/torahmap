@@ -1,0 +1,60 @@
+.word-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 6px;
+  background: rgba(30, 30, 30, 0.98);
+  border: 1px solid #444;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  color: #eee;
+}
+
+.word-menu-note,
+.word-menu-warning {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.word-menu-warning {
+  border-top: 1px solid #333;
+  color: #e0b0b0;
+}
+
+.word-menu-choice {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.word-menu-choice:hover {
+  background: rgba(106, 176, 243, 0.18);
+}
+
+.word-menu-form {
+  font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
+  font-size: 16px;
+  direction: rtl;
+}
+
+.word-menu-gloss {
+  flex: 1;
+}
+
+.word-menu-count {
+  color: #888;
+  font-size: 11px;
+  white-space: nowrap;
+}
