@@ -566,11 +566,14 @@ export const searchOverlay: Overlay = {
   name: 'Text Search',
   credits: [
     {
-      source: 'Eep Talstra Centre for Bible and Computer, Biblia Hebraica Stuttgartensia',
-      url: 'https://dx.doi.org/10.17026/dans-z6y-skyh',
+      source:
+        'Eep Talstra Centre for Bible and Computer, ' +
+        'Biblia Hebraica Stuttgartensia Amstelodamensis (2021)',
+      url: 'https://doi.org/10.17026/dans-z6y-skyh',
       license: 'CC BY-NC 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
       collected: 'September 2026',
-      note: 'Available on Github at https://github.com/ETCBC/bhsa',
+      note: 'Cite 10.17026/dans-z6y-skyh. Available on GitHub at github.com/ETCBC/bhsa.',
     },
   ],
 

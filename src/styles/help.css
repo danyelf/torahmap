@@ -181,9 +181,9 @@
  *
  * The modal had no `a` rule at all, so every link rendered in the browser's
  * default blue on a near-black panel and read dimmer than the prose it sat
- * between. Against #1e1e1e, #8ec5f7 gives 9.1:1 where the body text #bbb gives
- * 8.7:1, so a link now reads brighter than the surrounding words. The tab
- * accent #6ab0f3 reaches only 7.9:1, which is dimmer than the prose and would
+ * between. Against #1e1e1e, #8ec5f7 gives 9.11:1 where the body text #bbb gives
+ * 8.68:1, so a link now reads brighter than the surrounding words. The tab
+ * accent #6ab0f3 reaches only 7.24:1, which is dimmer than the prose and would
  * have left the problem standing. The underline carries the same information
  * without depending on colour at all.
  */
@@ -317,4 +317,22 @@ span.credit-source {
   .credit-license {
     justify-self: start;
   }
+}
+
+/* A licence pill that links to its deed.
+ *
+ * Creative Commons 4.0 asks for a link to the licence, so these became
+ * anchors. Blue still means clickable, which keeps the tab's one rule intact
+ * and makes linked pills legibly different from the plain ones — but the
+ * underline is dropped, since the pill's own border already bounds it.
+ */
+.help-body a.credit-license {
+  border-color: #3f5a73;
+  color: #8ec5f7;
+  text-decoration: none;
+}
+
+.help-body a.credit-license:hover {
+  border-color: #8ec5f7;
+  color: #b6d9fa;
 }

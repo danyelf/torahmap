@@ -17,8 +17,19 @@ export interface Credit {
   /** How the source should be named. Some licences require a specific wording. */
   source: string;
   url?: string;
-  /** Licence as it should be shown, e.g. "CC BY-SA". Omit if there is none to state. */
+  /** Licence as it should be shown, e.g. "CC BY-SA 4.0". Omit if there is none to state. */
   license?: string;
+  /**
+   * The licence deed itself. Creative Commons 4.0 licences require a link to
+   * the licence alongside the attribution, so this is an obligation rather
+   * than a convenience.
+   *
+   * Set it only where the version is actually established. Sefaria records
+   * "CC-BY-SA" and "CC-BY-NC" with no version and no URL of its own, so a
+   * versioned deed link is asserted only where the upstream says which version
+   * it means. Where it does not, the licence shows as plain text.
+   */
+  licenseUrl?: string;
   /**
    * When we last took the data, at month precision, e.g. "September 2026".
    *
@@ -39,7 +50,8 @@ export const APP_CREDITS: readonly Credit[] = [
   {
     source: 'Miqra according to the Masorah',
     url: 'https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94',
-    license: 'CC BY-SA',
+    license: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
     collected: 'September 2026',
     note: 'The Hebrew text, from Hebrew Wikisource, downloaded via Sefaria. The Trop overlay reads its cantillation marks out of this edition, and Hebrew search matches it with vowels and cantillation ignored.',
   },
@@ -60,19 +72,23 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function renderSource(credit: Credit): string {
-  const name = escapeHtml(credit.source);
-  if (!credit.url) return `<span class="credit-source">${name}</span>`;
+/**
+ * Text in `className`, linked when there is somewhere to link it. One helper so
+ * that every outward link in the tab opens the same guarded way.
+ */
+function renderLinked(className: string, text: string, url?: string): string {
+  const label = escapeHtml(text);
+  if (!url) return `<span class="${className}">${label}</span>`;
 
   return (
-    `<a class="credit-source" href="${escapeHtml(credit.url)}"` +
-    ` target="_blank" rel="noopener noreferrer">${name}</a>`
+    `<a class="${className}" href="${escapeHtml(url)}"` +
+    ` target="_blank" rel="noopener noreferrer">${label}</a>`
   );
 }
 
 function renderRow(credit: Credit): string {
   const licence = credit.license
-    ? `<span class="credit-license">${escapeHtml(credit.license)}</span>`
+    ? renderLinked('credit-license', credit.license, credit.licenseUrl)
     : '';
 
   const collected = credit.collected
@@ -81,7 +97,7 @@ function renderRow(credit: Credit): string {
   const note = credit.note ? ` · ${escapeHtml(credit.note)}` : '';
 
   return (
-    `<li class="credit-row">${renderSource(credit)}${licence}` +
+    `<li class="credit-row">${renderLinked('credit-source', credit.source, credit.url)}${licence}` +
     `<p class="credit-meta">${collected}${note}</p></li>`
   );
 }

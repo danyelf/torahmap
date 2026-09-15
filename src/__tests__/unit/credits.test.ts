@@ -50,6 +50,26 @@ describe('renderCreditBlock', () => {
     expect(block([{ source: 'S' }])).not.toContain('credit-license');
   });
 
+  it('links the licence when a deed url is given', () => {
+    const el = document.createElement('div');
+    el.innerHTML = block([
+      { source: 'S', license: 'CC BY-SA 4.0', licenseUrl: 'https://example.test/by-sa/4.0/' },
+    ]);
+    const pill = el.querySelector('a.credit-license');
+
+    expect(pill).not.toBeNull();
+    expect(pill!.getAttribute('href')).toBe('https://example.test/by-sa/4.0/');
+    expect(pill!.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('leaves the licence as plain text when no deed url is given', () => {
+    const el = document.createElement('div');
+    el.innerHTML = block([{ source: 'S', license: 'CC BY-NC' }]);
+
+    expect(el.querySelector('a.credit-license')).toBeNull();
+    expect(el.querySelector('span.credit-license')).not.toBeNull();
+  });
+
   it('says the collection date is not recorded when none is given', () => {
     expect(block([{ source: 'S', collected: 'September 2026' }])).toContain('September 2026');
 
@@ -125,9 +145,21 @@ describe('the credits the app ships', () => {
 
   it('links every source it links over https', () => {
     const bad = everyCredit()
-      .map((c) => c.url)
+      .flatMap((c) => [c.url, c.licenseUrl])
       .filter((u) => u !== undefined && !u.startsWith('https://'));
 
     expect(bad).toEqual([]);
+  });
+
+  it('links the deed for every licence that states a version', () => {
+    // Creative Commons 4.0 asks for a link to the licence alongside the
+    // attribution. A version we are confident enough to print is a version we
+    // are confident enough to link.
+    const unlinked = everyCredit()
+      .filter((c) => c.license !== undefined && /\d+\.\d+/.test(c.license))
+      .filter((c) => c.licenseUrl === undefined)
+      .map((c) => c.source);
+
+    expect(unlinked).toEqual([]);
   });
 });

@@ -110,7 +110,8 @@ export const textDatingOverlay: Overlay = {
     {
       source: 'Wikipedia, "Dating the Bible"',
       url: 'https://en.wikipedia.org/wiki/Dating_the_Bible',
-      license: 'CC BY-SA',
+      license: 'CC BY-SA 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
       collected: 'January 2026',
     },
   ],

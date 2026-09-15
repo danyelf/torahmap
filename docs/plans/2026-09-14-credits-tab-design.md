@@ -97,14 +97,32 @@ From `APP_CREDITS` in `src/credits.ts`, rendered above the overlay blocks.
 
 | Overlay | Source | Licence | Collected | Note |
 | --- | --- | --- | --- | --- |
-| Text Search | ETCBC BHSA (2021), read through Text-Fabric | CC BY-NC 4.0 | September 2026 | Cite 10.17026/dans-z6y-skyh |
-| Commentary | Sefaria link exports | Sefaria's terms | January 2026 | Sefaria regenerates these monthly, so counts trail the live site. |
-| Haftarah | Mechon Mamre, Weekly Torah Readings | none stated | January 2026 | © Mechon Mamre 2013. The page states no licence. |
-| Text Dating | Wikipedia, "Dating the Bible" | CC BY-SA | January 2026 | — |
+| Text Search | Eep Talstra Centre for Bible and Computer, Biblia Hebraica Stuttgartensia Amstelodamensis (2021) | CC BY-NC 4.0 | September 2026 | Cite 10.17026/dans-z6y-skyh |
+| Commentary | Sefaria link exports | none stated | September 2026 | — |
+| Text Dating | Wikipedia, "Dating the Bible" | CC BY-SA 4.0 | January 2026 | — |
 
-Trop and Verse Length declare no credits and do not appear. Both derive
-everything from text that is already credited: Trop reads the cantillation
-marks out of the Hebrew edition, and Verse Length counts characters.
+Three overlays declare no credits and do not appear. Trop reads the
+cantillation marks out of the Hebrew edition and Verse Length counts
+characters, so both derive from text that is already credited. Haftarah
+declares an explicit empty list: which passage is read on which occasion is
+recorded in many places, so the readings are not any one source's work. The
+generator still parses a cached copy of Mechon Mamre's page, which is where
+they were taken from; #108 tracks establishing what that page permits.
+
+## Linking the licence
+
+Creative Commons 4.0 asks for a link to the licence alongside the attribution,
+so `Credit` carries an optional `licenseUrl` and the pill renders as an anchor
+when it is set.
+
+It is set only where the version is actually established. Sefaria records
+`CC-BY-SA` and `CC-BY-NC` with no version and no URL of its own — checked in
+both the downloaded files and its API — so the JPS edition shows a plain,
+unlinked `CC BY-NC`. The Hebrew edition and the Wikipedia article come from
+Wikimedia projects, whose text has been CC BY-SA 4.0 since June 2023, and BHSA
+states CC BY-NC 4.0 upstream; those three link their deeds. A version we are
+confident enough to print is a version we are confident enough to link, and a
+test enforces exactly that.
 
 ## Where the collection dates come from
 
@@ -120,12 +138,10 @@ A date is therefore given only where a commit plainly is a collection event:
 
 - **September 2026** for the two text editions. Commit `87681ae` rewrote all 78
   files under `data/texts/`, which is a re-download.
-- **January 2026** for Mechon Mamre. Commit `b4c3794` added
-  `data/readings.html`, the cached copy of their page.
-- **January 2026** for the commentary counts. Commit `109da61` regenerated
-  `commentary-counts.json` from Sefaria's link CSVs. The CSVs
-  themselves are not in the repository, but Sefaria re-exports them monthly, so
-  the counts are at most about a month older than the file.
+- **September 2026** for the commentary counts, from main's
+  `fd9dc60`, "Refresh commentary counts from the September export". The CSVs
+  are not in the repository, but the refresh script prints the export date it
+  found, which is what this records.
 
 Two further dates come from Danyel directly rather than from the repository:
 BHSA was pulled in September 2026, and the Wikipedia article was read in
@@ -164,9 +180,9 @@ issue is about.
 Links get the rule the project has never had, scoped to `.help-body` so it
 cannot leak into the map interface: `#8ec5f7`, underlined at a 2px offset,
 hover `#b6d9fa`, and a visible focus ring. Measured against the `#1e1e1e`
-modal, `#8ec5f7` gives 9.1:1 where the body prose `#bbb` gives 8.7:1, so links
+modal, `#8ec5f7` gives 9.11:1 where the body prose `#bbb` gives 8.68:1, so links
 read brighter than the words around them. The tab accent `#6ab0f3` reaches only
-7.9:1, which is dimmer than the prose and would have left the complaint
+7.24:1, which is dimmer than the prose and would have left the complaint
 standing.
 
 The palette registry the issue suggests drawing this from was PR #62, which is
