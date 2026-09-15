@@ -118,6 +118,14 @@ the files by hand, count them first.
 
 ### Checking the result is sane
 
+```bash
+python3 scripts/verify-against-sefaria.py
+```
+
+This samples twenty-six verses across Torah, Nevi'im and Ketuvim, compares each
+against Sefaria's live site, and fails if the differences run in both
+directions.
+
 The counts we generate are not expected to match Sefaria's live site exactly —
 the script drops Tanakh cross-references and filters Talmud by design, and the
 export is up to a month behind. What they should be is *consistently* close.
