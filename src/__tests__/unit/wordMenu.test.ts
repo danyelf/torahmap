@@ -53,9 +53,6 @@ function open(overrides: Partial<WordMenuOptions> = {}): void {
     word: 'עלה',
     meanings: [leaf],
     anchor: anchor(),
-    replacesOverlay: null,
-    switchesToRootMode: false,
-    switchesToWordMode: false,
     paletteFull: false,
     onChoose: vi.fn(),
     ...overrides,
@@ -70,6 +67,35 @@ const menuText = (): string => document.querySelector('.word-menu')!.textContent
 beforeEach(() => {
   document.body.innerHTML = '';
   closeWordMenu();
+});
+
+describe('what the panel is', () => {
+  // The header does not depend on anything, because it is not telling the
+  // reader about their situation - it is naming the thing they have opened.
+
+  it('names itself when the verse settles the word', () => {
+    open({ meanings: [leaf] });
+
+    expect(document.querySelector('.word-menu-title')!.textContent).toBe('Word Search');
+  });
+
+  it('names itself when the verse carries more than one reading', () => {
+    open({ word: 'עלת', meanings: [leaf, ascend] });
+
+    expect(document.querySelector('.word-menu-title')!.textContent).toBe('Word Search');
+  });
+
+  it('names itself when the verse settles nothing', () => {
+    open({ word: 'אתו', meanings: [] });
+
+    expect(document.querySelector('.word-menu-title')!.textContent).toBe('Word Search');
+  });
+
+  it('names itself even when there is nothing left to offer', () => {
+    open({ paletteFull: true });
+
+    expect(document.querySelector('.word-menu-title')!.textContent).toBe('Word Search');
+  });
 });
 
 describe('one reading, settled by the verse', () => {
@@ -178,46 +204,6 @@ describe('searching the written form', () => {
   });
 });
 
-describe('when searching costs the current view', () => {
-  it('says which view will be lost', () => {
-    open({ replacesOverlay: 'Haftarah' });
-
-    expect(menuText()).toContain('Haftarah');
-  });
-});
-
-describe('when searching costs the current Hebrew mode', () => {
-  it('says a meaning will move the search to root', () => {
-    open({ meanings: [leaf], switchesToRootMode: true });
-
-    expect(menuText()).toContain('switches Hebrew search to Root');
-  });
-
-  it('says nothing about root when the search is already there', () => {
-    open({ meanings: [leaf], switchesToRootMode: false });
-
-    expect(menuText()).not.toContain('switches Hebrew search to Root');
-  });
-
-  it('says nothing about root when no reading is on offer', () => {
-    open({ meanings: [], switchesToRootMode: true });
-
-    expect(menuText()).not.toContain('switches Hebrew search to Root');
-  });
-
-  it('says the written form will move the search to whole word', () => {
-    open({ switchesToWordMode: true });
-
-    expect(menuText()).toContain('switches Hebrew search to Whole word');
-  });
-
-  it('says nothing about whole word when the search is already there', () => {
-    open({ switchesToWordMode: false });
-
-    expect(menuText()).not.toContain('switches Hebrew search to Whole word');
-  });
-});
-
 describe('layout', () => {
   it('separates form, gloss and count into distinct flex items', () => {
     open({ meanings: [leaf] });
@@ -245,10 +231,9 @@ describe('when the palette is full', () => {
   });
 
   it('does not offer the written form either, since it would be refused too', () => {
-    open({ paletteFull: true, switchesToWordMode: true });
+    open({ paletteFull: true });
 
     expect(menuText()).not.toContain('exactly');
-    expect(menuText()).not.toContain('switches Hebrew search');
   });
 });
 

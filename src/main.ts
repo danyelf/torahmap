@@ -60,7 +60,7 @@ import {
   configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
-import { searchForMeaning, canAddTerm, searchModeWouldChange } from './overlays/search.ts';
+import { searchForMeaning, canAddTerm } from './overlays/search.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -692,10 +692,6 @@ async function main(): Promise<void> {
       word: click.text,
       meanings,
       anchor: click.element,
-      replacesOverlay:
-        currentOverlay && currentOverlay.id !== 'search' ? currentOverlay.name : null,
-      switchesToRootMode: searchModeWouldChange('root'),
-      switchesToWordMode: searchModeWouldChange('word'),
       paletteFull: !canAddTerm(),
       onChoose: (meaning) => {
         // Ask before anything is spent. setOverlay() destroys the outgoing

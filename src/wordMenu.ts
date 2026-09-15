@@ -15,11 +15,6 @@ export interface WordMenuOptions {
   /** What the verse supports: usually one, sometimes a few, sometimes none. */
   meanings: Meaning[];
   anchor: HTMLElement;
-  replacesOverlay: string | null;
-  /** True when choosing a meaning would move Hebrew search into root mode. */
-  switchesToRootMode: boolean;
-  /** True when searching the written form would move Hebrew search to whole word. */
-  switchesToWordMode: boolean;
   paletteFull: boolean;
   /** A reading of the word, or null for the written form itself. */
   onChoose: (meaning: Meaning | null) => void;
@@ -102,6 +97,14 @@ export function openWordMenu(options: WordMenuOptions): void {
   menu.className = 'word-menu';
   menu.setAttribute('role', 'dialog');
 
+  // What the panel is, said once and always. It names the thing the reader has
+  // opened rather than reporting on their situation, so nothing it says depends
+  // on what the verse turned out to hold.
+  const title = document.createElement('div');
+  title.className = 'word-menu-title';
+  title.textContent = 'Word Search';
+  menu.appendChild(title);
+
   if (options.paletteFull) {
     // Five colours, five words. A sixth would repeat a colour and the map could
     // no longer say which word is which, so this says so rather than offering a
@@ -137,30 +140,6 @@ export function openWordMenu(options: WordMenuOptions): void {
     }
 
     menu.appendChild(exactChoice(options));
-  }
-
-  if (options.replacesOverlay) {
-    const warning = document.createElement('div');
-    warning.className = 'word-menu-warning';
-    warning.textContent = `Searching replaces the ${options.replacesOverlay} view.`;
-    menu.appendChild(warning);
-  }
-
-  if (!options.paletteFull && options.meanings.length > 0 && options.switchesToRootMode) {
-    // A meaning is not something a substring can express, so choosing one has
-    // to move the Hebrew search into root mode. The reader chose the mode they
-    // are in, so they are told before the click rather than after it.
-    const warning = document.createElement('div');
-    warning.className = 'word-menu-warning';
-    warning.textContent = 'Searching a meaning switches Hebrew search to Root.';
-    menu.appendChild(warning);
-  }
-
-  if (!options.paletteFull && options.switchesToWordMode) {
-    const warning = document.createElement('div');
-    warning.className = 'word-menu-warning';
-    warning.textContent = 'Searching exactly switches Hebrew search to Whole word.';
-    menu.appendChild(warning);
   }
 
   // Anchored to the word, then nudged back inside the viewport.

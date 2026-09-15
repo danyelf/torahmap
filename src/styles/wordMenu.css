@@ -12,16 +12,27 @@
   color: #eee;
 }
 
-.word-menu-note,
-.word-menu-warning {
+/*
+ * The panel's own header, following #verse-popup .verse-ref - the other
+ * popover in this app - one size down, because the word menu is smaller and
+ * this is a label rather than a banner. The negative margins take it out to the
+ * panel's edges, past the 6px the panel pads its contents by.
+ */
+.word-menu-title {
+  margin: -6px -6px 6px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px 3px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.word-menu-note {
   padding: 6px 8px;
   font-size: 12px;
   color: #aaa;
-}
-
-.word-menu-warning {
-  border-top: 1px solid #333;
-  color: #e0b0b0;
 }
 
 .word-menu-choice {
