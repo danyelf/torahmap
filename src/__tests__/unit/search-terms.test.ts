@@ -36,13 +36,14 @@ describe('adding a term', () => {
       'burnt-offering',
       'leafage',
       'pretext',
+      'upon',
     ]);
-    expect(aleh.selected.size).toBe(4);
+    expect(aleh.selected.size).toBe(5);
   });
 
   it('paints the union until the reader narrows it', () => {
     const [aleh] = addTerm([], 'עלה');
-    expect(selectedKeys(aleh)).toHaveLength(4);
+    expect(selectedKeys(aleh)).toHaveLength(5);
   });
 
   it('gives each term a colour no other term is using', () => {
@@ -111,7 +112,7 @@ describe('choosing meanings', () => {
     terms = toggleMeaning(terms, terms[0].id, leafage.keys[0]);
 
     expect(terms[0].selected.has(leafage.keys[0])).toBe(false);
-    expect(terms[0].selected.size).toBe(3);
+    expect(terms[0].selected.size).toBe(4);
   });
 
   it('selects every lexeme behind a merged row, not just the first', () => {
@@ -148,7 +149,7 @@ describe('carrying a narrowed search in a URL', () => {
 
     // Second term untouched, so its slot is empty and the comma still holds
     // its position.
-    expect(encodeMeanings(terms)).toBe('<LH/@heb|<LH=/@heb|<LH/@arc,');
+    expect(encodeMeanings(terms)).toBe('<LH/@heb|<LH=/@heb|<LH/@arc|<L@arc,');
   });
 
   it('names every lexeme behind a merged row', () => {
@@ -183,7 +184,7 @@ describe('carrying a narrowed search in a URL', () => {
   it('falls back to every meaning when a key no longer resolves', () => {
     const restored = applyMeanings(addTerm([], 'עלה'), 'GONE@heb');
 
-    expect(restored[0].selected.size).toBe(4);
+    expect(restored[0].selected.size).toBe(5);
   });
 });
 
@@ -271,7 +272,7 @@ describe('getting back to all of them', () => {
 
     terms = allMeanings(terms, terms[0].id);
 
-    expect(terms[0].selected.size).toBe(4);
+    expect(terms[0].selected.size).toBe(5);
   });
 
   it('says whether a term is narrowed, so the control can appear', () => {

@@ -1,8 +1,8 @@
 // The meaning filter, as the reader meets it.
 //
 // A Hebrew word written without vowels is often several different words. עלה is
-// four of them. The search has always painted all four and labelled the result
-// with one; these tests are about the control that splits them.
+// five of them. The search has always painted all of them and labelled the
+// result with one; these tests are about the control that splits them.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
@@ -63,12 +63,14 @@ describe('the meaning list', () => {
       'burnt-offering',
       'leafage',
       'pretext',
+      'upon',
     ]);
     expect(rows.map((r) => r.querySelector('.meaning-count')?.textContent)).toEqual([
       '818',
       '260',
       '13',
       '2',
+      '86',
     ]);
   });
 
@@ -85,7 +87,7 @@ describe('the meaning list', () => {
     type(container, 'עלה');
 
     const tags = [...container.querySelectorAll('.meaning-tag')].map((t) => t.textContent);
-    expect(tags).toEqual(['(v.)', '(n.)', '(n.)', '(aram., n.)']);
+    expect(tags).toEqual(['(v.)', '(n.)', '(n.)', '(aram., n.)', '(aram., prep.)']);
   });
 
   it('shows no list at all for a word that means only one thing', () => {
@@ -149,7 +151,7 @@ describe('the URL', () => {
     type(container, 'עלה');
     uncheck(container, 'ascend');
 
-    expect(searchOverlay.getUrlParams?.().m).toBe('<LH/@heb|<LH=/@heb|<LH/@arc');
+    expect(searchOverlay.getUrlParams?.().m).toBe('<LH/@heb|<LH=/@heb|<LH/@arc|<L@arc');
   });
 
   it('restores it', () => {

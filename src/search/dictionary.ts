@@ -112,10 +112,19 @@ export function meaningsFor(writtenForm: string): Meaning[] {
     });
   }
 
-  return [...rows.values()].map(({ meaning, group }) => ({
-    ...meaning,
-    verseCount: group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
-  }));
+  return (
+    [...rows.values()]
+      .map(({ meaning, group }) => ({
+        ...meaning,
+        verseCount:
+          group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
+      }))
+      // A meaning with no verses behind it cannot be chosen and cannot mislead,
+      // but it is still a row to read past. Six lexemes are in that state: the
+      // proclitics ו, ה, ש and the Aramaic כ and ה, which are printed stuck to
+      // the next word and so are never words in their own right.
+      .filter((meaning) => meaning.verseCount > 0)
+  );
 }
 
 /**

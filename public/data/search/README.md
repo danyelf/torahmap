@@ -81,11 +81,28 @@ To line up against the Hebrew in `all-texts.json`, fold it the way
 `misaligned` lines up under exactly those rules, so a change to either copy of
 them fails the test suite with the offending verses named.
 
-Two things in `lexicon.json` are written but no longer read: the `root` column
-and the `functionWordPos` list. Both existed to group words into root families
-for a "related words" suggestion that has since been removed. They are harmless
-where they are, and the generator still produces them; drop them if you ever
-rebuild the index and want the file smaller.
+The `root` column of `lexicon.json` is written but no longer read. It existed to
+group words into root families for a "related words" suggestion that has since
+been removed. It is harmless where it is, and the generator still produces it;
+drop it if you ever rebuild the index and want the file smaller.
+
+### What counts as a word
+
+BHSA counts in morphemes, not in printed words: the ו of וַיֹּאמֶר and the ב of
+בְּרֵאשִׁית are units of their own, and 121,790 of its 426,590 units are printed
+with nothing after them, running straight into the next. Such a unit is part of
+a word rather than a word, and it is not indexed — it contributes no written
+form and puts no lexeme into its verse. Every printed word is filed under the
+lexeme of its last unit, its stem, so בְּרֵאשִׁית is found under רֵאשִׁית and not
+under the preposition.
+
+That is why `verse-lexemes.json` says which dictionary words a verse *uses*
+rather than which morphemes it contains, and why ו "and" and ה "the" match no
+verse at all: they are never words. The prepositions that can carry a pronominal
+suffix keep exactly those forms — לוֹ, עָלָיו, בּוֹ are words, and are indexed.
+
+The rule needs one test because no bound unit in BHSA 2021 carries a pronominal
+suffix. The generator asserts that and stops if a future release breaks it.
 
 ## Regenerating them
 

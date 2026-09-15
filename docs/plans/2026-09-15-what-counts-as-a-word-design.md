@@ -184,10 +184,16 @@ Running the patched generator end to end, against the real search code:
 | לכ | הלך "walk" | **לְ "to", הלך "walk", לְ "to"** (aram.) |
 | ואת | אֵת ×2, אַתְּ, אֹות (via prefix stripping) | אֵת ×2, אַתְּ, אַתָּה |
 
-`word-lexemes.json` goes from 45,524 written forms to 45,846: **322 added, none
-removed.** Nothing becomes less findable. The bound morphemes it stops indexing
-were already excluded by the generator's two-letter minimum, so the rule costs
-no searchability at all — it only adds.
+`word-lexemes.json` goes from 45,524 written forms to 45,844: **327 added, 7
+removed.** The bound morphemes it stops indexing were single letters, already
+below the generator's two-letter minimum, so they cost nothing.
+
+The seven removed forms are not words either. They are what the old walk
+produced when it joined a token at the *written* trailer across a boundary the
+page prints: שיניהמ filed under רֶגֶל "foot", מאשתמ under תָּם "complete",
+ישימות under מָוֶת "death". Checked against `all-texts.json`, **none of the seven
+appears anywhere in the printed Bible**, so nothing a reader could copy off the
+page became less findable.
 
 `verse-lexemes.json` shrinks 17.7%, from 325,829 entries to 268,177.
 
@@ -195,19 +201,24 @@ no searchability at all — it only adds.
 
 Which lookup answers each of the 305,451 printed words in the Tanakh:
 
-| branch | now | under the rule |
+| branch | before | after, as shipped |
 | --- | ---: | ---: |
 | written-form table | 289,906 (94.91%) | **304,844 (99.80%)** |
-| exact dictionary spelling | 801 | 17 |
-| spelling starts with the term | 2,450 | **23** |
-| strip a prefix and retry | 9,402 | **282** |
-| nothing matched, fall back | 2,892 | 285 |
+| exact dictionary spelling | 822 | 38 |
+| spelling starts with the term | 2,450 | *deleted* |
+| strip a prefix and retry | 9,402 | *deleted* |
+| nothing matched, fall back | 14,724 (4.82%) | **570 (0.19%)** |
 
-The table answers 99.8% on its own. Everything below it handles 607 words out of
-305,451. The three fallback branches exist to patch a hole that this rule
-closes, so they go: step 3 with its 23 remaining hits is the one that produced
-Melchizedek, and step 4's prefix stripping was re-deriving by string surgery
-what ETCBC's parse already said.
+The table answers 99.8% on its own, so the three branches below it go. What they
+were covering was not a shortfall in ETCBC's parse but the hole the generator
+punched in it: before the rule the commonest unresolved printed words were ואת
+(2,242 occurrences), ולא (1,591), לי (749) and עליו (403). Afterwards the
+commonest are נגו (14) and ברנע (10) — the second halves of אֲבֵד נְגוֹ and
+קָדֵשׁ בַּרְנֵעַ, compound names that BHSA and Sefaria divide differently, which
+is the same 64 verses the `misaligned` list already names.
+
+Step 3 is the one that produced Melchizedek. Step 4's prefix stripping was
+re-deriving by string surgery what ETCBC's parse already said.
 
 ## What it costs
 
@@ -345,7 +356,8 @@ there and the existing "cannot settle" branch is the right home for them.
   the real collisions are elsewhere. Measured against a full regeneration with
   the gate disabled.
 - No bound node carries a pronominal suffix. Zero of 426,590.
-- Removing the gate removes no written forms. 322 added, 0 removed.
+- Removing the gate costs no findable word. 327 forms added, 7 removed, and all
+  seven of those are strings that are printed nowhere in the Bible.
 - The seven content-word losses are all already-misaligned verses.
 - The written and printed trailers disagree about 23 nodes, so unifying the two
   walks onto the printed one costs 23 nodes and no promise made here.

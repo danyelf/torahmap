@@ -42,11 +42,15 @@ describe('a term too short to be a word', () => {
   });
 
   it('leaves an ordinary three-letter word alone', () => {
+    // "upon" is the Aramaic preposition carrying a suffix, which really is
+    // written עלה and really is a word. It is last because it is the rarest
+    // reading of the five, not because it is an afterthought.
     expect(meaningsFor('עלה').map((m) => m.gloss)).toEqual([
       'ascend',
       'burnt-offering',
       'leafage',
       'pretext',
+      'upon',
     ]);
   });
 });
