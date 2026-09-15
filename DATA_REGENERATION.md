@@ -150,9 +150,9 @@ the files by hand, count them first.
 python3 scripts/verify-against-sefaria.py
 ```
 
-This samples twenty-six verses across Torah, Nevi'im and Ketuvim, compares each
-against Sefaria's live site, and fails if the differences run in both
-directions.
+This samples twenty-six verses across Torah, Nevi'im and Ketuvim and compares
+each against Sefaria's live site. It reports rather than judges: read the shape
+of the numbers, not any one of them.
 
 The counts we generate are not expected to match Sefaria's live site exactly —
 the script drops translations, dictionary lookups and cross-references by
@@ -162,9 +162,14 @@ design, and the export is up to a month behind. What they should be is
 A healthy refresh sits at or just below the live `/api/related` totals on every
 category, across verses from all three sections — within a few percent, since
 the only thing separating us from the site on those categories is how old the
-export is. Counts scattered in both directions — some verses far under live,
-others far over — mean something is wrong with the inputs, not that the data is
-stale. Staleness is uniform and always undercounts; a partial corpus is not.
+export is.
+
+What is worth chasing is a verse that has come adrift from its neighbours, which
+the script names for you. The export is split alphabetically by source text, so
+an incomplete download takes out a coherent slice of the library rather than a
+random sample: a few verses land far from the site while the ones beside them
+sit at zero. If several outliers share a part of the library, suspect the
+download before the data.
 
 The script used to run 7% to 47% *above* the site, varying verse by verse in a
 way nobody could explain. That was commentaries being counted under the shelf
