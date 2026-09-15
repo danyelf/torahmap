@@ -5,19 +5,20 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
  * help.ts caches the modal in module state, so each test gets a fresh copy of
  * the module rather than one left over from the test before.
  *
- * The overlay registry is module state too, so it has to be filled after the
- * reset and from the same fresh copy help.ts will read — which is also how the
- * app does it, registering in main() before the modal is ever built.
+ * The overlay registry is module state too, and the order here matters: main.ts
+ * imports help.ts at load and only calls registerAllOverlays() later, so help.ts
+ * must be imported against an empty registry for these tests to mean anything.
+ * Registering first would let a credits tab built at import time still pass.
  */
 async function openHelp(): Promise<HTMLElement> {
   vi.resetModules();
   document.body.innerHTML = '';
   localStorage.clear();
 
+  const { initHelp } = await import('../../help');
+
   const { registerAllOverlays } = await import('../../overlays/index');
   registerAllOverlays();
-
-  const { initHelp } = await import('../../help');
   const panel = document.createElement('div');
   document.body.appendChild(panel);
   initHelp(panel);
