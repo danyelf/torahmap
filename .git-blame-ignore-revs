@@ -1,0 +1,6 @@
+# Commits that changed formatting only, and never meaning. Skipping them keeps
+# `git blame` pointing at whoever last wrote the line, rather than at the
+# reformat that touched every line in the repository at once.
+#
+# GitHub reads this file by itself. Locally it takes one setting, which
+# ./scripts/install-hooks.sh applies along with the hooks path.

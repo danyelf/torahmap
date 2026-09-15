@@ -49,15 +49,20 @@ npm run test:coverage # Coverage report
 
 ### The pre-commit hook
 
-A pre-commit hook runs `npm run typecheck` and the full test suite, and refuses
-the commit if either fails. The two together take about six seconds.
+A pre-commit hook checks that the staged files are formatted, runs
+`npm run typecheck` and runs the full test suite, and refuses the commit if any
+of the three fails. Together they take about six seconds.
+
+Formatting is checked on the staged files rather than the whole tree, so a
+branch that predates the bulk reformat can still commit the files it touches.
+When it fails, `npm run format` fixes it.
 
 The hook lives in `.githooks/pre-commit`, which is tracked in git. Git only
 looks there once `core.hooksPath` is set, and that setting is local to your
 clone — it cannot travel in a commit. **After cloning, run this once:**
 
 ```bash
-./scripts/install-hooks.sh          # same as: git config core.hooksPath .githooks
+./scripts/install-hooks.sh          # sets core.hooksPath and blame.ignoreRevsFile
 ```
 
 It is also wired to npm's `prepare` script, so plain `npm install` usually does
@@ -86,6 +91,43 @@ commit again.
 ### Test Harness
 
 A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow without WebGL. Use this for visual testing of the search UI in headless browsers like Playwright where WebGL is unavailable. Source lives in `test-harness/`.
+
+## Formatting
+
+Prettier owns the formatting of the TypeScript, CSS, HTML and JSON in this
+repository. The version is pinned exactly in `devDependencies`, because a minor
+Prettier release can legitimately change its output, and a formatter that
+drifts between contributors is the problem it was brought in to solve.
+
+```bash
+npm run format         # rewrite every file
+npm run format:check   # report, change nothing
+```
+
+Two settings in `.prettierrc.json` were measured against the codebase rather
+than chosen by taste, so the reformat moved as few lines as it could:
+`singleQuote` because committed source held 6995 single-quoted strings to 1112
+double, and `printWidth: 100` because line lengths ran to a p99 of 100.
+`quoteProps: preserve` keeps the quotes on Hebrew object keys such as
+`'ך': 'כ'` in `src/search.ts`, which Prettier would otherwise strip — they are
+valid JavaScript identifiers, so nothing forces the quotes, but the letters are
+much easier to pick out with them.
+
+The bulk reformat is listed in `.git-blame-ignore-revs` so that blame keeps
+naming whoever last wrote a line, instead of stopping at the commit that
+rewrapped everything at once. GitHub reads that file by itself;
+`install-hooks.sh` applies the local setting along with the hooks path.
+
+One sharp edge, on a branch cut from before the reformat: `blame.ignoreRevsFile`
+is repository-wide config, and git fails every `git blame` outright when the
+file it names is absent. Rebase the branch, or `git config --unset
+blame.ignoreRevsFile` until you do.
+
+Markdown is not formatted. Prettier aligns table columns by counting
+characters, and the tables here hold Hebrew and em-dashes, which are not one
+column wide; the result is rows that line up worse than the hand-written ones
+and run to several hundred characters. `data/` and `public/data/` are also
+ignored: large, generated, and not ours to reformat.
 
 ## Project Structure
 
