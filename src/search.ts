@@ -472,6 +472,18 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
 }
 
 /**
+ * The dictionary words a verse contains.
+ *
+ * Exposed for the dictionary seam, which uses it to decide which of a
+ * spelling's readings is the one in front of the reader. Returns null when the
+ * index has not loaded, which callers must treat as "cannot say" rather than
+ * as "none".
+ */
+export function getVerseLexemes(verseKey: string): LexemeId[] | null {
+  return verseToLexemes?.[verseKey] ?? null;
+}
+
+/**
  * Verse keys containing any of the given lexemes.
  * Uses the inverted index, so one lookup per lexeme rather than a full scan.
  */
