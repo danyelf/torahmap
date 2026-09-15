@@ -50,14 +50,14 @@ export const commentaryOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetchData('commentary-counts.json');
+      const res = await fetchData('overlays/commentary/counts.json');
       if (!res.ok) {
-        console.error(`Failed to load commentary-counts.json: ${res.status}`);
+        console.error(`Failed to load the commentary counts: ${res.status}`);
         return;
       }
       data = await res.json();
     } catch (e) {
-      console.error('Failed to parse commentary-counts.json:', e);
+      console.error('Failed to parse the commentary counts:', e);
     }
   },
 

@@ -8,8 +8,8 @@ dist
 coverage
 # No trailing slash: in a worktree this is usually a symlink to the copy in the
 # main checkout, rather than 650MB of CSVs downloaded a second time.
-data/sefaria-links
-data/sefaria-index.json
+data/overlays/commentary/sefaria-links
+data/overlays/commentary/sefaria-index.json
 .DS_Store
 .claude/worktrees
 __pycache__/

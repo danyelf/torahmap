@@ -173,11 +173,14 @@ ignored: large, generated, and not ours to reformat.
 │   └── constants/           # Shared constants
 │       └── books.ts         # Book names and metadata
 │
-├── public/data/
+├── public/data/              # Shipped data. Shared files at the top, and one
+│   │                         # directory per overlay for what only it reads.
 │   ├── all-texts.json            # Bundled verse texts (generated)
 │   ├── tanakh-structure.json     # Verse counts per chapter per book
-│   ├── commentary-counts.json    # Sefaria link counts by category
 │   ├── text-dating.json          # Estimated composition dates by verse
+│   ├── overlays/
+│   │   └── commentary/
+│   │       └── counts.json       # Sefaria link counts by category
 │   └── search/                   # Lexeme index for root-mode search (see its README)
 │       ├── README.md             # Where this data comes from and how to rebuild it
 │       ├── lexicon.json          # Hebrew/Aramaic dictionary from ETCBC BHSA
@@ -185,7 +188,12 @@ ignored: large, generated, and not ours to reformat.
 │       ├── verse-lexemes.json    # Verse -> the dictionary words occurring in it
 │       └── verse-morphology.json # Grammatical parsing per word (not loaded by search)
 │
-├── data/texts/           # Source Hebrew & English verse texts (78 files)
+├── data/                     # Sources and downloads, not shipped. Same shape.
+│   ├── texts/                    # Hebrew & English verse texts (78 files)
+│   └── overlays/
+│       └── commentary/           # Gitignored; see DATA_REGENERATION.md
+│           ├── sefaria-links/    # The links export, ~650MB of CSV
+│           └── sefaria-index.json # What kind of text each work in the library is
 │
 ├── scripts/
 │   ├── bundle-texts.ts               # Bundle all verse texts into one file

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compare two commentary-counts.json files and report what moved.
+Compare two commentary counts files and report what moved.
 
 Run this after regenerating the counts, passing the previous version, to see
 whether a refresh was worth it and where the links actually grew:
@@ -69,7 +69,7 @@ def main() -> int:
     new_path = (
         Path(sys.argv[2])
         if len(sys.argv) > 2
-        else project_root / "public" / "data" / "commentary-counts.json"
+        else project_root / "public" / "data" / "overlays" / "commentary" / "counts.json"
     )
 
     for path in (old_path, new_path):

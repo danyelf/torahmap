@@ -111,11 +111,13 @@ if you actually revisit the article.
 scripts/refresh-commentary-counts.sh
 ```
 
-That is the whole procedure. The script asks the bucket how many files the
-export has, downloads any that are missing or stale into `data/sefaria-links/`,
-fetches Sefaria's index of the library to `data/sefaria-index.json`,
-regenerates `public/data/commentary-counts.json`, and prints what moved. Pass
-`--force` to re-download files that are already present.
+That is the whole procedure. Everything this overlay downloads lives under
+`data/overlays/commentary/`, and what it produces lives under
+`public/data/overlays/commentary/`. The script asks the bucket how many files
+the export has, downloads any that are missing or stale into `sefaria-links/`,
+fetches Sefaria's index of the library to `sefaria-index.json`, regenerates
+`counts.json`, and prints what moved. Pass `--force` to re-download files that
+are already present.
 
 Sefaria re-exports on the 1st of each month, and the script prints the export
 date it found, so there is nothing to gain by running this more than monthly.
@@ -189,7 +191,7 @@ Yehoyada on Sanhedrin comes back as Talmud. Derekh Chayyim, the Maharal on
 Pirkei Avot, comes back as Mishnah. Counting those under the shelf they are
 filed on means a category called Mishnah is mostly not the Mishnah.
 
-Sefaria publishes the answer. `data/sefaria-index.json` gives every text a
+Sefaria publishes the answer. `data/overlays/commentary/sefaria-index.json` gives every text a
 `primary_category` — `Commentary`, `Targum`, `Talmud`, `Mishnah` and so on —
 and it is the same field the website itself uses. The export usually names a
 node inside a book (`Midrash Lekach Tov, Genesis`) where the index names the

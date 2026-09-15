@@ -92,7 +92,7 @@ describe('Commentary Overlay', () => {
       await commentaryOverlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/commentary-counts.json'),
+        expect.stringContaining('data/overlays/commentary/counts.json'),
       );
     });
 

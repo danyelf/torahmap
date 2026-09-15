@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Refresh public/data/commentary-counts.json from Sefaria's links export.
+# Refresh public/data/overlays/commentary/counts.json from Sefaria's links export.
 #
 # Downloads the links CSVs (skipping any already present at the right size),
 # regenerates the counts, and reports what moved. Sefaria re-exports on the 1st
@@ -16,9 +16,9 @@ BUCKET="https://storage.googleapis.com/sefaria-export/links"
 INDEX_URL="https://www.sefaria.org/api/index/"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-LINKS_DIR="$PROJECT_ROOT/data/sefaria-links"
-INDEX="$PROJECT_ROOT/data/sefaria-index.json"
-COUNTS="$PROJECT_ROOT/public/data/commentary-counts.json"
+LINKS_DIR="$PROJECT_ROOT/data/overlays/commentary/sefaria-links"
+INDEX="$PROJECT_ROOT/data/overlays/commentary/sefaria-index.json"
+COUNTS="$PROJECT_ROOT/public/data/overlays/commentary/counts.json"
 
 FORCE=0
 [[ "${1:-}" == "--force" ]] && FORCE=1
@@ -112,4 +112,4 @@ if [[ -n "$previous" ]]; then
   rm -f "$previous"
 fi
 
-echo "Done. Review the diff to public/data/commentary-counts.json before committing."
+echo "Done. Review the diff to public/data/overlays/commentary/counts.json before committing."

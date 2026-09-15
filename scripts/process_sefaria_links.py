@@ -2,9 +2,9 @@
 """
 Process Sefaria links data to count commentary per Tanakh verse by category.
 
-Reads the links export from data/sefaria-links/ and Sefaria's index of the
-library from data/sefaria-index.json. Both are downloaded by
-scripts/refresh-commentary-counts.sh.
+Reads two things, both under data/overlays/commentary/ and both downloaded by
+scripts/refresh-commentary-counts.sh: the links export in sefaria-links/, and
+Sefaria's index of the library in sefaria-index.json.
 
 - resolve_shelf() asks the index what a work actually is, because the export's
   own category column files a commentary under whatever it comments on
@@ -92,12 +92,18 @@ _REF_RE = re.compile(r'^(\d+):(\d+)(?:-(?:(\d+):)?(\d+))?$')
 _chapter_lengths: dict[str, list[int]] | None = None
 _shelves: dict[str, str] | None = None
 
+# Everything this overlay downloads or produces lives under its own name, so
+# that one overlay's data is one directory.
+PROJECT_ROOT = Path(__file__).parent.parent
+COMMENTARY_DATA = PROJECT_ROOT / "data" / "overlays" / "commentary"
+COMMENTARY_COUNTS = PROJECT_ROOT / "public" / "data" / "overlays" / "commentary" / "counts.json"
+
 
 def chapter_lengths() -> dict[str, list[int]]:
     """Verse count for every chapter of every book, from tanakh-structure.json."""
     global _chapter_lengths
     if _chapter_lengths is None:
-        path = Path(__file__).parent.parent / "public" / "data" / "tanakh-structure.json"
+        path = PROJECT_ROOT / "public" / "data" / "tanakh-structure.json"
         with open(path) as f:
             structure = json.load(f)
         _chapter_lengths = {b["name"]: b["chapters"] for b in structure["books"]}
@@ -156,13 +162,13 @@ def parse_verse_refs(citation: str) -> list[tuple[str, int, int]]:
 def shelves() -> dict[str, str]:
     """Every text in Sefaria's library, mapped to what kind of text it is.
 
-    Read from data/sefaria-index.json, which refresh-commentary-counts.sh
-    downloads alongside the links. The value is Sefaria's own primary_category:
+    Read from sefaria-index.json, which refresh-commentary-counts.sh downloads
+    alongside the links. The value is Sefaria's own primary_category:
     "Commentary", "Targum", "Talmud", "Mishnah", "Midrash" and so on.
     """
     global _shelves
     if _shelves is None:
-        path = Path(__file__).parent.parent / "data" / "sefaria-index.json"
+        path = COMMENTARY_DATA / "sefaria-index.json"
         if not path.exists():
             raise SystemExit(
                 f"ERROR: Sefaria's library index is not at {path}.\n"
@@ -373,15 +379,12 @@ def main():
     seen_link_pairs = set()
 
     # Find local CSV files
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    links_dir = project_root / "data" / "sefaria-links"
+    links_dir = COMMENTARY_DATA / "sefaria-links"
 
     if not links_dir.exists():
         print(f"ERROR: Links directory not found: {links_dir}")
-        print("Please download the CSV files first using:")
-        print("  mkdir -p data/sefaria-links && cd data/sefaria-links")
-        print("  for i in {0..12}; do curl -O https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/links/links$i.csv; done")
+        print("Download the export first:")
+        print("  scripts/refresh-commentary-counts.sh")
         return
 
     # Process all CSV files
@@ -412,7 +415,7 @@ def main():
                 }
 
     # Write output
-    output_path = project_root / "public" / "data" / "commentary-counts.json"
+    output_path = COMMENTARY_COUNTS
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, 'w') as f:

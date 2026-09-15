@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Check a regenerated commentary-counts.json against Sefaria's live site.
+Check regenerated commentary counts against Sefaria's live site.
 
     python3 scripts/verify-against-sefaria.py
 
@@ -79,7 +79,7 @@ def main() -> int:
     project_root = Path(__file__).parent.parent
     counts_path = (
         Path(sys.argv[1]) if len(sys.argv) > 1
-        else project_root / "public" / "data" / "commentary-counts.json"
+        else project_root / "public" / "data" / "overlays" / "commentary" / "counts.json"
     )
     if not counts_path.exists():
         print(f"No such file: {counts_path}")
