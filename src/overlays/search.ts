@@ -599,7 +599,7 @@ export const searchOverlay: Overlay = {
   name: 'Text Search',
   description:
     'Lights up every verse holding the word you type, in the Hebrew or in the English. ' +
-    'Supports exact string search as well as roots.'
+    'Supports exact string search as well as roots.',
   credits: [
     {
       source:
