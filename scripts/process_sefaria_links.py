@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """
 Process Sefaria links data to count commentary per Tanakh verse by category.
-Reads from locally downloaded CSV files in data/sefaria-links/
 
-- Sorts each link into a category with link_bucket() below, which is where the
-  judgement calls about what counts as commentary live
-- Filters the Talmud category to direct Talmud text, not commentaries on it
+Reads the links export from data/sefaria-links/ and Sefaria's index of the
+library from data/sefaria-index.json. Both are downloaded by
+scripts/refresh-commentary-counts.sh.
+
+- resolve_shelf() asks the index what a work actually is, because the export's
+  own category column files a commentary under whatever it comments on
+- link_bucket() turns a shelf and a connection type into a category; that is
+  where the judgement calls about what counts as commentary live
 - Counts a citation towards every verse it covers, up to MAX_RANGE_VERSES;
   longer ranges name a whole portion rather than a passage and are ignored
 """
@@ -50,13 +54,19 @@ COUNTED_CATEGORIES = {
     "Second Temple",
 }
 
-# Dictionary and lexicon lookups: BDB, Jastrow, Klein, Sefer HaShorashim. They
-# are roughly a quarter of all links to verses, and they record which words a
-# verse contains rather than anything anyone wrote about it.
-IGNORED_CATEGORIES = {"Reference"}
+# Shelves we drop entirely.
+#
+# Reference is dictionary and lexicon lookups: BDB, Jastrow, Klein, Sefer
+# HaShorashim. Roughly a quarter of all links to verses, and they record which
+# words a verse contains rather than anything anyone wrote about it.
+#
+# Targum is translation. Nearly every verse has one, the Torah has three, and
+# the books already written partly in Aramaic have none — so counting them
+# draws a picture of which books were translated rather than of the verses.
+IGNORED_SHELVES = {"Reference", "Targum"}
 
-# The two buckets we produce ourselves rather than read off a shelf. Both come
-# from texts filed under Tanakh; see link_bucket() for how they are told apart.
+# The two buckets we produce ourselves. Both come from works the index calls
+# commentaries; see link_bucket() for how they are told apart.
 COMMENTARY = "Commentary"
 QUOTING_COMMENTARY = "Quoting Commentary"
 
@@ -80,6 +90,7 @@ BOOKS_LONGEST_FIRST = sorted(TANAKH_BOOKS, key=len, reverse=True)
 _REF_RE = re.compile(r'^(\d+):(\d+)(?:-(?:(\d+):)?(\d+))?$')
 
 _chapter_lengths: dict[str, list[int]] | None = None
+_shelves: dict[str, str] | None = None
 
 
 def chapter_lengths() -> dict[str, list[int]]:
@@ -142,94 +153,121 @@ def parse_verse_refs(citation: str) -> list[tuple[str, int, int]]:
     return []
 
 
-def is_direct_talmud(citation: str) -> bool:
+def shelves() -> dict[str, str]:
+    """Every text in Sefaria's library, mapped to what kind of text it is.
+
+    Read from data/sefaria-index.json, which refresh-commentary-counts.sh
+    downloads alongside the links. The value is Sefaria's own primary_category:
+    "Commentary", "Targum", "Talmud", "Mishnah", "Midrash" and so on.
     """
-    Check if citation is a direct Talmud text reference vs a commentary on Talmud.
+    global _shelves
+    if _shelves is None:
+        path = Path(__file__).parent.parent / "data" / "sefaria-index.json"
+        if not path.exists():
+            raise SystemExit(
+                f"ERROR: Sefaria's library index is not at {path}.\n"
+                "It says which texts are commentaries, which the links export\n"
+                "does not. Download it with:\n"
+                "  scripts/refresh-commentary-counts.sh"
+            )
+        found: dict[str, str] = {}
 
-    Direct Talmud: "Bava Metzia 32a:17", "Tractate Derekh Eretz Zuta", "Introductions to..."
-    Commentary: "Steinsaltz on Bava Metzia 32a:17", "Rashi on Pesachim 113b:4"
+        def walk(node):
+            if isinstance(node, list):
+                for item in node:
+                    walk(item)
+            elif isinstance(node, dict):
+                title, category = node.get("title"), node.get("primary_category")
+                if title and category:
+                    found[title] = category
+                for value in node.values():
+                    if isinstance(value, (list, dict)):
+                        walk(value)
 
-    Note: We match Sefaria's categorization, which includes:
-    - Standard Babylonian Talmud tractates
-    - Jerusalem Talmud
-    - Minor tractates (Derekh Eretz, etc.)
-    - Introductions to Talmudic literature (when marked as Talmud category)
+        with open(path, encoding="utf-8") as f:
+            walk(json.load(f))
+        _shelves = found
+    return _shelves
+
+
+def resolve_shelf(work: str, fallback: str, index: dict[str, str]) -> str:
+    """What kind of text a work is, according to Sefaria's own index.
+
+    `work` is the title the links export gives, `fallback` the shelf the export
+    files it under, and `index` the map from shelves().
+
+    This is the correction the whole category scheme rests on. The export's own
+    category column gives a commentary the shelf of the thing it comments on:
+    Rashi comes back as Tanakh, Ben Yehoyada as Talmud, Derekh Chayyim as
+    Mishnah, Mishnah Berurah as Halakhah. Counting those under the shelf they
+    are filed on means a category called Mishnah is mostly not the Mishnah.
+
+    The export usually names a node inside a book — "Midrash Lekach Tov,
+    Genesis" — where the index names the book, so trailing section names come
+    off one at a time until something matches. Every work in the export
+    resolves this way; the fallback is for texts added since the index was
+    downloaded.
     """
-    # Exclude clear commentary patterns - commentaries ON Talmud texts
-    exclude_patterns = [
-        r'^Steinsaltz on',
-        r'^Rashi on',
-        r'^Tosafot on',
-        r'^Reshimot Shiurim on',
-        r'^Ohr LaYesharim on',
-        r'^Rif ',  # Rif is an abbreviation/commentary
-    ]
-
-    for pattern in exclude_patterns:
-        if re.match(pattern, citation, re.IGNORECASE):
-            return False
-
-    # If Sefaria categorizes it as "Talmud", we trust that
-    # This includes:
-    # - Babylonian Talmud: "Bava Metzia 32a:17"
-    # - Jerusalem Talmud: "Jerusalem Talmud Bava Metzia 2:10:3"
-    # - Minor tractates: "Tractate Derekh Eretz Zuta, Section on Peace 4"
-    # - Introductions: "Introductions to Tanaitic Literature..."
-    return True
+    name = work.strip()
+    while name:
+        category = index.get(name)
+        if category is not None:
+            return category
+        if "," not in name:
+            break
+        name = name.rsplit(",", 1)[0].strip()
+    return fallback.strip()
 
 
-def link_bucket(citation: str, category: str, connection: str) -> str | None:
+def link_bucket(citation: str, shelf: str, connection: str) -> str | None:
     """
     Which category a link to a verse counts towards, or None if it does not
     count at all.
 
-    The three arguments describe the far end of the link from the verse: the
-    citation ("Rashi on Genesis 1:1:1"), the shelf its text sits on as the
-    export records it ("Tanakh"), and the connection type ("commentary").
+    The arguments describe the far end of the link from the verse: the citation
+    ("Rashi on Genesis 1:1:1"), what kind of text it is as resolve_shelf()
+    determined ("Commentary"), and the export's connection type ("commentary").
 
-    The export's category column says where a text lives in the library, not
-    what kind of link this is. Every classical verse commentary — Rashi, Ibn
-    Ezra, Ramban, Sforno, Ba'al HaTurim — lives under Tanakh, and so arrives
-    carrying the same label as a plain cross-reference from one verse to
-    another. The connection type is what separates them, and it separates them
-    three ways:
+    Two different questions, answered from two different places. Whether a work
+    is a commentary at all comes from Sefaria's index. Whether *this particular
+    link* is a comment on *this verse*, rather than a passing citation of it,
+    comes from the connection type — the same column Sefaria's own site reads
+    to split its Commentary and Quoting Commentary sections.
 
-      commentary    someone wrote about this verse
-      targum        someone translated this verse
-      anything else someone writing about a different verse cited this one
+    So a commentary splits two ways:
 
-    The third case is worth keeping and worth naming. When Abarbanel, in the
+      commentary      someone wrote about this verse
+      anything else   someone writing about something else cited this verse
+
+    Both are worth keeping and worth naming apart. When Abarbanel, in the
     middle of his commentary on Amos, reaches for Genesis 49:28, that is a real
     fact about Genesis 49:28 — but it is not commentary on it, and a map of
     which verses commentators reach for is a different map from one of which
     verses they write about.
 
-    Translations are dropped. Almost every verse has one, the Torah has three,
-    and the books already written partly in Aramaic have none, so counting them
-    paints a picture of which books were translated rather than of the verses.
-
-    Outside Tanakh the connection type is left alone, and a link counts under
-    its own shelf whatever kind it is. Chasidut and Midrash works do use the
-    commentary connection, but on well under a fifth of their links, where
-    under Tanakh it is two thirds of them.
+    Quoting Commentary is not confined to commentaries on the Tanakh. A Zohar
+    commentary, a Talmud commentary and a commentary on Pirkei Avot can all
+    cite a verse, and Sefaria counts all of them here.
     """
-    category = category.strip()
+    shelf = shelf.strip()
     connection = connection.strip()
 
-    if category in IGNORED_CATEGORIES:
+    if shelf in IGNORED_SHELVES:
         return None
 
-    if category == "Tanakh":
-        if parse_verse_refs(citation):
-            return None  # a cross-reference to another verse
-        if connection == "targum":
-            return None
+    if shelf == "Commentary":
         return COMMENTARY if connection == "commentary" else QUOTING_COMMENTARY
 
-    if category == "Talmud" and not is_direct_talmud(citation):
-        return None
+    if shelf == "Tanakh":
+        if parse_verse_refs(citation):
+            return None  # a cross-reference from one verse to another
+        # A handful of modern Torah commentaries sit on the Tanakh shelf
+        # without being marked as commentaries — David Zvi Hoffmann, Nechama
+        # Leibowitz, Steinsaltz's introductions. The citation is not a bare
+        # verse, so they are not cross-references. Treat them as what they are.
+        return COMMENTARY if connection == "commentary" else QUOTING_COMMENTARY
 
-    return category if category in COUNTED_CATEGORIES else "Other"
+    return shelf if shelf in COUNTED_CATEGORIES else "Other"
 
 
 def process_file(filepath: Path) -> dict:
@@ -239,6 +277,7 @@ def process_file(filepath: Path) -> dict:
     # verse_counts[book][chapter][verse][category] = count
     verse_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(int))))
     duplicates_skipped = 0
+    index = shelves()
 
     print(f"Processing {filepath.name}...")
 
@@ -250,7 +289,7 @@ def process_file(filepath: Path) -> dict:
             if len(row) < 7:
                 continue
 
-            citation1, citation2, connection, _text1, _text2, cat1, cat2 = row[:7]
+            citation1, citation2, connection, work1, work2, cat1, cat2 = row[:7]
 
             # Create normalized key for deduplication
             link_pair = frozenset({citation1, citation2})
@@ -262,14 +301,15 @@ def process_file(filepath: Path) -> dict:
             # A link is written once but read from both ends: either citation
             # may be the verse, and each verse it covers is credited with the
             # text at the other end.
-            for verse_side, other_side, other_category in (
-                (citation2, citation1, cat1),
-                (citation1, citation2, cat2),
+            for verse_side, other_side, other_work, other_category in (
+                (citation2, citation1, work1, cat1),
+                (citation1, citation2, work2, cat2),
             ):
                 verse_refs = parse_verse_refs(verse_side)
                 if not verse_refs:
                     continue
-                bucket = link_bucket(other_side, other_category, connection)
+                shelf = resolve_shelf(other_work, other_category, index)
+                bucket = link_bucket(other_side, shelf, connection)
                 if bucket is None:
                     continue
                 for book, chapter, verse in verse_refs:

@@ -113,6 +113,7 @@ scripts/refresh-commentary-counts.sh
 
 That is the whole procedure. The script asks the bucket how many files the
 export has, downloads any that are missing or stale into `data/sefaria-links/`,
+fetches Sefaria's index of the library to `data/sefaria-index.json`,
 regenerates `public/data/commentary-counts.json`, and prints what moved. Pass
 `--force` to re-download files that are already present.
 
@@ -123,8 +124,10 @@ Set the `collected` date in `src/overlays/commentary.ts` to the export date the
 script printed. That is what the Credits tab shows, and it is the date of the
 export rather than of the run.
 
-The CSVs total about 650MB. `data/sefaria-links/` is gitignored, so a fresh
-clone downloads all of it; a second run re-downloads only what changed.
+The CSVs total about 650MB and the index is 4MB. Both live under `data/` and
+both are gitignored, so a fresh clone downloads all of it; a second run
+re-downloads only the CSVs that changed, and always re-fetches the index, which
+is small and has to describe the same library the links describe.
 
 ### Do not hardcode the file count
 
@@ -156,34 +159,64 @@ the script drops translations, dictionary lookups and cross-references by
 design, and the export is up to a month behind. What they should be is
 *consistently* close.
 
-A healthy refresh sits at or slightly above the live `/api/related` totals for
-the categories that map cleanly onto ours, across verses from all three
-sections. Counts scattered in both directions — some verses far under live,
+A healthy refresh sits at or just below the live `/api/related` totals on every
+category, across verses from all three sections — within a few percent, since
+the only thing separating us from the site on those categories is how old the
+export is. Counts scattered in both directions — some verses far under live,
 others far over — mean something is wrong with the inputs, not that the data is
 stale. Staleness is uniform and always undercounts; a partial corpus is not.
 
+The script used to run 7% to 47% *above* the site, varying verse by verse in a
+way nobody could explain. That was commentaries being counted under the shelf
+they are filed on rather than as commentaries: Sefaria's Mishnah figure for
+Genesis 1:1 was 4 and ours was 64, of which 63 were commentaries on Pirkei
+Avot. Reading each text's category out of Sefaria's index closed it.
+
 ### What the generator does
 
-Every link is sorted into a category by `link_bucket()` in
-`scripts/process_sefaria_links.py`. That function is where the judgement calls
-live; read it before changing anything here.
+Two functions in `scripts/process_sefaria_links.py` carry all the judgement.
+Read them before changing anything here.
 
-The export labels each side of a link with the shelf its text sits on, not with
-what kind of link it is. Every classical verse commentary — Rashi, Ibn Ezra,
-Ramban, Sforno, Ba'al HaTurim — sits under Tanakh, so it arrives wearing the
-same label as a plain cross-reference from one verse to another. The connection
-type column is what tells them apart, and it splits the Tanakh shelf three ways:
+**`resolve_shelf()` asks what a text actually is.** The links export labels
+each side of a link with the shelf the text is filed on — and a commentary is
+filed on the shelf of whatever it comments on. Rashi comes back as Tanakh. Ben
+Yehoyada on Sanhedrin comes back as Talmud. Derekh Chayyim, the Maharal on
+Pirkei Avot, comes back as Mishnah. Counting those under the shelf they are
+filed on means a category called Mishnah is mostly not the Mishnah.
 
-| connection type | bucket |
-|---|---|
-| `commentary` | **Commentary** — someone wrote about this verse |
-| `targum` | dropped |
-| anything else | **Quoting Commentary** — someone writing about a different verse cited this one |
+Sefaria publishes the answer. `data/sefaria-index.json` gives every text a
+`primary_category` — `Commentary`, `Targum`, `Talmud`, `Mishnah` and so on —
+and it is the same field the website itself uses. The export usually names a
+node inside a book (`Midrash Lekach Tov, Genesis`) where the index names the
+book, so trailing section names come off one at a time until something matches.
+
+A string test on the title was tried and rejected. Reading `X on Y` as "a
+commentary on Y" misclassifies about 166,000 links: it wrongly catches
+`Yalkut Shimoni on Torah` (16,190 links — a midrash in its own right),
+`Midrash Tannaim on Deuteronomy` and every `Targum Jonathan on <book>`, while
+missing Rabbeinu Bahya, Chizkuni, Siftei Chakhamim, Mizrachi, Malbim and
+Derekh Chayyim, none of which have "on" in the title.
+
+**`link_bucket()` decides what a link means.** A commentary can either be
+writing about this verse or citing it in passing, and the export's connection
+type says which — the same column Sefaria reads to split its own Commentary and
+Quoting Commentary sections:
+
+| the work is | connection type | bucket |
+|---|---|---|
+| a commentary | `commentary` | **Commentary** — written about this verse |
+| a commentary | anything else | **Quoting Commentary** — cited while writing about something else |
+| a translation | — | dropped |
+| anything else | — | its own shelf: Talmud, Midrash, Mishnah, … |
 
 When Abarbanel, in the middle of his commentary on Amos, reaches for Genesis
-49:28, that is a real fact about Genesis 49:28 — but it is not commentary on it,
-and a map of which verses commentators reach for is a different map from one of
-which verses they write about. Both count towards the total.
+49:28, that is a real fact about Genesis 49:28 — but it is not commentary on
+it, and a map of which verses commentators reach for is a different map from
+one of which verses they write about. Both count towards the total.
+
+Quoting Commentary is not confined to commentaries on the Tanakh: a Zohar
+commentary, a Talmud commentary and a commentary on Pirkei Avot can all cite a
+verse, and all of them land here.
 
 Dropped on purpose:
 
@@ -196,14 +229,18 @@ Dropped on purpose:
 - **Verse-to-verse cross-references**, which is what the original rule was
   aimed at. About twelve thousand of them — against six hundred thousand
   commentary links that were being discarded alongside, until this was fixed.
-- **Commentaries on the Talmud** (Steinsaltz, Rashi on the Talmud, Tosafot), so
-  that the Talmud figure means Talmud text.
 - **Citations covering more than ten verses**, which name a whole portion
   rather than a passage — see below.
 
+There used to be a hand-written list of Talmud commentaries here, so that the
+Talmud figure would mean Talmud text. It has been deleted. A list maintained by
+hand is wrong the moment Sefaria adds a text, and this one was: `Ben Yehoyada
+on Sanhedrin` was never on it, so 1,406 links were counted as Talmud. The index
+knows without being told.
+
 Also:
 
-- **Reads local CSVs** from `data/sefaria-links/` rather than downloading each run
+- **Reads local files** from `data/` rather than downloading each run
 - **Counts each link once**, deduplicating the two directions of a bidirectional link
 - **Spreads short ranges, drops long ones** — see below
 

@@ -13,9 +13,11 @@
 set -euo pipefail
 
 BUCKET="https://storage.googleapis.com/sefaria-export/links"
+INDEX_URL="https://www.sefaria.org/api/index/"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 LINKS_DIR="$PROJECT_ROOT/data/sefaria-links"
+INDEX="$PROJECT_ROOT/data/sefaria-index.json"
 COUNTS="$PROJECT_ROOT/public/data/commentary-counts.json"
 
 FORCE=0
@@ -70,6 +72,29 @@ done
 total_mb=$(du -smL "$LINKS_DIR" | cut -f1)
 echo
 echo "Links CSVs: ${total_mb}MB in $LINKS_DIR (gitignored)"
+
+# Sefaria's index of the library. The links export says which shelf a text is
+# filed on, which for a commentary is the shelf of whatever it comments on —
+# Rashi comes back as Tanakh, Ben Yehoyada as Talmud. The index says what each
+# text actually is, and without it a category called Mishnah is mostly not the
+# Mishnah. Fetched every time: it is 4MB and it must describe the same library
+# the links describe.
+echo
+echo "Downloading Sefaria's library index..."
+if ! curl -sf --max-time 300 -o "$INDEX.tmp" "$INDEX_URL"; then
+  rm -f "$INDEX.tmp"
+  echo "Could not download $INDEX_URL" >&2
+  exit 1
+fi
+# A truncated or error response parses as neither, and silently wrong here
+# means every commentary in the library gets miscategorised.
+if ! python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$INDEX.tmp"; then
+  rm -f "$INDEX.tmp"
+  echo "The index did not come back as JSON. Try again." >&2
+  exit 1
+fi
+mv "$INDEX.tmp" "$INDEX"
+echo "Library index: $(( $(wc -c < "$INDEX") / 1024 ))KB in $INDEX (gitignored)"
 
 # Keep the outgoing counts so we can say what the refresh actually changed.
 previous=""

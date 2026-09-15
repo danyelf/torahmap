@@ -32,24 +32,17 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-# The categories that mean the same thing on both sides.
+# The categories that mean the same thing on both sides — which is now all of
+# them, because we read a text's category out of Sefaria's own index rather
+# than guessing it from the links export.
 #
-# Commentary belongs here and is the most valuable entry: it is the largest
-# category by a wide margin, so a problem anywhere in the classical commentaries
-# shows up in this column first.
-#
-# Quoting Commentary is deliberately left out. The site computes far more of
-# them than the export carries — 427 against our 124 for Genesis 1:1 — and
-# until someone works out why, including it would swamp the comparison.
-#
-# Mishnah is left out too, for a different reason: Sefaria's Mishnah shelf holds
-# commentaries on the Mishnah alongside the Mishnah itself, and we count both
-# while the site's Mishnah figure counts only the text.
+# Only Targum, Reference and Tanakh are missing, and those we drop on purpose.
 SHARED_CATEGORIES = {
-    "Commentary",
-    "Talmud", "Midrash", "Halakhah", "Jewish Thought",
-    "Responsa", "Kabbalah", "Chasidut", "Musar",
-    "Liturgy", "Tosefta", "Second Temple",
+    "Commentary", "Quoting Commentary",
+    "Talmud", "Midrash", "Mishnah", "Tosefta",
+    "Halakhah", "Responsa", "Jewish Thought",
+    "Kabbalah", "Chasidut", "Musar",
+    "Liturgy", "Second Temple",
 }
 
 # Spread across Torah, Nevi'im and Ketuvim, and across heavily and lightly
