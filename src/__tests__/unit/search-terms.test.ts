@@ -147,8 +147,15 @@ describe('carrying a narrowed search in a URL', () => {
     terms = toggleMeaning(terms, terms[0].id, ascend.keys[0]);
 
     // Second term untouched, so its slot is empty and the comma still holds
-    // its position.
-    expect(encodeMeanings(terms)).toBe('<LH/@heb|<LH=/@heb|<LH/@arc,');
+    // its position. Keys are percent-encoded; the separators are not, so the
+    // shape of the value stays readable.
+    const written = encodeMeanings(terms);
+    expect(written.endsWith(',')).toBe(true);
+    expect(written.split(',')[0].split('|').map(decodeURIComponent)).toEqual([
+      '<LH/@heb',
+      '<LH=/@heb',
+      '<LH/@arc',
+    ]);
   });
 
   it('names every lexeme behind a merged row', () => {
@@ -158,7 +165,10 @@ describe('carrying a narrowed search in a URL', () => {
     terms = toggleMeaning(terms, terms[0].id, shoulder.keys[0]);
     terms = toggleMeaning(terms, terms[0].id, lastShechem.keys[0]);
 
-    expect(encodeMeanings(terms)).toBe('CKM=/@heb|CKM==/@heb');
+    expect(encodeMeanings(terms).split('|').map(decodeURIComponent)).toEqual([
+      'CKM=/@heb',
+      'CKM==/@heb',
+    ]);
   });
 
   it('restores what was narrowed', () => {

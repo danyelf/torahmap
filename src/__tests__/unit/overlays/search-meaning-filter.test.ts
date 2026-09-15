@@ -149,7 +149,11 @@ describe('the URL', () => {
     type(container, 'עלה');
     uncheck(container, 'ascend');
 
-    expect(searchOverlay.getUrlParams?.().m).toBe('<LH/@heb|<LH=/@heb|<LH/@arc');
+    // The keys are percent-encoded: ETCBC spells ayin `<` and aleph `>`, and
+    // the URL layer strips anything that looks like a tag out of free text.
+    const m = searchOverlay.getUrlParams!().m!;
+    expect(m).not.toMatch(/[<>]/);
+    expect(m.split('|').map(decodeURIComponent)).toEqual(['<LH/@heb', '<LH=/@heb', '<LH/@arc']);
   });
 
   it('restores it', () => {
@@ -258,7 +262,7 @@ describe('showing only one meaning', () => {
     const container = render();
     type(container, 'עלה');
     only(container, 'burnt-offering');
-    expect(searchOverlay.getUrlParams?.().m).toBe('<LH/@heb');
+    expect(decodeURIComponent(searchOverlay.getUrlParams!().m!)).toBe('<LH/@heb');
 
     container.querySelector<HTMLButtonElement>('.term-all')!.click();
 

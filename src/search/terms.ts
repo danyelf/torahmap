@@ -141,12 +141,33 @@ export function selectedKeys(term: SearchTerm): string[] {
  * Positions are safe here in a way they are not in the live list, because `q`
  * and `m` are written and read as one snapshot. It is editing that needs
  * identity.
+ *
+ * Each key is percent-encoded on the way in. ETCBC writes ayin as `<` and
+ * aleph as `>`, so two keys side by side can look like an HTML tag — and the
+ * URL layer strips tags out of free text, taking everything between the two
+ * brackets with them. The browser's own encoding does not help: it is undone
+ * before the value is validated. Encoding the keys themselves leaves nothing
+ * for the stripper to recognise. The separators stay as they are, so the shape
+ * of the value is still legible in a link.
  */
 export function encodeMeanings(terms: SearchTerm[]): string {
   const narrowed = terms.map((t) =>
-    t.selected.size === t.meanings.length ? '' : selectedKeys(t).join('|'),
+    t.selected.size === t.meanings.length ? '' : selectedKeys(t).map(encodeURIComponent).join('|'),
   );
   return narrowed.some((entry) => entry !== '') ? narrowed.join(',') : '';
+}
+
+/**
+ * A key as the URL carries it. A hand-edited link holding a broken escape is
+ * read literally rather than throwing — it will simply match no meaning, which
+ * applyMeanings already handles.
+ */
+function decodeKey(key: string): string {
+  try {
+    return decodeURIComponent(key);
+  } catch {
+    return key;
+  }
 }
 
 /**
@@ -166,7 +187,7 @@ export function applyMeanings(terms: SearchTerm[], encoded: string): SearchTerm[
     const entry = perTerm[i];
     if (!entry) return term;
 
-    const named = new Set(entry.split('|'));
+    const named = new Set(entry.split('|').map(decodeKey));
     const selected = new Set(
       term.meanings.filter((m) => m.keys.some((k) => named.has(k))).map((m) => m.keys[0]),
     );
