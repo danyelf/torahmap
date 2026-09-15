@@ -118,6 +118,14 @@ the files by hand, count them first.
 
 ### Checking the result is sane
 
+```bash
+python3 scripts/verify-against-sefaria.py
+```
+
+This samples twenty-six verses across Torah, Nevi'im and Ketuvim, compares each
+against Sefaria's live site, and fails if the differences run in both
+directions.
+
 The counts we generate are not expected to match Sefaria's live site exactly —
 the script drops Tanakh cross-references and filters Talmud by design, and the
 export is up to a month behind. What they should be is *consistently* close.
@@ -134,10 +142,29 @@ stale. Staleness is uniform and always undercounts; a partial corpus is not.
 - **Filters Talmud** — direct text references only, not Steinsaltz or Rashi on Talmud
 - **Reads local CSVs** from `data/sefaria-links/` rather than downloading each run
 - **Counts each link once**, deduplicating the two directions of a bidirectional link
+- **Spreads short ranges, drops long ones** — see below
 
-Known limitation: a citation covering a range of verses is credited entirely to
-the range's first verse, so the opening verse of each weekly portion carries a
-count that belongs to the whole portion.
+### How a range of verses is counted
+
+A citation can name one verse (`Genesis 1:2`), a passage (`Deuteronomy 6:4-9`),
+or a sweep of text so large it is really an index entry (`Genesis 1:1-6:8`, the
+whole of Bereshit).
+
+A citation covering **ten verses or fewer** counts towards every verse it
+covers, so a comment on the Shema credits all six of its verses. A longer one is
+ignored completely: "all of Psalm 76" is no more a claim about a particular
+verse than "all of Bereshit" is, and crediting it anywhere invents a
+concentration of commentary that is not there.
+
+The cutoff is not delicate. Half of all ranges are five verses or fewer and a
+fifth cover more than a hundred, so anything between five and twenty produces
+essentially the same map; ten sits in the empty middle.
+
+The generator used to credit a whole range to its first verse. That put 46,000
+citations on the opening verses of weekly portions, and after the September
+refresh it made Deuteronomy 11:26 the brightest point on the map at 2,525 links
+— purely because Re'eh begins there. Since the heatmap is normalised to its
+maximum, that one verse flattened everything else.
 
 ### Data staleness
 
