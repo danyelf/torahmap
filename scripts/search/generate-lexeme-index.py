@@ -44,7 +44,7 @@ FEATURES = (
     "otype oslots book chapter verse "
     "g_cons_utf8 g_word_utf8 trailer_utf8 qere_utf8 qere_trailer_utf8 "
     "lex lex_utf8 voc_lex_utf8 gloss sp language freq_lex root "
-    "vs vt ps nu gn st"
+    "vs vt ps nu gn st prs"
 )
 
 # BHSA names its books in Latin; the app uses Sefaria's English names.
@@ -134,13 +134,6 @@ MORPH_FIELDS = ["vs", "vt", "ps", "nu", "gn", "st"]
 
 # Column order of the rows in lexicon.json.
 LEXEME_FIELDS = ["id", "form", "gloss", "pos", "lang", "root"]
-
-# Function words make poor "related word" suggestions, so lexemes with these
-# parts of speech are left out of the related-word grouping.
-FUNCTION_WORD_POS = {
-    "art", "conj", "prep", "nega", "inrg", "intj",
-    "prde", "prin", "prps", "advb",
-}
 
 
 def normalize(text):
@@ -250,20 +243,6 @@ def main():
     print(f"  {len(lexemes)} lexemes "
           f"({sum(1 for x in lexemes if x[4] == 'arc')} Aramaic)")
 
-    # Function words are indexed only under their own spelling. A reader typing
-    # a word into root search wants the word, and a preposition carrying a
-    # pronominal suffix -- Aramaic על + ה, written עלה, "upon him" -- would
-    # otherwise attach itself to a search for the verb עלה "ascend" and drag in
-    # every one of the 5,700 places the preposition occurs.
-    function_word_spelling = [
-        consonants(row[1]) if row[3] in FUNCTION_WORD_POS else None
-        for row in lexemes
-    ]
-
-    def indexable(written, lexeme):
-        expected = function_word_spelling[lexeme]
-        return expected is None or written == expected
-
     # ---- walk the text --------------------------------------------------
     # form_counts[(written form, lexeme)] -> how often that reading occurs, so
     # that ambiguous forms can list their likeliest lexeme first.
@@ -279,6 +258,11 @@ def main():
 
     unmapped_books = set()
     word_total = 0
+    # Units printed with nothing after them, which are parts of a word rather
+    # than words, and the reason the rule needs only one test: none of them
+    # carries a pronominal suffix, so "bound" never has to be qualified.
+    bound_total = 0
+    bound_and_suffixed = []
 
     for verse_node in F.otype.s("verse"):
         bhsa_book, chapter, verse = T.sectionFromNode(verse_node)
@@ -291,17 +275,16 @@ def main():
         )
         key = f"{book}:{chapter}:{verse}"
 
-        token_forms = []       # written forms making up the current token
-        token_last_lexeme = None
-        morphemes_in_word = 0  # ETCBC units taken by the word being read
+        token_forms = []       # written forms making up the word being read
+        morphemes_in_word = 0  # ETCBC units taken by that word
         word_inner = []        # separators printed inside those units
         word_lengths = []
         maqaf_joins = []
 
-        for word_node in L.d(verse_node, "word"):
+        nodes = L.d(verse_node, "word")
+        for position, word_node in enumerate(nodes):
             word_total += 1
             lexeme = lex_index[L.u(word_node, "lex")[0]]
-            verse_lexemes[key].add(lexeme)
 
             combo = tuple(
                 "" if (v := getattr(F, field).v(word_node)) in (None, "NA", "n/a")
@@ -324,59 +307,56 @@ def main():
             )
 
             written = normalize(F.g_cons_utf8.v(word_node) or "")
-            if len(written) >= 2 and indexable(written, lexeme):
-                form_counts[(written, lexeme)] += 1
             qere = normalize(F.qere_utf8.v(word_node) or "")
-            if len(qere) >= 2 and qere != written and indexable(qere, lexeme):
-                form_counts[(qere, lexeme)] += 1
-
             token_forms.append(written)
-            token_last_lexeme = lexeme
 
-            trailer = F.trailer_utf8.v(word_node)
             # A corrected word carries a second trailer, for the reading rather
             # than the writing, and the two can differ: בגד is written as one
-            # word and read as two, בא גד. The search index follows the writing,
-            # as it always has; the word boundaries follow what is printed.
+            # word and read as two, בא גד. What is printed is what the reader
+            # sees, so it is what says where a word ends.
             printed_trailer = (
                 F.qere_trailer_utf8.v(word_node)
                 if F.qere_utf8.v(word_node)
-                else trailer
+                else F.trailer_utf8.v(word_node)
             )
+            ends_word = is_token_break(printed_trailer) or position == len(nodes) - 1
 
-            if is_token_break(trailer):
-                # The whole token, prefixes and all, is filed under the lexeme
-                # of its final segment -- the stem. BHSA splits proclitics such
-                # as the ב of בראשית into their own words, so without this a
-                # reader who types the word as it is printed would find nothing.
-                token = "".join(token_forms)
-                if (
-                    len(token) >= 2
-                    and token_last_lexeme is not None
-                    and indexable(token, token_last_lexeme)
-                ):
-                    form_counts[(token, token_last_lexeme)] += 1
-                token_forms = []
-                token_last_lexeme = None
+            if not ends_word:
+                # Nothing is printed between this unit and the next, so the two
+                # run together as one word on the page. A bound unit is not a
+                # word: it is never indexed and it never puts its lexeme into
+                # the verse. These are the proclitics -- ו, ה, ל, ב, מן, כ --
+                # and "every verse containing the letter ל" is not a question
+                # anyone means to ask.
+                bound_total += 1
+                if F.prs.v(word_node) not in (None, "absent", "n/a", "NA"):
+                    bound_and_suffixed.append(f"{key} {F.g_word_utf8.v(word_node)}")
+                continue
 
-
-            # The same break, recorded rather than discarded. This is what
-            # lets a reader of the file say which printed word a lexeme is,
-            # instead of only which verse it is in.
-            if is_token_break(printed_trailer):
-                close_word(
-                    word_lengths, maqaf_joins, morphemes_in_word, word_inner,
-                    printed_trailer,
-                )
-                morphemes_in_word = 0
-                word_inner = []
-
-        if token_forms and token_last_lexeme is not None:
+            # This unit ends a printed word, so it is that word's stem and the
+            # word belongs to its lexeme. Both the whole word and the stem on
+            # its own are filed there: the first is what a reader types when
+            # they copy בראשית off the page, the second is what they type when
+            # they mean ראשית.
+            verse_lexemes[key].add(lexeme)
+            if len(written) >= 2:
+                form_counts[(written, lexeme)] += 1
+            if len(qere) >= 2 and qere != written:
+                form_counts[(qere, lexeme)] += 1
             token = "".join(token_forms)
-            if len(token) >= 2 and indexable(token, token_last_lexeme):
-                form_counts[(token, token_last_lexeme)] += 1
-        if morphemes_in_word:
-            close_word(word_lengths, maqaf_joins, morphemes_in_word, word_inner, "")
+            if len(token) >= 2:
+                form_counts[(token, lexeme)] += 1
+            token_forms = []
+
+            # The same break, recorded rather than discarded. This is what lets
+            # a reader of the file say which printed word a lexeme is, instead
+            # of only which verse it is in.
+            close_word(
+                word_lengths, maqaf_joins, morphemes_in_word, word_inner,
+                printed_trailer,
+            )
+            morphemes_in_word = 0
+            word_inner = []
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
@@ -388,6 +368,18 @@ def main():
     if unmapped_books:
         sys.exit(f"Unmapped BHSA book names: {sorted(unmapped_books)}")
 
+    # The rule is a single test -- is anything printed after this unit? -- and
+    # it can stay a single test only while no bound unit carries a suffix. That
+    # holds in BHSA 2021 for all 426,590 units. If a later release breaks it,
+    # the rule needs a second clause and this should say so rather than quietly
+    # drop suffixed words from the index.
+    if bound_and_suffixed:
+        sys.exit(
+            f"{len(bound_and_suffixed)} bound units carry a pronominal suffix, "
+            "which the word rule assumes cannot happen:\n  "
+            + "\n  ".join(bound_and_suffixed[:10])
+        )
+
     word_lexemes = collections.defaultdict(list)
     for (written, lexeme), count in form_counts.items():
         word_lexemes[written].append((count, lexeme))
@@ -397,6 +389,8 @@ def main():
     }
 
     print(f"  {word_total} word occurrences across {len(verse_lexemes)} verses")
+    print(f"  {bound_total} of them bound to the next "
+          f"({100 * bound_total / word_total:.1f}%), and so not words")
     print(f"  {len(word_lexemes)} distinct written forms")
     print(f"  {len(morph_table)} distinct grammatical parsings")
 
@@ -506,7 +500,6 @@ def main():
         {
             "source": f"ETCBC BHSA {BHSA_VERSION}",
             "fields": LEXEME_FIELDS,
-            "functionWordPos": sorted(FUNCTION_WORD_POS),
             "lexemes": lexemes,
         },
     )

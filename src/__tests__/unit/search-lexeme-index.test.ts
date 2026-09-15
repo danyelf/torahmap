@@ -30,7 +30,6 @@ const lexiconFile = dataExists
   ? (JSON.parse(fs.readFileSync(lexiconPath, 'utf-8')) as {
       source: string;
       fields: string[];
-      functionWordPos: string[];
       lexemes: LexemeRow[];
     })
   : null;
@@ -106,10 +105,6 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
     });
 
     it('keeps the several words spelled עלה apart instead of merging them', () => {
-      // Under the old concordance numbering this written form was offered five
-      // entries, one of which was the Aramaic preposition "upon" filed as if it
-      // shared a root with the verb. Here each reading is its own dictionary
-      // entry with its own gloss.
       const ids = forms['עלה'];
       expect(ids.length).toBeGreaterThan(1);
 
@@ -117,19 +112,23 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       expect(glosses).toContain('ascend');
       expect(new Set(glosses).size).toBe(glosses.length);
 
-      // No preposition of either language is among them: עלה is a content word.
-      expect(ids.map((id) => lexemes[id][3])).not.toContain('prep');
+      // The Aramaic preposition על with a suffix is also written עלה, and it is
+      // offered here: it is a word, spelled this way, and worth 86 verses. What
+      // must not appear is the Hebrew preposition על, which is a different
+      // dictionary word worth 4,487 verses and could never be written עלה.
+      const prepositions = ids.filter((id) => lexemes[id][3] === 'prep');
+      expect(prepositions.map(language)).toEqual(['arc']);
     });
 
-    it('indexes a function word only under its own spelling', () => {
-      // The Aramaic preposition על carrying a pronominal suffix is written עלה,
-      // "upon him". Filing that under the preposition would attach all 5,700 of
-      // its occurrences to a search for the verb עלה "ascend", so suffixed and
-      // prefixed forms of function words are left out of the index. The bare
-      // spelling still resolves.
+    it('resolves a preposition carrying a pronominal suffix (עליו, בו)', () => {
+      // עליו is "upon him" and בו is "in it": among the commonest words in the
+      // Bible, and both missing from this table until the word rule. Their
+      // absence is what let root mode answer עליו with עֶלְיֹון "most high",
+      // a different word that merely starts with the same four letters.
       expect(forms['על'].map((id) => lexemes[id][3])).toContain('prep');
-      expect(forms['עליו']).toBeUndefined();
-      expect(forms['בו']).toBeUndefined();
+      expect(forms['עליו'].map(gloss)).toEqual(['upon']);
+      expect(forms['בו'].map(gloss)).toEqual(['in']);
+      expect(forms['עליו'].map((id) => lexemes[id][1])).not.toContain('עֶלְיֹון');
     });
 
     it('separates the noun דבר "word" from the verb דבר "speak"', () => {
@@ -165,6 +164,61 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       // namesake occurs a few dozen times.
       const [first] = forms['ויאמר'];
       expect(language(first)).toBe('heb');
+    });
+  });
+
+  // BHSA counts in morphemes, not in printed words: the ו of ויאמר and the ב of
+  // בראשית are units of their own. A unit with nothing printed after it runs
+  // straight into the next, so it is part of a word rather than a word, and it
+  // is not indexed and puts no lexeme into its verse.
+  //
+  // These are the tripwires for that rule. It is meant to cut fragments and
+  // leave words alone, so the two halves are asserted separately: a change in
+  // the first block means it has reached a real word.
+  describe('what counts as a word', () => {
+    const lexemeFor = (id: string, lang: 'heb' | 'arc') => {
+      const found = lexemes.findIndex((row) => row[0] === id && row[4] === lang);
+      expect(found, `no ${lang} lexeme ${id} in the dictionary`).toBeGreaterThanOrEqual(0);
+      return found;
+    };
+
+    const verseCount = (lexeme: number) =>
+      Object.values(verses).filter((ids) => ids.includes(lexeme)).length;
+
+    it('leaves the words that stand on their own untouched', () => {
+      // Every one of these is a function word, and every one is printed with a
+      // space after it every time it occurs, so the rule never touches them.
+      // The exact numbers are the assertion: these counts are what they were
+      // before the rule existed, to the verse.
+      expect(verseCount(lexemeFor('<L', 'heb'))).toBe(4487); // על "upon"
+      expect(verseCount(lexemeFor('>T', 'heb'))).toBe(6783); // את, object marker
+      expect(verseCount(lexemeFor('L>', 'heb'))).toBe(3945); // לא "not"
+      expect(verseCount(lexemeFor('KJ', 'heb'))).toBe(3908); // כי "that"
+      expect(verseCount(lexemeFor('>CR', 'heb'))).toBe(4438); // אשר, relative
+    });
+
+    it('leaves nothing behind for a proclitic, which is never a word', () => {
+      // ו "and" and ה "the" are printed stuck to what follows, without a single
+      // exception in the whole Bible. They are not words and match no verse.
+      expect(verseCount(lexemeFor('W', 'heb'))).toBe(0);
+      expect(verseCount(lexemeFor('H', 'heb'))).toBe(0);
+      expect(verseCount(lexemeFor('W', 'arc'))).toBe(0);
+    });
+
+    it('keeps the suffixed forms of a preposition, which are words', () => {
+      // ל is two different things wearing one dictionary entry. Stuck to a noun
+      // it is a proclitic; carrying a suffix it is לוֹ, לָהֶם, לְךָ, printed words
+      // in their own right. The rule keeps the second and drops the first, so
+      // the count falls a long way without reaching zero.
+      const to = verseCount(lexemeFor('L', 'heb'));
+      expect(to).toBeGreaterThan(3000);
+      expect(to).toBeLessThan(5000);
+      expect(forms['לו'].map(gloss)).toContain('to');
+    });
+
+    it('leaves no verse without any dictionary word', () => {
+      const empty = Object.entries(verses).filter(([, ids]) => ids.length === 0);
+      expect(empty).toEqual([]);
     });
   });
 
@@ -335,6 +389,29 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       if (displayedWords(hebrew).length !== words.length) unexpected.push(key);
     }
     expect(unexpected).toEqual([]);
+  });
+
+  it('can look up almost every word printed in the Tanakh', () => {
+    // A reader types what is on the page, so this is the number that decides
+    // whether the index is any use: how many printed words the written-form
+    // table answers on its own, with no fallback underneath it. Before the word
+    // rule it was 94.9%, and the missing 5% were the commonest words there
+    // are — ואת, ולא, לי, עליו. The lookups that used to paper over the gap
+    // have been deleted, so this has to carry the weight now.
+    let total = 0;
+    let missing = 0;
+    for (const chapters of Object.values(texts)) {
+      for (const verses of Object.values(chapters)) {
+        for (const { he } of Object.values(verses)) {
+          for (const word of displayedWords(he ?? '')) {
+            total += 1;
+            if (!(normalizeHebrewForSearch(word) in forms)) missing += 1;
+          }
+        }
+      }
+    }
+    expect(total).toBeGreaterThan(300000);
+    expect(missing / total).toBeLessThan(0.005);
   });
 
   it('owns up to the handful of verses that do not line up', () => {
