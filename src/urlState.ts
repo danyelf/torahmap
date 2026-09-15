@@ -10,8 +10,17 @@ import { MIN_ZOOM, MAX_ZOOM } from './camera.ts';
  * - `token`    short identifier, e.g. a slugified name or a mode word
  * - `category` a name that may contain spaces and slashes, e.g. "Talmud/Mishnah"
  * - `text`     free-form user text, e.g. a search query
+ * - `names`    machine-readable names the app looks up, never shown to a reader
+ *
+ * The difference between `text` and `names` is what the value is for, and it
+ * decides whether HTML tags are stripped out of it. A search query is shown
+ * back to the reader, so it is stripped. A list of names is split apart and
+ * looked up in a table, and anything unrecognised is dropped long before it
+ * could reach the page — so stripping buys nothing, and it does real harm:
+ * ETCBC spells ayin `<` and aleph `>`, so two lexeme names side by side read
+ * as a tag and everything between them would be deleted.
  */
-export type UrlParamKind = 'token' | 'category' | 'text';
+export type UrlParamKind = 'token' | 'category' | 'text' | 'names';
 
 /**
  * An overlay's declaration of one URL parameter it owns.
@@ -70,6 +79,17 @@ const RESERVED_KEYS = new Set(['story', 'overlay', 'verse', 'zoom', 'x', 'y']);
 const MAX_PAN_POSITION = 1000000; // Increased to support existing use cases
 const MAX_STRING_LENGTH = 50;
 const MAX_SEARCH_QUERY_LENGTH = 1000;
+
+/**
+ * What a `names` value may contain: the characters lexeme names are written
+ * from, the `@` and language that follow one, and the `|` and `,` that
+ * separate them. ETCBC uses ASCII for Hebrew consonants, hence the brackets
+ * and slashes — `<LH/@heb` is burnt-offering.
+ *
+ * A value holding anything else did not come from this app and is refused
+ * whole, rather than edited into something that would half-apply.
+ */
+const NAMES_ALLOWED = /^[A-Za-z0-9<>=/@[\]_|,.~-]+$/;
 
 /**
  * Base validation - checks for XSS patterns and length
@@ -142,6 +162,17 @@ function validateOneParam(spec: UrlParamSpec, raw: string | null | undefined): s
       const trimmed = raw.trim();
       cleaned =
         trimmed && trimmed.length <= MAX_SEARCH_QUERY_LENGTH ? stripHtmlTags(trimmed) : null;
+      break;
+    }
+    case 'names': {
+      // Deliberately not stripped — see UrlParamKind.
+      const trimmed = raw.trim();
+      cleaned =
+        trimmed.length > 0 &&
+        trimmed.length <= MAX_SEARCH_QUERY_LENGTH &&
+        NAMES_ALLOWED.test(trimmed)
+          ? trimmed
+          : null;
       break;
     }
     case 'token':
