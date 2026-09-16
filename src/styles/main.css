@@ -38,3 +38,32 @@ canvas {
 #overlay-legend .label {
   line-height: 1.2;
 }
+
+/* Background Hebrew text (prototype, behind ?bgtext=1) */
+#bgtext {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  direction: rtl;
+  color: #b8ad98;
+}
+#bgtext[data-layer='behind'] {
+  z-index: -1;
+}
+#bgtext[data-layer='above'] {
+  z-index: 1;
+}
+.bgtext-page {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  line-height: 1.6;
+  opacity: 0;
+  transition: opacity var(--bgtext-fade, 300ms) linear;
+}
+.bgtext-page.front {
+  opacity: var(--bgtext-opacity, 0.25);
+}
