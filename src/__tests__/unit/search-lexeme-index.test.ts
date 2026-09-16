@@ -112,10 +112,8 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       expect(glosses).toContain('ascend');
       expect(new Set(glosses).size).toBe(glosses.length);
 
-      // The Aramaic preposition על with a suffix is also written עלה, and it is
-      // offered here: it is a word, spelled this way, and worth 86 verses. What
-      // must not appear is the Hebrew preposition על, which is a different
-      // dictionary word worth 4,487 verses and could never be written עלה.
+      // The Aramaic על with a suffix is written עלה and is offered; the Hebrew
+      // על, a different word in 4,487 verses, could never be.
       const prepositions = ids.filter((id) => lexemes[id][3] === 'prep');
       expect(prepositions.map(language)).toEqual(['arc']);
     });
@@ -186,10 +184,8 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       Object.values(verses).filter((ids) => ids.includes(lexeme)).length;
 
     it('leaves the words that stand on their own untouched', () => {
-      // Every one of these is a function word, and every one is printed with a
-      // space after it every time it occurs, so the rule never touches them.
-      // The exact numbers are the assertion: these counts are what they were
-      // before the rule existed, to the verse.
+      // All printed with a space after them, always, so the rule cannot touch
+      // them: these counts are what they were before it, to the verse.
       expect(verseCount(lexemeFor('<L', 'heb'))).toBe(4487); // על "upon"
       expect(verseCount(lexemeFor('>T', 'heb'))).toBe(6783); // את, object marker
       expect(verseCount(lexemeFor('L>', 'heb'))).toBe(3945); // לא "not"
@@ -219,11 +215,8 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
 
   describe('verse keys', () => {
     it('gives every verse the app displays at least one dictionary word', () => {
-      // Both halves have to be asserted here, against the list of verses that
-      // should exist. Asking the file's own keys whether any holds an empty
-      // list cannot fail: the generator only creates a key when it adds a
-      // lexeme, so a verse that lost all its words goes missing rather than
-      // going empty.
+      // Iterate the structure, not the file's own keys: the generator creates a
+      // key only when it adds a lexeme, so an emptied verse goes missing.
       const structure = JSON.parse(
         fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8'),
       ) as { books: Array<{ name: string; chapters: number[] }> };
@@ -392,12 +385,8 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
   });
 
   it('can look up almost every word printed in the Tanakh', () => {
-    // A reader types what is on the page, so this is the number that decides
-    // whether the index is any use: how many printed words the written-form
-    // table answers on its own, with no fallback underneath it. Before the word
-    // rule it was 94.9%, and the missing 5% were the commonest words there
-    // are — ואת, ולא, לי, עליו. The lookups that used to paper over the gap
-    // have been deleted, so this has to carry the weight now.
+    // Printed words the written-form table answers with no fallback under it.
+    // 94.9% before the word rule, and the missing 5% were ואת, ולא, לי, עליו.
     let total = 0;
     let missing = 0;
     for (const chapters of Object.values(texts)) {
@@ -415,15 +404,9 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {
-    // Two shipped files carry the same rule. verse-lexemes.json holds the
-    // lexeme of the last morpheme of each printed word — the stem — and is the
-    // one the app loads. This file holds every morpheme plus the length of
-    // each printed word, so the same set is recoverable from it.
-    //
-    // Nothing else checks that the two agree, and "two structures with two
-    // ideas of where a word ends" is the exact bug this rule exists to remove.
-    // Deriving one from the other is what stops them drifting apart in
-    // silence.
+    // verse-lexemes.json holds the stem of each printed word; this file holds
+    // every morpheme plus the word lengths, so the same set is recoverable.
+    // Nothing else checks that the two agree, and they must.
     const disagree: string[] = [];
     for (const [key, [morphemes, words]] of entries) {
       const stems = new Set<number>();

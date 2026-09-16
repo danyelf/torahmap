@@ -107,10 +107,8 @@ function rowsFor(ids: LexemeId[]): Meaning[] {
     });
   }
 
-  // A meaning with no verses behind it cannot be chosen and cannot mislead, but
-  // it is still a row to read past. Six lexemes are in that state: the Hebrew
-  // ו, ה and ש, and the Aramaic כ, ו and ה. All six are proclitics, printed
-  // stuck to the word after them, so they are never words in their own right.
+  // Drops six rows a reader could only read past: the Hebrew ו, ה, ש and the
+  // Aramaic כ, ו, ה, proclitics the word rule leaves in no verse.
   return [...rows.values()]
     .map(({ meaning, group }) => ({
       ...meaning,
@@ -157,13 +155,17 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * reading of the word in front of the reader is one the verse contains, and
  * the spelling's other candidates usually are not.
  *
- * This is inference, not knowledge, and it can leave more than one reading
- * standing. `verse-morphology.json` does carry the answer — the length of each
+ * This is inference, not knowledge. BHSA tags every occurrence with exactly one
+ * lexeme, but the index is keyed by spelling, so the link is lost before it
+ * reaches the browser. `verse-morphology.json` carries it — the length of each
  * printed word, whose last morpheme is its stem — so this body could become a
- * lookup without any caller changing.
+ * lookup off the word's own position. Until then the verse narrows rather than
+ * decides, and can leave two readings standing: see `word-in-verse.test.ts`,
+ * לו in Genesis 2:18.
  *
- * An empty result means "cannot say". Callers offer a literal search instead
- * rather than treating it as an error.
+ * An empty result means "cannot say" — now rare, but real for a spelling the
+ * dictionary does not carry and for the 64 verses in `misaligned`. Callers
+ * offer a literal search rather than treating it as an error.
  */
 export function meaningsInVerse(writtenForm: string, verseKey: string): Meaning[] {
   const ids = findLexemesForWord(writtenForm);

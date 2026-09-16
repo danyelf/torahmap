@@ -314,28 +314,16 @@ function buildSpellingIndex(): void {
 }
 
 /**
- * Find the lexemes a written Hebrew word can be.
+ * Find the lexemes a written Hebrew word can be: the word exactly as printed,
+ * then a bare dictionary spelling (the reader typed the dictionary form).
  *
- * Two lookups:
- * 1. the word exactly as it appears in the text
- * 2. a bare dictionary spelling (the reader typed the dictionary form)
+ * Do not add prefix stripping or completion to a longer spelling. The index
+ * files every printed word under its stem's lexeme, prefix and all, so בדבר
+ * resolves without anything noticing the ב; and completion answered עליו "upon
+ * him" with עֶלְיֹון "most high" on four shared letters.
  *
- * There were two more, and they have gone. One completed the term to any longer
- * dictionary spelling; the other stripped a prefix and tried again. Both existed
- * to cover words the index left out, and the index no longer leaves words out:
- * every word printed in the Tanakh is filed under the lexeme of its stem, prefix
- * and all, so בדבר is found without anything having to notice the ב.
- *
- * The completion also answered wrongly and confidently: עֶלְיֹון folds to עליונ,
- * which starts with עליו, so a reader asking for "upon him" got "most high" —
- * a different word reached by nothing but a shared opening, and confident
- * enough to hide that the lookup had failed.
- *
- * Returning null is a real answer, not a failure: the caller matches the word as
- * text instead and marks the term unresolved, which is what a reader should see
- * for a spelling the dictionary does not carry.
- *
- * Exported so the search overlay can tell which terms resolved to a lexeme.
+ * Null is an answer, not a failure: the caller falls back to text matching and
+ * marks the term unresolved. Exported so the overlay can tell which resolved.
  */
 export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
   if (!formToLexemes) return null;
@@ -345,10 +333,7 @@ export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
   return lookupFormOrSpelling(normalizeHebrewForSearch(hebrewWord));
 }
 
-/**
- * The written form first, then the bare dictionary spelling. Both are exact: a
- * spelling that merely starts with the term is somebody else's word.
- */
+/** The written form first, then the bare dictionary spelling. Both exact. */
 function lookupFormOrSpelling(term: string): LexemeId[] | null {
   if (term.length === 0) return null;
 

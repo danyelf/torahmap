@@ -32,9 +32,7 @@ describe('adding a term', () => {
   it('resolves its meanings and starts with all of them selected', () => {
     const [aleh] = addTerm([], 'עלה');
 
-    // What addTerm owes us is that the meanings arrive and all of them start
-    // selected — not which meanings they are. search-dictionary.test.ts owns
-    // the list for עלה.
+    // Which meanings they are is search-dictionary.test.ts's business.
     expect(aleh.meanings.length).toBeGreaterThan(1);
     expect(aleh.selected.size).toBe(aleh.meanings.length);
   });
@@ -143,9 +141,6 @@ describe('carrying a narrowed search in a URL', () => {
   it('writes only the narrowed term, leaving the other term empty', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'מלך');
     const ascend = terms[0].meanings.find((m) => m.gloss === 'ascend')!;
-    // The keys the narrowed term should still carry, taken from the term
-    // itself rather than restated, so that a change to how the index orders
-    // the readings of עלה fails in one place and not in four.
     const kept = terms[0].meanings.filter((m) => m !== ascend).flatMap((m) => m.keys);
     terms = toggleMeaning(terms, terms[0].id, ascend.keys[0]);
 

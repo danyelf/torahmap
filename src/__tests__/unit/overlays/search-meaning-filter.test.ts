@@ -58,10 +58,7 @@ describe('the meaning list', () => {
     const container = render();
     type(container, 'עלה');
 
-    // What this test owns is that the DOM shows one row per meaning, in order,
-    // each with its own count. Which meanings עלה has, and what those counts
-    // are, belong to search-dictionary.test.ts — restating them here meant
-    // every change to the index had to be typed out in four files.
+    // This test owns the DOM shape; search-dictionary.test.ts owns the list.
     const expected = meaningsFor('עלה');
     expect(expected.length).toBeGreaterThan(1);
 
@@ -86,8 +83,6 @@ describe('the meaning list', () => {
     const container = render();
     type(container, 'עלה');
 
-    // The rule, rather than a transcript of today's five rows: a row is marked
-    // "aram." exactly when its meaning is Aramaic.
     const expected = meaningsFor('עלה');
     const tags = [...container.querySelectorAll('.meaning-tag')].map((t) => t.textContent);
 
@@ -158,8 +153,6 @@ describe('the URL', () => {
   it('carries the narrowing', () => {
     const container = render();
     type(container, 'עלה');
-    // The keys that should survive, taken from the dictionary rather than
-    // restated, so the index's ordering is asserted in one file only.
     const kept = meaningsFor('עלה')
       .filter((m) => m.gloss !== 'ascend')
       .flatMap((m) => m.keys);

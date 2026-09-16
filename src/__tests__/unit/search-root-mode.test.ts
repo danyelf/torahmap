@@ -84,19 +84,16 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     });
 
     it('resolves a prefixed word straight from the table (בראשית)', () => {
-      // The whole printed word is filed under the lexeme of its stem, so
-      // nothing here has to notice the ב. Prefix stripping used to redo that by
-      // string surgery, and has gone.
+      // The whole printed word is filed under its stem's lexeme; nothing here
+      // notices the ב.
       const readings = findLexemesForWord('בראשית');
       expect(readings).not.toBeNull();
       expect(readings!.map((id) => getLexeme(id)!.gloss)).toEqual(['beginning']);
     });
 
     it('returns null for a form that is never printed (ובראשית)', () => {
-      // ובראשית appears nowhere in the Tanakh. Stripping the ו and answering
-      // with ראשית would be a guess about a word the reader cannot have copied
-      // off the page. Null sends the caller to plain text matching instead,
-      // which shows the term as unresolved rather than confidently wrong.
+      // ובראשית appears nowhere in the Tanakh. Stripping the ו would guess at a
+      // word the reader cannot have copied off the page; null is the answer.
       expect(findLexemesForWord('ובראשית')).toBeNull();
     });
 
@@ -139,14 +136,10 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     });
 
     it('does not drag the Hebrew preposition על into a search for עלה', () => {
-      // This is the failure the old concordance numbering forced: על "upon"
-      // occurs in 4,487 verses, so folding it into עלה swamped the results. It
-      // cannot be written עלה and is not offered.
-      //
-      // The Aramaic preposition is offered, and should be: with a suffix it is
-      // written this way, it is a word, and it is worth 86 verses. Keeping it
-      // out was what the generator's exclusion list was for, and the exclusion
-      // cost far more than the collision did.
+      // על "upon" is in 4,487 verses; folding it into עלה swamped the results,
+      // which the old concordance numbering forced. It cannot be written עלה.
+      // The Aramaic preposition can, is a word, and is worth 86 verses —
+      // keeping it out cost far more than the collision did.
       const readings = findLexemesForWord('עלה')!;
       const prepositions = readings.map((id) => getLexeme(id)!).filter((l) => l.pos === 'prep');
       expect(prepositions.map((l) => l.language)).toEqual(['arc']);
