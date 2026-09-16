@@ -40,7 +40,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  applyOverlayParams(searchOverlay, { q: '', hm: undefined, m: undefined });
+  applyOverlayParams(searchOverlay, { q: '', mode: undefined, m: undefined });
 });
 
 describe('searching for a clicked word', () => {
@@ -69,16 +69,18 @@ describe('searching for a clicked word', () => {
 
   it('switches Hebrew mode to root, since a meaning cannot be matched as a substring', () => {
     render();
-    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+    applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
-    expect(searchOverlay.getUrlParams!().hm).toBeUndefined(); // root is the default, so it is not written
+    // The click chose root for this word, and a choice is written even when it
+    // matches the default — the reader made it, so the link carries it.
+    expect(searchOverlay.getUrlParams!().mode).toBe('r');
   });
 
   it('leaves the mode radios showing the mode the search is now in', () => {
     const container = render();
-    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+    applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
@@ -120,11 +122,11 @@ describe('searching for a clicked word', () => {
     // would be resolved to its dictionary entry - neither is what "exactly"
     // means.
     const container = render();
-    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+    applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', null);
 
-    expect(searchOverlay.getUrlParams!().hm).toBe('word');
+    expect(searchOverlay.getUrlParams!().mode).toBe('w');
     expect(
       container.querySelector<HTMLInputElement>('input[name="hebrew-mode"]:checked')!.value,
     ).toBe('word');

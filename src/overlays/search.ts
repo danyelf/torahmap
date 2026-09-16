@@ -25,8 +25,13 @@ import {
   selectedKeys,
   encodeMeanings,
   applyMeanings,
+  setMode,
+  effectiveMode,
+  encodeModes,
+  applyModes,
   MAX_TERMS,
   type SearchTerm,
+  type SearchMode,
 } from '../search/terms.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { MIN_SEARCH_TERM_LENGTH } from '../constants/app.ts';
@@ -39,26 +44,22 @@ function colorToCss(color: Color): string {
 
 // State
 let verses: TanakhLayout[] = [];
-// The search is a list of terms, each with its own text, its own meanings and
-// its own colour. There is always at least one, possibly empty, so the panel
-// always has somewhere to type.
+// The search is a list of terms, each with its own text, its own meanings, its
+// own colour and its own way of being matched. There is always at least one,
+// possibly empty, so the panel always has somewhere to type.
 let terms: SearchTerm[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
-let wholeWordEnabled = false;
-const HEBREW_SEARCH_MODES = ['substring', 'word', 'root'] as const;
 
 const URL_PARAMS = [
   { key: 'q', kind: 'text' },
-  { key: 'ww', kind: 'token', allowed: ['1'] },
-  { key: 'hm', kind: 'token', allowed: HEBREW_SEARCH_MODES },
+  // Positional across the terms in q, one letter each, and an empty entry for
+  // a term still on its default. Letters rather than words because a token is
+  // capped at 50 characters and five spelled-out modes would be 49 of them.
+  { key: 'mode', kind: 'token' },
   { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
 
-// Root is the default: substring matches inside longer words that have nothing
-// to do with the query, and it is the one mode where the meaning filter cannot
-// appear at all.
-let hebrewSearchMode: (typeof HEBREW_SEARCH_MODES)[number] = 'root';
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
 
@@ -115,18 +116,9 @@ function termIsHebrew(term: SearchTerm): boolean {
   return isHebrewQuery(term.text.trim());
 }
 
-/**
- * Does the search involve Hebrew at all? Only the two language-specific
- * controls consult this — whether to show the Hebrew modes or the English
- * whole-word box. What each term matches is decided per term.
- */
-function searchIsHebrew(): boolean {
-  return activeTerms().some(termIsHebrew);
-}
-
 /** Root mode over Hebrew is the only place meanings are consulted. */
-function meaningsApply(): boolean {
-  return searchIsHebrew() && hebrewSearchMode === 'root';
+function meaningsApply(term: SearchTerm): boolean {
+  return termIsHebrew(term) && effectiveMode(term) === 'root';
 }
 
 // Incremental rendering state
@@ -178,15 +170,19 @@ function runSearch(): void {
   // in root mode consults the chosen meanings; everything else is text.
   // Matching text scans the corpus, so it is done only for the terms that need
   // it — a Hebrew term answered from the dictionary never pays for it.
-  const textVerses = (term: SearchTerm): Set<string> =>
-    verseSetsForTerms([term.text.trim()], {
-      wholeWordEnglish: wholeWordEnabled,
-      hebrewMode: hebrewSearchMode === 'root' ? 'word' : hebrewSearchMode,
+  const textVerses = (term: SearchTerm): Set<string> => {
+    const mode = effectiveMode(term);
+    return verseSetsForTerms([term.text.trim()], {
+      wholeWordEnglish: mode === 'word',
+      // A Hebrew term reaches this path only when the dictionary has nothing
+      // for it, and root has always fallen back to whole word there.
+      hebrewMode: mode === 'root' ? 'word' : mode,
     })[0];
+  };
 
   currentResults = resultsForVerseSets(
     active.map((term) => {
-      if (!termIsHebrew(term) || hebrewSearchMode !== 'root') return textVerses(term);
+      if (!meaningsApply(term)) return textVerses(term);
       // A term the dictionary does not know falls back to whole-word matching,
       // as root mode always has. Root is the default now, so a lexeme index
       // that failed to load must not mean Hebrew silently finds nothing.
@@ -199,8 +195,7 @@ function runSearch(): void {
 
   for (const term of active) {
     const hebrew = termIsHebrew(term);
-    const mode = hebrew ? hebrewSearchMode : wholeWordEnabled ? 'word' : 'substring';
-    trackSearchExecute(term.text, hebrew ? 'he' : 'en', mode, currentResults.length);
+    trackSearchExecute(term.text, hebrew ? 'he' : 'en', effectiveMode(term), currentResults.length);
   }
 
   renderResults();
@@ -252,10 +247,10 @@ export function searchForMeaning(text: string, meaningKeys: readonly string[] | 
   }
 
   if (meaningKeys && meaningKeys.length > 0) {
-    hebrewSearchMode = 'root';
+    terms = setMode(terms, id, 'root');
     terms = onlyMeaning(terms, id, meaningKeys);
   } else {
-    hebrewSearchMode = 'word';
+    terms = setMode(terms, id, 'word');
   }
   syncHebrewModeRadios();
 
@@ -387,12 +382,34 @@ function buildMeaningRow(
  * cannot get back the way they came.
  */
 function syncHebrewModeRadios(): void {
-  if (!hebrewModeContainer) return;
-  for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
-    'input[name="hebrew-mode"]',
-  )) {
-    radio.checked = radio.value === hebrewSearchMode;
+  const hebrew = activeTerms().find(termIsHebrew);
+  if (hebrewModeContainer) {
+    const shown = hebrew ? effectiveMode(hebrew) : 'root';
+    for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
+      'input[name="hebrew-mode"]',
+    )) {
+      radio.checked = radio.value === shown;
+    }
   }
+
+  const english = activeTerms().find((term) => !termIsHebrew(term));
+  if (wholeWordCheckbox) {
+    wholeWordCheckbox.checked = english ? effectiveMode(english) === 'word' : false;
+  }
+}
+
+/**
+ * Set every term of one language at once.
+ *
+ * The footer controls are one setting for the whole search, which is the thing
+ * being got rid of; they drive the per-term state through here until the row
+ * controls replace them.
+ */
+function setModeForLanguage(hebrew: boolean, mode: SearchMode): void {
+  for (const term of terms) {
+    if (termIsHebrew(term) === hebrew) terms = setMode(terms, term.id, mode);
+  }
+  runSearch();
 }
 
 /**
@@ -440,7 +457,7 @@ function updateHitCaption(): void {
  * one) is put back rather than leaving the page disagreeing with the state.
  */
 function meaningSignature(term: SearchTerm): string {
-  if (!meaningsApply() || term.meanings.length < 2) return '';
+  if (!meaningsApply(term) || term.meanings.length < 2) return '';
   return term.meanings.map((m) => m.keys[0]).join(',');
 }
 
@@ -870,15 +887,18 @@ function splitIntoWords(
  * Handles Hebrew nikkud stripping and position mapping
  * Respects Hebrew search mode (substring/word/root) and English whole-word setting
  */
-function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): Match[] {
+function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
   const matches: Match[] = [];
   const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
 
-  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-    const term = terms[termIndex];
-    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+  for (let termIndex = 0; termIndex < searchTerms.length; termIndex++) {
+    const term = searchTerms[termIndex];
+    const normalizedTerm = isHebrew ? stripNikkud(term.text) : term.text.toLowerCase();
+    // The mode belongs to the term. `isHebrew` is the language of the verse
+    // text being marked up, which is a different question.
+    const mode = effectiveMode(term);
 
-    if (!isHebrew && wholeWordEnabled) {
+    if (!isHebrew && mode === 'word') {
       // English whole-word matching using regex
       const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
@@ -890,11 +910,11 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
           termIndex,
         });
       }
-    } else if (isHebrew && hebrewSearchMode === 'root') {
+    } else if (isHebrew && mode === 'root') {
       // Mark the words that are one of the meanings this term still stands
       // for. Once a term is narrowed to burnt-offering, a verb meaning
       // "ascend" in the same verse is not a hit and must not be marked.
-      const keys = selectedKeys(activeTerms()[termIndex]);
+      const keys = selectedKeys(term);
       for (const { word, start } of splitIntoWords(normalizedText)) {
         const hit = keys.length > 0 ? formMatches(keys, word) : word === normalizedTerm;
         if (hit) {
@@ -905,7 +925,7 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
           });
         }
       }
-    } else if (isHebrew && hebrewSearchMode === 'word') {
+    } else if (isHebrew && mode === 'word') {
       // Hebrew whole-word matching
       const wordEntries = splitIntoWords(normalizedText);
 
@@ -1004,11 +1024,7 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
   const isHebrew = language === 'he';
 
   // Find all matches
-  const matches = findAllTermMatches(
-    text,
-    active.map((t) => t.text),
-    isHebrew,
-  );
+  const matches = findAllTermMatches(text, active, isHebrew);
 
   if (matches.length === 0) {
     fragment.appendChild(document.createTextNode(text));
@@ -1119,13 +1135,8 @@ export const searchOverlay: Overlay = {
         ?.focus();
     });
 
-    if (wholeWordCheckbox) {
-      wholeWordCheckbox.checked = wholeWordEnabled;
-    }
-
     wholeWordCheckbox?.addEventListener('change', () => {
-      wholeWordEnabled = wholeWordCheckbox!.checked;
-      runSearch();
+      setModeForLanguage(false, wholeWordCheckbox!.checked ? 'word' : 'substring');
     });
 
     syncHebrewModeRadios();
@@ -1135,8 +1146,7 @@ export const searchOverlay: Overlay = {
       )) {
         radio.addEventListener('change', () => {
           if (!radio.checked) return;
-          hebrewSearchMode = radio.value as (typeof HEBREW_SEARCH_MODES)[number];
-          runSearch();
+          setModeForLanguage(true, radio.value as SearchMode);
         });
       }
     }
@@ -1154,20 +1164,22 @@ export const searchOverlay: Overlay = {
     const termIndices = matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
     if (!termIndices) return null;
 
-    if (meaningsApply()) {
-      // Name the meanings, not the spelling: that is what was searched for.
-      const named = termIndices.map((i) => {
-        const term = active[i];
-        const chosen = term.meanings.filter((m) => term.selected.has(m.keys[0]));
-        return chosen.length > 0 ? chosen.map((m) => m.gloss).join(' / ') : term.text;
-      });
-      return `Matches: ${named.join(', ')}`;
-    }
+    // Each term is named the way that term was searched for. A verse can be
+    // claimed by a word narrowed to one meaning and by an exact spelling at
+    // once, and saying so is the point of the modes being separate.
+    const named = termIndices.map((i) => {
+      const term = active[i];
+      if (!term) return '';
 
-    const quoted = termIndices.map((i) => `"${active[i].text}"`).join(', ');
-    return hebrewSearchMode === 'word' && searchIsHebrew()
-      ? `Matches word: ${quoted}`
-      : `Matches: ${quoted}`;
+      if (meaningsApply(term)) {
+        // Name the meanings, not the spelling: that is what was searched for.
+        const chosen = term.meanings.filter((m) => term.selected.has(m.keys[0]));
+        if (chosen.length > 0) return chosen.map((m) => m.gloss).join(' / ');
+      }
+      return effectiveMode(term) === 'word' ? `word "${term.text}"` : `"${term.text}"`;
+    });
+
+    return `Matches: ${named.filter(Boolean).join(', ')}`;
   },
 
   onUpdate(callback: () => void): void {
@@ -1190,9 +1202,10 @@ export const searchOverlay: Overlay = {
     // Clear callbacks
     updateCallback = null;
     onVerseClickCallback = null;
-    // NOTE: We intentionally DO NOT reset currentQuery, currentTerms, currentResults,
-    // matchingTerms, wholeWordEnabled, hebrewSearchMode, or related state here.
-    // These should persist across overlay switches so the user can return to their search.
+    // NOTE: We intentionally DO NOT reset the terms, currentResults,
+    // matchingTerms or related state here. These should persist across overlay
+    // switches so the user can return to their search — including the mode each
+    // term was being matched by.
   },
 
   urlParams: URL_PARAMS,
@@ -1203,17 +1216,13 @@ export const searchOverlay: Overlay = {
     if (query) {
       params.q = query;
     }
-    if (wholeWordEnabled) {
-      params.ww = '1';
-    }
-    // Root is the default now, so it is substring and word that are worth
-    // saying. A link written before the default changed paints differently,
-    // which is the decision recorded in the design: an absent parameter means
-    // whatever the default currently is.
-    if (query && searchIsHebrew() && hebrewSearchMode !== 'root') {
-      params.hm = hebrewSearchMode;
-    }
-    if (meaningsApply()) {
+    if (query) {
+      // Both are positional over the same list, so they are written together
+      // and a term that has chosen nothing contributes an empty entry rather
+      // than being skipped — skipping it would shift every later term.
+      const modes = encodeModes(activeTerms());
+      if (modes) params.mode = modes;
+
       const meanings = encodeMeanings(activeTerms());
       if (meanings) params.m = meanings;
     }
@@ -1221,22 +1230,19 @@ export const searchOverlay: Overlay = {
   },
 
   applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
-    wholeWordEnabled = params.ww === '1';
-    if (wholeWordCheckbox) {
-      wholeWordCheckbox.checked = wholeWordEnabled;
-    }
-
-    hebrewSearchMode = params.hm ?? 'root';
-    syncHebrewModeRadios();
-
-    // Rebuild the term list from the query, then lay the chosen meanings over
-    // it. Positions are safe here: q and m are read as one snapshot.
+    // Rebuild the term list from the query, then lay the chosen modes and
+    // meanings over it. Positions are safe here: q, mode and m are read as one
+    // snapshot. It is editing, not loading, that needs identity.
     terms = parseSearchTerms(params.q ?? '').reduce(addTerm, [] as SearchTerm[]);
     if (terms.length === 0) terms = addTerm([], '');
+    if (params.mode) {
+      terms = applyModes(terms, params.mode);
+    }
     if (params.m) {
       terms = applyMeanings(terms, params.m);
     }
 
+    syncHebrewModeRadios();
     runSearch();
   },
 

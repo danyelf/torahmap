@@ -218,7 +218,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Use applyUrlParams to switch to word mode with a query
       // (applyUrlParams directly sets hebrewSearchMode and calls doSearch)
       updateCallback.mockClear();
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=w'));
 
       expect(updateCallback).toHaveBeenCalled();
     });
@@ -241,7 +241,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(Array.isArray(substringColor)).toBe(true);
 
       // Switch to word mode via applyUrlParams (directly sets hebrewSearchMode)
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אלה&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אלה&mode=w'));
 
       const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
@@ -350,51 +350,51 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Set mode via applyUrlParams (directly sets hebrewSearchMode)
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=w'));
 
       const params = searchOverlay.getUrlParams?.();
 
       expect(params).toBeDefined();
       expect(params!.q).toBe('אברהם');
-      expect(params!.hm).toBe('word');
+      expect(params!.mode).toBe('w');
     });
 
-    it('getUrlParams leaves out the mode when it is the default', () => {
+    it('writes nothing while no term has chosen', () => {
       searchOverlay.renderControls?.(container);
 
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=root'));
-
-      const params = searchOverlay.getUrlParams?.();
-
-      expect(params).toBeDefined();
-      expect(params!.q).toBe('אברהם');
-      // Root is the default now, so it is substring and word that need saying.
-      expect(params!.hm).toBeUndefined();
-    });
-
-    it('getUrlParams names the mode when it is not the default', () => {
-      searchOverlay.renderControls?.(container);
-
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=substring'));
-
-      expect(searchOverlay.getUrlParams?.().hm).toBe('substring');
-    });
-
-    it('getUrlParams does NOT include mode for substring (default)', () => {
-      searchOverlay.renderControls?.(container);
-
-      // Use applyUrlParams without hm to ensure substring mode (resets from any prior test)
+      // A term on its default writes no entry at all, so an ordinary link is
+      // unchanged. That is what "default" now means: the absence of a choice,
+      // rather than a value that happens to match one.
       applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם'));
 
-      // Substring is default, should not be in URL
       const params = searchOverlay.getUrlParams?.();
 
       expect(params).toBeDefined();
       expect(params!.q).toBe('אברהם');
-      expect(params!.hm).toBeUndefined();
+      expect(params!.mode).toBeUndefined();
     });
 
-    it('getUrlParams does NOT include Hebrew mode for English queries', () => {
+    it('names a mode the reader did choose, even when it matches the default', () => {
+      searchOverlay.renderControls?.(container);
+
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=r'));
+
+      expect(searchOverlay.getUrlParams?.().mode).toBe('r');
+    });
+
+    it('names substring when that is what was chosen', () => {
+      searchOverlay.renderControls?.(container);
+
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=s'));
+
+      expect(searchOverlay.getUrlParams?.().mode).toBe('s');
+    });
+
+    it('writes nothing for a typed English word nobody has chosen a mode for', () => {
+      // Start from a term list nobody has touched. A chosen mode survives an
+      // edit by design, so a term left over from an earlier test would arrive
+      // already carrying one.
+      applyOverlayParams(searchOverlay, new URLSearchParams('q='));
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
@@ -405,13 +405,13 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       expect(params).toBeDefined();
       expect(params!.q).toBe('Abraham');
-      expect(params!.hm).toBeUndefined(); // No Hebrew mode for English
+      expect(params!.mode).toBeUndefined(); // Nothing chosen, so nothing written
     });
 
     it('applyUrlParams restores Hebrew word mode', () => {
       searchOverlay.renderControls?.(container);
 
-      const urlParams = new URLSearchParams('q=אברהם&hm=word');
+      const urlParams = new URLSearchParams('q=אברהם&mode=w');
       applyOverlayParams(searchOverlay, urlParams);
 
       // Check that input has query
@@ -420,7 +420,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Verify mode was set via getUrlParams
       const params = searchOverlay.getUrlParams?.();
-      expect(params!.hm).toBe('word');
+      expect(params!.mode).toBe('w');
 
       // Verify search executed in word mode
       const gen175 = testVerses.find(
@@ -433,7 +433,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
     it('applyUrlParams restores a mode that is not the default', () => {
       searchOverlay.renderControls?.(container);
 
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=w'));
 
       const wordRadio = container.querySelector<HTMLInputElement>(
         'input[name="hebrew-mode"][value="word"]',
@@ -446,19 +446,22 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם'));
 
-      // An absent parameter means whatever the default currently is, so links
-      // written before the default changed now paint as root. That is the
-      // decision recorded in 2026-09-14-search-meaning-filter-design.md.
+      // An absent entry means whatever the default currently is, which for
+      // Hebrew is root.
       const rootRadio = container.querySelector<HTMLInputElement>(
         'input[name="hebrew-mode"][value="root"]',
       );
       expect(rootRadio?.checked).toBe(true);
     });
 
-    it('applyUrlParams ignores an unknown mode', () => {
+    it('applyUrlParams leaves a term on its default for an unknown entry', () => {
       searchOverlay.renderControls?.(container);
 
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=invalid'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=zzz'));
+
+      // The entry is dropped rather than the search, so nothing was chosen and
+      // nothing is written back.
+      expect(searchOverlay.getUrlParams?.().mode).toBeUndefined();
 
       const rootRadio = container.querySelector<HTMLInputElement>(
         'input[name="hebrew-mode"][value="root"]',
@@ -470,17 +473,17 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Set initial state via applyUrlParams
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=w'));
 
       // Get URL params
       const params = searchOverlay.getUrlParams?.();
       expect(params!.q).toBe('אברהם');
-      expect(params!.hm).toBe('word');
+      expect(params!.mode).toBe('w');
 
       // Create new URLSearchParams and apply
       const urlParams = new URLSearchParams();
       urlParams.set('q', params!.q);
-      urlParams.set('hm', params!.hm!);
+      urlParams.set('mode', params!.mode!);
 
       // Clear and re-render
       searchOverlay.destroy?.();
@@ -496,7 +499,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Verify mode persisted via getUrlParams
       const restoredParams = searchOverlay.getUrlParams?.();
-      expect(restoredParams!.hm).toBe('word');
+      expect(restoredParams!.mode).toBe('w');
     });
   });
 
@@ -505,11 +508,11 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       // Set mode via applyUrlParams (directly sets hebrewSearchMode)
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&hm=word'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=w'));
 
       // Verify mode was set
       const params = searchOverlay.getUrlParams?.();
-      expect(params!.hm).toBe('word');
+      expect(params!.mode).toBe('w');
 
       // Re-render controls
       const newContainer = document.createElement('div');
@@ -517,7 +520,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Mode should be preserved via getUrlParams
       const newParams = searchOverlay.getUrlParams?.();
-      expect(newParams!.hm).toBe('word');
+      expect(newParams!.mode).toBe('w');
 
       // Query should also be preserved
       const newInput = newContainer.querySelector('#search-input') as HTMLInputElement;
@@ -688,6 +691,44 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
         'input[name="hebrew-mode"][value="root"]',
       );
       expect(rootRadio?.checked).toBe(true);
+    });
+  });
+
+  // The comparison the map exists for is two words on one substrate, and the
+  // interesting comparisons are often not like-for-like.
+  describe('two terms, two modes', () => {
+    it('carries a different mode for each term', () => {
+      searchOverlay.renderControls?.(container);
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=r,w'));
+
+      const params = searchOverlay.getUrlParams?.();
+      expect(params!.q).toBe('עלה, אור');
+      expect(params!.mode).toBe('r,w');
+    });
+
+    it('leaves one term alone when another term changes mode', () => {
+      searchOverlay.renderControls?.(container);
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=r,w'));
+
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=r,s'));
+
+      // The first term is still root; only the second moved.
+      expect(searchOverlay.getUrlParams?.().mode).toBe('r,s');
+    });
+
+    it('matches a Hebrew term and an English term by their own rules at once', () => {
+      searchOverlay.renderControls?.(container);
+      // Hebrew by root, English as an exact word. Neither setting could reach
+      // the other term even if it wanted to.
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,Abraham&mode=r,w'));
+
+      const params = searchOverlay.getUrlParams?.();
+      expect(params!.mode).toBe('r,w');
+
+      const verse = testVerses.find(
+        (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
+      );
+      expect(searchOverlay.getVerseColor(verse!)).not.toBeNull();
     });
   });
 });
