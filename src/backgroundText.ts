@@ -45,11 +45,11 @@ export interface BackgroundTextSettings {
   snapLines: boolean;
 }
 
-// Danyel's pick after two rounds with the panel (2026-09-16): almost fixed to
-// the glass, very quiet, letters only, a slow dissolve between passages.
+// Danyel's pick after two rounds with the panel (2026-09-16): drifting at a
+// third of the map's speed, very quiet, letters only, a slow dissolve between passages.
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   layer: 'above',
-  parallax: 0.05,
+  parallax: 0.3,
   anchor: 'viewport',
   content: 'fill',
   neighbours: 17,

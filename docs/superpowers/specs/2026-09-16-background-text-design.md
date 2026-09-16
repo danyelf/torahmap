@@ -244,7 +244,7 @@ were opacity 0.15, exclusion blend, letters only, max font 34, hysteresis 17.
 ```json
 {
   "layer": "above",
-  "parallax": 0.05,
+  "parallax": 0.3,
   "anchor": "viewport",
   "content": "fill",
   "neighbours": 17,
@@ -262,7 +262,8 @@ were opacity 0.15, exclusion blend, letters only, max font 34, hysteresis 17.
 }
 ```
 
-What the numbers say: the text is almost fixed to the glass (parallax 0.05),
+What the numbers say: the text drifts at a third of the map's speed (he tried
+0.05 and went back to 0.3),
 very quiet (opacity 0.1 with the exclusion blend), grows to nearly four times
 its zoomed-out size when fully in (12 to 45), and passages dissolve into each
 other slowly (1100ms). Neighbours and width are not used by fill mode and are
