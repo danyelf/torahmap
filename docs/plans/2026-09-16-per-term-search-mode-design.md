@@ -224,22 +224,50 @@ are not being built here — the collapsed line leaves an obvious place to put
 them later. Danyel is closing #92 on the grounds that clicking between modes is
 cheap enough to answer the question directly.
 
-## Assumptions, open questions and surprises
+## What building it turned up
 
-Kept as the work runs, for a cleanup round before the pull request leaves draft.
+### The assumptions held
 
-### Assumptions going in
+- `verseSetsForTerms` needed no signature change. The overlay already called it
+  one term at a time, so it only had to be handed that term's mode. `src/search.ts`
+  is untouched by this work.
+- Importing `isHebrewQuery` into `terms.ts` introduces no cycle: `search.ts`
+  does not import `terms.ts`.
+- The test rewrites were mechanical. 1,752 tests before, 1,771 after.
 
-- `verseSetsForTerms` needs no signature change, because the overlay already
-  calls it one term at a time. To be confirmed at the call site.
-- The 58 test references are mechanical rewrites, not behavioural changes.
-- A term whose text is too short to search keeps its mode; the collapsed line
-  shows the mode with no count, as the row does today.
+### One real bug, caught by the suite
 
-### Open questions
+The first version made the modes on offer part of the signature that decides
+whether a row is rebuilt. That is wrong, and wrong in a way that only shows up
+while typing: the offered modes follow the text's language, and a reader typing
+their way from English into Hebrew flips it mid-word. The row was rebuilt,
+which threw away the box being typed into, along with its caret and its text
+direction. Three existing direction tests failed and named it.
 
-- None blocking. Anything found while building lands here.
+Only the mode control is rebuilt now, never the row. `renderModeControl` holds
+its own signature on `.term-body`, the way `renderMeanings` already does.
 
-### Surprises
+### A consequence worth knowing about
 
-- (none yet)
+A chosen mode survives an edit, which is right — retyping a word should not
+silently reset how it is matched. It also means module state now carries a
+choice between tests that share the overlay, and two tests had to start from a
+cleared term list rather than assuming a fresh default. That is the tests
+catching a real property, not a defect.
+
+### Confirmed in the browser
+
+Driven by hand at 380px against the running app, with no console errors:
+
+- עלה in root mode, narrowed to leafage: 13 verses. Adding אור and setting it
+  to whole word left עלה at 13, still reading `root · leafage`. This is the
+  defect from #115's second comment, and it is gone.
+- A third row holding `light` offered substring and whole word only.
+- Reloading the URL restored all three rows with their modes and narrowing.
+- עלה beside עלה, one narrowed to leafage and one to ascend, painted the map in
+  two colours from one written form — the comparison this change exists for.
+
+### Still open
+
+- Nothing blocking. Propagation and per-mode hit counts remain deliberately out
+  of scope, as recorded above.
