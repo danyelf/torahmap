@@ -47,13 +47,6 @@ verses — which is exactly what happens today for רבשקה, a name the dictio
 does not carry. Step 3 converts a correct fallback into a confident wrong
 answer.
 
-An earlier draft of this document said the fallback shows a marker beside the
-term. Checked in the running app: it does not. A term that resolved to a lexeme
-and a term that fell through to text matching look exactly alike, and only the
-meaning chooser appearing or not hints at the difference. That is worth fixing
-and is filed separately; it does not change the argument here, because a wrong
-answer is worse than a right one that says nothing about itself.
-
 It is also the behaviour already ruled out on design grounds: offering עֶלְיֹון
 for עליו is a path to a neighbouring word that merely shares a spelling prefix.
 
@@ -248,7 +241,7 @@ only casualties are ones already known to be unreliable for word-level work.
 
 **No verse is left with no lexemes at all.**
 
-**עלה gains the Aramaic preposition** — 86 verses on top of 1,028. This is the
+**עלה gains the Aramaic preposition**, the 86 verses measured above. This is the
 collision `indexable()` was written to prevent, and it is now simply allowed,
 because עלה written with a suffix is a word and 8% is not a reason to hide it.
 
@@ -304,9 +297,8 @@ word arrays already follow. Every figure in this document was computed on it.
    the table lookup, the exact-spelling lookup, and the existing honest fallback
    to whole-word matching. `HEBREW_PREFIXES`, `HEBREW_PREFIX_COMBOS` and
    `MIN_COMPLETION_LENGTH` have no other callers and go with them.
-5. **The meaning chooser drops rows with no verses behind them.** That is the
-   six emptied proclitics, which would otherwise read וְ "and" against a count
-   of nothing.
+5. **The meaning chooser drops rows with no verses behind them** — the six
+   emptied proclitics.
 6. **`lexicon.json` gains nothing and loses nothing.** Lexeme ids do not move,
    so the meaning-filter URLs from #111 keep resolving.
 
@@ -315,17 +307,8 @@ word arrays already follow. Every figure in this document was computed on it.
 #127, click a word in a verse to search for it, is built on the hole this rule
 closes. Its `meaningsInVerse()` cannot ask which dictionary word a clicked word
 is, so it guesses: it takes the candidates for the spelling and keeps those that
-occur anywhere in the verse. Its own comment names the fix —
-
-> This is inference, not knowledge. BHSA tags every word occurrence with exactly
-> one lexeme, but the index is keyed by spelling, so the link is lost before it
-> reaches the browser and is reconstructed here. When the index carries per-word
-> lexemes, this body becomes a lookup and every caller stays as it is.
-
-The index has carried per-word lexemes since #126: `words` gives the length of
-each printed word, and the last morpheme of that run is its stem. Genesis 1:1
-divides into its seven printed words and names רֵאשִׁית, ברא, אֱלֹהִים, אֵת,
-שָׁמַיִם, אֵת, אֶרֶץ.
+occur anywhere in the verse. Its own comment says that body becomes a lookup
+once the index carries per-word lexemes — which it has since #126.
 
 #127 also measured this rule's problem from the click side, without naming it:
 
@@ -370,12 +353,17 @@ there and the existing "cannot settle" branch is the right home for them.
 - No bound node carries a pronominal suffix. Zero of 426,590.
 - Removing the gate costs no findable word. 327 forms added, 7 removed, and all
   seven of those are strings that are printed nowhere in the Bible.
-- The seven content-word losses are all already-misaligned verses.
+- The seven content-word losses are 7, not the 19 an earlier draft of this
+  document claimed — that figure contradicted the same document's "seven
+  verses" and its breakdown did not sum to its own total — and all seven are
+  verses the `misaligned` list already names.
 - The written and printed trailers disagree about 23 nodes, so unifying the two
   walks onto the printed one costs 23 nodes and no promise made here.
-- The seven content-word losses are 7, not the 19 an earlier draft of this
-  document claimed; that figure contradicted the same document's "seven verses",
-  and its part-of-speech breakdown did not sum to its own total.
+- The fallback shows no marker beside an unresolved term. An earlier draft of
+  this document said it did; checked in the running app, a term that resolved to
+  a lexeme and a term that fell through to text matching look alike. Filed as
+  #137; it does not change the argument, because a wrong answer is worse than a
+  right one that says nothing about itself.
 
 **Settled on 2026-09-15:**
 

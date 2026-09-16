@@ -161,13 +161,20 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  *
  * This is inference, not knowledge. BHSA tags every word occurrence with
  * exactly one lexeme, but the index is keyed by spelling, so the link is lost
- * before it reaches the browser and is reconstructed here. When the index
- * carries per-word lexemes, this body becomes a lookup and every caller stays
- * as it is.
+ * before it reaches the browser and is reconstructed here. The index does now
+ * carry per-word lexemes — `verse-morphology.json` gives the length of each
+ * printed word, and the last morpheme of that run is its stem — so this body
+ * can become a lookup, and every caller stay as it is. That is #139.
  *
- * An empty result means "cannot say", which happens for inflected function
- * words the index deliberately omits. Callers offer a literal search instead
- * rather than treating it as an error.
+ * Until then the verse narrows rather than decides, and it can leave more than
+ * one reading standing: לו in Genesis 2:18 is לְ "to him", but the verse also
+ * contains לֹא, which shares the spelling in the places the text is corrected
+ * between them, so both come back.
+ *
+ * An empty result means "cannot say", which is now rare — every printed word is
+ * indexed under the lexeme of its stem — but still happens for a spelling the
+ * dictionary does not carry at all, and for the 64 verses in `misaligned`.
+ * Callers offer a literal search instead rather than treating it as an error.
  */
 export function meaningsInVerse(writtenForm: string, verseKey: string): Meaning[] {
   const ids = findLexemesForWord(writtenForm);

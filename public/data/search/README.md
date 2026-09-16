@@ -88,13 +88,11 @@ drop it if you ever rebuild the index and want the file smaller.
 
 ### What counts as a word
 
-BHSA counts in morphemes, not in printed words: the ו of וַיֹּאמֶר and the ב of
-בְּרֵאשִׁית are units of their own, and 121,790 of its 426,590 units are printed
-with nothing after them, running straight into the next. Such a unit is part of
-a word rather than a word, and it is not indexed — it contributes no written
-form and puts no lexeme into its verse. Every printed word is filed under the
-lexeme of its last unit, its stem, so בְּרֵאשִׁית is found under רֵאשִׁית and not
-under the preposition.
+Of those 426,590 units, 121,790 are printed with nothing after them, running
+straight into the next. Such a unit is part of a word rather than a word, and it
+is not indexed — it contributes no written form and puts no lexeme into its
+verse. Every printed word is filed under the lexeme of its last unit, its stem,
+so בְּרֵאשִׁית is found under רֵאשִׁית and not under the preposition.
 
 That is why `verse-lexemes.json` says which dictionary words a verse *uses*
 rather than which morphemes it contains, and why ו "and" and ה "the" match no

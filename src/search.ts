@@ -346,12 +346,8 @@ export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
 }
 
 /**
- * Look a normalized Hebrew string up as a written form first, then as a bare
- * dictionary spelling.
- *
- * Both are exact. A spelling that merely starts with the term is somebody
- * else's word, and this project decided a search box offers the meanings of the
- * word you have and never a path to a neighbouring one.
+ * The written form first, then the bare dictionary spelling. Both are exact: a
+ * spelling that merely starts with the term is somebody else's word.
  */
 function lookupFormOrSpelling(term: string): LexemeId[] | null {
   if (term.length === 0) return null;

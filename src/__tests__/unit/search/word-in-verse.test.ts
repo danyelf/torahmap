@@ -44,11 +44,24 @@ describe('resolving a word against its verse', () => {
     expect(glosses).toContain('ascend');
   });
 
-  it('offers nothing for an inflected function word', () => {
-    // לו "to him" is absent from the index: the generator files a function word
-    // only under its own bare spelling. What is left is the unrelated לוּ "if
-    // only", which this verse does not contain.
-    expect(meaningsInVerse('לו', 'Genesis:2:18')).toEqual([]);
+  it('offers the reading of an inflected function word (לו in Genesis 2:18)', () => {
+    // לו is לְ carrying a pronominal suffix, "to him", and this verse has it:
+    // אֶעֱשֶׂה־לּוֹ עֵזֶר. It used to return nothing at all, because the
+    // generator filed a function word only under its own bare spelling, and the
+    // panel fell back to searching the letters. Now the word resolves.
+    //
+    // לֹא comes back too, and correctly: the index carries לו as a spelling of
+    // לֹא, because the two are interchanged where the text is corrected —
+    // Psalms 100:3 prints (ולא) [ולו] and Isaiah 63:9 prints (לא) [לו] — and
+    // this verse happens to contain לֹא as well, in לֹא־טוֹב. The verse can say
+    // which readings it permits, never which word was clicked. Reading that off
+    // the word's own position is #139.
+    const glosses = meaningsInVerse('לו', 'Genesis:2:18').map((m) => m.gloss);
+
+    expect(glosses).toContain('to');
+    // The verse still narrows: לוּ "if only" is a reading of this spelling that
+    // Genesis 2:18 does not contain, and it is not offered.
+    expect(glosses).not.toContain('if only');
   });
 
   it('never offers a reading the spelling alone does not allow', () => {

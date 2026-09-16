@@ -298,9 +298,7 @@ def main():
 
     unmapped_books = set()
     word_total = 0
-    # Units printed with nothing after them, which are parts of a word rather
-    # than words, and the reason the rule needs only one test: none of them
-    # carries a pronominal suffix, so "bound" never has to be qualified.
+    # Units printed with nothing after them: parts of a word, not words.
     bound_total = 0
     bound_and_suffixed = []
 
@@ -336,9 +334,8 @@ def main():
                     morph_table.append(".".join(combo))
                 verse_morph[key].append([lexeme, morph])
                 word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
-                # Where the text is corrected, the page shows the qere, and the
-                # two readings need not be the same number of words: בגד is
-                # written as one and read as two, בא גד.
+                # Separators printed inside a unit, where a corrected reading
+                # divides into more words than the writing does.
                 word_inner.extend(
                     internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
                 )
