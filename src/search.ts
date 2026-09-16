@@ -1,5 +1,5 @@
-// Full-text search with word-wheeling support for Hebrew and English
-// Hebrew root search resolves written forms to ETCBC BHSA lexemes
+// Full-text search over Hebrew and English.
+// Hebrew root search resolves written forms to ETCBC BHSA lexemes.
 
 import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
@@ -69,11 +69,6 @@ const FINAL_FORM_MAP: Record<string, string> = {
   'ף': 'פ', // pe sofit (U+05E3) → pe (U+05E4)
   'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
 };
-
-// Common Hebrew prefixes that can be stripped when resolving a word to its lexeme
-const HEBREW_PREFIXES = ['ו', 'ה', 'ב', 'ל', 'כ', 'מ', 'ש'];
-// Two-letter prefix combinations
-const HEBREW_PREFIX_COMBOS = ['וב', 'וה', 'ול', 'וכ', 'ומ', 'וש', 'מה', 'שב', 'של', 'בה'];
 
 let searchIndex: IndexEntry[] = [];
 // Fast lookup map: verse key -> index entry (avoids O(n) find() calls)
@@ -319,61 +314,26 @@ function buildSpellingIndex(): void {
 }
 
 /**
- * Find the lexemes a written Hebrew word can be.
+ * Find the lexemes a written Hebrew word can be: the word exactly as printed,
+ * then a bare dictionary spelling (the reader typed the dictionary form).
  *
- * Prefer readings that account for more of what was typed:
- * 1. the word exactly as it appears in the text
- * 2. a bare dictionary spelling (the reader typed a root)
- * 3. the same two lookups again after stripping a prefix, longest first
+ * Do not add prefix stripping or completion to a longer spelling. The index
+ * files every printed word under its stem's lexeme, prefix and all, so בדבר
+ * resolves without anything noticing the ב; and completion answered עליו "upon
+ * him" with עֶלְיֹון "most high" on four shared letters.
  *
- * Exported so the search overlay can tell which terms resolved to a lexeme.
+ * Null is an answer, not a failure: the caller falls back to text matching and
+ * marks the term unresolved. Exported so the overlay can tell which resolved.
  */
 export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
   if (!formToLexemes) return null;
 
   // word-lexemes keys fold final letters to their medial shape, so the query
   // has to be folded the same way.
-  const normalized = normalizeHebrewForSearch(hebrewWord);
-
-  const direct = lookupFormOrSpelling(normalized);
-  if (direct) return direct;
-
-  // Two-letter prefix combinations first, then single letters.
-  for (const prefix of HEBREW_PREFIX_COMBOS) {
-    if (normalized.startsWith(prefix) && normalized.length > prefix.length + 1) {
-      const result = lookupFormOrSpelling(normalized.slice(prefix.length));
-      if (result) return result;
-    }
-  }
-
-  for (const prefix of HEBREW_PREFIXES) {
-    if (normalized.startsWith(prefix) && normalized.length > 2) {
-      const result = lookupFormOrSpelling(normalized.slice(prefix.length));
-      if (result) return result;
-    }
-  }
-
-  return null;
+  return lookupFormOrSpelling(normalizeHebrewForSearch(hebrewWord));
 }
 
-/**
- * Shortest fragment that may be completed to longer dictionary words.
- *
- * The completion below asks whether each dictionary spelling starts with the
- * term, which on an empty string is true of all 6,395 of them — a blank search
- * box resolved to every lexeme there is, covering the whole Tanakh. One letter
- * was barely better at 911 meanings. Completing a fragment is a wordwheel, and
- * a wordwheel needs enough letters to be a hint rather than noise.
- *
- * Exact lookups are not affected, so short words that really are words still
- * resolve: אב is "father", not a fragment of something longer.
- */
-const MIN_COMPLETION_LENGTH = 3;
-
-/**
- * Look a normalized Hebrew string up as a written form first, then as a bare
- * dictionary spelling (exact, then as the start of a longer spelling).
- */
+/** The written form first, then the bare dictionary spelling. Both exact. */
 function lookupFormOrSpelling(term: string): LexemeId[] | null {
   if (term.length === 0) return null;
 
@@ -381,20 +341,8 @@ function lookupFormOrSpelling(term: string): LexemeId[] | null {
     return formToLexemes[term];
   }
 
-  if (spellingToLexemes) {
-    const exact = spellingToLexemes.get(term);
-    if (exact && exact.length > 0) return exact;
-
-    if (term.length >= MIN_COMPLETION_LENGTH) {
-      const prefixMatches: LexemeId[] = [];
-      for (const [spelling, lexemes] of spellingToLexemes) {
-        if (spelling.startsWith(term) && spelling !== term) {
-          prefixMatches.push(...lexemes);
-        }
-      }
-      if (prefixMatches.length > 0) return prefixMatches;
-    }
-  }
+  const exact = spellingToLexemes?.get(term);
+  if (exact && exact.length > 0) return exact;
 
   return null;
 }

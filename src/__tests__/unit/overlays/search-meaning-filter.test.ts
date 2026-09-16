@@ -1,8 +1,8 @@
 // The meaning filter, as the reader meets it.
 //
 // A Hebrew word written without vowels is often several different words. עלה is
-// four of them. The search has always painted all four and labelled the result
-// with one; these tests are about the control that splits them.
+// five of them. The search has always painted all of them and labelled the
+// result with one; these tests are about the control that splits them.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
@@ -11,6 +11,7 @@ import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 import type { VerseTexts } from '../../../verseTexts';
+import { meaningsFor } from '../../../search/dictionary';
 
 registerAllOverlays();
 const searchOverlay = getOverlay('search')!;
@@ -57,19 +58,17 @@ describe('the meaning list', () => {
     const container = render();
     type(container, 'עלה');
 
+    // This test owns the DOM shape; search-dictionary.test.ts owns the list.
+    const expected = meaningsFor('עלה');
+    expect(expected.length).toBeGreaterThan(1);
+
     const rows = [...container.querySelectorAll('.meaning-row')];
-    expect(rows.map((r) => r.querySelector('.meaning-gloss')?.textContent)).toEqual([
-      'ascend',
-      'burnt-offering',
-      'leafage',
-      'pretext',
-    ]);
-    expect(rows.map((r) => r.querySelector('.meaning-count')?.textContent)).toEqual([
-      '818',
-      '260',
-      '13',
-      '2',
-    ]);
+    expect(rows.map((r) => r.querySelector('.meaning-gloss')?.textContent)).toEqual(
+      expected.map((m) => m.gloss),
+    );
+    expect(rows.map((r) => r.querySelector('.meaning-count')?.textContent)).toEqual(
+      expected.map((m) => String(m.verseCount)),
+    );
   });
 
   it('starts with every meaning checked, so nothing is hidden by default', () => {
@@ -84,8 +83,15 @@ describe('the meaning list', () => {
     const container = render();
     type(container, 'עלה');
 
+    const expected = meaningsFor('עלה');
     const tags = [...container.querySelectorAll('.meaning-tag')].map((t) => t.textContent);
-    expect(tags).toEqual(['(v.)', '(n.)', '(n.)', '(aram., n.)']);
+
+    expect(tags).toHaveLength(expected.length);
+    expect(expected.some((m) => m.language === 'arc')).toBe(true);
+    expect(expected.some((m) => m.language === 'heb')).toBe(true);
+    expected.forEach((meaning, i) => {
+      expect(tags[i]!.includes('aram.')).toBe(meaning.language === 'arc');
+    });
   });
 
   it('shows no list at all for a word that means only one thing', () => {
@@ -147,9 +153,12 @@ describe('the URL', () => {
   it('carries the narrowing', () => {
     const container = render();
     type(container, 'עלה');
+    const kept = meaningsFor('עלה')
+      .filter((m) => m.gloss !== 'ascend')
+      .flatMap((m) => m.keys);
     uncheck(container, 'ascend');
 
-    expect(searchOverlay.getUrlParams?.().m).toBe('<LH/@heb|<LH=/@heb|<LH/@arc');
+    expect(searchOverlay.getUrlParams?.().m).toBe(kept.join('|'));
   });
 
   it('restores it', () => {

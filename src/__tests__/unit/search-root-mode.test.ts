@@ -83,10 +83,18 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
       expect(glosses).toContain('laugh');
     });
 
-    it('strips a prefix when the word as typed is not in the text (ובראשית)', () => {
-      const readings = findLexemesForWord('ובראשית');
+    it('resolves a prefixed word straight from the table (בראשית)', () => {
+      // The whole printed word is filed under its stem's lexeme; nothing here
+      // notices the ב.
+      const readings = findLexemesForWord('בראשית');
       expect(readings).not.toBeNull();
-      expect(readings!.map((id) => getLexeme(id)!.gloss)).toContain('beginning');
+      expect(readings!.map((id) => getLexeme(id)!.gloss)).toEqual(['beginning']);
+    });
+
+    it('returns null for a form that is never printed (ובראשית)', () => {
+      // ובראשית appears nowhere in the Tanakh. Stripping the ו would guess at a
+      // word the reader cannot have copied off the page; null is the answer.
+      expect(findLexemesForWord('ובראשית')).toBeNull();
     });
 
     it('accepts a bare dictionary spelling that never stands alone (מלוכה)', () => {
@@ -128,10 +136,13 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
     });
 
     it('does not drag the Hebrew preposition על into a search for עלה', () => {
-      // This is the failure the old concordance numbering forced: על "upon"
-      // occurs some 5,700 times, so folding it into עלה swamped the results.
+      // על "upon" is in 4,487 verses; folding it into עלה swamped the results,
+      // which the old concordance numbering forced. It cannot be written עלה.
+      // The Aramaic preposition can, is a word, and is worth 86 verses —
+      // keeping it out cost far more than the collision did.
       const readings = findLexemesForWord('עלה')!;
-      expect(readings.map((id) => getLexeme(id)!.pos)).not.toContain('prep');
+      const prepositions = readings.map((id) => getLexeme(id)!).filter((l) => l.pos === 'prep');
+      expect(prepositions.map((l) => l.language)).toEqual(['arc']);
       expect(readings.map((id) => getLexeme(id)!.gloss)).toContain('ascend');
 
       const ascend = keys(searchInRootMode('עלה'));

@@ -1,6 +1,9 @@
 node_modules
 dist
 *.local
+# The Python toolchain for the search index generator. Created by the setup in
+# public/data/search/README.md, and about 300MB once text-fabric is in it.
+.venv
 .playwright-mcp/
 .worktrees/
 .agents

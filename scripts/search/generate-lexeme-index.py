@@ -7,11 +7,6 @@ public/data/search/. What each file holds, where BHSA comes from and how to set
 up Text-Fabric are all documented in public/data/search/README.md — read that
 first.
 
-Prerequisites:
-  .venv/bin/pip install text-fabric
-  The BHSA data must be present under ~/text-fabric-data/github/ETCBC/bhsa
-  (Text-Fabric downloads it with: .venv/bin/text-fabric ETCBC/bhsa)
-
 Usage:
   .venv/bin/python scripts/search/generate-lexeme-index.py
 """
@@ -43,8 +38,8 @@ BHSA_LOCATION = os.path.expanduser(
 FEATURES = (
     "otype oslots book chapter verse "
     "g_cons_utf8 g_word_utf8 trailer_utf8 qere_utf8 qere_trailer_utf8 "
-    "lex lex_utf8 voc_lex_utf8 gloss sp language freq_lex root "
-    "vs vt ps nu gn st"
+    "lex lex_utf8 voc_lex_utf8 gloss sp language root "
+    "vs vt ps nu gn st prs"
 )
 
 # BHSA names its books in Latin; the app uses Sefaria's English names.
@@ -135,13 +130,6 @@ MORPH_FIELDS = ["vs", "vt", "ps", "nu", "gn", "st"]
 # Column order of the rows in lexicon.json.
 LEXEME_FIELDS = ["id", "form", "gloss", "pos", "lang", "root"]
 
-# Function words make poor "related word" suggestions, so lexemes with these
-# parts of speech are left out of the related-word grouping.
-FUNCTION_WORD_POS = {
-    "art", "conj", "prep", "nega", "inrg", "intj",
-    "prde", "prin", "prps", "advb",
-}
-
 
 def normalize(text):
     """Fold Hebrew text to the shape the search box works in.
@@ -171,8 +159,13 @@ def consonants(text):
     )
 
 
-def is_token_break(trailer):
-    """True when the trailer after a word ends the whitespace-delimited token."""
+def ends_printed_word(trailer):
+    """True when something is printed after this morpheme, so it ends a word.
+
+    A morpheme with an empty trailer runs into the next one: the two are
+    printed as a single word, and the first of them is part of a word rather
+    than a word.
+    """
     return any(ch.isspace() or ch in "־׃" for ch in trailer or "")
 
 
@@ -196,7 +189,38 @@ def is_maqaf_break(trailer):
     return "־" in (trailer or "")
 
 
-def close_word(word_lengths, maqaf_joins, morphemes, inner, trailer):
+def printed_trailer(F, node):
+    """What is printed after a morpheme, as the reader sees it.
+
+    A corrected word carries a second trailer, for the reading rather than the
+    writing, and the two can differ: בגד is written as one word and read as
+    two, בא גד. What is printed is what says where a word ends.
+    """
+    if F.qere_utf8.v(node):
+        return F.qere_trailer_utf8.v(node)
+    return F.trailer_utf8.v(node)
+
+
+def printed_words(F, L, verse_node):
+    """Group a verse's morphemes into the words the page prints.
+
+    Yields (morphemes, trailer): the run of morphemes printed with nothing
+    between them, and what is printed after the last of them.
+    """
+    run = []
+    for node in L.d(verse_node, "word"):
+        run.append(node)
+        trailer = printed_trailer(F, node)
+        if ends_printed_word(trailer):
+            yield run, trailer
+            run = []
+    if run:
+        # The verse ran out before a separator did. The last trailer holds no
+        # separator, or the loop would have yielded already.
+        yield run, ""
+
+
+def close_word(word_lengths, maqaf_joins, morpheme_count, inner, trailer):
     """Record the printed word just finished, and any it was printed with.
 
     Nearly always this adds one word carrying all the morphemes read since the
@@ -204,7 +228,7 @@ def close_word(word_lengths, maqaf_joins, morphemes, inner, trailer):
     halves follow it carrying no morphemes of their own -- a length of 0 means
     "the same dictionary word as the one before, printed separately".
     """
-    word_lengths.append(morphemes)
+    word_lengths.append(morpheme_count)
     for separator in inner:
         if separator == "־":
             maqaf_joins.append(len(word_lengths) - 1)
@@ -250,23 +274,10 @@ def main():
     print(f"  {len(lexemes)} lexemes "
           f"({sum(1 for x in lexemes if x[4] == 'arc')} Aramaic)")
 
-    # Function words are indexed only under their own spelling. A reader typing
-    # a word into root search wants the word, and a preposition carrying a
-    # pronominal suffix -- Aramaic על + ה, written עלה, "upon him" -- would
-    # otherwise attach itself to a search for the verb עלה "ascend" and drag in
-    # every one of the 5,700 places the preposition occurs.
-    function_word_spelling = [
-        consonants(row[1]) if row[3] in FUNCTION_WORD_POS else None
-        for row in lexemes
-    ]
-
-    def indexable(written, lexeme):
-        expected = function_word_spelling[lexeme]
-        return expected is None or written == expected
-
     # ---- walk the text --------------------------------------------------
-    # form_counts[(written form, lexeme)] -> how often that reading occurs, so
-    # that ambiguous forms can list their likeliest lexeme first.
+    # form_counts[(written form, lexeme)] -> how many printed words with that
+    # spelling are read as that word, so that ambiguous forms can list their
+    # likeliest lexeme first. One per occurrence, whatever the word's shape.
     form_counts = collections.Counter()
     verse_lexemes = collections.defaultdict(set)
     verse_morph = collections.defaultdict(list)
@@ -278,7 +289,9 @@ def main():
     morph_table = []
 
     unmapped_books = set()
-    word_total = 0
+    morpheme_total = 0
+    bound_total = 0
+    bound_and_suffixed = []
 
     for verse_node in F.otype.s("verse"):
         bhsa_book, chapter, verse = T.sectionFromNode(verse_node)
@@ -291,92 +304,57 @@ def main():
         )
         key = f"{book}:{chapter}:{verse}"
 
-        token_forms = []       # written forms making up the current token
-        token_last_lexeme = None
-        morphemes_in_word = 0  # ETCBC units taken by the word being read
-        word_inner = []        # separators printed inside those units
         word_lengths = []
         maqaf_joins = []
 
-        for word_node in L.d(verse_node, "word"):
-            word_total += 1
-            lexeme = lex_index[L.u(word_node, "lex")[0]]
+        for morphemes, trailer in printed_words(F, L, verse_node):
+            morpheme_total += len(morphemes)
+
+            word_forms = []   # the written form of each, in order
+            word_inner = []   # separators printed inside them
+            for node in morphemes:
+                morpheme_lexeme = lex_index[L.u(node, "lex")[0]]
+                combo = tuple(
+                    "" if (v := getattr(F, field).v(node)) in (None, "NA", "n/a")
+                    else v
+                    for field in MORPH_FIELDS
+                )
+                morph = morph_ids.get(combo)
+                if morph is None:
+                    morph = morph_ids[combo] = len(morph_table)
+                    morph_table.append(".".join(combo))
+                verse_morph[key].append([morpheme_lexeme, morph])
+                word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
+                # Separators printed inside a morpheme, where a corrected reading
+                # divides into more words than the writing does.
+                word_inner.extend(
+                    internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
+                )
+
+            *bound, stem = morphemes
+
+            # The proclitics -- ו, ה, ל, ב, מן, כ. Nobody means to ask which
+            # verses contain ל, so they are counted and then dropped.
+            for node in bound:
+                bound_total += 1
+                if F.prs.v(node) not in (None, "absent", "n/a", "NA"):
+                    bound_and_suffixed.append(f"{key} {F.g_word_utf8.v(node)}")
+
+            lexeme = lex_index[L.u(stem, "lex")[0]]
             verse_lexemes[key].add(lexeme)
 
-            combo = tuple(
-                "" if (v := getattr(F, field).v(word_node)) in (None, "NA", "n/a")
-                else v
-                for field in MORPH_FIELDS
-            )
-            morph = morph_ids.get(combo)
-            if morph is None:
-                morph = morph_ids[combo] = len(morph_table)
-                morph_table.append(".".join(combo))
-            verse_morph[key].append([lexeme, morph])
-            morphemes_in_word += 1
-            # Where the text is corrected, the page shows the qere, and the two
-            # readings need not be the same number of words: בגד is written as
-            # one and read as two, בא גד.
-            word_inner.extend(
-                internal_separators(
-                    F.qere_utf8.v(word_node) or F.g_word_utf8.v(word_node)
-                )
-            )
+            # A word of one morpheme is its own stem, so two of these three are the
+            # same string. Counting it twice would weigh a word printed bare
+            # against the same word printed with a prefix, and since nouns take
+            # the article and verbs mostly do not, that ranks verbs above nouns.
+            written = word_forms[-1]
+            qere = normalize(F.qere_utf8.v(stem) or "")
+            whole_word = "".join(word_forms)
+            for form in dict.fromkeys([written, qere, whole_word]):
+                if len(form) >= 2:
+                    form_counts[(form, lexeme)] += 1
 
-            written = normalize(F.g_cons_utf8.v(word_node) or "")
-            if len(written) >= 2 and indexable(written, lexeme):
-                form_counts[(written, lexeme)] += 1
-            qere = normalize(F.qere_utf8.v(word_node) or "")
-            if len(qere) >= 2 and qere != written and indexable(qere, lexeme):
-                form_counts[(qere, lexeme)] += 1
-
-            token_forms.append(written)
-            token_last_lexeme = lexeme
-
-            trailer = F.trailer_utf8.v(word_node)
-            # A corrected word carries a second trailer, for the reading rather
-            # than the writing, and the two can differ: בגד is written as one
-            # word and read as two, בא גד. The search index follows the writing,
-            # as it always has; the word boundaries follow what is printed.
-            printed_trailer = (
-                F.qere_trailer_utf8.v(word_node)
-                if F.qere_utf8.v(word_node)
-                else trailer
-            )
-
-            if is_token_break(trailer):
-                # The whole token, prefixes and all, is filed under the lexeme
-                # of its final segment -- the stem. BHSA splits proclitics such
-                # as the ב of בראשית into their own words, so without this a
-                # reader who types the word as it is printed would find nothing.
-                token = "".join(token_forms)
-                if (
-                    len(token) >= 2
-                    and token_last_lexeme is not None
-                    and indexable(token, token_last_lexeme)
-                ):
-                    form_counts[(token, token_last_lexeme)] += 1
-                token_forms = []
-                token_last_lexeme = None
-
-
-            # The same break, recorded rather than discarded. This is what
-            # lets a reader of the file say which printed word a lexeme is,
-            # instead of only which verse it is in.
-            if is_token_break(printed_trailer):
-                close_word(
-                    word_lengths, maqaf_joins, morphemes_in_word, word_inner,
-                    printed_trailer,
-                )
-                morphemes_in_word = 0
-                word_inner = []
-
-        if token_forms and token_last_lexeme is not None:
-            token = "".join(token_forms)
-            if len(token) >= 2 and indexable(token, token_last_lexeme):
-                form_counts[(token, token_last_lexeme)] += 1
-        if morphemes_in_word:
-            close_word(word_lengths, maqaf_joins, morphemes_in_word, word_inner, "")
+            close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
@@ -388,6 +366,18 @@ def main():
     if unmapped_books:
         sys.exit(f"Unmapped BHSA book names: {sorted(unmapped_books)}")
 
+    # The rule is a single test -- is anything printed after this morpheme? --
+    # and it holds only while no bound morpheme carries a suffix. That
+    # holds in BHSA 2021 for all 426,590 morphemes. If a later release breaks
+    # the rule needs a second clause and this should say so rather than quietly
+    # drop suffixed words from the index.
+    if bound_and_suffixed:
+        sys.exit(
+            f"{len(bound_and_suffixed)} bound morphemes carry a pronominal suffix, "
+            "which the word rule assumes cannot happen:\n  "
+            + "\n  ".join(bound_and_suffixed[:10])
+        )
+
     word_lexemes = collections.defaultdict(list)
     for (written, lexeme), count in form_counts.items():
         word_lexemes[written].append((count, lexeme))
@@ -396,7 +386,9 @@ def main():
         for written, pairs in word_lexemes.items()
     }
 
-    print(f"  {word_total} word occurrences across {len(verse_lexemes)} verses")
+    print(f"  {morpheme_total} morphemes across {len(verse_lexemes)} verses")
+    print(f"  {bound_total} of them bound to the next "
+          f"({100 * bound_total / morpheme_total:.1f}%), and so not words")
     print(f"  {len(word_lexemes)} distinct written forms")
     print(f"  {len(morph_table)} distinct grammatical parsings")
 
@@ -506,7 +498,6 @@ def main():
         {
             "source": f"ETCBC BHSA {BHSA_VERSION}",
             "fields": LEXEME_FIELDS,
-            "functionWordPos": sorted(FUNCTION_WORD_POS),
             "lexemes": lexemes,
         },
     )
@@ -523,24 +514,13 @@ def main():
             "verseFields": ["morphemes", "words", "joined"],
             "misaligned": misaligned,
             "note": (
-                "verses[key] is [morphemes, words, joined]. morphemes lists "
-                "every ETCBC unit of the verse in text order as [lexeme index, "
-                "parsing index]. Those units are morphemes rather than printed "
-                "words: the \u05d1 of \u05d1\u05e8\u05d0\u05e9\u05d9\u05ea is "
-                "a unit of its own. words gives the number of units making up "
-                "each printed word, in the same order, and so sums to the "
-                "length of morphemes. A 0 means the printed word is a further "
-                "part of the dictionary word before it, as the second half of "
-                "\u05ea\u05d5\u05d1\u05dc \u05e7\u05d9\u05df is. A printed "
-                "word ends at a space or at a "
-                "maqaf; joined lists the positions in words that a maqaf "
-                "follows, so that "
-                "\u05db\u05dc\u05be\u05d4\u05d0\u05e8\u05e5 can be drawn "
-                "as the single word it is printed as while staying two words "
-                "here. misaligned names the verses whose words do not line up "
-                "with the Hebrew in all-texts.json, because the two sources "
-                "divide a compound name differently or the text is absent; "
-                "positions in those verses must not be used to label a word."
+                "verses[key] is [morphemes, words, joined]: every ETCBC morpheme in "
+                "text order as [lexeme index, parsing index], the number of "
+                "morphemes in each printed word, and the word positions a maqaf "
+                "follows. Morphemes are not printed words. misaligned "
+                "names verses whose words do not line up with all-texts.json; "
+                "positions in those must not be used to label a word. "
+                "See README.md in this folder."
             ),
             "verses": {
                 key: [verse_morph[key], verse_words[key], verse_joins[key]]

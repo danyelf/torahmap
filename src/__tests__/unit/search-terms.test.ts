@@ -32,18 +32,14 @@ describe('adding a term', () => {
   it('resolves its meanings and starts with all of them selected', () => {
     const [aleh] = addTerm([], 'עלה');
 
-    expect(aleh.meanings.map((m) => m.gloss)).toEqual([
-      'ascend',
-      'burnt-offering',
-      'leafage',
-      'pretext',
-    ]);
-    expect(aleh.selected.size).toBe(4);
+    // Which meanings they are is search-dictionary.test.ts's business.
+    expect(aleh.meanings.length).toBeGreaterThan(1);
+    expect(aleh.selected.size).toBe(aleh.meanings.length);
   });
 
   it('paints the union until the reader narrows it', () => {
     const [aleh] = addTerm([], 'עלה');
-    expect(selectedKeys(aleh)).toHaveLength(4);
+    expect(selectedKeys(aleh)).toHaveLength(aleh.meanings.flatMap((m) => m.keys).length);
   });
 
   it('gives each term a colour no other term is using', () => {
@@ -112,7 +108,7 @@ describe('choosing meanings', () => {
     terms = toggleMeaning(terms, terms[0].id, leafage.keys[0]);
 
     expect(terms[0].selected.has(leafage.keys[0])).toBe(false);
-    expect(terms[0].selected.size).toBe(3);
+    expect(terms[0].selected.size).toBe(4);
   });
 
   it('selects every lexeme behind a merged row, not just the first', () => {
@@ -145,11 +141,12 @@ describe('carrying a narrowed search in a URL', () => {
   it('writes only the narrowed term, leaving the other term empty', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'מלך');
     const ascend = terms[0].meanings.find((m) => m.gloss === 'ascend')!;
+    const kept = terms[0].meanings.filter((m) => m !== ascend).flatMap((m) => m.keys);
     terms = toggleMeaning(terms, terms[0].id, ascend.keys[0]);
 
     // Second term untouched, so its slot is empty and the comma still holds
     // its position.
-    expect(encodeMeanings(terms)).toBe('<LH/@heb|<LH=/@heb|<LH/@arc,');
+    expect(encodeMeanings(terms)).toBe(`${kept.join('|')},`);
   });
 
   it('names every lexeme behind a merged row', () => {
@@ -184,7 +181,7 @@ describe('carrying a narrowed search in a URL', () => {
   it('falls back to every meaning when a key no longer resolves', () => {
     const restored = applyMeanings(addTerm([], 'עלה'), 'GONE@heb');
 
-    expect(restored[0].selected.size).toBe(4);
+    expect(restored[0].selected.size).toBe(5);
   });
 });
 
@@ -287,7 +284,7 @@ describe('getting back to all of them', () => {
 
     terms = allMeanings(terms, terms[0].id);
 
-    expect(terms[0].selected.size).toBe(4);
+    expect(terms[0].selected.size).toBe(5);
   });
 
   it('says whether a term is narrowed, so the control can appear', () => {

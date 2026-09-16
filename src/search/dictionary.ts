@@ -70,10 +70,8 @@ function lexemeForKey(key: string): LexemeId | null {
 }
 
 /**
- * Merge a list of lexeme ids into the rows a reader sees.
- *
- * This is the body `meaningsFor` used to hold, unchanged, taking the ids as its
- * input so that both questions about a word share one answer shape.
+ * Merge a list of lexeme ids into the rows a reader sees, so that both
+ * questions about a word share one answer shape.
  */
 function rowsFor(ids: LexemeId[]): Meaning[] {
   // Merge as we go, so a merged row keeps the position of its likeliest member
@@ -85,14 +83,15 @@ function rowsFor(ids: LexemeId[]): Meaning[] {
     const key = keyOf(id);
     if (!lexeme || key === null) continue;
 
-    const row = rows.get(renderedAs(lexeme));
+    const rendered = renderedAs(lexeme);
+    const row = rows.get(rendered);
     if (row) {
       row.meaning.keys.push(key);
       row.group.push(id);
       continue;
     }
 
-    rows.set(renderedAs(lexeme), {
+    rows.set(rendered, {
       meaning: {
         keys: [key],
         form: lexeme.form,
@@ -108,10 +107,14 @@ function rowsFor(ids: LexemeId[]): Meaning[] {
     });
   }
 
-  return [...rows.values()].map(({ meaning, group }) => ({
-    ...meaning,
-    verseCount: group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
-  }));
+  // Drops six rows a reader could only read past: the Hebrew ו, ה, ש and the
+  // Aramaic כ, ו, ה, proclitics the word rule leaves in no verse.
+  return [...rows.values()]
+    .map(({ meaning, group }) => ({
+      ...meaning,
+      verseCount: group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
+    }))
+    .filter((meaning) => meaning.verseCount > 0);
 }
 
 /**
@@ -152,15 +155,17 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * reading of the word in front of the reader is one the verse contains, and
  * the spelling's other candidates usually are not.
  *
- * This is inference, not knowledge. BHSA tags every word occurrence with
- * exactly one lexeme, but the index is keyed by spelling, so the link is lost
- * before it reaches the browser and is reconstructed here. When the index
- * carries per-word lexemes, this body becomes a lookup and every caller stays
- * as it is.
+ * This is inference, not knowledge. BHSA tags every occurrence with exactly one
+ * lexeme, but the index is keyed by spelling, so the link is lost before it
+ * reaches the browser. `verse-morphology.json` carries it — the length of each
+ * printed word, whose last morpheme is its stem — so this body could become a
+ * lookup off the word's own position. Until then the verse narrows rather than
+ * decides, and can leave two readings standing: see `word-in-verse.test.ts`,
+ * לו in Genesis 2:18.
  *
- * An empty result means "cannot say", which happens for inflected function
- * words the index deliberately omits. Callers offer a literal search instead
- * rather than treating it as an error.
+ * An empty result means "cannot say" — now rare, but real for a spelling the
+ * dictionary does not carry and for the 64 verses in `misaligned`. Callers
+ * offer a literal search rather than treating it as an error.
  */
 export function meaningsInVerse(writtenForm: string, verseKey: string): Meaning[] {
   const ids = findLexemesForWord(writtenForm);

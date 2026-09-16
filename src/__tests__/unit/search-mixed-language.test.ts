@@ -15,11 +15,13 @@ beforeAll(async () => {
   buildSearchIndex(ALL_TEXTS_FIXTURE);
 });
 
-describe('a term too short to be a word', () => {
+// Both lookups are exact, so nothing here turns on how long a term is. A
+// fragment resolves to nothing because no word is spelled that way, and a short
+// word resolves because one is.
+describe('a fragment is not a word', () => {
   it('resolves a blank term to nothing at all', () => {
-    // It used to resolve to every lexeme in the dictionary, because the
-    // fallback prefix scan asks whether each spelling startsWith the term —
-    // and every string starts with "".
+    // It used to resolve to every lexeme there is: the lookup asked whether
+    // each dictionary spelling startsWith the term, and every string does.
     expect(meaningsFor('')).toEqual([]);
     expect(versesFor(meaningsFor('').flatMap((m) => m.keys)).size).toBe(0);
   });
@@ -30,8 +32,6 @@ describe('a term too short to be a word', () => {
   });
 
   it('still resolves a short word that really is a word', () => {
-    // Only the guessing is gated, not the dictionary. אל is a written form in
-    // its own right with ten real readings, and two letters is enough for it.
     const glosses = meaningsFor('אל').map((m) => m.gloss);
     expect(glosses).toContain('god');
     expect(glosses).toContain('to');
@@ -42,12 +42,8 @@ describe('a term too short to be a word', () => {
   });
 
   it('leaves an ordinary three-letter word alone', () => {
-    expect(meaningsFor('עלה').map((m) => m.gloss)).toEqual([
-      'ascend',
-      'burnt-offering',
-      'leafage',
-      'pretext',
-    ]);
+    // search-dictionary.test.ts owns the list of readings.
+    expect(meaningsFor('עלה').map((m) => m.gloss)).toContain('ascend');
   });
 });
 
