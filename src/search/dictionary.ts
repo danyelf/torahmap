@@ -85,14 +85,15 @@ function rowsFor(ids: LexemeId[]): Meaning[] {
     const key = keyOf(id);
     if (!lexeme || key === null) continue;
 
-    const row = rows.get(renderedAs(lexeme));
+    const rendered = renderedAs(lexeme);
+    const row = rows.get(rendered);
     if (row) {
       row.meaning.keys.push(key);
       row.group.push(id);
       continue;
     }
 
-    rows.set(renderedAs(lexeme), {
+    rows.set(rendered, {
       meaning: {
         keys: [key],
         form: lexeme.form,
@@ -108,19 +109,16 @@ function rowsFor(ids: LexemeId[]): Meaning[] {
     });
   }
 
-  return (
-    [...rows.values()]
-      .map(({ meaning, group }) => ({
-        ...meaning,
-        verseCount:
-          group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
-      }))
-      // A meaning with no verses behind it cannot be chosen and cannot mislead,
-      // but it is still a row to read past. Six lexemes are in that state: the
-      // proclitics ו, ה, ש and the Aramaic כ and ה, which are printed stuck to
-      // the next word and so are never words in their own right.
-      .filter((meaning) => meaning.verseCount > 0)
-  );
+  // A meaning with no verses behind it cannot be chosen and cannot mislead, but
+  // it is still a row to read past. Six lexemes are in that state: the Hebrew
+  // ו, ה and ש, and the Aramaic כ, ו and ה. All six are proclitics, printed
+  // stuck to the word after them, so they are never words in their own right.
+  return [...rows.values()]
+    .map(({ meaning, group }) => ({
+      ...meaning,
+      verseCount: group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
+    }))
+    .filter((meaning) => meaning.verseCount > 0);
 }
 
 /**

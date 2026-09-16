@@ -43,7 +43,7 @@ BHSA_LOCATION = os.path.expanduser(
 FEATURES = (
     "otype oslots book chapter verse "
     "g_cons_utf8 g_word_utf8 trailer_utf8 qere_utf8 qere_trailer_utf8 "
-    "lex lex_utf8 voc_lex_utf8 gloss sp language freq_lex root "
+    "lex lex_utf8 voc_lex_utf8 gloss sp language root "
     "vs vt ps nu gn st prs"
 )
 
@@ -244,8 +244,9 @@ def main():
           f"({sum(1 for x in lexemes if x[4] == 'arc')} Aramaic)")
 
     # ---- walk the text --------------------------------------------------
-    # form_counts[(written form, lexeme)] -> how often that reading occurs, so
-    # that ambiguous forms can list their likeliest lexeme first.
+    # form_counts[(written form, lexeme)] -> how many printed words with that
+    # spelling are read as that word, so that ambiguous forms can list their
+    # likeliest lexeme first. One per occurrence, whatever the word's shape.
     form_counts = collections.Counter()
     verse_lexemes = collections.defaultdict(set)
     verse_morph = collections.defaultdict(list)
@@ -339,13 +340,18 @@ def main():
             # they copy בראשית off the page, the second is what they type when
             # they mean ראשית.
             verse_lexemes[key].add(lexeme)
-            if len(written) >= 2:
-                form_counts[(written, lexeme)] += 1
-            if len(qere) >= 2 and qere != written:
-                form_counts[(qere, lexeme)] += 1
+            # Three spellings lead to this word, and they are not always three
+            # strings: a word of one unit is its own stem, so the stem's letters
+            # and the whole printed word are written the same. Count each
+            # distinct spelling once. Filing the same one twice would count a
+            # word printed bare as two occurrences and the same word printed
+            # with a prefix as one, which is not what the number claims to be
+            # and, since nouns take the article and verbs mostly do not, would
+            # quietly rank verbs above nouns.
             token = "".join(token_forms)
-            if len(token) >= 2:
-                form_counts[(token, lexeme)] += 1
+            for form in dict.fromkeys([written, qere, token]):
+                if len(form) >= 2:
+                    form_counts[(form, lexeme)] += 1
             token_forms = []
 
             # The same break, recorded rather than discarded. This is what lets

@@ -11,6 +11,7 @@ import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 import type { VerseTexts } from '../../../verseTexts';
+import { meaningsFor } from '../../../search/dictionary';
 
 registerAllOverlays();
 const searchOverlay = getOverlay('search')!;
@@ -57,21 +58,20 @@ describe('the meaning list', () => {
     const container = render();
     type(container, 'עלה');
 
+    // What this test owns is that the DOM shows one row per meaning, in order,
+    // each with its own count. Which meanings עלה has, and what those counts
+    // are, belong to search-dictionary.test.ts — restating them here meant
+    // every change to the index had to be typed out in four files.
+    const expected = meaningsFor('עלה');
+    expect(expected.length).toBeGreaterThan(1);
+
     const rows = [...container.querySelectorAll('.meaning-row')];
-    expect(rows.map((r) => r.querySelector('.meaning-gloss')?.textContent)).toEqual([
-      'ascend',
-      'burnt-offering',
-      'leafage',
-      'pretext',
-      'upon',
-    ]);
-    expect(rows.map((r) => r.querySelector('.meaning-count')?.textContent)).toEqual([
-      '818',
-      '260',
-      '13',
-      '2',
-      '86',
-    ]);
+    expect(rows.map((r) => r.querySelector('.meaning-gloss')?.textContent)).toEqual(
+      expected.map((m) => m.gloss),
+    );
+    expect(rows.map((r) => r.querySelector('.meaning-count')?.textContent)).toEqual(
+      expected.map((m) => String(m.verseCount)),
+    );
   });
 
   it('starts with every meaning checked, so nothing is hidden by default', () => {
@@ -86,8 +86,17 @@ describe('the meaning list', () => {
     const container = render();
     type(container, 'עלה');
 
+    // The rule, rather than a transcript of today's five rows: a row is marked
+    // "aram." exactly when its meaning is Aramaic.
+    const expected = meaningsFor('עלה');
     const tags = [...container.querySelectorAll('.meaning-tag')].map((t) => t.textContent);
-    expect(tags).toEqual(['(v.)', '(n.)', '(n.)', '(aram., n.)', '(aram., prep.)']);
+
+    expect(tags).toHaveLength(expected.length);
+    expect(expected.some((m) => m.language === 'arc')).toBe(true);
+    expect(expected.some((m) => m.language === 'heb')).toBe(true);
+    expected.forEach((meaning, i) => {
+      expect(tags[i]!.includes('aram.')).toBe(meaning.language === 'arc');
+    });
   });
 
   it('shows no list at all for a word that means only one thing', () => {
@@ -149,9 +158,14 @@ describe('the URL', () => {
   it('carries the narrowing', () => {
     const container = render();
     type(container, 'עלה');
+    // The keys that should survive, taken from the dictionary rather than
+    // restated, so the index's ordering is asserted in one file only.
+    const kept = meaningsFor('עלה')
+      .filter((m) => m.gloss !== 'ascend')
+      .flatMap((m) => m.keys);
     uncheck(container, 'ascend');
 
-    expect(searchOverlay.getUrlParams?.().m).toBe('<LH/@heb|<LH=/@heb|<LH/@arc|<L@arc');
+    expect(searchOverlay.getUrlParams?.().m).toBe(kept.join('|'));
   });
 
   it('restores it', () => {

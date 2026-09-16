@@ -15,18 +15,22 @@ beforeAll(async () => {
 });
 
 describe('meaningsFor', () => {
-  it('offers the five dictionary words that עלה can be', () => {
-    // The fifth is the Aramaic preposition על carrying a pronominal suffix,
-    // "upon him", which is written exactly this way. The generator used to
-    // withhold it, to keep 86 Aramaic verses out of a search for the verb; the
+  // This is the one place the exact list and the exact counts for עלה live.
+  // Three other test files used to restate them, and every change to the index
+  // meant editing four files to say the same thing once. They now assert the
+  // property each of them is actually about.
+  it('offers the five dictionary words that עלה can be, commonest first', () => {
+    // "upon" is the Aramaic preposition על carrying a pronominal suffix, "upon
+    // him", which is written exactly this way. The generator used to withhold
+    // it, to keep 86 Aramaic verses out of a search for the verb; the
     // withholding cost עליו, בו and every other suffixed preposition.
     const meanings = meaningsFor('עלה');
     expect(meanings.map((m) => m.gloss)).toEqual([
       'ascend',
       'burnt-offering',
       'leafage',
-      'pretext',
       'upon',
+      'pretext',
     ]);
   });
 
@@ -43,7 +47,11 @@ describe('meaningsFor', () => {
 
   it('counts the verses each meaning occurs in', () => {
     const meanings = meaningsFor('עלה');
-    expect(meanings.map((m) => m.verseCount)).toEqual([818, 260, 13, 2, 86]);
+    // The order is by how often this spelling is read as each word, which is
+    // not the same as how many verses each word occurs in — "upon" leads
+    // "pretext" on both here, but a rarer reading of a commoner word can still
+    // sort below a commoner reading of a rarer one.
+    expect(meanings.map((m) => m.verseCount)).toEqual([818, 260, 13, 86, 2]);
   });
 
   it('absorbs prefixes, so the first word of Genesis is unambiguous', () => {

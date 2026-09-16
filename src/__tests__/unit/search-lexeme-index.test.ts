@@ -215,15 +215,15 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       expect(to).toBeLessThan(5000);
       expect(forms['לו'].map(gloss)).toContain('to');
     });
-
-    it('leaves no verse without any dictionary word', () => {
-      const empty = Object.entries(verses).filter(([, ids]) => ids.length === 0);
-      expect(empty).toEqual([]);
-    });
   });
 
   describe('verse keys', () => {
-    it('covers every verse of the Tanakh the app displays', () => {
+    it('gives every verse the app displays at least one dictionary word', () => {
+      // Both halves have to be asserted here, against the list of verses that
+      // should exist. Asking the file's own keys whether any holds an empty
+      // list cannot fail: the generator only creates a key when it adds a
+      // lexeme, so a verse that lost all its words goes missing rather than
+      // going empty.
       const structure = JSON.parse(
         fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8'),
       ) as { books: Array<{ name: string; chapters: number[] }> };
@@ -233,7 +233,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
         book.chapters.forEach((verseCount, index) => {
           for (let verse = 1; verse <= verseCount; verse++) {
             const key = `${book.name}:${index + 1}:${verse}`;
-            if (!verses[key]) missing.push(key);
+            if (!verses[key]?.length) missing.push(key);
           }
         });
       }
@@ -412,6 +412,36 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     }
     expect(total).toBeGreaterThan(300000);
     expect(missing / total).toBeLessThan(0.005);
+  });
+
+  it('encodes the word rule the same way verse-lexemes.json does', () => {
+    // Two shipped files carry the same rule. verse-lexemes.json holds the
+    // lexeme of the last morpheme of each printed word — the stem — and is the
+    // one the app loads. This file holds every morpheme plus the length of
+    // each printed word, so the same set is recoverable from it.
+    //
+    // Nothing else checks that the two agree, and "two structures with two
+    // ideas of where a word ends" is the exact bug this rule exists to remove.
+    // Deriving one from the other is what stops them drifting apart in
+    // silence.
+    const disagree: string[] = [];
+    for (const [key, [morphemes, words]] of entries) {
+      const stems = new Set<number>();
+      let at = 0;
+      for (const length of words) {
+        // A length of 0 is a printed word that is a further part of the
+        // dictionary word before it — the second half of תובל קין — so it
+        // carries no morphemes and contributes no stem.
+        if (length === 0) continue;
+        stems.add(morphemes[at + length - 1][0]);
+        at += length;
+      }
+      const stored = new Set(verses[key] ?? []);
+      if (stems.size !== stored.size || [...stems].some((id) => !stored.has(id))) {
+        disagree.push(key);
+      }
+    }
+    expect(disagree).toEqual([]);
   });
 
   it('owns up to the handful of verses that do not line up', () => {

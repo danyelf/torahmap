@@ -279,6 +279,11 @@ the entire price of having one definition instead of two:
 | lexemes emptied | 5 | 6 |
 | `verse-lexemes` entries | 268,172 | 268,183 |
 
+Those last two are counted on BHSA's own verse numbering, which is what a walk
+sees before the remapping that folds Exodus 20, Deuteronomy 5 and Numbers 25
+into Sefaria's. They are six entries above the 268,177 the shipped file holds,
+and are here only for the eleven-entry difference between the two columns.
+
 The printed trailer wins, because it is what the reader sees and what #126's
 word arrays already follow. Every figure in this document was computed on it.
 
