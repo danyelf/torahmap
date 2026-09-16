@@ -1,0 +1,25 @@
+[
+  { "in": "בְּרֵאשִׁ֖ית", "out": "בראשית", "rule": "points and accents are removed" },
+  { "in": "שָׁלוֹם", "out": "שלומ", "rule": "final letters become medial" },
+  { "in": "עַל־פְּנֵי", "out": "על פני", "rule": "maqaf separates words" },
+  { "in": "ירושל͏ם", "out": "ירושלמ", "rule": "the grapheme joiner is dropped" },
+  { "in": "שׁלום", "out": "שלומ", "rule": "one-character shin folds to the plain letter" },
+  { "in": "שׂמח", "out": "שמח", "rule": "one-character sin folds to the plain letter" },
+  {
+    "in": "שַׂמֵחַ",
+    "out": "שמח",
+    "rule": "the decomposed sin folds the same as the one-character form"
+  },
+  {
+    "in": "הָאָרֶץ׃",
+    "out": "הארצ ",
+    "rule": "a trailing sof pasuq becomes a trailing space, not nothing"
+  },
+  { "in": "עַל־", "out": "על ", "rule": "a trailing maqaf becomes a trailing space" },
+  { "in": "א־־ב", "out": "א  ב", "rule": "adjacent separators are not collapsed" },
+  { "in": "א׃־ב", "out": "א  ב", "rule": "two different adjacent separators are not collapsed" },
+  { "in": "  אב  ", "out": "  אב  ", "rule": "surrounding whitespace is left alone" },
+  { "in": "א\nב", "out": "א\nב", "rule": "whitespace that is not a space is left alone" },
+  { "in": "׃", "out": " ", "rule": "a bare separator folds to a space" },
+  { "in": "", "out": "", "rule": "empty text folds to empty" }
+]

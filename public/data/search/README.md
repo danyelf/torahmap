@@ -135,5 +135,19 @@ and you have to change the other.
 The same goes for which characters separate one word from the next — maqaf,
 paseq, sof pasuq and nun hafukha. The generator's `SEPARATORS` and the set
 `normalizeHebrewForSearch()` turns into spaces have to hold the same four
-codepoints, and the word boundaries above are only true while they do. There is
-a test for it now, in `search-lexeme-index.test.ts`.
+codepoints, and the word boundaries above are only true while they do.
+
+Each function folds both sources' quirks, including the one its own source
+never produces — Sefaria's combining grapheme joiner, BHSA's one-character
+shin. A rule that is inert on the data in front of you is the price of not
+having to read the other function to predict this one.
+
+`scripts/search/folding-cases.json` states the rules once; the test beside it
+and `src/__tests__/unit/search-normalization.test.ts` each assert their own side
+against it. The check that would notice a rule missing from one side, or an
+index built before one existed, is "resolves every word a reader can click" in
+`search-lexeme-index.test.ts`, which walks the corpus through the real lookup.
+
+`scripts/search/test_generate_lexeme_index.py` runs both implementations over
+real verses and compares them word for word, which covers the separator sets
+above as a side effect of covering everything else.
