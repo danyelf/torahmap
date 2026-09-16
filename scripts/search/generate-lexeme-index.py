@@ -17,13 +17,17 @@ import os
 import re
 import sys
 
-try:
-    from tf.fabric import Fabric
-except ImportError:  # pragma: no cover - operator-facing message
-    sys.exit(
-        "text-fabric is not installed. Install it into a virtual environment:\n"
-        "  python3 -m venv .venv && .venv/bin/pip install text-fabric"
-    )
+def load_fabric():
+    """Imported inside a function so the test can import normalize() on a
+    machine with no Text-Fabric."""
+    try:
+        from tf.fabric import Fabric
+    except ImportError:  # pragma: no cover - operator-facing message
+        sys.exit(
+            "text-fabric is not installed. Install it into a virtual environment:\n"
+            "  python3 -m venv .venv && .venv/bin/pip install text-fabric"
+        )
+    return Fabric
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(REPO_ROOT, "public", "data")
@@ -115,6 +119,16 @@ VERSE_REMAP[("Numbers", 25, 19)] = ("Numbers", 26, 1)
 POINT_START = 0x0591
 POINT_END = 0x05C7
 SEPARATORS = {0x05BE, 0x05C0, 0x05C3, 0x05C6}  # maqaf, paseq, sof pasuq, nun hafukha
+# Inert here — BHSA has none. Sefaria writes ירושל͏ם with one, and both sides fold both.
+GRAPHEME_JOINER = 0x034F
+
+# BHSA writes shin and sin as one presentation-form character where Sefaria
+# writes the plain letter and a dot, which is then stripped as a point.
+# Without this fold, 190 written forms are filed under a spelling nothing can produce.
+PRESENTATION_TO_LETTER = {
+    "שׁ": "ש",  # shin with shin dot
+    "שׂ": "ש",  # shin with sin dot
+}
 
 FINAL_TO_MEDIAL = {
     "ך": "כ",  # kaf
@@ -132,22 +146,24 @@ LEXEME_FIELDS = ["id", "form", "gloss", "pos", "lang", "root"]
 
 
 def normalize(text):
-    """Fold Hebrew text to the shape the search box works in.
+    """Fold Hebrew to the shape the search box works in.
 
-    Points and accents are removed, word separators become spaces, and final
-    letters become their medial form. This mirrors normalizeHebrewForSearch()
-    in src/search.ts; the two must agree or lookups will miss.
+    Mirrors normalizeHebrewForSearch() in src/search.ts; the two must agree
+    character for character or every lookup misses.
     """
     out = []
     for ch in text or "":
+        ch = PRESENTATION_TO_LETTER.get(ch, ch)
         code = ord(ch)
+        if code == GRAPHEME_JOINER:
+            continue
         if POINT_START <= code <= POINT_END and code not in SEPARATORS:
             continue
         if code in SEPARATORS or ch == "-":
             out.append(" ")
         else:
             out.append(FINAL_TO_MEDIAL.get(ch, ch))
-    return " ".join("".join(out).split())
+    return "".join(out)
 
 
 def consonants(text):
@@ -238,6 +254,10 @@ def close_word(word_lengths, maqaf_joins, morpheme_count, inner, trailer):
 
 
 def main():
+    # Before the data check: without the package, the command that check
+    # recommends does not exist.
+    Fabric = load_fabric()
+
     if not os.path.isdir(BHSA_LOCATION):
         sys.exit(
             f"BHSA data not found at {BHSA_LOCATION}\n"

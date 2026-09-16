@@ -9,6 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { normalizeHebrewForSearch } from '../../search';
+import { lookupForm, splitVerseText } from '../../verseWords';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -89,9 +90,14 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
   });
 
   describe('written forms', () => {
-    it('are stored with final letters folded to their medial shape', () => {
-      const finals = /[ךםןףץ]/;
-      const offenders = Object.keys(forms).filter((form) => finals.test(form));
+    it('are stored already folded, so typing one finds it', () => {
+      // A key is what typing gets folded into, so folding it again must change
+      // nothing. Covers every rule at once, including the ones a stale index
+      // was built before.
+      const offenders = Object.keys(forms).filter(
+        (form) => normalizeHebrewForSearch(form) !== form,
+      );
+      expect(offenders.slice(0, 5)).toEqual([]);
       expect(offenders).toEqual([]);
     });
 
@@ -401,6 +407,35 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     }
     expect(total).toBeGreaterThan(300000);
     expect(missing / total).toBeLessThan(0.005);
+  });
+
+  it('resolves every word a reader can click, bar a known few', () => {
+    // Where the two normalizers actually meet: lookupForm() is what a click
+    // runs, against keys the Python generator wrote. This is the only check
+    // that sees a rule missing from one side, or an index built before one
+    // existed — unlike the test above, whose helper strips the characters the
+    // folding rules are about before it looks anything up.
+    //
+    // An exact count, not a rate: 652 of these words carry a grapheme joiner,
+    // and a rate loose enough to pass today also passes with all 652 broken.
+    // The remainder are compound proper names the two sources divide
+    // differently.
+    let total = 0;
+    const missing: string[] = [];
+    for (const chapters of Object.values(texts)) {
+      for (const verses of Object.values(chapters)) {
+        for (const { he } of Object.values(verses)) {
+          if (!he) continue;
+          for (const piece of splitVerseText(he)) {
+            if (piece.kind !== 'word') continue;
+            total += 1;
+            if (!(lookupForm(piece.text) in forms)) missing.push(piece.text);
+          }
+        }
+      }
+    }
+    expect(total).toBeGreaterThan(300000);
+    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(808);
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {

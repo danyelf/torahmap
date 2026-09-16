@@ -6,6 +6,9 @@ coverage
 data/
 public/data/
 
+# Vendored Python packages ship CSS and JSON that format:check would flag.
+.venv/
+
 # Markdown. Prettier aligns table columns by counting characters, but these
 # tables hold Hebrew and em-dashes, which are not one column wide -- so it
 # produces rows that are less aligned than before and hundreds of characters

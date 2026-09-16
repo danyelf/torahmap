@@ -329,8 +329,10 @@ export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
   if (!formToLexemes) return null;
 
   // word-lexemes keys fold final letters to their medial shape, so the query
-  // has to be folded the same way.
-  return lookupFormOrSpelling(normalizeHebrewForSearch(hebrewWord));
+  // has to be folded the same way. Trimmed because a separator folds to a
+  // space: a word pasted with its sof pasuq would otherwise be looked up as
+  // "הארצ " and miss, and no key carries an outer space.
+  return lookupFormOrSpelling(normalizeHebrewForSearch(hebrewWord).trim());
 }
 
 /** The written form first, then the bare dictionary spelling. Both exact. */
