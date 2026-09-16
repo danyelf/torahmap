@@ -419,7 +419,17 @@ const MODE_LABELS: Record<SearchMode, string> = {
  */
 function termSummary(term: SearchTerm): string {
   const mode = MODE_LABELS[effectiveMode(term)];
-  if (!meaningsApply(term) || !isNarrowed(term)) return mode;
+
+  // Only a Hebrew term in root mode has meanings to report, and only a word
+  // with at least two of them has anything to report about them. One meaning
+  // is not a choice, and a word the dictionary does not know has none at all —
+  // both of those are the rows that show no checkboxes either.
+  if (!meaningsApply(term) || term.meanings.length < 2) return mode;
+
+  // Saying how many there are rather than leaving the mode bare: root over a
+  // word with four readings is searching for all four, and a row that said
+  // only "root" gave no sign of it.
+  if (!isNarrowed(term)) return `${mode} · all ${term.meanings.length} meanings`;
 
   const chosen = term.meanings
     .filter((m) => term.selected.has(m.keys[0]))

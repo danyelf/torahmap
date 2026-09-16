@@ -149,12 +149,28 @@ for the control.
 
 **A collapsed row is one line:** the colour swatch, the word, a grey summary,
 the hit count, and the × that removes it. The summary always names the mode,
-then any narrowing: `root · leafage`, or `word`, or `substring`. Naming the mode
-even when it is the default is what makes the column scannable, and naming the
-narrowing is load-bearing rather than decorative — two rows both reading עלה in
-root mode are otherwise indistinguishable, and telling them apart is the whole
-point of the feature. Several checked meanings are listed comma separated and
-cut off with an ellipsis; all of them checked shows the mode alone.
+then what it is doing about meanings. Naming the mode even when it is the
+default is what makes the column scannable, and naming the meanings is
+load-bearing rather than decorative — two rows both reading עלה in root mode
+are otherwise indistinguishable, and telling them apart is the whole point of
+the feature.
+
+A Hebrew row in root mode reads one of three ways:
+
+| The row | Reads |
+|---|---|
+| narrowed to one or more meanings | `root · leafage` |
+| every meaning still checked | `root · all 4 meanings` |
+| one meaning, or a word the dictionary does not know | `root` |
+
+Counting the meanings rather than leaving the mode bare is the difference
+between "searching for all four readings" and "this word has one reading", which
+a bare `root` gave no sign of. It is left bare where there is no choice to
+report, which is the same set of rows that show no checkboxes either — saying
+"all 1 meanings" would be both ungrammatical and untrue to what the row offers.
+
+Several checked meanings are listed comma separated and cut off with an
+ellipsis. Outside root mode the summary is just the mode: `word`, `substring`.
 
 **The open row** is today's row plus a three-segment mode control on its own
 line, at the top of the same indented block that holds the meanings. That block
