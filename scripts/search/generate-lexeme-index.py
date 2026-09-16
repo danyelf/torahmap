@@ -164,8 +164,13 @@ def consonants(text):
     )
 
 
-def is_token_break(trailer):
-    """True when the trailer after a word ends the whitespace-delimited token."""
+def ends_printed_word(trailer):
+    """True when something is printed after this unit, so it ends a word.
+
+    A unit with an empty trailer runs straight into the next one: the two are
+    printed as a single word, and the first of them is part of a word rather
+    than a word.
+    """
     return any(ch.isspace() or ch in "־׃" for ch in trailer or "")
 
 
@@ -187,6 +192,40 @@ def is_maqaf_break(trailer):
     breaks are maqafs lets a reader of the file have it either way.
     """
     return "־" in (trailer or "")
+
+
+def printed_trailer(F, node):
+    """What is printed after a unit, as the reader sees it.
+
+    A corrected word carries a second trailer, for the reading rather than the
+    writing, and the two can differ: בגד is written as one word and read as
+    two, בא גד. What is printed is what says where a word ends.
+    """
+    if F.qere_utf8.v(node):
+        return F.qere_trailer_utf8.v(node)
+    return F.trailer_utf8.v(node)
+
+
+def printed_words(F, L, verse_node):
+    """Group a verse's ETCBC units into the words the page prints.
+
+    Yields (units, trailer): the run of units printed with nothing between
+    them, and what is printed after the last of them. The last unit of a verse
+    ends a word whatever its trailer holds.
+
+    This is the rule the whole index rests on. Everything the walk does with a
+    word -- which lexeme it belongs to, which spellings lead to it, how many
+    units it took -- follows from the grouping, so the grouping is made once,
+    here, rather than reconstructed from accumulators as the walk goes.
+    """
+    run = []
+    nodes = L.d(verse_node, "word")
+    for position, node in enumerate(nodes):
+        run.append(node)
+        trailer = printed_trailer(F, node)
+        if ends_printed_word(trailer) or position == len(nodes) - 1:
+            yield run, trailer
+            run = []
 
 
 def close_word(word_lengths, maqaf_joins, morphemes, inner, trailer):
@@ -276,70 +315,53 @@ def main():
         )
         key = f"{book}:{chapter}:{verse}"
 
-        token_forms = []       # written forms making up the word being read
-        morphemes_in_word = 0  # ETCBC units taken by that word
-        word_inner = []        # separators printed inside those units
         word_lengths = []
         maqaf_joins = []
 
-        nodes = L.d(verse_node, "word")
-        for position, word_node in enumerate(nodes):
-            word_total += 1
-            lexeme = lex_index[L.u(word_node, "lex")[0]]
+        for units, trailer in printed_words(F, L, verse_node):
+            word_total += len(units)
 
-            combo = tuple(
-                "" if (v := getattr(F, field).v(word_node)) in (None, "NA", "n/a")
-                else v
-                for field in MORPH_FIELDS
-            )
-            morph = morph_ids.get(combo)
-            if morph is None:
-                morph = morph_ids[combo] = len(morph_table)
-                morph_table.append(".".join(combo))
-            verse_morph[key].append([lexeme, morph])
-            morphemes_in_word += 1
-            # Where the text is corrected, the page shows the qere, and the two
-            # readings need not be the same number of words: בגד is written as
-            # one and read as two, בא גד.
-            word_inner.extend(
-                internal_separators(
-                    F.qere_utf8.v(word_node) or F.g_word_utf8.v(word_node)
+            word_forms = []   # the written form of each unit, in order
+            word_inner = []   # separators printed inside those units
+            for node in units:
+                lexeme = lex_index[L.u(node, "lex")[0]]
+                combo = tuple(
+                    "" if (v := getattr(F, field).v(node)) in (None, "NA", "n/a")
+                    else v
+                    for field in MORPH_FIELDS
                 )
-            )
+                morph = morph_ids.get(combo)
+                if morph is None:
+                    morph = morph_ids[combo] = len(morph_table)
+                    morph_table.append(".".join(combo))
+                verse_morph[key].append([lexeme, morph])
+                word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
+                # Where the text is corrected, the page shows the qere, and the
+                # two readings need not be the same number of words: בגד is
+                # written as one and read as two, בא גד.
+                word_inner.extend(
+                    internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
+                )
 
-            written = normalize(F.g_cons_utf8.v(word_node) or "")
-            qere = normalize(F.qere_utf8.v(word_node) or "")
-            token_forms.append(written)
-
-            # A corrected word carries a second trailer, for the reading rather
-            # than the writing, and the two can differ: בגד is written as one
-            # word and read as two, בא גד. What is printed is what the reader
-            # sees, so it is what says where a word ends.
-            printed_trailer = (
-                F.qere_trailer_utf8.v(word_node)
-                if F.qere_utf8.v(word_node)
-                else F.trailer_utf8.v(word_node)
-            )
-            ends_word = is_token_break(printed_trailer) or position == len(nodes) - 1
-
-            if not ends_word:
-                # Nothing is printed between this unit and the next, so the two
-                # run together as one word on the page. A bound unit is not a
-                # word: it is never indexed and it never puts its lexeme into
-                # the verse. These are the proclitics -- ו, ה, ל, ב, מן, כ --
-                # and "every verse containing the letter ל" is not a question
-                # anyone means to ask.
+            # Every unit but the last has nothing printed after it, so it runs
+            # into its neighbour and the two are one word on the page. A bound
+            # unit is not a word: it is never indexed and never puts its lexeme
+            # into the verse. These are the proclitics -- ו, ה, ל, ב, מן, כ --
+            # and "every verse containing the letter ל" is not a question
+            # anyone means to ask.
+            for node in units[:-1]:
                 bound_total += 1
-                if F.prs.v(word_node) not in (None, "absent", "n/a", "NA"):
-                    bound_and_suffixed.append(f"{key} {F.g_word_utf8.v(word_node)}")
-                continue
+                if F.prs.v(node) not in (None, "absent", "n/a", "NA"):
+                    bound_and_suffixed.append(f"{key} {F.g_word_utf8.v(node)}")
 
-            # This unit ends a printed word, so it is that word's stem and the
-            # word belongs to its lexeme. Both the whole word and the stem on
-            # its own are filed there: the first is what a reader types when
-            # they copy בראשית off the page, the second is what they type when
-            # they mean ראשית.
+            # The last unit is the word's stem, and the word belongs to its
+            # lexeme. Both the whole word and the stem on its own are filed
+            # there: the first is what a reader types when they copy בראשית off
+            # the page, the second is what they type when they mean ראשית.
+            stem = units[-1]
+            lexeme = lex_index[L.u(stem, "lex")[0]]
             verse_lexemes[key].add(lexeme)
+
             # Three spellings lead to this word, and they are not always three
             # strings: a word of one unit is its own stem, so the stem's letters
             # and the whole printed word are written the same. Count each
@@ -348,21 +370,17 @@ def main():
             # with a prefix as one, which is not what the number claims to be
             # and, since nouns take the article and verbs mostly do not, would
             # quietly rank verbs above nouns.
-            token = "".join(token_forms)
-            for form in dict.fromkeys([written, qere, token]):
+            written = word_forms[-1]
+            qere = normalize(F.qere_utf8.v(stem) or "")
+            whole_word = "".join(word_forms)
+            for form in dict.fromkeys([written, qere, whole_word]):
                 if len(form) >= 2:
                     form_counts[(form, lexeme)] += 1
-            token_forms = []
 
-            # The same break, recorded rather than discarded. This is what lets
-            # a reader of the file say which printed word a lexeme is, instead
-            # of only which verse it is in.
-            close_word(
-                word_lengths, maqaf_joins, morphemes_in_word, word_inner,
-                printed_trailer,
-            )
-            morphemes_in_word = 0
-            word_inner = []
+            # The same grouping, recorded rather than discarded. This is what
+            # lets a reader of the file say which printed word a lexeme is,
+            # instead of only which verse it is in.
+            close_word(word_lengths, maqaf_joins, len(units), word_inner, trailer)
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
