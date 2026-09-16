@@ -68,11 +68,7 @@
   color: #fff;
 }
 
-/* A row the reader is not working in folds to one line saying what it is
-   doing. Root is the only mode with sub-choices, so it is the only mode whose
-   row is tall — folding those away is what buys room for a control on every
-   row. The summary names the mode and any narrowing, which is the only thing
-   distinguishing two rows holding the same word in the same mode. */
+/* A row the reader is not working in, folded to one line. */
 .term-summary {
   display: flex;
   align-items: center;
@@ -116,8 +112,7 @@
   border-radius: 5px;
 }
 
-/* The mode control and the meaning checkboxes share one indent, so the two
-   read as one statement about this term. */
+/* The mode control and the meaning checkboxes share one indent. */
 .term-body {
   margin: 6px 0 0 16px;
   border-left: 1px solid #333;

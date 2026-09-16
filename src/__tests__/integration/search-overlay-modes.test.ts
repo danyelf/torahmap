@@ -695,6 +695,36 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(container.querySelector('#search-hit-caption')!.textContent).toBe('2 matching verses');
     });
 
+    // The list filters by the open row, and the row list is what settles which
+    // row that is when the old one is gone. Drawing the list first left it
+    // showing every term's verses under a caption counting one term's.
+    const caption = () => container.querySelector('#search-hit-caption')!.textContent;
+
+    it('agrees with its own caption when a link arrives at an open panel', () => {
+      searchOverlay.renderControls?.(container);
+
+      // אברהם is in 2 verses, אברם in 2, אלהים in 1, four between them.
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,אברם,אלהים&mode=w,w,w'));
+
+      expect(caption()).toBe('2 of 4 matching verses');
+      expect(refs()).toHaveLength(2);
+    });
+
+    it('agrees with its own caption after the open row is removed', () => {
+      searchOverlay.renderControls?.(container);
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,אברם,אלהים&mode=w,w,w'));
+
+      // Remove the open row. The first surviving row inherits, and the list
+      // has to follow it rather than the row that has just gone.
+      container
+        .querySelectorAll<HTMLElement>('.term-row')[0]
+        .querySelector<HTMLElement>('.term-remove')!
+        .click();
+
+      expect(caption()).toBe('2 of 3 matching verses');
+      expect(refs()).toHaveLength(2);
+    });
+
     it('narrows nothing while the open row has nothing to search on', () => {
       applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,אברם&mode=w,w'));
       searchOverlay.renderControls?.(container);

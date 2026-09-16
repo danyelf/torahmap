@@ -37,11 +37,9 @@ export interface SearchTerm {
   /**
    * How this term is matched, or null while the reader has not said.
    *
-   * Null is not the same as substring. A term's language is worked out from
-   * its text, and the text changes on every keystroke, so a term created as
-   * English and retyped in Hebrew has to pick up Hebrew's default rather than
-   * keep the one it was born with. Holding "has not chosen" apart from "chose
-   * substring" is what makes that possible.
+   * Null is not substring: a term's language follows its text, which changes as
+   * it is typed, so a word retyped in the other script has to pick up that
+   * language's default rather than keep the one it was created with.
    */
   mode: SearchMode | null;
 }
@@ -250,12 +248,10 @@ export function setMode(terms: SearchTerm[], id: string, mode: SearchMode): Sear
 }
 
 /**
- * How this term will actually be matched: what the reader chose, or the
- * default for the language its text is written in.
+ * What the reader chose, or the default for the language the text is in.
  *
- * Root is clamped to whole word for English, which has no dictionary behind
- * it. The clamp is in the reading rather than the field, so a term set to root
- * and briefly retyped in English is still a root term when the Hebrew returns.
+ * English has no dictionary, so root is clamped to whole word here rather than
+ * in the field: a root term briefly retyped in English is root again on return.
  */
 export function effectiveMode(term: SearchTerm): SearchMode {
   const hebrew = isHebrewQuery(term.text.trim());

@@ -51,11 +51,7 @@ let verses: TanakhLayout[] = [];
 let terms: SearchTerm[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
-/**
- * The row the reader is working in. Exactly one row is open at a time, and it
- * stays open while they work on the map, so coming back from a click on a
- * verse finds the panel as they left it.
- */
+/** The row the reader last opened. Read through `openTerm`. */
 let openTermId: string | null = null;
 
 const URL_PARAMS = [
@@ -129,6 +125,18 @@ function meaningsApply(term: SearchTerm): boolean {
 }
 
 /**
+ * The row the reader is working in: the one they opened while it still exists,
+ * otherwise the first.
+ *
+ * Derived on every read rather than repaired in one place, so the list, the
+ * caption and the rows cannot disagree about which row is open depending on
+ * the order they are drawn in.
+ */
+function openTerm(): SearchTerm | undefined {
+  return terms.find((t) => t.id === openTermId) ?? terms[0];
+}
+
+/**
  * Where the open row's term sits among the terms being searched, or -1 when
  * that row has nothing to search on — an empty box, or a single letter.
  *
@@ -136,21 +144,15 @@ function meaningsApply(term: SearchTerm): boolean {
  * position among the rows on screen.
  */
 function openTermIndex(): number {
-  return activeTerms().findIndex((term) => term.id === openTermId);
+  const open = openTerm();
+  return open ? activeTerms().indexOf(open) : -1;
 }
 
 /**
  * The verses the list shows: the ones the open row's word accounts for.
  *
- * The panel is asking about one word at a time — that is what opening a row
- * means — so the list answers for that word rather than for the union. The map
- * still paints every term, and a verse claimed by more than one still carries
- * every one of its dots, so the list says "these are my word's verses, and here
- * is which of your other words also landed on them".
- *
- * A row with nothing to search on narrows nothing. Filtering by it would empty
- * the list at the moment the reader clicks "add a word", which reads as the
- * search having been lost.
+ * A row with nothing to search on narrows nothing, or clicking "add a word"
+ * would empty the list.
  */
 function resultsForOpenRow(): SearchResult[] {
   const index = openTermIndex();
@@ -254,11 +256,7 @@ function runSearch(): void {
  * request, for this spelling and no other, so it goes to whole word: substring
  * would match it inside longer words, and root would resolve a known spelling
  * to its dictionary entry and find the readings the reader just declined.
- *
- * Neighbouring terms keep whatever they were doing. While the mode was one
- * setting for the whole search, taking a written form here widened a word the
- * reader had narrowed a moment earlier, and the only clue was a count that
- * changed.
+ * Neighbouring terms keep whatever they were doing.
  *
  * The meaning arrives as every lexeme its row stands for, not as one key. The
  * reader chose from a list the verse built, and a row the verse built can be
@@ -450,13 +448,10 @@ const MODE_LABELS: Record<SearchMode, string> = {
 };
 
 /**
- * What a collapsed row says about itself: always the mode, then the narrowing
- * when there is one.
+ * What a collapsed row says about itself: the mode, then the narrowing.
  *
- * The mode is named even when it is the default, so the rows read as a column
- * rather than a list of exceptions. The narrowing is not decoration — two rows
- * both holding עלה in root mode are otherwise identical, and telling those
- * apart is the comparison the per-term mode exists for.
+ * Both are named even when unremarkable. Two rows holding עלה in root mode are
+ * otherwise identical, and telling those apart is the point of the feature.
  */
 function termSummary(term: SearchTerm): string {
   const mode = MODE_LABELS[effectiveMode(term)];
@@ -480,12 +475,7 @@ function termSummary(term: SearchTerm): string {
 }
 
 /**
- * The three ways a word can be matched, as one control.
- *
- * Which are on offer follows the term's own text: root resolves a written form
- * to the dictionary words it could be, and there is no dictionary behind an
- * English word.
- */
+/** The ways this term's own text can be matched, as one control. */
 function buildModeControl(term: SearchTerm): HTMLDivElement {
   const control = document.createElement('div');
   control.className = 'term-mode';
@@ -506,10 +496,9 @@ function buildModeControl(term: SearchTerm): HTMLDivElement {
 }
 
 /**
- * Keep the control showing the right choices, and the right one marked.
- *
- * Only the control is replaced when the choices change, never the row: the
- * choices follow the text's language, and the reader is typing that text.
+/**
+ * Replace only the control when the choices change, never the row: the choices
+ * follow the text's language, and the reader is typing that text.
  */
 function renderModeControl(body: HTMLElement, term: SearchTerm): void {
   const offered = modesOffered(term).join(',');
@@ -592,12 +581,7 @@ function removeOrClear(id: string): void {
 }
 
 /**
- * A row the reader is not working in: one line saying what it is doing.
- *
- * Folding the meaning checkboxes away is what buys the room for a mode control
- * on every row. Root is the only mode with sub-choices, so it is the only mode
- * whose row is tall, which is why collapsing is worth doing at all.
- */
+/** A row the reader is not working in: one line saying what it is doing. */
 function buildCollapsedRow(row: HTMLElement, term: SearchTerm): void {
   const summary = document.createElement('div');
   summary.className = 'term-summary';
@@ -717,10 +701,9 @@ function buildTermRow(term: SearchTerm, index: number, isOpen: boolean): HTMLDiv
 /**
  * Everything about a row that changes without the row itself changing.
  *
- * Open and collapsed rows share no children, so a row that opens or closes is
- * rebuilt. Nothing else is: the modes on offer change as the reader types their
- * way from one language to the other, and rebuilding the row for that would
- * throw away the box being typed into, along with its caret.
+ * Open and collapsed rows share no children, so opening or closing rebuilds the
+ * row. Nothing else does: the reader types their way between languages mid-word,
+ * and rebuilding then would throw away the box they are typing into.
  */
 function updateTermRow(row: HTMLElement, term: SearchTerm, index: number, isOpen: boolean): void {
   if (row.dataset.open !== String(isOpen)) {
@@ -804,11 +787,7 @@ function renderTermRows(): void {
   if (!searchTermsContainer) return;
 
   const list = activeOrEmptyTerms();
-
-  // The open row survives as long as its term does; otherwise the first row
-  // takes over, which is also what a fresh panel shows.
-  const openId = list.some((t) => t.id === openTermId) ? openTermId : (list[0]?.id ?? null);
-  openTermId = openId;
+  const openId = openTerm()?.id ?? null;
 
   const existing = new Map(
     [...searchTermsContainer.querySelectorAll<HTMLElement>('.term-row')].map((row) => [
