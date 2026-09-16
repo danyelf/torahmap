@@ -13,6 +13,7 @@ export type Anchor = 'viewport' | 'square';
 export type Content = 'center' | 'window';
 export type Marks = 'all' | 'no-trop' | 'letters';
 export type Font = 'noto' | 'frank' | 'david';
+export type Blend = 'normal' | 'difference' | 'exclusion' | 'overlay';
 
 export interface BackgroundTextSettings {
   /** Under the canvas (squares occlude the text) or over it at low opacity. */
@@ -25,10 +26,14 @@ export interface BackgroundTextSettings {
   content: Content;
   /** Verses on each side of the center verse when content is 'window'. */
   neighbours: number;
+  /** Width of the paragraph in em, so it scales with the font. */
+  widthEm: number;
   /** Font size in CSS pixels at MIN_ZOOM and at MAX_ZOOM. */
   minFont: number;
   maxFont: number;
   opacity: number;
+  /** How the text mixes with what is under it. 'difference' reads dark over light squares and light over the dark gaps. */
+  blend: Blend;
   font: Font;
   marks: Marks;
   /** Keep the current passage until the center verse is more than this many verses away. */
@@ -44,9 +49,11 @@ export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   anchor: 'viewport',
   content: 'window',
   neighbours: 6,
+  widthEm: 30,
   minFont: 12,
   maxFont: 24,
   opacity: 0.25,
+  blend: 'normal',
   font: 'frank',
   marks: 'no-trop',
   hysteresis: 3,

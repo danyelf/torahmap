@@ -23,7 +23,6 @@ import {
 // Pages are laid out once at this size; zoom applies a CSS scale on top, so a
 // zoom never reflows the paragraph.
 const BASE_FONT_PX = 16;
-const PAGE_WIDTH_EM = 30;
 
 interface Page {
   el: HTMLDivElement;
@@ -52,7 +51,6 @@ export function createBackgroundTextLayer(options: {
   const pages: Page[] = [0, 1].map(() => {
     const el = document.createElement('div');
     el.className = 'bgtext-page';
-    el.style.width = `${PAGE_WIDTH_EM * BASE_FONT_PX}px`;
     el.style.fontSize = `${BASE_FONT_PX}px`;
     root.appendChild(el);
     return { el, placement: null };
@@ -68,10 +66,15 @@ export function createBackgroundTextLayer(options: {
     root.style.setProperty('--bgtext-opacity', String(settings.opacity));
     root.style.setProperty('--bgtext-fade', `${settings.crossfadeMs}ms`);
     root.style.fontFamily = FONT_FAMILIES[settings.font];
+    for (const page of pages) page.el.style.mixBlendMode = settings.blend;
   }
 
+  // The part of the window the map is actually visible in: the right panel
+  // covers a strip of it, and the passage should sit in the middle of the rest.
   function viewport(): { width: number; height: number } {
-    return { width: window.innerWidth, height: window.innerHeight };
+    const panel = document.getElementById('right-panel');
+    const covered = panel && panel.offsetWidth > 0 ? panel.offsetWidth : 0;
+    return { width: window.innerWidth - covered, height: window.innerHeight };
   }
 
   function centerVerseIndex(): number {
@@ -86,6 +89,7 @@ export function createBackgroundTextLayer(options: {
     const verse = verses[centerIndex];
     const passage = passageAround(verses, texts, centerIndex, settings);
 
+    page.el.style.width = `${settings.widthEm * BASE_FONT_PX}px`;
     const center = document.createElement('span');
     center.className = 'bgtext-center';
     center.textContent = passage.center;
@@ -95,12 +99,18 @@ export function createBackgroundTextLayer(options: {
       document.createTextNode(passage.after ? ` ${passage.after}` : ''),
     );
 
-    // Measure the reference point unscaled: the top-right of the center
-    // verse's first line box, relative to the page's own top-left.
+    // Measure the reference point unscaled, relative to the page's own
+    // top-left. Vertically it is the top of the center verse's first line.
+    // Horizontally, a square anchor wants the verse's first word (the right
+    // end of that line) on the square; a viewport anchor wants the paragraph
+    // centred on the screen.
     page.el.style.transform = 'none';
     const pageRect = page.el.getBoundingClientRect();
     const firstLine = center.getClientRects()[0] ?? pageRect;
-    const refOffset = { x: firstLine.right - pageRect.left, y: firstLine.top - pageRect.top };
+    const refOffset = {
+      x: settings.anchor === 'square' ? firstLine.right - pageRect.left : pageRect.width / 2,
+      y: firstLine.top - pageRect.top,
+    };
 
     const anchorWorld = anchorWorldPoint(settings.anchor, verse, camera, viewport());
     page.placement = {

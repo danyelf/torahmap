@@ -67,3 +67,41 @@ canvas {
 .bgtext-page.front {
   opacity: var(--bgtext-opacity, 0.25);
 }
+
+#bgtext-panel {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ddd;
+  font:
+    11px system-ui,
+    sans-serif;
+  border-radius: 4px;
+}
+#bgtext-panel label {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+#bgtext-panel .bgtext-range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#bgtext-panel input[type='range'] {
+  width: 110px;
+}
+#bgtext-panel output {
+  min-width: 32px;
+  text-align: right;
+}
+#bgtext-panel .bgtext-presets {
+  display: flex;
+  gap: 4px;
+}
