@@ -128,9 +128,41 @@ function meaningsApply(term: SearchTerm): boolean {
   return termIsHebrew(term) && effectiveMode(term) === 'root';
 }
 
+/**
+ * Where the open row's term sits among the terms being searched, or -1 when
+ * that row has nothing to search on — an empty box, or a single letter.
+ *
+ * Results name a term by its position in the searched list, which is not its
+ * position among the rows on screen.
+ */
+function openTermIndex(): number {
+  return activeTerms().findIndex((term) => term.id === openTermId);
+}
+
+/**
+ * The verses the list shows: the ones the open row's word accounts for.
+ *
+ * The panel is asking about one word at a time — that is what opening a row
+ * means — so the list answers for that word rather than for the union. The map
+ * still paints every term, and a verse claimed by more than one still carries
+ * every one of its dots, so the list says "these are my word's verses, and here
+ * is which of your other words also landed on them".
+ *
+ * A row with nothing to search on narrows nothing. Filtering by it would empty
+ * the list at the moment the reader clicks "add a word", which reads as the
+ * search having been lost.
+ */
+function resultsForOpenRow(): SearchResult[] {
+  const index = openTermIndex();
+  if (index === -1) return currentResults;
+
+  return currentResults.filter((result) => result.matchingTerms.some((m) => m.termIndex === index));
+}
+
 // Incremental rendering state
 const RESULTS_BATCH_SIZE = 50;
 let renderedCount = 0;
+let listedResults: SearchResult[] = [];
 let scrollHandler: (() => void) | null = null;
 
 // DOM references (for cleanup)
@@ -388,9 +420,18 @@ function updateHitCaption(): void {
   if (!searchHitCaption) return;
 
   const active = activeTerms();
+  const listed = resultsForOpenRow().length;
+
   let message: string;
   if (active.length > 0 && currentResults.length > 0) {
-    message = `${currentResults.length} matching verses`;
+    // The list shows the open row's verses, so the caption above it counts
+    // those, and names the union second so the number the rows cannot show
+    // between them is still somewhere. With one term the two are the same
+    // number and saying it twice would be noise.
+    message =
+      listed === currentResults.length
+        ? `${currentResults.length} matching verses`
+        : `${listed} of ${currentResults.length} matching verses`;
   } else if (active.length > 0) {
     message = 'No matching verses';
   } else if (typedTerms().length > 0) {
@@ -528,10 +569,17 @@ function renderMeanings(row: HTMLElement, term: SearchTerm): void {
   });
 }
 
-/** Make this row the one the reader is working in, and put the caret in it. */
+/**
+ * Make this row the one the reader is working in, and put the caret in it.
+ *
+ * The list follows the open row, so it is redrawn too — without rerunning the
+ * search, which has not changed.
+ */
 function openRow(id: string): void {
   openTermId = id;
   renderTermRows();
+  renderResults();
+  updateHitCaption();
   searchTermsContainer
     ?.querySelector<HTMLInputElement>('.term-row[data-open="true"] .term-input')
     ?.focus();
@@ -820,11 +868,16 @@ function createResultElement(result: SearchResult): HTMLDivElement {
   refDiv.appendChild(termIndicators);
   refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
 
-  // Create snippet div with highlighting
+  // The snippet is drawn for the word the list is answering about, falling back
+  // to whichever term claimed the verse first. Without this, a list narrowed to
+  // the second word would quote the first word's match — the reader would have
+  // asked about one word and been shown another.
+  const focus = openTermIndex();
+  const firstMatch =
+    result.matchingTerms.find((m) => m.termIndex === focus) ?? result.matchingTerms[0];
+
   const snippetDiv = document.createElement('div');
   snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
-
-  const firstMatch = result.matchingTerms[0];
 
   // Compute snippet on-demand if not present (for lazy evaluation in root mode)
   let snippet = firstMatch.snippet;
@@ -867,11 +920,11 @@ function createResultElement(result: SearchResult): HTMLDivElement {
 }
 
 function appendResultsBatch(): void {
-  if (!searchResults || renderedCount >= currentResults.length) return;
+  if (!searchResults || renderedCount >= listedResults.length) return;
 
-  const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, currentResults.length);
+  const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, listedResults.length);
   for (let i = renderedCount; i < end; i++) {
-    searchResults.appendChild(createResultElement(currentResults[i]));
+    searchResults.appendChild(createResultElement(listedResults[i]));
   }
   renderedCount = end;
 }
@@ -879,10 +932,13 @@ function appendResultsBatch(): void {
 function renderResults(): void {
   if (!searchResults) return;
 
+  listedResults = resultsForOpenRow();
+
   // Clear previous results and reset scroll state
   const existingResults = searchResults.querySelectorAll('.search-result');
   existingResults.forEach((el) => el.remove());
   renderedCount = 0;
+  searchResults.scrollTop = 0;
 
   // Remove previous scroll handler
   if (scrollHandler) {
@@ -890,7 +946,7 @@ function renderResults(): void {
     scrollHandler = null;
   }
 
-  if (currentResults.length === 0) {
+  if (listedResults.length === 0) {
     searchResults.classList.remove('visible');
     return;
   }
@@ -899,7 +955,7 @@ function renderResults(): void {
   appendResultsBatch();
 
   // Set up infinite scroll if there are more results
-  if (renderedCount < currentResults.length) {
+  if (renderedCount < listedResults.length) {
     scrollHandler = () => {
       if (!searchResults) return;
       const { scrollTop, scrollHeight, clientHeight } = searchResults;

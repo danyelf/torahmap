@@ -189,6 +189,36 @@ A collapsed row's × removes the word without opening it first. The `all` link
 that undoes a narrowing stays inside the open row, beside the checkboxes it
 undoes.
 
+### The results list follows the open row
+
+Opening a row is the reader asking about that word, so the list answers for
+that word rather than for the union of every word. With עלה and אור both
+searched, opening עלה lists its 1,028 verses; clicking across to אור lists its
+55.
+
+A verse the list shows still carries every one of its dots. Genesis 17:5 holds
+both אברהם and אברם, and it says so while the list is narrowed to אברהם — the
+list reports "these are my word's verses, and here is which of your other words
+also landed on them".
+
+Two things follow from it:
+
+- The snippet is drawn for the word the list is answering about, not for
+  whichever term claimed the verse first. Otherwise a list narrowed to the
+  second word would quote the first word's match.
+- The caption above the list counts what the list shows, then the union:
+  `55 of 1083 matching verses`. With one term the two numbers are equal and it
+  says the number once, as before. The union is worth keeping because no row
+  can show it.
+
+A row with nothing to search on narrows nothing, and the list stays whole.
+Filtering by an empty row would empty the list at the moment the reader clicks
+"add a word", which reads as the search having been lost.
+
+It also, incidentally, puts the list back in book order. A multi-term list was
+ordered by which term claimed a verse first, so it ran through the Tanakh once
+per term; one term's verses are in book order on their own.
+
 **What leaves:** `#search-options` (the whole-word checkbox) and
 `#hebrew-mode-container` (the three radios) are removed from `renderControls`,
 along with `updateOptionVisibility`, which existed only to show and hide them as

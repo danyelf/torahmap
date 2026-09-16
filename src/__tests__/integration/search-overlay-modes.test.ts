@@ -641,6 +641,72 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
     });
   });
 
+  // Opening a row is the reader asking about that word, so the list answers
+  // for it rather than for the union of every word.
+  describe('the list follows the open row', () => {
+    const refs = () =>
+      [...container.querySelectorAll<HTMLElement>('.search-result .ref')].map((r) =>
+        r.textContent?.trim(),
+      );
+    const dotsOn = (i: number) =>
+      container.querySelectorAll(`.search-result:nth-child(${i + 1}) .term-dot`).length;
+
+    it('lists only the verses the open row accounts for', () => {
+      // אברהם is in Genesis 17:5 and Exodus 3:6; אברם is in Genesis 12:1 and
+      // Genesis 17:5. Together they cover three verses.
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,אברם&mode=w,w'));
+      searchOverlay.renderControls?.(container);
+
+      expect(refs()).toEqual(['Genesis 17:5', 'Exodus 3:6']);
+
+      container
+        .querySelectorAll<HTMLElement>('.term-row')[1]
+        .querySelector<HTMLElement>('.term-summary')!
+        .click();
+
+      // Sorted, because a result keeps the position it was first claimed at:
+      // Genesis 17:5 was claimed by אברהם before אברם reached it.
+      expect(refs().sort()).toEqual(['Genesis 12:1', 'Genesis 17:5']);
+    });
+
+    it('keeps every dot on a verse two words both landed on', () => {
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,אברם&mode=w,w'));
+      searchOverlay.renderControls?.(container);
+
+      // Genesis 17:5 holds both names, so it carries both colours even though
+      // the list is narrowed to one of them.
+      expect(refs()[0]).toBe('Genesis 17:5');
+      expect(dotsOn(0)).toBe(2);
+      expect(dotsOn(1)).toBe(1);
+    });
+
+    it('counts the listed verses and the union, in that order', () => {
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,אברם&mode=w,w'));
+      searchOverlay.renderControls?.(container);
+
+      const caption = container.querySelector('#search-hit-caption')!;
+      expect(caption.textContent).toBe('2 of 3 matching verses');
+    });
+
+    it('says the number once when one word accounts for everything', () => {
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=w'));
+      searchOverlay.renderControls?.(container);
+
+      expect(container.querySelector('#search-hit-caption')!.textContent).toBe('2 matching verses');
+    });
+
+    it('narrows nothing while the open row has nothing to search on', () => {
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,אברם&mode=w,w'));
+      searchOverlay.renderControls?.(container);
+
+      // Adding a word opens an empty row. The list must not empty itself at
+      // the moment the reader reaches for another word.
+      container.querySelector<HTMLButtonElement>('#add-term')!.click();
+
+      expect(refs()).toHaveLength(3);
+    });
+  });
+
   // The comparison the map exists for is two words on one substrate, and the
   // interesting comparisons are often not like-for-like.
   describe('two terms, two modes', () => {
