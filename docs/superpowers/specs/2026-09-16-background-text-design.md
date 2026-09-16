@@ -210,3 +210,28 @@ Not yet judged, because it needs a hand on the mouse: how the parallax feels,
 whether the crossfade hides the anchor jump under presets B and C, and what
 values of hysteresis and settle delay stop the passage from churning at low
 zoom.
+
+## Second round, after Danyel's first look (2026-09-16)
+
+Danyel preferred A and C with many neighbours and a wide paragraph, David
+Libre, and asked for three things. The panel settings he left in the browser
+were opacity 0.15, exclusion blend, letters only, max font 34, hysteresis 17.
+
+- **Centred and filling the viewport.** A `fill` content mode sizes the page
+  to overhang the visible area by 30% on each axis and pulls in verses on
+  alternating sides until the paragraph is at least that tall. It rebuilds
+  when a zoom changes the page's size by more than 15%. A and C now use it.
+  Text is justified so the left edge is straight.
+- **Why the paragraph wandered.** Zooming about the mouse moves the anchor's
+  screen position a long way; the parallax ratio turned 30% of that into a
+  slide, and since the centre verse does not change during a zoom, nothing
+  ever rebuilt and re-centred it. The anchor's movement is now split into a
+  pan part and a zoom part. Parallax applies only to the pan part. The
+  viewport anchor ignores the zoom part and grows in place; the square anchor
+  follows it fully so it stays on its square.
+- **Lines that stay put.** A new page is shifted by less than one line so its
+  rows land on the old page's rows (`snap lines` in the panel, on by default).
+  Verified: after a rebuild the two pages' translations differ by exactly four
+  line pitches. The words still change under the crossfade; the grid does not.
+
+![Preset A, fill, David Libre, zoom 1](2026-09-16-background-text/preset-a-fill-david.jpg)
