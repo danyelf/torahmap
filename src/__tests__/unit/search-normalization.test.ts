@@ -16,3 +16,13 @@ describe('the combining grapheme joiner', () => {
     expect(findLexemesForWord(normalizeHebrewForSearch('ירושל͏ם'))).not.toBeNull();
   });
 });
+
+describe('shin and sin written as one character', () => {
+  it('folds to the plain letter, so both spellings of a word agree', () => {
+    // BHSA writes some words with U+FB2A/U+FB2B, where Sefaria writes the
+    // plain letter and a dot that is stripped as a point. Without this the two
+    // sources spell the same word differently and neither can find the other.
+    expect(normalizeHebrewForSearch('שׁלום')).toBe(normalizeHebrewForSearch('שָׁלוֹם'));
+    expect(normalizeHebrewForSearch('שׂמח')).toBe(normalizeHebrewForSearch('שָׂמַח'));
+  });
+});

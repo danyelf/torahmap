@@ -50,6 +50,17 @@ const NIKKUD_END = 0x05c7;
 // lookup of Jerusalem misses.
 const GRAPHEME_JOINER = 0x034f;
 
+// Shin and sin written as one character each, from the Hebrew presentation
+// forms. BHSA uses these where Sefaria writes the plain letter and a dot, and
+// the dot is stripped as a point, so the two sources would otherwise disagree
+// about how to spell the same word. Nothing in the text we display uses them;
+// the generator folds them for the same reason, and both fold both so that
+// neither has to be read to predict the other.
+const PRESENTATION_FORM_MAP: Record<string, string> = {
+  'שׁ': 'ש', // shin with shin dot (U+FB2A) → shin (U+05E9)
+  'שׂ': 'ש', // shin with sin dot (U+FB2B) → shin (U+05E9)
+};
+
 // Hebrew final forms (sofit) - map final form to regular form
 const FINAL_FORM_MAP: Record<string, string> = {
   'ך': 'כ', // kaf sofit (U+05DA) → kaf (U+05DB)
@@ -142,7 +153,8 @@ export function stripNikkud(text: string): string {
  */
 export function normalizeHebrewForSearch(text: string): string {
   let result = '';
-  for (const char of text) {
+  for (const raw of text) {
+    const char = PRESENTATION_FORM_MAP[raw] ?? raw;
     const code = char.charCodeAt(0);
     if (code === GRAPHEME_JOINER) continue;
     // Skip nikkud marks but keep Hebrew letters and other characters
