@@ -45,6 +45,22 @@ const HEBREW_RANGE_END = 0x05ff;
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05c7;
 
+// U+034F COMBINING GRAPHEME JOINER. Sefaria writes ירושל͏ם with one inside the
+// word, where it renders as nothing and matches nothing; without this, every
+// lookup of Jerusalem misses.
+const GRAPHEME_JOINER = 0x034f;
+
+// Shin and sin written as one character each, from the Hebrew presentation
+// forms. BHSA uses these where Sefaria writes the plain letter and a dot, and
+// the dot is stripped as a point, so the two sources would otherwise disagree
+// about how to spell the same word. Nothing in the text we display uses them;
+// the generator folds them for the same reason, and both fold both so that
+// neither has to be read to predict the other.
+const PRESENTATION_FORM_MAP: Record<string, string> = {
+  'שׁ': 'ש', // shin with shin dot (U+FB2A) → shin (U+05E9)
+  'שׂ': 'ש', // shin with sin dot (U+FB2B) → shin (U+05E9)
+};
+
 // Hebrew final forms (sofit) - map final form to regular form
 const FINAL_FORM_MAP: Record<string, string> = {
   'ך': 'כ', // kaf sofit (U+05DA) → kaf (U+05DB)
@@ -137,8 +153,10 @@ export function stripNikkud(text: string): string {
  */
 export function normalizeHebrewForSearch(text: string): string {
   let result = '';
-  for (const char of text) {
+  for (const raw of text) {
+    const char = PRESENTATION_FORM_MAP[raw] ?? raw;
     const code = char.charCodeAt(0);
+    if (code === GRAPHEME_JOINER) continue;
     // Skip nikkud marks but keep Hebrew letters and other characters
     if (
       code < NIKKUD_START ||
@@ -463,6 +481,18 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
       }
     }
   }
+}
+
+/**
+ * The dictionary words a verse contains.
+ *
+ * Exposed for the dictionary seam, which uses it to decide which of a
+ * spelling's readings is the one in front of the reader. Returns null when the
+ * index has not loaded, which callers must treat as "cannot say" rather than
+ * as "none".
+ */
+export function getVerseLexemes(verseKey: string): LexemeId[] | null {
+  return verseToLexemes?.[verseKey] ?? null;
 }
 
 /**

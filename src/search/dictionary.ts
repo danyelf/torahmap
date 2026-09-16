@@ -16,6 +16,7 @@ import {
   findLexemesForWord,
   getLexeme,
   getLexemeVerseCount,
+  getVerseLexemes,
   searchByLexemes,
   type LexemeId,
 } from '../search.ts';
@@ -69,17 +70,12 @@ function lexemeForKey(key: string): LexemeId | null {
 }
 
 /**
- * The dictionary words a written form could be, likeliest reading first.
+ * Merge a list of lexeme ids into the rows a reader sees.
  *
- * "Likeliest" means how often that spelling is read as that word, which is not
- * the same as `verseCount` — that counts the word across all of its spellings.
- * The two disagree for about a third of ambiguous forms, so a list ordered one
- * way and labelled the other can look mis-sorted. It is not.
+ * This is the body `meaningsFor` used to hold, unchanged, taking the ids as its
+ * input so that both questions about a word share one answer shape.
  */
-export function meaningsFor(writtenForm: string): Meaning[] {
-  const ids = findLexemesForWord(writtenForm);
-  if (!ids) return [];
-
+function rowsFor(ids: LexemeId[]): Meaning[] {
   // Merge as we go, so a merged row keeps the position of its likeliest member
   // and the order stays the order the data gave us.
   const rows = new Map<string, { meaning: Meaning; group: LexemeId[] }>();
@@ -116,6 +112,65 @@ export function meaningsFor(writtenForm: string): Meaning[] {
     ...meaning,
     verseCount: group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
   }));
+}
+
+/**
+ * Is this row the reading these keys name?
+ *
+ * A row is not identified by its first key. It stands for every lexeme merged
+ * into it, and `rowsFor` keeps whichever of them came first in the list it was
+ * handed - so the same reading comes back from `meaningsFor` and
+ * `meaningsInVerse` under two different first keys whenever the verse does not
+ * contain the group's earliest member. Anything that compares first keys
+ * across those two lists will miss, and a reader who picks a reading from one
+ * list gets a search built from the other. Sharing a single lexeme is what
+ * makes two rows the same reading.
+ */
+export function sameMeaning(meaning: Meaning, keys: readonly string[]): boolean {
+  return meaning.keys.some((key) => keys.includes(key));
+}
+
+/**
+ * The dictionary words a written form could be, likeliest reading first.
+ *
+ * "Likeliest" means how often that spelling is read as that word, which is not
+ * the same as `verseCount` — that counts the word across all of its spellings.
+ * The two disagree for about a third of ambiguous forms, so a list ordered one
+ * way and labelled the other can look mis-sorted. It is not.
+ */
+export function meaningsFor(writtenForm: string): Meaning[] {
+  const ids = findLexemesForWord(writtenForm);
+  if (!ids) return [];
+  return rowsFor(ids);
+}
+
+/**
+ * Which dictionary word is this written form, in this verse?
+ *
+ * The spelling alone is ambiguous for half of the words in the text, because
+ * Hebrew does not write most vowels. The verse resolves nearly all of it: the
+ * reading of the word in front of the reader is one the verse contains, and
+ * the spelling's other candidates usually are not.
+ *
+ * This is inference, not knowledge. BHSA tags every word occurrence with
+ * exactly one lexeme, but the index is keyed by spelling, so the link is lost
+ * before it reaches the browser and is reconstructed here. When the index
+ * carries per-word lexemes, this body becomes a lookup and every caller stays
+ * as it is.
+ *
+ * An empty result means "cannot say", which happens for inflected function
+ * words the index deliberately omits. Callers offer a literal search instead
+ * rather than treating it as an error.
+ */
+export function meaningsInVerse(writtenForm: string, verseKey: string): Meaning[] {
+  const ids = findLexemesForWord(writtenForm);
+  if (!ids) return [];
+
+  const inVerse = getVerseLexemes(verseKey);
+  if (!inVerse) return [];
+
+  const present = new Set(inVerse);
+  return rowsFor(ids.filter((id) => present.has(id)));
 }
 
 /**

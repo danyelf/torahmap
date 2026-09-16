@@ -141,7 +141,6 @@ let searchHitCaption: HTMLDivElement | null = null;
 let addTermButton: HTMLButtonElement | null = null;
 let wholeWordCheckbox: HTMLInputElement | null = null;
 let hebrewModeContainer: HTMLDivElement | null = null;
-let documentClickHandler: ((e: MouseEvent) => void) | null = null;
 
 export function configure(config: {
   verses: TanakhLayout[];
@@ -209,6 +208,70 @@ function runSearch(): void {
   updateOptionVisibility();
   updateHitCaption();
   updateCallback?.();
+}
+
+/**
+ * Search for a word a reader clicked, narrowed to one of its meanings.
+ *
+ * Adds a term rather than replacing the search: the existing words keep their
+ * colours, which is what makes two words comparable on one map. Returns false
+ * when the palette is full, so the caller can say so rather than dropping the
+ * click silently.
+ *
+ * Either way the click settles the Hebrew mode. A meaning can only be
+ * searched for in root mode - "the
+ * burnt-offering reading" cannot be expressed as a substring. The written form
+ * is the opposite request, for this spelling and no other, so it goes to whole
+ * word: substring mode would match it inside longer words, and root mode would
+ * resolve a known spelling to its dictionary entry and find the readings the
+ * reader just declined.
+ *
+ * The meaning arrives as every lexeme its row stands for, not as one key. The
+ * reader chose from a list the verse built, and a row the verse built can be
+ * headed by a different lexeme than the same row in the term's own list, so a
+ * single key would be a key this term does not answer to.
+ */
+export function searchForMeaning(text: string, meaningKeys: readonly string[] | null): boolean {
+  const typed = typedTerms();
+  if (typed.length >= MAX_TERMS) return false;
+
+  // The list always holds one empty row to type into. Fill it rather than
+  // leaving an empty row above the new word. setTermText replaces a term in
+  // place, so the filled row keeps its position - track it by id rather than
+  // assuming it lands last, which is wrong whenever the empty row was not the
+  // last one (a reader who cleared an earlier box while a later one still
+  // held a word).
+  const empty = terms.find((term) => term.text.trim() === '');
+  let id: string;
+  if (empty) {
+    id = empty.id;
+    terms = setTermText(terms, id, text);
+  } else {
+    terms = addTerm(terms, text);
+    id = terms[terms.length - 1].id;
+  }
+
+  if (meaningKeys && meaningKeys.length > 0) {
+    hebrewSearchMode = 'root';
+    terms = onlyMeaning(terms, id, meaningKeys);
+  } else {
+    hebrewSearchMode = 'word';
+  }
+  syncHebrewModeRadios();
+
+  renderTermRows();
+  runSearch();
+  return true;
+}
+
+/**
+ * Is there a colour left for another word?
+ *
+ * Asked before a click is offered, so the panel can say the palette is full
+ * rather than showing a button that would quietly do nothing.
+ */
+export function canAddTerm(): boolean {
+  return typedTerms().length < MAX_TERMS;
 }
 
 /**
@@ -301,7 +364,7 @@ function buildMeaningRow(
     // The row is a label, so the click would otherwise reach the checkbox too.
     e.preventDefault();
     e.stopPropagation();
-    terms = onlyMeaning(terms, term.id, meaning.keys[0]);
+    terms = onlyMeaning(terms, term.id, meaning.keys);
     runSearch();
   });
   row.appendChild(only);
@@ -312,6 +375,24 @@ function buildMeaningRow(
   row.appendChild(count);
 
   return row;
+}
+
+/**
+ * Put the mode radios where the mode actually is.
+ *
+ * Nothing else keeps them honest. A reader can change the mode without touching
+ * them - choosing a meaning from a clicked word moves the search to root - and
+ * a radio still filled from before is worse than merely wrong: its `checked`
+ * property is already true, so clicking it fires no change event and the reader
+ * cannot get back the way they came.
+ */
+function syncHebrewModeRadios(): void {
+  if (!hebrewModeContainer) return;
+  for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
+    'input[name="hebrew-mode"]',
+  )) {
+    radio.checked = radio.value === hebrewSearchMode;
+  }
 }
 
 /**
@@ -1047,11 +1128,11 @@ export const searchOverlay: Overlay = {
       runSearch();
     });
 
+    syncHebrewModeRadios();
     if (hebrewModeContainer) {
       for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
         'input[name="hebrew-mode"]',
       )) {
-        radio.checked = radio.value === hebrewSearchMode;
         radio.addEventListener('change', () => {
           if (!radio.checked) return;
           hebrewSearchMode = radio.value as (typeof HEBREW_SEARCH_MODES)[number];
@@ -1059,18 +1140,6 @@ export const searchOverlay: Overlay = {
         });
       }
     }
-
-    // Results sit in a floating box, so a click elsewhere puts them away.
-    if (documentClickHandler) {
-      document.removeEventListener('click', documentClickHandler);
-    }
-    documentClickHandler = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (searchResults && !searchResults.contains(target) && !container.contains(target)) {
-        searchResults.classList.remove('visible');
-      }
-    };
-    document.addEventListener('click', documentClickHandler);
 
     renderTermRows();
     updateOptionVisibility();
@@ -1110,10 +1179,6 @@ export const searchOverlay: Overlay = {
     if (scrollHandler && searchResults) {
       searchResults.removeEventListener('scroll', scrollHandler);
       scrollHandler = null;
-    }
-    if (documentClickHandler) {
-      document.removeEventListener('click', documentClickHandler);
-      documentClickHandler = null;
     }
     // Clear DOM references (for memory cleanup)
     searchResults = null;
@@ -1162,13 +1227,7 @@ export const searchOverlay: Overlay = {
     }
 
     hebrewSearchMode = params.hm ?? 'root';
-    if (hebrewModeContainer) {
-      for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
-        'input[name="hebrew-mode"]',
-      )) {
-        radio.checked = radio.value === hebrewSearchMode;
-      }
-    }
+    syncHebrewModeRadios();
 
     // Rebuild the term list from the query, then lay the chosen meanings over
     // it. Positions are safe here: q and m are read as one snapshot.

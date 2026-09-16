@@ -1,0 +1,80 @@
+.word-menu {
+  position: fixed;
+  z-index: 200;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 6px;
+  background: rgba(30, 30, 30, 0.98);
+  border: 1px solid #444;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  color: #eee;
+}
+
+/*
+ * The panel's own header, following #verse-popup .verse-ref - the other
+ * popover in this app - one size down, because the word menu is smaller and
+ * this is a label rather than a banner. The negative margins take it out to the
+ * panel's edges, past the 6px the panel pads its contents by.
+ */
+.word-menu-title {
+  margin: -6px -6px 6px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px 3px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+}
+
+.word-menu-note {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.word-menu-choice {
+  display: flex;
+  align-items: baseline;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.word-menu-choice:hover {
+  background: rgba(106, 176, 243, 0.18);
+}
+
+.word-menu-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1;
+}
+
+.word-menu-form {
+  font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
+  font-size: 16px;
+  direction: rtl;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.word-menu-gloss {
+  flex: 1;
+  min-width: 0;
+}
+
+.word-menu-count {
+  color: #888;
+  font-size: 11px;
+  white-space: nowrap;
+}
