@@ -160,9 +160,9 @@ def consonants(text):
 
 
 def ends_printed_word(trailer):
-    """True when something is printed after this unit, so it ends a word.
+    """True when something is printed after this morpheme, so it ends a word.
 
-    A unit with an empty trailer runs straight into the next one: the two are
+    A morpheme with an empty trailer runs into the next one: the two are
     printed as a single word, and the first of them is part of a word rather
     than a word.
     """
@@ -190,7 +190,7 @@ def is_maqaf_break(trailer):
 
 
 def printed_trailer(F, node):
-    """What is printed after a unit, as the reader sees it.
+    """What is printed after a morpheme, as the reader sees it.
 
     A corrected word carries a second trailer, for the reading rather than the
     writing, and the two can differ: בגד is written as one word and read as
@@ -202,23 +202,25 @@ def printed_trailer(F, node):
 
 
 def printed_words(F, L, verse_node):
-    """Group a verse's ETCBC units into the words the page prints.
+    """Group a verse's morphemes into the words the page prints.
 
-    Yields (units, trailer): the run of units printed with nothing between
-    them, and what is printed after the last of them. The last unit of a verse
-    ends a word whatever its trailer holds.
+    Yields (morphemes, trailer): the run of morphemes printed with nothing
+    between them, and what is printed after the last of them.
     """
     run = []
-    nodes = L.d(verse_node, "word")
-    for position, node in enumerate(nodes):
+    for node in L.d(verse_node, "word"):
         run.append(node)
         trailer = printed_trailer(F, node)
-        if ends_printed_word(trailer) or position == len(nodes) - 1:
+        if ends_printed_word(trailer):
             yield run, trailer
             run = []
+    if run:
+        # The verse ran out before a separator did. The last trailer holds no
+        # separator, or the loop would have yielded already.
+        yield run, ""
 
 
-def close_word(word_lengths, maqaf_joins, morphemes, inner, trailer):
+def close_word(word_lengths, maqaf_joins, morpheme_count, inner, trailer):
     """Record the printed word just finished, and any it was printed with.
 
     Nearly always this adds one word carrying all the morphemes read since the
@@ -226,7 +228,7 @@ def close_word(word_lengths, maqaf_joins, morphemes, inner, trailer):
     halves follow it carrying no morphemes of their own -- a length of 0 means
     "the same dictionary word as the one before, printed separately".
     """
-    word_lengths.append(morphemes)
+    word_lengths.append(morpheme_count)
     for separator in inner:
         if separator == "־":
             maqaf_joins.append(len(word_lengths) - 1)
@@ -287,7 +289,7 @@ def main():
     morph_table = []
 
     unmapped_books = set()
-    word_total = 0
+    morpheme_total = 0
     bound_total = 0
     bound_and_suffixed = []
 
@@ -305,13 +307,13 @@ def main():
         word_lengths = []
         maqaf_joins = []
 
-        for units, trailer in printed_words(F, L, verse_node):
-            word_total += len(units)
+        for morphemes, trailer in printed_words(F, L, verse_node):
+            morpheme_total += len(morphemes)
 
-            word_forms = []   # the written form of each unit, in order
-            word_inner = []   # separators printed inside those units
-            for node in units:
-                unit_lexeme = lex_index[L.u(node, "lex")[0]]
+            word_forms = []   # the written form of each, in order
+            word_inner = []   # separators printed inside them
+            for node in morphemes:
+                morpheme_lexeme = lex_index[L.u(node, "lex")[0]]
                 combo = tuple(
                     "" if (v := getattr(F, field).v(node)) in (None, "NA", "n/a")
                     else v
@@ -321,15 +323,15 @@ def main():
                 if morph is None:
                     morph = morph_ids[combo] = len(morph_table)
                     morph_table.append(".".join(combo))
-                verse_morph[key].append([unit_lexeme, morph])
+                verse_morph[key].append([morpheme_lexeme, morph])
                 word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
-                # Separators printed inside a unit, where a corrected reading
+                # Separators printed inside a morpheme, where a corrected reading
                 # divides into more words than the writing does.
                 word_inner.extend(
                     internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
                 )
 
-            *bound, stem = units
+            *bound, stem = morphemes
 
             # The proclitics -- ו, ה, ל, ב, מן, כ. Nobody means to ask which
             # verses contain ל, so they are counted and then dropped.
@@ -341,7 +343,7 @@ def main():
             lexeme = lex_index[L.u(stem, "lex")[0]]
             verse_lexemes[key].add(lexeme)
 
-            # A word of one unit is its own stem, so two of these three are the
+            # A word of one morpheme is its own stem, so two of these three are the
             # same string. Counting it twice would weigh a word printed bare
             # against the same word printed with a prefix, and since nouns take
             # the article and verbs mostly do not, that ranks verbs above nouns.
@@ -352,7 +354,7 @@ def main():
                 if len(form) >= 2:
                     form_counts[(form, lexeme)] += 1
 
-            close_word(word_lengths, maqaf_joins, len(units), word_inner, trailer)
+            close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
@@ -364,14 +366,14 @@ def main():
     if unmapped_books:
         sys.exit(f"Unmapped BHSA book names: {sorted(unmapped_books)}")
 
-    # The rule is a single test -- is anything printed after this unit? -- and
-    # it can stay a single test only while no bound unit carries a suffix. That
-    # holds in BHSA 2021 for all 426,590 units. If a later release breaks it,
+    # The rule is a single test -- is anything printed after this morpheme? --
+    # and it holds only while no bound morpheme carries a suffix. That
+    # holds in BHSA 2021 for all 426,590 morphemes. If a later release breaks
     # the rule needs a second clause and this should say so rather than quietly
     # drop suffixed words from the index.
     if bound_and_suffixed:
         sys.exit(
-            f"{len(bound_and_suffixed)} bound units carry a pronominal suffix, "
+            f"{len(bound_and_suffixed)} bound morphemes carry a pronominal suffix, "
             "which the word rule assumes cannot happen:\n  "
             + "\n  ".join(bound_and_suffixed[:10])
         )
@@ -384,9 +386,9 @@ def main():
         for written, pairs in word_lexemes.items()
     }
 
-    print(f"  {word_total} ETCBC units across {len(verse_lexemes)} verses")
+    print(f"  {morpheme_total} morphemes across {len(verse_lexemes)} verses")
     print(f"  {bound_total} of them bound to the next "
-          f"({100 * bound_total / word_total:.1f}%), and so not words")
+          f"({100 * bound_total / morpheme_total:.1f}%), and so not words")
     print(f"  {len(word_lexemes)} distinct written forms")
     print(f"  {len(morph_table)} distinct grammatical parsings")
 
@@ -512,10 +514,10 @@ def main():
             "verseFields": ["morphemes", "words", "joined"],
             "misaligned": misaligned,
             "note": (
-                "verses[key] is [morphemes, words, joined]: every ETCBC unit in "
+                "verses[key] is [morphemes, words, joined]: every ETCBC morpheme in "
                 "text order as [lexeme index, parsing index], the number of "
-                "units in each printed word, and the word positions a maqaf "
-                "follows. Units are morphemes, not printed words. misaligned "
+                "morphemes in each printed word, and the word positions a maqaf "
+                "follows. Morphemes are not printed words. misaligned "
                 "names verses whose words do not line up with all-texts.json; "
                 "positions in those must not be used to label a word. "
                 "See README.md in this folder."

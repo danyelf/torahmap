@@ -96,8 +96,8 @@ right question; they are a right answer to a question that should not have been
 askable.
 
 And BHSA already records this, in a feature the generator reads and throws
-away. Every word node carries a trailer: the text printed after it before the
-next node. A node whose trailer is empty runs straight into the next one, with
+away. Every morpheme carries a trailer: the text printed after it before the
+next. A morpheme whose trailer is empty runs straight into the next one, with
 no space and no maqaf between them. It is part of a word rather than a word.
 
 The split is nothing like the part-of-speech list:
@@ -125,28 +125,29 @@ the trailer separates them exactly.
 
 ## The rule
 
-Walk BHSA's word nodes in text order. Each carries a trailer; where the verse is
+Walk BHSA's morphemes in text order. Each carries a trailer; where the verse is
 corrected, use the qere's trailer, because that is what the page shows.
 
-- A node is **bound** if its printed trailer is empty. Nothing separates it from
-  the next node; they are printed as one word.
-- A node is **free** otherwise — a space, a maqaf or the end of the verse
+- A morpheme is **bound** if its printed trailer is empty. Nothing separates it
+  from the next; they are printed as one word.
+- A morpheme is **free** otherwise — a space, a maqaf or the end of the verse
   follows it.
-- A **printed word** is a run of nodes ending at a free node. Its **stem** is
-  that final node.
+- A **printed word** is a run of morphemes ending at a free one. Its **stem**
+  is that final morpheme.
 
-> **A bound node is not a word.** It is never a search result, never contributes
-> a verse to any index, and is never offered as a meaning. Only printed words
-> are searchable, and a printed word is indexed under the lexeme of its stem.
+> **A bound morpheme is not a word.** It is never a search result, never
+> contributes a verse to any index, and is never offered as a meaning. Only
+> printed words are searchable, and a printed word is indexed under the lexeme
+> of its stem.
 
 The consequence that does the work: a lexeme's verse set holds a verse when that
 lexeme is the **stem of a printed word** in it, not when any morpheme in the
 verse happens to carry that lexeme.
 
 The rule is one test. It needs no second clause about suffixes, because **no
-node in the Bible is both bound and suffixed** — zero out of 426,590.
+morpheme in the Bible is both bound and suffixed** — zero out of 426,590.
 
-Measured over the whole text: 121,790 nodes are bound (28.5%), 304,800 are free.
+Measured over the whole text: 121,790 morphemes are bound (28.5%), 304,800 free.
 The bound ones are conjunctions (51,141), prepositions (39,505), articles
 (30,386), interrogatives (749) and interrogative pronouns (2). Content words
 among them: **7 occurrences**, six nouns and one verb, 0.006%. So "bound" is a
@@ -257,7 +258,7 @@ The rule needs no new machinery. PR #126 already put it in the generator.
 
 To fill `verse-morphology.json`'s new word arrays, #126 taught the walk to close
 a printed word at `is_token_break(printed_trailer)` — which is this rule's
-question, asked and answered on every node. It wired that only to the new
+question, asked and answered on every morpheme. It wired that only to the new
 arrays, deliberately, so that `word-lexemes.json` would come out byte-identical
 and the boundary work could land on its own. That reason has expired.
 
@@ -268,13 +269,13 @@ every morpheme with no notion of words at all; #126's breaks at the *printed*
 trailer. The work is to delete the older one and derive all three files from the
 one that is left.
 
-The two disagree about **23 nodes out of 426,590**, all of them qere
+The two disagree about **23 morphemes out of 426,590**, all of them qere
 corrections — Genesis 30:11, Exodus 4:2, 1 Samuel 24:9 and twenty more. That is
 the entire price of having one definition instead of two:
 
 | | written trailer | printed trailer |
 | --- | ---: | ---: |
-| bound nodes | 121,801 | 121,790 |
+| bound morphemes | 121,801 | 121,790 |
 | lexemes emptied | 5 | 6 |
 | `verse-lexemes` entries | 268,172 | 268,183 |
 
@@ -288,7 +289,7 @@ word arrays already follow. Every figure in this document was computed on it.
 
 1. **One walk.** At each printed-word break the generator files the joined form
    and the stem's own written form under the stem's lexeme, adds the stem to
-   that verse's lexeme set, and records the word's length. A node that is not a
+   that verse's lexeme set, and records the word's length. A morpheme that is not
    stem contributes nothing to any index. Filing the stem's own form is what
    keeps ראשית findable as well as בראשית.
 2. **`indexable()` and `FUNCTION_WORD_POS` are deleted.** The collision they
@@ -296,7 +297,7 @@ word arrays already follow. Every figure in this document was computed on it.
    `functionWordPos` in `lexicon.json` is already written-but-unread, and the
    data README says so; it comes out with the rest.
 3. **The generator asserts what the rule rests on.** It reads BHSA's `prs` and
-   exits loudly if any bound node carries a pronominal suffix, so a future BHSA
+   exits loudly if any bound morpheme carries a suffix, so a future BHSA
    release cannot quietly invalidate the one-test rule.
 4. **`lookupFormOrSpelling()` loses its "spelling starts with the term" branch**,
    and `findLexemesForWord()` loses its prefix-stripping loops. What is left is
@@ -342,7 +343,7 @@ there and the existing "cannot settle" branch is the right home for them.
 - Every lexeme that is always bound has an empty verse set; every lexeme that is
   always free has the verse count it has today. The ±0 rows above are the
   assertion — a change there means the rule has reached a real word.
-- No node is both bound and suffixed. This is what lets the rule be one test,
+- No morpheme is both bound and suffixed. This is what lets the rule be one test,
   and it should fail loudly if a future BHSA version breaks it.
 - עליו resolves to עַל and not to עֶלְיֹון, named as a regression test for the
   branch being removed.
@@ -356,15 +357,15 @@ there and the existing "cannot settle" branch is the right home for them.
 - The עלה justification in the generator comment is wrong by roughly 50x, and
   the real collisions are elsewhere. Measured against a full regeneration with
   the gate disabled.
-- No bound node carries a pronominal suffix. Zero of 426,590.
+- No bound morpheme carries a pronominal suffix. Zero of 426,590.
 - Removing the gate costs no findable word. 327 forms added, 7 removed, and all
   seven of those are strings that are printed nowhere in the Bible.
 - The seven content-word losses are 7, not the 19 an earlier draft of this
   document claimed — that figure contradicted the same document's "seven
   verses" and its breakdown did not sum to its own total — and all seven are
   verses the `misaligned` list already names.
-- The written and printed trailers disagree about 23 nodes, so unifying the two
-  walks onto the printed one costs 23 nodes and no promise made here.
+- The written and printed trailers disagree about 23 morphemes, so unifying the
+  two walks onto the printed one costs 23 and no promise made here.
 - The fallback shows no marker beside an unresolved term. An earlier draft of
   this document said it did; checked in the running app, a term that resolved to
   a lexeme and a term that fell through to text matching look alike. Filed as
