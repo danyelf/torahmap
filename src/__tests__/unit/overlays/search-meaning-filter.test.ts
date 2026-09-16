@@ -187,6 +187,8 @@ describe('the Hebrew default', () => {
   it('says how many meanings a collapsed row is searching for', () => {
     const container = render();
     type(container, 'עלה');
+    // Counted rather than written down: rebuilding the index changes it.
+    const offered = container.querySelectorAll('.meaning-row').length;
 
     // Add a second word so the עלה row collapses and has to describe itself.
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
@@ -194,7 +196,7 @@ describe('the Hebrew default', () => {
     const state = container
       .querySelectorAll<HTMLElement>('.term-row')[0]
       .querySelector('.term-state')!;
-    expect(state.textContent).toBe('root · all 4 meanings');
+    expect(state.textContent).toBe(`root · all ${offered} meanings`);
   });
 
   it('names the meanings once the row is narrowed', () => {
