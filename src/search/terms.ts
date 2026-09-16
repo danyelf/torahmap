@@ -8,7 +8,16 @@
 // and these functions are pure — each returns a new list.
 
 import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
+import { isHebrewQuery } from '../search.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
+
+/**
+ * How a term is matched. Root resolves a written form to the dictionary words
+ * it could be, so it is offered only where there is a dictionary — Hebrew.
+ */
+export type SearchMode = 'substring' | 'word' | 'root';
+
+export const SEARCH_MODES = ['substring', 'word', 'root'] as const satisfies readonly SearchMode[];
 
 export interface SearchTerm {
   /** Stable for the life of the term; survives edits to its text. */
@@ -25,6 +34,16 @@ export interface SearchTerm {
   selected: Set<string>;
   /** Position in SEARCH_COLORS, held for the term's life. */
   colorIndex: number;
+  /**
+   * How this term is matched, or null while the reader has not said.
+   *
+   * Null is not the same as substring. A term's language is worked out from
+   * its text, and the text changes on every keystroke, so a term created as
+   * English and retyped in Hebrew has to pick up Hebrew's default rather than
+   * keep the one it was born with. Holding "has not chosen" apart from "chose
+   * substring" is what makes that possible.
+   */
+  mode: SearchMode | null;
 }
 
 /**
@@ -53,7 +72,10 @@ function freeColor(terms: SearchTerm[]): number {
 
 export function addTerm(terms: SearchTerm[], text: string): SearchTerm[] {
   if (terms.length >= MAX_TERMS) return terms;
-  return [...terms, { id: `t${nextId++}`, text, ...resolve(text), colorIndex: freeColor(terms) }];
+  return [
+    ...terms,
+    { id: `t${nextId++}`, text, ...resolve(text), colorIndex: freeColor(terms), mode: null },
+  ];
 }
 
 export function removeTerm(terms: SearchTerm[], id: string): SearchTerm[] {
@@ -220,4 +242,71 @@ export function allMeanings(terms: SearchTerm[], id: string): SearchTerm[] {
  */
 export function isNarrowed(term: SearchTerm): boolean {
   return term.meanings.length > 1 && term.selected.size < term.meanings.length;
+}
+
+/** Change how one term is matched. */
+export function setMode(terms: SearchTerm[], id: string, mode: SearchMode): SearchTerm[] {
+  return terms.map((t) => (t.id === id ? { ...t, mode } : t));
+}
+
+/**
+ * How this term will actually be matched: what the reader chose, or the
+ * default for the language its text is written in.
+ *
+ * Root is clamped to whole word for English, which has no dictionary behind
+ * it. The clamp is in the reading rather than the field, so a term set to root
+ * and briefly retyped in English is still a root term when the Hebrew returns.
+ */
+export function effectiveMode(term: SearchTerm): SearchMode {
+  const hebrew = isHebrewQuery(term.text.trim());
+  const chosen = term.mode ?? (hebrew ? 'root' : 'substring');
+  return !hebrew && chosen === 'root' ? 'word' : chosen;
+}
+
+/** The modes this term's own text can be matched by, in the order shown. */
+export function modesOffered(term: SearchTerm): SearchMode[] {
+  return isHebrewQuery(term.text.trim()) ? ['substring', 'word', 'root'] : ['substring', 'word'];
+}
+
+/**
+ * One letter per mode, because the URL layer caps a token at 50 characters and
+ * five terms spelled out would be 49 of them.
+ */
+const MODE_LETTERS: Record<SearchMode, string> = {
+  substring: 's',
+  word: 'w',
+  root: 'r',
+};
+
+const MODE_BY_LETTER = new Map<string, SearchMode>(
+  SEARCH_MODES.map((mode) => [MODE_LETTERS[mode], mode]),
+);
+
+/**
+ * The chosen modes, for the URL's `mode` parameter.
+ *
+ * Positional alongside the comma-separated terms in `q`, exactly as `m` is:
+ * one entry per term, and an empty entry for a term still on its default. A
+ * search where nobody has chosen writes nothing at all, so an ordinary link is
+ * unchanged.
+ */
+export function encodeModes(terms: SearchTerm[]): string {
+  const letters = terms.map((t) => (t.mode ? MODE_LETTERS[t.mode] : ''));
+  return letters.some((letter) => letter !== '') ? letters.join(',') : '';
+}
+
+/**
+ * Apply a `mode` parameter to a freshly built term list.
+ *
+ * An entry that is empty or unrecognised leaves that term on its default,
+ * rather than discarding the term or the search.
+ */
+export function applyModes(terms: SearchTerm[], encoded: string): SearchTerm[] {
+  if (!encoded) return terms;
+
+  const perTerm = encoded.split(',');
+  return terms.map((term, i) => {
+    const mode = MODE_BY_LETTER.get(perTerm[i]);
+    return mode ? { ...term, mode } : term;
+  });
 }

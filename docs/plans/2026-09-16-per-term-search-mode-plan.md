@@ -363,7 +363,7 @@ describe('two terms, two modes', () => {
     expect(rootOnly.ww).toBeUndefined();
   });
 
-  it('keeps one term's mode when another term's changes', () => {
+  it('keeps one mode when another term changes', () => {
     applyOverlayParams(searchOverlay, { q: 'עלה,אור', mode: 'r,w' });
     expect(searchOverlay.getUrlParams!().mode).toBe('r,w');
 

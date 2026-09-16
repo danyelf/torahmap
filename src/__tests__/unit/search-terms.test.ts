@@ -22,6 +22,12 @@ import {
   onlyMeaning,
   allMeanings,
   isNarrowed,
+  setMode,
+  effectiveMode,
+  modesOffered,
+  encodeModes,
+  applyModes,
+  type SearchTerm,
 } from '../../search/terms.ts';
 
 beforeAll(async () => {
@@ -300,5 +306,98 @@ describe('getting back to all of them', () => {
     // בראשית has one meaning, which is every meaning; nothing to restore.
     const [bereshit] = addTerm([], 'בראשית');
     expect(isNarrowed(bereshit)).toBe(false);
+  });
+});
+
+// How a word is matched belongs to the word. It used to be one setting for the
+// whole search, so every Hebrew term was matched the same way and the
+// comparisons the map exists for could not be asked for at all.
+describe('a term matched its own way', () => {
+  it('defaults Hebrew to root and English to substring', () => {
+    const terms = addTerm(addTerm([], 'עלה'), 'light');
+    expect(effectiveMode(terms[0])).toBe('root');
+    expect(effectiveMode(terms[1])).toBe('substring');
+  });
+
+  it('lets the default follow the text when the language changes', () => {
+    // The reader has chosen nothing, so retyping an English word in Hebrew
+    // should get Hebrew's default rather than the one it was created with.
+    let terms = addTerm([], 'light');
+    terms = setTermText(terms, terms[0].id, 'עלה');
+    expect(terms[0].mode).toBeNull();
+    expect(effectiveMode(terms[0])).toBe('root');
+  });
+
+  it('keeps a chosen mode across an edit', () => {
+    let terms = addTerm([], 'עלה');
+    terms = setMode(terms, terms[0].id, 'word');
+    terms = setTermText(terms, terms[0].id, 'עלו');
+    expect(effectiveMode(terms[0])).toBe('word');
+  });
+
+  it('holds root for English but does not forget it', () => {
+    let terms = addTerm([], 'עלה');
+    terms = setMode(terms, terms[0].id, 'root');
+    terms = setTermText(terms, terms[0].id, 'light');
+    expect(effectiveMode(terms[0])).toBe('word');
+    terms = setTermText(terms, terms[0].id, 'עלה');
+    expect(effectiveMode(terms[0])).toBe('root');
+  });
+
+  it('changes one term without touching its neighbours', () => {
+    let terms = addTerm(addTerm([], 'עלה'), 'אור');
+    terms = setMode(terms, terms[1].id, 'word');
+    expect(effectiveMode(terms[0])).toBe('root');
+    expect(effectiveMode(terms[1])).toBe('word');
+  });
+
+  it('offers root only to a term the dictionary could answer', () => {
+    const terms = addTerm(addTerm([], 'עלה'), 'light');
+    expect(modesOffered(terms[0])).toEqual(['substring', 'word', 'root']);
+    expect(modesOffered(terms[1])).toEqual(['substring', 'word']);
+  });
+});
+
+describe('the mode in the URL', () => {
+  it('writes nothing while every term is on its default', () => {
+    const terms = addTerm(addTerm([], 'עלה'), 'light');
+    expect(encodeModes(terms)).toBe('');
+  });
+
+  it('writes one letter per term, empty for a term that has not chosen', () => {
+    let terms = addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'light');
+    terms = setMode(terms, terms[1].id, 'word');
+    expect(encodeModes(terms)).toBe(',w,');
+  });
+
+  it('round-trips every mode', () => {
+    let terms = addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'דבר');
+    terms = setMode(terms, terms[0].id, 'substring');
+    terms = setMode(terms, terms[1].id, 'word');
+    terms = setMode(terms, terms[2].id, 'root');
+    expect(encodeModes(terms)).toBe('s,w,r');
+
+    const fresh = applyModes(addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'דבר'), 's,w,r');
+    expect(fresh.map(effectiveMode)).toEqual(['substring', 'word', 'root']);
+  });
+
+  it('leaves a term on its default for an empty or unknown entry', () => {
+    const terms = applyModes(addTerm(addTerm([], 'עלה'), 'אור'), ',zzz');
+    expect(terms[0].mode).toBeNull();
+    expect(terms[1].mode).toBeNull();
+    expect(terms.map(effectiveMode)).toEqual(['root', 'root']);
+  });
+
+  it('ignores entries past the end of the term list', () => {
+    const terms = applyModes(addTerm([], 'עלה'), 'w,r,s');
+    expect(terms).toHaveLength(1);
+    expect(effectiveMode(terms[0])).toBe('word');
+  });
+
+  it('stays well under the 50-character cap at five terms', () => {
+    let terms: SearchTerm[] = [];
+    for (const word of ['עלה', 'אור', 'דבר', 'מלך', 'ארץ']) terms = addTerm(terms, word);
+    for (const term of terms) terms = setMode(terms, term.id, 'substring');
+    expect(encodeModes(terms).length).toBeLessThanOrEqual(50);
   });
 });
