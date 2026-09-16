@@ -7,11 +7,6 @@ public/data/search/. What each file holds, where BHSA comes from and how to set
 up Text-Fabric are all documented in public/data/search/README.md — read that
 first.
 
-Prerequisites:
-  .venv/bin/pip install text-fabric
-  The BHSA data must be present under ~/text-fabric-data/github/ETCBC/bhsa
-  (Text-Fabric downloads it with: .venv/bin/text-fabric ETCBC/bhsa)
-
 Usage:
   .venv/bin/python scripts/search/generate-lexeme-index.py
 """
@@ -212,11 +207,6 @@ def printed_words(F, L, verse_node):
     Yields (units, trailer): the run of units printed with nothing between
     them, and what is printed after the last of them. The last unit of a verse
     ends a word whatever its trailer holds.
-
-    This is the rule the whole index rests on. Everything the walk does with a
-    word -- which lexeme it belongs to, which spellings lead to it, how many
-    units it took -- follows from the grouping, so the grouping is made once,
-    here, rather than reconstructed from accumulators as the walk goes.
     """
     run = []
     nodes = L.d(verse_node, "word")
@@ -298,7 +288,6 @@ def main():
 
     unmapped_books = set()
     word_total = 0
-    # Units printed with nothing after them: parts of a word, not words.
     bound_total = 0
     bound_and_suffixed = []
 
@@ -340,33 +329,22 @@ def main():
                     internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
                 )
 
-            # Every unit but the last has nothing printed after it, so it runs
-            # into its neighbour and the two are one word on the page. A bound
-            # unit is not a word: it is never indexed and never puts its lexeme
-            # into the verse. These are the proclitics -- ו, ה, ל, ב, מן, כ --
-            # and "every verse containing the letter ל" is not a question
-            # anyone means to ask.
-            for node in units[:-1]:
+            *bound, stem = units
+
+            # The proclitics -- ו, ה, ל, ב, מן, כ. Nobody means to ask which
+            # verses contain ל, so they are counted and then dropped.
+            for node in bound:
                 bound_total += 1
                 if F.prs.v(node) not in (None, "absent", "n/a", "NA"):
                     bound_and_suffixed.append(f"{key} {F.g_word_utf8.v(node)}")
 
-            # The last unit is the word's stem, and the word belongs to its
-            # lexeme. Both the whole word and the stem on its own are filed
-            # there: the first is what a reader types when they copy בראשית off
-            # the page, the second is what they type when they mean ראשית.
-            stem = units[-1]
             lexeme = lex_index[L.u(stem, "lex")[0]]
             verse_lexemes[key].add(lexeme)
 
-            # Three spellings lead to this word, and they are not always three
-            # strings: a word of one unit is its own stem, so the stem's letters
-            # and the whole printed word are written the same. Count each
-            # distinct spelling once. Filing the same one twice would count a
-            # word printed bare as two occurrences and the same word printed
-            # with a prefix as one, which is not what the number claims to be
-            # and, since nouns take the article and verbs mostly do not, would
-            # quietly rank verbs above nouns.
+            # A word of one unit is its own stem, so two of these three are the
+            # same string. Counting it twice would weigh a word printed bare
+            # against the same word printed with a prefix, and since nouns take
+            # the article and verbs mostly do not, that ranks verbs above nouns.
             written = word_forms[-1]
             qere = normalize(F.qere_utf8.v(stem) or "")
             whole_word = "".join(word_forms)
@@ -374,9 +352,6 @@ def main():
                 if len(form) >= 2:
                     form_counts[(form, lexeme)] += 1
 
-            # The same grouping, recorded rather than discarded. This is what
-            # lets a reader of the file say which printed word a lexeme is,
-            # instead of only which verse it is in.
             close_word(word_lengths, maqaf_joins, len(units), word_inner, trailer)
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
@@ -537,24 +512,13 @@ def main():
             "verseFields": ["morphemes", "words", "joined"],
             "misaligned": misaligned,
             "note": (
-                "verses[key] is [morphemes, words, joined]. morphemes lists "
-                "every ETCBC unit of the verse in text order as [lexeme index, "
-                "parsing index]. Those units are morphemes rather than printed "
-                "words: the \u05d1 of \u05d1\u05e8\u05d0\u05e9\u05d9\u05ea is "
-                "a unit of its own. words gives the number of units making up "
-                "each printed word, in the same order, and so sums to the "
-                "length of morphemes. A 0 means the printed word is a further "
-                "part of the dictionary word before it, as the second half of "
-                "\u05ea\u05d5\u05d1\u05dc \u05e7\u05d9\u05df is. A printed "
-                "word ends at a space or at a "
-                "maqaf; joined lists the positions in words that a maqaf "
-                "follows, so that "
-                "\u05db\u05dc\u05be\u05d4\u05d0\u05e8\u05e5 can be drawn "
-                "as the single word it is printed as while staying two words "
-                "here. misaligned names the verses whose words do not line up "
-                "with the Hebrew in all-texts.json, because the two sources "
-                "divide a compound name differently or the text is absent; "
-                "positions in those verses must not be used to label a word."
+                "verses[key] is [morphemes, words, joined]: every ETCBC unit in "
+                "text order as [lexeme index, parsing index], the number of "
+                "units in each printed word, and the word positions a maqaf "
+                "follows. Units are morphemes, not printed words. misaligned "
+                "names verses whose words do not line up with all-texts.json; "
+                "positions in those must not be used to label a word. "
+                "See README.md in this folder."
             ),
             "verses": {
                 key: [verse_morph[key], verse_words[key], verse_joins[key]]
