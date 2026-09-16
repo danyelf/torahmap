@@ -178,3 +178,35 @@ project rule, this is not done until he has looked at it.
   layer later, and shear between the two layers during fast pans is the thing
   that would force it.
 - Shipped defaults, and whether the layer is on by default at all.
+
+## Findings from the first build (2026-09-16)
+
+What the prototype taught before anyone had panned it by hand. Screenshots
+are in `2026-09-16-background-text/`, all at zoom 8 in Genesis 5, the "above"
+layer, Frank Ruhl Libre, 25% opacity, no trop.
+
+- **Light text vanishes over light squares.** The warm grey at 25% opacity
+  reads only in the dark gaps, so "above" and "behind" looked identical at
+  first. A blend-mode control was added: `difference` makes the text dark over
+  light squares and light over the gaps, and is the first setting that makes
+  "above" visibly different from "behind". Whether that reads as elegant or
+  as noise is for Danyel to judge.
+- **The visible center is not the window center.** The right panel covers
+  280px, so the passage is now centred on the uncovered part of the window.
+- **A viewport anchor should centre the paragraph.** Putting the centre
+  verse's first word at the screen centre pushed the whole paragraph into the
+  left half. The square anchor keeps the first-word rule; the viewport anchor
+  centres the block. The paragraph width is a control (`width em`) because a
+  30em block reads as a block, not as a wallpaper.
+- **Story mode wins the hash.** On load the app enters story mode and replaces
+  any explore-mode hash, so `?bgtext=1#verse=Genesis.1.1&zoom=8` does not land
+  on Genesis 1:1. The layer follows the story camera correctly; getting to
+  1:1 zoomed in is done by hand. Not a prototype problem, noted so nobody
+  chases it.
+- **The layer never blocks input.** Pointer events are off on the layer, and
+  the panel sits at top left under the book labels.
+
+Not yet judged, because it needs a hand on the mouse: how the parallax feels,
+whether the crossfade hides the anchor jump under presets B and C, and what
+values of hysteresis and settle delay stop the passage from churning at low
+zoom.
