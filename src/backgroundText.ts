@@ -45,22 +45,24 @@ export interface BackgroundTextSettings {
   snapLines: boolean;
 }
 
+// Danyel's pick after two rounds with the panel (2026-09-16): almost fixed to
+// the glass, very quiet, letters only, a slow dissolve between passages.
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   layer: 'above',
-  parallax: 0.3,
+  parallax: 0.05,
   anchor: 'viewport',
   content: 'fill',
-  neighbours: 6,
-  widthEm: 30,
+  neighbours: 17,
+  widthEm: 35,
   minFont: 12,
-  maxFont: 24,
-  opacity: 0.25,
-  blend: 'normal',
+  maxFont: 45,
+  opacity: 0.1,
+  blend: 'exclusion',
   font: 'david',
-  marks: 'no-trop',
-  hysteresis: 3,
+  marks: 'letters',
+  hysteresis: 17,
   settleMs: 150,
-  crossfadeMs: 300,
+  crossfadeMs: 1100,
   snapLines: true,
 };
 

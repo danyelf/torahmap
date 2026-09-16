@@ -235,3 +235,35 @@ were opacity 0.15, exclusion blend, letters only, max font 34, hysteresis 17.
   line pitches. The words still change under the crossfade; the grid does not.
 
 ![Preset A, fill, David Libre, zoom 1](2026-09-16-background-text/preset-a-fill-david.jpg)
+
+## Danyel's pick after round two (2026-09-16)
+
+"Pretty intriguing, liking this a lot." These are now the defaults in
+`DEFAULT_SETTINGS`, so the flag opens this way:
+
+```json
+{
+  "layer": "above",
+  "parallax": 0.05,
+  "anchor": "viewport",
+  "content": "fill",
+  "neighbours": 17,
+  "widthEm": 35,
+  "minFont": 12,
+  "maxFont": 45,
+  "opacity": 0.1,
+  "blend": "exclusion",
+  "font": "david",
+  "marks": "letters",
+  "hysteresis": 17,
+  "settleMs": 150,
+  "crossfadeMs": 1100,
+  "snapLines": true
+}
+```
+
+What the numbers say: the text is almost fixed to the glass (parallax 0.05),
+very quiet (opacity 0.1 with the exclusion blend), grows to nearly four times
+its zoomed-out size when fully in (12 to 45), and passages dissolve into each
+other slowly (1100ms). Neighbours and width are not used by fill mode and are
+kept only for the window and centre modes.
