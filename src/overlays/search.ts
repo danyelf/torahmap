@@ -27,6 +27,7 @@ import {
   applyMeanings,
   setMode,
   effectiveMode,
+  modesOffered,
   encodeModes,
   applyModes,
   MAX_TERMS,
@@ -50,6 +51,12 @@ let verses: TanakhLayout[] = [];
 let terms: SearchTerm[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
+/**
+ * The row the reader is working in. Exactly one row is open at a time, and it
+ * stays open while they work on the map, so coming back from a click on a
+ * verse finds the panel as they left it.
+ */
+let openTermId: string | null = null;
 
 const URL_PARAMS = [
   { key: 'q', kind: 'text' },
@@ -131,8 +138,6 @@ let searchResults: HTMLDivElement | null = null;
 let searchTermsContainer: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
 let addTermButton: HTMLButtonElement | null = null;
-let wholeWordCheckbox: HTMLInputElement | null = null;
-let hebrewModeContainer: HTMLDivElement | null = null;
 
 export function configure(config: {
   verses: TanakhLayout[];
@@ -160,7 +165,6 @@ function runSearch(): void {
     matchingTerms = new Map();
     renderResults();
     renderTermRows();
-    updateOptionVisibility();
     updateHitCaption();
     updateCallback?.();
     return;
@@ -200,7 +204,6 @@ function runSearch(): void {
 
   renderResults();
   renderTermRows();
-  updateOptionVisibility();
   updateHitCaption();
   updateCallback?.();
 }
@@ -256,8 +259,9 @@ export function searchForMeaning(text: string, meaningKeys: readonly string[] | 
   } else {
     terms = setMode(terms, id, 'word');
   }
-  syncHebrewModeRadios();
 
+  // The word the click just added is the one the reader is looking at.
+  openTermId = id;
   renderTermRows();
   runSearch();
   return true;
@@ -377,63 +381,6 @@ function buildMeaningRow(
 }
 
 /**
- * Put the mode radios where the mode actually is.
- *
- * Nothing else keeps them honest. A reader can change the mode without touching
- * them - choosing a meaning from a clicked word moves the search to root - and
- * a radio still filled from before is worse than merely wrong: its `checked`
- * property is already true, so clicking it fires no change event and the reader
- * cannot get back the way they came.
- */
-function syncHebrewModeRadios(): void {
-  const hebrew = activeTerms().find(termIsHebrew);
-  if (hebrewModeContainer) {
-    const shown = hebrew ? effectiveMode(hebrew) : 'root';
-    for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
-      'input[name="hebrew-mode"]',
-    )) {
-      radio.checked = radio.value === shown;
-    }
-  }
-
-  const english = activeTerms().find((term) => !termIsHebrew(term));
-  if (wholeWordCheckbox) {
-    wholeWordCheckbox.checked = english ? effectiveMode(english) === 'word' : false;
-  }
-}
-
-/**
- * Set every term of one language at once.
- *
- * The footer controls are one setting for the whole search, which is the thing
- * being got rid of; they drive the per-term state through here until the row
- * controls replace them.
- */
-function setModeForLanguage(hebrew: boolean, mode: SearchMode): void {
-  for (const term of terms) {
-    if (termIsHebrew(term) === hebrew) terms = setMode(terms, term.id, mode);
-  }
-  runSearch();
-}
-
-/**
- * Whole-word applies only to English, the mode radios only to Hebrew. Both
- * follow the text, as they always have.
- */
-function updateOptionVisibility(): void {
-  // Each control follows the terms it can act on, so a search holding both a
-  // Hebrew word and an English one shows both — they apply to different rows.
-  // With nothing typed, the English box shows, as it always has.
-  const active = activeTerms();
-  const anyHebrew = active.some(termIsHebrew);
-  const anyEnglish = active.length === 0 || active.some((term) => !termIsHebrew(term));
-
-  const options = wholeWordCheckbox?.closest('#search-options') as HTMLElement | null;
-  if (options) options.style.display = anyEnglish ? 'block' : 'none';
-  if (hebrewModeContainer) hebrewModeContainer.style.display = anyHebrew ? 'block' : 'none';
-}
-
-/**
  * The one number the term rows cannot show: how many verses the search finds
  * altogether. Each row carries its own count; this is their union.
  */
@@ -453,6 +400,78 @@ function updateHitCaption(): void {
   }
 
   searchHitCaption.textContent = message;
+}
+
+const MODE_LABELS: Record<SearchMode, string> = {
+  substring: 'substring',
+  word: 'word',
+  root: 'root',
+};
+
+/**
+ * What a collapsed row says about itself: always the mode, then the narrowing
+ * when there is one.
+ *
+ * The mode is named even when it is the default, so the rows read as a column
+ * rather than a list of exceptions. The narrowing is not decoration — two rows
+ * both holding עלה in root mode are otherwise identical, and telling those
+ * apart is the comparison the per-term mode exists for.
+ */
+function termSummary(term: SearchTerm): string {
+  const mode = MODE_LABELS[effectiveMode(term)];
+  if (!meaningsApply(term) || !isNarrowed(term)) return mode;
+
+  const chosen = term.meanings
+    .filter((m) => term.selected.has(m.keys[0]))
+    .map((m) => m.gloss)
+    .join(', ');
+  return chosen ? `${mode} · ${chosen}` : mode;
+}
+
+/**
+ * The three ways a word can be matched, as one control.
+ *
+ * Which are on offer follows the term's own text: root resolves a written form
+ * to the dictionary words it could be, and there is no dictionary behind an
+ * English word.
+ */
+function buildModeControl(term: SearchTerm): HTMLDivElement {
+  const control = document.createElement('div');
+  control.className = 'term-mode';
+
+  for (const mode of modesOffered(term)) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'term-mode-option';
+    option.dataset.mode = mode;
+    option.textContent = MODE_LABELS[mode];
+    option.addEventListener('click', () => {
+      terms = setMode(terms, term.id, mode);
+      runSearch();
+    });
+    control.appendChild(option);
+  }
+  return control;
+}
+
+/**
+ * Keep the control showing the right choices, and the right one marked.
+ *
+ * Only the control is replaced when the choices change, never the row: the
+ * choices follow the text's language, and the reader is typing that text.
+ */
+function renderModeControl(body: HTMLElement, term: SearchTerm): void {
+  const offered = modesOffered(term).join(',');
+  if (body.dataset.modes !== offered) {
+    body.dataset.modes = offered;
+    body.querySelector('.term-mode')?.remove();
+    body.prepend(buildModeControl(term));
+  }
+
+  const current = effectiveMode(term);
+  for (const option of body.querySelectorAll<HTMLElement>('.term-mode-option')) {
+    option.classList.toggle('on', option.dataset.mode === current);
+  }
 }
 
 /**
@@ -499,11 +518,85 @@ function renderMeanings(row: HTMLElement, term: SearchTerm): void {
   });
 }
 
-function buildTermRow(term: SearchTerm, index: number): HTMLDivElement {
-  const row = document.createElement('div');
-  row.className = 'term-row';
-  row.dataset.termId = term.id;
+/** Make this row the one the reader is working in, and put the caret in it. */
+function openRow(id: string): void {
+  openTermId = id;
+  renderTermRows();
+  searchTermsContainer
+    ?.querySelector<HTMLInputElement>('.term-row[data-open="true"] .term-input')
+    ?.focus();
+}
 
+/** Remove a word, or clear the box when it is the only one left. */
+function removeOrClear(id: string): void {
+  terms = terms.length > 1 ? removeTerm(terms, id) : setTermText(terms, id, '');
+  runSearch();
+}
+
+/**
+ * A row the reader is not working in: one line saying what it is doing.
+ *
+ * Folding the meaning checkboxes away is what buys the room for a mode control
+ * on every row. Root is the only mode with sub-choices, so it is the only mode
+ * whose row is tall, which is why collapsing is worth doing at all.
+ */
+function buildCollapsedRow(row: HTMLElement, term: SearchTerm): void {
+  const summary = document.createElement('div');
+  summary.className = 'term-summary';
+  // Click, never hover: hover does not exist on touch, and a control that
+  // appears under the pointer is a control you cannot aim at.
+  summary.addEventListener('click', () => openRow(term.id));
+
+  const swatch = document.createElement('span');
+  swatch.className = 'term-swatch';
+  summary.appendChild(swatch);
+
+  const word = document.createElement('span');
+  word.className = 'term-word';
+  summary.appendChild(word);
+
+  const state = document.createElement('span');
+  state.className = 'term-state';
+  summary.appendChild(state);
+
+  const count = document.createElement('span');
+  count.className = 'term-count';
+  summary.appendChild(count);
+
+  const remove = document.createElement('button');
+  remove.className = 'term-remove';
+  remove.type = 'button';
+  remove.textContent = '×';
+  remove.title = 'Remove this word';
+  remove.addEventListener('click', (e) => {
+    // The × sits inside the summary, so without this the word would be removed
+    // and its row opened in the same gesture.
+    e.stopPropagation();
+    removeOrClear(term.id);
+  });
+  summary.appendChild(remove);
+
+  row.appendChild(summary);
+}
+
+function updateCollapsedRow(row: HTMLElement, term: SearchTerm): void {
+  const swatch = row.querySelector<HTMLElement>('.term-swatch')!;
+  swatch.style.background = colorToCss(SEARCH_COLORS[term.colorIndex]);
+  swatch.style.visibility = term.text.trim() ? 'visible' : 'hidden';
+
+  const word = row.querySelector<HTMLElement>('.term-word')!;
+  word.textContent = term.text;
+  word.classList.toggle('rtl', termIsHebrew(term));
+
+  row.querySelector<HTMLElement>('.term-state')!.textContent = term.text.trim()
+    ? termSummary(term)
+    : '';
+
+  const count = row.querySelector<HTMLElement>('.term-count')!;
+  count.textContent = activeTerms().includes(term) ? String(termHitCount(term)) : '';
+}
+
+function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   const head = document.createElement('div');
   head.className = 'term-head';
 
@@ -542,19 +635,52 @@ function buildTermRow(term: SearchTerm, index: number): HTMLDivElement {
   remove.type = 'button';
   if (index === 0) remove.id = 'search-clear';
   remove.textContent = '\u00d7';
-  remove.addEventListener('click', () => {
-    terms = terms.length > 1 ? removeTerm(terms, term.id) : setTermText(terms, term.id, '');
-    runSearch();
-  });
+  remove.addEventListener('click', () => removeOrClear(term.id));
   head.appendChild(remove);
 
   row.appendChild(head);
-  updateTermRow(row, term, index);
+
+  // The mode control and the meaning checkboxes share one indented block, so
+  // the two read as one statement: this term is matched this way, and if by
+  // root, these are the readings it stands for.
+  const body = document.createElement('div');
+  body.className = 'term-body';
+  row.appendChild(body);
+}
+
+function buildTermRow(term: SearchTerm, index: number, isOpen: boolean): HTMLDivElement {
+  const row = document.createElement('div');
+  row.className = 'term-row';
+  row.dataset.termId = term.id;
+  updateTermRow(row, term, index, isOpen);
   return row;
 }
 
-/** Everything about a row that changes without the row itself changing. */
-function updateTermRow(row: HTMLElement, term: SearchTerm, index: number): void {
+/**
+ * Everything about a row that changes without the row itself changing.
+ *
+ * Open and collapsed rows share no children, so a row that opens or closes is
+ * rebuilt. Nothing else is: the modes on offer change as the reader types their
+ * way from one language to the other, and rebuilding the row for that would
+ * throw away the box being typed into, along with its caret.
+ */
+function updateTermRow(row: HTMLElement, term: SearchTerm, index: number, isOpen: boolean): void {
+  if (row.dataset.open !== String(isOpen)) {
+    row.dataset.open = String(isOpen);
+    row.replaceChildren();
+    if (isOpen) buildOpenRow(row, term, index);
+    else buildCollapsedRow(row, term);
+  }
+
+  if (!isOpen) {
+    updateCollapsedRow(row, term);
+    return;
+  }
+
+  updateOpenRow(row, term, index);
+}
+
+function updateOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   const input = row.querySelector<HTMLInputElement>('.term-input')!;
   // Safe to assign unconditionally: a term holds exactly what its box holds.
   if (input.value !== term.text) input.value = term.text;
@@ -577,7 +703,9 @@ function updateTermRow(row: HTMLElement, term: SearchTerm, index: number): void 
   remove.style.display = !term.text && terms.length === 1 ? 'none' : 'block';
   remove.title = terms.length > 1 ? 'Remove this word' : 'Clear';
 
-  renderMeanings(row, term);
+  const body = row.querySelector<HTMLElement>('.term-body')!;
+  renderModeControl(body, term);
+  renderMeanings(body, term);
 }
 
 function onTermInput(id: string, input: HTMLInputElement): void {
@@ -618,6 +746,12 @@ function renderTermRows(): void {
   if (!searchTermsContainer) return;
 
   const list = activeOrEmptyTerms();
+
+  // The open row survives as long as its term does; otherwise the first row
+  // takes over, which is also what a fresh panel shows.
+  const openId = list.some((t) => t.id === openTermId) ? openTermId : (list[0]?.id ?? null);
+  openTermId = openId;
+
   const existing = new Map(
     [...searchTermsContainer.querySelectorAll<HTMLElement>('.term-row')].map((row) => [
       row.dataset.termId,
@@ -633,11 +767,12 @@ function renderTermRows(): void {
   }
 
   list.forEach((term, i) => {
+    const isOpen = term.id === openId;
     let row = existing.get(term.id);
     if (row) {
-      updateTermRow(row, term, i);
+      updateTermRow(row, term, i, isOpen);
     } else {
-      row = buildTermRow(term, i);
+      row = buildTermRow(term, i, isOpen);
     }
     if (searchTermsContainer!.children[i] !== row) {
       searchTermsContainer!.insertBefore(row, searchTermsContainer!.children[i] ?? null);
@@ -1099,27 +1234,6 @@ export const searchOverlay: Overlay = {
     container.innerHTML = `
       <div id="search-terms"></div>
       <button type="button" id="add-term">+ add a word</button>
-      <div id="search-options">
-        <label>
-          <input type="checkbox" id="whole-word-checkbox">
-          Match whole words only
-        </label>
-      </div>
-      <div id="hebrew-mode-container" style="display: none;">
-        <div class="hebrew-mode-label">Hebrew search mode:</div>
-        <label class="hebrew-mode-option">
-          <input type="radio" name="hebrew-mode" value="substring">
-          Substring
-        </label>
-        <label class="hebrew-mode-option">
-          <input type="radio" name="hebrew-mode" value="word">
-          Whole word
-        </label>
-        <label class="hebrew-mode-option">
-          <input type="radio" name="hebrew-mode" value="root">
-          Root (שרש)
-        </label>
-      </div>
       <div id="search-hit-caption"></div>
       <div id="search-results"></div>
     `;
@@ -1128,35 +1242,13 @@ export const searchOverlay: Overlay = {
     addTermButton = container.querySelector('#add-term');
     searchHitCaption = container.querySelector('#search-hit-caption');
     searchResults = container.querySelector('#search-results');
-    wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
-    hebrewModeContainer = container.querySelector('#hebrew-mode-container');
 
     addTermButton?.addEventListener('click', () => {
       terms = addTerm(terms, '');
-      renderTermRows();
-      searchTermsContainer
-        ?.querySelector<HTMLInputElement>('.term-row:last-child .term-input')
-        ?.focus();
+      openRow(terms[terms.length - 1].id);
     });
-
-    wholeWordCheckbox?.addEventListener('change', () => {
-      setModeForLanguage(false, wholeWordCheckbox!.checked ? 'word' : 'substring');
-    });
-
-    syncHebrewModeRadios();
-    if (hebrewModeContainer) {
-      for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
-        'input[name="hebrew-mode"]',
-      )) {
-        radio.addEventListener('change', () => {
-          if (!radio.checked) return;
-          setModeForLanguage(true, radio.value as SearchMode);
-        });
-      }
-    }
 
     renderTermRows();
-    updateOptionVisibility();
     updateHitCaption();
     if (currentResults.length > 0) renderResults();
   },
@@ -1201,8 +1293,6 @@ export const searchOverlay: Overlay = {
     searchTermsContainer = null;
     searchHitCaption = null;
     addTermButton = null;
-    wholeWordCheckbox = null;
-    hebrewModeContainer = null;
     // Clear callbacks
     updateCallback = null;
     onVerseClickCallback = null;
@@ -1246,7 +1336,8 @@ export const searchOverlay: Overlay = {
       terms = applyMeanings(terms, params.m);
     }
 
-    syncHebrewModeRadios();
+    // A fresh list means a fresh choice of which row is open.
+    openTermId = null;
     runSearch();
   },
 

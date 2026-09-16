@@ -178,20 +178,21 @@ describe('the Hebrew default', () => {
     const container = render();
     type(container, 'עלה');
 
-    const checkedMode = container.querySelector<HTMLInputElement>(
-      'input[name="hebrew-mode"]:checked',
+    const marked = container.querySelector<HTMLElement>(
+      '.term-row[data-open="true"] .term-mode-option.on',
     );
-    expect(checkedMode?.value).toBe('root');
+    expect(marked?.dataset.mode).toBe('root');
   });
 
   it('hides the meaning list in substring mode, which cannot use it', () => {
     const container = render();
     type(container, 'עלה');
-    const substring = container.querySelector<HTMLInputElement>(
-      'input[name="hebrew-mode"][value="substring"]',
-    )!;
-    substring.checked = true;
-    substring.dispatchEvent(new Event('change', { bubbles: true }));
+
+    container
+      .querySelector<HTMLElement>(
+        '.term-row[data-open="true"] .term-mode-option[data-mode="substring"]',
+      )!
+      .click();
 
     expect(container.querySelectorAll('.meaning-row')).toHaveLength(0);
   });

@@ -78,14 +78,16 @@ describe('searching for a clicked word', () => {
     expect(searchOverlay.getUrlParams!().mode).toBe('r');
   });
 
-  it('leaves the mode radios showing the mode the search is now in', () => {
+  it('leaves the row showing the mode the click put it in', () => {
     const container = render();
     applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
-    const checked = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"]:checked');
-    expect(checked?.value).toBe('root');
+    const marked = container.querySelector<HTMLElement>(
+      '.term-row[data-open="true"] .term-mode-option.on',
+    );
+    expect(marked?.dataset.mode).toBe('root');
   });
 
   it('keeps the results list on screen after the click that filled it', () => {
@@ -128,7 +130,8 @@ describe('searching for a clicked word', () => {
 
     expect(searchOverlay.getUrlParams!().mode).toBe('w');
     expect(
-      container.querySelector<HTMLInputElement>('input[name="hebrew-mode"]:checked')!.value,
+      container.querySelector<HTMLElement>('.term-row[data-open="true"] .term-mode-option.on')!
+        .dataset.mode,
     ).toBe('word');
   });
 
@@ -151,10 +154,15 @@ describe('searching for a clicked word', () => {
     searchForMeaning('עלה', firstMeaning.keys);
     searchForMeaning('רוח', null);
 
-    const inputsBeforeClear = [...container.querySelectorAll<HTMLInputElement>('.term-input')];
-    expect(inputsBeforeClear).toHaveLength(2);
-    inputsBeforeClear[0].value = '';
-    inputsBeforeClear[0].dispatchEvent(new Event('input', { bubbles: true }));
+    // Only the open row holds a box, so reaching the first one means opening
+    // it, which is what a reader clearing an earlier word does too.
+    expect(container.querySelectorAll('.term-row')).toHaveLength(2);
+    const firstRow = container.querySelectorAll<HTMLElement>('.term-row')[0];
+    firstRow.querySelector<HTMLElement>('.term-summary')!.click();
+
+    const firstInput = firstRow.querySelector<HTMLInputElement>('.term-input')!;
+    firstInput.value = '';
+    firstInput.dispatchEvent(new Event('input', { bubbles: true }));
 
     // Click a different meaning of the same written form. If the code tracks
     // "the last term" instead of the term it actually filled, this narrowing
@@ -162,10 +170,12 @@ describe('searching for a clicked word', () => {
     const secondMeaning = meaningsInVerse('עלה', 'Genesis:8:20')[0];
     searchForMeaning('עלה', secondMeaning.keys);
 
-    const inputs = [...container.querySelectorAll<HTMLInputElement>('.term-input')];
-    expect(inputs).toHaveLength(2);
-    expect(inputs[0].value).toBe('עלה');
-    expect(inputs[1].value).toBe('רוח');
+    const shown = [...container.querySelectorAll<HTMLElement>('.term-row')].map(
+      (row) =>
+        row.querySelector<HTMLInputElement>('.term-input')?.value ??
+        row.querySelector('.term-word')!.textContent,
+    );
+    expect(shown).toEqual(['עלה', 'רוח']);
 
     const params = searchOverlay.getUrlParams!();
     const [firstEntry, secondEntry] = (params.m ?? '').split(',');

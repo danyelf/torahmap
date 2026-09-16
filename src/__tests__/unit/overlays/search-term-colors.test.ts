@@ -37,8 +37,17 @@ function render(): HTMLElement {
   return container;
 }
 
-function rows(container: HTMLElement): HTMLInputElement[] {
-  return [...container.querySelectorAll<HTMLInputElement>('.term-input')];
+/**
+ * Open the nth row and hand back its box.
+ *
+ * Only the row the reader is working in holds a box; the others fold to a line
+ * saying what they are doing. So reaching a row means opening it first, which
+ * is what a reader does too.
+ */
+function rowInput(container: HTMLElement, index: number): HTMLInputElement {
+  const row = container.querySelectorAll<HTMLElement>('.term-row')[index];
+  if (row.dataset.open !== 'true') row.querySelector<HTMLElement>('.term-summary')!.click();
+  return row.querySelector<HTMLInputElement>('.term-input')!;
 }
 
 function typeInto(input: HTMLInputElement, text: string): void {
@@ -57,7 +66,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   configure({ verses });
-  applyOverlayParams(searchOverlay, { q: '', hm: undefined, m: undefined });
+  applyOverlayParams(searchOverlay, { q: '', mode: undefined, m: undefined });
 });
 
 describe('a surviving term keeps one colour', () => {
@@ -66,9 +75,9 @@ describe('a surviving term keeps one colour', () => {
 
     // Two terms, then remove the first. The survivor keeps the colour it was
     // given, while moving up into the first position.
-    typeInto(rows(container)[0], 'created');
+    typeInto(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
-    typeInto(rows(container)[1], 'spirit');
+    typeInto(rowInput(container, 1), 'spirit');
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
     const swatch = container.querySelector<HTMLElement>('.term-swatch')!;
@@ -85,9 +94,9 @@ describe('a surviving term keeps one colour', () => {
   it('marks the verse text in the same colour as the row', () => {
     const container = render();
 
-    typeInto(rows(container)[0], 'created');
+    typeInto(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
-    typeInto(rows(container)[1], 'spirit');
+    typeInto(rowInput(container, 1), 'spirit');
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
     const fragment = highlightSearchTerms('and the spirit of God hovered', 'en');

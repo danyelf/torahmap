@@ -641,21 +641,24 @@ describe('Search Overlay', () => {
       expect(input.dir).toBe('ltr');
     });
 
-    it('shows both sets of options when the search mixes languages', () => {
+    it('gives a mixed search a control per row, each offering what its text can do', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
-      const hebrewModes = container.querySelector('#hebrew-mode-container') as HTMLElement;
 
-      // A mixed search shows both sets of options, because each one acts on
-      // the terms it can act on. Which term comes first decides nothing.
+      // Each row offers what its own text can be matched by. Which term comes
+      // first decides nothing, and neither row's control can reach the other.
       input.value = 'god, אלהים';
       input.dispatchEvent(new Event('input', { bubbles: true }));
 
-      const englishOptions = container.querySelector('#search-options') as HTMLElement;
-      expect(hebrewModes.style.display).toBe('block');
-      expect(englishOptions.style.display).toBe('block');
+      const rows = container.querySelectorAll<HTMLElement>('.term-row');
+      expect(rows).toHaveLength(2);
+
+      // Only the open row shows its control; the other says what it is doing.
+      const english = [...rows[0].querySelectorAll<HTMLElement>('.term-mode-option')];
+      expect(english.map((o) => o.dataset.mode)).toEqual(['substring', 'word']);
+      expect(rows[1].querySelector('.term-state')!.textContent).toBe('root');
     });
 
     it('turns right to left on the very first Hebrew letter typed', () => {
@@ -672,17 +675,19 @@ describe('Search Overlay', () => {
       expect(input.dir).toBe('rtl');
     });
 
-    it('shows the Hebrew options when the first term is Hebrew', () => {
+    it('offers root on a Hebrew row, whichever position it is in', () => {
       const container = document.createElement('div');
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
-      const hebrewModes = container.querySelector('#hebrew-mode-container') as HTMLElement;
 
       input.value = 'אלהים, god';
       input.dispatchEvent(new Event('input', { bubbles: true }));
 
-      expect(hebrewModes.style.display).toBe('block');
+      const offered = [
+        ...container.querySelectorAll<HTMLElement>('.term-row[data-open="true"] .term-mode-option'),
+      ];
+      expect(offered.map((o) => o.dataset.mode)).toEqual(['substring', 'word', 'root']);
       expect(input.dir).toBe('rtl');
     });
   });
@@ -724,11 +729,15 @@ describe('Search Overlay', () => {
       input.value = 'God, earth';
       input.dispatchEvent(new Event('input'));
 
+      // Only the open row holds a box; a collapsed row shows its word as text.
       const rows = [...controlsContainer.querySelectorAll('.term-row')];
-      expect(rows.map((r) => (r.querySelector('.term-input') as HTMLInputElement).value)).toEqual([
-        'God',
-        'earth',
-      ]);
+      expect(
+        rows.map(
+          (r) =>
+            (r.querySelector('.term-input') as HTMLInputElement | null)?.value ??
+            r.querySelector('.term-word')!.textContent,
+        ),
+      ).toEqual(['God', 'earth']);
       expect(rows.every((r) => r.querySelector('.term-swatch'))).toBe(true);
       expect(rows.map((r) => r.querySelector('.term-count')?.textContent)).not.toContain('');
     });
@@ -1173,29 +1182,30 @@ describe('Search Overlay', () => {
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
 
-    it('preserves whole-word setting across destroy/recreate cycles', () => {
-      // Setup search with whole-word enabled
+    it("preserves a term's mode across destroy/recreate cycles", () => {
       const container1 = document.createElement('div');
       searchOverlay.renderControls?.(container1);
 
       const input1 = container1.querySelector('#search-input') as HTMLInputElement;
-      const checkbox1 = container1.querySelector('#whole-word-checkbox') as HTMLInputElement;
-
       input1.value = 'God';
       input1.dispatchEvent(new Event('input'));
-      checkbox1.checked = true;
-      checkbox1.dispatchEvent(new Event('change'));
+
+      container1
+        .querySelector<HTMLElement>(
+          '.term-row[data-open="true"] .term-mode-option[data-mode="word"]',
+        )!
+        .click();
 
       // Simulate switching overlays
       searchOverlay.destroy?.();
 
-      // Render controls again
       const container2 = document.createElement('div');
       searchOverlay.renderControls?.(container2);
 
-      // Verify whole-word setting is restored
-      const checkbox2 = container2.querySelector('#whole-word-checkbox') as HTMLInputElement;
-      expect(checkbox2.checked).toBe(true);
+      const marked = container2.querySelector<HTMLElement>(
+        '.term-row[data-open="true"] .term-mode-option.on',
+      );
+      expect(marked?.dataset.mode).toBe('word');
     });
   });
 
@@ -1356,12 +1366,12 @@ describe('Search Overlay', () => {
       input.value = 'אלהים'; // Search term
       input.dispatchEvent(new Event('input'));
 
-      // Switch to word mode
-      const wordRadio = container.querySelector(
-        'input[name="hebrew-mode"][value="word"]',
-      ) as HTMLInputElement;
-      wordRadio.checked = true;
-      wordRadio.dispatchEvent(new Event('change'));
+      // Switch this term to word mode
+      container
+        .querySelector<HTMLElement>(
+          '.term-row[data-open="true"] .term-mode-option[data-mode="word"]',
+        )!
+        .click();
 
       // Test verse with the word אֱלֹהִים (with nikkud)
       // Should highlight only the full word, not substrings
@@ -1383,10 +1393,12 @@ describe('Search Overlay', () => {
       input.value = 'God'; // Search term
       input.dispatchEvent(new Event('input'));
 
-      // Enable whole-word checkbox
-      const wholeWordCheckbox = container.querySelector('#whole-word-checkbox') as HTMLInputElement;
-      wholeWordCheckbox.checked = true;
-      wholeWordCheckbox.dispatchEvent(new Event('change'));
+      // Switch this term to whole word
+      container
+        .querySelector<HTMLElement>(
+          '.term-row[data-open="true"] .term-mode-option[data-mode="word"]',
+        )!
+        .click();
 
       // Test verse where "God" appears as full word and as substring
       // "God" should match but "Godly" should not
@@ -1411,12 +1423,12 @@ describe('Search Overlay', () => {
       input.value = 'אלהים'; // Search for "God" (without nikkud)
       input.dispatchEvent(new Event('input'));
 
-      // Switch to word mode
-      const wordRadio = container.querySelector(
-        'input[name="hebrew-mode"][value="word"]',
-      ) as HTMLInputElement;
-      wordRadio.checked = true;
-      wordRadio.dispatchEvent(new Event('change'));
+      // Switch this term to word mode
+      container
+        .querySelector<HTMLElement>(
+          '.term-row[data-open="true"] .term-mode-option[data-mode="word"]',
+        )!
+        .click();
 
       // Test with the actual verse text from Genesis 1:1
       const verseText = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים';
