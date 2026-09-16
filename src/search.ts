@@ -1,5 +1,5 @@
-// Full-text search with word-wheeling support for Hebrew and English
-// Hebrew root search resolves written forms to ETCBC BHSA lexemes
+// Full-text search over Hebrew and English.
+// Hebrew root search resolves written forms to ETCBC BHSA lexemes.
 
 import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
@@ -326,9 +326,9 @@ function buildSpellingIndex(): void {
  * every word printed in the Tanakh is filed under the lexeme of its stem, prefix
  * and all, so בדבר is found without anything having to notice the ב.
  *
- * The completion was also the bug in #132. עֶלְיֹון folds to עליונ, which starts
- * with עליו, so a reader asking for "upon him" was given "most high" — a
- * different word reached by nothing but a shared opening, and confidently
+ * The completion also answered wrongly and confidently: עֶלְיֹון folds to עליונ,
+ * which starts with עליו, so a reader asking for "upon him" got "most high" —
+ * a different word reached by nothing but a shared opening, and confident
  * enough to hide that the lookup had failed.
  *
  * Returning null is a real answer, not a failure: the caller matches the word as

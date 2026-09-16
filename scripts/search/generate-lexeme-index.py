@@ -311,7 +311,7 @@ def main():
             word_forms = []   # the written form of each unit, in order
             word_inner = []   # separators printed inside those units
             for node in units:
-                lexeme = lex_index[L.u(node, "lex")[0]]
+                unit_lexeme = lex_index[L.u(node, "lex")[0]]
                 combo = tuple(
                     "" if (v := getattr(F, field).v(node)) in (None, "NA", "n/a")
                     else v
@@ -321,7 +321,7 @@ def main():
                 if morph is None:
                     morph = morph_ids[combo] = len(morph_table)
                     morph_table.append(".".join(combo))
-                verse_morph[key].append([lexeme, morph])
+                verse_morph[key].append([unit_lexeme, morph])
                 word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
                 # Separators printed inside a unit, where a corrected reading
                 # divides into more words than the writing does.
@@ -384,7 +384,7 @@ def main():
         for written, pairs in word_lexemes.items()
     }
 
-    print(f"  {word_total} word occurrences across {len(verse_lexemes)} verses")
+    print(f"  {word_total} ETCBC units across {len(verse_lexemes)} verses")
     print(f"  {bound_total} of them bound to the next "
           f"({100 * bound_total / word_total:.1f}%), and so not words")
     print(f"  {len(word_lexemes)} distinct written forms")

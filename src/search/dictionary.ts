@@ -70,10 +70,8 @@ function lexemeForKey(key: string): LexemeId | null {
 }
 
 /**
- * Merge a list of lexeme ids into the rows a reader sees.
- *
- * This is the body `meaningsFor` used to hold, unchanged, taking the ids as its
- * input so that both questions about a word share one answer shape.
+ * Merge a list of lexeme ids into the rows a reader sees, so that both
+ * questions about a word share one answer shape.
  */
 function rowsFor(ids: LexemeId[]): Meaning[] {
   // Merge as we go, so a merged row keeps the position of its likeliest member
@@ -159,22 +157,13 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * reading of the word in front of the reader is one the verse contains, and
  * the spelling's other candidates usually are not.
  *
- * This is inference, not knowledge. BHSA tags every word occurrence with
- * exactly one lexeme, but the index is keyed by spelling, so the link is lost
- * before it reaches the browser and is reconstructed here. The index does now
- * carry per-word lexemes — `verse-morphology.json` gives the length of each
- * printed word, and the last morpheme of that run is its stem — so this body
- * can become a lookup, and every caller stay as it is. That is #139.
+ * This is inference, not knowledge, and it can leave more than one reading
+ * standing. `verse-morphology.json` does carry the answer — the length of each
+ * printed word, whose last morpheme is its stem — so this body could become a
+ * lookup without any caller changing.
  *
- * Until then the verse narrows rather than decides, and it can leave more than
- * one reading standing: לו in Genesis 2:18 is לְ "to him", but the verse also
- * contains לֹא, which shares the spelling in the places the text is corrected
- * between them, so both come back.
- *
- * An empty result means "cannot say", which is now rare — every printed word is
- * indexed under the lexeme of its stem — but still happens for a spelling the
- * dictionary does not carry at all, and for the 64 verses in `misaligned`.
- * Callers offer a literal search instead rather than treating it as an error.
+ * An empty result means "cannot say". Callers offer a literal search instead
+ * rather than treating it as an error.
  */
 export function meaningsInVerse(writtenForm: string, verseKey: string): Meaning[] {
   const ids = findLexemesForWord(writtenForm);

@@ -21,7 +21,7 @@ occurrence. Nothing else we looked at has all three.
 | --- | --- |
 | `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech, language, and the derivational root where BHSA supplies one. |
 | `word-lexemes.json` | Written form → the lexemes it could be, most frequent reading first. Keys have their points stripped and their final letters folded to the medial shape, matching what the search box does to what you type. |
-| `verse-lexemes.json` | Verse key → the distinct lexemes occurring in that verse. This is what search actually queries. |
+| `verse-lexemes.json` | Verse key → the distinct dictionary words the verse uses, one per printed word. This is what search actually queries. |
 | `verse-morphology.json` | Every word of every verse in text order with its lexeme and its grammatical parsing, and where each printed word begins and ends. Kept for a future grammatical-form filter; search does not load it. See below — its units are not the words you see on the page. |
 
 Lexemes are referred to throughout by their position in the `lexicon.json`

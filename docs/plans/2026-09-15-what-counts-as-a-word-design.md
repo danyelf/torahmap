@@ -201,13 +201,19 @@ page became less findable.
 
 Which lookup answers each of the 305,451 printed words in the Tanakh:
 
-| branch | before | after, as shipped |
+| what answers a printed word | before | after, as shipped |
 | --- | ---: | ---: |
 | written-form table | 289,906 (94.91%) | **304,844 (99.80%)** |
 | exact dictionary spelling | 822 | 38 |
-| spelling starts with the term | 2,450 | *deleted* |
-| strip a prefix and retry | 9,402 | *deleted* |
 | nothing matched, fall back | 14,724 (4.82%) | **570 (0.19%)** |
+
+Three rows, and they partition the 305,452 printed words in both columns. An
+earlier draft added rows for the two deleted branches, taken from a different
+measurement, so the column summed to 317,304 against a population of 305,451
+while its percentages were computed on the smaller number. Those branches sat
+*inside* the fallback row rather than beside it — they rescued some of the
+words the first two lookups missed — so they were never siblings of the rows
+above, and their per-branch counts have not been reproduced here.
 
 The table answers 99.8% on its own, so the three branches below it go. What they
 were covering was not a shortfall in ETCBC's parse but the hole the generator
