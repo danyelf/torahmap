@@ -173,4 +173,25 @@ describe('searching for a clicked word', () => {
     // 'רוח' was never clicked with a meaning, so it stays fully unnarrowed.
     expect(secondEntry ?? '').toBe('');
   });
+
+  it('leaves an already narrowed word narrowed', () => {
+    // Narrow one word to a meaning, then ask for a second word by its written
+    // form. The second click used to move the whole search to whole-word mode,
+    // which quietly widened the first word back to all of its readings: the
+    // meaning was still ticked, but nothing was filtering by it.
+    render();
+    const leaf = meaningsInVerse('עלה', 'Genesis:3:7')[0];
+
+    searchForMeaning('עלה', leaf.keys);
+    const afterFirst = searchOverlay.getUrlParams!();
+    expect(afterFirst.mode).toBe('r');
+
+    searchForMeaning('תאנה', null);
+    const afterSecond = searchOverlay.getUrlParams!();
+
+    // The first word is still matched by root, and still narrowed; only the
+    // second word went to whole word.
+    expect(afterSecond.mode).toBe('r,w');
+    expect((afterSecond.m ?? '').split(',')[0]).toBe(afterFirst.m);
+  });
 });

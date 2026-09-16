@@ -213,13 +213,17 @@ function runSearch(): void {
  * when the palette is full, so the caller can say so rather than dropping the
  * click silently.
  *
- * Either way the click settles the Hebrew mode. A meaning can only be
- * searched for in root mode - "the
- * burnt-offering reading" cannot be expressed as a substring. The written form
- * is the opposite request, for this spelling and no other, so it goes to whole
- * word: substring mode would match it inside longer words, and root mode would
- * resolve a known spelling to its dictionary entry and find the readings the
- * reader just declined.
+ * Either way the click settles how that word is matched, and only that word. A
+ * meaning can only be searched for in root mode — "the burnt-offering reading"
+ * cannot be expressed as a substring. The written form is the opposite
+ * request, for this spelling and no other, so it goes to whole word: substring
+ * would match it inside longer words, and root would resolve a known spelling
+ * to its dictionary entry and find the readings the reader just declined.
+ *
+ * Neighbouring terms keep whatever they were doing. While the mode was one
+ * setting for the whole search, taking a written form here widened a word the
+ * reader had narrowed a moment earlier, and the only clue was a count that
+ * changed.
  *
  * The meaning arrives as every lexeme its row stands for, not as one key. The
  * reader chose from a list the verse built, and a row the verse built can be
