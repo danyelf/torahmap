@@ -10,7 +10,7 @@ import type { TanakhLayout } from './types.ts';
 
 export type Layer = 'behind' | 'above';
 export type Anchor = 'viewport' | 'square';
-export type Content = 'center' | 'window';
+export type Content = 'center' | 'window' | 'fill';
 export type Marks = 'all' | 'no-trop' | 'letters';
 export type Font = 'noto' | 'frank' | 'david';
 export type Blend = 'normal' | 'difference' | 'exclusion' | 'overlay';
@@ -22,7 +22,7 @@ export interface BackgroundTextSettings {
   parallax: number;
   /** What the passage is pinned to: the point under the screen center, or the center verse's own square. */
   anchor: Anchor;
-  /** The center verse alone, or a window of neighbours around it. */
+  /** The center verse alone, a window of neighbours around it, or enough verses to cover the viewport. */
   content: Content;
   /** Verses on each side of the center verse when content is 'window'. */
   neighbours: number;
@@ -41,30 +41,33 @@ export interface BackgroundTextSettings {
   /** Regenerate only after the camera has been still this long. 0 means immediately. */
   settleMs: number;
   crossfadeMs: number;
+  /** Shift a new passage so its lines land on the same rows as the old one. */
+  snapLines: boolean;
 }
 
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   layer: 'above',
   parallax: 0.3,
   anchor: 'viewport',
-  content: 'window',
+  content: 'fill',
   neighbours: 6,
   widthEm: 30,
   minFont: 12,
   maxFont: 24,
   opacity: 0.25,
   blend: 'normal',
-  font: 'frank',
+  font: 'david',
   marks: 'no-trop',
   hysteresis: 3,
   settleMs: 150,
   crossfadeMs: 300,
+  snapLines: true,
 };
 
 export const PRESETS = {
-  A: { anchor: 'viewport', parallax: 0.3, content: 'window' },
+  A: { anchor: 'viewport', parallax: 0.3, content: 'fill' },
   B: { anchor: 'square', parallax: 1, content: 'center' },
-  C: { anchor: 'square', parallax: 1, content: 'window' },
+  C: { anchor: 'square', parallax: 1, content: 'fill' },
 } as const satisfies Record<string, Partial<BackgroundTextSettings>>;
 
 export const FONT_FAMILIES: Record<Font, string> = {
@@ -151,21 +154,17 @@ export interface Passage {
   after: string;
 }
 
-export function passageAround(
+export function passageForRange(
   verses: TanakhLayout[],
   texts: VerseTexts,
+  range: { start: number; end: number },
   centerIndex: number,
-  settings: Pick<BackgroundTextSettings, 'content' | 'neighbours' | 'marks'>,
+  marks: Marks,
 ): Passage {
-  const { start, end } =
-    settings.content === 'center'
-      ? { start: centerIndex, end: centerIndex }
-      : windowAround(centerIndex, verses.length, settings.neighbours);
-
   const hebrew = (i: number): string => {
     const v = verses[i];
     const text = getVerseText(texts, v.book, v.chapter, v.verse);
-    return text ? stripMarks(text.he, settings.marks) : '';
+    return text ? stripMarks(text.he, marks) : '';
   };
   const join = (from: number, to: number): string => {
     const parts: string[] = [];
@@ -174,10 +173,69 @@ export function passageAround(
   };
 
   return {
-    before: start < centerIndex ? join(start, centerIndex - 1) : '',
+    before: range.start < centerIndex ? join(range.start, centerIndex - 1) : '',
     center: hebrew(centerIndex),
-    after: end > centerIndex ? join(centerIndex + 1, end) : '',
+    after: range.end > centerIndex ? join(centerIndex + 1, range.end) : '',
   };
+}
+
+export function passageAround(
+  verses: TanakhLayout[],
+  texts: VerseTexts,
+  centerIndex: number,
+  settings: Pick<BackgroundTextSettings, 'content' | 'neighbours' | 'marks'>,
+): Passage {
+  const range =
+    settings.content === 'center'
+      ? { start: centerIndex, end: centerIndex }
+      : windowAround(centerIndex, verses.length, settings.neighbours);
+  return passageForRange(verses, texts, range, centerIndex, settings.marks);
+}
+
+/**
+ * The smallest range around the center verse whose text runs to at least
+ * `targetChars` characters, grown one verse at a time on alternating sides so
+ * the center verse stays near the middle. Stops at the ends of the corpus.
+ */
+export function rangeToFill(
+  verses: TanakhLayout[],
+  texts: VerseTexts,
+  centerIndex: number,
+  targetChars: number,
+): { start: number; end: number } {
+  const length = (i: number): number => {
+    const v = verses[i];
+    return (getVerseText(texts, v.book, v.chapter, v.verse)?.he.length ?? 0) + 1;
+  };
+  let start = centerIndex;
+  let end = centerIndex;
+  let chars = length(centerIndex);
+  let growBefore = true;
+  while (chars < targetChars && (start > 0 || end < verses.length - 1)) {
+    if (growBefore && start > 0) {
+      start--;
+      chars += length(start);
+    } else if (end < verses.length - 1) {
+      end++;
+      chars += length(end);
+    } else {
+      start--;
+      chars += length(start);
+    }
+    growBefore = !growBefore;
+  }
+  return { start, end };
+}
+
+/**
+ * The smallest vertical shift that puts a new page's line grid on the same
+ * rows as the old page's, given both pages' translations and the line pitch
+ * on screen. Lines start at the top of each page, so they align exactly when
+ * the translations differ by a whole number of pitches.
+ */
+export function lineGridSnap(oldY: number, newY: number, pitch: number): number {
+  const diff = oldY - newY;
+  return diff - Math.round(diff / pitch) * pitch;
 }
 
 /**
@@ -200,28 +258,77 @@ export function anchorWorldPoint(
  * Where a built page is pinned. `refOffset` is the reference point (the
  * top-right of the center verse's first line) measured inside the page at its
  * base font size, before any scale is applied.
+ *
+ * The anchor's screen movement since the build is kept in two parts: what
+ * panning did and what zooming did. They are followed at different rates: a
+ * pan slides the text by the parallax ratio, while a zoom about the mouse
+ * moves the anchor a long way and a background should not chase that.
  */
 export interface PagePlacement {
   anchorWorld: { x: number; y: number };
   anchorScreenAtBuild: { x: number; y: number };
   refOffset: { x: number; y: number };
+  /** The page scale when it was built, so a large zoom change can trigger a rebuild. */
+  scaleAtBuild: number;
+  /** Where the anchor was on screen at the last update. */
+  lastAnchorScreen: { x: number; y: number };
+  panOffset: { x: number; y: number };
+  zoomOffset: { x: number; y: number };
+}
+
+export function newPlacement(
+  anchorWorld: { x: number; y: number },
+  anchorScreenAtBuild: { x: number; y: number },
+  refOffset: { x: number; y: number },
+  scaleAtBuild: number,
+): PagePlacement {
+  return {
+    anchorWorld,
+    anchorScreenAtBuild,
+    refOffset,
+    scaleAtBuild,
+    lastAnchorScreen: { ...anchorScreenAtBuild },
+    panOffset: { x: 0, y: 0 },
+    zoomOffset: { x: 0, y: 0 },
+  };
+}
+
+/**
+ * Attribute the anchor's screen movement since the last update to panning or
+ * to zooming, depending on whether the zoom level changed.
+ */
+export function advancePlacement(
+  placement: PagePlacement,
+  camera: Camera,
+  zoomChanged: boolean,
+): PagePlacement {
+  const now = worldToScreen(placement.anchorWorld.x, placement.anchorWorld.y, camera);
+  const dx = now.x - placement.lastAnchorScreen.x;
+  const dy = now.y - placement.lastAnchorScreen.y;
+  const pan = placement.panOffset;
+  const zoom = placement.zoomOffset;
+  return {
+    ...placement,
+    lastAnchorScreen: now,
+    panOffset: zoomChanged ? pan : { x: pan.x + dx, y: pan.y + dy },
+    zoomOffset: zoomChanged ? { x: zoom.x + dx, y: zoom.y + dy } : zoom,
+  };
 }
 
 /**
  * Translation for a page so that its reference point lands on the anchor,
- * with the anchor's screen movement since build time reduced by the parallax
- * ratio. The page is scaled about its top-left corner, so the reference offset
- * scales too.
+ * with the pan part of the anchor's movement reduced by the parallax ratio
+ * and the zoom part by `zoomFollow`. The page is scaled about its top-left
+ * corner, so the reference offset scales too.
  */
 export function pageTransform(
   placement: PagePlacement,
-  camera: Camera,
   parallax: number,
+  zoomFollow: number,
   scale: number,
 ): { x: number; y: number } {
-  const now = worldToScreen(placement.anchorWorld.x, placement.anchorWorld.y, camera);
   const at = placement.anchorScreenAtBuild;
-  const ax = at.x + parallax * (now.x - at.x);
-  const ay = at.y + parallax * (now.y - at.y);
+  const ax = at.x + parallax * placement.panOffset.x + zoomFollow * placement.zoomOffset.x;
+  const ay = at.y + parallax * placement.panOffset.y + zoomFollow * placement.zoomOffset.y;
   return { x: ax - placement.refOffset.x * scale, y: ay - placement.refOffset.y * scale };
 }

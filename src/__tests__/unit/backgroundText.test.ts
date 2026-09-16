@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { MIN_ZOOM, MAX_ZOOM } from '../../camera';
 import {
+  advancePlacement,
   DEFAULT_SETTINGS,
   fontSizeForZoom,
+  newPlacement,
+  lineGridSnap,
   nearestVerseIndex,
+  rangeToFill,
   pageTransform,
   passageAround,
   shouldRegenerate,
@@ -92,25 +96,47 @@ describe('stripMarks', () => {
 });
 
 describe('pageTransform', () => {
-  const placement = {
-    anchorWorld: { x: 100, y: 50 },
-    anchorScreenAtBuild: { x: 300, y: 200 },
-    refOffset: { x: 40, y: 10 },
-  };
+  const built = () => newPlacement({ x: 100, y: 50 }, { x: 300, y: 200 }, { x: 40, y: 10 }, 1);
 
-  it('keeps the reference point on the anchor when parallax is 1', () => {
-    // Camera moved: the anchor is now at screen (350, 260).
-    const camera = { x: 250, y: 210, zoom: 1 };
-    expect(pageTransform(placement, camera, 1, 1)).toEqual({ x: 310, y: 250 });
+  it('puts the reference point on the anchor at build time', () => {
+    expect(pageTransform(built(), 0.3, 0, 1)).toEqual({ x: 260, y: 190 });
   });
 
-  it('does not move at all when parallax is 0', () => {
-    const camera = { x: 250, y: 210, zoom: 1 };
-    expect(pageTransform(placement, camera, 0, 1)).toEqual({ x: 260, y: 190 });
+  it('follows a pan by the parallax ratio', () => {
+    // Same zoom, camera panned so the anchor moved by (+50, +60).
+    const moved = advancePlacement(built(), { x: 250, y: 210, zoom: 1 }, false);
+    expect(pageTransform(moved, 1, 0, 1)).toEqual({ x: 310, y: 250 });
+    expect(pageTransform(moved, 0.5, 0, 1)).toEqual({ x: 285, y: 220 });
+    expect(pageTransform(moved, 0, 0, 1)).toEqual({ x: 260, y: 190 });
+  });
+
+  it('follows a zoom only by the zoom-follow ratio', () => {
+    // Zoom doubled: the anchor is now at (400, 300), a move of (+100, +100).
+    const zoomed = advancePlacement(built(), { x: 100, y: 100, zoom: 2 }, true);
+    expect(pageTransform(zoomed, 0.3, 1, 1)).toEqual({ x: 360, y: 290 });
+    expect(pageTransform(zoomed, 0.3, 0, 1)).toEqual({ x: 260, y: 190 });
   });
 
   it('scales the reference offset with the page scale', () => {
-    const camera = { x: 200, y: 150, zoom: 1 };
-    expect(pageTransform(placement, camera, 1, 2)).toEqual({ x: 220, y: 180 });
+    expect(pageTransform(built(), 1, 1, 2)).toEqual({ x: 220, y: 180 });
+  });
+});
+
+describe('rangeToFill', () => {
+  it('grows on alternating sides until the text is long enough, and stops at the corpus', () => {
+    // Each verse is one letter plus a space: two characters.
+    expect(rangeToFill(verses, texts, 2, 1)).toEqual({ start: 2, end: 2 });
+    expect(rangeToFill(verses, texts, 2, 3)).toEqual({ start: 1, end: 2 });
+    expect(rangeToFill(verses, texts, 2, 5)).toEqual({ start: 1, end: 3 });
+    expect(rangeToFill(verses, texts, 2, 100)).toEqual({ start: 0, end: 3 });
+  });
+});
+
+describe('lineGridSnap', () => {
+  it('returns the smallest shift that aligns the line grids', () => {
+    expect(lineGridSnap(100, 100, 25)).toBe(0);
+    expect(lineGridSnap(100, 90, 25)).toBe(10);
+    expect(lineGridSnap(100, 82, 25)).toBe(-7);
+    expect(lineGridSnap(100, 350, 25)).toBe(0);
   });
 });

@@ -37,7 +37,7 @@ export function createBackgroundTextPanel(
     onChange({ ...settings });
   }
 
-  function set(key: Key, value: string | number): void {
+  function set(key: Key, value: string | number | boolean): void {
     settings = { ...settings, [key]: value } as BackgroundTextSettings;
     commit();
   }
@@ -113,7 +113,7 @@ export function createBackgroundTextPanel(
   row('layer', select('layer', ['behind', 'above']));
   row('anchor', select('anchor', ['viewport', 'square']));
   row('parallax', range('parallax', 0, 1, 0.05));
-  row('content', select('content', ['center', 'window']));
+  row('content', select('content', ['center', 'window', 'fill']));
   row('neighbours', range('neighbours', 1, 20, 1));
   row('width em', range('widthEm', 10, 120, 5));
   row('min font', range('minFont', 6, 40, 1));
@@ -125,6 +125,11 @@ export function createBackgroundTextPanel(
   row('hysteresis', range('hysteresis', 0, 30, 1));
   row('settle ms', range('settleMs', 0, 1000, 50));
   row('crossfade ms', range('crossfadeMs', 0, 2000, 50));
+  const snap = document.createElement('input');
+  snap.type = 'checkbox';
+  snap.checked = settings.snapLines;
+  snap.addEventListener('change', () => set('snapLines', snap.checked));
+  row('snap lines', snap);
 
   return panel;
 }

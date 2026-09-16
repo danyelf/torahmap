@@ -61,6 +61,7 @@ canvas {
   transform-origin: 0 0;
   will-change: transform;
   line-height: 1.6;
+  text-align: justify;
   opacity: 0;
   transition: opacity var(--bgtext-fade, 300ms) linear;
 }
