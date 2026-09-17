@@ -22,7 +22,7 @@ occurrence. Nothing else we looked at has all three.
 | `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech and language. |
 | `word-lexemes.json` | Written form → the lexemes it could be, most frequent reading first. Keys have their points stripped and their final letters folded to the medial shape, matching what the search box does to what you type. |
 | `verse-lexemes.json` | Verse key → the distinct dictionary words the verse uses, one per printed word. This is what search actually queries. |
-| `verse-morphology.json` | Every word of every verse in text order with its lexeme and its grammatical parsing, and where each printed word begins and ends. Kept for a future grammatical-form filter; search does not load it. See below — its morphemes are not the words you see on the page. |
+| `verse-morphology.json` | Every word of every verse in text order with its lexeme and its grammatical parsing, and where each printed word begins and ends. This is what names the word a reader clicks or a search marks, rather than guessing from its spelling. 4.5 MB, more than the other three together, so it is fetched when the first verse is displayed rather than at startup. See below — its morphemes are not the words you see on the page. |
 
 Lexemes are referred to throughout by their position in the `lexicon.json`
 array rather than by name, which is what keeps the two per-verse files small.

@@ -46,7 +46,7 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
 
 const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
-const { meaningsInVerse } = await import('../../src/search/dictionary.ts');
+const { meaningsInVerse, setVerseOnScreen } = await import('../../src/search/dictionary.ts');
 const { splitVerseText, lookupForm } = await import('../../src/verseWords.ts');
 
 interface Report {
@@ -70,12 +70,17 @@ function buildReport(
     for (const [chapter, verses] of Object.entries(chapters)) {
       for (const [verse, text] of Object.entries(verses)) {
         const verseKey = `${book}:${chapter}:${verse}`;
+        // What displaying the verse does, which is what makes a click a
+        // lookup of the word rather than a guess from its spelling.
+        setVerseOnScreen(verseKey, text.he);
 
+        let wordIndex = -1;
         for (const piece of splitVerseText(text.he)) {
           if (piece.kind !== 'word') continue;
+          wordIndex++;
 
           const form = lookupForm(piece.text);
-          const n = meaningsInVerse(form, verseKey).length;
+          const n = meaningsInVerse(form, verseKey, wordIndex).length;
           report.total++;
 
           if (n === 1) report.one++;
@@ -110,6 +115,16 @@ await loadLexiconData();
 // which is why this checks rather than trusts.
 if (!getVerseLexemes('Genesis:1:1')) {
   console.error('The lexeme index did not load. The numbers below would be meaningless.');
+  process.exit(1);
+}
+
+// The per-word parse is fetched when a verse is first displayed, and every
+// number below is about what a click finds once it is here. Waiting for it is
+// the difference between measuring this report's subject and measuring the
+// fallback under it.
+await setVerseOnScreen('Genesis:1:1', texts.Genesis['1']['1'].he);
+if (meaningsInVerse('בראשית', 'Genesis:1:1', 0).length !== 1) {
+  console.error('The per-word parse did not load. The numbers below would be meaningless.');
   process.exit(1);
 }
 

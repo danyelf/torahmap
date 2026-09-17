@@ -1,9 +1,11 @@
 // Sidebar management for verse details display
 
 import type { TanakhLayout } from './types.ts';
+import { tanakhKey } from './types.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { getVerseLinkCount } from './overlays/commentary.ts';
+import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
 import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
 
 /** A click on a word in the verse popup's Hebrew text. */
@@ -152,6 +154,19 @@ export function updateSidebar(
   }
   if (hebrew) {
     const hebrewText = text?.he || 'Loading...';
+
+    // Naming the verse is what lets a word be looked up rather than guessed
+    // from its spelling, both by the overlay marking the text and by a click
+    // on a word. The parse behind that is big enough to be fetched only once
+    // a verse is on screen, so the first verse is drawn without it and drawn
+    // again when it arrives.
+    const verseKey = tanakhKey(verse.book, verse.chapter, verse.verse);
+    setVerseOnScreen(verseKey, hebrewText)?.then(() => {
+      if (verseOnScreen() === verseKey) {
+        updateSidebar(elements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
+      }
+    });
+
     // Whatever the overlay produced, words are wrapped afterwards, so a click
     // finds a word whether or not anything is highlighting the text.
     const fragment =
