@@ -19,7 +19,7 @@ occurrence. Nothing else we looked at has all three.
 
 | File | Contents |
 | --- | --- |
-| `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech, language, and the derivational root where BHSA supplies one. |
+| `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech and language. |
 | `word-lexemes.json` | Written form → the lexemes it could be, most frequent reading first. Keys have their points stripped and their final letters folded to the medial shape, matching what the search box does to what you type. |
 | `verse-lexemes.json` | Verse key → the distinct dictionary words the verse uses, one per printed word. This is what search actually queries. |
 | `verse-morphology.json` | Every word of every verse in text order with its lexeme and its grammatical parsing, and where each printed word begins and ends. Kept for a future grammatical-form filter; search does not load it. See below — its morphemes are not the words you see on the page. |
@@ -81,10 +81,10 @@ To line up against the Hebrew in `all-texts.json`, fold it the way
 `misaligned` lines up under exactly those rules, so a change to either copy of
 them fails the test suite with the offending verses named.
 
-The `root` column of `lexicon.json` is written but no longer read. It existed to
-group words into root families for a "related words" suggestion that has since
-been removed. It is harmless where it is, and the generator still produces it;
-drop it if you ever rebuild the index and want the file smaller.
+BHSA also records a derivational root for each lexeme, which this index does
+not carry. It was here for a "related words" suggestion that has since been
+removed, and search deliberately offers the meanings of the word you typed
+rather than a path to its derivational neighbours, so nothing would read it.
 
 ### What counts as a word
 
