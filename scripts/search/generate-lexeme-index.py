@@ -42,7 +42,7 @@ BHSA_LOCATION = os.path.expanduser(
 FEATURES = (
     "otype oslots book chapter verse "
     "g_cons_utf8 g_word_utf8 trailer_utf8 qere_utf8 qere_trailer_utf8 "
-    "lex lex_utf8 voc_lex_utf8 gloss sp language root "
+    "lex lex_utf8 voc_lex_utf8 gloss sp language "
     "vs vt ps nu gn st prs"
 )
 
@@ -142,7 +142,7 @@ FINAL_TO_MEDIAL = {
 MORPH_FIELDS = ["vs", "vt", "ps", "nu", "gn", "st"]
 
 # Column order of the rows in lexicon.json.
-LEXEME_FIELDS = ["id", "form", "gloss", "pos", "lang", "root"]
+LEXEME_FIELDS = ["id", "form", "gloss", "pos", "lang"]
 
 
 def normalize(text):
@@ -275,12 +275,6 @@ def main():
     lexemes = []
     for node in lex_nodes:
         display = F.voc_lex_utf8.v(node) or F.lex_utf8.v(node) or ""
-        # BHSA spells roots in its own transliteration, where ">" is aleph and
-        # "<" is ayin; the only angle brackets that are not letters are the
-        # placeholders "<unknown>", "<uncertain>" and "<unclear>".
-        root = F.root.v(node)
-        if root and re.fullmatch(r"<[a-z]+>", root):
-            root = None
         lexemes.append(
             [
                 F.lex.v(node),
@@ -288,7 +282,6 @@ def main():
                 F.gloss.v(node) or "",
                 F.sp.v(node) or "",
                 "arc" if F.language.v(node) == "Aramaic" else "heb",
-                root,
             ]
         )
     print(f"  {len(lexemes)} lexemes "

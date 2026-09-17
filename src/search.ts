@@ -71,8 +71,6 @@ export interface Lexeme {
   /** part of speech: verb, subs, nmpr, prep, ... */
   pos: string;
   language: 'heb' | 'arc';
-  /** derivational root, in ETCBC transliteration, where BHSA records one */
-  root: string | null;
 }
 
 // The dictionary, loaded from lexicon.json.
@@ -103,14 +101,7 @@ export function parseSearchTerms(query: string): string[] {
 }
 
 /** Row order of the lexeme records in lexicon.json */
-type LexemeRow = [
-  id: string,
-  form: string,
-  gloss: string,
-  pos: string,
-  language: 'heb' | 'arc',
-  root: string | null,
-];
+type LexemeRow = [id: string, form: string, gloss: string, pos: string, language: 'heb' | 'arc'];
 
 interface LexiconFile {
   source: string;
@@ -145,13 +136,12 @@ export async function loadLexiconData(): Promise<void> {
     formToLexemes = await formsRes.json();
     verseToLexemes = await versesRes.json();
 
-    lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language, root]) => ({
+    lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language]) => ({
       id,
       form,
       gloss,
       pos,
       language,
-      root,
     }));
     lexemeSpellings = lexicon.map((entry) => normalizeHebrewForSearch(entry.form));
 

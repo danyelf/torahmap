@@ -25,7 +25,7 @@ const generatorPath = path.join(process.cwd(), 'scripts', 'search', 'generate-le
 const dataExists =
   fs.existsSync(lexiconPath) && fs.existsSync(formsPath) && fs.existsSync(versesPath);
 
-type LexemeRow = [string, string, string, string, 'heb' | 'arc', string | null];
+type LexemeRow = [string, string, string, string, 'heb' | 'arc'];
 
 const lexiconFile = dataExists
   ? (JSON.parse(fs.readFileSync(lexiconPath, 'utf-8')) as {
@@ -70,7 +70,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
   describe('the dictionary', () => {
     it('names its source and column order', () => {
       expect(lexiconFile!.source).toMatch(/BHSA/);
-      expect(lexiconFile!.fields).toEqual(['id', 'form', 'gloss', 'pos', 'lang', 'root']);
+      expect(lexiconFile!.fields).toEqual(['id', 'form', 'gloss', 'pos', 'lang']);
     });
 
     it('gives every lexeme an identifier, a display form and a part of speech', () => {
