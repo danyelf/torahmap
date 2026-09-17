@@ -15,14 +15,7 @@ export interface OutlineOptions {
   color?: Color;
 }
 
-/**
- * Build outline geometry as 4 border rectangles around a verse.
- * Each border is 2 triangles (6 vertices), total 24 vertices.
- *
- * @param bounds - Verse bounds (x, y, size)
- * @param options - Outline configuration (thickness, color)
- * @returns Float32Array with vertex data (24 vertices * 19 floats each)
- */
+/** Build outline geometry as 4 border rectangles (24 vertices) around a verse. */
 export function buildOutlineGeometry(
   bounds: OutlineBounds,
   options: OutlineOptions = {},
@@ -49,7 +42,6 @@ export function buildOutlineGeometry(
 
   let offset = 0;
 
-  // Helper to write a vertex with single color (no stipple for outlines)
   const writeVertex = (x: number, y: number) => {
     data[offset++] = x;
     data[offset++] = y;
@@ -66,7 +58,6 @@ export function buildOutlineGeometry(
     data[offset++] = seedY;
   };
 
-  // Helper to write a rectangle as 2 triangles
   const writeRect = (rx0: number, ry0: number, rx1: number, ry1: number) => {
     // Triangle 1 (top-left, top-right, bottom-left)
     writeVertex(rx0, ry0);

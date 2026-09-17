@@ -1,11 +1,7 @@
-// src/constants.ts
 // Global constants for the application
 
 import type { Color } from './overlays/types.ts';
 
-/**
- * Highlight and rendering constants
- */
 export const HIGHLIGHT_CONSTANTS = {
   // Fuzzy hit detection radius (world units / pixels at 1x zoom)
   FUZZY_RADIUS: 10,
@@ -38,7 +34,7 @@ export const HIGHLIGHT_CONSTANTS = {
   // Dimming factor for non-highlighted verses
   DIM_FACTOR: 0.3,
 
-  // Brightness adjustment for haftarah hover
+  // Brightness multiplier for an overlay-colored item on hover
   BRIGHTNESS_FACTOR: 1.5,
 
   // Desaturation factor for haftarah non-hover

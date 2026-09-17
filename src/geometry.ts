@@ -17,7 +17,7 @@ export function buildItemGeometry<T>(
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
   // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-  const floatsPerVertex = 19; // Added 2 for seed position
+  const floatsPerVertex = 19;
   const verticesPerQuad = 6;
   const data = new Float32Array(verses.length * verticesPerQuad * floatsPerVertex);
 
@@ -26,11 +26,9 @@ export function buildItemGeometry<T>(
     const v = verses[i];
     const verseColor = colors?.[i];
 
-    // Extract colors - handle single color or array of colors
     let vertexColors: Color[];
     // Check for empty array first (before isColorArray which would fail on empty)
     if (Array.isArray(verseColor) && (verseColor as unknown[]).length === 0) {
-      // Handle empty array - fall back to base color
       vertexColors = [baseColor];
     } else if (isColorArray(verseColor)) {
       vertexColors = verseColor.slice(0, 4) as Color[]; // Cap at 4 colors
@@ -60,11 +58,9 @@ export function buildItemGeometry<T>(
       vertexColors.push([0, 0, 0]);
     }
 
-    // Helper to write a vertex
     const writeVertex = (x: number, y: number, u: number, vCoord: number) => {
       data[offset++] = x;
       data[offset++] = y;
-      // Write all 4 colors
       for (let c = 0; c < 4; c++) {
         data[offset++] = vertexColors[c][0];
         data[offset++] = vertexColors[c][1];
