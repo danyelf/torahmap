@@ -119,11 +119,19 @@ describe('words in the verse popup', () => {
       name: 'Test overlay',
       getVerseColor: () => null,
       highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
-        if (language !== 'he') return text;
+        const fragment = document.createDocumentFragment();
+        if (language !== 'he') {
+          fragment.appendChild(document.createTextNode(text));
+          return fragment;
+        }
         // Mark the first three characters of the first word - interior to
         // the word, not at a word boundary - leaving the rest of the text
         // untouched so it still matches the source exactly.
-        return `<mark>${text.slice(0, 3)}</mark>${text.slice(3)}`;
+        const mark = document.createElement('mark');
+        mark.textContent = text.slice(0, 3);
+        fragment.appendChild(mark);
+        fragment.appendChild(document.createTextNode(text.slice(3)));
+        return fragment;
       }),
     };
 

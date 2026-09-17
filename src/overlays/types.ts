@@ -42,9 +42,9 @@ export interface Overlay<T = TanakhIdentity> {
   getUrlParams?(): Record<string, string>;
   applyUrlParams?(params: UrlParamValues): void;
 
-  renderSidebarInfo?(verse: T, isPinned: boolean): HTMLElement | string | null;
+  renderSidebarInfo?(verse: T, isPinned: boolean): HTMLElement | null;
 
-  highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment | string;
+  highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment;
 
   getLinkSubtitle?(verse: T): string | null;
 

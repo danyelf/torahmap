@@ -405,10 +405,15 @@ describe('sidebar', () => {
           name: 'Trop Overlay',
           getVerseColor: () => null,
           highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
+            const fragment = document.createDocumentFragment();
             if (language === 'he') {
-              return `<mark>${text}</mark>`;
+              const mark = document.createElement('mark');
+              mark.textContent = text;
+              fragment.appendChild(mark);
+            } else {
+              fragment.appendChild(document.createTextNode(text));
             }
-            return text;
+            return fragment;
           }),
         };
 

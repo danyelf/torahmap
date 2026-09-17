@@ -238,11 +238,16 @@ export const tropOverlay: Overlay = {
     }
   },
 
-  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment | string {
+  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment {
+    const fragment = document.createDocumentFragment();
     if (language !== 'he' || !selectedTrop) {
-      return text;
+      fragment.appendChild(document.createTextNode(text));
+      return fragment;
     }
-    return highlightTropInText(text, selectedTrop.unicode);
+    const holder = document.createElement('div');
+    holder.innerHTML = highlightTropInText(text, selectedTrop.unicode);
+    fragment.append(...holder.childNodes);
+    return fragment;
   },
 };
 
