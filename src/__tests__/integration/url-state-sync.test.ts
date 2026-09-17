@@ -201,18 +201,21 @@ describe('URL State Sync Integration', () => {
       expect(historyStates[0]).toContain('zoom=2');
     });
 
-    it('subscribes to hash changes', () => {
+    it('does not react to a hashchange event', () => {
+      // This app writes the URL only through pushState/replaceState (see
+      // updateUrl), which never fire hashchange on their own, so listening
+      // for it too would just run the restore callback twice per back/forward
+      // navigation. Only popstate is registered — see subscribeToHashChange.
       const callback = vi.fn();
       subscribeToHashChange(callback);
 
-      // Simulate hashchange event
       const event = new Event('hashchange');
       window.dispatchEvent(event);
 
-      expect(callback).toHaveBeenCalled();
+      expect(callback).not.toHaveBeenCalled();
     });
 
-    it('subscribes to popstate events', () => {
+    it('subscribes to popstate events, exactly once per navigation', () => {
       const callback = vi.fn();
       subscribeToHashChange(callback);
 
@@ -220,7 +223,7 @@ describe('URL State Sync Integration', () => {
       const event = new Event('popstate');
       window.dispatchEvent(event);
 
-      expect(callback).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 
