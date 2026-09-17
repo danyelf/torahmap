@@ -41,8 +41,16 @@ const FINAL_FORM_MAP: Record<string, string> = {
   'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
 };
 
-/** A point or accent: decoration on a letter, not a letter and not a break. */
+/**
+ * Does `stripNikkud` drop this character? A point, an accent, or the grapheme
+ * joiner, none of which a reader types or sees.
+ *
+ * Mapping a position back to the text it came from counts exactly what this
+ * dropped. The two disagreeing does not fail loudly: it shifts every highlight
+ * after the disagreement along by one character, which looks plausible.
+ */
 export function isNikkud(code: number): boolean {
+  if (code === GRAPHEME_JOINER) return true;
   return code >= NIKKUD_START && code <= NIKKUD_END && !SEPARATOR_CODES.has(code);
 }
 
@@ -70,7 +78,6 @@ export function normalizeHebrewForSearch(text: string): string {
   for (const raw of text) {
     const char = PRESENTATION_FORM_MAP[raw] ?? raw;
     const code = char.charCodeAt(0);
-    if (code === GRAPHEME_JOINER) continue;
     if (isNikkud(code)) continue;
     // Whitespace is already a break and is left as written; it is the Hebrew
     // separators that have to become one, so that a typed space matches them.

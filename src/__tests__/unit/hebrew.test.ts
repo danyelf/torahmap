@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   isWordSeparator,
+  mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
   normalizeHebrewForSearch,
@@ -34,6 +35,26 @@ describe('where a word ends', () => {
     const [first, second] = splitIntoWords('אב גד');
     expect([first.start, first.end]).toEqual([0, 2]);
     expect([second.start, second.end]).toEqual([3, 5]);
+  });
+});
+
+describe('the grapheme joiner Sefaria writes inside Jerusalem', () => {
+  // U+034F renders as nothing and nobody types it. Stripping it without also
+  // counting it when a position is mapped back would shift every mark after it.
+  const JERUSALEM = 'יְרוּשָׁלַ֗͏ִם';
+
+  it('is dropped along with the points', () => {
+    expect(stripNikkud(JERUSALEM)).toBe('ירושלם');
+    expect(normalizeHebrewForSearch(JERUSALEM)).toBe('ירושלמ');
+  });
+
+  it('is counted when a position past it is mapped back', () => {
+    // The word after Jerusalem is what catches a mapping that has drifted: a
+    // joiner dropped but not counted leaves every later position short by one.
+    const text = `${JERUSALEM} שָׁלוֹם`;
+    const at = stripNikkud(text).indexOf('שלום');
+
+    expect(stripNikkud(text.slice(mapStrippedToOriginal(text, at)))).toBe('שלום');
   });
 });
 

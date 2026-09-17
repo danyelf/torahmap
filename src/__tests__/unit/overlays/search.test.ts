@@ -1463,6 +1463,24 @@ describe('Search Overlay', () => {
       expect(html).toContain('<mark');
       expect(html).toContain('הָאָֽרֶץ');
     });
+
+    it('marks Jerusalem, which carries a grapheme joiner nobody types', () => {
+      // II Kings 21:13 names it twice. The second catches a mapping that has
+      // drifted, so assert the marked text rather than that a mark exists.
+      const verse =
+        'וְנָטִ֣יתִי עַל־יְרוּשָׁלַ֗͏ִם אֵ֚ת קָ֣ו שֹׁמְר֔וֹן וְאֶת־מִשְׁקֹ֖לֶת בֵּ֣ית ' +
+        'אַחְאָ֑ב וּמָחִ֨יתִי אֶת־יְרוּשָׁלַ֜͏ִם כַּאֲשֶׁר־יִמְחֶ֤ה אֶת־הַצַּלַּ֙חַת֙ ' +
+        'מָחָ֔ה וְהָפַ֖ךְ עַל־פָּנֶֽיהָ׃';
+
+      searchOverlay.applyUrlParams({ q: 'ירושלם', mode: 'word' } as never);
+
+      const html = fragmentToHtml(highlightSearchTerms(verse, 'he') as DocumentFragment);
+      const marked = [...html.matchAll(/<mark[^>]*>([^<]*)<\/mark>/g)].map((m) =>
+        m[1].replace(/[^א-ת]/g, ''),
+      );
+
+      expect(marked).toEqual(['ירושלם', 'ירושלם']);
+    });
   });
 
   describe('Color Validation', () => {
