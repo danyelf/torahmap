@@ -9,7 +9,10 @@ const searchOverlay = getOverlay('search')!;
 import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
-import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
+import { SEARCH_COLORS } from '../../../utils/color';
+import { HIGHLIGHT_CONSTANTS } from '../../../constants';
+
+const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
@@ -1448,6 +1451,35 @@ describe('Search Overlay', () => {
       expect(html).toContain('בָּרָא');
       expect(html).toContain('<mark');
       expect(html).toContain('אֱלֹהִים');
+    });
+
+    it('marks the last word of a verse, which the sof pasuq used to hide', () => {
+      searchOverlay.applyUrlParams({ q: 'הארץ', mode: 'word' } as never);
+
+      const html = fragmentToHtml(
+        highlightSearchTerms('אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃', 'he') as DocumentFragment,
+      );
+
+      expect(html).toContain('<mark');
+      expect(html).toContain('הָאָֽרֶץ');
+    });
+
+    it('marks Jerusalem, which carries a grapheme joiner nobody types', () => {
+      // II Kings 21:13 names it twice. The second catches a mapping that has
+      // drifted, so assert the marked text rather than that a mark exists.
+      const verse =
+        'וְנָטִ֣יתִי עַל־יְרוּשָׁלַ֗͏ִם אֵ֚ת קָ֣ו שֹׁמְר֔וֹן וְאֶת־מִשְׁקֹ֖לֶת בֵּ֣ית ' +
+        'אַחְאָ֑ב וּמָחִ֨יתִי אֶת־יְרוּשָׁלַ֜͏ִם כַּאֲשֶׁר־יִמְחֶ֤ה אֶת־הַצַּלַּ֙חַת֙ ' +
+        'מָחָ֔ה וְהָפַ֖ךְ עַל־פָּנֶֽיהָ׃';
+
+      searchOverlay.applyUrlParams({ q: 'ירושלם', mode: 'word' } as never);
+
+      const html = fragmentToHtml(highlightSearchTerms(verse, 'he') as DocumentFragment);
+      const marked = [...html.matchAll(/<mark[^>]*>([^<]*)<\/mark>/g)].map((m) =>
+        m[1].replace(/[^א-ת]/g, ''),
+      );
+
+      expect(marked).toEqual(['ירושלם', 'ירושלם']);
     });
   });
 

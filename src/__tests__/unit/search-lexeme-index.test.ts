@@ -8,7 +8,7 @@
 //   .venv/bin/python scripts/search/generate-lexeme-index.py
 
 import { describe, it, expect } from 'vitest';
-import { normalizeHebrewForSearch } from '../../search';
+import { normalizeHebrewForSearch } from '../../hebrew';
 import { lookupForm, splitVerseText } from '../../verseWords';
 import * as fs from 'fs';
 import * as path from 'path';

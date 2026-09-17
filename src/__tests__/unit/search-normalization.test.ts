@@ -9,7 +9,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { normalizeHebrewForSearch, findLexemesForWord, loadLexiconData } from '../../search';
+import { findLexemesForWord, loadLexiconData } from '../../search';
+import { normalizeHebrewForSearch } from '../../hebrew';
 
 const cases: Array<{ in: string; out: string; rule: string }> = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), 'scripts', 'search', 'folding-cases.json'), 'utf-8'),
