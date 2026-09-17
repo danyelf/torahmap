@@ -1,7 +1,8 @@
 import '../styles/overlays/text-dating.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
-import { fetchData } from '../constants/app.ts';
+import { loadJson } from './loadJson.ts';
+import { legendRow } from './legend.ts';
 
 interface TextDatingData {
   notes: string[];
@@ -77,6 +78,11 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
   ];
 }
 
+/** "~500 BCE" for a single date, "500-400 BCE" for a range. Takes positive BCE numbers. */
+function formatBceRange(startBCE: number, endBCE: number): string {
+  return startBCE === endBCE ? `~${startBCE} BCE` : `${startBCE}-${endBCE} BCE`;
+}
+
 function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number } | null {
   const bookData = data.books?.[verse.book];
   if (!bookData) return null;
@@ -107,12 +113,8 @@ export const textDatingOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetchData('text-dating.json');
-      if (!res.ok) {
-        console.error(`Failed to load text-dating.json: ${res.status}`);
-        return;
-      }
-      data = await res.json();
+      const result = await loadJson<TextDatingData>('text-dating.json');
+      if (result) data = result;
     } catch (e) {
       console.error('Failed to parse text-dating.json:', e);
     }
@@ -132,12 +134,7 @@ export const textDatingOverlay: Overlay = {
     const rows = ERAS.map((era) => {
       const [r, g, b] = era.baseColor;
       const rgb = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
-      return `
-        <div class="legend-row">
-          <span class="swatch" style="background: ${rgb}"></span>
-          <span class="label">${era.name} (${era.dateRange[0]}-${era.dateRange[1]} BCE)</span>
-        </div>
-      `;
+      return legendRow(rgb, `${era.name} (${era.dateRange[0]}-${era.dateRange[1]} BCE)`, 'label');
     }).join('');
 
     container.innerHTML = `
@@ -149,22 +146,12 @@ export const textDatingOverlay: Overlay = {
   },
 
   getHoverInfo(verse: TanakhIdentity): string | null {
-    const verseData = getVerseData(verse);
-    if (!verseData) return null;
+    const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
+    if (!datingInfo) return null;
 
-    const [startBCE, endBCE] = verseData.d;
-    const midpointBCE = Math.abs((startBCE + endBCE) / 2);
-    const era = getEra(midpointBCE);
+    const dateStr = formatBceRange(datingInfo.dateRange[0], datingInfo.dateRange[1]);
 
-    if (!era) return null;
-
-    const note = data.notes?.[verseData.n];
-    const dateStr =
-      startBCE === endBCE
-        ? `~${Math.abs(startBCE)} BCE`
-        : `${Math.abs(startBCE)}-${Math.abs(endBCE)} BCE`;
-
-    return `${era.name} (${dateStr})\n${note}`;
+    return `${datingInfo.era} (${dateStr})\n${datingInfo.note}`;
   },
 
   renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | string | null {
@@ -173,10 +160,7 @@ export const textDatingOverlay: Overlay = {
     const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
     if (!datingInfo) return null;
 
-    const dateStr =
-      datingInfo.dateRange[0] === datingInfo.dateRange[1]
-        ? `~${datingInfo.dateRange[0]} BCE`
-        : `${datingInfo.dateRange[0]}-${datingInfo.dateRange[1]} BCE`;
+    const dateStr = formatBceRange(datingInfo.dateRange[0], datingInfo.dateRange[1]);
 
     // Parse citation links from note (format: [text](url))
     const noteHtml = datingInfo.note.replace(
