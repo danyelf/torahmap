@@ -2,6 +2,12 @@
   margin-top: 10px;
 }
 
+.trop-gradient {
+  height: 12px;
+  border-radius: 2px;
+  margin-bottom: 2px;
+}
+
 .trop-chart {
   display: grid;
   grid-template-columns: repeat(6, 1fr);

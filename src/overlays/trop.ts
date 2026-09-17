@@ -11,7 +11,8 @@ import { isNikkud } from '../hebrew.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
-import { scaleToGradient, type ColorStop } from '../utils/color.ts';
+import { scaleToGradient, buildLegendGradient, interpolateGradient } from '../utils/color.ts';
+import type { ColorStop } from '../utils/color.ts';
 import { legendRow } from './legend.ts';
 
 let tropIndex: TropIndex = new Map();
@@ -207,8 +208,11 @@ export const tropOverlay: Overlay = {
         legendRow('rgb(255, 214, 0)', `Contains ${selectedTrop.name}`) +
         legendRow('rgb(64, 64, 64)', 'Does not contain');
     } else {
+      const stops = tier === 'uncommon' ? UNCOMMON_TROP_GRADIENT : COMMON_TROP_GRADIENT;
+      const gradient = buildLegendGradient(10, (i) => interpolateGradient(i / 9, stops));
+
       container.innerHTML = `
-        <div class="legend-gradient" style="background: linear-gradient(to right, #3f3b47, #5a3f7a, #a060a0, #e090c0);"></div>
+        <div class="trop-gradient" style="background: ${gradient}"></div>
         <div style="display: flex; justify-content: space-between; font-size: 10px; color: #888;">
           <span>0</span>
           <span>Count</span>

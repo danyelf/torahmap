@@ -495,6 +495,31 @@ describe('Trop Overlay', () => {
         expect(legendContainer.innerHTML).toContain('rgb(255, 214, 0)'); // Gold
       }
     });
+
+    it('draws its strip in its own colours, owing nothing to commentary', async () => {
+      // The shared fixture's marks are all rare, which is the two-swatch
+      // legend. A mark has to clear RARITY_THRESHOLDS.UNCOMMON to get a strip.
+      const chapter: Record<string, { he: string; en: string }> = {};
+      for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
+        chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
+      }
+      configure({ verseTexts: { 'Genesis': { '1': chapter } } });
+      await tropOverlay.init?.();
+
+      const controls = document.createElement('div');
+      tropOverlay.renderControls?.(controls);
+      controls.querySelector('button')?.click();
+
+      const container = document.createElement('div');
+      tropOverlay.renderLegend?.(container);
+
+      const strip = container.querySelector<HTMLElement>('.trop-gradient');
+      expect(strip).not.toBeNull();
+      expect(container.querySelector('.legend-gradient')).toBeNull();
+      // The ends of trop's own gradient, not a hand-written approximation.
+      expect(strip?.style.background).toContain('rgb(51, 26, 77) 0%');
+      expect(strip?.style.background).toContain('rgb(242, 153, 230) 100%');
+    });
   });
 
   describe('Hover Info', () => {

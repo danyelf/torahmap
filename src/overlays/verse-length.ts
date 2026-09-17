@@ -2,8 +2,9 @@ import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
-import { interpolateGradient, buildLegendGradient, type ColorStop } from '../utils/color.ts';
-import { legendCaption } from './legend.ts';
+import type { ColorStop } from '../utils/color.ts';
+import { scale, SQRT, type Scale } from '../utils/scale.ts';
+import { legendCaption, renderAxis } from './legend.ts';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
 const PLASMA_STOPS: ColorStop[] = [
@@ -59,6 +60,14 @@ export function configure(config: { verseTexts: VerseTexts }): void {
   maxWordCount = max;
 }
 
+/**
+ * Square root, so that a few very long verses don't compress everything else
+ * toward one end of the palette. Rebuilt per call: the range follows the text.
+ */
+function wordCountScale(): Scale {
+  return scale(minWordCount, maxWordCount, SQRT, PLASMA_STOPS);
+}
+
 function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
   const wordCount = wordCountCache.get(key);
@@ -67,14 +76,7 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
     return [0.15, 0.15, 0.2];
   }
 
-  // Square root scale so a few very long verses don't compress everything
-  // else toward one end of the palette.
-  const sqrtMin = Math.sqrt(minWordCount);
-  const sqrtMax = Math.sqrt(maxWordCount);
-  const sqrtValue = Math.sqrt(wordCount);
-  const t = (sqrtValue - sqrtMin) / (sqrtMax - sqrtMin);
-
-  return interpolateGradient(t, PLASMA_STOPS);
+  return wordCountScale().colorOf(wordCount);
 }
 
 export const verseLengthOverlay: Overlay = {
@@ -89,26 +91,12 @@ export const verseLengthOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement): void {
-    const gradient = buildLegendGradient(10, (i) => interpolateGradient(i / 9, PLASMA_STOPS));
-
     const paletteName = 'Plasma';
     const lowColor = 'Purple';
     const highColor = 'Orange/yellow';
 
     container.innerHTML = `
-      <div class="legend-row">
-        <div style="
-          width: 100%;
-          height: 12px;
-          background: ${gradient};
-          border-radius: 2px;
-          margin-bottom: 6px;
-        "></div>
-        <div style="display: flex; justify-content: space-between; font-size: 10px; color: #888;">
-          <span>${minWordCount} words</span>
-          <span>${maxWordCount} words</span>
-        </div>
-      </div>
+      ${renderAxis(wordCountScale(), [minWordCount, maxWordCount], (n) => `${n} words`)}
       ${legendCaption(`${lowColor} = shorter verses`, { marginTop: 8 })}
       ${legendCaption(`${highColor} = longer verses`)}
       ${legendCaption(`Square root scale · ${paletteName} palette`)}
