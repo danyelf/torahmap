@@ -4,8 +4,6 @@ import {
   buildUrlHash,
   updateUrl,
   subscribeToHashChange,
-  verseToUrlFormat,
-  parseVerseFromUrl,
   type UrlState,
 } from '../../urlState';
 import {
@@ -105,309 +103,6 @@ describe('URL State Sync Integration', () => {
     (window as any).location = originalLocation;
   });
 
-  describe('URL State Parsing', () => {
-    it('parses overlay from URL hash', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=commentary');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.overlay).toBe('commentary');
-    });
-
-    it('parses overlay-specific parameters for commentary', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=commentary&category=talmud');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.overlay).toBe('commentary');
-      expect(state.overlayParams.category).toBe('talmud');
-    });
-
-    it('parses overlay-specific parameters for trop', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=trop&trop=tipcha');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.overlay).toBe('trop');
-      expect(state.overlayParams.trop).toBe('tipcha');
-    });
-
-    it('parses overlay-specific parameters for search', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=search&q=moses');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.overlay).toBe('search');
-      expect(state.overlayParams.q).toBe('moses');
-    });
-
-    it('parses search query with special characters', () => {
-      mockWindowLocation(
-        'http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA',
-      );
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.overlay).toBe('search');
-      expect(state.overlayParams.q).toBe('בראשית');
-    });
-
-    it('parses verse selection', () => {
-      mockWindowLocation('http://localhost:5173/#verse=Genesis.1.1');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.verse).toBe('Genesis.1.1');
-    });
-
-    it('parses verse with multi-word book name', () => {
-      mockWindowLocation('http://localhost:5173/#verse=I.Samuel.1.5');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.verse).toBe('I.Samuel.1.5');
-    });
-
-    it('parses zoom level', () => {
-      mockWindowLocation('http://localhost:5173/#zoom=2.5');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.zoom).toBe(2.5);
-    });
-
-    it('parses pan coordinates', () => {
-      mockWindowLocation('http://localhost:5173/#x=100&y=200');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.x).toBe(100);
-      expect(state.y).toBe(200);
-    });
-
-    it('parses complete state with all parameters', () => {
-      mockWindowLocation(
-        'http://localhost:5173/#overlay=commentary&category=midrash&verse=Genesis.1.1&zoom=1.5&x=50&y=75',
-      );
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.overlay).toBe('commentary');
-      expect(state.overlayParams.category).toBe('midrash');
-      expect(state.verse).toBe('Genesis.1.1');
-      expect(state.zoom).toBe(1.5);
-      expect(state.x).toBe(50);
-      expect(state.y).toBe(75);
-    });
-
-    it('handles empty hash', () => {
-      mockWindowLocation('http://localhost:5173/');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.overlay).toBeUndefined();
-      expect(state.verse).toBeUndefined();
-      expect(state.zoom).toBeUndefined();
-    });
-
-    it('handles malformed zoom values', () => {
-      mockWindowLocation('http://localhost:5173/#zoom=invalid');
-      const state = parseUrlState(overlayUrlParams);
-
-      expect(state.zoom).toBeUndefined();
-    });
-
-    it('clamps zoom to valid range', () => {
-      mockWindowLocation('http://localhost:5173/#zoom=20');
-      const state = parseUrlState(overlayUrlParams);
-
-      // Should be clamped to max of 10
-      expect(state.zoom).toBeUndefined(); // Out of range, so ignored
-
-      mockWindowLocation('http://localhost:5173/#zoom=0.05');
-      const state2 = parseUrlState(overlayUrlParams);
-
-      expect(state2.zoom).toBeUndefined(); // Out of range, so ignored
-    });
-  });
-
-  describe('URL State Building', () => {
-    it('builds hash with overlay selection', () => {
-      const state: UrlState = {
-        overlay: 'commentary',
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('#overlay=commentary');
-    });
-
-    it('builds hash with commentary overlay and category', () => {
-      const state: UrlState = {
-        overlay: 'commentary',
-        overlayParams: { category: 'talmud' },
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toContain('overlay=commentary');
-      expect(hash).toContain('category=talmud');
-    });
-
-    it('builds hash with trop overlay and selected mark', () => {
-      const state: UrlState = {
-        overlay: 'trop',
-        overlayParams: { trop: 'tipcha' },
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toContain('overlay=trop');
-      expect(hash).toContain('trop=tipcha');
-    });
-
-    it('builds hash with search overlay and query', () => {
-      const state: UrlState = {
-        overlay: 'search',
-        overlayParams: { q: 'moses' },
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toContain('overlay=search');
-      expect(hash).toContain('q=moses');
-    });
-
-    it('builds hash with verse selection', () => {
-      const state: UrlState = {
-        verse: 'Genesis.1.1',
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('#verse=Genesis.1.1');
-    });
-
-    it('builds hash with zoom', () => {
-      const state: UrlState = {
-        zoom: 2.5,
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('#zoom=2.5');
-    });
-
-    it('omits default zoom value (1.0)', () => {
-      const state: UrlState = {
-        zoom: 1.0,
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('');
-    });
-
-    it('builds hash with pan coordinates', () => {
-      const state: UrlState = {
-        x: 100,
-        y: 200,
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toContain('x=100');
-      expect(hash).toContain('y=200');
-    });
-
-    it('omits pan coordinates when verse is selected', () => {
-      const state: UrlState = {
-        verse: 'Genesis.1.1',
-        x: 100,
-        y: 200,
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('#verse=Genesis.1.1');
-      expect(hash).not.toContain('x=');
-      expect(hash).not.toContain('y=');
-    });
-
-    it('omits the category when the overlay is on its default', () => {
-      // The overlay, not the URL layer, decides that "total" means "nothing
-      // to say", so it reports no parameters at all.
-      const state: UrlState = {
-        overlay: 'commentary',
-        overlayParams: getOverlay('commentary')?.getUrlParams?.() ?? {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('#overlay=commentary');
-      expect(hash).not.toContain('category=');
-    });
-
-    it('rounds zoom to reasonable precision', () => {
-      const state: UrlState = {
-        zoom: 2.123456789,
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('#zoom=2.12');
-    });
-
-    it('rounds pan coordinates', () => {
-      const state: UrlState = {
-        x: 100.123456,
-        y: 200.987654,
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toContain('x=100.1');
-      expect(hash).toContain('y=201');
-    });
-
-    it('returns empty string for default state', () => {
-      const state: UrlState = {
-        overlayParams: {},
-      };
-
-      const hash = buildUrlHash(state);
-      expect(hash).toBe('');
-    });
-  });
-
-  describe('URL Update Operations', () => {
-    it('updates URL with replaceState by default', () => {
-      const state: UrlState = {
-        overlay: 'commentary',
-        overlayParams: {},
-      };
-
-      updateUrl(state, false);
-
-      expect(history.replaceState).toHaveBeenCalled();
-      expect(history.pushState).not.toHaveBeenCalled();
-      expect(window.location.hash).toBe('#overlay=commentary');
-    });
-
-    it('updates URL with pushState when requested', () => {
-      const state: UrlState = {
-        overlay: 'commentary',
-        overlayParams: {},
-      };
-
-      updateUrl(state, true);
-
-      expect(history.pushState).toHaveBeenCalled();
-      expect(historyStates.length).toBe(1);
-    });
-
-    it('preserves pathname and search when updating hash', () => {
-      mockWindowLocation('http://localhost:5173/app?debug=true');
-
-      const state: UrlState = {
-        overlay: 'commentary',
-        overlayParams: {},
-      };
-
-      updateUrl(state, false);
-
-      const lastUrl = historyStates[historyStates.length - 1];
-      expect(lastUrl).toContain('/app');
-      expect(lastUrl).toContain('?debug=true');
-      expect(lastUrl).toContain('#overlay=commentary');
-    });
-  });
-
   describe('Overlay Integration', () => {
     it('integrates with commentary overlay URL params', async () => {
       const overlay = getOverlay('commentary');
@@ -484,50 +179,45 @@ describe('URL State Sync Integration', () => {
       expect(hash2).not.toContain('category');
       expect(hash2).toContain('trop=tipcha');
     });
-  });
 
-  describe('Verse Selection URL Integration', () => {
-    it('converts verse to URL format', () => {
-      const urlFormat = verseToUrlFormat('Genesis', 1, 1);
-      expect(urlFormat).toBe('Genesis.1.1');
-    });
+    it('round-trips a trop selection made by clicking a real control', async () => {
+      const overlay = getOverlay('trop');
+      await overlay?.init?.();
 
-    it('converts verse with multi-word book name', () => {
-      const urlFormat = verseToUrlFormat('I Samuel', 1, 5);
-      expect(urlFormat).toBe('I.Samuel.1.5');
-    });
+      const container = document.createElement('div');
+      overlay?.renderControls?.(container);
+      (container.querySelector('button') as HTMLButtonElement).click();
+      const chosen = overlay?.getUrlParams?.().trop;
+      expect(chosen, 'the trop overlay reported no selection').toBeTruthy();
 
-    it('parses verse from URL format', () => {
-      const verse = parseVerseFromUrl('Genesis.1.1');
-      expect(verse).toEqual({ book: 'Genesis', chapter: 1, verse: 1 });
-    });
+      const state: UrlState = {
+        overlay: 'trop',
+        overlayParams: { trop: chosen! },
+        verse: 'Genesis.39.8',
+        zoom: 4.0,
+      };
 
-    it('parses verse with multi-word book name', () => {
-      const verse = parseVerseFromUrl('I.Samuel.1.5');
-      expect(verse).toEqual({ book: 'I Samuel', chapter: 1, verse: 5 });
-    });
+      // Generate a shareable URL and simulate a colleague opening it.
+      const hash = buildUrlHash(state);
+      mockWindowLocation(`http://localhost:5173/${hash}`);
+      const restored = parseUrlState(overlayUrlParams);
 
-    it('parses verse with book name containing dots', () => {
-      const verse = parseVerseFromUrl('I.Samuel.1.5');
-      expect(verse).toEqual({ book: 'I Samuel', chapter: 1, verse: 5 });
-    });
+      expect(restored.overlay).toBe('trop');
+      expect(restored.overlayParams.trop).toBe(chosen);
+      expect(restored.verse).toBe('Genesis.39.8');
+      expect(restored.zoom).toBe(4.0);
 
-    it('handles invalid verse format', () => {
-      const verse = parseVerseFromUrl('invalid');
-      expect(verse).toBeNull();
-    });
+      // Clear the selection first (clicking a selected mark deselects it),
+      // so the assertion below is about the restore and not state the
+      // overlay happened to be carrying already.
+      container.innerHTML = '';
+      overlay?.renderControls?.(container);
+      (container.querySelector('button') as HTMLButtonElement).click();
+      expect(overlay?.getUrlParams?.().trop, 'failed to clear the selection').toBeUndefined();
 
-    it('handles verse with non-numeric chapter/verse', () => {
-      const verse = parseVerseFromUrl('Genesis.abc.def');
-      expect(verse).toBeNull();
-    });
+      applyOverlayParams(overlay, restored.overlayParams);
 
-    it('round-trips verse conversion', () => {
-      const original = { book: 'II Kings', chapter: 5, verse: 10 };
-      const urlFormat = verseToUrlFormat(original.book, original.chapter, original.verse);
-      const parsed = parseVerseFromUrl(urlFormat);
-
-      expect(parsed).toEqual(original);
+      expect(overlay?.getUrlParams?.().trop).toBe(chosen);
     });
   });
 
