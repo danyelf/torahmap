@@ -1,6 +1,5 @@
+import type { Color } from '../overlays/types.ts';
 import { lerpColor } from './interpolation';
-
-type Color = { r: number; g: number; b: number };
 
 /**
  * Blend two arrays of (single-or-multi) verse colors slot-by-slot.
@@ -21,7 +20,7 @@ export function blendColorArrays(
 ): (Color | Color[])[] {
   const len = Math.max(from.length, to.length);
   const result: (Color | Color[])[] = new Array(len);
-  const defaultColor: Color = { r: 0.15, g: 0.15, b: 0.15 };
+  const defaultColor: Color = [0.15, 0.15, 0.15];
 
   for (let i = 0; i < len; i++) {
     const fromArr = toColorArray(i < from.length ? from[i] : undefined);
@@ -41,12 +40,9 @@ export function blendColorArrays(
   return result;
 }
 
-/**
- * Coerce a Color | Color[] | undefined into a Color[] for slot-wise iteration.
- * A single Color becomes a one-element array; undefined becomes empty.
- */
+// A single Color is a 3-tuple of numbers; Color[] is an array of those tuples.
+// Tell them apart by the type of the first element.
 function toColorArray(c: Color | Color[] | undefined): Color[] {
   if (c === undefined) return [];
-  if (Array.isArray(c)) return c;
-  return [c];
+  return typeof c[0] === 'number' ? [c as Color] : (c as Color[]);
 }
