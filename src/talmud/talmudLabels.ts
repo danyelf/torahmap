@@ -106,7 +106,7 @@ export function createTalmudLabels(
       position:absolute;
       color:#cfd6e6;
       opacity:0.55;
-      font-family:"Noto Sans Hebrew", system-ui, sans-serif;
+      font-family:"David Libre", system-ui, sans-serif;
       font-weight:700;
       letter-spacing:0.04em;
       text-shadow:0 1px 4px rgba(0,0,0,0.7);
@@ -132,7 +132,7 @@ export function createTalmudLabels(
     label.style.cssText = `
       position:absolute;
       color:#eee;
-      font-family:"Noto Sans Hebrew", system-ui, sans-serif;
+      font-family:"David Libre", system-ui, sans-serif;
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
@@ -161,7 +161,7 @@ export function createTalmudLabels(
       position:absolute;
       color:#cfd6e6;
       opacity:0.75;
-      font-family:"Noto Sans Hebrew", system-ui, sans-serif;
+      font-family:"David Libre", system-ui, sans-serif;
       font-weight:600;
       text-shadow:0 1px 2px rgba(0,0,0,0.7);
       white-space:nowrap;

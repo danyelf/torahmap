@@ -57,7 +57,7 @@ export function createBookLabels(
     // Hebrew name (always shown, without nikkud)
     const heSpan = document.createElement('span');
     heSpan.className = 'book-label-he';
-    heSpan.style.fontFamily = '"Noto Sans Hebrew", system-ui, sans-serif';
+    heSpan.style.fontFamily = '"David Libre", system-ui, sans-serif';
     heSpan.textContent = hebrewNames?.[name] ?? name;
     label.appendChild(heSpan);
 
