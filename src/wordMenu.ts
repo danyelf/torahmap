@@ -106,8 +106,7 @@ export function openWordMenu(options: WordMenuOptions): void {
   menu.appendChild(title);
 
   if (options.paletteFull) {
-    // Five colours, five words. A sixth would repeat a colour and the map could
-    // no longer say which word is which, so this says so rather than offering a
+    // MAX_TERMS colours are already in use; say so rather than offering a
     // button that would decline.
     const note = document.createElement('div');
     note.className = 'word-menu-note';

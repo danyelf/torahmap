@@ -43,7 +43,6 @@ function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
 }
 
-// State
 let verses: TanakhLayout[] = [];
 // The search is a list of terms, each with its own text, its own meanings, its
 // own colour and its own way of being matched. There is always at least one,
@@ -57,8 +56,7 @@ let openTermId: string | null = null;
 const URL_PARAMS = [
   { key: 'q', kind: 'text' },
   // Positional across the terms in q, one letter each, and an empty entry for
-  // a term still on its default. Letters rather than words because a token is
-  // capped at 50 characters and five spelled-out modes would be 49 of them.
+  // a term still on its default (see MODE_LETTERS in terms.ts).
   { key: 'mode', kind: 'token' },
   { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
@@ -161,13 +159,11 @@ function resultsForOpenRow(): SearchResult[] {
   return currentResults.filter((result) => result.matchingTerms.some((m) => m.termIndex === index));
 }
 
-// Incremental rendering state
 const RESULTS_BATCH_SIZE = 50;
 let renderedCount = 0;
 let listedResults: SearchResult[] = [];
 let scrollHandler: (() => void) | null = null;
 
-// DOM references (for cleanup)
 let searchResults: HTMLDivElement | null = null;
 let searchTermsContainer: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
@@ -348,10 +344,9 @@ const POS_LABELS: Record<string, string> = {
 };
 
 /**
- * The tag beside a meaning: its part of speech, and its language when that is
- * not Hebrew. The language is not decoration — 304 written forms offer two
- * candidates identical in spelling, gloss and part of speech, differing only in
- * being Hebrew or Aramaic. ויאמר is one of them.
+ * The tag beside a meaning: its part of speech, and its language when that
+ * isn't Hebrew — otherwise-identical Hebrew and Aramaic readings would look
+ * like duplicates (see the dictionary seam in search/dictionary.ts).
  */
 function meaningTag(pos: string, language: 'heb' | 'arc'): string {
   const posLabel = POS_LABELS[pos] ?? pos;
@@ -384,10 +379,8 @@ function buildMeaningRow(
     row.appendChild(span);
   }
 
-  // Unchecking the others is fine for the two or three meanings most ambiguous
-  // words have, and tedious past that — אלה offers ten. This is the legend
-  // isolate gesture, on its own target so it is not competing with the box for
-  // what a click means.
+  // The legend's isolate gesture, on its own target so it is not competing
+  // with the checkbox for what a click means.
   const only = document.createElement('button');
   only.className = 'meaning-only';
   only.type = 'button';
@@ -474,7 +467,6 @@ function termSummary(term: SearchTerm): string {
   return chosen ? `${mode} · ${chosen}` : mode;
 }
 
-/**
 /** The ways this term's own text can be matched, as one control. */
 function buildModeControl(term: SearchTerm): HTMLDivElement {
   const control = document.createElement('div');
@@ -495,7 +487,6 @@ function buildModeControl(term: SearchTerm): HTMLDivElement {
   return control;
 }
 
-/**
 /**
  * Replace only the control when the choices change, never the row: the choices
  * follow the text's language, and the reader is typing that text.
@@ -548,10 +539,9 @@ function renderMeanings(row: HTMLElement, term: SearchTerm): void {
     const box = boxes[i];
     if (!box) return;
     box.checked = term.selected.has(meaning.keys[0]);
-    // The last checked meaning holds: a term matching nothing by construction
-    // is a dead state with no reading. It is locked with a class rather than
-    // the disabled attribute, because a disabled checkbox is drawn grey — so
-    // the one meaning still chosen would look like the least chosen one.
+    // Locked with a class rather than the disabled attribute: a disabled
+    // checkbox is drawn grey, so the one meaning still chosen would look like
+    // the least chosen one.
     const locked = box.checked && term.selected.size === 1;
     box.closest('.meaning-row')?.classList.toggle('locked', locked);
     box.title = locked ? 'The last meaning cannot be unchecked' : '';
@@ -580,7 +570,6 @@ function removeOrClear(id: string): void {
   runSearch();
 }
 
-/**
 /** A row the reader is not working in: one line saying what it is doing. */
 function buildCollapsedRow(row: HTMLElement, term: SearchTerm): void {
   const summary = document.createElement('div');
@@ -831,7 +820,6 @@ function createResultElement(result: SearchResult): HTMLDivElement {
   const div = document.createElement('div');
   div.className = 'search-result';
 
-  // Create ref div with term indicators
   const refDiv = document.createElement('div');
   refDiv.className = 'ref';
 
@@ -858,7 +846,7 @@ function createResultElement(result: SearchResult): HTMLDivElement {
   const snippetDiv = document.createElement('div');
   snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
 
-  // Compute snippet on-demand if not present (for lazy evaluation in root mode)
+  // Computed on demand: root mode leaves these unset until the result is shown.
   let snippet = firstMatch.snippet;
   let matchStart = firstMatch.matchStart;
   let matchEnd = firstMatch.matchEnd;
@@ -913,13 +901,11 @@ function renderResults(): void {
 
   listedResults = resultsForOpenRow();
 
-  // Clear previous results and reset scroll state
   const existingResults = searchResults.querySelectorAll('.search-result');
   existingResults.forEach((el) => el.remove());
   renderedCount = 0;
   searchResults.scrollTop = 0;
 
-  // Remove previous scroll handler
   if (scrollHandler) {
     searchResults.removeEventListener('scroll', scrollHandler);
     scrollHandler = null;
@@ -930,15 +916,13 @@ function renderResults(): void {
     return;
   }
 
-  // Render first batch
   appendResultsBatch();
 
-  // Set up infinite scroll if there are more results
   if (renderedCount < listedResults.length) {
     scrollHandler = () => {
       if (!searchResults) return;
       const { scrollTop, scrollHeight, clientHeight } = searchResults;
-      // Load more when within 100px of the bottom
+      // Load more within 100px of the bottom.
       if (scrollHeight - scrollTop - clientHeight < 100) {
         appendResultsBatch();
       }
@@ -949,10 +933,6 @@ function renderResults(): void {
   searchResults.classList.add('visible');
 }
 
-/**
- * Create a DocumentFragment with highlighted text
- * Safer than innerHTML - builds DOM programmatically
- */
 function createHighlightedText(
   text: string,
   start: number,
@@ -977,18 +957,13 @@ function createHighlightedText(
   return fragment;
 }
 
-// Match interface for search term highlighting
 interface Match {
   start: number;
   end: number;
   termIndex: number;
 }
 
-/**
- * Find all matches for all search terms in the given text
- * Handles Hebrew nikkud stripping and position mapping
- * Respects Hebrew search mode (substring/word/root) and English whole-word setting
- */
+/** Handles nikkud stripping and position mapping; respects each term's own search mode. */
 function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
   const matches: Match[] = [];
   const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
@@ -1001,7 +976,6 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     const mode = effectiveMode(term);
 
     if (!isHebrew && mode === 'word') {
-      // English whole-word matching using regex
       const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
       let match;
@@ -1013,9 +987,8 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
         });
       }
     } else if (isHebrew && mode === 'root') {
-      // Mark the words that are one of the meanings this term still stands
-      // for. Once a term is narrowed to burnt-offering, a verb meaning
-      // "ascend" in the same verse is not a hit and must not be marked.
+      // Mark only the words matching the term's checked meanings (see
+      // formMatches in search/dictionary.ts).
       const keys = selectedKeys(term);
       for (const { word, start } of splitIntoWords(normalizedText)) {
         const hit = keys.length > 0 ? formMatches(keys, word) : word === normalizedTerm;
@@ -1028,12 +1001,10 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
         }
       }
     } else if (isHebrew && mode === 'word') {
-      // Hebrew whole-word matching
       const wordEntries = splitIntoWords(normalizedText);
 
       for (const { word, start } of wordEntries) {
         if (word === normalizedTerm) {
-          // Found a match - map to original text position
           const origStart = mapStrippedToOriginal(text, start);
           const origEnd = mapStrippedToOriginal(text, start + word.length);
 
@@ -1041,13 +1012,11 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
         }
       }
     } else {
-      // Substring search (for Hebrew substring mode and English non-whole-word)
       let searchStart = 0;
       while (true) {
         const idx = normalizedText.indexOf(normalizedTerm, searchStart);
         if (idx === -1) break;
 
-        // Map normalized positions back to original text
         let origStart = idx;
         let origEnd = idx + normalizedTerm.length;
 
@@ -1065,10 +1034,7 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
   return matches;
 }
 
-/**
- * Remove overlapping matches, keeping the first/longest match
- * Assumes matches are already sorted by position
- */
+/** Assumes matches are already sorted by position. */
 function removeOverlappingMatches(matches: Match[]): Match[] {
   const filtered: Match[] = [];
   for (const m of matches) {
@@ -1079,20 +1045,15 @@ function removeOverlappingMatches(matches: Match[]): Match[] {
   return filtered;
 }
 
-/**
- * Build DOM fragment with highlighted matches
- */
 function buildHighlightedDomFragment(text: string, matches: Match[]): DocumentFragment {
   const fragment = document.createDocumentFragment();
 
   let pos = 0;
   for (const m of matches) {
-    // Add text before this match
     if (m.start > pos) {
       fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
     }
 
-    // Add highlighted match
     const mark = document.createElement('mark');
     mark.className = `term-${termColorIndex(m.termIndex)}`;
     mark.textContent = text.slice(m.start, m.end);
@@ -1101,7 +1062,6 @@ function buildHighlightedDomFragment(text: string, matches: Match[]): DocumentFr
     pos = m.end;
   }
 
-  // Add remaining text after last match
   if (pos < text.length) {
     fragment.appendChild(document.createTextNode(text.slice(pos)));
   }
@@ -1109,11 +1069,7 @@ function buildHighlightedDomFragment(text: string, matches: Match[]): DocumentFr
   return fragment;
 }
 
-/**
- * Highlight all search terms in text with per-term colors
- * Returns DocumentFragment with <mark class="term-N"> elements
- * Safer than innerHTML - builds DOM programmatically
- */
+/** Builds the DOM directly rather than through innerHTML. */
 export function highlightSearchTerms(text: string, language: 'he' | 'en'): DocumentFragment {
   const fragment = document.createDocumentFragment();
 
@@ -1125,7 +1081,6 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
 
   const isHebrew = language === 'he';
 
-  // Find all matches
   const matches = findAllTermMatches(text, active, isHebrew);
 
   if (matches.length === 0) {
@@ -1133,13 +1088,10 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
     return fragment;
   }
 
-  // Sort by position, longest match first for overlaps
+  // Longest match first, so removeOverlappingMatches keeps it over a shorter one.
   matches.sort((a, b) => a.start - b.start || b.end - a.end);
 
-  // Remove overlapping matches (keep first/longest)
   const filtered = removeOverlappingMatches(matches);
-
-  // Build result with highlights
   return buildHighlightedDomFragment(text, filtered);
 }
 
@@ -1163,7 +1115,6 @@ export const searchOverlay: Overlay = {
   ],
 
   getVerseColor(verse: TanakhIdentity): Color | Color[] | null {
-    // No active search - use default colors
     if (activeTerms().length === 0) {
       return null;
     }
@@ -1172,7 +1123,6 @@ export const searchOverlay: Overlay = {
     const termIndices = matchingTerms.get(key);
 
     if (termIndices && termIndices.length > 0) {
-      // Get colors for all matching terms
       // Guard the index: results can outlive the term list they came from for
       // one frame, between a term being removed and the search rerunning.
       const active = activeTerms();
@@ -1180,15 +1130,13 @@ export const searchOverlay: Overlay = {
         .filter((i) => i < active.length)
         .map((i) => SEARCH_COLORS[active[i].colorIndex]);
       if (colors.length === 0) return null;
-      // Return array for stipple effect if multiple, otherwise single color
       if (colors.length === 1) {
         return colors[0];
       }
-      // Return multiple colors for stipple effect (capped at 4)
+      // Stipple effect for multiple matches, capped at 4 colors.
       return colors.slice(0, 4) as Color[];
     }
 
-    // Dim non-matching verses
     const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
     return [brightness, brightness, brightness];
   },
@@ -1246,23 +1194,19 @@ export const searchOverlay: Overlay = {
   },
 
   destroy(): void {
-    // Clean up event listeners
     if (scrollHandler && searchResults) {
       searchResults.removeEventListener('scroll', scrollHandler);
       scrollHandler = null;
     }
-    // Clear DOM references (for memory cleanup)
     searchResults = null;
     searchTermsContainer = null;
     searchHitCaption = null;
     addTermButton = null;
-    // Clear callbacks
     updateCallback = null;
     onVerseClickCallback = null;
-    // NOTE: We intentionally DO NOT reset the terms, currentResults,
-    // matchingTerms or related state here. These should persist across overlay
-    // switches so the user can return to their search — including the mode each
-    // term was being matched by.
+    // terms, currentResults and matchingTerms are left alone: they should
+    // persist across overlay switches so the reader can return to their
+    // search, including the mode each term was being matched by.
   },
 
   urlParams: URL_PARAMS,
@@ -1288,8 +1232,7 @@ export const searchOverlay: Overlay = {
 
   applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
     // Rebuild the term list from the query, then lay the chosen modes and
-    // meanings over it. Positions are safe here: q, mode and m are read as one
-    // snapshot. It is editing, not loading, that needs identity.
+    // meanings over it.
     terms = parseSearchTerms(params.q ?? '').reduce(addTerm, [] as SearchTerm[]);
     if (terms.length === 0) terms = addTerm([], '');
     if (params.mode) {
