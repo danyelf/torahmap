@@ -2,7 +2,7 @@ import '../styles/overlays/commentary.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout, CommentaryData } from '../types.ts';
 import { heatmapColor } from '../utils/color.ts';
-import { fetchData } from '../constants/app.ts';
+import { loadJson } from './loadJson.ts';
 
 const URL_PARAMS = [
   { key: 'category', kind: 'category' },
@@ -53,12 +53,11 @@ export const commentaryOverlay: Overlay = {
 
   async init() {
     try {
-      const res = await fetchData('overlays/commentary/counts.json');
-      if (!res.ok) {
-        console.error(`Failed to load the commentary counts: ${res.status}`);
-        return;
-      }
-      data = await res.json();
+      const result = await loadJson<CommentaryData>(
+        'overlays/commentary/counts.json',
+        'the commentary counts',
+      );
+      if (result) data = result;
     } catch (e) {
       console.error('Failed to parse the commentary counts:', e);
     }
