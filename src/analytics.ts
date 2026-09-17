@@ -1,4 +1,5 @@
 // Thin wrapper around GA4 gtag() for type-safe event tracking
+import type { TextLanguage } from './types.ts';
 
 declare global {
   interface Window {
@@ -16,7 +17,7 @@ export function trackOverlaySwitch(overlayName: string, previousOverlay: string)
 
 export function trackSearchExecute(
   term: string,
-  language: 'he' | 'en',
+  language: TextLanguage,
   mode: string,
   resultCount: number,
 ): void {

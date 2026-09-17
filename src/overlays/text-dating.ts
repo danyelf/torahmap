@@ -154,7 +154,7 @@ export const textDatingOverlay: Overlay = {
     return `${datingInfo.era} (${dateStr})\n${datingInfo.note}`;
   },
 
-  renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | string | null {
+  renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | null {
     if (!isPinned) return null;
 
     const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
@@ -168,10 +168,12 @@ export const textDatingOverlay: Overlay = {
       '<a href="$2" target="_blank" rel="noopener">$1</a>',
     );
 
-    return `
+    const container = document.createElement('div');
+    container.innerHTML = `
       <strong>${datingInfo.era}</strong> (${dateStr})
       <br>${noteHtml}
     `;
+    return container;
   },
 };
 

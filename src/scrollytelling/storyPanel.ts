@@ -1,5 +1,6 @@
 import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
 import type { TanakhLayout } from '../types';
+import { findTanakhItem } from '../types';
 import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
 
@@ -84,12 +85,7 @@ export function resolveStops(
       const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
       const verseLayout =
-        parsed && verses && canvasWidth && canvasHeight
-          ? verses.find(
-              (v) =>
-                v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
-            )
-          : undefined;
+        parsed && verses && canvasWidth && canvasHeight ? findTanakhItem(verses, parsed) : null;
       if (verseLayout && canvasWidth && canvasHeight) {
         camera = cameraForVerse(verseLayout, zoom, canvasWidth, canvasHeight);
       } else {
@@ -99,11 +95,7 @@ export function resolveStops(
       camera = cam;
     } else if (stop.verse && verses && canvasWidth && canvasHeight) {
       const parsed = parseVerseFromUrl(stop.verse);
-      const verseLayout =
-        parsed &&
-        verses.find(
-          (v) => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
-        );
+      const verseLayout = parsed ? findTanakhItem(verses, parsed) : null;
       if (verseLayout) {
         camera = cameraForVerse(verseLayout, initialCamera.zoom, canvasWidth, canvasHeight);
       } else {

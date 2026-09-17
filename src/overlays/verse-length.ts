@@ -125,7 +125,7 @@ export const verseLengthOverlay: Overlay = {
     return `${wordCount} ${plural}`;
   },
 
-  renderSidebarInfo(verse: TanakhIdentity): HTMLElement | string | null {
+  renderSidebarInfo(verse: TanakhIdentity): HTMLElement | null {
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);
     const wordCount = wordCountCache.get(key);
 

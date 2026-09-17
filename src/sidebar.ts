@@ -19,6 +19,13 @@ export interface WordClick {
   element: HTMLElement;
 }
 
+/** A fragment holding just a text node, for text no overlay has marked up. */
+function textFragment(text: string): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(document.createTextNode(text));
+  return fragment;
+}
+
 let wordClickHandler: ((click: WordClick) => void) | null = null;
 
 /**
@@ -83,11 +90,11 @@ export function getSidebarElements(): SidebarElements {
 }
 
 /**
- * Build Sefaria URL for a verse with context-aware parameters
+ * Build the Sefaria URL for a verse.
  *
- * When viewing the commentary overlay with a specific category filter,
- * opens Sefaria to that category (e.g., ?with=Talmud).
- * Otherwise, opens to all connections (?with=all) since we show link counts.
+ * If the current overlay has an opinion (e.g. commentary's selected
+ * category), opens Sefaria to that connection type. Otherwise opens to all
+ * connections (?with=all).
  */
 export function getSefariaUrl(
   book: string,
@@ -98,12 +105,9 @@ export function getSefariaUrl(
   const sefariaBook = book.replace(/ /g, '_');
   const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
 
-  if (currentOverlay?.id === 'commentary') {
-    const urlParams = currentOverlay.getUrlParams?.();
-    const category = urlParams?.category;
-    if (category) {
-      return `${baseUrl}?with=${encodeURIComponent(category)}`;
-    }
+  const param = currentOverlay?.getSefariaConnectionParam?.();
+  if (param) {
+    return `${baseUrl}?with=${encodeURIComponent(param)}`;
   }
 
   return `${baseUrl}?with=all`;
@@ -140,11 +144,7 @@ export function updateSidebar(
   if (overlayInfo) {
     const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned);
     if (sidebarInfo) {
-      if (typeof sidebarInfo === 'string') {
-        overlayInfo.innerHTML = sidebarInfo;
-      } else {
-        overlayInfo.replaceChildren(sidebarInfo);
-      }
+      overlayInfo.replaceChildren(sidebarInfo);
     } else {
       const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
       overlayInfo.textContent = hoverInfo || '';
@@ -152,22 +152,10 @@ export function updateSidebar(
   }
   if (hebrew) {
     const hebrewText = text?.he || 'Loading...';
-    const highlighted = currentOverlay?.highlightVerseText?.(hebrewText, 'he');
-
     // Whatever the overlay produced, words are wrapped afterwards, so a click
     // finds a word whether or not anything is highlighting the text.
-    const fragment = document.createDocumentFragment();
-    if (highlighted && highlighted !== hebrewText) {
-      if (typeof highlighted === 'string') {
-        const holder = document.createElement('div');
-        holder.innerHTML = highlighted;
-        fragment.append(...holder.childNodes);
-      } else {
-        fragment.appendChild(highlighted);
-      }
-    } else {
-      fragment.appendChild(document.createTextNode(hebrewText));
-    }
+    const fragment =
+      currentOverlay?.highlightVerseText?.(hebrewText, 'he') ?? textFragment(hebrewText);
 
     hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
     attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
@@ -175,12 +163,8 @@ export function updateSidebar(
   if (english) {
     const englishText = text?.en || 'Loading...';
     const highlighted = currentOverlay?.highlightVerseText?.(englishText, 'en');
-    if (highlighted && highlighted !== englishText) {
-      if (typeof highlighted === 'string') {
-        english.innerHTML = highlighted;
-      } else {
-        english.replaceChildren(highlighted);
-      }
+    if (highlighted) {
+      english.replaceChildren(highlighted);
     } else {
       english.textContent = englishText;
     }

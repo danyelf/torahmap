@@ -358,10 +358,20 @@ export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   }
 }
 
-/** Subscribe to hash/history changes (for browser back/forward). */
+/**
+ * Subscribe to browser back/forward navigation.
+ *
+ * This app writes the URL only through history.pushState/replaceState (see
+ * updateUrl above), never by assigning location.hash directly. Those calls
+ * fire neither event on their own, so the only thing this needs to catch is
+ * history traversal — which fires popstate every time, whether or not the
+ * hash differs between entries. hashchange would fire for that too (when the
+ * hash does differ, which pushHistory navigations arrange for), so adding it
+ * only doubles up the same restore; it would only earn its place if something
+ * changed location.hash directly, which nothing here does.
+ */
 export function subscribeToHashChange(callback: () => void): void {
   window.addEventListener('popstate', callback);
-  window.addEventListener('hashchange', callback);
 }
 
 /**

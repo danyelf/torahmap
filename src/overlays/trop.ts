@@ -1,7 +1,7 @@
 import '../styles/overlays/trop.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
-import type { TanakhIdentity, TropIndex, TropIndexEntry } from '../types.ts';
-import { tanakhKey } from '../types.ts';
+import type { TanakhIdentity, TropIndex, TropIndexEntry, TextLanguage } from '../types.ts';
+import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
@@ -215,9 +215,7 @@ export const tropOverlay: Overlay = {
   getHoverInfo(verse: TanakhIdentity): string | null {
     if (!selectedTrop) return null;
 
-    const loc = selectedTrop.verses.find(
-      (v) => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse,
-    );
+    const loc = selectedTrop.verses.find((v) => tanakhIdentitiesEqual(v, verse));
     return loc ? `${selectedTrop.name} ×${loc.count}` : null;
   },
 
@@ -240,11 +238,16 @@ export const tropOverlay: Overlay = {
     }
   },
 
-  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment | string {
+  highlightVerseText(text: string, language: TextLanguage): DocumentFragment {
+    const fragment = document.createDocumentFragment();
     if (language !== 'he' || !selectedTrop) {
-      return text;
+      fragment.appendChild(document.createTextNode(text));
+      return fragment;
     }
-    return highlightTropInText(text, selectedTrop.unicode);
+    const holder = document.createElement('div');
+    holder.innerHTML = highlightTropInText(text, selectedTrop.unicode);
+    fragment.append(...holder.childNodes);
+    return fragment;
   },
 };
 

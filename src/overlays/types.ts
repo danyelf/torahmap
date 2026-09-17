@@ -1,4 +1,4 @@
-import type { TanakhIdentity } from '../types.ts';
+import type { TanakhIdentity, TextLanguage } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '../urlState.ts';
 import type { Credit } from '../credits.ts';
 
@@ -42,11 +42,15 @@ export interface Overlay<T = TanakhIdentity> {
   getUrlParams?(): Record<string, string>;
   applyUrlParams?(params: UrlParamValues): void;
 
-  renderSidebarInfo?(verse: T, isPinned: boolean): HTMLElement | string | null;
+  renderSidebarInfo?(verse: T, isPinned: boolean): HTMLElement | null;
 
-  highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment | string;
+  highlightVerseText?(text: string, language: TextLanguage): DocumentFragment;
 
   getLinkSubtitle?(verse: T): string | null;
+
+  // The Sefaria `?with=` value this overlay wants a verse's link to open to
+  // (e.g. a chosen commentary category). Absent overlays get `with=all`.
+  getSefariaConnectionParam?(): string | null;
 
   // Outside sources this overlay depends on, shown in the help modal's Credits
   // tab. Omit when the overlay derives everything from already-credited text;
