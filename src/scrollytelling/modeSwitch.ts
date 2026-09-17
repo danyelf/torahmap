@@ -1,4 +1,3 @@
-// src/scrollytelling/modeSwitch.ts
 export type AppMode = 'story' | 'explore';
 
 export function switchToExplore(storyPanel: HTMLElement, explorePanel: HTMLElement): void {

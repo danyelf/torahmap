@@ -39,9 +39,7 @@ export interface TalmudTractateText {
   amudim: string[][];
 }
 
-/**
- * Load the all-tractates structure file. Called once at page load.
- */
+// Called once at page load.
 export async function loadTalmudStructure(): Promise<TalmudStructure> {
   const res = await fetchData('talmud/structure.json');
   if (!res.ok) {
@@ -50,17 +48,10 @@ export async function loadTalmudStructure(): Promise<TalmudStructure> {
   return res.json() as Promise<TalmudStructure>;
 }
 
-// ============================================================================
-// Per-tractate text cache
-// ============================================================================
-
 const textCache = new Map<string, TalmudTractateText | Promise<TalmudTractateText>>();
 
-/**
- * Get the Hebrew text for a tractate. Returns cached text if loaded,
- * awaits an in-flight fetch if one exists, otherwise starts a new fetch.
- * Dedupes concurrent callers automatically.
- */
+// Awaits an in-flight fetch if one exists rather than starting a second one,
+// so concurrent callers for the same tractate share one request.
 export async function getTractateText(name: string): Promise<TalmudTractateText> {
   const existing = textCache.get(name);
   if (existing) {
@@ -83,25 +74,18 @@ export async function getTractateText(name: string): Promise<TalmudTractateText>
   return result;
 }
 
-/**
- * True when a tractate's text is already fully loaded (not just in flight).
- */
+// True only once the text is fully loaded, not while a fetch is in flight.
 export function hasTractateText(name: string): boolean {
   const entry = textCache.get(name);
   return entry !== undefined && !(entry instanceof Promise);
 }
 
-/**
- * Clear the cache. Test-only.
- */
+// Test-only.
 export function resetTalmudDataCache(): void {
   textCache.clear();
 }
 
-/**
- * Look up whether a specific segment is Mishnah or Gemara.
- * Returns false if the tractate/daf/amud/segment is unknown.
- */
+// False if the tractate/daf/amud/segment is unknown.
 export function isSegmentMishnah(
   structure: TalmudStructure,
   tractateName: string,

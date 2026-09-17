@@ -25,7 +25,7 @@ function calculateWrapPoints(verseCount: number): number[] {
   }
 
   if (verseCount <= WRAP_THRESHOLD) {
-    return [verseCount]; // No wrapping needed
+    return [verseCount];
   }
 
   const lines: number[] = [];
@@ -33,17 +33,15 @@ function calculateWrapPoints(verseCount: number): number[] {
 
   while (remaining > 0) {
     if (remaining <= WRAP_THRESHOLD) {
-      // Last line - just take what's left
       lines.push(remaining);
       remaining = 0;
     } else if (remaining <= WRAP_THRESHOLD + MIN_WRAP_VERSES - 1) {
-      // Would create a widow on next line - split more evenly
-      // e.g., 52 verses: instead of 50+2, do 49+3 or split evenly
+      // Would create a widow on next line - split more evenly instead
+      // (e.g. 52 verses: 49+3 rather than 50+2)
       const firstLine = remaining - MIN_WRAP_VERSES;
       lines.push(firstLine);
       remaining -= firstLine;
     } else {
-      // Normal case - take full line
       lines.push(WRAP_THRESHOLD);
       remaining -= WRAP_THRESHOLD;
     }
@@ -239,7 +237,6 @@ function layoutMultiColumn(
 ): { width: number; height: number } {
   const splitPoint = Math.min(splitAtChapter, book.chapters.length);
 
-  // Column A: chapters 1-72
   let colAY = bookY;
   let colAWidth = 0;
   for (let chapterIdx = 0; chapterIdx < splitPoint; chapterIdx++) {
@@ -258,7 +255,6 @@ function layoutMultiColumn(
   }
   const colAHeight = colAY - bookY;
 
-  // Column B: chapters 73-150
   const colBX = bookX + colAWidth + PSALMS_COLUMN_GAP;
   let colBY = bookY;
   let colBWidth = 0;
@@ -294,12 +290,10 @@ function layoutNeviim(
 ): number {
   const minorProphets = new Set(minorProphetStacks.flat());
 
-  // Separate major prophets from minor prophets
   const majorBooks = books.filter((b) => !minorProphets.has(b.name));
   const minorBooks = books.filter((b) => minorProphets.has(b.name));
   const minorProphetMap = new Map(minorBooks.map((b) => [b.name, b]));
 
-  // Layout major prophets (Former + Latter) horizontally
   const { height: majorHeight, nextX } = layoutBooksRow(
     majorBooks,
     0,
@@ -309,7 +303,6 @@ function layoutNeviim(
     verses,
   );
 
-  // Layout minor prophets as stacked columns
   const { height: minorHeight } = layoutStacksRow(
     minorProphetStacks,
     minorProphetMap,
@@ -337,10 +330,8 @@ function layoutKetuvim(
   let bookX = 0;
   let maxHeight = 0;
 
-  // Get regular (non-stacked) books
   const regularBooks = books.filter((b) => !stackedBooks.has(b.name));
 
-  // Layout regular books, inserting stacks at appropriate positions
   for (const book of regularBooks) {
     const multiCol = layoutConfig.multiColumnBooks?.[book.name];
     const { width, height } = multiCol
@@ -391,7 +382,6 @@ export function computeLayout(torahData: TorahData): TanakhLayout[] {
   const verses: TanakhLayout[] = [];
   const globalVerseIdx = { value: 0 };
 
-  // Group books by section
   const torah: Book[] = [];
   const neviim: Book[] = [];
   const ketuvim: Book[] = [];
@@ -402,14 +392,12 @@ export function computeLayout(torahData: TorahData): TanakhLayout[] {
     else ketuvim.push(book);
   }
 
-  // Layout each section vertically stacked
+  // Sections stack vertically: Torah, then Nevi'im, then Ketuvim.
   let sectionY = 0;
 
-  // Torah
   const torahHeight = layoutTorah(torah, sectionY, globalVerseIdx, verses);
   sectionY += torahHeight + SECTION_GAP;
 
-  // Nevi'im
   const neviimHeight = layoutNeviim(
     neviim,
     sectionY,
@@ -419,7 +407,6 @@ export function computeLayout(torahData: TorahData): TanakhLayout[] {
   );
   sectionY += neviimHeight + SECTION_GAP;
 
-  // Ketuvim
   layoutKetuvim(ketuvim, sectionY, globalVerseIdx, verses, torahData.layout);
 
   // Mirror x-coordinates for RTL layout: Genesis rightmost, verse 1 at right

@@ -1,4 +1,3 @@
-// Tests for src/utils/random.ts
 import { describe, it, expect } from 'vitest';
 import { seededRandom } from '../../../utils/random';
 

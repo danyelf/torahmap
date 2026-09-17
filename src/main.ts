@@ -89,7 +89,6 @@ import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
 
-// Extend window for global state
 declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
@@ -97,35 +96,28 @@ declare global {
 }
 
 async function main(): Promise<void> {
-  // Set page title with branch name
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
-  // Load all data in parallel: structure, verse texts, and lexeme index
   const [torahData, verseTexts] = await Promise.all([
     loadTanakhStructure(),
     loadAllVerseTexts(),
     loadLexiconData(),
   ]);
 
-  // Initialize book metadata and compute layout
   initBookData(torahData);
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
-  // Build search index
   buildSearchIndex(verseTexts);
 
-  // Register and initialize overlays
   registerAllOverlays();
   configureCommentary({ verses });
   configureTrop({ verseTexts });
   configureVerseLength({ verseTexts });
-  // Note: configureSearch is called later after updateSidebar is defined
 
   await Promise.all(getAllOverlays().map((o) => o.init?.()));
 
-  // Setup canvas with devicePixelRatio for crisp rendering on high-DPI displays
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
   const dpr = window.devicePixelRatio || 1;
@@ -138,16 +130,12 @@ async function main(): Promise<void> {
   }
   resizeCanvas();
 
-  // Init WebGL and rendering infrastructure
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext.gl, verses, dpr);
 
-  // Current overlay state
   let currentOverlay: Overlay | null = null;
 
-  // Function to apply overlay colors
   function applyOverlay(): void {
-    // Compute verse states and apply colors
     const verseStates = computeItemStates(
       verses,
       currentOverlay,
@@ -157,7 +145,6 @@ async function main(): Promise<void> {
     );
     const colors = applyItemColors(verseStates);
 
-    // Rebuild geometry buffer with new colors
     rebuildGeometry(renderContext.gl, renderState, colors);
   }
 
@@ -211,30 +198,24 @@ async function main(): Promise<void> {
     }
   }
 
-  // Camera state - start at 1:1 zoom, centered
   const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
 
-  // Track pinned verse (click to persist)
   let pinnedVerse: TanakhLayout | null = null;
 
-  // Mouse interaction state
   const mouseState = createMouseState();
 
   const touchState = createTouchState();
 
-  // Mode switching state (story vs explore)
   let appMode: AppMode = 'story';
   let lastStoryScrollTop = 0;
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
   // Reset on mode switches (explore may have changed overlay/pin out from under us).
   let lastSyncedStopId: string | null = null;
-  // Tap detection for touch devices
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
   const TAP_THRESHOLD = 10; // max px movement to count as tap
   const TAP_MAX_DURATION = 300; // max ms to count as tap
 
-  // Render function
   function render(): void {
     renderFrame(
       renderContext,
@@ -246,7 +227,6 @@ async function main(): Promise<void> {
     );
   }
 
-  // Helper: Center camera on a verse
   function centerOnVerse(verse: TanakhLayout): void {
     Object.assign(camera, panToCenter(verse, camera.zoom, window.innerWidth, window.innerHeight));
   }
@@ -288,7 +268,6 @@ async function main(): Promise<void> {
     });
   }
 
-  // Helper: Pin a verse and update all dependent state
   function pinVerse(verse: TanakhLayout, centerCamera: boolean = false): void {
     trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
@@ -302,7 +281,6 @@ async function main(): Promise<void> {
     saveUrlState(true);
   }
 
-  // Helper: Unpin the current verse and update all dependent state
   function unpinVerse(): void {
     pinnedVerse = null;
     updateSidebarWrapper(null);
@@ -313,12 +291,10 @@ async function main(): Promise<void> {
 
   render();
 
-  // Book labels
   const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
   window.bookLabels = createBookLabels(verses, document.body, hebrewNames);
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
 
-  // Smooth zooming with mouse wheel, centered on cursor
   canvas.addEventListener(
     'wheel',
     (e: WheelEvent) => {
@@ -327,11 +303,9 @@ async function main(): Promise<void> {
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       const newZoom = clampZoom(camera.zoom * zoomFactor);
 
-      // Get mouse position in canvas coordinates
       const mouseX = e.clientX;
       const mouseY = e.clientY;
 
-      // Adjust pan so the world point under the mouse stays fixed
       const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, mouseX, mouseY);
       camera.x = newPan.x;
       camera.y = newPan.y;
@@ -347,7 +321,6 @@ async function main(): Promise<void> {
 
   const debouncedTrackZoom = debounce(() => trackZoomLevel(camera.zoom), 1000);
 
-  // Zoom buttons
   const zoomInBtn = document.getElementById('zoom-in');
   const zoomOutBtn = document.getElementById('zoom-out');
 
@@ -377,7 +350,6 @@ async function main(): Promise<void> {
     debouncedSaveUrlState();
   });
 
-  // Touch events for pinch-to-zoom
   canvas.addEventListener(
     'touchstart',
     (e: TouchEvent) => {
@@ -436,7 +408,6 @@ async function main(): Promise<void> {
     resetTouchState(touchState);
   });
 
-  // Pointer events for pan/drag (works for both mouse and touch)
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
     // A hand on the map outranks a glide that is still running.
     cancelCameraGlide();
@@ -465,7 +436,6 @@ async function main(): Promise<void> {
       debouncedSaveUrlState();
     }
 
-    // Tap detection (works for both mouse and touch)
     if (pointerDownPos) {
       const dx = Math.abs(e.clientX - pointerDownPos.x);
       const dy = Math.abs(e.clientY - pointerDownPos.y);
@@ -486,7 +456,6 @@ async function main(): Promise<void> {
       pointerDownPos = null;
     }
 
-    // Reset cursor
     if (wasDragging) {
       const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
       if (pinnedVerse && verse) {
@@ -513,33 +482,26 @@ async function main(): Promise<void> {
     }
   });
 
-  // Sidebar for verse details
   const sidebarElements = getSidebarElements();
 
-  // URL State Management
-  // The overlay reports its own settings; we pass them straight through.
   function buildOverlayParamsForUrl(): Record<string, string> {
     return currentOverlay?.getUrlParams?.() ?? {};
   }
 
-  // Build current state for URL
   function buildCurrentUrlState(): UrlState {
     const state: UrlState = {
       overlayParams: {},
     };
 
-    // Overlay
     if (currentOverlay) {
       state.overlay = currentOverlay.id;
       state.overlayParams = buildOverlayParamsForUrl();
     }
 
-    // Pinned verse
     if (pinnedVerse) {
       state.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
     }
 
-    // Zoom (only if not default)
     if (camera.zoom !== DEFAULT_ZOOM) {
       state.zoom = camera.zoom;
     }
@@ -553,22 +515,18 @@ async function main(): Promise<void> {
     return state;
   }
 
-  // Save current state to URL
   function saveUrlState(pushHistory: boolean = false): void {
     const state = buildCurrentUrlState();
     updateUrl(state, pushHistory);
   }
 
-  // Debounced version for pan/zoom (replaceState only)
   const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
 
-  // Update sidebar with verse info - wrapper for the extracted module function
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
     updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
   }
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
-    // Skip hover logic on touch devices and during pinch
     if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
@@ -604,12 +562,10 @@ async function main(): Promise<void> {
     }
   });
 
-  // Close button to unpin
   sidebarElements.closeBtn?.addEventListener('click', () => {
     unpinVerse();
   });
 
-  // Keyboard navigation: arrow keys for next/previous verse, Escape to close
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (!pinnedVerse) return;
 
@@ -631,7 +587,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // UI elements
   const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
 
   // Fill the overlay menu from the registry, after the "None" option the page
@@ -644,7 +599,6 @@ async function main(): Promise<void> {
     overlaySelect?.appendChild(option);
   }
 
-  // Overlay controls container (will be populated by overlays)
   const overlayControlsContainer = document.getElementById('overlay-controls');
   const overlayLegendContainer = document.getElementById('overlay-legend');
 
@@ -659,10 +613,8 @@ async function main(): Promise<void> {
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
 
-    // Wire up update callback for dynamic overlays
     currentOverlay?.onUpdate?.(() => {
       applyOverlay();
-      // Re-render legend when overlay updates (e.g., category changes)
       if (overlayLegendContainer) {
         overlayLegendContainer.innerHTML = '';
         currentOverlay?.renderLegend?.(overlayLegendContainer);
@@ -675,7 +627,6 @@ async function main(): Promise<void> {
       saveUrlState(false);
     });
 
-    // Clear and render overlay's UI
     if (overlayControlsContainer) {
       overlayControlsContainer.innerHTML = '';
       currentOverlay?.renderControls?.(overlayControlsContainer);
@@ -697,7 +648,6 @@ async function main(): Promise<void> {
     applyOverlay();
     render();
 
-    // Update URL when overlay changes (unless restoring from URL)
     if (!fromUrlRestore) {
       saveUrlState(true);
     }
@@ -738,12 +688,10 @@ async function main(): Promise<void> {
     });
   });
 
-  // Overlay selector
   overlaySelect?.addEventListener('change', () => {
     setOverlay(overlaySelect.value);
   });
 
-  // Handle resize
   window.addEventListener('resize', () => {
     resizeCanvas();
     render();
@@ -759,7 +707,6 @@ async function main(): Promise<void> {
         const y = Math.round(camera.y * 100) / 100;
         const zoom = Math.round(camera.zoom * 100) / 100;
 
-        // Build optional parts
         let extraParts = '';
         if (currentOverlay) {
           extraParts += ` | overlay: ${currentOverlay.id}`;
@@ -782,7 +729,6 @@ async function main(): Promise<void> {
     });
   }
 
-  // Wire up search overlay callbacks
   configureSearch({
     verses,
     callbacks: {
@@ -794,13 +740,11 @@ async function main(): Promise<void> {
     },
   });
 
-  // Initialize help modal
   const rightPanel = document.getElementById('right-panel');
   if (rightPanel) {
     initHelp(rightPanel);
   }
 
-  // Load story data and wire up scroll-driven camera
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
   const storyContent = document.getElementById('story-content')!;
 
@@ -832,7 +776,6 @@ async function main(): Promise<void> {
     storyContent.dispatchEvent(new Event('scroll'));
   }
 
-  // Hot-reload story.md in dev mode
   if (import.meta.hot) {
     import.meta.hot.on('story-update', () => {
       reloadStory();
@@ -857,7 +800,6 @@ async function main(): Promise<void> {
     // force the next settled frame to re-apply the resting stop's state.
     lastSyncedStopId = null;
     switchToStory(storyPanel, explorePanel, storyContent, lastStoryScrollTop);
-    // Re-trigger scroll handler to restore map state
     storyContent.dispatchEvent(new Event('scroll'));
   });
 
@@ -880,7 +822,6 @@ async function main(): Promise<void> {
         storyContent.clientHeight,
       );
 
-      // Apply interpolated camera
       camera.x = state.camera.x;
       camera.y = state.camera.y;
       camera.zoom = state.camera.zoom;
@@ -908,15 +849,12 @@ async function main(): Promise<void> {
     });
   });
 
-  // Re-trigger scroll on resize to recompute story positions
   window.addEventListener('resize', () => {
     if (appMode === 'story') {
       storyContent.dispatchEvent(new Event('scroll'));
     }
   });
 
-  // URL State Restoration
-  // Restore overlay and its parameters from URL
   function restoreOverlayFromUrl(urlState: UrlState): void {
     if (!urlState.overlay) return;
 
@@ -941,14 +879,12 @@ async function main(): Promise<void> {
     }
   }
 
-  // Restore pinned verse from URL and center on it
   function restoreVerseFromUrl(urlState: UrlState): boolean {
     if (!urlState.verse) return false;
 
     const parsed = parseVerseFromUrl(urlState.verse);
     if (!parsed) return false;
 
-    // Find the verse in our list
     const verse = verses.find(
       (v) => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
     );
@@ -961,14 +897,11 @@ async function main(): Promise<void> {
     return true;
   }
 
-  // Restore camera position from URL (zoom always, pan only if no verse)
   function restoreCameraFromUrl(urlState: UrlState, hasVerse: boolean): void {
-    // Restore zoom
     if (urlState.zoom !== undefined) {
       camera.zoom = urlState.zoom;
     }
 
-    // Restore pan position (only if no verse - verse auto-centers)
     if (!hasVerse && urlState.x !== undefined && urlState.y !== undefined) {
       camera.x = urlState.x;
       camera.y = urlState.y;
@@ -985,7 +918,6 @@ async function main(): Promise<void> {
     const urlState = parseUrlState((id) => getOverlay(id)?.urlParams);
 
     if (urlState.story) {
-      // Restore story mode
       appMode = 'story';
       // Force the next settled scroll frame to apply the stop's state.
       lastSyncedStopId = null;
@@ -997,7 +929,6 @@ async function main(): Promise<void> {
       return;
     }
 
-    // Explore mode
     if (urlState.overlay || urlState.verse) {
       appMode = 'explore';
       switchToExplore(storyPanel, explorePanel);
@@ -1011,17 +942,14 @@ async function main(): Promise<void> {
     render();
   }
 
-  // Restore state from URL on page load
   if (window.location.hash) {
     restoreFromUrl();
   }
 
-  // Handle browser back/forward navigation
   subscribeToHashChange(() => {
     restoreFromUrl();
   });
 
-  // Apply first stop's state (verse pin, overlay) on initial load
   if (appMode === 'story') {
     storyContent.dispatchEvent(new Event('scroll'));
   }

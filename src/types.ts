@@ -1,30 +1,11 @@
 // Shared types for Torah Map
-
-/**
- * ARCHITECTURE: Domain vs Spatial Separation
- *
- * This codebase separates domain knowledge (Torah structure) from spatial rendering.
- * This enables future abstraction to other structured texts (Quran, Talmud, etc).
- *
- * DOMAIN LAYER (Torah-specific):
- * - TanakhIdentity: References a biblical verse (book/chapter/verse)
- * - Data loaders: layout.ts, verseTexts.ts, overlay data loading
- * - Overlays: Implement domain logic (commentary, trop, search, text dating, etc)
- * - Display: Sidebar, URL state (formatting "Genesis 1:1")
- *
- * SPATIAL LAYER (domain-agnostic):
- * - TanakhLayout: Position and size in 2D space (x, y, size)
- * - Rendering: geometry.ts, rendering.ts, webgl.ts
- * - Interaction: hitDetection.ts, mouse handling
- * - Camera: zoom, pan (camera.ts)
- *
- * To adapt this codebase for another text:
- * 1. Redefine TanakhIdentity structure
- * 2. Replace data loaders
- * 3. Implement domain-specific overlays
- * 4. Update display formatting
- * The entire rendering pipeline remains unchanged.
- */
+//
+// The codebase separates domain knowledge (book/chapter/verse, commentary,
+// trop, search, display formatting) from spatial rendering (position, size,
+// geometry, hit detection, camera). SpatialItem<T> is the join: any domain
+// identity T paired with x/y/size. The rendering pipeline only ever reads
+// x/y/size, so a new corpus needs just a concrete identity type — see
+// TalmudIdentity below — to reuse the whole pipeline unchanged.
 
 export interface Book {
   name: string;
@@ -43,10 +24,6 @@ export interface TorahData {
   books: Book[];
   layout: LayoutConfig;
 }
-
-// ============================================================================
-// Corpus-generic identity types (Talmud integration — tm-f28x)
-// ============================================================================
 
 /**
  * A spatial item is any domain identity paired with 2D coordinates and a size.
@@ -89,27 +66,14 @@ export interface TalmudIdentity {
 export type TanakhLayout = SpatialItem<TanakhIdentity>;
 export type TalmudLayout = SpatialItem<TalmudIdentity>;
 
-/**
- * Check if two verses refer to the same verse.
- * Handles null comparison for optional verse references (hover, pinned).
- *
- * @param a - First verse identity (or null)
- * @param b - Second verse identity (or null)
- * @returns true if both are null or both refer to same verse
- */
+/** True if both are null, or both refer to the same verse. */
 export function tanakhIdentitiesEqual(a: TanakhIdentity | null, b: TanakhIdentity | null): boolean {
   if (a === null && b === null) return true;
   if (a === null || b === null) return false;
   return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
 }
 
-/**
- * Find the next verse in the layout array.
- *
- * @param verses - Array of all verses in layout order
- * @param current - Current verse
- * @returns Next verse or null if current is last verse or not found
- */
+/** Next verse in layout order, or null if current is last or not found. */
 export function nextTanakhItem(
   verses: TanakhLayout[],
   current: TanakhIdentity,
@@ -125,13 +89,7 @@ export function nextTanakhItem(
   return verses[currentIndex + 1];
 }
 
-/**
- * Find the previous verse in the layout array.
- *
- * @param verses - Array of all verses in layout order
- * @param current - Current verse
- * @returns Previous verse or null if current is first verse or not found
- */
+/** Previous verse in layout order, or null if current is first or not found. */
 export function prevTanakhItem(
   verses: TanakhLayout[],
   current: TanakhIdentity,
@@ -147,16 +105,12 @@ export function prevTanakhItem(
   return verses[currentIndex - 1];
 }
 
-/**
- * Computed state for a single verse during rendering.
- * First pass: semantic state (what is true about this verse)
- * Second pass: visual state (how to render it)
- */
+/** Computed state for a single item: semantic state first, visual state second. */
 export interface ItemState {
-  hasOverlayColor: boolean; // Does overlay provide a color?
-  resolvedColor: [number, number, number] | [number, number, number][]; // Final color: overlay color if present, otherwise default gray
-  isHovered: boolean; // Is mouse hovering this verse?
-  isPinned: boolean; // Is this verse pinned in sidebar?
+  hasOverlayColor: boolean;
+  resolvedColor: [number, number, number] | [number, number, number][];
+  isHovered: boolean;
+  isPinned: boolean;
 }
 
 export interface Bounds {

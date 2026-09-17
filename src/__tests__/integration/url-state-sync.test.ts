@@ -17,10 +17,6 @@ import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../he
 import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
 
-/**
- * Integration test for URL state synchronization with overlay system
- * Tests how URL state persists overlay selection, filters, search terms, and view state
- */
 describe('URL State Sync Integration', () => {
   let originalLocation: Location;
   let historyStates: string[] = [];
@@ -67,7 +63,6 @@ describe('URL State Sync Integration', () => {
       return originalReplaceState(state, title, url);
     });
 
-    // Mock fetch for overlay data
     globalThis.fetch = vi.fn((url: string | Request) => {
       const urlString = typeof url === 'string' ? url : url.url;
 
@@ -521,7 +516,6 @@ describe('URL State Sync Integration', () => {
 
   describe('Real-World Scenarios', () => {
     it('handles shareable link workflow', () => {
-      // User selects overlay and filters
       const state: UrlState = {
         overlay: 'commentary',
         overlayParams: { category: 'chasidut' },
@@ -529,11 +523,9 @@ describe('URL State Sync Integration', () => {
         zoom: 2.5,
       };
 
-      // Generate shareable URL
       const hash = buildUrlHash(state);
       const url = `http://localhost:5173/${hash}`;
 
-      // Simulate user opening shared link
       mockWindowLocation(url);
       const restored = parseUrlState(overlayUrlParams);
 
@@ -544,14 +536,12 @@ describe('URL State Sync Integration', () => {
     });
 
     it('handles search-then-select workflow', async () => {
-      // User searches
       const searchState: UrlState = {
         overlay: 'search',
         overlayParams: { q: 'covenant' },
       };
       updateUrl(searchState, true);
 
-      // User selects a verse from results
       const selectedState: UrlState = {
         overlay: 'search',
         overlayParams: { q: 'covenant' },
@@ -560,14 +550,12 @@ describe('URL State Sync Integration', () => {
       };
       updateUrl(selectedState, true);
 
-      // Verify both states in history
       expect(historyStates.length).toBe(2);
       expect(historyStates[0]).toContain('q=covenant');
       expect(historyStates[1]).toContain('verse=Genesis.17.2');
     });
 
     it('handles overlay exploration workflow', async () => {
-      // User tries different overlays
       const overlays = ['commentary', 'trop', 'search'];
 
       for (const overlayId of overlays) {
@@ -578,7 +566,6 @@ describe('URL State Sync Integration', () => {
         updateUrl(state, true);
       }
 
-      // All transitions should be in history
       expect(historyStates.length).toBe(3);
       expect(historyStates[0]).toContain('commentary');
       expect(historyStates[1]).toContain('trop');

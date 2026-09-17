@@ -1,4 +1,4 @@
-// Verse Coloring module - handles verse color computation and highlighting
+// Color computation and hover highlighting for spatial items
 
 import type { SpatialItem, ItemState } from './types';
 import type { Overlay } from './overlays/types';
@@ -6,11 +6,8 @@ import { seededRandom } from './utils/random';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
 /**
- * Get default gray color with brightness variation for a verse.
- * Uses seeded random to ensure consistent appearance.
- *
- * @param verseIndex - Index of verse in verses array
- * @returns RGB color tuple with brightness variation
+ * Default gray for a verse with no overlay color, brightness-varied by a
+ * seeded random to reduce moiré.
  */
 export function getDefaultColor(verseIndex: number): [number, number, number] {
   const brightness =
@@ -30,23 +27,15 @@ export function getOverlayColor<T>(
 }
 
 /**
- * Apply hover highlighting to a verse color.
- * Second pass: modifies colors based on hover state.
- * - Verses with overlay color: brighten by 1.5x
- * - Verses without overlay color (background): replace with highlight color
- *
- * @param baseColor - Base color (single or array for multi-color verses)
- * @param hasOverlayColor - Whether verse has overlay-provided color
- * @returns Highlighted color
+ * Apply hover highlighting to a verse color: overlay-colored verses brighten,
+ * background verses (no overlay color) are replaced with the highlight color.
  */
 export function applyHoverHighlight(
   baseColor: [number, number, number] | [number, number, number][],
   hasOverlayColor: boolean,
 ): [number, number, number] | [number, number, number][] {
   if (hasOverlayColor) {
-    // Brighten overlay-colored verses by 1.5x
     if (Array.isArray(baseColor[0])) {
-      // Array of colors (multi-color verse)
       return (baseColor as [number, number, number][]).map(
         (c) =>
           [
@@ -56,7 +45,6 @@ export function applyHoverHighlight(
           ] as [number, number, number],
       );
     } else {
-      // Single color
       const c = baseColor as [number, number, number];
       return [
         Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
@@ -65,15 +53,14 @@ export function applyHoverHighlight(
       ];
     }
   } else {
-    // Replace background verses with highlight color
     return HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR;
   }
 }
 
 /**
- * Compute semantic state for all items.
- * First pass: determine what is true about each item (hasOverlayColor, resolvedColor, isHovered, isPinned).
- * Returns array parallel to items array.
+ * Compute semantic state for all items: what is true about each one
+ * (hasOverlayColor, resolvedColor, isHovered, isPinned). Returns an array
+ * parallel to items.
  *
  * Equality is injected as a parameter because each corpus has its own
  * identity shape. Tanakh callers pass tanakhIdentitiesEqual; Talmud callers pass
@@ -104,21 +91,15 @@ export function computeItemStates<T>(
 }
 
 /**
- * Apply colors based on computed states.
- * Second pass: apply base colors, then hover highlighting.
- * Returns immutable color array parallel to verse states.
- *
- * @param verseStates - Pre-computed verse states
- * @returns Array of final colors for each verse
+ * Apply colors based on computed states: base color, then hover highlighting.
+ * Returns an immutable color array parallel to item states.
  */
 export function applyItemColors(
   verseStates: ItemState[],
 ): ([number, number, number] | [number, number, number][])[] {
   return verseStates.map((state) => {
-    // Start with base color
     let finalColor = state.resolvedColor;
 
-    // Apply hover highlighting if this verse is hovered
     if (state.isHovered) {
       finalColor = applyHoverHighlight(finalColor, state.hasOverlayColor);
     }

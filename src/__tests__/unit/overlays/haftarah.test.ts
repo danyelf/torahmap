@@ -1,4 +1,3 @@
-// Tests for haftarah overlay - parshiot and special occasions
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
 
@@ -185,8 +184,8 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Custom setting in the URL', () => {
-    // Issue #66: the Ashkenazi/Sephardi choice used to be lost on reload
-    // because nothing carried it into the URL.
+    // The Ashkenazi/Sephardi choice used to be lost on reload because
+    // nothing carried it into the URL.
     beforeEach(async () => {
       await haftarahOverlay.init?.();
       applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));

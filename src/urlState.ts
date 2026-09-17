@@ -1,5 +1,4 @@
-// URL State Management
-// Handles parsing and serializing view state to/from URL hash
+// Parsing and serializing view state to/from the URL hash
 
 import { MIN_ZOOM, MAX_ZOOM } from './camera.ts';
 
@@ -30,11 +29,9 @@ export type UrlParamKind = 'token' | 'category' | 'text' | 'names';
  * lets `UrlParamValues` hand the overlay a record it can trust.
  */
 export interface UrlParamSpec {
-  /** The key used both in the URL hash and in the record the overlay receives */
   readonly key: string;
-  /** Which validation rules apply to the value */
   readonly kind: UrlParamKind;
-  /** When present, the value must be one of these after validation */
+  /** When present, the value must be one of these after validation. */
   readonly allowed?: readonly string[];
 }
 
@@ -68,15 +65,10 @@ export type OverlayParams = UrlParamValues;
  */
 export type OverlayParamSpecLookup = (overlayId: string) => readonly UrlParamSpec[] | undefined;
 
-/**
- * Keys this module owns. An overlay may not claim one of these.
- */
+// Keys this module owns; an overlay may not claim one of these.
 const RESERVED_KEYS = new Set(['story', 'overlay', 'verse', 'zoom', 'x', 'y']);
 
-/**
- * Validation constants
- */
-const MAX_PAN_POSITION = 1000000; // Increased to support existing use cases
+const MAX_PAN_POSITION = 1000000;
 const MAX_STRING_LENGTH = 50;
 const MAX_SEARCH_QUERY_LENGTH = 1000;
 
@@ -91,20 +83,15 @@ const MAX_SEARCH_QUERY_LENGTH = 1000;
  */
 const NAMES_ALLOWED = /^[A-Za-z0-9<>=/@[\]_|,.~-]+$/;
 
-/**
- * Base validation - checks for XSS patterns and length
- * Returns null if invalid, trimmed string if valid
- */
+/** Trims, length-checks, and rejects HTML tags, javascript: URLs, and event-handler attributes. */
 function baseValidate(value: string | null, maxLength: number): string | null {
   if (!value) return null;
 
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  // Check length
   if (trimmed.length > maxLength) return null;
 
-  // Reject HTML tags and script injections
   if (/<[^>]*>/.test(trimmed)) return null;
   if (/javascript:/i.test(trimmed)) return null;
   if (/on\w+=/i.test(trimmed)) return null;
@@ -112,11 +99,7 @@ function baseValidate(value: string | null, maxLength: number): string | null {
   return trimmed;
 }
 
-/**
- * Validate and sanitize a string parameter
- * Rejects HTML tags, scripts, and excessively long strings
- * Only allows alphanumeric characters, spaces, and hyphens
- */
+/** Like baseValidate, and also rejects slashes, backslashes, pipes, and semicolons. */
 function validateString(
   value: string | null,
   maxLength: number = MAX_STRING_LENGTH,
@@ -124,30 +107,23 @@ function validateString(
   const trimmed = baseValidate(value, maxLength);
   if (!trimmed) return null;
 
-  // Reject path-like strings and special characters that could be used for injection
   if (/[/\\|;]/.test(trimmed)) return null;
 
   return trimmed;
 }
 
-/**
- * Validate category name - allows letters, spaces, slashes for subcategories
- * More permissive than validateString to support legacy categories
- */
+// Allows letters, spaces, and slashes, for categories like "Talmud/Mishnah".
+// More permissive than validateString to support legacy categories.
 function validateCategoryName(value: string | null): string | null {
   const trimmed = baseValidate(value, MAX_STRING_LENGTH);
   if (!trimmed) return null;
 
-  // Allow letters, spaces, and slashes for categories like "Talmud/Mishnah"
   if (!/^[a-zA-Z\s/]+$/.test(trimmed)) return null;
 
   return trimmed;
 }
 
-/**
- * Validate a single overlay parameter value against its declared kind.
- * Returns the cleaned value, or null if the value should be dropped.
- */
+/** Validate one overlay parameter against its declared kind, or null to drop it. */
 function validateOneParam(spec: UrlParamSpec, raw: string | null | undefined): string | null {
   if (raw === null || raw === undefined) return null;
 
@@ -212,68 +188,48 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   return values as UrlParamValues<S>;
 }
 
-/**
- * Validate book name in verse reference
- * Only allows letters, spaces, and dots (for I.Samuel format)
- */
+// Allows letters (including Hebrew), spaces, and dots, for names like "I.Samuel".
 function validateBookName(book: string): boolean {
   if (!book || book.trim() === '') return false;
-  // Only allow letters (including Unicode), spaces, and dots
   return /^[a-zA-Z\u0590-\u05FF\s.]+$/.test(book);
 }
 
-/**
- * Strip HTML tags from search query
- */
 function stripHtmlTags(value: string): string {
   return value.replace(/<[^>]*>/g, '');
 }
 
-/**
- * Complete URL state representation
- */
 export interface UrlState {
-  /** Story stop ID (story mode) */
   story?: string;
-  /** Active overlay ID (undefined = no overlay) */
   overlay?: string;
-  /** Selected verse in "Book.Chapter.Verse" format */
+  /** "Book.Chapter.Verse", e.g. "Genesis.1.1" */
   verse?: string;
-  /** Zoom level (default: 1.0) */
   zoom?: number;
-  /** Pan X position (only used if no verse specified) */
+  /** Pan position; unused if verse is set, since a verse auto-centers */
   x?: number;
-  /** Pan Y position (only used if no verse specified) */
   y?: number;
-  /** Overlay-specific parameters */
   overlayParams: OverlayParams;
 }
 
 /**
- * Parse the current URL hash into a UrlState object.
- *
- * @param lookupOverlayParams - given the overlay id found in the URL, returns
- *   that overlay's parameter declarations. Without it, no overlay parameters
- *   are read (the core view state still parses).
+ * Parse the current URL hash into a UrlState object. Without
+ * lookupOverlayParams, overlay parameters are skipped; the core view state
+ * still parses.
  */
 export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): UrlState {
-  const hash = window.location.hash.slice(1); // Remove leading #
+  const hash = window.location.hash.slice(1);
   const params = new URLSearchParams(hash);
 
   const state: UrlState = {
     overlayParams: {},
   };
 
-  // Story mode parameter
   const story = params.get('story');
   const validatedStory = validateString(story);
   if (validatedStory) state.story = validatedStory;
 
-  // Core parameters
   const overlay = params.get('overlay');
   const validatedOverlay = validateString(overlay);
-  // Accept any validated overlay ID (for forward/backward compatibility)
-  // The overlay registry will handle unknown IDs gracefully
+  // Any validated ID is accepted; the overlay registry handles unknown ones gracefully.
   if (validatedOverlay) {
     state.overlay = validatedOverlay;
   }
@@ -306,8 +262,6 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
     }
   }
 
-  // Overlay-specific parameters: the active overlay says which keys it owns
-  // and what shape each value has; we decide whether the value is acceptable.
   if (state.overlay) {
     state.overlayParams = validateOverlayParams(lookupOverlayParams?.(state.overlay), params);
   }
@@ -315,19 +269,14 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
   return state;
 }
 
-/**
- * Build a URL hash string from state
- * Omits default values to keep URLs clean
- */
+/** Build a URL hash string from state, omitting default values to keep URLs clean. */
 export function buildUrlHash(state: UrlState): string {
-  // Story mode: simple URL with just the stop ID
   if (state.story) {
     return `#story=${encodeURIComponent(state.story)}`;
   }
 
   const params = new URLSearchParams();
 
-  // Core parameters (omit defaults)
   if (state.overlay) {
     params.set('overlay', state.overlay);
   }
@@ -363,9 +312,7 @@ export function buildUrlHash(state: UrlState): string {
   return hash ? `#${hash}` : '';
 }
 
-/**
- * How many nested applyingExternalState() calls are in progress.
- */
+// How many nested applyingExternalState() calls are in progress.
 let urlWritesSuspended = 0;
 
 /**
@@ -392,14 +339,11 @@ export function isApplyingExternalState(): boolean {
 }
 
 /**
- * Update the URL with new state.
+ * Update the URL with new state. Does nothing while external state is being
+ * applied — see applyingExternalState().
  *
- * Does nothing while external state is being applied — see
- * applyingExternalState().
- *
- * @param state - The new URL state
- * @param pushHistory - If true, creates a new history entry (for significant changes like overlay/verse)
- *                      If false, replaces current entry (for pan/zoom)
+ * pushHistory creates a new history entry, for a significant change like
+ * overlay or verse; otherwise it replaces the current entry, for pan/zoom.
  */
 export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   if (urlWritesSuspended > 0) return;
@@ -414,9 +358,7 @@ export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   }
 }
 
-/**
- * Subscribe to hash/history changes (for browser back/forward)
- */
+/** Subscribe to hash/history changes (for browser back/forward). */
 export function subscribeToHashChange(callback: () => void): void {
   window.addEventListener('popstate', callback);
   window.addEventListener('hashchange', callback);
@@ -438,30 +380,24 @@ export function verseToUrlFormat(book: string, chapter: number, verse: number): 
 export function parseVerseFromUrl(
   verseStr: string,
 ): { book: string; chapter: number; verse: number } | null {
-  // Split from the end to handle book names with dots
+  // Split from the end to handle book names with dots, e.g. "I.Samuel.1.5".
   const parts = verseStr.split('.');
   if (parts.length < 3) return null;
-
-  // Ensure we only have book.chapter.verse format (no extra dots)
-  if (parts.length > 5) return null; // Allow for "I.Samuel" style names (max 3 parts for book + 2 for chapter/verse)
+  if (parts.length > 5) return null; // max 3 parts for book name + 2 for chapter/verse
 
   const verseStr_ = parts.pop()!;
   const chapterStr = parts.pop()!;
-  const book = parts.join(' '); // Rejoin remaining parts as book name
+  const book = parts.join(' ');
 
   const verse = parseInt(verseStr_, 10);
   const chapter = parseInt(chapterStr, 10);
 
-  // Validate parsed numbers
   if (isNaN(verse) || isNaN(chapter)) return null;
-
-  // Reject negative numbers
   if (verse < 0 || chapter < 0) return null;
 
-  // Reject excessively large numbers (no book has >200 chapters, no chapter has >200 verses)
+  // No book has >200 chapters, no chapter has >200 verses
   if (chapter > 200 || verse > 200) return null;
 
-  // Validate book name
   if (!validateBookName(book)) return null;
 
   return { book, chapter, verse };

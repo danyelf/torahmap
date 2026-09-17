@@ -1,5 +1,8 @@
 # Mobile Support Design: Usable Viewer
 
+**Status:** Shipped — `src/touchState.ts`, pointer events in `src/main.ts`, and
+the responsive CSS in `src/styles/`.
+
 ## Goal
 
 Make Torah Map functional and usable on mobile devices (phones and tablets) without changing the desktop experience.

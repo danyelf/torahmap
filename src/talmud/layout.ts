@@ -1,9 +1,7 @@
 // Bookshelf layout for the Talmud map.
 //
-// Design: docs/plans/2026-04-07-talmud-integration-design.md §3.6
-//
-// - Each tractate is an "option C" perek-block (vertical blocks of amud-rows,
-//   shared right edge, RTL within each row).
+// - Each tractate is a block of amud-rows sharing a right edge, RTL within
+//   each row.
 // - Sedarim are stacked vertically (top to bottom in canonical order).
 // - Within a shelf, tractates are arranged right-to-left (RTL reading).
 // - Tractates on a shelf are top-aligned.
@@ -65,10 +63,6 @@ export interface TalmudLayoutResult {
   perekAnchors: PerekAnchor[];
   bounds: { width: number; height: number };
 }
-
-// ============================================================================
-// Per-tractate layout (option C)
-// ============================================================================
 
 interface AmudRow {
   daf: number;
@@ -330,10 +324,6 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     height: maxHeight,
   };
 }
-
-// ============================================================================
-// Bookshelf arrangement
-// ============================================================================
 
 export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutResult {
   // 1. Lay out each tractate in local coordinates.

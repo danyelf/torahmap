@@ -2,11 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-/**
- * Tests for the cleanText function in bundle-texts.ts
- * This function strips HTML tags and entities from Sefaria verse text.
- */
-
+// cleanText strips HTML tags and entities from Sefaria verse text.
 // Copied from scripts/bundle-texts.ts
 function cleanText(text: string): string {
   return text
@@ -23,7 +19,7 @@ function cleanText(text: string): string {
 
 describe('cleanText', () => {
   describe('HTML entity handling', () => {
-    it('replaces &thinsp; with space (fixes tm-1my bug)', () => {
+    it('replaces &thinsp; with space', () => {
       const input =
         'אֲמָרַ֖י הַאֲזִ֥ינָה&thinsp;<small>׀</small>&thinsp;יְהֹוָ֗ה בִּ֣ינָה הֲגִיגִֽי׃';
       const result = cleanText(input);

@@ -1,25 +1,10 @@
-// Parse markdown story files into StoryData
 import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
 import { parseVerseFromUrl } from '../urlState';
 
-/**
- * Parse a markdown story file into StoryData.
- *
- * Format:
- *   ---
- *   easing: ease-in-out
- *   ---
- *
- *   <!-- stop: intro | camera: initial -->
- *   # The Torah Map
- *
- *   Narrative text with **markdown** support.
- *
- *   <!-- stop: abraham | camera: initial | overlay: search | q: אברהם -->
- *   # Abraham's Journey
- *
- *   More text...
- */
+// A story is optional YAML frontmatter (currently just `easing`) followed by
+// stops, each opened by `<!-- stop: id | camera: ... | overlay: ... | key: value -->`
+// and a `# Title` heading; params other than camera/overlay/easing/verse/zoom
+// become that stop's overlay params. See public/data/story.md for an example.
 export function parseStoryMarkdown(markdown: string): StoryData {
   const defaults = parseFrontmatter(markdown);
   const body = stripFrontmatter(markdown);
@@ -87,7 +72,7 @@ function parseCamera(params: Record<string, string>): CameraRef {
     return { x: parts[0], y: parts[1], zoom: parts[2] };
   }
 
-  // Support verse-ref form, e.g. "Genesis.12.1" or "I.Samuel.1.5"
+  // e.g. "Genesis.12.1" or "I.Samuel.1.5"
   if (parseVerseFromUrl(cameraStr)) {
     return { kind: 'verse', ref: cameraStr };
   }
@@ -100,7 +85,6 @@ function parseStops(body: string): StoryStop[] {
   const stops: StoryStop[] = [];
   const metas: StopMeta[] = [];
 
-  // Find all stop comments and their positions
   let match;
   STOP_COMMENT_RE.lastIndex = 0;
   while ((match = STOP_COMMENT_RE.exec(body)) !== null) {
@@ -118,18 +102,15 @@ function parseStops(body: string): StoryStop[] {
       i + 1 < metas.length ? body.lastIndexOf('<!--', metas[i + 1].contentStart) : body.length;
     const rawContent = body.slice(meta.contentStart, contentEnd).trim();
 
-    // Extract title from first # heading
     const titleMatch = rawContent.match(/^#\s+(.+)$/m);
     const title = titleMatch ? titleMatch[1].trim() : meta.id;
 
-    // Text is everything after the title line
     const text = titleMatch
       ? rawContent.slice(rawContent.indexOf(titleMatch[0]) + titleMatch[0].length).trim()
       : rawContent;
 
     const camera = parseCamera(meta.params);
 
-    // Overlay params: everything except camera and easing
     const overlayParams: Record<string, string> = {};
     let overlay: string | null = null;
     let easing: EasingName | undefined;

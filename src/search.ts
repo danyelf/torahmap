@@ -44,7 +44,6 @@ interface IndexEntry {
   englishOriginal: string; // original for display
 }
 
-// Unicode range for Hebrew characters
 const HEBREW_RANGE_START = 0x0590;
 const HEBREW_RANGE_END = 0x05ff;
 
@@ -272,9 +271,6 @@ export function getLexemeForm(id: LexemeId): string | null {
   return lexicon?.[id]?.form ?? null;
 }
 
-/**
- * Detect if a string contains Hebrew characters
- */
 export function isHebrewQuery(query: string): boolean {
   for (const char of query) {
     const code = char.charCodeAt(0);
@@ -285,9 +281,6 @@ export function isHebrewQuery(query: string): boolean {
   return false;
 }
 
-/**
- * Build the search index from loaded verse texts
- */
 export function buildSearchIndex(verseTexts: VerseTexts): void {
   searchIndex = [];
   verseKeyToEntry.clear();
@@ -325,7 +318,6 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
         };
         searchIndex.push(entry);
 
-        // Build fast lookup map
         const verseKey = `${book}:${chapter}:${verse}`;
         verseKeyToEntry.set(verseKey, entry);
       }
@@ -385,10 +377,6 @@ export function getWordBoundaries(
   return word ? { start: word.start, end: word.end } : null;
 }
 
-/**
- * Search Hebrew text for whole-word matches only
- * Returns verse indices that match complete words
- */
 /** The words of an indexed verse, in the same order `getWordBoundaries` walks. */
 function indexedWords(entry: IndexEntry): string[] {
   return splitIntoWords(entry.hebrewText).map((w) => w.word);
@@ -419,12 +407,9 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
 
     for (const entry of searchIndex) {
       const words = indexedWords(entry);
-
-      // Find word index that matches exactly
       const wordIndex = words.findIndex((word) => word === normalizedTerm);
 
       if (wordIndex !== -1) {
-        // Found a match - use getWordBoundaries to find position in original text
         const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
 
         if (wordBounds) {
@@ -442,7 +427,6 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
             resultMap.set(key, result);
           }
 
-          // Only add if this term hasn't matched this verse yet
           if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
             const wordLen = wordBounds.end - wordBounds.start;
             const snippet = createSnippetAtPosition(
@@ -491,21 +475,12 @@ function findEnglishMatch(text: string, term: string): { idx: number; len: numbe
   return idx === -1 ? null : { idx, len: term.length };
 }
 
-/**
- * Lazily compute snippet/highlighting for a specific search result
- * Call this only when the result needs to be displayed
- *
- * @param result - The search result to compute snippet for
- * @param termIndex - Index of the matching term
- * @param searchTerm - The original search term
- * @returns Snippet data or null if verse not found
- */
+/** Snippet/highlight data for one match, computed lazily — only when the result is shown. */
 export function computeSnippetForMatch(
   result: SearchResult,
   _termIndex: number,
   searchTerm: string,
 ): { snippet: string; matchStart: number; matchEnd: number } | null {
-  // Find verse text
   const verseKey = `${result.book}:${result.chapter}:${result.verse}`;
   const entry = verseKeyToEntry.get(verseKey);
   if (!entry) return null;
@@ -531,7 +506,6 @@ export function computeSnippetForMatch(
     };
   }
 
-  // Try lexeme-based highlighting first
   const lexemes = findLexemesForWord(searchTerm);
   if (lexemes && lexemes.length > 0) {
     // Find the word in the verse that resolves to one of the same lexemes.
@@ -652,14 +626,12 @@ export function resultsForVerseSets(
 }
 
 /**
- * Search for verses matching any of the comma-separated terms
- * Returns ALL matching verses with info about which terms matched
+ * Verses matching any of the comma-separated terms.
  *
- * For Hebrew: Supports three modes:
- *   - 'substring': substring search (nikkud-insensitive)
- *   - 'word': whole-word matching only
- *   - 'root': lexeme-based search via the ETCBC BHSA index (default)
- * For English: Uses substring search (optionally whole-word matching)
+ * Hebrew: substring (nikkud-insensitive, the default) or whole-word. Root mode
+ * is not a `hebrewMode` value here — it resolves a term to dictionary meanings
+ * and looks up their verses directly, in the search overlay.
+ * English: substring, optionally whole-word via `wholeWord`.
  */
 export function search(
   query: string,
@@ -674,19 +646,16 @@ export function search(
   // terms simply find nothing.
   const isHebrew = isHebrewQuery(terms[0]);
 
-  // For Hebrew, dispatch based on mode
   if (isHebrew) {
     switch (hebrewMode) {
       case 'word':
         return searchHebrewWholeWord(terms);
       case 'substring':
       default:
-        // Fall through to substring search below
         break;
     }
   }
 
-  // Substring search for Hebrew or English
   const resultMap = new Map<string, SearchResult>();
 
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
@@ -694,15 +663,12 @@ export function search(
     const normalizedTerm = isHebrew ? normalizeHebrewForSearch(term) : term.toLowerCase();
 
     for (const entry of searchIndex) {
-      // Select appropriate text based on language
       const text = isHebrew ? entry.hebrewText : entry.englishText;
       const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
 
-      // Find matches
       let matches: Array<{ idx: number; len: number }> = [];
 
       if (!isHebrew && wholeWord) {
-        // For English with whole-word matching, use regex
         const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
         let match;
@@ -710,14 +676,12 @@ export function search(
           matches.push({ idx: match.index, len: match[0].length });
         }
       } else {
-        // Simple substring search (for both Hebrew and English)
         const idx = text.indexOf(normalizedTerm);
         if (idx !== -1) {
           matches.push({ idx, len: normalizedTerm.length });
         }
       }
 
-      // Process all matches
       for (const { idx, len } of matches) {
         const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
         const snippet = createSnippet(original, idx, len, isHebrew);
@@ -734,7 +698,6 @@ export function search(
           resultMap.set(key, result);
         }
 
-        // Only add if this term hasn't matched this verse yet
         if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
           result.matchingTerms.push({
             termIndex,
@@ -756,10 +719,7 @@ interface SnippetResult {
   matchEnd: number;
 }
 
-/**
- * Create a snippet around a match when we already have positions in the original text
- * (no nikkud mapping needed - used for lexeme-based word highlighting)
- */
+/** A snippet around a match whose position is already in the original text (no nikkud mapping). */
 function createSnippetAtPosition(
   text: string,
   matchStart: number,
@@ -768,13 +728,11 @@ function createSnippetAtPosition(
   const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
   const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
 
-  // Bounds validation: ensure matchEnd doesn't exceed text length
   const matchEnd = Math.min(matchStart + matchLen, text.length);
 
   let start = Math.max(0, matchStart - contextBefore);
   let end = Math.min(text.length, start + maxLen);
 
-  // Adjust start if we're near the end
   if (end === text.length && end - start < maxLen) {
     start = Math.max(0, end - maxLen);
   }
@@ -783,7 +741,6 @@ function createSnippetAtPosition(
   const adjustedMatchStart = matchStart - start;
   const adjustedMatchEnd = matchEnd - start;
 
-  // Add ellipsis if truncated
   let prefixLen = 0;
   if (start > 0) {
     snippet = '...' + snippet;
@@ -817,9 +774,6 @@ function createSnippet(
   return createSnippetAtPosition(text, origStart, matchLen + nikkudInMatch);
 }
 
-/**
- * Get map of verse keys to their matching term indices
- */
 export function getMatchingVerseTerms(results: SearchResult[]): Map<string, number[]> {
   const map = new Map<string, number[]>();
   for (const r of results) {

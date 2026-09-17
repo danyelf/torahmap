@@ -1,5 +1,3 @@
-// src/scrollytelling/types.ts
-
 export interface CameraPosition {
   x: number;
   y: number;

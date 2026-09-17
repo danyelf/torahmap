@@ -1,4 +1,3 @@
-// src/scrollytelling/interpolation.ts
 import type { EasingName } from './types';
 
 type Color = { r: number; g: number; b: number };

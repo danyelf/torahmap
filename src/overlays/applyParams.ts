@@ -1,4 +1,3 @@
-// src/overlays/applyParams.ts
 import type { Overlay } from './types.ts';
 import { validateOverlayParams, applyingExternalState } from '../urlState.ts';
 

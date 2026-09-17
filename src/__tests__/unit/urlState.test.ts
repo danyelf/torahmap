@@ -1109,7 +1109,7 @@ describe('the restore guard itself', () => {
   });
 });
 
-describe('haftarah custom in the URL (issue #66)', () => {
+describe('haftarah custom in the URL', () => {
   it('parses the Sephardi custom', () => {
     mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=sephardi');
     const state = parseUrlState(overlayUrlParams);

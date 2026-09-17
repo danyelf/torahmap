@@ -1,4 +1,3 @@
-// src/overlays/types.ts
 import type { TanakhIdentity } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '../urlState.ts';
 import type { Credit } from '../credits.ts';
@@ -8,9 +7,6 @@ export type { Credit } from '../credits.ts';
 
 export type Color = [number, number, number];
 
-// Each overlay manages its own module-level state. A factory-per-overlay pattern
-// would make destroy() cleaner, but the current approach is simpler for 6 stable overlays.
-//
 // Generic over the identity type T so that Talmud overlays can declare
 // Overlay<TalmudIdentity>. Defaults to TanakhIdentity so existing Tanakh
 // overlay imports compile unchanged.
@@ -18,71 +14,42 @@ export interface Overlay<T = TanakhIdentity> {
   id: string;
   name: string;
 
-  // What this overlay shows, in a sentence or two, written for a reader who has
-  // never opened the map. The help modal's Overlays tab is built out of these,
-  // so an overlay the reader can choose needs one; a test checks that every
-  // overlay the app registers has said something. Plain text, not markup: the
-  // modal owns the markup, the same way it does for credits below.
-  //
-  // Optional because the type also covers overlays that are never offered to a
-  // reader, such as the internal ones the Talmud view composes.
+  // Shown in the help modal's Overlays tab (a test enforces one per registered
+  // overlay). Optional because internal overlays, such as the ones the Talmud
+  // view composes, are never offered to a reader.
   description?: string;
 
-  // Lifecycle - called once when app starts
   init?(): Promise<void>;
   destroy?(): void;
 
-  // Core - called for each verse during applyOverlay
-  // Return null to use default gray
-  // Return Color[] for stipple effect (multiple colors shown via noise dithering)
+  // null renders default gray; Color[] stipples multiple colors via noise dithering.
   getVerseColor(verse: T): Color | Color[] | null;
 
-  // UI - called when overlay becomes active
   renderControls?(container: HTMLElement): void;
   renderLegend?(container: HTMLElement): void;
 
-  // Hover - called when user hovers a verse
   getHoverInfo?(verse: T): string | null;
 
-  // Called when hover state changes - enables cross-highlighting
-  // Returns true if overlay needs re-render, false otherwise
+  // Returns true if the overlay needs a re-render for the new hover state.
   setHoveredVerse?(verse: T | null): boolean;
 
-  // For dynamic overlays - register callback to trigger re-render
   onUpdate?(callback: () => void): void;
 
-  // URL state persistence - for shareable links.
-  //
-  // An overlay that has settings worth sharing declares them here. `urlParams`
-  // names the keys and says what shape each value has, so that urlState.ts can
-  // read them out of a link and check them without knowing what they mean.
-  //
-  // getUrlParams() reports the current settings using those same keys, omitting
-  // any that are still at their default. applyUrlParams() receives them back
-  // already validated: only declared keys are present, and a key that named a
-  // set of allowed values holds one of them. An overlay should annotate its own
-  // parameter as UrlParamValues<typeof ITS_SPECS> and then just use the values,
-  // rather than checking again what its declaration already promised.
+  // Settings worth putting in a shareable link. urlState.ts reads and validates
+  // them against urlParams without knowing what they mean; getUrlParams/
+  // applyUrlParams pass the values (already validated) back and forth.
   urlParams?: readonly UrlParamSpec[];
   getUrlParams?(): Record<string, string>;
   applyUrlParams?(params: UrlParamValues): void;
 
-  // Sidebar integration - for verse details display
   renderSidebarInfo?(verse: T, isPinned: boolean): HTMLElement | string | null;
 
-  // Highlight or modify verse text display (e.g., search terms, trop marks)
   highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment | string;
 
-  // Provide overlay-specific link subtitle (e.g., category-specific commentary counts)
   getLinkSubtitle?(verse: T): string | null;
 
-  // The outside sources this overlay depends on, shown in the help modal's
-  // Credits tab under the overlay's own name. Declare data only: the modal
-  // owns the markup, the same way urlParams declares settings and urlState
-  // owns the link.
-  //
-  // Leave it out when the overlay derives everything from text that is already
-  // credited. A test checks that any overlay not on that short list declares
-  // something, so a new data source cannot arrive uncredited.
+  // Outside sources this overlay depends on, shown in the help modal's Credits
+  // tab. Omit when the overlay derives everything from already-credited text;
+  // a test enforces this for everything else.
   credits?: readonly Credit[];
 }

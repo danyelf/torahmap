@@ -1,7 +1,11 @@
 # Search redesign: click to explore, not type to query
 
 **Date:** 2026-09-04
-**Status:** approved, not yet implemented
+**Status:** Shipped — the click-to-search menu, the full-height results panel
+and the meaning-filter work it called for have all landed; see
+`2026-09-14-search-meaning-filter-design.md`,
+`2026-09-15-click-to-search-implementation.md` and
+`2026-09-16-per-term-search-mode-design.md`.
 **Target:** publishable before Simchat Torah
 
 ## The problem

@@ -1,4 +1,3 @@
-// Tests for text-dating overlay - era detection, color computation, date ranges
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
 import { getVerseDatingInfo } from '../../../overlays/text-dating';
@@ -15,10 +14,8 @@ describe('Text Dating Overlay', () => {
   let testData: any;
 
   beforeEach(() => {
-    // Reset mocks
     vi.clearAllMocks();
 
-    // Setup test data matching the runtime format
     testData = {
       notes: [
         'P source (Priestly) - post-exilic redaction. [Source](https://en.wikipedia.org/wiki/Dating_the_Bible)',
@@ -75,7 +72,6 @@ describe('Text Dating Overlay', () => {
       },
     };
 
-    // Mock fetch
     mockFetch = vi.fn((_url: string) => {
       return Promise.resolve({
         ok: true,
@@ -87,7 +83,6 @@ describe('Text Dating Overlay', () => {
   });
 
   afterEach(() => {
-    // Clean up
     vi.restoreAllMocks();
   });
 
@@ -251,20 +246,8 @@ describe('Text Dating Overlay', () => {
     });
 
     it('applies darker shade for later dates within era', () => {
-      // Late Monarchic era: 722-586 BCE
-      // According to the implementation: "Older texts within an era are lighter, newer texts are darker"
-      // The shade factor ranges from 0.7 (start of era) to 1.0 (end of era)
-      // So earlier dates (near start = 722 BCE) get shadeFactor closer to 0.7 (darker)
-      // And later dates (near end = 586 BCE) get shadeFactor closer to 1.0 (lighter)
-      // Wait, that seems backwards. Let me check the actual implementation...
-      // Actually looking at the code: position = (rangeStart - dateBCE) / (rangeStart - rangeEnd)
-      // For Late Monarchic: rangeStart=722, rangeEnd=586
-      // For date 720 BCE: position = (722-720)/(722-586) = 2/136 = ~0.015 (near start)
-      // For date 590 BCE: position = (722-590)/(722-586) = 132/136 = ~0.97 (near end)
-      // shadeFactor = 0.7 + position * 0.3
-      // So early date gets 0.7 + 0.015*0.3 = ~0.7 (darker)
-      // And late date gets 0.7 + 0.97*0.3 = ~0.99 (lighter)
-      // So later dates are LIGHTER, earlier dates are DARKER within an era
+      // Late Monarchic era: 722-586 BCE. shadeFactor rises from 0.7 near the
+      // era's start toward 1.0 near its end, so later dates render lighter.
       testData.books['TestBook'] = [
         [
           { d: [-720, -720], n: 0 }, // Early in Late Monarchic (near start) - should be darker

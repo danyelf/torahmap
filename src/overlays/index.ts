@@ -1,4 +1,3 @@
-// src/overlays/index.ts
 import type { Overlay } from './types.ts';
 import { registerOverlay, clearOverlays } from './registry.ts';
 import { commentaryOverlay } from './commentary.ts';
@@ -17,12 +16,7 @@ export { configure as configureSearch, highlightSearchTerms } from './search.ts'
 export { getVerseDatingInfo } from './text-dating.ts';
 export { configure as configureVerseLength } from './verse-length.ts';
 
-/**
- * Every overlay the app ships, in the order the reader sees them in the menu.
- *
- * This is the input to registration and nothing else. Code that wants an
- * overlay asks the registry for it; only registerAllOverlays reads this list.
- */
+// Every overlay the app ships, in the order the reader sees them in the menu.
 const ALL_OVERLAYS: readonly Overlay[] = [
   searchOverlay,
   commentaryOverlay,
@@ -32,13 +26,8 @@ const ALL_OVERLAYS: readonly Overlay[] = [
   verseLengthOverlay,
 ];
 
-/**
- * Fill the registry with the overlays the app ships.
- *
- * This lives here rather than inside main(), so that a test can put the app's
- * real overlays in the registry the same way the app does and then read them
- * back out of the registry, instead of importing them behind its back.
- */
+// Lives here rather than inside main() so a test can put the app's real
+// overlays in the registry the same way the app does.
 export function registerAllOverlays(): void {
   clearOverlays();
   ALL_OVERLAYS.forEach(registerOverlay);

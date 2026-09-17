@@ -1,4 +1,3 @@
-// src/scrollytelling/storyPanel.ts
 import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
 import type { TanakhLayout } from '../types';
 import { parseVerseFromUrl } from '../urlState';
@@ -14,10 +13,8 @@ export async function loadStoryData(): Promise<StoryData> {
   return parseStoryMarkdown(markdown);
 }
 
-/**
- * Minimal markdown-to-HTML for story text.
- * Supports: **bold**, *italic*, [links](url), paragraphs, and raw HTML (e.g. <span>).
- */
+// Minimal markdown-to-HTML for story text: **bold**, *italic*, [links](url),
+// paragraphs, and raw HTML (e.g. <span>).
 function renderMarkdown(md: string): string {
   return md
     .split(/\n\n+/)
@@ -57,9 +54,6 @@ export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HT
   return stopElements;
 }
 
-/**
- * Compute camera position that centers on a verse.
- */
 function cameraForVerse(
   verse: TanakhLayout,
   zoom: number,
@@ -73,11 +67,8 @@ function cameraForVerse(
   };
 }
 
-/**
- * Resolve camera references to actual coordinates.
- * - "initial": use the app's default camera position
- * - If the stop has a verse and camera is "initial", center on that verse
- */
+// "initial" uses the app's default camera position, unless the stop names a
+// verse to pin on, in which case that verse is centered instead.
 export function resolveStops(
   stops: StoryStop[],
   initialCamera: CameraPosition,
@@ -90,7 +81,6 @@ export function resolveStops(
     let camera: CameraPosition;
 
     if (isVerseRef(cam)) {
-      // Verse-ref camera: look up world position, default zoom to 3 if not specified
       const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
       const verseLayout =
@@ -108,7 +98,6 @@ export function resolveStops(
     } else if (cam !== 'initial') {
       camera = cam;
     } else if (stop.verse && verses && canvasWidth && canvasHeight) {
-      // Center camera on the pinned verse
       const parsed = parseVerseFromUrl(stop.verse);
       const verseLayout =
         parsed &&
@@ -128,9 +117,6 @@ export function resolveStops(
   });
 }
 
-/**
- * Compute the scroll offset for each stop element.
- */
 export function computeStopOffsets(stopElements: HTMLElement[]): number[] {
   return stopElements.map((el) => el.offsetTop);
 }

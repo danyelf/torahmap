@@ -1,5 +1,4 @@
 // Tests for Hebrew search modes (substring, word, root)
-// tm-z8ru: Comprehensive tests for Hebrew mode parameter and mode switching
 import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, searchHebrewWholeWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';

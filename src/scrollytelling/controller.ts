@@ -1,5 +1,3 @@
-// src/scrollytelling/controller.ts
-
 import type { ResolvedStoryStop, InterpolatedState, EasingName } from './types';
 import { lerpCamera, easingFunctions } from './interpolation';
 
@@ -8,10 +6,7 @@ import { lerpCamera, easingFunctions } from './interpolation';
 // Transitions happen in the scroll gap between rest zones.
 const REST_ZONE_FRACTION = 0.4;
 
-/**
- * Compute the scrollTop at which each stop's content is centered in the viewport.
- * This is the scrollTop where the stop's visual center aligns with the viewport center.
- */
+// The scrollTop at which each stop's visual center aligns with the viewport center.
 function computeStopScrollCenters(
   stopOffsets: number[],
   stopHeights: number[],
@@ -42,11 +37,8 @@ export function computeInterpolatedState(
     );
   const vpHeight = viewportHeight ?? heights[0] ?? 500;
 
-  // Compute the scrollTop where each stop is centered on screen
   const scrollCenters = computeStopScrollCenters(stopOffsets, heights, vpHeight);
 
-  // Rest zone: a band of scroll positions around each center where we hold steady
-  // The band width is REST_ZONE_FRACTION of the stop's height
   const restZones: [number, number][] = scrollCenters.map((center, i) => {
     const halfZone = (heights[i] * REST_ZONE_FRACTION) / 2;
     return [Math.max(0, center - halfZone), Math.min(maxScroll, center + halfZone)];

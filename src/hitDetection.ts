@@ -4,14 +4,6 @@ import type { SpatialItem } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
-/**
- * Convert screen coordinates to world coordinates.
- *
- * @param screenX - X coordinate in screen space
- * @param screenY - Y coordinate in screen space
- * @param camera - Camera state with pan and zoom
- * @returns World coordinates
- */
 export function screenToWorld(
   screenX: number,
   screenY: number,
@@ -23,9 +15,7 @@ export function screenToWorld(
   };
 }
 
-/**
- * Check if a point (in world coordinates) is inside a spatial item's bounds.
- */
+/** Check if a point (in world coordinates) is inside a spatial item's bounds. */
 export function isPointInItem<T>(worldX: number, worldY: number, verse: SpatialItem<T>): boolean {
   return (
     worldX >= verse.x &&
@@ -35,9 +25,7 @@ export function isPointInItem<T>(worldX: number, worldY: number, verse: SpatialI
   );
 }
 
-/**
- * Find verse at exact world coordinates (no fuzzy matching).
- */
+/** Find verse at exact world coordinates (no fuzzy matching). */
 export function findExactHit<T>(
   verses: SpatialItem<T>[],
   worldX: number,
@@ -64,16 +52,13 @@ export function findFuzzyHit<T>(
   let nearestDistSq = HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
 
   for (const v of verses) {
-    // Find center of verse square
     const centerX = v.x + v.size / 2;
     const centerY = v.y + v.size / 2;
 
-    // Distance from point to verse center
     const dx = worldX - centerX;
     const dy = worldY - centerY;
     const distSq = dx * dx + dy * dy;
 
-    // If within fuzzy radius and closer than previous best
     if (distSq < nearestDistSq) {
       nearestItem = v;
       nearestDistSq = distSq;
@@ -84,8 +69,8 @@ export function findFuzzyHit<T>(
 }
 
 /**
- * Find verse at screen coordinates.
- * First tries exact hit detection, then falls back to fuzzy matching.
+ * Find verse at screen coordinates: exact hit detection first, falling back
+ * to fuzzy matching so a near-miss still lands on something.
  */
 export function findItemAtPoint<T>(
   verses: SpatialItem<T>[],
@@ -93,15 +78,12 @@ export function findItemAtPoint<T>(
   screenX: number,
   screenY: number,
 ): SpatialItem<T> | null {
-  // Convert screen coords to world coords
   const { x: worldX, y: worldY } = screenToWorld(screenX, screenY, camera);
 
-  // First, try exact hit detection
   const exactHit = findExactHit(verses, worldX, worldY);
   if (exactHit) {
     return exactHit;
   }
 
-  // If no exact hit, find nearest verse within fuzzy radius
   return findFuzzyHit(verses, worldX, worldY);
 }
