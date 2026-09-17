@@ -18,11 +18,11 @@ live database. On the categories that mean the same thing on both sides, which
 since we started reading Sefaria's own index is nearly all of them, a few
 percent below the site is the export's age and nothing more.
 
-What is worth chasing is a verse that has come adrift from its neighbours. The
-export is split alphabetically by source text, so an incomplete download takes
-out a coherent slice of the library rather than a random sample: some verses
-land far from the site while the ones beside them sit at zero. If several
-outliers share a part of the library, suspect the download before the data.
+What is worth chasing is a verse that has come adrift from its neighbours: the
+links export is split alphabetically by source text (see refresh.sh), so an
+incomplete download takes out a coherent slice of the library rather than a
+random sample, and shows up here as some verses far from the site while the
+ones beside them sit at zero.
 """
 
 import json
@@ -142,12 +142,8 @@ def main() -> int:
     print(f"range: {min(shared_diffs):+.0f}% to {max(shared_diffs):+.0f}%, "
           f"median {sorted(shared_diffs)[len(shared_diffs) // 2]:+.0f}%")
 
-    # Read the shape, not any single number. A few percent either way is the
-    # export's age and nothing more. What matters is a verse, or a run of
-    # verses, that has come adrift from the rest — the export is split
-    # alphabetically by source text, so a missing file takes out a coherent
-    # slice of the library rather than a random sample, and shows up as some
-    # verses far from the site while their neighbours sit at zero.
+    # Read the shape, not any single number — see the module docstring for
+    # what a verse adrift from its neighbours means.
     adrift = [(label, d) for label, d in zip(labels, shared_diffs) if abs(d) > 20]
     if adrift:
         print("\nWell away from the site, worth a look:")
