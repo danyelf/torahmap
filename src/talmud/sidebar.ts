@@ -1,7 +1,7 @@
 // Sidebar population for the Talmud map.
 //
 // Shows: reference, M/G tag, Hebrew text (from lazy-loaded tractate file),
-// Sefaria deep link. No English, no perek name (see design doc §3.9/Q16).
+// Sefaria deep link. No English, no perek name.
 
 import type { TalmudIdentity } from '../types.ts';
 import { talmudFormat } from './format.ts';

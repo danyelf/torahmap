@@ -2,11 +2,10 @@
 //
 // Talmud segments always carry a Mishnah-or-Gemara identity; we paint that
 // distinction as the "default" color (parallel to getDefaultColor() on the
-// Tanakh side, which colors verses by book section). Per-segment brightness
-// jitter is folded in so the grid reads as living rainfall rather than flat
-// tiles.
+// Tanakh side, which colors verses by book section), with per-segment
+// brightness jitter folded in.
 //
-// `composeWithBase(userOverlay)` returns an Overlay that prefers the user's
+// `composeWithMgBase(userOverlay)` returns an Overlay that prefers the user's
 // overlay color (when it has data for the segment) and falls back to the
 // structural M/G paint.
 

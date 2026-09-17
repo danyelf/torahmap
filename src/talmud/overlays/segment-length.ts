@@ -1,8 +1,8 @@
 // Segment length overlay for the Talmud map.
 //
-// Pale yellow → dark red ramp based on segment character count.
-// Paints both Mishnah and Gemara (per design doc §3.7 — overlays paint
-// over both M and G substrates; length is computed the same way).
+// Pale yellow → dark red ramp based on segment character count. Paints both
+// Mishnah and Gemara — overlays paint over both M and G substrates, and
+// length is computed the same way for both.
 
 import type { Overlay } from '../../overlays/types.ts';
 import type { TalmudIdentity } from '../../types.ts';
