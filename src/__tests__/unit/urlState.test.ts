@@ -678,8 +678,7 @@ describe('subscribeToHashChange', () => {
 });
 
 describe('backward compatibility', () => {
-  it('handles old URL format without overlay prefix', () => {
-    // Old format might have been just the overlay name
+  it('ignores a bare fragment that names no parameter', () => {
     mockWindowLocation('http://localhost:5173/#commentary');
     const state = parseUrlState(overlayUrlParams);
     // Should parse as empty since it's not a valid param
@@ -700,11 +699,10 @@ describe('backward compatibility', () => {
     expect(state.zoom).toBe(2.5);
   });
 
-  it('handles legacy category names', () => {
-    // Assuming categories haven't changed, but testing robustness
-    mockWindowLocation('http://localhost:5173/#overlay=commentary&category=Legacy%20Category');
+  it('accepts a category name containing a space', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=commentary&category=Modern%20Commentary');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.category).toBe('Legacy Category');
+    expect(state.overlayParams.category).toBe('Modern Commentary');
   });
 });
 

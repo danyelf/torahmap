@@ -269,7 +269,7 @@ def test_a_shelf_we_have_never_seen_lands_in_other():
         # Rashi is filed under Tanakh and writes on the verse.
         ("Rashi on Genesis", "Tanakh", "commentary", "Commentary"),
         # Ben Yehoyada is filed under Talmud and is citing the verse, not
-        # commenting on it. It used to be counted as Talmud.
+        # commenting on it, so the shelf it is filed under does not decide.
         ("Ben Yehoyada on Sanhedrin", "Talmud", "", "Quoting Commentary"),
         # Derekh Chayyim is the Maharal on Pirkei Avot, filed under Mishnah.
         ("Derekh Chayyim", "Mishnah", "", "Quoting Commentary"),

@@ -26,6 +26,21 @@ a decision and why it went that way, a constraint that is not visible locally,
 a failure mode worth naming. Say it once, in one place. Do not restate it in
 the caller, the test, or the document.
 
+**Comments describe the code as it is now, not as it once was.** The history is
+in the log; a comment that says "this used to return null" or "an earlier
+version kept a cache here" describes code the reader cannot see, and goes stale
+again the next time the code moves. Write the rule in the present tense: not
+"the language used to come from the first term", but "the language belongs to
+the term". This holds for test names and file headers too — a regression test
+describes the behaviour it pins, not the bug that prompted it.
+
+Naming an approach that was tried and rejected earns its place only when a
+reader would otherwise walk the same path: a tempting simplification that does
+not work, a number that looks arbitrary until you know what was measured. Say
+what goes wrong, in the present tense — "a time budget here measures CPU
+contention, not the search" — and give the evidence. Ticket numbers, dates and
+PR references belong in the commit message, not in the code.
+
 Do not treat the length of the surrounding comments as a style to match. Most
 of this codebase was written by an agent, so its habits are not a convention
 and carry no authority; judge each comment on whether a reader needs it.

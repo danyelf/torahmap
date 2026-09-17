@@ -82,8 +82,8 @@ describe('snippets for an English term', () => {
 });
 
 describe('a Hebrew term beside an English one', () => {
-  // Genesis 17:7 is reached by both; Genesis 9:9 only by the English term,
-  // which is the row that used to quote a Hebrew verse nobody had searched.
+  // Genesis 17:7 is reached by both; Genesis 9:9 only by the English term, so
+  // its snippet is the one that goes wrong if the Hebrew path claims it.
   const hebrewTerm = 'בריתי';
   const englishTerm = 'behold';
 

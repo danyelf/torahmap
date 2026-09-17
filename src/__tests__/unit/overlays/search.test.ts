@@ -519,9 +519,9 @@ describe('Search Overlay', () => {
       // Narrow on purpose. happy-dom does not turn a KeyboardEvent into text,
       // so the only thing that could change the value here is a handler that
       // rewrites it — which is the shape transliteration would come back in.
-      // It does not prove transliteration is gone: the old one lived on a
-      // document listener that only existed while the keyboard was open, and
-      // this test never opened it.
+      // It does not prove no transliteration exists anywhere: one installed on
+      // a document listener that only lives while the on-screen keyboard is
+      // open would never see this test, which never opens it.
       expect(input.value).toBe('light');
     });
 
@@ -934,10 +934,10 @@ describe('Search Overlay', () => {
   describe('Destroy', () => {
     it('listens for no clicks on the document, so none can outlive it', () => {
       // The results box sits in the controls panel and is shown or hidden by
-      // whether the search found anything. It used to float over the map, and
-      // a document-level click handler put it away; that handler also caught
-      // the click that chose a meaning in the word panel, hiding the list at
-      // the moment it was filled.
+      // whether the search found anything, so nothing needs a document-level
+      // click handler to dismiss it. Such a handler also catches the click
+      // that chooses a meaning in the word panel, hiding that list at the
+      // moment it is filled.
       const container = document.createElement('div');
       const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
 
@@ -1214,7 +1214,7 @@ describe('Search Overlay', () => {
       expect(html).toContain('אֱלֹהִים');
     });
 
-    it('marks the last word of a verse, which the sof pasuq used to hide', () => {
+    it('marks the last word of a verse, where the sof pasuq trails the word', () => {
       searchOverlay.applyUrlParams({ q: 'הארץ', mode: 'word' } as never);
 
       const html = fragmentToHtml(

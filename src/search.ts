@@ -486,9 +486,9 @@ export function computeSnippetForMatch(
   const entry = verseKeyToEntry.get(verseKey);
   if (!entry) return null;
 
-  // An English term reads the English verse. Everything below it works on the
-  // Hebrew, which is all this function used to do, and every English result
-  // came through it quoting a Hebrew verse the reader had not searched.
+  // An English term reads the English verse; everything below this works on the
+  // Hebrew. Falling through to it hands an English result a snippet of a Hebrew
+  // verse the reader never searched.
   if (!isHebrewQuery(searchTerm)) {
     const match = findEnglishMatch(entry.englishText, searchTerm.toLowerCase());
     if (match) {
@@ -557,11 +557,12 @@ export function computeSnippetForMatch(
 /**
  * The verses each term matches, decided term by term.
  *
- * The language of a search used to be read off its first term, so a Hebrew
- * word beside an English one meant the English one was hunted for in the
- * Hebrew text and found nothing. A term's own text decides now, and the two
- * settings that are language-specific — whole-word for English, the matching
- * mode for Hebrew — apply only to the terms they can apply to.
+ * Language belongs to the term, not to the search: a term's own text decides
+ * which text it is looked for in, so a Hebrew word beside an English one
+ * searches the Hebrew and the English respectively. Reading one language off
+ * the first term instead hunts the English word in the Hebrew text, where it
+ * finds nothing. The two language-specific settings — whole-word for English,
+ * the matching mode for Hebrew — apply only to the terms they can apply to.
  *
  * Meanings mode is not handled here: it depends on which meanings the reader has
  * left checked, which the overlay knows and this does not.
@@ -584,11 +585,9 @@ export function verseSetsForTerms(
 /**
  * Turn per-term sets of verse keys into search results.
  *
- * Meanings mode used to resolve a term's text to lexemes and union their verses
- * inside search(). Once the reader can choose which of a word's meanings the
- * term stands for, that resolution belongs where the choice lives, so the sets
- * arrive already decided. Snippets are left for computeSnippetForMatch, as
- * meanings mode has always done.
+ * The sets arrive already decided. Resolving a term's text to lexemes belongs
+ * with the reader's choice of which meanings the term stands for, which the
+ * overlay holds and this does not. Snippets are left to computeSnippetForMatch.
  *
  * A term with no hits simply contributes nothing; term indices are positions
  * in the caller's list, so the gap keeps every other term's colour in place.

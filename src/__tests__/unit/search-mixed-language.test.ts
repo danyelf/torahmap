@@ -1,9 +1,8 @@
-// Two bugs a second search row made visible.
+// Two things a row per term has to get right.
 //
-// Terms used to be substrings of one box, and one box was one language. With a
-// row each, nothing stops a reader putting Hebrew in one and English in the
-// next — and nothing should. A blank row is also now a thing that exists, and
-// it must mean "nothing yet", not "everything".
+// Nothing stops a reader putting Hebrew in one row and English in the next —
+// and nothing should, so language is decided per term. A row can also be blank,
+// and a blank row means "nothing yet", not "everything".
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData, buildSearchIndex, verseSetsForTerms } from '../../search.ts';
@@ -20,14 +19,14 @@ beforeAll(async () => {
 // word resolves because one is.
 describe('a fragment is not a word', () => {
   it('resolves a blank term to nothing at all', () => {
-    // It used to resolve to every lexeme there is: the lookup asked whether
-    // each dictionary spelling startsWith the term, and every string does.
+    // A prefix lookup resolves it to every lexeme there is, since every
+    // dictionary spelling startsWith the empty string.
     expect(meaningsFor('')).toEqual([]);
     expect(versesFor(meaningsFor('').flatMap((m) => m.keys)).size).toBe(0);
   });
 
   it('resolves a single letter to nothing', () => {
-    // א used to offer 911 meanings covering 19,689 verses.
+    // Under a prefix lookup א offers 911 meanings covering 19,689 verses.
     expect(meaningsFor('א')).toEqual([]);
   });
 
@@ -48,10 +47,9 @@ describe('a fragment is not a word', () => {
 });
 
 describe('one language per term, not one per search', () => {
-  // The whole search used to take its language from the FIRST term, so a
-  // Hebrew word beside an English one meant the English one was hunted for in
-  // the Hebrew text and found nothing. A row per language combination makes
-  // that regression easy to hit.
+  // Language is decided per term. Taking it from the first term instead means
+  // an English word beside a Hebrew one is hunted for in the Hebrew text,
+  // where it finds nothing.
 
   it('finds the English term when a Hebrew term comes first', () => {
     const sets = verseSetsForTerms(['אלהים', 'heaven']);

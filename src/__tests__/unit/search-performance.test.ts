@@ -1,11 +1,11 @@
 // Correctness checks for Hebrew search at production scale (~23,000 verses).
 //
-// These used to also assert a time budget, but the budget measured cold start
-// on whatever else the machine was doing, not the search itself: this suite
-// failed twice at ~230ms against a 200ms budget purely from CPU contention,
-// then passed eight consecutive runs once the machine was idle. Meanings-mode
-// search is about 1ms once warm. A slow search would still show up as a slow
-// test run; it just isn't asserted here.
+// No time budget is asserted here, and adding one measures the wrong thing: a
+// budget catches cold start and whatever else the machine is doing rather than
+// the search itself. Against a 200ms budget this suite failed twice at ~230ms
+// purely from CPU contention, then passed eight consecutive runs on an idle
+// machine. Meanings-mode search is about 1ms once warm, so a genuinely slow
+// search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { search, buildSearchIndex } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
