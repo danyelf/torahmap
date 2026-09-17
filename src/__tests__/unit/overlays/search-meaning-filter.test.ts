@@ -10,6 +10,7 @@ import { configure, highlightSearchTerms } from '../../../overlays/search';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
+import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
 
@@ -32,15 +33,11 @@ const verses = [
 ];
 
 function render(): HTMLDivElement {
-  const container = document.createElement('div');
-  searchOverlay.renderControls?.(container);
-  return container as HTMLDivElement;
+  return renderSearchControls(searchOverlay);
 }
 
 function type(container: HTMLElement, text: string): void {
-  const input = container.querySelector<HTMLInputElement>('.term-input')!;
-  input.value = text;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
+  typeInSearch(container, text);
 }
 
 beforeAll(async () => {

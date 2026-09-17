@@ -10,6 +10,7 @@ import { meaningsInVerse } from '../../../search/dictionary';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
+import { renderSearchControls } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 
 registerAllOverlays();
@@ -28,9 +29,7 @@ const verses = [
 ];
 
 function render(): HTMLDivElement {
-  const container = document.createElement('div');
-  searchOverlay.renderControls?.(container);
-  return container as HTMLDivElement;
+  return renderSearchControls(searchOverlay);
 }
 
 beforeAll(async () => {
