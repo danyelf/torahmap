@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure, getVerseLinkCount } from '../../../overlays/commentary';
+import { configure } from '../../../overlays/commentary';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -424,49 +424,14 @@ describe('Commentary Overlay', () => {
       expect(ticks).not.toBeNull();
     });
 
-    // Read the labels, not the markup: `left: 100%` in a style attribute
-    // satisfies a substring check for "100" whether or not that tick exists.
-    const tickLabels = (container: HTMLElement) =>
-      Array.from(container.querySelectorAll('.tick')).map((tick) => tick.textContent);
-
-    it('replaces the last power of ten when the maximum would print on top of it', () => {
-      // The test data tops out at 150, which sits 8% from 100 on the log scale.
+    it('labels the powers of ten up to the maximum, then the maximum', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderLegend?.(container);
 
-      expect(tickLabels(container)).toEqual(['0', '1', '10', '150']);
-    });
-
-    it('keeps the last power of ten when the maximum clears it', async () => {
-      const roomyData: CommentaryData = {
-        'Genesis': { '1': { '1': { total: 900, categories: { 'Midrash': 900 } } } },
-      };
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(roomyData),
-      } as Response);
-
-      configure({ verses: [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })] });
-      await commentaryOverlay.init?.();
-
-      const container = document.createElement('div');
-      commentaryOverlay.renderLegend?.(container);
-
-      expect(tickLabels(container)).toEqual(['0', '1', '10', '100', '900']);
-    });
-
-    it('aligns the outermost labels inwards so they stay on the scale', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderLegend?.(container);
-
-      const ticks = Array.from(container.querySelectorAll('.tick'));
-      expect(ticks[0].classList.contains('tick-start')).toBe(true);
-      expect(ticks[ticks.length - 1].classList.contains('tick-end')).toBe(true);
-      for (const middle of ticks.slice(1, -1)) {
-        expect(middle.classList.contains('tick-start')).toBe(false);
-        expect(middle.classList.contains('tick-end')).toBe(false);
-      }
+      // Read the labels, not the markup: `left: 100%` in a style attribute
+      // satisfies a substring check for "100" whether or not that tick exists.
+      const labels = Array.from(container.querySelectorAll('.tick')).map((t) => t.textContent);
+      expect(labels).toEqual(['0', '1', '10', '100', '150']);
     });
 
     it('formats large values with k suffix', async () => {
@@ -682,42 +647,6 @@ describe('Commentary Overlay', () => {
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
-    });
-  });
-
-  describe('getVerseLinkCount Helper', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.init?.();
-    });
-
-    it('returns total link count for verse with data', () => {
-      const count = getVerseLinkCount('Genesis', 1, 1);
-      expect(count).toBe(150);
-    });
-
-    it('returns null for verse without data', () => {
-      const count = getVerseLinkCount('NonExistent', 1, 1);
-      expect(count).toBeNull();
-    });
-
-    it('returns 0 for verse with zero total', () => {
-      const count = getVerseLinkCount('Genesis', 1, 3);
-      expect(count).toBe(0);
-    });
-
-    it('handles missing book', () => {
-      const count = getVerseLinkCount('Psalms', 1, 1);
-      expect(count).toBeNull();
-    });
-
-    it('handles missing chapter', () => {
-      const count = getVerseLinkCount('Genesis', 999, 1);
-      expect(count).toBeNull();
-    });
-
-    it('handles missing verse', () => {
-      const count = getVerseLinkCount('Genesis', 1, 999);
-      expect(count).toBeNull();
     });
   });
 

@@ -26,22 +26,3 @@
   height: 4px;
   background: #666;
 }
-
-/* The labels at 0% and 100% align inwards so they stay inside the panel, while
-   their marks stay on the position they name. Must follow .tick: same
-   specificity, so order decides. */
-#overlay-legend .tick-start {
-  transform: none;
-}
-
-#overlay-legend .tick-start::before {
-  left: 0;
-}
-
-#overlay-legend .tick-end {
-  transform: translateX(-100%);
-}
-
-#overlay-legend .tick-end::before {
-  left: 100%;
-}

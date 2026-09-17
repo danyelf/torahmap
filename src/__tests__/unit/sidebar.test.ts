@@ -23,10 +23,6 @@ vi.mock('../../overlays/search.ts', () => ({
   }),
 }));
 
-vi.mock('../../overlays/commentary.ts', () => ({
-  getVerseLinkCount: vi.fn(() => 0),
-}));
-
 describe('sidebar', () => {
   describe('getSidebarElements', () => {
     let sidebar: HTMLElement;
@@ -60,12 +56,10 @@ describe('sidebar', () => {
       english.className = 'verse-english';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
-      const linkSubtitle = document.createElement('div');
-      linkSubtitle.className = 'link-subtitle';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, english, link, linkSubtitle, closeBtn);
+      sidebar.append(ref, overlayInfo, hebrew, english, link, closeBtn);
 
       const elements = getSidebarElements();
       expect(elements.sidebar).toBe(sidebar);
@@ -75,7 +69,6 @@ describe('sidebar', () => {
       expect(elements.english).toBe(english);
       expect(elements.link).toBeInstanceOf(HTMLAnchorElement);
       expect(elements.link).toBe(link);
-      expect(elements.linkSubtitle).toBe(linkSubtitle);
       expect(elements.closeBtn).toBe(closeBtn);
     });
 
@@ -87,7 +80,6 @@ describe('sidebar', () => {
       expect(elements.hebrew).toBeNull();
       expect(elements.english).toBeNull();
       expect(elements.link).toBeNull();
-      expect(elements.linkSubtitle).toBeNull();
       expect(elements.closeBtn).toBeNull();
     });
   });
@@ -194,12 +186,10 @@ describe('sidebar', () => {
       english.className = 'verse-english';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
-      const linkSubtitle = document.createElement('div');
-      linkSubtitle.className = 'link-subtitle';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, english, link, linkSubtitle, closeBtn);
+      sidebar.append(ref, overlayInfo, hebrew, english, link, closeBtn);
       document.body.appendChild(sidebar);
 
       elements = {
@@ -209,7 +199,6 @@ describe('sidebar', () => {
         hebrew,
         english,
         link,
-        linkSubtitle,
         closeBtn,
       };
 
@@ -325,7 +314,6 @@ describe('sidebar', () => {
           hebrew: null,
           english: null,
           link: null,
-          linkSubtitle: null,
           closeBtn: null,
         };
 
@@ -369,84 +357,6 @@ describe('sidebar', () => {
         updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
 
         expect(elements.overlayInfo?.textContent).toBe('');
-      });
-    });
-
-    describe('link count display', () => {
-      it('displays link count when available', async () => {
-        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
-        vi.mocked(getVerseLinkCount).mockReturnValue(42);
-
-        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
-
-        expect(elements.linkSubtitle?.textContent).toBe('42 linked texts');
-      });
-
-      it('clears link subtitle when no links', async () => {
-        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
-        vi.mocked(getVerseLinkCount).mockReturnValue(0);
-
-        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
-
-        expect(elements.linkSubtitle?.textContent).toBe('');
-      });
-
-      // The popup gives a verse's numbers once, in the line at the top. These
-      // three fix which line that is.
-      it('leaves the link line plain when the overlay has already given a count', async () => {
-        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
-        vi.mocked(getVerseLinkCount).mockReturnValue(413);
-
-        const mockOverlay: Overlay = {
-          id: 'commentary',
-          name: 'Commentary',
-          getVerseColor: () => null,
-          getHoverInfo: () => '21 Halakhah',
-        };
-
-        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
-
-        expect(elements.overlayInfo?.textContent).toBe('21 Halakhah');
-        expect(elements.linkSubtitle?.textContent).toBe('');
-      });
-
-      it('leaves the link line plain when the overlay renders its own info block', async () => {
-        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
-        vi.mocked(getVerseLinkCount).mockReturnValue(413);
-
-        const block = document.createElement('div');
-        block.textContent = 'Two matches';
-        const mockOverlay: Overlay = {
-          id: 'search',
-          name: 'Search',
-          getVerseColor: () => null,
-          renderSidebarInfo: () => block,
-        };
-
-        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
-
-        expect(elements.linkSubtitle?.textContent).toBe('');
-      });
-
-      it('keeps the count when the overlay says nothing about this verse', async () => {
-        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
-        vi.mocked(getVerseLinkCount).mockReturnValue(413);
-
-        const mockOverlay: Overlay = {
-          id: 'trop',
-          name: 'Trop',
-          getVerseColor: () => null,
-          getHoverInfo: () => null,
-        };
-
-        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
-
-        expect(elements.linkSubtitle?.textContent).toBe('413 linked texts');
       });
     });
 
@@ -547,15 +457,6 @@ describe('sidebar', () => {
       it('handles missing link element', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         elements.link = null;
-
-        expect(() => {
-          updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
-        }).not.toThrow();
-      });
-
-      it('handles missing linkSubtitle element', () => {
-        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        elements.linkSubtitle = null;
 
         expect(() => {
           updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);

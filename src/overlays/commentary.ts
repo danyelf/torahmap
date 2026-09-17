@@ -124,21 +124,15 @@ export const commentaryOverlay: Overlay = {
   renderLegend(container: HTMLElement) {
     const maxValue = getMaxValue();
     const logMax = Math.log(maxValue + 1);
-    const position = (val: number) => (val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100);
 
+    // Calculate tick values (powers of 10)
     const ticks: number[] = [0];
-    for (let val = 1; val <= maxValue; val *= 10) {
-      ticks.push(val);
+    let tickVal = 1;
+    while (tickVal <= maxValue) {
+      ticks.push(tickVal);
+      tickVal *= 10;
     }
-
-    // The top of the scale is worth naming, but on a log axis the last power of
-    // ten often lands almost on it: Halakhah's 100 and 113 sit 2.6% apart, about
-    // nine pixels, and the labels print over each other. Nearer than this and the
-    // maximum takes that tick's place rather than crowding it.
-    const MIN_LABEL_GAP_PERCENT = 10;
-    const highestPower = ticks[ticks.length - 1];
-    if (highestPower < maxValue) {
-      if (position(maxValue) - position(highestPower) < MIN_LABEL_GAP_PERCENT) ticks.pop();
+    if (ticks[ticks.length - 1] < maxValue) {
       ticks.push(maxValue);
     }
 
@@ -146,13 +140,10 @@ export const commentaryOverlay: Overlay = {
       <div class="legend-gradient"></div>
       <div class="legend-ticks">
         ${ticks
-          .map((val, i) => {
+          .map((val) => {
+            const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
             const label = val >= 1000 ? `${val / 1000}k` : String(val);
-            // Both ends sit on the edge of the scale, so a centred label there
-            // falls half outside it. These two align inwards instead; the CSS
-            // leaves their tick marks on the true position.
-            const edge = i === 0 ? ' tick-start' : i === ticks.length - 1 ? ' tick-end' : '';
-            return `<span class="tick${edge}" style="left: ${position(val)}%">${label}</span>`;
+            return `<span class="tick" style="left: ${pos}%">${label}</span>`;
           })
           .join('')}
       </div>
@@ -196,10 +187,4 @@ export function configure(config: { verses: TanakhLayout[] }): void {
   cachedMaxValues = {};
   // Reset to default state for testing
   currentCategory = 'total';
-}
-
-// Get total linked texts count for a verse (used by sidebar)
-export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
-  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-  return verseData?.total ?? null;
 }

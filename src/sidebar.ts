@@ -3,7 +3,6 @@
 import type { TanakhLayout } from './types.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
-import { getVerseLinkCount } from './overlays/commentary.ts';
 import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
 
 /** A click on a word in the verse popup's Hebrew text. */
@@ -70,7 +69,6 @@ export interface SidebarElements {
   hebrew: Element | null;
   english: Element | null;
   link: HTMLAnchorElement | null;
-  linkSubtitle: Element | null;
   closeBtn: Element | null;
 }
 
@@ -84,7 +82,6 @@ export function getSidebarElements(): SidebarElements {
     hebrew: sidebar?.querySelector('.verse-hebrew') ?? null,
     english: sidebar?.querySelector('.verse-english') ?? null,
     link: (sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement) ?? null,
-    linkSubtitle: sidebar?.querySelector('.link-subtitle') ?? null,
     closeBtn: sidebar?.querySelector('.close-btn') ?? null,
   };
 }
@@ -126,7 +123,7 @@ export function updateSidebar(
   ) => VerseText | null,
   isPinned: boolean = false,
 ): void {
-  const { sidebar, ref, overlayInfo, hebrew, english, link, linkSubtitle } = elements;
+  const { sidebar, ref, overlayInfo, hebrew, english, link } = elements;
 
   if (!sidebar) return;
 
@@ -141,18 +138,12 @@ export function updateSidebar(
   if (ref) {
     ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
   }
-  // Whether the overlay has already spoken about this verse, which decides
-  // below whether the Sefaria link repeats a number or stays a plain invitation.
-  let overlayHasSpoken = false;
   if (overlayInfo) {
     const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned);
     if (sidebarInfo) {
       overlayInfo.replaceChildren(sidebarInfo);
-      overlayHasSpoken = true;
     } else {
-      const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
-      overlayInfo.textContent = hoverInfo || '';
-      overlayHasSpoken = Boolean(hoverInfo);
+      overlayInfo.textContent = currentOverlay?.getHoverInfo?.(verse) || '';
     }
   }
   if (hebrew) {
@@ -176,15 +167,6 @@ export function updateSidebar(
   }
   if (link) {
     link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
-  }
-  if (linkSubtitle) {
-    // The popup gives a verse's numbers once. The commentary count belongs here
-    // only when nothing above is already describing the verse - under the
-    // commentary overlay it would otherwise be the same figure twice.
-    const linkCount = overlayHasSpoken
-      ? null
-      : getVerseLinkCount(verse.book, verse.chapter, verse.verse);
-    linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
   }
 
   sidebar.classList.add('visible');
