@@ -46,8 +46,6 @@ export interface Overlay<T = TanakhIdentity> {
 
   highlightVerseText?(text: string, language: TextLanguage): DocumentFragment;
 
-  getLinkSubtitle?(verse: T): string | null;
-
   // The Sefaria `?with=` value this overlay wants a verse's link to open to
   // (e.g. a chosen commentary category). Absent overlays get `with=all`.
   getSefariaConnectionParam?(): string | null;

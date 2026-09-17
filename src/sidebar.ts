@@ -141,13 +141,18 @@ export function updateSidebar(
   if (ref) {
     ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
   }
+  // Whether the overlay has already spoken about this verse, which decides
+  // below whether the Sefaria link repeats a number or stays a plain invitation.
+  let overlayHasSpoken = false;
   if (overlayInfo) {
     const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned);
     if (sidebarInfo) {
       overlayInfo.replaceChildren(sidebarInfo);
+      overlayHasSpoken = true;
     } else {
       const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
       overlayInfo.textContent = hoverInfo || '';
+      overlayHasSpoken = Boolean(hoverInfo);
     }
   }
   if (hebrew) {
@@ -173,13 +178,13 @@ export function updateSidebar(
     link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
   }
   if (linkSubtitle) {
-    const overlaySubtitle = currentOverlay?.getLinkSubtitle?.(verse);
-    if (overlaySubtitle) {
-      linkSubtitle.textContent = overlaySubtitle;
-    } else {
-      const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
-      linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
-    }
+    // The popup gives a verse's numbers once. The commentary count belongs here
+    // only when nothing above is already describing the verse - under the
+    // commentary overlay it would otherwise be the same figure twice.
+    const linkCount = overlayHasSpoken
+      ? null
+      : getVerseLinkCount(verse.book, verse.chapter, verse.verse);
+    linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
   }
 
   sidebar.classList.add('visible');

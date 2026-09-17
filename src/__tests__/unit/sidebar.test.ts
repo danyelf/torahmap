@@ -392,6 +392,62 @@ describe('sidebar', () => {
 
         expect(elements.linkSubtitle?.textContent).toBe('');
       });
+
+      // The popup gives a verse's numbers once, in the line at the top. These
+      // three fix which line that is.
+      it('leaves the link line plain when the overlay has already given a count', async () => {
+        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
+        vi.mocked(getVerseLinkCount).mockReturnValue(413);
+
+        const mockOverlay: Overlay = {
+          id: 'commentary',
+          name: 'Commentary',
+          getVerseColor: () => null,
+          getHoverInfo: () => '21 Halakhah',
+        };
+
+        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
+
+        expect(elements.overlayInfo?.textContent).toBe('21 Halakhah');
+        expect(elements.linkSubtitle?.textContent).toBe('');
+      });
+
+      it('leaves the link line plain when the overlay renders its own info block', async () => {
+        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
+        vi.mocked(getVerseLinkCount).mockReturnValue(413);
+
+        const block = document.createElement('div');
+        block.textContent = 'Two matches';
+        const mockOverlay: Overlay = {
+          id: 'search',
+          name: 'Search',
+          getVerseColor: () => null,
+          renderSidebarInfo: () => block,
+        };
+
+        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
+
+        expect(elements.linkSubtitle?.textContent).toBe('');
+      });
+
+      it('keeps the count when the overlay says nothing about this verse', async () => {
+        const { getVerseLinkCount } = await import('../../overlays/commentary.ts');
+        vi.mocked(getVerseLinkCount).mockReturnValue(413);
+
+        const mockOverlay: Overlay = {
+          id: 'trop',
+          name: 'Trop',
+          getVerseColor: () => null,
+          getHoverInfo: () => null,
+        };
+
+        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
+
+        expect(elements.linkSubtitle?.textContent).toBe('413 linked texts');
+      });
     });
 
     describe('special text highlighting', () => {

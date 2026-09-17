@@ -124,15 +124,21 @@ export const commentaryOverlay: Overlay = {
   renderLegend(container: HTMLElement) {
     const maxValue = getMaxValue();
     const logMax = Math.log(maxValue + 1);
+    const position = (val: number) => (val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100);
 
-    // Calculate tick values (powers of 10)
     const ticks: number[] = [0];
-    let tickVal = 1;
-    while (tickVal <= maxValue) {
-      ticks.push(tickVal);
-      tickVal *= 10;
+    for (let val = 1; val <= maxValue; val *= 10) {
+      ticks.push(val);
     }
-    if (ticks[ticks.length - 1] < maxValue) {
+
+    // The top of the scale is worth naming, but on a log axis the last power of
+    // ten often lands almost on it: Halakhah's 100 and 113 sit 2.6% apart, about
+    // nine pixels, and the labels print over each other. Nearer than this and the
+    // maximum takes that tick's place rather than crowding it.
+    const MIN_LABEL_GAP_PERCENT = 10;
+    const highestPower = ticks[ticks.length - 1];
+    if (highestPower < maxValue) {
+      if (position(maxValue) - position(highestPower) < MIN_LABEL_GAP_PERCENT) ticks.pop();
       ticks.push(maxValue);
     }
 
@@ -140,10 +146,13 @@ export const commentaryOverlay: Overlay = {
       <div class="legend-gradient"></div>
       <div class="legend-ticks">
         ${ticks
-          .map((val) => {
-            const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
+          .map((val, i) => {
             const label = val >= 1000 ? `${val / 1000}k` : String(val);
-            return `<span class="tick" style="left: ${pos}%">${label}</span>`;
+            // Both ends sit on the edge of the scale, so a centred label there
+            // falls half outside it. These two align inwards instead; the CSS
+            // leaves their tick marks on the true position.
+            const edge = i === 0 ? ' tick-start' : i === ticks.length - 1 ? ' tick-end' : '';
+            return `<span class="tick${edge}" style="left: ${position(val)}%">${label}</span>`;
           })
           .join('')}
       </div>
@@ -177,14 +186,6 @@ export const commentaryOverlay: Overlay = {
     }
   },
 
-  getLinkSubtitle(verse: TanakhIdentity): string | null {
-    const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
-    if (!count) return null;
-
-    const categoryName = currentCategory === 'total' ? 'linked texts' : `${currentCategory} links`;
-    return `${count} ${categoryName}`;
-  },
-
   getSefariaConnectionParam(): string | null {
     return currentCategory === 'total' ? null : currentCategory;
   },
@@ -201,12 +202,4 @@ export function configure(config: { verses: TanakhLayout[] }): void {
 export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   return verseData?.total ?? null;
-}
-
-// Get category-specific link count for a verse (used by sidebar)
-function getVerseCategoryCount(book: string, chapter: number, verse: number): number | null {
-  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-  if (!verseData) return null;
-  if (currentCategory === 'total') return verseData.total;
-  return verseData.categories[currentCategory] ?? null;
 }

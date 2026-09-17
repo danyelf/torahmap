@@ -424,15 +424,49 @@ describe('Commentary Overlay', () => {
       expect(ticks).not.toBeNull();
     });
 
-    it('includes appropriate tick values', () => {
+    // Read the labels, not the markup: `left: 100%` in a style attribute
+    // satisfies a substring check for "100" whether or not that tick exists.
+    const tickLabels = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll('.tick')).map((tick) => tick.textContent);
+
+    it('replaces the last power of ten when the maximum would print on top of it', () => {
+      // The test data tops out at 150, which sits 8% from 100 on the log scale.
       const container = document.createElement('div');
       commentaryOverlay.renderLegend?.(container);
 
-      const innerHTML = container.innerHTML;
-      expect(innerHTML).toContain('0');
-      expect(innerHTML).toContain('1');
-      expect(innerHTML).toContain('10');
-      expect(innerHTML).toContain('100');
+      expect(tickLabels(container)).toEqual(['0', '1', '10', '150']);
+    });
+
+    it('keeps the last power of ten when the maximum clears it', async () => {
+      const roomyData: CommentaryData = {
+        'Genesis': { '1': { '1': { total: 900, categories: { 'Midrash': 900 } } } },
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(roomyData),
+      } as Response);
+
+      configure({ verses: [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })] });
+      await commentaryOverlay.init?.();
+
+      const container = document.createElement('div');
+      commentaryOverlay.renderLegend?.(container);
+
+      expect(tickLabels(container)).toEqual(['0', '1', '10', '100', '900']);
+    });
+
+    it('aligns the outermost labels inwards so they stay on the scale', () => {
+      const container = document.createElement('div');
+      commentaryOverlay.renderLegend?.(container);
+
+      const ticks = Array.from(container.querySelectorAll('.tick'));
+      expect(ticks[0].classList.contains('tick-start')).toBe(true);
+      expect(ticks[ticks.length - 1].classList.contains('tick-end')).toBe(true);
+      for (const middle of ticks.slice(1, -1)) {
+        expect(middle.classList.contains('tick-start')).toBe(false);
+        expect(middle.classList.contains('tick-end')).toBe(false);
+      }
     });
 
     it('formats large values with k suffix', async () => {
