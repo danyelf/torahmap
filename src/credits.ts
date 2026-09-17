@@ -1,5 +1,3 @@
-// src/credits.ts
-//
 // Where the map's data comes from, and how that is shown in the help modal's
 // Credits tab.
 //
