@@ -15,7 +15,7 @@ vi.mock('../../overlays/trop.ts', () => ({
   highlightTropInText: vi.fn((text: string) => text),
 }));
 
-vi.mock('../../overlays/search.ts', () => ({
+vi.mock('../../overlays/search/index.ts', () => ({
   highlightSearchTerms: vi.fn((text: string) => {
     const span = document.createElement('span');
     span.textContent = text;

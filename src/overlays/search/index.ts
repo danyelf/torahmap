@@ -1,8 +1,8 @@
 // Full-text search overlay
-import '../styles/overlays/search.css';
-import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
-import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../types.ts';
-import { tanakhKey } from '../types.ts';
+import '../../styles/overlays/search.css';
+import type { Overlay, Color, UrlParamSpec, UrlParamValues } from '../types.ts';
+import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
+import { tanakhKey } from '../../types.ts';
 import {
   getMatchingVerseTerms,
   parseSearchTerms,
@@ -11,10 +11,10 @@ import {
   resultsForVerseSets,
   verseSetsForTerms,
   type SearchResult,
-} from '../search.ts';
-import { mapStrippedToOriginal, splitIntoWords, stripNikkud } from '../hebrew.ts';
-import { foldForMatching, matchRangesInFolded } from '../search/matching.ts';
-import { versesFor, wordMatches } from '../search/dictionary.ts';
+} from '../../search.ts';
+import { mapStrippedToOriginal, splitIntoWords, stripNikkud } from '../../hebrew.ts';
+import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
+import { versesFor, wordMatches } from '../../search/dictionary.ts';
 import {
   addTerm,
   removeTerm,
@@ -34,11 +34,11 @@ import {
   MAX_TERMS,
   type SearchTerm,
   type SearchMode,
-} from '../search/terms.ts';
-import { SEARCH_COLORS } from '../utils/color.ts';
-import { MIN_SEARCH_TERM_LENGTH } from '../constants/app.ts';
-import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
-import { trackSearchExecute } from '../analytics.ts';
+} from '../../search/terms.ts';
+import { SEARCH_COLORS } from '../../utils/color.ts';
+import { MIN_SEARCH_TERM_LENGTH } from '../../constants/app.ts';
+import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';
+import { trackSearchExecute } from '../../analytics.ts';
 
 function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;

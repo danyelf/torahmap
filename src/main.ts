@@ -73,7 +73,7 @@ import {
   configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
-import { searchForMeaning, canAddTerm } from './overlays/search.ts';
+import { searchForMeaning, canAddTerm } from './overlays/search/index.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
