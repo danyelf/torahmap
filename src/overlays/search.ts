@@ -7,6 +7,7 @@ import {
   getMatchingVerseTerms,
   parseSearchTerms,
   stripNikkud,
+  isDroppedByStripNikkud,
   isHebrewQuery,
   computeSnippetForMatch,
   resultsForVerseSets,
@@ -784,41 +785,30 @@ interface Match {
 }
 
 /**
- * Check if a character is Hebrew nikkud (diacritical mark)
- */
-function isNikkudChar(code: number): boolean {
-  return (
-    code >= 0x0591 &&
-    code <= 0x05c7 &&
-    code !== 0x05be &&
-    code !== 0x05c0 &&
-    code !== 0x05c3 &&
-    code !== 0x05c6
-  );
-}
-
-/**
  * Map position in normalized (no nikkud) text back to original text position
- * Accounts for nikkud characters that were stripped during normalization
+ *
+ * The normalized text here is whatever `stripNikkud` produced, so this asks
+ * that function's own predicate which characters went missing. It used to
+ * carry a copy of the rule, and the copy did not know about the grapheme
+ * joiner that `stripNikkud` now removes.
  */
 function mapNormalizedToOriginalPosition(
   text: string,
   normalizedPos: number,
   startFrom: number = 0,
 ): number {
-  let nikkudCount = 0;
+  let droppedCount = 0;
   let currentNormalizedPos = 0;
 
   for (let i = startFrom; i < text.length && currentNormalizedPos < normalizedPos; i++) {
-    const code = text.charCodeAt(i);
-    if (isNikkudChar(code)) {
-      nikkudCount++;
+    if (isDroppedByStripNikkud(text.charCodeAt(i))) {
+      droppedCount++;
     } else {
       currentNormalizedPos++;
     }
   }
 
-  return normalizedPos + nikkudCount;
+  return normalizedPos + droppedCount;
 }
 
 /**

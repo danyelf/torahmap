@@ -118,24 +118,40 @@ let spellingToLexemes: Map<string, LexemeId[]> | null = null;
 
 /**
  * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
+ *
+ * Anything this drops must also be dropped by `isDroppedByStripNikkud`, which
+ * is how a position in the stripped text is turned back into one in the
+ * original. The two disagreeing does not fail loudly; it shifts every
+ * highlight after the disagreement by a character.
  */
 export function stripNikkud(text: string): string {
   let result = '';
   for (const char of text) {
-    const code = char.charCodeAt(0);
-    // Skip nikkud marks but keep Hebrew letters and other characters
-    if (
-      code < NIKKUD_START ||
-      code > NIKKUD_END ||
-      code === 0x05be ||
-      code === 0x05c0 ||
-      code === 0x05c3 ||
-      code === 0x05c6
-    ) {
+    if (!isDroppedByStripNikkud(char.charCodeAt(0))) {
       result += char;
     }
   }
   return result;
+}
+
+/**
+ * Does `stripNikkud` remove this character?
+ *
+ * The points and accents, and the grapheme joiner Sefaria writes inside
+ * Jerusalem. The four Hebrew punctuation marks in the same block — maqaf,
+ * paseq, sof pasuq and nun hafukha — are separators rather than marks and stay.
+ */
+export function isDroppedByStripNikkud(code: number): boolean {
+  if (code === GRAPHEME_JOINER) return true;
+
+  return (
+    code >= NIKKUD_START &&
+    code <= NIKKUD_END &&
+    code !== 0x05be &&
+    code !== 0x05c0 &&
+    code !== 0x05c3 &&
+    code !== 0x05c6
+  );
 }
 
 /**
