@@ -50,7 +50,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  applyOverlayParams(searchOverlay, { q: '', hm: undefined, m: undefined });
+  applyOverlayParams(searchOverlay, { q: '', mode: undefined, m: undefined });
 });
 
 describe('the meaning list', () => {
@@ -162,7 +162,7 @@ describe('the URL', () => {
   });
 
   it('restores it', () => {
-    applyOverlayParams(searchOverlay, { q: 'עלה', hm: 'root', m: '<LH/@heb' });
+    applyOverlayParams(searchOverlay, { q: 'עלה', mode: 'r', m: '<LH/@heb' });
     const container = render();
 
     const checked = [...container.querySelectorAll<HTMLInputElement>('.meaning-row input')].filter(
@@ -178,20 +178,63 @@ describe('the Hebrew default', () => {
     const container = render();
     type(container, 'עלה');
 
-    const checkedMode = container.querySelector<HTMLInputElement>(
-      'input[name="hebrew-mode"]:checked',
+    const marked = container.querySelector<HTMLElement>(
+      '.term-row[data-open="true"] .term-mode-option.on',
     );
-    expect(checkedMode?.value).toBe('root');
+    expect(marked?.dataset.mode).toBe('root');
+  });
+
+  it('says how many meanings a collapsed row is searching for', () => {
+    const container = render();
+    type(container, 'עלה');
+    // Counted rather than written down: rebuilding the index changes it.
+    const offered = container.querySelectorAll('.meaning-row').length;
+
+    // Add a second word so the עלה row collapses and has to describe itself.
+    container.querySelector<HTMLButtonElement>('#add-term')!.click();
+
+    const state = container
+      .querySelectorAll<HTMLElement>('.term-row')[0]
+      .querySelector('.term-state')!;
+    expect(state.textContent).toBe(`root · all ${offered} meanings`);
+  });
+
+  it('names the meanings once the row is narrowed', () => {
+    const container = render();
+    type(container, 'עלה');
+
+    // Keep one meaning, then collapse the row.
+    container.querySelectorAll<HTMLButtonElement>('.meaning-only')[2].click();
+    container.querySelector<HTMLButtonElement>('#add-term')!.click();
+
+    const state = container
+      .querySelectorAll<HTMLElement>('.term-row')[0]
+      .querySelector('.term-state')!;
+    expect(state.textContent).toBe('root · leafage');
+  });
+
+  it('leaves the mode bare when there is no choice of meaning to report', () => {
+    const container = render();
+    // A word the lexeme index does not know has no meanings, so there is
+    // nothing to count and no checkboxes either.
+    type(container, 'zzqq');
+    container.querySelector<HTMLButtonElement>('#add-term')!.click();
+
+    const state = container
+      .querySelectorAll<HTMLElement>('.term-row')[0]
+      .querySelector('.term-state')!;
+    expect(state.textContent).toBe('substring');
   });
 
   it('hides the meaning list in substring mode, which cannot use it', () => {
     const container = render();
     type(container, 'עלה');
-    const substring = container.querySelector<HTMLInputElement>(
-      'input[name="hebrew-mode"][value="substring"]',
-    )!;
-    substring.checked = true;
-    substring.dispatchEvent(new Event('change', { bubbles: true }));
+
+    container
+      .querySelector<HTMLElement>(
+        '.term-row[data-open="true"] .term-mode-option[data-mode="substring"]',
+      )!
+      .click();
 
     expect(container.querySelectorAll('.meaning-row')).toHaveLength(0);
   });

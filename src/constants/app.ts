@@ -51,6 +51,17 @@ export const URL_UPDATE_DEBOUNCE_MS = 300;
 export const MIN_SEARCH_TERM_LENGTH = 2;
 
 /**
+ * What separates one search term from the next: English comma, Arabic comma,
+ * left-to-right mark, Hebrew gershayim.
+ *
+ * Read both when a query string arrives and when the reader types, so that a
+ * term can never hold a character that would later split it. They disagreed
+ * once, and a term carrying a separator came back as two terms, which shifted
+ * every later term's mode and meaning onto the wrong word.
+ */
+export const TERM_SEPARATORS = /[,،‎״]/;
+
+/**
  * Maximum length of search result snippet (characters)
  * Keeps result previews concise and readable
  */

@@ -68,11 +68,94 @@
   color: #fff;
 }
 
-/* The meanings of one term. Absent for the 88% of words that mean one thing. */
-.term-meanings {
+/* A row the reader is not working in, folded to one line. */
+.term-summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 3px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.term-summary:hover {
+  background: #232323;
+}
+
+.term-word {
+  flex: 0 0 auto;
+  font-size: 14px;
+  color: #eee;
+}
+
+/* The Hebrew reads right to left inside a left-to-right row. */
+.term-word.rtl {
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+.term-state {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11px;
+  color: #7d7d7d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The open row, lifted off the collapsed ones around it. */
+.term-row[data-open='true'] {
+  background: #212121;
+  margin: 0 -6px 10px;
+  padding: 7px 6px;
+  border-radius: 5px;
+}
+
+/* The mode control and the meaning checkboxes share one indent. */
+.term-body {
   margin: 6px 0 0 16px;
   border-left: 1px solid #333;
   padding-left: 10px;
+}
+
+.term-mode {
+  display: inline-flex;
+  border: 1px solid #3d3d3d;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #202020;
+  margin: 3px 0 5px;
+}
+
+.term-mode-option {
+  font: inherit;
+  font-size: 10.5px;
+  padding: 2.5px 8px;
+  color: #8a8a8a;
+  background: none;
+  border: none;
+  border-right: 1px solid #3d3d3d;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.term-mode-option:last-child {
+  border-right: none;
+}
+
+.term-mode-option:hover {
+  color: #fff;
+}
+
+.term-mode-option.on {
+  background: #2f5f8a;
+  color: #fff;
+}
+
+/* The meanings of one term. Absent for the 88% of words that mean one thing. */
+.term-meanings {
+  margin-top: 2px;
 }
 
 .meaning-row {
@@ -311,47 +394,6 @@
 
 #search-hit-caption {
   margin-bottom: 4px;
-}
-
-#search-options {
-  margin-bottom: 12px;
-}
-
-#search-options label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #ccc;
-  cursor: pointer;
-}
-
-#search-options input[type='checkbox'] {
-  cursor: pointer;
-}
-
-#hebrew-mode-container {
-  margin-bottom: 12px;
-}
-
-.hebrew-mode-label {
-  font-size: 11px;
-  color: #888;
-  margin-bottom: 6px;
-}
-
-.hebrew-mode-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: #ccc;
-  cursor: pointer;
-  margin-right: 12px;
-}
-
-.hebrew-mode-option input[type='radio'] {
-  cursor: pointer;
 }
 
 @media (max-width: 768px) {
