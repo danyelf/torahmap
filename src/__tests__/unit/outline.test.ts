@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildOutlineGeometry } from '../../outline';
 import type { OutlineBounds, OutlineOptions } from '../../outline';
 import { HIGHLIGHT_CONSTANTS } from '../../constants';
-import { TEST_COLORS } from '../helpers';
+import { TEST_COLORS, FLOATS_PER_VERTEX as floatsPerVertex } from '../helpers';
 
 describe('buildOutlineGeometry', () => {
   describe('basic buffer properties', () => {
@@ -22,7 +22,6 @@ describe('buildOutlineGeometry', () => {
     it('generates 4 borders (24 vertices total)', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
-      const floatsPerVertex = 19;
       const verticesPerBorder = 6;
       const borderCount = 4;
       const expectedFloats = borderCount * verticesPerBorder * floatsPerVertex;
@@ -32,7 +31,6 @@ describe('buildOutlineGeometry', () => {
     it('each vertex has 19 floats (x, y, 4 colors, colorCount, u, v, seedX, seedY)', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
-      const floatsPerVertex = 19;
       expect(buffer.length % floatsPerVertex).toBe(0);
     });
   });
@@ -42,7 +40,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const thickness = 2;
       const x0 = 100 - thickness; // Extends outside by thickness
       const y0 = 200 - thickness;
@@ -77,7 +74,6 @@ describe('buildOutlineGeometry', () => {
       const options: OutlineOptions = { thickness: 5 };
       const buffer = buildOutlineGeometry(bounds, options);
 
-      const floatsPerVertex = 19;
       const thickness = 5;
       const y0 = 200 - thickness; // Extends outside
 
@@ -103,7 +99,6 @@ describe('buildOutlineGeometry', () => {
       const options: OutlineOptions = { thickness: 3, color: TEST_COLORS.BLUE };
       const buffer = buildOutlineGeometry(bounds, options);
 
-      const floatsPerVertex = 19;
       const colorOffset = 2;
       const thickness = 3;
       const y0 = 20 - thickness; // Extends outside
@@ -123,7 +118,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const thickness = 2;
       const x0 = 100 - thickness; // extends left
       const y0 = 200 - thickness; // extends up
@@ -151,7 +145,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const floatsPerBorder = floatsPerVertex * 6;
       const thickness = 2;
       const y0 = 200 - thickness; // extends up
@@ -178,7 +171,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const floatsPerBorder = floatsPerVertex * 6;
       const thickness = 2;
       const x0 = 100 - thickness; // extends left
@@ -205,7 +197,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const floatsPerBorder = floatsPerVertex * 6;
       const thickness = 2;
       const x0 = 100 - thickness; // extends left
@@ -232,7 +223,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const thickness = 2;
       const expectedX0 = 100 - thickness; // 98
       const expectedY0 = 200 - thickness; // 198
@@ -257,7 +247,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const colorCountOffset = 14; // After x, y, and 4 colors (2 + 12)
 
       // Check first vertex
@@ -290,7 +279,6 @@ describe('buildOutlineGeometry', () => {
       const options: OutlineOptions = { color: TEST_COLORS.YELLOW };
       const buffer = buildOutlineGeometry(bounds, options);
 
-      const floatsPerVertex = 19;
       const colorOffset = 2;
 
       // Check all 24 vertices have the same color
@@ -305,8 +293,6 @@ describe('buildOutlineGeometry', () => {
     it('color values are in valid range [0, 1]', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
-
-      const floatsPerVertex = 19;
 
       for (let v = 0; v < 24; v++) {
         const offset = v * floatsPerVertex;
@@ -328,7 +314,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const uvOffset = 15;
 
       // Check all vertices have u=0, v=0
@@ -343,7 +328,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 123, y: 456, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const seedOffset = 17;
 
       // Check all vertices have same seed (verse position)
@@ -370,8 +354,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 50, y: 75, size: 12 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
-
       // Check each vertex position is valid
       for (let v = 0; v < 24; v++) {
         const offset = v * floatsPerVertex;
@@ -389,7 +371,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const verticesPerBorder = 6;
       const floatsPerBorder = floatsPerVertex * verticesPerBorder;
 
@@ -441,7 +422,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 10, y: 10, size: 2 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       // x0 = 10 - 2 = 8
       // x1 = 10 + 2 - 2 + 2 = 12 (x + size - gap + thickness)
       expect(buffer[floatsPerVertex]).toBe(12);
@@ -451,7 +431,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 1000 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const thickness = 2;
       const expectedX1 = 1000 - 2 + thickness; // 1000
       expect(buffer[floatsPerVertex]).toBe(expectedX1);
@@ -462,7 +441,6 @@ describe('buildOutlineGeometry', () => {
       const options: OutlineOptions = { thickness: 0 };
       const buffer = buildOutlineGeometry(bounds, options);
 
-      const floatsPerVertex = 19;
       const thickness = 0;
       const y0 = 200 - thickness; // No extension
 
@@ -475,7 +453,6 @@ describe('buildOutlineGeometry', () => {
       const options: OutlineOptions = { thickness: 10 };
       const buffer = buildOutlineGeometry(bounds, options);
 
-      const floatsPerVertex = 19;
       const thickness = 10;
       const y0 = 200 - thickness; // Extends up by 10
 
@@ -511,7 +488,6 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
-      const floatsPerVertex = 19;
       const floatsPerBorder = floatsPerVertex * 6;
 
       // Check each border

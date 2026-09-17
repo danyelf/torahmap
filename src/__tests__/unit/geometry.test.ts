@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { buildItemGeometry, createBuffer } from '../../geometry';
-import { createVerse, createVerses, TEST_COLORS } from '../helpers';
+import {
+  createVerse,
+  createVerses,
+  TEST_COLORS,
+  FLOATS_PER_VERTEX as floatsPerVertex,
+  createMockWebGL2Context,
+} from '../helpers';
 
 describe('buildItemGeometry', () => {
   describe('basic buffer properties', () => {
@@ -43,7 +49,6 @@ describe('buildItemGeometry', () => {
       const verses = [createVerse()];
       const buffer = buildItemGeometry(verses);
       const verticesPerQuad = 6;
-      const floatsPerVertex = 19;
       const expectedFloats = verticesPerQuad * floatsPerVertex;
       expect(buffer.length).toBe(expectedFloats);
     });
@@ -52,7 +57,6 @@ describe('buildItemGeometry', () => {
       const verseCount = 10;
       const verses = createVerses(verseCount);
       const buffer = buildItemGeometry(verses);
-      const floatsPerVertex = 19;
       const verticesPerQuad = 6;
       expect(buffer.length).toBe(verseCount * verticesPerQuad * floatsPerVertex);
     });
@@ -61,7 +65,6 @@ describe('buildItemGeometry', () => {
       const verses = [createVerse()];
       const buffer = buildItemGeometry(verses);
       // Structure: x(1) + y(1) + color1(3) + color2(3) + color3(3) + color4(3) + colorCount(1) + u(1) + v(1) + seedX(1) + seedY(1) = 19
-      const floatsPerVertex = 19;
       expect(buffer.length % floatsPerVertex).toBe(0);
     });
   });
@@ -80,7 +83,6 @@ describe('buildItemGeometry', () => {
       const verse = createVerse({ x: 100, y: 200, size: 10 });
       const buffer = buildItemGeometry([verse]);
 
-      const floatsPerVertex = 19;
       // Second vertex (top-right): x should be x + size - 2
       const expectedX = 100 + 10 - 2; // 108
       expect(buffer[floatsPerVertex]).toBe(expectedX);
@@ -91,7 +93,6 @@ describe('buildItemGeometry', () => {
       const verse2 = createVerse({ x: 10, y: 10, size: 12 });
       const buffer = buildItemGeometry([verse1, verse2]);
 
-      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
 
       // Verse 1: size 6, so width/height = 4 (6-2)
@@ -115,7 +116,6 @@ describe('buildItemGeometry', () => {
       const verse = createVerse({ x: 10, y: 20, size: 8 });
       const buffer = buildItemGeometry([verse]);
 
-      const floatsPerVertex = 19;
       const x0 = 10,
         y0 = 20;
       const x1 = 10 + 8 - 2,
@@ -138,7 +138,6 @@ describe('buildItemGeometry', () => {
       const verse = createVerse({ x: 10, y: 20, size: 8 });
       const buffer = buildItemGeometry([verse]);
 
-      const floatsPerVertex = 19;
       const x0 = 10,
         y0 = 20;
       const x1 = 10 + 8 - 2,
@@ -161,7 +160,6 @@ describe('buildItemGeometry', () => {
       const verse = createVerse({ x: 0, y: 0, size: 10 });
       const buffer = buildItemGeometry([verse]);
 
-      const floatsPerVertex = 19;
       const corners = [];
       for (let i = 0; i < 6; i++) {
         corners.push({
@@ -244,7 +242,6 @@ describe('buildItemGeometry', () => {
       const verse = createVerse();
       const buffer = buildItemGeometry([verse], [TEST_COLORS.RED]);
 
-      const floatsPerVertex = 19;
       const colorOffset = 2;
 
       // Check all 6 vertices have the same color
@@ -352,7 +349,6 @@ describe('buildItemGeometry', () => {
       ];
       const buffer = buildItemGeometry(verses, colors);
 
-      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
       const colorCountOffset = 14;
 
@@ -372,7 +368,6 @@ describe('buildItemGeometry', () => {
       const verse = createVerse();
       const buffer = buildItemGeometry([verse]);
 
-      const floatsPerVertex = 19;
       const uvOffset = 15; // After x, y, 4 colors, colorCount
 
       // Vertex 0 (top-left): u=0, v=0
@@ -404,7 +399,6 @@ describe('buildItemGeometry', () => {
       const verses = createVerses(5);
       const buffer = buildItemGeometry(verses);
 
-      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
       const uvOffset = 15;
 
@@ -432,7 +426,6 @@ describe('buildItemGeometry', () => {
       const verses = createVerses(3);
       const buffer = buildItemGeometry(verses);
 
-      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
 
       // Check that each verse quad is properly separated
@@ -462,8 +455,6 @@ describe('buildItemGeometry', () => {
     it('no values exceed expected ranges', () => {
       const verses = createVerses(5);
       const buffer = buildItemGeometry(verses);
-
-      const floatsPerVertex = 19;
 
       for (let v = 0; v < 5 * 6; v++) {
         const offset = v * floatsPerVertex;
@@ -521,7 +512,6 @@ describe('buildItemGeometry', () => {
       const verse = createVerse({ x: 10, y: 10, size: 2 });
       const buffer = buildItemGeometry([verse]);
 
-      const floatsPerVertex = 19;
       // With size 2 and -2 gap, width/height should be 0
       expect(buffer[floatsPerVertex]).toBe(10 + 2 - 2); // x1 = x0 + 0
     });
@@ -539,7 +529,6 @@ describe('buildItemGeometry', () => {
       ];
       const buffer = buildItemGeometry(verses, colors as any);
 
-      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
       const colorCountOffset = 14;
 
@@ -590,7 +579,6 @@ describe('buildItemGeometry', () => {
       const colors = [TEST_COLORS.RED, TEST_COLORS.GREEN, TEST_COLORS.BLUE];
       const buffer = buildItemGeometry(verses, colors);
 
-      const floatsPerVertex = 19;
       const floatsPerQuad = floatsPerVertex * 6;
 
       // Check each verse maintains its properties
@@ -620,13 +608,8 @@ describe('createBuffer', () => {
 
   beforeEach(() => {
     mockBuffer = {} as WebGLBuffer;
-    mockGl = {
-      createBuffer: vi.fn().mockReturnValue(mockBuffer),
-      bindBuffer: vi.fn(),
-      bufferData: vi.fn(),
-      ARRAY_BUFFER: 34962,
-      STATIC_DRAW: 35044,
-    } as any;
+    mockGl = createMockWebGL2Context();
+    vi.mocked(mockGl.createBuffer).mockReturnValue(mockBuffer);
   });
 
   it('creates a WebGL buffer', () => {

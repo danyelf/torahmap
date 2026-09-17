@@ -115,3 +115,7 @@ export const SAMPLE_TROP_MARKS = {
   SHALSHELET: '\u0593',
   ZAQEF_QATAN: '\u0594',
 };
+
+// Matches floatsPerVertex in geometry.ts and outline.ts: x, y, up to 4 RGB
+// colors, colorCount, u, v, seedX, seedY.
+export const FLOATS_PER_VERTEX = 19;
