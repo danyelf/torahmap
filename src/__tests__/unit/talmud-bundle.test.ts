@@ -50,8 +50,8 @@ describe('walkMarkers', () => {
 
   it('ignores inline (mid-segment) marker words — they are natural Hebrew abbreviations, not structural markers', () => {
     // Real Wikisource case: Bava Metzia 6b:2 contains "מתני׳" inside a quote
-    // ("Rav Hamnuna said: it's a mishnah ...") and used to falsely flip the
-    // state for several dapim.
+    // ("Rav Hamnuna said: it's a mishnah ..."). Treating that as a marker
+    // flips the state for several dapim after it.
     expect(walkMarkers([['a real gemara segment that mentions מתני׳ in passing', 'next']])).toEqual(
       [[false, false]],
     );

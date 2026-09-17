@@ -1,8 +1,7 @@
 // How a word is matched, driven through the panel the way a reader drives it.
 //
-// The mode used to be one setting for the whole search, set by three radios in
-// the panel footer. It now belongs to a term and is set on that term's row, so
-// these tests click the row rather than the footer.
+// The mode belongs to a term and is set on that term's row, so these tests
+// click the row.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { configure } from '../../overlays/search';
@@ -662,8 +661,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
     });
 
     // The list filters by the open row, and the row list is what settles which
-    // row that is when the old one is gone. Drawing the list first left it
-    // showing every term's verses under a caption counting one term's.
+    // row that is once the previously open one is gone. Drawing the list
+    // before the rows shows every term's verses under a caption counting one
+    // term's.
     const caption = () => container.querySelector('#search-hit-caption')!.textContent;
 
     it('agrees with its own caption when a link arrives at an open panel', () => {

@@ -1,5 +1,5 @@
 // One rule decides where a word ends, so the three readers of Hebrew text
-// agree. These are the cases where they used to disagree.
+// agree. These are the cases a rule per reader would split them on.
 
 import { describe, it, expect } from 'vitest';
 import {

@@ -185,9 +185,9 @@ describe('searching for a clicked word', () => {
 
   it('leaves an already narrowed word narrowed', () => {
     // Narrow one word to a meaning, then ask for a second word by its written
-    // form. The second click used to move the whole search to whole-word mode,
-    // which quietly widened the first word back to all of its readings: the
-    // meaning was still ticked, but nothing was filtering by it.
+    // form. The second click must not move the whole search to whole-word
+    // mode: that widens the first word back to all of its readings, leaving
+    // its meaning ticked with nothing filtering by it.
     render();
     const leaf = meaningsInVerse('עלה', 'Genesis:3:7')[0];
 

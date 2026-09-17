@@ -11,7 +11,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-// New format from Wikipedia baseline data
+// The shape the Wikipedia baseline data ships in.
 interface WikipediaSourceEntry {
   book: string;
   chapters: string; // "15" (single chapter as string)
@@ -22,7 +22,8 @@ interface WikipediaSourceEntry {
   citation?: string;
 }
 
-// Legacy format (for future use)
+// What normalization produces, and what a hand-written source may supply
+// directly under an `entries` key. No shipped source file uses that form.
 interface SourceEntry {
   book: string;
   chapter: number;
@@ -257,7 +258,7 @@ function normalizeSourceData(data: SourceData, structure: TanakhStructure): Sour
     // Flatten because normalizeWikipediaEntry can return multiple entries
     return data.flatMap((wiki) => normalizeWikipediaEntry(wiki, structure));
   } else {
-    // Legacy format: { entries: SourceEntry[] }
+    // A hand-written source, already in the normalized shape.
     return data.entries;
   }
 }

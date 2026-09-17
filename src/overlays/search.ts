@@ -310,8 +310,8 @@ export function canAddTerm(): boolean {
  * Takes the term, not a row number. Results are indexed by a term's position
  * among the terms actually being searched, which is not its position among the
  * rows on screen — a row holding nothing, or one letter, occupies a row but no
- * search slot. Emptying the first of two rows used to hand the second row the
- * first one's count, which was zero.
+ * search slot. Indexing by row instead gives a row its neighbour's count as
+ * soon as an earlier row is emptied.
  */
 function termHitCount(term: SearchTerm): number {
   const index = activeTerms().indexOf(term);
@@ -639,8 +639,8 @@ function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'term-input';
-  // The first row keeps the old ids: it is still the search box, and its
-  // button is still what clears the search.
+  // The first row carries the well-known ids: it is the search box, and its
+  // button is what clears the search.
   if (index === 0) input.id = 'search-input';
   input.value = term.text;
   input.addEventListener('input', () => onTermInput(term.id, input));
