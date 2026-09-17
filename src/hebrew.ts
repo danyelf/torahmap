@@ -12,6 +12,12 @@
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05c7;
 
+// The cantillation marks occupy the front of that same range. The lower bound
+// is shared because the block opens with the accents and the vowel points
+// follow them, not because the two questions are the same one.
+const TROP_START = 0x0591;
+const TROP_END = 0x05af;
+
 // These sit inside the range above but separate words rather than sit on one.
 // Sefaria ends every verse with a sof pasuq attached to the last word, so a
 // rule that misses these loses that word.
@@ -69,11 +75,11 @@ export function isNikkud(code: number): boolean {
  * chanted?
  *
  * A strict subset of what `isNikkud` covers: every trop mark is an accent, and
- * the vowel points above U+05AF are not trop. Kept beside it so the two can be
+ * the vowel points past TROP_END are not trop. Kept beside it so the two can be
  * read against each other rather than found separately and assumed unrelated.
  */
 export function isTropMark(code: number): boolean {
-  return code >= NIKKUD_START && code <= 0x05af;
+  return code >= TROP_START && code <= TROP_END;
 }
 
 /** Whitespace, hyphen, or one of the four Hebrew characters that break words. */
