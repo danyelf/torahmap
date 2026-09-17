@@ -1,7 +1,7 @@
 import '../styles/overlays/trop.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry } from '../types.ts';
-import { tanakhKey } from '../types.ts';
+import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
@@ -215,9 +215,7 @@ export const tropOverlay: Overlay = {
   getHoverInfo(verse: TanakhIdentity): string | null {
     if (!selectedTrop) return null;
 
-    const loc = selectedTrop.verses.find(
-      (v) => v.book === verse.book && v.chapter === verse.chapter && v.verse === verse.verse,
-    );
+    const loc = selectedTrop.verses.find((v) => tanakhIdentitiesEqual(v, verse));
     return loc ? `${selectedTrop.name} ×${loc.count}` : null;
   },
 
