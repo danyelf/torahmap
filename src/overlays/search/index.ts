@@ -12,9 +12,9 @@ import {
   verseSetsForTerms,
   type SearchResult,
 } from '../../search.ts';
-import { mapStrippedToOriginal, splitIntoWords, stripNikkud } from '../../hebrew.ts';
-import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
-import { versesFor, wordMatches } from '../../search/dictionary.ts';
+import { stripNikkud } from '../../hebrew.ts';
+import { versesFor } from '../../search/dictionary.ts';
+import { highlightTerms, markRange } from './highlight.ts';
 import {
   addTerm,
   removeTerm,
@@ -869,7 +869,12 @@ function createResultElement(result: SearchResult): HTMLDivElement {
     }
   }
 
-  const snippetContent = createHighlightedText(snippet, matchStart, matchEnd, firstMatch.termIndex);
+  const snippetContent = markRange(
+    snippet,
+    matchStart,
+    matchEnd,
+    termColorIndex(firstMatch.termIndex),
+  );
   snippetDiv.appendChild(snippetContent);
 
   div.appendChild(refDiv);
@@ -934,139 +939,9 @@ function renderResults(): void {
   searchResults.classList.add('visible');
 }
 
-function createHighlightedText(
-  text: string,
-  start: number,
-  end: number,
-  termIndex: number,
-): DocumentFragment {
-  const fragment = document.createDocumentFragment();
-
-  if (start > 0) {
-    fragment.appendChild(document.createTextNode(text.slice(0, start)));
-  }
-
-  const mark = document.createElement('mark');
-  mark.className = `term-${termColorIndex(termIndex)}`;
-  mark.textContent = text.slice(start, end);
-  fragment.appendChild(mark);
-
-  if (end < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(end)));
-  }
-
-  return fragment;
-}
-
-interface Match {
-  start: number;
-  end: number;
-  termIndex: number;
-}
-
-/** Handles nikkud stripping and position mapping; respects each term's own search mode. */
-function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
-  const matches: Match[] = [];
-  const language = isHebrew ? 'he' : 'en';
-  const folded = foldForMatching(text, language);
-  const toOriginal = (at: number) => (isHebrew ? mapStrippedToOriginal(text, at) : at);
-
-  for (let termIndex = 0; termIndex < searchTerms.length; termIndex++) {
-    const term = searchTerms[termIndex];
-    // The mode belongs to the term. `isHebrew` is the language of the verse
-    // text being marked up, which is a different question.
-    const mode = effectiveMode(term);
-
-    // Meanings mode asks the dictionary, not the spelling: mark only the words
-    // that are one of the meanings this term still stands for.
-    //
-    // By position rather than by spelling, which is what separates the two
-    // words spelled עלה in Genesis 8:20 — a spelling could be either, and only
-    // the place in the verse says which this one is. `wordMatches` falls back
-    // to the spelling wherever the parse cannot answer (see
-    // search/dictionary.ts), so a verse that does not line up still marks.
-    if (isHebrew && mode === 'meanings') {
-      const keys = selectedKeys(term);
-      const needle = foldForMatching(term.text, 'he');
-      for (const { word, start, end } of splitIntoWords(folded)) {
-        const hit = keys.length > 0 ? wordMatches(keys, word, text, start) : word === needle;
-        if (hit) {
-          matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
-        }
-      }
-      continue;
-    }
-
-    for (const { start, end } of matchRangesInFolded(folded, foldForMatching(term.text, language), {
-      mode: mode === 'word' ? 'word' : 'substring',
-      language,
-    })) {
-      matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
-    }
-  }
-
-  return matches;
-}
-
-/** Assumes matches are already sorted by position. */
-function removeOverlappingMatches(matches: Match[]): Match[] {
-  const filtered: Match[] = [];
-  for (const m of matches) {
-    if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
-      filtered.push(m);
-    }
-  }
-  return filtered;
-}
-
-function buildHighlightedDomFragment(text: string, matches: Match[]): DocumentFragment {
-  const fragment = document.createDocumentFragment();
-
-  let pos = 0;
-  for (const m of matches) {
-    if (m.start > pos) {
-      fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
-    }
-
-    const mark = document.createElement('mark');
-    mark.className = `term-${termColorIndex(m.termIndex)}`;
-    mark.textContent = text.slice(m.start, m.end);
-    fragment.appendChild(mark);
-
-    pos = m.end;
-  }
-
-  if (pos < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(pos)));
-  }
-
-  return fragment;
-}
-
-/** Builds the DOM directly rather than through innerHTML. */
+/** The verse text, with every searched term marked in its own colour. */
 export function highlightSearchTerms(text: string, language: TextLanguage): DocumentFragment {
-  const fragment = document.createDocumentFragment();
-
-  const active = activeTerms();
-  if (active.length === 0) {
-    fragment.appendChild(document.createTextNode(text));
-    return fragment;
-  }
-
-  const isHebrew = language === 'he';
-
-  const matches = findAllTermMatches(text, active, isHebrew);
-
-  if (matches.length === 0) {
-    fragment.appendChild(document.createTextNode(text));
-    return fragment;
-  }
-
-  // Longest match first, so removeOverlappingMatches keeps it over a shorter one.
-  matches.sort((a, b) => a.start - b.start || b.end - a.end);
-
-  const filtered = removeOverlappingMatches(matches);
-  return buildHighlightedDomFragment(text, filtered);
+  return highlightTerms(text, language, activeTerms());
 }
 
 export const searchOverlay: Overlay = {
