@@ -1,51 +1,19 @@
-// Performance diagnostic tests for Hebrew search
+// Performance diagnostic tests for Hebrew search.
+//
+// These log timings to help a human compare modes, but assert only
+// correctness — a wall-clock budget here measures whatever else the machine
+// is doing, not the search itself (see search-performance.test.ts, which hit
+// this directly). A slow search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { search, buildSearchIndex, findLexemesForWord } from '../../search';
-import type { VerseTexts } from '../../verseTexts';
+import { search, buildSearchIndex } from '../../search';
 import { searchInRootMode } from '../helpers/rootSearch';
+import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
 describe('Hebrew Search Performance Diagnostics', () => {
   beforeAll(() => {
-    let mockVerseTexts: VerseTexts;
-    // Create a large mock dataset similar to the real one (~23,000 verses)
-    // This simulates performance at scale
-    mockVerseTexts = {};
-
-    // Generate a realistic mock dataset (use fewer verses for test performance, but enough to measure)
-    const books = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'];
-    const totalVerses = 5000; // Reduced from 23,000 for test speed
-    let versesCreated = 0;
-
-    for (const book of books) {
-      mockVerseTexts[book] = {};
-      const chaptersInBook = Math.floor(totalVerses / books.length / 50); // ~20 chapters per book
-
-      for (let chapter = 1; chapter <= chaptersInBook && versesCreated < totalVerses; chapter++) {
-        mockVerseTexts[book][String(chapter)] = {};
-
-        for (let verse = 1; verse <= 50 && versesCreated < totalVerses; verse++) {
-          // Mix of verses with common Hebrew words
-          const hebrewTexts = [
-            'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ',
-            'וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר וַיְהִי־אוֹר',
-            'וַיַּרְא אֱלֹהִים אֶת־הָאוֹר כִּי־טוֹב',
-            'וַיִּקְרָא אֱלֹהִים לָאוֹר יוֹם וְלַחֹשֶׁךְ קָרָא לָיְלָה',
-            'וַיְהִי־עֶרֶב וַיְהִי־בֹקֶר יוֹם אֶחָד',
-          ];
-
-          mockVerseTexts[book][String(chapter)][String(verse)] = {
-            he: hebrewTexts[versesCreated % hebrewTexts.length],
-            en: 'In the beginning God created the heavens and the earth',
-          };
-          versesCreated++;
-        }
-      }
-    }
-
-    buildSearchIndex(mockVerseTexts);
+    buildSearchIndex(buildLargeVerseTexts(5000));
     // Warmup: JIT-compile the search path before measuring
     search('אלהים', false, 'substring');
-    findLexemesForWord('אלהים');
   });
 
   // Helper to measure execution time
@@ -59,26 +27,6 @@ describe('Hebrew Search Performance Diagnostics', () => {
   }
 
   describe('Performance: Root mode (default for Hebrew)', () => {
-    it('measures findLexemesForWord() performance for common word', () => {
-      const word = 'אלהים'; // God - very common word
-
-      const { timeMs } = measureTime(() => {
-        return findLexemesForWord(word);
-      }, 'findLexemesForWord("אלהים")');
-
-      expect(timeMs).toBeLessThan(10);
-    });
-
-    it('measures findLexemesForWord() performance for word with prefix', () => {
-      const word = 'ואלהים'; // And God - word with prefix
-
-      const { timeMs } = measureTime(() => {
-        return findLexemesForWord(word);
-      }, 'findLexemesForWord("ואלהים") - with prefix stripping');
-
-      expect(timeMs).toBeLessThan(20);
-    });
-
     it('measures root mode search for single common term', () => {
       const term = 'אלהים'; // God - appears in ~2600 verses
 

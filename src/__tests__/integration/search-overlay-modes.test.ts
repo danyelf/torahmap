@@ -10,6 +10,7 @@ import { buildSearchIndex } from '../../search';
 import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
 import { applyOverlayParams } from '../helpers/overlayUrlParams';
+import { createVerse } from '../helpers/fixtures';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -23,46 +24,11 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
   beforeEach(() => {
     // Setup test verses
     testVerses = [
-      {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 10,
-      },
-      {
-        book: 'Genesis',
-        chapter: 12,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 10,
-      },
-      {
-        book: 'Genesis',
-        chapter: 17,
-        verse: 5,
-        x: 0,
-        y: 0,
-        size: 10,
-      },
-      {
-        book: 'Exodus',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 10,
-      },
-      {
-        book: 'Exodus',
-        chapter: 3,
-        verse: 6,
-        x: 0,
-        y: 0,
-        size: 10,
-      },
+      createVerse({ chapter: 1, verse: 1, x: 0, y: 0, size: 10 }),
+      createVerse({ chapter: 12, verse: 1, x: 0, y: 0, size: 10 }),
+      createVerse({ chapter: 17, verse: 5, x: 0, y: 0, size: 10 }),
+      createVerse({ book: 'Exodus', chapter: 1, verse: 1, x: 0, y: 0, size: 10 }),
+      createVerse({ book: 'Exodus', chapter: 3, verse: 6, x: 0, y: 0, size: 10 }),
     ];
 
     // Setup test verse texts with proper nouns

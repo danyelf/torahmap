@@ -46,7 +46,13 @@ import {
   getPinchCenter,
   resetTouchState,
 } from './touchState.ts';
-import { tanakhIdentitiesEqual, nextTanakhItem, prevTanakhItem, tanakhKey } from './types.ts';
+import {
+  tanakhIdentitiesEqual,
+  findTanakhItem,
+  nextTanakhItem,
+  prevTanakhItem,
+  tanakhKey,
+} from './types.ts';
 import { findItemAtPoint } from './hitDetection.ts';
 import { computeItemStates, applyItemColors } from './itemColoring.ts';
 import {
@@ -176,16 +182,8 @@ async function main(): Promise<void> {
     if (stop.verse) {
       const parsed = parseVerseFromUrl(stop.verse);
       if (parsed) {
-        const isAlreadyPinned =
-          pinnedVerse &&
-          pinnedVerse.book === parsed.book &&
-          pinnedVerse.chapter === parsed.chapter &&
-          pinnedVerse.verse === parsed.verse;
-        if (!isAlreadyPinned) {
-          const verse = verses.find(
-            (v) =>
-              v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
-          );
+        if (!tanakhIdentitiesEqual(pinnedVerse, parsed)) {
+          const verse = findTanakhItem(verses, parsed);
           if (verse) {
             pinnedVerse = verse;
             updateSidebarWrapper(verse, true);
@@ -263,7 +261,6 @@ async function main(): Promise<void> {
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
-      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
       debouncedSaveUrlState();
     });
   }
@@ -277,7 +274,6 @@ async function main(): Promise<void> {
     }
     applyOverlay();
     render();
-    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
     saveUrlState(true);
   }
 
@@ -287,6 +283,16 @@ async function main(): Promise<void> {
     applyOverlay();
     render();
     saveUrlState(true);
+  }
+
+  /** Zoom by `factor`, holding whatever is under (screenX, screenY) still. */
+  function zoomAt(factor: number, screenX: number, screenY: number): void {
+    const newZoom = clampZoom(camera.zoom * factor);
+    const pan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, screenX, screenY);
+    camera.x = pan.x;
+    camera.y = pan.y;
+    camera.zoom = newZoom;
+    render();
   }
 
   render();
@@ -301,18 +307,7 @@ async function main(): Promise<void> {
       e.preventDefault();
       cancelCameraGlide();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
-      const newZoom = clampZoom(camera.zoom * zoomFactor);
-
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-
-      const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, mouseX, mouseY);
-      camera.x = newPan.x;
-      camera.y = newPan.y;
-      camera.zoom = newZoom;
-
-      render();
-      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      zoomAt(zoomFactor, e.clientX, e.clientY);
       debouncedSaveUrlState();
       debouncedTrackZoom();
     },
@@ -325,28 +320,12 @@ async function main(): Promise<void> {
   const zoomOutBtn = document.getElementById('zoom-out');
 
   zoomInBtn?.addEventListener('click', () => {
-    const centerX = canvas.clientWidth / 2;
-    const centerY = canvas.clientHeight / 2;
-    const newZoom = clampZoom(camera.zoom * ZOOM_IN_FACTOR);
-    const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, centerX, centerY);
-    camera.x = newPan.x;
-    camera.y = newPan.y;
-    camera.zoom = newZoom;
-    render();
-    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    zoomAt(ZOOM_IN_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
     debouncedSaveUrlState();
   });
 
   zoomOutBtn?.addEventListener('click', () => {
-    const centerX = canvas.clientWidth / 2;
-    const centerY = canvas.clientHeight / 2;
-    const newZoom = clampZoom(camera.zoom * ZOOM_OUT_FACTOR);
-    const newPan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, centerX, centerY);
-    camera.x = newPan.x;
-    camera.y = newPan.y;
-    camera.zoom = newZoom;
-    render();
-    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+    zoomAt(ZOOM_OUT_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
     debouncedSaveUrlState();
   });
 
@@ -375,19 +354,7 @@ async function main(): Promise<void> {
         const center = getPinchCenter(touchState);
         if (newDist && center && touchState.lastPinchDistance) {
           const scale = newDist / touchState.lastPinchDistance;
-          const newZoom = clampZoom(camera.zoom * scale);
-          const newPan = panForZoom(
-            { x: camera.x, y: camera.y },
-            camera.zoom,
-            newZoom,
-            center.x,
-            center.y,
-          );
-          camera.x = newPan.x;
-          camera.y = newPan.y;
-          camera.zoom = newZoom;
-          render();
-          updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+          zoomAt(scale, center.x, center.y);
         }
         touchState.lastPinchDistance = newDist;
       }
@@ -425,7 +392,6 @@ async function main(): Promise<void> {
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
-      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
     }
   });
 
@@ -695,7 +661,6 @@ async function main(): Promise<void> {
   window.addEventListener('resize', () => {
     resizeCanvas();
     render();
-    updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
   });
 
   // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
@@ -885,9 +850,7 @@ async function main(): Promise<void> {
     const parsed = parseVerseFromUrl(urlState.verse);
     if (!parsed) return false;
 
-    const verse = verses.find(
-      (v) => v.book === parsed.book && v.chapter === parsed.chapter && v.verse === parsed.verse,
-    );
+    const verse = findTanakhItem(verses, parsed);
     if (!verse) return false;
 
     // Pin without saveUrlState since we're restoring FROM the URL

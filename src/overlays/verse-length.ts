@@ -2,37 +2,17 @@ import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
+import { interpolateGradient, buildLegendGradient, type ColorStop } from '../utils/color.ts';
+import { legendCaption } from './legend.ts';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
-const PLASMA_STOPS: Array<[number, Color]> = [
-  [0.0, [13 / 255, 8 / 255, 135 / 255]], // dark purple
-  [0.25, [126 / 255, 3 / 255, 168 / 255]], // magenta
-  [0.5, [204 / 255, 71 / 255, 120 / 255]], // pink/red
-  [0.75, [248 / 255, 149 / 255, 64 / 255]], // orange
-  [1.0, [240 / 255, 249 / 255, 33 / 255]], // yellow
+const PLASMA_STOPS: ColorStop[] = [
+  { t: 0.0, color: [13 / 255, 8 / 255, 135 / 255] }, // dark purple
+  { t: 0.25, color: [126 / 255, 3 / 255, 168 / 255] }, // magenta
+  { t: 0.5, color: [204 / 255, 71 / 255, 120 / 255] }, // pink/red
+  { t: 0.75, color: [248 / 255, 149 / 255, 64 / 255] }, // orange
+  { t: 1.0, color: [240 / 255, 249 / 255, 33 / 255] }, // yellow
 ];
-
-const COLOR_STOPS = PLASMA_STOPS;
-
-function getPaletteColor(t: number): Color {
-  t = Math.max(0, Math.min(1, t));
-
-  for (let i = 0; i < COLOR_STOPS.length - 1; i++) {
-    const [t0, color0] = COLOR_STOPS[i];
-    const [t1, color1] = COLOR_STOPS[i + 1];
-
-    if (t >= t0 && t <= t1) {
-      const localT = (t - t0) / (t1 - t0);
-      return [
-        color0[0] + (color1[0] - color0[0]) * localT,
-        color0[1] + (color1[1] - color0[1]) * localT,
-        color0[2] + (color1[2] - color0[2]) * localT,
-      ];
-    }
-  }
-
-  return COLOR_STOPS[COLOR_STOPS.length - 1][1];
-}
 
 let verseTexts: VerseTexts | null = null;
 let wordCountCache: Map<string, number> = new Map();
@@ -94,7 +74,7 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
   const sqrtValue = Math.sqrt(wordCount);
   const t = (sqrtValue - sqrtMin) / (sqrtMax - sqrtMin);
 
-  return getPaletteColor(t);
+  return interpolateGradient(t, PLASMA_STOPS);
 }
 
 export const verseLengthOverlay: Overlay = {
@@ -109,16 +89,7 @@ export const verseLengthOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement): void {
-    const gradientStops = [];
-    const numStops = 10;
-    for (let i = 0; i < numStops; i++) {
-      const t = i / (numStops - 1);
-      const color = getPaletteColor(t);
-      const rgb = color.map((c) => Math.round(c * 255)).join(', ');
-      const percent = (i / (numStops - 1)) * 100;
-      gradientStops.push(`rgb(${rgb}) ${percent}%`);
-    }
-    const gradient = gradientStops.join(', ');
+    const gradient = buildLegendGradient(10, (i) => interpolateGradient(i / 9, PLASMA_STOPS));
 
     const paletteName = 'Plasma';
     const lowColor = 'Purple';
@@ -129,7 +100,7 @@ export const verseLengthOverlay: Overlay = {
         <div style="
           width: 100%;
           height: 12px;
-          background: linear-gradient(to right, ${gradient});
+          background: ${gradient};
           border-radius: 2px;
           margin-bottom: 6px;
         "></div>
@@ -138,15 +109,9 @@ export const verseLengthOverlay: Overlay = {
           <span>${maxWordCount} words</span>
         </div>
       </div>
-      <div style="color: #888; font-size: 10px; margin-top: 8px; line-height: 1.3;">
-        ${lowColor} = shorter verses
-      </div>
-      <div style="color: #888; font-size: 10px; margin-top: 4px; line-height: 1.3;">
-        ${highColor} = longer verses
-      </div>
-      <div style="color: #888; font-size: 10px; margin-top: 4px; line-height: 1.3;">
-        Square root scale · ${paletteName} palette
-      </div>
+      ${legendCaption(`${lowColor} = shorter verses`, { marginTop: 8 })}
+      ${legendCaption(`${highColor} = longer verses`)}
+      ${legendCaption(`Square root scale · ${paletteName} palette`)}
     `;
   },
 

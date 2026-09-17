@@ -4,25 +4,6 @@
   gap: 4px;
 }
 
-.text-dating-legend .legend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: #ccc;
-}
-
-.text-dating-legend .swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.text-dating-legend .label {
-  line-height: 1.2;
-}
-
 .text-dating-legend .legend-note {
   margin-top: 4px;
   font-size: 10px;

@@ -1,6 +1,6 @@
 import type { EasingName } from './types';
+import type { Color } from '../overlays/types.ts';
 
-type Color = { r: number; g: number; b: number };
 type CameraState = { x: number; y: number; zoom: number };
 
 export const easingFunctions: Record<EasingName, (t: number) => number> = {
@@ -19,9 +19,5 @@ export function lerpCamera(from: CameraState, to: CameraState, t: number): Camer
 }
 
 export function lerpColor(a: Color, b: Color, t: number): Color {
-  return {
-    r: a.r + (b.r - a.r) * t,
-    g: a.g + (b.g - a.g) * t,
-    b: a.b + (b.b - a.b) * t,
-  };
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }

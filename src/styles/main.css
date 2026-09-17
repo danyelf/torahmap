@@ -16,3 +16,25 @@ canvas {
   margin-top: 12px;
   font-size: 11px;
 }
+
+/* Every overlay's legend draws rows the same way. These lived under the text
+   dating legend alone, so the trop legend's swatches had no size and did not
+   appear at all. */
+#overlay-legend .legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #ccc;
+}
+
+#overlay-legend .swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+#overlay-legend .label {
+  line-height: 1.2;
+}

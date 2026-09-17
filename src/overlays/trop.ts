@@ -6,6 +6,7 @@ import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { scaleToGradient, type ColorStop } from '../utils/color.ts';
+import { legendRow } from './legend.ts';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
@@ -49,6 +50,23 @@ const COMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 0.66, color: [0.7, 0.3, 0.7] }, // Magenta
   { t: 1.0, color: [0.95, 0.6, 0.9] }, // Pink
 ];
+
+function tierLabel(tier: 'rare' | 'uncommon' | 'common'): string {
+  return tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
+}
+
+/** The "name (hebrew) · count · tier" line shown for a trop mark's info. */
+function tropInfoLine(entry: TropIndexEntry, options?: { withOccurrencesWord?: boolean }): string {
+  const tier = getRarityTier(entry.totalCount);
+  const count = options?.withOccurrencesWord
+    ? `${entry.totalCount.toLocaleString()} occurrences`
+    : entry.totalCount.toLocaleString();
+  return `${entry.name} (${entry.hebrewName}) · ${count} · ${tierLabel(tier)}`;
+}
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, '-');
+}
 
 function getTropVerseColor(verse: TanakhIdentity): Color | null {
   if (!selectedTrop) return null;
@@ -102,8 +120,7 @@ function createTropChart(container: HTMLElement): void {
     }
 
     button.addEventListener('mouseenter', () => {
-      const tierLabel = tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
-      info.textContent = `${entry.name} (${entry.hebrewName}) · ${entry.totalCount.toLocaleString()} occurrences · ${tierLabel}`;
+      info.textContent = tropInfoLine(entry, { withOccurrencesWord: true });
     });
 
     button.addEventListener('mouseleave', () => {
@@ -112,10 +129,7 @@ function createTropChart(container: HTMLElement): void {
       } else {
         const selEntry = tropByFrequency.find((e) => e.unicode === selectedButton?.dataset.unicode);
         if (selEntry) {
-          const selTier = getRarityTier(selEntry.totalCount);
-          const tierLabel =
-            selTier === 'rare' ? 'Rare' : selTier === 'uncommon' ? 'Uncommon' : 'Common';
-          info.textContent = `${selEntry.name} (${selEntry.hebrewName}) · ${selEntry.totalCount.toLocaleString()} · ${tierLabel}`;
+          info.textContent = tropInfoLine(selEntry);
         }
       }
     });
@@ -143,9 +157,7 @@ function createTropChart(container: HTMLElement): void {
     if (selectedTrop && entry.unicode === selectedTrop.unicode) {
       button.classList.add('selected');
       selectedButton = button;
-      const tier = getRarityTier(entry.totalCount);
-      const tierLabel = tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
-      info.textContent = `${entry.name} (${entry.hebrewName}) · ${entry.totalCount.toLocaleString()} · ${tierLabel}`;
+      info.textContent = tropInfoLine(entry);
     }
   }
 }
@@ -185,10 +197,9 @@ export const tropOverlay: Overlay = {
 
     const tier = getRarityTier(selectedTrop.totalCount);
     if (tier === 'rare') {
-      container.innerHTML = `
-        <div class="legend-row"><span class="swatch" style="background: rgb(255, 214, 0)"></span><span>Contains ${selectedTrop.name}</span></div>
-        <div class="legend-row"><span class="swatch" style="background: rgb(64, 64, 64)"></span><span>Does not contain</span></div>
-      `;
+      container.innerHTML =
+        legendRow('rgb(255, 214, 0)', `Contains ${selectedTrop.name}`) +
+        legendRow('rgb(64, 64, 64)', 'Does not contain');
     } else {
       container.innerHTML = `
         <div class="legend-gradient" style="background: linear-gradient(to right, #3f3b47, #5a3f7a, #a060a0, #e090c0);"></div>
@@ -214,14 +225,13 @@ export const tropOverlay: Overlay = {
 
   getUrlParams(): Record<string, string> {
     if (!selectedTrop) return {};
-    const slug = selectedTrop.name.toLowerCase().replace(/\s+/g, '-');
-    return { trop: slug };
+    return { trop: slugify(selectedTrop.name) };
   },
 
   applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
     const slug = params.trop;
     if (slug) {
-      const entry = tropByFrequency.find((t) => t.name.toLowerCase().replace(/\s+/g, '-') === slug);
+      const entry = tropByFrequency.find((t) => slugify(t.name) === slug);
       if (entry) {
         selectedTrop = entry;
         updateCache();

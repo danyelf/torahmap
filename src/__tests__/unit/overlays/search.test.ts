@@ -14,9 +14,18 @@ import { HIGHLIGHT_CONSTANTS } from '../../../constants';
 const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
+import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
+
+function render(): HTMLDivElement {
+  return renderSearchControls(searchOverlay);
+}
+
+function type(container: HTMLElement, text: string): void {
+  typeInSearch(container, text);
+}
 
 describe('Search Overlay', () => {
   let testVerses: TanakhLayout[];
@@ -98,13 +107,7 @@ describe('Search Overlay', () => {
     searchOverlay.destroy?.();
 
     // Clear any search state by simulating an empty search
-    const container = document.createElement('div');
-    searchOverlay.renderControls?.(container);
-    const input = container.querySelector('#search-input') as HTMLInputElement;
-    if (input) {
-      input.value = '';
-      input.dispatchEvent(new Event('input'));
-    }
+    type(render(), '');
     searchOverlay.destroy?.();
   });
 
@@ -132,12 +135,8 @@ describe('Search Overlay', () => {
 
   describe('Color Computation - Single Term Search', () => {
     beforeEach(() => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
     });
 
     it('returns search color for matching verses', () => {
@@ -179,12 +178,8 @@ describe('Search Overlay', () => {
 
   describe('Color Computation - Multi-Term Search', () => {
     beforeEach(() => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God, earth';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God, earth');
     });
 
     it('returns single color for verse matching one term', () => {
@@ -204,13 +199,9 @@ describe('Search Overlay', () => {
     });
 
     it('caps color array at 4 colors', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const container = render();
       // Create a contrived scenario - in practice hard to match 5 terms in one verse
-      input.value = 'the, and, of, in, be';
-      input.dispatchEvent(new Event('input'));
+      type(container, 'the, and, of, in, be');
 
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -229,13 +220,9 @@ describe('Search Overlay', () => {
 
   describe('Hebrew Search', () => {
     beforeEach(() => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const container = render();
       // Search for Hebrew word אלהים (Elohim/God)
-      input.value = 'אלהים';
-      input.dispatchEvent(new Event('input'));
+      type(container, 'אלהים');
     });
 
     it('highlights verses with Hebrew matches', () => {
@@ -258,12 +245,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles nikkud-insensitive search', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אלהים'; // Without nikkud
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'אלהים'); // Without nikkud
 
       // Still matches Genesis 1:1, which has אֱלֹהִים (with nikkud)
       const verse = testVerses[0];
@@ -275,8 +258,7 @@ describe('Search Overlay', () => {
 
   describe('Render Controls', () => {
     it('renders search input', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input');
       expect(input).not.toBeNull();
@@ -284,8 +266,7 @@ describe('Search Overlay', () => {
     });
 
     it('renders clear button', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const clearBtn = container.querySelector('#search-clear');
       expect(clearBtn).not.toBeNull();
@@ -293,8 +274,7 @@ describe('Search Overlay', () => {
     });
 
     it('renders results container', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const results = container.querySelector('#search-results');
       expect(results).not.toBeNull();
@@ -305,8 +285,7 @@ describe('Search Overlay', () => {
       configure({ verses: testVerses });
       searchOverlay.destroy?.();
 
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const clearBtn = container.querySelector('#search-clear') as HTMLElement;
       const input = container.querySelector('#search-input') as HTMLInputElement;
@@ -319,8 +298,7 @@ describe('Search Overlay', () => {
     });
 
     it('shows clear button when query is entered', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       const clearBtn = container.querySelector('#search-clear') as HTMLElement;
@@ -332,8 +310,7 @@ describe('Search Overlay', () => {
     });
 
     it('clears search when clear button is clicked', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       const clearBtn = container.querySelector('#search-clear') as HTMLButtonElement;
@@ -348,8 +325,7 @@ describe('Search Overlay', () => {
     });
 
     it('returns to left-to-right when a Hebrew query is cleared', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       const clearBtn = container.querySelector('#search-clear') as HTMLButtonElement;
@@ -372,36 +348,26 @@ describe('Search Overlay', () => {
       const updateCallback = vi.fn();
       searchOverlay.onUpdate?.(updateCallback);
 
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       expect(updateCallback).toHaveBeenCalled();
     });
 
     it('restores previous query when re-rendering', () => {
       // First render with query
-      const container1 = document.createElement('div');
-      searchOverlay.renderControls?.(container1);
-
-      const input1 = container1.querySelector('#search-input') as HTMLInputElement;
-      input1.value = 'God';
-      input1.dispatchEvent(new Event('input'));
+      const container1 = render();
+      type(container1, 'God');
 
       // Second render should restore query
-      const container2 = document.createElement('div');
-      searchOverlay.renderControls?.(container2);
+      const container2 = render();
 
       const input2 = container2.querySelector('#search-input') as HTMLInputElement;
       expect(input2.value).toBe('God');
     });
 
     it('strips nikkud from pasted Hebrew text', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -424,8 +390,7 @@ describe('Search Overlay', () => {
     });
 
     it('does not prevent default for non-Hebrew pasted text', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -447,8 +412,7 @@ describe('Search Overlay', () => {
     });
 
     it('handles paste at cursor position', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -479,8 +443,7 @@ describe('Search Overlay', () => {
     });
 
     it('strips nikkud from typed Hebrew text', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -496,8 +459,7 @@ describe('Search Overlay', () => {
     });
 
     it('preserves cursor position when stripping nikkud from typed text', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -518,8 +480,7 @@ describe('Search Overlay', () => {
     });
 
     it('does not modify English typed text', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -534,27 +495,21 @@ describe('Search Overlay', () => {
 
   describe('Plain search box with no script mode', () => {
     it('renders no Hebrew keyboard toggle', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       expect(container.querySelector('#keyboard-toggle')).toBeNull();
     });
 
     it('adds no virtual keyboard to the page when Hebrew is typed', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אלהים';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+      const container = render();
+      type(container, 'אלהים');
 
       expect(document.getElementById('hebrew-keyboard-container')).toBeNull();
-      expect(input.value).toBe('אלהים');
+      expect(container.querySelector<HTMLInputElement>('#search-input')!.value).toBe('אלהים');
     });
 
     it('installs no key handler that rewrites what you type', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = 'light';
@@ -571,19 +526,14 @@ describe('Search Overlay', () => {
     });
 
     it('keeps a mix of Hebrew and Latin letters', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
+      type(container, 'god אלהים');
 
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'god אלהים';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-
-      expect(input.value).toBe('god אלהים');
+      expect(container.querySelector<HTMLInputElement>('#search-input')!.value).toBe('god אלהים');
     });
 
     it('accepts Hebrew pasted into an input that already holds English', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = 'god ';
@@ -603,8 +553,7 @@ describe('Search Overlay', () => {
     });
 
     it('follows the text for direction, Hebrew then English', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -618,8 +567,7 @@ describe('Search Overlay', () => {
     });
 
     it('gives a mixed search a control per row, each offering what its text can do', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -638,8 +586,7 @@ describe('Search Overlay', () => {
     });
 
     it('turns right to left on the very first Hebrew letter typed', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -652,8 +599,7 @@ describe('Search Overlay', () => {
     });
 
     it('offers root on a Hebrew row, whichever position it is in', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -671,8 +617,7 @@ describe('Search Overlay', () => {
   describe('Render Legend', () => {
     // Legend content is rendered inline in #search-hit-caption above search results
     it('renders default message when no search', () => {
-      const controlsContainer = document.createElement('div');
-      searchOverlay.renderControls?.(controlsContainer);
+      const controlsContainer = render();
       const input = controlsContainer.querySelector('#search-input') as HTMLInputElement;
       input.value = '';
       input.dispatchEvent(new Event('input'));
@@ -685,25 +630,17 @@ describe('Search Overlay', () => {
     });
 
     it('names the searched word on its own row, not in the caption', () => {
-      const controlsContainer = document.createElement('div');
-      searchOverlay.renderControls?.(controlsContainer);
-
-      const input = controlsContainer.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const controlsContainer = render();
+      type(controlsContainer, 'God');
 
       const rows = [...controlsContainer.querySelectorAll('.term-row .term-input')];
       expect(rows.map((r) => (r as HTMLInputElement).value)).toEqual(['God']);
     });
 
     it('gives each term its own row, swatch and count', () => {
-      const controlsContainer = document.createElement('div');
-      searchOverlay.renderControls?.(controlsContainer);
-
-      const input = controlsContainer.querySelector('#search-input') as HTMLInputElement;
+      const controlsContainer = render();
       // A comma still means another word, but it now makes a second row.
-      input.value = 'God, earth';
-      input.dispatchEvent(new Event('input'));
+      type(controlsContainer, 'God, earth');
 
       // Only the open row holds a box; a collapsed row shows its word as text.
       const rows = [...controlsContainer.querySelectorAll('.term-row')];
@@ -719,24 +656,16 @@ describe('Search Overlay', () => {
     });
 
     it('displays result count', () => {
-      const controlsContainer = document.createElement('div');
-      searchOverlay.renderControls?.(controlsContainer);
-
-      const input = controlsContainer.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const controlsContainer = render();
+      type(controlsContainer, 'God');
 
       const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
       expect(hitCaption.innerHTML).toContain('matching verses');
     });
 
     it('shows minimum character warning for short terms', () => {
-      const controlsContainer = document.createElement('div');
-      searchOverlay.renderControls?.(controlsContainer);
-
-      const input = controlsContainer.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'a'; // Too short
-      input.dispatchEvent(new Event('input'));
+      const controlsContainer = render();
+      type(controlsContainer, 'a'); // Too short
 
       const hitCaption = controlsContainer.querySelector('#search-hit-caption') as HTMLElement;
       expect(hitCaption.innerHTML).toContain('at least 2 characters');
@@ -752,12 +681,8 @@ describe('Search Overlay', () => {
     });
 
     it('returns null for non-matching verses', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       // Genesis 1:2 does not contain "God"
       const verse = testVerses[1];
@@ -767,12 +692,8 @@ describe('Search Overlay', () => {
     });
 
     it('returns matching terms for single match', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       // Genesis 1:1 contains "God"
       const verse = testVerses[0];
@@ -782,12 +703,8 @@ describe('Search Overlay', () => {
     });
 
     it('returns multiple matching terms', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God, light';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God, light');
 
       // Genesis 1:3 contains both "God" and "light"
       const verse = testVerses[2];
@@ -802,8 +719,7 @@ describe('Search Overlay', () => {
   describe('URL State Management', () => {
     it('returns empty params when no search', () => {
       // Perform an empty search to clear any previous state
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = '';
       input.dispatchEvent(new Event('input'));
@@ -813,12 +729,8 @@ describe('Search Overlay', () => {
     });
 
     it('returns query param when search is active', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       const params = searchOverlay.getUrlParams?.();
       expect(params).toEqual({ q: 'God' });
@@ -836,8 +748,7 @@ describe('Search Overlay', () => {
     });
 
     it('updates input when applying URL params', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const urlParams = new URLSearchParams('q=heavens');
       applyOverlayParams(searchOverlay, urlParams);
@@ -847,8 +758,7 @@ describe('Search Overlay', () => {
     });
 
     it('shows clear button when applying URL params', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const urlParams = new URLSearchParams('q=test');
       applyOverlayParams(searchOverlay, urlParams);
@@ -859,8 +769,7 @@ describe('Search Overlay', () => {
 
     it('ignores empty URL params', () => {
       // Perform an empty search to clear any previous state
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = '';
       input.dispatchEvent(new Event('input'));
@@ -877,44 +786,31 @@ describe('Search Overlay', () => {
 
   describe('Search Results Display', () => {
     it('shows results when search has matches', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       const caption = container.querySelector('#search-hit-caption') as HTMLElement;
       expect(caption.textContent).toContain('matching verses');
     });
 
     it('displays result count correctly', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       const caption = container.querySelector('#search-hit-caption') as HTMLElement;
       expect(caption.textContent).toMatch(/\d+ matching verses/);
     });
 
     it('limits displayed results to 10', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'the'; // Common word, many matches
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'the'); // Common word, many matches
 
       const results = container.querySelectorAll('.search-result');
       expect(results.length).toBeLessThanOrEqual(10);
     });
 
     it('clears previous results on new search', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
 
@@ -935,12 +831,8 @@ describe('Search Overlay', () => {
       const onVerseClick = vi.fn();
       configure({ verses: testVerses, callbacks: { onVerseClick } });
 
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       const firstResult = container.querySelector('.search-result') as HTMLElement;
       if (firstResult) {
@@ -952,12 +844,8 @@ describe('Search Overlay', () => {
 
   describe('Edge Cases', () => {
     it('handles empty search query', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = '';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, '');
 
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -966,12 +854,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles whitespace-only query', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = '   ';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, '   ');
 
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -980,12 +864,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles query with no matches', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'xyzabc123'; // Should not match anything
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'xyzabc123'); // Should not match anything
 
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as Color;
@@ -996,12 +876,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles verse not in search results', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
       const color = searchOverlay.getVerseColor(verse) as Color;
@@ -1011,12 +887,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles comma-separated terms', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God, earth, light';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God, earth, light');
 
       const verse = testVerses[0]; // Genesis 1:1 has "God"
       const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -1025,12 +897,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles terms with extra whitespace', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = '  God  ,  earth  ';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, '  God  ,  earth  ');
 
       const verse = testVerses[0];
       const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -1039,34 +907,22 @@ describe('Search Overlay', () => {
     });
 
     it('handles very long search query', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'a'.repeat(1000);
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'a'.repeat(1000));
 
       expect(() => searchOverlay.getVerseColor(testVerses[0])).not.toThrow();
     });
 
     it('handles special characters in search', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = '&<>"\'/';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, '&<>"\'/');
 
       expect(() => searchOverlay.getVerseColor(testVerses[0])).not.toThrow();
     });
 
     it('handles search term shorter than 2 characters', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'a'; // Too short
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'a'); // Too short
 
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -1093,8 +949,7 @@ describe('Search Overlay', () => {
     });
 
     it('clears DOM references', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
+      render();
 
       searchOverlay.destroy?.();
       expect(() => searchOverlay.destroy?.()).not.toThrow();
@@ -1112,12 +967,8 @@ describe('Search Overlay', () => {
       // Switching overlays destroys and recreates this one; the query should
       // still be there so the user can return to the same search.
 
-      const container1 = document.createElement('div');
-      searchOverlay.renderControls?.(container1);
-
-      const input1 = container1.querySelector('#search-input') as HTMLInputElement;
-      input1.value = 'God';
-      input1.dispatchEvent(new Event('input'));
+      const container1 = render();
+      type(container1, 'God');
 
       const verse = testVerses[0]; // Genesis 1:1
       let color = searchOverlay.getVerseColor(verse);
@@ -1131,8 +982,7 @@ describe('Search Overlay', () => {
       expect(color).toEqual(SEARCH_COLORS[0]);
 
       // Simulate switching back to search overlay (renders controls again)
-      const container2 = document.createElement('div');
-      searchOverlay.renderControls?.(container2);
+      const container2 = render();
 
       const input2 = container2.querySelector('#search-input') as HTMLInputElement;
       expect(input2.value).toBe('God');
@@ -1142,12 +992,8 @@ describe('Search Overlay', () => {
     });
 
     it("preserves a term's mode across destroy/recreate cycles", () => {
-      const container1 = document.createElement('div');
-      searchOverlay.renderControls?.(container1);
-
-      const input1 = container1.querySelector('#search-input') as HTMLInputElement;
-      input1.value = 'God';
-      input1.dispatchEvent(new Event('input'));
+      const container1 = render();
+      type(container1, 'God');
 
       container1
         .querySelector<HTMLElement>(
@@ -1158,8 +1004,7 @@ describe('Search Overlay', () => {
       // Simulate switching overlays
       searchOverlay.destroy?.();
 
-      const container2 = document.createElement('div');
-      searchOverlay.renderControls?.(container2);
+      const container2 = render();
 
       const marked = container2.querySelector<HTMLElement>(
         '.term-row[data-open="true"] .term-mode-option.on',
@@ -1205,22 +1050,14 @@ describe('Search Overlay', () => {
     }
 
     beforeEach(() => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God, light';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God, light');
     });
 
     it('returns plain text when no search terms', () => {
       // Clear search
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = '';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, '');
 
       const result = highlightSearchTerms('In the beginning', 'en');
       expect(fragmentToText(result)).toBe('In the beginning');
@@ -1237,12 +1074,8 @@ describe('Search Overlay', () => {
     });
 
     it('highlights matching terms in Hebrew text', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אלהים';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'אלהים');
 
       const result = highlightSearchTerms('בְּרֵאשִׁית בָּרָא אֱלֹהִים', 'he');
       expect(fragmentToHtml(result)).toContain('<mark');
@@ -1268,12 +1101,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles overlapping matches correctly', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God, Godly'; // Overlapping terms (hypothetically)
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God, Godly'); // Overlapping terms (hypothetically)
 
       const result = highlightSearchTerms('God is great', 'en');
       const text = fragmentToText(result);
@@ -1296,12 +1125,8 @@ describe('Search Overlay', () => {
     });
 
     it('handles Hebrew with nikkud', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אלהים'; // Without nikkud
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'אלהים'); // Without nikkud
 
       const result = highlightSearchTerms('אֱלֹהִים', 'he'); // With nikkud
       expect(fragmentToHtml(result)).toContain('<mark');
@@ -1315,12 +1140,8 @@ describe('Search Overlay', () => {
     });
 
     it('respects Hebrew word mode for highlighting', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אלהים'; // Search term
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'אלהים'); // Search term
 
       // Switch this term to word mode
       container
@@ -1340,12 +1161,8 @@ describe('Search Overlay', () => {
     });
 
     it('respects English whole-word mode for highlighting', () => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God'; // Search term
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God'); // Search term
 
       // Switch this term to whole word
       container
@@ -1369,12 +1186,8 @@ describe('Search Overlay', () => {
       // Regression test for bug where Hebrew word highlighting was broken
       // The bug was passing word.length instead of currentPos + word.length
       // to mapNormalizedToOriginalPosition, causing incorrect highlighting
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אלהים'; // Search for "God" (without nikkud)
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'אלהים'); // Search for "God" (without nikkud)
 
       // Switch this term to word mode
       container
@@ -1433,12 +1246,8 @@ describe('Search Overlay', () => {
 
   describe('Color Validation', () => {
     beforeEach(() => {
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
     });
 
     it('returns valid RGB colors for all verses', () => {
@@ -1482,12 +1291,8 @@ describe('Search Overlay', () => {
       const updateCallback = vi.fn();
       searchOverlay.onUpdate?.(updateCallback);
 
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'test';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'test');
 
       expect(updateCallback).toHaveBeenCalled();
     });
@@ -1496,12 +1301,8 @@ describe('Search Overlay', () => {
       const updateCallback = vi.fn();
       searchOverlay.onUpdate?.(updateCallback);
 
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'test';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'test');
 
       updateCallback.mockClear();
 
@@ -1515,12 +1316,8 @@ describe('Search Overlay', () => {
       const updateCallback = vi.fn();
       searchOverlay.onUpdate?.(updateCallback);
 
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'test';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'test');
 
       // Callback should be called before destroy
       expect(updateCallback).toHaveBeenCalled();
@@ -1567,12 +1364,8 @@ describe('Search Overlay', () => {
 
       // Since we don't have Jeremiah in our mock data, test with available data
       // Search for a Hebrew word that appears in Isaiah
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'שמים'; // "shamayim" (heavens)
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'שמים'); // "shamayim" (heavens)
 
       // Isaiah 1:2 has 'שִׁמְעוּ שָׁמַיִם' (shim'u shamayim - hear heavens)
       const results = search('שמים');
@@ -1643,12 +1436,8 @@ describe('Search Overlay', () => {
       expect(results.length).toBeGreaterThan(0);
 
       // Apply those results via the overlay
-      const container = document.createElement('div');
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'God';
-      input.dispatchEvent(new Event('input'));
+      const container = render();
+      type(container, 'God');
 
       // Matching verses should be highlighted
       const verse = testVerses[0]; // Genesis 1:1

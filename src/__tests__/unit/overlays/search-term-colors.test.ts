@@ -11,6 +11,7 @@ import { configure, highlightSearchTerms } from '../../../overlays/search';
 import { buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
+import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';
 import { SEARCH_COLORS } from '../../../utils/color';
 import type { VerseTexts } from '../../../verseTexts';
 
@@ -32,9 +33,7 @@ const verses = [
 ];
 
 function render(): HTMLElement {
-  const container = document.createElement('div');
-  searchOverlay.renderControls?.(container);
-  return container;
+  return renderSearchControls(searchOverlay);
 }
 
 /**
@@ -48,11 +47,6 @@ function rowInput(container: HTMLElement, index: number): HTMLInputElement {
   const row = container.querySelectorAll<HTMLElement>('.term-row')[index];
   if (row.dataset.open !== 'true') row.querySelector<HTMLElement>('.term-summary')!.click();
   return row.querySelector<HTMLInputElement>('.term-input')!;
-}
-
-function typeInto(input: HTMLInputElement, text: string): void {
-  input.value = text;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function css(index: number): string {
@@ -75,9 +69,9 @@ describe('a surviving term keeps one colour', () => {
 
     // Two terms, then remove the first. The survivor keeps the colour it was
     // given, while moving up into the first position.
-    typeInto(rowInput(container, 0), 'created');
+    typeIntoInput(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
-    typeInto(rowInput(container, 1), 'spirit');
+    typeIntoInput(rowInput(container, 1), 'spirit');
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
     const swatch = container.querySelector<HTMLElement>('.term-swatch')!;
@@ -94,9 +88,9 @@ describe('a surviving term keeps one colour', () => {
   it('marks the verse text in the same colour as the row', () => {
     const container = render();
 
-    typeInto(rowInput(container, 0), 'created');
+    typeIntoInput(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
-    typeInto(rowInput(container, 1), 'spirit');
+    typeIntoInput(rowInput(container, 1), 'spirit');
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
     const fragment = highlightSearchTerms('and the spirit of God hovered', 'en');
