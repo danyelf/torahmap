@@ -140,6 +140,43 @@ export function mockWindowLocation(url: string = 'http://localhost:5173/') {
   };
 }
 
+// Installs history.pushState/replaceState mocks that also update the mocked
+// window.location, the way a real browser would, and keeps a chronological
+// log of the resulting URLs — replaceState overwrites the most recent entry
+// rather than adding one, matching real navigation semantics.
+export function mockHistory(initialUrl: string = 'http://localhost:5173/') {
+  mockWindowLocation(initialUrl);
+
+  const historyStates: string[] = [];
+
+  function resolve(url: string | URL): string {
+    const urlString = typeof url === 'string' ? url : url.toString();
+    return urlString.startsWith('http') ? urlString : `http://localhost:5173${urlString}`;
+  }
+
+  const pushState = vi.fn((_state: unknown, _title: string, url?: string | URL | null) => {
+    if (url) {
+      historyStates.push(String(url));
+      mockWindowLocation(resolve(url));
+    }
+  });
+
+  const replaceState = vi.fn((_state: unknown, _title: string, url?: string | URL | null) => {
+    if (url) {
+      if (historyStates.length > 0) {
+        historyStates[historyStates.length - 1] = String(url);
+      } else {
+        historyStates.push(String(url));
+      }
+      mockWindowLocation(resolve(url));
+    }
+  });
+
+  globalThis.history = { pushState, replaceState } as unknown as History;
+
+  return { pushState, replaceState, historyStates };
+}
+
 // A response entry is normally just the JSON body a URL should resolve to
 // (200, ok: true). Wrap it in mockFetchStatus() when a test needs a specific
 // status code instead, such as a 404 or 500 error path.

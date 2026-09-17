@@ -10,7 +10,7 @@ import {
   isApplyingExternalState,
   type UrlState,
 } from '../../urlState';
-import { mockWindowLocation } from '../helpers/mocks';
+import { mockHistory, mockWindowLocation } from '../helpers/mocks';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
 import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
 
@@ -26,11 +26,7 @@ beforeAll(() => {
 
 describe('parseUrlState', () => {
   beforeEach(() => {
-    // Mock history API
-    globalThis.history = {
-      pushState: vi.fn(),
-      replaceState: vi.fn(),
-    } as any;
+    mockHistory();
   });
 
   afterEach(() => {
@@ -476,11 +472,7 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
 
 describe('updateUrl', () => {
   beforeEach(() => {
-    mockWindowLocation('http://localhost:5173/');
-    globalThis.history = {
-      pushState: vi.fn(),
-      replaceState: vi.fn(),
-    } as any;
+    mockHistory('http://localhost:5173/');
   });
 
   it('replaces state by default', () => {
@@ -1034,10 +1026,7 @@ describe('what every overlay must hold to', () => {
       // state. So wire up a handler that does exactly that and watch the
       // history API. (Commentary and search do announce; that is what makes
       // this half of the test bite.)
-      const pushState = vi.fn();
-      const replaceState = vi.fn();
-      globalThis.history = { pushState, replaceState } as any;
-      mockWindowLocation('http://localhost:5173/');
+      const { pushState, replaceState } = mockHistory('http://localhost:5173/');
 
       overlay.onUpdate?.(() => {
         updateUrl({ overlay: overlay.id, overlayParams: {} }, false);
@@ -1075,18 +1064,14 @@ describe('what every overlay must hold to', () => {
 
 describe('the restore guard itself', () => {
   it('lets URL writes through normally', () => {
-    const replaceState = vi.fn();
-    globalThis.history = { pushState: vi.fn(), replaceState } as any;
-    mockWindowLocation('http://localhost:5173/');
+    const { replaceState } = mockHistory('http://localhost:5173/');
 
     updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
     expect(replaceState).toHaveBeenCalled();
   });
 
   it('blocks them inside applyingExternalState, and only inside', () => {
-    const replaceState = vi.fn();
-    globalThis.history = { pushState: vi.fn(), replaceState } as any;
-    mockWindowLocation('http://localhost:5173/');
+    const { replaceState } = mockHistory('http://localhost:5173/');
 
     applyingExternalState(() => {
       expect(isApplyingExternalState()).toBe(true);

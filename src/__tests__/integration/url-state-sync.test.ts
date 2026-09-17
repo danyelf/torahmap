@@ -14,7 +14,7 @@ import {
   configureSearch,
 } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
-import { mockFetch, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
+import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
 
 describe('URL State Sync Integration', () => {
@@ -25,43 +25,7 @@ describe('URL State Sync Integration', () => {
     // Save original location
     originalLocation = window.location;
 
-    // Mock window.location
-    mockWindowLocation('http://localhost:5173/');
-
-    // Mock history API
-    historyStates = [];
-    const originalPushState = history.pushState.bind(history);
-    const originalReplaceState = history.replaceState.bind(history);
-
-    vi.spyOn(history, 'pushState').mockImplementation((state, title, url) => {
-      historyStates.push(url as string);
-      // Update mock location
-      if (url) {
-        const urlString = typeof url === 'string' ? url : url.toString();
-        const fullUrl = urlString.startsWith('http')
-          ? urlString
-          : `http://localhost:5173${urlString}`;
-        mockWindowLocation(fullUrl);
-      }
-      return originalPushState(state, title, url);
-    });
-
-    vi.spyOn(history, 'replaceState').mockImplementation((state, title, url) => {
-      if (historyStates.length > 0) {
-        historyStates[historyStates.length - 1] = url as string;
-      } else {
-        historyStates.push(url as string);
-      }
-      // Update mock location
-      if (url) {
-        const urlString = typeof url === 'string' ? url : url.toString();
-        const fullUrl = urlString.startsWith('http')
-          ? urlString
-          : `http://localhost:5173${urlString}`;
-        mockWindowLocation(fullUrl);
-      }
-      return originalReplaceState(state, title, url);
-    });
+    ({ historyStates } = mockHistory('http://localhost:5173/'));
 
     mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
 
