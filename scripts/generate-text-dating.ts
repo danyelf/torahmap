@@ -22,8 +22,7 @@ interface WikipediaSourceEntry {
   citation?: string;
 }
 
-// What normalization produces, and what a hand-written source may supply
-// directly under an `entries` key. No shipped source file uses that form.
+// What normalization produces, and what the rest of this script runs on.
 interface SourceEntry {
   book: string;
   chapter: number;
@@ -34,8 +33,6 @@ interface SourceEntry {
   };
   note: string;
 }
-
-type SourceData = WikipediaSourceEntry[] | { entries: SourceEntry[] };
 
 interface TanakhStructure {
   books: Array<{
@@ -250,17 +247,16 @@ function normalizeWikipediaEntry(
 }
 
 /**
- * Normalize source data to array of SourceEntry
+ * Normalize source data to array of SourceEntry.
+ *
+ * Flattened because one source entry can name a range of chapters, and
+ * normalizeWikipediaEntry returns one entry per chapter.
  */
-function normalizeSourceData(data: SourceData, structure: TanakhStructure): SourceEntry[] {
-  if (Array.isArray(data)) {
-    // Wikipedia format: array of WikipediaSourceEntry
-    // Flatten because normalizeWikipediaEntry can return multiple entries
-    return data.flatMap((wiki) => normalizeWikipediaEntry(wiki, structure));
-  } else {
-    // A hand-written source, already in the normalized shape.
-    return data.entries;
-  }
+function normalizeSourceData(
+  data: WikipediaSourceEntry[],
+  structure: TanakhStructure,
+): SourceEntry[] {
+  return data.flatMap((wiki) => normalizeWikipediaEntry(wiki, structure));
 }
 
 async function main() {
@@ -276,7 +272,7 @@ async function main() {
   const sourcePath = new URL('../data/text-dating-source.json', import.meta.url);
   console.log(`Reading source: ${sourcePath.pathname}`);
   const sourceJson = await readFile(sourcePath, 'utf-8');
-  const rawSourceData: SourceData = JSON.parse(sourceJson);
+  const rawSourceData: WikipediaSourceEntry[] = JSON.parse(sourceJson);
 
   // Normalize source data to standard format
   const sourceEntries = normalizeSourceData(rawSourceData, structure);

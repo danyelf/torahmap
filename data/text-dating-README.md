@@ -30,14 +30,6 @@ of chapters, or (with `"all"`) a whole book, to a single point estimate:
 ]
 ```
 
-### Legacy format
-
-`scripts/generate-text-dating.ts` also accepts an older shape,
-`{ "entries": [ { book, chapter, verses, dating: { min, max }, note } ] }`,
-with a numeric `chapter` per entry and an explicit `[min, max]` date range
-instead of a single `date_bce`. Nothing in the repository is in this format
-today, but the generator keeps reading it.
-
 ## Runtime Format: `public/data/text-dating.json`
 
 `scripts/generate-text-dating.ts` expands every entry to one record per verse,

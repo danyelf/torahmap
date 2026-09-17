@@ -82,9 +82,8 @@ To line up against the Hebrew in `all-texts.json`, fold it the way
 them fails the test suite with the offending verses named.
 
 BHSA also records a derivational root for each lexeme, which this index does
-not carry. It was here for a "related words" suggestion that has since been
-removed, and search deliberately offers the meanings of the word you typed
-rather than a path to its derivational neighbours, so nothing would read it.
+not carry. Search deliberately offers the meanings of the word you typed rather
+than a path to its derivational neighbours, so nothing would read it.
 
 ### What counts as a word
 
@@ -125,9 +124,9 @@ BHSA and Sefaria number the verses identically except in Exodus 20,
 Deuteronomy 5 and Numbers 25, and the script carries an explicit mapping for
 those three chapters.
 
-That check covers whether the verses line up, not whether the index still names
-as many words as it used to. For that, run `npm run report:click-resolution`
-afterwards and compare against the baseline it keeps in `scripts/search/`.
+That check covers whether the verses line up, not how many words the index
+names. For that, run `npm run report:click-resolution` afterwards and compare
+against the baseline it keeps in `scripts/search/`.
 
 ## One thing to watch
 
