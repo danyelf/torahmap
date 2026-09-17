@@ -1,9 +1,6 @@
 // Test fixtures for Torah Map tests
 import type { TanakhLayout, TorahData, CommentaryData, TanakhCommentary } from '../../types';
 
-/**
- * Creates a sample verse with default values that can be overridden
- */
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
     book: 'Genesis',
@@ -16,9 +13,6 @@ export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout
   };
 }
 
-/**
- * Creates multiple sample verses
- */
 export function createVerses(
   count: number,
   baseOverrides: Partial<TanakhLayout> = {},
@@ -33,9 +27,6 @@ export function createVerses(
   );
 }
 
-/**
- * Sample verse data spanning multiple books and sections
- */
 export const SAMPLE_VERSES: TanakhLayout[] = [
   // Torah - Genesis
   createVerse({ book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20 }),
@@ -56,9 +47,6 @@ export const SAMPLE_VERSES: TanakhLayout[] = [
   createVerse({ book: 'Psalms', chapter: 119, verse: 1, x: 10, y: 1100 }),
 ];
 
-/**
- * Minimal Torah structure data for testing
- */
 export const SAMPLE_TORAH_DATA: TorahData = {
   books: [
     {
@@ -93,9 +81,6 @@ export const SAMPLE_TORAH_DATA: TorahData = {
   },
 };
 
-/**
- * Sample commentary data
- */
 export const SAMPLE_COMMENTARY_DATA: CommentaryData = {
   'Genesis': {
     '1': {
@@ -117,9 +102,6 @@ export const SAMPLE_COMMENTARY_DATA: CommentaryData = {
   },
 };
 
-/**
- * Sample verse texts (Hebrew and English)
- */
 export const SAMPLE_VERSE_TEXTS = {
   'Genesis': {
     '1': {
@@ -149,9 +131,6 @@ export const SAMPLE_VERSE_TEXTS = {
   },
 };
 
-/**
- * Creates a sample TanakhCommentary object
- */
 export function createTanakhCommentary(
   overrides: Partial<TanakhCommentary> = {},
 ): TanakhCommentary {
@@ -166,9 +145,6 @@ export function createTanakhCommentary(
   };
 }
 
-/**
- * Color constants for testing
- */
 export const TEST_COLORS = {
   RED: [1, 0, 0] as [number, number, number],
   GREEN: [0, 1, 0] as [number, number, number],
@@ -180,9 +156,6 @@ export const TEST_COLORS = {
   PURPLE: [0.5, 0, 0.5] as [number, number, number],
 };
 
-/**
- * Sample trop marks with their unicode values
- */
 export const SAMPLE_TROP_MARKS = {
   TIPCHA: '\u0596',
   ETNACHTA: '\u0591',
@@ -191,9 +164,6 @@ export const SAMPLE_TROP_MARKS = {
   ZAQEF_QATAN: '\u0594',
 };
 
-/**
- * Hebrew text with trop marks for testing
- */
 export const HEBREW_WITH_TROP = {
   WITH_TIPCHA: 'בְּרֵאשִׁ֖ית', // Contains tipcha (U+0596)
   WITH_ETNACHTA: 'אֱלֹהִ֑ים', // Contains etnachta (U+0591)

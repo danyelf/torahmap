@@ -1,10 +1,7 @@
 // Mock implementations for testing
 import { vi } from 'vitest';
 
-/**
- * Creates a minimal mock WebGL2RenderingContext for testing
- * This allows tests to run without a real GPU/browser environment
- */
+// Lets tests run without a real GPU/browser environment.
 export function createMockWebGL2Context(): WebGL2RenderingContext {
   const mockShader = {} as WebGLShader;
   const mockProgram = {} as WebGLProgram;
@@ -96,9 +93,6 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
   return gl;
 }
 
-/**
- * Creates a mock HTMLCanvasElement with getContext that returns mock WebGL2
- */
 export function createMockCanvas(): HTMLCanvasElement {
   const mockGL = createMockWebGL2Context();
 
@@ -129,9 +123,6 @@ export function createMockCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
-/**
- * Mocks window.location for URL state testing
- */
 export function mockWindowLocation(url: string = 'http://localhost:5173/') {
   const urlObj = new URL(url);
 
@@ -149,9 +140,6 @@ export function mockWindowLocation(url: string = 'http://localhost:5173/') {
   };
 }
 
-/**
- * Creates a mock HTMLElement for testing UI controls
- */
 export function createMockElement(tagName: string = 'div'): HTMLElement {
   const childrenArray: HTMLElement[] = [];
 
@@ -189,9 +177,6 @@ export function createMockElement(tagName: string = 'div'): HTMLElement {
   return element;
 }
 
-/**
- * Mock for document.createElement
- */
 export function mockDocumentCreateElement() {
   vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
     if (tagName === 'canvas') {
@@ -205,9 +190,6 @@ export function mockDocumentCreateElement() {
   };
 }
 
-/**
- * Creates a mock for the URLSearchParams API
- */
 export function createMockURLSearchParams(params: Record<string, string> = {}): URLSearchParams {
   const map = new Map(Object.entries(params));
 
@@ -230,9 +212,6 @@ export function createMockURLSearchParams(params: Record<string, string> = {}): 
   } as unknown as URLSearchParams;
 }
 
-/**
- * Mock fetch for loading external data
- */
 export function mockFetch(responses: Record<string, any> = {}) {
   const defaultResponses: Record<string, any> = {
     '/data/tanakh-structure.json': { books: [] },
@@ -258,9 +237,6 @@ export function mockFetch(responses: Record<string, any> = {}) {
   };
 }
 
-/**
- * Helper to restore all mocks
- */
 export function restoreAllMocks() {
   vi.restoreAllMocks();
 }
