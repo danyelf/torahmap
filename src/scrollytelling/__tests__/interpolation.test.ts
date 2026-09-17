@@ -49,17 +49,17 @@ describe('lerpCamera', () => {
 
 describe('lerpColor', () => {
   it('blends two colors at t=0.5', () => {
-    const a = { r: 0, g: 0, b: 0 };
-    const b = { r: 1, g: 1, b: 1 };
+    const a: [number, number, number] = [0, 0, 0];
+    const b: [number, number, number] = [1, 1, 1];
     const result = lerpColor(a, b, 0.5);
-    expect(result.r).toBeCloseTo(0.5);
-    expect(result.g).toBeCloseTo(0.5);
-    expect(result.b).toBeCloseTo(0.5);
+    expect(result[0]).toBeCloseTo(0.5);
+    expect(result[1]).toBeCloseTo(0.5);
+    expect(result[2]).toBeCloseTo(0.5);
   });
 
   it('returns first color at t=0', () => {
-    const a = { r: 0.2, g: 0.4, b: 0.6 };
-    const b = { r: 0.8, g: 0.6, b: 0.4 };
+    const a: [number, number, number] = [0.2, 0.4, 0.6];
+    const b: [number, number, number] = [0.8, 0.6, 0.4];
     expect(lerpColor(a, b, 0)).toEqual(a);
   });
 });
