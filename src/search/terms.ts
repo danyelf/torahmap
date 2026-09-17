@@ -262,6 +262,11 @@ export function setMode(terms: SearchTerm[], id: string, mode: SearchMode): Sear
   return terms.map((t) => (t.id === id ? { ...t, mode } : t));
 }
 
+/** Each term's own language, decided by its own text. */
+export function termIsHebrew(term: SearchTerm): boolean {
+  return isHebrewQuery(term.text.trim());
+}
+
 /**
  * What the reader chose, or the default for the language the text is in.
  *
@@ -270,16 +275,19 @@ export function setMode(terms: SearchTerm[], id: string, mode: SearchMode): Sear
  * moment it is Hebrew again.
  */
 export function effectiveMode(term: SearchTerm): SearchMode {
-  const hebrew = isHebrewQuery(term.text.trim());
+  const hebrew = termIsHebrew(term);
   const chosen = term.mode ?? (hebrew ? 'meanings' : 'substring');
   return !hebrew && chosen === 'meanings' ? 'word' : chosen;
 }
 
 /** The modes this term's own text can be matched by, in the order shown. */
 export function modesOffered(term: SearchTerm): SearchMode[] {
-  return isHebrewQuery(term.text.trim())
-    ? ['substring', 'word', 'meanings']
-    : ['substring', 'word'];
+  return termIsHebrew(term) ? ['substring', 'word', 'meanings'] : ['substring', 'word'];
+}
+
+/** Only a Hebrew term in meanings mode consults the dictionary. */
+export function meaningsApply(term: SearchTerm): boolean {
+  return termIsHebrew(term) && effectiveMode(term) === 'meanings';
 }
 
 /**
