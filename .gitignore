@@ -19,3 +19,6 @@ __pycache__/
 
 # Talmud verification cache — regenerable via scripts/talmud/verify-coverage.ts
 data-transient/
+
+# Visual brainstorming companion scratch
+.superpowers/

@@ -40,7 +40,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  applyOverlayParams(searchOverlay, { q: '', hm: undefined, m: undefined });
+  applyOverlayParams(searchOverlay, { q: '', mode: undefined, m: undefined });
 });
 
 describe('searching for a clicked word', () => {
@@ -69,21 +69,25 @@ describe('searching for a clicked word', () => {
 
   it('switches Hebrew mode to root, since a meaning cannot be matched as a substring', () => {
     render();
-    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+    applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
-    expect(searchOverlay.getUrlParams!().hm).toBeUndefined(); // root is the default, so it is not written
+    // The click chose root for this word, and a choice is written even when it
+    // matches the default — the reader made it, so the link carries it.
+    expect(searchOverlay.getUrlParams!().mode).toBe('r');
   });
 
-  it('leaves the mode radios showing the mode the search is now in', () => {
+  it('leaves the row showing the mode the click put it in', () => {
     const container = render();
-    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+    applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
-    const checked = container.querySelector<HTMLInputElement>('input[name="hebrew-mode"]:checked');
-    expect(checked?.value).toBe('root');
+    const marked = container.querySelector<HTMLElement>(
+      '.term-row[data-open="true"] .term-mode-option.on',
+    );
+    expect(marked?.dataset.mode).toBe('root');
   });
 
   it('keeps the results list on screen after the click that filled it', () => {
@@ -120,13 +124,14 @@ describe('searching for a clicked word', () => {
     // would be resolved to its dictionary entry - neither is what "exactly"
     // means.
     const container = render();
-    applyOverlayParams(searchOverlay, { q: '', hm: 'substring', m: undefined });
+    applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', null);
 
-    expect(searchOverlay.getUrlParams!().hm).toBe('word');
+    expect(searchOverlay.getUrlParams!().mode).toBe('w');
     expect(
-      container.querySelector<HTMLInputElement>('input[name="hebrew-mode"]:checked')!.value,
+      container.querySelector<HTMLElement>('.term-row[data-open="true"] .term-mode-option.on')!
+        .dataset.mode,
     ).toBe('word');
   });
 
@@ -149,10 +154,15 @@ describe('searching for a clicked word', () => {
     searchForMeaning('עלה', firstMeaning.keys);
     searchForMeaning('רוח', null);
 
-    const inputsBeforeClear = [...container.querySelectorAll<HTMLInputElement>('.term-input')];
-    expect(inputsBeforeClear).toHaveLength(2);
-    inputsBeforeClear[0].value = '';
-    inputsBeforeClear[0].dispatchEvent(new Event('input', { bubbles: true }));
+    // Only the open row holds a box, so reaching the first one means opening
+    // it, which is what a reader clearing an earlier word does too.
+    expect(container.querySelectorAll('.term-row')).toHaveLength(2);
+    const firstRow = container.querySelectorAll<HTMLElement>('.term-row')[0];
+    firstRow.querySelector<HTMLElement>('.term-summary')!.click();
+
+    const firstInput = firstRow.querySelector<HTMLInputElement>('.term-input')!;
+    firstInput.value = '';
+    firstInput.dispatchEvent(new Event('input', { bubbles: true }));
 
     // Click a different meaning of the same written form. If the code tracks
     // "the last term" instead of the term it actually filled, this narrowing
@@ -160,15 +170,38 @@ describe('searching for a clicked word', () => {
     const secondMeaning = meaningsInVerse('עלה', 'Genesis:8:20')[0];
     searchForMeaning('עלה', secondMeaning.keys);
 
-    const inputs = [...container.querySelectorAll<HTMLInputElement>('.term-input')];
-    expect(inputs).toHaveLength(2);
-    expect(inputs[0].value).toBe('עלה');
-    expect(inputs[1].value).toBe('רוח');
+    const shown = [...container.querySelectorAll<HTMLElement>('.term-row')].map(
+      (row) =>
+        row.querySelector<HTMLInputElement>('.term-input')?.value ??
+        row.querySelector('.term-word')!.textContent,
+    );
+    expect(shown).toEqual(['עלה', 'רוח']);
 
     const params = searchOverlay.getUrlParams!();
     const [firstEntry, secondEntry] = (params.m ?? '').split(',');
     expect(firstEntry).toBe(secondMeaning.keys[0]);
     // 'רוח' was never clicked with a meaning, so it stays fully unnarrowed.
     expect(secondEntry ?? '').toBe('');
+  });
+
+  it('leaves an already narrowed word narrowed', () => {
+    // Narrow one word to a meaning, then ask for a second word by its written
+    // form. The second click used to move the whole search to whole-word mode,
+    // which quietly widened the first word back to all of its readings: the
+    // meaning was still ticked, but nothing was filtering by it.
+    render();
+    const leaf = meaningsInVerse('עלה', 'Genesis:3:7')[0];
+
+    searchForMeaning('עלה', leaf.keys);
+    const afterFirst = searchOverlay.getUrlParams!();
+    expect(afterFirst.mode).toBe('r');
+
+    searchForMeaning('תאנה', null);
+    const afterSecond = searchOverlay.getUrlParams!();
+
+    // The first word is still matched by root, and still narrowed; only the
+    // second word went to whole word.
+    expect(afterSecond.mode).toBe('r,w');
+    expect((afterSecond.m ?? '').split(',')[0]).toBe(afterFirst.m);
   });
 });

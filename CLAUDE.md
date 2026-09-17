@@ -19,7 +19,10 @@ The core design principle is **position stability** - each verse occupies a perm
 - **Verse details** on hover/click with Hebrew text, English translation, and Sefaria link
 - **Full-text search** with Hebrew/English support, nikkud-insensitive; root
   mode resolves a written form to the dictionary words it can be, so every
-  inflected form is found and words that merely share a spelling stay apart
+  inflected form is found and words that merely share a spelling stay apart.
+  How a word is matched — substring, whole word, or root — belongs to that
+  word, so one term can be searched by root while another is pinned to an
+  exact spelling
 - **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (7 source categories plus a combined total), Trop (33 cantillation marks), Haftarah (Ashkenazi and Sephardi), Text Dating (6 historical periods), Verse Length. Each overlay carries its own one-sentence description, and the help modal's Overlays tab is built from them.
 
 ## Quick Start

@@ -953,17 +953,16 @@ describe('overlay-supplied parameters', () => {
   });
 
   it('rejects a value outside the set the overlay allows', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=search&q=light&hm=sideways');
+    mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=yemenite');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.hm).toBeUndefined();
-    expect(state.overlayParams.q).toBe('light');
+    expect(state.overlayParams.custom).toBeUndefined();
   });
 
   it('accepts every value in the set the overlay allows', () => {
-    for (const mode of ['substring', 'word', 'root']) {
-      mockWindowLocation(`http://localhost:5173/#overlay=search&q=light&hm=${mode}`);
+    for (const custom of ['ashkenazi', 'sephardi']) {
+      mockWindowLocation(`http://localhost:5173/#overlay=haftarah&custom=${custom}`);
       const state = parseUrlState(overlayUrlParams);
-      expect(state.overlayParams.hm).toBe(mode);
+      expect(state.overlayParams.custom).toBe(custom);
     }
   });
 
@@ -1147,8 +1146,8 @@ describe('whole links, parsed with the real overlay declarations', () => {
     ['#overlay=commentary&category=Midrash', { category: 'Midrash' }],
     ['#overlay=commentary&category=Jewish%20Thought', { category: 'Jewish Thought' }],
     ['#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', { q: 'בראשית' }],
-    ['#overlay=search&q=light&ww=1', { q: 'light', ww: '1' }],
-    ['#overlay=search&q=light&ww=1&hm=root', { q: 'light', ww: '1', hm: 'root' }],
+    ['#overlay=search&q=light&mode=w', { q: 'light', mode: 'w' }],
+    ['#overlay=search&q=light,%D7%A2%D7%9C%D7%94&mode=w,r', { q: 'light,עלה', mode: 'w,r' }],
   ];
 
   links.forEach(([hash, expected]) => {

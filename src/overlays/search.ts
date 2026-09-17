@@ -26,8 +26,14 @@ import {
   selectedKeys,
   encodeMeanings,
   applyMeanings,
+  setMode,
+  effectiveMode,
+  modesOffered,
+  encodeModes,
+  applyModes,
   MAX_TERMS,
   type SearchTerm,
+  type SearchMode,
 } from '../search/terms.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { MIN_SEARCH_TERM_LENGTH } from '../constants/app.ts';
@@ -40,26 +46,24 @@ function colorToCss(color: Color): string {
 
 // State
 let verses: TanakhLayout[] = [];
-// The search is a list of terms, each with its own text, its own meanings and
-// its own colour. There is always at least one, possibly empty, so the panel
-// always has somewhere to type.
+// The search is a list of terms, each with its own text, its own meanings, its
+// own colour and its own way of being matched. There is always at least one,
+// possibly empty, so the panel always has somewhere to type.
 let terms: SearchTerm[] = [];
 let currentResults: SearchResult[] = [];
 let matchingTerms = new Map<string, number[]>();
-let wholeWordEnabled = false;
-const HEBREW_SEARCH_MODES = ['substring', 'word', 'root'] as const;
+/** The row the reader last opened. Read through `openTerm`. */
+let openTermId: string | null = null;
 
 const URL_PARAMS = [
   { key: 'q', kind: 'text' },
-  { key: 'ww', kind: 'token', allowed: ['1'] },
-  { key: 'hm', kind: 'token', allowed: HEBREW_SEARCH_MODES },
+  // Positional across the terms in q, one letter each, and an empty entry for
+  // a term still on its default. Letters rather than words because a token is
+  // capped at 50 characters and five spelled-out modes would be 49 of them.
+  { key: 'mode', kind: 'token' },
   { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
 
-// Root is the default: substring matches inside longer words that have nothing
-// to do with the query, and it is the one mode where the meaning filter cannot
-// appear at all.
-let hebrewSearchMode: (typeof HEBREW_SEARCH_MODES)[number] = 'root';
 let updateCallback: (() => void) | null = null;
 let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
 
@@ -116,23 +120,52 @@ function termIsHebrew(term: SearchTerm): boolean {
   return isHebrewQuery(term.text.trim());
 }
 
-/**
- * Does the search involve Hebrew at all? Only the two language-specific
- * controls consult this — whether to show the Hebrew modes or the English
- * whole-word box. What each term matches is decided per term.
- */
-function searchIsHebrew(): boolean {
-  return activeTerms().some(termIsHebrew);
+/** Root mode over Hebrew is the only place meanings are consulted. */
+function meaningsApply(term: SearchTerm): boolean {
+  return termIsHebrew(term) && effectiveMode(term) === 'root';
 }
 
-/** Root mode over Hebrew is the only place meanings are consulted. */
-function meaningsApply(): boolean {
-  return searchIsHebrew() && hebrewSearchMode === 'root';
+/**
+ * The row the reader is working in: the one they opened while it still exists,
+ * otherwise the first.
+ *
+ * Derived on every read rather than repaired in one place, so the list, the
+ * caption and the rows cannot disagree about which row is open depending on
+ * the order they are drawn in.
+ */
+function openTerm(): SearchTerm | undefined {
+  return terms.find((t) => t.id === openTermId) ?? terms[0];
+}
+
+/**
+ * Where the open row's term sits among the terms being searched, or -1 when
+ * that row has nothing to search on — an empty box, or a single letter.
+ *
+ * Results name a term by its position in the searched list, which is not its
+ * position among the rows on screen.
+ */
+function openTermIndex(): number {
+  const open = openTerm();
+  return open ? activeTerms().indexOf(open) : -1;
+}
+
+/**
+ * The verses the list shows: the ones the open row's word accounts for.
+ *
+ * A row with nothing to search on narrows nothing, or clicking "add a word"
+ * would empty the list.
+ */
+function resultsForOpenRow(): SearchResult[] {
+  const index = openTermIndex();
+  if (index === -1) return currentResults;
+
+  return currentResults.filter((result) => result.matchingTerms.some((m) => m.termIndex === index));
 }
 
 // Incremental rendering state
 const RESULTS_BATCH_SIZE = 50;
 let renderedCount = 0;
+let listedResults: SearchResult[] = [];
 let scrollHandler: (() => void) | null = null;
 
 // DOM references (for cleanup)
@@ -140,8 +173,6 @@ let searchResults: HTMLDivElement | null = null;
 let searchTermsContainer: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
 let addTermButton: HTMLButtonElement | null = null;
-let wholeWordCheckbox: HTMLInputElement | null = null;
-let hebrewModeContainer: HTMLDivElement | null = null;
 
 export function configure(config: {
   verses: TanakhLayout[];
@@ -169,7 +200,6 @@ function runSearch(): void {
     matchingTerms = new Map();
     renderResults();
     renderTermRows();
-    updateOptionVisibility();
     updateHitCaption();
     updateCallback?.();
     return;
@@ -179,15 +209,19 @@ function runSearch(): void {
   // in root mode consults the chosen meanings; everything else is text.
   // Matching text scans the corpus, so it is done only for the terms that need
   // it — a Hebrew term answered from the dictionary never pays for it.
-  const textVerses = (term: SearchTerm): Set<string> =>
-    verseSetsForTerms([term.text.trim()], {
-      wholeWordEnglish: wholeWordEnabled,
-      hebrewMode: hebrewSearchMode === 'root' ? 'word' : hebrewSearchMode,
+  const textVerses = (term: SearchTerm): Set<string> => {
+    const mode = effectiveMode(term);
+    return verseSetsForTerms([term.text.trim()], {
+      wholeWordEnglish: mode === 'word',
+      // A Hebrew term reaches this path only when the dictionary has nothing
+      // for it, and root has always fallen back to whole word there.
+      hebrewMode: mode === 'root' ? 'word' : mode,
     })[0];
+  };
 
   currentResults = resultsForVerseSets(
     active.map((term) => {
-      if (!termIsHebrew(term) || hebrewSearchMode !== 'root') return textVerses(term);
+      if (!meaningsApply(term)) return textVerses(term);
       // A term the dictionary does not know falls back to whole-word matching,
       // as root mode always has. Root is the default now, so a lexeme index
       // that failed to load must not mean Hebrew silently finds nothing.
@@ -200,13 +234,11 @@ function runSearch(): void {
 
   for (const term of active) {
     const hebrew = termIsHebrew(term);
-    const mode = hebrew ? hebrewSearchMode : wholeWordEnabled ? 'word' : 'substring';
-    trackSearchExecute(term.text, hebrew ? 'he' : 'en', mode, currentResults.length);
+    trackSearchExecute(term.text, hebrew ? 'he' : 'en', effectiveMode(term), currentResults.length);
   }
 
   renderResults();
   renderTermRows();
-  updateOptionVisibility();
   updateHitCaption();
   updateCallback?.();
 }
@@ -219,13 +251,13 @@ function runSearch(): void {
  * when the palette is full, so the caller can say so rather than dropping the
  * click silently.
  *
- * Either way the click settles the Hebrew mode. A meaning can only be
- * searched for in root mode - "the
- * burnt-offering reading" cannot be expressed as a substring. The written form
- * is the opposite request, for this spelling and no other, so it goes to whole
- * word: substring mode would match it inside longer words, and root mode would
- * resolve a known spelling to its dictionary entry and find the readings the
- * reader just declined.
+ * Either way the click settles how that word is matched, and only that word. A
+ * meaning can only be searched for in root mode — "the burnt-offering reading"
+ * cannot be expressed as a substring. The written form is the opposite
+ * request, for this spelling and no other, so it goes to whole word: substring
+ * would match it inside longer words, and root would resolve a known spelling
+ * to its dictionary entry and find the readings the reader just declined.
+ * Neighbouring terms keep whatever they were doing.
  *
  * The meaning arrives as every lexeme its row stands for, not as one key. The
  * reader chose from a list the verse built, and a row the verse built can be
@@ -253,13 +285,14 @@ export function searchForMeaning(text: string, meaningKeys: readonly string[] | 
   }
 
   if (meaningKeys && meaningKeys.length > 0) {
-    hebrewSearchMode = 'root';
+    terms = setMode(terms, id, 'root');
     terms = onlyMeaning(terms, id, meaningKeys);
   } else {
-    hebrewSearchMode = 'word';
+    terms = setMode(terms, id, 'word');
   }
-  syncHebrewModeRadios();
 
+  // The word the click just added is the one the reader is looking at.
+  openTermId = id;
   renderTermRows();
   runSearch();
   return true;
@@ -379,41 +412,6 @@ function buildMeaningRow(
 }
 
 /**
- * Put the mode radios where the mode actually is.
- *
- * Nothing else keeps them honest. A reader can change the mode without touching
- * them - choosing a meaning from a clicked word moves the search to root - and
- * a radio still filled from before is worse than merely wrong: its `checked`
- * property is already true, so clicking it fires no change event and the reader
- * cannot get back the way they came.
- */
-function syncHebrewModeRadios(): void {
-  if (!hebrewModeContainer) return;
-  for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
-    'input[name="hebrew-mode"]',
-  )) {
-    radio.checked = radio.value === hebrewSearchMode;
-  }
-}
-
-/**
- * Whole-word applies only to English, the mode radios only to Hebrew. Both
- * follow the text, as they always have.
- */
-function updateOptionVisibility(): void {
-  // Each control follows the terms it can act on, so a search holding both a
-  // Hebrew word and an English one shows both — they apply to different rows.
-  // With nothing typed, the English box shows, as it always has.
-  const active = activeTerms();
-  const anyHebrew = active.some(termIsHebrew);
-  const anyEnglish = active.length === 0 || active.some((term) => !termIsHebrew(term));
-
-  const options = wholeWordCheckbox?.closest('#search-options') as HTMLElement | null;
-  if (options) options.style.display = anyEnglish ? 'block' : 'none';
-  if (hebrewModeContainer) hebrewModeContainer.style.display = anyHebrew ? 'block' : 'none';
-}
-
-/**
  * The one number the term rows cannot show: how many verses the search finds
  * altogether. Each row carries its own count; this is their union.
  */
@@ -421,9 +419,18 @@ function updateHitCaption(): void {
   if (!searchHitCaption) return;
 
   const active = activeTerms();
+  const listed = resultsForOpenRow().length;
+
   let message: string;
   if (active.length > 0 && currentResults.length > 0) {
-    message = `${currentResults.length} matching verses`;
+    // The list shows the open row's verses, so the caption above it counts
+    // those, and names the union second so the number the rows cannot show
+    // between them is still somewhere. With one term the two are the same
+    // number and saying it twice would be noise.
+    message =
+      listed === currentResults.length
+        ? `${currentResults.length} matching verses`
+        : `${listed} of ${currentResults.length} matching verses`;
   } else if (active.length > 0) {
     message = 'No matching verses';
   } else if (typedTerms().length > 0) {
@@ -435,13 +442,86 @@ function updateHitCaption(): void {
   searchHitCaption.textContent = message;
 }
 
+const MODE_LABELS: Record<SearchMode, string> = {
+  substring: 'substring',
+  word: 'word',
+  root: 'root',
+};
+
+/**
+ * What a collapsed row says about itself: the mode, then the narrowing.
+ *
+ * Both are named even when unremarkable. Two rows holding עלה in root mode are
+ * otherwise identical, and telling those apart is the point of the feature.
+ */
+function termSummary(term: SearchTerm): string {
+  const mode = MODE_LABELS[effectiveMode(term)];
+
+  // Only a Hebrew term in root mode has meanings to report, and only a word
+  // with at least two of them has anything to report about them. One meaning
+  // is not a choice, and a word the dictionary does not know has none at all —
+  // both of those are the rows that show no checkboxes either.
+  if (!meaningsApply(term) || term.meanings.length < 2) return mode;
+
+  // Saying how many there are rather than leaving the mode bare: root over a
+  // word with four readings is searching for all four, and a row that said
+  // only "root" gave no sign of it.
+  if (!isNarrowed(term)) return `${mode} · all ${term.meanings.length} meanings`;
+
+  const chosen = term.meanings
+    .filter((m) => term.selected.has(m.keys[0]))
+    .map((m) => m.gloss)
+    .join(', ');
+  return chosen ? `${mode} · ${chosen}` : mode;
+}
+
+/**
+/** The ways this term's own text can be matched, as one control. */
+function buildModeControl(term: SearchTerm): HTMLDivElement {
+  const control = document.createElement('div');
+  control.className = 'term-mode';
+
+  for (const mode of modesOffered(term)) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'term-mode-option';
+    option.dataset.mode = mode;
+    option.textContent = MODE_LABELS[mode];
+    option.addEventListener('click', () => {
+      terms = setMode(terms, term.id, mode);
+      runSearch();
+    });
+    control.appendChild(option);
+  }
+  return control;
+}
+
+/**
+/**
+ * Replace only the control when the choices change, never the row: the choices
+ * follow the text's language, and the reader is typing that text.
+ */
+function renderModeControl(body: HTMLElement, term: SearchTerm): void {
+  const offered = modesOffered(term).join(',');
+  if (body.dataset.modes !== offered) {
+    body.dataset.modes = offered;
+    body.querySelector('.term-mode')?.remove();
+    body.prepend(buildModeControl(term));
+  }
+
+  const current = effectiveMode(term);
+  for (const option of body.querySelectorAll<HTMLElement>('.term-mode-option')) {
+    option.classList.toggle('on', option.dataset.mode === current);
+  }
+}
+
 /**
  * Which meanings the list shows — its structure, not which are ticked. The
  * boxes are then synced on every pass, so a refused toggle (unchecking the last
  * one) is put back rather than leaving the page disagreeing with the state.
  */
 function meaningSignature(term: SearchTerm): string {
-  if (!meaningsApply() || term.meanings.length < 2) return '';
+  if (!meaningsApply(term) || term.meanings.length < 2) return '';
   return term.meanings.map((m) => m.keys[0]).join(',');
 }
 
@@ -479,11 +559,87 @@ function renderMeanings(row: HTMLElement, term: SearchTerm): void {
   });
 }
 
-function buildTermRow(term: SearchTerm, index: number): HTMLDivElement {
-  const row = document.createElement('div');
-  row.className = 'term-row';
-  row.dataset.termId = term.id;
+/**
+ * Make this row the one the reader is working in, and put the caret in it.
+ *
+ * The list follows the open row, so it is redrawn too — without rerunning the
+ * search, which has not changed.
+ */
+function openRow(id: string): void {
+  openTermId = id;
+  renderTermRows();
+  renderResults();
+  updateHitCaption();
+  searchTermsContainer
+    ?.querySelector<HTMLInputElement>('.term-row[data-open="true"] .term-input')
+    ?.focus();
+}
 
+/** Remove a word, or clear the box when it is the only one left. */
+function removeOrClear(id: string): void {
+  terms = terms.length > 1 ? removeTerm(terms, id) : setTermText(terms, id, '');
+  runSearch();
+}
+
+/**
+/** A row the reader is not working in: one line saying what it is doing. */
+function buildCollapsedRow(row: HTMLElement, term: SearchTerm): void {
+  const summary = document.createElement('div');
+  summary.className = 'term-summary';
+  // Click, never hover: hover does not exist on touch, and a control that
+  // appears under the pointer is a control you cannot aim at.
+  summary.addEventListener('click', () => openRow(term.id));
+
+  const swatch = document.createElement('span');
+  swatch.className = 'term-swatch';
+  summary.appendChild(swatch);
+
+  const word = document.createElement('span');
+  word.className = 'term-word';
+  summary.appendChild(word);
+
+  const state = document.createElement('span');
+  state.className = 'term-state';
+  summary.appendChild(state);
+
+  const count = document.createElement('span');
+  count.className = 'term-count';
+  summary.appendChild(count);
+
+  const remove = document.createElement('button');
+  remove.className = 'term-remove';
+  remove.type = 'button';
+  remove.textContent = '×';
+  remove.title = 'Remove this word';
+  remove.addEventListener('click', (e) => {
+    // The × sits inside the summary, so without this the word would be removed
+    // and its row opened in the same gesture.
+    e.stopPropagation();
+    removeOrClear(term.id);
+  });
+  summary.appendChild(remove);
+
+  row.appendChild(summary);
+}
+
+function updateCollapsedRow(row: HTMLElement, term: SearchTerm): void {
+  const swatch = row.querySelector<HTMLElement>('.term-swatch')!;
+  swatch.style.background = colorToCss(SEARCH_COLORS[term.colorIndex]);
+  swatch.style.visibility = term.text.trim() ? 'visible' : 'hidden';
+
+  const word = row.querySelector<HTMLElement>('.term-word')!;
+  word.textContent = term.text;
+  word.classList.toggle('rtl', termIsHebrew(term));
+
+  row.querySelector<HTMLElement>('.term-state')!.textContent = term.text.trim()
+    ? termSummary(term)
+    : '';
+
+  const count = row.querySelector<HTMLElement>('.term-count')!;
+  count.textContent = activeTerms().includes(term) ? String(termHitCount(term)) : '';
+}
+
+function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   const head = document.createElement('div');
   head.className = 'term-head';
 
@@ -522,19 +678,51 @@ function buildTermRow(term: SearchTerm, index: number): HTMLDivElement {
   remove.type = 'button';
   if (index === 0) remove.id = 'search-clear';
   remove.textContent = '\u00d7';
-  remove.addEventListener('click', () => {
-    terms = terms.length > 1 ? removeTerm(terms, term.id) : setTermText(terms, term.id, '');
-    runSearch();
-  });
+  remove.addEventListener('click', () => removeOrClear(term.id));
   head.appendChild(remove);
 
   row.appendChild(head);
-  updateTermRow(row, term, index);
+
+  // The mode control and the meaning checkboxes share one indented block, so
+  // the two read as one statement: this term is matched this way, and if by
+  // root, these are the readings it stands for.
+  const body = document.createElement('div');
+  body.className = 'term-body';
+  row.appendChild(body);
+}
+
+function buildTermRow(term: SearchTerm, index: number, isOpen: boolean): HTMLDivElement {
+  const row = document.createElement('div');
+  row.className = 'term-row';
+  row.dataset.termId = term.id;
+  updateTermRow(row, term, index, isOpen);
   return row;
 }
 
-/** Everything about a row that changes without the row itself changing. */
-function updateTermRow(row: HTMLElement, term: SearchTerm, index: number): void {
+/**
+ * Everything about a row that changes without the row itself changing.
+ *
+ * Open and collapsed rows share no children, so opening or closing rebuilds the
+ * row. Nothing else does: the reader types their way between languages mid-word,
+ * and rebuilding then would throw away the box they are typing into.
+ */
+function updateTermRow(row: HTMLElement, term: SearchTerm, index: number, isOpen: boolean): void {
+  if (row.dataset.open !== String(isOpen)) {
+    row.dataset.open = String(isOpen);
+    row.replaceChildren();
+    if (isOpen) buildOpenRow(row, term, index);
+    else buildCollapsedRow(row, term);
+  }
+
+  if (!isOpen) {
+    updateCollapsedRow(row, term);
+    return;
+  }
+
+  updateOpenRow(row, term, index);
+}
+
+function updateOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   const input = row.querySelector<HTMLInputElement>('.term-input')!;
   // Safe to assign unconditionally: a term holds exactly what its box holds.
   if (input.value !== term.text) input.value = term.text;
@@ -557,7 +745,9 @@ function updateTermRow(row: HTMLElement, term: SearchTerm, index: number): void 
   remove.style.display = !term.text && terms.length === 1 ? 'none' : 'block';
   remove.title = terms.length > 1 ? 'Remove this word' : 'Clear';
 
-  renderMeanings(row, term);
+  const body = row.querySelector<HTMLElement>('.term-body')!;
+  renderModeControl(body, term);
+  renderMeanings(body, term);
 }
 
 function onTermInput(id: string, input: HTMLInputElement): void {
@@ -598,6 +788,8 @@ function renderTermRows(): void {
   if (!searchTermsContainer) return;
 
   const list = activeOrEmptyTerms();
+  const openId = openTerm()?.id ?? null;
+
   const existing = new Map(
     [...searchTermsContainer.querySelectorAll<HTMLElement>('.term-row')].map((row) => [
       row.dataset.termId,
@@ -613,11 +805,12 @@ function renderTermRows(): void {
   }
 
   list.forEach((term, i) => {
+    const isOpen = term.id === openId;
     let row = existing.get(term.id);
     if (row) {
-      updateTermRow(row, term, i);
+      updateTermRow(row, term, i, isOpen);
     } else {
-      row = buildTermRow(term, i);
+      row = buildTermRow(term, i, isOpen);
     }
     if (searchTermsContainer!.children[i] !== row) {
       searchTermsContainer!.insertBefore(row, searchTermsContainer!.children[i] ?? null);
@@ -655,11 +848,16 @@ function createResultElement(result: SearchResult): HTMLDivElement {
   refDiv.appendChild(termIndicators);
   refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
 
-  // Create snippet div with highlighting
+  // The snippet is drawn for the word the list is answering about, falling back
+  // to whichever term claimed the verse first. Without this, a list narrowed to
+  // the second word would quote the first word's match — the reader would have
+  // asked about one word and been shown another.
+  const focus = openTermIndex();
+  const firstMatch =
+    result.matchingTerms.find((m) => m.termIndex === focus) ?? result.matchingTerms[0];
+
   const snippetDiv = document.createElement('div');
   snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
-
-  const firstMatch = result.matchingTerms[0];
 
   // Compute snippet on-demand if not present (for lazy evaluation in root mode)
   let snippet = firstMatch.snippet;
@@ -702,11 +900,11 @@ function createResultElement(result: SearchResult): HTMLDivElement {
 }
 
 function appendResultsBatch(): void {
-  if (!searchResults || renderedCount >= currentResults.length) return;
+  if (!searchResults || renderedCount >= listedResults.length) return;
 
-  const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, currentResults.length);
+  const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, listedResults.length);
   for (let i = renderedCount; i < end; i++) {
-    searchResults.appendChild(createResultElement(currentResults[i]));
+    searchResults.appendChild(createResultElement(listedResults[i]));
   }
   renderedCount = end;
 }
@@ -714,10 +912,13 @@ function appendResultsBatch(): void {
 function renderResults(): void {
   if (!searchResults) return;
 
+  listedResults = resultsForOpenRow();
+
   // Clear previous results and reset scroll state
   const existingResults = searchResults.querySelectorAll('.search-result');
   existingResults.forEach((el) => el.remove());
   renderedCount = 0;
+  searchResults.scrollTop = 0;
 
   // Remove previous scroll handler
   if (scrollHandler) {
@@ -725,7 +926,7 @@ function renderResults(): void {
     scrollHandler = null;
   }
 
-  if (currentResults.length === 0) {
+  if (listedResults.length === 0) {
     searchResults.classList.remove('visible');
     return;
   }
@@ -734,7 +935,7 @@ function renderResults(): void {
   appendResultsBatch();
 
   // Set up infinite scroll if there are more results
-  if (renderedCount < currentResults.length) {
+  if (renderedCount < listedResults.length) {
     scrollHandler = () => {
       if (!searchResults) return;
       const { scrollTop, scrollHeight, clientHeight } = searchResults;
@@ -860,15 +1061,18 @@ function splitIntoWords(
  * Handles Hebrew nikkud stripping and position mapping
  * Respects Hebrew search mode (substring/word/root) and English whole-word setting
  */
-function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): Match[] {
+function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
   const matches: Match[] = [];
   const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
 
-  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-    const term = terms[termIndex];
-    const normalizedTerm = isHebrew ? stripNikkud(term) : term.toLowerCase();
+  for (let termIndex = 0; termIndex < searchTerms.length; termIndex++) {
+    const term = searchTerms[termIndex];
+    const normalizedTerm = isHebrew ? stripNikkud(term.text) : term.text.toLowerCase();
+    // The mode belongs to the term. `isHebrew` is the language of the verse
+    // text being marked up, which is a different question.
+    const mode = effectiveMode(term);
 
-    if (!isHebrew && wholeWordEnabled) {
+    if (!isHebrew && mode === 'word') {
       // English whole-word matching using regex
       const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
@@ -880,11 +1084,11 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
           termIndex,
         });
       }
-    } else if (isHebrew && hebrewSearchMode === 'root') {
+    } else if (isHebrew && mode === 'root') {
       // Mark the words that are one of the meanings this term still stands
       // for. Once a term is narrowed to burnt-offering, a verb meaning
       // "ascend" in the same verse is not a hit and must not be marked.
-      const keys = selectedKeys(activeTerms()[termIndex]);
+      const keys = selectedKeys(term);
       for (const { word, start } of splitIntoWords(normalizedText)) {
         const hit = keys.length > 0 ? formMatches(keys, word) : word === normalizedTerm;
         if (hit) {
@@ -895,7 +1099,7 @@ function findAllTermMatches(text: string, terms: string[], isHebrew: boolean): M
           });
         }
       }
-    } else if (isHebrew && hebrewSearchMode === 'word') {
+    } else if (isHebrew && mode === 'word') {
       // Hebrew whole-word matching
       const wordEntries = splitIntoWords(normalizedText);
 
@@ -994,11 +1198,7 @@ export function highlightSearchTerms(text: string, language: 'he' | 'en'): Docum
   const isHebrew = language === 'he';
 
   // Find all matches
-  const matches = findAllTermMatches(
-    text,
-    active.map((t) => t.text),
-    isHebrew,
-  );
+  const matches = findAllTermMatches(text, active, isHebrew);
 
   if (matches.length === 0) {
     fragment.appendChild(document.createTextNode(text));
@@ -1069,27 +1269,6 @@ export const searchOverlay: Overlay = {
     container.innerHTML = `
       <div id="search-terms"></div>
       <button type="button" id="add-term">+ add a word</button>
-      <div id="search-options">
-        <label>
-          <input type="checkbox" id="whole-word-checkbox">
-          Match whole words only
-        </label>
-      </div>
-      <div id="hebrew-mode-container" style="display: none;">
-        <div class="hebrew-mode-label">Hebrew search mode:</div>
-        <label class="hebrew-mode-option">
-          <input type="radio" name="hebrew-mode" value="substring">
-          Substring
-        </label>
-        <label class="hebrew-mode-option">
-          <input type="radio" name="hebrew-mode" value="word">
-          Whole word
-        </label>
-        <label class="hebrew-mode-option">
-          <input type="radio" name="hebrew-mode" value="root">
-          Root (שרש)
-        </label>
-      </div>
       <div id="search-hit-caption"></div>
       <div id="search-results"></div>
     `;
@@ -1098,41 +1277,13 @@ export const searchOverlay: Overlay = {
     addTermButton = container.querySelector('#add-term');
     searchHitCaption = container.querySelector('#search-hit-caption');
     searchResults = container.querySelector('#search-results');
-    wholeWordCheckbox = container.querySelector('#whole-word-checkbox');
-    hebrewModeContainer = container.querySelector('#hebrew-mode-container');
 
     addTermButton?.addEventListener('click', () => {
       terms = addTerm(terms, '');
-      renderTermRows();
-      searchTermsContainer
-        ?.querySelector<HTMLInputElement>('.term-row:last-child .term-input')
-        ?.focus();
+      openRow(terms[terms.length - 1].id);
     });
-
-    if (wholeWordCheckbox) {
-      wholeWordCheckbox.checked = wholeWordEnabled;
-    }
-
-    wholeWordCheckbox?.addEventListener('change', () => {
-      wholeWordEnabled = wholeWordCheckbox!.checked;
-      runSearch();
-    });
-
-    syncHebrewModeRadios();
-    if (hebrewModeContainer) {
-      for (const radio of hebrewModeContainer.querySelectorAll<HTMLInputElement>(
-        'input[name="hebrew-mode"]',
-      )) {
-        radio.addEventListener('change', () => {
-          if (!radio.checked) return;
-          hebrewSearchMode = radio.value as (typeof HEBREW_SEARCH_MODES)[number];
-          runSearch();
-        });
-      }
-    }
 
     renderTermRows();
-    updateOptionVisibility();
     updateHitCaption();
     if (currentResults.length > 0) renderResults();
   },
@@ -1144,20 +1295,22 @@ export const searchOverlay: Overlay = {
     const termIndices = matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
     if (!termIndices) return null;
 
-    if (meaningsApply()) {
-      // Name the meanings, not the spelling: that is what was searched for.
-      const named = termIndices.map((i) => {
-        const term = active[i];
-        const chosen = term.meanings.filter((m) => term.selected.has(m.keys[0]));
-        return chosen.length > 0 ? chosen.map((m) => m.gloss).join(' / ') : term.text;
-      });
-      return `Matches: ${named.join(', ')}`;
-    }
+    // Each term is named the way that term was searched for. A verse can be
+    // claimed by a word narrowed to one meaning and by an exact spelling at
+    // once, and saying so is the point of the modes being separate.
+    const named = termIndices.map((i) => {
+      const term = active[i];
+      if (!term) return '';
 
-    const quoted = termIndices.map((i) => `"${active[i].text}"`).join(', ');
-    return hebrewSearchMode === 'word' && searchIsHebrew()
-      ? `Matches word: ${quoted}`
-      : `Matches: ${quoted}`;
+      if (meaningsApply(term)) {
+        // Name the meanings, not the spelling: that is what was searched for.
+        const chosen = term.meanings.filter((m) => term.selected.has(m.keys[0]));
+        if (chosen.length > 0) return chosen.map((m) => m.gloss).join(' / ');
+      }
+      return effectiveMode(term) === 'word' ? `word "${term.text}"` : `"${term.text}"`;
+    });
+
+    return `Matches: ${named.filter(Boolean).join(', ')}`;
   },
 
   onUpdate(callback: () => void): void {
@@ -1175,14 +1328,13 @@ export const searchOverlay: Overlay = {
     searchTermsContainer = null;
     searchHitCaption = null;
     addTermButton = null;
-    wholeWordCheckbox = null;
-    hebrewModeContainer = null;
     // Clear callbacks
     updateCallback = null;
     onVerseClickCallback = null;
-    // NOTE: We intentionally DO NOT reset currentQuery, currentTerms, currentResults,
-    // matchingTerms, wholeWordEnabled, hebrewSearchMode, or related state here.
-    // These should persist across overlay switches so the user can return to their search.
+    // NOTE: We intentionally DO NOT reset the terms, currentResults,
+    // matchingTerms or related state here. These should persist across overlay
+    // switches so the user can return to their search — including the mode each
+    // term was being matched by.
   },
 
   urlParams: URL_PARAMS,
@@ -1193,17 +1345,13 @@ export const searchOverlay: Overlay = {
     if (query) {
       params.q = query;
     }
-    if (wholeWordEnabled) {
-      params.ww = '1';
-    }
-    // Root is the default now, so it is substring and word that are worth
-    // saying. A link written before the default changed paints differently,
-    // which is the decision recorded in the design: an absent parameter means
-    // whatever the default currently is.
-    if (query && searchIsHebrew() && hebrewSearchMode !== 'root') {
-      params.hm = hebrewSearchMode;
-    }
-    if (meaningsApply()) {
+    if (query) {
+      // Both are positional over the same list, so they are written together
+      // and a term that has chosen nothing contributes an empty entry rather
+      // than being skipped — skipping it would shift every later term.
+      const modes = encodeModes(activeTerms());
+      if (modes) params.mode = modes;
+
       const meanings = encodeMeanings(activeTerms());
       if (meanings) params.m = meanings;
     }
@@ -1211,22 +1359,20 @@ export const searchOverlay: Overlay = {
   },
 
   applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
-    wholeWordEnabled = params.ww === '1';
-    if (wholeWordCheckbox) {
-      wholeWordCheckbox.checked = wholeWordEnabled;
-    }
-
-    hebrewSearchMode = params.hm ?? 'root';
-    syncHebrewModeRadios();
-
-    // Rebuild the term list from the query, then lay the chosen meanings over
-    // it. Positions are safe here: q and m are read as one snapshot.
+    // Rebuild the term list from the query, then lay the chosen modes and
+    // meanings over it. Positions are safe here: q, mode and m are read as one
+    // snapshot. It is editing, not loading, that needs identity.
     terms = parseSearchTerms(params.q ?? '').reduce(addTerm, [] as SearchTerm[]);
     if (terms.length === 0) terms = addTerm([], '');
+    if (params.mode) {
+      terms = applyModes(terms, params.mode);
+    }
     if (params.m) {
       terms = applyMeanings(terms, params.m);
     }
 
+    // A fresh list means a fresh choice of which row is open.
+    openTermId = null;
     runSearch();
   },
 

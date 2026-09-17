@@ -17,7 +17,8 @@
     "typecheck": "tsc --project tsconfig.build.json --noEmit",
     "test:ci": "npm run typecheck && npm run test",
     "validate:haftarah": "npx tsx scripts/overlays/haftarah/generate.ts",
-    "generate:text-dating": "npx tsx scripts/generate-text-dating.ts"
+    "generate:text-dating": "npx tsx scripts/generate-text-dating.ts",
+    "report:click-resolution": "npx tsx scripts/search/click-resolution-report.ts"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.18",
