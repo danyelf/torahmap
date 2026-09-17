@@ -9,7 +9,10 @@ const searchOverlay = getOverlay('search')!;
 import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
-import { SEARCH_COLORS, DIM_FACTOR } from '../../../utils/color';
+import { SEARCH_COLORS } from '../../../utils/color';
+import { HIGHLIGHT_CONSTANTS } from '../../../constants';
+
+const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';

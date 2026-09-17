@@ -3,7 +3,6 @@ import type { Color } from '../overlays/types.ts';
 
 // Shared color constants
 export const HIGHLIGHT_COLOR: Color = [0.2, 0.9, 1.0]; // Bright cyan for search/selection
-export const DIM_FACTOR = 0.3; // Dimming factor for non-highlighted verses
 
 // Fixed palette for multi-term search (cyan, orange, lime, pink, yellow)
 export const SEARCH_COLORS: Color[] = [
