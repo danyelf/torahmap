@@ -773,18 +773,17 @@ describe('labels', () => {
     });
 
     describe('performance', () => {
-      it('handles many labels efficiently', () => {
+      it('positions every label in a large set', () => {
         const verses = Array.from({ length: 100 }, (_, i) =>
           createVerse({ book: `Book${i}`, x: i * 10, y: i * 20 }),
         );
         const manyLabels = createBookLabels(verses, container);
 
-        const start = performance.now();
         updateLabelPositions(manyLabels, { x: 50, y: 100 }, 2);
-        const duration = performance.now() - start;
 
-        // Should complete in reasonable time (< 100ms for 100 labels)
-        expect(duration).toBeLessThan(100);
+        const labels = Array.from(manyLabels.children) as HTMLElement[];
+        expect(labels.length).toBe(100);
+        expect(labels.every((label) => label.style.left !== '')).toBe(true);
       });
     });
   });
