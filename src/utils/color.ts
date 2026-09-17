@@ -57,6 +57,22 @@ export function scaleToGradient(
   }
 }
 
+/**
+ * Renders a CSS `linear-gradient(...)` string by sampling `colorAt` at `stops`
+ * evenly spaced indices (0..stops-1). Used to build legend gradient bars.
+ */
+export function buildLegendGradient(stops: number, colorAt: (index: number) => Color): string {
+  const parts: string[] = [];
+  for (let i = 0; i < stops; i++) {
+    const rgb = colorAt(i)
+      .map((c) => Math.round(c * 255))
+      .join(', ');
+    const percent = (i / (stops - 1)) * 100;
+    parts.push(`rgb(${rgb}) ${percent}%`);
+  }
+  return `linear-gradient(to right, ${parts.join(', ')})`;
+}
+
 /** Heatmap scale: dark blue -> light blue -> teal -> orange -> red, logarithmic. */
 export function heatmapColor(value: number, maxValue: number): Color {
   if (value === 0) return [0.15, 0.15, 0.2]; // No data
