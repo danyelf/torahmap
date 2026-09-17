@@ -254,8 +254,10 @@ function lexemesForKeys(keys: readonly string[]): Set<LexemeId> {
 // dictionary word the reader is looking at: no inference involved.
 //
 // It costs 4.5 MB, which is more than the other three files together, and no
-// reader needs it until a verse is on screen. So it is fetched then, and until
-// it lands every answer here is the one the spelling gives.
+// reader needs it until a verse is on screen. So it is not part of startup:
+// `prefetchMorphology` asks for it once the app has gone idle, and opening a
+// verse asks for it outright. Until it lands every answer here is the one the
+// spelling gives.
 
 /** morphemes as [lexeme, parsing], morphemes per printed word, maqaf positions. */
 type ParsedVerse = [Array<[LexemeId, number]>, number[], number[]];
@@ -294,6 +296,29 @@ function loadMorphology(): Promise<void> {
     });
   return loading;
 }
+
+/**
+ * Ask for the parse once the app has finished starting up, so that the reader
+ * who opens a verse is not the one who waits for it.
+ *
+ * Scheduled rather than called, because the point is to stay off the critical
+ * path: at the moment this runs the first frame has been drawn but the browser
+ * may still be laying out and painting. Safari has no `requestIdleCallback`,
+ * hence the timer; either way the fetch is the same memoized one `loading`
+ * guards, so a verse opened before this fires still fetches exactly once.
+ */
+export function prefetchMorphology(): void {
+  if (typeof requestIdleCallback === 'function') {
+    // The deadline matters more than the idleness: on a page that never goes
+    // idle the callback must still run.
+    requestIdleCallback(() => void loadMorphology(), { timeout: PREFETCH_TIMEOUT_MS });
+  } else {
+    setTimeout(() => void loadMorphology(), PREFETCH_TIMEOUT_MS);
+  }
+}
+
+/** Long enough to be clear of first paint, short enough to beat a deliberate click. */
+const PREFETCH_TIMEOUT_MS = 2000;
 
 /**
  * The verse whose Hebrew is on screen, and its printed words' stems by where
