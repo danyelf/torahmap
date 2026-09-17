@@ -1,5 +1,5 @@
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
-import type { TanakhIdentity } from '../types.ts';
+import type { TanakhIdentity, TorahData } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { rgbToHsl, hslToRgb, buildLegendGradient } from '../utils/color.ts';
@@ -58,14 +58,6 @@ interface HaftarahMappings {
   specialOccasions: SpecialOccasionData[];
 }
 
-interface TanakhStructure {
-  books: Array<{
-    name: string;
-    hebrewName: string;
-    chapters: number[];
-  }>;
-}
-
 function getItemColor(itemIndex: number, totalItemCount: number): Color {
   const hue = (itemIndex / totalItemCount) * 360;
   return hslToRgb({ h: hue, s: 0.8, l: 0.55 });
@@ -92,7 +84,7 @@ const URL_PARAMS = [
 ] as const satisfies readonly UrlParamSpec[];
 
 let data: HaftarahMappings | null = null;
-let structure: TanakhStructure | null = null;
+let structure: TorahData | null = null;
 let currentCustom: Custom = 'ashkenazi';
 let hoveredVerse: TanakhIdentity | null = null;
 let updateCallback: (() => void) | null = null;
@@ -244,7 +236,7 @@ export const haftarahOverlay: Overlay = {
     try {
       const [haftarahData, structureData] = await Promise.all([
         loadJson<HaftarahMappings>('overlays/haftarah/mappings.json'),
-        loadJson<TanakhStructure>('tanakh-structure.json'),
+        loadJson<TorahData>('tanakh-structure.json'),
       ]);
       if (!haftarahData || !structureData) return;
 
