@@ -1,5 +1,7 @@
 # Scrollytelling Implementation Plan
 
+**Status:** Shipped — see `2026-03-25-scrollytelling-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add a scroll-driven narrative panel that smoothly transitions the Tanakh map between camera positions and overlay states as the user reads through a guided story.

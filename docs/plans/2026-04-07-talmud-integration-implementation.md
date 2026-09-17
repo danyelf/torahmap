@@ -1,5 +1,7 @@
 # Talmud Integration Implementation Plan
 
+**Status:** Shipped — see `2026-04-07-talmud-integration-design.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the full Babylonian Talmud as a second corpus at `/torahmap/talmud.html`, sharing the Torah Map's WebGL rendering pipeline via a lightweight type generalization, with all 37 Bavli tractates rendered in a bookshelf layout, structural Mishnah/Gemara coloring, and one first-cut analytical overlay.

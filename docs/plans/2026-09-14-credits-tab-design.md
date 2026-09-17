@@ -1,5 +1,6 @@
 # Credits tab — design
 
+**Status:** Shipped — `src/credits.ts`.
 Issue: [#100](https://github.com/danyelf/torahmap/issues/100)
 
 ## The problem

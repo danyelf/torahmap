@@ -1,5 +1,7 @@
 # Scrollytelling Design
 
+**Status:** Shipped — `src/scrollytelling/`.
+
 ## Overview
 
 Add a right-side text panel that drives a guided narrative through the Tanakh map. As the user scrolls through story text, the map smoothly transitions between camera positions and overlay states. The user can exit into free exploration and return to the story.
