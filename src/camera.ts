@@ -12,26 +12,16 @@ export interface Camera {
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10.0;
 
-// Margin from right edge to keep Genesis 1:1 clear of the sidebar (280px + padding)
+// Keeps Genesis 1:1 clear of the right-panel sidebar; wider than the panel
+// itself so the verse isn't flush against its edge.
 const RIGHT_MARGIN = 320;
 // Top margin to leave room for book labels above the first row
 const TOP_MARGIN = 40;
 
-/**
- * Create initial camera state with Genesis 1:1 near the top-right,
- * offset enough to clear the verse sidebar.
- * Always starts at 1.0 zoom to avoid moiré from fractional scaling.
- *
- * @param cssWidth - Window width in CSS pixels
- * @param cssHeight - Window height in CSS pixels
- * @param bounds - Bounding box of the visualization
- * @returns Camera state with 1.0 zoom, Genesis 1:1 at top-right
- */
+// At zoom=1, screenX = worldX + pan.x, and Genesis 1:1 sits near worldX ≈
+// bounds.width (rightmost after RTL mirror). Solving screenX = cssWidth -
+// RIGHT_MARGIN for pan.x gives the offset below.
 export function createCamera(cssWidth: number, _cssHeight: number, bounds: Bounds): Camera {
-  // At zoom=1, screenX = (worldX + pan.x) * 1 = worldX + pan.x
-  // Genesis 1:1 is near worldX ≈ bounds.width (rightmost after RTL mirror)
-  // We want it at screenX = cssWidth - RIGHT_MARGIN
-  // So pan.x = cssWidth - RIGHT_MARGIN - bounds.width
   return {
     x: cssWidth - RIGHT_MARGIN - bounds.width,
     y: TOP_MARGIN,
@@ -39,12 +29,6 @@ export function createCamera(cssWidth: number, _cssHeight: number, bounds: Bound
   };
 }
 
-/**
- * Clamp zoom level to valid range [0.1, 10.0].
- *
- * @param zoom - Zoom value to clamp
- * @returns Clamped zoom value
- */
 export function clampZoom(zoom: number): number {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
 }

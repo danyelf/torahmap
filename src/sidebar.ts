@@ -56,9 +56,6 @@ function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLay
   };
 }
 
-/**
- * DOM elements that make up the verse details sidebar
- */
 export interface SidebarElements {
   sidebar: HTMLElement | null;
   ref: Element | null;
@@ -70,9 +67,6 @@ export interface SidebarElements {
   closeBtn: Element | null;
 }
 
-/**
- * Get references to all sidebar DOM elements
- */
 export function getSidebarElements(): SidebarElements {
   const sidebar = document.getElementById('verse-popup');
 
@@ -104,7 +98,6 @@ export function getSefariaUrl(
   const sefariaBook = book.replace(/ /g, '_');
   const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
 
-  // If viewing commentary overlay with a category filter, open to that category
   if (currentOverlay?.id === 'commentary') {
     const urlParams = currentOverlay.getUrlParams?.();
     const category = urlParams?.category;
@@ -113,13 +106,9 @@ export function getSefariaUrl(
     }
   }
 
-  // Default: show all connections (since we display link counts in sidebar)
   return `${baseUrl}?with=all`;
 }
 
-/**
- * Update sidebar with verse info
- */
 export function updateSidebar(
   elements: SidebarElements,
   verse: TanakhLayout | null,
@@ -149,7 +138,6 @@ export function updateSidebar(
     ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
   }
   if (overlayInfo) {
-    // Try overlay-specific sidebar info first (for detailed info when pinned)
     const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned);
     if (sidebarInfo) {
       if (typeof sidebarInfo === 'string') {
@@ -158,7 +146,6 @@ export function updateSidebar(
         overlayInfo.replaceChildren(sidebarInfo);
       }
     } else {
-      // Fall back to hover info (e.g., parshah name for Torah verses)
       const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
       overlayInfo.textContent = hoverInfo || '';
     }
@@ -202,12 +189,10 @@ export function updateSidebar(
     link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
   }
   if (linkSubtitle) {
-    // Try overlay-specific link subtitle first
     const overlaySubtitle = currentOverlay?.getLinkSubtitle?.(verse);
     if (overlaySubtitle) {
       linkSubtitle.textContent = overlaySubtitle;
     } else {
-      // Fall back to total link count
       const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
       linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
     }

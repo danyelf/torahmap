@@ -12,8 +12,7 @@ export interface TropMark {
   hebrewName: string; // Hebrew name
 }
 
-// All 27 trop marks with their names
-// Ordered by traditional grouping, will be sorted by frequency later
+// The trop marks, with their names, ordered by traditional grouping.
 export const TROP_MARKS: TropMark[] = [
   // Disjunctive accents (מפסיקים) - Emperors
   { unicode: '\u0592', name: 'Segol', hebrewName: 'סגול' },
@@ -92,7 +91,6 @@ function countTropMarks(hebrewText: string): Map<string, number> {
 export function buildTropIndex(verseTexts: VerseTexts): TropIndex {
   const index: TropIndex = new Map();
 
-  // Initialize entries for all known trop marks
   for (const trop of TROP_MARKS) {
     index.set(trop.unicode, {
       unicode: trop.unicode,
@@ -103,7 +101,6 @@ export function buildTropIndex(verseTexts: VerseTexts): TropIndex {
     });
   }
 
-  // Scan all verses
   for (const [book, chapters] of Object.entries(verseTexts)) {
     for (const [chapterStr, verses] of Object.entries(chapters)) {
       const chapter = parseInt(chapterStr, 10);

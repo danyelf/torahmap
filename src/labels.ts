@@ -25,7 +25,6 @@ export function createBookLabels(
   container: HTMLElement,
   hebrewNames?: Record<string, string>,
 ): HTMLDivElement {
-  // Group verses by book to find column positions
   const books: Record<string, BookBounds> = {};
   for (const v of verses) {
     if (!books[v.book]) {
@@ -77,10 +76,7 @@ export function createBookLabels(
 }
 
 export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
-  // Scale font size with zoom, clamped to prevent extremes
   const fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
-
-  // Scale gap proportionally to font size
   const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
 
   for (const label of labelsContainer.children) {
@@ -97,7 +93,6 @@ export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoo
       label.style.fontSize = fontSize + 'px';
       label.style.transform = 'translateX(-100%)';
 
-      // Show English name only when the book is wide enough on screen
       const bookScreenWidth = bookWidth * zoom;
       const enSpan = label.querySelector<HTMLElement>('.book-label-en');
       if (enSpan) {
