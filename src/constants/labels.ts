@@ -12,9 +12,9 @@ export const HEBREW_LABEL_FONT = '"David Libre", system-ui, sans-serif';
 
 /**
  * How much larger a label sets its Hebrew than its nominal size. David Libre's
- * letter bodies fill 53% of the em against about 61% for the sans faces beside
- * them (measured: 105.5px against 121.3px for מ, ב and ת set at 200px), so the
- * plain number reads small.
+ * letter bodies fill 0.53 of the em where the sans Hebrew faces around it fill
+ * 0.59 to 0.61 (mean of מ, ב and ת, steady from 200px up), so the plain number
+ * reads small. 1.15 puts it at the top of that range.
  *
  * Applied outside the zoom clamps — an em on the Hebrew span in labels.ts, a
  * multiplier on the clamped size in talmudLabels.ts — so MIN and MAX go on
