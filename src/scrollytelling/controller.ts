@@ -12,7 +12,7 @@ const REST_ZONE_FRACTION = 0.4;
  * Compute the scrollTop at which each stop's content is centered in the viewport.
  * This is the scrollTop where the stop's visual center aligns with the viewport center.
  */
-export function computeStopScrollCenters(
+function computeStopScrollCenters(
   stopOffsets: number[],
   stopHeights: number[],
   viewportHeight: number,

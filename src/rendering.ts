@@ -230,7 +230,7 @@ export function renderOutline<T>(
       size: verse.size,
     },
     {
-      thickness: 2,
+      thickness: HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
       color: color,
     },
   );

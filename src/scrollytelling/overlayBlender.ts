@@ -37,10 +37,7 @@ function objToTuple(c: Color): [number, number, number] {
  * Get colors for a single story stop by querying its overlay.
  * Returns colors as { r, g, b } objects for blending compatibility.
  */
-export function getColorsForStop(
-  stop: ResolvedStoryStop,
-  verses: TanakhLayout[],
-): (Color | Color[])[] {
+function getColorsForStop(stop: ResolvedStoryStop, verses: TanakhLayout[]): (Color | Color[])[] {
   if (!stop.overlay) {
     return verses.map((_, i) => tupleToObj(getDefaultColor(i)));
   }
