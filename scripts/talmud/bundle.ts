@@ -2,9 +2,6 @@
 /**
  * Bundle Talmud raw cache into runtime-fetchable JSON files.
  *
- * Issue: tm-f28x
- * Design: docs/plans/2026-04-07-talmud-integration-design.md §3.4
- *
  * Inputs:
  *   data-transient/talmud-raw/<Tractate>/wikisource.json
  *   data-transient/talmud-raw/<Tractate>/schema.json
@@ -21,29 +18,19 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-// ============================================================================
-// Pure helpers (unit-tested)
-// ============================================================================
+// Pure helpers (unit-tested).
 
 /**
  * Walk a tractate's segment stream tracking Mishnah/Gemara state.
  *
  * Rule: a segment counts as a structural marker only when it carries
  * BOTH a marker word (מתני׳ / גמ׳) AND a `<big>` (or `<big><strong>`)
- * presentational wrapper near the start of the segment. Wikisource uses
- * two equally common forms:
- *
- *   - "<big><strong>מתני׳</strong></big> first mishnah word..."
- *      (the marker itself is wrapped)
- *   - "מתני׳ <big><strong>אין</strong></big> מעמידין..."
- *      (the marker is bare and the first content word is wrapped)
- *
- * Both forms put a `<big>` tag inside the leading region of the segment,
- * which makes "marker word + nearby <big>" a robust signal. The wrap is
- * the strongest cue — without it, segments like Bava Metzia 6b:2
- * ("א\"ל רב המנונא מתני׳ היא ספק בכורות...") would falsely flip the
- * state for dozens of dapim, because the abbreviation is also natural
- * Hebrew that appears inside running text.
+ * presentational wrapper near the start of the segment — see the marker
+ * regexes below for the exact forms this takes. The wrap is the strongest
+ * cue — without it, segments like Bava Metzia 6b:2 ("א\"ל רב המנונא מתני׳
+ * היא ספק בכורות...") would falsely flip the state for dozens of dapim,
+ * because the abbreviation is also natural Hebrew that appears inside
+ * running text.
  *
  * Initial state is gemara (conservative default — in practice the very
  * first segment of every tractate is a wrapped מתני׳ marker).
@@ -140,8 +127,6 @@ export function walkMarkersWithBudget(
     charsConsumedInRun = 0;
     runForceFlipped = false;
     const units = perekUnitChars[newIdx] ?? [];
-    // Per-marker cap = largest single standalone unit × slack. This is
-    // the upper bound for any one Bavli mishnah block in this perek.
     const maxUnit = units.length > 0 ? Math.max(...units) : 0;
     currentBudget = maxUnit * slack;
   }
@@ -244,10 +229,6 @@ export function stripHtml(s: string): string {
   );
 }
 
-// ============================================================================
-// Output schema types
-// ============================================================================
-
 export interface TalmudAmud {
   daf: number;
   amud: 'a' | 'b';
@@ -282,10 +263,6 @@ export interface TalmudTractateText {
   name: string;
   amudim: string[][];
 }
-
-// ============================================================================
-// Schema parsing
-// ============================================================================
 
 interface WikisourceJson {
   text: string[][];
@@ -363,10 +340,6 @@ export function parseWholeRef(ref: string): {
 export function dafAmudToIdx(daf: number, amud: 'a' | 'b', firstDaf: number): number {
   return (daf - firstDaf) * 2 + (amud === 'b' ? 1 : 0);
 }
-
-// ============================================================================
-// Tractate processing
-// ============================================================================
 
 export interface MishnahJson {
   text: string[][]; // [perek][mishnah_unit]
@@ -463,14 +436,12 @@ export function processTractate(
     mishnahMask = walkMarkers(markerText);
   }
 
-  // Strip markers and HTML from text before storing.
   const cleanText: string[][] = rawText.map((amud) =>
     amud.map((seg) =>
       stripHtml(seg.replace(/מתני׳/g, '').replace(/גמ׳/g, '').replace(/הדרן/g, '')),
     ),
   );
 
-  // Build the TalmudAmud[] array.
   const amudim: TalmudAmud[] = [];
   for (let ai = 0; ai < rawText.length; ai++) {
     const segmentCount = rawText[ai].length;
@@ -503,10 +474,6 @@ export function processTractate(
   };
 }
 
-// ============================================================================
-// Main script
-// ============================================================================
-
 const CACHE_ROOT = 'data-transient/talmud-raw';
 const MISHNAH_CACHE = 'data-transient/mishnah-raw';
 const COVERAGE_REPORT = 'docs/plans/data/2026-04-07-talmud-coverage-report.json';
@@ -535,9 +502,7 @@ async function main(): Promise<void> {
       const ws: WikisourceJson = JSON.parse(wsText);
       const sc: SchemaJson = JSON.parse(scText);
 
-      // Load merged.json (Steinsaltz) — used as a more reliable marker
-      // source. Optional; falls back to wikisource if missing or shape
-      // mismatched.
+      // Optional; processTractate falls back to wikisource if missing.
       let merged: MergedJson | null = null;
       try {
         const mergedRaw = await readFile(join(CACHE_ROOT, ref.tractate, 'merged.json'), 'utf-8');
@@ -546,8 +511,7 @@ async function main(): Promise<void> {
         /* fall back to wikisource markers */
       }
 
-      // Load standalone Mishnah counterpart for the mishnah-budget cap.
-      // It's optional — if missing we fall back to the marker-only walker.
+      // Optional; processTractate falls back to the marker-only walker.
       let mishnah: MishnahJson | null = null;
       try {
         const mishText = await readFile(join(MISHNAH_CACHE, `${ref.tractate}.json`), 'utf-8');

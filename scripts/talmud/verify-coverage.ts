@@ -2,9 +2,6 @@
 /**
  * Verify Wikisource coverage across all Bavli tractates.
  *
- * Issue: #45 (was tm-u7b1)
- * Design: docs/plans/2026-04-07-talmud-integration-design.md §2
- *
  * For each tractate:
  *   1. Download Wikisource Hebrew JSON (primary source for M/G markers)
  *   2. Download Davidson merged.json (secondary, for shape cross-check)
@@ -14,7 +11,7 @@
  *   6. Emit report to data-transient/talmud-coverage-report.json
  *
  * Raw files cached under data-transient/talmud-raw/<Tractate>/ and reused
- * by scripts/talmud/bundle.ts (built under issue #33, was tm-f28x).
+ * by scripts/talmud/bundle.ts.
  *
  * Usage:
  *   npx tsx scripts/talmud/verify-coverage.ts            # honor cache
@@ -24,11 +21,9 @@
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
 
-// ============================================================================
 // Tractate list — hand-rolled. Source: standard Vilna Bavli table of contents.
 // 37 tractates total. Shekalim is excluded because its "Bavli" Gemara is
-// actually Yerushalmi (see design doc §2.5).
-// ============================================================================
+// actually Yerushalmi.
 
 export interface TractateRef {
   seder: string;
@@ -82,10 +77,6 @@ export const BAVLI_TRACTATES: ReadonlyArray<TractateRef> = [
 ];
 // 1 + 11 + 7 + 8 + 9 + 1 = 37
 
-// ============================================================================
-// Configuration
-// ============================================================================
-
 const CACHE_ROOT = 'data-transient/talmud-raw';
 const REPORT_PATH = 'data-transient/talmud-coverage-report.json';
 
@@ -98,10 +89,6 @@ const GCS_BASE = 'https://storage.googleapis.com/sefaria-export';
 // verification is the hard shape/schema check above.
 const MARKER_MIN = 3;
 const MARKER_MAX = 400;
-
-// ============================================================================
-// Fetch + cache helpers
-// ============================================================================
 
 async function fileExists(path: string): Promise<boolean> {
   try {
@@ -191,9 +178,7 @@ async function fetchTractate(
   };
 }
 
-// ============================================================================
-// Verification logic (pure functions, no I/O)
-// ============================================================================
+// Verification logic — pure functions, no I/O.
 
 export interface VerificationResult {
   status: 'pass' | 'hard-fail' | 'soft-fail';
@@ -338,10 +323,6 @@ export function verifyTractate(
   };
 }
 
-// ============================================================================
-// Report + summary output
-// ============================================================================
-
 interface CoverageReport {
   generatedAt: string;
   totalTractates: number;
@@ -392,10 +373,6 @@ function printSummary(results: Array<VerificationResult & TractateRef>): void {
     }
   }
 }
-
-// ============================================================================
-// Entry point
-// ============================================================================
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
