@@ -7,6 +7,14 @@
 // x/y/size, so a new corpus needs just a concrete identity type — see
 // TalmudIdentity below — to reuse the whole pipeline unchanged.
 
+/**
+ * Which of a verse's two texts is in hand: the Hebrew or the English.
+ *
+ * It decides how text is folded for matching and where a word ends, so it
+ * travels with the text rather than being guessed from it.
+ */
+export type TextLanguage = 'he' | 'en';
+
 export interface Book {
   name: string;
   hebrewName: string;

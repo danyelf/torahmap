@@ -1,7 +1,7 @@
 // Full-text search overlay
 import '../styles/overlays/search.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
-import type { TanakhIdentity, TanakhLayout } from '../types.ts';
+import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import {
   getMatchingVerseTerms,
@@ -1039,7 +1039,7 @@ function buildHighlightedDomFragment(text: string, matches: Match[]): DocumentFr
 }
 
 /** Builds the DOM directly rather than through innerHTML. */
-export function highlightSearchTerms(text: string, language: 'he' | 'en'): DocumentFragment {
+export function highlightSearchTerms(text: string, language: TextLanguage): DocumentFragment {
   const fragment = document.createDocumentFragment();
 
   const active = activeTerms();
@@ -1216,7 +1216,7 @@ export const searchOverlay: Overlay = {
     runSearch();
   },
 
-  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment {
+  highlightVerseText(text: string, language: TextLanguage): DocumentFragment {
     return highlightSearchTerms(text, language);
   },
 };

@@ -19,6 +19,7 @@ import {
   splitIntoWords,
 } from './hebrew.ts';
 import { escapeForRegex, foldForMatching, matchRangesInFolded } from './search/matching.ts';
+import type { TextLanguage } from './types.ts';
 
 export interface TermMatch {
   termIndex: number;
@@ -31,7 +32,7 @@ export interface SearchResult {
   book: string;
   chapter: number;
   verse: number;
-  language: 'he' | 'en';
+  language: TextLanguage;
   matchingTerms: TermMatch[];
 }
 
@@ -594,7 +595,7 @@ export function verseSetsForTerms(
  */
 export function resultsForVerseSets(
   termVerseKeys: Array<Set<string>>,
-  termLanguages?: Array<'he' | 'en'>,
+  termLanguages?: TextLanguage[],
 ): SearchResult[] {
   const resultMap = new Map<string, SearchResult>();
 

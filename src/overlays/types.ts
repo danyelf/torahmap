@@ -1,4 +1,4 @@
-import type { TanakhIdentity } from '../types.ts';
+import type { TanakhIdentity, TextLanguage } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '../urlState.ts';
 import type { Credit } from '../credits.ts';
 
@@ -44,7 +44,7 @@ export interface Overlay<T = TanakhIdentity> {
 
   renderSidebarInfo?(verse: T, isPinned: boolean): HTMLElement | null;
 
-  highlightVerseText?(text: string, language: 'he' | 'en'): DocumentFragment;
+  highlightVerseText?(text: string, language: TextLanguage): DocumentFragment;
 
   getLinkSubtitle?(verse: T): string | null;
 

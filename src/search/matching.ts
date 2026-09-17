@@ -7,6 +7,7 @@
 // like a bug in the highlighter and was really the two rules drifting apart.
 
 import { normalizeHebrewForSearch, splitIntoWords } from '../hebrew.ts';
+import type { TextLanguage } from '../types.ts';
 
 export interface TextRange {
   start: number;
@@ -21,7 +22,7 @@ export function escapeForRegex(term: string): string {
 }
 
 /** The spelling text is compared under: folded for Hebrew, lowercased for English. */
-export function foldForMatching(text: string, language: 'he' | 'en'): string {
+export function foldForMatching(text: string, language: TextLanguage): string {
   return language === 'he' ? normalizeHebrewForSearch(text) : text.toLowerCase();
 }
 
@@ -38,7 +39,7 @@ export function foldForMatching(text: string, language: 'he' | 'en'): string {
 export function matchRangesInFolded(
   haystack: string,
   needle: string,
-  options: { mode: MatchMode; language: 'he' | 'en'; limit?: number },
+  options: { mode: MatchMode; language: TextLanguage; limit?: number },
 ): TextRange[] {
   const { mode, language, limit = Infinity } = options;
   if (needle.length === 0 || limit <= 0) return [];
@@ -87,7 +88,7 @@ export function matchRangesInFolded(
 export function matchRanges(
   text: string,
   term: string,
-  options: { mode: MatchMode; language: 'he' | 'en'; limit?: number },
+  options: { mode: MatchMode; language: TextLanguage; limit?: number },
 ): TextRange[] {
   const folded = foldForMatching(text, options.language);
   const needle = foldForMatching(term, options.language);

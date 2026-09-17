@@ -1,6 +1,6 @@
 import '../styles/overlays/trop.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
-import type { TanakhIdentity, TropIndex, TropIndexEntry } from '../types.ts';
+import type { TanakhIdentity, TropIndex, TropIndexEntry, TextLanguage } from '../types.ts';
 import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
@@ -238,7 +238,7 @@ export const tropOverlay: Overlay = {
     }
   },
 
-  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment {
+  highlightVerseText(text: string, language: TextLanguage): DocumentFragment {
     const fragment = document.createDocumentFragment();
     if (language !== 'he' || !selectedTrop) {
       fragment.appendChild(document.createTextNode(text));
