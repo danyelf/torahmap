@@ -8,15 +8,9 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     environment: 'happy-dom',
     setupFiles: ['./src/__tests__/setup.ts'],
-    // Limit worker pool to prevent zombie processes
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 4,
-        minForks: 1,
-        singleFork: false,
-      },
-    },
+    maxWorkers: 4,
+    minWorkers: 1,
     // Force cleanup on exit
     teardownTimeout: 5000,
   },
