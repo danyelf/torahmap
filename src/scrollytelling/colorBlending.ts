@@ -1,4 +1,3 @@
-// src/scrollytelling/colorBlending.ts
 import { lerpColor } from './interpolation';
 
 type Color = { r: number; g: number; b: number };
