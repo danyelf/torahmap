@@ -3,9 +3,9 @@
 Danyel Fisher
 January 2026
 
-I love the idea of being able to lay out an entire text as an interactive surface. Brad Paley's ["TextArc"](https://history.siggraph.org/artwork/w-bradford-paley-textarc/) was an early inspiration for me; so was Alexander's ["Serendip"](https://github.com/uwgraphics/SerendipSlim) and "Pomeage".
+I love the idea of being able to lay out an entire text as an interactive surface. Brad Paley's ["TextArc"](https://history.siggraph.org/artwork/w-bradford-paley-textarc/) was an early inspiration for me; so was Alexander's "Serendip" (TK: link) and "Pomeage" (TK: link).
 
-The Tanakh -- the Jewish Bible -- is a rich and deep text.
+The Tanakh -- the Jewish Bible -- is a rich and deep text, and -- fortunately -- we live in an era TK: finish this sentence.
 
 Overlays, in the order the map offers them:
 
