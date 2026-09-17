@@ -54,7 +54,7 @@ const FINAL_FORM_MAP: Record<string, string> = {
  * dropped. The two disagreeing does not fail loudly: it shifts every highlight
  * after the disagreement along by one character, which looks plausible.
  */
-export function isNikkud(code: number): boolean {
+function isNikkud(code: number): boolean {
   if (code === GRAPHEME_JOINER) return true;
   return code >= NIKKUD_START && code <= NIKKUD_END && !SEPARATOR_CODES.has(code);
 }

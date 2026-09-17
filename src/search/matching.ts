@@ -78,19 +78,3 @@ export function matchRangesInFolded(
   }
   return ranges;
 }
-
-/**
- * Where `term` matches `text`, folding both. Positions are in the folded text,
- * which for Hebrew is not the text passed in because the points are gone; map
- * back with mapStrippedToOriginal. Folding never turns one character into two,
- * so a position is always valid.
- */
-export function matchRanges(
-  text: string,
-  term: string,
-  options: { mode: MatchMode; language: TextLanguage; limit?: number },
-): TextRange[] {
-  const folded = foldForMatching(text, options.language);
-  const needle = foldForMatching(term, options.language);
-  return matchRangesInFolded(folded, needle, options);
-}
