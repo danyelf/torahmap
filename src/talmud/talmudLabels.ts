@@ -13,24 +13,30 @@ import {
   SEDER_BACKGROUND_COLORS,
   SEDER_BACKGROUND_OPACITY,
 } from './constants.ts';
+import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '../constants/labels.ts';
 
 // Perek labels appear at mid-zoom and above (same threshold as the daf
 // 3/3/4 tier — when the user can see individual sub-decade dapim, the
 // perek headings become legible too).
 const PEREK_LABEL_ZOOM_THRESHOLD = 0.7;
-const BASE_PEREK_FONT_SIZE = 9;
-const MIN_PEREK_FONT_SIZE = 7;
-const MAX_PEREK_FONT_SIZE = 18;
 
-const BASE_TRACTATE_FONT_SIZE = 12;
-const MIN_TRACTATE_FONT_SIZE = 6;
-const MAX_TRACTATE_FONT_SIZE = 36;
+// Size at zoom 1, and the bounds it is held between as the reader zooms.
+interface LabelSize {
+  base: number;
+  min: number;
+  max: number;
+}
 
-const BASE_SEDER_FONT_SIZE = 28;
-const MIN_SEDER_FONT_SIZE = 14;
-const MAX_SEDER_FONT_SIZE = 96;
+const PEREK_SIZE: LabelSize = { base: 9, min: 7, max: 18 };
+const TRACTATE_SIZE: LabelSize = { base: 12, min: 6, max: 36 };
+const SEDER_SIZE: LabelSize = { base: 28, min: 14, max: 96 };
 
 const DAF_LABEL_FONT_SIZE = 9;
+
+// Every Hebrew label scales with zoom between its own bounds, then takes the
+// correction for the face it is set in.
+const hebrewLabelFontSize = ({ base, min, max }: LabelSize, zoom: number) =>
+  Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE;
 
 // Transliterated → Hebrew display fallback for seder names.
 const SEDER_HEBREW: Record<string, string> = {
@@ -106,7 +112,7 @@ export function createTalmudLabels(
       position:absolute;
       color:#cfd6e6;
       opacity:0.55;
-      font-family:"Noto Sans Hebrew", system-ui, sans-serif;
+      font-family:${HEBREW_LABEL_FONT};
       font-weight:700;
       letter-spacing:0.04em;
       text-shadow:0 1px 4px rgba(0,0,0,0.7);
@@ -132,7 +138,7 @@ export function createTalmudLabels(
     label.style.cssText = `
       position:absolute;
       color:#eee;
-      font-family:"Noto Sans Hebrew", system-ui, sans-serif;
+      font-family:${HEBREW_LABEL_FONT};
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
@@ -161,7 +167,7 @@ export function createTalmudLabels(
       position:absolute;
       color:#cfd6e6;
       opacity:0.75;
-      font-family:"Noto Sans Hebrew", system-ui, sans-serif;
+      font-family:${HEBREW_LABEL_FONT};
       font-weight:600;
       text-shadow:0 1px 2px rgba(0,0,0,0.7);
       white-space:nowrap;
@@ -242,10 +248,7 @@ export function updateTalmudLabelPositions(
   }
 
   // Seder labels: always visible, large.
-  const sederFontSize = Math.max(
-    MIN_SEDER_FONT_SIZE,
-    Math.min(MAX_SEDER_FONT_SIZE, BASE_SEDER_FONT_SIZE * zoom),
-  );
+  const sederFontSize = hebrewLabelFontSize(SEDER_SIZE, zoom);
   for (const el of Array.from(state.sederLabels.children) as HTMLElement[]) {
     const worldX = parseFloat(el.dataset.worldX || '0');
     const worldY = parseFloat(el.dataset.worldY || '0');
@@ -257,10 +260,7 @@ export function updateTalmudLabelPositions(
   }
 
   // Tractate labels: always visible, scaled with zoom.
-  const fontSize = Math.max(
-    MIN_TRACTATE_FONT_SIZE,
-    Math.min(MAX_TRACTATE_FONT_SIZE, BASE_TRACTATE_FONT_SIZE * zoom),
-  );
+  const fontSize = hebrewLabelFontSize(TRACTATE_SIZE, zoom);
   for (const el of Array.from(state.tractateLabels.children) as HTMLElement[]) {
     const worldX = parseFloat(el.dataset.worldX || '0');
     const worldY = parseFloat(el.dataset.worldY || '0');
@@ -273,10 +273,7 @@ export function updateTalmudLabelPositions(
 
   // Perek labels: visible at mid+ zoom, scaled with zoom.
   const perekVisible = zoom >= PEREK_LABEL_ZOOM_THRESHOLD;
-  const perekFontSize = Math.max(
-    MIN_PEREK_FONT_SIZE,
-    Math.min(MAX_PEREK_FONT_SIZE, BASE_PEREK_FONT_SIZE * zoom),
-  );
+  const perekFontSize = hebrewLabelFontSize(PEREK_SIZE, zoom);
   for (const el of Array.from(state.perekLabels.children) as HTMLElement[]) {
     if (!perekVisible) {
       el.style.display = 'none';

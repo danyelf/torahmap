@@ -19,8 +19,9 @@ export const HIGHLIGHT_CONSTANTS = {
   // Highlight color for search/selection
   HIGHLIGHT_COLOR: [0.2, 0.9, 1.0] as Color,
 
-  // Outline color for pinned verses
-  PINNED_OUTLINE_COLOR: [0.2, 0.9, 1.0] as Color,
+  // Outline color for pinned verses. Violet, in the 200-310 degree gap that
+  // SEARCH_COLORS leaves unused, and neither the white nor the gold of hover.
+  PINNED_OUTLINE_COLOR: [0.72, 0.55, 1.0] as Color,
 
   // Outline color for hovered verses
   HOVER_OUTLINE_COLOR: [1.0, 1.0, 1.0] as Color,
@@ -30,6 +31,10 @@ export const HIGHLIGHT_CONSTANTS = {
 
   // Outline thickness (extends outside verse bounds)
   OUTLINE_THICKNESS: 2,
+
+  // Thinner than hover: the outline is drawn outside the square, so thickness 2
+  // rings a 4-unit verse with three times its own area and reads as a blob.
+  PINNED_OUTLINE_THICKNESS: 1,
 
   // Dimming factor for non-highlighted verses
   DIM_FACTOR: 0.3,

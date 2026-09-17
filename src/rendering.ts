@@ -148,6 +148,7 @@ export function render<T>(
       HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
       state.outlineBuffer,
       camera,
+      HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_THICKNESS,
     );
   }
 
@@ -163,6 +164,7 @@ export function renderOutline<T>(
   color: [number, number, number],
   buffer: WebGLBuffer | null,
   camera: Camera,
+  thickness?: number,
 ): WebGLBuffer {
   const { gl, programs, canvas } = context;
   const { dpr } = state;
@@ -174,7 +176,7 @@ export function renderOutline<T>(
       size: verse.size,
     },
     {
-      thickness: HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
+      thickness,
       color: color,
     },
   );

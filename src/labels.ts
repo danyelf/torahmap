@@ -1,6 +1,7 @@
 // Render book labels as HTML overlays
 
 import type { TanakhLayout } from './types.ts';
+import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from './constants/labels.ts';
 
 interface BookBounds {
   minX: number;
@@ -47,7 +48,9 @@ export function createBookLabels(
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
-      line-height:1.2;
+      /* A length, not a factor: the larger Hebrew below inherits it as-is and
+         so cannot grow the box the positioning maths below assumes. */
+      line-height:1.2em;
     `;
     label.dataset.bookName = name;
     label.dataset.rightX = String(pos.maxX);
@@ -57,7 +60,9 @@ export function createBookLabels(
     // Hebrew name (always shown, without nikkud)
     const heSpan = document.createElement('span');
     heSpan.className = 'book-label-he';
-    heSpan.style.fontFamily = '"Noto Sans Hebrew", system-ui, sans-serif';
+    heSpan.style.fontFamily = HEBREW_LABEL_FONT;
+    // Only the Hebrew: the English sibling is a sans face and needs no correction.
+    heSpan.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
     heSpan.textContent = hebrewNames?.[name] ?? name;
     label.appendChild(heSpan);
 

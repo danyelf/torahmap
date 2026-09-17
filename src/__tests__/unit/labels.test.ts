@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createBookLabels, updateLabelPositions } from '../../labels';
 import { createVerse, SAMPLE_VERSES } from '../helpers';
+import { HEBREW_LABEL_SCALE } from '../../constants/labels';
 
 // Hebrew names for test use (matching tanakh-structure.json hebrewName field)
 const HEBREW_NAMES: Record<string, string> = {
@@ -150,6 +151,16 @@ describe('labels', () => {
         const enSpan = label.querySelector('.book-label-en') as HTMLElement;
         expect(heSpan).not.toBeNull();
         expect(enSpan).not.toBeNull();
+      });
+
+      it('sets the Hebrew larger than the label it sits in', () => {
+        const verses = [createVerse({ book: 'Genesis' })];
+        const labels = createBookLabels(verses, container, HEBREW_NAMES);
+
+        const label = labels.children[0] as HTMLElement;
+        const heSpan = label.querySelector('.book-label-he') as HTMLElement;
+
+        expect(heSpan.style.fontSize).toBe(`${HEBREW_LABEL_SCALE}em`);
       });
 
       it('stores book name in dataset', () => {
