@@ -134,7 +134,7 @@ describe('sidebar', () => {
     });
 
     it('adds ?with=all when commentary overlay shows all categories', () => {
-      const mockOverlay = { id: 'commentary' } as any;
+      const mockOverlay = { id: 'commentary', getSefariaConnectionParam: () => null } as any;
       // No category filter is set, so the link opens to all commentary
       const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
       expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
@@ -154,7 +154,7 @@ describe('sidebar', () => {
       it('passes the selected category straight through as ?with=<category>', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ category: 'Talmud' }),
+          getSefariaConnectionParam: () => 'Talmud',
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Talmud');
@@ -163,7 +163,7 @@ describe('sidebar', () => {
       it('encodes category names with spaces', () => {
         const mockOverlay = {
           id: 'commentary',
-          getUrlParams: () => ({ category: 'Jewish Thought' }),
+          getSefariaConnectionParam: () => 'Jewish Thought',
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Jewish%20Thought');
