@@ -1,7 +1,7 @@
 // Tests for lazy snippet evaluation performance optimization
 import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, computeSnippetForMatch, type SearchResult } from '../../search';
-import { searchInRootMode } from '../helpers/rootSearch';
+import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Lazy Snippet Evaluation', () => {
@@ -44,10 +44,10 @@ describe('Lazy Snippet Evaluation', () => {
   });
 
   describe('SearchResult with optional snippet fields', () => {
-    it('root mode search returns results without snippets initially', () => {
-      // When searching in root mode (which falls back to whole-word without the lexeme index),
+    it('meanings mode search returns results without snippets initially', () => {
+      // When searching in meanings mode (which falls back to whole-word without the lexeme index),
       // results should be returned WITHOUT snippet computation
-      const results = searchInRootMode('אלהים');
+      const results = searchInMeaningsMode('אלהים');
 
       expect(results.length).toBeGreaterThan(0);
       const firstResult = results[0];
@@ -63,7 +63,7 @@ describe('Lazy Snippet Evaluation', () => {
 
     it('computeSnippetForMatch creates snippet on-demand', () => {
       // Search without computing snippets
-      const results = searchInRootMode('אלהים');
+      const results = searchInMeaningsMode('אלהים');
       expect(results.length).toBeGreaterThan(0);
 
       const result = results[0];
@@ -104,7 +104,7 @@ describe('Lazy Snippet Evaluation', () => {
 
     it('computeSnippetForMatch returns fallback for word not found in verse', () => {
       // Search for a word that exists
-      const results = searchInRootMode('אלהים');
+      const results = searchInMeaningsMode('אלהים');
       expect(results.length).toBeGreaterThan(0);
 
       const result = results[0];
@@ -126,7 +126,7 @@ describe('Lazy Snippet Evaluation', () => {
 
     it('computeSnippetForMatch highlights correct word position', () => {
       // Search for "אלהים" which appears in Genesis 1:1 and 1:3
-      const results = searchInRootMode('אלהים');
+      const results = searchInMeaningsMode('אלהים');
       expect(results.length).toBeGreaterThanOrEqual(2);
 
       const gen11 = results.find((r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1);
@@ -150,7 +150,7 @@ describe('Lazy Snippet Evaluation', () => {
 
   describe('Performance characteristics', () => {
     it('search returns without snippet computation', () => {
-      const results = searchInRootMode('אלהים');
+      const results = searchInMeaningsMode('אלהים');
 
       expect(results.length).toBeGreaterThan(0);
 
@@ -161,7 +161,7 @@ describe('Lazy Snippet Evaluation', () => {
 
     it('snippet computation is lazy per result', () => {
       // Get search results
-      const results = searchInRootMode('אלהים');
+      const results = searchInMeaningsMode('אלהים');
       expect(results.length).toBeGreaterThan(0);
 
       // Compute snippet for first result only
@@ -210,7 +210,7 @@ describe('Lazy Snippet Evaluation', () => {
 
   describe('Multi-term search with lazy evaluation', () => {
     it('multiple matching terms have no snippets initially', () => {
-      const results = searchInRootMode('אלהים, אדם');
+      const results = searchInMeaningsMode('אלהים, אדם');
 
       // Genesis 2:7 has both אלהים and אדם
       const gen27 = results.find((r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
@@ -224,7 +224,7 @@ describe('Lazy Snippet Evaluation', () => {
     });
 
     it('computes snippets independently for each term', () => {
-      const results = searchInRootMode('אלהים, אדם');
+      const results = searchInMeaningsMode('אלהים, אדם');
       const gen27 = results.find((r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7);
 
       if (gen27 && gen27.matchingTerms.length > 1) {

@@ -187,7 +187,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(Array.isArray(color121)).toBe(true);
     });
 
-    it('root mode falls back to word mode behavior', () => {
+    it('meanings mode falls back to word mode behavior', () => {
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
@@ -202,13 +202,13 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       );
       const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
-      // Now test root mode
-      chooseMode('root');
+      // Now test meanings mode
+      chooseMode('meanings');
 
-      const rootColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
+      const meaningsColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
       // Should behave identically (both should match)
-      expect(rootColor).not.toBeNull();
+      expect(meaningsColor).not.toBeNull();
       expect(wordColor).not.toBeNull();
     });
   });
@@ -245,9 +245,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
     it('names a mode the reader did choose, even when it matches the default', () => {
       searchOverlay.renderControls?.(container);
 
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=r'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם&mode=m'));
 
-      expect(searchOverlay.getUrlParams?.().mode).toBe('r');
+      expect(searchOverlay.getUrlParams?.().mode).toBe('m');
     });
 
     it('names substring when that is what was chosen', () => {
@@ -307,13 +307,13 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(markedMode()).toBe('word');
     });
 
-    it('applyUrlParams falls back to root when no mode is given', () => {
+    it('applyUrlParams falls back to meanings when no mode is given', () => {
       applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם'));
       searchOverlay.renderControls?.(container);
 
       // An absent entry means whatever the default currently is, which for
-      // Hebrew is root.
-      expect(markedMode()).toBe('root');
+      // Hebrew is meanings.
+      expect(markedMode()).toBe('meanings');
     });
 
     it('applyUrlParams leaves a term on its default for an unknown entry', () => {
@@ -323,7 +323,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // The entry is dropped rather than the search, so nothing was chosen and
       // nothing is written back.
       expect(searchOverlay.getUrlParams?.().mode).toBeUndefined();
-      expect(markedMode()).toBe('root');
+      expect(markedMode()).toBe('meanings');
     });
 
     it('round-trips URL state correctly', () => {
@@ -405,16 +405,16 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(markedMode()).toBe('word');
     });
 
-    it('takes root back up when the text returns to Hebrew', () => {
+    it('takes meanings back up when the text returns to Hebrew', () => {
       applyOverlayParams(searchOverlay, new URLSearchParams('q='));
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = 'אברהם';
       input.dispatchEvent(new Event('input'));
-      chooseMode('root');
+      chooseMode('meanings');
 
-      // English has no dictionary, so root is held as whole word while the
+      // English has no dictionary, so meanings is held as whole word while the
       // text is English — held, not forgotten.
       input.value = 'Abraham';
       input.dispatchEvent(new Event('input'));
@@ -422,18 +422,18 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       input.value = 'אברהם';
       input.dispatchEvent(new Event('input'));
-      expect(markedMode()).toBe('root');
+      expect(markedMode()).toBe('meanings');
     });
   });
 
   describe('Fallback Behavior', () => {
-    it('root mode falls back to whole-word for proper nouns', () => {
+    it('meanings mode falls back to whole-word for proper nouns', () => {
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = 'אברהם';
       input.dispatchEvent(new Event('input'));
-      chooseMode('root');
+      chooseMode('meanings');
 
       // Should find אברהם as whole word (lexeme lookup fails, falls back to whole-word)
       const gen175 = testVerses.find(
@@ -446,7 +446,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(Array.isArray(color)).toBe(true);
     });
 
-    it('root mode does NOT fall back to substring', () => {
+    it('meanings mode does NOT fall back to substring', () => {
       searchOverlay.renderControls?.(container);
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
@@ -454,26 +454,26 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Search for "אלה" which appears as substring in "ואלה"
       input.value = 'אלה';
       input.dispatchEvent(new Event('input'));
-      chooseMode('root');
+      chooseMode('meanings');
 
-      // Exodus 1:1 has "ואלה" - should NOT match in root mode
+      // Exodus 1:1 has "ואלה" - should NOT match in meanings mode
       const ex11 = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
-      const rootColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
+      const meaningsColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
 
       // Switch to substring mode
       chooseMode('substring');
 
       const substringColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
 
-      // Substring should match, root should not (dimmed)
+      // Substring should match, meanings should not (dimmed)
       if (
-        Array.isArray(rootColor) &&
-        typeof rootColor[0] === 'number' &&
+        Array.isArray(meaningsColor) &&
+        typeof meaningsColor[0] === 'number' &&
         Array.isArray(substringColor) &&
         typeof substringColor[0] === 'number'
       ) {
-        // Root mode should be dimmed (not matched)
-        expect(rootColor[0]).toBeLessThan(1);
+        // Meanings mode should be dimmed (not matched)
+        expect(meaningsColor[0]).toBeLessThan(1);
 
         // Substring should be highlighted (matched)
         // Note: This assumes SEARCH_COLORS values are > dimmed values
@@ -521,11 +521,11 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       input.value = 'אברהם';
       input.dispatchEvent(new Event('input'));
 
-      for (const mode of ['word', 'root', 'substring', 'word', 'root']) {
+      for (const mode of ['word', 'meanings', 'substring', 'word', 'meanings']) {
         chooseMode(mode);
       }
 
-      expect(markedMode()).toBe('root');
+      expect(markedMode()).toBe('meanings');
     });
   });
 
@@ -537,7 +537,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה'));
       searchOverlay.renderControls?.(container);
       const hebrew = [...openRow().querySelectorAll<HTMLElement>('.term-mode-option')];
-      expect(hebrew.map((b) => b.dataset.mode)).toEqual(['substring', 'word', 'root']);
+      expect(hebrew.map((b) => b.dataset.mode)).toEqual(['substring', 'word', 'meanings']);
 
       applyOverlayParams(searchOverlay, new URLSearchParams('q=light'));
       searchOverlay.renderControls?.(container);
@@ -708,31 +708,31 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
   describe('two terms, two modes', () => {
     it('carries a different mode for each term', () => {
       searchOverlay.renderControls?.(container);
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=r,w'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=m,w'));
 
       const params = searchOverlay.getUrlParams?.();
       expect(params!.q).toBe('עלה, אור');
-      expect(params!.mode).toBe('r,w');
+      expect(params!.mode).toBe('m,w');
     });
 
     it('leaves one term alone when another term changes mode', () => {
       searchOverlay.renderControls?.(container);
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=r,w'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=m,w'));
 
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=r,s'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=עלה,אור&mode=m,s'));
 
-      // The first term is still root; only the second moved.
-      expect(searchOverlay.getUrlParams?.().mode).toBe('r,s');
+      // The first term is still meanings; only the second moved.
+      expect(searchOverlay.getUrlParams?.().mode).toBe('m,s');
     });
 
     it('matches a Hebrew term and an English term by their own rules at once', () => {
       searchOverlay.renderControls?.(container);
-      // Hebrew by root, English as an exact word. Neither setting could reach
+      // Hebrew by meanings, English as an exact word. Neither setting could reach
       // the other term even if it wanted to.
-      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,Abraham&mode=r,w'));
+      applyOverlayParams(searchOverlay, new URLSearchParams('q=אברהם,Abraham&mode=m,w'));
 
       const params = searchOverlay.getUrlParams?.();
-      expect(params!.mode).toBe('r,w');
+      expect(params!.mode).toBe('m,w');
 
       const verse = testVerses.find(
         (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,

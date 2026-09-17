@@ -1,8 +1,8 @@
-// Tests for Hebrew search modes (substring, word, root)
+// Tests for Hebrew search modes (substring, word, meanings)
 import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, searchHebrewWholeWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
-import { searchInRootMode } from '../helpers/rootSearch';
+import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 
 describe('Hebrew Search Modes', () => {
   let mockVerseTexts: VerseTexts;
@@ -185,19 +185,19 @@ describe('Hebrew Search Modes', () => {
     });
   });
 
-  describe('root mode - resolved through the dictionary, not search()', () => {
-    it('root mode falls back to whole-word when the term resolves to no lexeme', () => {
-      // The lexeme index is not loaded here, so root mode falls back to whole-word
-      const rootResults = searchInRootMode('אברהם');
+  describe('meanings mode - resolved through the dictionary, not search()', () => {
+    it('meanings mode falls back to whole-word when the term resolves to no lexeme', () => {
+      // The lexeme index is not loaded here, so meanings mode falls back to whole-word
+      const meaningsResults = searchInMeaningsMode('אברהם');
       const wordResults = search('אברהם', false, 'word');
 
       // Should behave identically to word mode (fallback)
-      expect(rootResults.length).toBe(wordResults.length);
+      expect(meaningsResults.length).toBe(wordResults.length);
     });
 
-    it('root mode fallback finds proper nouns correctly', () => {
+    it('meanings mode fallback finds proper nouns correctly', () => {
       // Even without the lexeme index, should find "אברהם" as whole word
-      const results = searchInRootMode('אברהם');
+      const results = searchInMeaningsMode('אברהם');
 
       const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
       const ex36 = results.find((r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
@@ -206,18 +206,18 @@ describe('Hebrew Search Modes', () => {
       expect(ex36).toBeDefined();
     });
 
-    it('root mode does NOT fall back to substring', () => {
-      // Root mode should fall back to whole-word, NOT substring
-      const rootResults = searchInRootMode('אלה');
+    it('meanings mode does NOT fall back to substring', () => {
+      // Meanings mode should fall back to whole-word, NOT substring
+      const meaningsResults = searchInMeaningsMode('אלה');
       const substringResults = search('אלה', false, 'substring');
 
-      // Root mode should NOT match "ואלה" (requires whole word)
+      // Meanings mode should NOT match "ואלה" (requires whole word)
       // Substring mode WOULD match "ואלה"
-      expect(rootResults.length).toBeLessThan(substringResults.length);
+      expect(meaningsResults.length).toBeLessThan(substringResults.length);
     });
 
-    it('root mode returns valid search results', () => {
-      const results = searchInRootMode('אלהים');
+    it('meanings mode returns valid search results', () => {
+      const results = searchInMeaningsMode('אלהים');
 
       expect(results.length).toBeGreaterThan(0);
       for (const result of results) {
@@ -248,12 +248,12 @@ describe('Hebrew Search Modes', () => {
 
       const substring = search(term, false, 'substring');
       const word = search(term, false, 'word');
-      const root = searchInRootMode(term);
+      const meanings = searchInMeaningsMode(term);
 
       // All should find matches (nikkud-insensitive)
       expect(substring.length).toBeGreaterThan(0);
       expect(word.length).toBeGreaterThan(0);
-      expect(root.length).toBeGreaterThan(0);
+      expect(meanings.length).toBeGreaterThan(0);
     });
 
     it('modes return language="he" for Hebrew results', () => {
@@ -268,7 +268,7 @@ describe('Hebrew Search Modes', () => {
         }
       }
 
-      for (const result of searchInRootMode('אלהים')) {
+      for (const result of searchInMeaningsMode('אלהים')) {
         expect(result.language).toBe('he');
       }
     });
@@ -291,13 +291,13 @@ describe('Hebrew Search Modes', () => {
         expect(match.matchEnd).toBeLessThanOrEqual(match.snippet!.length);
       }
 
-      // Root mode uses lazy evaluation - snippets are undefined initially
-      const rootResults = searchInRootMode('אלהים');
-      expect(rootResults.length).toBeGreaterThan(0);
-      const rootMatch = rootResults[0].matchingTerms[0];
-      expect(rootMatch.snippet).toBeUndefined();
-      expect(rootMatch.matchStart).toBeUndefined();
-      expect(rootMatch.matchEnd).toBeUndefined();
+      // Meanings mode uses lazy evaluation - snippets are undefined initially
+      const meaningsResults = searchInMeaningsMode('אלהים');
+      expect(meaningsResults.length).toBeGreaterThan(0);
+      const meaningsMatch = meaningsResults[0].matchingTerms[0];
+      expect(meaningsMatch.snippet).toBeUndefined();
+      expect(meaningsMatch.matchStart).toBeUndefined();
+      expect(meaningsMatch.matchEnd).toBeUndefined();
     });
   });
 
@@ -339,8 +339,8 @@ describe('Hebrew Search Modes', () => {
       expect(abrahamResults.length).toBeGreaterThan(0);
     });
 
-    it('root mode finds אברהם correctly (via whole-word fallback)', () => {
-      const results = searchInRootMode('אברהם');
+    it('meanings mode finds אברהם correctly (via whole-word fallback)', () => {
+      const results = searchInMeaningsMode('אברהם');
 
       const gen175 = results.find((r) => r.book === 'Genesis' && r.chapter === 17 && r.verse === 5);
       const ex36 = results.find((r) => r.book === 'Exodus' && r.chapter === 3 && r.verse === 6);
@@ -380,8 +380,8 @@ describe('Hebrew Search Modes', () => {
       expect(termsFound.size).toBeGreaterThan(0);
     });
 
-    it('root mode applies to all terms', () => {
-      const results = searchInRootMode('אלהים, אדם');
+    it('meanings mode applies to all terms', () => {
+      const results = searchInMeaningsMode('אלהים, אדם');
 
       // Should find verses with either term (via whole-word fallback)
       expect(results.length).toBeGreaterThan(0);
@@ -401,7 +401,7 @@ describe('Hebrew Search Modes', () => {
         expect(results.length).toBe(0);
       }
 
-      expect(searchInRootMode('').length).toBe(0);
+      expect(searchInMeaningsMode('').length).toBe(0);
     });
 
     it('handles single-character query in all modes', () => {
@@ -413,7 +413,7 @@ describe('Hebrew Search Modes', () => {
         expect(results.length).toBe(0);
       }
 
-      expect(searchInRootMode('א').length).toBe(0);
+      expect(searchInMeaningsMode('א').length).toBe(0);
     });
 
     it('handles query with no matches in all modes', () => {
@@ -424,7 +424,7 @@ describe('Hebrew Search Modes', () => {
         expect(results.length).toBe(0);
       }
 
-      expect(searchInRootMode('xyz123').length).toBe(0);
+      expect(searchInMeaningsMode('xyz123').length).toBe(0);
     });
 
     it('handles query with only nikkud characters', () => {
@@ -439,7 +439,7 @@ describe('Hebrew Search Modes', () => {
         expect(results).toBeDefined();
       }
 
-      expect(searchInRootMode('\u05B0\u05B1')).toBeDefined();
+      expect(searchInMeaningsMode('\u05B0\u05B1')).toBeDefined();
     });
   });
 });

@@ -127,7 +127,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
     it('resolves a preposition carrying a pronominal suffix (עליו, בו)', () => {
       // עליו is "upon him" and בו is "in it": among the commonest words in the
       // Bible, and both missing from this table until the word rule. Their
-      // absence is what let root mode answer עליו with עֶלְיֹון "most high",
+      // absence is what let meanings mode answer עליו with עֶלְיֹון "most high",
       // a different word that merely starts with the same four letters.
       expect(forms['על'].map((id) => lexemes[id][3])).toContain('prep');
       expect(forms['עליו'].map(gloss)).toEqual(['upon']);

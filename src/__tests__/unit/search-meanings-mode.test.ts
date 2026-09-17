@@ -1,8 +1,8 @@
-// Root-mode search, exercised against the real generated lexeme index.
+// Meanings-mode search, exercised against the real generated lexeme index.
 //
 // The idea under test is a reading: one of the dictionary words a written form
 // could be. עלה could be the verb "ascend", the noun "burnt-offering", the noun
-// "leafage", and more. A root-mode search looks for all of them.
+// "leafage", and more. A meanings-mode search looks for all of them.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
@@ -19,7 +19,7 @@ import type { VerseTexts } from '../../verseTexts';
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { searchInRootMode } from '../helpers/rootSearch';
+import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 const searchDataDir = path.join(dataDir, 'search');
@@ -58,7 +58,7 @@ function mockFetchForLexiconData() {
 const keys = (results: Array<{ book: string; chapter: number; verse: number }>) =>
   new Set(results.map((r) => `${r.book}:${r.chapter}:${r.verse}`));
 
-describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
+describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () => {
   beforeEach(async () => {
     buildSearchIndex(JSON.parse(fs.readFileSync(allTextsPath, 'utf-8')) as VerseTexts);
     mockFetchForLexiconData();
@@ -117,17 +117,17 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
   describe('searching', () => {
     it('finds every inflected form of a verb, not just the one typed', () => {
       // Genesis 1:3 has וַיֹּאמֶר; the search term is the bare verb.
-      const results = keys(searchInRootMode('אמר'));
+      const results = keys(searchInMeaningsMode('אמר'));
       expect(results.has('Genesis:1:3')).toBe(true);
       expect(results.size).toBeGreaterThan(2000);
     });
 
     it('finds Genesis 19:14 when searching צחק (it has כִּמְצַחֵק)', () => {
-      expect(keys(searchInRootMode('צחק')).has('Genesis:19:14')).toBe(true);
+      expect(keys(searchInMeaningsMode('צחק')).has('Genesis:19:14')).toBe(true);
     });
 
     it('marks a verse with every term that matched it', () => {
-      const results = searchInRootMode('צחק,יצחק');
+      const results = searchInMeaningsMode('צחק,יצחק');
       const gen1914 = results.find(
         (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 14,
       );
@@ -145,14 +145,14 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
       expect(prepositions.map((l) => l.language)).toEqual(['arc']);
       expect(readings.map((id) => getLexeme(id)!.gloss)).toContain('ascend');
 
-      const ascend = keys(searchInRootMode('עלה'));
-      const upon = keys(searchInRootMode('על'));
+      const ascend = keys(searchInMeaningsMode('עלה'));
+      const upon = keys(searchInMeaningsMode('על'));
       expect(ascend.size).toBeLessThan(upon.size / 2);
     });
 
     it('highlights the word that was typed, not another word sharing a reading', () => {
       // Genesis 19:28 has both עַל and עָלָה. A search for עלה must land on עלה.
-      const [result] = searchInRootMode('עלה').filter(
+      const [result] = searchInMeaningsMode('עלה').filter(
         (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
       );
       expect(result).toBeDefined();
@@ -163,7 +163,7 @@ describe.skipIf(!dataExists)('Root-mode search over the lexeme index', () => {
 
     it('falls back to whole-word search for a term with no reading', () => {
       // A nonsense string finds nothing rather than throwing.
-      expect(searchInRootMode('קקקקקקק')).toEqual([]);
+      expect(searchInMeaningsMode('קקקקקקק')).toEqual([]);
     });
   });
 });

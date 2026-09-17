@@ -582,7 +582,7 @@ describe('Search Overlay', () => {
       // Only the open row shows its control; the other says what it is doing.
       const english = [...rows[0].querySelectorAll<HTMLElement>('.term-mode-option')];
       expect(english.map((o) => o.dataset.mode)).toEqual(['substring', 'word']);
-      expect(rows[1].querySelector('.term-state')!.textContent).toBe('root');
+      expect(rows[1].querySelector('.term-state')!.textContent).toBe('meanings');
     });
 
     it('turns right to left on the very first Hebrew letter typed', () => {
@@ -598,7 +598,7 @@ describe('Search Overlay', () => {
       expect(input.dir).toBe('rtl');
     });
 
-    it('offers root on a Hebrew row, whichever position it is in', () => {
+    it('offers meanings on a Hebrew row, whichever position it is in', () => {
       const container = render();
 
       const input = container.querySelector('#search-input') as HTMLInputElement;
@@ -609,7 +609,7 @@ describe('Search Overlay', () => {
       const offered = [
         ...container.querySelectorAll<HTMLElement>('.term-row[data-open="true"] .term-mode-option'),
       ];
-      expect(offered.map((o) => o.dataset.mode)).toEqual(['substring', 'word', 'root']);
+      expect(offered.map((o) => o.dataset.mode)).toEqual(['substring', 'word', 'meanings']);
       expect(input.dir).toBe('rtl');
     });
   });

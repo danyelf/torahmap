@@ -118,9 +118,9 @@ function termIsHebrew(term: SearchTerm): boolean {
   return isHebrewQuery(term.text.trim());
 }
 
-/** Root mode over Hebrew is the only place meanings are consulted. */
+/** Only a Hebrew term in meanings mode consults the dictionary. */
 function meaningsApply(term: SearchTerm): boolean {
-  return termIsHebrew(term) && effectiveMode(term) === 'root';
+  return termIsHebrew(term) && effectiveMode(term) === 'meanings';
 }
 
 /**
@@ -183,7 +183,7 @@ export function configure(config: {
 /**
  * Run the search the current terms describe, and repaint.
  *
- * Two paths, because the modes genuinely differ. In root mode over Hebrew each
+ * Two paths, because the modes genuinely differ. In meanings mode over Hebrew each
  * term contributes the verses of the meanings the reader has left checked, so
  * the choice is what drives the result. Every other mode still matches text,
  * and search() does that as it always has.
@@ -202,7 +202,7 @@ function runSearch(): void {
   }
 
   // Every term is matched on its own, in its own language. Only a Hebrew term
-  // in root mode consults the chosen meanings; everything else is text.
+  // in meanings mode consults the chosen meanings; everything else is text.
   // Matching text scans the corpus, so it is done only for the terms that need
   // it — a Hebrew term answered from the dictionary never pays for it.
   const textVerses = (term: SearchTerm): Set<string> => {
@@ -210,8 +210,8 @@ function runSearch(): void {
     return verseSetsForTerms([term.text.trim()], {
       wholeWordEnglish: mode === 'word',
       // A Hebrew term reaches this path only when the dictionary has nothing
-      // for it, and root has always fallen back to whole word there.
-      hebrewMode: mode === 'root' ? 'word' : mode,
+      // for it, and meanings has always fallen back to whole word there.
+      hebrewMode: mode === 'meanings' ? 'word' : mode,
     })[0];
   };
 
@@ -219,7 +219,7 @@ function runSearch(): void {
     active.map((term) => {
       if (!meaningsApply(term)) return textVerses(term);
       // A term the dictionary does not know falls back to whole-word matching,
-      // as root mode always has. Root is the default now, so a lexeme index
+      // as meanings mode always has. Meanings is the default now, so a lexeme index
       // that failed to load must not mean Hebrew silently finds nothing.
       return term.meanings.length > 0 ? versesFor(selectedKeys(term)) : textVerses(term);
     }),
@@ -248,10 +248,10 @@ function runSearch(): void {
  * click silently.
  *
  * Either way the click settles how that word is matched, and only that word. A
- * meaning can only be searched for in root mode — "the burnt-offering reading"
+ * meaning can only be searched for in meanings mode — "the burnt-offering reading"
  * cannot be expressed as a substring. The written form is the opposite
  * request, for this spelling and no other, so it goes to whole word: substring
- * would match it inside longer words, and root would resolve a known spelling
+ * would match it inside longer words, and meanings would resolve a known spelling
  * to its dictionary entry and find the readings the reader just declined.
  * Neighbouring terms keep whatever they were doing.
  *
@@ -281,7 +281,7 @@ export function searchForMeaning(text: string, meaningKeys: readonly string[] | 
   }
 
   if (meaningKeys && meaningKeys.length > 0) {
-    terms = setMode(terms, id, 'root');
+    terms = setMode(terms, id, 'meanings');
     terms = onlyMeaning(terms, id, meaningKeys);
   } else {
     terms = setMode(terms, id, 'word');
@@ -438,27 +438,27 @@ function updateHitCaption(): void {
 const MODE_LABELS: Record<SearchMode, string> = {
   substring: 'substring',
   word: 'word',
-  root: 'root',
+  meanings: 'meanings',
 };
 
 /**
  * What a collapsed row says about itself: the mode, then the narrowing.
  *
- * Both are named even when unremarkable. Two rows holding עלה in root mode are
+ * Both are named even when unremarkable. Two rows holding עלה in meanings mode are
  * otherwise identical, and telling those apart is the point of the feature.
  */
 function termSummary(term: SearchTerm): string {
   const mode = MODE_LABELS[effectiveMode(term)];
 
-  // Only a Hebrew term in root mode has meanings to report, and only a word
+  // Only a Hebrew term in meanings mode has readings to report, and only a word
   // with at least two of them has anything to report about them. One meaning
   // is not a choice, and a word the dictionary does not know has none at all —
   // both of those are the rows that show no checkboxes either.
   if (!meaningsApply(term) || term.meanings.length < 2) return mode;
 
-  // Saying how many there are rather than leaving the mode bare: root over a
-  // word with four readings is searching for all four, and a row that said
-  // only "root" gave no sign of it.
+  // Saying how many there are rather than leaving the mode bare: meanings over
+  // a word with four readings is searching for all four, and a row that said
+  // only "meanings" gave no sign of it.
   if (!isNarrowed(term)) return `${mode} · all ${term.meanings.length} meanings`;
 
   const chosen = term.meanings
@@ -674,7 +674,7 @@ function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
 
   // The mode control and the meaning checkboxes share one indented block, so
   // the two read as one statement: this term is matched this way, and if by
-  // root, these are the readings it stands for.
+  // meanings, these are the readings it stands for.
   const body = document.createElement('div');
   body.className = 'term-body';
   row.appendChild(body);
@@ -847,7 +847,7 @@ function createResultElement(result: SearchResult): HTMLDivElement {
   const snippetDiv = document.createElement('div');
   snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
 
-  // Computed on demand: root mode leaves these unset until the result is shown.
+  // Computed on demand: meanings mode leaves these unset until the result is shown.
   let snippet = firstMatch.snippet;
   let matchStart = firstMatch.matchStart;
   let matchEnd = firstMatch.matchEnd;
@@ -977,10 +977,10 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     // text being marked up, which is a different question.
     const mode = effectiveMode(term);
 
-    // Root mode asks the dictionary, not the spelling: mark only the words
+    // Meanings mode asks the dictionary, not the spelling: mark only the words
     // that are one of the meanings this term still stands for (see formMatches
     // in search/dictionary.ts).
-    if (isHebrew && mode === 'root') {
+    if (isHebrew && mode === 'meanings') {
       const keys = selectedKeys(term);
       const needle = foldForMatching(term.text, 'he');
       for (const { word, start, end } of splitIntoWords(folded)) {
@@ -1069,7 +1069,7 @@ export const searchOverlay: Overlay = {
   name: 'Text Search',
   description:
     'Lights up every verse holding the word you type, in the Hebrew or in the English. ' +
-    'Supports exact string search as well as roots.',
+    'Matches the letters you typed, or the dictionary words that spelling can be.',
   credits: [
     {
       source:

@@ -313,9 +313,9 @@ describe('getting back to all of them', () => {
 // whole search, so every Hebrew term was matched the same way and the
 // comparisons the map exists for could not be asked for at all.
 describe('a term matched its own way', () => {
-  it('defaults Hebrew to root and English to substring', () => {
+  it('defaults Hebrew to meanings and English to substring', () => {
     const terms = addTerm(addTerm([], 'עלה'), 'light');
-    expect(effectiveMode(terms[0])).toBe('root');
+    expect(effectiveMode(terms[0])).toBe('meanings');
     expect(effectiveMode(terms[1])).toBe('substring');
   });
 
@@ -325,7 +325,7 @@ describe('a term matched its own way', () => {
     let terms = addTerm([], 'light');
     terms = setTermText(terms, terms[0].id, 'עלה');
     expect(terms[0].mode).toBeNull();
-    expect(effectiveMode(terms[0])).toBe('root');
+    expect(effectiveMode(terms[0])).toBe('meanings');
   });
 
   it('keeps a chosen mode across an edit', () => {
@@ -335,25 +335,25 @@ describe('a term matched its own way', () => {
     expect(effectiveMode(terms[0])).toBe('word');
   });
 
-  it('holds root for English but does not forget it', () => {
+  it('holds meanings for English but does not forget it', () => {
     let terms = addTerm([], 'עלה');
-    terms = setMode(terms, terms[0].id, 'root');
+    terms = setMode(terms, terms[0].id, 'meanings');
     terms = setTermText(terms, terms[0].id, 'light');
     expect(effectiveMode(terms[0])).toBe('word');
     terms = setTermText(terms, terms[0].id, 'עלה');
-    expect(effectiveMode(terms[0])).toBe('root');
+    expect(effectiveMode(terms[0])).toBe('meanings');
   });
 
   it('changes one term without touching its neighbours', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'אור');
     terms = setMode(terms, terms[1].id, 'word');
-    expect(effectiveMode(terms[0])).toBe('root');
+    expect(effectiveMode(terms[0])).toBe('meanings');
     expect(effectiveMode(terms[1])).toBe('word');
   });
 
-  it('offers root only to a term the dictionary could answer', () => {
+  it('offers meanings only to a term the dictionary could answer', () => {
     const terms = addTerm(addTerm([], 'עלה'), 'light');
-    expect(modesOffered(terms[0])).toEqual(['substring', 'word', 'root']);
+    expect(modesOffered(terms[0])).toEqual(['substring', 'word', 'meanings']);
     expect(modesOffered(terms[1])).toEqual(['substring', 'word']);
   });
 });
@@ -374,18 +374,18 @@ describe('the mode in the URL', () => {
     let terms = addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'דבר');
     terms = setMode(terms, terms[0].id, 'substring');
     terms = setMode(terms, terms[1].id, 'word');
-    terms = setMode(terms, terms[2].id, 'root');
-    expect(encodeModes(terms)).toBe('s,w,r');
+    terms = setMode(terms, terms[2].id, 'meanings');
+    expect(encodeModes(terms)).toBe('s,w,m');
 
-    const fresh = applyModes(addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'דבר'), 's,w,r');
-    expect(fresh.map(effectiveMode)).toEqual(['substring', 'word', 'root']);
+    const fresh = applyModes(addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'דבר'), 's,w,m');
+    expect(fresh.map(effectiveMode)).toEqual(['substring', 'word', 'meanings']);
   });
 
   it('leaves a term on its default for an empty or unknown entry', () => {
     const terms = applyModes(addTerm(addTerm([], 'עלה'), 'אור'), ',zzz');
     expect(terms[0].mode).toBeNull();
     expect(terms[1].mode).toBeNull();
-    expect(terms.map(effectiveMode)).toEqual(['root', 'root']);
+    expect(terms.map(effectiveMode)).toEqual(['meanings', 'meanings']);
   });
 
   it('ignores entries past the end of the term list', () => {

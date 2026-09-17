@@ -65,7 +65,7 @@
 
     <div class="metrics">
       <div class="metric">Query: <span id="query">-</span></div>
-      <div class="metric">Search Mode: <span id="mode">root</span></div>
+      <div class="metric">Search Mode: <span id="mode">meanings</span></div>
       <div class="metric">Search Time: <span id="search-time">-</span></div>
       <div class="metric">Render Time: <span id="render-time">-</span></div>
       <div class="metric">Total Time: <span id="total-time">-</span></div>
@@ -77,7 +77,7 @@
 
     <script type="module">
       import { buildSearchIndex } from '/src/search.ts';
-      import { searchInRootMode } from '/src/__tests__/helpers/rootSearch.ts';
+      import { searchInMeaningsMode } from '/src/__tests__/helpers/meaningsSearch.ts';
       import { BOOK_ORDER } from '/src/constants/books.ts';
 
       // Load data and build index
@@ -123,7 +123,7 @@
 
         // Measure search time
         const searchStart = performance.now();
-        const results = searchInRootMode(query);
+        const results = searchInMeaningsMode(query);
         const searchEnd = performance.now();
         const searchTime = searchEnd - searchStart;
 

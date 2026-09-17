@@ -66,15 +66,15 @@ describe('searching for a clicked word', () => {
     expect(container.querySelectorAll('.term-row')).toHaveLength(2);
   });
 
-  it('switches Hebrew mode to root, since a meaning cannot be matched as a substring', () => {
+  it('switches Hebrew mode to meanings, since a meaning cannot be matched as a substring', () => {
     render();
     applyOverlayParams(searchOverlay, { q: '', mode: 's', m: undefined });
 
     searchForMeaning('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
-    // The click chose root for this word, and a choice is written even when it
+    // The click chose meanings for this word, and a choice is written even when it
     // matches the default — the reader made it, so the link carries it.
-    expect(searchOverlay.getUrlParams!().mode).toBe('r');
+    expect(searchOverlay.getUrlParams!().mode).toBe('m');
   });
 
   it('leaves the row showing the mode the click put it in', () => {
@@ -86,7 +86,7 @@ describe('searching for a clicked word', () => {
     const marked = container.querySelector<HTMLElement>(
       '.term-row[data-open="true"] .term-mode-option.on',
     );
-    expect(marked?.dataset.mode).toBe('root');
+    expect(marked?.dataset.mode).toBe('meanings');
   });
 
   it('keeps the results list on screen after the click that filled it', () => {
@@ -119,7 +119,7 @@ describe('searching for a clicked word', () => {
 
   it('matches whole words when the written form is what was asked for', () => {
     // The reader asked for this spelling and no other. Left in substring mode
-    // it would match inside longer words, and left in root mode a known word
+    // it would match inside longer words, and left in meanings mode a known word
     // would be resolved to its dictionary entry - neither is what "exactly"
     // means.
     const container = render();
@@ -193,14 +193,14 @@ describe('searching for a clicked word', () => {
 
     searchForMeaning('עלה', leaf.keys);
     const afterFirst = searchOverlay.getUrlParams!();
-    expect(afterFirst.mode).toBe('r');
+    expect(afterFirst.mode).toBe('m');
 
     searchForMeaning('תאנה', null);
     const afterSecond = searchOverlay.getUrlParams!();
 
-    // The first word is still matched by root, and still narrowed; only the
+    // The first word is still matched by meanings, and still narrowed; only the
     // second word went to whole word.
-    expect(afterSecond.mode).toBe('r,w');
+    expect(afterSecond.mode).toBe('m,w');
     expect((afterSecond.m ?? '').split(',')[0]).toBe(afterFirst.m);
   });
 });
