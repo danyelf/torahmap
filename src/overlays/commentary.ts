@@ -177,14 +177,6 @@ export const commentaryOverlay: Overlay = {
     }
   },
 
-  getLinkSubtitle(verse: TanakhIdentity): string | null {
-    const count = getVerseCategoryCount(verse.book, verse.chapter, verse.verse);
-    if (!count) return null;
-
-    const categoryName = currentCategory === 'total' ? 'linked texts' : `${currentCategory} links`;
-    return `${count} ${categoryName}`;
-  },
-
   getSefariaConnectionParam(): string | null {
     return currentCategory === 'total' ? null : currentCategory;
   },
@@ -195,18 +187,4 @@ export function configure(config: { verses: TanakhLayout[] }): void {
   cachedMaxValues = {};
   // Reset to default state for testing
   currentCategory = 'total';
-}
-
-// Get total linked texts count for a verse (used by sidebar)
-export function getVerseLinkCount(book: string, chapter: number, verse: number): number | null {
-  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-  return verseData?.total ?? null;
-}
-
-// Get category-specific link count for a verse (used by sidebar)
-function getVerseCategoryCount(book: string, chapter: number, verse: number): number | null {
-  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-  if (!verseData) return null;
-  if (currentCategory === 'total') return verseData.total;
-  return verseData.categories[currentCategory] ?? null;
 }

@@ -4,7 +4,6 @@ import type { TanakhLayout } from './types.ts';
 import { tanakhKey } from './types.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
-import { getVerseLinkCount } from './overlays/commentary.ts';
 import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
 import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
 
@@ -72,7 +71,6 @@ export interface SidebarElements {
   hebrew: Element | null;
   english: Element | null;
   link: HTMLAnchorElement | null;
-  linkSubtitle: Element | null;
   closeBtn: Element | null;
 }
 
@@ -86,7 +84,6 @@ export function getSidebarElements(): SidebarElements {
     hebrew: sidebar?.querySelector('.verse-hebrew') ?? null,
     english: sidebar?.querySelector('.verse-english') ?? null,
     link: (sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement) ?? null,
-    linkSubtitle: sidebar?.querySelector('.link-subtitle') ?? null,
     closeBtn: sidebar?.querySelector('.close-btn') ?? null,
   };
 }
@@ -128,7 +125,7 @@ export function updateSidebar(
   ) => VerseText | null,
   isPinned: boolean = false,
 ): void {
-  const { sidebar, ref, overlayInfo, hebrew, english, link, linkSubtitle } = elements;
+  const { sidebar, ref, overlayInfo, hebrew, english, link } = elements;
 
   if (!sidebar) return;
 
@@ -148,8 +145,7 @@ export function updateSidebar(
     if (sidebarInfo) {
       overlayInfo.replaceChildren(sidebarInfo);
     } else {
-      const hoverInfo = currentOverlay?.getHoverInfo?.(verse);
-      overlayInfo.textContent = hoverInfo || '';
+      overlayInfo.textContent = currentOverlay?.getHoverInfo?.(verse) || '';
     }
   }
   if (hebrew) {
@@ -186,15 +182,6 @@ export function updateSidebar(
   }
   if (link) {
     link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
-  }
-  if (linkSubtitle) {
-    const overlaySubtitle = currentOverlay?.getLinkSubtitle?.(verse);
-    if (overlaySubtitle) {
-      linkSubtitle.textContent = overlaySubtitle;
-    } else {
-      const linkCount = getVerseLinkCount(verse.book, verse.chapter, verse.verse);
-      linkSubtitle.textContent = linkCount ? `${linkCount} linked texts` : '';
-    }
   }
 
   sidebar.classList.add('visible');

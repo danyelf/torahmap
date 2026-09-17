@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure, getVerseLinkCount } from '../../../overlays/commentary';
+import { configure } from '../../../overlays/commentary';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -424,15 +424,14 @@ describe('Commentary Overlay', () => {
       expect(ticks).not.toBeNull();
     });
 
-    it('includes appropriate tick values', () => {
+    it('labels the powers of ten up to the maximum, then the maximum', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderLegend?.(container);
 
-      const innerHTML = container.innerHTML;
-      expect(innerHTML).toContain('0');
-      expect(innerHTML).toContain('1');
-      expect(innerHTML).toContain('10');
-      expect(innerHTML).toContain('100');
+      // Read the labels, not the markup: `left: 100%` in a style attribute
+      // satisfies a substring check for "100" whether or not that tick exists.
+      const labels = Array.from(container.querySelectorAll('.tick')).map((t) => t.textContent);
+      expect(labels).toEqual(['0', '1', '10', '100', '150']);
     });
 
     it('formats large values with k suffix', async () => {
@@ -648,42 +647,6 @@ describe('Commentary Overlay', () => {
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
-    });
-  });
-
-  describe('getVerseLinkCount Helper', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.init?.();
-    });
-
-    it('returns total link count for verse with data', () => {
-      const count = getVerseLinkCount('Genesis', 1, 1);
-      expect(count).toBe(150);
-    });
-
-    it('returns null for verse without data', () => {
-      const count = getVerseLinkCount('NonExistent', 1, 1);
-      expect(count).toBeNull();
-    });
-
-    it('returns 0 for verse with zero total', () => {
-      const count = getVerseLinkCount('Genesis', 1, 3);
-      expect(count).toBe(0);
-    });
-
-    it('handles missing book', () => {
-      const count = getVerseLinkCount('Psalms', 1, 1);
-      expect(count).toBeNull();
-    });
-
-    it('handles missing chapter', () => {
-      const count = getVerseLinkCount('Genesis', 999, 1);
-      expect(count).toBeNull();
-    });
-
-    it('handles missing verse', () => {
-      const count = getVerseLinkCount('Genesis', 1, 999);
-      expect(count).toBeNull();
     });
   });
 

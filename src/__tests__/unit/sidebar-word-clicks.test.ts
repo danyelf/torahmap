@@ -24,7 +24,7 @@ function mountPopup(): void {
       <div class="overlay-info"></div>
       <div class="verse-hebrew"></div>
       <div class="verse-english"></div>
-      <a class="sefaria-link"><span class="link-subtitle"></span></a>
+      <a class="sefaria-link">View on Sefaria</a>
     </div>`;
 }
 
