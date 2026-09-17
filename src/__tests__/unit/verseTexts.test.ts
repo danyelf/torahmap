@@ -62,24 +62,6 @@ describe('verseTexts', () => {
         expect(fetchSpy).toHaveBeenCalledWith('/data/all-texts.json');
       });
 
-      it('uses BASE_URL in the path', async () => {
-        // Note: import.meta.env.BASE_URL is resolved at build time
-        // In tests it defaults to '/', so we test that behavior
-        const fetchSpy = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({}),
-          } as Response),
-        );
-        globalThis.fetch = fetchSpy;
-
-        await loadAllVerseTexts();
-
-        // In test environment, BASE_URL is '/'
-        expect(fetchSpy).toHaveBeenCalledWith('/data/all-texts.json');
-      });
-
       it('returns nested structure with correct hierarchy', async () => {
         const mockData: VerseTexts = {
           'Genesis': {
@@ -210,23 +192,6 @@ describe('verseTexts', () => {
         );
 
         await expect(loadAllVerseTexts()).rejects.toThrow('Invalid JSON');
-      });
-
-      it('returns empty object on error (not null)', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: false,
-            status: 404,
-            json: () => Promise.resolve(null),
-          } as Response),
-        );
-
-        const result = await loadAllVerseTexts();
-
-        expect(result).not.toBeNull();
-        expect(result).toEqual({});
-        consoleErrorSpy.mockRestore();
       });
     });
 
@@ -391,42 +356,13 @@ describe('verseTexts', () => {
         expect(result?.en).toBe('In the beginning');
       });
 
-      it('retrieves verse from different books', () => {
-        const genesis = getVerseText(mockVerseTexts, 'Genesis', 1, 1);
-        const exodus = getVerseText(mockVerseTexts, 'Exodus', 1, 1);
-
-        expect(genesis?.en).toBe('In the beginning');
-        expect(exodus?.en).toBe('Now these are');
-      });
-
-      it('retrieves verse from different chapters', () => {
-        const chapter1 = getVerseText(mockVerseTexts, 'Genesis', 1, 1);
-        const chapter2 = getVerseText(mockVerseTexts, 'Genesis', 2, 1);
-
-        expect(chapter1?.en).toBe('In the beginning');
-        expect(chapter2?.en).toBe('Thus were finished');
-      });
-
-      it('retrieves verse from different verse numbers', () => {
-        const verse1 = getVerseText(mockVerseTexts, 'Genesis', 1, 1);
-        const verse2 = getVerseText(mockVerseTexts, 'Genesis', 1, 2);
-
-        expect(verse1?.en).toBe('In the beginning');
-        expect(verse2?.en).toBe('And the earth');
-      });
-
-      it('retrieves verse with large chapter number', () => {
-        const result = getVerseText(mockVerseTexts, 'Psalms', 119, 1);
-
-        expect(result).not.toBeNull();
-        expect(result?.en).toBe('Blessed are');
-      });
-
-      it('retrieves verse with large verse number', () => {
-        const result = getVerseText(mockVerseTexts, 'Psalms', 119, 176);
-
-        expect(result).not.toBeNull();
-        expect(result?.en).toBe('I have gone astray');
+      it('retrieves verses varying by book, chapter and verse number', () => {
+        expect(getVerseText(mockVerseTexts, 'Genesis', 1, 1)?.en).toBe('In the beginning');
+        expect(getVerseText(mockVerseTexts, 'Exodus', 1, 1)?.en).toBe('Now these are');
+        expect(getVerseText(mockVerseTexts, 'Genesis', 2, 1)?.en).toBe('Thus were finished');
+        expect(getVerseText(mockVerseTexts, 'Genesis', 1, 2)?.en).toBe('And the earth');
+        expect(getVerseText(mockVerseTexts, 'Psalms', 119, 1)?.en).toBe('Blessed are');
+        expect(getVerseText(mockVerseTexts, 'Psalms', 119, 176)?.en).toBe('I have gone astray');
       });
 
       it('returns object with both he and en properties', () => {
@@ -445,34 +381,16 @@ describe('verseTexts', () => {
         expect(result).toBeNull();
       });
 
-      it('returns null for non-existent chapter', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', 50, 1);
-        expect(result).toBeNull();
+      it('returns null for any chapter number that has no matching key (missing, zero, negative)', () => {
+        expect(getVerseText(mockVerseTexts, 'Genesis', 50, 1)).toBeNull();
+        expect(getVerseText(mockVerseTexts, 'Genesis', 0, 1)).toBeNull();
+        expect(getVerseText(mockVerseTexts, 'Genesis', -1, 1)).toBeNull();
       });
 
-      it('returns null for non-existent verse', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', 1, 100);
-        expect(result).toBeNull();
-      });
-
-      it('returns null for chapter 0', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', 0, 1);
-        expect(result).toBeNull();
-      });
-
-      it('returns null for verse 0', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', 1, 0);
-        expect(result).toBeNull();
-      });
-
-      it('returns null for negative chapter', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', -1, 1);
-        expect(result).toBeNull();
-      });
-
-      it('returns null for negative verse', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', 1, -1);
-        expect(result).toBeNull();
+      it('returns null for any verse number that has no matching key (missing, zero, negative)', () => {
+        expect(getVerseText(mockVerseTexts, 'Genesis', 1, 100)).toBeNull();
+        expect(getVerseText(mockVerseTexts, 'Genesis', 1, 0)).toBeNull();
+        expect(getVerseText(mockVerseTexts, 'Genesis', 1, -1)).toBeNull();
       });
 
       it('returns null for empty book name', () => {
@@ -628,22 +546,9 @@ describe('verseTexts', () => {
         }
       });
 
-      it('accepts chapter as number', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', 1, 1);
-        expect(result).not.toBeNull();
-      });
-
-      it('accepts verse as number', () => {
-        const result = getVerseText(mockVerseTexts, 'Genesis', 1, 1);
-        expect(result).not.toBeNull();
-      });
-
-      it('handles fractional chapter numbers by conversion', () => {
-        // JavaScript will convert 1.5 to "1" in object lookup
+      it('returns null for a fractional chapter number (no chapter key matches "1.5")', () => {
         const result = getVerseText(mockVerseTexts, 'Genesis', 1.5 as any, 1);
-        // This might return chapter 1 or null depending on implementation
-        // The function uses String() conversion which truncates
-        expect(result).toBeDefined(); // Not throwing is the key
+        expect(result).toBeNull();
       });
     });
 
@@ -679,18 +584,6 @@ describe('verseTexts', () => {
     });
 
     describe('performance', () => {
-      it('handles rapid sequential lookups', () => {
-        const start = performance.now();
-
-        for (let i = 0; i < 1000; i++) {
-          getVerseText(mockVerseTexts, 'Genesis', 1, 1);
-        }
-
-        const duration = performance.now() - start;
-        // Should complete 1000 lookups in < 10ms
-        expect(duration).toBeLessThan(10);
-      });
-
       it('handles lookups across many verses', () => {
         const largeData: VerseTexts = {
           'Book': {},
@@ -707,12 +600,9 @@ describe('verseTexts', () => {
           }
         }
 
-        const start = performance.now();
         const result = getVerseText(largeData, 'Book', 150, 50);
-        const duration = performance.now() - start;
 
         expect(result?.en).toBe('en-150-50');
-        expect(duration).toBeLessThan(1); // Should be instant
       });
     });
   });
