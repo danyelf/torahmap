@@ -43,79 +43,10 @@ describe('sidebar', () => {
       }
     });
 
-    it('returns sidebar element when it exists', () => {
-      const elements = getSidebarElements();
-      expect(elements.sidebar).toBe(sidebar);
-    });
-
     it('returns null for sidebar when element does not exist', () => {
       document.body.removeChild(sidebar);
       const elements = getSidebarElements();
       expect(elements.sidebar).toBeNull();
-    });
-
-    it('returns ref element when it exists', () => {
-      const ref = document.createElement('div');
-      ref.className = 'ref-text';
-      sidebar.appendChild(ref);
-
-      const elements = getSidebarElements();
-      expect(elements.ref).toBe(ref);
-    });
-
-    it('returns overlayInfo element when it exists', () => {
-      const overlayInfo = document.createElement('div');
-      overlayInfo.className = 'overlay-info';
-      sidebar.appendChild(overlayInfo);
-
-      const elements = getSidebarElements();
-      expect(elements.overlayInfo).toBe(overlayInfo);
-    });
-
-    it('returns hebrew element when it exists', () => {
-      const hebrew = document.createElement('div');
-      hebrew.className = 'verse-hebrew';
-      sidebar.appendChild(hebrew);
-
-      const elements = getSidebarElements();
-      expect(elements.hebrew).toBe(hebrew);
-    });
-
-    it('returns english element when it exists', () => {
-      const english = document.createElement('div');
-      english.className = 'verse-english';
-      sidebar.appendChild(english);
-
-      const elements = getSidebarElements();
-      expect(elements.english).toBe(english);
-    });
-
-    it('returns link element as HTMLAnchorElement when it exists', () => {
-      const link = document.createElement('a');
-      link.className = 'sefaria-link';
-      sidebar.appendChild(link);
-
-      const elements = getSidebarElements();
-      expect(elements.link).toBe(link);
-      expect(elements.link).toBeInstanceOf(HTMLAnchorElement);
-    });
-
-    it('returns linkSubtitle element when it exists', () => {
-      const linkSubtitle = document.createElement('div');
-      linkSubtitle.className = 'link-subtitle';
-      sidebar.appendChild(linkSubtitle);
-
-      const elements = getSidebarElements();
-      expect(elements.linkSubtitle).toBe(linkSubtitle);
-    });
-
-    it('returns closeBtn element when it exists', () => {
-      const closeBtn = document.createElement('button');
-      closeBtn.className = 'close-btn';
-      sidebar.appendChild(closeBtn);
-
-      const elements = getSidebarElements();
-      expect(elements.closeBtn).toBe(closeBtn);
     });
 
     it('returns all elements when fully populated', () => {
@@ -142,6 +73,7 @@ describe('sidebar', () => {
       expect(elements.overlayInfo).toBe(overlayInfo);
       expect(elements.hebrew).toBe(hebrew);
       expect(elements.english).toBe(english);
+      expect(elements.link).toBeInstanceOf(HTMLAnchorElement);
       expect(elements.link).toBe(link);
       expect(elements.linkSubtitle).toBe(linkSubtitle);
       expect(elements.closeBtn).toBe(closeBtn);
@@ -219,31 +151,13 @@ describe('sidebar', () => {
         vi.resetAllMocks();
       });
 
-      it('adds ?with=Talmud when Talmud category is selected', () => {
+      it('passes the selected category straight through as ?with=<category>', () => {
         const mockOverlay = {
           id: 'commentary',
           getUrlParams: () => ({ category: 'Talmud' }),
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Talmud');
-      });
-
-      it('adds ?with=Midrash when Midrash category is selected', () => {
-        const mockOverlay = {
-          id: 'commentary',
-          getUrlParams: () => ({ category: 'Midrash' }),
-        } as any;
-        const url = getSefariaUrl('Exodus', 20, 2, mockOverlay);
-        expect(url).toBe('https://www.sefaria.org/Exodus.20.2?with=Midrash');
-      });
-
-      it('adds ?with=Halakhah when Halakhah category is selected', () => {
-        const mockOverlay = {
-          id: 'commentary',
-          getUrlParams: () => ({ category: 'Halakhah' }),
-        } as any;
-        const url = getSefariaUrl('Leviticus', 19, 18, mockOverlay);
-        expect(url).toBe('https://www.sefaria.org/Leviticus.19.18?with=Halakhah');
       });
 
       it('encodes category names with spaces', () => {
@@ -253,33 +167,6 @@ describe('sidebar', () => {
         } as any;
         const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
         expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Jewish%20Thought');
-      });
-
-      it('adds ?with=Kabbalah when Kabbalah category is selected', () => {
-        const mockOverlay = {
-          id: 'commentary',
-          getUrlParams: () => ({ category: 'Kabbalah' }),
-        } as any;
-        const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
-        expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Kabbalah');
-      });
-
-      it('adds ?with=Chasidut when Chasidut category is selected', () => {
-        const mockOverlay = {
-          id: 'commentary',
-          getUrlParams: () => ({ category: 'Chasidut' }),
-        } as any;
-        const url = getSefariaUrl('Genesis', 1, 1, mockOverlay);
-        expect(url).toBe('https://www.sefaria.org/Genesis.1.1?with=Chasidut');
-      });
-
-      it('adds ?with=Musar when Musar category is selected', () => {
-        const mockOverlay = {
-          id: 'commentary',
-          getUrlParams: () => ({ category: 'Musar' }),
-        } as any;
-        const url = getSefariaUrl('Proverbs', 1, 1, mockOverlay);
-        expect(url).toBe('https://www.sefaria.org/Proverbs.1.1?with=Musar');
       });
     });
   });

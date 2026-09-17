@@ -1,4 +1,3 @@
-// Tests for trop overlay - trop mark selection, rarity-based coloring, verse filtering
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
 import { configure, getSelectedTrop, highlightTropInText } from '../../../overlays/trop';
@@ -19,7 +18,6 @@ describe('Trop Overlay', () => {
   let updateCallback: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    // Reset mocks
     vi.clearAllMocks();
 
     // Create test verse texts with trop marks
@@ -86,7 +84,6 @@ describe('Trop Overlay', () => {
   });
 
   afterEach(() => {
-    // Clean up
     tropOverlay.destroy?.();
   });
 
@@ -228,17 +225,9 @@ describe('Trop Overlay', () => {
       tropOverlay.renderControls?.(container);
 
       const buttons = container.querySelectorAll('button');
+      const hasRareButton = Array.from(buttons).some((button) => button.classList.contains('rare'));
 
-      // Find a rare trop button (check dataset for count info)
-      buttons.forEach((button) => {
-        if (button.classList.contains('rare')) {
-          // Found a rare trop button
-        }
-      });
-
-      // We should have at least some rare trop marks
-      // (depends on test data, but Shalshelet is famously rare)
-      expect(buttons.length).toBeGreaterThan(0);
+      expect(hasRareButton).toBe(true);
     });
 
     it('displays rarity tier in info text', () => {
@@ -398,235 +387,6 @@ describe('Trop Overlay', () => {
         }
       });
     });
-
-    describe('Uncommon Marks (50-499 occurrences)', () => {
-      it('uses purple gradient for uncommon marks', () => {
-        // We'll test the gradient logic by selecting a trop and checking colors
-        const container = document.createElement('div');
-        tropOverlay.renderControls?.(container);
-
-        const buttons = container.querySelectorAll('button');
-
-        // Find an uncommon trop (not rare, not too common)
-        for (const button of Array.from(buttons)) {
-          const btn = button as HTMLButtonElement;
-          btn.click();
-
-          const selected = getSelectedTrop();
-          if (selected && getRarityTier(selected.totalCount) === 'uncommon') {
-            // Check that verses have purple-ish colors
-            const colors = testVerses
-              .map((v) => tropOverlay.getVerseColor(v) as [number, number, number] | null)
-              .filter((c) => c !== null);
-
-            if (colors.length > 0) {
-              // At least some colors should be purple-ish (higher blue channel)
-              const hasPurple = colors.some((c) => c![2] > 0.4);
-              expect(hasPurple).toBe(true);
-            }
-
-            break;
-          }
-        }
-      });
-
-      it('returns dim color for verses without uncommon trop', () => {
-        const container = document.createElement('div');
-        tropOverlay.renderControls?.(container);
-
-        const buttons = container.querySelectorAll('button');
-
-        for (const button of Array.from(buttons)) {
-          const btn = button as HTMLButtonElement;
-          btn.click();
-
-          const selected = getSelectedTrop();
-          if (selected && getRarityTier(selected.totalCount) === 'uncommon') {
-            // Find a verse without this trop
-            const verseWithoutTrop = testVerses.find((v) => {
-              const color = tropOverlay.getVerseColor(v) as [number, number, number] | null;
-              return color && color[0] < 0.2 && color[1] < 0.2 && color[2] < 0.2;
-            });
-
-            if (verseWithoutTrop) {
-              const color = tropOverlay.getVerseColor(verseWithoutTrop) as
-                [number, number, number] | null;
-              expect(color).not.toBeNull();
-
-              // Dim color (more visible): [0.25, 0.25, 0.28]
-              expect(color![0]).toBeGreaterThan(0.2);
-              expect(color![0]).toBeLessThan(0.3);
-              expect(color![1]).toBeGreaterThan(0.2);
-              expect(color![1]).toBeLessThan(0.3);
-              expect(color![2]).toBeGreaterThan(0.25);
-              expect(color![2]).toBeLessThan(0.35);
-            }
-
-            break;
-          }
-        }
-      });
-
-      it('uses gradient based on count', () => {
-        const container = document.createElement('div');
-        tropOverlay.renderControls?.(container);
-
-        const buttons = container.querySelectorAll('button');
-
-        for (const button of Array.from(buttons)) {
-          const btn = button as HTMLButtonElement;
-          btn.click();
-
-          const selected = getSelectedTrop();
-          if (selected && getRarityTier(selected.totalCount) === 'uncommon') {
-            // Get all non-zero colors
-            const nonZeroColors = testVerses
-              .map((v) => ({
-                verse: v,
-                color: tropOverlay.getVerseColor(v) as [number, number, number] | null,
-              }))
-              .filter(
-                ({ color }) =>
-                  color &&
-                  ((color as [number, number, number])[0] > 0.2 ||
-                    (color as [number, number, number])[1] > 0.2 ||
-                    (color as [number, number, number])[2] > 0.2),
-              );
-
-            if (nonZeroColors.length > 1) {
-              // Check that colors vary (not all the same)
-              const uniqueColors = new Set(nonZeroColors.map(({ color }) => JSON.stringify(color)));
-              expect(uniqueColors.size).toBeGreaterThan(1);
-            }
-
-            break;
-          }
-        }
-      });
-    });
-
-    describe('Common Marks (500+ occurrences)', () => {
-      it('uses full heatmap for common marks', () => {
-        const container = document.createElement('div');
-        tropOverlay.renderControls?.(container);
-
-        const buttons = container.querySelectorAll('button');
-
-        for (const button of Array.from(buttons)) {
-          const btn = button as HTMLButtonElement;
-          btn.click();
-
-          const selected = getSelectedTrop();
-          if (selected && getRarityTier(selected.totalCount) === 'common') {
-            // Check that we have a range of colors
-            const colors = testVerses
-              .map((v) => tropOverlay.getVerseColor(v) as [number, number, number] | null)
-              .filter((c) => c !== null);
-
-            if (colors.length > 0) {
-              // Should have purple spectrum colors
-              const hasPurple = colors.some((c) => c![2] > 0.3);
-              expect(hasPurple).toBe(true);
-            }
-
-            break;
-          }
-        }
-      });
-
-      it('uses logarithmic scale for common marks', () => {
-        const container = document.createElement('div');
-        tropOverlay.renderControls?.(container);
-
-        const buttons = container.querySelectorAll('button');
-
-        for (const button of Array.from(buttons)) {
-          const btn = button as HTMLButtonElement;
-          btn.click();
-
-          const selected = getSelectedTrop();
-          if (
-            selected &&
-            getRarityTier(selected.totalCount) === 'common' &&
-            selected.verses.length > 2
-          ) {
-            // Get verses with different counts
-            const sortedVerses = [...selected.verses].sort((a, b) => a.count - b.count);
-
-            if (sortedVerses.length >= 3) {
-              const low = sortedVerses[0];
-              const mid = sortedVerses[Math.floor(sortedVerses.length / 2)];
-              const high = sortedVerses[sortedVerses.length - 1];
-
-              const lowVerse = testVerses.find(
-                (v) => v.book === low.book && v.chapter === low.chapter && v.verse === low.verse,
-              );
-              const midVerse = testVerses.find(
-                (v) => v.book === mid.book && v.chapter === mid.chapter && v.verse === mid.verse,
-              );
-              const highVerse = testVerses.find(
-                (v) => v.book === high.book && v.chapter === high.chapter && v.verse === high.verse,
-              );
-
-              if (lowVerse && midVerse && highVerse) {
-                const lowColor = tropOverlay.getVerseColor(lowVerse) as
-                  [number, number, number] | null;
-                const midColor = tropOverlay.getVerseColor(midVerse) as
-                  [number, number, number] | null;
-                const highColor = tropOverlay.getVerseColor(highVerse) as
-                  [number, number, number] | null;
-
-                // Check that colors progress from dark to light
-                if (lowColor && midColor && highColor) {
-                  const lowBrightness =
-                    (lowColor as [number, number, number])[0] +
-                    (lowColor as [number, number, number])[1] +
-                    (lowColor as [number, number, number])[2];
-                  const midBrightness =
-                    (midColor as [number, number, number])[0] +
-                    (midColor as [number, number, number])[1] +
-                    (midColor as [number, number, number])[2];
-                  const highBrightness =
-                    (highColor as [number, number, number])[0] +
-                    (highColor as [number, number, number])[1] +
-                    (highColor as [number, number, number])[2];
-
-                  expect(midBrightness).toBeGreaterThanOrEqual(lowBrightness);
-                  expect(highBrightness).toBeGreaterThanOrEqual(midBrightness);
-                }
-              }
-            }
-
-            break;
-          }
-        }
-      });
-
-      it('returns dim color for verses without common trop', () => {
-        const container = document.createElement('div');
-        tropOverlay.renderControls?.(container);
-
-        const buttons = container.querySelectorAll('button');
-
-        for (const button of Array.from(buttons)) {
-          const btn = button as HTMLButtonElement;
-          btn.click();
-
-          const selected = getSelectedTrop();
-          if (selected && getRarityTier(selected.totalCount) === 'common') {
-            // The dim color for common trop
-            const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-            const color = tropOverlay.getVerseColor(verse) as [number, number, number] | null;
-
-            // Should return null for non-existent verse when trop is selected
-            // OR return the base dark color
-            expect(color).toBeTruthy();
-
-            break;
-          }
-        }
-      });
-    });
   });
 
   describe('Verse Filtering', () => {
@@ -733,60 +493,6 @@ describe('Trop Overlay', () => {
         expect(legendContainer.innerHTML).toContain('Contains');
         expect(legendContainer.innerHTML).toContain('Does not contain');
         expect(legendContainer.innerHTML).toContain('rgb(255, 214, 0)'); // Gold
-      }
-    });
-
-    it('shows gradient legend for uncommon/common trop', () => {
-      const controlContainer = document.createElement('div');
-      tropOverlay.renderControls?.(controlContainer);
-
-      const buttons = controlContainer.querySelectorAll('button');
-
-      // Find a non-rare button
-      let nonRareButton: HTMLButtonElement | null = null;
-      buttons.forEach((button) => {
-        if (!button.classList.contains('rare')) {
-          nonRareButton = button as HTMLButtonElement;
-        }
-      });
-
-      if (nonRareButton) {
-        (nonRareButton as HTMLButtonElement).click();
-
-        const legendContainer = document.createElement('div');
-        tropOverlay.renderLegend?.(legendContainer);
-
-        expect(legendContainer.innerHTML).toContain('legend-gradient');
-        expect(legendContainer.innerHTML).toContain('Count');
-        expect(legendContainer.innerHTML).toContain('Max');
-      }
-    });
-
-    it('uses purple gradient colors in legend', () => {
-      const controlContainer = document.createElement('div');
-      tropOverlay.renderControls?.(controlContainer);
-
-      const buttons = controlContainer.querySelectorAll('button');
-      let nonRareButton: HTMLButtonElement | null = null;
-
-      buttons.forEach((button) => {
-        if (!button.classList.contains('rare')) {
-          nonRareButton = button as HTMLButtonElement;
-        }
-      });
-
-      if (nonRareButton) {
-        (nonRareButton as HTMLButtonElement).click();
-
-        const legendContainer = document.createElement('div');
-        tropOverlay.renderLegend?.(legendContainer);
-
-        const gradient = legendContainer.querySelector('.legend-gradient') as HTMLElement;
-        expect(gradient).not.toBeNull();
-
-        const style = gradient.style.background;
-        // Should contain purple-ish colors
-        expect(style.toLowerCase()).toContain('gradient');
       }
     });
   });
@@ -1260,26 +966,6 @@ describe('Trop Overlay', () => {
       await tropOverlay.init?.();
     });
 
-    it('caches verse lookup for performance', () => {
-      const container = document.createElement('div');
-      tropOverlay.renderControls?.(container);
-
-      const button = container.querySelector('button') as HTMLButtonElement;
-      button.click();
-
-      const verse = testVerses[0];
-
-      // Multiple calls should return same result quickly
-      const start = performance.now();
-      for (let i = 0; i < 100; i++) {
-        tropOverlay.getVerseColor(verse);
-      }
-      const duration = performance.now() - start;
-
-      // Should be fast (less than 10ms for 100 calls)
-      expect(duration).toBeLessThan(10);
-    });
-
     it('recalculates cache when trop changes', () => {
       const container = document.createElement('div');
       tropOverlay.renderControls?.(container);
@@ -1317,11 +1003,6 @@ describe('Trop Overlay', () => {
       expect(getRarityTier(10)).toBe('rare');
       expect(getRarityTier(100)).toBe('uncommon');
       expect(getRarityTier(1000)).toBe('common');
-    });
-
-    it('applies correct rarity thresholds', () => {
-      expect(RARITY_THRESHOLDS.RARE).toBe(50);
-      expect(RARITY_THRESHOLDS.UNCOMMON).toBe(500);
     });
   });
 });

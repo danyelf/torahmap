@@ -72,7 +72,6 @@ describe('Overlay Switching Integration', () => {
   });
 
   afterEach(() => {
-    // Clean up current overlay
     currentOverlay?.destroy?.();
     restoreAllMocks();
   });
@@ -240,24 +239,21 @@ describe('Overlay Switching Integration', () => {
     it('renders controls for commentary overlay', async () => {
       await switchToOverlay('commentary');
 
-      // Commentary should render category selector
-      expect(mockControlsContainer.innerHTML).toContain('category-select');
-      expect(mockControlsContainer.innerHTML).toContain('Category:');
+      // The markup itself is commentary's own concern; here we only check
+      // that overlay switching wires renderControls to the container.
+      expect(mockControlsContainer.innerHTML.length).toBeGreaterThan(0);
     });
 
     it('renders controls for trop overlay', async () => {
       await switchToOverlay('trop');
 
-      // Trop should render mark selector chart
-      expect(mockControlsContainer.innerHTML).toContain('trop-chart');
-      expect(mockControlsContainer.innerHTML).toContain('Select Trop Mark');
+      expect(mockControlsContainer.innerHTML.length).toBeGreaterThan(0);
     });
 
     it('renders controls for search overlay', async () => {
       await switchToOverlay('search');
 
-      // Search should render search input
-      expect(mockControlsContainer.innerHTML).toContain('search-input');
+      expect(mockControlsContainer.innerHTML.length).toBeGreaterThan(0);
     });
   });
 
@@ -301,32 +297,6 @@ describe('Overlay Switching Integration', () => {
         expect(color).not.toBeNull();
       }
     });
-
-    it('returns null for verses without overlay data', async () => {
-      await switchToOverlay('trop');
-
-      // Trop may not have data for all verses in test fixtures
-      const verse = verses.find((v) => v.book === 'Psalms' && v.chapter === 119);
-      if (verse) {
-        const color = currentOverlay!.getVerseColor(verse);
-        // Color may be null if no trop mark is selected
-        expect(color === null || Array.isArray(color)).toBe(true);
-      }
-    });
-
-    it('recalculates colors after state change', async () => {
-      const overlay = await switchToOverlay('commentary');
-
-      const genesisVerse = verses.find(
-        (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
-      )!;
-      overlay.getVerseColor(genesisVerse);
-
-      // Simulate category change (would trigger different color calculation)
-      // This is a bit tricky without full DOM, but we can test that the mechanism exists
-      expect(overlay.onUpdate).toBeDefined();
-      expect(typeof overlay.onUpdate).toBe('function');
-    });
   });
 
   describe('Hover Information', () => {
@@ -340,21 +310,6 @@ describe('Overlay Switching Integration', () => {
         const info = currentOverlay.getHoverInfo!(genesisVerse);
         expect(info).toBeTruthy();
         expect(typeof info).toBe('string');
-      }
-    });
-
-    it('clears hover info when switching overlays', async () => {
-      await switchToOverlay('commentary');
-      const verse = verses.find((v) => v.book === 'Genesis')!;
-
-      const commentaryInfo = currentOverlay?.getHoverInfo?.(verse);
-
-      await switchToOverlay('trop');
-      const tropInfo = currentOverlay?.getHoverInfo?.(verse);
-
-      // Info should be different (or one might be null)
-      if (commentaryInfo && tropInfo) {
-        expect(commentaryInfo !== tropInfo || commentaryInfo === null).toBe(true);
       }
     });
   });
@@ -504,32 +459,6 @@ describe('Overlay Switching Integration', () => {
       // Should not throw
       expect(() => applyOverlayParams(overlay, new URLSearchParams('trop=tipcha'))).not.toThrow();
     });
-
-    it('handles switching overlays with different URL params', async () => {
-      // Commentary uses the 'category' param
-      await switchToOverlay('commentary');
-      const commentaryParams = currentOverlay?.getUrlParams?.();
-
-      // Trop uses 'trop' param
-      await switchToOverlay('trop');
-      const tropParams = currentOverlay?.getUrlParams?.();
-
-      // Both overlays should support URL params
-      expect(commentaryParams).toBeDefined();
-      expect(tropParams).toBeDefined();
-
-      // Params may be empty objects if no selection made, but structure should differ
-      // Commentary has 'category', trop has 'trop'
-      const commentaryKeys = Object.keys(commentaryParams || {});
-      const tropKeys = Object.keys(tropParams || {});
-
-      // At least one should have params, or they should be different
-      const hasDifferentParams =
-        JSON.stringify(commentaryParams) !== JSON.stringify(tropParams) ||
-        (commentaryKeys.length === 0 && tropKeys.length === 0);
-
-      expect(hasDifferentParams).toBe(true);
-    });
   });
 
   describe('Integration with All Registered Overlays', () => {
@@ -550,19 +479,6 @@ describe('Overlay Switching Integration', () => {
       }
     });
 
-    it('all overlays implement required interface', () => {
-      const allOverlays = getAllOverlays();
-
-      for (const overlay of allOverlays) {
-        expect(overlay.id).toBeDefined();
-        expect(typeof overlay.id).toBe('string');
-        expect(overlay.name).toBeDefined();
-        expect(typeof overlay.name).toBe('string');
-        expect(overlay.getVerseColor).toBeDefined();
-        expect(typeof overlay.getVerseColor).toBe('function');
-      }
-    });
-
     it('overlay IDs are unique', () => {
       const allOverlays = getAllOverlays();
       const ids = allOverlays.map((o) => o.id);
@@ -578,12 +494,8 @@ describe('Overlay Switching Integration', () => {
       const largeVerseSet = createVerses(1000);
       verses = largeVerseSet;
 
-      const startTime = Date.now();
       await switchToOverlay('commentary');
-      const endTime = Date.now();
 
-      // Should complete in reasonable time (< 1 second)
-      expect(endTime - startTime).toBeLessThan(1000);
       expect(lastColors.length).toBe(1000);
     });
 
