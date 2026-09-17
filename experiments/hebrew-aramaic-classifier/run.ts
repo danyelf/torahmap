@@ -1,7 +1,7 @@
 /**
  * Hebrew/Aramaic classifier prototype runner.
  *
- * Run with: npx tsx scripts/hebrew-aramaic-prototype/run.ts
+ * Run with: npx tsx experiments/hebrew-aramaic-classifier/run.ts
  *
  * Stages:
  *   1. Run the classifier on two hand-labeled fixture sentences and report

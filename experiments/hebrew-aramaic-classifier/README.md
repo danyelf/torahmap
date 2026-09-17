@@ -10,7 +10,7 @@ against real Berakhot text. Not production code.
 ## Run it
 
 ```bash
-node --experimental-strip-types scripts/hebrew-aramaic-prototype/run.ts
+node --experimental-strip-types experiments/hebrew-aramaic-classifier/run.ts
 ```
 
 Stages:
@@ -61,8 +61,8 @@ touching the contracts or the storage format.
 ## Not used yet
 
 - **Mishnah/Gemara structural markers** (`מתני׳`, `גמ׳`) embedded in the
-  Wikisource text. The parallel Talmud-prototype worktree (tm-7la,
-  `docs/plans/2026-04-06-talmud-exploration-design.md` §4) parses these
+  Wikisource text. The parallel Talmud exploration prototype
+  (`docs/plans/2026-04-06-talmud-exploration-design.md` §4) parses these
   for layout. They are also a strong language prior — every word between
   `מתני׳` and the next `גמ׳` is almost certainly Hebrew. Worth using as
   a structural override on top of any per-word classifier.
