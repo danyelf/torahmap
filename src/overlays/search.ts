@@ -7,7 +7,7 @@ import {
   getMatchingVerseTerms,
   parseSearchTerms,
   stripNikkud,
-  isDroppedByStripNikkud,
+  isNikkudChar,
   isHebrewQuery,
   computeSnippetForMatch,
   resultsForVerseSets,
@@ -989,9 +989,9 @@ interface Match {
  * Map position in normalized (no nikkud) text back to original text position
  *
  * The normalized text here is whatever `stripNikkud` produced, so this asks
- * that function's own predicate which characters went missing. It used to
- * carry a copy of the rule, and the copy did not know about the grapheme
- * joiner that `stripNikkud` now removes.
+ * that function's own predicate which characters went missing. `isNikkudChar`
+ * used to be declared here as well as there, and this copy did not know about
+ * the grapheme joiner.
  */
 function mapNormalizedToOriginalPosition(
   text: string,
@@ -1002,7 +1002,7 @@ function mapNormalizedToOriginalPosition(
   let currentNormalizedPos = 0;
 
   for (let i = startFrom; i < text.length && currentNormalizedPos < normalizedPos; i++) {
-    if (isDroppedByStripNikkud(text.charCodeAt(i))) {
+    if (isNikkudChar(text.charCodeAt(i))) {
       droppedCount++;
     } else {
       currentNormalizedPos++;

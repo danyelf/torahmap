@@ -53,15 +53,29 @@ function searchFor(term: string): void {
   input.dispatchEvent(new Event('input'));
 }
 
+// Exodus 20:4, where the joiner is nothing to do with Jerusalem. The Decalogue
+// is printed with doubled cantillation, and a joiner separates the stacked
+// marks — 14 words in all, against Jerusalem's 638. This verse says מתחת twice,
+// once carrying a joiner and once not, so one search covers both.
+const EXODUS_20_4 =
+  'לֹֽ֣א־תַעֲשֶֽׂ֨ה־לְךָ֥֣ פֶ֣֙סֶל֙ ׀ וְכׇל־תְּמוּנָ֔֡ה אֲשֶׁ֤֣ר בַּשָּׁמַ֣֙יִם֙ ׀ מִמַּ֔֡עַל ' +
+  'וַֽאֲשֶׁ֥ר֩ בָּאָ֖֨רֶץ מִתָּ֑͏ַ֜חַת וַאֲשֶׁ֥ר בַּמַּ֖֣יִם ׀ מִתַּ֥֣חַת לָאָֽ֗רֶץ׃';
+
 const texts: VerseTexts = {
   'II Kings': { '21': { '13': { he: II_KINGS_21_13, en: 'And I will stretch over Jerusalem' } } },
+  Exodus: { '20': { '4': { he: EXODUS_20_4, en: 'You shall not make for yourself an idol' } } },
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   applyOverlayParams(searchOverlay, { q: '' });
   buildSearchIndex(texts);
-  configure({ verses: [createVerse({ book: 'II Kings', chapter: 21, verse: 13 })] });
+  configure({
+    verses: [
+      createVerse({ book: 'II Kings', chapter: 21, verse: 13 }),
+      createVerse({ book: 'Genesis', chapter: 35, verse: 22 }),
+    ],
+  });
 });
 
 describe('a word carrying a grapheme joiner', () => {
@@ -100,6 +114,20 @@ describe('a word carrying a grapheme joiner', () => {
     // Asserted on a non-empty list, because "every" is true of no marks at all.
     expect(found).toHaveLength(2);
     expect(found.every((m) => m.includes(JOINER))).toBe(true);
+  });
+
+  it('is not only Jerusalem: the Decalogue carries them too', () => {
+    // 652 words carry a joiner. 638 are Jerusalem; the other 14 are eight words
+    // in Exodus 20, Deuteronomy 5 and Genesis 35:22, where the doubled
+    // cantillation stacks two marks and a joiner separates them.
+    searchFor('מתחת');
+
+    const found = marks(fragmentToHtml(highlightSearchTerms(EXODUS_20_4, 'he')));
+
+    // The verse says the word twice, the first carrying a joiner. Before the
+    // fix only the second was marked, so the two are not interchangeable here.
+    expect(found.map(consonants)).toEqual(['מתחת', 'מתחת']);
+    expect(found.filter((m) => m.includes(JOINER))).toHaveLength(1);
   });
 
   it('still marks a word that follows the joiner at the right place', () => {
