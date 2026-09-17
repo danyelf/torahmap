@@ -43,3 +43,13 @@ export const TERM_SEPARATORS = /[,،‎״]/;
 
 export const SEARCH_SNIPPET_MAX_LENGTH = 60;
 export const SEARCH_SNIPPET_CONTEXT_BEFORE = 20; // characters shown before the match
+
+/**
+ * How much larger the Hebrew in map labels is set than the label's nominal
+ * size. David Libre's letter bodies stand 15% shorter than Noto Sans Hebrew's
+ * at the same font-size (measured: 105.5px against 121.3px for מ, ב and ת set
+ * at 200px), so Hebrew set at the old numbers reads smaller than it used to.
+ * Applied after the zoom clamps, so MIN/MAX font sizes keep meaning the size a
+ * label appears to be rather than the number handed to the font.
+ */
+export const HEBREW_LABEL_SCALE = 1.15;

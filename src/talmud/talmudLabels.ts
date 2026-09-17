@@ -13,6 +13,7 @@ import {
   SEDER_BACKGROUND_COLORS,
   SEDER_BACKGROUND_OPACITY,
 } from './constants.ts';
+import { HEBREW_LABEL_SCALE } from '../constants/app.ts';
 
 // Perek labels appear at mid-zoom and above (same threshold as the daf
 // 3/3/4 tier — when the user can see individual sub-decade dapim, the
@@ -242,10 +243,9 @@ export function updateTalmudLabelPositions(
   }
 
   // Seder labels: always visible, large.
-  const sederFontSize = Math.max(
-    MIN_SEDER_FONT_SIZE,
-    Math.min(MAX_SEDER_FONT_SIZE, BASE_SEDER_FONT_SIZE * zoom),
-  );
+  const sederFontSize =
+    Math.max(MIN_SEDER_FONT_SIZE, Math.min(MAX_SEDER_FONT_SIZE, BASE_SEDER_FONT_SIZE * zoom)) *
+    HEBREW_LABEL_SCALE;
   for (const el of Array.from(state.sederLabels.children) as HTMLElement[]) {
     const worldX = parseFloat(el.dataset.worldX || '0');
     const worldY = parseFloat(el.dataset.worldY || '0');
@@ -257,10 +257,11 @@ export function updateTalmudLabelPositions(
   }
 
   // Tractate labels: always visible, scaled with zoom.
-  const fontSize = Math.max(
-    MIN_TRACTATE_FONT_SIZE,
-    Math.min(MAX_TRACTATE_FONT_SIZE, BASE_TRACTATE_FONT_SIZE * zoom),
-  );
+  const fontSize =
+    Math.max(
+      MIN_TRACTATE_FONT_SIZE,
+      Math.min(MAX_TRACTATE_FONT_SIZE, BASE_TRACTATE_FONT_SIZE * zoom),
+    ) * HEBREW_LABEL_SCALE;
   for (const el of Array.from(state.tractateLabels.children) as HTMLElement[]) {
     const worldX = parseFloat(el.dataset.worldX || '0');
     const worldY = parseFloat(el.dataset.worldY || '0');
@@ -273,10 +274,9 @@ export function updateTalmudLabelPositions(
 
   // Perek labels: visible at mid+ zoom, scaled with zoom.
   const perekVisible = zoom >= PEREK_LABEL_ZOOM_THRESHOLD;
-  const perekFontSize = Math.max(
-    MIN_PEREK_FONT_SIZE,
-    Math.min(MAX_PEREK_FONT_SIZE, BASE_PEREK_FONT_SIZE * zoom),
-  );
+  const perekFontSize =
+    Math.max(MIN_PEREK_FONT_SIZE, Math.min(MAX_PEREK_FONT_SIZE, BASE_PEREK_FONT_SIZE * zoom)) *
+    HEBREW_LABEL_SCALE;
   for (const el of Array.from(state.perekLabels.children) as HTMLElement[]) {
     if (!perekVisible) {
       el.style.display = 'none';
