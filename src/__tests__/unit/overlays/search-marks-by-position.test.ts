@@ -71,8 +71,9 @@ describe('marking a verse that holds two words of one spelling', () => {
   it('gives each word to the term that means it', () => {
     searchBothReadings();
 
-    // Before this, both words came back as term-0: the spelling matched both
-    // terms, and the first one to claim a position kept it.
+    // Either term's spelling matches either word, so only the place in the
+    // verse decides which is which. Matching on the spelling alone gives both
+    // words to whichever term claims a position first.
     expect(marks()).toEqual([
       ['term-0', 'ויעל'],
       ['term-1', 'עלת'],
