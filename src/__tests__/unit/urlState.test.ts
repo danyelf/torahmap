@@ -666,11 +666,14 @@ describe('subscribeToHashChange', () => {
     expect(window.addEventListener).toHaveBeenCalledWith('popstate', callback);
   });
 
-  it('subscribes to hashchange event', () => {
+  // Registering both popstate and hashchange made a single back/forward
+  // navigation run the restore callback twice, since both fire when history
+  // traversal changes the hash. Only popstate is needed — see the comment on
+  // subscribeToHashChange.
+  it('does not also subscribe to hashchange', () => {
     const callback = vi.fn();
     subscribeToHashChange(callback);
-    expect(window.addEventListener).toHaveBeenCalledWith('popstate', callback);
-    expect(window.addEventListener).toHaveBeenCalledWith('hashchange', callback);
+    expect(window.addEventListener).not.toHaveBeenCalledWith('hashchange', callback);
   });
 });
 

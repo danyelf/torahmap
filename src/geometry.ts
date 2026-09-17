@@ -10,10 +10,16 @@ function isColorArray(color: Color | Color[] | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
 
+// Fill for verses with no assigned color, e.g. the base layer before any
+// overlay is picked. Shares its value with HIGHLIGHT_CONSTANTS.OUTLINE_COLOR,
+// but that constant is named for its other use as a border color; this name
+// says what it means here.
+const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
+
 export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
-  baseColor: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR,
+  baseColor: Color = DEFAULT_FILL_COLOR,
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
   // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
