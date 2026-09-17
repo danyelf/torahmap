@@ -4,11 +4,14 @@
 // the spelling alone cannot say which. The verse can: the reading of a word in
 // front of you is one the verse contains, and the other candidates usually are
 // not.
+//
+// How often that succeeds across the whole text is a measurement rather than an
+// assertion, and lives in scripts/search/click-resolution-report.ts.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData } from '../../../search';
 import { meaningsInVerse, meaningsFor } from '../../../search/dictionary';
-import { splitVerseText, lookupForm } from '../../../verseWords';
+import { lookupForm } from '../../../verseWords';
 
 beforeAll(async () => {
   await loadLexiconData();
@@ -80,42 +83,5 @@ describe('resolving a word against its verse', () => {
 
   it('returns nothing for a verse it has no data for', () => {
     expect(meaningsInVerse('עלה', 'Nowhere:1:1')).toEqual([]);
-  });
-});
-
-describe('coverage across the whole text', () => {
-  it('resolves most clicks, and reports how many', async () => {
-    // The test setup serves public/ from disk, so this is the same path the
-    // app itself fetches.
-    const texts = await (await fetch('/data/all-texts.json')).json();
-
-    let resolved = 0;
-    let ambiguous = 0;
-    let unknown = 0;
-
-    for (const [book, chapters] of Object.entries(texts)) {
-      for (const [chapter, verses] of Object.entries(chapters)) {
-        for (const [verse, text] of Object.entries(verses)) {
-          const key = `${book}:${chapter}:${verse}`;
-          for (const word of splitVerseText(text.he).filter((p) => p.kind === 'word')) {
-            const n = meaningsInVerse(lookupForm(word.text), key).length;
-            if (n === 1) resolved++;
-            else if (n > 1) ambiguous++;
-            else unknown++;
-          }
-        }
-      }
-    }
-
-    const total = resolved + ambiguous + unknown;
-    console.log(
-      `click resolution: ${((resolved / total) * 100).toFixed(1)}% one meaning, ` +
-        `${((ambiguous / total) * 100).toFixed(1)}% several, ` +
-        `${((unknown / total) * 100).toFixed(1)}% none`,
-    );
-
-    // A floor, not a target. It catches a resolution path that has stopped
-    // working; it must not fail when the lexeme index gets better.
-    expect(resolved / total).toBeGreaterThan(0.5);
   });
 });

@@ -91,6 +91,19 @@ Text-Fabric the first time. Once that setup is done:
 
 Then set the BHSA `collected` date in `src/overlays/search.ts`.
 
+Afterwards, check what the new index can name:
+
+```bash
+npm run report:click-resolution
+```
+
+It walks every word of every verse, asks which dictionary word each one is in
+its verse, and prints the split against the baseline in
+`scripts/search/click-resolution.json`. A regeneration that quietly drops a part
+of speech shows up here as a share that moved and nowhere else. When the move is
+one you meant, re-record it with `--save` and commit the baseline alongside the
+index.
+
 ## Haftarah Readings
 
 Which passage is read on which occasion comes from hebcal's leyning tables,
