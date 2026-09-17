@@ -64,6 +64,18 @@ export function isNikkud(code: number): boolean {
   return code >= NIKKUD_START && code <= NIKKUD_END && !SEPARATOR_CODES.has(code);
 }
 
+/**
+ * Is this one of the cantillation marks, the accents that say how a verse is
+ * chanted?
+ *
+ * A strict subset of what `isNikkud` covers: every trop mark is an accent, and
+ * the vowel points above U+05AF are not trop. Kept beside it so the two can be
+ * read against each other rather than found separately and assumed unrelated.
+ */
+export function isTropMark(code: number): boolean {
+  return code >= NIKKUD_START && code <= 0x05af;
+}
+
 /** Whitespace, hyphen, or one of the four Hebrew characters that break words. */
 export function isWordSeparator(char: string): boolean {
   return /\s/.test(char) || SEPARATOR_CODES.has(char.codePointAt(0)!) || char === '-';
