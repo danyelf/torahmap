@@ -81,7 +81,7 @@ export function resolveStops(
     let camera: CameraPosition;
 
     if (isVerseRef(cam)) {
-      const zoom = stop.zoom ?? 3; // default zoom when the stop doesn't specify one
+      const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
       const verseLayout =
         parsed && verses && canvasWidth && canvasHeight

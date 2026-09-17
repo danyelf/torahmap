@@ -66,8 +66,8 @@ interface TanakhStructure {
 }
 
 function getItemColor(itemIndex: number, totalItemCount: number): Color {
-  const hue = (itemIndex / totalItemCount) * 360; // full spectrum, red to red
-  return hslToRgb({ h: hue, s: 0.8, l: 0.55 }); // high saturation, vivid
+  const hue = (itemIndex / totalItemCount) * 360;
+  return hslToRgb({ h: hue, s: 0.8, l: 0.55 });
 }
 
 function adjustBrightness(color: Color, factor: number): Color {

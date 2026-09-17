@@ -120,9 +120,9 @@ export const verseLengthOverlay: Overlay = {
     }
     const gradient = gradientStops.join(', ');
 
-    const paletteName = COLOR_STOPS === PLASMA_STOPS ? 'Plasma' : 'Viridis';
-    const lowColor = COLOR_STOPS === PLASMA_STOPS ? 'Purple' : 'Purple/blue';
-    const highColor = COLOR_STOPS === PLASMA_STOPS ? 'Orange/yellow' : 'Green/yellow';
+    const paletteName = 'Plasma';
+    const lowColor = 'Purple';
+    const highColor = 'Orange/yellow';
 
     container.innerHTML = `
       <div class="legend-row">
