@@ -164,7 +164,7 @@ export function renderOutline<T>(
   color: [number, number, number],
   buffer: WebGLBuffer | null,
   camera: Camera,
-  thickness: number = HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
+  thickness?: number,
 ): WebGLBuffer {
   const { gl, programs, canvas } = context;
   const { dpr } = state;

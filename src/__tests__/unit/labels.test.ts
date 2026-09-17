@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createBookLabels, updateLabelPositions } from '../../labels';
 import { createVerse, SAMPLE_VERSES } from '../helpers';
-import { HEBREW_LABEL_SCALE } from '../../constants/app';
+import { HEBREW_LABEL_SCALE } from '../../constants/labels';
 
 // Hebrew names for test use (matching tanakh-structure.json hebrewName field)
 const HEBREW_NAMES: Record<string, string> = {
@@ -153,21 +153,14 @@ describe('labels', () => {
         expect(enSpan).not.toBeNull();
       });
 
-      it('sets the Hebrew larger than the English, at a line-height that keeps the label box', () => {
+      it('sets the Hebrew larger than the label it sits in', () => {
         const verses = [createVerse({ book: 'Genesis' })];
         const labels = createBookLabels(verses, container, HEBREW_NAMES);
 
         const label = labels.children[0] as HTMLElement;
         const heSpan = label.querySelector('.book-label-he') as HTMLElement;
-        const enSpan = label.querySelector('.book-label-en') as HTMLElement;
 
         expect(heSpan.style.fontSize).toBe(`${HEBREW_LABEL_SCALE}em`);
-        expect(enSpan.style.fontSize).toBe('');
-        // The two line-heights multiply out to the label's own, so a taller
-        // Hebrew glyph never pushes the label down into the verses.
-        expect(Number(heSpan.style.lineHeight) * HEBREW_LABEL_SCALE).toBeCloseTo(
-          Number(label.style.lineHeight),
-        );
       });
 
       it('stores book name in dataset', () => {

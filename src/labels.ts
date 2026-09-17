@@ -1,7 +1,7 @@
 // Render book labels as HTML overlays
 
 import type { TanakhLayout } from './types.ts';
-import { HEBREW_LABEL_SCALE } from './constants/app.ts';
+import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from './constants/labels.ts';
 
 interface BookBounds {
   minX: number;
@@ -14,7 +14,6 @@ interface Pan {
   y: number;
 }
 
-const LABEL_LINE_HEIGHT = 1.2;
 const BASE_LABEL_GAP = 10; // Gap between label bottom and verse top at BASE_FONT_SIZE
 const BASE_FONT_SIZE = 13; // Font size at zoom=1
 const MIN_FONT_SIZE = 5; // Minimum font size when zoomed out
@@ -49,7 +48,9 @@ export function createBookLabels(
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
-      line-height:${LABEL_LINE_HEIGHT};
+      /* A length, not a factor: the larger Hebrew below inherits it as-is and
+         so cannot grow the box the positioning maths below assumes. */
+      line-height:1.2em;
     `;
     label.dataset.bookName = name;
     label.dataset.rightX = String(pos.maxX);
@@ -59,13 +60,9 @@ export function createBookLabels(
     // Hebrew name (always shown, without nikkud)
     const heSpan = document.createElement('span');
     heSpan.className = 'book-label-he';
-    heSpan.style.fontFamily = '"David Libre", system-ui, sans-serif';
-    // Only the Hebrew grows: the English beside it never changed typeface. The
-    // line-height shrinks to match, so the taller Hebrew leaves the label box
-    // the height the positioning maths assumes and the gap above the verses
-    // stays where it was.
+    heSpan.style.fontFamily = HEBREW_LABEL_FONT;
+    // Only the Hebrew: the English sibling is a sans face and needs no correction.
     heSpan.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
-    heSpan.style.lineHeight = String(LABEL_LINE_HEIGHT / HEBREW_LABEL_SCALE);
     heSpan.textContent = hebrewNames?.[name] ?? name;
     label.appendChild(heSpan);
 

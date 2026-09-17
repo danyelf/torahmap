@@ -10,8 +10,8 @@ export interface OutlineBounds {
   size: number;
 }
 
-// rendering.ts always passes both fields explicitly; the defaults below are a
-// fallback for other callers (and are what the tests exercise directly).
+// The defaults below are the only place either value is decided: callers that
+// want the ordinary outline leave the field out rather than naming it again.
 export interface OutlineOptions {
   thickness?: number;
   color?: Color;
