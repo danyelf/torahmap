@@ -1,9 +1,8 @@
 // Assembling results from verse sets.
 //
-// Meanings mode used to resolve each term's text to lexemes and union their
-// verses, all inside search(). Once the reader can choose which meanings a
-// term stands for, that resolution belongs where the choice lives. So the
-// verse sets arrive already decided and this turns them into results.
+// The verse sets arrive already decided, and this turns them into results.
+// Resolving a term's text to lexemes happens where the reader's choice of
+// meanings lives — the overlay — not in search().
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData, buildSearchIndex, resultsForVerseSets } from '../../search.ts';

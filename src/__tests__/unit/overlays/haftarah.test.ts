@@ -168,8 +168,7 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Custom setting in the URL', () => {
-    // The Ashkenazi/Sephardi choice used to be lost on reload because
-    // nothing carried it into the URL.
+    // The URL carries the Ashkenazi/Sephardi choice, so a reload keeps it.
     beforeEach(async () => {
       await haftarahOverlay.init?.();
       applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));

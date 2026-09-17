@@ -136,10 +136,10 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
     });
 
     it('does not drag the Hebrew preposition על into a search for עלה', () => {
-      // על "upon" is in 4,487 verses; folding it into עלה swamped the results,
-      // which the old concordance numbering forced. It cannot be written עלה.
-      // The Aramaic preposition can, is a word, and is worth 86 verses —
-      // keeping it out cost far more than the collision did.
+      // The Hebrew על "upon" is in 4,487 verses and cannot be written עלה, so
+      // folding it in swamps the results. The Aramaic preposition can be
+      // written עלה, is a word, and is worth 86 verses — that collision costs
+      // far less than keeping it out.
       const readings = findLexemesForWord('עלה')!;
       const prepositions = readings.map((id) => getLexeme(id)!).filter((l) => l.pos === 'prep');
       expect(prepositions.map((l) => l.language)).toEqual(['arc']);

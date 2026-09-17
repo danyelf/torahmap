@@ -1,11 +1,9 @@
 // The list of search terms.
 //
-// Terms used to be substrings of one comma-separated box, re-split on every
-// keystroke and addressed by position. That was safe while a term carried
-// nothing of its own. It stops being safe once a term carries a meaning
-// selection, because editing an earlier term shifts every later index and the
-// selection silently lands on a different word. So terms have identity, and
-// these tests are mostly about what survives an edit.
+// Terms have identity, so these tests are mostly about what survives an edit.
+// A term addressed by its position in a re-split string loses its meaning
+// selection as soon as an earlier term is edited: every later index shifts and
+// the selection silently lands on a different word.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData, parseSearchTerms } from '../../search.ts';
@@ -309,9 +307,9 @@ describe('getting back to all of them', () => {
   });
 });
 
-// How a word is matched belongs to the word. It used to be one setting for the
-// whole search, so every Hebrew term was matched the same way and the
-// comparisons the map exists for could not be asked for at all.
+// How a word is matched belongs to the word. One setting for the whole search
+// matches every Hebrew term the same way, which rules out the comparisons the
+// map exists to make.
 describe('a term matched its own way', () => {
   it('defaults Hebrew to meanings and English to substring', () => {
     const terms = addTerm(addTerm([], 'עלה'), 'light');

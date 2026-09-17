@@ -14,7 +14,7 @@ import {
 } from '../search.ts';
 import { mapStrippedToOriginal, splitIntoWords, stripNikkud } from '../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../search/matching.ts';
-import { versesFor, formMatches } from '../search/dictionary.ts';
+import { versesFor, wordMatches } from '../search/dictionary.ts';
 import {
   addTerm,
   removeTerm,
@@ -310,8 +310,8 @@ export function canAddTerm(): boolean {
  * Takes the term, not a row number. Results are indexed by a term's position
  * among the terms actually being searched, which is not its position among the
  * rows on screen — a row holding nothing, or one letter, occupies a row but no
- * search slot. Emptying the first of two rows used to hand the second row the
- * first one's count, which was zero.
+ * search slot. Indexing by row instead gives a row its neighbour's count as
+ * soon as an earlier row is emptied.
  */
 function termHitCount(term: SearchTerm): number {
   const index = activeTerms().indexOf(term);
@@ -639,8 +639,8 @@ function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'term-input';
-  // The first row keeps the old ids: it is still the search box, and its
-  // button is still what clears the search.
+  // The first row carries the well-known ids: it is the search box, and its
+  // button is what clears the search.
   if (index === 0) input.id = 'search-input';
   input.value = term.text;
   input.addEventListener('input', () => onTermInput(term.id, input));
@@ -978,13 +978,18 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     const mode = effectiveMode(term);
 
     // Meanings mode asks the dictionary, not the spelling: mark only the words
-    // that are one of the meanings this term still stands for (see formMatches
-    // in search/dictionary.ts).
+    // that are one of the meanings this term still stands for.
+    //
+    // By position rather than by spelling, which is what separates the two
+    // words spelled עלה in Genesis 8:20 — a spelling could be either, and only
+    // the place in the verse says which this one is. `wordMatches` falls back
+    // to the spelling wherever the parse cannot answer (see
+    // search/dictionary.ts), so a verse that does not line up still marks.
     if (isHebrew && mode === 'meanings') {
       const keys = selectedKeys(term);
       const needle = foldForMatching(term.text, 'he');
       for (const { word, start, end } of splitIntoWords(folded)) {
-        const hit = keys.length > 0 ? formMatches(keys, word) : word === needle;
+        const hit = keys.length > 0 ? wordMatches(keys, word, text, start) : word === needle;
         if (hit) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
         }

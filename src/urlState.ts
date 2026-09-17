@@ -113,7 +113,7 @@ function validateString(
 }
 
 // Allows letters, spaces, and slashes, for categories like "Talmud/Mishnah".
-// More permissive than validateString to support legacy categories.
+// More permissive than validateString, which rejects the slash outright.
 function validateCategoryName(value: string | null): string | null {
   const trimmed = baseValidate(value, MAX_STRING_LENGTH);
   if (!trimmed) return null;

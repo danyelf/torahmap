@@ -102,8 +102,8 @@ describe('the haftarah readings the app ships', () => {
 
   // The portions are named as Sefaria names them, so that a reference here and
   // a reference on Sefaria are the same string. These five are the spellings
-  // that most obviously separate Sefaria's vocabulary from the transliteration
-  // the map used before, and from hebcal's, which differs on three of its own.
+  // that most obviously separate Sefaria's vocabulary from a plain
+  // transliteration, and from hebcal's, which differs on three of its own.
   it('names the portions as Sefaria names them', () => {
     const named = (n: string) => mappings.parshiot.some((p) => p.name === n);
     for (const name of ['Bereshit', 'Lech Lecha', "Sh'lach", "Ha'Azinu", "V'Zot HaBerachah"]) {

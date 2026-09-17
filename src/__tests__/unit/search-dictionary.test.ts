@@ -19,7 +19,7 @@ describe('meaningsFor', () => {
   // the property they are about and take the list from here.
   it('offers the five dictionary words that עלה can be, commonest first', () => {
     // "upon" is the Aramaic על with a pronominal suffix, written exactly this
-    // way. search-meanings-mode.test.ts has why it is no longer withheld.
+    // way. search-meanings-mode.test.ts has why it is offered.
     const meanings = meaningsFor('עלה');
     expect(meanings.map((m) => m.gloss)).toEqual([
       'ascend',

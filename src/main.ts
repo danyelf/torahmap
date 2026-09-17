@@ -7,7 +7,7 @@ import { createBookLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { lookupForm } from './verseWords.ts';
-import { meaningsInVerse } from './search/dictionary.ts';
+import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
@@ -626,7 +626,11 @@ async function main(): Promise<void> {
   // allowed to do that on its own.
   setWordClickHandler((click) => {
     const word = lookupForm(click.text);
-    const meanings = meaningsInVerse(word, tanakhKey(click.book, click.chapter, click.verse));
+    const meanings = meaningsInVerse(
+      word,
+      tanakhKey(click.book, click.chapter, click.verse),
+      click.index,
+    );
 
     openWordMenu({
       word: click.text,
@@ -916,6 +920,8 @@ async function main(): Promise<void> {
   if (appMode === 'story') {
     storyContent.dispatchEvent(new Event('scroll'));
   }
+
+  prefetchMorphology();
 }
 
 main().catch(console.error);

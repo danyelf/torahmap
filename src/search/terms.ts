@@ -1,11 +1,10 @@
 // The list of search terms.
 //
-// A term used to be a substring of one comma-separated box, re-split on every
-// keystroke and addressed by its position. That was safe while a term carried
-// nothing of its own. It stops being safe once a term carries a choice of
-// meanings: editing an earlier term shifts every later index, and the choice
-// lands silently on a different word. So a term is an object with an identity,
-// and these functions are pure — each returns a new list.
+// A term is an object with an identity, and these functions are pure — each
+// returns a new list. The identity is what keeps a term's choice of meanings
+// attached to it: a term addressed by its position in a re-split string loses
+// that choice the moment an earlier term is edited, because every later index
+// shifts and the choice lands silently on a different word.
 
 import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
 import { isHebrewQuery } from '../search.ts';

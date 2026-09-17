@@ -6,12 +6,11 @@ Most data comes from [Sefaria](https://www.sefaria.org/):
 - **Structure data**: Sefaria `/api/shape/` endpoint
 - **Commentary links**: Sefaria Links CSV exports, from the same bucket
 
-Sefaria used to serve its whole corpus out of the
-[Sefaria-Export](https://github.com/Sefaria/Sefaria-Export) git repository. In
-September 2026 the texts moved to a public Google Cloud Storage bucket and the
-repository was reduced to an index (`books.json`) and some helper scripts, so
-the old `raw.githubusercontent.com` URLs now return 404. Everything below reads
-from the bucket, which needs no credentials.
+Everything below reads from the bucket, which needs no credentials. The
+[Sefaria-Export](https://github.com/Sefaria/Sefaria-Export) git repository holds
+only an index (`books.json`) and some helper scripts, so the
+`raw.githubusercontent.com` URLs that other instructions point at return 404 —
+do not follow them.
 
 The Hebrew lexeme index behind root-mode search comes from the
 [ETCBC BHSA](https://github.com/ETCBC/bhsa) database instead.
@@ -47,9 +46,9 @@ explains why we don't use Sefaria's `merged` files.
 | Hebrew | Miqra according to the Masorah | CC BY-SA |
 | English | THE JPS TANAKH: Gender-Sensitive Edition | CC BY-NC |
 
-The map used to ship merged English, which turned out to be three different
-JPS editions stitched together at invisible seams, with a Portuguese
-translation sitting in the pool as an eligible candidate.
+Do not take Sefaria's merged English: it is three different JPS editions
+stitched together at invisible seams, with a Portuguese translation sitting in
+the pool as an eligible candidate.
 
 Because the edition is pinned, `scripts/bundle-texts.ts` checks each downloaded
 file's `versionTitle` against the expected name and stops the build if it does
@@ -176,15 +175,16 @@ is small and has to describe the same library the links describe.
 
 ### Do not hardcode the file count
 
-The export had thirteen files (`links0`–`links12`) for a long time and now has
-seventeen. The old instructions here looped over `{0..12}`, and after the count
-grew that fetched a partial corpus — which still processed cleanly and produced
-a counts file that looked entirely normal.
+The export has seventeen files today and had thirteen (`links0`–`links12`) for
+a long time before that, so the count moves. A loop over a fixed range fetches
+a partial corpus as soon as it grows — and that still processes cleanly and
+produces a counts file that looks entirely normal.
 
-It was not normal. The CSVs are split alphabetically by source text, so the
-missing files were a coherent slice of the library rather than a random sample.
-Kabbalah counts in Psalms fell by 87% while Genesis was barely touched, because
-the Zohar sorts near the end of the alphabet. Nothing in the output said so.
+It is not normal. The CSVs are split alphabetically by source text, so the
+missing files are a coherent slice of the library rather than a random sample.
+Stopping at `links12` drops Kabbalah counts in Psalms by 87% while barely
+touching Genesis, because the Zohar sorts near the end of the alphabet. Nothing
+in the output says so.
 
 This is why the script discovers the count instead of assuming it. If you fetch
 the files by hand, count them first.
@@ -199,11 +199,12 @@ Samples verses against Sefaria's live site and reports how close the counts
 are; read its own docstring for what a healthy result looks like and what an
 outlier means.
 
-The script used to run 7% to 47% *above* the site, varying verse by verse in a
-way nobody could explain. That was commentaries being counted under the shelf
-they are filed on rather than as commentaries: Sefaria's Mishnah figure for
-Genesis 1:1 was 4 and ours was 64, of which 63 were commentaries on Pirkei
-Avot. Reading each text's category out of Sefaria's index closed it.
+If the counts run *above* the site — 7% to 47% high, varying verse by verse in
+a way nothing seems to explain — suspect commentaries being counted under the
+shelf they are filed on rather than as commentaries. Sefaria's Mishnah figure
+for Genesis 1:1 is 4; counting by shelf gives 64, of which 63 are commentaries
+on Pirkei Avot. `resolve_shelf()` reads each text's category out of Sefaria's
+index to keep them apart.
 
 ### What the generator does
 
