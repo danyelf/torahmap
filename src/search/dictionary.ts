@@ -9,8 +9,8 @@
 // regenerated. It is a fine in-memory handle and a terrible thing to write into
 // a URL. Outside this module a meaning is identified by its `key`, which is
 // ETCBC's own identifier paired with its language — `<LH/@heb`. The language is
-// not decoration: 461 lexemes share an ETCBC id with another, always a Hebrew
-// word and an Aramaic one, and `<LH/` is both burnt-offering and pretext.
+// not decoration: 461 ETCBC ids are shared by a Hebrew word and an Aramaic one,
+// and `<LH/` is both burnt-offering and pretext.
 
 import {
   findLexemesForWord,

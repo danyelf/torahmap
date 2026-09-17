@@ -142,8 +142,8 @@ export function toggleMeaning(terms: SearchTerm[], id: string, key: string): Sea
 /**
  * Every lexeme the term's checked meanings stand for, ready for `versesFor`.
  *
- * A merged row covers more than one lexeme — ETCBC gives two people called
- * Shechem separate entries — so this expands each chosen row to all of them.
+ * A merged row can cover more than one lexeme (see `rowsFor`), so this expands
+ * each chosen row to all of them.
  */
 export function selectedKeys(term: SearchTerm): string[] {
   return term.meanings.filter((m) => term.selected.has(m.keys[0])).flatMap((m) => m.keys);
