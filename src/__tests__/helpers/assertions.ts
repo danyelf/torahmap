@@ -172,7 +172,6 @@ export function assertSortedBy<T, K extends keyof T>(
 }
 
 export function assertHasTropMarks(text: string) {
-  // Trop marks are in Unicode range U+0591 to U+05AF
   const hasTrop = /[֑-֯]/.test(text);
   expect(hasTrop).toBe(true);
 }
