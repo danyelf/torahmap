@@ -742,8 +742,9 @@ async function main(): Promise<void> {
   configureSearch({
     verses,
     callbacks: {
+      // Most hits are off screen, so centre as well as pin.
       onVerseClick: (verse: TanakhLayout) => {
-        pinVerse(verse);
+        pinVerse(verse, true);
       },
     },
   });
