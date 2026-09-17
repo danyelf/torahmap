@@ -83,11 +83,11 @@ export function getSidebarElements(): SidebarElements {
 }
 
 /**
- * Build Sefaria URL for a verse with context-aware parameters
+ * Build the Sefaria URL for a verse.
  *
- * When viewing the commentary overlay with a specific category filter,
- * opens Sefaria to that category (e.g., ?with=Talmud).
- * Otherwise, opens to all connections (?with=all) since we show link counts.
+ * If the current overlay has an opinion (e.g. commentary's selected
+ * category), opens Sefaria to that connection type. Otherwise opens to all
+ * connections (?with=all).
  */
 export function getSefariaUrl(
   book: string,
@@ -98,12 +98,9 @@ export function getSefariaUrl(
   const sefariaBook = book.replace(/ /g, '_');
   const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
 
-  if (currentOverlay?.id === 'commentary') {
-    const urlParams = currentOverlay.getUrlParams?.();
-    const category = urlParams?.category;
-    if (category) {
-      return `${baseUrl}?with=${encodeURIComponent(category)}`;
-    }
+  const param = currentOverlay?.getSefariaConnectionParam?.();
+  if (param) {
+    return `${baseUrl}?with=${encodeURIComponent(param)}`;
   }
 
   return `${baseUrl}?with=all`;

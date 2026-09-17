@@ -48,6 +48,10 @@ export interface Overlay<T = TanakhIdentity> {
 
   getLinkSubtitle?(verse: T): string | null;
 
+  // The Sefaria `?with=` value this overlay wants a verse's link to open to
+  // (e.g. a chosen commentary category). Absent overlays get `with=all`.
+  getSefariaConnectionParam?(): string | null;
+
   // Outside sources this overlay depends on, shown in the help modal's Credits
   // tab. Omit when the overlay derives everything from already-credited text;
   // a test enforces this for everything else.

@@ -184,6 +184,10 @@ export const commentaryOverlay: Overlay = {
     const categoryName = currentCategory === 'total' ? 'linked texts' : `${currentCategory} links`;
     return `${count} ${categoryName}`;
   },
+
+  getSefariaConnectionParam(): string | null {
+    return currentCategory === 'total' ? null : currentCategory;
+  },
 };
 
 export function configure(config: { verses: TanakhLayout[] }): void {
