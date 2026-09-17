@@ -1,7 +1,13 @@
+// The trop overlay: colours, the mark chart, and marking a mark inside a verse.
+//
+// The presentation half of the trop feature. What the marks are and which
+// verses carry them is in src/trop.ts.
+
 import '../styles/overlays/trop.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry, TextLanguage } from '../types.ts';
 import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
+import { isNikkud } from '../hebrew.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
@@ -279,7 +285,7 @@ export function highlightTropInText(hebrewText: string, tropUnicode: string): st
         while (result.length > 0) {
           const last = result[result.length - 1];
           const lastCode = last.codePointAt(0) || 0;
-          if (lastCode >= 0x0591 && lastCode <= 0x05c7) {
+          if (isNikkud(lastCode)) {
             highlighted.unshift(result.pop()!);
           } else {
             highlighted.unshift(result.pop()!);

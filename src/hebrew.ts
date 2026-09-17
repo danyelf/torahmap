@@ -12,6 +12,12 @@
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05c7;
 
+// The cantillation marks occupy the front of that same range. The lower bound
+// is shared because the block opens with the accents and the vowel points
+// follow them, not because the two questions are the same one.
+const TROP_START = 0x0591;
+const TROP_END = 0x05af;
+
 // These sit inside the range above but separate words rather than sit on one.
 // Sefaria ends every verse with a sof pasuq attached to the last word, so a
 // rule that misses these loses that word.
@@ -53,10 +59,27 @@ const FINAL_FORM_MAP: Record<string, string> = {
  * Mapping a position back to the text it came from counts exactly what this
  * dropped. The two disagreeing does not fail loudly: it shifts every highlight
  * after the disagreement along by one character, which looks plausible.
+ *
+ * Exported although only this module calls it. It is the one answer to what
+ * counts as a point, and the three bugs that came of two rules drifting apart
+ * all began with somewhere else writing its own. Anywhere that needs this test
+ * should import it rather than spell it out again.
  */
 export function isNikkud(code: number): boolean {
   if (code === GRAPHEME_JOINER) return true;
   return code >= NIKKUD_START && code <= NIKKUD_END && !SEPARATOR_CODES.has(code);
+}
+
+/**
+ * Is this one of the cantillation marks, the accents that say how a verse is
+ * chanted?
+ *
+ * A strict subset of what `isNikkud` covers: every trop mark is an accent, and
+ * the vowel points past TROP_END are not trop. Kept beside it so the two can be
+ * read against each other rather than found separately and assumed unrelated.
+ */
+export function isTropMark(code: number): boolean {
+  return code >= TROP_START && code <= TROP_END;
 }
 
 /** Whitespace, hyphen, or one of the four Hebrew characters that break words. */

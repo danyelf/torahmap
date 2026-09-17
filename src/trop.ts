@@ -1,10 +1,12 @@
-// Trop (cantillation marks) extraction and indexing
+// Trop (cantillation marks): what the marks are, and which verses carry them.
+//
+// The domain half of the trop feature. The overlay that draws it is in
+// src/overlays/trop.ts; which character is a mark is in src/hebrew.ts, with
+// the other character tests.
 
 import type { TropIndex, TropIndexEntry } from './types.ts';
 import type { VerseTexts } from './verseTexts.ts';
-
-// Unicode range for Hebrew cantillation marks: U+0591 - U+05AF
-// Reference: https://unicode.org/charts/PDF/U0590.pdf
+import { isTropMark } from './hebrew.ts';
 
 export interface TropMark {
   unicode: string; // The Unicode character
@@ -65,12 +67,11 @@ export function getRarityTier(count: number): RarityTier {
   return 'common';
 }
 
-// Extract all trop marks from a Hebrew text string
 function extractTropMarks(hebrewText: string): string[] {
   const marks: string[] = [];
   for (const char of hebrewText) {
     const codePoint = char.codePointAt(0);
-    if (codePoint && codePoint >= 0x0591 && codePoint <= 0x05af) {
+    if (codePoint && isTropMark(codePoint)) {
       marks.push(char);
     }
   }
