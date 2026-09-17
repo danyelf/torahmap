@@ -1,5 +1,4 @@
 // Performance regression tests for Hebrew search
-// tm-6mw3: Ensure search performance meets acceptable thresholds
 import { describe, it, expect, beforeAll } from 'vitest';
 import { search, buildSearchIndex } from '../../search';
 import type { VerseTexts } from '../../verseTexts';

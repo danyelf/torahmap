@@ -1,4 +1,3 @@
-// Tests for src/utils/color.ts
 import { describe, it, expect } from 'vitest';
 import {
   heatmapColor,

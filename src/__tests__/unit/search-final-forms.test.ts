@@ -83,7 +83,6 @@ describe('Hebrew Final Forms Normalization', () => {
     describe('substring mode', () => {
       it('should find אלהים (with final mem ם) when searching with regular mem (אלהימ)', () => {
         // Genesis 1:1 has אֱלֹהִים (Elohim) ending with ם (mem sofit)
-        // User types אלהימ (with regular mem) - should still match
         const results = search('אלהימ', false, 'substring');
         const genesis11 = results.find(
           (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
@@ -102,7 +101,6 @@ describe('Hebrew Final Forms Normalization', () => {
 
       it('should find הארץ (with final tzadi ץ) when searching with regular tzadi (הארצ)', () => {
         // Genesis 1:2 has הָאָרֶץ (the earth) ending with ץ (tzadi sofit)
-        // User types הארצ (with regular tzadi) - should still match
         const results = search('הארצ', false, 'substring');
         const genesis12 = results.find(
           (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2,

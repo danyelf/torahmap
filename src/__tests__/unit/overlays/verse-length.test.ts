@@ -1,4 +1,3 @@
-// Tests for verse-length overlay - word counting, logarithmic color gradient, legend rendering
 import { describe, it, expect, beforeEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
 import { configure } from '../../../overlays/verse-length';
@@ -14,7 +13,6 @@ describe('Verse Length Overlay', () => {
   let testVerseTexts: VerseTexts;
 
   beforeEach(() => {
-    // Setup test data with various verse lengths
     testVerseTexts = {
       'Genesis': {
         '1': {

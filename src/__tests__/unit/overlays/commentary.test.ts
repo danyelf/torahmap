@@ -1,4 +1,3 @@
-// Tests for commentary overlay - color computation, category filtering, logarithmic heatmap
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
 import { configure, getVerseLinkCount } from '../../../overlays/commentary';
@@ -18,10 +17,8 @@ describe('Commentary Overlay', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    // Reset mocks
     vi.clearAllMocks();
 
-    // Setup test data
     testData = {
       'Genesis': {
         '1': {
@@ -61,7 +58,6 @@ describe('Commentary Overlay', () => {
       createVerse({ book: 'Isaiah', chapter: 1, verse: 2 }),
     ];
 
-    // Mock fetch
     mockFetch = vi.fn((_url: string) => {
       return Promise.resolve({
         ok: true,
@@ -71,12 +67,10 @@ describe('Commentary Overlay', () => {
     });
     globalThis.fetch = mockFetch;
 
-    // Configure overlay with test verses
     configure({ verses: testVerses });
   });
 
   afterEach(() => {
-    // Clean up
     commentaryOverlay.destroy?.();
   });
 

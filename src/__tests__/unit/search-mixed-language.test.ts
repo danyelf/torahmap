@@ -50,8 +50,8 @@ describe('a fragment is not a word', () => {
 describe('one language per term, not one per search', () => {
   // The whole search used to take its language from the FIRST term, so a
   // Hebrew word beside an English one meant the English one was hunted for in
-  // the Hebrew text and found nothing. #97 predicted this; a row each made it
-  // easy to hit.
+  // the Hebrew text and found nothing. A row per language combination makes
+  // that regression easy to hit.
 
   it('finds the English term when a Hebrew term comes first', () => {
     const sets = verseSetsForTerms(['אלהים', 'heaven']);
