@@ -125,6 +125,10 @@ BHSA and Sefaria number the verses identically except in Exodus 20,
 Deuteronomy 5 and Numbers 25, and the script carries an explicit mapping for
 those three chapters.
 
+That check covers whether the verses line up, not whether the index still names
+as many words as it used to. For that, run `npm run report:click-resolution`
+afterwards and compare against the baseline it keeps in `scripts/search/`.
+
 ## One thing to watch
 
 `normalize()` in the generator and `normalizeHebrewForSearch()` in
