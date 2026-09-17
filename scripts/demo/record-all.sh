@@ -10,6 +10,13 @@
 #   - heat-shimmer (subtle ±7% brightness): deeper zoom + longer hold.
 #   - hover-driven effects (ripple, scatter, whisper, constellations,
 #     thread-lines, breathing-text): HOVER_SWEEP=1 to retrigger.
+#
+# CONCEPTS below names each worktree by the agent hash it happened to get when
+# it was created. Those worktrees are gone (worktrees are throwaway), so this
+# script will not run as-is. The demo/* branches themselves are still on the
+# remote; recreate a worktree per branch (`git worktree add ... demo/<name>`,
+# then `npm install` for vite + playwright), and update CONCEPTS with the new
+# directory names, before running this.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

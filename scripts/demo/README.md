@@ -6,9 +6,13 @@ Captures ~30s 1080p webm recordings of the visual concepts living on the
 
 ## Workflow
 
-1. Each `demo/<name>` branch is checked out as a worktree under
-   `.claude/worktrees/agent-<hash>/`. The worktree must have working
-   `node_modules` (specifically `vite` and `playwright`).
+1. Each `demo/<name>` branch needs a worktree with working `node_modules`
+   (specifically `vite` and `playwright`). `record-all.sh` names these
+   worktrees by the agent hash they happened to get when this gallery was
+   built; those worktrees are gone (worktrees are throwaway) even though the
+   branches are still on the remote. Recreate a worktree per branch and
+   update `record-all.sh`'s `CONCEPTS` array with the new paths before
+   running it.
 2. `record-concept.mjs` launches Playwright headlessly, navigates to the
    running dev server, drives a scripted camera + cursor path, then
    2-pass re-encodes the captured webm to a higher bitrate via Playwright's

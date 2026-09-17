@@ -152,6 +152,10 @@ console.log(`saved → ${outWebm}`);
 // fades, shimmer) needs the higher bitrate + relaxed quantizer bounds + 1s
 // keyframe interval — the encoder's still-frame heuristics under-allocate
 // otherwise.
+// The version number in this path (ffmpeg-1011) is whatever Playwright's
+// install cached last; it will drift with the Playwright version and may need
+// updating by hand — check `ls ~/Library/Caches/ms-playwright/` if this stops
+// matching.
 const ffmpeg = join(process.env.HOME, 'Library/Caches/ms-playwright/ffmpeg-1011/ffmpeg-mac');
 if (existsSync(ffmpeg)) {
   const tmpHq = join(videosDir, `.hq-${name}-${Date.now()}.webm`);
