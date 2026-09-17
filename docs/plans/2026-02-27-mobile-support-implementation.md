@@ -1,5 +1,7 @@
 # Mobile Support Implementation Plan
 
+**Status:** Shipped — see `2026-02-27-mobile-support-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Make Torah Map functional and usable on mobile devices (touch pan, pinch zoom, responsive layout, bottom sheet sidebar) without changing the desktop experience.

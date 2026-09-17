@@ -1,7 +1,8 @@
 # How a word is matched belongs to the word
 
 **Date:** 2026-09-16
-**Status:** approved, not yet implemented
+**Status:** Shipped — `SearchTerm.mode` and `effectiveMode()` in
+`src/search/terms.ts`.
 **Issues:** #115
 **Builds on:** `2026-09-14-search-meaning-filter-design.md`, which introduced the
 term list, and `2026-09-15-click-to-search-implementation.md` (#133), which

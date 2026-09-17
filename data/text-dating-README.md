@@ -1,123 +1,68 @@
 # Text Dating Data Format
 
-This directory contains source data for biblical text dating visualization.
-
 ## Source Format: `text-dating-source.json`
 
-The source file contains dating estimates for passages of biblical text. Each entry specifies:
+The source file is a flat JSON array. Each entry dates one chapter, one range
+of chapters, or (with `"all"`) a whole book, to a single point estimate:
 
 - **book**: Book name (must match names in `tanakh-structure.json`)
-- **chapter**: Chapter number (1-indexed)
-- **verses**: Verse range specification (see below)
-- **dating**: Estimated date range
-  - **min**: Earliest estimated date (BCE as negative, CE as positive)
-  - **max**: Latest estimated date
-- **note**: Explanation of the dating (e.g., source attribution, scholarly consensus)
-
-### Verse Range Format
-
-The `verses` field supports three formats:
-
-1. **Single verse**: `"5"` - Just verse 5
-2. **Range**: `"1-11"` - Verses 1 through 11 (inclusive)
-3. **Wildcard**: `"*"` - All verses in the chapter
+- **chapters**: `"15"`, a range like `"1-14"`, comma-separated ranges like
+  `"1-14,16-40"`, or `"all"` for every chapter in the book
+- **verses**: `"all"`, a single verse (`"5"`), or a range (`"1-11"`)
+- **era**: one of the six eras in `src/overlays/text-dating.ts`
+- **date_bce**: a single estimated year BCE
+- **note**: explanation of the dating (source attribution, scholarly view)
+- **citation**: optional URL, appended to the note as a link
 
 ### Example
 
 ```json
-{
-  "entries": [
-    {
-      "book": "Genesis",
-      "chapter": 1,
-      "verses": "*",
-      "dating": {
-        "min": -950,
-        "max": -900
-      },
-      "note": "P source (Priestly)"
-    },
-    {
-      "book": "Exodus",
-      "chapter": 20,
-      "verses": "1-17",
-      "dating": {
-        "min": -1300,
-        "max": -1200
-      },
-      "note": "Ten Commandments - traditional dating to Mosaic period"
-    }
-  ]
-}
+[
+  {
+    "book": "Exodus",
+    "chapters": "15",
+    "verses": "all",
+    "era": "pre_monarchic",
+    "date_bce": 1250,
+    "note": "Song of the Sea - Late 13th century BCE, one of the earliest Hebrew poems.",
+    "citation": "https://en.wikipedia.org/wiki/Dating_the_Bible"
+  }
+]
 ```
+
+### Legacy format
+
+`scripts/generate-text-dating.ts` also accepts an older shape,
+`{ "entries": [ { book, chapter, verses, dating: { min, max }, note } ] }`,
+with a numeric `chapter` per entry and an explicit `[min, max]` date range
+instead of a single `date_bce`. Nothing in the repository is in this format
+today, but the generator keeps reading it.
 
 ## Runtime Format: `public/data/text-dating.json`
 
-The generation script (`scripts/generate-text-dating.ts`) processes the source file into an optimized runtime format:
-
-- Expands all verse ranges into individual verse entries
-- Deduplicates notes into a lookup array
-- Produces per-book, per-chapter, per-verse data structure
-- Enables O(1) lookup by verse coordinates
-
-### Structure
+`scripts/generate-text-dating.ts` expands every entry to one record per verse,
+converting each `date_bce` to a `[min, max]` range (±25 years), deduplicating
+notes into a lookup array, and producing a per-book, per-chapter, per-verse
+structure for O(1) lookup by verse coordinates:
 
 ```json
 {
-  "notes": [
-    "P source (Priestly)",
-    "J source (Yahwist)",
-    ...
-  ],
+  "notes": ["P source (Priestly)", "J source (Yahwist)"],
   "books": {
     "Genesis": [
-      // Chapter 1
-      [
-        { "d": [-950, -900], "n": 0 },  // Verse 1: date range, note_id
-        { "d": [-950, -900], "n": 0 },  // Verse 2
-        ...
-      ],
-      // Chapter 2
-      [...]
+      [{ "d": [-950, -900], "n": 0 }, { "d": [-950, -900], "n": 0 }]
     ]
   }
 }
 ```
 
-### Field Abbreviations
+`d` is the date range `[min, max]`; `n` is the index into `notes`. Where two
+entries date the same verse, the earlier one wins.
 
-- `d`: Date range `[min, max]`
-- `n`: Note ID (index into `notes` array)
-
-## Generating Runtime Data
-
-After editing `text-dating-source.json`, regenerate the runtime file:
+## Regenerating
 
 ```bash
 npm run generate:text-dating
 ```
 
-Or directly:
-
-```bash
-npx tsx scripts/generate-text-dating.ts
-```
-
-## Date Conventions
-
-- **BCE years**: Negative numbers (e.g., `-950` = 950 BCE)
-- **CE years**: Positive numbers (e.g., `100` = 100 CE)
-- **Ranges**: Use scholarly consensus for date ranges
-  - Wider ranges for uncertain datings
-  - Narrower ranges for well-established dates
-
-## Data Sources
-
-The dating estimates should be sourced from:
-
-1. **Wikipedia**: Baseline scholarly consensus dates
-2. **Academic literature**: Recent biblical scholarship
-3. **Documentary Hypothesis**: Traditional source divisions (J, E, P, D, R)
-4. **Post-documentary research**: Updated scholarly views
-
-Always document the source/reasoning in the `note` field.
+See DATA_REGENERATION.md for when to update the `collected` date.

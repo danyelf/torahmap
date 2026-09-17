@@ -2,7 +2,10 @@
 
 **Date:** 2026-01-27
 **Bead:** tm-0ne
-**Status:** Approved for implementation
+**Status:** Shipped, then removed. The keyboard and its transliteration layer
+were deleted (commit `5241017`, "Remove the Hebrew keyboard, transliteration
+and the א button") once search could be reached by clicking a word instead —
+see `2026-09-04-search-redesign-design.md`.
 
 ## Overview
 

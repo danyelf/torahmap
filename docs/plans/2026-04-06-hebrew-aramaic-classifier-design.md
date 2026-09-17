@@ -2,7 +2,9 @@
 
 **Date:** 2026-04-06
 **Bead:** tm-7la (Talmud exploration)
-**Status:** Design approved, ready for implementation plan
+**Status:** Prototyped, not integrated. The classifier lives in
+`experiments/hebrew-aramaic-classifier/` and was never wired into the Talmud
+view.
 
 ## Problem
 

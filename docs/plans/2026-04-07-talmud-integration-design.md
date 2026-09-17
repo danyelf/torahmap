@@ -2,7 +2,7 @@
 
 **Issues:** `tm-u7b1` (verify Wikisource coverage), `tm-f28x` (engine integration for full Bavli)
 **Date:** 2026-04-07
-**Status:** Design — awaiting approval
+**Status:** Shipped — `src/talmud/`, `src/main-talmud.ts`.
 **Supersedes planning state of:** `docs/plans/2026-04-06-talmud-exploration-design.md` (exploration), `docs/plans/2026-04-06-talmud-exploration-memo.md` (recommendation)
 
 This document covers both issues together because they form a single indivisible arc: `tm-u7b1` is the precondition that unblocks `tm-f28x`, and the verification work directly feeds the integration's data pipeline. They will ship as two stacked PRs, with `tm-f28x` branched on top of `tm-u7b1`.

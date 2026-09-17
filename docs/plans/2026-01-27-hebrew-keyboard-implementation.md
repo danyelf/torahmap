@@ -1,5 +1,7 @@
 # Hebrew Virtual Keyboard Implementation Plan
 
+**Status:** Shipped, then removed — see `2026-01-27-hebrew-keyboard-design.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add GreyWyvern virtual keyboard to enable Hebrew text input in search

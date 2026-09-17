@@ -2,7 +2,10 @@
 
 **Date:** 2026-01-27
 **Bead:** tm-773t
-**Status:** Approved
+**Status:** Superseded. The lexeme index and the meaning-filter/per-term-mode
+work (`2026-09-14-search-meaning-filter-design.md`,
+`2026-09-16-per-term-search-mode-design.md`) replaced this design's single
+global mode with a mode per search term.
 
 ## Problem
 

@@ -1,5 +1,7 @@
 # Per-Term Search Mode Implementation Plan
 
+**Status:** Shipped — see `2026-09-16-per-term-search-mode-design.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Move the substring/whole-word/root matching mode off the search as a whole and onto each search term, so two words can be matched differently on one map.

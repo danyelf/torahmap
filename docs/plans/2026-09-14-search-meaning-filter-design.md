@@ -1,7 +1,7 @@
 # Choosing which meaning a Hebrew search term has
 
 **Date:** 2026-09-14
-**Status:** approved, not yet implemented
+**Status:** Shipped — `src/search/terms.ts`, `src/search/dictionary.ts`.
 **Issues:** #94, and the "which default" half of #92
 **Supersedes:** the "colour belongs to the word; meaning is a filter inside it"
 section of `2026-09-04-search-redesign-design.md`, and that document's

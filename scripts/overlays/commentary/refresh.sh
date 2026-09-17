@@ -73,12 +73,11 @@ total_mb=$(du -smL "$LINKS_DIR" | cut -f1)
 echo
 echo "Links CSVs: ${total_mb}MB in $LINKS_DIR (gitignored)"
 
-# Sefaria's index of the library. The links export says which shelf a text is
-# filed on, which for a commentary is the shelf of whatever it comments on —
-# Rashi comes back as Tanakh, Ben Yehoyada as Talmud. The index says what each
-# text actually is, and without it a category called Mishnah is mostly not the
-# Mishnah. Fetched every time: it is 4MB and it must describe the same library
-# the links describe.
+# Sefaria's index of the library. A commentary is filed under whatever shelf
+# it comments on rather than as commentary — see resolve_shelf() in
+# process_sefaria_links.py — and without this index a category called Mishnah
+# is mostly not the Mishnah. Fetched every time: it is 4MB and it must
+# describe the same library the links describe.
 echo
 echo "Downloading Sefaria's library index..."
 if ! curl -sf --max-time 300 -o "$INDEX.tmp" "$INDEX_URL"; then

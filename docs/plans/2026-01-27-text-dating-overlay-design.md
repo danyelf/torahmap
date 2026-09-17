@@ -2,7 +2,7 @@
 
 **Issue:** tm-jkn
 **Date:** 2026-01-27
-**Status:** Design Complete
+**Status:** Shipped — `src/overlays/text-dating.ts`.
 
 ## Overview
 
