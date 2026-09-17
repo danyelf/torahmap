@@ -48,7 +48,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from './rendering.ts';
-import type { TanakhLayout, Bounds } from './types.ts';
+import type { TanakhLayout } from './types.ts';
 import {
   registerAllOverlays,
   applyOverlayParams,
@@ -86,14 +86,6 @@ import './styles/verse-popup.css';
 declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
-    torahMap?: {
-      verses: TanakhLayout[];
-      pan: { x: number; y: number };
-      zoom: number;
-      render: () => void;
-      canvas: HTMLCanvasElement;
-      bounds: Bounds;
-    };
   }
 }
 
@@ -230,12 +222,6 @@ async function main(): Promise<void> {
   // is currently synced. Used to skip redundant resyncs every scroll frame.
   // Reset on mode switches (explore may have changed overlay/pin out from under us).
   let lastSyncedStopId: string | null = null;
-  // Track whether user manually zoomed/panned during story mode.
-  // Cleared when the user scrolls the narrative, resuming scroll-driven camera.
-  // Currently write-only; reserved for future UI hints (e.g., "scroll to resume").
-  let manualOverride = false;
-  void manualOverride; // satisfy noUnusedLocals
-
   // Tap detection for touch devices
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
   const TAP_THRESHOLD = 10; // max px movement to count as tap
@@ -296,7 +282,6 @@ async function main(): Promise<void> {
     'wheel',
     (e: WheelEvent) => {
       e.preventDefault();
-      if (appMode === 'story') manualOverride = true;
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       const newZoom = clampZoom(camera.zoom * zoomFactor);
 
@@ -325,7 +310,6 @@ async function main(): Promise<void> {
   const zoomOutBtn = document.getElementById('zoom-out');
 
   zoomInBtn?.addEventListener('click', () => {
-    if (appMode === 'story') manualOverride = true;
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_IN_FACTOR);
@@ -339,7 +323,6 @@ async function main(): Promise<void> {
   });
 
   zoomOutBtn?.addEventListener('click', () => {
-    if (appMode === 'story') manualOverride = true;
     const centerX = canvas.clientWidth / 2;
     const centerY = canvas.clientHeight / 2;
     const newZoom = clampZoom(camera.zoom * ZOOM_OUT_FACTOR);
@@ -421,7 +404,6 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
-      if (appMode === 'story') manualOverride = true;
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
       camera.x += dx / camera.zoom;
@@ -554,8 +536,6 @@ async function main(): Promise<void> {
 
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
-      } else if (mouseState.isDragging) {
-        canvas.style.cursor = 'grabbing';
       } else {
         canvas.style.cursor = 'default';
       }
@@ -726,16 +706,6 @@ async function main(): Promise<void> {
     updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
   });
 
-  // Store for hover detection
-  window.torahMap = {
-    verses,
-    pan: { x: camera.x, y: camera.y },
-    zoom: camera.zoom,
-    render,
-    canvas,
-    bounds,
-  };
-
   // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
   if (import.meta.hot) {
     document.addEventListener('keydown', (e) => {
@@ -848,7 +818,6 @@ async function main(): Promise<void> {
   let scrollRAF: number | null = null;
   storyContent.addEventListener('scroll', () => {
     if (appMode !== 'story') return;
-    manualOverride = false;
     if (scrollRAF) return;
     scrollRAF = requestAnimationFrame(() => {
       scrollRAF = null;

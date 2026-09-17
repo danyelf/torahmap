@@ -168,11 +168,6 @@ export const tropOverlay: Overlay = {
     'The cantillation marks that say how the Hebrew is chanted, and where in the text ' +
     'they punctuate. Pick a mark to see which verses carry it, and how often.',
 
-  async init() {
-    // Trop index is built from verse texts, not loaded from file
-    // It will be built when setVerseTexts is called
-  },
-
   destroy() {
     // Clear callback (to prevent stale references)
     updateCallback = null;

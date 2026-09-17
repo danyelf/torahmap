@@ -8,14 +8,7 @@ import { haftarahOverlay } from './haftarah.ts';
 import { textDatingOverlay } from './text-dating.ts';
 import { verseLengthOverlay } from './verse-length.ts';
 
-export type {
-  Overlay,
-  Color,
-  OverlayConfig,
-  UrlParamSpec,
-  UrlParamKind,
-  UrlParamValues,
-} from './types.ts';
+export type { Overlay, Color, UrlParamSpec, UrlParamKind, UrlParamValues } from './types.ts';
 export { registerOverlay, getOverlay, getAllOverlays, clearOverlays } from './registry.ts';
 export { applyOverlayParams } from './applyParams.ts';
 export { configure as configureCommentary, getVerseLinkCount } from './commentary.ts';

@@ -387,7 +387,7 @@ function printSummary(results: Array<VerificationResult & TractateRef>): void {
     for (const r of failed) {
       const kind = r.status === 'hard-fail' ? 'hard' : 'soft';
       console.log(
-        `  ./scripts/issues-new.sh "Talmud coverage anomaly: ${r.tractate} (${kind}-fail)" task 2`,
+        `  gh issue create --title "Talmud coverage anomaly: ${r.tractate} (${kind}-fail)" --label task,P2`,
       );
     }
   }

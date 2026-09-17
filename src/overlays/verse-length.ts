@@ -4,16 +4,7 @@ import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 
-// Color palettes (perceptually uniform, colorblind-friendly)
-
-// Viridis: purple→blue→teal→green→yellow (unused but kept for reference)
-const _VIRIDIS_STOPS: Array<[number, Color]> = [
-  [0.0, [68 / 255, 1 / 255, 84 / 255]], // dark purple
-  [0.25, [59 / 255, 82 / 255, 139 / 255]], // blue
-  [0.5, [33 / 255, 145 / 255, 140 / 255]], // teal
-  [0.75, [94 / 255, 201 / 255, 98 / 255]], // green
-  [1.0, [253 / 255, 231 / 255, 37 / 255]], // yellow
-];
+// Color palette (perceptually uniform, colorblind-friendly)
 
 // Plasma: purple→pink→orange→yellow
 const PLASMA_STOPS: Array<[number, Color]> = [
@@ -24,9 +15,7 @@ const PLASMA_STOPS: Array<[number, Color]> = [
   [1.0, [240 / 255, 249 / 255, 33 / 255]], // yellow
 ];
 
-// Select which palette to use (change this line to switch palettes)
 const COLOR_STOPS = PLASMA_STOPS;
-// const COLOR_STOPS = VIRIDIS_STOPS;
 
 /**
  * Get a color from the selected palette at position t ∈ [0, 1]
@@ -124,14 +113,10 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
     return [0.15, 0.15, 0.2];
   }
 
-  let op = (x: number) => x;
-  op = Math.sqrt;
-  //op = Math.log;
-
   // Square root scale: map word count to [0, 1]
-  const sqrtMin = op(minWordCount);
-  const sqrtMax = op(maxWordCount);
-  const sqrtValue = op(wordCount);
+  const sqrtMin = Math.sqrt(minWordCount);
+  const sqrtMax = Math.sqrt(maxWordCount);
+  const sqrtValue = Math.sqrt(wordCount);
   const t = (sqrtValue - sqrtMin) / (sqrtMax - sqrtMin);
 
   // Get color from selected palette
@@ -166,9 +151,6 @@ export const verseLengthOverlay: Overlay = {
     const paletteName = COLOR_STOPS === PLASMA_STOPS ? 'Plasma' : 'Viridis';
     const lowColor = COLOR_STOPS === PLASMA_STOPS ? 'Purple' : 'Purple/blue';
     const highColor = COLOR_STOPS === PLASMA_STOPS ? 'Orange/yellow' : 'Green/yellow';
-
-    // Suppress unused variable warning (reference for alternative palette)
-    void _VIRIDIS_STOPS;
 
     container.innerHTML = `
       <div class="legend-row">
