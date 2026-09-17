@@ -53,8 +53,13 @@ const FINAL_FORM_MAP: Record<string, string> = {
  * Mapping a position back to the text it came from counts exactly what this
  * dropped. The two disagreeing does not fail loudly: it shifts every highlight
  * after the disagreement along by one character, which looks plausible.
+ *
+ * Exported although only this module calls it. It is the one answer to what
+ * counts as a point, and the three bugs that came of two rules drifting apart
+ * all began with somewhere else writing its own. Anywhere that needs this test
+ * should import it rather than spell it out again.
  */
-function isNikkud(code: number): boolean {
+export function isNikkud(code: number): boolean {
   if (code === GRAPHEME_JOINER) return true;
   return code >= NIKKUD_START && code <= NIKKUD_END && !SEPARATOR_CODES.has(code);
 }
