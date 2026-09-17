@@ -14,7 +14,7 @@ import {
   configureSearch,
 } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
-import { mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
+import { mockFetch, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
 
 describe('URL State Sync Integration', () => {
@@ -63,22 +63,7 @@ describe('URL State Sync Integration', () => {
       return originalReplaceState(state, title, url);
     });
 
-    globalThis.fetch = vi.fn((url: string | Request) => {
-      const urlString = typeof url === 'string' ? url : url.url;
-
-      let data: any;
-      if (urlString.includes('overlays/commentary/counts.json')) {
-        data = SAMPLE_COMMENTARY_DATA;
-      } else {
-        data = {};
-      }
-
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(data),
-      } as Response);
-    }) as any;
+    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
 
     // Register overlays the way the app does
     registerAllOverlays();

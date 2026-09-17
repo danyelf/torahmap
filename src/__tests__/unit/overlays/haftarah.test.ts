@@ -6,6 +6,7 @@ registerAllOverlays();
 const haftarahOverlay = getOverlay('haftarah')!;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
+import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 // Sample data matching the real structure
@@ -148,27 +149,10 @@ describe('Haftarah Overlay', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockFetch = vi.fn((url: string) => {
-      if (url.includes('overlays/haftarah/mappings.json')) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(SAMPLE_HAFTARAH_DATA),
-        } as Response);
-      }
-      if (url.includes('tanakh-structure.json')) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(SAMPLE_STRUCTURE),
-        } as Response);
-      }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-      } as Response);
+    mockFetch = installMockFetch({
+      '/data/overlays/haftarah/mappings.json': SAMPLE_HAFTARAH_DATA,
+      '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
     });
-    globalThis.fetch = mockFetch;
   });
 
   afterEach(() => {

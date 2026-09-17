@@ -140,29 +140,56 @@ export function mockWindowLocation(url: string = 'http://localhost:5173/') {
   };
 }
 
-export function mockFetch(responses: Record<string, any> = {}) {
-  const defaultResponses: Record<string, any> = {
+// A response entry is normally just the JSON body a URL should resolve to
+// (200, ok: true). Wrap it in mockFetchStatus() when a test needs a specific
+// status code instead, such as a 404 or 500 error path.
+class MockResponseStatus {
+  constructor(
+    public status: number,
+    public body: unknown = null,
+  ) {}
+}
+
+export function mockFetchStatus(status: number, body: unknown = null): MockResponseStatus {
+  return new MockResponseStatus(status, body);
+}
+
+// Installs a fetch mock keyed by URL and returns it, so callers can still
+// assert on calls or layer one-off overrides with mockResolvedValueOnce /
+// mockRejectedValueOnce for behavior a static URL map can't express (a
+// rejected fetch, a response whose .json() itself rejects).
+export function mockFetch(responses: Record<string, unknown> = {}) {
+  const defaultResponses: Record<string, unknown> = {
     '/data/tanakh-structure.json': { books: [] },
     '/data/all-texts.json': {},
     '/data/overlays/commentary/counts.json': {},
     ...responses,
   };
 
-  globalThis.fetch = vi.fn((url: string | URL | Request) => {
+  const fetchMock = vi.fn((url: string | URL | Request) => {
     const urlString = typeof url === 'string' ? url : url instanceof URL ? url.toString() : url.url;
-    const data = defaultResponses[urlString];
+    const entry = defaultResponses[urlString];
+
+    if (entry instanceof MockResponseStatus) {
+      const { status, body } = entry;
+      return Promise.resolve({
+        ok: status >= 200 && status < 300,
+        status,
+        json: () => Promise.resolve(body),
+        text: () => Promise.resolve(JSON.stringify(body)),
+      } as Response);
+    }
 
     return Promise.resolve({
-      ok: !!data,
-      status: data ? 200 : 404,
-      json: () => Promise.resolve(data),
-      text: () => Promise.resolve(JSON.stringify(data)),
+      ok: !!entry,
+      status: entry ? 200 : 404,
+      json: () => Promise.resolve(entry),
+      text: () => Promise.resolve(JSON.stringify(entry)),
     } as Response);
-  }) as typeof fetch;
+  });
 
-  return () => {
-    (globalThis.fetch as any).mockRestore?.();
-  };
+  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  return fetchMock;
 }
 
 export function restoreAllMocks() {
