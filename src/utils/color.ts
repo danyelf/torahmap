@@ -9,6 +9,11 @@ export const SEARCH_COLORS: Color[] = [
   [1.0, 1.0, 0.2], // Yellow
 ];
 
+/** A color as CSS, for a swatch or a background the GPU is not drawing. */
+export function colorToCss(color: Color): string {
+  return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
+}
+
 /** A color stop in a gradient: position in [0, 1] and the color there. */
 export interface ColorStop {
   t: number;

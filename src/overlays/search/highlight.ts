@@ -7,12 +7,12 @@ import type { TextLanguage } from '../../types.ts';
 import { mapStrippedToOriginal, splitIntoWords } from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
 import { wordMatches } from '../../search/dictionary.ts';
-import { effectiveMode, selectedKeys, type SearchTerm } from '../../search/terms.ts';
+import { colorIndexAt, effectiveMode, selectedKeys, type SearchTerm } from '../../search/terms.ts';
 
 /**
  * A term's colour is carried on the mark's class, and the stylesheet holds one
- * rule per colour slot. Both highlighters below go through here, so the class
- * name is written once.
+ * rule per colour slot. Both highlighters in this file go through here, so the
+ * class name is written once.
  */
 function mark(text: string, colorIndex: number): HTMLElement {
   const element = document.createElement('mark');
@@ -117,7 +117,7 @@ function buildHighlightedDomFragment(
       fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
     }
 
-    fragment.appendChild(mark(text.slice(m.start, m.end), terms[m.termIndex]?.colorIndex ?? 0));
+    fragment.appendChild(mark(text.slice(m.start, m.end), colorIndexAt(terms, m.termIndex)));
 
     pos = m.end;
   }

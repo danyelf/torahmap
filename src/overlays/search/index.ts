@@ -7,14 +7,14 @@ import {
   getMatchingVerseTerms,
   parseSearchTerms,
   isHebrewQuery,
-  computeSnippetForMatch,
   resultsForVerseSets,
   verseSetsForTerms,
   type SearchResult,
 } from '../../search.ts';
 import { stripNikkud } from '../../hebrew.ts';
 import { versesFor } from '../../search/dictionary.ts';
-import { highlightTerms, markRange } from './highlight.ts';
+import { highlightTerms } from './highlight.ts';
+import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
 import {
   addTerm,
   removeTerm,
@@ -35,14 +35,10 @@ import {
   type SearchTerm,
   type SearchMode,
 } from '../../search/terms.ts';
-import { SEARCH_COLORS } from '../../utils/color.ts';
+import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { MIN_SEARCH_TERM_LENGTH } from '../../constants/app.ts';
 import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';
 import { trackSearchExecute } from '../../analytics.ts';
-
-function colorToCss(color: Color): string {
-  return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
-}
 
 let verses: TanakhLayout[] = [];
 // The search is a list of terms, each with its own text, its own meanings, its
@@ -87,19 +83,6 @@ function activeTerms(): SearchTerm[] {
     };
   }
   return activeTermsCache.value;
-}
-
-/**
- * The colour slot a term occupies, given its position among the searched terms.
- *
- * A result, a snippet and a highlight all name a term by its position in the
- * searched list; the swatch and the map ask the term itself. Those were the
- * same number until a term gained a colour that survives its neighbours being
- * edited — delete the first of two terms and the survivor keeps colour 1 while
- * moving to position 0 — so the translation belongs in one place.
- */
-function termColorIndex(position: number): number {
-  return activeTerms()[position]?.colorIndex ?? 0;
 }
 
 /** Terms holding something, including ones too short to search on. */
@@ -159,11 +142,6 @@ function resultsForOpenRow(): SearchResult[] {
 
   return currentResults.filter((result) => result.matchingTerms.some((m) => m.termIndex === index));
 }
-
-const RESULTS_BATCH_SIZE = 50;
-let renderedCount = 0;
-let listedResults: SearchResult[] = [];
-let scrollHandler: (() => void) | null = null;
 
 let searchResults: HTMLDivElement | null = null;
 let searchTermsContainer: HTMLDivElement | null = null;
@@ -817,126 +795,26 @@ function activeOrEmptyTerms(): SearchTerm[] {
   return terms;
 }
 
-function createResultElement(result: SearchResult): HTMLDivElement {
-  const div = document.createElement('div');
-  div.className = 'search-result';
-
-  const refDiv = document.createElement('div');
-  refDiv.className = 'ref';
-
-  const termIndicators = document.createElement('span');
-  termIndicators.className = 'term-indicators';
-  for (const m of result.matchingTerms) {
-    const dot = document.createElement('span');
-    dot.className = 'term-dot';
-    const color = SEARCH_COLORS[termColorIndex(m.termIndex)];
-    dot.style.background = colorToCss(color);
-    termIndicators.appendChild(dot);
-  }
-  refDiv.appendChild(termIndicators);
-  refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
-
-  // The snippet is drawn for the word the list is answering about, falling back
-  // to whichever term claimed the verse first. Without this, a list narrowed to
-  // the second word would quote the first word's match — the reader would have
-  // asked about one word and been shown another.
-  const focus = openTermIndex();
-  const firstMatch =
-    result.matchingTerms.find((m) => m.termIndex === focus) ?? result.matchingTerms[0];
-
-  const snippetDiv = document.createElement('div');
-  snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
-
-  // Computed on demand: meanings mode leaves these unset until the result is shown.
-  let snippet = firstMatch.snippet;
-  let matchStart = firstMatch.matchStart;
-  let matchEnd = firstMatch.matchEnd;
-
-  if (snippet === undefined || matchStart === undefined || matchEnd === undefined) {
-    const snippetData = computeSnippetForMatch(
-      result,
-      firstMatch.termIndex,
-      activeTerms()[firstMatch.termIndex]?.text ?? '',
-    );
-    if (snippetData) {
-      snippet = snippetData.snippet;
-      matchStart = snippetData.matchStart;
-      matchEnd = snippetData.matchEnd;
-    } else {
-      snippet = `${result.book} ${result.chapter}:${result.verse}`;
-      matchStart = 0;
-      matchEnd = 0;
-    }
-  }
-
-  const snippetContent = markRange(
-    snippet,
-    matchStart,
-    matchEnd,
-    termColorIndex(firstMatch.termIndex),
-  );
-  snippetDiv.appendChild(snippetContent);
-
-  div.appendChild(refDiv);
-  div.appendChild(snippetDiv);
-
-  div.addEventListener('click', () => {
-    const verse = verses.find(
-      (v) => v.book === result.book && v.chapter === result.chapter && v.verse === result.verse,
-    );
-    if (verse && onVerseClickCallback) {
-      onVerseClickCallback(verse);
-    }
-  });
-
-  return div;
-}
-
-function appendResultsBatch(): void {
-  if (!searchResults || renderedCount >= listedResults.length) return;
-
-  const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, listedResults.length);
-  for (let i = renderedCount; i < end; i++) {
-    searchResults.appendChild(createResultElement(listedResults[i]));
-  }
-  renderedCount = end;
-}
-
+/** Redraw the list of verses for the row the reader is working in. */
 function renderResults(): void {
   if (!searchResults) return;
 
-  listedResults = resultsForOpenRow();
+  renderResultsList(searchResults, {
+    results: resultsForOpenRow(),
+    terms: activeTerms(),
+    focus: openTermIndex(),
+    onSelect: showVerse,
+  });
+}
 
-  const existingResults = searchResults.querySelectorAll('.search-result');
-  existingResults.forEach((el) => el.remove());
-  renderedCount = 0;
-  searchResults.scrollTop = 0;
-
-  if (scrollHandler) {
-    searchResults.removeEventListener('scroll', scrollHandler);
-    scrollHandler = null;
+/** Hand a clicked result back to the app as the verse it names. */
+function showVerse(result: SearchResult): void {
+  const verse = verses.find(
+    (v) => v.book === result.book && v.chapter === result.chapter && v.verse === result.verse,
+  );
+  if (verse && onVerseClickCallback) {
+    onVerseClickCallback(verse);
   }
-
-  if (listedResults.length === 0) {
-    searchResults.classList.remove('visible');
-    return;
-  }
-
-  appendResultsBatch();
-
-  if (renderedCount < listedResults.length) {
-    scrollHandler = () => {
-      if (!searchResults) return;
-      const { scrollTop, scrollHeight, clientHeight } = searchResults;
-      // Load more within 100px of the bottom.
-      if (scrollHeight - scrollTop - clientHeight < 100) {
-        appendResultsBatch();
-      }
-    };
-    searchResults.addEventListener('scroll', scrollHandler);
-  }
-
-  searchResults.classList.add('visible');
 }
 
 /** The verse text, with every searched term marked in its own colour. */
@@ -1043,10 +921,7 @@ export const searchOverlay: Overlay = {
   },
 
   destroy(): void {
-    if (scrollHandler && searchResults) {
-      searchResults.removeEventListener('scroll', scrollHandler);
-      scrollHandler = null;
-    }
+    detachResults(searchResults);
     searchResults = null;
     searchTermsContainer = null;
     searchHitCaption = null;

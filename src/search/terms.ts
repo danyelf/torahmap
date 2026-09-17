@@ -244,6 +244,19 @@ export function isNarrowed(term: SearchTerm): boolean {
   return term.meanings.length > 1 && term.selected.size < term.meanings.length;
 }
 
+/**
+ * The colour slot occupied by the term at this position among the searched terms.
+ *
+ * A result, a snippet and a highlight all name a term by its position in the
+ * searched list; the swatch and the map ask the term itself. Those were the
+ * same number until a term gained a colour that survives its neighbours being
+ * edited — delete the first of two terms and the survivor keeps colour 1 while
+ * moving to position 0 — so the translation belongs in one place.
+ */
+export function colorIndexAt(terms: SearchTerm[], position: number): number {
+  return terms[position]?.colorIndex ?? 0;
+}
+
 /** Change how one term is matched. */
 export function setMode(terms: SearchTerm[], id: string, mode: SearchMode): SearchTerm[] {
   return terms.map((t) => (t.id === id ? { ...t, mode } : t));
