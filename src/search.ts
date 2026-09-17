@@ -510,9 +510,11 @@ export function computeSnippetForMatch(
   const lexemes = findLexemesForWord(searchTerm);
   if (lexemes && lexemes.length > 0) {
     // Find the word in the verse that resolves to one of the same lexemes.
-    // Positions cannot be taken from the index: BHSA splits prefixes into
-    // separate words, so its word numbering does not line up with the
-    // whitespace tokens of the displayed text.
+    //
+    // By spelling, not by position, though not for the reason this comment
+    // used to give. The parse does number the printed words, and the marking
+    // inside a verse reads the answer straight off it. But it is worked out
+    // only for the verse on screen, and a result row is some other verse.
     const wanted = new Set(lexemes);
     const words = indexedWords(entry);
     const normalizedSearch = normalizeHebrewForSearch(searchTerm);
