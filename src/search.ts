@@ -511,10 +511,10 @@ export function computeSnippetForMatch(
   if (lexemes && lexemes.length > 0) {
     // Find the word in the verse that resolves to one of the same lexemes.
     //
-    // By spelling, not by position, though not for the reason this comment
-    // used to give. The parse does number the printed words, and the marking
-    // inside a verse reads the answer straight off it. But it is worked out
-    // only for the verse on screen, and a result row is some other verse.
+    // By spelling, not by position. The parse numbers the printed words, and
+    // the marking inside a verse reads the answer straight off it, but it is
+    // worked out only for the verse on screen — and a result row is some other
+    // verse.
     const wanted = new Set(lexemes);
     const words = indexedWords(entry);
     const normalizedSearch = normalizeHebrewForSearch(searchTerm);

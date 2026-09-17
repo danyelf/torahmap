@@ -273,10 +273,9 @@ let settled = false;
 /**
  * Fetch the per-word parse, once.
  *
- * A failure is not fatal and is not retried: search keeps working on spellings
- * alone, which is what it did before this file was loaded at all. `settled`
- * says the attempt is over either way, so that a caller waiting to redraw is
- * released rather than left asking again.
+ * A failure is not fatal and is not retried: every caller falls back to the
+ * spelling. `settled` says the attempt is over either way, so a caller waiting
+ * to redraw is released rather than left asking again.
  */
 function loadMorphology(): Promise<void> {
   loading ??= fetchData('search/verse-morphology.json')
