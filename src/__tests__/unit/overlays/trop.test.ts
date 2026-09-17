@@ -98,10 +98,6 @@ describe('Trop Overlay', () => {
   });
 
   describe('Initialization', () => {
-    it('initializes without error', async () => {
-      await expect(tropOverlay.init?.()).resolves.not.toThrow();
-    });
-
     it('starts with no selected trop', async () => {
       await tropOverlay.init?.();
       expect(getSelectedTrop()).toBeNull();

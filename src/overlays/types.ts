@@ -1,6 +1,5 @@
 // src/overlays/types.ts
-import type { TanakhIdentity, TanakhLayout } from '../types.ts';
-import type { VerseTexts } from '../verseTexts.ts';
+import type { TanakhIdentity } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '../urlState.ts';
 import type { Credit } from '../credits.ts';
 
@@ -8,18 +7,6 @@ export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '../urlState.ts'
 export type { Credit } from '../credits.ts';
 
 export type Color = [number, number, number];
-
-/**
- * Standard configuration passed to overlays that need external data.
- * Use the configure() function exported by each overlay that needs this.
- */
-export interface OverlayConfig {
-  verses: TanakhLayout[];
-  verseTexts: VerseTexts;
-  callbacks?: {
-    onVerseClick?: (verse: TanakhLayout) => void;
-  };
-}
 
 // Each overlay manages its own module-level state. A factory-per-overlay pattern
 // would make destroy() cleaner, but the current approach is simpler for 6 stable overlays.
