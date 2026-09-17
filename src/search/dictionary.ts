@@ -20,6 +20,9 @@ import {
   searchByLexemes,
   type LexemeId,
 } from '../search.ts';
+import { fetchData } from '../constants/app.ts';
+import { mapStrippedToOriginal, splitIntoWords } from '../hebrew.ts';
+import { splitVerseText } from '../verseWords.ts';
 
 /**
  * One dictionary word a written form might be, as a reader sees it.
@@ -150,24 +153,29 @@ export function meaningsFor(writtenForm: string): Meaning[] {
 /**
  * Which dictionary word is this written form, in this verse?
  *
- * The spelling alone is ambiguous for half of the words in the text, because
- * Hebrew does not write most vowels. The verse resolves nearly all of it: the
- * reading of the word in front of the reader is one the verse contains, and
- * the spelling's other candidates usually are not.
+ * Given `wordIndex` — which of the verse's printed words it is, counting from
+ * zero the way `splitVerseText` does — this is a lookup rather than a guess,
+ * and answers with the one word BHSA parsed there. It needs the verse to be
+ * the one `setVerseOnScreen` last named, and its parse to have arrived.
  *
- * This is inference, not knowledge. BHSA tags every occurrence with exactly one
- * lexeme, but the index is keyed by spelling, so the link is lost before it
- * reaches the browser. `verse-morphology.json` carries it — the length of each
- * printed word, whose last morpheme is its stem — so this body could become a
- * lookup off the word's own position. Until then the verse narrows rather than
- * decides, and can leave two readings standing: see `word-in-verse.test.ts`,
- * לו in Genesis 2:18.
+ * Without that, the verse narrows the spelling instead of settling it. Hebrew
+ * does not write most vowels, so half the words in the text could be several
+ * dictionary words; the reading in front of the reader is one the verse
+ * contains and the spelling's other candidates usually are not. It can leave
+ * two readings standing — see `word-in-verse.test.ts`, לו in Genesis 2:18.
  *
- * An empty result means "cannot say" — now rare, but real for a spelling the
- * dictionary does not carry and for the 64 verses in `misaligned`. Callers
- * offer a literal search rather than treating it as an error.
+ * An empty result means "cannot say": a spelling the dictionary does not carry,
+ * or one of the 64 verses in `misaligned`. Callers offer a literal search
+ * rather than treating it as an error.
  */
-export function meaningsInVerse(writtenForm: string, verseKey: string): Meaning[] {
+export function meaningsInVerse(
+  writtenForm: string,
+  verseKey: string,
+  wordIndex?: number,
+): Meaning[] {
+  const parsed = wordIndex === undefined ? null : stemOfWord(verseKey, wordIndex);
+  if (parsed !== null) return rowForStem(parsed, writtenForm);
+
   const ids = findLexemesForWord(writtenForm);
   if (!ids) return [];
 
@@ -176,6 +184,22 @@ export function meaningsInVerse(writtenForm: string, verseKey: string): Meaning[
 
   const present = new Set(inVerse);
   return rowsFor(ids.filter((id) => present.has(id)));
+}
+
+/**
+ * The one row for a lexeme the parse named.
+ *
+ * Built from the spelling's own candidate list where it holds the lexeme, so
+ * that the row a reader picks here is identical — keys and all — to the row
+ * `meaningsFor` would have offered them. Compound names are the exception:
+ * בֵּית אֵל is filed under Bethel while its halves are spellings of "house" and
+ * "god", so the lexeme stands alone and gets a row of its own.
+ */
+function rowForStem(stem: LexemeId, writtenForm: string): Meaning[] {
+  const key = keyOf(stem);
+  const candidates = findLexemesForWord(writtenForm) ?? [];
+  const row = key === null ? undefined : rowsFor(candidates).find((m) => m.keys.includes(key));
+  return row ? [row] : rowsFor([stem]);
 }
 
 /**
@@ -207,10 +231,203 @@ export function formMatches(keys: string[], writtenForm: string): boolean {
   const ids = findLexemesForWord(writtenForm);
   if (!ids || ids.length === 0) return false;
 
+  const wanted = lexemesForKeys(keys);
+  return ids.some((id) => wanted.has(id));
+}
+
+function lexemesForKeys(keys: readonly string[]): Set<LexemeId> {
   const wanted = new Set<LexemeId>();
   for (const key of keys) {
     const id = lexemeForKey(key);
     if (id !== null) wanted.add(id);
   }
-  return ids.some((id) => wanted.has(id));
+  return wanted;
+}
+
+// ---------------------------------------------------------------------------
+// The word in front of the reader
+//
+// Everything above answers about a spelling. BHSA parsed each occurrence
+// individually, and `verse-morphology.json` keeps that: every morpheme of a
+// verse in text order, and how many of them each printed word is made of. The
+// last morpheme of a printed word is its stem, and the stem's lexeme is the
+// dictionary word the reader is looking at: no inference involved.
+//
+// It costs 4.5 MB, which is more than the other three files together, and no
+// reader needs it until a verse is on screen. So it is fetched then, and until
+// it lands every answer here is the one the spelling gives.
+
+/** morphemes as [lexeme, parsing], morphemes per printed word, maqaf positions. */
+type ParsedVerse = [Array<[LexemeId, number]>, number[], number[]];
+
+interface MorphologyFile {
+  misaligned: string[];
+  verses: Record<string, ParsedVerse>;
+}
+
+let morphology: MorphologyFile | null = null;
+let misaligned: Set<string> = new Set();
+let loading: Promise<void> | null = null;
+let settled = false;
+
+/**
+ * Fetch the per-word parse, once.
+ *
+ * A failure is not fatal and is not retried: search keeps working on spellings
+ * alone, which is what it did before this file was loaded at all. `settled`
+ * says the attempt is over either way, so that a caller waiting to redraw is
+ * released rather than left asking again.
+ */
+function loadMorphology(): Promise<void> {
+  loading ??= fetchData('search/verse-morphology.json')
+    .then(async (res) => {
+      if (!res.ok) throw new Error(`Response status ${res.status}`);
+      const file: MorphologyFile = await res.json();
+      morphology = file;
+      misaligned = new Set(file.misaligned);
+    })
+    .catch((err) => {
+      console.warn('Could not load the per-word parse; falling back to the spelling:', err);
+    })
+    .finally(() => {
+      settled = true;
+    });
+  return loading;
+}
+
+/**
+ * The verse whose Hebrew is on screen, and its printed words' stems by where
+ * each word starts in that text. Null stems mean the two sources divide this
+ * verse differently, or the parse is not here yet.
+ */
+let onScreen: { verseKey: string; hebrew: string; stems: Map<number, LexemeId> | null } | null =
+  null;
+
+/**
+ * Name the verse whose Hebrew is about to be displayed.
+ *
+ * The overlay that marks words inside a verse is handed the text without its
+ * reference, so the verse has to be named separately by whoever is drawing it.
+ *
+ * Returns null when the parse is already in hand and nothing is waiting on it,
+ * and otherwise a promise that resolves once it arrives, so the caller can
+ * draw the verse again, this time with the words named. It resolves after a
+ * failed load too; there is simply nothing more to wait for.
+ */
+export function setVerseOnScreen(verseKey: string, hebrew: string): Promise<void> | null {
+  onScreen = { verseKey, hebrew, stems: stemsOf(verseKey, hebrew) };
+  return settled ? null : loadMorphology();
+}
+
+/** Which verse the last `setVerseOnScreen` named, for callers checking staleness. */
+export function verseOnScreen(): string | null {
+  return onScreen?.verseKey ?? null;
+}
+
+/**
+ * Did the parse line up with the verse on screen, so that its words are named
+ * rather than guessed at?
+ *
+ * Here so that the test and the report can ask this function rather than write
+ * their own copy of the check. Three separate attempts to reimplement it
+ * disagreed with it — by 4,230 verses — which is the argument for asking it
+ * directly.
+ */
+export function wordsAreNamed(): boolean {
+  return onScreen?.stems != null;
+}
+
+/** BHSA carries no word for these, so they cannot be counted past. */
+const KETIV = /\([^)]*\)/g;
+const PARAGRAPH_MARK = /\{[ספ]\}/g;
+const HEBREW_LETTER = /[א-ת]/;
+
+/**
+ * Blank out what BHSA has nothing for, leaving every other character where it
+ * was: the scribal paragraph marks, and the ketiv — the form Sefaria prints in
+ * round brackets beside the qere, the word that is actually read. Replacing
+ * them with spaces rather than deleting them keeps offsets into the verse
+ * text meaning what they meant.
+ *
+ * Same rule as `displayed_words()` in scripts/search/generate-lexeme-index.py,
+ * which is what the file was aligned against.
+ */
+function blankWhatBhsaOmits(hebrew: string): string {
+  return hebrew
+    .replace(PARAGRAPH_MARK, (m) => ' '.repeat(m.length))
+    .replace(KETIV, (m) => ' '.repeat(m.length));
+}
+
+/**
+ * Where each printed word of a verse starts, and which dictionary word it is.
+ *
+ * Null rather than a partial answer whenever anything fails to line up. The
+ * file names 64 verses where BHSA and Sefaria divide a compound name
+ * differently; the word count is checked again here anyway, because a position
+ * that is one word out labels every word after it with its neighbour's
+ * dictionary entry — wrong, and plausible enough to go unnoticed.
+ */
+function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId> | null {
+  const parsed = morphology?.verses[verseKey];
+  if (!parsed || misaligned.has(verseKey)) return null;
+
+  const [morphemes, lengths] = parsed;
+  const words = splitIntoWords(blankWhatBhsaOmits(hebrew)).filter((w) =>
+    HEBREW_LETTER.test(w.word),
+  );
+  if (words.length !== lengths.length) return null;
+
+  const stems = new Map<number, LexemeId>();
+  let at = 0;
+  let stem: LexemeId | null = null;
+
+  for (let i = 0; i < lengths.length; i++) {
+    // A word of no morphemes is a further part of the dictionary word before
+    // it — the קַיִן of תּוּבַל קַיִן — so it carries that word's stem.
+    if (lengths[i] > 0) {
+      stem = morphemes[at + lengths[i] - 1][0];
+      at += lengths[i];
+    }
+    if (stem !== null) stems.set(words[i].start, stem);
+  }
+
+  return stems;
+}
+
+/** The dictionary word at a position in the text on screen, if that is what this is. */
+function stemAt(verseText: string, wordStart: number): LexemeId | null {
+  if (!onScreen?.stems || onScreen.hebrew !== verseText) return null;
+  return onScreen.stems.get(wordStart) ?? null;
+}
+
+/** The nth printed word of a verse, as BHSA parsed it. */
+function stemOfWord(verseKey: string, wordIndex: number): LexemeId | null {
+  if (!onScreen?.stems || onScreen.verseKey !== verseKey) return null;
+
+  const words = splitVerseText(onScreen.hebrew).filter((piece) => piece.kind === 'word');
+  const word = words[wordIndex];
+  return word ? (onScreen.stems.get(word.start) ?? null) : null;
+}
+
+/**
+ * Is the word at this place in the verse one of the given meanings?
+ *
+ * The question `formMatches` answers is whether a spelling *could* be one of
+ * them, which cannot separate the two words spelled עלה in Genesis 8:20. This
+ * one names the word instead, and falls back to the spelling wherever the
+ * parse cannot: a ketiv, a verse that does not line up, or the moments before
+ * the parse has loaded.
+ *
+ * `wordStart` is where the word begins in the nikkud-stripped text, which is
+ * what the caller splits into words.
+ */
+export function wordMatches(
+  keys: string[],
+  writtenForm: string,
+  verseText: string,
+  wordStart: number,
+): boolean {
+  const stem = stemAt(verseText, mapStrippedToOriginal(verseText, wordStart));
+  if (stem === null) return formMatches(keys, writtenForm);
+  return lexemesForKeys(keys).has(stem);
 }

@@ -626,7 +626,11 @@ async function main(): Promise<void> {
   // allowed to do that on its own.
   setWordClickHandler((click) => {
     const word = lookupForm(click.text);
-    const meanings = meaningsInVerse(word, tanakhKey(click.book, click.chapter, click.verse));
+    const meanings = meaningsInVerse(
+      word,
+      tanakhKey(click.book, click.chapter, click.verse),
+      click.index,
+    );
 
     openWordMenu({
       word: click.text,
