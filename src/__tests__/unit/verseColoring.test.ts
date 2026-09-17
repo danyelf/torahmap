@@ -10,6 +10,7 @@ import type { TanakhLayout, ItemState } from '../../types';
 import { tanakhIdentitiesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
+import { createVerse } from '../helpers/fixtures';
 
 describe('itemColoring', () => {
   describe('getDefaultColor', () => {
@@ -59,14 +60,7 @@ describe('itemColoring', () => {
 
   describe('getOverlayColor', () => {
     it('returns null when overlay is null', () => {
-      const verse: TanakhLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
+      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
       const color = getOverlayColor(null, verse);
 
@@ -74,14 +68,7 @@ describe('itemColoring', () => {
     });
 
     it('returns overlay color when overlay provides color', () => {
-      const verse: TanakhLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
+      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
       const mockOverlay: Overlay = {
         id: 'test',
@@ -97,14 +84,7 @@ describe('itemColoring', () => {
     });
 
     it('returns null when overlay getVerseColor returns null', () => {
-      const verse: TanakhLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
+      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
       const mockOverlay: Overlay = {
         id: 'test',
@@ -119,14 +99,7 @@ describe('itemColoring', () => {
     });
 
     it('handles multi-color verses', () => {
-      const verse: TanakhLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
+      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
       const multiColor: [number, number, number][] = [
         [1, 0, 0],
@@ -208,9 +181,7 @@ describe('itemColoring', () => {
     });
 
     it('computes hasOverlayColor correctly when overlay provides color', () => {
-      const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
+      const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
       const mockOverlay: Overlay = {
         id: 'test',
@@ -226,9 +197,7 @@ describe('itemColoring', () => {
     });
 
     it('computes hasOverlayColor as false when overlay returns null', () => {
-      const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
+      const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
       const mockOverlay: Overlay = {
         id: 'test',
@@ -247,9 +216,7 @@ describe('itemColoring', () => {
     });
 
     it('uses default color when overlay is null', () => {
-      const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
+      const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
       const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
@@ -262,8 +229,8 @@ describe('itemColoring', () => {
 
     it('identifies hovered verse correctly', () => {
       const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
+        createVerse({ x: 0, y: 0, size: 1 }),
+        createVerse({ verse: 2, y: 0, size: 1 }),
       ];
       const hoveredVerse = verses[1];
 
@@ -275,8 +242,8 @@ describe('itemColoring', () => {
 
     it('identifies pinned verse correctly', () => {
       const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
+        createVerse({ x: 0, y: 0, size: 1 }),
+        createVerse({ verse: 2, y: 0, size: 1 }),
       ];
       const pinnedVerse = verses[0];
 
@@ -287,9 +254,7 @@ describe('itemColoring', () => {
     });
 
     it('handles null hoveredVerse', () => {
-      const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
+      const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
       const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
@@ -297,9 +262,7 @@ describe('itemColoring', () => {
     });
 
     it('handles null pinnedVerse', () => {
-      const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-      ];
+      const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
       const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
 
@@ -308,18 +271,12 @@ describe('itemColoring', () => {
 
     it('matches verses by book, chapter, and verse number', () => {
       const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
-        { book: 'Exodus', chapter: 1, verse: 1, x: 0, y: 10, size: 1 },
+        createVerse({ x: 0, y: 0, size: 1 }),
+        createVerse({ verse: 2, y: 0, size: 1 }),
+        createVerse({ book: 'Exodus', x: 0, y: 10, size: 1 }),
       ];
-      const hoveredVerse: TanakhLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 999, // Different position - doesn't matter
-        y: 999,
-        size: 2,
-      };
+      // Different position - doesn't matter
+      const hoveredVerse: TanakhLayout = createVerse({ x: 999, y: 999, size: 2 });
 
       const states = computeItemStates(verses, null, hoveredVerse, null, tanakhIdentitiesEqual);
 
@@ -330,9 +287,9 @@ describe('itemColoring', () => {
 
     it('returns array parallel to verses', () => {
       const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 3, x: 20, y: 0, size: 1 },
+        createVerse({ x: 0, y: 0, size: 1 }),
+        createVerse({ verse: 2, y: 0, size: 1 }),
+        createVerse({ verse: 3, x: 20, y: 0, size: 1 }),
       ];
 
       const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
@@ -473,8 +430,8 @@ describe('itemColoring', () => {
 
     it('supports full workflow: compute states then apply colors', () => {
       const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 1 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 0, size: 1 },
+        createVerse({ x: 0, y: 0, size: 1 }),
+        createVerse({ verse: 2, y: 0, size: 1 }),
       ];
 
       const mockOverlay: Overlay = {
