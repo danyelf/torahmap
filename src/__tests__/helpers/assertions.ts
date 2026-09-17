@@ -2,10 +2,8 @@
 import { expect } from 'vitest';
 import type { TanakhLayout } from '../../types';
 
-/**
- * Asserts that a color is valid (all channels in [0, 1] range)
- * Accepts Color | Color[] from overlay getVerseColor return type
- */
+// All channels must be in [0, 1]. Accepts Color | Color[] (overlay
+// getVerseColor's return type).
 export function assertValidColor(
   color: number[] | [number, number, number] | (number[] | [number, number, number])[],
 ) {
@@ -26,18 +24,12 @@ export function assertValidColor(
   }
 }
 
-/**
- * Asserts that all colors in an array are valid
- */
 export function assertValidColors(colors: (number[] | [number, number, number])[]) {
   for (const color of colors) {
     assertValidColor(color);
   }
 }
 
-/**
- * Asserts that two colors are approximately equal (within epsilon)
- */
 export function assertColorEquals(
   actual: number[] | [number, number, number],
   expected: number[] | [number, number, number],
@@ -50,9 +42,6 @@ export function assertColorEquals(
   }
 }
 
-/**
- * Asserts that a verse has all required properties
- */
 export function assertValidVerse(verse: TanakhLayout) {
   expect(verse.book).toBeDefined();
   expect(typeof verse.book).toBe('string');
@@ -79,36 +68,24 @@ export function assertValidVerse(verse: TanakhLayout) {
   // Note: colors are no longer part of TanakhLayout - they're computed separately
 }
 
-/**
- * Asserts that all verses in an array are valid
- */
 export function assertValidVerses(verses: TanakhLayout[]) {
   for (const verse of verses) {
     assertValidVerse(verse);
   }
 }
 
-/**
- * Asserts that two verses represent the same location (book, chapter, verse)
- */
 export function assertSameVerseLocation(actual: TanakhLayout, expected: TanakhLayout) {
   expect(actual.book).toBe(expected.book);
   expect(actual.chapter).toBe(expected.chapter);
   expect(actual.verse).toBe(expected.verse);
 }
 
-/**
- * Asserts that a number is within a range
- */
 export function assertInRange(value: number, min: number, max: number) {
   expect(value).toBeGreaterThanOrEqual(min);
   expect(value).toBeLessThanOrEqual(max);
 }
 
-/**
- * Asserts that all verses have unique positions (no overlaps)
- * Allows for small floating point differences
- */
+// Allows small floating-point differences.
 export function assertUniquePositions(verses: TanakhLayout[], tolerance: number = 0.01) {
   const positions = new Map<string, TanakhLayout>();
 
@@ -134,16 +111,10 @@ export function assertUniquePositions(verses: TanakhLayout[], tolerance: number 
   }
 }
 
-/**
- * Asserts that a value is approximately equal to expected (within epsilon)
- */
 export function assertApproximately(actual: number, expected: number, epsilon: number = 0.01) {
   expect(Math.abs(actual - expected)).toBeLessThan(epsilon);
 }
 
-/**
- * Asserts that an array contains elements matching a predicate
- */
 export function assertContains<T>(array: T[], predicate: (item: T) => boolean) {
   const found = array.some(predicate);
   if (!found) {
@@ -151,9 +122,6 @@ export function assertContains<T>(array: T[], predicate: (item: T) => boolean) {
   }
 }
 
-/**
- * Asserts that all elements in an array match a predicate
- */
 export function assertAll<T>(array: T[], predicate: (item: T) => boolean) {
   for (let i = 0; i < array.length; i++) {
     if (!predicate(array[i])) {
@@ -164,9 +132,6 @@ export function assertAll<T>(array: T[], predicate: (item: T) => boolean) {
   }
 }
 
-/**
- * Asserts that a URL contains expected query parameters
- */
 export function assertURLHasParams(url: string, expectedParams: Record<string, string>) {
   const urlObj = new URL(url, 'http://localhost');
   const params = new URLSearchParams(urlObj.search);
@@ -176,9 +141,6 @@ export function assertURLHasParams(url: string, expectedParams: Record<string, s
   }
 }
 
-/**
- * Asserts that an object has specific properties
- */
 export function assertHasProperties<T extends object>(obj: T, properties: (keyof T)[]) {
   for (const prop of properties) {
     expect(obj).toHaveProperty(String(prop));
@@ -186,18 +148,12 @@ export function assertHasProperties<T extends object>(obj: T, properties: (keyof
   }
 }
 
-/**
- * Asserts that a color is grayscale (all channels equal)
- */
 export function assertGrayscale(color: [number, number, number], epsilon: number = 0.01) {
   assertValidColor(color);
   expect(Math.abs(color[0] - color[1])).toBeLessThan(epsilon);
   expect(Math.abs(color[1] - color[2])).toBeLessThan(epsilon);
 }
 
-/**
- * Asserts that verses are sorted by a property
- */
 export function assertSortedBy<T, K extends keyof T>(
   items: T[],
   property: K,
@@ -215,19 +171,13 @@ export function assertSortedBy<T, K extends keyof T>(
   }
 }
 
-/**
- * Asserts that a Hebrew string contains trop marks
- */
 export function assertHasTropMarks(text: string) {
   // Trop marks are in Unicode range U+0591 to U+05AF
-  const hasTrop = /[\u0591-\u05AF]/.test(text);
+  const hasTrop = /[֑-֯]/.test(text);
   expect(hasTrop).toBe(true);
 }
 
-/**
- * Asserts that a Hebrew string does NOT contain trop marks
- */
 export function assertNoTropMarks(text: string) {
-  const hasTrop = /[\u0591-\u05AF]/.test(text);
+  const hasTrop = /[֑-֯]/.test(text);
   expect(hasTrop).toBe(false);
 }

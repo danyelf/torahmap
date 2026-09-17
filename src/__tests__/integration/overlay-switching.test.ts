@@ -18,14 +18,6 @@ import {
 import { restoreAllMocks } from '../helpers/mocks';
 import { applyOverlayParams } from '../helpers/overlayUrlParams';
 
-/**
- * Integration test for overlay switching behavior
- * Tests how overlays interact when switching between them, including:
- * - State preservation
- * - UI updates
- * - Color recalculation
- * - Cleanup
- */
 describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
   let mockLegendContainer: HTMLElement;
@@ -38,7 +30,6 @@ describe('Overlay Switching Integration', () => {
     mockControlsContainer = document.createElement('div');
     mockLegendContainer = document.createElement('div');
 
-    // Mock fetch for overlay data
     globalThis.fetch = vi.fn((url: string | URL | Request) => {
       const urlString = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
 

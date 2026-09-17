@@ -1,5 +1,4 @@
 // Tests for lazy snippet evaluation performance optimization
-// tm-6mw3: Hebrew search performance improvement via lazy snippet computation
 import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, computeSnippetForMatch, type SearchResult } from '../../search';
 import { searchInRootMode } from '../helpers/rootSearch';

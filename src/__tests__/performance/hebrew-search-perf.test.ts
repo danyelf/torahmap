@@ -1,5 +1,4 @@
 // Performance diagnostic tests for Hebrew search
-// tm-6mw3: Gather evidence about where Hebrew search is slow
 import { describe, it, expect, beforeAll } from 'vitest';
 import { search, buildSearchIndex, findLexemesForWord } from '../../search';
 import type { VerseTexts } from '../../verseTexts';

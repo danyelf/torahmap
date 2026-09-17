@@ -1,6 +1,4 @@
 // Background prefetch for Talmud tractate texts with click-time precedence.
-//
-// Design: docs/plans/2026-04-07-talmud-integration-design.md §3.12
 
 import { getTractateText, hasTractateText } from './data.ts';
 import { PREFETCH_CONCURRENCY } from './constants.ts';

@@ -44,7 +44,6 @@ function talmudSegmentsEqual(a: TalmudIdentity | null, b: TalmudIdentity | null)
 async function main(): Promise<void> {
   document.title = `Bavli Map [${__GIT_BRANCH__}]`;
 
-  // --- Load data and compute layout ---
   const structure = await loadTalmudStructure();
   const { items, tractateBlocks, sederBlocks, perekAnchors, bounds } =
     computeTalmudLayout(structure);
@@ -52,7 +51,7 @@ async function main(): Promise<void> {
     `Loaded ${structure.tractates.length} tractates, ${items.length} segments, bounds: ${bounds.width}x${bounds.height}`,
   );
 
-  // --- Canvas setup (mirrors main.ts) ---
+  // Canvas setup mirrors main.ts.
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
   const dpr = window.devicePixelRatio || 1;
@@ -65,11 +64,9 @@ async function main(): Promise<void> {
   }
   resizeCanvas();
 
-  // --- WebGL ---
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext.gl, items, dpr);
 
-  // --- Camera ---
   // Start zoomed out to fit the whole bookshelf with a small margin.
   // The Bavli total bounds are wide (4 tall shelves of tractates) so the
   // default 1.0 zoom from createCamera is almost always too zoomed in.
@@ -84,7 +81,6 @@ async function main(): Promise<void> {
     camera.y = (window.innerHeight / fitZoom - bounds.height) / 2;
   }
 
-  // --- State ---
   const mouseState = createMouseState();
   let lastMouseX = 0;
   let lastMouseY = 0;
@@ -92,14 +88,9 @@ async function main(): Promise<void> {
   let pinnedItem: TalmudLayoutItem | null = null;
   let currentOverlay: Overlay<TalmudIdentity> | null = null;
 
-  // --- Registry ---
   const overlaysById = new Map<string, Overlay<TalmudIdentity>>();
   overlaysById.set(segmentLengthOverlay.id, segmentLengthOverlay);
 
-  // --- Structural base coloring ---
-  // Talmud segments always carry M/G identity; we paint that distinction as
-  // the "default" color (parallel to getDefaultColor() on the Tanakh side).
-  // User overlays compose on top via composeWithMgBase().
   const mgBaseOverlay = createMgBaseOverlay(structure);
 
   function applyOverlay(): void {
@@ -125,8 +116,7 @@ async function main(): Promise<void> {
     );
   }
 
-  // --- Labels (tractate + daf) ---
-  // Build daf-row anchors from the layout items.
+  // Daf-row anchors for label positioning, built from the layout items.
   const rowAnchors = new Map<string, DafRowAnchor>();
   for (const item of items) {
     const key = `${item.tractate}:${item.daf}${item.amud}`;
@@ -153,20 +143,14 @@ async function main(): Promise<void> {
   );
   updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
 
-  // --- Initial paint ---
   applyOverlay();
   doRender();
 
-  // --- Kick off background prefetch ---
-  // Ingest order = completion order (the prefetch queue may be reordered
-  // by `promoteTractateToFront` when the user clicks an unloaded tractate;
-  // we want the segment-length overlay to see those lengths first too).
   const tractateNames = structure.tractates.map((t) => t.name);
   startBackgroundPrefetch(tractateNames, {
     onLoaded: (_name, text) => ingestTractateLengths(structure, text),
   });
 
-  // --- Sidebar elements ---
   const sidebarElements = getTalmudSidebarElements();
   const sidebarClose = sidebarElements.sidebar.querySelector('.close-btn') as HTMLElement | null;
   sidebarClose?.addEventListener('click', () => {
@@ -192,7 +176,6 @@ async function main(): Promise<void> {
   }
   const saveUrlStateDebounced = debounce(saveUrlState, URL_UPDATE_DEBOUNCE_MS);
 
-  // --- Wheel zoom ---
   canvas.addEventListener(
     'wheel',
     (e: WheelEvent) => {
@@ -215,7 +198,6 @@ async function main(): Promise<void> {
     { passive: false },
   );
 
-  // --- Mouse move: hover + drag-pan ---
   canvas.addEventListener('mousemove', (e: MouseEvent) => {
     if (mouseState.isDragging) {
       camera.x += (e.clientX - lastMouseX) / camera.zoom;
@@ -287,7 +269,6 @@ async function main(): Promise<void> {
     }
   });
 
-  // --- Overlay picker ---
   const select = document.getElementById('overlay-select') as HTMLSelectElement;
   select?.addEventListener('change', () => {
     const id = select.value;
@@ -297,18 +278,16 @@ async function main(): Promise<void> {
     saveUrlState();
   });
 
-  // --- Window resize ---
   window.addEventListener('resize', () => {
     resizeCanvas();
     doRender();
     updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
   });
 
-  // --- URL state: restore pinned segment if present ---
-  // NOTE: this runs AFTER all listeners are wired so that a cold load with
-  // ?segment=... for an uncached tractate doesn't leave the canvas
-  // unresponsive while the network fetch resolves. Fire-and-forget so main()
-  // returns promptly and the initial paint isn't blocked.
+  // Restoring a pinned segment from the URL runs AFTER all listeners are
+  // wired so a cold load with ?segment=... for an uncached tractate doesn't
+  // leave the canvas unresponsive while the fetch resolves. Fire-and-forget
+  // so main() returns promptly and the initial paint isn't blocked.
   const initialUrl = parseTalmudUrlState();
   if (initialUrl.overlay) {
     const o = overlaysById.get(initialUrl.overlay);

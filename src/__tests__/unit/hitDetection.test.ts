@@ -338,12 +338,7 @@ describe('hitDetection', () => {
       const hit4 = findItemAtPoint(verses, camera, 210, 410);
       expect(hit4).toBe(null); // Too far
 
-      // Screen (310, 510) -> World (105, 205) - exact center!
-      // 310/2 - 50 = 105, 510/2 - 100 = 155 (wait, that's not right)
-      // Let me recalculate: 510/2 - 100 = 155, not 205
-      // Actually for exact center at (105, 205), we need:
-      // screenX/2 - 50 = 105 => screenX = 310
-      // screenY/2 - 100 = 205 => screenY = 610
+      // Screen (310, 610) -> World (310/2 - 50, 610/2 - 100) = (105, 205) - exact center!
       const hit5 = findItemAtPoint(verses, camera, 310, 610);
       expect(hit5).toBe(verses[0]); // Found at exact center!
     });

@@ -1,5 +1,4 @@
 // Talmud-specific layout and color constants.
-// Tunable values for the tm-f28x integration.
 
 // --- Layout constants ---
 
@@ -28,8 +27,8 @@ export const SEDER_ORDER: readonly string[] = [
 ];
 
 // --- Base colors (muted, similar, "rainfall over both") ---
-// MISHNAH = slate blue (brighter and more saturated than first pass so it
-// reads against gemara grey), GEMARA = neutral grey.
+// MISHNAH = slate blue, saturated enough to read against gemara grey.
+// GEMARA = neutral grey.
 
 export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.48, 0.58, 0.82];
 export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.58, 0.58, 0.58];
@@ -53,8 +52,8 @@ export const POSITION_JITTER = 0.7;
 // --- Per-seder background tints ---
 // Drawn as semi-transparent DOM overlays above the canvas (opacity =
 // SEDER_BACKGROUND_OPACITY). Tints are intentionally muted but distinct
-// enough to read against the dark canvas + flat verse colors. The first
-// pass used near-white values (0.97...) which were invisible.
+// enough to read against the dark canvas + flat verse colors — near-white
+// values (0.97+) are invisible there.
 
 export const SEDER_BACKGROUND_COLORS: Readonly<Record<string, readonly [number, number, number]>> =
   {
