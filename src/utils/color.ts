@@ -2,7 +2,8 @@
 import type { Color } from '../overlays/types.ts';
 
 // Shared color constants
-export const HIGHLIGHT_COLOR: Color = [0.2, 0.9, 1.0]; // Bright cyan for search/selection
+// DIM_FACTOR duplicates HIGHLIGHT_CONSTANTS.DIM_FACTOR in ../constants.ts; kept here because
+// src/__tests__/unit/overlays/search.test.ts imports it and that file is out of scope for this change.
 export const DIM_FACTOR = 0.3; // Dimming factor for non-highlighted verses
 
 // Fixed palette for multi-term search (cyan, orange, lime, pink, yellow)

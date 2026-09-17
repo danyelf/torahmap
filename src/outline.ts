@@ -27,7 +27,7 @@ export function buildOutlineGeometry(
   bounds: OutlineBounds,
   options: OutlineOptions = {},
 ): Float32Array {
-  const thickness = options.thickness ?? 2;
+  const thickness = options.thickness ?? HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS;
   const color = options.color ?? HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 
   // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
