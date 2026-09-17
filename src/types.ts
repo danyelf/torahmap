@@ -73,14 +73,17 @@ export function tanakhIdentitiesEqual(a: TanakhIdentity | null, b: TanakhIdentit
   return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
 }
 
+/** The laid-out verse with this identity, or null if the map does not hold it. */
+export function findTanakhItem(verses: TanakhLayout[], id: TanakhIdentity): TanakhLayout | null {
+  return verses.find((v) => tanakhIdentitiesEqual(v, id)) ?? null;
+}
+
 /** Next verse in layout order, or null if current is last or not found. */
 export function nextTanakhItem(
   verses: TanakhLayout[],
   current: TanakhIdentity,
 ): TanakhLayout | null {
-  const currentIndex = verses.findIndex(
-    (v) => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse,
-  );
+  const currentIndex = verses.findIndex((v) => tanakhIdentitiesEqual(v, current));
 
   if (currentIndex === -1 || currentIndex >= verses.length - 1) {
     return null;
@@ -94,9 +97,7 @@ export function prevTanakhItem(
   verses: TanakhLayout[],
   current: TanakhIdentity,
 ): TanakhLayout | null {
-  const currentIndex = verses.findIndex(
-    (v) => v.book === current.book && v.chapter === current.chapter && v.verse === current.verse,
-  );
+  const currentIndex = verses.findIndex((v) => tanakhIdentitiesEqual(v, current));
 
   if (currentIndex <= 0) {
     return null;
