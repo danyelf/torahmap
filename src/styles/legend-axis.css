@@ -1,0 +1,51 @@
+/* The axis any overlay with a continuous scale draws. It lives here, not in a
+   file named for one overlay, so that a second caller need not import the
+   first. */
+
+#overlay-legend .legend-gradient {
+  height: 12px;
+  border-radius: 2px;
+  margin-bottom: 2px;
+}
+
+#overlay-legend .legend-ticks {
+  position: relative;
+  height: 16px;
+}
+
+#overlay-legend .tick {
+  position: absolute;
+  transform: translateX(-50%);
+  color: #888;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+#overlay-legend .tick::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 1px;
+  height: 4px;
+  background: #666;
+}
+
+/* A label centred on the 0% or 100% position hangs half of itself off the
+   strip, so the outermost two align inwards while their marks stay on the
+   position they name. Must follow .tick: same specificity, so order decides. */
+#overlay-legend .tick-start {
+  transform: none;
+}
+
+#overlay-legend .tick-start::before {
+  left: 0;
+}
+
+#overlay-legend .tick-end {
+  transform: translateX(-100%);
+}
+
+#overlay-legend .tick-end::before {
+  left: 100%;
+}

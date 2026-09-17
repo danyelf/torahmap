@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  heatmapColor,
   rgbToHsl,
   hslToRgb,
   interpolateGradient,
@@ -217,109 +216,6 @@ describe('scaleToGradient', () => {
       const logColor = scaleToGradient(v, max, gradient, { useLog: true });
       assertValidColor(linearColor);
       assertValidColor(logColor);
-    }
-  });
-});
-
-describe('heatmapColor', () => {
-  it('returns very dark color for zero value', () => {
-    const color = heatmapColor(0, 100);
-    expect(color).toEqual([0.15, 0.15, 0.2]);
-  });
-
-  it('returns valid colors for all inputs', () => {
-    const maxValue = 1000;
-    for (let i = 0; i <= maxValue; i += 10) {
-      const color = heatmapColor(i, maxValue);
-      assertValidColor(color);
-    }
-  });
-
-  it('returns darker colors for smaller values', () => {
-    const max = 100;
-    const color1 = heatmapColor(1, max);
-    const color10 = heatmapColor(10, max);
-    const color50 = heatmapColor(50, max);
-    const color100 = heatmapColor(100, max);
-
-    // Colors should generally get brighter (higher channel values) as value increases
-    const brightness = (c: Color) => c[0] + c[1] + c[2];
-    expect(brightness(color1)).toBeLessThan(brightness(color10));
-    expect(brightness(color10)).toBeLessThan(brightness(color50));
-    expect(brightness(color50)).toBeLessThan(brightness(color100));
-  });
-
-  it('uses logarithmic scale', () => {
-    // With log scale, the difference between 1 and 10 should be greater than
-    // the difference between 91 and 100
-    const max = 100;
-    const color1 = heatmapColor(1, max);
-    const color10 = heatmapColor(10, max);
-    const color91 = heatmapColor(91, max);
-    const color100 = heatmapColor(100, max);
-
-    const diff1to10 = Math.abs(color10[0] - color1[0]);
-    const diff91to100 = Math.abs(color100[0] - color91[0]);
-
-    expect(diff1to10).toBeGreaterThan(diff91to100);
-  });
-
-  it('handles maxValue of 1', () => {
-    const color = heatmapColor(1, 1);
-    assertValidColor(color);
-  });
-
-  it('handles large maxValue', () => {
-    const color = heatmapColor(5000, 10000);
-    assertValidColor(color);
-  });
-
-  it('returns same color for same ratio', () => {
-    // Same relative position should give similar colors
-    const color1 = heatmapColor(50, 100);
-    const color2 = heatmapColor(500, 1000);
-
-    assertColorEquals(color1, color2, 0.03);
-  });
-
-  it('progresses through gradient stops', () => {
-    // Test that we get different colors in different gradient ranges
-    const max = 1000;
-    const color25pct = heatmapColor(Math.floor(max * 0.25), max); // First stop
-    const color50pct = heatmapColor(Math.floor(max * 0.5), max); // Second stop
-    const color75pct = heatmapColor(Math.floor(max * 0.75), max); // Third stop
-    const color100pct = heatmapColor(max, max); // Fourth stop
-
-    // All should be different
-    expect(color25pct).not.toEqual(color50pct);
-    expect(color50pct).not.toEqual(color75pct);
-    expect(color75pct).not.toEqual(color100pct);
-  });
-
-  it('handles edge case where value equals maxValue', () => {
-    const color = heatmapColor(100, 100);
-    assertValidColor(color);
-    // Should be at the brightest end of the scale
-    expect(color[0]).toBeGreaterThan(0.8);
-  });
-
-  it('produces distinct colors across the range', () => {
-    const max = 100;
-    const colors = [];
-    for (let i = 1; i <= max; i += 10) {
-      colors.push(heatmapColor(i, max));
-    }
-
-    // Each color should be sufficiently different from its neighbors
-    for (let i = 1; i < colors.length; i++) {
-      const prev = colors[i - 1];
-      const curr = colors[i];
-      const distance = Math.sqrt(
-        Math.pow(curr[0] - prev[0], 2) +
-          Math.pow(curr[1] - prev[1], 2) +
-          Math.pow(curr[2] - prev[2], 2),
-      );
-      expect(distance).toBeGreaterThan(0.01); // Colors should be visibly different
     }
   });
 });

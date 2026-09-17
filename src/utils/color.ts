@@ -73,21 +73,6 @@ export function buildLegendGradient(stops: number, colorAt: (index: number) => C
   return `linear-gradient(to right, ${parts.join(', ')})`;
 }
 
-/** Heatmap scale: dark blue -> light blue -> teal -> orange -> red, logarithmic. */
-export function heatmapColor(value: number, maxValue: number): Color {
-  if (value === 0) return [0.15, 0.15, 0.2]; // No data
-
-  const stops: ColorStop[] = [
-    { t: 0, color: [0.1, 0.13, 0.18] }, // Dark blue
-    { t: 0.25, color: [0.1, 0.23, 0.38] }, // Light blue
-    { t: 0.5, color: [0.2, 0.43, 0.33] }, // Teal
-    { t: 0.75, color: [0.9, 0.33, 0.13] }, // Orange
-    { t: 1.0, color: [1.0, 0.23, 0.18] }, // Red
-  ];
-
-  return scaleToGradient(value, maxValue, stops, { useLog: true });
-}
-
 interface HSL {
   h: number; // 0-360
   s: number; // 0-1

@@ -5,9 +5,9 @@ import { configure } from '../../../overlays/commentary';
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
 const commentaryOverlay = getOverlay('commentary')!;
-import { heatmapColor } from '../../../utils/color';
+
 import { createVerse } from '../../helpers/fixtures';
-import { assertValidColor } from '../../helpers/assertions';
+import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { CommentaryData, TanakhLayout } from '../../../types';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
@@ -424,41 +424,40 @@ describe('Commentary Overlay', () => {
       expect(ticks).not.toBeNull();
     });
 
-    it('labels the powers of ten up to the maximum, then the maximum', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderLegend?.(container);
+    // Read the labels, not the markup: `left: 100%` in a style attribute
+    // satisfies a substring check for "100" whether or not that tick exists.
+    const tickLabels = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll('.tick')).map((tick) => tick.textContent);
 
-      // Read the labels, not the markup: `left: 100%` in a style attribute
-      // satisfies a substring check for "100" whether or not that tick exists.
-      const labels = Array.from(container.querySelectorAll('.tick')).map((t) => t.textContent);
-      expect(labels).toEqual(['0', '1', '10', '100', '150']);
-    });
-
-    it('formats large values with k suffix', async () => {
-      // Create data with large values
-      const largeData: CommentaryData = {
-        'Genesis': {
-          '1': {
-            '1': { total: 5000, categories: { 'Midrash': 5000 } },
-          },
-        },
-      };
-
+    async function reinitWithMax(total: number) {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: () => Promise.resolve(largeData),
+        json: () => Promise.resolve({ 'Genesis': { '1': { '1': { total, categories: {} } } } }),
       } as Response);
 
-      // Re-init with large data
       configure({ verses: [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })] });
       await commentaryOverlay.init?.();
 
       const container = document.createElement('div');
       commentaryOverlay.renderLegend?.(container);
+      return container;
+    }
 
-      const innerHTML = container.innerHTML;
-      expect(innerHTML).toContain('1k');
+    it('ticks the powers of ten, then the maximum', async () => {
+      expect(tickLabels(await reinitWithMax(900))).toEqual(['0', '1', '10', '100', '900']);
+    });
+
+    it('drops the last power of ten when the maximum sits on top of it', () => {
+      // The fixture tops out at 150, which is 8% from 100 on the log scale.
+      const container = document.createElement('div');
+      commentaryOverlay.renderLegend?.(container);
+
+      expect(tickLabels(container)).toEqual(['0', '1', '10', '150']);
+    });
+
+    it('writes a thousands separator rather than abbreviating', async () => {
+      expect(tickLabels(await reinitWithMax(5000))).toContain('5,000');
     });
   });
 
@@ -754,28 +753,20 @@ describe('Commentary Overlay', () => {
       await commentaryOverlay.init?.();
     });
 
-    it('uses heatmapColor function from utils/color', () => {
-      const verse = testVerses[0];
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+    // The colours themselves, not "whatever the colour function returns" — an
+    // assertion of the latter shape holds however the scale is wired up.
+    it('colours a verse by where its count falls on the log scale', () => {
+      const atMax = commentaryOverlay.getVerseColor(testVerses[0]); // 150 of 150
+      const partWay = commentaryOverlay.getVerseColor(testVerses[1]); // 45 of 150
 
-      // Verify it returns same result as calling heatmapColor directly
-      const expectedColor = heatmapColor(150, 150);
-      expect(color).toEqual(expectedColor);
+      assertColorEquals(atMax as number[], [1, 0.23, 0.18]);
+      assertColorEquals(partWay as number[], [0.905236, 0.324764, 0.132618]);
     });
 
-    it('passes correct count and max to heatmapColor', () => {
-      const verse1 = testVerses[0]; // 150 total
-      const verse2 = testVerses[1]; // 45 total
+    it('gives a verse with no links the no-data grey', () => {
+      const unlinked = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // 0 total
 
-      const color1 = commentaryOverlay.getVerseColor(verse1);
-      const color2 = commentaryOverlay.getVerseColor(verse2);
-
-      // Verify against direct heatmapColor calls
-      const expected1 = heatmapColor(150, 150);
-      const expected2 = heatmapColor(45, 150);
-
-      expect(color1).toEqual(expected1);
-      expect(color2).toEqual(expected2);
+      assertColorEquals(commentaryOverlay.getVerseColor(unlinked) as number[], [0.15, 0.15, 0.2]);
     });
   });
 });

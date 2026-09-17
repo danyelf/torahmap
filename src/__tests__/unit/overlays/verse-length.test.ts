@@ -152,6 +152,20 @@ describe('Verse Length Overlay', () => {
     });
   });
 
+  describe('Legend layout', () => {
+    it('stacks its bar above its labels instead of sharing the flex row', () => {
+      // `#overlay-legend .legend-row` is `display: flex`. Two stacked children
+      // in it sit side by side, which renders as "1 14 / words words".
+      const container = document.createElement('div');
+      verseLengthOverlay.renderLegend!(container);
+
+      expect(container.querySelector('.legend-row')).toBeNull();
+
+      const labels = Array.from(container.querySelectorAll('.tick')).map((t) => t.textContent);
+      expect(labels).toEqual(['1 words', '14 words']);
+    });
+  });
+
   describe('Min/Max Calculation', () => {
     it('calculates correct minimum word count', () => {
       // Min should be 1 (Exodus 1:2 has 1 word, ignoring Psalms 1:1 which has 0)

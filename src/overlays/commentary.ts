@@ -1,8 +1,20 @@
-import '../styles/overlays/commentary.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout, CommentaryData } from '../types.ts';
-import { heatmapColor } from '../utils/color.ts';
+import type { ColorStop } from '../utils/color.ts';
+import { scale, LOG, type Scale } from '../utils/scale.ts';
+import { renderAxis } from './legend.ts';
 import { loadJson } from './loadJson.ts';
+
+const HEATMAP_STOPS: ColorStop[] = [
+  { t: 0, color: [0.1, 0.13, 0.18] },
+  { t: 0.25, color: [0.1, 0.23, 0.38] },
+  { t: 0.5, color: [0.2, 0.43, 0.33] },
+  { t: 0.75, color: [0.9, 0.33, 0.13] },
+  { t: 1.0, color: [1.0, 0.23, 0.18] },
+];
+
+/** A verse nothing has been written about. */
+const NO_LINKS: Color = [0.15, 0.15, 0.2];
 
 const URL_PARAMS = [
   { key: 'category', kind: 'category' },
@@ -15,6 +27,11 @@ let updateCallback: (() => void) | null = null;
 // Cache max values per category to avoid recalculating
 let cachedMaxValues: Record<string, number> = {};
 let verses: TanakhLayout[] = [];
+
+/** Rebuilt per call: the maximum moves when the category changes. */
+function linkScale(): Scale {
+  return scale(0, getMaxValue(), LOG, HEATMAP_STOPS);
+}
 
 function getCount(book: string, chapter: number, verse: number): number {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
@@ -75,11 +92,9 @@ export const commentaryOverlay: Overlay = {
   },
 
   getVerseColor(verse: TanakhIdentity): Color | null {
-    // Store reference to verses for max calculation
-    // This is a bit awkward - we'll improve this in integration
     const count = getCount(verse.book, verse.chapter, verse.verse);
-    const maxValue = getMaxValue();
-    return heatmapColor(count, maxValue);
+    if (count === 0) return NO_LINKS;
+    return linkScale().colorOf(count);
   },
 
   renderControls(container: HTMLElement) {
@@ -123,31 +138,16 @@ export const commentaryOverlay: Overlay = {
 
   renderLegend(container: HTMLElement) {
     const maxValue = getMaxValue();
-    const logMax = Math.log(maxValue + 1);
 
-    // Calculate tick values (powers of 10)
     const ticks: number[] = [0];
-    let tickVal = 1;
-    while (tickVal <= maxValue) {
-      ticks.push(tickVal);
-      tickVal *= 10;
+    for (let value = 1; value <= maxValue; value *= 10) {
+      ticks.push(value);
     }
     if (ticks[ticks.length - 1] < maxValue) {
       ticks.push(maxValue);
     }
 
-    container.innerHTML = `
-      <div class="legend-gradient"></div>
-      <div class="legend-ticks">
-        ${ticks
-          .map((val) => {
-            const pos = val === 0 ? 0 : (Math.log(val + 1) / logMax) * 100;
-            const label = val >= 1000 ? `${val / 1000}k` : String(val);
-            return `<span class="tick" style="left: ${pos}%">${label}</span>`;
-          })
-          .join('')}
-      </div>
-    `;
+    container.innerHTML = renderAxis(linkScale(), ticks);
   },
 
   getHoverInfo(verse: TanakhIdentity): string | null {
