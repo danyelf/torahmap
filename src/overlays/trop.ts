@@ -1,4 +1,3 @@
-// src/overlays/trop.ts
 import '../styles/overlays/trop.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry } from '../types.ts';
@@ -15,41 +14,35 @@ const URL_PARAMS = [{ key: 'trop', kind: 'token' }] as const satisfies readonly 
 let selectedTrop: TropIndexEntry | null = null;
 let updateCallback: (() => void) | null = null;
 
-// Cached values for performance (computed once per trop selection, not per verse)
+// Computed once per trop selection, not per verse.
 let cachedVerseLookup: Map<string, number> = new Map();
 let cachedMaxCount = 1;
 let cachedTier: 'rare' | 'uncommon' | 'common' = 'common';
 
-// Colors for trop visualization
 const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
 
-// Update cached values when trop selection changes
 function updateCache(): void {
   cachedVerseLookup.clear();
   if (!selectedTrop) return;
 
   cachedTier = getRarityTier(selectedTrop.totalCount);
 
-  // Build verse lookup once
   for (const loc of selectedTrop.verses) {
     const key = tanakhKey(loc.book, loc.chapter, loc.verse);
     cachedVerseLookup.set(key, loc.count);
   }
 
-  // Calculate max count once
   cachedMaxCount = 1;
   for (const loc of selectedTrop.verses) {
     if (loc.count > cachedMaxCount) cachedMaxCount = loc.count;
   }
 }
 
-// Gradient for uncommon trop (linear purple gradient)
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
   { t: 1, color: [0.9, 0.4, 0.95] }, // Bright purple
 ];
 
-// Gradient for common trop (purple spectrum with log scale)
 const COMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 0, color: [0.2, 0.1, 0.3] }, // Dark purple
   { t: 0.33, color: [0.4, 0.2, 0.5] }, // Purple
@@ -57,11 +50,10 @@ const COMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 1.0, color: [0.95, 0.6, 0.9] }, // Pink
 ];
 
-// Get verse color based on selected trop and rarity tier
 function getTropVerseColor(verse: TanakhIdentity): Color | null {
   if (!selectedTrop) return null;
 
-  // Rebuild cache if it was cleared (e.g., after destroy)
+  // destroy() clears the cache; rebuild it lazily rather than on re-init.
   if (cachedVerseLookup.size === 0) {
     updateCache();
   }
@@ -70,16 +62,15 @@ function getTropVerseColor(verse: TanakhIdentity): Color | null {
   const count = cachedVerseLookup.get(key) || 0;
 
   if (cachedTier === 'rare') {
-    // Binary highlight: bright gold for matches, dim gray for non-matches
+    // Binary: gold for a match, dim gray otherwise.
     return count > 0 ? RARE_MATCH_COLOR : HIGHLIGHT_CONSTANTS.RARE_NO_MATCH_COLOR;
   } else if (cachedTier === 'uncommon') {
-    // Linear gradient based on count
     if (count === 0) {
       return [0.25, 0.25, 0.28];
     }
     return scaleToGradient(count, cachedMaxCount, UNCOMMON_TROP_GRADIENT);
   } else {
-    // Common: logarithmic heatmap
+    // Common trop marks span a wide count range, so scale logarithmically.
     if (count === 0) {
       return [0.25, 0.23, 0.28];
     }
@@ -119,7 +110,6 @@ function createTropChart(container: HTMLElement): void {
       if (!selectedButton) {
         info.textContent = '';
       } else {
-        // Restore selected info
         const selEntry = tropByFrequency.find((e) => e.unicode === selectedButton?.dataset.unicode);
         if (selEntry) {
           const selTier = getRarityTier(selEntry.totalCount);
@@ -131,7 +121,6 @@ function createTropChart(container: HTMLElement): void {
     });
 
     button.addEventListener('click', () => {
-      // Toggle selection
       if (selectedButton === button) {
         button.classList.remove('selected');
         selectedButton = null;
@@ -169,14 +158,10 @@ export const tropOverlay: Overlay = {
     'they punctuate. Pick a mark to see which verses carry it, and how often.',
 
   destroy() {
-    // Clear callback (to prevent stale references)
     updateCallback = null;
-    // Clear cached values (will be recalculated when overlay is re-rendered)
     cachedVerseLookup.clear();
     cachedMaxCount = 1;
     cachedTier = 'common';
-    // NOTE: We intentionally DO NOT reset selectedTrop here. It should persist
-    // across overlay switches so the user can return to their selected trop mark.
   },
 
   onUpdate(callback) {
@@ -229,7 +214,6 @@ export const tropOverlay: Overlay = {
 
   getUrlParams(): Record<string, string> {
     if (!selectedTrop) return {};
-    // Use lowercase name with hyphens for URL-friendly format
     const slug = selectedTrop.name.toLowerCase().replace(/\s+/g, '-');
     return { trop: slug };
   },
@@ -237,7 +221,6 @@ export const tropOverlay: Overlay = {
   applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
     const slug = params.trop;
     if (slug) {
-      // Match against slugified name
       const entry = tropByFrequency.find((t) => t.name.toLowerCase().replace(/\s+/g, '-') === slug);
       if (entry) {
         selectedTrop = entry;
@@ -248,7 +231,6 @@ export const tropOverlay: Overlay = {
   },
 
   highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment | string {
-    // Only highlight Hebrew text when trop is selected
     if (language !== 'he' || !selectedTrop) {
       return text;
     }
@@ -264,12 +246,13 @@ export function configure(config: { verseTexts: VerseTexts }): void {
   updateCache();
 }
 
-// Get selected trop for sidebar highlighting
 export function getSelectedTrop(): TropIndexEntry | null {
   return selectedTrop;
 }
 
-// Highlight trop mark in Hebrew text for sidebar display
+// Wraps a trop mark together with its base letter and any other combining
+// marks between them (Hebrew points/accents, U+0591-U+05C7), so the <mark>
+// highlights a whole grapheme instead of just the trop character.
 export function highlightTropInText(hebrewText: string, tropUnicode: string): string {
   const result: string[] = [];
   let i = 0;
@@ -277,21 +260,15 @@ export function highlightTropInText(hebrewText: string, tropUnicode: string): st
   while (i < hebrewText.length) {
     const char = hebrewText[i];
 
-    // Check if this is the target trop mark
     if (char === tropUnicode) {
-      // Find the base letter (previous non-combining character)
-      // Wrap from the last base letter through this trop
       if (result.length > 0) {
-        // Pop characters back to the base letter
         const highlighted: string[] = [];
         while (result.length > 0) {
           const last = result[result.length - 1];
           const lastCode = last.codePointAt(0) || 0;
-          // Keep popping combining characters
           if (lastCode >= 0x0591 && lastCode <= 0x05c7) {
             highlighted.unshift(result.pop()!);
           } else {
-            // This is the base letter
             highlighted.unshift(result.pop()!);
             break;
           }

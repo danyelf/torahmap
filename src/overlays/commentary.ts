@@ -1,4 +1,3 @@
-// src/overlays/commentary.ts
 import '../styles/overlays/commentary.css';
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout, CommentaryData } from '../types.ts';
@@ -66,12 +65,10 @@ export const commentaryOverlay: Overlay = {
   },
 
   destroy() {
-    // Clear cached max values (will be recalculated when overlay is re-rendered)
     cachedMaxValues = {};
-    // Clear callback (to prevent stale references)
     updateCallback = null;
-    // NOTE: We intentionally DO NOT reset currentCategory here. It should persist
-    // across overlay switches so the user can return to their selected category.
+    // currentCategory intentionally persists across overlay switches, so the
+    // user returns to their selected category.
   },
 
   onUpdate(callback) {

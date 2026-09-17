@@ -1,10 +1,8 @@
-// src/overlays/text-dating.ts
 import '../styles/overlays/text-dating.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { fetchData } from '../constants/app.ts';
 
-// Data structure types
 interface TextDatingData {
   notes: string[];
   books: {
@@ -12,7 +10,6 @@ interface TextDatingData {
   };
 }
 
-// Era definitions with date ranges (BCE, stored as negative)
 interface EraInfo {
   name: string;
   dateRange: [number, number]; // [start BCE, end BCE]
@@ -54,9 +51,6 @@ const ERAS: EraInfo[] = [
 
 let data: TextDatingData = { notes: [], books: {} };
 
-/**
- * Determine which era a date falls into
- */
 function getEra(dateBCE: number): EraInfo | null {
   for (const era of ERAS) {
     if (dateBCE >= era.dateRange[1] && dateBCE <= era.dateRange[0]) {
@@ -66,20 +60,14 @@ function getEra(dateBCE: number): EraInfo | null {
   return null;
 }
 
-/**
- * Calculate shaded color based on date within era
- * Older texts within an era are lighter, newer texts are darker
- */
 function getVerseColorFromDate(dateBCE: number): Color | null {
   const era = getEra(dateBCE);
   if (!era) return null;
 
   const [rangeStart, rangeEnd] = era.dateRange;
 
-  // Calculate position within era (0 = start, 1 = end)
+  // position: 0 at the era's start date, 1 at its end date
   const position = (rangeStart - dateBCE) / (rangeStart - rangeEnd);
-
-  // Darken toward end of era (0.7 at start, 1.0 at end)
   const shadeFactor = 0.7 + position * 0.3;
 
   return [
@@ -89,9 +77,6 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
   ];
 }
 
-/**
- * Get verse dating data
- */
 function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number } | null {
   const bookData = data.books?.[verse.book];
   if (!bookData) return null;
@@ -137,7 +122,6 @@ export const textDatingOverlay: Overlay = {
     const verseData = getVerseData(verse);
     if (!verseData) return null;
 
-    // Use midpoint of date range for color calculation
     const [startBCE, endBCE] = verseData.d;
     const midpointBCE = Math.abs((startBCE + endBCE) / 2);
 
@@ -184,7 +168,6 @@ export const textDatingOverlay: Overlay = {
   },
 
   renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | string | null {
-    // Only show detailed info when verse is pinned
     if (!isPinned) return null;
 
     const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
@@ -208,9 +191,6 @@ export const textDatingOverlay: Overlay = {
   },
 };
 
-/**
- * Get full dating information for a verse (used by sidebar)
- */
 export interface VerseDatingInfo {
   era: string;
   eraDateRange: [number, number];
@@ -218,6 +198,7 @@ export interface VerseDatingInfo {
   note: string;
 }
 
+// Used by the sidebar.
 export function getVerseDatingInfo(
   book: string,
   chapter: number,
