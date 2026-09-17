@@ -8,6 +8,7 @@ import { tanakhKey } from './types.ts';
 import {
   fetchData,
   MIN_SEARCH_TERM_LENGTH,
+  TERM_SEPARATORS,
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './constants/app.ts';
@@ -181,13 +182,10 @@ export function normalizeHebrewForSearch(text: string): string {
   return result;
 }
 
-/**
- * Parse comma-separated search terms, filtering empty ones
- * Supports multiple comma variants: English (U+002C), Arabic (U+060C), Hebrew Gershayim (U+05F4)
- */
+/** The terms a query string names, dropping ones too short to search on. */
 export function parseSearchTerms(query: string): string[] {
   return query
-    .split(/[,،‎\u05F4]/) // Split on English comma, Arabic comma, or Hebrew Gershayim
+    .split(TERM_SEPARATORS)
     .map((t) => t.trim())
     .filter((t) => t.length >= MIN_SEARCH_TERM_LENGTH);
 }

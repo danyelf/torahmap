@@ -8,7 +8,7 @@
 // these tests are mostly about what survives an edit.
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { loadLexiconData } from '../../search.ts';
+import { loadLexiconData, parseSearchTerms } from '../../search.ts';
 import { meaningsInVerse } from '../../search/dictionary.ts';
 import {
   addTerm,
@@ -399,5 +399,35 @@ describe('the mode in the URL', () => {
     for (const word of ['עלה', 'אור', 'דבר', 'מלך', 'ארץ']) terms = addTerm(terms, word);
     for (const term of terms) terms = setMode(terms, term.id, 'substring');
     expect(encodeModes(terms).length).toBeLessThanOrEqual(50);
+  });
+});
+
+// `mode` and `m` are positional across the terms in `q`, so a term holding a
+// character that `q` is later split on comes back as two terms and every later
+// term's settings land one word early. Typing and parsing have to agree on
+// what a separator is.
+describe('typing and parsing agree on what separates two terms', () => {
+  const separators = [',', '،', '‎', '״'];
+
+  it.each(separators)('splits on %j rather than keeping it in a term', (separator) => {
+    let terms = addTerm([], 'x');
+    terms = setTermText(terms, terms[0].id, `אבגד${separator}הוזח`);
+
+    expect(terms.map((t) => t.text)).toEqual(['אבגד', 'הוזח']);
+  });
+
+  it.each(separators)('round-trips a query holding %j without shifting modes', (separator) => {
+    let terms = addTerm([], 'x');
+    terms = setTermText(terms, terms[0].id, `אבגד${separator}הוזח`);
+    terms = setMode(terms, terms[1].id, 'word');
+
+    const query = terms.map((t) => t.text).join(', ');
+    const restored = applyModes(
+      parseSearchTerms(query).reduce(addTerm, [] as SearchTerm[]),
+      encodeModes(terms),
+    );
+
+    expect(restored.map((t) => t.text)).toEqual(terms.map((t) => t.text));
+    expect(restored.map(effectiveMode)).toEqual(terms.map(effectiveMode));
   });
 });

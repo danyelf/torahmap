@@ -9,6 +9,7 @@
 
 import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
 import { isHebrewQuery } from '../search.ts';
+import { TERM_SEPARATORS } from '../constants/app.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 
 /**
@@ -84,20 +85,18 @@ export function removeTerm(terms: SearchTerm[], id: string): SearchTerm[] {
  * Change a term's text, which re-resolves its meanings and checks all of them
  * again. Other terms are untouched — that is the whole point of the identity.
  *
- * A comma still means "another word". The comma box is gone, but readers type
- * commas out of habit and old URLs are full of them, so a comma splits the text
- * into terms here rather than being taken literally. That also keeps an
- * invariant the search depends on: no term's text contains a comma. Text-
- * matching modes join the terms into one query and re-split it, so a comma
- * hiding inside a term would hand back term indices that no term row owns.
+ * A separator still means "another word": the comma box is gone, but readers
+ * type commas out of habit and old URLs are full of them. Splitting on the same
+ * set `parseSearchTerms` reads keeps the invariant the URL depends on — no
+ * term's text holds a character that would later split it in two.
  */
 export function setTermText(terms: SearchTerm[], id: string, text: string): SearchTerm[] {
   // `text` is kept exactly as the box holds it, trailing space and all, so the
   // input element and the term never disagree about what is written. Trimming
   // happens where it matters: resolving meanings, and building the query.
-  const parts = text.includes(',')
+  const parts = TERM_SEPARATORS.test(text)
     ? text
-        .split(',')
+        .split(TERM_SEPARATORS)
         .map((part) => part.trim())
         .filter((part) => part.length > 0)
     : [text];
