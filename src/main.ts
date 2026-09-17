@@ -23,7 +23,14 @@ import {
 } from './urlState.ts';
 import { debounce } from './utils/debounce.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
-import { createCamera, clampZoom, panForZoom } from './camera.ts';
+import {
+  createCamera,
+  clampZoom,
+  panForZoom,
+  panToCenter,
+  viewCenteredOn,
+  animateCameraTo,
+} from './camera.ts';
 import {
   createMouseState,
   startDrag,
@@ -241,10 +248,44 @@ async function main(): Promise<void> {
 
   // Helper: Center camera on a verse
   function centerOnVerse(verse: TanakhLayout): void {
-    const cssWidth = window.innerWidth;
-    const cssHeight = window.innerHeight;
-    camera.x = cssWidth / 2 / camera.zoom - verse.x - verse.size / 2;
-    camera.y = cssHeight / 2 / camera.zoom - verse.y - verse.size / 2;
+    Object.assign(camera, panToCenter(verse, camera.zoom, window.innerWidth, window.innerHeight));
+  }
+
+  // A verse is one square six pixels across, so centring it while scaled out
+  // moves the map and shows the reader nothing. Close enough to pick it out.
+  const RESULT_CLICK_ZOOM = 2.5;
+
+  let stopCameraGlide: (() => void) | null = null;
+
+  /** Stop a glide in its tracks, for when the reader takes the map back. */
+  function cancelCameraGlide(): void {
+    stopCameraGlide?.();
+    stopCameraGlide = null;
+  }
+
+  /**
+   * Travel to a verse rather than cutting to it, so the reader keeps their
+   * bearings and can see where on the map the hit lives.
+   *
+   * Zooming in only when already further out: a reader who has zoomed past 2.5
+   * has said what they want to see, and being pulled back would undo it.
+   */
+  function glideToVerse(verse: TanakhLayout): void {
+    cancelCameraGlide();
+
+    const target = viewCenteredOn(
+      verse,
+      camera.zoom,
+      RESULT_CLICK_ZOOM,
+      window.innerWidth,
+      window.innerHeight,
+    );
+
+    stopCameraGlide = animateCameraTo(camera, target, () => {
+      render();
+      updateLabelPositions(window.bookLabels!, { x: camera.x, y: camera.y }, camera.zoom);
+      debouncedSaveUrlState();
+    });
   }
 
   // Helper: Pin a verse and update all dependent state
@@ -282,6 +323,7 @@ async function main(): Promise<void> {
     'wheel',
     (e: WheelEvent) => {
       e.preventDefault();
+      cancelCameraGlide();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       const newZoom = clampZoom(camera.zoom * zoomFactor);
 
@@ -396,6 +438,8 @@ async function main(): Promise<void> {
 
   // Pointer events for pan/drag (works for both mouse and touch)
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+    // A hand on the map outranks a glide that is still running.
+    cancelCameraGlide();
     startDrag(mouseState, e.clientX, e.clientY);
     canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
@@ -742,8 +786,10 @@ async function main(): Promise<void> {
   configureSearch({
     verses,
     callbacks: {
+      // Most hits are off screen, so travel to the verse as well as pinning it.
       onVerseClick: (verse: TanakhLayout) => {
         pinVerse(verse);
+        glideToVerse(verse);
       },
     },
   });

@@ -1,6 +1,7 @@
 // Camera module - handles zoom and pan state
 
 import type { Bounds } from './types';
+import { lerpCamera, easingFunctions } from './scrollytelling/interpolation.ts';
 
 export interface Camera {
   x: number; // pan x position
@@ -74,4 +75,75 @@ export function panForZoom(
     x: pan.x + mouseX * (1 / newZoom - 1 / oldZoom),
     y: pan.y + mouseY * (1 / newZoom - 1 / oldZoom),
   };
+}
+
+/**
+ * Where the camera has to sit for an item to be in the middle of the window.
+ *
+ * Takes the zoom rather than reading it, because moving and zooming at once
+ * has to aim at where the item will be, not where it is now.
+ */
+export function panToCenter(
+  item: { x: number; y: number; size: number },
+  zoom: number,
+  cssWidth: number,
+  cssHeight: number,
+): { x: number; y: number } {
+  return {
+    x: cssWidth / 2 / zoom - item.x - item.size / 2,
+    y: cssHeight / 2 / zoom - item.y - item.size / 2,
+  };
+}
+
+/**
+ * The camera that brings an item into view: centred, and zoomed in if the map
+ * is currently scaled out past `minZoom`.
+ *
+ * A reader already closer than `minZoom` has said what they want to see, so
+ * their zoom is left alone rather than pulled back.
+ */
+export function viewCenteredOn(
+  item: { x: number; y: number; size: number },
+  currentZoom: number,
+  minZoom: number,
+  cssWidth: number,
+  cssHeight: number,
+): Camera {
+  const zoom = clampZoom(Math.max(currentZoom, minZoom));
+  return { ...panToCenter(item, zoom, cssWidth, cssHeight), zoom };
+}
+
+/** How long a camera glide takes. Long enough to read as travel over the map. */
+export const CAMERA_GLIDE_MS = 500;
+
+/**
+ * Glide the camera to a target, the way the story moves between its stops.
+ *
+ * Same interpolation and same easing as scrollytelling; only the thing driving
+ * the progress differs. A story stop is driven by scroll position, and there is
+ * no scroll behind a click, so this drives it from the clock instead.
+ *
+ * The camera is edited in place, because that is the object the render loop
+ * reads. Returns a function that stops the glide, which the caller owes the
+ * reader the moment they touch the map themselves.
+ */
+export function animateCameraTo(
+  camera: Camera,
+  target: Camera,
+  onFrame: () => void,
+  durationMs: number = CAMERA_GLIDE_MS,
+): () => void {
+  const from = { ...camera };
+  const started = performance.now();
+  let request = 0;
+
+  const step = (now: number): void => {
+    const progress = durationMs > 0 ? Math.min(1, (now - started) / durationMs) : 1;
+    Object.assign(camera, lerpCamera(from, target, easingFunctions['ease-in-out'](progress)));
+    onFrame();
+    if (progress < 1) request = requestAnimationFrame(step);
+  };
+
+  request = requestAnimationFrame(step);
+  return () => cancelAnimationFrame(request);
 }
