@@ -1449,6 +1449,17 @@ describe('Search Overlay', () => {
       expect(html).toContain('<mark');
       expect(html).toContain('אֱלֹהִים');
     });
+
+    it('marks the last word of a verse, which the sof pasuq used to hide', () => {
+      searchOverlay.applyUrlParams({ q: 'הארץ', mode: 'word' } as never);
+
+      const html = fragmentToHtml(
+        highlightSearchTerms('אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃', 'he') as DocumentFragment,
+      );
+
+      expect(html).toContain('<mark');
+      expect(html).toContain('הָאָֽרֶץ');
+    });
   });
 
   describe('Color Validation', () => {

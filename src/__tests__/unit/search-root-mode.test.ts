@@ -13,8 +13,8 @@ import {
   getLexemeForm,
   loadLexiconData,
   computeSnippetForMatch,
-  stripNikkud,
 } from '../../search';
+import { stripNikkud } from '../../hebrew';
 import type { VerseTexts } from '../../verseTexts';
 
 import * as fs from 'fs';

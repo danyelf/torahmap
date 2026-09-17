@@ -12,6 +12,12 @@ import {
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './constants/app.ts';
+import {
+  countNikkudInRange,
+  mapStrippedToOriginal,
+  normalizeHebrewForSearch,
+  splitIntoWords,
+} from './hebrew.ts';
 
 export interface TermMatch {
   termIndex: number;
@@ -32,7 +38,7 @@ interface IndexEntry {
   book: string;
   chapter: number;
   verse: number;
-  hebrewText: string; // nikkud-stripped
+  hebrewText: string; // folded for matching: no points, finals and separators normalized
   hebrewOriginal: string; // original for display
   englishText: string; // lowercased
   englishOriginal: string; // original for display
@@ -41,35 +47,6 @@ interface IndexEntry {
 // Unicode range for Hebrew characters
 const HEBREW_RANGE_START = 0x0590;
 const HEBREW_RANGE_END = 0x05ff;
-
-// Nikkud (vowel marks) range
-const NIKKUD_START = 0x0591;
-const NIKKUD_END = 0x05c7;
-
-// U+034F COMBINING GRAPHEME JOINER. Sefaria writes ירושל͏ם with one inside the
-// word, where it renders as nothing and matches nothing; without this, every
-// lookup of Jerusalem misses.
-const GRAPHEME_JOINER = 0x034f;
-
-// Shin and sin written as one character each, from the Hebrew presentation
-// forms. BHSA uses these where Sefaria writes the plain letter and a dot, and
-// the dot is stripped as a point, so the two sources would otherwise disagree
-// about how to spell the same word. Nothing in the text we display uses them;
-// the generator folds them for the same reason, and both fold both so that
-// neither has to be read to predict the other.
-const PRESENTATION_FORM_MAP: Record<string, string> = {
-  'שׁ': 'ש', // shin with shin dot (U+FB2A) → shin (U+05E9)
-  'שׂ': 'ש', // shin with sin dot (U+FB2B) → shin (U+05E9)
-};
-
-// Hebrew final forms (sofit) - map final form to regular form
-const FINAL_FORM_MAP: Record<string, string> = {
-  'ך': 'כ', // kaf sofit (U+05DA) → kaf (U+05DB)
-  'ם': 'מ', // mem sofit (U+05DD) → mem (U+05DE)
-  'ן': 'נ', // nun sofit (U+05DF) → nun (U+05E0)
-  'ף': 'פ', // pe sofit (U+05E3) → pe (U+05E4)
-  'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
-};
 
 let searchIndex: IndexEntry[] = [];
 // Fast lookup map: verse key -> index entry (avoids O(n) find() calls)
@@ -116,71 +93,6 @@ let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
 // Consonantal dictionary spelling -> lexemes, for readers who type a bare root
 // that never appears on its own in the text.
 let spellingToLexemes: Map<string, LexemeId[]> | null = null;
-
-/**
- * Strip Hebrew vowel marks (nikkud) from text (preserves final forms)
- */
-export function stripNikkud(text: string): string {
-  let result = '';
-  for (const char of text) {
-    const code = char.charCodeAt(0);
-    // Skip nikkud marks but keep Hebrew letters and other characters
-    if (
-      code < NIKKUD_START ||
-      code > NIKKUD_END ||
-      code === 0x05be ||
-      code === 0x05c0 ||
-      code === 0x05c3 ||
-      code === 0x05c6
-    ) {
-      result += char;
-    }
-  }
-  return result;
-}
-
-/**
- * Normalize Hebrew text for search: strip nikkud AND normalize final forms
- * Final forms (sofit) are converted to their regular equivalents:
- * ך → כ, ם → מ, ן → נ, ף → פ, ץ → צ
- *
- * This function is used for search matching, where we want both forms to match.
- * Use stripNikkud() if you want to preserve final forms (e.g., for display).
- */
-export function normalizeHebrewForSearch(text: string): string {
-  let result = '';
-  for (const raw of text) {
-    const char = PRESENTATION_FORM_MAP[raw] ?? raw;
-    const code = char.charCodeAt(0);
-    if (code === GRAPHEME_JOINER) continue;
-    // Skip nikkud marks but keep Hebrew letters and other characters
-    if (
-      code < NIKKUD_START ||
-      code > NIKKUD_END ||
-      code === 0x05be ||
-      code === 0x05c0 ||
-      code === 0x05c3 ||
-      code === 0x05c6
-    ) {
-      // Normalize maqaf (U+05BE ־), hyphens, and other non-letter Hebrew
-      // punctuation (paseq, sof pasuq, nun hafukha) to spaces so that
-      // keyboard space matches any word separator (e.g. "את יצחק" matches "את־יצחק")
-      if (
-        code === 0x05be ||
-        code === 0x05c0 ||
-        code === 0x05c3 ||
-        code === 0x05c6 ||
-        char === '-'
-      ) {
-        result += ' ';
-      } else {
-        // Normalize final forms to regular forms
-        result += FINAL_FORM_MAP[char] || char;
-      }
-    }
-  }
-  return result;
-}
 
 /** The terms a query string names, dropping ones too short to search on. */
 export function parseSearchTerms(query: string): string[] {
@@ -473,64 +385,41 @@ export function searchByLexemes(lexemes: LexemeId[]): Set<string> {
   return matchingVerses;
 }
 
-/**
- * Test if a character is a word separator (whitespace, maqaf, or other
- * Hebrew punctuation that normalizeHebrewForSearch converts to space)
- */
-function isWordSeparator(char: string): boolean {
-  if (/\s/.test(char)) return true;
-  const code = char.charCodeAt(0);
-  return code === 0x05be || code === 0x05c0 || code === 0x05c3 || code === 0x05c6 || char === '-';
-}
-
-/**
- * Get the start and end positions of a word at a given index in the text
- * Words are separated by whitespace, maqaf (U+05BE), and other Hebrew punctuation
- * Exported for testing
- */
+/** Where the word at `wordIndex` starts and ends, or null past the last one. */
 export function getWordBoundaries(
   text: string,
   wordIndex: number,
 ): { start: number; end: number } | null {
-  // Bounds check: wordIndex must be non-negative
   if (wordIndex < 0) return null;
-
-  let currentWord = 0;
-  let start = 0;
-
-  // Skip leading separators
-  while (start < text.length && isWordSeparator(text[start])) {
-    start++;
-  }
-
-  // Find the word at the given index
-  while (currentWord < wordIndex && start < text.length) {
-    // Skip current word
-    while (start < text.length && !isWordSeparator(text[start])) {
-      start++;
-    }
-    // Skip separators to next word
-    while (start < text.length && isWordSeparator(text[start])) {
-      start++;
-    }
-    currentWord++;
-  }
-
-  if (start >= text.length) return null;
-
-  // Find end of this word
-  let end = start;
-  while (end < text.length && !isWordSeparator(text[end])) {
-    end++;
-  }
-
-  return { start, end };
+  const word = splitIntoWords(text)[wordIndex];
+  return word ? { start: word.start, end: word.end } : null;
 }
 
 /**
  * Search Hebrew text for whole-word matches only
  * Returns verse indices that match complete words
  */
+/** The words of an indexed verse, in the same order `getWordBoundaries` walks. */
+function indexedWords(entry: IndexEntry): string[] {
+  return splitIntoWords(entry.hebrewText).map((w) => w.word);
+}
+
+/** A snippet around the nth word of a verse, as it is written with its points. */
+function snippetAtWord(
+  entry: IndexEntry,
+  wordIndex: number,
+): { snippet: string; matchStart: number; matchEnd: number } | null {
+  const bounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
+  if (!bounds) return null;
+
+  const snippet = createSnippetAtPosition(
+    entry.hebrewOriginal,
+    bounds.start,
+    bounds.end - bounds.start,
+  );
+  return { snippet: snippet.text, matchStart: snippet.matchStart, matchEnd: snippet.matchEnd };
+}
+
 export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
   const resultMap = new Map<string, SearchResult>();
 
@@ -539,7 +428,7 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
     const normalizedTerm = normalizeHebrewForSearch(term);
 
     for (const entry of searchIndex) {
-      const words = entry.hebrewText.split(/\s+/);
+      const words = indexedWords(entry);
 
       // Find word index that matches exactly
       const wordIndex = words.findIndex((word) => word === normalizedTerm);
@@ -613,7 +502,7 @@ export function computeSnippetForMatch(
     // separate words, so its word numbering does not line up with the
     // whitespace tokens of the displayed text.
     const wanted = new Set(lexemes);
-    const words = entry.hebrewText.split(/\s+/);
+    const words = indexedWords(entry);
     const normalizedSearch = normalizeHebrewForSearch(searchTerm);
 
     // Prefer the word the reader actually typed. A verse can hold several
@@ -633,40 +522,19 @@ export function computeSnippetForMatch(
     }
 
     if (wordIndex >= 0) {
-      const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
-      if (wordBounds) {
-        const wordLen = wordBounds.end - wordBounds.start;
-        const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
-        return {
-          snippet: snippet.text,
-          matchStart: snippet.matchStart,
-          matchEnd: snippet.matchEnd,
-        };
-      }
+      const found = snippetAtWord(entry, wordIndex);
+      if (found) return found;
     }
   }
 
-  // Fallback to whole-word matching (when the term resolved to no lexeme, or
-  // no word in the verse matched one)
-  const normalizedTerm = normalizeHebrewForSearch(searchTerm);
-  const words = entry.hebrewText.split(/\s+/);
-  const wordIndex = words.findIndex((word) => word === normalizedTerm);
-
-  if (wordIndex !== -1) {
-    // Found whole-word match - get position in original text
-    const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
-    if (wordBounds) {
-      const wordLen = wordBounds.end - wordBounds.start;
-      const snippet = createSnippetAtPosition(entry.hebrewOriginal, wordBounds.start, wordLen);
-      return {
-        snippet: snippet.text,
-        matchStart: snippet.matchStart,
-        matchEnd: snippet.matchEnd,
-      };
-    }
+  // The term resolved to no lexeme. Fall back to the spelling as typed.
+  const spelled = indexedWords(entry).indexOf(normalizeHebrewForSearch(searchTerm));
+  if (spelled >= 0) {
+    const found = snippetAtWord(entry, spelled);
+    if (found) return found;
   }
 
-  // Last resort fallback: no highlighting
+  // Nothing to point at: show the opening of the verse unmarked.
   return {
     snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
     matchStart: 0,
@@ -896,64 +764,8 @@ function createSnippetAtPosition(
 }
 
 /**
- * Map a position in nikkud-stripped text to the corresponding position in original text
- */
-function mapStrippedToOriginal(original: string, strippedPos: number): number {
-  // Bounds check: strippedPos must be non-negative
-  if (strippedPos < 0) return 0;
-
-  let normalizedPos = 0;
-  for (let i = 0; i < original.length; i++) {
-    if (normalizedPos === strippedPos) {
-      return i;
-    }
-    const code = original.charCodeAt(i);
-    const isNikkud =
-      code >= NIKKUD_START &&
-      code <= NIKKUD_END &&
-      code !== 0x05be &&
-      code !== 0x05c0 &&
-      code !== 0x05c3 &&
-      code !== 0x05c6;
-    if (!isNikkud) {
-      normalizedPos++;
-    }
-  }
-  return original.length;
-}
-
-/**
- * Count nikkud characters in a range of the original text
- */
-function countNikkudInRange(text: string, start: number, strippedLen: number): number {
-  // Bounds check: start must be within valid range
-  if (start < 0 || start >= text.length) return 0;
-  // Bounds check: strippedLen must be non-negative
-  if (strippedLen < 0) return 0;
-
-  let nikkudCount = 0;
-  let nonNikkudCount = 0;
-  for (let i = start; i < text.length && nonNikkudCount < strippedLen; i++) {
-    const code = text.charCodeAt(i);
-    const isNikkud =
-      code >= NIKKUD_START &&
-      code <= NIKKUD_END &&
-      code !== 0x05be &&
-      code !== 0x05c0 &&
-      code !== 0x05c3 &&
-      code !== 0x05c6;
-    if (isNikkud) {
-      nikkudCount++;
-    } else {
-      nonNikkudCount++;
-    }
-  }
-  return nikkudCount;
-}
-
-/**
- * Create a snippet around the match position
- * For Hebrew, matchIdx/matchLen refer to positions in the nikkud-stripped text
+ * A snippet around a match whose position is given in nikkud-stripped text.
+ * The positions move because the points sit between the letters.
  */
 function createSnippet(
   text: string,
@@ -961,47 +773,11 @@ function createSnippet(
   matchLen: number,
   isHebrew: boolean = false,
 ): SnippetResult {
-  const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
-  const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
+  if (!isHebrew) return createSnippetAtPosition(text, matchIdx, matchLen);
 
-  // For Hebrew, map stripped positions to original positions
-  let origMatchStart = matchIdx;
-  let origMatchEnd = matchIdx + matchLen;
-
-  if (isHebrew) {
-    origMatchStart = mapStrippedToOriginal(text, matchIdx);
-    const nikkudInMatch = countNikkudInRange(text, origMatchStart, matchLen);
-    // Bounds validation: ensure origMatchEnd doesn't exceed text length
-    origMatchEnd = Math.min(origMatchStart + matchLen + nikkudInMatch, text.length);
-  }
-
-  let start = Math.max(0, origMatchStart - contextBefore);
-  let end = Math.min(text.length, start + maxLen);
-
-  // Adjust start if we're near the end
-  if (end === text.length && end - start < maxLen) {
-    start = Math.max(0, end - maxLen);
-  }
-
-  let snippet = text.slice(start, end);
-  const adjustedMatchStart = origMatchStart - start;
-  const adjustedMatchEnd = origMatchEnd - start;
-
-  // Add ellipsis if truncated
-  let prefixLen = 0;
-  if (start > 0) {
-    snippet = '...' + snippet;
-    prefixLen = 3;
-  }
-  if (end < text.length) {
-    snippet = snippet + '...';
-  }
-
-  return {
-    text: snippet,
-    matchStart: adjustedMatchStart + prefixLen,
-    matchEnd: Math.min(adjustedMatchEnd + prefixLen, snippet.length),
-  };
+  const origStart = mapStrippedToOriginal(text, matchIdx);
+  const nikkudInMatch = countNikkudInRange(text, origStart, matchLen);
+  return createSnippetAtPosition(text, origStart, matchLen + nikkudInMatch);
 }
 
 /**

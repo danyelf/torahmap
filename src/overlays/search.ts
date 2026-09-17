@@ -6,13 +6,13 @@ import { tanakhKey } from '../types.ts';
 import {
   getMatchingVerseTerms,
   parseSearchTerms,
-  stripNikkud,
   isHebrewQuery,
   computeSnippetForMatch,
   resultsForVerseSets,
   verseSetsForTerms,
   type SearchResult,
 } from '../search.ts';
+import { mapStrippedToOriginal, splitIntoWords, stripNikkud } from '../hebrew.ts';
 import { versesFor, formMatches } from '../search/dictionary.ts';
 import {
   addTerm,
@@ -985,88 +985,6 @@ interface Match {
 }
 
 /**
- * Check if a character is Hebrew nikkud (diacritical mark)
- */
-function isNikkudChar(code: number): boolean {
-  return (
-    code >= 0x0591 &&
-    code <= 0x05c7 &&
-    code !== 0x05be &&
-    code !== 0x05c0 &&
-    code !== 0x05c3 &&
-    code !== 0x05c6
-  );
-}
-
-/**
- * Map position in normalized (no nikkud) text back to original text position
- * Accounts for nikkud characters that were stripped during normalization
- */
-function mapNormalizedToOriginalPosition(
-  text: string,
-  normalizedPos: number,
-  startFrom: number = 0,
-): number {
-  let nikkudCount = 0;
-  let currentNormalizedPos = 0;
-
-  for (let i = startFrom; i < text.length && currentNormalizedPos < normalizedPos; i++) {
-    const code = text.charCodeAt(i);
-    if (isNikkudChar(code)) {
-      nikkudCount++;
-    } else {
-      currentNormalizedPos++;
-    }
-  }
-
-  return normalizedPos + nikkudCount;
-}
-
-/**
- * Split text into words, treating both whitespace and maqaf (־) as separators
- * Returns array of {word, start, end} with positions in the normalized text
- */
-function splitIntoWords(
-  normalizedText: string,
-): Array<{ word: string; start: number; end: number }> {
-  const words: Array<{ word: string; start: number; end: number }> = [];
-  let start = 0;
-
-  while (start < normalizedText.length) {
-    // Skip separators (whitespace and maqaf U+05BE)
-    while (
-      start < normalizedText.length &&
-      (/\s/.test(normalizedText[start]) || normalizedText.charCodeAt(start) === 0x05be)
-    ) {
-      start++;
-    }
-
-    if (start >= normalizedText.length) break;
-
-    // Find end of word (next separator or end of text)
-    let end = start;
-    while (
-      end < normalizedText.length &&
-      !(/\s/.test(normalizedText[end]) || normalizedText.charCodeAt(end) === 0x05be)
-    ) {
-      end++;
-    }
-
-    if (end > start) {
-      words.push({
-        word: normalizedText.slice(start, end),
-        start,
-        end,
-      });
-    }
-
-    start = end;
-  }
-
-  return words;
-}
-
-/**
  * Find all matches for all search terms in the given text
  * Handles Hebrew nikkud stripping and position mapping
  * Respects Hebrew search mode (substring/word/root) and English whole-word setting
@@ -1103,8 +1021,8 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
         const hit = keys.length > 0 ? formMatches(keys, word) : word === normalizedTerm;
         if (hit) {
           matches.push({
-            start: mapNormalizedToOriginalPosition(text, start),
-            end: mapNormalizedToOriginalPosition(text, start + word.length),
+            start: mapStrippedToOriginal(text, start),
+            end: mapStrippedToOriginal(text, start + word.length),
             termIndex,
           });
         }
@@ -1116,8 +1034,8 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
       for (const { word, start } of wordEntries) {
         if (word === normalizedTerm) {
           // Found a match - map to original text position
-          const origStart = mapNormalizedToOriginalPosition(text, start);
-          const origEnd = mapNormalizedToOriginalPosition(text, start + word.length);
+          const origStart = mapStrippedToOriginal(text, start);
+          const origEnd = mapStrippedToOriginal(text, start + word.length);
 
           matches.push({ start: origStart, end: origEnd, termIndex });
         }
@@ -1134,8 +1052,8 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
         let origEnd = idx + normalizedTerm.length;
 
         if (isHebrew) {
-          origStart = mapNormalizedToOriginalPosition(text, idx);
-          origEnd = mapNormalizedToOriginalPosition(text, idx + normalizedTerm.length);
+          origStart = mapStrippedToOriginal(text, idx);
+          origEnd = mapStrippedToOriginal(text, idx + normalizedTerm.length);
         }
 
         matches.push({ start: origStart, end: origEnd, termIndex });
