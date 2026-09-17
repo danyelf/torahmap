@@ -6,7 +6,7 @@
 // this directly). A slow search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { search, buildSearchIndex } from '../../search';
-import { searchInRootMode } from '../helpers/rootSearch';
+import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
 describe('Hebrew Search Performance Diagnostics', () => {
@@ -26,13 +26,13 @@ describe('Hebrew Search Performance Diagnostics', () => {
     return { result, timeMs };
   }
 
-  describe('Performance: Root mode (default for Hebrew)', () => {
-    it('measures root mode search for single common term', () => {
+  describe('Performance: Meanings mode (default for Hebrew)', () => {
+    it('measures meanings mode search for single common term', () => {
       const term = 'אלהים'; // God - appears in ~2600 verses
 
       const { result } = measureTime(() => {
-        return searchInRootMode(term);
-      }, 'search("אלהים", root mode) - ~2600 results');
+        return searchInMeaningsMode(term);
+      }, 'search("אלהים", meanings mode) - ~2600 results');
 
       console.log(`  Found ${result.length} results`);
 
@@ -41,12 +41,12 @@ describe('Hebrew Search Performance Diagnostics', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
-    it('measures root mode search for multiple terms', () => {
+    it('measures meanings mode search for multiple terms', () => {
       const terms = 'אלהים, יהוה'; // God, LORD
 
       const { result } = measureTime(() => {
-        return searchInRootMode(terms);
-      }, 'search("אלהים, יהוה", root mode) - multiple terms');
+        return searchInMeaningsMode(terms);
+      }, 'search("אלהים, יהוה", meanings mode) - multiple terms');
 
       console.log(`  Found ${result.length} results`);
 
@@ -88,19 +88,21 @@ describe('Hebrew Search Performance Diagnostics', () => {
 
       const substring = measureTime(() => search(term, false, 'substring'), 'Substring');
       const word = measureTime(() => search(term, false, 'word'), 'Word');
-      const root = measureTime(() => searchInRootMode(term), 'Root');
+      const meanings = measureTime(() => searchInMeaningsMode(term), 'Meanings');
 
       console.log('\nMode comparison:');
       console.log(
         `  Substring: ${substring.timeMs.toFixed(2)}ms (${substring.result.length} results)`,
       );
       console.log(`  Word:      ${word.timeMs.toFixed(2)}ms (${word.result.length} results)`);
-      console.log(`  Root:      ${root.timeMs.toFixed(2)}ms (${root.result.length} results)`);
+      console.log(
+        `  Meanings: ${meanings.timeMs.toFixed(2)}ms (${meanings.result.length} results)`,
+      );
 
       // All modes should return results
       expect(substring.result.length).toBeGreaterThan(0);
       expect(word.result.length).toBeGreaterThan(0);
-      expect(root.result.length).toBeGreaterThan(0);
+      expect(meanings.result.length).toBeGreaterThan(0);
     });
   });
 
@@ -108,10 +110,10 @@ describe('Hebrew Search Performance Diagnostics', () => {
     it('simulates typing "אלהים" character by character', () => {
       const chars = ['א', 'אל', 'אלה', 'אלהי', 'אלהים'];
 
-      console.log('\nSimulating typing (root mode):');
+      console.log('\nSimulating typing (meanings mode):');
       for (const partial of chars) {
         const { result, timeMs } = measureTime(() => {
-          return searchInRootMode(partial);
+          return searchInMeaningsMode(partial);
         }, `  "${partial}"`);
 
         console.log(`    -> ${result.length} results in ${timeMs.toFixed(2)}ms`);

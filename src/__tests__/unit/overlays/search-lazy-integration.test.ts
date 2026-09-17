@@ -1,7 +1,7 @@
 // Integration tests for lazy snippet evaluation in search overlay
 import { describe, it, expect, beforeEach } from 'vitest';
 import { search, buildSearchIndex, computeSnippetForMatch } from '../../../search';
-import { searchInRootMode } from '../../helpers/rootSearch';
+import { searchInMeaningsMode } from '../../helpers/meaningsSearch';
 import type { VerseTexts } from '../../../verseTexts';
 
 describe('Search Overlay - Lazy Snippet Integration', () => {
@@ -26,10 +26,10 @@ describe('Search Overlay - Lazy Snippet Integration', () => {
     buildSearchIndex(mockVerseTexts);
   });
 
-  it('root mode returns results without snippets, UI computes on-demand', () => {
+  it('meanings mode returns results without snippets, UI computes on-demand', () => {
     // Simulate what the UI does:
-    // 1. Search returns results (root mode - lazy)
-    const results = searchInRootMode('אלהים');
+    // 1. Search returns results (meanings mode - lazy)
+    const results = searchInMeaningsMode('אלהים');
 
     expect(results.length).toBeGreaterThan(0);
     const firstResult = results[0];
@@ -53,7 +53,7 @@ describe('Search Overlay - Lazy Snippet Integration', () => {
   it('computes snippets only for displayed results (not all 2000+ results)', () => {
     const BATCH_SIZE = 50; // Matches RESULTS_BATCH_SIZE in search overlay
     // Search that returns many results
-    const results = searchInRootMode('אלהים');
+    const results = searchInMeaningsMode('אלהים');
 
     // Simulate UI rendering first batch (incremental scroll)
     const displayResults = results.slice(0, BATCH_SIZE);

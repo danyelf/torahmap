@@ -171,14 +171,14 @@ describe('the URL', () => {
 });
 
 describe('the Hebrew default', () => {
-  it('starts in root mode, where the meaning filter lives', () => {
+  it('starts in meanings mode, where the meaning filter lives', () => {
     const container = render();
     type(container, 'עלה');
 
     const marked = container.querySelector<HTMLElement>(
       '.term-row[data-open="true"] .term-mode-option.on',
     );
-    expect(marked?.dataset.mode).toBe('root');
+    expect(marked?.dataset.mode).toBe('meanings');
   });
 
   it('says how many meanings a collapsed row is searching for', () => {
@@ -193,7 +193,7 @@ describe('the Hebrew default', () => {
     const state = container
       .querySelectorAll<HTMLElement>('.term-row')[0]
       .querySelector('.term-state')!;
-    expect(state.textContent).toBe(`root · all ${offered} meanings`);
+    expect(state.textContent).toBe(`meanings · all ${offered} meanings`);
   });
 
   it('names the meanings once the row is narrowed', () => {
@@ -207,7 +207,7 @@ describe('the Hebrew default', () => {
     const state = container
       .querySelectorAll<HTMLElement>('.term-row')[0]
       .querySelector('.term-state')!;
-    expect(state.textContent).toBe('root · leafage');
+    expect(state.textContent).toBe('meanings · leafage');
   });
 
   it('leaves the mode bare when there is no choice of meaning to report', () => {

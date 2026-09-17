@@ -1,5 +1,5 @@
 // Full-text search over Hebrew and English.
-// Hebrew root search resolves written forms to ETCBC BHSA lexemes.
+// Meanings mode resolves a written form to the ETCBC BHSA lexemes it can be.
 
 import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
@@ -86,7 +86,7 @@ let formToLexemes: Record<string, LexemeId[]> | null = null;
 // Verse key -> the lexemes occurring in that verse.
 let verseToLexemes: Record<string, LexemeId[]> | null = null;
 
-// Inverted index: lexeme -> the verses it occurs in. Turns a root-mode search
+// Inverted index: lexeme -> the verses it occurs in. Turns a meanings-mode search
 // into one lookup per lexeme instead of a scan over every verse.
 let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
 // Consonantal dictionary spelling -> lexemes, for readers who type a bare root
@@ -160,7 +160,7 @@ export async function loadLexiconData(): Promise<void> {
 }
 
 /**
- * Invert verse -> lexemes into lexeme -> verses, so a root-mode search costs
+ * Invert verse -> lexemes into lexeme -> verses, so a meanings-mode search costs
  * one lookup per lexeme rather than a pass over all 23,000 verses.
  */
 function buildVerseIndex(): void {
@@ -563,7 +563,7 @@ export function computeSnippetForMatch(
  * settings that are language-specific — whole-word for English, the matching
  * mode for Hebrew — apply only to the terms they can apply to.
  *
- * Root mode is not handled here: it depends on which meanings the reader has
+ * Meanings mode is not handled here: it depends on which meanings the reader has
  * left checked, which the overlay knows and this does not.
  */
 export function verseSetsForTerms(
@@ -584,11 +584,11 @@ export function verseSetsForTerms(
 /**
  * Turn per-term sets of verse keys into search results.
  *
- * Root mode used to resolve a term's text to lexemes and union their verses
+ * Meanings mode used to resolve a term's text to lexemes and union their verses
  * inside search(). Once the reader can choose which of a word's meanings the
  * term stands for, that resolution belongs where the choice lives, so the sets
  * arrive already decided. Snippets are left for computeSnippetForMatch, as
- * root mode has always done.
+ * meanings mode has always done.
  *
  * A term with no hits simply contributes nothing; term indices are positions
  * in the caller's list, so the gap keeps every other term's colour in place.
@@ -629,7 +629,7 @@ export function resultsForVerseSets(
 /**
  * Verses matching any of the comma-separated terms.
  *
- * Hebrew: substring (nikkud-insensitive, the default) or whole-word. Root mode
+ * Hebrew: substring (nikkud-insensitive, the default) or whole-word. Meanings mode
  * is not a `hebrewMode` value here — it resolves a term to dictionary meanings
  * and looks up their verses directly, in the search overlay.
  * English: substring, optionally whole-word via `wholeWord`.

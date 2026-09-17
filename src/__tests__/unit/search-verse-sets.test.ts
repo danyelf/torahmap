@@ -1,6 +1,6 @@
 // Assembling results from verse sets.
 //
-// Root mode used to resolve each term's text to lexemes and union their
+// Meanings mode used to resolve each term's text to lexemes and union their
 // verses, all inside search(). Once the reader can choose which meanings a
 // term stands for, that resolution belongs where the choice lives. So the
 // verse sets arrive already decided and this turns them into results.

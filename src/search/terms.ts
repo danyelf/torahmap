@@ -13,12 +13,16 @@ import { TERM_SEPARATORS } from '../constants/app.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 
 /**
- * How a term is matched. Root resolves a written form to the dictionary words
+ * How a term is matched. Meanings resolves a written form to the dictionary words
  * it could be, so it is offered only where there is a dictionary — Hebrew.
  */
-export type SearchMode = 'substring' | 'word' | 'root';
+export type SearchMode = 'substring' | 'word' | 'meanings';
 
-export const SEARCH_MODES = ['substring', 'word', 'root'] as const satisfies readonly SearchMode[];
+export const SEARCH_MODES = [
+  'substring',
+  'word',
+  'meanings',
+] as const satisfies readonly SearchMode[];
 
 export interface SearchTerm {
   /** Stable for the life of the term; survives edits to its text. */
@@ -249,18 +253,21 @@ export function setMode(terms: SearchTerm[], id: string, mode: SearchMode): Sear
 /**
  * What the reader chose, or the default for the language the text is in.
  *
- * English has no dictionary, so root is clamped to whole word here rather than
- * in the field: a root term briefly retyped in English is root again on return.
+ * English has no dictionary, so meanings is clamped to whole word here rather
+ * than in the field: a term briefly retyped in English is back on meanings the
+ * moment it is Hebrew again.
  */
 export function effectiveMode(term: SearchTerm): SearchMode {
   const hebrew = isHebrewQuery(term.text.trim());
-  const chosen = term.mode ?? (hebrew ? 'root' : 'substring');
-  return !hebrew && chosen === 'root' ? 'word' : chosen;
+  const chosen = term.mode ?? (hebrew ? 'meanings' : 'substring');
+  return !hebrew && chosen === 'meanings' ? 'word' : chosen;
 }
 
 /** The modes this term's own text can be matched by, in the order shown. */
 export function modesOffered(term: SearchTerm): SearchMode[] {
-  return isHebrewQuery(term.text.trim()) ? ['substring', 'word', 'root'] : ['substring', 'word'];
+  return isHebrewQuery(term.text.trim())
+    ? ['substring', 'word', 'meanings']
+    : ['substring', 'word'];
 }
 
 /**
@@ -270,7 +277,7 @@ export function modesOffered(term: SearchTerm): SearchMode[] {
 const MODE_LETTERS: Record<SearchMode, string> = {
   substring: 's',
   word: 'w',
-  root: 'r',
+  meanings: 'm',
 };
 
 const MODE_BY_LETTER = new Map<string, SearchMode>(
