@@ -18,6 +18,7 @@ import {
   normalizeHebrewForSearch,
   splitIntoWords,
 } from './hebrew.ts';
+import { escapeForRegex, foldForMatching, matchRangesInFolded } from './search/matching.ts';
 
 export interface TermMatch {
   termIndex: number;
@@ -467,8 +468,7 @@ function truncateForSnippet(text: string): string {
 function findEnglishMatch(text: string, term: string): { idx: number; len: number } | null {
   if (term.length === 0) return null;
 
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const wholeWord = new RegExp(`\\b${escaped}\\b`).exec(text);
+  const wholeWord = new RegExp(`\\b${escapeForRegex(term)}\\b`).exec(text);
   if (wholeWord) return { idx: wholeWord.index, len: wholeWord[0].length };
 
   const idx = text.indexOf(term);
@@ -660,29 +660,22 @@ export function search(
 
   for (let termIndex = 0; termIndex < terms.length; termIndex++) {
     const term = terms[termIndex];
-    const normalizedTerm = isHebrew ? normalizeHebrewForSearch(term) : term.toLowerCase();
+    const language = isHebrew ? 'he' : 'en';
+    const needle = foldForMatching(term, language);
+    const wantWholeWord = !isHebrew && wholeWord;
 
     for (const entry of searchIndex) {
       const text = isHebrew ? entry.hebrewText : entry.englishText;
       const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
 
-      let matches: Array<{ idx: number; len: number }> = [];
+      const ranges = matchRangesInFolded(text, needle, {
+        mode: wantWholeWord ? 'word' : 'substring',
+        language,
+        limit: wantWholeWord ? Infinity : 1,
+      });
 
-      if (!isHebrew && wholeWord) {
-        const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-          matches.push({ idx: match.index, len: match[0].length });
-        }
-      } else {
-        const idx = text.indexOf(normalizedTerm);
-        if (idx !== -1) {
-          matches.push({ idx, len: normalizedTerm.length });
-        }
-      }
-
-      for (const { idx, len } of matches) {
+      for (const { start: idx, end } of ranges) {
+        const len = end - idx;
         const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
         const snippet = createSnippet(original, idx, len, isHebrew);
 

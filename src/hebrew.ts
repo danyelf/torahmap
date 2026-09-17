@@ -12,10 +12,15 @@
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05c7;
 
-// Maqaf, paseq, sof pasuq and nun hafukha. They sit inside the range above but
-// separate words rather than sit on one. Sefaria ends every verse with a sof
-// pasuq attached to the last word, so a rule that misses these loses that word.
-const SEPARATOR_CODES = new Set([0x05be, 0x05c0, 0x05c3, 0x05c6]);
+// These sit inside the range above but separate words rather than sit on one.
+// Sefaria ends every verse with a sof pasuq attached to the last word, so a
+// rule that misses these loses that word.
+const SEPARATOR_CODES = new Set([
+  0x05be, // ־ maqaf, the hyphen joining two words into one accent unit
+  0x05c0, // ׀ paseq, a light pause drawn between two words
+  0x05c3, // ׃ sof pasuq, the colon ending a verse
+  0x05c6, // ׆ nun hafukha, the inverted nun bracketing Numbers 10:35-36
+]);
 
 // U+034F COMBINING GRAPHEME JOINER. Sefaria writes ירושל͏ם with one inside the
 // word, where it renders as nothing and matches nothing; without this, every

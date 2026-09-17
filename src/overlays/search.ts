@@ -13,6 +13,7 @@ import {
   type SearchResult,
 } from '../search.ts';
 import { mapStrippedToOriginal, splitIntoWords, stripNikkud } from '../hebrew.ts';
+import { foldForMatching, matchRangesInFolded } from '../search/matching.ts';
 import { versesFor, formMatches } from '../search/dictionary.ts';
 import {
   addTerm,
@@ -966,68 +967,36 @@ interface Match {
 /** Handles nikkud stripping and position mapping; respects each term's own search mode. */
 function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
   const matches: Match[] = [];
-  const normalizedText = isHebrew ? stripNikkud(text) : text.toLowerCase();
+  const language = isHebrew ? 'he' : 'en';
+  const folded = foldForMatching(text, language);
+  const toOriginal = (at: number) => (isHebrew ? mapStrippedToOriginal(text, at) : at);
 
   for (let termIndex = 0; termIndex < searchTerms.length; termIndex++) {
     const term = searchTerms[termIndex];
-    const normalizedTerm = isHebrew ? stripNikkud(term.text) : term.text.toLowerCase();
     // The mode belongs to the term. `isHebrew` is the language of the verse
     // text being marked up, which is a different question.
     const mode = effectiveMode(term);
 
-    if (!isHebrew && mode === 'word') {
-      const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
-      let match;
-      while ((match = regex.exec(text.toLowerCase())) !== null) {
-        matches.push({
-          start: match.index,
-          end: match.index + match[0].length,
-          termIndex,
-        });
-      }
-    } else if (isHebrew && mode === 'root') {
-      // Mark only the words matching the term's checked meanings (see
-      // formMatches in search/dictionary.ts).
+    // Root mode asks the dictionary, not the spelling: mark only the words
+    // that are one of the meanings this term still stands for (see formMatches
+    // in search/dictionary.ts).
+    if (isHebrew && mode === 'root') {
       const keys = selectedKeys(term);
-      for (const { word, start } of splitIntoWords(normalizedText)) {
-        const hit = keys.length > 0 ? formMatches(keys, word) : word === normalizedTerm;
+      const needle = foldForMatching(term.text, 'he');
+      for (const { word, start, end } of splitIntoWords(folded)) {
+        const hit = keys.length > 0 ? formMatches(keys, word) : word === needle;
         if (hit) {
-          matches.push({
-            start: mapStrippedToOriginal(text, start),
-            end: mapStrippedToOriginal(text, start + word.length),
-            termIndex,
-          });
+          matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
         }
       }
-    } else if (isHebrew && mode === 'word') {
-      const wordEntries = splitIntoWords(normalizedText);
+      continue;
+    }
 
-      for (const { word, start } of wordEntries) {
-        if (word === normalizedTerm) {
-          const origStart = mapStrippedToOriginal(text, start);
-          const origEnd = mapStrippedToOriginal(text, start + word.length);
-
-          matches.push({ start: origStart, end: origEnd, termIndex });
-        }
-      }
-    } else {
-      let searchStart = 0;
-      while (true) {
-        const idx = normalizedText.indexOf(normalizedTerm, searchStart);
-        if (idx === -1) break;
-
-        let origStart = idx;
-        let origEnd = idx + normalizedTerm.length;
-
-        if (isHebrew) {
-          origStart = mapStrippedToOriginal(text, idx);
-          origEnd = mapStrippedToOriginal(text, idx + normalizedTerm.length);
-        }
-
-        matches.push({ start: origStart, end: origEnd, termIndex });
-        searchStart = idx + 1;
-      }
+    for (const { start, end } of matchRangesInFolded(folded, foldForMatching(term.text, language), {
+      mode: mode === 'word' ? 'word' : 'substring',
+      language,
+    })) {
+      matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
     }
   }
 
@@ -1247,7 +1216,7 @@ export const searchOverlay: Overlay = {
     runSearch();
   },
 
-  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment | string {
+  highlightVerseText(text: string, language: 'he' | 'en'): DocumentFragment {
     return highlightSearchTerms(text, language);
   },
 };
