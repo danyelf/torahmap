@@ -475,6 +475,32 @@ export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
   return Array.from(resultMap.values());
 }
 
+/** The opening of a verse, for when there is nothing to mark in it. */
+function truncateForSnippet(text: string): string {
+  const limit = 60;
+  return text.length > limit ? `${text.slice(0, limit)}...` : text;
+}
+
+/**
+ * Where an English term sits in a verse. Both strings are already lowercased.
+ *
+ * A whole word wins over a substring, so searching "covenant" marks the word
+ * itself rather than the opening of an earlier "covenanted". Which of the two
+ * the reader asked for is not known here, and preferring the word is right
+ * either way: under whole-word matching it is the only legitimate hit, and
+ * under substring matching it is the one they meant.
+ */
+function findEnglishMatch(text: string, term: string): { idx: number; len: number } | null {
+  if (term.length === 0) return null;
+
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const wholeWord = new RegExp(`\\b${escaped}\\b`).exec(text);
+  if (wholeWord) return { idx: wholeWord.index, len: wholeWord[0].length };
+
+  const idx = text.indexOf(term);
+  return idx === -1 ? null : { idx, len: term.length };
+}
+
 /**
  * Lazily compute snippet/highlighting for a specific search result
  * Call this only when the result needs to be displayed
@@ -493,6 +519,27 @@ export function computeSnippetForMatch(
   const verseKey = `${result.book}:${result.chapter}:${result.verse}`;
   const entry = verseKeyToEntry.get(verseKey);
   if (!entry) return null;
+
+  // An English term reads the English verse. Everything below it works on the
+  // Hebrew, which is all this function used to do, and every English result
+  // came through it quoting a Hebrew verse the reader had not searched.
+  if (!isHebrewQuery(searchTerm)) {
+    const match = findEnglishMatch(entry.englishText, searchTerm.toLowerCase());
+    if (match) {
+      const snippet = createSnippet(entry.englishOriginal, match.idx, match.len, false);
+      return {
+        snippet: snippet.text,
+        matchStart: snippet.matchStart,
+        matchEnd: snippet.matchEnd,
+      };
+    }
+
+    return {
+      snippet: truncateForSnippet(entry.englishOriginal),
+      matchStart: 0,
+      matchEnd: 0,
+    };
+  }
 
   // Try lexeme-based highlighting first
   const lexemes = findLexemesForWord(searchTerm);
@@ -536,7 +583,7 @@ export function computeSnippetForMatch(
 
   // Nothing to point at: show the opening of the verse unmarked.
   return {
-    snippet: entry.hebrewOriginal.slice(0, 60) + (entry.hebrewOriginal.length > 60 ? '...' : ''),
+    snippet: truncateForSnippet(entry.hebrewOriginal),
     matchStart: 0,
     matchEnd: 0,
   };

@@ -110,8 +110,10 @@ describe('Lazy Snippet Evaluation', () => {
 
       const result = results[0];
 
-      // Try to compute snippet for a different word (won't match)
-      const snippetData = computeSnippetForMatch(result, 0, 'xyz123');
+      // A Hebrew word the verse does not contain. It has to be Hebrew: the
+      // term's own script decides which text is quoted, so a Latin word here
+      // would ask for the English verse and rightly get it.
+      const snippetData = computeSnippetForMatch(result, 0, '\u05E1\u05D5\u05E1');
 
       // Should return fallback snippet (no highlighting)
       expect(snippetData).not.toBeNull();
