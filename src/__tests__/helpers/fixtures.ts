@@ -1,5 +1,5 @@
 // Test fixtures for Torah Map tests
-import type { TanakhLayout, TorahData, CommentaryData, TanakhCommentary } from '../../types';
+import type { TanakhLayout, CommentaryData } from '../../types';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
@@ -46,40 +46,6 @@ export const SAMPLE_VERSES: TanakhLayout[] = [
   createVerse({ book: 'Psalms', chapter: 1, verse: 2, x: 18, y: 1000 }),
   createVerse({ book: 'Psalms', chapter: 119, verse: 1, x: 10, y: 1100 }),
 ];
-
-export const SAMPLE_TORAH_DATA: TorahData = {
-  books: [
-    {
-      name: 'Genesis',
-      hebrewName: 'בראשית',
-      section: 'torah',
-      chapters: [31, 25, 24, 26, 32], // First 5 chapters
-    },
-    {
-      name: 'Exodus',
-      hebrewName: 'שמות',
-      section: 'torah',
-      chapters: [22, 25, 22, 31, 23], // First 5 chapters
-    },
-    {
-      name: 'Isaiah',
-      hebrewName: 'ישעיהו',
-      section: 'neviim',
-      chapters: [31, 22, 26], // First 3 chapters
-    },
-    {
-      name: 'Psalms',
-      hebrewName: 'תהלים',
-      section: 'ketuvim',
-      chapters: [6, 12, 8, 8, 12], // First 5 chapters
-    },
-  ],
-  layout: {
-    minorProphetStacks: [],
-    ketuvimStacks: [],
-    multiColumnBooks: { Psalms: { splitAtChapter: 72 } },
-  },
-};
 
 export const SAMPLE_COMMENTARY_DATA: CommentaryData = {
   'Genesis': {
@@ -131,20 +97,6 @@ export const SAMPLE_VERSE_TEXTS = {
   },
 };
 
-export function createTanakhCommentary(
-  overrides: Partial<TanakhCommentary> = {},
-): TanakhCommentary {
-  return {
-    total: 50,
-    categories: {
-      'Midrash': 20,
-      'Talmud': 15,
-      'Tanakh': 15,
-    },
-    ...overrides,
-  };
-}
-
 export const TEST_COLORS = {
   RED: [1, 0, 0] as [number, number, number],
   GREEN: [0, 1, 0] as [number, number, number],
@@ -164,9 +116,6 @@ export const SAMPLE_TROP_MARKS = {
   ZAQEF_QATAN: '\u0594',
 };
 
-export const HEBREW_WITH_TROP = {
-  WITH_TIPCHA: 'בְּרֵאשִׁ֖ית', // Contains tipcha (U+0596)
-  WITH_ETNACHTA: 'אֱלֹהִ֑ים', // Contains etnachta (U+0591)
-  WITH_MULTIPLE: 'בְּרֵאשִׁ֖ית אֱלֹהִ֑ים', // Multiple trop marks
-  WITHOUT_TROP: 'בראשית', // No trop marks
-};
+// Matches floatsPerVertex in geometry.ts and outline.ts: x, y, up to 4 RGB
+// colors, colorCount, u, v, seedX, seedY.
+export const FLOATS_PER_VERTEX = 19;

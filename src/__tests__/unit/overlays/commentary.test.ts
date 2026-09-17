@@ -8,6 +8,7 @@ const commentaryOverlay = getOverlay('commentary')!;
 import { heatmapColor } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
+import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { CommentaryData, TanakhLayout } from '../../../types';
 import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
@@ -58,14 +59,7 @@ describe('Commentary Overlay', () => {
       createVerse({ book: 'Isaiah', chapter: 1, verse: 2 }),
     ];
 
-    mockFetch = vi.fn((_url: string) => {
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(testData),
-      } as Response);
-    });
-    globalThis.fetch = mockFetch;
+    mockFetch = installMockFetch({ '/data/overlays/commentary/counts.json': testData });
 
     configure({ verses: testVerses });
   });

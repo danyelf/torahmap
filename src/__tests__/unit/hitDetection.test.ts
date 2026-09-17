@@ -8,6 +8,7 @@ import {
 } from '../../hitDetection';
 import type { TanakhLayout } from '../../types';
 import type { Camera } from '../../camera';
+import { createVerse } from '../helpers/fixtures';
 
 describe('hitDetection', () => {
   describe('screenToWorld', () => {
@@ -67,14 +68,7 @@ describe('hitDetection', () => {
   });
 
   describe('isPointInItem', () => {
-    const verse: TanakhLayout = {
-      book: 'Genesis',
-      chapter: 1,
-      verse: 1,
-      x: 100,
-      y: 200,
-      size: 50,
-    };
+    const verse: TanakhLayout = createVerse({ x: 100, y: 200, size: 50 });
 
     it('returns true when point is inside verse bounds', () => {
       expect(isPointInItem(125, 225, verse)).toBe(true);
@@ -104,14 +98,7 @@ describe('hitDetection', () => {
     });
 
     it('handles very small verse', () => {
-      const smallVerse: TanakhLayout = {
-        book: 'Genesis',
-        chapter: 1,
-        verse: 1,
-        x: 0,
-        y: 0,
-        size: 1,
-      };
+      const smallVerse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
       expect(isPointInItem(0, 0, smallVerse)).toBe(true);
       expect(isPointInItem(0.5, 0.5, smallVerse)).toBe(true);
@@ -121,9 +108,9 @@ describe('hitDetection', () => {
 
   describe('findExactHit', () => {
     const verses: TanakhLayout[] = [
-      { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
-      { book: 'Genesis', chapter: 1, verse: 2, x: 20, y: 0, size: 10 },
-      { book: 'Genesis', chapter: 1, verse: 3, x: 40, y: 0, size: 10 },
+      createVerse({ x: 0, y: 0, size: 10 }),
+      createVerse({ verse: 2, x: 20, y: 0, size: 10 }),
+      createVerse({ verse: 3, x: 40, y: 0, size: 10 }),
     ];
 
     it('finds verse when point is inside bounds', () => {
@@ -146,8 +133,8 @@ describe('hitDetection', () => {
 
     it('returns first match when verses overlap', () => {
       const overlappingVerses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 20 },
-        { book: 'Genesis', chapter: 1, verse: 2, x: 10, y: 10, size: 20 },
+        createVerse({ x: 0, y: 0, size: 20 }),
+        createVerse({ verse: 2, y: 10, size: 20 }),
       ];
 
       const hit = findExactHit(overlappingVerses, 15, 15);
@@ -169,9 +156,9 @@ describe('hitDetection', () => {
 
   describe('findFuzzyHit', () => {
     const verses: TanakhLayout[] = [
-      { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
-      { book: 'Genesis', chapter: 1, verse: 2, x: 20, y: 0, size: 10 },
-      { book: 'Genesis', chapter: 1, verse: 3, x: 100, y: 100, size: 10 },
+      createVerse({ x: 0, y: 0, size: 10 }),
+      createVerse({ verse: 2, x: 20, y: 0, size: 10 }),
+      createVerse({ verse: 3, x: 100, y: 100, size: 10 }),
     ];
 
     it('finds verse within fuzzy radius', () => {
@@ -231,8 +218,8 @@ describe('hitDetection', () => {
 
   describe('findItemAtPoint', () => {
     const verses: TanakhLayout[] = [
-      { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 10 },
-      { book: 'Genesis', chapter: 1, verse: 2, x: 20, y: 0, size: 10 },
+      createVerse({ x: 0, y: 0, size: 10 }),
+      createVerse({ verse: 2, x: 20, y: 0, size: 10 }),
     ];
 
     it('finds verse using exact hit when available', () => {
@@ -311,9 +298,7 @@ describe('hitDetection', () => {
 
   describe('integration', () => {
     it('supports typical hover workflow with camera', () => {
-      const verses: TanakhLayout[] = [
-        { book: 'Genesis', chapter: 1, verse: 1, x: 100, y: 200, size: 10 },
-      ];
+      const verses: TanakhLayout[] = [createVerse({ x: 100, y: 200, size: 10 })];
       const camera: Camera = { x: 50, y: 100, zoom: 2.0 };
 
       // Screen (250, 350) -> World (250/2 - 50, 350/2 - 100) = (75, 75)
@@ -348,14 +333,16 @@ describe('hitDetection', () => {
       const verses: TanakhLayout[] = [];
       for (let y = 0; y < 3; y++) {
         for (let x = 0; x < 3; x++) {
-          verses.push({
-            book: 'Test',
-            chapter: y + 1,
-            verse: x + 1,
-            x: x * 20,
-            y: y * 20,
-            size: 10,
-          });
+          verses.push(
+            createVerse({
+              book: 'Test',
+              chapter: y + 1,
+              verse: x + 1,
+              x: x * 20,
+              y: y * 20,
+              size: 10,
+            }),
+          );
         }
       }
 

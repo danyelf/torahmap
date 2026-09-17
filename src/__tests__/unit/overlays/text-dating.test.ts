@@ -7,6 +7,7 @@ registerAllOverlays();
 const textDatingOverlay = getOverlay('text-dating')!;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
+import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { Color } from '../../../overlays/types';
 
 describe('Text Dating Overlay', () => {
@@ -72,14 +73,7 @@ describe('Text Dating Overlay', () => {
       },
     };
 
-    mockFetch = vi.fn((_url: string) => {
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(testData),
-      } as Response);
-    });
-    global.fetch = mockFetch;
+    mockFetch = installMockFetch({ '/data/text-dating.json': testData });
   });
 
   afterEach(() => {

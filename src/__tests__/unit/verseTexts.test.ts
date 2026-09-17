@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { loadAllVerseTexts, getVerseText } from '../../verseTexts';
 import type { VerseTexts } from '../../verseTexts';
 import { SAMPLE_VERSE_TEXTS } from '../helpers';
+import { mockFetch, mockFetchStatus } from '../helpers/mocks';
 
 describe('verseTexts', () => {
   describe('loadAllVerseTexts', () => {
@@ -35,27 +36,14 @@ describe('verseTexts', () => {
           },
         };
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockData });
 
         const result = await loadAllVerseTexts();
         expect(result).toEqual(mockData);
       });
 
       it('uses correct URL path with BASE_URL', async () => {
-        const fetchSpy = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({}),
-          } as Response),
-        );
-        globalThis.fetch = fetchSpy;
+        const fetchSpy = mockFetch();
 
         await loadAllVerseTexts();
 
@@ -75,13 +63,7 @@ describe('verseTexts', () => {
           },
         };
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockData });
 
         const result = await loadAllVerseTexts();
 
@@ -109,13 +91,7 @@ describe('verseTexts', () => {
           }
         }
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(largeData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': largeData });
 
         const result = await loadAllVerseTexts();
 
@@ -127,13 +103,7 @@ describe('verseTexts', () => {
     describe('error handling', () => {
       it('handles 404 response', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: false,
-            status: 404,
-            json: () => Promise.resolve(null),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockFetchStatus(404) });
 
         const result = await loadAllVerseTexts();
 
@@ -144,13 +114,7 @@ describe('verseTexts', () => {
 
       it('handles 500 response', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: false,
-            status: 500,
-            json: () => Promise.resolve(null),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockFetchStatus(500) });
 
         const result = await loadAllVerseTexts();
 
@@ -161,13 +125,7 @@ describe('verseTexts', () => {
 
       it('handles network error', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: false,
-            status: 0,
-            json: () => Promise.resolve(null),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockFetchStatus(0) });
 
         const result = await loadAllVerseTexts();
 
@@ -208,13 +166,7 @@ describe('verseTexts', () => {
           },
         };
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockData });
 
         const result = await loadAllVerseTexts();
 
@@ -234,13 +186,7 @@ describe('verseTexts', () => {
           },
         };
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockData });
 
         const result = await loadAllVerseTexts();
 
@@ -258,13 +204,7 @@ describe('verseTexts', () => {
           },
         };
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockData });
 
         const result = await loadAllVerseTexts();
 
@@ -281,13 +221,7 @@ describe('verseTexts', () => {
           },
         };
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockData });
 
         const result = await loadAllVerseTexts();
 
@@ -307,13 +241,7 @@ describe('verseTexts', () => {
           },
         };
 
-        globalThis.fetch = vi.fn(() =>
-          Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve(mockData),
-          } as Response),
-        );
+        mockFetch({ '/data/all-texts.json': mockData });
 
         const result = await loadAllVerseTexts();
 
@@ -617,13 +545,7 @@ describe('verseTexts', () => {
         },
       };
 
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(mockData),
-        } as Response),
-      );
+      mockFetch({ '/data/all-texts.json': mockData });
 
       const verseTexts = await loadAllVerseTexts();
       const verse = getVerseText(verseTexts, 'Genesis', 1, 1);
@@ -635,13 +557,7 @@ describe('verseTexts', () => {
 
     it('handles load failure gracefully', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: false,
-          status: 404,
-          json: () => Promise.resolve(null),
-        } as Response),
-      );
+      mockFetch({ '/data/all-texts.json': mockFetchStatus(404) });
 
       const verseTexts = await loadAllVerseTexts();
       const verse = getVerseText(verseTexts, 'Genesis', 1, 1);
@@ -665,13 +581,7 @@ describe('verseTexts', () => {
         },
       };
 
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(mockData),
-        } as Response),
-      );
+      mockFetch({ '/data/all-texts.json': mockData });
 
       const verseTexts = await loadAllVerseTexts();
 

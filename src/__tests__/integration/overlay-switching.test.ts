@@ -15,7 +15,7 @@ import {
   SAMPLE_COMMENTARY_DATA,
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
-import { restoreAllMocks } from '../helpers/mocks';
+import { mockFetch, restoreAllMocks } from '../helpers/mocks';
 import { applyOverlayParams } from '../helpers/overlayUrlParams';
 
 describe('Overlay Switching Integration', () => {
@@ -30,22 +30,7 @@ describe('Overlay Switching Integration', () => {
     mockControlsContainer = document.createElement('div');
     mockLegendContainer = document.createElement('div');
 
-    globalThis.fetch = vi.fn((url: string | URL | Request) => {
-      const urlString = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
-
-      let data: any;
-      if (urlString.includes('overlays/commentary/counts.json')) {
-        data = SAMPLE_COMMENTARY_DATA;
-      } else {
-        data = {};
-      }
-
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(data),
-      } as Response);
-    }) as typeof fetch;
+    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
 
     // Register overlays fresh
     registerAllOverlays();

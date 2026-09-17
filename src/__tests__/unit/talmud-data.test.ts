@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getTractateText, resetTalmudDataCache, isSegmentMishnah } from '../../talmud/data.ts';
 import type { TalmudStructure } from '../../talmud/data.ts';
+import { mockFetch } from '../helpers/mocks';
 
 const fakeTractate = {
   name: 'Berakhot',
@@ -10,13 +11,7 @@ const fakeTractate = {
 describe('getTractateText', () => {
   beforeEach(() => {
     resetTalmudDataCache();
-    global.fetch = vi.fn(async (url: unknown) => {
-      const urlStr = String(url);
-      if (urlStr.includes('Berakhot.json')) {
-        return new Response(JSON.stringify(fakeTractate));
-      }
-      return new Response('', { status: 404 });
-    }) as unknown as typeof fetch;
+    mockFetch({ '/data/talmud/texts/Berakhot.json': fakeTractate });
   });
 
   it('fetches and returns a tractate text on first call', async () => {

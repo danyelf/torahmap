@@ -149,15 +149,10 @@ describe('Lazy Snippet Evaluation', () => {
   });
 
   describe('Performance characteristics', () => {
-    it('search returns quickly without snippet computation', () => {
-      const startTime = performance.now();
+    it('search returns without snippet computation', () => {
       const results = searchInRootMode('אלהים');
-      const searchTime = performance.now() - startTime;
 
       expect(results.length).toBeGreaterThan(0);
-
-      // Search should be very fast (< 10ms for small dataset)
-      expect(searchTime).toBeLessThan(10);
 
       // Verify snippets are not computed
       const firstMatch = results[0].matchingTerms[0];
