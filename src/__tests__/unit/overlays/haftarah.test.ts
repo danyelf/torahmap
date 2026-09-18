@@ -176,7 +176,7 @@ describe('Haftarah Overlay', () => {
 
     it('declares the custom key it owns', () => {
       expect(haftarahOverlay.urlParams).toEqual([
-        { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'] },
+        { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'], default: 'ashkenazi' },
       ]);
     });
 
@@ -205,10 +205,10 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.getUrlParams?.()).toEqual({});
     });
 
-    it('leaves the setting alone when the value is not recognised', () => {
+    it('falls back to the default when the value is not recognised', () => {
       applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
       applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=yemenite'));
-      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
     });
 
     it('updates the dropdown when restoring from a link', () => {

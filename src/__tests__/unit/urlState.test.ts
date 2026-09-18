@@ -8,7 +8,9 @@ import {
   subscribeToHashChange,
   applyingExternalState,
   isApplyingExternalState,
+  validateOverlayParams,
   type UrlState,
+  type UrlParamSpec,
 } from '../../urlState';
 import { mockHistory, mockWindowLocation } from '../helpers/mocks';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
@@ -945,10 +947,10 @@ describe('overlay-supplied parameters', () => {
     expect(state.overlayParams).toEqual({});
   });
 
-  it('rejects a value outside the set the overlay allows', () => {
+  it('falls back to the default when the value is outside the set the overlay allows', () => {
     mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=yemenite');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.custom).toBeUndefined();
+    expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
   it('accepts every value in the set the overlay allows', () => {
@@ -1108,10 +1110,10 @@ describe('haftarah custom in the URL', () => {
     expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
-  it('rejects a custom that is not one of the two', () => {
+  it('falls back to Ashkenazi for a custom that is not one of the two', () => {
     mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=yemenite');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.custom).toBeUndefined();
+    expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
   it('roundtrips the Sephardi custom', () => {
@@ -1153,5 +1155,32 @@ describe('whole links, parsed with the real overlay declarations', () => {
     expect(rebuilt).toContain('verse=Exodus.20.1');
     expect(rebuilt).toContain('zoom=3');
     expect(rebuilt).toContain('category=Talmud');
+  });
+});
+
+describe('validateOverlayParams defaults', () => {
+  const specs = [
+    { key: 'category', kind: 'category', default: 'total' },
+    { key: 'note', kind: 'token' },
+  ] as const satisfies readonly UrlParamSpec[];
+
+  it('fills a declared default when the key is absent', () => {
+    expect(validateOverlayParams(specs, {})).toEqual({ category: 'total' });
+  });
+
+  it('fills a declared default when the value is rejected', () => {
+    expect(validateOverlayParams(specs, { category: '<script>' })).toEqual({
+      category: 'total',
+    });
+  });
+
+  it('prefers a valid supplied value over the default', () => {
+    expect(validateOverlayParams(specs, { category: 'Midrash' })).toEqual({
+      category: 'Midrash',
+    });
+  });
+
+  it('leaves a key with no declared default absent', () => {
+    expect(validateOverlayParams(specs, {})).not.toHaveProperty('note');
   });
 });

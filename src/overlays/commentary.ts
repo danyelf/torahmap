@@ -17,7 +17,7 @@ const HEATMAP_STOPS: ColorStop[] = [
 const NO_LINKS: Color = [0.15, 0.15, 0.2];
 
 const URL_PARAMS = [
-  { key: 'category', kind: 'category' },
+  { key: 'category', kind: 'category', default: 'total' },
 ] as const satisfies readonly UrlParamSpec[];
 
 let data: CommentaryData = {};

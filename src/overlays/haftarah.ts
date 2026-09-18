@@ -80,7 +80,7 @@ const CUSTOMS = ['ashkenazi', 'sephardi'] as const;
 type Custom = (typeof CUSTOMS)[number];
 
 const URL_PARAMS = [
-  { key: 'custom', kind: 'token', allowed: CUSTOMS },
+  { key: 'custom', kind: 'token', allowed: CUSTOMS, default: 'ashkenazi' },
 ] as const satisfies readonly UrlParamSpec[];
 
 let data: HaftarahMappings | null = null;

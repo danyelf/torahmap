@@ -33,6 +33,13 @@ export interface UrlParamSpec {
   readonly kind: UrlParamKind;
   /** When present, the value must be one of these after validation. */
   readonly allowed?: readonly string[];
+  /**
+   * The value the overlay holds when the URL says nothing — the other half of
+   * the rule overlays already follow when they omit a default on the way out.
+   * An overlay that has no such value (a selection that can be empty, say)
+   * leaves this unset, and the key stays absent instead.
+   */
+  readonly default?: string;
 }
 
 /**
@@ -180,7 +187,7 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   const values: Record<string, string> = {};
   for (const spec of specs ?? []) {
     if (RESERVED_KEYS.has(spec.key)) continue;
-    const value = validateOneParam(spec, read(spec.key));
+    const value = validateOneParam(spec, read(spec.key)) ?? spec.default;
     if (value) values[spec.key] = value;
   }
   // The one assertion in the chain, and the place it belongs: the loop above

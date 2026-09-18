@@ -532,7 +532,9 @@ describe('Commentary Overlay', () => {
     });
 
     it('declares the category key it owns', () => {
-      expect(commentaryOverlay.urlParams).toEqual([{ key: 'category', kind: 'category' }]);
+      expect(commentaryOverlay.urlParams).toEqual([
+        { key: 'category', kind: 'category', default: 'total' },
+      ]);
     });
 
     it('applies category under its own key name', () => {
