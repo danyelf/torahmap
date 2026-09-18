@@ -2,7 +2,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  width: 380px;
+  width: var(--panel-width);
   height: 100vh;
   background: rgba(0, 0, 0, 0.92);
   z-index: 10;
@@ -130,7 +130,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: calc(100vw - 380px);
+  width: calc(100vw - var(--panel-width));
   height: 100vh;
 }
 

@@ -2,7 +2,7 @@
 #zoom-controls {
   position: fixed;
   bottom: 20px;
-  right: 420px; /* panel width + gap */
+  right: calc(var(--panel-width) + 40px);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -37,9 +37,9 @@
   border-radius: 0 0 4px 4px;
 }
 
+/* Pinch zooms on a phone, and there the buttons would sit on the panel sheet. */
 @media (max-width: 768px) {
   #zoom-controls {
-    right: 16px;
-    bottom: 60px;
+    display: none;
   }
 }

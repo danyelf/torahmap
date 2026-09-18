@@ -1,3 +1,7 @@
+:root {
+  --panel-width: 380px;
+}
+
 * {
   margin: 0;
   padding: 0;
