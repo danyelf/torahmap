@@ -114,7 +114,7 @@
 @media (max-width: 768px) {
   #verse-popup {
     left: 10px;
-    bottom: calc(var(--sheet-height) + 10px);
+    bottom: calc(var(--sheet-shown) + 10px);
     width: calc(100vw - 20px);
     max-height: 200px;
   }

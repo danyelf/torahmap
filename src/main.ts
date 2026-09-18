@@ -303,8 +303,15 @@ async function main(): Promise<void> {
   // story folded nothing moves the map but the reader.
   let storyOpen = true;
 
+  // Where the story was when it folded. Folded, it has no height, and the stops
+  // are spaced in fractions of its height, so its scroll collapses with it.
+  let foldedScrollTop = 0;
+
   function setStoryOpen(open: boolean): void {
-    if (!open) storyStripTitle.textContent = currentStopLabel();
+    if (!open && storyOpen) {
+      storyStripTitle.textContent = currentStopLabel();
+      foldedScrollTop = storyContent.scrollTop;
+    }
     storyOpen = open;
     document.body.classList.toggle('story-folded', !open);
     controlsToggle.setAttribute('aria-expanded', String(!open));
@@ -313,9 +320,37 @@ async function main(): Promise<void> {
     storyContent.inert = !open;
   }
 
+  // On a phone the sheet can also be lowered to its summary line, giving the
+  // map the screen. Lowering hides the sheet without changing which section is
+  // open, so raising it brings back what was there.
+  const phoneLayout = window.matchMedia('(max-width: 768px)');
+  let sheetDown = false;
+
+  function setSheetDown(down: boolean): void {
+    sheetDown = down;
+    document.body.classList.toggle('sheet-down', down);
+    const footer = document.getElementById('panel-footer');
+    if (footer) footer.inert = down;
+    storyStrip.inert = down;
+    if (down) {
+      panelControls.inert = true;
+      storyContent.inert = true;
+    } else {
+      setStoryOpen(storyOpen);
+    }
+  }
+
+  phoneLayout.addEventListener('change', () => {
+    if (!phoneLayout.matches && sheetDown) setSheetDown(false);
+  });
+
   function currentStopLabel(): string {
     const state = currentStoryState();
-    return stopLabel(state.t > 0.5 ? state.toStop : state.fromStop);
+    // A phone's strip has room for about 50 characters.
+    return stopLabel(
+      state.t > 0.5 ? state.toStop : state.fromStop,
+      phoneLayout.matches ? 50 : undefined,
+    );
   }
 
   let driver: Driver = STORY_DRIVING;
@@ -515,6 +550,8 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+    // Any touch on a phone's map says the reader wants the map.
+    if (phoneLayout.matches && !sheetDown) setSheetDown(true);
     // A hand on the map outranks a glide that is still running.
     cancelCameraGlide();
     startDrag(mouseState, e.clientX, e.clientY);
@@ -829,10 +866,12 @@ async function main(): Promise<void> {
     setOverlay(overlaySelect.value);
   });
 
-  window.addEventListener('resize', () => {
+  // The window resizing is not the only thing that resizes the map: on a phone
+  // it grows as the sheet lowers.
+  new ResizeObserver(() => {
     resizeCanvas();
     render();
-  });
+  }).observe(canvas);
 
   // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
   if (import.meta.hot) {
@@ -946,6 +985,7 @@ async function main(): Promise<void> {
       if (started || !storyOpen) return;
       started = true;
       rightPanel.removeEventListener('transitionend', onTransitionEnd);
+      storyContent.scrollTop = foldedScrollTop;
       driver = rejoinNow(performance.now());
       beginRejoin();
       scheduleStoryFrame();
@@ -958,7 +998,11 @@ async function main(): Promise<void> {
     setTimeout(start, 400);
   }
 
-  controlsToggle.addEventListener('click', () => (storyOpen ? openControls() : openStory()));
+  controlsToggle.addEventListener('click', () => {
+    if (sheetDown) setSheetDown(false);
+    else if (storyOpen) openControls();
+    else openStory();
+  });
   storyStrip.addEventListener('click', openStory);
 
   // Scrolling is the only thing that moves the story on. While the reader

@@ -30,14 +30,23 @@ function renderMarkdown(md: string): string {
     .join('\n');
 }
 
-/** What stands for a stop when the story is folded: its title, or else its first sentence. */
-export function stopLabel(stop: Pick<StoryStop, 'title' | 'text'>): string {
-  if (stop.title) return stop.title;
-  const div = document.createElement('div');
-  div.innerHTML = renderMarkdown(stop.text);
-  const text = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
-  // A sentence can end inside a closing quote or bracket: Abraham.”
-  return text.match(/^.*?[.!?]["'”’)\]]*(?=\s|$)/)?.[0] ?? text;
+/**
+ * What stands for a stop when the story is folded: its title, or else its
+ * first sentence. Given `maxChars`, a longer label is cut at the last whole
+ * word that fits and ends in an ellipsis.
+ */
+export function stopLabel(stop: Pick<StoryStop, 'title' | 'text'>, maxChars?: number): string {
+  let label = stop.title;
+  if (!label) {
+    const div = document.createElement('div');
+    div.innerHTML = renderMarkdown(stop.text);
+    const text = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
+    // A sentence can end inside a closing quote or bracket: Abraham.”
+    label = text.match(/^.*?[.!?]["'”’)\]]*(?=\s|$)/)?.[0] ?? text;
+  }
+  if (maxChars === undefined || label.length <= maxChars) return label;
+  const cut = label.slice(0, maxChars).replace(/\s+\S*$/, '');
+  return `${cut.replace(/[\s,;:—–-]+$/, '')}…`;
 }
 
 export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HTMLElement[] {
