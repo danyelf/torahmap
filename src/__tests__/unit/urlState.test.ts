@@ -1003,8 +1003,13 @@ describe('what every overlay must hold to', () => {
   // The point of the redesign: an overlay that saves settings has to say which
   // keys it uses, or urlState.ts will never read them back out of a link.
   getAllOverlays().forEach((overlay) => {
+    // A converted overlay with nothing to save (Overlay<T, void>) still
+    // implements settingsFromUrl, returning undefined; its defaultSettings
+    // says so, and needs no urlParams.
     const savesSettings = Boolean(
-      overlay.settingsFromUrl || overlay.getUrlParams || overlay.applyUrlParams,
+      overlay.getUrlParams ||
+      overlay.applyUrlParams ||
+      (overlay.defaultSettings && overlay.defaultSettings() !== undefined),
     );
 
     it(`${overlay.id}: declares its keys if it saves any settings`, () => {

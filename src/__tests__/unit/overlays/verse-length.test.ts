@@ -4,10 +4,11 @@ import { configure } from '../../../overlays/verse-length';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
-const verseLengthOverlay = getOverlay('verse-length')!;
+const verseLengthOverlay = hostOverlay(getOverlay('verse-length')!);
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { VerseTexts } from '../../../verseTexts';
+import { hostOverlay } from '../../helpers/overlayHost';
 
 describe('Verse Length Overlay', () => {
   let testVerseTexts: VerseTexts;
@@ -72,15 +73,15 @@ describe('Verse Length Overlay', () => {
 
   describe('Overlay Interface', () => {
     it('has correct id and name', () => {
-      expect(verseLengthOverlay.id).toBe('verse-length');
-      expect(verseLengthOverlay.name).toBe('Verse Length');
+      expect(verseLengthOverlay.overlay.id).toBe('verse-length');
+      expect(verseLengthOverlay.overlay.name).toBe('Verse Length');
     });
 
     it('has required methods', () => {
-      expect(verseLengthOverlay.getVerseColor).toBeDefined();
-      expect(verseLengthOverlay.renderLegend).toBeDefined();
-      expect(verseLengthOverlay.getHoverInfo).toBeDefined();
-      expect(verseLengthOverlay.renderSidebarInfo).toBeDefined();
+      expect(verseLengthOverlay.overlay.getVerseColor).toBeDefined();
+      expect(verseLengthOverlay.overlay.renderLegend).toBeDefined();
+      expect(verseLengthOverlay.overlay.getHoverInfo).toBeDefined();
+      expect(verseLengthOverlay.overlay.renderSidebarInfo).toBeDefined();
     });
   });
 
@@ -88,26 +89,26 @@ describe('Verse Length Overlay', () => {
     it('gives the same answer through colorsFor as through getVerseColor', () => {
       const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
 
-      expect(verseLengthOverlay.colorsFor!(items, {}, null)).toEqual([
-        verseLengthOverlay.getVerseColor(items[0]),
-      ]);
+      expect(
+        verseLengthOverlay.overlay.colorsFor!(items, verseLengthOverlay.fromUrl({}), null),
+      ).toEqual([verseLengthOverlay.getVerseColor(items[0])]);
     });
   });
 
   describe('Word Counting Logic', () => {
     it('counts Hebrew words correctly by splitting on whitespace', () => {
       const verse1 = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const info1 = verseLengthOverlay.getHoverInfo!(verse1);
+      const info1 = verseLengthOverlay.getHoverInfo(verse1);
       expect(info1).toBe('7 words');
 
       const verse2 = createVerse({ book: 'Genesis', chapter: 1, verse: 2 });
-      const info2 = verseLengthOverlay.getHoverInfo!(verse2);
+      const info2 = verseLengthOverlay.getHoverInfo(verse2);
       expect(info2).toBe('4 words');
     });
 
     it('handles single word verses', () => {
       const verse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
       expect(info).toBe('1 word'); // Singular form
     });
 
@@ -138,7 +139,7 @@ describe('Verse Length Overlay', () => {
       configure({ verseTexts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
       expect(info).toBe('2 words'); // Should count as 2, not more
     });
 
@@ -157,7 +158,7 @@ describe('Verse Length Overlay', () => {
       configure({ verseTexts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
       expect(info).toBe('2 words');
     });
   });
@@ -167,7 +168,7 @@ describe('Verse Length Overlay', () => {
       // `#overlay-legend .legend-row` is `display: flex`. Two stacked children
       // in it sit side by side, which renders as "1 14 / words words".
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       expect(container.querySelector('.legend-row')).toBeNull();
 
@@ -180,7 +181,7 @@ describe('Verse Length Overlay', () => {
     it('calculates correct minimum word count', () => {
       // Min should be 1 (Exodus 1:2 has 1 word, ignoring Psalms 1:1 which has 0)
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toContain('1 word'); // Minimum label
@@ -189,7 +190,7 @@ describe('Verse Length Overlay', () => {
     it('calculates correct maximum word count', () => {
       // Max should be 14 (Isaiah 1:1 has 14 words)
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toContain('14 words'); // Maximum label
@@ -198,7 +199,7 @@ describe('Verse Length Overlay', () => {
     it('excludes zero-word verses from min calculation', () => {
       // Psalms 1:1 has 0 words but should not affect min
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).not.toContain('0 word'); // Should not show 0 as minimum
@@ -216,7 +217,7 @@ describe('Verse Length Overlay', () => {
       configure({ verseTexts: emptyData });
 
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toContain('0 words'); // Both min and max should be 0
@@ -372,49 +373,49 @@ describe('Verse Length Overlay', () => {
   describe('Hover Info Formatting', () => {
     it('returns formatted word count with plural "words"', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBe('7 words');
     });
 
     it('returns singular "word" for count of 1', () => {
       const verse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBe('1 word');
     });
 
     it('returns null for verses not in dataset', () => {
       const verse = createVerse({ book: 'UnknownBook', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBeNull();
     });
 
     it('returns formatted count for zero words', () => {
       const verse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBe('0 words');
     });
 
     it('handles missing book gracefully', () => {
       const verse = createVerse({ book: 'MissingBook', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBeNull();
     });
 
     it('handles missing chapter gracefully', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 999, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBeNull();
     });
 
     it('handles missing verse gracefully', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 999 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBeNull();
     });
@@ -423,7 +424,7 @@ describe('Verse Length Overlay', () => {
   describe('Legend Rendering', () => {
     it('renders gradient bar', () => {
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toContain('linear-gradient');
@@ -431,7 +432,7 @@ describe('Verse Length Overlay', () => {
 
     it('renders min and max word count labels', () => {
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toContain('1 word'); // Min
@@ -440,7 +441,7 @@ describe('Verse Length Overlay', () => {
 
     it('includes explanatory text about cool colors', () => {
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toMatch(/Purple\/blue|Purple/);
@@ -449,7 +450,7 @@ describe('Verse Length Overlay', () => {
 
     it('includes explanatory text about warm colors', () => {
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toMatch(/Green\/yellow|Orange\/yellow/);
@@ -458,7 +459,7 @@ describe('Verse Length Overlay', () => {
 
     it('mentions logarithmic scale in legend', () => {
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
       expect(html).toMatch(/Viridis palette|Plasma palette/);
@@ -466,7 +467,7 @@ describe('Verse Length Overlay', () => {
 
     it('creates gradient with multiple color stops', () => {
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
 
@@ -478,7 +479,7 @@ describe('Verse Length Overlay', () => {
 
     it('gradient uses palette from purple to yellow', () => {
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
 
@@ -508,7 +509,11 @@ describe('Verse Length Overlay', () => {
   describe('Sidebar Info Rendering', () => {
     it('returns HTMLElement with word count', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.renderSidebarInfo!(verse, false);
+      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
+        verse,
+        false,
+        verseLengthOverlay.settings,
+      );
 
       expect(element).not.toBeNull();
       expect(element).toBeInstanceOf(HTMLElement);
@@ -519,14 +524,22 @@ describe('Verse Length Overlay', () => {
 
     it('includes "Verse Length:" label', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.renderSidebarInfo!(verse, false) as HTMLElement;
+      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
+        verse,
+        false,
+        verseLengthOverlay.settings,
+      ) as HTMLElement;
 
       expect(element.textContent).toContain('Verse Length:');
     });
 
     it('uses singular form for one word', () => {
       const verse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 });
-      const element = verseLengthOverlay.renderSidebarInfo!(verse, false) as HTMLElement;
+      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
+        verse,
+        false,
+        verseLengthOverlay.settings,
+      ) as HTMLElement;
 
       expect(element.textContent).toContain('1 word');
       expect(element.textContent).not.toContain('1 words');
@@ -534,14 +547,22 @@ describe('Verse Length Overlay', () => {
 
     it('returns null for verses not in dataset', () => {
       const verse = createVerse({ book: 'UnknownBook', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.renderSidebarInfo!(verse, false);
+      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
+        verse,
+        false,
+        verseLengthOverlay.settings,
+      );
 
       expect(element).toBeNull();
     });
 
     it('has appropriate styling', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.renderSidebarInfo!(verse, false) as HTMLElement;
+      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
+        verse,
+        false,
+        verseLengthOverlay.settings,
+      ) as HTMLElement;
 
       // Check that it has styling
       expect(element.style.cssText).toBeTruthy();
@@ -552,7 +573,7 @@ describe('Verse Length Overlay', () => {
   describe('Integration', () => {
     it('overlay is exported from module', () => {
       expect(verseLengthOverlay).toBeDefined();
-      expect(verseLengthOverlay.id).toBe('verse-length');
+      expect(verseLengthOverlay.overlay.id).toBe('verse-length');
     });
 
     it('configure function is exported', () => {
@@ -563,10 +584,10 @@ describe('Verse Length Overlay', () => {
     it('can be registered and retrieved from registry', async () => {
       const { registerOverlay, getOverlay } = await import('../../../overlays/registry');
 
-      registerOverlay(verseLengthOverlay);
+      registerOverlay(verseLengthOverlay.overlay);
       const retrieved = getOverlay('verse-length');
 
-      expect(retrieved).toBe(verseLengthOverlay);
+      expect(retrieved).toBe(verseLengthOverlay.overlay);
     });
 
     it('appears in getAllOverlays after registration', async () => {
@@ -574,7 +595,7 @@ describe('Verse Length Overlay', () => {
 
       // Clear and re-register
       const before = getAllOverlays().length;
-      registerOverlay(verseLengthOverlay);
+      registerOverlay(verseLengthOverlay.overlay);
       const after = getAllOverlays();
 
       expect(after.length).toBeGreaterThanOrEqual(before);
@@ -597,7 +618,7 @@ describe('Verse Length Overlay', () => {
       configure({ verseTexts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(info).toBe('0 words');
     });
@@ -619,7 +640,7 @@ describe('Verse Length Overlay', () => {
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       assertValidColor(color!);
       expect(info).toBe('100 words');
@@ -641,7 +662,7 @@ describe('Verse Length Overlay', () => {
 
       const verse = createVerse({ book: 'NewBook', chapter: 1, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(color).not.toBeNull();
       expect(info).toBe('3 words');
@@ -650,7 +671,7 @@ describe('Verse Length Overlay', () => {
     it('handles missing chapter in book', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 999, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       // Missing data is treated as 0 words (dark gray)
       expect(color).not.toBeNull();
@@ -661,7 +682,7 @@ describe('Verse Length Overlay', () => {
     it('handles missing verse in chapter', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 999 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       // Missing data is treated as 0 words (dark gray)
       expect(color).not.toBeNull();
@@ -694,7 +715,7 @@ describe('Verse Length Overlay', () => {
       configure({ verseTexts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       // Maqaf connects words but is surrounded by spaces, so should count as 2 words
       expect(info).toBe('2 words');
@@ -715,14 +736,14 @@ describe('Verse Length Overlay', () => {
 
       const verse = createVerse({ book: 'SingleBook', chapter: 1, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
-      const info = verseLengthOverlay.getHoverInfo!(verse);
+      const info = verseLengthOverlay.getHoverInfo(verse);
 
       assertValidColor(color!);
       expect(info).toBe('1 word');
 
       // When min === max, gradient should still work
       const container = document.createElement('div');
-      verseLengthOverlay.renderLegend!(container);
+      verseLengthOverlay.renderLegend(container);
       expect(container.innerHTML).toContain('1 word');
     });
   });

@@ -94,7 +94,7 @@ function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number }
   return verseData || null;
 }
 
-export const textDatingOverlay: Overlay = {
+export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
   id: 'text-dating',
   name: 'Text Dating',
   description:
@@ -118,6 +118,18 @@ export const textDatingOverlay: Overlay = {
     } catch (e) {
       console.error('Failed to parse text-dating.json:', e);
     }
+  },
+
+  defaultSettings() {
+    return undefined;
+  },
+
+  settingsFromUrl() {
+    return undefined;
+  },
+
+  settingsToUrl() {
+    return {};
   },
 
   getVerseColor(verse: TanakhIdentity): Color | null {
