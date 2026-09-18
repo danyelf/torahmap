@@ -100,9 +100,15 @@
 }
 
 #verse-popup .sefaria-link {
-  margin-left: 6px;
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
   color: #6ab0f3;
-  vertical-align: -1px;
+  font-size: 12px;
+  font-weight: 400;
+  text-decoration: none;
 }
 
 #verse-popup .sefaria-link:hover {
