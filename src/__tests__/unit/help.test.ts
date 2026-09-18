@@ -22,8 +22,8 @@ async function openHelp(): Promise<HTMLElement> {
   const panel = document.createElement('div');
   document.body.appendChild(panel);
   initHelp(panel);
+  document.getElementById('help-btn')!.click();
 
-  // With nothing seen yet, initHelp opens the modal itself.
   return document.getElementById('help-modal') as HTMLElement;
 }
 
@@ -48,7 +48,16 @@ describe('help modal', () => {
     localStorage.clear();
   });
 
-  it('opens on a first visit and offers a Credits tab', async () => {
+  it('stays closed until the reader asks for it', async () => {
+    vi.resetModules();
+    document.body.innerHTML = '';
+    const { initHelp } = await import('../../help');
+    initHelp(document.body);
+
+    expect(document.getElementById('help-modal')).toBeNull();
+  });
+
+  it('opens from the help button and offers a Credits tab', async () => {
     const modal = await openHelp();
 
     expect(modal.classList.contains('visible')).toBe(true);

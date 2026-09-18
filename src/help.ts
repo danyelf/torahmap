@@ -4,7 +4,6 @@ import { renderCreditsHtml } from './credits.ts';
 import { getAllOverlays } from './overlays/registry.ts';
 import { escapeHtml } from './utils/html.ts';
 
-const STORAGE_KEY_SEEN = 'torahMap.helpSeen';
 const STORAGE_KEY_TAB = 'torahMap.helpTab';
 
 type TabId = 'overview' | 'controls' | 'overlays' | 'credits';
@@ -157,10 +156,7 @@ function showHelp(): void {
 }
 
 function hideHelp(): void {
-  if (modal) {
-    modal.classList.remove('visible');
-    localStorage.setItem(STORAGE_KEY_SEEN, 'true');
-  }
+  modal?.classList.remove('visible');
 }
 
 export function initHelp(controlsPanel: HTMLElement): void {
@@ -171,9 +167,4 @@ export function initHelp(controlsPanel: HTMLElement): void {
   helpBtn.title = 'How to use';
   helpBtn.addEventListener('click', showHelp);
   controlsPanel.appendChild(helpBtn);
-
-  // Show on first visit
-  if (!localStorage.getItem(STORAGE_KEY_SEEN)) {
-    showHelp();
-  }
 }
