@@ -90,6 +90,10 @@ export const verseLengthOverlay: Overlay = {
     return getVerseColorForWordCount(verse);
   },
 
+  colorsFor(items, _settings, _hovered) {
+    return items.map((item) => this.getVerseColor(item));
+  },
+
   renderLegend(container: HTMLElement): void {
     const paletteName = 'Plasma';
     const lowColor = 'Purple';

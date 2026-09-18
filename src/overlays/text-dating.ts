@@ -130,6 +130,10 @@ export const textDatingOverlay: Overlay = {
     return getVerseColorFromDate(midpointBCE);
   },
 
+  colorsFor(items, _settings, _hovered) {
+    return items.map((item) => this.getVerseColor(item));
+  },
+
   renderLegend(container: HTMLElement) {
     const rows = ERAS.map((era) => {
       const [r, g, b] = era.baseColor;
