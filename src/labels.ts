@@ -103,24 +103,23 @@ export function createSectionLabels(
   labelsContainer: HTMLElement,
   sectionOf: (book: string) => Section,
 ): void {
-  const bounds = new Map<Section, { maxX: number; minY: number; maxY: number }>();
+  const bounds = new Map<Section, { maxX: number; minY: number }>();
   for (const v of verses) {
     const section = sectionOf(v.book);
     const b = bounds.get(section);
     if (!b) {
-      bounds.set(section, { maxX: v.x + v.size, minY: v.y, maxY: v.y + v.size });
+      bounds.set(section, { maxX: v.x + v.size, minY: v.y });
       continue;
     }
     b.maxX = Math.max(b.maxX, v.x + v.size);
     b.minY = Math.min(b.minY, v.y);
-    b.maxY = Math.max(b.maxY, v.y + v.size);
   }
 
   for (const [section, b] of bounds) {
     const label = document.createElement('div');
     label.style.cssText = `
       position:absolute;
-      color:#eee;
+      color:#aaa;
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
@@ -128,7 +127,7 @@ export function createSectionLabels(
     `;
     label.dataset.section = section;
     label.dataset.leftX = String(b.maxX);
-    label.dataset.midY = String((b.minY + b.maxY) / 2);
+    label.dataset.topY = String(b.minY);
 
     const heSpan = document.createElement('span');
     heSpan.style.fontFamily = HEBREW_LABEL_FONT;
@@ -151,14 +150,14 @@ function positionSectionLabel(label: HTMLElement, pan: Pan, zoom: number): void 
     Math.min(MAX_SECTION_FONT_SIZE, BASE_SECTION_FONT_SIZE * zoom),
   );
   const leftX = parseFloat(label.dataset.leftX || '0');
-  const midY = parseFloat(label.dataset.midY || '0');
+  const topY = parseFloat(label.dataset.topY || '0');
   label.style.left = (leftX + pan.x) * zoom + fontSize * SECTION_LABEL_GAP_EM + 'px';
-  label.style.top = (midY + pan.y) * zoom + 'px';
+  label.style.top = (topY + pan.y) * zoom + 'px';
   label.style.fontSize = fontSize + 'px';
-  // Turned clockwise about its own top-left corner, then centred on the row:
-  // the text reads downward and its line box sits right of the anchor.
+  // Turned clockwise about its own top-left corner, so the text reads downward
+  // from the section's top and its line box sits right of the anchor.
   label.style.transformOrigin = '0 0';
-  label.style.transform = 'rotate(90deg) translate(-50%, -100%)';
+  label.style.transform = 'rotate(90deg) translateY(-100%)';
 }
 
 export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
