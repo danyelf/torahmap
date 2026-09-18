@@ -36,7 +36,8 @@ export function stopLabel(stop: Pick<StoryStop, 'title' | 'text'>): string {
   const div = document.createElement('div');
   div.innerHTML = renderMarkdown(stop.text);
   const text = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
-  return text.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? text;
+  // A sentence can end inside a closing quote or bracket: Abraham.”
+  return text.match(/^.*?[.!?]["'”’)\]]*(?=\s|$)/)?.[0] ?? text;
 }
 
 export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HTMLElement[] {

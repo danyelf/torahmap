@@ -34,6 +34,13 @@ describe('stopLabel', () => {
     );
   });
 
+  it('ends a sentence inside a closing quote', () => {
+    const text = 'God gives Abram a new name: “your name shall be Abraham.” We can add it.';
+    expect(stopLabel(stop({ text }))).toBe(
+      'God gives Abram a new name: “your name shall be Abraham.”',
+    );
+  });
+
   it('is the whole text when it has no sentence end', () => {
     expect(stopLabel(stop({ text: 'Search for [Abram](https://example.org)' }))).toBe(
       'Search for Abram',

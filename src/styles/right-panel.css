@@ -252,6 +252,8 @@ body.story-folded #story-strip {
   grid-row: 4;
   min-height: 0;
   overflow-y: auto;
+  padding: 0;
+  container-type: size;
   scrollbar-color: #444 transparent;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: var(--story-bg);
@@ -261,13 +263,20 @@ body.story-folded #story-content {
   border-top: none;
 }
 
+/* Paragraphs sit half a panel apart, so when one is centred the next starts
+   at the bottom edge. The first starts mid-panel and the last can scroll up
+   to it. cqh is the panel's height, not the window's: on a phone the panel
+   is half the screen. */
 .story-stop {
-  padding: 40px 24px;
-  min-height: 60vh;
+  padding: 25cqh 24px;
 }
 
 .story-stop:first-child {
-  padding-top: 24px;
+  padding-top: 50cqh;
+}
+
+.story-stop:last-child {
+  padding-bottom: 50cqh;
 }
 
 .story-stop h2 {
