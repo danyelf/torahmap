@@ -11,7 +11,15 @@ import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
-import { trackOverlaySwitch, trackVerseClick } from './analytics.ts';
+import {
+  configureAnalytics,
+  trackOverlaySwitch,
+  trackPageView,
+  trackStoryExit,
+  trackStoryReturn,
+  trackStoryStop,
+  trackVerseClick,
+} from './analytics.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -269,7 +277,9 @@ async function main(): Promise<void> {
   const touchState = createTouchState();
 
   let appMode: AppMode = 'story';
+  configureAnalytics({ getMode: () => appMode });
   let lastStoryScrollTop = 0;
+  let storyExitStopId = '';
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
   // Reset on mode switches (explore may have changed overlay/pin out from under us).
@@ -815,6 +825,9 @@ async function main(): Promise<void> {
   const explorePanel = document.getElementById('explore-panel')!;
 
   document.getElementById('exit-story')?.addEventListener('click', () => {
+    storyExitStopId = lastSyncedStopId ?? '';
+    const exitIndex = resolvedStops.findIndex((s) => s.id === storyExitStopId);
+    trackStoryExit(storyExitStopId, exitIndex + 1);
     lastStoryScrollTop = storyContent.scrollTop;
     appMode = 'explore';
     transition = null;
@@ -827,6 +840,7 @@ async function main(): Promise<void> {
 
   document.getElementById('back-to-story')?.addEventListener('click', (e) => {
     e.preventDefault();
+    trackStoryReturn(storyExitStopId);
     appMode = 'story';
     // Reset settled tracker — explore mode may have changed overlay/pin, so
     // force the next settled frame to re-apply the resting stop's state.
@@ -868,6 +882,8 @@ async function main(): Promise<void> {
       if (lastSyncedStopId !== dominantStop.id) {
         syncStoryStopState(dominantStop);
         lastSyncedStopId = dominantStop.id;
+        const stopIndex = resolvedStops.findIndex((s) => s.id === dominantStop.id);
+        trackStoryStop(dominantStop.id, stopIndex + 1, resolvedStops.length);
       }
 
       // A scroll fires no pointer event, so re-run hit detection under the
@@ -951,6 +967,10 @@ async function main(): Promise<void> {
   if (window.location.hash) {
     restoreFromUrl();
   }
+
+  const urlStop = parseUrlState().story ?? '';
+  const referrer = document.referrer ? new URL(document.referrer).hostname : '';
+  trackPageView(urlStop, referrer === location.hostname ? '' : referrer);
 
   subscribeToHashChange(() => {
     restoreFromUrl();
