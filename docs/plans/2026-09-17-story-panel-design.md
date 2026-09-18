@@ -92,10 +92,17 @@ legend:
 Trop is a grid of cantillation-mark tiles the reader picks from by eye. It is
 tall because it has to be, and it will not shrink.
 
-The band is sized to the tallest the story itself uses, not the tallest that
-exists. The story drives only search, haftarah and commentary, so **210px** on
-desktop covers it. Anything taller scrolls inside the band; a reader who has
-taken the wheel and chosen Trop can put the story away for the room.
+A story may use any overlay, Trop included, so the band cannot be sized to the
+ones today's story happens to use. Instead each overlay has two forms. The
+**summary** is one line saying what is selected — the search terms, the chosen
+trop mark — and is what the band shows. The **full controls** — the trop grid,
+search's options — appear when the reader takes the wheel or puts the story
+away.
+
+The band is therefore picker, summary line and legend, whatever the overlay.
+The legend is now the tall part: Text Dating's is the tallest at 136px, which
+puts the band at roughly **225px**. The exact figure waits on the summary line
+existing to be measured.
 
 ## The small controls
 
@@ -125,13 +132,9 @@ design no longer has.
 ## Mobile
 
 The panel stays a bottom sheet at 50vh and holds the same three zones. The band
-is smaller: the picker and the legend, about 140px, from the picker's measured
-53px and the tallest legend the story uses (Haftarah's, 86px). That leaves
-roughly 282px of story on an 844px phone. The overlay's own controls appear
-when the reader takes the wheel or puts the story away.
-
-The same overflow rule applies — a driving reader who picks Text Dating, whose
-legend alone is 136px, scrolls inside the band.
+is the picker and the legend, without the summary line. Sized for the tallest
+legend (Text Dating, 136px) plus the picker's 53px, it is about 190px, leaving
+roughly 230px of story on an 844px phone.
 
 ## Open questions
 
@@ -144,7 +147,11 @@ Written down because they were not settled, not because they are unimportant.
 - **Whether a hidden story stays hidden on a return visit** is undecided. It is
   the same question as the help modal's `torahMap.helpSeen`, and should probably
   get the same answer.
-- **What the footer costs on mobile** has not been measured. The 282px figure
+- **Mobile story room.** Once the band has to fit any overlay's legend, a phone
+  keeps about 230px of story, down from the 282px it had when the band only
+  fitted today's story. If that is too little, the likely lever is a one-line
+  summary for the legend too, on mobile only.
+- **What the footer costs on mobile** has not been measured. The 230px figure
   above does not account for it.
 
 ## Prototype
