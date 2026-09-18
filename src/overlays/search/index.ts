@@ -32,6 +32,7 @@ import {
   setMode,
   effectiveMode,
   meaningsApply,
+  narrowedGlosses,
   termIsHebrew,
   encodeModes,
   applyModes,
@@ -539,17 +540,12 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     const termIndices = matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
     if (!termIndices) return null;
 
-    // Each term is named the way that term was searched for. A verse can be
-    // claimed by a word narrowed to one meaning and by an exact spelling at
-    // once, and saying so is the point of the modes being separate.
+    // Each term is named as its row names it: the word as typed, then the
+    // meanings it is narrowed to.
     const named = termIndices.map((i) => {
       const term = active[i];
-      if (meaningsApply(term)) {
-        // Name the meanings, not the spelling: that is what was searched for.
-        const chosen = term.meanings.filter((m) => term.selected.has(m.keys[0]));
-        if (chosen.length > 0) return chosen.map((m) => m.gloss).join(' / ');
-      }
-      return effectiveMode(term) === 'word' ? `word "${term.text}"` : `"${term.text}"`;
+      const chosen = narrowedGlosses(term);
+      return chosen.length > 0 ? `${term.text} (${chosen.join(', ')})` : term.text;
     });
 
     return `Matches: ${named.join(', ')}`;

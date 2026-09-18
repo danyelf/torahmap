@@ -244,6 +244,12 @@ export function isNarrowed(term: SearchTerm): boolean {
   return term.meanings.length > 1 && term.selected.size < term.meanings.length;
 }
 
+/** The glosses of the meanings a term is narrowed to; none when it is not narrowed. */
+export function narrowedGlosses(term: SearchTerm): string[] {
+  if (!meaningsApply(term) || !isNarrowed(term)) return [];
+  return term.meanings.filter((m) => term.selected.has(m.keys[0])).map((m) => m.gloss);
+}
+
 /**
  * The colour slot occupied by the term at this position among the searched terms.
  *

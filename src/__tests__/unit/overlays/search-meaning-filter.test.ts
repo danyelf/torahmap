@@ -382,3 +382,25 @@ describe('a row that is empty or too short to search', () => {
     expect(Number(counts[1])).toBeGreaterThan(0);
   });
 });
+
+// The line under a verse's reference names each term as its row does: the word
+// as typed, and the meanings it is narrowed to.
+describe('the Matches line', () => {
+  it('names an unnarrowed word as typed, without listing its meanings', () => {
+    const container = render();
+    type(container, 'עלה');
+
+    expect(searchOverlay.getHoverInfo(verses[2])).toBe('Matches: עלה');
+  });
+
+  it('puts the meaning a word is narrowed to after it', () => {
+    const container = render();
+    type(container, 'עלה');
+    const row = [...container.querySelectorAll('.meaning-row')].find(
+      (r) => r.querySelector('.meaning-gloss')?.textContent === 'burnt-offering',
+    )!;
+    row.querySelector<HTMLButtonElement>('.meaning-only')!.click();
+
+    expect(searchOverlay.getHoverInfo(verses[1])).toBe('Matches: עלה (burnt-offering)');
+  });
+});
