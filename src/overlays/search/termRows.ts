@@ -14,7 +14,6 @@ import {
   onlyMeaning,
   allMeanings,
   isNarrowed,
-  narrowedGlosses,
   setMode,
   effectiveMode,
   modesOffered,
@@ -194,7 +193,10 @@ function termSummary(term: SearchTerm): string {
   // only "meanings" gave no sign of it.
   if (!isNarrowed(term)) return `${mode} · all ${term.meanings.length} meanings`;
 
-  const chosen = narrowedGlosses(term).join(', ');
+  const chosen = term.meanings
+    .filter((m) => term.selected.has(m.keys[0]))
+    .map((m) => m.gloss)
+    .join(', ');
   return chosen ? `${mode} · ${chosen}` : mode;
 }
 

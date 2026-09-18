@@ -32,7 +32,6 @@ import {
   setMode,
   effectiveMode,
   meaningsApply,
-  narrowedGlosses,
   termIsHebrew,
   encodeModes,
   applyModes,
@@ -537,15 +536,18 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     const { active, matchingTerms } = searchFor(settings);
     if (active.length === 0) return null;
 
-    const termIndices = matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+    const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 
-    // Each term is named as its row names it: the word as typed, then the
-    // meanings it is narrowed to.
+    // Each word as typed, then which of its checked meanings this verse holds.
     const named = termIndices.map((i) => {
       const term = active[i];
-      const chosen = narrowedGlosses(term);
-      return chosen.length > 0 ? `${term.text} (${chosen.join(', ')})` : term.text;
+      if (!meaningsApply(term)) return term.text;
+      const here = term.meanings
+        .filter((m) => term.selected.has(m.keys[0]) && versesFor(m.keys).has(key))
+        .map((m) => m.gloss);
+      return here.length > 0 ? `${term.text} (${here.join(', ')})` : term.text;
     });
 
     return `Matches: ${named.join(', ')}`;

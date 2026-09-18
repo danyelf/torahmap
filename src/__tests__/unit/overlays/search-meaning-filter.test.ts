@@ -383,17 +383,26 @@ describe('a row that is empty or too short to search', () => {
   });
 });
 
-// The line under a verse's reference names each term as its row does: the word
-// as typed, and the meanings it is narrowed to.
+// The line under a verse's reference names each word as typed, followed by the
+// meanings of it that this verse holds.
 describe('the Matches line', () => {
-  it('names an unnarrowed word as typed, without listing its meanings', () => {
+  it('names the meaning each verse holds', () => {
     const container = render();
     type(container, 'עלה');
 
-    expect(searchOverlay.getHoverInfo(verses[2])).toBe('Matches: עלה');
+    expect(searchOverlay.getHoverInfo(verses[0])).toBe('Matches: עלה (leafage)');
+    expect(searchOverlay.getHoverInfo(verses[2])).toBe('Matches: עלה (ascend)');
   });
 
-  it('puts the meaning a word is narrowed to after it', () => {
+  it('names every meaning a verse holds', () => {
+    const container = render();
+    type(container, 'עלה');
+
+    // ויעל עלת: the verb and the offering in one verse.
+    expect(searchOverlay.getHoverInfo(verses[1])).toBe('Matches: עלה (ascend, burnt-offering)');
+  });
+
+  it('leaves out a meaning the reader has unchecked, even where the verse holds it', () => {
     const container = render();
     type(container, 'עלה');
     const row = [...container.querySelectorAll('.meaning-row')].find(
