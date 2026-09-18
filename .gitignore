@@ -22,3 +22,6 @@ data-transient/
 
 # Visual brainstorming companion scratch
 .superpowers/
+
+# Local state from `wrangler dev`
+.wrangler

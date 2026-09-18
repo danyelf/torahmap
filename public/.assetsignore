@@ -1,0 +1,4 @@
+# Files in the build that Cloudflare does not publish. The Talmud page is left
+# out of the production build, so its data is too.
+.assetsignore
+data/talmud
