@@ -303,13 +303,21 @@ function buildCollapsedRow(row: HTMLElement, term: SearchTerm): void {
   swatch.className = 'term-swatch';
   summary.appendChild(swatch);
 
+  const field = document.createElement('span');
+  field.className = 'term-field';
+  summary.appendChild(field);
+
   const word = document.createElement('span');
   word.className = 'term-word';
-  summary.appendChild(word);
+  field.appendChild(word);
 
   const state = document.createElement('span');
   state.className = 'term-state';
-  summary.appendChild(state);
+  field.appendChild(state);
+
+  const chevron = document.createElement('span');
+  chevron.className = 'term-chevron';
+  field.appendChild(chevron);
 
   const count = document.createElement('span');
   count.className = 'term-count';

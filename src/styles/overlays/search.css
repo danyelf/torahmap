@@ -73,13 +73,39 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 3px;
-  border-radius: 4px;
+  padding: 3px 6px;
   cursor: pointer;
 }
 
-.term-summary:hover {
-  background: #232323;
+/* The open row's input box, shorter, so a closed word still reads as editable. */
+.term-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 3px 8px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+}
+
+.term-summary:hover .term-field {
+  border-color: #666;
+}
+
+.term-chevron {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  margin: 0 3px 3px 2px;
+  border-right: 1.5px solid #aaa;
+  border-bottom: 1.5px solid #aaa;
+  transform: rotate(45deg);
+}
+
+.term-summary:hover .term-chevron {
+  border-color: #fff;
 }
 
 .term-word {
@@ -107,7 +133,6 @@
 /* The open row, lifted off the collapsed ones around it. */
 .term-row[data-open='true'] {
   background: #212121;
-  margin: 0 -6px 10px;
   padding: 7px 6px;
   border-radius: 5px;
 }
