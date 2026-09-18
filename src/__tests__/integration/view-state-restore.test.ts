@@ -35,8 +35,8 @@ async function controlsAfter(hash: string): Promise<HTMLElement> {
   const container = document.createElement('div');
   if (overlay) {
     settings.restore(overlay, view.overlaySettings);
-    overlay.renderControls?.(container, settings.get(overlay), (next) =>
-      settings.set(overlay, next),
+    overlay.renderControls?.(container, settings.get(overlay), (update) =>
+      settings.set(overlay, update(settings.get(overlay))),
     );
   }
   return container;

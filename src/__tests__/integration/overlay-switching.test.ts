@@ -79,8 +79,8 @@ describe('Overlay Switching Integration', () => {
 
     // Render controls and legend
     mockControlsContainer.innerHTML = '';
-    overlay.renderControls?.(mockControlsContainer, settings.get(overlay), (next) =>
-      settings.set(overlay, next),
+    overlay.renderControls?.(mockControlsContainer, settings.get(overlay), (update) =>
+      settings.set(overlay, update(settings.get(overlay))),
     );
 
     mockLegendContainer.innerHTML = '';

@@ -7,6 +7,12 @@ export type { Credit } from '../credits.ts';
 
 export type Color = [number, number, number];
 
+// A change to an overlay's settings: the next settings, worked out from the
+// current ones. Typed through a method so that its parameter is checked
+// bivariantly, like the Overlay members below; as a plain function type, S would
+// sit in both directions and no Overlay<T, SomeSettings> would be an Overlay.
+export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHack'];
+
 // Generic over the identity type T, so that Talmud overlays can declare
 // Overlay<TalmudIdentity, void> (they have no settings), and over the settings
 // type S, which each overlay defines for itself. The app holds an overlay's
@@ -14,7 +20,10 @@ export type Color = [number, number, number];
 // keeps none of its own.
 //
 // Code that handles any overlay sees S as unknown, and only ever hands an
-// overlay settings that the same overlay produced.
+// overlay settings that the same overlay produced. An Overlay<T, SearchSettings>
+// counts as an Overlay only because the members are declared as methods, which
+// TypeScript checks bivariantly. Declare a member as a function-typed property
+// and overlays with different settings can no longer share one list.
 export interface Overlay<T = TanakhIdentity, S = unknown> {
   id: string;
   name: string;
@@ -46,11 +55,18 @@ export interface Overlay<T = TanakhIdentity, S = unknown> {
   settingsFromUrl?(params: UrlParamValues): S;
   settingsToUrl?(settings: S): Record<string, string>;
 
-  // Draw the controls for `settings`. Called again with the same container
-  // after every change, so bring what is there up to date rather than
-  // rebuilding it: a box being typed in must keep its focus. A control asks for
-  // a change through onChange and never makes one itself.
-  renderControls?(container: HTMLElement, settings: S, onChange: (next: S) => void): void;
+  // Draw the controls for `settings`. The app calls this again with the same
+  // container after a change, so bring what is there up to date rather than
+  // rebuilding it: a box being typed in must keep its focus.
+  //
+  // A control asks for a change by handing onChange a function from the current
+  // settings to the next. The app applies it to the settings it holds, so a
+  // control never needs, and must never keep, a copy of them to write from.
+  renderControls?(
+    container: HTMLElement,
+    settings: S,
+    onChange: (update: SettingsUpdate<S>) => void,
+  ): void;
   renderLegend?(container: HTMLElement, settings: S): void;
 
   getHoverInfo?(verse: T, settings: S): string | null;

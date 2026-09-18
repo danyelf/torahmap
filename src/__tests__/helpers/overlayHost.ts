@@ -2,7 +2,7 @@
 // store main.ts uses, handing them to every member that takes them, and
 // drawing the controls again after each change, into the container they were
 // last drawn in.
-import type { Overlay } from '../../overlays/types';
+import type { Overlay, SettingsUpdate } from '../../overlays/types';
 import type { TanakhIdentity, TextLanguage } from '../../types';
 import { createOverlaySettings, settingsFromParams } from '../../overlays/settings';
 import { validateOverlayParams } from '../../urlState';
@@ -19,8 +19,8 @@ export interface OverlayHost<S> {
   restore(raw: RawParams): void;
   /** The settings a link describes, without holding them. */
   fromUrl(raw: RawParams): S;
-  /** Take new settings, as the controls' onChange does. */
-  change(next: S): void;
+  /** Apply a change to the settings held, and redraw, as main.ts does for a control's onChange. */
+  change(update: SettingsUpdate<S>): void;
   /** Called after every change the controls or `change` make. Restoring is not a change. */
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
@@ -59,8 +59,8 @@ export function hostOverlay<S>(overlay: Overlay<TanakhIdentity, S>): OverlayHost
     fromUrl(raw) {
       return settingsFromParams(overlay, validateOverlayParams(overlay.urlParams, raw)) as S;
     },
-    change(next) {
-      store.set(overlay, next);
+    change(update) {
+      store.set(overlay, update(store.get(overlay)));
       draw();
       listeners.forEach((listener) => listener());
     },

@@ -62,7 +62,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from './rendering.ts';
-import type { TanakhLayout } from './types.ts';
+import type { TanakhIdentity, TanakhLayout } from './types.ts';
 import {
   registerAllOverlays,
   createOverlaySettings,
@@ -646,8 +646,8 @@ async function main(): Promise<void> {
   function renderOverlayControls(): void {
     const overlay = currentOverlay;
     if (!overlay || !overlayControlsContainer) return;
-    overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), (next) =>
-      changeSettings(overlay, next),
+    overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), (update) =>
+      changeSettings(overlay, update),
     );
   }
 
@@ -660,11 +660,12 @@ async function main(): Promise<void> {
   }
 
   /**
-   * Take the settings a reader asked for. A control left over from an overlay
-   * that is no longer showing still has its settings kept, but paints nothing.
+   * Apply a change a reader asked for to the settings held for `overlay`. A
+   * control left over from an overlay that is no longer showing still changes
+   * that overlay's settings, but paints nothing.
    */
-  function changeSettings(overlay: Overlay, next: unknown): void {
-    overlaySettings.set(overlay, next);
+  function changeSettings<S>(overlay: Overlay<TanakhIdentity, S>, update: (current: S) => S): void {
+    overlaySettings.set(overlay, update(overlaySettings.get(overlay)));
     if (overlay !== currentOverlay) return;
 
     applyOverlay();
@@ -707,12 +708,7 @@ async function main(): Promise<void> {
         // first - otherwise the reader loses their Haftarah view and gains
         // nothing. The panel's own count was taken when it opened, and a
         // keyboard reader can add a word in between.
-        const next = searchForMeaning(
-          overlaySettings.get(searchOverlay),
-          word,
-          meaning?.keys ?? null,
-        );
-        if (!next) return;
+        if (!canAddTerm(overlaySettings.get(searchOverlay))) return;
 
         if (currentOverlayId !== 'search') {
           setOverlay('search');
@@ -721,7 +717,10 @@ async function main(): Promise<void> {
 
         // Replaces the URL setOverlay just pushed rather than adding a second
         // history entry.
-        changeSettings(searchOverlay, next);
+        changeSettings(
+          searchOverlay,
+          (current) => searchForMeaning(current, word, meaning?.keys ?? null) ?? current,
+        );
       },
     });
   });

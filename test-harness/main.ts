@@ -162,8 +162,8 @@ async function main(): Promise<void> {
   const settings = createOverlaySettings();
 
   function draw(): void {
-    searchOverlay.renderControls?.(controlsContainer, settings.get(searchOverlay), (next) => {
-      settings.set(searchOverlay, next);
+    searchOverlay.renderControls?.(controlsContainer, settings.get(searchOverlay), (update) => {
+      settings.set(searchOverlay, update(settings.get(searchOverlay)));
       draw();
     });
     legendContainer.innerHTML = '';

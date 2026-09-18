@@ -26,6 +26,8 @@ export function createOverlaySettings(): OverlaySettings {
 
   const store: OverlaySettings = {
     get<T, S>(overlay: Overlay<T, S>): S {
+      // TRANSITIONAL: an overlay that holds its own settings has no defaultSettings,
+      // and is handed undefined, which it ignores.
       if (!byId.has(overlay.id)) byId.set(overlay.id, overlay.defaultSettings?.());
       // The one assertion: only this overlay's own settings are stored under its id.
       return byId.get(overlay.id) as S;

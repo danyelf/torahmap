@@ -133,8 +133,8 @@ describe('URL State Sync Integration', () => {
       const container = document.createElement('div');
       const settings = createOverlaySettings();
       const draw = () =>
-        overlay?.renderControls?.(container, settings.get(overlay), (next) =>
-          settings.set(overlay, next),
+        overlay?.renderControls?.(container, settings.get(overlay), (update) =>
+          settings.set(overlay, update(settings.get(overlay))),
         );
       draw();
       (container.querySelector('button') as HTMLButtonElement).click();

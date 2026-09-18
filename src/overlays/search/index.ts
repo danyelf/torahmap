@@ -147,12 +147,16 @@ function resultsForOpenRow(settings: SearchSettings): SearchResult[] {
   return results.filter((result) => result.matchingTerms.some((m) => m.termIndex === index));
 }
 
-// The controls on screen: their elements, the settings they were last drawn
-// from, and where they send a change. Only the controls' own event handlers
-// read `drawn`; nothing that colours the map or answers for a verse does.
+type SettingsChange = (update: (current: SearchSettings) => SearchSettings) => void;
+
+// The controls on screen: their elements, where they send a change, and the
+// settings they show. `shown` is display state, for redrawing the rows when the
+// reader opens one; a change is always worked out from the settings the app
+// holds when it applies it, never from `shown`.
 let searchResults: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
-let drawn: { settings: SearchSettings; onChange: (next: SearchSettings) => void } | null = null;
+let requestChange: SettingsChange | null = null;
+let shown: SearchSettings | null = null;
 
 export function configure(config: {
   verses: TanakhLayout[];
@@ -357,34 +361,36 @@ function renderResults(settings: SearchSettings): void {
  */
 function openRow(id: string): void {
   openTermId = id;
-  if (!drawn) return;
+  if (!shown) return;
   renderTermRows();
-  renderResults(drawn.settings);
-  updateHitCaption(drawn.settings);
+  renderResults(shown);
+  updateHitCaption(shown);
 }
 
 /**
  * What the term rows are allowed to ask of the search.
  *
- * Narrow and one-way on purpose. The rows read the term list they were drawn
- * from and ask for a new one; the app takes it and draws the controls again.
+ * Narrow and one-way on purpose. The rows draw the term list they are shown
+ * and ask for changes to it; the app applies each change to the list it holds.
  */
 const termRowsHost: TermRowsHost = {
-  terms: () => drawn?.settings.terms ?? [],
-  openId: () => (drawn ? (openTerm(drawn.settings)?.id ?? null) : null),
-  hitCount: (term) => (drawn ? termHitCount(drawn.settings, term) : null),
-  setTerms(terms) {
-    if (!drawn) return;
-    const next = { terms };
-    trackSearch(next);
-    drawn.onChange(next);
+  terms: () => shown?.terms ?? [],
+  openId: () => (shown ? (openTerm(shown)?.id ?? null) : null),
+  hitCount: (term) => (shown ? termHitCount(shown, term) : null),
+  edit(change) {
+    requestChange?.((current) => {
+      const next = { terms: change(current.terms) };
+      trackSearch(next);
+      return next;
+    });
   },
   openRow,
   addRow() {
-    if (!drawn) return;
-    const terms = addTerm(drawn.settings.terms, '');
-    openTermId = terms[terms.length - 1].id;
-    drawn.onChange({ terms });
+    requestChange?.((current) => {
+      const terms = addTerm(current.terms, '');
+      openTermId = terms[terms.length - 1].id;
+      return { terms };
+    });
   },
 };
 
@@ -494,8 +500,9 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
   },
 
   renderControls(container, settings, onChange) {
-    const previous = drawn?.settings;
-    drawn = { settings, onChange };
+    const previous = shown;
+    shown = settings;
+    requestChange = onChange;
 
     if (!searchResults || !container.contains(searchResults)) {
       container.innerHTML = `
@@ -553,7 +560,8 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     unmountTermRows();
     searchResults = null;
     searchHitCaption = null;
-    drawn = null;
+    shown = null;
+    requestChange = null;
     // verses and onVerseClickCallback are configuration handed in once by
     // configure(), not per-activation state, so they stay.
   },

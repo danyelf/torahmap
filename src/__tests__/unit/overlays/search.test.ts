@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure } from '../../../overlays/search';
+import { configure, type SearchSettings } from '../../../overlays/search';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -1435,7 +1435,7 @@ describe('Search Overlay', () => {
       const requests: unknown[] = [];
 
       // Controls whose requests go nowhere leave the search exactly as it was.
-      searchOverlay.overlay.renderControls!(container, before, (next) => requests.push(next));
+      searchOverlay.overlay.renderControls!(container, before, (update) => requests.push(update));
       type(container, 'God');
 
       expect(requests).toHaveLength(1);
@@ -1443,6 +1443,25 @@ describe('Search Overlay', () => {
       expect(testVerses.map((v) => searchOverlay.getVerseColor(v))).toEqual(
         testVerses.map(() => null),
       );
+    });
+
+    it('works each change out from the settings held, not the ones last drawn', () => {
+      // A host that applies changes but never redraws: the second edit must
+      // still build on the first rather than on the empty row on screen.
+      const container = document.createElement('div');
+      let held = searchOverlay.settings as SearchSettings;
+      searchOverlay.overlay.renderControls!(container, held, (update) => {
+        held = update(held) as SearchSettings;
+      });
+
+      type(container, 'God');
+      container
+        .querySelector<HTMLElement>(
+          '.term-row[data-open="true"] .term-mode-option[data-mode="word"]',
+        )!
+        .click();
+
+      expect(held.terms.map((t) => [t.text, t.mode])).toEqual([['God', 'word']]);
     });
 
     /** The colours for the search a link with this query describes. */

@@ -5,7 +5,12 @@
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure, searchForMeaning, type SearchSettings } from '../../../overlays/search';
+import {
+  configure,
+  searchForMeaning,
+  canAddTerm,
+  type SearchSettings,
+} from '../../../overlays/search';
 import { meaningsInVerse } from '../../../search/dictionary';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
@@ -37,9 +42,11 @@ function render(): HTMLDivElement {
  * the search held. False when the palette is full and nothing changed.
  */
 function clickWord(text: string, meaningKeys: readonly string[] | null): boolean {
-  const next = searchForMeaning(searchOverlay.settings as SearchSettings, text, meaningKeys);
-  if (next) searchOverlay.change(next);
-  return next !== null;
+  if (!canAddTerm(searchOverlay.settings as SearchSettings)) return false;
+  searchOverlay.change(
+    (current) => searchForMeaning(current as SearchSettings, text, meaningKeys) ?? current,
+  );
+  return true;
 }
 
 beforeAll(async () => {
