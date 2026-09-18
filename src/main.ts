@@ -15,11 +15,14 @@ import {
   configureAnalytics,
   trackOverlaySwitch,
   trackPageView,
+  trackSefariaClick,
   trackStoryExit,
   trackStoryReturn,
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
+  trackWordMenuOpen,
+  trackWordSearch,
 } from './analytics.ts';
 import { centreBook } from './telemetry/centreBook.ts';
 import {
@@ -711,11 +714,15 @@ async function main(): Promise<void> {
       click.index,
     );
 
+    const ref = `${click.book} ${click.chapter}:${click.verse}`;
+    const paletteFull = !canAddTerm(overlaySettings.get(searchOverlay));
+    trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
+
     openWordMenu({
       word: click.text,
       meanings,
       anchor: click.element,
-      paletteFull: !canAddTerm(overlaySettings.get(searchOverlay)),
+      paletteFull,
       onChoose: (meaning) => {
         // Ask before anything is spent. setOverlay() takes the showing overlay
         // off the map, so a search that is going to be refused must be refused
@@ -723,6 +730,8 @@ async function main(): Promise<void> {
         // nothing. The panel's own count was taken when it opened, and a
         // keyboard reader can add a word in between.
         if (!canAddTerm(overlaySettings.get(searchOverlay))) return;
+
+        trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
 
         if (currentOverlayId !== 'search') {
           setOverlay('search');
@@ -736,6 +745,13 @@ async function main(): Promise<void> {
         );
       },
     });
+  });
+
+  // sendBeacon survives the page navigating away, so following the link to
+  // Sefaria doesn't lose the event.
+  sidebarElements.link?.addEventListener('click', () => {
+    const verse = pinnedVerse ?? mouseState.hoveredVerse;
+    if (verse) trackSefariaClick(verse.book, verse.chapter, verse.verse, currentOverlayId);
   });
 
   overlaySelect?.addEventListener('change', () => {
