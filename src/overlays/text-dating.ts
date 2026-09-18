@@ -3,6 +3,7 @@ import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { loadJson } from './loadJson.ts';
 import { legendRow } from './legend.ts';
+import { colorToCss } from '../utils/color.ts';
 
 interface TextDatingData {
   notes: string[];
@@ -136,9 +137,11 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
 
   renderLegend(container: HTMLElement) {
     const rows = ERAS.map((era) => {
-      const [r, g, b] = era.baseColor;
-      const rgb = `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
-      return legendRow(rgb, `${era.name} (${era.dateRange[0]}-${era.dateRange[1]} BCE)`, 'label');
+      return legendRow(
+        colorToCss(era.baseColor),
+        `${era.name} (${era.dateRange[0]}-${era.dateRange[1]} BCE)`,
+        'label',
+      );
     }).join('');
 
     container.innerHTML = `
@@ -147,6 +150,10 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
         <div class="legend-note">Darker shades = later within period</div>
       </div>
     `;
+  },
+
+  summary() {
+    return { colors: ERAS.map((era) => colorToCss(era.baseColor)) };
   },
 
   getHoverInfo(verse: TanakhIdentity): string | null {

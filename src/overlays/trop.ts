@@ -41,6 +41,14 @@ function entryFor(mark: string | null): TropIndexEntry | null {
   return tropByFrequency.find((t) => slugify(t.name) === mark) ?? null;
 }
 
+/** A rare mark's legend is two swatches, "contains" and "does not"; any other's a gradient. */
+function markColors(entry: TropIndexEntry): string[] {
+  const tier = getRarityTier(entry.totalCount);
+  if (tier === 'rare') return ['rgb(255, 214, 0)', 'rgb(64, 64, 64)'];
+  const stops = tier === 'uncommon' ? UNCOMMON_TROP_GRADIENT : COMMON_TROP_GRADIENT;
+  return [buildLegendGradient(10, (i) => interpolateGradient(i / 9, stops))];
+}
+
 interface TropDerivation {
   verseLookup: Map<string, number>;
   maxCount: number;
@@ -252,17 +260,13 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
       return;
     }
 
-    const tier = getRarityTier(entry.totalCount);
-    if (tier === 'rare') {
+    const colors = markColors(entry);
+    if (colors.length === 2) {
       container.innerHTML =
-        legendRow('rgb(255, 214, 0)', `Contains ${entry.name}`) +
-        legendRow('rgb(64, 64, 64)', 'Does not contain');
+        legendRow(colors[0], `Contains ${entry.name}`) + legendRow(colors[1], 'Does not contain');
     } else {
-      const stops = tier === 'uncommon' ? UNCOMMON_TROP_GRADIENT : COMMON_TROP_GRADIENT;
-      const gradient = buildLegendGradient(10, (i) => interpolateGradient(i / 9, stops));
-
       container.innerHTML = `
-        <div class="trop-gradient" style="background: ${gradient}"></div>
+        <div class="trop-gradient" style="background: ${colors[0]}"></div>
         <div style="display: flex; justify-content: space-between; font-size: 10px; color: #888;">
           <span>0</span>
           <span>Count</span>
@@ -270,6 +274,11 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
         </div>
       `;
     }
+  },
+
+  summary(settings) {
+    const entry = entryFor(settings.mark);
+    return entry ? { detail: settings.mark ?? undefined, colors: markColors(entry) } : {};
   },
 
   getHoverInfo(verse, settings) {

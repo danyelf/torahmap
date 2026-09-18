@@ -4,7 +4,7 @@ import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
-import { legendCaption, renderAxis } from './legend.ts';
+import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
 const PLASMA_STOPS: ColorStop[] = [
@@ -105,6 +105,10 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
       ${legendCaption(`${highColor} = longer verses`)}
       ${legendCaption(`Square root scale · ${paletteName} palette`)}
     `;
+  },
+
+  summary() {
+    return { colors: [axisGradient(wordCountScale())] };
   },
 
   getHoverInfo(verse: TanakhIdentity): string | null {

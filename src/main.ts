@@ -112,7 +112,7 @@ import {
   type Driver,
 } from './scrollytelling/driver';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
-import { drawnColors, summaryHtml } from './panelSummary.ts';
+import { summaryHtml } from './panelSummary.ts';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
@@ -264,7 +264,7 @@ async function main(): Promise<void> {
     }
 
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
-    renderOverlayUi();
+    overlayChanged(true);
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -795,26 +795,23 @@ async function main(): Promise<void> {
     );
   }
 
-  /** The one line that stands for the controls while the story is open. */
-  function renderOverlaySummary(): void {
-    controlsSummary.innerHTML = summaryHtml(
-      currentOverlayId,
-      currentOverlay?.name,
-      buildOverlayParamsForUrl(),
-      // Search's term rows; its results list draws coloured dots too.
-      drawnColors(overlayControlsContainer, '.term-swatch'),
-      drawnColors(overlayLegendContainer),
-    );
-    updateSummaryShown();
-  }
-
-  /** Draw the active overlay's controls and legend from its current settings. */
-  function renderOverlayUi(): void {
-    if (overlaySelect) overlaySelect.value = currentOverlayId;
-    if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
+  /**
+   * Redraw everything that shows the active overlay or its settings. `fresh`
+   * clears the controls first, for a different overlay or settings from
+   * elsewhere; a reader's own edit redraws into them, keeping their focus.
+   */
+  function overlayChanged(fresh: boolean): void {
+    if (fresh) {
+      if (overlaySelect) overlaySelect.value = currentOverlayId;
+      if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
+    }
     renderOverlayControls();
     renderOverlayLegend();
-    renderOverlaySummary();
+    controlsSummary.innerHTML = summaryHtml(
+      currentOverlay?.name,
+      currentOverlay?.summary?.(currentSettings()) ?? {},
+    );
+    updateSummaryShown();
     refreshVersePopup();
   }
 
@@ -828,10 +825,7 @@ async function main(): Promise<void> {
     if (overlay !== currentOverlay) return;
 
     applyOverlay();
-    renderOverlayLegend();
-    renderOverlayControls();
-    renderOverlaySummary();
-    refreshVersePopup();
+    overlayChanged(false);
     render();
     saveUrlState(false);
   }
@@ -839,7 +833,7 @@ async function main(): Promise<void> {
   function setOverlay(id: string): void {
     trackOverlaySwitch(id, currentOverlayId);
     activateOverlay(id);
-    renderOverlayUi();
+    overlayChanged(true);
     applyOverlay();
     render();
     saveUrlState(true);
@@ -1084,6 +1078,7 @@ async function main(): Promise<void> {
       colorLayer.map((c, i) => c ?? getDefaultColor(i)),
       computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
     );
+    updateSummaryShown();
   }
 
   function paintStoryFrame(now: number): void {
@@ -1096,7 +1091,6 @@ async function main(): Promise<void> {
       // Done: the next lines re-sync the overlay, its settings and the pin.
       if (driver.by === 'story') lastSyncedStopId = null;
     }
-    updateSummaryShown();
 
     const state = currentStoryState();
     // Nothing further to scroll to, so no cue to.
@@ -1189,7 +1183,7 @@ async function main(): Promise<void> {
 
     activateOverlay(next.overlay);
     if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
-    renderOverlayUi();
+    overlayChanged(true);
 
     const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
     pinnedVerse = verse;
