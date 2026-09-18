@@ -46,18 +46,4 @@ describe('stopLabel', () => {
       'Search for Abram',
     );
   });
-
-  it('cuts a long label at the last whole word within the limit', () => {
-    const text =
-      'In Genesis, he is everywhere: even after his burial in chapter 25, his name is present.';
-    const label = stopLabel(stop({ text }), 50);
-    expect(label).toBe('In Genesis, he is everywhere: even after his…');
-    expect(label.length).toBeLessThanOrEqual(51);
-  });
-
-  it('leaves a label within the limit whole', () => {
-    expect(stopLabel(stop({ text: 'And then he almost disappears.' }), 50)).toBe(
-      'And then he almost disappears.',
-    );
-  });
 });

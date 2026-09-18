@@ -30,23 +30,14 @@ function renderMarkdown(md: string): string {
     .join('\n');
 }
 
-/**
- * What stands for a stop when the story is folded: its title, or else its
- * first sentence. Given `maxChars`, a longer label is cut at the last whole
- * word that fits and ends in an ellipsis.
- */
-export function stopLabel(stop: Pick<StoryStop, 'title' | 'text'>, maxChars?: number): string {
-  let label = stop.title;
-  if (!label) {
-    const div = document.createElement('div');
-    div.innerHTML = renderMarkdown(stop.text);
-    const text = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
-    // A sentence can end inside a closing quote or bracket: Abraham.”
-    label = text.match(/^.*?[.!?]["'”’)\]]*(?=\s|$)/)?.[0] ?? text;
-  }
-  if (maxChars === undefined || label.length <= maxChars) return label;
-  const cut = label.slice(0, maxChars).replace(/\s+\S*$/, '');
-  return `${cut.replace(/[\s,;:—–-]+$/, '')}…`;
+/** What stands for a stop when the story is folded: its title, or else its first sentence. */
+export function stopLabel(stop: Pick<StoryStop, 'title' | 'text'>): string {
+  if (stop.title) return stop.title;
+  const div = document.createElement('div');
+  div.innerHTML = renderMarkdown(stop.text);
+  const text = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
+  // A sentence can end inside a closing quote or bracket: Abraham.”
+  return text.match(/^.*?[.!?]["'”’)\]]*(?=\s|$)/)?.[0] ?? text;
 }
 
 export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HTMLElement[] {
@@ -76,27 +67,27 @@ export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HT
   return stopElements;
 }
 
-function cameraForVerse(
-  verse: TanakhLayout,
-  zoom: number,
-  canvasWidth: number,
-  canvasHeight: number,
-): CameraPosition {
+/** A point on the map, in CSS pixels, where the story puts the verse it names. */
+export interface StoryFocus {
+  x: number;
+  y: number;
+}
+
+function cameraForVerse(verse: TanakhLayout, zoom: number, focus: StoryFocus): CameraPosition {
   return {
-    x: canvasWidth / 2 / zoom - verse.x - verse.size / 2,
-    y: canvasHeight / 2 / zoom - verse.y - verse.size / 2,
+    x: focus.x / zoom - verse.x - verse.size / 2,
+    y: focus.y / zoom - verse.y - verse.size / 2,
     zoom,
   };
 }
 
 // "initial" uses the app's default camera position, unless the stop names a
-// verse to pin on, in which case that verse is centered instead.
+// verse to pin on, in which case that verse is put at `focus` instead.
 export function resolveStops(
   stops: StoryStop[],
   initialCamera: CameraPosition,
   verses?: TanakhLayout[],
-  canvasWidth?: number,
-  canvasHeight?: number,
+  focus?: StoryFocus,
 ): ResolvedStoryStop[] {
   return stops.map((stop) => {
     const cam = stop.camera;
@@ -105,20 +96,19 @@ export function resolveStops(
     if (isVerseRef(cam)) {
       const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
-      const verseLayout =
-        parsed && verses && canvasWidth && canvasHeight ? findTanakhItem(verses, parsed) : null;
-      if (verseLayout && canvasWidth && canvasHeight) {
-        camera = cameraForVerse(verseLayout, zoom, canvasWidth, canvasHeight);
+      const verseLayout = parsed && verses && focus ? findTanakhItem(verses, parsed) : null;
+      if (verseLayout && focus) {
+        camera = cameraForVerse(verseLayout, zoom, focus);
       } else {
         camera = { ...initialCamera };
       }
     } else if (cam !== 'initial') {
       camera = cam;
-    } else if (stop.verse && verses && canvasWidth && canvasHeight) {
+    } else if (stop.verse && verses && focus) {
       const parsed = parseVerseFromUrl(stop.verse);
       const verseLayout = parsed ? findTanakhItem(verses, parsed) : null;
       if (verseLayout) {
-        camera = cameraForVerse(verseLayout, initialCamera.zoom, canvasWidth, canvasHeight);
+        camera = cameraForVerse(verseLayout, initialCamera.zoom, focus);
       } else {
         camera = { ...initialCamera };
       }
@@ -128,8 +118,4 @@ export function resolveStops(
 
     return { ...stop, camera };
   });
-}
-
-export function computeStopOffsets(stopElements: HTMLElement[]): number[] {
-  return stopElements.map((el) => el.offsetTop);
 }

@@ -90,9 +90,9 @@ import {
 import {
   loadStoryData,
   renderStoryPanel,
-  computeStopOffsets,
   resolveStops,
   stopLabel,
+  type StoryFocus,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { colorsForStop, computeBlendedColors } from './scrollytelling/overlayBlender';
@@ -121,6 +121,10 @@ declare global {
 }
 
 const STORY_FOLDED_KEY = 'torahMap.storyFolded';
+
+// How far down a phone's map the story puts the verse it names. Halfway down,
+// the verse lands behind the popup that sits just above the sheet.
+const PHONE_STORY_FOCUS = 0.4;
 
 function storyWasFolded(): boolean {
   try {
@@ -305,12 +309,12 @@ async function main(): Promise<void> {
 
   // Where the story was when it folded. Folded, it has no height, and the stops
   // are spaced in fractions of its height, so its scroll collapses with it.
-  let foldedScrollTop = 0;
+  let foldedPosition = 0;
 
   function setStoryOpen(open: boolean): void {
     if (!open && storyOpen) {
       storyStripTitle.textContent = currentStopLabel();
-      foldedScrollTop = storyContent.scrollTop;
+      foldedPosition = storyPosition();
     }
     storyOpen = open;
     document.body.classList.toggle('story-folded', !open);
@@ -326,6 +330,22 @@ async function main(): Promise<void> {
   const phoneLayout = window.matchMedia('(max-width: 768px)');
   let sheetDown = false;
 
+  // On a phone the stops sit side by side and a swipe moves one; elsewhere
+  // they stack and scroll. Either way the story is driven by how far along
+  // that one axis it has been moved.
+  function storyPosition(): number {
+    return phoneLayout.matches ? storyContent.scrollLeft : storyContent.scrollTop;
+  }
+
+  function setStoryPosition(position: number): void {
+    if (phoneLayout.matches) storyContent.scrollLeft = position;
+    else storyContent.scrollTop = position;
+  }
+
+  function showStop(stop: HTMLElement | undefined): void {
+    stop?.scrollIntoView(phoneLayout.matches ? { block: 'nearest', inline: 'center' } : undefined);
+  }
+
   function setSheetDown(down: boolean): void {
     sheetDown = down;
     document.body.classList.toggle('sheet-down', down);
@@ -340,17 +360,18 @@ async function main(): Promise<void> {
     }
   }
 
+  // Crossing into or out of phone width turns the story from a column into a
+  // row, or back, and moves where it centres verses; keep the reader's stop.
   phoneLayout.addEventListener('change', () => {
     if (!phoneLayout.matches && sheetDown) setSheetDown(false);
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
+    showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
+    scheduleStoryFrame();
   });
 
   function currentStopLabel(): string {
     const state = currentStoryState();
-    // A phone's strip has room for about 50 characters.
-    return stopLabel(
-      state.t > 0.5 ? state.toStop : state.fromStop,
-      phoneLayout.matches ? 50 : undefined,
-    );
+    return stopLabel(state.t > 0.5 ? state.toStop : state.fromStop);
   }
 
   let driver: Driver = STORY_DRIVING;
@@ -366,7 +387,7 @@ async function main(): Promise<void> {
   /** Anything the reader does that changes what the map shows hands them the map. */
   function takeOver(): void {
     if (!storyOpen || driver.by === 'reader') return;
-    driver = readerTakesOver(storyContent.scrollTop);
+    driver = readerTakesOver(storyPosition());
     rejoin = null;
     // The reader's view is painted from the overlay, not from a story blend.
     transition = null;
@@ -917,28 +938,27 @@ async function main(): Promise<void> {
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
 
+  /**
+   * Where on the map the story puts the verse a stop names: the middle, or on
+   * a phone higher up, clear of the verse popup that sits above the sheet.
+   */
+  function storyFocus(): StoryFocus {
+    const height = phoneLayout.matches
+      ? canvas.clientHeight * PHONE_STORY_FOCUS
+      : canvas.clientHeight / 2;
+    return { x: canvas.clientWidth / 2, y: height };
+  }
+
   let storyData = await loadStoryData();
-  let resolvedStops = resolveStops(
-    storyData.stops,
-    initialCamera,
-    verses,
-    canvas.clientWidth,
-    canvas.clientHeight,
-  );
+  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
 
   async function reloadStory(): Promise<void> {
-    const scrollTop = storyContent.scrollTop;
+    const position = storyPosition();
     storyData = await loadStoryData();
-    resolvedStops = resolveStops(
-      storyData.stops,
-      initialCamera,
-      verses,
-      canvas.clientWidth,
-      canvas.clientHeight,
-    );
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
     stopElements = renderStoryPanel(storyContent, storyData.stops);
-    storyContent.scrollTop = scrollTop;
+    setStoryPosition(position);
     // Force re-apply: stops may have changed (overlay/params/verse), and stop
     // object identities are fresh after re-resolving.
     lastSyncedStopId = null;
@@ -985,7 +1005,7 @@ async function main(): Promise<void> {
       if (started || !storyOpen) return;
       started = true;
       rightPanel.removeEventListener('transitionend', onTransitionEnd);
-      storyContent.scrollTop = foldedScrollTop;
+      setStoryPosition(foldedPosition);
       driver = rejoinNow(performance.now());
       beginRejoin();
       scheduleStoryFrame();
@@ -1004,6 +1024,7 @@ async function main(): Promise<void> {
     else openStory();
   });
   storyStrip.addEventListener('click', openStory);
+  document.getElementById('return-to-story')?.addEventListener('click', openStory);
 
   // Scrolling is the only thing that moves the story on. While the reader
   // drives it only counts towards handing the map back.
@@ -1011,7 +1032,7 @@ async function main(): Promise<void> {
     if (!storyOpen) return;
 
     const before = driver.by;
-    driver = storyScrolled(driver, storyContent.scrollTop, performance.now());
+    driver = storyScrolled(driver, storyPosition(), performance.now());
     if (driver.by === 'reader') return;
     if (before === 'reader') beginRejoin();
     scheduleStoryFrame();
@@ -1025,14 +1046,15 @@ async function main(): Promise<void> {
   }
 
   function currentStoryState(): InterpolatedState {
+    const across = phoneLayout.matches;
     return computeInterpolatedState(
       resolvedStops,
-      computeStopOffsets(stopElements),
-      storyContent.scrollHeight,
-      storyContent.scrollTop,
+      stopElements.map((el) => (across ? el.offsetLeft : el.offsetTop)),
+      across ? storyContent.scrollWidth : storyContent.scrollHeight,
+      storyPosition(),
       storyData.defaults?.easing ?? 'ease-in-out',
-      stopElements.map((el) => el.offsetHeight),
-      storyContent.clientHeight,
+      stopElements.map((el) => (across ? el.offsetWidth : el.offsetHeight)),
+      across ? storyContent.clientWidth : storyContent.clientHeight,
     );
   }
 
@@ -1137,9 +1159,9 @@ async function main(): Promise<void> {
       lastSyncedStopId = null;
       driver = STORY_DRIVING;
       setStoryOpen(true);
-      storyContent.scrollTop = 0;
+      setStoryPosition(0);
     } else {
-      driver = readerTakesOver(storyContent.scrollTop);
+      driver = readerTakesOver(storyPosition());
       setStoryOpen(false);
     }
 
@@ -1160,7 +1182,7 @@ async function main(): Promise<void> {
     // The story drives the map from its scroll position, so it takes over here.
     if (next.mode === 'story') {
       const stopIndex = resolvedStops.findIndex((s) => s.id === next.storyStop);
-      stopElements[stopIndex]?.scrollIntoView();
+      showStop(stopElements[stopIndex]);
       scheduleStoryFrame();
     }
   }

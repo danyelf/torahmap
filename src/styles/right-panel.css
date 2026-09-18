@@ -268,8 +268,7 @@ body.story-folded #story-content {
 
 /* Paragraphs sit half a panel apart, so when one is centred the next starts
    at the bottom edge. The first starts mid-panel and the last can scroll up
-   to it. cqh is the panel's height, not the window's: on a phone the panel
-   is half the screen. */
+   to it. cqh is the story's height, not the window's. */
 .story-stop {
   padding: 25cqh 24px;
 }
@@ -298,8 +297,27 @@ body.story-folded #story-content {
 
 #panel-footer {
   grid-row: 5;
+  display: flex;
+  gap: 20px;
   padding: 10px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* On a phone it stands in for the folded story's strip. */
+#return-to-story {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #6ab0f3;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#return-to-story:hover {
+  color: #9cd;
+  text-decoration: underline;
 }
 
 /* Canvas sizing to accommodate panel */
@@ -311,16 +329,17 @@ body.story-folded #story-content {
   height: 100vh;
 }
 
-/* On a phone the panel is a sheet along the bottom. 30vh leaves every story
-   stop room for about 150px of text on an 844px-tall screen.
+/* On a phone the panel is a sheet along the bottom. 30svh leaves every story
+   stop room for about 150px of text on an 844px-tall screen. svh, not vh: a
+   phone's vh counts the space behind the browser's toolbar, so the map would
+   run under it and the verse the story centres would sit lower than it looks.
 
    Lowered, the sheet slides down until only its summary line shows. It slides
-   rather than shrinks: squeezing the story to no height would reset its
-   scroll, and the map would jump back to the first stop. --sheet-shown is how
-   much of it is on screen, which the map and the verse popup make room for. */
+   rather than shrinks, so the story keeps its place. --sheet-shown is how much
+   of it is on screen, which the map and the verse popup make room for. */
 @media (max-width: 768px) {
   :root {
-    --sheet-height: 30vh;
+    --sheet-height: 30svh;
     --sheet-bar: 60px;
     --sheet-shown: var(--sheet-height);
   }
@@ -348,7 +367,7 @@ body.story-folded #story-content {
 
   #canvas {
     width: 100vw;
-    height: calc(100vh - var(--sheet-shown));
+    height: calc(100svh - var(--sheet-shown));
   }
 
   /* Lowered, the top line is always the summary field, even when the open
@@ -374,18 +393,33 @@ body.story-folded #story-content {
     transform: translateY(2px) rotate(-135deg);
   }
 
-  /* A swipe moves one stop. Each stop's centre is where the story rests on it. */
+  /* The stops sit side by side, a page each, and a swipe moves one. Each
+     stop's centre is where the story rests on it. */
   #story-content {
-    scroll-snap-type: y mandatory;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
   }
 
-  /* Folding the story shrinks it, and a snapping scroller re-snaps as it
-     shrinks: it would land on another stop and lose the reader's place. */
-  body.story-folded #story-content {
-    scroll-snap-type: none;
-  }
-
-  .story-stop {
+  .story-stop,
+  .story-stop:first-child,
+  .story-stop:last-child {
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    padding: 16px 24px;
+    overflow-y: auto;
     scroll-snap-align: center;
+  }
+
+  /* Folded, the story is reached from the footer rather than its strip. */
+  body.story-folded #story-strip {
+    display: none;
+  }
+
+  body.story-folded #return-to-story {
+    display: inline;
   }
 }
