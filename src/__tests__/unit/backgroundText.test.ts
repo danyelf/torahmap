@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MIN_ZOOM, MAX_ZOOM } from '../../camera';
 import {
   advancePlacement,
+  bookBoxes,
   DEFAULT_SETTINGS,
   dominantUnitStart,
   fontSizeForZoom,
@@ -12,6 +13,7 @@ import {
   rangeToFill,
   pageTransform,
   passageAround,
+  planeTransform,
   shouldRegenerate,
   stripMarks,
   windowAround,
@@ -84,6 +86,32 @@ describe('dominantUnitStart', () => {
   it('is null when nothing is in view', () => {
     const rect = { left: 500, top: 500, right: 600, bottom: 600 };
     expect(dominantUnitStart(verses, rect, 'book')).toBeNull();
+  });
+});
+
+describe('bookBoxes', () => {
+  it('bounds each book and records its first and last verse', () => {
+    expect(bookBoxes(verses)).toEqual([
+      { book: 'Genesis', first: 0, last: 1, left: 6, top: 0, right: 18, bottom: 6 },
+      { book: 'Exodus', first: 2, last: 3, left: 94, top: 0, right: 106, bottom: 6 },
+    ]);
+  });
+});
+
+describe('planeTransform', () => {
+  const camera = { x: 0, y: 0, zoom: 2 };
+  const center = { x: 100, y: 100 };
+
+  it('leaves the point under the screen centre where it is', () => {
+    // Map point (50, 50) is at screen (100, 100) at zoom 2.
+    expect(planeTransform(50, 50, camera, 0.3, center)).toEqual({ x: 100, y: 100, scale: 0.6 });
+  });
+
+  it('moves by the parallax ratio of a pan', () => {
+    const before = planeTransform(0, 0, camera, 0.25, center);
+    const after = planeTransform(0, 0, { ...camera, x: 20 }, 0.25, center);
+    // Panning 20 map units at zoom 2 moves the map 40 pixels; the plane moves 10.
+    expect(after.x - before.x).toBeCloseTo(10);
   });
 });
 

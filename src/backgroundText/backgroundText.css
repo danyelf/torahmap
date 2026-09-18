@@ -22,6 +22,30 @@
   opacity: 0;
   transition: opacity var(--bgtext-fade, 300ms) linear;
 }
+.bgtext-plane {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  direction: rtl;
+}
+.bgtext-plane[data-layer='behind'] {
+  z-index: -1;
+}
+.bgtext-plane[data-layer='above'] {
+  z-index: 1;
+}
+.bgtext-book {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  overflow: hidden;
+  line-height: 1.6;
+  text-align: justify;
+  color: rgb(184 173 152 / var(--bgtext-opacity, 0.25));
+}
+
 /* Faintness is in the text colour, not the page's opacity, because a child
    can never be more opaque than its parent and a lit verse must be. */
 .bgtext-page.front {

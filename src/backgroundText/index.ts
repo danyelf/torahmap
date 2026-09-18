@@ -7,7 +7,8 @@ import type { Camera } from '../camera.ts';
 import type { RenderState } from '../rendering.ts';
 import type { TanakhLayout } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
-import { createBackgroundTextLayer } from './layer.ts';
+import { createBackgroundTextLayer, viewport } from './layer.ts';
+import { createBackPlane } from './plane.ts';
 import { createBackgroundTextPanel, loadSettings } from './panel.ts';
 
 // The map's labels load David Libre bold; the text and the panel's font choice
@@ -44,13 +45,25 @@ export function installBackgroundText(options: {
     container: document.body,
     litVerses: options.litVerses,
   });
+  const plane = createBackPlane({
+    verses,
+    texts,
+    camera,
+    settings,
+    container: document.body,
+    viewport,
+  });
   renderState.transparentBackground = settings.layer === 'behind';
   document.body.appendChild(
     createBackgroundTextPanel(settings, (next) => {
       layer.setSettings(next);
+      plane.setSettings(next);
       renderState.transparentBackground = next.layer === 'behind';
       render();
     }),
   );
-  return () => layer.update();
+  return () => {
+    layer.update();
+    plane.update();
+  };
 }

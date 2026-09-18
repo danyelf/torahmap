@@ -13,7 +13,7 @@ export type Anchor = 'viewport' | 'square';
 export type Content = 'center' | 'window' | 'fill';
 export type Marks = 'all' | 'no-trop' | 'letters';
 export type Font = 'noto' | 'frank' | 'david';
-export type Follow = 'verse' | 'chapter' | 'book';
+export type Follow = 'verse' | 'chapter' | 'book' | 'plane';
 export type Blend = 'normal' | 'difference' | 'exclusion' | 'overlay';
 
 export interface BackgroundTextSettings {
@@ -22,8 +22,12 @@ export interface BackgroundTextSettings {
    * which the reader cannot see. 'chapter' and 'book' are the one with the
    * most verses on screen; the passage starts at its beginning and is fixed to
    * the screen, since it stays the same for as long as that unit does.
+   * 'plane' chooses nothing: every book shows its opening words inside its
+   * own outline on a copy of the map shrunk by the parallax ratio.
    */
   follow: Follow;
+  /** Font size on the back plane, in map units (a verse square is 6). */
+  planeFont: number;
   /** Under the canvas (squares occlude the text) or over it at low opacity. */
   layer: Layer;
   /** How much of the map's screen movement the text follows: 0 is fixed to the glass, 1 is glued to the map. */
@@ -59,6 +63,7 @@ export interface BackgroundTextSettings {
 // third of the map's speed, very quiet, letters only, a slow dissolve between passages.
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   follow: 'book',
+  planeFont: 12,
   layer: 'above',
   parallax: 0.3,
   anchor: 'viewport',
@@ -278,6 +283,55 @@ export function dominantUnitStart(
     }
   }
   return best;
+}
+
+export interface BookBox {
+  book: string;
+  /** Index of the book's first and last verse. */
+  first: number;
+  last: number;
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/** Each book's bounding box in map units, in reading order. Assumes `verses` is in reading order. */
+export function bookBoxes(verses: TanakhLayout[]): BookBox[] {
+  const boxes: BookBox[] = [];
+  verses.forEach((v, i) => {
+    let box = boxes[boxes.length - 1];
+    if (!box || box.book !== v.book) {
+      box = { book: v.book, first: i, last: i, left: v.x, top: v.y, right: v.x, bottom: v.y };
+      boxes.push(box);
+    }
+    box.last = i;
+    box.left = Math.min(box.left, v.x);
+    box.top = Math.min(box.top, v.y);
+    box.right = Math.max(box.right, v.x + v.size);
+    box.bottom = Math.max(box.bottom, v.y + v.size);
+  });
+  return boxes;
+}
+
+/**
+ * Where a map point lands on the back plane: the map's screen position pulled
+ * toward the screen centre by `parallax`. A pan of d pixels moves it by
+ * parallax * d, and the point under the screen centre sits on its own map point.
+ */
+export function planeTransform(
+  worldX: number,
+  worldY: number,
+  camera: Camera,
+  parallax: number,
+  center: { x: number; y: number },
+): { x: number; y: number; scale: number } {
+  const s = worldToScreen(worldX, worldY, camera);
+  return {
+    x: center.x + parallax * (s.x - center.x),
+    y: center.y + parallax * (s.y - center.y),
+    scale: camera.zoom * parallax,
+  };
 }
 
 /**

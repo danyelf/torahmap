@@ -57,6 +57,14 @@ export interface BackgroundTextLayer {
   getSettings(): BackgroundTextSettings;
 }
 
+// The part of the window the map is actually visible in: the right panel
+// covers a strip of it, and the passage should sit in the middle of the rest.
+export function viewport(): { width: number; height: number } {
+  const panel = document.getElementById('right-panel');
+  const covered = panel && panel.offsetWidth > 0 ? panel.offsetWidth : 0;
+  return { width: window.innerWidth - covered, height: window.innerHeight };
+}
+
 function verseKey(v: TanakhLayout): string {
   return `${v.book} ${v.chapter}:${v.verse}`;
 }
@@ -91,20 +99,13 @@ export function createBackgroundTextLayer(options: {
   let lastZoom = camera.zoom;
 
   function applyStyle(): void {
+    root.hidden = settings.follow === 'plane';
     root.dataset.layer = settings.layer;
     root.style.setProperty('--bgtext-opacity', String(settings.opacity));
     root.style.setProperty('--bgtext-lit-opacity', String(settings.litOpacity));
     root.style.setProperty('--bgtext-fade', `${settings.crossfadeMs}ms`);
     root.style.fontFamily = FONT_FAMILIES[settings.font];
     for (const page of pages) page.el.style.mixBlendMode = settings.blend;
-  }
-
-  // The part of the window the map is actually visible in: the right panel
-  // covers a strip of it, and the passage should sit in the middle of the rest.
-  function viewport(): { width: number; height: number } {
-    const panel = document.getElementById('right-panel');
-    const covered = panel && panel.offsetWidth > 0 ? panel.offsetWidth : 0;
-    return { width: window.innerWidth - covered, height: window.innerHeight };
   }
 
   function centerVerseIndex(): number {
@@ -244,7 +245,7 @@ export function createBackgroundTextLayer(options: {
 
   /** The verse the passage is built around: the centre verse, or the first verse of the dominant unit. */
   function passageVerse(): number {
-    if (settings.follow === 'verse') return centerVerseIndex();
+    if (settings.follow === 'verse' || settings.follow === 'plane') return centerVerseIndex();
     const vp = viewport();
     const topLeft = screenToWorld(0, 0, camera);
     const bottomRight = screenToWorld(vp.width, vp.height, camera);
@@ -295,6 +296,7 @@ export function createBackgroundTextLayer(options: {
   }
 
   function update(): void {
+    if (settings.follow === 'plane') return;
     const zoomChanged = camera.zoom !== lastZoom;
     lastZoom = camera.zoom;
     for (const page of pages) {
