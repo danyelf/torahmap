@@ -817,6 +817,8 @@ async function main(): Promise<void> {
     lastStoryScrollTop = storyContent.scrollTop;
     appMode = 'explore';
     transition = null;
+    applyOverlay();
+    render();
     switchToExplore(storyPanel, explorePanel);
     // Update URL to explore mode (remove story param)
     saveUrlState(true);
@@ -838,6 +840,8 @@ async function main(): Promise<void> {
     if (scrollRAF) return;
     scrollRAF = requestAnimationFrame(() => {
       scrollRAF = null;
+      // The reader can leave the story between the scroll and this frame.
+      if (appMode !== 'story') return;
       const offsets = computeStopOffsets(stopElements);
       const heights = stopElements.map((el) => el.offsetHeight);
       const totalHeight = storyContent.scrollHeight;
