@@ -816,8 +816,8 @@ describe('labels', () => {
     it('adds one label per section, Hebrew then English', () => {
       const { sections } = sectionLabels();
       expect(sections.map((l) => l.dataset.section)).toEqual(['torah', 'neviim']);
-      expect(sections[0].textContent).toBe('תורה | Five Books');
-      expect(sections[1].textContent).toBe('נביאים | Prophets');
+      expect(sections[0].textContent).toBe('תורה Five Books');
+      expect(sections[1].textContent).toBe('נביאים Prophets');
     });
 
     it("sits beside the section's right edge, level with its top row", () => {

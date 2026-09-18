@@ -137,7 +137,7 @@ export function createSectionLabels(
 
     const enSpan = document.createElement('span');
     enSpan.style.fontFamily = 'system-ui,sans-serif';
-    enSpan.textContent = ` | ${SECTION_NAMES[section].en}`;
+    enSpan.textContent = ` ${SECTION_NAMES[section].en}`;
     label.appendChild(enSpan);
 
     labelsContainer.appendChild(label);
