@@ -54,7 +54,7 @@ import {
   tanakhKey,
 } from './types.ts';
 import { findItemAtPoint } from './hitDetection.ts';
-import { computeItemStates, applyItemColors } from './itemColoring.ts';
+import { computeItemStates, applyItemColors, overlayColorsFor } from './itemColoring.ts';
 import {
   createRenderContext,
   createRenderState,
@@ -144,7 +144,7 @@ async function main(): Promise<void> {
   function applyOverlay(): void {
     const verseStates = computeItemStates(
       verses,
-      currentOverlay,
+      overlayColorsFor(currentOverlay, verses),
       mouseState.hoveredVerse,
       pinnedVerse,
       tanakhIdentitiesEqual,

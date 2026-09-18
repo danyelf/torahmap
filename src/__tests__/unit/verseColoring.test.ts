@@ -5,6 +5,7 @@ import {
   applyHoverHighlight,
   computeItemStates,
   applyItemColors,
+  overlayColorsFor,
 } from '../../itemColoring';
 import type { TanakhLayout, ItemState } from '../../types';
 import { tanakhIdentitiesEqual } from '../../types';
@@ -190,7 +191,13 @@ describe('itemColoring', () => {
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
       };
 
-      const states = computeItemStates(verses, mockOverlay, null, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(mockOverlay, verses),
+        null,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].hasOverlayColor).toBe(true);
       expect(states[0].resolvedColor).toEqual([1, 0, 0]);
@@ -206,7 +213,13 @@ describe('itemColoring', () => {
         getVerseColor: vi.fn().mockReturnValue(null),
       };
 
-      const states = computeItemStates(verses, mockOverlay, null, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(mockOverlay, verses),
+        null,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -218,7 +231,13 @@ describe('itemColoring', () => {
     it('uses default color when overlay is null', () => {
       const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
-      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(null, verses),
+        null,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].hasOverlayColor).toBe(false);
       const resolvedColor = states[0].resolvedColor as [number, number, number];
@@ -234,7 +253,13 @@ describe('itemColoring', () => {
       ];
       const hoveredVerse = verses[1];
 
-      const states = computeItemStates(verses, null, hoveredVerse, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(null, verses),
+        hoveredVerse,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].isHovered).toBe(false);
       expect(states[1].isHovered).toBe(true);
@@ -247,7 +272,13 @@ describe('itemColoring', () => {
       ];
       const pinnedVerse = verses[0];
 
-      const states = computeItemStates(verses, null, null, pinnedVerse, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(null, verses),
+        null,
+        pinnedVerse,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].isPinned).toBe(true);
       expect(states[1].isPinned).toBe(false);
@@ -256,7 +287,13 @@ describe('itemColoring', () => {
     it('handles null hoveredVerse', () => {
       const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
-      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(null, verses),
+        null,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].isHovered).toBe(false);
     });
@@ -264,7 +301,13 @@ describe('itemColoring', () => {
     it('handles null pinnedVerse', () => {
       const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
-      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(null, verses),
+        null,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].isPinned).toBe(false);
     });
@@ -278,7 +321,13 @@ describe('itemColoring', () => {
       // Different position - doesn't matter
       const hoveredVerse: TanakhLayout = createVerse({ x: 999, y: 999, size: 2 });
 
-      const states = computeItemStates(verses, null, hoveredVerse, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(null, verses),
+        hoveredVerse,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states[0].isHovered).toBe(true); // Same book/chapter/verse
       expect(states[1].isHovered).toBe(false); // Different verse
@@ -292,9 +341,26 @@ describe('itemColoring', () => {
         createVerse({ verse: 3, x: 20, y: 0, size: 1 }),
       ];
 
-      const states = computeItemStates(verses, null, null, null, tanakhIdentitiesEqual);
+      const states = computeItemStates(
+        verses,
+        overlayColorsFor(null, verses),
+        null,
+        null,
+        tanakhIdentitiesEqual,
+      );
 
       expect(states.length).toBe(3);
+    });
+
+    it('composites hover onto colours it was handed, with no overlay', () => {
+      const items = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })];
+      const handed: (Color | Color[] | null)[] = [[1, 0, 0]];
+
+      const states = computeItemStates(items, handed, items[0], null, tanakhIdentitiesEqual);
+
+      expect(states[0].hasOverlayColor).toBe(true);
+      expect(states[0].resolvedColor).toEqual([1, 0, 0]);
+      expect(states[0].isHovered).toBe(true);
     });
   });
 
@@ -448,7 +514,7 @@ describe('itemColoring', () => {
       // First pass: compute states
       const states = computeItemStates(
         verses,
-        mockOverlay,
+        overlayColorsFor(mockOverlay, verses),
         hoveredVerse,
         null,
         tanakhIdentitiesEqual,

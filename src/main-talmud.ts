@@ -15,7 +15,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from './rendering.ts';
-import { computeItemStates, applyItemColors } from './itemColoring.ts';
+import { computeItemStates, applyItemColors, overlayColorsFor } from './itemColoring.ts';
 import { findItemAtPoint } from './hitDetection.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import { createMouseState, startDrag, stopDrag } from './mouseState.ts';
@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   function applyOverlay(): void {
     const states = computeItemStates<TalmudIdentity>(
       items,
-      composeWithMgBase(mgBaseOverlay, currentOverlay),
+      overlayColorsFor(composeWithMgBase(mgBaseOverlay, currentOverlay), items),
       hoveredItem,
       pinnedItem,
       talmudSegmentsEqual,

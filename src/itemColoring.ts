@@ -1,7 +1,7 @@
 // Color computation and hover highlighting for spatial items
 
 import type { SpatialItem, ItemState } from './types';
-import type { Overlay } from './overlays/types';
+import type { Overlay, Color } from './overlays/types';
 import { seededRandom } from './utils/random';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -58,9 +58,24 @@ export function applyHoverHighlight(
 }
 
 /**
+ * Map an overlay over items to the colours computeItemStates needs, one
+ * entry per item. The overlay is consulted here and nowhere else.
+ */
+export function overlayColorsFor<T>(
+  overlay: Overlay<T> | null,
+  items: SpatialItem<T>[],
+): (Color | Color[] | null)[] {
+  return items.map((v) => getOverlayColor(overlay, v));
+}
+
+/**
  * Compute semantic state for all items: what is true about each one
  * (hasOverlayColor, resolvedColor, isHovered, isPinned). Returns an array
  * parallel to items.
+ *
+ * Takes a colour per item rather than an overlay, so a blended colour array
+ * composites the same way a settled overlay frame does; overlayColorsFor
+ * builds that array from an overlay.
  *
  * Equality is injected as a parameter because each corpus has its own
  * identity shape. Tanakh callers pass tanakhIdentitiesEqual; Talmud callers pass
@@ -68,13 +83,13 @@ export function applyHoverHighlight(
  */
 export function computeItemStates<T>(
   items: SpatialItem<T>[],
-  overlay: Overlay<T> | null,
+  overlayColors: (Color | Color[] | null)[],
   hoveredItem: SpatialItem<T> | null,
   pinnedItem: SpatialItem<T> | null,
   itemsEqual: (a: T | null, b: T | null) => boolean,
 ): ItemState[] {
   return items.map((v, i) => {
-    const overlayColor = getOverlayColor(overlay, v);
+    const overlayColor = overlayColors[i];
     const hasOverlayColor = overlayColor !== null;
     const resolvedColor = hasOverlayColor ? overlayColor : getDefaultColor(i);
 
