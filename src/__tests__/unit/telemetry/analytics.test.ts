@@ -6,10 +6,10 @@ import {
   trackViewSettled,
 } from '../../../analytics.ts';
 
-let send: ReturnType<typeof vi.fn>;
+let send: ReturnType<typeof vi.fn<(body: string) => void>>;
 
 beforeEach(() => {
-  send = vi.fn();
+  send = vi.fn<(body: string) => void>();
   configureAnalytics({ hostname: 'torahmap.org', send, getMode: () => 'explore', visitId: 'v1' });
 });
 
