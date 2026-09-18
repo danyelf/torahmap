@@ -1,10 +1,22 @@
 # Story panel implementation plan
 
-**Status:** Tasks 1–5 and Task 8 Step 1 done. Tasks 6–7 wait for the overlay
-refactor; until then the band holds each overlay's full controls, 240px on
-desktop and the picker alone (90px) on a phone. The hidden story is
-remembered from the × and Show the story only, not from `setStoryShown`, so a
-shared link that opens with it hidden is not remembered.
+**Status:** Built, then revised. Tasks 1, 2, 4 and 5 stand as written. The
+fixed band of Tasks 3, 6 and 7, and the × and Show the story, were replaced by
+the accordion the revised spec describes. What was built instead:
+
+- `index.html`: `#controls-toggle` (the summary line, styled as a field),
+  `#panel-controls`, `#story-strip` (the folded story's title) and
+  `#story-content`, placed on the rows of a grid. `right-panel.css` swaps the
+  two opening rows between `0fr` and `1fr`, so the accordion animates in CSS.
+- `src/panelSummary.ts`: the summary from the overlay's name, its URL
+  settings, search's `.term-swatch` colours and the backgrounds its legend
+  drew. The `Overlay` interface is unchanged.
+- `main.ts`: `storyOpen` and `setStoryOpen` replace `storyShown`.
+  `openControls` folds the story and hands the reader the map; `openStory`
+  eases back once the story has finished opening. The fold is remembered under
+  `torahMap.storyFolded`, only from the reader's own taps.
+- Search results fill the open controls in their own scroll; other overlays'
+  controls keep their height and the column scrolls.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

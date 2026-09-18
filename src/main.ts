@@ -102,6 +102,7 @@ import {
   type Driver,
 } from './scrollytelling/driver';
 import type { CameraPosition, InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
+import { drawnColors, summaryHtml } from './panelSummary.ts';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
@@ -112,11 +113,11 @@ declare global {
   }
 }
 
-const STORY_HIDDEN_KEY = 'torahMap.storyHidden';
+const STORY_FOLDED_KEY = 'torahMap.storyFolded';
 
-function storyWasHidden(): boolean {
+function storyWasFolded(): boolean {
   try {
-    return localStorage.getItem(STORY_HIDDEN_KEY) === 'true';
+    return localStorage.getItem(STORY_FOLDED_KEY) === 'true';
   } catch {
     return false;
   }
@@ -195,11 +196,12 @@ async function main(): Promise<void> {
     const wantedOverlay = stop.overlay ?? 'none';
     if (wantedOverlay !== currentOverlayId) {
       activateOverlay(wantedOverlay);
-      // The picker is on screen during the story; the reader watches it move.
+      // So the controls show what the map shows when the reader opens them.
       if (overlaySelect) overlaySelect.value = wantedOverlay;
     }
 
     applyOverlayParams(currentOverlay, stop.overlayParams ?? {});
+    updateSummary();
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -229,13 +231,43 @@ async function main(): Promise<void> {
 
   const storyContent = document.getElementById('story-content')!;
 
-  // Whether the story section is showing. With it put away the controls have
-  // the panel to themselves and nothing moves the map but the reader.
-  let storyShown = true;
+  const panelControls = document.getElementById('panel-controls')!;
+  const controlsToggle = document.getElementById('controls-toggle')!;
+  const controlsSummary = document.getElementById('controls-summary')!;
+  const storyStrip = document.getElementById('story-strip')!;
+  const storyStripTitle = document.getElementById('story-strip-title')!;
 
-  function setStoryShown(shown: boolean): void {
-    storyShown = shown;
-    document.body.classList.toggle('story-hidden', !shown);
+  // The panel is an accordion: the story open and the controls folded to one
+  // line, or the controls open and the story folded to its title. With the
+  // story folded nothing moves the map but the reader.
+  let storyOpen = true;
+
+  function setStoryOpen(open: boolean): void {
+    if (!open) storyStripTitle.textContent = currentStopTitle();
+    storyOpen = open;
+    document.body.classList.toggle('story-folded', !open);
+    controlsToggle.setAttribute('aria-expanded', String(!open));
+    storyStrip.setAttribute('aria-expanded', String(open));
+    panelControls.inert = open;
+    storyContent.inert = !open;
+  }
+
+  setStoryOpen(true);
+
+  function currentStopTitle(): string {
+    const state = currentStoryState();
+    return (state.t > 0.5 ? state.toStop : state.fromStop).title;
+  }
+
+  function updateSummary(): void {
+    controlsSummary.innerHTML = summaryHtml(
+      currentOverlayId,
+      currentOverlay?.name,
+      currentOverlay?.getUrlParams?.() ?? {},
+      // Search's term rows; its results list draws coloured dots too.
+      drawnColors(overlayControlsContainer, '.term-swatch'),
+      drawnColors(overlayLegendContainer),
+    );
   }
 
   let driver: Driver = STORY_DRIVING;
@@ -250,13 +282,12 @@ async function main(): Promise<void> {
 
   /** Anything the reader does that changes what the map shows hands them the map. */
   function takeOver(): void {
-    if (!storyShown || driver.by === 'reader') return;
+    if (!storyOpen || driver.by === 'reader') return;
     driver = readerTakesOver(storyContent.scrollTop);
     rejoin = null;
     saveUrlState(true);
   }
 
-  let lastStoryScrollTop = 0;
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
   // Reset whenever the story comes back, since the reader may have changed the
@@ -644,6 +675,7 @@ async function main(): Promise<void> {
         currentOverlay?.renderLegend?.(overlayLegendContainer);
       }
       render();
+      updateSummary();
       // Save URL state when overlay params change (replaceState).
       // No guard needed here: applyingExternalState() turns URL writes off
       // around every restore and every story stop, so an overlay announcing a
@@ -659,6 +691,7 @@ async function main(): Promise<void> {
       overlayLegendContainer.innerHTML = '';
       currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
+    updateSummary();
   }
 
   function setOverlay(id: string, opts: { fromUrlRestore?: boolean } = {}): void {
@@ -716,14 +749,6 @@ async function main(): Promise<void> {
       },
     });
   });
-
-  // Capturing, so the reader has the wheel before any control acts. The story
-  // sets controls without DOM events, so only the reader's own actions reach
-  // this.
-  const panelControls = document.getElementById('panel-controls');
-  for (const type of ['input', 'change', 'click'] as const) {
-    panelControls?.addEventListener(type, takeOver, { capture: true });
-  }
 
   overlaySelect?.addEventListener('change', () => {
     setOverlay(overlaySelect.value);
@@ -815,42 +840,61 @@ async function main(): Promise<void> {
     });
   }
 
-  // Remembered only when the reader puts the story away themselves, not when a
-  // shared link opens with it hidden.
-  function rememberStoryHidden(hidden: boolean): void {
+  // Remembered only when the reader opens or closes a section themselves, not
+  // when a shared link opens with the story folded.
+  function rememberStoryFolded(folded: boolean): void {
     try {
-      if (hidden) localStorage.setItem(STORY_HIDDEN_KEY, 'true');
-      else localStorage.removeItem(STORY_HIDDEN_KEY);
+      if (folded) localStorage.setItem(STORY_FOLDED_KEY, 'true');
+      else localStorage.removeItem(STORY_FOLDED_KEY);
     } catch {
-      // Storage can be unavailable; the story simply shows next time.
+      // Storage can be unavailable; the story simply opens next time.
     }
   }
 
-  document.getElementById('hide-story')?.addEventListener('click', () => {
-    lastStoryScrollTop = storyContent.scrollTop;
+  function openControls(): void {
     driver = readerTakesOver(storyContent.scrollTop);
     rejoin = null;
-    setStoryShown(false);
-    rememberStoryHidden(true);
+    setStoryOpen(false);
+    rememberStoryFolded(true);
     // The URL stops naming a story stop and names the overlay instead.
     saveUrlState(true);
-  });
+  }
 
-  // Showing the story hands it the map at once, easing back as a deliberate
-  // scroll would.
-  document.getElementById('show-story')?.addEventListener('click', () => {
-    setStoryShown(true);
-    rememberStoryHidden(false);
-    storyContent.scrollTop = lastStoryScrollTop;
-    driver = rejoinNow(performance.now());
-    beginRejoin();
-    scheduleStoryFrame();
-  });
+  const rightPanel = document.getElementById('right-panel')!;
+
+  /**
+   * Opening the story hands it the map at once, easing back as a deliberate
+   * scroll would. The ease starts once the story has finished opening: where
+   * the story is depends on how tall it is.
+   */
+  function openStory(): void {
+    setStoryOpen(true);
+    rememberStoryFolded(false);
+
+    let started = false;
+    const start = (): void => {
+      if (started || !storyOpen) return;
+      started = true;
+      rightPanel.removeEventListener('transitionend', onTransitionEnd);
+      driver = rejoinNow(performance.now());
+      beginRejoin();
+      scheduleStoryFrame();
+    };
+    const onTransitionEnd = (e: TransitionEvent): void => {
+      if (e.target === rightPanel && e.propertyName === 'grid-template-rows') start();
+    };
+    rightPanel.addEventListener('transitionend', onTransitionEnd);
+    // No transitionend without a transition, as with reduced motion.
+    setTimeout(start, 400);
+  }
+
+  controlsToggle.addEventListener('click', () => (storyOpen ? openControls() : openStory()));
+  storyStrip.addEventListener('click', openStory);
 
   // Scrolling is the only thing that moves the story on. While the reader
   // drives it only counts towards handing the map back.
   storyContent.addEventListener('scroll', () => {
-    if (!storyShown) return;
+    if (!storyOpen) return;
 
     const before = driver.by;
     driver = storyScrolled(driver, storyContent.scrollTop, performance.now());
@@ -895,7 +939,7 @@ async function main(): Promise<void> {
 
   function paintStoryFrame(now: number): void {
     storyFrame = null;
-    if (!storyShown || driver.by === 'reader') return;
+    if (!storyOpen || driver.by === 'reader') return;
 
     if (driver.by === 'rejoining') {
       driver = settle(driver, now);
@@ -970,6 +1014,7 @@ async function main(): Promise<void> {
         overlayLegendContainer.innerHTML = '';
         currentOverlay.renderLegend?.(overlayLegendContainer);
       }
+      updateSummary();
     }
   }
 
@@ -1014,7 +1059,7 @@ async function main(): Promise<void> {
       lastSyncedStopId = null;
       driver = STORY_DRIVING;
       rejoin = null;
-      setStoryShown(true);
+      setStoryOpen(true);
       storyContent.scrollTop = 0;
       const stopIndex = resolvedStops.findIndex((s) => s.id === urlState.story);
       if (stopIndex >= 0 && stopElements[stopIndex]) {
@@ -1026,7 +1071,7 @@ async function main(): Promise<void> {
     if (urlState.overlay || urlState.verse) {
       driver = readerTakesOver(storyContent.scrollTop);
       rejoin = null;
-      setStoryShown(false);
+      setStoryOpen(false);
     }
 
     restoreOverlayFromUrl(urlState);
@@ -1041,10 +1086,10 @@ async function main(): Promise<void> {
     restoreFromUrl();
   }
 
-  // A link to a story stop always shows the story.
-  if (storyShown && !parseUrlState().story && storyWasHidden()) {
+  // A link to a story stop always opens the story.
+  if (storyOpen && !parseUrlState().story && storyWasFolded()) {
     driver = readerTakesOver(0);
-    setStoryShown(false);
+    setStoryOpen(false);
   }
 
   subscribeToHashChange(() => {
