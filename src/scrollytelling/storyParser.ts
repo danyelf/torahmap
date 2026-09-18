@@ -103,7 +103,7 @@ function parseStops(body: string): StoryStop[] {
     const rawContent = body.slice(meta.contentStart, contentEnd).trim();
 
     const titleMatch = rawContent.match(/^#\s+(.+)$/m);
-    const title = titleMatch ? titleMatch[1].trim() : meta.id;
+    const title = titleMatch?.[1].trim();
 
     const text = titleMatch
       ? rawContent.slice(rawContent.indexOf(titleMatch[0]) + titleMatch[0].length).trim()

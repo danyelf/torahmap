@@ -86,6 +86,7 @@ import {
   renderStoryPanel,
   computeStopOffsets,
   resolveStops,
+  stopLabel,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { colorsForStop, computeBlendedColors } from './scrollytelling/overlayBlender';
@@ -243,7 +244,7 @@ async function main(): Promise<void> {
   let storyOpen = true;
 
   function setStoryOpen(open: boolean): void {
-    if (!open) storyStripTitle.textContent = currentStopTitle();
+    if (!open) storyStripTitle.textContent = currentStopLabel();
     storyOpen = open;
     document.body.classList.toggle('story-folded', !open);
     controlsToggle.setAttribute('aria-expanded', String(!open));
@@ -254,9 +255,9 @@ async function main(): Promise<void> {
 
   setStoryOpen(true);
 
-  function currentStopTitle(): string {
+  function currentStopLabel(): string {
     const state = currentStoryState();
-    return (state.t > 0.5 ? state.toStop : state.fromStop).title;
+    return stopLabel(state.t > 0.5 ? state.toStop : state.fromStop);
   }
 
   function updateSummary(): void {

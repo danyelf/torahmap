@@ -240,6 +240,13 @@ body.story-folded #story-strip {
   display: flex;
 }
 
+#story-strip-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Folded to no height rather than hidden, so it keeps its scroll position. */
 #story-content {
   grid-row: 4;

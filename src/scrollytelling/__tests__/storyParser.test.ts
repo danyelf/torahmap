@@ -40,6 +40,15 @@ Abraham first appears in Genesis 12.`;
     expect(data.stops[1].overlayParams).toEqual({ q: 'אברהם' });
   });
 
+  it('leaves a stop without a heading untitled', () => {
+    const md = `<!-- stop: rename | camera: initial -->
+Five chapters later, God renames him.`;
+
+    const [stop] = parseStoryMarkdown(md).stops;
+    expect(stop.title).toBeUndefined();
+    expect(stop.text).toBe('Five chapters later, God renames him.');
+  });
+
   it('parses camera coordinates', () => {
     const md = `<!-- stop: zoomed | camera: -2000,40,2.5 -->
 # Zoomed View

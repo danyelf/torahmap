@@ -30,6 +30,15 @@ function renderMarkdown(md: string): string {
     .join('\n');
 }
 
+/** What stands for a stop when the story is folded: its title, or else its first sentence. */
+export function stopLabel(stop: Pick<StoryStop, 'title' | 'text'>): string {
+  if (stop.title) return stop.title;
+  const div = document.createElement('div');
+  div.innerHTML = renderMarkdown(stop.text);
+  const text = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
+  return text.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? text;
+}
+
 export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HTMLElement[] {
   container.innerHTML = '';
   const stopElements: HTMLElement[] = [];
@@ -39,9 +48,11 @@ export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HT
     el.className = 'story-stop';
     el.dataset.stopId = stop.id;
 
-    const title = document.createElement('h2');
-    title.textContent = stop.title;
-    el.appendChild(title);
+    if (stop.title) {
+      const title = document.createElement('h2');
+      title.textContent = stop.title;
+      el.appendChild(title);
+    }
 
     const textContainer = document.createElement('div');
     textContainer.className = 'story-text';
