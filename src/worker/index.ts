@@ -18,6 +18,12 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405 });
   if (request.headers.get('Origin') !== SITE_ORIGIN) return new Response(null, { status: 403 });
 
+  // Reject by the declared size before reading the body, so an oversized
+  // request never has to be buffered in full. The header can be absent or
+  // wrong, so the byte count below still checks what was actually sent.
+  const contentLength = Number(request.headers.get('Content-Length'));
+  if (contentLength > MAX_BODY_BYTES) return new Response(null, { status: 413 });
+
   const body = await request.text();
   if (new TextEncoder().encode(body).length > MAX_BODY_BYTES) {
     return new Response(null, { status: 413 });

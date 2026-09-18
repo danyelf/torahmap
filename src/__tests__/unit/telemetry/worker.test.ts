@@ -58,6 +58,13 @@ describe('telemetry worker', () => {
     expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
   });
 
+  it('rejects an oversized body by its Content-Length header, without reading it', async () => {
+    const e = env();
+    const response = await worker.fetch(post('x', { 'Content-Length': String(3000) }), e);
+    expect(response.status).toBe(413);
+    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
   it('measures the body in bytes, not characters', async () => {
     const e = env();
     // Each 'א' is one UTF-16 code unit but two UTF-8 bytes, so this body is
