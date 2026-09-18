@@ -6,10 +6,12 @@ import { getOverlay } from '../overlays/registry';
 import { getDefaultColor } from '../itemColoring';
 import { blendColorArrays } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
+import { settingsFromParams } from '../overlays/settings.ts';
 
-// Keyed on overlay id + the validated settings, so two stops that ask for the
-// same thing share an entry and this module never has to know what a stop is
-// called or how many exist. Settings are the only thing this caches by: an
+// Keyed on overlay id + the validated URL parameters, taken before they become
+// the overlay's own settings: that text is canonical, where a settings value
+// need not be. Two stops that ask for the same thing share an entry and this module never has to know what a stop is
+// called or how many exist. The parameters are the only thing this caches by: an
 // overlay whose colours depend on the hovered verse (only Haftarah — it's the
 // one overlay that declares setHoveredVerse) is evaluated fresh, uncached,
 // whenever a verse is actually hovered. Hit detection re-runs every frame the
@@ -26,9 +28,9 @@ function definedEntries(values: UrlParamValues): [string, string][] {
   );
 }
 
-function cacheKeyFor(overlay: Overlay, settings: UrlParamValues): string {
-  const settingsKey = new URLSearchParams(Object.fromEntries(definedEntries(settings))).toString();
-  return `${overlay.id}?${settingsKey}`;
+function cacheKeyFor(overlay: Overlay, params: UrlParamValues): string {
+  const paramsKey = new URLSearchParams(Object.fromEntries(definedEntries(params))).toString();
+  return `${overlay.id}?${paramsKey}`;
 }
 
 function getColorsForStop(
@@ -43,18 +45,18 @@ function getColorsForStop(
     return verses.map((_, i) => getDefaultColor(i));
   }
 
-  const settings = validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {});
+  const params = validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {});
 
   if (overlay.setHoveredVerse && hovered) {
-    const colors = overlay.colorsFor(verses, settings, hovered);
+    const colors = overlay.colorsFor(verses, settingsFromParams(overlay, params), hovered);
     return colors.map((c, i) => c ?? getDefaultColor(i));
   }
 
-  const key = cacheKeyFor(overlay, settings);
+  const key = cacheKeyFor(overlay, params);
   const cached = colorsCache.get(key);
   if (cached) return cached;
 
-  const colors = overlay.colorsFor(verses, settings, hovered);
+  const colors = overlay.colorsFor(verses, settingsFromParams(overlay, params), hovered);
   const resolved = colors.map((c, i) => c ?? getDefaultColor(i));
   colorsCache.set(key, resolved);
   return resolved;

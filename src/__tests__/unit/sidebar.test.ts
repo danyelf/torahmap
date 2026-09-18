@@ -224,42 +224,42 @@ describe('sidebar', () => {
     describe('showing verse info', () => {
       it('displays verse reference', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.ref?.textContent).toBe('Genesis 1:1');
       });
 
       it('displays Hebrew text', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.hebrew?.textContent).toBe('בְּרֵאשִׁית');
       });
 
       it('displays English text', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.english?.textContent).toBe('In the beginning');
       });
 
       it('sets Sefaria link href', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.link?.href).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
       });
 
       it('makes sidebar visible', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.sidebar?.classList.contains('visible')).toBe(true);
       });
 
       it('handles verse with no text data', () => {
         const verse = createVerse({ book: 'Exodus', chapter: 20, verse: 2 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.hebrew?.textContent).toBe('Loading...');
         expect(elements.english?.textContent).toBe('Loading...');
@@ -269,14 +269,14 @@ describe('sidebar', () => {
     describe('pinned state', () => {
       it('adds pinned class when isPinned is true', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, true);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, true);
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(true);
       });
 
       it('does not add pinned class when isPinned is false', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(false);
       });
@@ -285,7 +285,7 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         elements.sidebar?.classList.add('pinned');
 
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(false);
       });
@@ -294,14 +294,14 @@ describe('sidebar', () => {
     describe('hiding sidebar', () => {
       it('removes visible class when verse is null', () => {
         elements.sidebar?.classList.add('visible');
-        updateSidebar(elements, null, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, null, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.sidebar?.classList.contains('visible')).toBe(false);
       });
 
       it('removes pinned class when verse is null', () => {
         elements.sidebar?.classList.add('pinned');
-        updateSidebar(elements, null, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, null, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(false);
       });
@@ -318,7 +318,7 @@ describe('sidebar', () => {
         };
 
         expect(() => {
-          updateSidebar(nullElements, null, verseTexts, null, mockGetVerseText, false);
+          updateSidebar(nullElements, null, verseTexts, null, undefined, mockGetVerseText, false);
         }).not.toThrow();
       });
     });
@@ -332,10 +332,11 @@ describe('sidebar', () => {
           getHoverInfo: vi.fn(() => 'Test hover info'),
         };
 
+        const settings = { category: 'x' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, mockOverlay, settings, mockGetVerseText, false);
 
-        expect(mockOverlay.getHoverInfo).toHaveBeenCalledWith(verse);
+        expect(mockOverlay.getHoverInfo).toHaveBeenCalledWith(verse, settings);
         expect(elements.overlayInfo?.textContent).toBe('Test hover info');
       });
 
@@ -347,14 +348,14 @@ describe('sidebar', () => {
         };
 
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, mockOverlay, undefined, mockGetVerseText, false);
 
         expect(elements.overlayInfo?.textContent).toBe('');
       });
 
       it('clears overlay info when overlay is null', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.overlayInfo?.textContent).toBe('');
       });
@@ -383,10 +384,11 @@ describe('sidebar', () => {
           }),
         };
 
+        const settings = { any: 'value' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, mockOverlay, settings, mockGetVerseText, false);
 
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he');
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he', settings);
         // The mark reaches the popup, and the text inside it is still wrapped
         // into a clickable word rather than the guard refusing to touch it.
         expect(elements.hebrew?.querySelector('mark')).not.toBeNull();
@@ -410,16 +412,21 @@ describe('sidebar', () => {
           }),
         };
 
+        const settings = { any: 'value' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, mockOverlay, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, mockOverlay, settings, mockGetVerseText, false);
 
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he');
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('In the beginning', 'en');
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he', settings);
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+          'In the beginning',
+          'en',
+          settings,
+        );
       });
 
       it('uses plain text when no special overlay is active', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.hebrew?.textContent).toBe('בְּרֵאשִׁית');
         expect(elements.english?.textContent).toBe('In the beginning');
@@ -432,7 +439,7 @@ describe('sidebar', () => {
         elements.ref = null;
 
         expect(() => {
-          updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+          updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
         }).not.toThrow();
       });
 
@@ -441,7 +448,7 @@ describe('sidebar', () => {
         elements.hebrew = null;
 
         expect(() => {
-          updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+          updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
         }).not.toThrow();
       });
 
@@ -450,7 +457,7 @@ describe('sidebar', () => {
         elements.english = null;
 
         expect(() => {
-          updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+          updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
         }).not.toThrow();
       });
 
@@ -459,7 +466,7 @@ describe('sidebar', () => {
         elements.link = null;
 
         expect(() => {
-          updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+          updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
         }).not.toThrow();
       });
 
@@ -471,7 +478,7 @@ describe('sidebar', () => {
         };
         const verse = createVerse({ book: 'Song of Songs', chapter: 1, verse: 1 });
 
-        updateSidebar(elements, verse, verseTexts, null, mockGetVerseText, false);
+        updateSidebar(elements, verse, verseTexts, null, undefined, mockGetVerseText, false);
 
         expect(elements.ref?.textContent).toBe('Song of Songs 1:1');
         expect(elements.link?.href).toBe('https://www.sefaria.org/Song_of_Songs.1.1?with=all');

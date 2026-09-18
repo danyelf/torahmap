@@ -203,7 +203,7 @@ export const tropOverlay: Overlay = {
     return getTropVerseColor(verse);
   },
 
-  colorsFor(items, settings, _hovered) {
+  colorsFor(items, settings: UrlParamValues, _hovered) {
     const derived = deriveTrop(settings.trop);
     return items.map((item) => tropColorAt(item, derived));
   },

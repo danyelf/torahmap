@@ -63,7 +63,7 @@ describe('itemColoring', () => {
     it('returns null when overlay is null', () => {
       const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
-      const color = getOverlayColor(null, verse);
+      const color = getOverlayColor(null, verse, undefined);
 
       expect(color).toBe(null);
     });
@@ -78,10 +78,11 @@ describe('itemColoring', () => {
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
       };
 
-      const color = getOverlayColor(mockOverlay, verse);
+      const settings = { any: 'value' };
+      const color = getOverlayColor(mockOverlay, verse, settings);
 
       expect(color).toEqual([1, 0, 0]);
-      expect(mockOverlay.getVerseColor).toHaveBeenCalledWith(verse);
+      expect(mockOverlay.getVerseColor).toHaveBeenCalledWith(verse, settings);
     });
 
     it('returns null when overlay getVerseColor returns null', () => {
@@ -94,7 +95,7 @@ describe('itemColoring', () => {
         getVerseColor: vi.fn().mockReturnValue(null),
       };
 
-      const color = getOverlayColor(mockOverlay, verse);
+      const color = getOverlayColor(mockOverlay, verse, undefined);
 
       expect(color).toBe(null);
     });
@@ -113,7 +114,7 @@ describe('itemColoring', () => {
         getVerseColor: vi.fn().mockReturnValue(multiColor),
       };
 
-      const color = getOverlayColor(mockOverlay, verse);
+      const color = getOverlayColor(mockOverlay, verse, undefined);
 
       expect(color).toEqual(multiColor);
     });
@@ -193,7 +194,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(mockOverlay, verses),
+        overlayColorsFor(mockOverlay, verses, undefined),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -215,7 +216,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(mockOverlay, verses),
+        overlayColorsFor(mockOverlay, verses, undefined),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -233,7 +234,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses),
+        overlayColorsFor(null, verses, undefined),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -255,7 +256,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses),
+        overlayColorsFor(null, verses, undefined),
         hoveredVerse,
         null,
         tanakhIdentitiesEqual,
@@ -274,7 +275,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses),
+        overlayColorsFor(null, verses, undefined),
         null,
         pinnedVerse,
         tanakhIdentitiesEqual,
@@ -289,7 +290,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses),
+        overlayColorsFor(null, verses, undefined),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -303,7 +304,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses),
+        overlayColorsFor(null, verses, undefined),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -323,7 +324,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses),
+        overlayColorsFor(null, verses, undefined),
         hoveredVerse,
         null,
         tanakhIdentitiesEqual,
@@ -343,7 +344,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses),
+        overlayColorsFor(null, verses, undefined),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -514,7 +515,7 @@ describe('itemColoring', () => {
       // First pass: compute states
       const states = computeItemStates(
         verses,
-        overlayColorsFor(mockOverlay, verses),
+        overlayColorsFor(mockOverlay, verses, undefined),
         hoveredVerse,
         null,
         tanakhIdentitiesEqual,

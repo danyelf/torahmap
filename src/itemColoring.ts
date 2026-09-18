@@ -19,11 +19,12 @@ export function getDefaultColor(verseIndex: number): [number, number, number] {
 /**
  * Get overlay-provided color for a spatial item, or null if overlay doesn't color it.
  */
-export function getOverlayColor<T>(
-  overlay: Overlay<T> | null,
+export function getOverlayColor<T, S>(
+  overlay: Overlay<T, S> | null,
   item: T,
+  settings: S,
 ): [number, number, number] | [number, number, number][] | null {
-  return overlay?.getVerseColor(item) ?? null;
+  return overlay?.getVerseColor(item, settings) ?? null;
 }
 
 /**
@@ -61,11 +62,12 @@ export function applyHoverHighlight(
  * Map an overlay over items to the colours computeItemStates needs, one
  * entry per item. The overlay is consulted here and nowhere else.
  */
-export function overlayColorsFor<T>(
-  overlay: Overlay<T> | null,
+export function overlayColorsFor<T, S>(
+  overlay: Overlay<T, S> | null,
   items: SpatialItem<T>[],
+  settings: S,
 ): (Color | Color[] | null)[] {
-  return items.map((v) => getOverlayColor(overlay, v));
+  return items.map((v) => getOverlayColor(overlay, v, settings));
 }
 
 /**

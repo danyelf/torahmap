@@ -14,7 +14,9 @@ import {
 } from '../../urlState';
 import { mockHistory, mockWindowLocation } from '../helpers/mocks';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
-import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { createOverlaySettings } from '../../overlays/settings';
+import type { Overlay } from '../../overlays/types';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -988,11 +990,22 @@ describe('overlay-supplied parameters', () => {
   });
 });
 
+// A plausible value for each key an overlay declared.
+function plausibleSettings(overlay: Overlay): Record<string, string> {
+  const settings: Record<string, string> = {};
+  for (const spec of overlay.urlParams ?? []) {
+    settings[spec.key] = spec.allowed?.[0] ?? 'x';
+  }
+  return settings;
+}
+
 describe('what every overlay must hold to', () => {
   // The point of the redesign: an overlay that saves settings has to say which
   // keys it uses, or urlState.ts will never read them back out of a link.
   getAllOverlays().forEach((overlay) => {
-    const savesSettings = Boolean(overlay.getUrlParams || overlay.applyUrlParams);
+    const savesSettings = Boolean(
+      overlay.settingsFromUrl || overlay.getUrlParams || overlay.applyUrlParams,
+    );
 
     it(`${overlay.id}: declares its keys if it saves any settings`, () => {
       if (savesSettings) {
@@ -1018,7 +1031,9 @@ describe('what every overlay must hold to', () => {
 
     it(`${overlay.id}: only reports settings under keys it declared`, () => {
       const declared = new Set((overlay.urlParams ?? []).map((spec) => spec.key));
-      const reported = Object.keys(overlay.getUrlParams?.() ?? {});
+      const store = createOverlaySettings();
+      store.restore(overlay, plausibleSettings(overlay));
+      const reported = Object.keys(store.toUrl(overlay));
       for (const key of reported) {
         expect(declared, `${overlay.id} reported undeclared "${key}"`).toContain(key);
       }
@@ -1035,8 +1050,8 @@ describe('what every overlay must hold to', () => {
       // Second, end to end: an overlay announces a settings change by calling
       // the handler the app gave it, and in the app that handler saves URL
       // state. So wire up a handler that does exactly that and watch the
-      // history API. (Commentary and search do announce; that is what makes
-      // this half of the test bite.)
+      // history API. (Commentary does announce; that is what makes this half
+      // of the test bite.)
       const { pushState, replaceState } = mockHistory('http://localhost:5173/');
 
       overlay.onUpdate?.(() => {
@@ -1052,12 +1067,7 @@ describe('what every overlay must hold to', () => {
         });
       }
 
-      // Feed it a plausible value for each key it declared.
-      const settings: Record<string, string> = {};
-      for (const spec of overlay.urlParams ?? []) {
-        settings[spec.key] = spec.allowed?.[0] ?? 'x';
-      }
-      applyOverlayParams(overlay, settings);
+      createOverlaySettings().restore(overlay, plausibleSettings(overlay));
 
       if (overlay.applyUrlParams) {
         expect(

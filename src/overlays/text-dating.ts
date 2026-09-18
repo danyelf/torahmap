@@ -130,8 +130,8 @@ export const textDatingOverlay: Overlay = {
     return getVerseColorFromDate(midpointBCE);
   },
 
-  colorsFor(items, _settings, _hovered) {
-    return items.map((item) => this.getVerseColor(item));
+  colorsFor(items, settings, _hovered) {
+    return items.map((item) => this.getVerseColor(item, settings));
   },
 
   renderLegend(container: HTMLElement) {

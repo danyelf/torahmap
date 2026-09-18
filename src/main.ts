@@ -65,7 +65,7 @@ import {
 import type { TanakhLayout } from './types.ts';
 import {
   registerAllOverlays,
-  applyOverlayParams,
+  createOverlaySettings,
   getOverlay,
   getAllOverlays,
   configureCommentary,
@@ -75,7 +75,7 @@ import {
   type Overlay,
   type Color,
 } from './overlays/index.ts';
-import { searchForMeaning, canAddTerm } from './overlays/search/index.ts';
+import { searchOverlay, searchForMeaning, canAddTerm } from './overlays/search/index.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -143,6 +143,13 @@ async function main(): Promise<void> {
 
   let currentOverlay: Overlay | null = null;
 
+  // Every overlay's settings, kept while another overlay is showing.
+  const overlaySettings = createOverlaySettings();
+
+  function currentSettings(): unknown {
+    return currentOverlay ? overlaySettings.get(currentOverlay) : undefined;
+  }
+
   // The one colour layer on the map: either a settled overlay's colours or a
   // story transition's blend. Hover and pin never touch it — composite()
   // paints them on top each time, so a hover re-render never re-asks an
@@ -168,7 +175,7 @@ async function main(): Promise<void> {
   }
 
   function applyOverlay(): void {
-    setColorLayer(overlayColorsFor(currentOverlay, verses));
+    setColorLayer(overlayColorsFor(currentOverlay, verses, currentSettings()));
   }
 
   /**
@@ -193,7 +200,7 @@ async function main(): Promise<void> {
       activateOverlay(wantedOverlay);
     }
 
-    applyOverlayParams(currentOverlay, stop.overlayParams ?? {});
+    if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
     renderOverlayUi();
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
@@ -467,7 +474,7 @@ async function main(): Promise<void> {
 
     if (overlayWantsRerender) {
       // Haftarah's own colours depend on hover, so the layer itself is stale.
-      setColorLayer(overlayColorsFor(currentOverlay, verses));
+      applyOverlay();
       render();
     } else if (wasHovering) {
       composite();
@@ -478,7 +485,7 @@ async function main(): Promise<void> {
   const sidebarElements = getSidebarElements();
 
   function buildOverlayParamsForUrl(): Record<string, string> {
-    return currentOverlay?.getUrlParams?.() ?? {};
+    return currentOverlay ? overlaySettings.toUrl(currentOverlay) : {};
   }
 
   function buildCurrentUrlState(): UrlState {
@@ -516,7 +523,15 @@ async function main(): Promise<void> {
   const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
+    updateSidebar(
+      sidebarElements,
+      verse,
+      verseTexts,
+      currentOverlay,
+      currentSettings(),
+      getVerseText,
+      isPinned,
+    );
   }
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
@@ -543,7 +558,7 @@ async function main(): Promise<void> {
 
       if (overlayWantsRerender) {
         // Haftarah's own colours depend on hover, so the layer itself is stale.
-        setColorLayer(overlayColorsFor(currentOverlay, verses));
+        applyOverlay();
         render();
       } else if (hoverChanged) {
         composite();
@@ -623,18 +638,40 @@ async function main(): Promise<void> {
   function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
-      currentOverlay?.renderLegend?.(overlayLegendContainer);
+      currentOverlay?.renderLegend?.(overlayLegendContainer, currentSettings());
     }
+  }
+
+  /** Draw the active overlay's controls into what is already there. */
+  function renderOverlayControls(): void {
+    const overlay = currentOverlay;
+    if (!overlay || !overlayControlsContainer) return;
+    overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), (next) =>
+      changeSettings(overlay, next),
+    );
   }
 
   /** Draw the active overlay's controls and legend from its current settings. */
   function renderOverlayUi(): void {
     if (overlaySelect) overlaySelect.value = currentOverlayId;
-    if (overlayControlsContainer) {
-      overlayControlsContainer.innerHTML = '';
-      currentOverlay?.renderControls?.(overlayControlsContainer);
-    }
+    if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
+    renderOverlayControls();
     renderOverlayLegend();
+  }
+
+  /**
+   * Take the settings a reader asked for. A control left over from an overlay
+   * that is no longer showing still has its settings kept, but paints nothing.
+   */
+  function changeSettings(overlay: Overlay, next: unknown): void {
+    overlaySettings.set(overlay, next);
+    if (overlay !== currentOverlay) return;
+
+    applyOverlay();
+    renderOverlayLegend();
+    renderOverlayControls();
+    render();
+    saveUrlState(false);
   }
 
   function setOverlay(id: string): void {
@@ -663,24 +700,28 @@ async function main(): Promise<void> {
       word: click.text,
       meanings,
       anchor: click.element,
-      paletteFull: !canAddTerm(),
+      paletteFull: !canAddTerm(overlaySettings.get(searchOverlay)),
       onChoose: (meaning) => {
-        // Ask before anything is spent. setOverlay() destroys the outgoing
-        // overlay and its settings, so a search that is going to be refused
-        // must be refused first - otherwise the reader loses their Haftarah
-        // view and gains nothing. The panel's own count was taken when it
-        // opened, and a keyboard reader can add a word in between.
-        if (!canAddTerm()) return;
+        // Ask before anything is spent. setOverlay() takes the showing overlay
+        // off the map, so a search that is going to be refused must be refused
+        // first - otherwise the reader loses their Haftarah view and gains
+        // nothing. The panel's own count was taken when it opened, and a
+        // keyboard reader can add a word in between.
+        const next = searchForMeaning(
+          overlaySettings.get(searchOverlay),
+          word,
+          meaning?.keys ?? null,
+        );
+        if (!next) return;
 
         if (currentOverlayId !== 'search') {
           setOverlay('search');
           if (overlaySelect) overlaySelect.value = 'search';
         }
 
-        // No repaint here, and no second history entry: running the search
-        // announces itself through the overlay's update callback, which paints
-        // the map and writes the URL over whatever setOverlay just pushed.
-        searchForMeaning(word, meaning?.keys ?? null);
+        // Replaces the URL setOverlay just pushed rather than adding a second
+        // history entry.
+        changeSettings(searchOverlay, next);
       },
     });
   });
@@ -706,11 +747,8 @@ async function main(): Promise<void> {
         let extraParts = '';
         if (currentOverlay) {
           extraParts += ` | overlay: ${currentOverlay.id}`;
-          const params = currentOverlay.getUrlParams?.();
-          if (params) {
-            for (const [key, value] of Object.entries(params)) {
-              extraParts += ` | ${key}: ${value}`;
-            }
+          for (const [key, value] of Object.entries(overlaySettings.toUrl(currentOverlay))) {
+            extraParts += ` | ${key}: ${value}`;
           }
         }
         if (pinnedVerse) {
@@ -895,7 +933,7 @@ async function main(): Promise<void> {
     appMode = next.mode;
 
     activateOverlay(next.overlay);
-    applyOverlayParams(currentOverlay, next.overlaySettings);
+    if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlaySettings);
     renderOverlayUi();
 
     const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;

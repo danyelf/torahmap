@@ -359,7 +359,7 @@ export const haftarahOverlay: Overlay = {
     return colorAt(verse, currentDerivation, hoveredVerse);
   },
 
-  colorsFor(items, settings, hovered) {
+  colorsFor(items, settings: UrlParamValues, hovered) {
     if (!data) return items.map(() => null);
     const derived = deriveHaftarah(settings.custom);
     // A hovered verse outside every reading desaturates nothing, the same as

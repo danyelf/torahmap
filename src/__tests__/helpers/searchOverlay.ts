@@ -1,10 +1,8 @@
 // Driving the search overlay's controls the way a reader would.
-import type { Overlay } from '../../overlays/types';
+import type { OverlayHost } from './overlayHost';
 
-export function renderSearchControls(overlay: Overlay): HTMLDivElement {
-  const container = document.createElement('div');
-  overlay.renderControls?.(container);
-  return container as HTMLDivElement;
+export function renderSearchControls(host: OverlayHost<unknown>): HTMLDivElement {
+  return host.renderControls(document.createElement('div')) as HTMLDivElement;
 }
 
 export function typeIntoInput(input: HTMLInputElement, text: string): void {

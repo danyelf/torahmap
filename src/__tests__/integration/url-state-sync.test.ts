@@ -16,6 +16,7 @@ import {
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+import { createOverlaySettings } from '../../overlays/settings';
 
 describe('URL State Sync Integration', () => {
   let originalLocation: Location;
@@ -80,10 +81,11 @@ describe('URL State Sync Integration', () => {
 
       // Apply URL params
       const params = new URLSearchParams('q=moses');
-      applyOverlayParams(overlay, params);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params);
 
       // Get URL params back
-      const urlParams = overlay?.getUrlParams?.();
+      const urlParams = settings.toUrl(overlay!);
       expect(urlParams).toEqual({ q: 'moses' });
     });
 
@@ -129,7 +131,12 @@ describe('URL State Sync Integration', () => {
       await overlay?.init?.();
 
       const container = document.createElement('div');
-      overlay?.renderControls?.(container);
+      const settings = createOverlaySettings();
+      const draw = () =>
+        overlay?.renderControls?.(container, settings.get(overlay), (next) =>
+          settings.set(overlay, next),
+        );
+      draw();
       (container.querySelector('button') as HTMLButtonElement).click();
       const chosen = overlay?.getUrlParams?.().trop;
       expect(chosen, 'the trop overlay reported no selection').toBeTruthy();
@@ -155,7 +162,7 @@ describe('URL State Sync Integration', () => {
       // so the assertion below is about the restore and not state the
       // overlay happened to be carrying already.
       container.innerHTML = '';
-      overlay?.renderControls?.(container);
+      draw();
       (container.querySelector('button') as HTMLButtonElement).click();
       expect(overlay?.getUrlParams?.().trop, 'failed to clear the selection').toBeUndefined();
 

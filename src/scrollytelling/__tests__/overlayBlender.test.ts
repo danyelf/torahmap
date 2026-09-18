@@ -5,7 +5,7 @@ import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
-import type { Overlay } from '../../overlays/types';
+import type { Overlay, UrlParamValues } from '../../overlays/types';
 
 const verses: TanakhLayout[] = [
   { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
@@ -26,8 +26,8 @@ const stippleOverlay: Overlay = {
     }
     return [0.5, 0.5, 0.5] as [number, number, number];
   },
-  colorsFor(items) {
-    return items.map((item) => stippleOverlay.getVerseColor(item));
+  colorsFor(items, settings) {
+    return items.map((item) => stippleOverlay.getVerseColor(item, settings));
   },
 };
 
@@ -127,7 +127,7 @@ describe('story stop settings reach the overlay', () => {
     name: 'Test Settings',
     urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
     getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
-    colorsFor(items, settings) {
+    colorsFor(items, settings: UrlParamValues) {
       received = { ...settings };
       return items.map(() => [0.5, 0.5, 0.5] as [number, number, number]);
     },
@@ -166,6 +166,26 @@ describe('story stop settings reach the overlay', () => {
     const stop = stopWith({ mode: 'off', nonsense: 'x' });
     computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({ mode: 'off' });
+  });
+
+  it("hands an overlay with its own settings type the settings it builds from the stop's", () => {
+    let handed: unknown = null;
+    const typedOverlay: Overlay<TanakhLayout, { on: boolean }> = {
+      id: 'test-typed-settings',
+      name: 'Test Typed Settings',
+      urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+      settingsFromUrl: (params) => ({ on: params.mode === 'on' }),
+      getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
+      colorsFor(items, settings) {
+        handed = settings;
+        return items.map(() => [0.5, 0.5, 0.5] as [number, number, number]);
+      },
+    };
+    registerOverlay(typedOverlay);
+
+    const stop = { ...stopWith({ mode: 'on' }), overlay: 'test-typed-settings' };
+    computeBlendedColors(stop, stop, 0, verses, null);
+    expect(handed).toEqual({ on: true });
   });
 });
 

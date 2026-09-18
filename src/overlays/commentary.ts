@@ -101,7 +101,7 @@ export const commentaryOverlay: Overlay = {
     return commentaryColorAt(verse, currentCategory);
   },
 
-  colorsFor(items, settings, _hovered) {
+  colorsFor(items, settings: UrlParamValues, _hovered) {
     const category = settings.category ?? 'total';
     return items.map((item) => commentaryColorAt(item, category));
   },

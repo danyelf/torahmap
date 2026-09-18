@@ -10,9 +10,13 @@ import {
 } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { createOverlaySettings } from '../../overlays/settings';
 
 const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };
+
+// The settings the app holds for each overlay, as main.ts holds them.
+let settings = createOverlaySettings();
 
 function viewFor(hash: string): ViewState {
   mockWindowLocation(`http://localhost:5173/${hash}`);
@@ -28,9 +32,13 @@ async function controlsAfter(hash: string): Promise<HTMLElement> {
   const view = viewFor(hash);
   const overlay = getOverlay(view.overlay);
   await overlay?.init?.();
-  applyOverlayParams(overlay, view.overlaySettings);
   const container = document.createElement('div');
-  overlay?.renderControls?.(container);
+  if (overlay) {
+    settings.restore(overlay, view.overlaySettings);
+    overlay.renderControls?.(container, settings.get(overlay), (next) =>
+      settings.set(overlay, next),
+    );
+  }
   return container;
 }
 
@@ -39,6 +47,7 @@ describe('restoring a link as one complete view', () => {
     mockHistory('http://localhost:5173/');
     mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
     registerAllOverlays();
+    settings = createOverlaySettings();
     configureCommentary({ verses: SAMPLE_VERSES });
     configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({ verses: SAMPLE_VERSES, callbacks: { onVerseClick: vi.fn() } });
@@ -134,16 +143,16 @@ describe('restoring a link as one complete view', () => {
       await controlsAfter('#overlay=trop&trop=tipcha');
       const controls = await controlsAfter('#overlay=trop');
 
-      expect(getOverlay('trop')?.getUrlParams?.()).toEqual({});
+      expect(settings.toUrl(getOverlay('trop')!)).toEqual({});
       expect(controls.querySelector('button.selected')).toBeNull();
     });
 
     it('clears the search query when the link names none', async () => {
       await controlsAfter('#overlay=search&q=light');
-      expect(getOverlay('search')?.getUrlParams?.().q).toBe('light');
+      expect(settings.toUrl(getOverlay('search')!).q).toBe('light');
 
       await controlsAfter('#overlay=search');
-      expect(getOverlay('search')?.getUrlParams?.()).toEqual({});
+      expect(settings.toUrl(getOverlay('search')!)).toEqual({});
     });
   });
 });

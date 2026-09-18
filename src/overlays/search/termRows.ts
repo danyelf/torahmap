@@ -1,8 +1,8 @@
 // The term rows: one row per word, the open row's mode control, and its
 // meanings.
 //
-// The rows read and write the term list and decide which row the reader is
-// working in, but they hold none of it. Everything comes through the host
+// The rows read the term list, ask for changes to it and decide which row the
+// reader is working in, but they hold none of it. Everything comes through the host
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { isHebrewQuery } from '../../search.ts';
@@ -33,11 +33,11 @@ export interface TermRowsHost {
   openId(): string | null;
   /** Verses this term accounts for on its own, or null when it is not being searched. */
   hitCount(term: SearchTerm): number | null;
-  /** Take this term list and rerun the search on it. */
+  /** Ask for this term list in place of the current one. */
   setTerms(next: SearchTerm[]): void;
   /** Work in this row from now on. */
   openRow(id: string): void;
-  /** Add an empty row and work in that. Nothing to search for, so nothing reruns. */
+  /** Add an empty row and work in that. */
   addRow(): void;
 }
 
