@@ -849,7 +849,15 @@ async function main(): Promise<void> {
         }
         // Mid-scroll: the blender's interpolated colors become the layer, so a
         // hover mid-transition composites on top of them like any other frame.
-        setColorLayer(computeBlendedColors(state.fromStop, state.toStop, state.t, verses));
+        setColorLayer(
+          computeBlendedColors(
+            state.fromStop,
+            state.toStop,
+            state.t,
+            verses,
+            mouseState.hoveredVerse,
+          ),
+        );
       }
       render();
       updateUrl({ story: dominantStop.id, overlayParams: {} }, false);

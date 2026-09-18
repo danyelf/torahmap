@@ -1,7 +1,8 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { computeBlendedColors } from '../overlayBlender';
 import { registerOverlay } from '../../overlays/registry';
+import { commentaryOverlay } from '../../overlays/commentary';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Overlay } from '../../overlays/types';
@@ -25,6 +26,9 @@ const stippleOverlay: Overlay = {
     }
     return [0.5, 0.5, 0.5] as [number, number, number];
   },
+  colorsFor(items) {
+    return items.map((item) => stippleOverlay.getVerseColor(item));
+  },
 };
 
 describe('computeBlendedColors stipple preservation', () => {
@@ -44,7 +48,7 @@ describe('computeBlendedColors stipple preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-stipple',
     };
-    const result = computeBlendedColors(stop, stop, 0, verses);
+    const result = computeBlendedColors(stop, stop, 0, verses, null);
 
     // Verse 0 should be a Color[] (array of tuples), not a flattened single tuple
     const c0 = result[0];
@@ -77,7 +81,7 @@ describe('computeBlendedColors stipple preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-stipple',
     };
-    const result = computeBlendedColors(fromStop, toStop, 0, verses);
+    const result = computeBlendedColors(fromStop, toStop, 0, verses, null);
     const c0 = result[0];
     expect(Array.isArray(c0)).toBe(true);
     expect(Array.isArray((c0 as unknown[])[0])).toBe(true);
@@ -102,7 +106,7 @@ describe('computeBlendedColors stipple preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-stipple',
     };
-    const result = computeBlendedColors(fromStop, toStop, 0.5, verses);
+    const result = computeBlendedColors(fromStop, toStop, 0.5, verses, null);
     const c0 = result[0];
     // During transition between two identical stipple stops, slot-by-slot lerp
     // (red→red, blue→blue) keeps the stipple array intact.
@@ -122,10 +126,11 @@ describe('story stop settings reach the overlay', () => {
     id: 'test-settings',
     name: 'Test Settings',
     urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
-    applyUrlParams: (params) => {
-      received = { ...params };
-    },
     getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
+    colorsFor(items, settings) {
+      received = { ...settings };
+      return items.map(() => [0.5, 0.5, 0.5] as [number, number, number]);
+    },
   };
 
   function stopWith(overlayParams: Record<string, string>): ResolvedStoryStop {
@@ -146,20 +151,90 @@ describe('story stop settings reach the overlay', () => {
 
   it('passes a declared setting through', () => {
     const stop = stopWith({ mode: 'on' });
-    computeBlendedColors(stop, stop, 0, verses);
+    computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({ mode: 'on' });
   });
 
   it('drops a value the overlay did not allow', () => {
     // Story stops are hand-written, so they are checked like any link.
     const stop = stopWith({ mode: 'sideways' });
-    computeBlendedColors(stop, stop, 0, verses);
+    computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({});
   });
 
   it('drops a key the overlay never declared', () => {
     const stop = stopWith({ mode: 'off', nonsense: 'x' });
-    computeBlendedColors(stop, stop, 0, verses);
+    computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({ mode: 'off' });
+  });
+});
+
+describe('the blender evaluates without disturbing the overlay', () => {
+  beforeEach(() => {
+    registerOverlay(commentaryOverlay);
+  });
+
+  it('leaves the overlay showing what it showed before the blend', () => {
+    commentaryOverlay.applyUrlParams?.({ category: 'Midrash' });
+
+    const fromStop: ResolvedStoryStop = {
+      id: 'a',
+      title: 'A',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'commentary',
+      overlayParams: { category: 'Talmud' },
+    };
+    const toStop: ResolvedStoryStop = {
+      id: 'b',
+      title: 'B',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'commentary',
+      overlayParams: { category: 'Mishnah' },
+    };
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+
+    expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
+  });
+});
+
+describe('the blender memoises colours by settings', () => {
+  it('calls colorsFor once per distinct settings across repeated blends, not once per call', () => {
+    const colorsForSpy = vi.fn((items: TanakhLayout[]) =>
+      items.map(() => [0.2, 0.2, 0.2] as [number, number, number]),
+    );
+    const memoOverlay: Overlay = {
+      id: 'test-memo',
+      name: 'Test Memo',
+      urlParams: [{ key: 'mode', kind: 'token' }],
+      getVerseColor: () => [0.2, 0.2, 0.2] as [number, number, number],
+      colorsFor: colorsForSpy,
+    };
+    registerOverlay(memoOverlay);
+
+    const fromStop: ResolvedStoryStop = {
+      id: 'm1',
+      title: 'M1',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-memo',
+      overlayParams: { mode: 'a' },
+    };
+    const toStop: ResolvedStoryStop = {
+      id: 'm2',
+      title: 'M2',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-memo',
+      overlayParams: { mode: 'b' },
+    };
+
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+
+    // Two distinct settings (mode 'a' and 'b') across two blends: once each,
+    // not once per call — the second blend shares both cache entries.
+    expect(colorsForSpy).toHaveBeenCalledTimes(2);
   });
 });
