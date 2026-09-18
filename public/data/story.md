@@ -4,120 +4,92 @@ easing: ease-in-out
 
 <!-- stop: intro | camera: initial -->
 
-# The Torah Map
+# The Torahmap
 
-The Hebrew Bible. Twenty-three thousand verses, laid out as colored squares.
+The Tanakh — the Hebrew Bible — consists of almost twenty-three thousand verses. In the Torahmap, we lay them out as colored squares.
 
-Torah on the right. Prophets in the middle. Writings on the left.
+The Five Books of the Torah run across the top row,
+right to left, following Hebrew order.
+The Prophets are in the middle; the Writings at the bottom.
 
-Scroll to explore.
+Each book is a column.
 
 <!-- stop: a_book | camera: Genesis.25.1 | zoom: 1.5 -->
 
-# A Book
-
-Each book is a column. The ragged right edge is its chapters — each one a different length.
-
-This is Genesis. Fifty chapters. Fifteen hundred verses.
-
-<!-- stop: chapters | camera: Genesis.5.1 | zoom: 3 -->
-
-# Chapters
-
-Each line is a chapter.
+These are the fifty chapters of the Book of Genesis. Each line is a single chapter.
 
 <!-- stop: verses | camera: Genesis.1.1 | zoom: 5 | verse: Genesis.1.1 -->
 
-# Verses
+Every square is a single verse. The text appears when you hover over a verse.
 
-And every square is a verse.
+Tap or click a verse to pin it.
 
-Here is *bereshit bara elohim* — Genesis 1:1, the first verse of the Bible.
+This is Genesis 1:1, the first verse of the Bible.
 
-<!-- stop: genesis_full | camera: Genesis.25.1 | zoom: 1.4 -->
+<!-- stop: abraham_zoom | camera: Genesis.12.1 | zoom: 1.5 | overlay: search | q: אברם -->
 
-# Back to Genesis
+We can overlay the map with data. To show how, let's trace the story of how the forefather Abraham is remembered in the Tanakh.
 
-Pull back. Fifty chapters. Fifteen hundred verses. The whole book at once.
-
-Now we can search it.
+We can search for his name, **אברם**, Abram.
 
 <!-- stop: abraham_call | camera: Genesis.12.1 | zoom: 2.5 | verse: Genesis.12.1 | overlay: search | q: אברם -->
 
-# The Call
-
-Search for **אברם** — Abram.
-
-He first appears here, in Genesis 12: *Lekh lekha* — "Go forth from your land, from the place of your birth, to the land that I will show you."
+In Genesis 12, God calls to Abram: *Lekh lekha* — “Go forth from your native land and from your father’s house to the land that I will show you.”
 
 <!-- stop: abraham_rename | camera: Genesis.17.5 | zoom: 2.5 | verse: Genesis.17.5 | overlay: search | q: אברם,אברהם -->
 
-# The Rename
+Five chapters later, God gives Abram a new name: “you shall no longer be called Abram, but your name shall be Abraham.”
 
-Five chapters later, God renames him: *no longer shall your name be called Abram, but Abraham.*
+We can add the new name to our search. This verse, showing the rename, holds both colors.
 
-Add the new name in orange. This verse — the rename itself — holds both colors.
+<!-- stop: genesis_full | camera: Genesis.24.20 | zoom: 0.8 | verse: Genesis.25.11 | overlay: search | q: אברם,אברהם -->
 
-<!-- stop: abraham_torah | camera: initial | overlay: search | q: אברם,אברהם -->
+In Genesis, he is everywhere: even after his burial in chapter 25, his name is a continuing presence.
 
-# Two Names, One Map
+<!-- stop: gone | camera: I.Samuel.1.1 | zoom: 0.5 | overlay: search | q: אברם,אברהם -->
 
-Abram before Genesis 17. Abraham after.
+And then he almost disappears.
 
-The same person. Two names. Echoes throughout the Torah, the Prophets, and the Writings.
+The other four books of the Torah name him in just a handful of verses.
 
-<!-- stop: abraham_friend | camera: Isaiah.41.8 | zoom: 3 | verse: Isaiah.41.8 | overlay: search | q: אברם,אברהם -->
+<!-- stop: name_in_list | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם, -->
 
-# An Echo, A Thousand Years Later
+When he does appear, he is usually the first name in a list of forefathers.
 
-The prophet Isaiah remembers him:
+<!-- stop: name_in_list_with_isaac | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם,יצחק,יעקב, -->
 
-*Seed of Abraham, my friend.*
+At the burning bush, God tells Moses to tell the Israelites that he was sent by “the God of Abraham, the God of Isaac, and the God of Jacob.”
 
-<!-- stop: nehemiah_bridge | camera: Nehemiah.9.7 | zoom: 3 | verse: Nehemiah.9.7 | overlay: search | q: אברם,אברהם -->
+<!-- stop: name_in_list_worldwide_three_names | camera: I.Samuel.1.1 | zoom: 0.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם,יצחק,יעקב -->
 
-# The Bridge
+After Genesis, he is usually named alongside Isaac and Jacob. (Jacob's name, in pink, appears more often.)
 
-Five hundred years later still, in the book of Nehemiah, a single verse holds both names at once:
+<!-- stop: liturgy_verse | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
-*You are the LORD God, who chose **Abram** … and changed his name to **Abraham**.*
+Now we switch from search to the commentary overlay, which shows how often the prayer book quotes each verse.
 
-The historian, looking back, names the rename. Both colors, in one square.
+The Amidah, the central prayer said three times a day, opens with its words: “God of Abraham, God of Isaac, and God of Jacob.”
 
-<!-- stop: haftarah_reveal | camera: Isaiah.41.8 | zoom: 3 | verse: Isaiah.41.8 | overlay: haftarah -->
+Of all the verses that name Abraham, this is the one the prayer book cites most.
 
-# The Pairing
+(You can click on the Sefaria icon to go see the citations on their website.)
 
-The rabbis noticed too — and of all the echoes of Abraham, they singled out *this* passage.
+<!-- stop: liturgy_zoom_out | camera: Exodus.3.15 | zoom: 1.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
-Why this one? The verbs match. Genesis 12: *Go forth from your land.* Isaiah 41: *I drew you from the ends of the earth, called you from its far corners.* The same act of being called from afar.
+The prayer book's Abraham comes from the places that look back at him: the burning bush;
 
-So they paired Isaiah 40:27–41:16 with the Torah portion of *Lekh Lekha* — Abraham's call. Switch the overlay. Watch our verse light up inside the haftarah it belongs to.
+<!-- stop: liturgy_leviticus | camera: Leviticus.26.42 | zoom: 1.5 | verse: Leviticus.26.42 | overlay: commentary | category: Liturgy -->
 
-<!-- stop: haftarah_field | camera: initial | overlay: haftarah -->
+Leviticus's “I will remember My covenant with Abraham”;
 
-# A Web of Connections
+<!-- stop: liturgy_micah | camera: Micah.7.20 | zoom: 2 | verse: Micah.7.20 | overlay: commentary | category: Liturgy -->
 
-Every parsha. Every prophetic echo. Threads from Torah to Prophets, woven by tradition fifteen centuries ago.
+and Micah's “loyalty to Abraham”.
 
-<!-- stop: commentary_pivot | camera: Genesis.12.1 | zoom: 2.5 | verse: Genesis.12.1 | overlay: commentary -->
+<!-- stop: abraham_again | camera: I.Samuel.1.1 | zoom: 0.5 | verse: Leviticus.26.42 | overlay: search | q: אברם,אברהם,, -->
 
-# How to Read a Verse
+Even though the Tanakh allows him to slip into the background, the prayer book is built from the places where the Tanakh remembers.
 
-Pan back to *Lekh lekha* — Genesis 12:1.
+<!-- stop: conclusion | camera: I.Samuel.1.1 | zoom: 0.5 | overlay: commentary | category: total-->
 
-But each generation read this verse differently. The Hasidic masters wrote a hundred commentaries on it. The Midrash, ninety-two.
-
-The Talmud? Five. Halakhah? Eight.
-
-This is a *call*, not a law. The legalists were quiet. The mystics could not stop.
-
-<!-- stop: commentary_field | camera: initial | overlay: commentary -->
-
-# A Field of Commentary
-
-Different verses pull different traditions. Some breed Midrash. Some, Halakhah. Some, mysticism.
-
-Two thousand years of reading. One map.
-
-Welcome.
+There's a lot to explore in the Torahmap. Try the different overlays and see what you discover!
