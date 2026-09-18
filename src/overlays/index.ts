@@ -2,7 +2,7 @@ import type { Overlay } from './types.ts';
 import { registerOverlay, clearOverlays } from './registry.ts';
 import { commentaryOverlay } from './commentary.ts';
 import { tropOverlay } from './trop.ts';
-import { searchOverlay } from './search.ts';
+import { searchOverlay } from './search/index.ts';
 import { haftarahOverlay } from './haftarah.ts';
 import { textDatingOverlay } from './text-dating.ts';
 import { verseLengthOverlay } from './verse-length.ts';
@@ -12,7 +12,7 @@ export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { applyOverlayParams } from './applyParams.ts';
 export { configure as configureCommentary } from './commentary.ts';
 export { configure as configureTrop, getSelectedTrop, highlightTropInText } from './trop.ts';
-export { configure as configureSearch, highlightSearchTerms } from './search.ts';
+export { configure as configureSearch, highlightSearchTerms } from './search/index.ts';
 export { getVerseDatingInfo } from './text-dating.ts';
 export { configure as configureVerseLength } from './verse-length.ts';
 
