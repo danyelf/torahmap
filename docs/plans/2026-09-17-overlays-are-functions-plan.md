@@ -976,7 +976,11 @@ git commit -m "An overlay holds no settings of its own"
 - [ ] Clear the assumptions section of the design doc, per Task 1's findings.
 - [ ] `npm run build` and load the built app once — the tests do not cover WebGL.
 - [ ] Open the PR against main with `Closes #179`, `Closes #177`, `Closes #178`,
-      `Closes #74`, `Closes #76`, `Closes #122`, `Closes #56`, and `Closes #169` only if
-      Task 1 confirmed it.
+      `Closes #74`, `Closes #76`, `Closes #122`, `Closes #169`.
+- [ ] Do not claim `Closes #56`. Task 1 could not reproduce it, at rest or mid-transition,
+      with a mouse-off-canvas control. Comment on #56 with the screenshots instead, and let
+      Danyel decide whether to close it as already fixed. Task 5 still earns its place: the
+      hover highlight really is absent during a blend, because the mid-scroll branch hands
+      the blended colours straight to `rebuildGeometry` without `applyItemColors`.
 - [ ] Note in the PR that #73 — validating parameters on the way out — is still open and
       is now a smaller change.

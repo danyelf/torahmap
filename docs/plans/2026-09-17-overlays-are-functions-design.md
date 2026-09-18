@@ -154,13 +154,18 @@ the same composite.
 
 Kept during implementation, cleared before the PR leaves draft.
 
-- #169's black canvas is the centre-then-zoom ordering. Diagnosed from the code,
-  not yet reproduced. The issue's warm-load evidence does not fit, because
-  assigning `location.hash` fires `hashchange` and this app listens only to
-  `popstate` — so the warm case may not have exercised the restore path at all.
-- #56's repro says colours vanish at rest. Reading the code says settled frames
-  paint through the Explore path, so that half should already be fixed. To be
-  confirmed rather than assumed.
+- #169 reproduces. `#overlay=search&q=אור&verse=Genesis.1.3&zoom=8` loads to a
+  solid black canvas with a fully working search panel, result list, and verse
+  sidebar. Removing `zoom=8` from the same URL paints the canvas correctly, so
+  the centre-then-zoom ordering is confirmed as the cause, not just diagnosed
+  from the code. Task 12 should close #169.
+- #56 does not reproduce. On `#story=abraham_call`, colours survive both
+  holding the mouse on the canvas at rest and scrolling slowly through a
+  transition (Call → Rename → zoomed-out) while hovering — no black frame or
+  colour loss at any point observed. Settled frames do paint through the
+  Explore path as the code suggested. Leaving #56 open rather than folding it
+  into this work; its report may describe a state this branch doesn't produce,
+  or one that needs a different repro than tried here.
 - Settled: search settings are a plain ordered list of terms, each carrying its
   own colour slot. A list rebuilt from a URL takes slots by position; a list the
   reader has edited keeps the slots it has. Nothing needs identity across
