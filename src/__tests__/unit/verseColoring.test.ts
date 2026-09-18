@@ -537,5 +537,22 @@ describe('itemColoring', () => {
       expect(colors[0]).toEqual([1, 0, 0]); // Overlay color, not hovered
       expect(colors[1]).toEqual([0.2, 0.9, 1.0]); // Background hovered -> highlight
     });
+
+    it('brightens a hovered verse in colours that came from a blend', () => {
+      const items = [
+        createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
+        createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
+      ];
+      const blended: (Color | Color[] | null)[] = [
+        [0.4, 0.2, 0.2],
+        [0.4, 0.2, 0.2],
+      ];
+
+      const colors = applyItemColors(
+        computeItemStates(items, blended, items[0], null, tanakhIdentitiesEqual),
+      );
+
+      expect((colors[0] as Color)[0]).toBeGreaterThan((colors[1] as Color)[0]);
+    });
   });
 });

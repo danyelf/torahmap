@@ -72,6 +72,7 @@ import {
   configureSearch,
   configureVerseLength,
   type Overlay,
+  type Color,
 } from './overlays/index.ts';
 import { searchForMeaning, canAddTerm } from './overlays/search/index.ts';
 import {
@@ -141,10 +142,16 @@ async function main(): Promise<void> {
 
   let currentOverlay: Overlay | null = null;
 
-  function applyOverlay(): void {
+  // The one colour layer on the map: either a settled overlay's colours or a
+  // story transition's blend. Hover and pin never touch it — composite()
+  // paints them on top each time, so a hover re-render never re-asks an
+  // overlay for anything.
+  let colorLayer: (Color | Color[] | null)[] = [];
+
+  function composite(): void {
     const verseStates = computeItemStates(
       verses,
-      overlayColorsFor(currentOverlay, verses),
+      colorLayer,
       mouseState.hoveredVerse,
       pinnedVerse,
       tanakhIdentitiesEqual,
@@ -152,6 +159,15 @@ async function main(): Promise<void> {
     const colors = applyItemColors(verseStates);
 
     rebuildGeometry(renderContext.gl, renderState, colors);
+  }
+
+  function setColorLayer(next: (Color | Color[] | null)[]): void {
+    colorLayer = next;
+    composite();
+  }
+
+  function applyOverlay(): void {
+    setColorLayer(overlayColorsFor(currentOverlay, verses));
   }
 
   /**
@@ -201,6 +217,10 @@ async function main(): Promise<void> {
   let pinnedVerse: TanakhLayout | null = null;
 
   const mouseState = createMouseState();
+
+  // A scroll fires no pointer event, so the mid-scroll branch needs the last
+  // known cursor position to re-run hit detection as the camera moves under it.
+  let lastPointerPosition: { x: number; y: number } | null = null;
 
   const touchState = createTouchState();
 
@@ -435,6 +455,7 @@ async function main(): Promise<void> {
   canvas.addEventListener('pointerleave', () => {
     const wasHovering = mouseState.hoveredVerse !== null;
     clearHover(mouseState);
+    lastPointerPosition = null;
     canvas.style.cursor = 'default';
 
     let overlayWantsRerender = false;
@@ -442,8 +463,12 @@ async function main(): Promise<void> {
       overlayWantsRerender = currentOverlay.setHoveredVerse(null);
     }
 
-    if (wasHovering || overlayWantsRerender) {
-      applyOverlay();
+    if (overlayWantsRerender) {
+      // Haftarah's own colours depend on hover, so the layer itself is stale.
+      setColorLayer(overlayColorsFor(currentOverlay, verses));
+      render();
+    } else if (wasHovering) {
+      composite();
       render();
     }
   });
@@ -496,6 +521,7 @@ async function main(): Promise<void> {
     if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
+      lastPointerPosition = { x: e.clientX, y: e.clientY };
       const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
@@ -513,8 +539,12 @@ async function main(): Promise<void> {
         overlayWantsRerender = currentOverlay.setHoveredVerse(verse);
       }
 
-      if (hoverChanged || overlayWantsRerender) {
-        applyOverlay();
+      if (overlayWantsRerender) {
+        // Haftarah's own colours depend on hover, so the layer itself is stale.
+        setColorLayer(overlayColorsFor(currentOverlay, verses));
+        render();
+      } else if (hoverChanged) {
+        composite();
         render();
       }
 
@@ -809,9 +839,17 @@ async function main(): Promise<void> {
         // At rest: paint via the explore-mode color pipeline.
         applyOverlay();
       } else {
-        // Mid-scroll: blender paints interpolated colors directly to the GPU buffer.
-        const blendedColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses);
-        rebuildGeometry(renderContext.gl, renderState, blendedColors);
+        // A scroll fires no pointer event, so re-run hit detection under the
+        // last known cursor position now that the camera has moved.
+        if (lastPointerPosition) {
+          setHoveredVerse(
+            mouseState,
+            findItemAtPoint(verses, camera, lastPointerPosition.x, lastPointerPosition.y),
+          );
+        }
+        // Mid-scroll: the blender's interpolated colors become the layer, so a
+        // hover mid-transition composites on top of them like any other frame.
+        setColorLayer(computeBlendedColors(state.fromStop, state.toStop, state.t, verses));
       }
       render();
       updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
