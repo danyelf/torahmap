@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { hostOverlay } from '../../helpers/overlayHost';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
-const haftarahOverlay = getOverlay('haftarah')!;
+const haftarahOverlay = hostOverlay(getOverlay('haftarah')!);
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
-import { applyOverlayParams } from '../../helpers/overlayUrlParams';
 
 // Sample data matching the real structure
 const SAMPLE_HAFTARAH_DATA = {
@@ -153,89 +153,91 @@ describe('Haftarah Overlay', () => {
       '/data/overlays/haftarah/mappings.json': SAMPLE_HAFTARAH_DATA,
       '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
     });
+
+    // The custom is held by the same host across tests, so start each one on
+    // the default the way switching to the overlay fresh would.
+    haftarahOverlay.restore({});
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    haftarahOverlay.destroy?.();
+    haftarahOverlay.destroy();
   });
 
   describe('Overlay Interface', () => {
     it('has correct id and name', () => {
-      expect(haftarahOverlay.id).toBe('haftarah');
-      expect(haftarahOverlay.name).toBe('Haftarah');
+      expect(haftarahOverlay.overlay.id).toBe('haftarah');
+      expect(haftarahOverlay.overlay.name).toBe('Haftarah');
     });
   });
 
   describe('Custom setting in the URL', () => {
     // The URL carries the Ashkenazi/Sephardi choice, so a reload keeps it.
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));
+      await haftarahOverlay.overlay.init?.();
+      haftarahOverlay.restore({ custom: 'ashkenazi' });
     });
 
     it('declares the custom key it owns', () => {
-      expect(haftarahOverlay.urlParams).toEqual([
+      expect(haftarahOverlay.overlay.urlParams).toEqual([
         { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'], default: 'ashkenazi' },
       ]);
     });
 
     it('reports nothing while on the default (Ashkenazi)', () => {
-      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
+      expect(haftarahOverlay.toUrl()).toEqual({});
     });
 
     it('reports the Sephardi custom once it is chosen', () => {
-      const container = document.createElement('div');
-      haftarahOverlay.renderControls?.(container);
+      const container = haftarahOverlay.renderControls();
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'sephardi';
       select.dispatchEvent(new Event('change'));
 
-      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+      expect(haftarahOverlay.toUrl()).toEqual({ custom: 'sephardi' });
     });
 
     it('restores the Sephardi custom and reports it back', () => {
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
-      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+      haftarahOverlay.restore({ custom: 'sephardi' });
+      expect(haftarahOverlay.toUrl()).toEqual({ custom: 'sephardi' });
     });
 
     it('switches back to Ashkenazi when asked to', () => {
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=ashkenazi'));
-      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
+      haftarahOverlay.restore({ custom: 'sephardi' });
+      haftarahOverlay.restore({ custom: 'ashkenazi' });
+      expect(haftarahOverlay.toUrl()).toEqual({});
     });
 
     it('falls back to the default when the value is not recognised', () => {
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=yemenite'));
-      expect(haftarahOverlay.getUrlParams?.()).toEqual({});
+      haftarahOverlay.restore({ custom: 'sephardi' });
+      haftarahOverlay.restore({ custom: 'yemenite' });
+      expect(haftarahOverlay.toUrl()).toEqual({});
     });
 
     it('draws the dropdown from the custom a link restored', () => {
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+      haftarahOverlay.restore({ custom: 'sephardi' });
 
-      const container = document.createElement('div');
-      haftarahOverlay.renderControls?.(container);
+      const container = haftarahOverlay.renderControls();
 
       expect(container.querySelector('select')?.value).toBe('sephardi');
     });
 
-    it('does not announce a settings change, leaving that to the restorer', () => {
+    it('does not announce a restore as a change, leaving that to the restorer', () => {
       // Restoring is not a change the reader made. The caller that read the
       // link repaints; announcing it here would make the restore turn around
       // and write the settings straight back into the URL.
-      const updateCallback = vi.fn();
-      haftarahOverlay.onUpdate?.(updateCallback);
+      const listener = vi.fn();
+      haftarahOverlay.onChange(listener);
 
-      applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
+      haftarahOverlay.restore({ custom: 'sephardi' });
 
-      expect(updateCallback).not.toHaveBeenCalled();
+      expect(listener).not.toHaveBeenCalled();
     });
   });
 
   describe('Initialization', () => {
     it('loads haftarah mappings data on init', async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('data/overlays/haftarah/mappings.json'),
@@ -243,7 +245,7 @@ describe('Haftarah Overlay', () => {
     });
 
     it('loads tanakh structure data on init', async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('data/tanakh-structure.json'));
     });
@@ -255,14 +257,14 @@ describe('Haftarah Overlay', () => {
         status: 404,
       } as Response);
 
-      await expect(haftarahOverlay.init?.()).resolves.not.toThrow();
+      await expect(haftarahOverlay.overlay.init?.()).resolves.not.toThrow();
       consoleSpy.mockRestore();
     });
   });
 
   describe('Torah Verses (Parshiot)', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('returns color for Torah verses in a parsha', () => {
@@ -296,7 +298,7 @@ describe('Haftarah Overlay', () => {
 
   describe('Haftarah Verses (Parshiot)', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('returns color for haftarah verses', () => {
@@ -323,7 +325,7 @@ describe('Haftarah Overlay', () => {
 
   describe('Special Occasions', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('returns color for special occasion haftarah verses', () => {
@@ -359,12 +361,12 @@ describe('Haftarah Overlay', () => {
 
   describe('Hover Info', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('returns hover info for Torah verses', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const info = haftarahOverlay.getHoverInfo?.(verse);
+      const info = haftarahOverlay.getHoverInfo(verse);
 
       expect(info).toContain('Bereshit');
       expect(info).toContain('בראשית');
@@ -372,7 +374,7 @@ describe('Haftarah Overlay', () => {
 
     it('returns hover info for haftarah verses', () => {
       const verse = createVerse({ book: 'Isaiah', chapter: 42, verse: 10 });
-      const info = haftarahOverlay.getHoverInfo?.(verse);
+      const info = haftarahOverlay.getHoverInfo(verse);
 
       expect(info).toContain('Bereshit');
       expect(info).toContain('Haftarah');
@@ -380,14 +382,14 @@ describe('Haftarah Overlay', () => {
 
     it('returns hover info for special occasion haftarah', () => {
       const verse = createVerse({ book: 'Isaiah', chapter: 66, verse: 10 });
-      const info = haftarahOverlay.getHoverInfo?.(verse);
+      const info = haftarahOverlay.getHoverInfo(verse);
 
       expect(info).toContain('Shabbat Rosh Chodesh');
     });
 
     it('returns null for non-haftarah verses', () => {
       const verse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
-      const info = haftarahOverlay.getHoverInfo?.(verse);
+      const info = haftarahOverlay.getHoverInfo(verse);
 
       expect(info).toBeNull();
     });
@@ -395,12 +397,12 @@ describe('Haftarah Overlay', () => {
 
   describe('Render Legend', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('renders legend with parsha count', () => {
       const container = document.createElement('div');
-      haftarahOverlay.renderLegend?.(container);
+      haftarahOverlay.renderLegend(container);
 
       const innerHTML = container.innerHTML;
       expect(innerHTML).toContain('Parshiot');
@@ -408,7 +410,7 @@ describe('Haftarah Overlay', () => {
 
     it('renders legend with special occasions count', () => {
       const container = document.createElement('div');
-      haftarahOverlay.renderLegend?.(container);
+      haftarahOverlay.renderLegend(container);
 
       const innerHTML = container.innerHTML;
       expect(innerHTML).toContain('Special Occasions');
@@ -416,7 +418,7 @@ describe('Haftarah Overlay', () => {
 
     it('mentions holidays in legend', () => {
       const container = document.createElement('div');
-      haftarahOverlay.renderLegend?.(container);
+      haftarahOverlay.renderLegend(container);
 
       const innerHTML = container.innerHTML;
       expect(innerHTML).toContain('holidays');
@@ -425,7 +427,7 @@ describe('Haftarah Overlay', () => {
 
   describe('Multi-Item Verses (Stipple)', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('returns color for haftarah verse (single item)', () => {
@@ -452,7 +454,7 @@ describe('Haftarah Overlay', () => {
 
   describe('Color Distribution', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('distributes colors across rainbow spectrum', () => {
@@ -484,7 +486,7 @@ describe('Haftarah Overlay', () => {
 
   describe('Non-Relevant Verses', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('returns null for non-Torah non-haftarah verses', () => {
@@ -504,21 +506,21 @@ describe('Haftarah Overlay', () => {
 
   describe('Hover State (setHoveredVerse)', () => {
     beforeEach(async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
     });
 
     it('returns true when hovering relevant verse from null', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const shouldRerender = haftarahOverlay.setHoveredVerse?.(torahVerse);
+      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
 
       expect(shouldRerender).toBe(true);
     });
 
     it('returns true when clearing hover from relevant verse', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      haftarahOverlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
 
-      const shouldRerender = haftarahOverlay.setHoveredVerse?.(null);
+      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(null);
 
       expect(shouldRerender).toBe(true);
     });
@@ -527,8 +529,8 @@ describe('Haftarah Overlay', () => {
       const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
       const ruthVerse = createVerse({ book: 'Ruth', chapter: 1, verse: 1 });
 
-      haftarahOverlay.setHoveredVerse?.(psalmsVerse);
-      const shouldRerender = haftarahOverlay.setHoveredVerse?.(ruthVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
+      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(ruthVerse);
 
       expect(shouldRerender).toBe(false);
     });
@@ -537,8 +539,8 @@ describe('Haftarah Overlay', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
-      haftarahOverlay.setHoveredVerse?.(torahVerse);
-      const shouldRerender = haftarahOverlay.setHoveredVerse?.(psalmsVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
+      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
 
       expect(shouldRerender).toBe(true);
     });
@@ -549,11 +551,11 @@ describe('Haftarah Overlay', () => {
       const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
       // Hover relevant verse (causes dimming)
-      haftarahOverlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
       // Move to non-relevant verse
-      haftarahOverlay.setHoveredVerse?.(psalmsVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
       // Move off canvas (null)
-      const shouldRerender = haftarahOverlay.setHoveredVerse?.(null);
+      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(null);
 
       // Should return false because hover is already effectively cleared
       // (non-relevant verses are treated as null)
@@ -569,8 +571,8 @@ describe('Haftarah Overlay', () => {
         [number, number, number] | null;
 
       // Hover relevant verse, then non-relevant verse
-      haftarahOverlay.setHoveredVerse?.(torahVerse);
-      haftarahOverlay.setHoveredVerse?.(psalmsVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
 
       // After moving to non-relevant verse, should see base color (not desaturated)
       const colorAfterNonRelevant = haftarahOverlay.getVerseColor(torahVerse) as
@@ -588,7 +590,7 @@ describe('Haftarah Overlay', () => {
       const baseOtherColor = haftarahOverlay.getVerseColor(otherParsha) as [number, number, number];
 
       // Hover the torah verse
-      haftarahOverlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
 
       const hoveredColor = haftarahOverlay.getVerseColor(torahVerse) as [number, number, number];
       const otherColor = haftarahOverlay.getVerseColor(otherParsha) as [number, number, number];
@@ -602,39 +604,59 @@ describe('Haftarah Overlay', () => {
       // We can verify it's different from base
       expect(otherColor).not.toEqual(baseOtherColor);
     });
+
+    it("keeps setHoveredVerse's relevance check in step with the custom actually painted", () => {
+      // A verse that is only a haftarah verse under Sephardi: Isaiah 43:1-10 is
+      // read for Bereshit in the sample data under Sephardi, not Ashkenazi.
+      const sephardiOnly = createVerse({ book: 'Isaiah', chapter: 43, verse: 5 });
+
+      // Paint with Sephardi showing, which records it as the custom setHoveredVerse
+      // should judge relevance against.
+      haftarahOverlay.restore({ custom: 'sephardi' });
+      haftarahOverlay.getVerseColor(sephardiOnly);
+
+      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(sephardiOnly);
+      expect(shouldRerender).toBe(true);
+    });
   });
 
   describe('colorsFor', () => {
     it('answers for a custom it is handed without changing its own', async () => {
-      await haftarahOverlay.init?.();
-      haftarahOverlay.applyUrlParams?.({ custom: 'sephardi' });
+      await haftarahOverlay.overlay.init?.();
+      haftarahOverlay.restore({ custom: 'sephardi' });
 
       const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
-      haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, null);
+      haftarahOverlay.overlay.colorsFor!(
+        items,
+        haftarahOverlay.fromUrl({ custom: 'ashkenazi' }),
+        null,
+      );
 
-      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+      expect(haftarahOverlay.toUrl()).toEqual({ custom: 'sephardi' });
     });
 
     it('brightens the pairing of the verse it is told is hovered', async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
       const torah = { book: 'Genesis', chapter: 1, verse: 1 };
       const items = [torah];
+      const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
-      const cold = haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, null);
-      const hot = haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, torah);
+      const cold = haftarahOverlay.overlay.colorsFor!(items, settings, null);
+      const hot = haftarahOverlay.overlay.colorsFor!(items, settings, torah);
 
       expect(hot).not.toEqual(cold);
     });
 
     it('treats a hovered verse outside every reading the same as no hover', async () => {
-      await haftarahOverlay.init?.();
+      await haftarahOverlay.overlay.init?.();
       const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
       const outsideEveryReading = { book: 'Psalms', chapter: 1, verse: 1 };
+      const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
-      const noHover = haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, null);
-      const irrelevantHover = haftarahOverlay.colorsFor!(
+      const noHover = haftarahOverlay.overlay.colorsFor!(items, settings, null);
+      const irrelevantHover = haftarahOverlay.overlay.colorsFor!(
         items,
-        { custom: 'ashkenazi' },
+        settings,
         outsideEveryReading,
       );
 

@@ -83,11 +83,14 @@ const URL_PARAMS = [
   { key: 'custom', kind: 'token', allowed: CUSTOMS, default: 'ashkenazi' },
 ] as const satisfies readonly UrlParamSpec[];
 
+/** Which custom's readings to show. The app holds this; the overlay keeps none. */
+export interface HaftarahSettings {
+  readonly custom: Custom;
+}
+
 let data: HaftarahMappings | null = null;
 let structure: TorahData | null = null;
-let currentCustom: Custom = 'ashkenazi';
 let hoveredVerse: TanakhIdentity | null = null;
-let updateCallback: (() => void) | null = null;
 
 /** Everything about a custom's readings that a verse's color depends on. */
 interface HaftarahDerivation {
@@ -104,8 +107,17 @@ interface HaftarahDerivation {
 // rather than rebuilding one on every call.
 const derivationCache = new Map<Custom, HaftarahDerivation>();
 
-// The derivation for whatever custom the overlay itself is showing.
-let currentDerivation: HaftarahDerivation = deriveHaftarah(currentCustom);
+/**
+ * The derivation getVerseColor last painted the map with.
+ *
+ * setHoveredVerse has no settings argument of its own — main.ts calls it with
+ * only the hovered verse — so its relevance check reads this instead. It is
+ * safe to trust because getVerseColor is called only by the live map's own
+ * repaint, always with the settings actually showing; colorsFor also serves
+ * the story blender, with a story stop's settings, which need not be what is
+ * on screen, so it never writes here.
+ */
+let lastPaintedDerivation: HaftarahDerivation = deriveHaftarah(undefined);
 
 function getVerseCount(book: string, chapter: number): number {
   if (!structure) return 200; // Safe fallback
@@ -277,7 +289,7 @@ function colorAt(
   return null;
 }
 
-export const haftarahOverlay: Overlay = {
+export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   id: 'haftarah',
   name: 'Haftarah',
   description:
@@ -308,7 +320,7 @@ export const haftarahOverlay: Overlay = {
       // Both customs' derivations were built (if at all) from data that no
       // longer applies.
       derivationCache.clear();
-      currentDerivation = deriveHaftarah(currentCustom);
+      lastPaintedDerivation = deriveHaftarah(undefined);
     } catch (e) {
       console.error('Failed to initialize haftarah overlay:', e);
     }
@@ -319,16 +331,11 @@ export const haftarahOverlay: Overlay = {
     // loaded once in init() (which doesn't re-run on re-activation), so clearing
     // them here would leave the overlay broken if it gets re-activated later.
     hoveredVerse = null;
-    updateCallback = null;
-  },
-
-  onUpdate(callback) {
-    updateCallback = callback;
   },
 
   setHoveredVerse(verse: TanakhIdentity | null): boolean {
-    const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse, currentDerivation) : false;
-    const isRelevant = verse ? isRelevantVerse(verse, currentDerivation) : false;
+    const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse, lastPaintedDerivation) : false;
+    const isRelevant = verse ? isRelevantVerse(verse, lastPaintedDerivation) : false;
 
     // Track only relevant verses, so hovering empty space doesn't desaturate
     // every reading.
@@ -354,53 +361,61 @@ export const haftarahOverlay: Overlay = {
     return wasRelevant || isRelevant;
   },
 
-  getVerseColor(verse: TanakhIdentity): Color | Color[] | null {
+  getVerseColor(verse: TanakhIdentity, settings: HaftarahSettings): Color | Color[] | null {
     if (!data) return null;
-    return colorAt(verse, currentDerivation, hoveredVerse);
+    const derived = deriveHaftarah(settings.custom);
+    lastPaintedDerivation = derived;
+    return colorAt(verse, derived, hoveredVerse);
   },
 
-  colorsFor(items, settings: UrlParamValues, hovered) {
+  colorsFor(items, settings, hovered) {
     if (!data) return items.map(() => null);
     const derived = deriveHaftarah(settings.custom);
     // A hovered verse outside every reading desaturates nothing, the same as
     // setHoveredVerse already treats it — checked against this call's own
-    // derivation, not whatever custom the overlay itself is showing.
+    // derivation, not whatever custom the live map is showing.
     const relevantHover = hovered && isRelevantVerse(hovered, derived) ? hovered : null;
     return items.map((item) => colorAt(item, derived, relevantHover));
   },
 
-  renderControls(container: HTMLElement) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'haftarah-controls';
-    wrapper.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-        <label for="custom-select" style="font-size: 12px; color: #aaa;">Custom:</label>
-        <select id="custom-select" style="flex: 1;">
-          <option value="ashkenazi">Ashkenazi</option>
-          <option value="sephardi">Sephardi</option>
-        </select>
-      </div>
-    `;
-
-    const select = wrapper.querySelector('select')!;
-    select.value = currentCustom;
-    select.addEventListener('change', () => {
-      currentCustom = select.value as Custom;
-      currentDerivation = deriveHaftarah(currentCustom);
-      updateCallback?.();
-    });
-
-    container.appendChild(wrapper);
+  defaultSettings(): HaftarahSettings {
+    return { custom: 'ashkenazi' };
   },
 
-  renderLegend(container: HTMLElement) {
-    const customLabel = currentCustom === 'ashkenazi' ? 'Ashkenazi' : 'Sephardi';
+  renderControls(container: HTMLElement, settings: HaftarahSettings, onChange) {
+    let select = container.querySelector<HTMLSelectElement>('#custom-select');
+    if (!select) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'haftarah-controls';
+      wrapper.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+          <label for="custom-select" style="font-size: 12px; color: #aaa;">Custom:</label>
+          <select id="custom-select" style="flex: 1;">
+            <option value="ashkenazi">Ashkenazi</option>
+            <option value="sephardi">Sephardi</option>
+          </select>
+        </div>
+      `;
+      container.appendChild(wrapper);
+
+      select = wrapper.querySelector('select')!;
+      select.addEventListener('change', () => {
+        const custom = select!.value as Custom;
+        onChange((current) => ({ ...current, custom }));
+      });
+    }
+
+    select.value = settings.custom;
+  },
+
+  renderLegend(container: HTMLElement, settings: HaftarahSettings) {
+    const customLabel = settings.custom === 'ashkenazi' ? 'Ashkenazi' : 'Sephardi';
     // The optional chain has to reach parshiot too: a failed or malformed
     // fetch leaves data as an object without it.
     const parshaCount = data?.parshiot?.length || 54;
     const occasionCount = data?.specialOccasions?.length || 0;
 
-    const totalItems = currentDerivation.totalItems;
+    const totalItems = deriveHaftarah(settings.custom).totalItems;
     const gradient = buildLegendGradient(10, (i) =>
       getItemColor(i * (totalItems / 10), totalItems || 81),
     );
@@ -422,14 +437,15 @@ export const haftarahOverlay: Overlay = {
     `;
   },
 
-  getHoverInfo(verse: TanakhIdentity): string | null {
+  getHoverInfo(verse: TanakhIdentity, settings: HaftarahSettings): string | null {
     if (!data) return null;
 
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+    const derived = deriveHaftarah(settings.custom);
 
-    const parshaFromTorah = currentDerivation.torahVerseToParsha.get(key);
+    const parshaFromTorah = derived.torahVerseToParsha.get(key);
     if (parshaFromTorah) {
-      const haftarahRanges = parshaFromTorah.haftarah[currentCustom];
+      const haftarahRanges = parshaFromTorah.haftarah[settings.custom];
       const haftarahStr = haftarahRanges
         .map((r) => {
           if (r.start.chapter === r.end.chapter) {
@@ -441,7 +457,7 @@ export const haftarahOverlay: Overlay = {
       return `${parshaFromTorah.name} (${parshaFromTorah.hebrewName}) → ${haftarahStr}`;
     }
 
-    const itemsFromHaftarah = currentDerivation.haftarahVerseToItem.get(key);
+    const itemsFromHaftarah = derived.haftarahVerseToItem.get(key);
     if (itemsFromHaftarah && itemsFromHaftarah.length > 0) {
       if (itemsFromHaftarah.length === 1) {
         const item = itemsFromHaftarah[0];
@@ -458,17 +474,13 @@ export const haftarahOverlay: Overlay = {
 
   urlParams: URL_PARAMS,
 
-  getUrlParams(): Record<string, string> {
-    // Ashkenazi is the default, so it stays out of the URL
-    if (currentCustom === 'ashkenazi') return {};
-    return { custom: currentCustom };
+  settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): HaftarahSettings {
+    return { custom: params.custom ?? 'ashkenazi' };
   },
 
-  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
-    const custom = params.custom;
-    if (!custom || custom === currentCustom) return;
-
-    currentCustom = custom;
-    currentDerivation = deriveHaftarah(currentCustom);
+  settingsToUrl(settings: HaftarahSettings): Record<string, string> {
+    // Ashkenazi is the default, so it stays out of the URL.
+    if (settings.custom === 'ashkenazi') return {};
+    return { custom: settings.custom };
   },
 };
