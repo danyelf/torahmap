@@ -100,8 +100,11 @@ That is #76 and #122.
 
 `computeBlendedColors` calls `colorsFor` for each endpoint and blends the two
 arrays. It no longer calls `applyOverlayParams`, so it cannot leave residue.
-Results are memoised per stop: the story has fourteen stops, nine of which
-carry an overlay, so the table is small and is built as stops are reached.
+Results are memoised on the settings, not on the stop — the key is the
+settings in their serialized form, which already exists and is already
+canonical. Two stops asking for the same thing share an entry, a stop that is
+rewritten invalidates nothing, and no part of the blender knows how many stops
+there are or what they are called. Entries are built as they are asked for.
 
 `computeItemStates` takes a resolved colour array instead of an overlay. A
 settled frame passes the current overlay's colours and a transition frame passes
@@ -158,6 +161,9 @@ Kept during implementation, cleared before the PR leaves draft.
 - #56's repro says colours vanish at rest. Reading the code says settled frames
   paint through the Explore path, so that half should already be fixed. To be
   confirmed rather than assumed.
-- Whether every overlay's settings can be made a plain value, or whether search's
-  term list — which carries per-term colour slots that survive edits to its
-  neighbours — needs something richer.
+- Settled: search settings are a plain ordered list of terms, each carrying its
+  own colour slot. A list rebuilt from a URL takes slots by position; a list the
+  reader has edited keeps the slots it has. Nothing needs identity across
+  evaluations, because searching for two words is simply a different state from
+  searching for one of them — the word they share keeps its colour, and the word
+  that is only in one of them lerps in or out against the background.
