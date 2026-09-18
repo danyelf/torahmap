@@ -25,6 +25,11 @@ export interface Overlay<T = TanakhIdentity> {
   // null renders default gray; Color[] stipples multiple colors via noise dithering.
   getVerseColor(verse: T): Color | Color[] | null;
 
+  // Colours for an explicit set of settings, without consulting or changing
+  // whatever this overlay is currently showing. `hovered` is the item under the
+  // cursor; only Haftarah's colours depend on it.
+  colorsFor?(items: T[], settings: UrlParamValues, hovered: T | null): (Color | Color[] | null)[];
+
   renderControls?(container: HTMLElement): void;
   renderLegend?(container: HTMLElement): void;
 
