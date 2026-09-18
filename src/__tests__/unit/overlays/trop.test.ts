@@ -17,6 +17,7 @@ describe('Trop Overlay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
 
     testVerseTexts = {
       'Genesis': {
@@ -156,6 +157,7 @@ describe('Trop Overlay', () => {
       expect(info.textContent).not.toBe('');
 
       button.dispatchEvent(new MouseEvent('mouseleave'));
+      vi.runAllTimers();
       expect(info.textContent).toBe('');
     });
 
@@ -205,6 +207,91 @@ describe('Trop Overlay', () => {
       const buttonsAfter = container.querySelectorAll('button');
       expect(buttonsAfter[0]).toBe(button1);
       expect(buttonsAfter[1]).toBe(button2);
+    });
+
+    describe('previewing a mark by hovering', () => {
+      const colours = (host: ReturnType<typeof makeHost>) =>
+        testVerses.map((v) => host.getVerseColor(v));
+
+      /** The map's colours with `button` clicked, from a host of its own. */
+      function coloursClicked(index: number) {
+        const host = makeHost();
+        (host.renderControls().querySelectorAll('button')[index] as HTMLButtonElement).click();
+        return colours(host);
+      }
+
+      it('colours the map for a hovered mark without selecting it', () => {
+        const host = makeHost();
+        const button = host.renderControls().querySelector('button') as HTMLButtonElement;
+
+        button.dispatchEvent(new MouseEvent('mouseenter'));
+
+        expect(colours(host)).toEqual(coloursClicked(0));
+        expect(host.settings.mark).toBeNull();
+        expect(button.classList.contains('selected')).toBe(false);
+        expect(host.toUrl()).toEqual({});
+      });
+
+      it('returns to no colouring on leaving when nothing is clicked', () => {
+        const host = makeHost();
+        const button = host.renderControls().querySelector('button') as HTMLButtonElement;
+
+        button.dispatchEvent(new MouseEvent('mouseenter'));
+        button.dispatchEvent(new MouseEvent('mouseleave'));
+        vi.runAllTimers();
+
+        expect(colours(host).every((c) => c === null)).toBe(true);
+      });
+
+      it('returns to the clicked mark on leaving another', () => {
+        const host = makeHost();
+        const [first, second] = Array.from(
+          host.renderControls().querySelectorAll('button'),
+        ) as HTMLButtonElement[];
+        first.click();
+
+        second.dispatchEvent(new MouseEvent('mouseenter'));
+        expect(colours(host)).toEqual(coloursClicked(1));
+        expect(host.toUrl()).toEqual({ trop: first.dataset.slug });
+
+        second.dispatchEvent(new MouseEvent('mouseleave'));
+        vi.runAllTimers();
+        expect(colours(host)).toEqual(coloursClicked(0));
+      });
+
+      it('goes straight from one hovered mark to the next, never through no mark', () => {
+        const host = makeHost();
+        const [first, second] = Array.from(
+          host.renderControls().querySelectorAll('button'),
+        ) as HTMLButtonElement[];
+
+        first.dispatchEvent(new MouseEvent('mouseenter'));
+        first.dispatchEvent(new MouseEvent('mouseleave'));
+        expect(colours(host)).toEqual(coloursClicked(0));
+
+        second.dispatchEvent(new MouseEvent('mouseenter'));
+        vi.runAllTimers();
+        expect(colours(host)).toEqual(coloursClicked(1));
+      });
+
+      it('names the hovered mark in the legend', () => {
+        const host = makeHost();
+        const button = host.renderControls().querySelector('button') as HTMLButtonElement;
+        button.dispatchEvent(new MouseEvent('mouseenter'));
+
+        const legend = document.createElement('div');
+        host.renderLegend(legend);
+        expect(legend.textContent).not.toContain('Select a trop mark');
+      });
+
+      it('is not restored from a link', () => {
+        const host = makeHost();
+        (host.renderControls().querySelector('button') as HTMLButtonElement).dispatchEvent(
+          new MouseEvent('mouseenter'),
+        );
+        host.restore({});
+        expect(colours(host).every((c) => c === null)).toBe(true);
+      });
     });
 
     it('marks a rare trop with a special class', () => {
@@ -350,7 +437,7 @@ describe('Trop Overlay', () => {
       const urlBefore = host.toUrl();
 
       const overlay = getOverlay('trop')!;
-      const otherSettings: TropSettings = { mark: null };
+      const otherSettings: TropSettings = { mark: null, preview: null };
       overlay.colorsFor!(testVerses, otherSettings, null);
 
       expect(host.settings).toBe(held);
