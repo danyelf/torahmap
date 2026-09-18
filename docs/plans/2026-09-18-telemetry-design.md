@@ -91,7 +91,8 @@ and `CLOUDFLARE_API_TOKEN` (permission: Account Analytics Read). Counts use
   load. The real check is after deploy: load the site, run the report, find
   the visit.
 
-Worker types come from `wrangler types`, not a new dependency.
+The Worker declares the one binding method it uses, so it needs no Worker
+types package. See `src/telemetry/schema.ts` for the column layout.
 
 ## Out of scope
 
