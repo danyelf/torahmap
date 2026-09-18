@@ -8,6 +8,10 @@ import { escapeHtml } from './utils/html.ts';
 
 const MAX_SWATCHES = 6;
 
+// Haftarah's colours only tell one reading from the next; out of the map they
+// say nothing, so its line is just its name.
+const NAME_ONLY = new Set(['haftarah']);
+
 /** The inline backgrounds drawn in a container, skipping any hidden swatch. */
 export function drawnColors(container: Element | null, selector = '[style]'): string[] {
   if (!container) return [];
@@ -40,6 +44,9 @@ export function summaryHtml(
 ): string {
   if (overlayId === 'none' || !overlayName) {
     return '<span class="summary-name dim">No overlay</span>';
+  }
+  if (NAME_ONLY.has(overlayId)) {
+    return `<span class="summary-name">${escapeHtml(overlayName)}</span>`;
   }
 
   let detail = '';

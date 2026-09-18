@@ -31,13 +31,25 @@ describe('summaryHtml', () => {
   });
 
   it('shows other overlays by their settings and their legend colours', () => {
-    const html = summaryHtml('haftarah', 'Haftarah', { custom: 'sephardi' }, [], ['red', 'blue']);
-    expect(text(html)).toBe('Haftarah·sephardi');
+    const html = summaryHtml('commentary', 'Commentary', { cat: 'midrash' }, [], ['red', 'blue']);
+    expect(text(html)).toBe('Commentary·midrash');
     expect(swatchColors(html)).toEqual(['red', 'blue']);
   });
 
+  it('shows haftarah by name alone', () => {
+    const html = summaryHtml('haftarah', 'Haftarah', { custom: 'sephardi' }, [], ['red', 'blue']);
+    expect(text(html)).toBe('Haftarah');
+    expect(swatchColors(html)).toEqual([]);
+  });
+
   it('draws a gradient as a strip rather than a square', () => {
-    const html = summaryHtml('haftarah', 'Haftarah', {}, [], ['linear-gradient(red, blue)', 'red']);
+    const html = summaryHtml(
+      'commentary',
+      'Commentary',
+      {},
+      [],
+      ['linear-gradient(red, blue)', 'red'],
+    );
     const div = document.createElement('div');
     div.innerHTML = html;
     const shapes = [...div.querySelectorAll('.summary-swatch')].map((el) =>

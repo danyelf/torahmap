@@ -4,6 +4,7 @@
    while the story is folded. */
 :root {
   --accordion-duration: 250ms;
+  --story-bg: #16181d;
 }
 
 #right-panel {
@@ -55,6 +56,31 @@ body.story-folded #right-panel {
   border-color: #666;
 }
 
+/* Open, the controls speak for themselves; the line shrinks to a bar that
+   closes them. The summary stays readable to a screen reader, as the button's
+   name. */
+body.story-folded #controls-toggle {
+  justify-content: center;
+  margin: 0;
+  padding: 7px 20px;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  background: none;
+}
+
+body.story-folded #controls-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.story-folded #controls-summary {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
 #controls-summary {
   display: flex;
   align-items: center;
@@ -64,19 +90,28 @@ body.story-folded #right-panel {
   white-space: nowrap;
 }
 
+/* Drawn rather than a ▾ glyph, which renders small and faint in system fonts. */
 #right-panel .chevron {
   flex-shrink: 0;
-  color: #aaa;
-  font-size: 13px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #ddd;
+  border-bottom: 2px solid #ddd;
   transition: transform var(--accordion-duration) ease;
 }
 
 #controls-toggle .chevron {
-  margin-left: auto;
+  margin: 0 4px -3px auto;
+  transform: translateY(-4px) rotate(45deg);
 }
 
 body.story-folded #controls-toggle .chevron {
-  transform: rotate(180deg);
+  margin: 0;
+  transform: translateY(2px) rotate(-135deg);
+}
+
+#story-strip .chevron {
+  transform: rotate(-45deg);
 }
 
 .summary-name {
@@ -183,20 +218,22 @@ body.story-folded #controls-toggle .chevron {
   grid-row: 3;
   display: none;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
+  gap: 12px;
+  padding: 15px 20px;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: none;
-  color: #ccc;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--story-bg);
+  color: #eee;
   font: inherit;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
   text-align: left;
   cursor: pointer;
 }
 
 #story-strip:hover {
   color: #fff;
+  background: #1d2026;
 }
 
 body.story-folded #story-strip {
@@ -210,6 +247,7 @@ body.story-folded #story-strip {
   overflow-y: auto;
   scrollbar-color: #444 transparent;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--story-bg);
 }
 
 body.story-folded #story-content {
