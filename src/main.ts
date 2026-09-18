@@ -309,14 +309,25 @@ async function main(): Promise<void> {
   // story folded nothing moves the map but the reader.
   let storyOpen = true;
 
-  // Where the story was when it folded. Folded, it has no height, and the stops
-  // are spaced in fractions of its height, so its scroll collapses with it.
-  let foldedPosition = 0;
+  // The stop the story is at while it cannot be scrolled there: folded, it has
+  // no height, and opening, it has not yet grown to its full height. Null while
+  // its scroll says where it is.
+  let heldStop: number | null = null;
+
+  // Cancels an opening story's wait to grow before it starts; see openStory.
+  let cancelOpening: (() => void) | null = null;
+
+  function storyStopIndex(): number {
+    if (heldStop !== null) return heldStop;
+    const state = currentStoryState();
+    return resolvedStops.indexOf(state.t > 0.5 ? state.toStop : state.fromStop);
+  }
 
   function setStoryOpen(open: boolean): void {
     if (!open && storyOpen) {
-      storyStripTitle.textContent = currentStopLabel();
-      foldedPosition = storyPosition();
+      cancelOpening?.();
+      heldStop = storyStopIndex();
+      storyStripTitle.textContent = stopLabel(resolvedStops[heldStop]);
     }
     storyOpen = open;
     document.body.classList.toggle('story-folded', !open);
@@ -364,20 +375,6 @@ async function main(): Promise<void> {
     updateSummaryShown();
   }
 
-  // Crossing into or out of phone width turns the story from a column into a
-  // row, or back, and moves where it centres verses; keep the reader's stop.
-  phoneLayout.addEventListener('change', () => {
-    if (!phoneLayout.matches && sheetDown) setSheetDown(false);
-    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
-    showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
-    scheduleStoryFrame();
-  });
-
-  function currentStopLabel(): string {
-    const state = currentStoryState();
-    return stopLabel(state.t > 0.5 ? state.toStop : state.fromStop);
-  }
-
   /**
    * On a phone, "No overlay" reads as the first thing to do, so while the
    * story drives with no overlay on the line is left out. It comes back once
@@ -394,7 +391,6 @@ async function main(): Promise<void> {
     driver = readerTakesOver(storyPosition());
     applyOverlay();
     updateSummaryShown();
-    saveUrlState(true);
   }
 
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
@@ -453,7 +449,7 @@ async function main(): Promise<void> {
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
-      debouncedSaveUrlState();
+      debouncedSyncUrl();
     });
   }
 
@@ -468,7 +464,7 @@ async function main(): Promise<void> {
       centerOnVerse(verse);
     }
     repaint();
-    saveUrlState(true);
+    syncUrl(true);
   }
 
   function unpinVerse(): void {
@@ -476,7 +472,7 @@ async function main(): Promise<void> {
     pinnedVerse = null;
     updateSidebarWrapper(null);
     repaint();
-    saveUrlState(true);
+    syncUrl(true);
   }
 
   /** Zoom by `factor`, holding whatever is under (screenX, screenY) still. */
@@ -505,7 +501,7 @@ async function main(): Promise<void> {
       cancelCameraGlide();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       zoomAt(zoomFactor, e.clientX, e.clientY);
-      debouncedSaveUrlState();
+      debouncedSyncUrl();
       debouncedTrackZoom();
     },
     { passive: false },
@@ -518,12 +514,12 @@ async function main(): Promise<void> {
 
   zoomInBtn?.addEventListener('click', () => {
     zoomAt(ZOOM_IN_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedSaveUrlState();
+    debouncedSyncUrl();
   });
 
   zoomOutBtn?.addEventListener('click', () => {
     zoomAt(ZOOM_OUT_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedSaveUrlState();
+    debouncedSyncUrl();
   });
 
   canvas.addEventListener(
@@ -564,7 +560,7 @@ async function main(): Promise<void> {
       releaseTouch(touchState, touch.identifier);
     }
     if (touchState.activeTouches.size === 0) {
-      debouncedSaveUrlState();
+      debouncedSyncUrl();
     }
   });
 
@@ -599,7 +595,7 @@ async function main(): Promise<void> {
     const wasDragging = mouseState.isDragging;
     if (wasDragging) {
       stopDrag(mouseState);
-      debouncedSaveUrlState();
+      debouncedSyncUrl();
     }
 
     if (pointerDownPos) {
@@ -674,12 +670,20 @@ async function main(): Promise<void> {
     return state;
   }
 
-  function saveUrlState(pushHistory: boolean = false): void {
-    const state = buildCurrentUrlState();
-    updateUrl(state, pushHistory);
+  /**
+   * Write the URL for what is on screen. While the story is open it names the
+   * stop alone, whoever is driving, so reloading puts a lost reader back on the
+   * story; folded, it describes the reader's view. `push` adds a history entry,
+   * for a discrete step rather than a pan or a scroll.
+   */
+  function syncUrl(push: boolean = false): void {
+    const state: UrlState = storyOpen
+      ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
+      : buildCurrentUrlState();
+    updateUrl(state, push);
   }
 
-  const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
+  const debouncedSyncUrl = debounce(() => syncUrl(false), URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
     updateSidebar(
@@ -827,7 +831,7 @@ async function main(): Promise<void> {
     applyOverlay();
     overlayChanged(false);
     render();
-    saveUrlState(false);
+    syncUrl(false);
   }
 
   function setOverlay(id: string): void {
@@ -836,7 +840,7 @@ async function main(): Promise<void> {
     overlayChanged(true);
     applyOverlay();
     render();
-    saveUrlState(true);
+    syncUrl(true);
   }
 
   // Clicking a word in the verse popup.
@@ -950,6 +954,21 @@ async function main(): Promise<void> {
   let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
 
+  // Crossing into or out of phone width turns the story from a column into a
+  // row, or back, and moves where it centres verses; keep the reader's stop.
+  // By the time this runs the story is laid out on its new axis, so its scroll
+  // no longer says which stop it was at; the last stop synced does.
+  phoneLayout.addEventListener('change', () => {
+    if (!phoneLayout.matches && sheetDown) setSheetDown(false);
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
+    if (heldStop === null) {
+      showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
+      // That scroll was ours, not the reader's.
+      if (driver.by === 'reader') driver = readerTakesOver(storyPosition());
+    }
+    scheduleStoryFrame();
+  });
+
   async function reloadStory(): Promise<void> {
     const position = storyPosition();
     storyData = await loadStoryData();
@@ -984,48 +1003,72 @@ async function main(): Promise<void> {
     setStoryOpen(false);
     rememberStoryFolded(true);
     render();
+    syncUrl(true);
   }
 
   const rightPanel = document.getElementById('right-panel')!;
 
   /**
-   * Opening the story hands it the map at once, easing back as a deliberate
-   * scroll would. The ease starts once the story has finished opening: where
-   * the story is depends on how tall it is.
+   * Open the story at `stop` and hand it the map, easing from the reader's view
+   * or cutting to the stop, as a link does. Where a stop sits depends on how
+   * tall the story is, so an opening story waits until it has grown; a fold or
+   * another open before then cancels the wait.
    */
-  function openStory(): void {
+  function openStory(stop: number, arrive: 'ease' | 'cut'): void {
+    cancelOpening?.();
+    const wasOpen = storyOpen;
+    heldStop = stop;
     setStoryOpen(true);
-    rememberStoryFolded(false);
 
-    let started = false;
     const start = (): void => {
-      if (started || !storyOpen) return;
-      started = true;
-      rightPanel.removeEventListener('transitionend', onTransitionEnd);
-      setStoryPosition(foldedPosition);
-      beginEase(REJOIN_EASE_MS, performance.now());
+      cancelOpening?.();
+      heldStop = null;
+      showStop(stopElements[stop]);
+      if (arrive === 'ease') {
+        beginEase(REJOIN_EASE_MS, performance.now());
+      } else {
+        driver = STORY_DRIVING;
+        // Make the next frame apply the stop's overlay, settings and pin.
+        lastSyncedStopId = null;
+      }
       scheduleStoryFrame();
     };
+    if (wasOpen) {
+      start();
+      return;
+    }
+
     const onTransitionEnd = (e: TransitionEvent): void => {
       if (e.target === rightPanel && e.propertyName === 'grid-template-rows') start();
     };
     rightPanel.addEventListener('transitionend', onTransitionEnd);
     // No transitionend without a transition, as with reduced motion.
-    setTimeout(start, 400);
+    const fallback = setTimeout(start, 400);
+    cancelOpening = () => {
+      rightPanel.removeEventListener('transitionend', onTransitionEnd);
+      clearTimeout(fallback);
+      cancelOpening = null;
+    };
+  }
+
+  function readerOpensStory(): void {
+    openStory(storyStopIndex(), 'ease');
+    rememberStoryFolded(false);
+    syncUrl(true);
   }
 
   controlsToggle.addEventListener('click', () => {
     if (sheetDown) setSheetDown(false);
     else if (storyOpen) openControls();
-    else openStory();
+    else readerOpensStory();
   });
-  storyStrip.addEventListener('click', openStory);
-  document.getElementById('return-to-story')?.addEventListener('click', openStory);
+  storyStrip.addEventListener('click', readerOpensStory);
+  document.getElementById('return-to-story')?.addEventListener('click', readerOpensStory);
 
   // Scrolling is the only thing that moves the story on. While the reader
   // drives it only counts towards handing the map back.
   storyContent.addEventListener('scroll', () => {
-    if (!storyOpen) return;
+    if (!storyOpen || heldStop !== null) return;
 
     if (driver.by === 'reader') {
       const next = storyScrolled(driver, storyPosition());
@@ -1084,7 +1127,7 @@ async function main(): Promise<void> {
   function paintStoryFrame(now: number): void {
     storyFrame = null;
     // The reader can take the map, or fold the story, between the scroll and this frame.
-    if (!storyOpen || driver.by === 'reader') return;
+    if (!storyOpen || heldStop !== null || driver.by === 'reader') return;
 
     if (driver.by === 'rejoining') {
       driver = settle(driver, now);
@@ -1148,7 +1191,7 @@ async function main(): Promise<void> {
       blendTransition();
     }
     render();
-    updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
+    syncUrl();
   }
 
   window.addEventListener('resize', scheduleStoryFrame);
@@ -1170,13 +1213,7 @@ async function main(): Promise<void> {
    * before the camera that centres on it.
    */
   function applyViewState(next: ViewState): void {
-    if (next.mode === 'story') {
-      // Force the next settled story frame to apply the stop's state.
-      lastSyncedStopId = null;
-      driver = STORY_DRIVING;
-      setStoryOpen(true);
-      setStoryPosition(0);
-    } else {
+    if (next.mode === 'explore') {
       driver = readerTakesOver(storyPosition());
       setStoryOpen(false);
     }
@@ -1195,11 +1232,9 @@ async function main(): Promise<void> {
     applyOverlay();
     render();
 
-    // The story drives the map from its scroll position, so it takes over here.
     if (next.mode === 'story') {
-      const stopIndex = resolvedStops.findIndex((s) => s.id === next.storyStop);
-      showStop(stopElements[stopIndex]);
-      scheduleStoryFrame();
+      const stop = resolvedStops.findIndex((s) => s.id === next.storyStop);
+      openStory(Math.max(0, stop), 'cut');
     }
   }
 
