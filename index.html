@@ -41,17 +41,9 @@
     </div>
 
     <div id="right-panel">
-      <div id="story-panel">
-        <div class="story-header">
-          <button id="exit-story">Explore freely</button>
-        </div>
-        <div id="story-content"></div>
-      </div>
-
-      <!-- Explore mode content (hidden by default) -->
-      <div id="explore-panel" style="display: none">
-        <div class="explore-header">
-          <label>Overlay</label>
+      <div id="panel-controls">
+        <div class="panel-picker">
+          <label for="overlay-select">Overlay</label>
           <!-- The overlays themselves are added here at startup, from the
              registry. Do not list them: that is what the registry is for. -->
           <select id="overlay-select">
@@ -60,10 +52,15 @@
         </div>
         <div id="overlay-controls"></div>
         <div id="overlay-legend"></div>
-        <div class="explore-footer">
-          <a href="#" id="back-to-story">Back to story</a>
-        </div>
       </div>
+
+      <section id="story-section">
+        <button id="hide-story" type="button" aria-label="Hide the story">&times;</button>
+        <div id="story-content"></div>
+      </section>
+
+      <button id="show-story" type="button">Show the story</button>
+
       <footer id="panel-footer"></footer>
     </div>
     <script type="module" src="/src/main.ts"></script>

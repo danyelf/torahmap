@@ -88,8 +88,6 @@ import {
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
-import { switchToExplore, switchToStory } from './scrollytelling/modeSwitch';
-import type { AppMode } from './scrollytelling/modeSwitch';
 import type { ResolvedStoryStop } from './scrollytelling/types';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
@@ -174,6 +172,8 @@ async function main(): Promise<void> {
     const wantedOverlay = stop.overlay ?? 'none';
     if (wantedOverlay !== currentOverlayId) {
       activateOverlay(wantedOverlay);
+      // The picker is on screen during the story; the reader watches it move.
+      if (overlaySelect) overlaySelect.value = wantedOverlay;
     }
 
     applyOverlayParams(currentOverlay, stop.overlayParams ?? {});
@@ -204,11 +204,20 @@ async function main(): Promise<void> {
 
   const touchState = createTouchState();
 
-  let appMode: AppMode = 'story';
+  // Whether the story section is showing. With it put away the controls have
+  // the panel to themselves and nothing moves the map but the reader.
+  let storyShown = true;
+
+  function setStoryShown(shown: boolean): void {
+    storyShown = shown;
+    document.body.classList.toggle('story-hidden', !shown);
+  }
+
   let lastStoryScrollTop = 0;
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
-  // Reset on mode switches (explore may have changed overlay/pin out from under us).
+  // Reset whenever the story comes back, since the reader may have changed the
+  // overlay or pin out from under it.
   let lastSyncedStopId: string | null = null;
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
   const TAP_THRESHOLD = 10; // max px movement to count as tap
@@ -749,30 +758,23 @@ async function main(): Promise<void> {
     });
   }
 
-  const storyPanel = document.getElementById('story-panel')!;
-  const explorePanel = document.getElementById('explore-panel')!;
-
-  document.getElementById('exit-story')?.addEventListener('click', () => {
+  document.getElementById('hide-story')?.addEventListener('click', () => {
     lastStoryScrollTop = storyContent.scrollTop;
-    appMode = 'explore';
-    switchToExplore(storyPanel, explorePanel);
-    // Update URL to explore mode (remove story param)
+    setStoryShown(false);
+    // The URL stops naming a story stop and names the overlay instead.
     saveUrlState(true);
   });
 
-  document.getElementById('back-to-story')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    appMode = 'story';
-    // Reset settled tracker — explore mode may have changed overlay/pin, so
-    // force the next settled frame to re-apply the resting stop's state.
+  document.getElementById('show-story')?.addEventListener('click', () => {
     lastSyncedStopId = null;
-    switchToStory(storyPanel, explorePanel, storyContent, lastStoryScrollTop);
+    setStoryShown(true);
+    storyContent.scrollTop = lastStoryScrollTop;
     storyContent.dispatchEvent(new Event('scroll'));
   });
 
   let scrollRAF: number | null = null;
   storyContent.addEventListener('scroll', () => {
-    if (appMode !== 'story') return;
+    if (!storyShown) return;
     if (scrollRAF) return;
     scrollRAF = requestAnimationFrame(() => {
       scrollRAF = null;
@@ -817,7 +819,7 @@ async function main(): Promise<void> {
   });
 
   window.addEventListener('resize', () => {
-    if (appMode === 'story') {
+    if (storyShown) {
       storyContent.dispatchEvent(new Event('scroll'));
     }
   });
@@ -883,10 +885,10 @@ async function main(): Promise<void> {
     const urlState = parseUrlState((id) => getOverlay(id)?.urlParams);
 
     if (urlState.story) {
-      appMode = 'story';
       // Force the next settled scroll frame to apply the stop's state.
       lastSyncedStopId = null;
-      switchToStory(storyPanel, explorePanel, storyContent, 0);
+      setStoryShown(true);
+      storyContent.scrollTop = 0;
       const stopIndex = resolvedStops.findIndex((s) => s.id === urlState.story);
       if (stopIndex >= 0 && stopElements[stopIndex]) {
         stopElements[stopIndex].scrollIntoView();
@@ -895,8 +897,7 @@ async function main(): Promise<void> {
     }
 
     if (urlState.overlay || urlState.verse) {
-      appMode = 'explore';
-      switchToExplore(storyPanel, explorePanel);
+      setStoryShown(false);
     }
 
     restoreOverlayFromUrl(urlState);
@@ -915,7 +916,7 @@ async function main(): Promise<void> {
     restoreFromUrl();
   });
 
-  if (appMode === 'story') {
+  if (storyShown) {
     storyContent.dispatchEvent(new Event('scroll'));
   }
 
