@@ -1062,9 +1062,13 @@ async function main(): Promise<void> {
     syncUrl(true);
   }
 
+  // The line stands for the controls, so on a lowered sheet it raises the
+  // sheet with them open; the story is back through "Return to story".
   controlsToggle.addEventListener('click', () => {
-    if (sheetDown) setSheetDown(false);
-    else if (storyOpen) openControls();
+    if (sheetDown) {
+      setSheetDown(false);
+      if (storyOpen) openControls();
+    } else if (storyOpen) openControls();
     else readerOpensStory();
   });
   storyStrip.addEventListener('click', readerOpensStory);
