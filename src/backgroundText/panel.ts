@@ -133,6 +133,11 @@ export function createBackgroundTextPanel(
   snap.checked = settings.snapLines;
   snap.addEventListener('change', () => set('snapLines', snap.checked));
   row('snap lines', snap);
+  const grow = document.createElement('input');
+  grow.type = 'checkbox';
+  grow.checked = settings.planeGrow;
+  grow.addEventListener('change', () => set('planeGrow', grow.checked));
+  row('plane grow', grow);
 
   return panel;
 }

@@ -6,6 +6,7 @@ import {
   DEFAULT_SETTINGS,
   dominantUnitStart,
   fontSizeForZoom,
+  growBoxes,
   rangeFromStart,
   newPlacement,
   lineGridSnap,
@@ -94,6 +95,32 @@ describe('bookBoxes', () => {
     expect(bookBoxes(verses)).toEqual([
       { book: 'Genesis', first: 0, last: 1, left: 6, top: 0, right: 18, bottom: 6 },
       { book: 'Exodus', first: 2, last: 3, left: 94, top: 0, right: 106, bottom: 6 },
+    ]);
+  });
+});
+
+describe('growBoxes', () => {
+  const box = (book: string, left: number, top: number, right: number, bottom: number) => ({
+    book,
+    first: 0,
+    last: 0,
+    left,
+    top,
+    right,
+    bottom,
+  });
+
+  it('grows down to the row below and left to the neighbour, without overlap', () => {
+    // A row of two books with a gap between them, and a wide book below.
+    const grown = growBoxes([
+      box('A', 60, 0, 100, 10),
+      box('B', 0, 0, 40, 20),
+      box('C', 0, 50, 100, 60),
+    ]);
+    expect(grown.map((b) => [b.book, b.left, b.top, b.right, b.bottom])).toEqual([
+      ['A', 40, 0, 100, 50],
+      ['B', 0, 0, 40, 50],
+      ['C', 0, 50, 100, 60],
     ]);
   });
 });

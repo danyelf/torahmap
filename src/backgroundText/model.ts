@@ -28,6 +28,8 @@ export interface BackgroundTextSettings {
   follow: Follow;
   /** Font size on the back plane, in map units (a verse square is 6). */
   planeFont: number;
+  /** Let each book's text run into the empty space below and beside its squares. */
+  planeGrow: boolean;
   /** Under the canvas (squares occlude the text) or over it at low opacity. */
   layer: Layer;
   /** How much of the map's screen movement the text follows: 0 is fixed to the glass, 1 is glued to the map. */
@@ -64,6 +66,7 @@ export interface BackgroundTextSettings {
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   follow: 'book',
   planeFont: 12,
+  planeGrow: true,
   layer: 'above',
   parallax: 0.3,
   anchor: 'viewport',
@@ -312,6 +315,39 @@ export function bookBoxes(verses: TanakhLayout[]): BookBox[] {
     box.bottom = Math.max(box.bottom, v.y + v.size);
   });
   return boxes;
+}
+
+/**
+ * Grow each box into the empty space around it: first down to the next box
+ * below (or the bottom of everything), then left to the next box beside it.
+ * Books run right to left in rows, so their gaps are below and to the left.
+ * Each box stops at every other box as grown so far, so none overlap.
+ */
+export function growBoxes(boxes: BookBox[]): BookBox[] {
+  const out = boxes.map((b) => ({ ...b }));
+  const floor = Math.max(...out.map((b) => b.bottom));
+  const wall = Math.min(...out.map((b) => b.left));
+  const overlaps = (a0: number, a1: number, b0: number, b1: number): boolean => a0 < b1 && b0 < a1;
+
+  for (const box of out) {
+    let bottom = floor;
+    for (const other of out) {
+      if (other === box || other.top < box.bottom) continue;
+      if (overlaps(box.left, box.right, other.left, other.right))
+        bottom = Math.min(bottom, other.top);
+    }
+    box.bottom = bottom;
+  }
+  for (const box of out) {
+    let left = wall;
+    for (const other of out) {
+      if (other === box || other.right > box.left) continue;
+      if (overlaps(box.top, box.bottom, other.top, other.bottom))
+        left = Math.max(left, other.right);
+    }
+    box.left = left;
+  }
+  return out;
 }
 
 /**

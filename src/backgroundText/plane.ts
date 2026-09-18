@@ -8,6 +8,7 @@ import type { TanakhLayout } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import {
   bookBoxes,
+  growBoxes,
   passageForRange,
   planeTransform,
   rangeFromStart,
@@ -34,7 +35,9 @@ export function createBackPlane(options: {
 }): BackPlane {
   const { verses, texts, camera } = options;
   let settings = { ...options.settings };
-  const boxes = bookBoxes(verses);
+  const outlines = bookBoxes(verses);
+  const grown = growBoxes(outlines);
+  let boxes = settings.planeGrow ? grown : outlines;
 
   const root = document.createElement('div');
   root.className = 'bgtext-plane';
@@ -46,7 +49,7 @@ export function createBackPlane(options: {
   });
   options.container.appendChild(root);
 
-  /** Lay each book's opening text into its outline, in map units. */
+  /** Lay each book's opening text into its box, in map units. */
   function build(): void {
     const font = settings.planeFont;
     boxes.forEach((box: BookBox, i) => {
@@ -88,8 +91,12 @@ export function createBackPlane(options: {
   }
 
   function setSettings(next: BackgroundTextSettings): void {
-    const rebuild = next.planeFont !== settings.planeFont || next.marks !== settings.marks;
+    const rebuild =
+      next.planeFont !== settings.planeFont ||
+      next.marks !== settings.marks ||
+      next.planeGrow !== settings.planeGrow;
     settings = { ...next };
+    boxes = settings.planeGrow ? grown : outlines;
     applyStyle();
     if (rebuild) build();
     update();
