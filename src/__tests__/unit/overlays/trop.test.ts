@@ -696,6 +696,16 @@ describe('Trop Overlay', () => {
 
       expect(getSelectedTrop()).toBeNull();
     });
+
+    it('answers for a mark it is handed without changing its selection', async () => {
+      await tropOverlay.init?.();
+      tropOverlay.applyUrlParams?.({ trop: 'etnachta' });
+
+      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
+      tropOverlay.colorsFor!(items, { trop: 'zaqef-qatan' }, null);
+
+      expect(tropOverlay.getUrlParams?.()).toEqual({ trop: 'etnachta' });
+    });
   });
 
   describe('Edge Cases', () => {

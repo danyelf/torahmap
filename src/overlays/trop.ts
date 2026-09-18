@@ -22,28 +22,36 @@ const URL_PARAMS = [{ key: 'trop', kind: 'token' }] as const satisfies readonly 
 let selectedTrop: TropIndexEntry | null = null;
 let updateCallback: (() => void) | null = null;
 
+interface TropDerivation {
+  verseLookup: Map<string, number>;
+  maxCount: number;
+  tier: 'rare' | 'uncommon' | 'common';
+}
+
 // Computed once per trop selection, not per verse.
-let cachedVerseLookup: Map<string, number> = new Map();
-let cachedMaxCount = 1;
-let cachedTier: 'rare' | 'uncommon' | 'common' = 'common';
+let cachedDerivation: TropDerivation | null = null;
 
 const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
 
-function updateCache(): void {
-  cachedVerseLookup.clear();
-  if (!selectedTrop) return;
+/** The colours and lookup table for one trop mark, named by its URL slug. */
+function deriveTrop(tropName: string | undefined): TropDerivation | null {
+  if (!tropName) return null;
+  const entry = tropByFrequency.find((t) => slugify(t.name) === tropName);
+  if (!entry) return null;
 
-  cachedTier = getRarityTier(selectedTrop.totalCount);
-
-  for (const loc of selectedTrop.verses) {
+  const verseLookup = new Map<string, number>();
+  let maxCount = 1;
+  for (const loc of entry.verses) {
     const key = tanakhKey(loc.book, loc.chapter, loc.verse);
-    cachedVerseLookup.set(key, loc.count);
+    verseLookup.set(key, loc.count);
+    if (loc.count > maxCount) maxCount = loc.count;
   }
 
-  cachedMaxCount = 1;
-  for (const loc of selectedTrop.verses) {
-    if (loc.count > cachedMaxCount) cachedMaxCount = loc.count;
-  }
+  return { verseLookup, maxCount, tier: getRarityTier(entry.totalCount) };
+}
+
+function updateCache(): void {
+  cachedDerivation = selectedTrop ? deriveTrop(slugify(selectedTrop.name)) : null;
 }
 
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
@@ -75,32 +83,38 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-');
 }
 
-function getTropVerseColor(verse: TanakhIdentity): Color | null {
-  if (!selectedTrop) return null;
-
-  // destroy() clears the cache; rebuild it lazily rather than on re-init.
-  if (cachedVerseLookup.size === 0) {
-    updateCache();
-  }
+function tropColorAt(verse: TanakhIdentity, derived: TropDerivation | null): Color | null {
+  if (!derived) return null;
 
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-  const count = cachedVerseLookup.get(key) || 0;
+  const count = derived.verseLookup.get(key) || 0;
 
-  if (cachedTier === 'rare') {
+  if (derived.tier === 'rare') {
     // Binary: gold for a match, dim gray otherwise.
     return count > 0 ? RARE_MATCH_COLOR : HIGHLIGHT_CONSTANTS.RARE_NO_MATCH_COLOR;
-  } else if (cachedTier === 'uncommon') {
+  } else if (derived.tier === 'uncommon') {
     if (count === 0) {
       return [0.25, 0.25, 0.28];
     }
-    return scaleToGradient(count, cachedMaxCount, UNCOMMON_TROP_GRADIENT);
+    return scaleToGradient(count, derived.maxCount, UNCOMMON_TROP_GRADIENT);
   } else {
     // Common trop marks span a wide count range, so scale logarithmically.
     if (count === 0) {
       return [0.25, 0.23, 0.28];
     }
-    return scaleToGradient(count, cachedMaxCount, COMMON_TROP_GRADIENT, { useLog: true });
+    return scaleToGradient(count, derived.maxCount, COMMON_TROP_GRADIENT, { useLog: true });
   }
+}
+
+function getTropVerseColor(verse: TanakhIdentity): Color | null {
+  if (!selectedTrop) return null;
+
+  // destroy() clears the cache; rebuild it lazily rather than on re-init.
+  if (!cachedDerivation) {
+    updateCache();
+  }
+
+  return tropColorAt(verse, cachedDerivation);
 }
 
 function createTropChart(container: HTMLElement): void {
@@ -178,9 +192,7 @@ export const tropOverlay: Overlay = {
 
   destroy() {
     updateCallback = null;
-    cachedVerseLookup.clear();
-    cachedMaxCount = 1;
-    cachedTier = 'common';
+    cachedDerivation = null;
   },
 
   onUpdate(callback) {
@@ -189,6 +201,11 @@ export const tropOverlay: Overlay = {
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getTropVerseColor(verse);
+  },
+
+  colorsFor(items, settings, _hovered) {
+    const derived = deriveTrop(settings.trop);
+    return items.map((item) => tropColorAt(item, derived));
   },
 
   renderControls(container: HTMLElement) {
