@@ -65,23 +65,23 @@ export interface BackgroundTextSettings {
   snapLines: boolean;
 }
 
-// Danyel's pick after two rounds with the panel (2026-09-16): drifting at a
-// third of the map's speed, very quiet, letters only, a slow dissolve between passages.
+// Danyel's pick after round three (2026-09-18): the back plane, half again as
+// large as the map, lined up at the middle, behind the squares.
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
-  follow: 'book',
+  follow: 'plane',
   planeFont: 12,
   planeGrow: false,
-  planeSize: 3,
-  planePivot: 'start',
-  layer: 'above',
-  parallax: 0.3,
+  planeSize: 1.5,
+  planePivot: 'middle',
+  layer: 'behind',
+  parallax: 0.4,
   anchor: 'viewport',
   content: 'fill',
-  neighbours: 17,
+  neighbours: 16,
   widthEm: 35,
   minFont: 12,
-  maxFont: 45,
-  opacity: 0.1,
+  maxFont: 51,
+  opacity: 0.15,
   litOpacity: 0.4,
   blend: 'exclusion',
   font: 'david',

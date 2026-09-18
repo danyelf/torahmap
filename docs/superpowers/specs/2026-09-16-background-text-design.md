@@ -1,5 +1,8 @@
 # Background Hebrew text: prototype round
 
+Status: parked as draft PR #146 (2026-09-18). The back plane (`follow: plane`)
+is the direction; see the last section.
+
 Issue: https://github.com/danyelf/torahmap/issues/142
 
 ## Why
@@ -290,3 +293,67 @@ actually see.
 
 Rejected: tying each chapter's text to its own block of squares. A word is
 wider than a square, so the text cannot sit behind the verses it belongs to.
+
+Book mode removed the invisible centre but also the drift, which turned the
+text into wallpaper. Every mode so far gave up one of three things: the drift
+(which needs text that belongs to a place), a visible reason for the passage,
+or a passage that stays put long enough to drift.
+
+## The back plane (2026-09-18)
+
+`follow: plane` keeps all three. The text is a second copy of the map, set
+back behind the first, with each book's opening words filling that book's box
+on it. Nothing is chosen: every book always shows its own text in its own
+place, and the plane drifts because it is further away. Danyel: "amazing".
+
+How it got there:
+
+- **Shrunk copy.** First built as the map shrunk toward the screen centre by
+  the parallax ratio. Intriguing, but each book's box was a third the size and
+  held only its first few verses, and the text sat pulled toward the centre, so
+  Bereishit landed around Genesis 4.
+- **Growing the boxes** into the empty space around each book (outlines cover
+  36% of the plane; grown, 87%) gave more text but was not the point, and is
+  off by default (`plane grow`).
+- **A bigger plane, further back.** What he wanted: a plane `plane size` times
+  the map, at the depth the parallax ratio sets. It looks size × parallax times
+  as large as the map and holds size² the text per book. It lines up with the
+  map at the pivot: the start of Genesis at the top right of the view, or the
+  map's middle at the middle of the view. Each pivot needs its own screen point;
+  sharing one made `middle` line up only in the corner.
+
+The cost, from the geometry: a plane larger than the map cannot all be reached
+by panning. At size s, panning the whole map crosses about 1/s of the plane
+around the pivot, so the back text near the far edges never comes into view.
+Smaller sizes reach more.
+
+A per-book fill bug on the way: the estimate of how much text fits counted
+vowel marks that "letters only" strips, leaving boxes a third to two thirds
+empty. The plane now adds verses until the text overflows the box.
+
+Rejected: tying each chapter's text to its own block of squares on the map
+itself. A word is wider than a square.
+
+### Danyel's settings at the end of round three
+
+Now the defaults in `DEFAULT_SETTINGS`:
+
+```json
+{
+  "follow": "plane",
+  "planeFont": 12,
+  "planeGrow": false,
+  "planeSize": 1.5,
+  "planePivot": "middle",
+  "layer": "behind",
+  "parallax": 0.4,
+  "opacity": 0.15,
+  "blend": "exclusion",
+  "font": "david",
+  "marks": "letters"
+}
+```
+
+Left as a draft for now. Open questions for picking it back up: whether the
+unreachable edges of a larger plane matter in practice, and whether the
+verse, chapter and book modes should be deleted in favour of the plane.
