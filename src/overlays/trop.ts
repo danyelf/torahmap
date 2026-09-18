@@ -4,7 +4,7 @@
 // verses carry them is in src/trop.ts.
 
 import '../styles/overlays/trop.css';
-import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
+import type { Overlay, Color, UrlParamSpec, UrlParamValues, SettingsUpdate } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry, TextLanguage } from '../types.ts';
 import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
@@ -19,8 +19,10 @@ let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
 const URL_PARAMS = [{ key: 'trop', kind: 'token' }] as const satisfies readonly UrlParamSpec[];
 
-let selectedTrop: TropIndexEntry | null = null;
-let updateCallback: (() => void) | null = null;
+/** The trop mark selected, named by its URL slug, or none. */
+export interface TropSettings {
+  readonly mark: string | null;
+}
 
 interface TropDerivation {
   verseLookup: Map<string, number>;
@@ -28,15 +30,12 @@ interface TropDerivation {
   tier: 'rare' | 'uncommon' | 'common';
 }
 
-// Computed once per trop selection, not per verse.
-let cachedDerivation: TropDerivation | null = null;
-
 const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
 
 /** The colours and lookup table for one trop mark, named by its URL slug. */
-function deriveTrop(tropName: string | undefined): TropDerivation | null {
-  if (!tropName) return null;
-  const entry = tropByFrequency.find((t) => slugify(t.name) === tropName);
+function deriveTrop(mark: string | null): TropDerivation | null {
+  if (!mark) return null;
+  const entry = tropByFrequency.find((t) => slugify(t.name) === mark);
   if (!entry) return null;
 
   const verseLookup = new Map<string, number>();
@@ -50,8 +49,31 @@ function deriveTrop(tropName: string | undefined): TropDerivation | null {
   return { verseLookup, maxCount, tier: getRarityTier(entry.totalCount) };
 }
 
-function updateCache(): void {
-  cachedDerivation = selectedTrop ? deriveTrop(slugify(selectedTrop.name)) : null;
+// getVerseColor asks once per verse, 23,000 times a paint, so the derivation is
+// built once per settings value and kept. Settings are never edited in place,
+// so a value's identity is a sound key; the last one asked about is checked
+// first, because a paint asks about the same one every time.
+const derivations = new WeakMap<TropSettings, TropDerivation | null>();
+let lastDerivation: { of: TropSettings; value: TropDerivation | null } | null = null;
+
+function derivationFor(settings: TropSettings): TropDerivation | null {
+  if (lastDerivation?.of === settings) return lastDerivation.value;
+
+  let value: TropDerivation | null;
+  if (derivations.has(settings)) {
+    value = derivations.get(settings) ?? null;
+  } else {
+    value = deriveTrop(settings.mark);
+    derivations.set(settings, value);
+  }
+  lastDerivation = { of: settings, value };
+  return value;
+}
+
+/** The chart entry for the mark a settings value names, or null when none is selected. */
+function selectedEntry(settings: TropSettings): TropIndexEntry | null {
+  if (!settings.mark) return null;
+  return tropByFrequency.find((t) => slugify(t.name) === settings.mark) ?? null;
 }
 
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
@@ -106,84 +128,73 @@ function tropColorAt(verse: TanakhIdentity, derived: TropDerivation | null): Col
   }
 }
 
-function getTropVerseColor(verse: TanakhIdentity): Color | null {
-  if (!selectedTrop) return null;
+/**
+ * Draw the mark chart for `settings`, or bring an already-drawn chart's
+ * selection up to date. Built once per container; a redraw only toggles which
+ * button is marked selected and what the info line says.
+ */
+function renderTropChart(
+  container: HTMLElement,
+  settings: TropSettings,
+  onChange: (update: SettingsUpdate<TropSettings>) => void,
+): void {
+  let chart = container.querySelector<HTMLElement>('.trop-chart');
+  if (!chart) {
+    container.innerHTML = `
+      <div class="trop-controls">
+        <label style="margin-bottom: 8px;">Select Trop Mark</label>
+        <div class="trop-chart"></div>
+        <div class="trop-info"></div>
+      </div>
+    `;
+    chart = container.querySelector('.trop-chart') as HTMLElement;
+    const info = container.querySelector('.trop-info') as HTMLElement;
 
-  // destroy() clears the cache; rebuild it lazily rather than on re-init.
-  if (!cachedDerivation) {
-    updateCache();
+    for (const entry of tropByFrequency) {
+      const slug = slugify(entry.name);
+      const button = document.createElement('button');
+      button.textContent = 'ב' + entry.unicode; // Show on a bet for visibility
+      button.title = `${entry.name} (${entry.hebrewName})`;
+      button.dataset.unicode = entry.unicode;
+      button.dataset.slug = slug;
+
+      if (getRarityTier(entry.totalCount) === 'rare') {
+        button.classList.add('rare');
+      }
+
+      button.addEventListener('mouseenter', () => {
+        info.textContent = tropInfoLine(entry, { withOccurrencesWord: true });
+      });
+
+      button.addEventListener('mouseleave', () => {
+        const selected = chart!.querySelector<HTMLButtonElement>('button.selected');
+        const selEntry = selected
+          ? tropByFrequency.find((e) => e.unicode === selected.dataset.unicode)
+          : undefined;
+        info.textContent = selEntry ? tropInfoLine(selEntry) : '';
+      });
+
+      button.addEventListener('click', () => {
+        onChange((current) => ({ mark: current.mark === slug ? null : slug }));
+      });
+
+      chart.appendChild(button);
+    }
   }
 
-  return tropColorAt(verse, cachedDerivation);
-}
-
-function createTropChart(container: HTMLElement): void {
-  container.innerHTML = `
-    <div class="trop-controls">
-      <label style="margin-bottom: 8px;">Select Trop Mark</label>
-      <div class="trop-chart"></div>
-      <div class="trop-info"></div>
-    </div>
-  `;
-
-  const chart = container.querySelector('.trop-chart') as HTMLElement;
   const info = container.querySelector('.trop-info') as HTMLElement;
-  let selectedButton: HTMLButtonElement | null = null;
-
-  for (const entry of tropByFrequency) {
-    const button = document.createElement('button');
-    button.textContent = 'ב' + entry.unicode; // Show on a bet for visibility
-    button.title = `${entry.name} (${entry.hebrewName})`;
-
-    const tier = getRarityTier(entry.totalCount);
-    if (tier === 'rare') {
-      button.classList.add('rare');
+  let entryShown: TropIndexEntry | undefined;
+  chart.querySelectorAll<HTMLButtonElement>('button').forEach((button) => {
+    const isSelected = button.dataset.slug === settings.mark;
+    button.classList.toggle('selected', isSelected);
+    if (isSelected) {
+      entryShown = tropByFrequency.find((e) => e.unicode === button.dataset.unicode);
     }
-
-    button.addEventListener('mouseenter', () => {
-      info.textContent = tropInfoLine(entry, { withOccurrencesWord: true });
-    });
-
-    button.addEventListener('mouseleave', () => {
-      if (!selectedButton) {
-        info.textContent = '';
-      } else {
-        const selEntry = tropByFrequency.find((e) => e.unicode === selectedButton?.dataset.unicode);
-        if (selEntry) {
-          info.textContent = tropInfoLine(selEntry);
-        }
-      }
-    });
-
-    button.addEventListener('click', () => {
-      if (selectedButton === button) {
-        button.classList.remove('selected');
-        selectedButton = null;
-        selectedTrop = null;
-        info.textContent = '';
-      } else {
-        if (selectedButton) selectedButton.classList.remove('selected');
-        button.classList.add('selected');
-        selectedButton = button;
-        selectedTrop = entry;
-      }
-      updateCache(); // Rebuild lookup table once, not per-verse
-      updateCallback?.();
-    });
-
-    button.dataset.unicode = entry.unicode;
-    chart.appendChild(button);
-
-    // Restore selection state if this trop was previously selected
-    if (selectedTrop && entry.unicode === selectedTrop.unicode) {
-      button.classList.add('selected');
-      selectedButton = button;
-      info.textContent = tropInfoLine(entry);
-    }
-  }
+  });
+  info.textContent = entryShown ? tropInfoLine(entryShown) : '';
 }
 
-export const tropOverlay: Overlay = {
+export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   id: 'trop',
   name: 'Trop',
   description:
@@ -191,38 +202,48 @@ export const tropOverlay: Overlay = {
     'they punctuate. Pick a mark to see which verses carry it, and how often.',
 
   destroy() {
-    updateCallback = null;
-    cachedDerivation = null;
+    lastDerivation = null;
   },
 
-  onUpdate(callback) {
-    updateCallback = callback;
+  getVerseColor(verse, settings) {
+    return tropColorAt(verse, derivationFor(settings));
   },
 
-  getVerseColor(verse: TanakhIdentity): Color | null {
-    return getTropVerseColor(verse);
-  },
-
-  colorsFor(items, settings: UrlParamValues, _hovered) {
-    const derived = deriveTrop(settings.trop);
+  colorsFor(items, settings, _hovered) {
+    const derived = derivationFor(settings);
     return items.map((item) => tropColorAt(item, derived));
   },
 
-  renderControls(container: HTMLElement) {
-    createTropChart(container);
+  defaultSettings() {
+    return { mark: null };
   },
 
-  renderLegend(container: HTMLElement) {
-    if (!selectedTrop) {
+  urlParams: URL_PARAMS,
+
+  settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): TropSettings {
+    return { mark: params.trop ?? null };
+  },
+
+  settingsToUrl(settings): Record<string, string> {
+    return settings.mark ? { trop: settings.mark } : {};
+  },
+
+  renderControls(container, settings, onChange) {
+    renderTropChart(container, settings, onChange);
+  },
+
+  renderLegend(container, settings) {
+    const entry = selectedEntry(settings);
+    if (!entry) {
       container.innerHTML =
         '<div style="color: #666; font-size: 11px;">Select a trop mark above</div>';
       return;
     }
 
-    const tier = getRarityTier(selectedTrop.totalCount);
+    const tier = getRarityTier(entry.totalCount);
     if (tier === 'rare') {
       container.innerHTML =
-        legendRow('rgb(255, 214, 0)', `Contains ${selectedTrop.name}`) +
+        legendRow('rgb(255, 214, 0)', `Contains ${entry.name}`) +
         legendRow('rgb(64, 64, 64)', 'Does not contain');
     } else {
       const stops = tier === 'uncommon' ? UNCOMMON_TROP_GRADIENT : COMMON_TROP_GRADIENT;
@@ -239,35 +260,23 @@ export const tropOverlay: Overlay = {
     }
   },
 
-  getHoverInfo(verse: TanakhIdentity): string | null {
-    if (!selectedTrop) return null;
+  getHoverInfo(verse, settings) {
+    const entry = selectedEntry(settings);
+    if (!entry) return null;
 
-    const loc = selectedTrop.verses.find((v) => tanakhIdentitiesEqual(v, verse));
-    return loc ? `${selectedTrop.name} ×${loc.count}` : null;
+    const loc = entry.verses.find((v) => tanakhIdentitiesEqual(v, verse));
+    return loc ? `${entry.name} ×${loc.count}` : null;
   },
 
-  urlParams: URL_PARAMS,
-
-  getUrlParams(): Record<string, string> {
-    if (!selectedTrop) return {};
-    return { trop: slugify(selectedTrop.name) };
-  },
-
-  applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
-    const slug = params.trop;
-    selectedTrop = (slug && tropByFrequency.find((t) => slugify(t.name) === slug)) || null;
-    updateCache();
-    updateCallback?.();
-  },
-
-  highlightVerseText(text: string, language: TextLanguage): DocumentFragment {
+  highlightVerseText(text: string, language: TextLanguage, settings): DocumentFragment {
     const fragment = document.createDocumentFragment();
-    if (language !== 'he' || !selectedTrop) {
+    const entry = selectedEntry(settings);
+    if (language !== 'he' || !entry) {
       fragment.appendChild(document.createTextNode(text));
       return fragment;
     }
     const holder = document.createElement('div');
-    holder.innerHTML = highlightTropInText(text, selectedTrop.unicode);
+    holder.innerHTML = highlightTropInText(text, entry.unicode);
     fragment.append(...holder.childNodes);
     return fragment;
   },
@@ -276,13 +285,6 @@ export const tropOverlay: Overlay = {
 export function configure(config: { verseTexts: VerseTexts }): void {
   tropIndex = buildTropIndex(config.verseTexts);
   tropByFrequency = getTropByFrequency(tropIndex);
-  // Reset to default state for testing
-  selectedTrop = null;
-  updateCache();
-}
-
-export function getSelectedTrop(): TropIndexEntry | null {
-  return selectedTrop;
 }
 
 // Wraps a trop mark together with its base letter and any other combining

@@ -11,7 +11,7 @@ export type { Overlay, Color, UrlParamSpec, UrlParamKind, UrlParamValues } from 
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { createOverlaySettings, settingsFromParams } from './settings.ts';
 export { configure as configureCommentary } from './commentary.ts';
-export { configure as configureTrop, getSelectedTrop, highlightTropInText } from './trop.ts';
+export { configure as configureTrop, highlightTropInText } from './trop.ts';
 export { configure as configureSearch, highlightSearchTerms } from './search/index.ts';
 export { getVerseDatingInfo } from './text-dating.ts';
 export { configure as configureVerseLength } from './verse-length.ts';

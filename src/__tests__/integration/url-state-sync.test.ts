@@ -15,7 +15,7 @@ import {
 } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/overlayUrlParams';
 import { createOverlaySettings } from '../../overlays/settings';
 
 describe('URL State Sync Integration', () => {
@@ -67,12 +67,13 @@ describe('URL State Sync Integration', () => {
       const overlay = getOverlay('trop');
       await overlay?.init?.();
 
-      // Apply URL params
+      // Restore settings from a link
       const params = new URLSearchParams('trop=tipcha');
-      applyOverlayParams(overlay, params);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params);
 
       // Get URL params back
-      const urlParams = overlay?.getUrlParams?.();
+      const urlParams = settings.toUrl(overlay!);
       expect(urlParams).toEqual({ trop: 'tipcha' });
     });
 
@@ -139,7 +140,7 @@ describe('URL State Sync Integration', () => {
         );
       draw();
       (container.querySelector('button') as HTMLButtonElement).click();
-      const chosen = overlay?.getUrlParams?.().trop;
+      const chosen = settings.toUrl(overlay!).trop;
       expect(chosen, 'the trop overlay reported no selection').toBeTruthy();
 
       const state: UrlState = {
@@ -165,11 +166,11 @@ describe('URL State Sync Integration', () => {
       container.innerHTML = '';
       draw();
       (container.querySelector('button') as HTMLButtonElement).click();
-      expect(overlay?.getUrlParams?.().trop, 'failed to clear the selection').toBeUndefined();
+      expect(settings.toUrl(overlay!).trop, 'failed to clear the selection').toBeUndefined();
 
-      applyOverlayParams(overlay, restored.overlayParams);
+      settings.restore(overlay!, restored.overlayParams);
 
-      expect(overlay?.getUrlParams?.().trop).toBe(chosen);
+      expect(settings.toUrl(overlay!).trop).toBe(chosen);
     });
   });
 
