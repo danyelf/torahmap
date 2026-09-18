@@ -127,6 +127,9 @@ describe('story stop settings reach the overlay', () => {
     id: 'test-settings',
     name: 'Test Settings',
     urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+    defaultSettings: () => ({}),
+    settingsFromUrl: (params) => params,
+    settingsToUrl: () => ({}),
     getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
     colorsFor(items, settings: UrlParamValues) {
       received = { ...settings };
@@ -175,7 +178,9 @@ describe('story stop settings reach the overlay', () => {
       id: 'test-typed-settings',
       name: 'Test Typed Settings',
       urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+      defaultSettings: () => ({ on: false }),
       settingsFromUrl: (params) => ({ on: params.mode === 'on' }),
+      settingsToUrl: () => ({}),
       getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
       colorsFor(items, settings) {
         handed = settings;
@@ -238,6 +243,9 @@ describe('the blender memoises colours by settings', () => {
       id: 'test-memo',
       name: 'Test Memo',
       urlParams: [{ key: 'mode', kind: 'token' }],
+      defaultSettings: () => ({}),
+      settingsFromUrl: (params) => params,
+      settingsToUrl: () => ({}),
       getVerseColor: () => [0.2, 0.2, 0.2] as [number, number, number],
       colorsFor: colorsForSpy,
     };

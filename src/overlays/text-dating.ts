@@ -120,18 +120,6 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
     }
   },
 
-  defaultSettings() {
-    return undefined;
-  },
-
-  settingsFromUrl() {
-    return undefined;
-  },
-
-  settingsToUrl() {
-    return {};
-  },
-
   getVerseColor(verse: TanakhIdentity): Color | null {
     const verseData = getVerseData(verse);
     if (!verseData) return null;

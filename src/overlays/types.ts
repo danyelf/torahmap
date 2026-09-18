@@ -24,7 +24,34 @@ export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHac
 // counts as an Overlay only because the members are declared as methods, which
 // TypeScript checks bivariantly. Declare a member as a function-typed property
 // and overlays with different settings can no longer share one list.
-export interface Overlay<T = TanakhIdentity, S = unknown> {
+//
+// An overlay either has settings, and implements every member of
+// OverlayWithSettings, or has none and implements none of them.
+export type Overlay<T = TanakhIdentity, S = unknown> = OverlayMembers<T, S> &
+  (OverlayWithSettings<S> | OverlayWithoutSettings);
+
+interface OverlayWithSettings<S> {
+  // The settings an overlay starts with, before the reader or a link says otherwise.
+  defaultSettings(): S;
+
+  // Settings to and from a shareable link. urlState.ts reads and validates the
+  // link against urlParams without knowing what the values mean, so
+  // settingsFromUrl receives only declared keys, with declared defaults filled
+  // in. settingsToUrl leaves out any value at its default.
+  urlParams: readonly UrlParamSpec[];
+  settingsFromUrl(params: UrlParamValues): S;
+  settingsToUrl(settings: S): Record<string, string>;
+}
+
+// The app hands an overlay without settings undefined wherever it hands settings.
+interface OverlayWithoutSettings {
+  defaultSettings?: never;
+  urlParams?: never;
+  settingsFromUrl?: never;
+  settingsToUrl?: never;
+}
+
+interface OverlayMembers<T, S> {
   id: string;
   name: string;
 
@@ -43,17 +70,6 @@ export interface Overlay<T = TanakhIdentity, S = unknown> {
   // them. `hovered` is the item under the cursor; only Haftarah's colours
   // depend on it.
   colorsFor?(items: T[], settings: S, hovered: T | null): (Color | Color[] | null)[];
-
-  // The settings an overlay starts with, before the reader or a link says otherwise.
-  defaultSettings?(): S;
-
-  // Settings to and from a shareable link. urlState.ts reads and validates the
-  // link against urlParams without knowing what the values mean, so
-  // settingsFromUrl receives only declared keys, with declared defaults filled
-  // in. settingsToUrl leaves out any value at its default.
-  urlParams?: readonly UrlParamSpec[];
-  settingsFromUrl?(params: UrlParamValues): S;
-  settingsToUrl?(settings: S): Record<string, string>;
 
   // Draw the controls for `settings`. The app calls this again with the same
   // container after a change, so bring what is there up to date rather than
@@ -74,10 +90,6 @@ export interface Overlay<T = TanakhIdentity, S = unknown> {
   // Returns true if the overlay needs a re-render for the new hover state.
   setHoveredVerse?(verse: T | null, settings: S): boolean;
 
-  // For a repaint the overlay needs when something other than its settings
-  // changes what it shows.
-  onUpdate?(callback: () => void): void;
-
   renderSidebarInfo?(verse: T, isPinned: boolean, settings: S): HTMLElement | null;
 
   highlightVerseText?(text: string, language: TextLanguage, settings: S): DocumentFragment;
@@ -90,12 +102,4 @@ export interface Overlay<T = TanakhIdentity, S = unknown> {
   // tab. Omit when the overlay derives everything from already-credited text;
   // a test enforces this for everything else.
   credits?: readonly Credit[];
-
-  // TRANSITIONAL: the members of an overlay that still holds its own settings.
-  // Such an overlay reads its settings from itself and ignores the settings
-  // argument above. src/overlays/settings.ts is the one place that tells the
-  // two kinds apart; these members, and that branch, go once every overlay
-  // implements settingsFromUrl.
-  getUrlParams?(): Record<string, string>;
-  applyUrlParams?(params: UrlParamValues): void;
 }

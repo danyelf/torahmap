@@ -11,7 +11,6 @@ import { createVerse } from '../helpers';
 
 // Mock the overlay modules
 vi.mock('../../overlays/trop.ts', () => ({
-  getSelectedTrop: vi.fn(() => null),
   highlightTropInText: vi.fn((text: string) => text),
 }));
 

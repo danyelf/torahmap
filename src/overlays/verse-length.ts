@@ -86,18 +86,6 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
     'Shades each verse by how many Hebrew words it has, the shortest dark and the ' +
     'longest bright.',
 
-  defaultSettings() {
-    return undefined;
-  },
-
-  settingsFromUrl() {
-    return undefined;
-  },
-
-  settingsToUrl() {
-    return {};
-  },
-
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);
   },

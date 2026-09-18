@@ -1003,16 +1003,11 @@ describe('what every overlay must hold to', () => {
   // The point of the redesign: an overlay that saves settings has to say which
   // keys it uses, or urlState.ts will never read them back out of a link.
   getAllOverlays().forEach((overlay) => {
-    // A converted overlay with nothing to save (Overlay<T, void>) still
-    // implements settingsFromUrl, returning undefined; its defaultSettings
-    // says so, and needs no urlParams.
-    const savesSettings = Boolean(
-      overlay.getUrlParams ||
-      overlay.applyUrlParams ||
-      (overlay.defaultSettings && overlay.defaultSettings() !== undefined),
-    );
+    // Declared, not inferred from a value: an overlay whose default settings
+    // are undefined still saves settings if it implements settingsToUrl.
+    const savesSettings = overlay.settingsToUrl !== undefined;
 
-    it(`${overlay.id}: declares its keys if it saves any settings`, () => {
+    it(`${overlay.id}: declares its keys if and only if it saves settings`, () => {
       if (savesSettings) {
         expect(overlay.urlParams, `${overlay.id} has no urlParams`).toBeDefined();
         expect(overlay.urlParams!.length).toBeGreaterThan(0);
@@ -1042,48 +1037,6 @@ describe('what every overlay must hold to', () => {
       for (const key of reported) {
         expect(declared, `${overlay.id} reported undeclared "${key}"`).toContain(key);
       }
-    });
-
-    it(`${overlay.id}: writes no URL state while being restored`, () => {
-      // Restoring a link must not rewrite the link, for every overlay, whether
-      // or not that overlay remembers to be careful. Two things are checked.
-      //
-      // First, that URL writes really are off for the whole time the overlay
-      // is being handed its settings — true for every overlay, including ones
-      // that ignore the particular values this test can invent.
-      //
-      // Second, end to end: an overlay announces a settings change by calling
-      // the handler the app gave it, and in the app that handler saves URL
-      // state. So wire up a handler that does exactly that and watch the
-      // history API. (Commentary does announce; that is what makes this half
-      // of the test bite.)
-      const { pushState, replaceState } = mockHistory('http://localhost:5173/');
-
-      overlay.onUpdate?.(() => {
-        updateUrl({ overlay: overlay.id, overlayParams: {} }, false);
-      });
-
-      let writesWereSuspended: boolean | null = null;
-      if (overlay.applyUrlParams) {
-        const realApply = overlay.applyUrlParams.bind(overlay);
-        vi.spyOn(overlay, 'applyUrlParams').mockImplementation((params) => {
-          writesWereSuspended = isApplyingExternalState();
-          realApply(params);
-        });
-      }
-
-      createOverlaySettings().restore(overlay, plausibleSettings(overlay));
-
-      if (overlay.applyUrlParams) {
-        expect(
-          writesWereSuspended,
-          `${overlay.id} was given settings with URL writes still live`,
-        ).toBe(true);
-      }
-      expect(pushState, `${overlay.id} pushed a history entry`).not.toHaveBeenCalled();
-      expect(replaceState, `${overlay.id} wrote URL state`).not.toHaveBeenCalled();
-
-      vi.restoreAllMocks();
     });
   });
 });

@@ -326,10 +326,8 @@ let urlWritesSuspended = 0;
  * Run something that puts state *into* the app from outside — a link being
  * restored, a story stop being applied — with URL writes turned off.
  *
- * This is the one place the rule lives. Anything an overlay does in response,
- * including calling its own update handler, cannot reach the URL from in here,
- * so no overlay has to be careful about it and a new overlay gets the same
- * treatment without anyone remembering to give it.
+ * This is the one place the rule lives. Nothing that runs in response can
+ * reach the URL from in here, so no code path has to be careful about it.
  */
 export function applyingExternalState<T>(apply: () => T): T {
   urlWritesSuspended++;

@@ -187,8 +187,8 @@ async function main(): Promise<void> {
    * applyOverlay against a stale `currentOverlay` and clobber the blender's buffer.
    *
    * The stop is external state, like a link, so URL writes are off throughout:
-   * in story mode the URL is the stop id, and the explore-mode URL that an
-   * overlay's update handler would write has no business overwriting it.
+   * in story mode the URL is the stop id, and an explore-mode URL has no
+   * business overwriting it.
    */
   function syncStoryStopState(stop: ResolvedStoryStop): void {
     applyingExternalState(() => syncStoryStopStateUnguarded(stop));
@@ -622,17 +622,6 @@ async function main(): Promise<void> {
     currentOverlayId = id;
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
-
-    currentOverlay?.onUpdate?.(() => {
-      applyOverlay();
-      renderOverlayLegend();
-      render();
-      // Save URL state when overlay params change (replaceState).
-      // No guard needed here: applyingExternalState() turns URL writes off
-      // around every restore and every story stop, so an overlay announcing a
-      // change it was just handed cannot write it back.
-      saveUrlState(false);
-    });
   }
 
   function renderOverlayLegend(): void {

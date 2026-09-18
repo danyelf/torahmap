@@ -16,7 +16,6 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockFetch, restoreAllMocks } from '../helpers/mocks';
-import { applyOverlayParams } from '../helpers/overlayUrlParams';
 import { createOverlaySettings, type OverlaySettings } from '../../overlays/settings';
 
 describe('Overlay Switching Integration', () => {
@@ -71,11 +70,6 @@ describe('Overlay Switching Integration', () => {
 
     // Initialize if needed
     await overlay.init?.();
-
-    // Wire up update callback
-    overlay.onUpdate?.(() => {
-      // Update callback registered for overlay
-    });
 
     // Render controls and legend
     mockControlsContainer.innerHTML = '';
@@ -440,7 +434,7 @@ describe('Overlay Switching Integration', () => {
       const overlay = await switchToOverlay('trop');
 
       // Should not throw
-      expect(() => applyOverlayParams(overlay, new URLSearchParams('trop=tipcha'))).not.toThrow();
+      expect(() => settings.restore(overlay, new URLSearchParams('trop=tipcha'))).not.toThrow();
     });
   });
 

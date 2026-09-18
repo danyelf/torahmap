@@ -1,6 +1,5 @@
 import type { Overlay } from './types.ts';
 import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
-import { applyOverlayParams } from './applyParams.ts';
 
 /**
  * The settings the app holds for each overlay, by overlay id.
@@ -26,8 +25,6 @@ export function createOverlaySettings(): OverlaySettings {
 
   const store: OverlaySettings = {
     get<T, S>(overlay: Overlay<T, S>): S {
-      // TRANSITIONAL: an overlay that holds its own settings has no defaultSettings,
-      // and is handed undefined, which it ignores.
       if (!byId.has(overlay.id)) byId.set(overlay.id, overlay.defaultSettings?.());
       // The one assertion: only this overlay's own settings are stored under its id.
       return byId.get(overlay.id) as S;
@@ -38,16 +35,14 @@ export function createOverlaySettings(): OverlaySettings {
     },
 
     restore(overlay, raw) {
-      const params = validateOverlayParams(overlay.urlParams, raw);
-      store.set(overlay, settingsFromParams(overlay, params));
-      // TRANSITIONAL: an overlay that holds its own settings is handed them too.
-      if (!overlay.settingsFromUrl) applyOverlayParams(overlay, raw);
+      store.set(
+        overlay,
+        settingsFromParams(overlay, validateOverlayParams(overlay.urlParams, raw)),
+      );
     },
 
     toUrl(overlay) {
-      // TRANSITIONAL: an overlay that holds its own settings reports them itself.
-      if (!overlay.settingsToUrl) return overlay.getUrlParams?.() ?? {};
-      return overlay.settingsToUrl(store.get(overlay));
+      return overlay.settingsToUrl?.(store.get(overlay)) ?? {};
     },
   };
   return store;
@@ -56,10 +51,7 @@ export function createOverlaySettings(): OverlaySettings {
 /**
  * An overlay's settings from link parameters that have already been through
  * validateOverlayParams.
- *
- * TRANSITIONAL: an overlay without settingsFromUrl still takes the validated
- * parameters themselves, which is what its colorsFor reads.
  */
 export function settingsFromParams(overlay: Overlay, params: UrlParamValues): unknown {
-  return overlay.settingsFromUrl ? overlay.settingsFromUrl(params) : params;
+  return overlay.settingsFromUrl?.(params);
 }
