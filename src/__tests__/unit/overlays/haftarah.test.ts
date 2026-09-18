@@ -606,4 +606,27 @@ describe('Haftarah Overlay', () => {
       expect(otherColor).not.toEqual(baseOtherColor);
     });
   });
+
+  describe('colorsFor', () => {
+    it('answers for a custom it is handed without changing its own', async () => {
+      await haftarahOverlay.init?.();
+      haftarahOverlay.applyUrlParams?.({ custom: 'sephardi' });
+
+      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
+      haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, null);
+
+      expect(haftarahOverlay.getUrlParams?.()).toEqual({ custom: 'sephardi' });
+    });
+
+    it('brightens the pairing of the verse it is told is hovered', async () => {
+      await haftarahOverlay.init?.();
+      const torah = { book: 'Genesis', chapter: 1, verse: 1 };
+      const items = [torah];
+
+      const cold = haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, null);
+      const hot = haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, torah);
+
+      expect(hot).not.toEqual(cold);
+    });
+  });
 });
