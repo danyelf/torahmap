@@ -398,13 +398,13 @@ describe('Overlay Switching Integration', () => {
 
       if (overlay.setHoveredVerse) {
         const verse = verses[0];
-        const shouldRerender = overlay.setHoveredVerse(verse);
+        const shouldRerender = overlay.setHoveredVerse(verse, settings.get(overlay));
 
         // Should return boolean indicating if re-render needed
         expect(typeof shouldRerender).toBe('boolean');
 
         // Clear hover
-        overlay.setHoveredVerse(null);
+        overlay.setHoveredVerse(null, settings.get(overlay));
       } else {
         // Search overlay may not implement this yet
         expect(overlay.setHoveredVerse).toBeUndefined();
@@ -416,7 +416,7 @@ describe('Overlay Switching Integration', () => {
 
       // Set hover state if supported
       if (currentOverlay?.setHoveredVerse) {
-        currentOverlay.setHoveredVerse!(verses[0]);
+        currentOverlay.setHoveredVerse!(verses[0], settings.get(currentOverlay));
       }
 
       // Switch overlay
