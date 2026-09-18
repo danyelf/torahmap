@@ -1,174 +1,145 @@
 # Overlays Are Functions — Design
 
 **Issues:** #179 (shape), #177 and #178 (the P1 bugs that follow from it),
-#74, #76, #122, #56, #169 (the same cause, filed separately)
+#74, #76, #122, #169, #192
 **Date:** 2026-09-17
-**Status:** Approved, not yet implemented.
+**Status:** Implemented on `worktree-overlay-as-function`.
 
 ## The problem
 
-An overlay declares eighteen members over a page of module-level `let`s. One of
-them is the colour rule:
+An overlay's colour rule was `getVerseColor(verse)`, with no settings argument:
+the settings lived in module variables (`currentCategory`, `currentCustom`,
+`selectedTrop`, search's `terms`) that every other member read and wrote. There
+was no function from settings to colours, only "write the settings into the
+module, then read the colours back out". Both P1 bugs are that sentence.
 
-```ts
-getVerseColor(verse: TanakhIdentity): Color | Color[] | null
-```
+**#178.** To sample a story stop, the blender wrote the stop's parameters into
+the overlay and read its colours back, so the sampled stop stayed current
+afterwards and a hover repainted from the wrong stop. Through the Abraham stops
+it also re-ran the full-corpus search, rebuilt the results list and sent an
+analytics event for each term on each sample. How often that happened per frame
+was read from the code, not measured.
 
-It takes no settings argument, because the settings are ambient — `currentCategory`,
-`currentCustom`, `selectedTrop`, search's `terms`. The other seventeen members
-load data, draw controls, draw the legend, answer hover, and serialize to the
-URL, all reading and writing those same variables.
-
-So there is no function from settings to colours. There is "write the settings
-into the module, then read the colours back out". Both open P1 bugs are that
-sentence with different consequences.
-
-**#178.** To sample a story stop, `overlayBlender.ts` writes the stop's
-parameters into the overlay and reads its colours. Sampling the destination
-makes the destination current, and it stays current after the sample. `main.ts`
-may still consider the source stop dominant, so a hover repaints from the wrong
-stop. Through the five Abraham stops this also re-runs a full-corpus search, and
-rebuilds the results DOM, and sends a GA4 `search_execute` event, twice per
-animation frame per term.
-
-**#177.** `restoreFromUrlUnguarded` is five `if (present) apply` statements with
-no `else`. A field the URL does not mention keeps whatever was there, so
-returning to an empty hash leaves the previous overlay, pin and mode live. It
-also decides Explore from `overlay || verse` while the writer emits camera keys
-whenever nothing is pinned, so reader and writer disagree about what an Explore
-URL looks like.
+**#177.** Restoring from a link applied only the fields the link mentioned, so
+returning to an empty hash left the previous overlay, pin and mode on screen.
+The reader and the writer of the URL also disagreed about what made a link
+Explore.
 
 ## What an overlay is
 
 ```
-f(items, settings) -> colours
+f(items, settings, hovered) -> colours
 ```
 
-Everything else is one of three things around that: the data `f` reads, the
-settings `f` takes, or presentation that displays the settings and asks for new
-ones.
+Everything else is the data `f` reads, the settings `f` takes, or presentation
+that shows the settings and asks for new ones. The overlay keeps no settings of
+its own, and no hovered verse.
 
-Splitting it that way makes both bugs unrepresentable rather than fixed. The
-blender cannot leave residue in a function. A settings value that is always
-complete has no notion of "a field the URL did not mention".
+## Settings
 
-## The four parts
+Each overlay that has settings defines their type (`CommentarySettings`,
+`SearchSettings`, ...) and four members: `defaultSettings()`, `urlParams` (the
+link keys it reads, each with a default), `settingsFromUrl` and `settingsToUrl`.
+An overlay has all four or none; the type makes a half-converted overlay a
+compile error. Settings are typed per overlay rather than being the link's
+strings because they hold things a link does not: a search term keeps its colour
+slot when the reader deletes its neighbour, and that slot is not in the URL.
 
-**The rule.** Pure, `colorsFor(items, settings)`. Given the same settings it
-returns the same colours, whatever the overlay is currently showing.
+The app holds every overlay's settings in one store (`src/overlays/settings.ts`),
+keyed by overlay id, so switching away and back finds what you left. Every member
+that depends on settings is handed them as an argument. A control asks for a
+change by passing `onChange` a function from the current settings to the next;
+the app applies each such update exactly once, immediately. A link or a story
+stop becomes settings through one function, `settingsFromLink`: validate the
+parameters against `urlParams` (which fills in defaults), then `settingsFromUrl`.
 
-**The settings.** A value the app owns and hands to the rule. Always complete:
-every key the overlay declares is present, defaults included.
+## Colours
 
-**The presentation.** Controls, legend, sidebar, hover text, text highlighting.
-Reads the settings it is given; asks for a change rather than making one.
+An overlay has two colour members. `getVerseColor(verse, settings)` is required;
+`colorsFor(items, settings, hovered)` gives many verses at once and takes the
+hovered verse. In every overlay both go through one internal rule, so the rule is
+written once. A test requires every registered overlay to implement `colorsFor`.
 
-**The data.** Commentary counts, the haftarah tables, the trop index, the lexeme
-index. Loaded once, shared, never per-evaluation.
+The map has one colour layer, either the settled overlay's colours or a story
+transition's blend. Hover and pin are painted on top of it by one composite step
+(`computeItemStates` then `applyItemColors`), which takes a colour array rather
+than an overlay, so story and Explore paint the same way.
 
-## What changes
+The settled layer calls `colorsFor` with the hovered verse, exactly as the blend
+does, so the two cannot disagree. Only Haftarah's colours depend on the hover:
+hovering a reading brightens it and its paired passage and desaturates the rest.
+Haftarah declares `hoverChangesColors(before, after, settings)`, which answers
+whether moving the hover changes its colours; a verse outside every reading
+counts as no hover. That member is also what marks an overlay as hover-dependent.
 
-### The rule comes out
+When the hovered or pinned verse changes, `main.ts` repaints through one
+function:
 
-Each overlay grows `colorsFor(items, settings)`. `getVerseColor` is defined in
-terms of it with the overlay's current settings, so the rule is written once and
-has two callers rather than two implementations.
+- during a story transition, a hover change re-blends with the new hovered verse;
+- otherwise a hover change recomputes the settled layer only if the overlay says
+  its colours changed;
+- a pin or unpin never recomputes the layer; it only composites.
 
-Search needs `runSearch` split first. Today it computes the matches, stores
-them, redraws the results list and term rows, fires `updateCallback`, and sends
-one analytics event per active term. Only the first part belongs to the rule.
-The rest is what happens when a reader searches, and moving it out is what stops
-the scroll from fabricating GA events.
+`main.ts` keeps the current transition (the two stops and how far between them)
+while one is on screen, and clears it when the scroll settles on a stop or the
+story closes. A scroll fires no pointer event, so each scroll frame re-runs hit
+detection under the last cursor position, settled frames included.
 
-### Settings become a value
+## The blender
 
-`UrlParamSpec` gains a `default`. `validateOverlayParams` fills in any key the
-input omits, so what reaches an overlay is complete and `applyUrlParams` assigns
-unconditionally — `currentCategory = settings.category`, not `if (category)`.
-That is #74, enforced in the validator instead of remembered six times.
+`computeBlendedColors` calls `colorsFor` for the two stops and blends the arrays.
+It imports nothing that writes, so it cannot leave anything behind. Results are
+memoised per verses array, keyed by overlay id and the stop's validated link
+parameters; the key is canonical because the validator writes keys in the order
+`urlParams` declares them. Stops that ask for the same thing share an entry, and
+the blender never knows how many stops exist or what they are called. A
+hover-dependent overlay is computed fresh while a verse is hovered, since caching
+by hover would add an entry for every verse the cursor crosses. A stop whose
+overlay has no `colorsFor` blends as the default grey.
 
-### Presentation is drawn after the settings land
+## Links
 
-`activateOverlay` splits into swapping the instance and drawing its UI, and the
-restore path does them in that order with the settings applied between.
-Commentary's `renderControls` already ends in `select.value = currentCategory`;
-it shows the wrong thing only because it runs before the value arrives. Haftarah's
-hand-written `#custom-select` update inside `applyUrlParams` comes back out.
-That is #76 and #122.
+Parsing resolves a complete view state (`resolveViewState` in `viewState.ts`):
+mode, story stop, overlay, link parameters, verse and camera, with every absent
+field at its default. A link that names a story stop, or names nothing at all,
+opens the story; any other link is Explore, including one carrying only a
+camera. Applying it is one ordered pass: mode, overlay, settings, controls,
+verse, camera, paint. Settings land before the controls that show them, which
+fixes a dropdown showing the wrong category (#76, #122). The camera takes the
+link's zoom before centring on the verse (`cameraForView`); centring first
+put a zoomed link's verse off screen and painted a black canvas (#169).
 
-### The blender evaluates, and never writes
-
-`computeBlendedColors` calls `colorsFor` for each endpoint and blends the two
-arrays. It no longer calls `applyOverlayParams`, so it cannot leave residue.
-Results are memoised on the settings, not on the stop — the key is the
-settings in their serialized form, which already exists and is already
-canonical. Two stops asking for the same thing share an entry, a stop that is
-rewritten invalidates nothing, and no part of the blender knows how many stops
-there are or what they are called. Entries are built as they are asked for.
-
-`computeItemStates` takes a resolved colour array instead of an overlay. A
-settled frame passes the current overlay's colours and a transition frame passes
-the blended array, and both then composite hover through `applyItemColors`. The
-highlight therefore survives a transition, and hit detection re-runs each
-transition frame so it tracks the cursor while the camera moves. That is the
-rest of #56. `main-talmud.ts` is the other caller and takes the same change.
-
-### The URL becomes one transition
-
-Parsing resolves a complete view state — mode, overlay, settings, verse, camera
-— with every absent field at its default. Applying it is one ordered pass: mode,
-overlay instance, settings, presentation, verse, camera, paint. Nothing is
-conditional, so an empty hash resets rather than leaves.
-
-Camera comes before centring. `centerOnVerse` computes the pan from
-`camera.zoom`, and today it runs before the URL's zoom is applied, so a link
-carrying both a verse and a zoom centres at zoom 1 and then jumps to zoom 8
-without recentring — which puts the map outside the viewport. That is the
-likeliest cause of #169's black canvas, and the repro decides it.
+Nothing a restore does may write the URL; `applyingExternalState` in
+`urlState.ts` blocks those writes for its duration.
 
 ## What this closes
 
-#179, #177, #178, #74, #76, #122, and the surviving half of #56. #169 if the
-ordering diagnosis holds. #73 — validating parameters on the way out — gets
-easier and stays open.
+#179, #177, #178, #74, #76, #122, #169, and #192 (clicking a search result did
+nothing after switching overlays, because leaving Search cleared its click
+handler). #192 is also a standalone PR; its commit drops out here on rebase once
+that merges. #73, validating parameters on the way out, gets easier and stays
+open. #56 did not reproduce and is not claimed.
 
 ## Testing
 
-The valuable tests are on the parts that are now pure:
+- `colorsFor` gives the same colours for given settings whatever else the app
+  holds, and the settled map gives the same colours as `colorsFor` for a hovered
+  verse.
+- Which layer a hover or pin change recomputes is a pure function
+  (`layerToRecompute` in `itemColoring.ts`) with its own tests.
+- A view state resolves a default for every field a link omits.
+- One test per reported bug: a camera-only hash entering Explore, an empty hash
+  clearing overlay and pin, a link's category showing in the dropdown, a link
+  with a verse and a zoom landing on the verse, a search result clicked after
+  switching overlays.
 
-- `colorsFor` returns the same colours for given settings regardless of what the
-  overlay is currently showing.
-- The overlay's own settings are unchanged after a blend.
-- A view state resolves a default for every key the URL omits.
-- Blended colours composited with a hovered verse brighten that verse.
+## Findings
 
-Then one test per reported bug: a camera-only hash entering Explore; a back
-navigation to an empty hash clearing overlay and pin; a link carrying a category
-leaving the dropdown reading that category; a link carrying a verse and a zoom
-landing on the verse.
-
-And one that states the thing being asked for: story and Explore paint through
-the same composite.
-
-## Assumptions and open questions
-
-Kept during implementation, cleared before the PR leaves draft.
-
-- #169 reproduces. `#overlay=search&q=אור&verse=Genesis.1.3&zoom=8` loads to a
-  solid black canvas with a fully working search panel, result list, and verse
-  sidebar. Removing `zoom=8` from the same URL paints the canvas correctly, so
-  the centre-then-zoom ordering is confirmed as the cause, not just diagnosed
-  from the code. Task 12 should close #169.
-- #56 does not reproduce. On `#story=abraham_call`, colours survive both
-  holding the mouse on the canvas at rest and scrolling slowly through a
-  transition (Call → Rename → zoomed-out) while hovering — no black frame or
-  colour loss at any point observed. Settled frames do paint through the
-  Explore path as the code suggested. Leaving #56 open rather than folding it
-  into this work; its report may describe a state this branch doesn't produce,
-  or one that needs a different repro than tried here.
-- Settled: search settings are a plain ordered list of terms, each carrying its
-  own colour slot. A list rebuilt from a URL takes slots by position; a list the
-  reader has edited keeps the slots it has. Nothing needs identity across
-  evaluations, because searching for two words is simply a different state from
-  searching for one of them — the word they share keeps its colour, and the word
-  that is only in one of them lerps in or out against the background.
+- #169 reproduced before the change (`#overlay=search&q=אור&verse=Genesis.1.3&zoom=8`
+  loaded to a black canvas; without `zoom=8` it painted) and loads correctly after.
+- #56 did not reproduce on `#story=abraham_call`, holding or moving the mouse
+  through a transition.
+- Found by reading the code, not reproduced: before the hover fix, scrolling onto
+  a Haftarah stop with the cursor still lost the pairing highlight when the stop
+  settled, and moving the mouse or pinning mid-transition replaced the blend with
+  one stop's colours. After the fix, both look right in the browser.
