@@ -1,8 +1,8 @@
 // The term rows: one row per word, the open row's mode control, and its
 // meanings.
 //
-// The rows read and write the term list and decide which row the reader is
-// working in, but they hold none of it. Everything comes through the host
+// The rows read the term list, ask for changes to it and decide which row the
+// reader is working in, but they hold none of it. Everything comes through the host
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { isHebrewQuery } from '../../search.ts';
@@ -27,17 +27,17 @@ import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 
 /** What the rows ask of whoever owns the search. */
 export interface TermRowsHost {
-  /** The rows to draw, always at least one so there is somewhere to type. */
+  /** The rows to draw, always at least one so there is somewhere to type. For drawing only. */
   terms(): SearchTerm[];
   /** The row the reader is working in. */
   openId(): string | null;
   /** Verses this term accounts for on its own, or null when it is not being searched. */
   hitCount(term: SearchTerm): number | null;
-  /** Take this term list and rerun the search on it. */
-  setTerms(next: SearchTerm[]): void;
+  /** Ask for a change to the term list, worked out from the list as it is when applied. */
+  edit(change: (terms: SearchTerm[]) => SearchTerm[]): void;
   /** Work in this row from now on. */
   openRow(id: string): void;
-  /** Add an empty row and work in that. Nothing to search for, so nothing reruns. */
+  /** Add an empty row and work in that. */
   addRow(): void;
 }
 
@@ -129,7 +129,7 @@ function buildMeaningRow(
   const box = document.createElement('input');
   box.type = 'checkbox';
   box.addEventListener('change', () => {
-    host?.setTerms(toggleMeaning(host.terms(), term.id, meaning.keys[0]));
+    host?.edit((terms) => toggleMeaning(terms, term.id, meaning.keys[0]));
   });
   row.appendChild(box);
 
@@ -155,7 +155,7 @@ function buildMeaningRow(
     // The row is a label, so the click would otherwise reach the checkbox too.
     e.preventDefault();
     e.stopPropagation();
-    host?.setTerms(onlyMeaning(host.terms(), term.id, meaning.keys));
+    host?.edit((terms) => onlyMeaning(terms, term.id, meaning.keys));
   });
   row.appendChild(only);
 
@@ -212,7 +212,7 @@ function buildModeControl(term: SearchTerm): HTMLDivElement {
     option.dataset.mode = mode;
     option.textContent = MODE_LABELS[mode];
     option.addEventListener('click', () => {
-      host?.setTerms(setMode(host.terms(), term.id, mode));
+      host?.edit((terms) => setMode(terms, term.id, mode));
     });
     control.appendChild(option);
   }
@@ -288,8 +288,7 @@ function openRow(id: string): void {
 
 /** Remove a word, or clear the box when it is the only one left. */
 function removeOrClear(id: string): void {
-  const terms = host?.terms() ?? [];
-  host?.setTerms(terms.length > 1 ? removeTerm(terms, id) : setTermText(terms, id, ''));
+  host?.edit((terms) => (terms.length > 1 ? removeTerm(terms, id) : setTermText(terms, id, '')));
 }
 
 /** A row the reader is not working in: one line saying what it is doing. */
@@ -378,7 +377,7 @@ function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   all.textContent = 'all';
   all.title = 'Put every meaning back';
   all.addEventListener('click', () => {
-    host?.setTerms(allMeanings(host.terms(), term.id));
+    host?.edit((terms) => allMeanings(terms, term.id));
   });
   head.appendChild(all);
 
@@ -467,7 +466,8 @@ function onTermInput(id: string, input: HTMLInputElement): void {
     input.value = cleaned;
     input.setSelectionRange(caret, caret);
   }
-  host?.setTerms(setTermText(host.terms(), id, input.value));
+  const text = input.value;
+  host?.edit((terms) => setTermText(terms, id, text));
 }
 
 /** Hebrew arrives from a system keyboard or from a paste; drop its nikkud. */

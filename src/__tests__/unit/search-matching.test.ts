@@ -2,7 +2,10 @@
 // Each case below is one a rule of their own would make them disagree on.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { searchOverlay, highlightSearchTerms } from '../../overlays/search';
+import { searchOverlay as overlay } from '../../overlays/search';
+import { hostOverlay } from '../helpers/overlayHost';
+
+const searchOverlay = hostOverlay(overlay);
 import { buildSearchIndex, search } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
@@ -16,7 +19,7 @@ const texts: VerseTexts = {
 };
 
 function marked(text: string, language: 'he' | 'en'): string[] {
-  const fragment = highlightSearchTerms(text, language);
+  const fragment = searchOverlay.highlightVerseText(text, language);
   const host = document.createElement('div');
   host.appendChild(typeof fragment === 'string' ? document.createTextNode(fragment) : fragment);
   return [...host.innerHTML.matchAll(/<mark[^>]*>([^<]*)<\/mark>/g)].map((m) => m[1]);
@@ -32,14 +35,14 @@ describe('the search and the highlighter agree', () => {
     // and for a while only the search side folded.
     expect(search('הארצ', false, 'word')).toHaveLength(1);
 
-    searchOverlay.applyUrlParams({ q: 'הארצ', mode: 'word' } as never);
+    searchOverlay.restore({ q: 'הארצ', mode: 'word' });
     expect(marked(GENESIS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['הארץ']);
   });
 
   it('on the last word of a verse, which carries the sof pasuq', () => {
     expect(search('הארץ', false, 'word')).toHaveLength(1);
 
-    searchOverlay.applyUrlParams({ q: 'הארץ', mode: 'word' } as never);
+    searchOverlay.restore({ q: 'הארץ', mode: 'word' });
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);
   });
 });

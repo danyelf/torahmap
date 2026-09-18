@@ -79,7 +79,7 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
   return wordCountScale().colorOf(wordCount);
 }
 
-export const verseLengthOverlay: Overlay = {
+export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
   id: 'verse-length',
   name: 'Verse Length',
   description:
@@ -88,6 +88,10 @@ export const verseLengthOverlay: Overlay = {
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);
+  },
+
+  colorsFor(items, settings, _hovered) {
+    return items.map((item) => this.getVerseColor(item, settings));
   },
 
   renderLegend(container: HTMLElement): void {

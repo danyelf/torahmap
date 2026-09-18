@@ -9,9 +9,9 @@ import { verseLengthOverlay } from './verse-length.ts';
 
 export type { Overlay, Color, UrlParamSpec, UrlParamKind, UrlParamValues } from './types.ts';
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
-export { applyOverlayParams } from './applyParams.ts';
+export { createOverlaySettings, settingsFromLink } from './settings.ts';
 export { configure as configureCommentary } from './commentary.ts';
-export { configure as configureTrop, getSelectedTrop, highlightTropInText } from './trop.ts';
+export { configure as configureTrop, highlightTropInText } from './trop.ts';
 export { configure as configureSearch, highlightSearchTerms } from './search/index.ts';
 export { getVerseDatingInfo } from './text-dating.ts';
 export { configure as configureVerseLength } from './verse-length.ts';

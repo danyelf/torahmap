@@ -15,7 +15,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from './rendering.ts';
-import { computeItemStates, applyItemColors } from './itemColoring.ts';
+import { computeItemStates, applyItemColors, overlayColorsFor } from './itemColoring.ts';
 import { findItemAtPoint } from './hitDetection.ts';
 import { createCamera, clampZoom, panForZoom } from './camera.ts';
 import { createMouseState, startDrag, stopDrag } from './mouseState.ts';
@@ -86,9 +86,9 @@ async function main(): Promise<void> {
   let lastMouseY = 0;
   let hoveredItem: TalmudLayoutItem | null = null;
   let pinnedItem: TalmudLayoutItem | null = null;
-  let currentOverlay: Overlay<TalmudIdentity> | null = null;
+  let currentOverlay: Overlay<TalmudIdentity, void> | null = null;
 
-  const overlaysById = new Map<string, Overlay<TalmudIdentity>>();
+  const overlaysById = new Map<string, Overlay<TalmudIdentity, void>>();
   overlaysById.set(segmentLengthOverlay.id, segmentLengthOverlay);
 
   const mgBaseOverlay = createMgBaseOverlay(structure);
@@ -96,7 +96,12 @@ async function main(): Promise<void> {
   function applyOverlay(): void {
     const states = computeItemStates<TalmudIdentity>(
       items,
-      composeWithMgBase(mgBaseOverlay, currentOverlay),
+      overlayColorsFor(
+        composeWithMgBase(mgBaseOverlay, currentOverlay),
+        items,
+        undefined,
+        hoveredItem,
+      ),
       hoveredItem,
       pinnedItem,
       talmudSegmentsEqual,

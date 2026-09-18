@@ -4,13 +4,13 @@ import { configure } from '../../../overlays/commentary';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
-const commentaryOverlay = getOverlay('commentary')!;
+const commentaryOverlay = hostOverlay(getOverlay('commentary')!);
 
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { CommentaryData, TanakhLayout } from '../../../types';
-import { applyOverlayParams } from '../../helpers/overlayUrlParams';
+import { hostOverlay } from '../../helpers/overlayHost';
 
 describe('Commentary Overlay', () => {
   let testData: CommentaryData;
@@ -19,6 +19,7 @@ describe('Commentary Overlay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    commentaryOverlay.restore({});
 
     testData = {
       'Genesis': {
@@ -65,19 +66,19 @@ describe('Commentary Overlay', () => {
   });
 
   afterEach(() => {
-    commentaryOverlay.destroy?.();
+    commentaryOverlay.destroy();
   });
 
   describe('Overlay Interface', () => {
     it('has correct id and name', () => {
-      expect(commentaryOverlay.id).toBe('commentary');
-      expect(commentaryOverlay.name).toBe('Commentary');
+      expect(commentaryOverlay.overlay.id).toBe('commentary');
+      expect(commentaryOverlay.overlay.name).toBe('Commentary');
     });
   });
 
   describe('Initialization', () => {
     it('loads commentary data on init', async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('data/overlays/commentary/counts.json'),
@@ -92,7 +93,7 @@ describe('Commentary Overlay', () => {
       } as Response);
 
       // Should not throw
-      await expect(commentaryOverlay.init?.()).resolves.not.toThrow();
+      await expect(commentaryOverlay.overlay.init?.()).resolves.not.toThrow();
       consoleSpy.mockRestore();
     });
 
@@ -105,14 +106,14 @@ describe('Commentary Overlay', () => {
       } as Response);
 
       // Should not throw
-      await expect(commentaryOverlay.init?.()).resolves.not.toThrow();
+      await expect(commentaryOverlay.overlay.init?.()).resolves.not.toThrow();
       consoleSpy.mockRestore();
     });
   });
 
   describe('Color Computation - Total Category', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('returns valid colors for verses with data', () => {
@@ -181,12 +182,11 @@ describe('Commentary Overlay', () => {
 
   describe('Category Filtering', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('filters by Midrash category', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
@@ -203,8 +203,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('filters by Talmud category', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Talmud';
@@ -218,8 +217,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('filters by Halakhah category', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Halakhah';
@@ -233,8 +231,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('returns dark color for verses without the filtered category', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Kabbalah';
@@ -248,8 +245,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('handles multiple category switches', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       const verse = testVerses[0]; // Genesis 1:1
@@ -280,7 +276,7 @@ describe('Commentary Overlay', () => {
 
   describe('Max Value Caching', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('produces consistent colors for same verses', () => {
@@ -293,8 +289,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('recalculates colors on category change', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       // Use verse 2 which has different relative values in total vs Midrash
       // Genesis 1:2: total 45 (max 150), Midrash 20 (max 50)
@@ -316,12 +311,11 @@ describe('Commentary Overlay', () => {
 
   describe('Render Controls', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('renders category selector', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select');
       expect(select).not.toBeNull();
@@ -329,8 +323,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('includes all category options', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       const options = Array.from(select.options).map((opt) => opt.value);
@@ -355,8 +348,7 @@ describe('Commentary Overlay', () => {
       // regeneration output instead of vanishing. Today it holds Sefaria's
       // "Guides" — introductions to the Talmud — and it is a diagnostic for
       // whoever refreshes the data, not a lens anyone would choose.
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       const options = Array.from(select.options).map((opt) => opt.value);
@@ -381,36 +373,34 @@ describe('Commentary Overlay', () => {
     });
 
     it('sets initial value to current category', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       expect(select.value).toBe('total');
     });
 
-    it('triggers update callback on category change', () => {
-      const updateCallback = vi.fn();
-      commentaryOverlay.onUpdate?.(updateCallback);
+    it('notifies the app when the category changes', () => {
+      const container = commentaryOverlay.renderControls();
 
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const listener = vi.fn();
+      commentaryOverlay.onChange(listener);
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
-      expect(updateCallback).toHaveBeenCalled();
+      expect(listener).toHaveBeenCalled();
     });
   });
 
   describe('Render Legend', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('renders gradient element', () => {
       const container = document.createElement('div');
-      commentaryOverlay.renderLegend?.(container);
+      commentaryOverlay.renderLegend(container);
 
       const gradient = container.querySelector('.legend-gradient');
       expect(gradient).not.toBeNull();
@@ -418,7 +408,7 @@ describe('Commentary Overlay', () => {
 
     it('renders tick marks', () => {
       const container = document.createElement('div');
-      commentaryOverlay.renderLegend?.(container);
+      commentaryOverlay.renderLegend(container);
 
       const ticks = container.querySelector('.legend-ticks');
       expect(ticks).not.toBeNull();
@@ -437,10 +427,10 @@ describe('Commentary Overlay', () => {
       } as Response);
 
       configure({ verses: [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })] });
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
 
       const container = document.createElement('div');
-      commentaryOverlay.renderLegend?.(container);
+      commentaryOverlay.renderLegend(container);
       return container;
     }
 
@@ -451,7 +441,7 @@ describe('Commentary Overlay', () => {
     it('drops the last power of ten when the maximum sits on top of it', () => {
       // The fixture tops out at 150, which is 8% from 100 on the log scale.
       const container = document.createElement('div');
-      commentaryOverlay.renderLegend?.(container);
+      commentaryOverlay.renderLegend(container);
 
       expect(tickLabels(container)).toEqual(['0', '1', '10', '150']);
     });
@@ -463,47 +453,45 @@ describe('Commentary Overlay', () => {
 
   describe('Hover Info', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('returns link count for total category', () => {
       const verse = testVerses[0]; // Genesis 1:1, total: 150
-      const info = commentaryOverlay.getHoverInfo?.(verse);
+      const info = commentaryOverlay.getHoverInfo(verse);
 
       expect(info).toBe('150 links');
     });
 
     it('returns category count when filtered', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
       const verse = testVerses[0]; // Genesis 1:1, Midrash: 50
-      const info = commentaryOverlay.getHoverInfo?.(verse);
+      const info = commentaryOverlay.getHoverInfo(verse);
 
       expect(info).toBe('50 Midrash');
     });
 
     it('returns null for verses without data', () => {
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      const info = commentaryOverlay.getHoverInfo?.(verse);
+      const info = commentaryOverlay.getHoverInfo(verse);
 
       expect(info).toBeNull();
     });
 
     it('returns "no <category>" for category with zero count', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Kabbalah';
       select.dispatchEvent(new Event('change'));
 
       const verse = testVerses[0]; // Genesis 1:1, no Kabbalah
-      const info = commentaryOverlay.getHoverInfo?.(verse);
+      const info = commentaryOverlay.getHoverInfo(verse);
 
       expect(info).toBe('no Kabbalah');
     });
@@ -511,38 +499,38 @@ describe('Commentary Overlay', () => {
 
   describe('URL State Management', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('returns empty params for total category', () => {
-      const params = commentaryOverlay.getUrlParams?.();
+      const params = commentaryOverlay.toUrl();
       expect(params).toEqual({});
     });
 
     it('returns category param when filtered', () => {
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
-      const params = commentaryOverlay.getUrlParams?.();
+      const params = commentaryOverlay.toUrl();
       expect(params).toEqual({ category: 'Midrash' });
     });
 
     it('declares the category key it owns', () => {
-      expect(commentaryOverlay.urlParams).toEqual([{ key: 'category', kind: 'category' }]);
+      expect(commentaryOverlay.overlay.urlParams).toEqual([
+        { key: 'category', kind: 'category', default: 'total' },
+      ]);
     });
 
     it('applies category under its own key name', () => {
-      applyOverlayParams(commentaryOverlay, new URLSearchParams('category=Midrash'));
-      expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
+      commentaryOverlay.restore(new URLSearchParams('category=Midrash'));
+      expect(commentaryOverlay.toUrl()).toEqual({ category: 'Midrash' });
     });
 
     it('applies category from URL params', () => {
-      const urlParams = new URLSearchParams('category=Talmud');
-      applyOverlayParams(commentaryOverlay, urlParams);
+      commentaryOverlay.restore(new URLSearchParams('category=Talmud'));
 
       const verse = testVerses[0]; // Genesis 1:1, Talmud: 30
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -552,8 +540,7 @@ describe('Commentary Overlay', () => {
     });
 
     it('ignores invalid URL params', () => {
-      const urlParams = new URLSearchParams('other=value');
-      applyOverlayParams(commentaryOverlay, urlParams);
+      commentaryOverlay.restore(new URLSearchParams('other=value'));
 
       const verse = testVerses[0];
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -562,20 +549,20 @@ describe('Commentary Overlay', () => {
       assertValidColor(color as [number, number, number]);
     });
 
-    it('triggers update callback when applying URL params', () => {
-      const updateCallback = vi.fn();
-      commentaryOverlay.onUpdate?.(updateCallback);
+    it('restoring a category from a link repaints without announcing a change', () => {
+      const listener = vi.fn();
+      commentaryOverlay.onChange(listener);
 
-      const urlParams = new URLSearchParams('category=Midrash');
-      applyOverlayParams(commentaryOverlay, urlParams);
+      commentaryOverlay.restore(new URLSearchParams('category=Midrash'));
 
-      expect(updateCallback).toHaveBeenCalled();
+      expect(commentaryOverlay.toUrl()).toEqual({ category: 'Midrash' });
+      expect(listener).not.toHaveBeenCalled();
     });
   });
 
   describe('Edge Cases', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('handles missing book data', () => {
@@ -613,8 +600,7 @@ describe('Commentary Overlay', () => {
     it('handles empty category object', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // empty categories
 
-      const container = document.createElement('div');
-      commentaryOverlay.renderControls?.(container);
+      const container = commentaryOverlay.renderControls();
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
@@ -641,7 +627,7 @@ describe('Commentary Overlay', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       configure({ verses: [verse] });
 
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
 
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
@@ -666,51 +652,45 @@ describe('Commentary Overlay', () => {
 
   describe('Destroy', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     it('preserves category selection across destroy/recreate cycles', () => {
-      const container1 = document.createElement('div');
-      commentaryOverlay.renderControls?.(container1);
+      const container1 = commentaryOverlay.renderControls();
 
       const select1 = container1.querySelector('select') as HTMLSelectElement;
       select1.value = 'Midrash';
       select1.dispatchEvent(new Event('change'));
 
       // Verify category is set
-      let params = commentaryOverlay.getUrlParams?.();
+      let params = commentaryOverlay.toUrl();
       expect(params).toEqual({ category: 'Midrash' });
 
       // Destroy (simulating overlay switch)
-      commentaryOverlay.destroy?.();
+      commentaryOverlay.destroy();
 
-      // Category should still be preserved internally
-      params = commentaryOverlay.getUrlParams?.();
+      // Category should still be preserved — it lives in the app's settings
+      // store, not the overlay, so destroy does not touch it.
+      params = commentaryOverlay.toUrl();
       expect(params).toEqual({ category: 'Midrash' });
 
       // Re-render controls (simulating switching back to commentary)
-      const container2 = document.createElement('div');
-      commentaryOverlay.renderControls?.(container2);
+      const container2 = commentaryOverlay.renderControls();
 
       // Verify category is restored in the select element
       const select2 = container2.querySelector('select') as HTMLSelectElement;
       expect(select2.value).toBe('Midrash');
     });
 
-    it('clears update callback', () => {
-      const updateCallback = vi.fn();
-      commentaryOverlay.onUpdate?.(updateCallback);
-
-      commentaryOverlay.destroy?.();
-
-      // After destroy, callback should not be set
-      expect(() => commentaryOverlay.destroy?.()).not.toThrow();
+    it('can be called again without throwing', () => {
+      commentaryOverlay.destroy();
+      expect(() => commentaryOverlay.destroy()).not.toThrow();
     });
   });
 
   describe('All Categories', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     const categories = [
@@ -727,8 +707,7 @@ describe('Commentary Overlay', () => {
 
     categories.forEach((category) => {
       it(`filters by ${category} category correctly`, () => {
-        const container = document.createElement('div');
-        commentaryOverlay.renderControls?.(container);
+        const container = commentaryOverlay.renderControls();
 
         const select = container.querySelector('select') as HTMLSelectElement;
 
@@ -750,7 +729,7 @@ describe('Commentary Overlay', () => {
 
   describe('Logarithmic Heatmap', () => {
     beforeEach(async () => {
-      await commentaryOverlay.init?.();
+      await commentaryOverlay.overlay.init?.();
     });
 
     // The colours themselves, not "whatever the colour function returns" — an
@@ -767,6 +746,36 @@ describe('Commentary Overlay', () => {
       const unlinked = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // 0 total
 
       assertColorEquals(commentaryOverlay.getVerseColor(unlinked) as number[], [0.15, 0.15, 0.2]);
+    });
+  });
+
+  describe('colorsFor', () => {
+    beforeEach(async () => {
+      await commentaryOverlay.overlay.init?.();
+    });
+
+    it('answers for settings it is handed without changing what it is showing', async () => {
+      await commentaryOverlay.overlay.init?.();
+      commentaryOverlay.restore({ category: 'Midrash' });
+
+      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
+
+      // Asking about another category must not move the overlay off Midrash.
+      commentaryOverlay.overlay.colorsFor!(
+        items,
+        commentaryOverlay.fromUrl({ category: 'total' }),
+        null,
+      );
+      expect(commentaryOverlay.toUrl()).toEqual({ category: 'Midrash' });
+
+      // And asking about the category it is on must agree with what it paints.
+      expect(
+        commentaryOverlay.overlay.colorsFor!(
+          items,
+          commentaryOverlay.fromUrl({ category: 'Midrash' }),
+          null,
+        ),
+      ).toEqual([commentaryOverlay.getVerseColor(items[0])]);
     });
   });
 });
