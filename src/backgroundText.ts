@@ -4,7 +4,7 @@
 
 import { MIN_ZOOM, MAX_ZOOM, type Camera } from './camera.ts';
 import { screenToWorld } from './hitDetection.ts';
-import { stripNikkud } from './search.ts';
+import { stripNikkud } from './hebrew.ts';
 import { getVerseText, type VerseTexts } from './verseTexts.ts';
 import type { TanakhLayout } from './types.ts';
 
