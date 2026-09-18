@@ -141,6 +141,8 @@ Written down because they were not settled, not because they are unimportant.
   whether the summary becomes part of that interface is decided there.
 - **How a continuous scale shows as swatches** — a thin gradient strip is the
   likely answer.
+- **A ⋯ menu** could replace the footer, holding the help modal's tabs as items.
+  Not now; revisit if the footer earns nothing.
 
 ## Prototypes
 
