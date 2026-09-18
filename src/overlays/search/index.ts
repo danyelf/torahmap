@@ -22,6 +22,7 @@ import { renderResults as renderResultsList, detachResults } from './resultsList
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import {
   addTerm,
+  colorIndexAt,
   setTermText,
   onlyMeaning,
   selectedKeys,
@@ -76,12 +77,13 @@ let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
  */
 let activeTermsCache: { of: SearchTerm[]; value: SearchTerm[] } | null = null;
 
+function searchable(list: SearchTerm[]): SearchTerm[] {
+  return list.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+}
+
 function activeTerms(): SearchTerm[] {
   if (activeTermsCache?.of !== terms) {
-    activeTermsCache = {
-      of: terms,
-      value: terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH),
-    };
+    activeTermsCache = { of: terms, value: searchable(terms) };
   }
   return activeTermsCache.value;
 }
@@ -147,26 +149,22 @@ export function configure(config: {
   }
 }
 
+interface SearchMatches {
+  results: SearchResult[];
+  /** Verse key to the positions, among the searched terms, of the terms it matches. */
+  matchingTerms: Map<string, number[]>;
+}
+
 /**
- * Run the search the current terms describe, and repaint.
+ * The verses these terms find, and nothing else: no state, no DOM, no analytics.
  *
  * Two paths, because the modes genuinely differ. In meanings mode over Hebrew each
  * term contributes the verses of the meanings the reader has left checked, so
  * the choice is what drives the result. Every other mode still matches text,
  * and search() does that as it always has.
  */
-function runSearch(): void {
-  const active = activeTerms();
-
-  if (active.length === 0) {
-    currentResults = [];
-    matchingTerms = new Map();
-    renderResults();
-    renderTermRows();
-    updateHitCaption();
-    updateCallback?.();
-    return;
-  }
+function matchesForTerms(active: SearchTerm[]): SearchMatches {
+  if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
   // Every term is matched on its own, in its own language. Only a Hebrew term
   // in meanings mode consults the chosen meanings; everything else is text.
@@ -182,7 +180,7 @@ function runSearch(): void {
     })[0];
   };
 
-  currentResults = resultsForVerseSets(
+  const results = resultsForVerseSets(
     active.map((term) => {
       if (!meaningsApply(term)) return textVerses(term);
       // A term the dictionary does not know falls back to whole-word matching,
@@ -193,7 +191,18 @@ function runSearch(): void {
     active.map((term) => (termIsHebrew(term) ? 'he' : 'en')),
   );
 
-  matchingTerms = getMatchingVerseTerms(currentResults);
+  return { results, matchingTerms: getMatchingVerseTerms(results) };
+}
+
+/**
+ * Run the search the current terms describe, and repaint.
+ *
+ * The analytics event is sent here and not in matchesForTerms: it records a
+ * reader searching, not a colour being computed.
+ */
+function runSearch(): void {
+  const active = activeTerms();
+  ({ results: currentResults, matchingTerms } = matchesForTerms(active));
 
   for (const term of active) {
     const hebrew = termIsHebrew(term);
@@ -385,6 +394,47 @@ function showVerse(result: SearchResult): void {
   }
 }
 
+/**
+ * A verse's colour given the searched terms and what they matched: each
+ * matching term's own colour, stippled when there are several, or dimmed grey
+ * when none match.
+ */
+function searchColorAt(
+  verse: TanakhIdentity,
+  active: SearchTerm[],
+  matches: Map<string, number[]>,
+): Color | Color[] | null {
+  if (active.length === 0) return null;
+
+  const termIndices = matches.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+
+  if (termIndices && termIndices.length > 0) {
+    // Guard the index: results can outlive the term list they came from for
+    // one frame, between a term being removed and the search rerunning.
+    const colors = termIndices
+      .filter((i) => i < active.length)
+      .map((i) => SEARCH_COLORS[colorIndexAt(active, i)]);
+    if (colors.length === 0) return null;
+    if (colors.length === 1) {
+      return colors[0];
+    }
+    // Stipple effect for multiple matches, capped at 4 colors.
+    return colors.slice(0, 4) as Color[];
+  }
+
+  const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+  return [brightness, brightness, brightness];
+}
+
+/** The term list a set of settings describes, with its modes and meanings laid over it. */
+function termsFromSettings(settings: UrlParamValues<typeof URL_PARAMS>): SearchTerm[] {
+  let list = parseSearchTerms(settings.q ?? '').reduce(addTerm, [] as SearchTerm[]);
+  if (list.length === 0) list = addTerm([], '');
+  if (settings.mode) list = applyModes(list, settings.mode);
+  if (settings.m) list = applyMeanings(list, settings.m);
+  return list;
+}
+
 /** The verse text, with every searched term marked in its own colour. */
 export function highlightSearchTerms(text: string, language: TextLanguage): DocumentFragment {
   return highlightTerms(text, language, activeTerms());
@@ -410,30 +460,14 @@ export const searchOverlay: Overlay = {
   ],
 
   getVerseColor(verse: TanakhIdentity): Color | Color[] | null {
-    if (activeTerms().length === 0) {
-      return null;
-    }
+    return searchColorAt(verse, activeTerms(), matchingTerms);
+  },
 
-    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-    const termIndices = matchingTerms.get(key);
-
-    if (termIndices && termIndices.length > 0) {
-      // Guard the index: results can outlive the term list they came from for
-      // one frame, between a term being removed and the search rerunning.
-      const active = activeTerms();
-      const colors = termIndices
-        .filter((i) => i < active.length)
-        .map((i) => SEARCH_COLORS[active[i].colorIndex]);
-      if (colors.length === 0) return null;
-      if (colors.length === 1) {
-        return colors[0];
-      }
-      // Stipple effect for multiple matches, capped at 4 colors.
-      return colors.slice(0, 4) as Color[];
-    }
-
-    const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
-    return [brightness, brightness, brightness];
+  colorsFor(items, settings, _hovered) {
+    const active = searchable(termsFromSettings(settings));
+    if (active.length === 0) return items.map(() => null);
+    const { matchingTerms: matches } = matchesForTerms(active);
+    return items.map((item) => searchColorAt(item, active, matches));
   },
 
   renderControls(container: HTMLElement): void {
@@ -523,16 +557,7 @@ export const searchOverlay: Overlay = {
   },
 
   applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
-    // Rebuild the term list from the query, then lay the chosen modes and
-    // meanings over it.
-    terms = parseSearchTerms(params.q ?? '').reduce(addTerm, [] as SearchTerm[]);
-    if (terms.length === 0) terms = addTerm([], '');
-    if (params.mode) {
-      terms = applyModes(terms, params.mode);
-    }
-    if (params.m) {
-      terms = applyMeanings(terms, params.m);
-    }
+    terms = termsFromSettings(params);
 
     // A fresh list means a fresh choice of which row is open.
     openTermId = null;

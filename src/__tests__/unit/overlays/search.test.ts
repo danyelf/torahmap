@@ -1332,6 +1332,63 @@ describe('Search Overlay', () => {
     });
   });
 
+  describe('Colours for settings it is handed', () => {
+    afterEach(() => {
+      delete window.gtag;
+    });
+
+    it('answers for a query it is handed without changing the search or firing analytics', async () => {
+      const gtag = vi.fn();
+      window.gtag = gtag;
+      await searchOverlay.init?.();
+      searchOverlay.applyUrlParams?.({ q: 'אור' });
+      gtag.mockClear();
+
+      const items = [{ book: 'Genesis', chapter: 1, verse: 3 }];
+      searchOverlay.colorsFor!(items, { q: 'אברם' }, null);
+
+      expect(searchOverlay.getUrlParams?.().q).toBe('אור');
+      expect(gtag).not.toHaveBeenCalled();
+    });
+
+    it('neither redraws the panel nor asks the app to repaint', () => {
+      const updateCallback = vi.fn();
+      searchOverlay.onUpdate?.(updateCallback);
+      const container = render();
+      type(container, 'God');
+      updateCallback.mockClear();
+      const before = container.innerHTML;
+
+      searchOverlay.colorsFor!(testVerses, { q: 'heavens' }, null);
+
+      expect(container.innerHTML).toBe(before);
+      expect(updateCallback).not.toHaveBeenCalled();
+    });
+
+    it('gives the colours getVerseColor gives for the same query', () => {
+      applyOverlayParams(searchOverlay, { q: 'God, heavens' });
+      const expected = testVerses.map((v) => searchOverlay.getVerseColor(v));
+
+      applyOverlayParams(searchOverlay, { q: '' });
+      expect(searchOverlay.colorsFor!(testVerses, { q: 'God, heavens' }, null)).toEqual(expected);
+    });
+
+    it('colours each term by its position in the query', () => {
+      const heavens = testVerses[3];
+      const [alone] = searchOverlay.colorsFor!([heavens], { q: 'heavens' }, null);
+      const [second] = searchOverlay.colorsFor!([heavens], { q: 'light, heavens' }, null);
+
+      expect(alone).toEqual(SEARCH_COLORS[0]);
+      expect(second).toEqual(SEARCH_COLORS[1]);
+    });
+
+    it('answers null everywhere for a query with nothing to search on', () => {
+      expect(searchOverlay.colorsFor!(testVerses, { q: 'a' }, null)).toEqual(
+        testVerses.map(() => null),
+      );
+    });
+  });
+
   describe('Hebrew Substring Position Bug Fix', () => {
     // matchStart/matchEnd were calculated using nikkud-stripped positions but
     // applied to original text with nikkud, so highlights landed on the wrong substring.
