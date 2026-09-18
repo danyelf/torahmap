@@ -979,13 +979,10 @@ is to repaint (the resize handler, `reloadStory`, the end of
 `restoreFromUrlUnguarded`, the show-story handler) with `scheduleStoryFrame()`.
 A synthetic scroll event would now also count towards the threshold.
 
-- [ ] **Step 5: Decide what "Show the story" does to the driver**
+- [ ] **Step 5: "Show the story" eases back at once**
 
-The spec does not say. Two readings: the reader asked for the story, so it
-eases back at once (`driver = rejoinNow(performance.now()); beginRejoin();`),
-or the reader keeps the map until they scroll. **Ask Danyel before choosing.**
-Until he answers, implement the first — it is what the button does today — and
-note the choice in the commit message.
+Danyel decided: showing the story returns the map to the story's view, as a
+deliberate scroll would (`driver = rejoinNow(performance.now()); beginRejoin();`).
 
 Also on show: `driver = …` must be set before `scheduleStoryFrame()`. On hide:
 `driver = readerTakesOver(storyContent.scrollTop); rejoin = null;` so that
@@ -1345,15 +1342,13 @@ git commit -m "Summarise the legend in one line on a phone; set measured band he
 
 ### Task 8: Danyel looks at it
 
-- [ ] **Step 1: Decide whether a hidden story stays hidden**
+- [ ] **Step 1: Remember a hidden story across visits**
 
-The spec says a returning reader's hidden story should get the same answer as
-the help modal's `torahMap.helpSeen`. Task 2 removes that key, because once the
-modal stops opening itself nothing reads it — so there is no answer to match.
-Ask Danyel directly: should putting the story away be remembered across visits?
-If yes, store it under `torahMap.storyHidden` in `setStoryShown`, read it at
-startup only when the URL names neither a story stop nor an overlay, and wrap
-both in `try`/`catch` like the help module's storage.
+Danyel decided it is remembered. Store it under `torahMap.storyHidden` in
+`setStoryShown`, read it at startup only when the URL names neither a story
+stop nor an overlay, and wrap both in `try`/`catch` like the help module's
+storage. A URL naming an overlay but no stop opens with the story hidden
+regardless.
 
 - [ ] **Step 2: Show him**
 

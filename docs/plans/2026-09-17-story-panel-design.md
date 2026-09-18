@@ -137,6 +137,13 @@ plus one line, about 90px, leaving roughly 330px of story on an 844px phone.
 The full legend appears when the reader takes the wheel or puts the story
 away.
 
+## Showing, hiding and links
+
+**Show the story** returns the map to the story's view, as a deliberate scroll
+would. A hidden story stays hidden on a return visit. A link that names an
+overlay but no story stop opens with the story hidden and that overlay showing,
+as explore-mode links do today.
+
 ## Open questions
 
 Written down because they were not settled, not because they are unimportant.
@@ -145,9 +152,6 @@ Written down because they were not settled, not because they are unimportant.
   of building the prototype rather than out of evidence. Danyel drove all four
   rejoin behaviours and picked this one, but the trigger is what he was judging;
   neither number has been tuned.
-- **Whether a hidden story stays hidden on a return visit** is undecided. It is
-  the same question as the help modal's `torahMap.helpSeen`, and should probably
-  get the same answer.
 - **What a one-line legend summary says** is undecided per overlay. A
   continuous scale might become a thin gradient strip; a category legend
   might become its swatches without labels.
