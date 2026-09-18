@@ -1,7 +1,7 @@
 # Telemetry Design
 
 **Date:** 2026-09-18
-**Status:** Approved, being implemented. Issue #213.
+**Status:** Implemented; PR open. Issue #213.
 
 ## Problem
 
