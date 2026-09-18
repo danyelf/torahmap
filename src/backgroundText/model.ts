@@ -32,6 +32,8 @@ export interface BackgroundTextSettings {
   minFont: number;
   maxFont: number;
   opacity: number;
+  /** Opacity of the hovered and the pinned verse, when they are in the passage. */
+  litOpacity: number;
   /** How the text mixes with what is under it. 'difference' reads dark over light squares and light over the dark gaps. */
   blend: Blend;
   font: Font;
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   minFont: 12,
   maxFont: 45,
   opacity: 0.1,
+  litOpacity: 0.4,
   blend: 'exclusion',
   font: 'david',
   marks: 'letters',
@@ -149,36 +152,26 @@ export function stripMarks(text: string, marks: Marks): string {
   return out;
 }
 
-/** The passage split in three so the layer can wrap the center verse in its own element. */
+/** One string per verse, so the layer can give each verse its own element. */
 export interface Passage {
-  before: string;
-  center: string;
-  after: string;
+  /** Index into the verse list of the first entry in `verses`. */
+  start: number;
+  verses: string[];
 }
 
 export function passageForRange(
   verses: TanakhLayout[],
   texts: VerseTexts,
   range: { start: number; end: number },
-  centerIndex: number,
   marks: Marks,
 ): Passage {
-  const hebrew = (i: number): string => {
+  const out: string[] = [];
+  for (let i = range.start; i <= range.end; i++) {
     const v = verses[i];
     const text = getVerseText(texts, v.book, v.chapter, v.verse);
-    return text ? stripMarks(text.he, marks) : '';
-  };
-  const join = (from: number, to: number): string => {
-    const parts: string[] = [];
-    for (let i = from; i <= to; i++) parts.push(hebrew(i));
-    return parts.join(' ');
-  };
-
-  return {
-    before: range.start < centerIndex ? join(range.start, centerIndex - 1) : '',
-    center: hebrew(centerIndex),
-    after: range.end > centerIndex ? join(centerIndex + 1, range.end) : '',
-  };
+    out.push(text ? stripMarks(text.he, marks) : '');
+  }
+  return { start: range.start, verses: out };
 }
 
 export function passageAround(
@@ -191,7 +184,7 @@ export function passageAround(
     settings.content === 'center'
       ? { start: centerIndex, end: centerIndex }
       : windowAround(centerIndex, verses.length, settings.neighbours);
-  return passageForRange(verses, texts, range, centerIndex, settings.marks);
+  return passageForRange(verses, texts, range, settings.marks);
 }
 
 /**

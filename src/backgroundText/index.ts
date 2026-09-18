@@ -25,6 +25,7 @@ export function installBackgroundText(options: {
   camera: Camera;
   renderState: RenderState;
   render: () => void;
+  litVerses: () => (TanakhLayout | null)[];
 }): (() => void) | null {
   if (new URLSearchParams(window.location.search).get('bgtext') !== '1') return null;
 
@@ -41,6 +42,7 @@ export function installBackgroundText(options: {
     camera,
     settings,
     container: document.body,
+    litVerses: options.litVerses,
   });
   renderState.transparentBackground = settings.layer === 'behind';
   document.body.appendChild(

@@ -43,6 +43,9 @@ const RESCALE_REBUILD_RATIO = 1.15;
 interface Page {
   el: HTMLDivElement;
   placement: PagePlacement | null;
+  /** One span per verse, the first being verse number `start`. */
+  spans: HTMLSpanElement[];
+  start: number;
 }
 
 export interface BackgroundTextLayer {
@@ -52,14 +55,21 @@ export interface BackgroundTextLayer {
   getSettings(): BackgroundTextSettings;
 }
 
+function verseKey(v: TanakhLayout): string {
+  return `${v.book} ${v.chapter}:${v.verse}`;
+}
+
 export function createBackgroundTextLayer(options: {
   verses: TanakhLayout[];
   texts: VerseTexts;
   camera: Camera;
   settings: BackgroundTextSettings;
   container: HTMLElement;
+  /** The verses to light up, such as the hovered and the pinned one. */
+  litVerses: () => (TanakhLayout | null)[];
 }): BackgroundTextLayer {
   const { verses, texts, camera } = options;
+  const indexOf = new Map(verses.map((v, i) => [verseKey(v), i]));
   let settings = { ...options.settings };
 
   const root = document.createElement('div');
@@ -69,7 +79,7 @@ export function createBackgroundTextLayer(options: {
     el.className = 'bgtext-page';
     el.style.fontSize = `${BASE_FONT_PX}px`;
     root.appendChild(el);
-    return { el, placement: null };
+    return { el, placement: null, spans: [], start: 0 };
   });
   options.container.appendChild(root);
 
@@ -81,6 +91,7 @@ export function createBackgroundTextLayer(options: {
   function applyStyle(): void {
     root.dataset.layer = settings.layer;
     root.style.setProperty('--bgtext-opacity', String(settings.opacity));
+    root.style.setProperty('--bgtext-lit-opacity', String(settings.litOpacity));
     root.style.setProperty('--bgtext-fade', `${settings.crossfadeMs}ms`);
     root.style.fontFamily = FONT_FAMILIES[settings.font];
     for (const page of pages) page.el.style.mixBlendMode = settings.blend;
@@ -104,17 +115,20 @@ export function createBackgroundTextLayer(options: {
     return fontSizeForZoom(camera.zoom, settings.minFont, settings.maxFont) / BASE_FONT_PX;
   }
 
-  /** Put a passage into a page, with the center verse in its own span. */
-  function fillPage(page: Page, passage: Passage): HTMLSpanElement {
-    const center = document.createElement('span');
-    center.className = 'bgtext-center';
-    center.textContent = passage.center;
-    page.el.replaceChildren(
-      document.createTextNode(passage.before ? `${passage.before} ` : ''),
-      center,
-      document.createTextNode(passage.after ? ` ${passage.after}` : ''),
-    );
-    return center;
+  /** Put a passage into a page, a span per verse, and return the center verse's span. */
+  function fillPage(page: Page, passage: Passage, centerIndex: number): HTMLSpanElement {
+    page.start = passage.start;
+    page.spans = passage.verses.map((text) => {
+      const span = document.createElement('span');
+      span.textContent = text;
+      return span;
+    });
+    page.el.replaceChildren();
+    page.spans.forEach((span, i) => {
+      if (i > 0) page.el.append(' ');
+      page.el.append(span);
+    });
+    return page.spans[centerIndex - passage.start];
   }
 
   /**
@@ -132,7 +146,7 @@ export function createBackgroundTextLayer(options: {
     let center: HTMLSpanElement;
     for (let attempt = 0; ; attempt++) {
       const range = rangeToFill(verses, texts, centerIndex, targetChars);
-      center = fillPage(page, passageForRange(verses, texts, range, centerIndex, settings.marks));
+      center = fillPage(page, passageForRange(verses, texts, range, settings.marks), centerIndex);
       const wholeCorpus = range.start === 0 && range.end === verses.length - 1;
       if (page.el.offsetHeight >= targetHeight || wholeCorpus || attempt >= 4) break;
       targetChars *= 1.3;
@@ -153,7 +167,7 @@ export function createBackgroundTextLayer(options: {
       center = buildFilled(page, centerIndex, scale);
     } else {
       page.el.style.width = `${settings.widthEm * BASE_FONT_PX}px`;
-      center = fillPage(page, passageAround(verses, texts, centerIndex, settings));
+      center = fillPage(page, passageAround(verses, texts, centerIndex, settings), centerIndex);
     }
 
     // The reference point, relative to the page's own top-left. Vertically
@@ -184,6 +198,8 @@ export function createBackgroundTextLayer(options: {
     place(page);
     page.el.classList.add('front');
     old.el.classList.remove('front');
+    lit.clear();
+    light();
   }
 
   // A square anchor tracks its square through a zoom; a viewport anchor
@@ -226,6 +242,25 @@ export function createBackgroundTextLayer(options: {
     }, settings.settleMs);
   }
 
+  // The verse indices lit now, so a frame where nothing changed touches no DOM.
+  const lit = new Set<number>();
+
+  function light(): void {
+    const want = new Set<number>();
+    for (const v of options.litVerses()) {
+      const i = v ? indexOf.get(verseKey(v)) : undefined;
+      if (i !== undefined) want.add(i);
+    }
+    if (want.size === lit.size && [...want].every((i) => lit.has(i))) return;
+    for (const page of pages) {
+      page.spans.forEach((span, k) =>
+        span.classList.toggle('bgtext-lit', want.has(page.start + k)),
+      );
+    }
+    lit.clear();
+    for (const i of want) lit.add(i);
+  }
+
   function update(): void {
     const zoomChanged = camera.zoom !== lastZoom;
     lastZoom = camera.zoom;
@@ -234,6 +269,7 @@ export function createBackgroundTextLayer(options: {
     }
     maybeRegenerate();
     for (const page of pages) place(page);
+    light();
   }
 
   function setSettings(next: BackgroundTextSettings): void {

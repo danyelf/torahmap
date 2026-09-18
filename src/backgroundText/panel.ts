@@ -119,6 +119,7 @@ export function createBackgroundTextPanel(
   row('min font', range('minFont', 6, 40, 1));
   row('max font', range('maxFont', 6, 80, 1));
   row('opacity', range('opacity', 0, 1, 0.05));
+  row('lit opacity', range('litOpacity', 0, 1, 0.05));
   row('blend', select('blend', ['normal', 'difference', 'exclusion', 'overlay']));
   row('font', select('font', ['noto', 'frank', 'david']));
   row('marks', select('marks', ['all', 'no-trop', 'letters']));

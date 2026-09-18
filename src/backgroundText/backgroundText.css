@@ -4,7 +4,6 @@
   overflow: hidden;
   pointer-events: none;
   direction: rtl;
-  color: #b8ad98;
 }
 #bgtext[data-layer='behind'] {
   z-index: -1;
@@ -23,8 +22,17 @@
   opacity: 0;
   transition: opacity var(--bgtext-fade, 300ms) linear;
 }
+/* Faintness is in the text colour, not the page's opacity, because a child
+   can never be more opaque than its parent and a lit verse must be. */
 .bgtext-page.front {
-  opacity: var(--bgtext-opacity, 0.25);
+  opacity: 1;
+}
+.bgtext-page span {
+  color: rgb(184 173 152 / var(--bgtext-opacity, 0.25));
+  transition: color 250ms linear;
+}
+.bgtext-page span.bgtext-lit {
+  color: rgb(184 173 152 / var(--bgtext-lit-opacity, 0.4));
 }
 
 #bgtext-panel {

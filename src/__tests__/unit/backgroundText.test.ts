@@ -61,19 +61,14 @@ describe('passageAround', () => {
       marks: 'all' as const,
     };
     expect(passageAround(verses, texts, 2, settings)).toEqual({
-      before: 'ב',
-      center: 'ג',
-      after: 'ד',
+      start: 1,
+      verses: ['ב', 'ג', 'ד'],
     });
   });
 
   it('shows only the center verse when content is center', () => {
     const settings = { ...DEFAULT_SETTINGS, content: 'center' as const, marks: 'all' as const };
-    expect(passageAround(verses, texts, 1, settings)).toEqual({
-      before: '',
-      center: 'ב',
-      after: '',
-    });
+    expect(passageAround(verses, texts, 1, settings)).toEqual({ start: 1, verses: ['ב'] });
   });
 });
 

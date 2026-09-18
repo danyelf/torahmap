@@ -375,6 +375,7 @@ async function main(): Promise<void> {
     camera,
     renderState,
     render,
+    litVerses: () => [mouseState.hoveredVerse, pinnedVerse],
   });
   if (updateBackgroundText) render();
 
