@@ -31,6 +31,8 @@ export interface RenderState<T = TanakhIdentity> {
   hoverOutlineBuffer: WebGLBuffer | null;
   verses: SpatialItem<T>[];
   dpr: number;
+  /** Clear to transparent so a page layer under the canvas shows through. */
+  transparentBackground?: boolean;
 }
 
 export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
@@ -83,7 +85,11 @@ export function render<T>(
   const { buffer, verses, dpr } = state;
 
   gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.1, 0.1, 0.1, 1.0);
+  if (state.transparentBackground) {
+    gl.clearColor(0, 0, 0, 0);
+  } else {
+    gl.clearColor(0.1, 0.1, 0.1, 1.0);
+  }
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   gl.useProgram(programs.main.program);
