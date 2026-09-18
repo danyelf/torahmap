@@ -69,13 +69,6 @@ const context = await browser.newContext({
   recordVideo: { dir: stagingDir, size: VIEWPORT },
 });
 
-// Suppress the first-visit help modal (see src/help.ts STORAGE_KEY_SEEN).
-await context.addInitScript(() => {
-  try {
-    localStorage.setItem('torahMap.helpSeen', 'true');
-  } catch {}
-});
-
 const page = await context.newPage();
 
 await page.goto(url, { waitUntil: 'domcontentloaded' });
