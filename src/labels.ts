@@ -21,9 +21,9 @@ const MAX_FONT_SIZE = 50; // Maximum font size when zoomed in
 // Show English subtitle when book's screen width exceeds this many pixels
 const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 
+// No minimum: a label keeps its length on the map, about 275 units against the
+// shortest section's 470, so however far out it never reaches the next one.
 const BASE_SECTION_FONT_SIZE = 32;
-// High enough to read with the whole map on screen.
-const MIN_SECTION_FONT_SIZE = 14;
 const MAX_SECTION_FONT_SIZE = 64;
 const SECTION_LABEL_GAP_EM = 0.5;
 
@@ -145,10 +145,7 @@ export function createSectionLabels(
 }
 
 function positionSectionLabel(label: HTMLElement, pan: Pan, zoom: number): void {
-  const fontSize = Math.max(
-    MIN_SECTION_FONT_SIZE,
-    Math.min(MAX_SECTION_FONT_SIZE, BASE_SECTION_FONT_SIZE * zoom),
-  );
+  const fontSize = Math.min(MAX_SECTION_FONT_SIZE, BASE_SECTION_FONT_SIZE * zoom);
   const leftX = parseFloat(label.dataset.leftX || '0');
   const topY = parseFloat(label.dataset.topY || '0');
   label.style.left = (leftX + pan.x) * zoom + fontSize * SECTION_LABEL_GAP_EM + 'px';

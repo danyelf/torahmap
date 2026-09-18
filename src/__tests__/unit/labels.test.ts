@@ -829,10 +829,10 @@ describe('labels', () => {
       expect(sections[0].style.transform).toContain('rotate(90deg)');
     });
 
-    it('clamps its size so it stays readable zoomed out', () => {
+    it('shrinks without a floor, but stops growing when zoomed in', () => {
       const { labels, sections } = sectionLabels();
       updateLabelPositions(labels, { x: 0, y: 0 }, 0.1);
-      expect(sections[0].style.fontSize).toBe('14px');
+      expect(sections[0].style.fontSize).toBe('3.2px');
       updateLabelPositions(labels, { x: 0, y: 0 }, 10);
       expect(sections[0].style.fontSize).toBe('64px');
     });
