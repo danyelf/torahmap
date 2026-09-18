@@ -19,8 +19,10 @@ visits from the dev server alongside real ones.
 - **Analytics Engine keeps three months of data.** Accepted for now. D1 is
   built for read-heavy work, Pipelines needs the Workers Paid plan, and one R2
   object per event needs a compaction job; Honeycomb's free tier keeps 60 days.
-- **Only `torahmap.org` sends.** The dev server, `workers.dev` and previews
-  send nothing.
+- **The dev server sends nothing; everything else does.** Every event records
+  its host, so a Cloudflare preview version (a `workers.dev` address) can be
+  tested without mixing into real numbers — the report queries count only
+  `torahmap.org`.
 - **No dashboard yet.** A script runs saved SQL queries and prints tables.
   Cloudflare Web Analytics (the page-view beacon) was considered and left out:
   it has no custom events.
@@ -32,10 +34,11 @@ load draws a random visit id held only in memory, so a visit's events can be
 grouped without storing anything on the device.
 
 The Worker serves static assets first, so only `/api/event` reaches its
-script. It accepts a POST whose `Origin` is `https://torahmap.org`, drops
-unknown event names and oversized bodies, adds the country (from Cloudflare's
-request data) and device class (mobile or desktop, from the user agent), and
-writes one data point. IP addresses are never stored.
+script. It accepts a POST whose `Origin` header equals the request URL's own
+origin, drops unknown event names and oversized bodies, adds the country (from
+Cloudflare's request data), device class (mobile or desktop, from the user
+agent) and host (from the request URL, never the payload), and writes one
+data point. IP addresses are never stored.
 
 Analytics Engine columns are positional (`blob1`…`blob20`, `double1`…
 `double20`). One shared module, used by page and Worker, lists each event's
@@ -45,7 +48,7 @@ drops whole visits.
 
 ## Events
 
-Every event carries the visit id, country, device and **mode** (story or
+Every event carries the visit id, country, device, host and **mode** (story or
 explore). In story mode the camera, zoom and pinned verse belong to the
 story's author, so the same action means something different in each mode.
 
@@ -83,10 +86,12 @@ and `CLOUDFLARE_API_TOKEN` (permission: Account Analytics Read). Counts use
 
 ## Testing
 
-- Worker: rejects the wrong origin, unknown events and oversized bodies; maps
-  fields to the right columns, against a fake binding.
-- Page: sends nothing off `torahmap.org`; sends each story stop once per
-  visit.
+- Worker: rejects an Origin that does not match the request URL, unknown
+  events and oversized bodies; takes the host from the request URL, not the
+  payload; maps fields to the right columns, against a fake binding.
+- Page: sends nothing from the dev server (localhost, a LAN address, an
+  `.local` name, or no host); sends from `torahmap.org` and from a preview's
+  `workers.dev` host; sends each story stop once per visit.
 - `wrangler dev`: `/api/event` reaches the script and static assets still
   load. The real check is after deploy: load the site, run the report, find
   the visit.
