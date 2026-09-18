@@ -34,7 +34,7 @@ async function controlsAfter(hash: string): Promise<HTMLElement> {
   await overlay?.init?.();
   const container = document.createElement('div');
   if (overlay) {
-    settings.restore(overlay, view.overlaySettings);
+    settings.restore(overlay, view.overlayParams);
     overlay.renderControls?.(container, settings.get(overlay), (update) =>
       settings.set(overlay, update(settings.get(overlay))),
     );
@@ -70,7 +70,7 @@ describe('restoring a link as one complete view', () => {
         mode: 'story',
         storyStop: null,
         overlay: 'none',
-        overlaySettings: {},
+        overlayParams: {},
         verse: null,
         camera: DEFAULT_CAMERA,
       });

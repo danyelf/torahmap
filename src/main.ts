@@ -55,7 +55,12 @@ import {
   tanakhKey,
 } from './types.ts';
 import { findItemAtPoint } from './hitDetection.ts';
-import { computeItemStates, applyItemColors, overlayColorsFor } from './itemColoring.ts';
+import {
+  computeItemStates,
+  applyItemColors,
+  overlayColorsFor,
+  layerToRecompute,
+} from './itemColoring.ts';
 import {
   createRenderContext,
   createRenderState,
@@ -151,10 +156,13 @@ async function main(): Promise<void> {
   }
 
   // The one colour layer on the map: either a settled overlay's colours or a
-  // story transition's blend. Hover and pin never touch it — composite()
-  // paints them on top each time, so a hover re-render never re-asks an
-  // overlay for anything.
+  // story transition's blend. composite() paints the hover and pin on top of
+  // it. A pin never recomputes it; a hover does only when the colours depend
+  // on the hovered verse, which a blend's may.
   let colorLayer: (Color | Color[] | null)[] = [];
+
+  // The story transition on screen; null at rest on a stop, or outside the story.
+  let transition: { from: ResolvedStoryStop; to: ResolvedStoryStop; t: number } | null = null;
 
   function composite(): void {
     const verseStates = computeItemStates(
@@ -175,7 +183,35 @@ async function main(): Promise<void> {
   }
 
   function applyOverlay(): void {
-    setColorLayer(overlayColorsFor(currentOverlay, verses, currentSettings()));
+    setColorLayer(
+      overlayColorsFor(currentOverlay, verses, currentSettings(), mouseState.hoveredVerse),
+    );
+  }
+
+  function blendTransition(): void {
+    if (!transition) return;
+    const { from, to, t } = transition;
+    setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse));
+  }
+
+  /**
+   * Repaint after the hovered or pinned verse changes. `hoveredBefore` is the
+   * hover the colour layer was drawn for; a pin leaves the hover alone, so it
+   * passes nothing and only composites.
+   */
+  function repaint(hoveredBefore: TanakhLayout | null = mouseState.hoveredVerse): void {
+    const layer = layerToRecompute(
+      transition !== null,
+      currentOverlay,
+      currentSettings(),
+      hoveredBefore,
+      mouseState.hoveredVerse,
+      tanakhIdentitiesEqual,
+    );
+    if (layer === 'blend') blendTransition();
+    else if (layer === 'overlay') applyOverlay();
+    else composite();
+    render();
   }
 
   /**
@@ -183,8 +219,7 @@ async function main(): Promise<void> {
    * Does NOT paint the buffer — caller decides (settled paints via applyOverlay,
    * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
    * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
-   * heading toward; otherwise hover events fired during a transition would call
-   * applyOverlay against a stale `currentOverlay` and clobber the blender's buffer.
+   * heading toward, for the sidebar and the hover text.
    *
    * The stop is external state, like a link, so URL writes are off throughout:
    * in story mode the URL is the stop id, and an explore-mode URL has no
@@ -301,16 +336,14 @@ async function main(): Promise<void> {
     if (centerCamera) {
       centerOnVerse(verse);
     }
-    applyOverlay();
-    render();
+    repaint();
     saveUrlState(true);
   }
 
   function unpinVerse(): void {
     pinnedVerse = null;
     updateSidebarWrapper(null);
-    applyOverlay();
-    render();
+    repaint();
     saveUrlState(true);
   }
 
@@ -462,24 +495,12 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('pointerleave', () => {
-    const wasHovering = mouseState.hoveredVerse !== null;
+    const previousHover = mouseState.hoveredVerse;
     clearHover(mouseState);
     lastPointerPosition = null;
     canvas.style.cursor = 'default';
 
-    let overlayWantsRerender = false;
-    if (currentOverlay?.setHoveredVerse) {
-      overlayWantsRerender = currentOverlay.setHoveredVerse(null, currentSettings());
-    }
-
-    if (overlayWantsRerender) {
-      // Haftarah's own colours depend on hover, so the layer itself is stale.
-      applyOverlay();
-      render();
-    } else if (wasHovering) {
-      composite();
-      render();
-    }
+    if (previousHover) repaint(previousHover);
   });
 
   const sidebarElements = getSidebarElements();
@@ -543,27 +564,13 @@ async function main(): Promise<void> {
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
-      const hoverChanged = !tanakhIdentitiesEqual(previousHover, verse);
-
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
       } else {
         canvas.style.cursor = 'default';
       }
 
-      let overlayWantsRerender = false;
-      if (currentOverlay?.setHoveredVerse) {
-        overlayWantsRerender = currentOverlay.setHoveredVerse(verse, currentSettings());
-      }
-
-      if (overlayWantsRerender) {
-        // Haftarah's own colours depend on hover, so the layer itself is stale.
-        applyOverlay();
-        render();
-      } else if (hoverChanged) {
-        composite();
-        render();
-      }
+      if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
 
       if (pinnedVerse) {
         // Keep showing pinned verse
@@ -701,7 +708,6 @@ async function main(): Promise<void> {
 
         if (currentOverlayId !== 'search') {
           setOverlay('search');
-          if (overlaySelect) overlaySelect.value = 'search';
         }
 
         // Replaces the URL setOverlay just pushed rather than adding a second
@@ -810,6 +816,7 @@ async function main(): Promise<void> {
   document.getElementById('exit-story')?.addEventListener('click', () => {
     lastStoryScrollTop = storyContent.scrollTop;
     appMode = 'explore';
+    transition = null;
     switchToExplore(storyPanel, explorePanel);
     // Update URL to explore mode (remove story param)
     saveUrlState(true);
@@ -858,29 +865,22 @@ async function main(): Promise<void> {
         lastSyncedStopId = dominantStop.id;
       }
 
+      // A scroll fires no pointer event, so re-run hit detection under the
+      // last known cursor position now that the camera has moved.
+      if (lastPointerPosition) {
+        setHoveredVerse(
+          mouseState,
+          findItemAtPoint(verses, camera, lastPointerPosition.x, lastPointerPosition.y),
+        );
+      }
+
       if (settled) {
         // At rest: paint via the explore-mode color pipeline.
+        transition = null;
         applyOverlay();
       } else {
-        // A scroll fires no pointer event, so re-run hit detection under the
-        // last known cursor position now that the camera has moved.
-        if (lastPointerPosition) {
-          setHoveredVerse(
-            mouseState,
-            findItemAtPoint(verses, camera, lastPointerPosition.x, lastPointerPosition.y),
-          );
-        }
-        // Mid-scroll: the blender's interpolated colors become the layer, so a
-        // hover mid-transition composites on top of them like any other frame.
-        setColorLayer(
-          computeBlendedColors(
-            state.fromStop,
-            state.toStop,
-            state.t,
-            verses,
-            mouseState.hoveredVerse,
-          ),
-        );
+        transition = { from: state.fromStop, to: state.toStop, t: state.t };
+        blendTransition();
       }
       render();
       updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
@@ -919,9 +919,10 @@ async function main(): Promise<void> {
       switchToExplore(storyPanel, explorePanel);
     }
     appMode = next.mode;
+    transition = null;
 
     activateOverlay(next.overlay);
-    if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlaySettings);
+    if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
     renderOverlayUi();
 
     const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;

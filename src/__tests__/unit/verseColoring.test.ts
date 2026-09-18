@@ -6,6 +6,7 @@ import {
   computeItemStates,
   applyItemColors,
   overlayColorsFor,
+  layerToRecompute,
 } from '../../itemColoring';
 import type { TanakhLayout, ItemState } from '../../types';
 import { tanakhIdentitiesEqual } from '../../types';
@@ -120,6 +121,76 @@ describe('itemColoring', () => {
     });
   });
 
+  describe('overlayColorsFor', () => {
+    it('hands colorsFor the hovered verse', () => {
+      const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
+      const colorsFor = vi.fn().mockReturnValue([[1, 0, 0], null]);
+      const overlay: Overlay = { id: 'test', name: 'Test', getVerseColor: vi.fn(), colorsFor };
+
+      const colors = overlayColorsFor(overlay, verses, 'settings', verses[1]);
+
+      expect(colors).toEqual([[1, 0, 0], null]);
+      expect(colorsFor).toHaveBeenCalledWith(verses, 'settings', verses[1]);
+    });
+
+    it('asks getVerseColor for each verse when there is no colorsFor', () => {
+      const verses = [createVerse({ verse: 1 })];
+      const overlay: Overlay = {
+        id: 'test',
+        name: 'Test',
+        getVerseColor: vi.fn().mockReturnValue([0, 1, 0]),
+      };
+
+      expect(overlayColorsFor(overlay, verses, undefined, null)).toEqual([[0, 1, 0]]);
+    });
+  });
+
+  describe('layerToRecompute', () => {
+    const a = createVerse({ verse: 1 });
+    const b = createVerse({ verse: 2 });
+    const hoverSensitive: Overlay = {
+      id: 'hover',
+      name: 'Hover',
+      getVerseColor: () => null,
+      hoverChangesColors: () => true,
+    };
+    const hoverBlind: Overlay = { id: 'plain', name: 'Plain', getVerseColor: () => null };
+
+    it('re-blends mid-transition when the hovered verse changes', () => {
+      expect(layerToRecompute(true, hoverBlind, undefined, a, b, tanakhIdentitiesEqual)).toBe(
+        'blend',
+      );
+    });
+
+    it('recomputes nothing when the hovered verse is unchanged, as on a pin', () => {
+      expect(layerToRecompute(true, hoverSensitive, undefined, a, a, tanakhIdentitiesEqual)).toBe(
+        null,
+      );
+      expect(layerToRecompute(false, hoverSensitive, undefined, a, a, tanakhIdentitiesEqual)).toBe(
+        null,
+      );
+    });
+
+    it('recomputes a settled overlay only when its colours depend on the hover', () => {
+      expect(layerToRecompute(false, hoverSensitive, undefined, a, b, tanakhIdentitiesEqual)).toBe(
+        'overlay',
+      );
+      expect(layerToRecompute(false, hoverBlind, undefined, a, b, tanakhIdentitiesEqual)).toBe(
+        null,
+      );
+      expect(layerToRecompute(false, null, undefined, a, b, tanakhIdentitiesEqual)).toBe(null);
+    });
+
+    it('hands the overlay the settings to judge the hover by', () => {
+      const hoverChangesColors = vi.fn().mockReturnValue(false);
+      const overlay: Overlay = { ...hoverBlind, hoverChangesColors };
+
+      layerToRecompute(false, overlay, 'settings', a, b, tanakhIdentitiesEqual);
+
+      expect(hoverChangesColors).toHaveBeenCalledWith(a, b, 'settings');
+    });
+  });
+
   describe('applyHoverHighlight', () => {
     it('brightens single-color overlay verses by 1.5x', () => {
       const resolvedColor: [number, number, number] = [0.6, 0.4, 0.2];
@@ -194,7 +265,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(mockOverlay, verses, undefined),
+        overlayColorsFor(mockOverlay, verses, undefined, null),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -216,7 +287,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(mockOverlay, verses, undefined),
+        overlayColorsFor(mockOverlay, verses, undefined, null),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -234,7 +305,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses, undefined),
+        overlayColorsFor(null, verses, undefined, null),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -256,7 +327,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses, undefined),
+        overlayColorsFor(null, verses, undefined, null),
         hoveredVerse,
         null,
         tanakhIdentitiesEqual,
@@ -275,7 +346,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses, undefined),
+        overlayColorsFor(null, verses, undefined, null),
         null,
         pinnedVerse,
         tanakhIdentitiesEqual,
@@ -290,7 +361,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses, undefined),
+        overlayColorsFor(null, verses, undefined, null),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -304,7 +375,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses, undefined),
+        overlayColorsFor(null, verses, undefined, null),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -324,7 +395,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses, undefined),
+        overlayColorsFor(null, verses, undefined, null),
         hoveredVerse,
         null,
         tanakhIdentitiesEqual,
@@ -344,7 +415,7 @@ describe('itemColoring', () => {
 
       const states = computeItemStates(
         verses,
-        overlayColorsFor(null, verses, undefined),
+        overlayColorsFor(null, verses, undefined, null),
         null,
         null,
         tanakhIdentitiesEqual,
@@ -515,7 +586,7 @@ describe('itemColoring', () => {
       // First pass: compute states
       const states = computeItemStates(
         verses,
-        overlayColorsFor(mockOverlay, verses, undefined),
+        overlayColorsFor(mockOverlay, verses, undefined, null),
         hoveredVerse,
         null,
         tanakhIdentitiesEqual,

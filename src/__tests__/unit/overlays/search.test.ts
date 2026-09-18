@@ -344,14 +344,14 @@ describe('Search Overlay', () => {
       expect(searchOverlay.getVerseColor(testVerses[0])).toBeNull();
     });
 
-    it('triggers update callback on search', () => {
-      const updateCallback = vi.fn();
-      searchOverlay.onChange(updateCallback);
+    it('reports a change on search', () => {
+      const changed = vi.fn();
+      searchOverlay.onChange(changed);
 
       const container = render();
       type(container, 'God');
 
-      expect(updateCallback).toHaveBeenCalled();
+      expect(changed).toHaveBeenCalled();
     });
 
     it('restores previous query when re-rendering', () => {
@@ -1312,41 +1312,41 @@ describe('Search Overlay', () => {
 
   describe('Update Callback', () => {
     it('calls callback on search input', () => {
-      const updateCallback = vi.fn();
-      searchOverlay.onChange(updateCallback);
+      const changed = vi.fn();
+      searchOverlay.onChange(changed);
 
       const container = render();
       type(container, 'test');
 
-      expect(updateCallback).toHaveBeenCalled();
+      expect(changed).toHaveBeenCalled();
     });
 
     it('calls callback on clear', () => {
-      const updateCallback = vi.fn();
-      searchOverlay.onChange(updateCallback);
+      const changed = vi.fn();
+      searchOverlay.onChange(changed);
 
       const container = render();
       type(container, 'test');
 
-      updateCallback.mockClear();
+      changed.mockClear();
 
       const clearBtn = container.querySelector('#search-clear') as HTMLButtonElement;
       clearBtn.click();
 
-      expect(updateCallback).toHaveBeenCalled();
+      expect(changed).toHaveBeenCalled();
     });
 
-    it('clears update callback reference', () => {
-      const updateCallback = vi.fn();
-      searchOverlay.onChange(updateCallback);
+    it('clears the change listener reference', () => {
+      const changed = vi.fn();
+      searchOverlay.onChange(changed);
 
       const container = render();
       type(container, 'test');
 
       // Callback should be called before destroy
-      expect(updateCallback).toHaveBeenCalled();
+      expect(changed).toHaveBeenCalled();
 
-      updateCallback.mockClear();
+      changed.mockClear();
 
       searchOverlay.destroy?.();
 
@@ -1380,17 +1380,17 @@ describe('Search Overlay', () => {
     });
 
     it('neither redraws the panel nor asks the app to repaint', () => {
-      const updateCallback = vi.fn();
-      searchOverlay.onChange(updateCallback);
+      const changed = vi.fn();
+      searchOverlay.onChange(changed);
       const container = render();
       type(container, 'God');
-      updateCallback.mockClear();
+      changed.mockClear();
       const before = container.innerHTML;
 
       colorsFor(testVerses, 'heavens');
 
       expect(container.innerHTML).toBe(before);
-      expect(updateCallback).not.toHaveBeenCalled();
+      expect(changed).not.toHaveBeenCalled();
     });
 
     it('gives the colours getVerseColor gives for the same query', () => {

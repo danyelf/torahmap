@@ -96,7 +96,12 @@ async function main(): Promise<void> {
   function applyOverlay(): void {
     const states = computeItemStates<TalmudIdentity>(
       items,
-      overlayColorsFor(composeWithMgBase(mgBaseOverlay, currentOverlay), items, undefined),
+      overlayColorsFor(
+        composeWithMgBase(mgBaseOverlay, currentOverlay),
+        items,
+        undefined,
+        hoveredItem,
+      ),
       hoveredItem,
       pinnedItem,
       talmudSegmentsEqual,

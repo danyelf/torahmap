@@ -12,7 +12,7 @@ export interface ViewState {
   mode: AppMode;
   storyStop: string | null;
   overlay: string;
-  overlaySettings: OverlayParams;
+  overlayParams: OverlayParams;
   verse: TanakhIdentity | null;
   camera: Camera;
 }
@@ -38,7 +38,7 @@ export function resolveViewState(
     mode: url.story || namesNothing ? 'story' : 'explore',
     storyStop: url.story ?? null,
     overlay,
-    overlaySettings: overlay === 'none' ? {} : url.overlayParams,
+    overlayParams: overlay === 'none' ? {} : url.overlayParams,
     verse: url.verse ? parseVerseFromUrl(url.verse) : null,
     camera: {
       zoom: url.zoom ?? defaultCamera.zoom,

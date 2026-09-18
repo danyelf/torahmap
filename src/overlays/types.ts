@@ -69,9 +69,9 @@ interface OverlayMembers<T, S> {
   // null renders default gray; Color[] stipples multiple colors via noise dithering.
   getVerseColor(verse: T, settings: S): Color | Color[] | null;
 
-  // The same colours for many items at once, as the story's blend asks for
-  // them. `hovered` is the item under the cursor; only Haftarah's colours
-  // depend on it.
+  // The same colours for many items at once, as the map and the story's blend
+  // ask for them. `hovered` is the item under the cursor; only Haftarah's
+  // colours depend on it.
   colorsFor?(items: T[], settings: S, hovered: T | null): (Color | Color[] | null)[];
 
   // Draw the controls for `settings`. The app calls this again with the same
@@ -79,8 +79,9 @@ interface OverlayMembers<T, S> {
   // rebuilding it: a box being typed in must keep its focus.
   //
   // A control asks for a change by handing onChange a function from the current
-  // settings to the next. The app applies it to the settings it holds, so a
-  // control never needs, and must never keep, a copy of them to write from.
+  // settings to the next. The app applies each update exactly once, immediately,
+  // to the settings it holds, so a control never needs, and must never keep, a
+  // copy of them to write from.
   renderControls?(
     container: HTMLElement,
     settings: S,
@@ -90,8 +91,10 @@ interface OverlayMembers<T, S> {
 
   getHoverInfo?(verse: T, settings: S): string | null;
 
-  // Returns true if the overlay needs a re-render for the new hover state.
-  setHoveredVerse?(verse: T | null, settings: S): boolean;
+  // Declaring this marks an overlay's colours as depending on the hovered verse:
+  // the map recomputes them when it says so, and the story's blend does not
+  // memoise them. True when moving the hover from `before` to `after` changes them.
+  hoverChangesColors?(before: T | null, after: T | null, settings: S): boolean;
 
   renderSidebarInfo?(verse: T, isPinned: boolean, settings: S): HTMLElement | null;
 

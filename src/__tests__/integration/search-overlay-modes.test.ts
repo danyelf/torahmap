@@ -95,8 +95,8 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
   describe('Mode Switching Behavior', () => {
     it('switching mode by restoring a link runs the new search', () => {
-      const updateCallback = vi.fn();
-      searchOverlay.onChange(updateCallback);
+      const changed = vi.fn();
+      searchOverlay.onChange(changed);
 
       searchOverlay.renderControls?.(container);
       searchOverlay.restore(new URLSearchParams('q=אברם&mode=w'));
@@ -109,7 +109,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // The app repaints after a restore itself, so a restore is not announced
       // as a change the reader made.
-      expect(updateCallback).not.toHaveBeenCalled();
+      expect(changed).not.toHaveBeenCalled();
     });
 
     it('substring mode finds more results than word mode', () => {

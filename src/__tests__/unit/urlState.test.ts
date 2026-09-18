@@ -1016,6 +1016,10 @@ describe('what every overlay must hold to', () => {
       }
     });
 
+    it(`${overlay.id}: answers colorsFor, or the story's blend shows it grey`, () => {
+      expect(overlay.colorsFor).toBeTypeOf('function');
+    });
+
     it(`${overlay.id}: has a name, which is what the menu shows`, () => {
       // main.ts builds the overlay menu out of the registry, using this name.
       expect(overlay.name?.trim()).toBeTruthy();

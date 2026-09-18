@@ -386,39 +386,9 @@ describe('Overlay Switching Integration', () => {
     });
   });
 
-  describe('Hover State Integration', () => {
-    it('supports cross-highlighting with setHoveredVerse', async () => {
-      const overlay = await switchToOverlay('search');
-
-      if (overlay.setHoveredVerse) {
-        const verse = verses[0];
-        const shouldRerender = overlay.setHoveredVerse(verse, settings.get(overlay));
-
-        // Should return boolean indicating if re-render needed
-        expect(typeof shouldRerender).toBe('boolean');
-
-        // Clear hover
-        overlay.setHoveredVerse(null, settings.get(overlay));
-      } else {
-        // Search overlay may not implement this yet
-        expect(overlay.setHoveredVerse).toBeUndefined();
-      }
-    });
-
-    it('clears hover state when switching overlays', async () => {
-      await switchToOverlay('commentary');
-
-      // Set hover state if supported
-      if (currentOverlay?.setHoveredVerse) {
-        currentOverlay.setHoveredVerse!(verses[0], settings.get(currentOverlay));
-      }
-
-      // Switch overlay
-      await switchToOverlay('search');
-
-      // Previous hover state should not affect new overlay
-      expect(lastColors.length).toBe(verses.length);
-    });
+  it('only Haftarah says its colours depend on the hovered verse', () => {
+    const hoverSensitive = getAllOverlays().filter((o) => o.hoverChangesColors);
+    expect(hoverSensitive.map((o) => o.id)).toEqual(['haftarah']);
   });
 
   describe('URL State Persistence', () => {

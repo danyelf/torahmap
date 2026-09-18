@@ -90,7 +90,6 @@ export interface HaftarahSettings {
 
 let data: HaftarahMappings | null = null;
 let structure: TorahData | null = null;
-let hoveredVerse: TanakhIdentity | null = null;
 
 /** Everything about a custom's readings that a verse's color depends on. */
 interface HaftarahDerivation {
@@ -130,11 +129,9 @@ function forEachVerseInRange(
   }
 }
 
-/** Derives the lookup indexes for one custom from the loaded data. An unrecognized or absent custom means Ashkenazi. */
-function deriveHaftarah(custom: string | undefined): HaftarahDerivation {
-  const resolved: Custom = custom === 'sephardi' ? 'sephardi' : 'ashkenazi';
-
-  const cached = derivationCache.get(resolved);
+/** The lookup indexes for one custom, from the loaded data. */
+function deriveHaftarah(custom: Custom): HaftarahDerivation {
+  const cached = derivationCache.get(custom);
   if (cached) return cached;
 
   const torahVerseToParsha = new Map<string, ParshaData>();
@@ -163,7 +160,7 @@ function deriveHaftarah(custom: string | undefined): HaftarahDerivation {
       }
 
       // A haftarah verse can belong to multiple items, so accumulate into an array.
-      const haftarahRanges = item.haftarah[resolved];
+      const haftarahRanges = item.haftarah[custom];
       for (const range of haftarahRanges) {
         forEachVerseInRange(range, (book, ch, v) => {
           const key = tanakhKey(book, ch, v);
@@ -187,7 +184,7 @@ function deriveHaftarah(custom: string | undefined): HaftarahDerivation {
     itemToColor,
     totalItems,
   };
-  derivationCache.set(resolved, derivation);
+  derivationCache.set(custom, derivation);
   return derivation;
 }
 
@@ -318,46 +315,20 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     }
   },
 
-  destroy() {
-    // Only clear ephemeral UI state. Lookup indexes are derived from data
-    // loaded once in init() (which doesn't re-run on re-activation), so clearing
-    // them here would leave the overlay broken if it gets re-activated later.
-    hoveredVerse = null;
-  },
-
-  setHoveredVerse(verse: TanakhIdentity | null, settings: HaftarahSettings): boolean {
+  hoverChangesColors(before, after, settings) {
+    // A verse outside every reading colours the map the same as no hover.
     const derived = deriveHaftarah(settings.custom);
-    const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse, derived) : false;
-    const isRelevant = verse ? isRelevantVerse(verse, derived) : false;
-
-    // Track only relevant verses, so hovering empty space doesn't desaturate
-    // every reading.
-    const effectiveVerse = isRelevant ? verse : null;
-
-    if (!wasRelevant && !isRelevant) {
-      hoveredVerse = null;
-      return false;
-    }
-
-    const oldKey = hoveredVerse
-      ? tanakhKey(hoveredVerse.book, hoveredVerse.chapter, hoveredVerse.verse)
-      : null;
-    const newKey = effectiveVerse
-      ? tanakhKey(effectiveVerse.book, effectiveVerse.chapter, effectiveVerse.verse)
-      : null;
-
-    if (oldKey === newKey) {
-      return false;
-    }
-
-    hoveredVerse = effectiveVerse;
-    return wasRelevant || isRelevant;
+    const keyIfRelevant = (verse: TanakhIdentity | null) =>
+      verse && isRelevantVerse(verse, derived)
+        ? tanakhKey(verse.book, verse.chapter, verse.verse)
+        : null;
+    return keyIfRelevant(before) !== keyIfRelevant(after);
   },
 
+  /** The colour with nothing hovered. The map asks colorsFor, which takes the hover. */
   getVerseColor(verse: TanakhIdentity, settings: HaftarahSettings): Color | Color[] | null {
     if (!data) return null;
-    const derived = deriveHaftarah(settings.custom);
-    return colorAt(verse, derived, hoveredVerse);
+    return colorAt(verse, deriveHaftarah(settings.custom), null);
   },
 
   colorsFor(items, settings, hovered) {

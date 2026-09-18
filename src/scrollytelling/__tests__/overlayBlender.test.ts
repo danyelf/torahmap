@@ -8,10 +8,15 @@ import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Overlay, UrlParamValues } from '../../overlays/types';
 
-const verses: TanakhLayout[] = [
-  { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
-  { book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
-];
+// The blender memoises per verses array, so a fresh one keeps each test's
+// colours its own.
+let verses: TanakhLayout[];
+beforeEach(() => {
+  verses = [
+    { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
+    { book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
+  ];
+});
 
 // Stub overlay that returns multi-color stipple for the first verse
 const stippleOverlay: Overlay = {
@@ -287,7 +292,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
       name: 'Test Hover',
       getVerseColor: () => [0.3, 0.3, 0.3] as [number, number, number],
       colorsFor: hoverColorsFor,
-      setHoveredVerse: () => false,
+      hoverChangesColors: () => false,
     };
     registerOverlay(hoverOverlay);
 

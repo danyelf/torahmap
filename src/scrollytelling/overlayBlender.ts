@@ -6,18 +6,13 @@ import { getOverlay } from '../overlays/registry';
 import { getDefaultColor } from '../itemColoring';
 import { blendColorArrays } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
-import { settingsFromParams } from '../overlays/settings.ts';
+import { settingsFromLink } from '../overlays/settings.ts';
 
-// Keyed on overlay id + the validated URL parameters, taken before they become
-// the overlay's own settings: that text is canonical, where a settings value
-// need not be. Two stops that ask for the same thing share an entry and this module never has to know what a stop is
-// called or how many exist. The parameters are the only thing this caches by: an
-// overlay whose colours depend on the hovered verse (only Haftarah — it's the
-// one overlay that declares setHoveredVerse) is evaluated fresh, uncached,
-// whenever a verse is actually hovered. Hit detection re-runs every frame the
-// cursor is on the map, so caching by hover too would add one ~23,000-colour
-// entry per frame and almost never reuse one.
-const colorsCache = new Map<string, (Color | Color[])[]>();
+// Memoised per verses array by overlay id and validated link parameters. The key is canonical
+// because validateOverlayParams writes keys in the order urlParams declares them, so stops that
+// ask for the same thing share an entry. Colours that depend on the hover are recomputed while a
+// verse is hovered: caching by hover too would add an entry for every verse the cursor crosses.
+const colorsCache = new WeakMap<TanakhLayout[], Map<string, (Color | Color[])[]>>();
 
 // UrlParamValues declares every key optional; validateOverlayParams only ever
 // sets present keys to non-empty strings, so this just gives TypeScript proof
@@ -33,6 +28,10 @@ function cacheKeyFor(overlay: Overlay, params: UrlParamValues): string {
   return `${overlay.id}?${paramsKey}`;
 }
 
+function withDefaults(colors: (Color | Color[] | null)[]): (Color | Color[])[] {
+  return colors.map((c, i) => c ?? getDefaultColor(i));
+}
+
 function getColorsForStop(
   stop: ResolvedStoryStop,
   verses: TanakhLayout[],
@@ -45,20 +44,22 @@ function getColorsForStop(
     return verses.map((_, i) => getDefaultColor(i));
   }
 
-  const params = validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {});
-
-  if (overlay.setHoveredVerse && hovered) {
-    const colors = overlay.colorsFor(verses, settingsFromParams(overlay, params), hovered);
-    return colors.map((c, i) => c ?? getDefaultColor(i));
+  const raw = stop.overlayParams ?? {};
+  if (overlay.hoverChangesColors && hovered) {
+    return withDefaults(overlay.colorsFor(verses, settingsFromLink(overlay, raw), hovered));
   }
 
-  const key = cacheKeyFor(overlay, params);
-  const cached = colorsCache.get(key);
+  let cache = colorsCache.get(verses);
+  if (!cache) {
+    cache = new Map();
+    colorsCache.set(verses, cache);
+  }
+  const key = cacheKeyFor(overlay, validateOverlayParams(overlay.urlParams, raw));
+  const cached = cache.get(key);
   if (cached) return cached;
 
-  const colors = overlay.colorsFor(verses, settingsFromParams(overlay, params), hovered);
-  const resolved = colors.map((c, i) => c ?? getDefaultColor(i));
-  colorsCache.set(key, resolved);
+  const resolved = withDefaults(overlay.colorsFor(verses, settingsFromLink(overlay, raw), hovered));
+  cache.set(key, resolved);
   return resolved;
 }
 

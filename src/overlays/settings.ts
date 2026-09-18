@@ -1,5 +1,7 @@
 import type { Overlay } from './types.ts';
-import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
+import { validateOverlayParams } from '../urlState.ts';
+
+export type LinkParams = URLSearchParams | Readonly<Record<string, string | undefined>>;
 
 /**
  * The settings the app holds for each overlay, by overlay id.
@@ -12,10 +14,7 @@ export interface OverlaySettings {
   get<T, S>(overlay: Overlay<T, S>): S;
   set<T, S>(overlay: Overlay<T, S>, next: S): void;
   /** Replace an overlay's settings with the ones a link or a story stop names. */
-  restore(
-    overlay: Overlay,
-    raw: URLSearchParams | Readonly<Record<string, string | undefined>>,
-  ): void;
+  restore(overlay: Overlay, raw: LinkParams): void;
   /** An overlay's settings as link parameters, with values at their default left out. */
   toUrl(overlay: Overlay): Record<string, string>;
 }
@@ -35,10 +34,7 @@ export function createOverlaySettings(): OverlaySettings {
     },
 
     restore(overlay, raw) {
-      store.set(
-        overlay,
-        settingsFromParams(overlay, validateOverlayParams(overlay.urlParams, raw)),
-      );
+      store.set(overlay, settingsFromLink(overlay, raw));
     },
 
     toUrl(overlay) {
@@ -48,10 +44,7 @@ export function createOverlaySettings(): OverlaySettings {
   return store;
 }
 
-/**
- * An overlay's settings from link parameters that have already been through
- * validateOverlayParams.
- */
-export function settingsFromParams(overlay: Overlay, params: UrlParamValues): unknown {
-  return overlay.settingsFromUrl?.(params);
+/** The settings a link's parameters name for an overlay, once validated against its urlParams. */
+export function settingsFromLink(overlay: Overlay, raw: LinkParams): unknown {
+  return overlay.settingsFromUrl?.(validateOverlayParams(overlay.urlParams, raw));
 }

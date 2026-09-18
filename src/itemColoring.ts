@@ -59,15 +59,37 @@ export function applyHoverHighlight(
 }
 
 /**
- * Map an overlay over items to the colours computeItemStates needs, one
- * entry per item. The overlay is consulted here and nowhere else.
+ * A settled overlay's colours, one entry per item, as computeItemStates needs
+ * them. Asks colorsFor where there is one, as the story's blend does, so the
+ * two agree on a hovered verse.
  */
 export function overlayColorsFor<T, S>(
   overlay: Overlay<T, S> | null,
   items: SpatialItem<T>[],
   settings: S,
+  hovered: SpatialItem<T> | null,
 ): (Color | Color[] | null)[] {
+  if (overlay?.colorsFor) return overlay.colorsFor(items, settings, hovered);
   return items.map((v) => getOverlayColor(overlay, v, settings));
+}
+
+/**
+ * Which colour layer a move of the hovered verse makes stale: a story
+ * transition's blend, the settled overlay's colours if they depend on the
+ * hover, or neither. A pin leaves the hover where it was, so it recomputes
+ * nothing.
+ */
+export function layerToRecompute<T, S>(
+  inTransition: boolean,
+  overlay: Overlay<T, S> | null,
+  settings: S,
+  before: T | null,
+  after: T | null,
+  itemsEqual: (a: T | null, b: T | null) => boolean,
+): 'blend' | 'overlay' | null {
+  if (itemsEqual(before, after)) return null;
+  if (inTransition) return 'blend';
+  return overlay?.hoverChangesColors?.(before, after, settings) ? 'overlay' : null;
 }
 
 /**

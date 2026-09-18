@@ -252,8 +252,8 @@ describe('Trop Overlay', () => {
         const rareButton = Array.from(container.querySelectorAll('button')).find((b) =>
           b.classList.contains('rare'),
         ) as HTMLButtonElement | undefined;
-        if (!rareButton) return;
-        rareButton.click();
+        expect(rareButton).toBeDefined();
+        rareButton!.click();
 
         const verseWithMark = testVerses.find((v) => {
           const color = host.getVerseColor(v) as [number, number, number] | null;
@@ -273,8 +273,8 @@ describe('Trop Overlay', () => {
         const rareButton = Array.from(container.querySelectorAll('button')).find((b) =>
           b.classList.contains('rare'),
         ) as HTMLButtonElement | undefined;
-        if (!rareButton) return;
-        rareButton.click();
+        expect(rareButton).toBeDefined();
+        rareButton!.click();
 
         const verseWithoutMark = testVerses.find((v) => {
           const color = host.getVerseColor(v) as [number, number, number] | null;
@@ -294,8 +294,8 @@ describe('Trop Overlay', () => {
         const rareButton = Array.from(container.querySelectorAll('button')).find((b) =>
           b.classList.contains('rare'),
         ) as HTMLButtonElement | undefined;
-        if (!rareButton) return;
-        rareButton.click();
+        expect(rareButton).toBeDefined();
+        rareButton!.click();
 
         const colors = testVerses.map(
           (v) => host.getVerseColor(v) as [number, number, number] | null,
@@ -372,8 +372,8 @@ describe('Trop Overlay', () => {
       const rareButton = Array.from(controls.querySelectorAll('button')).find((b) =>
         b.classList.contains('rare'),
       ) as HTMLButtonElement | undefined;
-      if (!rareButton) return;
-      rareButton.click();
+      expect(rareButton).toBeDefined();
+      rareButton!.click();
 
       const container = document.createElement('div');
       host.renderLegend(container);
