@@ -21,6 +21,12 @@ const MAX_FONT_SIZE = 50; // Maximum font size when zoomed in
 // Show English subtitle when book's screen width exceeds this many pixels
 const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 
+// No minimum: a label keeps its length on the map, about 275 units against the
+// shortest section's 470, so however far out it never reaches the next one.
+const BASE_SECTION_FONT_SIZE = 32;
+const MAX_SECTION_FONT_SIZE = 64;
+const SECTION_LABEL_GAP_EM = 0.5;
+
 export function createBookLabels(
   verses: TanakhLayout[],
   container: HTMLElement,
@@ -80,12 +86,91 @@ export function createBookLabels(
   return labels;
 }
 
+type Section = 'torah' | 'neviim' | 'ketuvim';
+
+const SECTION_NAMES: Record<Section, { he: string; en: string }> = {
+  torah: { he: 'תורה', en: 'Five Books' },
+  neviim: { he: 'נביאים', en: 'Prophets' },
+  ketuvim: { he: 'כתובים', en: 'Writings' },
+};
+
+/**
+ * Adds a sideways heading to the right of each section's row of books, where
+ * Hebrew reading starts.
+ */
+export function createSectionLabels(
+  verses: TanakhLayout[],
+  labelsContainer: HTMLElement,
+  sectionOf: (book: string) => Section,
+): void {
+  const bounds = new Map<Section, { maxX: number; minY: number }>();
+  for (const v of verses) {
+    const section = sectionOf(v.book);
+    const b = bounds.get(section);
+    if (!b) {
+      bounds.set(section, { maxX: v.x + v.size, minY: v.y });
+      continue;
+    }
+    b.maxX = Math.max(b.maxX, v.x + v.size);
+    b.minY = Math.min(b.minY, v.y);
+  }
+
+  for (const [section, b] of bounds) {
+    const label = document.createElement('div');
+    label.style.cssText = `
+      position:absolute;
+      color:#aaa;
+      font-weight:700;
+      text-shadow:0 1px 3px rgba(0,0,0,0.8);
+      white-space:nowrap;
+      line-height:1.2em;
+    `;
+    label.dataset.section = section;
+    label.dataset.leftX = String(b.maxX);
+    label.dataset.topY = String(b.minY);
+
+    const heSpan = document.createElement('span');
+    heSpan.style.fontFamily = HEBREW_LABEL_FONT;
+    heSpan.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
+    heSpan.textContent = SECTION_NAMES[section].he;
+    label.appendChild(heSpan);
+
+    const enSpan = document.createElement('span');
+    enSpan.style.fontFamily = 'system-ui,sans-serif';
+    enSpan.textContent = ` ${SECTION_NAMES[section].en}`;
+    label.appendChild(enSpan);
+
+    labelsContainer.appendChild(label);
+  }
+}
+
+/** `bookLabelRise` is how far the book labels sit above their first row. */
+function positionSectionLabel(
+  label: HTMLElement,
+  pan: Pan,
+  zoom: number,
+  bookLabelRise: number,
+): void {
+  const fontSize = Math.min(MAX_SECTION_FONT_SIZE, BASE_SECTION_FONT_SIZE * zoom);
+  const leftX = parseFloat(label.dataset.leftX || '0');
+  const topY = parseFloat(label.dataset.topY || '0');
+  label.style.left = (leftX + pan.x) * zoom + fontSize * SECTION_LABEL_GAP_EM + 'px';
+  label.style.top = (topY + pan.y) * zoom - bookLabelRise + 'px';
+  label.style.fontSize = fontSize + 'px';
+  // Turned clockwise about its own top-left corner, so the text reads downward
+  // from the top of the book labels and its line box sits right of the anchor.
+  label.style.transformOrigin = '0 0';
+  label.style.transform = 'rotate(90deg) translateY(-100%)';
+}
+
 export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
   const fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
   const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
 
   for (const label of labelsContainer.children) {
-    if (label instanceof HTMLElement) {
+    if (label instanceof HTMLElement && label.dataset.section) {
+      positionSectionLabel(label, pan, zoom, fontSize + gap);
+    } else if (label instanceof HTMLElement) {
       const rightX = parseFloat(label.dataset.rightX || '0');
       const topY = parseFloat(label.dataset.topY || '0');
       const bookWidth = parseFloat(label.dataset.bookWidth || '0');

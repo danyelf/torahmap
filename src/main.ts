@@ -3,7 +3,7 @@
 declare const __GIT_BRANCH__: string;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
-import { createBookLabels, updateLabelPositions } from './labels.ts';
+import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { lookupForm } from './verseWords.ts';
@@ -361,6 +361,8 @@ async function main(): Promise<void> {
 
   const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
   window.bookLabels = createBookLabels(verses, document.body, hebrewNames);
+  const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
+  createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
 
   canvas.addEventListener(
