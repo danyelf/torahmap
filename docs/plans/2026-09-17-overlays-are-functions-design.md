@@ -109,8 +109,8 @@ fixes a dropdown showing the wrong category (#76, #122). The camera takes the
 link's zoom before centring on the verse (`cameraForView`); centring first
 put a zoomed link's verse off screen and painted a black canvas (#169).
 
-Nothing a restore does may write the URL; `applyingExternalState` in
-`urlState.ts` blocks those writes for its duration.
+`applyingExternalState` in `urlState.ts` blocks URL writes made synchronously
+during a restore; deferred writes, such as the debounced save, are not covered.
 
 ## What this closes
 

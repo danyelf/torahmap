@@ -329,10 +329,10 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseA);
     computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseB);
 
-    // Declares setHoveredVerse: its colours could depend on which verse is
+    // Declares hoverChangesColors: its colours could depend on which verse is
     // hovered, so every call with a hovered verse is evaluated fresh.
     expect(hoverColorsFor).toHaveBeenCalledTimes(2);
-    // Doesn't declare setHoveredVerse: hover isn't part of its cache key, so
+    // Doesn't declare hoverChangesColors: hover isn't part of its cache key, so
     // the second call (same settings) hits the entry the first call made.
     expect(noHoverColorsFor).toHaveBeenCalledTimes(1);
   });
