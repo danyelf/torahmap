@@ -144,15 +144,21 @@ export function createSectionLabels(
   }
 }
 
-function positionSectionLabel(label: HTMLElement, pan: Pan, zoom: number): void {
+/** `bookLabelRise` is how far the book labels sit above their first row. */
+function positionSectionLabel(
+  label: HTMLElement,
+  pan: Pan,
+  zoom: number,
+  bookLabelRise: number,
+): void {
   const fontSize = Math.min(MAX_SECTION_FONT_SIZE, BASE_SECTION_FONT_SIZE * zoom);
   const leftX = parseFloat(label.dataset.leftX || '0');
   const topY = parseFloat(label.dataset.topY || '0');
   label.style.left = (leftX + pan.x) * zoom + fontSize * SECTION_LABEL_GAP_EM + 'px';
-  label.style.top = (topY + pan.y) * zoom + 'px';
+  label.style.top = (topY + pan.y) * zoom - bookLabelRise + 'px';
   label.style.fontSize = fontSize + 'px';
   // Turned clockwise about its own top-left corner, so the text reads downward
-  // from the section's top and its line box sits right of the anchor.
+  // from the top of the book labels and its line box sits right of the anchor.
   label.style.transformOrigin = '0 0';
   label.style.transform = 'rotate(90deg) translateY(-100%)';
 }
@@ -163,7 +169,7 @@ export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoo
 
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement && label.dataset.section) {
-      positionSectionLabel(label, pan, zoom);
+      positionSectionLabel(label, pan, zoom, fontSize + gap);
     } else if (label instanceof HTMLElement) {
       const rightX = parseFloat(label.dataset.rightX || '0');
       const topY = parseFloat(label.dataset.topY || '0');

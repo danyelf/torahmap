@@ -820,12 +820,12 @@ describe('labels', () => {
       expect(sections[1].textContent).toBe('נביאים Prophets');
     });
 
-    it("sits beside the section's right edge, level with its top row", () => {
+    it("sits beside the section's right edge, level with the tops of its book labels", () => {
       const { labels, sections } = sectionLabels();
       updateLabelPositions(labels, { x: 0, y: 5 }, 1);
       // Right edge 106, plus half an em of 32px.
       expect(sections[0].style.left).toBe('122px');
-      expect(sections[0].style.top).toBe('5px');
+      expect(sections[0].style.top).toBe(`${calculateExpectedY(0, 5, 1)}px`);
       expect(sections[0].style.transform).toContain('rotate(90deg)');
     });
 
