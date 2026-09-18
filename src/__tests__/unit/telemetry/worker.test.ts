@@ -58,6 +58,22 @@ describe('telemetry worker', () => {
     expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
   });
 
+  it('measures the body in bytes, not characters', async () => {
+    const e = env();
+    // Each 'א' is one UTF-16 code unit but two UTF-8 bytes, so this body is
+    // under 2048 characters but over 2048 bytes.
+    const body = JSON.stringify({
+      event: 'story_return',
+      visit: 'v1',
+      mode: 'story',
+      fields: { s: 'א'.repeat(1100) },
+    });
+    expect(body.length).toBeLessThan(2048);
+    const response = await worker.fetch(post(body), e);
+    expect(response.status).toBe(413);
+    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
   it('refuses a GET on the endpoint and hands other paths to the static assets', async () => {
     const e = env();
     expect((await worker.fetch(new Request('https://torahmap.org/api/event'), e)).status).toBe(405);

@@ -19,7 +19,9 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
   if (request.headers.get('Origin') !== SITE_ORIGIN) return new Response(null, { status: 403 });
 
   const body = await request.text();
-  if (body.length > MAX_BODY_BYTES) return new Response(null, { status: 413 });
+  if (new TextEncoder().encode(body).length > MAX_BODY_BYTES) {
+    return new Response(null, { status: 413 });
+  }
 
   let payload: unknown;
   try {
