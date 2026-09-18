@@ -709,10 +709,8 @@ async function main(): Promise<void> {
     },
   });
 
-  const rightPanel = document.getElementById('right-panel');
-  if (rightPanel) {
-    initHelp(rightPanel);
-  }
+  const panelFooter = document.getElementById('panel-footer');
+  if (panelFooter) initHelp(panelFooter);
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
   const storyContent = document.getElementById('story-content')!;

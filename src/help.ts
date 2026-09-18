@@ -4,7 +4,6 @@ import { renderCreditsHtml } from './credits.ts';
 import { getAllOverlays } from './overlays/registry.ts';
 import { escapeHtml } from './utils/html.ts';
 
-const STORAGE_KEY_SEEN = 'torahMap.helpSeen';
 const STORAGE_KEY_TAB = 'torahMap.helpTab';
 
 type TabId = 'overview' | 'controls' | 'overlays' | 'credits';
@@ -157,23 +156,15 @@ function showHelp(): void {
 }
 
 function hideHelp(): void {
-  if (modal) {
-    modal.classList.remove('visible');
-    localStorage.setItem(STORAGE_KEY_SEEN, 'true');
-  }
+  modal?.classList.remove('visible');
 }
 
-export function initHelp(controlsPanel: HTMLElement): void {
-  // Add help button to controls panel
-  const helpBtn = document.createElement('button');
-  helpBtn.id = 'help-btn';
-  helpBtn.textContent = '?';
-  helpBtn.title = 'How to use';
-  helpBtn.addEventListener('click', showHelp);
-  controlsPanel.appendChild(helpBtn);
-
-  // Show on first visit
-  if (!localStorage.getItem(STORAGE_KEY_SEEN)) {
-    showHelp();
-  }
+/** The story is the way in, so the modal never opens by itself. */
+export function initHelp(footer: HTMLElement): void {
+  const aboutBtn = document.createElement('button');
+  aboutBtn.id = 'about-btn';
+  aboutBtn.type = 'button';
+  aboutBtn.textContent = 'About & credits';
+  aboutBtn.addEventListener('click', showHelp);
+  footer.appendChild(aboutBtn);
 }

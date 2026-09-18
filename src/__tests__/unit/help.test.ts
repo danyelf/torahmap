@@ -19,11 +19,11 @@ async function openHelp(): Promise<HTMLElement> {
 
   const { registerAllOverlays } = await import('../../overlays/index');
   registerAllOverlays();
-  const panel = document.createElement('div');
-  document.body.appendChild(panel);
-  initHelp(panel);
+  const footer = document.createElement('div');
+  document.body.appendChild(footer);
+  initHelp(footer);
 
-  // With nothing seen yet, initHelp opens the modal itself.
+  footer.querySelector<HTMLButtonElement>('#about-btn')!.click();
   return document.getElementById('help-modal') as HTMLElement;
 }
 
@@ -48,11 +48,35 @@ describe('help modal', () => {
     localStorage.clear();
   });
 
-  it('opens on a first visit and offers a Credits tab', async () => {
+  it('stays closed on a first visit', async () => {
+    vi.resetModules();
+    document.body.innerHTML = '';
+    const { initHelp } = await import('../../help');
+    const footer = document.createElement('div');
+    document.body.appendChild(footer);
+
+    initHelp(footer);
+
+    const modal = document.getElementById('help-modal');
+    expect(modal === null || !modal.classList.contains('visible')).toBe(true);
+  });
+
+  it('opens from a labelled control and offers a Credits tab', async () => {
     const modal = await openHelp();
 
     expect(modal.classList.contains('visible')).toBe(true);
     expect(modal.querySelector('.help-tab[data-tab="credits"]')).not.toBeNull();
+  });
+
+  it('labels its control in words, not a question mark', async () => {
+    vi.resetModules();
+    document.body.innerHTML = '';
+    const { initHelp } = await import('../../help');
+    const footer = document.createElement('div');
+
+    initHelp(footer);
+
+    expect(footer.querySelector('#about-btn')?.textContent).toBe('About & credits');
   });
 
   it('remembers which tab was last open', async () => {
