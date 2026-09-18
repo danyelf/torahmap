@@ -458,7 +458,7 @@ body.story-at-end #story-cue {
   .story-stop:last-child {
     flex: 0 0 100%;
     box-sizing: border-box;
-    padding: 16px 24px;
+    padding: 12px 24px;
     overflow-y: auto;
     scroll-snap-align: center;
   }

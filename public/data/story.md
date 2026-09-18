@@ -21,9 +21,7 @@ These are the fifty chapters of the Book of Genesis. Each line is a single chapt
 
 <!-- stop: verses | camera: Genesis.1.1 | zoom: 5 | verse: Genesis.1.1 -->
 
-Every square is a single verse. The text appears when you hover over a verse.
-
-Tap or click a verse to pin it.
+Every square is a single verse. The text appears when you hover over a verse; tap or click to pin it.
 
 This is Genesis 1:1, the first verse of the Bible.
 
@@ -39,13 +37,11 @@ In Genesis 12, God calls to Abram: *Lekh lekha* — “Go forth from your native
 
 <!-- stop: abraham_rename | camera: Genesis.17.5 | zoom: 2.5 | verse: Genesis.17.5 | overlay: search | q: אברם,אברהם -->
 
-Five chapters later, God gives Abram a new name: “you shall no longer be called Abram, but your name shall be Abraham.”
-
-We can add the new name to our search. This verse, showing the rename, holds both colors.
+Five chapters later, God gives Abram a new name: “you shall no longer be called Abram, but your name shall be Abraham.” This verse, showing the rename, holds both colors.
 
 <!-- stop: genesis_full | camera: Genesis.24.20 | zoom: 0.8 | verse: Genesis.25.11 | overlay: search | q: אברם,אברהם -->
 
-In Genesis, he is everywhere: even after his burial in chapter 25, his name is a continuing presence.
+In Genesis, Abraham is everywhere: even after his burial in chapter 25, his name is a continuing presence.
 
 <!-- stop: gone | camera: I.Samuel.1.1 | zoom: 0.5 | overlay: search | q: אברם,אברהם -->
 
@@ -55,7 +51,7 @@ The other four books of the Torah name him in just a handful of verses.
 
 <!-- stop: name_in_list | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם, -->
 
-When he does appear, he is usually the first name in a list of forefathers.
+When he does appear, he is usually the first of the forefathers: Abraham, Isaac, and Jacob.
 
 <!-- stop: name_in_list_with_isaac | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם,יצחק,יעקב, -->
 
@@ -65,13 +61,17 @@ At the burning bush, God tells Moses to tell the Israelites that he was sent by 
 
 After Genesis, he is usually named alongside Isaac and Jacob. (Jacob's name, in pink, appears more often.)
 
-<!-- stop: liturgy_verse | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
+<!-- stop: liturgy_verse | camera: Exodus.3.15 | zoom: 2.5 | overlay: commentary | category: Liturgy -->
 
 Now we switch from search to the commentary overlay, which shows how often the prayer book quotes each verse.
+
+<!-- stop: liturgy_verse_II | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
 The Amidah, the central prayer said three times a day, opens with the words of this verse: “God of Abraham, God of Isaac, and God of Jacob.”
 
 Of all the verses that name Abraham, this is the one the prayer book cites most.
+
+<!-- stop: liturgy_verse_III | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
 (You can click on the Sefaria icon to go see the citations on their website.)
 
