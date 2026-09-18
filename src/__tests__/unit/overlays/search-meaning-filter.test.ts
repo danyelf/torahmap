@@ -382,3 +382,34 @@ describe('a row that is empty or too short to search', () => {
     expect(Number(counts[1])).toBeGreaterThan(0);
   });
 });
+
+// The line under a verse's reference names each word as typed, followed by the
+// meanings of it that this verse holds.
+describe('the Matches line', () => {
+  it('names the meaning each verse holds', () => {
+    const container = render();
+    type(container, 'עלה');
+
+    expect(searchOverlay.getHoverInfo(verses[0])).toBe('Matches: עלה (leafage)');
+    expect(searchOverlay.getHoverInfo(verses[2])).toBe('Matches: עלה (ascend)');
+  });
+
+  it('names every meaning a verse holds', () => {
+    const container = render();
+    type(container, 'עלה');
+
+    // ויעל עלת: the verb and the offering in one verse.
+    expect(searchOverlay.getHoverInfo(verses[1])).toBe('Matches: עלה (ascend, burnt-offering)');
+  });
+
+  it('leaves out a meaning the reader has unchecked, even where the verse holds it', () => {
+    const container = render();
+    type(container, 'עלה');
+    const row = [...container.querySelectorAll('.meaning-row')].find(
+      (r) => r.querySelector('.meaning-gloss')?.textContent === 'burnt-offering',
+    )!;
+    row.querySelector<HTMLButtonElement>('.meaning-only')!.click();
+
+    expect(searchOverlay.getHoverInfo(verses[1])).toBe('Matches: עלה (burnt-offering)');
+  });
+});

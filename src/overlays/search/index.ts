@@ -536,20 +536,18 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     const { active, matchingTerms } = searchFor(settings);
     if (active.length === 0) return null;
 
-    const termIndices = matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+    const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 
-    // Each term is named the way that term was searched for. A verse can be
-    // claimed by a word narrowed to one meaning and by an exact spelling at
-    // once, and saying so is the point of the modes being separate.
+    // Each word as typed, then which of its checked meanings this verse holds.
     const named = termIndices.map((i) => {
       const term = active[i];
-      if (meaningsApply(term)) {
-        // Name the meanings, not the spelling: that is what was searched for.
-        const chosen = term.meanings.filter((m) => term.selected.has(m.keys[0]));
-        if (chosen.length > 0) return chosen.map((m) => m.gloss).join(' / ');
-      }
-      return effectiveMode(term) === 'word' ? `word "${term.text}"` : `"${term.text}"`;
+      if (!meaningsApply(term)) return term.text;
+      const here = term.meanings
+        .filter((m) => term.selected.has(m.keys[0]) && versesFor(m.keys).has(key))
+        .map((m) => m.gloss);
+      return here.length > 0 ? `${term.text} (${here.join(', ')})` : term.text;
     });
 
     return `Matches: ${named.join(', ')}`;

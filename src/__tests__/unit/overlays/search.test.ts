@@ -699,7 +699,7 @@ describe('Search Overlay', () => {
       const verse = testVerses[0];
       const info = searchOverlay.getHoverInfo?.(verse);
 
-      expect(info).toBe('Matches: "God"');
+      expect(info).toBe('Matches: God');
     });
 
     it('returns multiple matching terms', () => {
@@ -710,9 +710,7 @@ describe('Search Overlay', () => {
       const verse = testVerses[2];
       const info = searchOverlay.getHoverInfo?.(verse);
 
-      expect(info).toContain('Matches:');
-      expect(info).toContain('"God"');
-      expect(info).toContain('"light"');
+      expect(info).toBe('Matches: God, light');
     });
   });
 
