@@ -112,6 +112,8 @@ export function createBackgroundTextPanel(
 
   row('follow', select('follow', ['verse', 'chapter', 'book', 'plane']));
   row('plane font', range('planeFont', 2, 40, 1));
+  row('plane size', range('planeSize', 1, 6, 0.25));
+  row('plane pivot', select('planePivot', ['start', 'middle']));
   row('layer', select('layer', ['behind', 'above']));
   row('anchor', select('anchor', ['viewport', 'square']));
   row('parallax', range('parallax', 0, 1, 0.05));

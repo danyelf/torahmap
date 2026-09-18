@@ -23,13 +23,17 @@ export interface BackgroundTextSettings {
    * most verses on screen; the passage starts at its beginning and is fixed to
    * the screen, since it stays the same for as long as that unit does.
    * 'plane' chooses nothing: every book shows its opening words inside its
-   * own outline on a copy of the map shrunk by the parallax ratio.
+   * own box on a larger copy of the map set further back (see planeTransform).
    */
   follow: Follow;
   /** Font size on the back plane, in map units (a verse square is 6). */
   planeFont: number;
   /** Let each book's text run into the empty space below and beside its squares. */
   planeGrow: boolean;
+  /** How much larger the back plane is than the map. It shows this many times the text per book, each way. */
+  planeSize: number;
+  /** Where the back plane lines up with the map: the start of Genesis, or the middle of the map. */
+  planePivot: 'start' | 'middle';
   /** Under the canvas (squares occlude the text) or over it at low opacity. */
   layer: Layer;
   /** How much of the map's screen movement the text follows: 0 is fixed to the glass, 1 is glued to the map. */
@@ -66,7 +70,9 @@ export interface BackgroundTextSettings {
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
   follow: 'book',
   planeFont: 12,
-  planeGrow: true,
+  planeGrow: false,
+  planeSize: 3,
+  planePivot: 'start',
   layer: 'above',
   parallax: 0.3,
   anchor: 'viewport',
@@ -351,22 +357,33 @@ export function growBoxes(boxes: BookBox[]): BookBox[] {
 }
 
 /**
- * Where a map point lands on the back plane: the map's screen position pulled
- * toward the screen centre by `parallax`. A pan of d pixels moves it by
- * parallax * d, and the point under the screen centre sits on its own map point.
+ * Where a map point lands on screen when drawn on the back plane. The plane is
+ * the map enlarged `size` times about `pivot`, set back so that it moves at
+ * `parallax` of the map's speed and looks `parallax` times as large.
+ *
+ * `origin` is the screen point looked at straight on: the plane shrinks toward
+ * it, and the plane's copy of the map point under it sits on that point. With
+ * size 1/parallax the plane looks as large as the map and lines up with it
+ * when the pivot is under the origin.
  */
 export function planeTransform(
   worldX: number,
   worldY: number,
   camera: Camera,
-  parallax: number,
-  center: { x: number; y: number },
+  plane: { parallax: number; size: number; pivot: { x: number; y: number } },
+  origin: { x: number; y: number },
 ): { x: number; y: number; scale: number } {
-  const s = worldToScreen(worldX, worldY, camera);
+  const { parallax, size, pivot } = plane;
+  const onPlane = {
+    x: pivot.x + size * (worldX - pivot.x),
+    y: pivot.y + size * (worldY - pivot.y),
+  };
+  const looking = screenToWorld(origin.x, origin.y, camera);
+  const scale = camera.zoom * parallax;
   return {
-    x: center.x + parallax * (s.x - center.x),
-    y: center.y + parallax * (s.y - center.y),
-    scale: camera.zoom * parallax,
+    x: origin.x + scale * (onPlane.x - looking.x),
+    y: origin.y + scale * (onPlane.y - looking.y),
+    scale,
   };
 }
 

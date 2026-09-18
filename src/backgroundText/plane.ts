@@ -1,7 +1,6 @@
-// The background text as a second map behind the first. Every book's opening
-// words fill that book's outline, and the whole plane is the map shrunk by the
-// parallax ratio toward the screen centre. Nothing is chosen, so nothing
-// depends on which verse is central.
+// The background text as a second map behind the first: a larger copy of the
+// map, set further back, with every book's opening words filling that book's
+// box on it. Nothing is chosen, so nothing depends on which verse is central.
 
 import type { Camera } from '../camera.ts';
 import type { TanakhLayout } from '../types.ts';
@@ -38,6 +37,16 @@ export function createBackPlane(options: {
   const outlines = bookBoxes(verses);
   const grown = growBoxes(outlines);
   let boxes = settings.planeGrow ? grown : outlines;
+  const pivots = {
+    start: {
+      x: Math.max(...outlines.map((b) => b.right)),
+      y: Math.min(...outlines.map((b) => b.top)),
+    },
+    middle: {
+      x: (Math.min(...outlines.map((b) => b.left)) + Math.max(...outlines.map((b) => b.right))) / 2,
+      y: (Math.min(...outlines.map((b) => b.top)) + Math.max(...outlines.map((b) => b.bottom))) / 2,
+    },
+  };
 
   const root = document.createElement('div');
   root.className = 'bgtext-plane';
@@ -49,12 +58,12 @@ export function createBackPlane(options: {
   });
   options.container.appendChild(root);
 
-  /** Lay each book's opening text into its box, in map units. */
+  /** Lay each book's opening text into its box on the back plane, in plane units. */
   function build(): void {
     const font = settings.planeFont;
     boxes.forEach((box: BookBox, i) => {
-      const width = box.right - box.left;
-      const height = box.bottom - box.top;
+      const width = (box.right - box.left) * settings.planeSize;
+      const height = (box.bottom - box.top) * settings.planeSize;
       const el = blocks[i];
       el.style.width = `${width}px`;
       el.style.height = `${height}px`;
@@ -82,10 +91,16 @@ export function createBackPlane(options: {
 
   function update(): void {
     if (settings.follow !== 'plane') return;
-    const vp = options.viewport();
-    const center = { x: vp.width / 2, y: vp.height / 2 };
+    // Reading starts top-right, so that is where the plane meets the map: a
+    // book whose opening is up there has its back text lined up with it.
+    const origin = { x: options.viewport().width, y: 0 };
+    const plane = {
+      parallax: settings.parallax,
+      size: settings.planeSize,
+      pivot: pivots[settings.planePivot],
+    };
     boxes.forEach((box, i) => {
-      const t = planeTransform(box.left, box.top, camera, settings.parallax, center);
+      const t = planeTransform(box.left, box.top, camera, plane, origin);
       blocks[i].style.transform = `translate(${t.x}px, ${t.y}px) scale(${t.scale})`;
     });
   }
@@ -94,7 +109,8 @@ export function createBackPlane(options: {
     const rebuild =
       next.planeFont !== settings.planeFont ||
       next.marks !== settings.marks ||
-      next.planeGrow !== settings.planeGrow;
+      next.planeGrow !== settings.planeGrow ||
+      next.planeSize !== settings.planeSize;
     settings = { ...next };
     boxes = settings.planeGrow ? grown : outlines;
     applyStyle();

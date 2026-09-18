@@ -127,18 +127,29 @@ describe('growBoxes', () => {
 
 describe('planeTransform', () => {
   const camera = { x: 0, y: 0, zoom: 2 };
-  const center = { x: 100, y: 100 };
+  const origin = { x: 100, y: 100 };
 
-  it('leaves the point under the screen centre where it is', () => {
+  it('at size 1 leaves the point under the origin where it is', () => {
     // Map point (50, 50) is at screen (100, 100) at zoom 2.
-    expect(planeTransform(50, 50, camera, 0.3, center)).toEqual({ x: 100, y: 100, scale: 0.6 });
+    const plane = { parallax: 0.5, size: 1, pivot: { x: 0, y: 0 } };
+    expect(planeTransform(50, 50, camera, plane, origin)).toEqual({ x: 100, y: 100, scale: 1 });
   });
 
-  it('moves by the parallax ratio of a pan', () => {
-    const before = planeTransform(0, 0, camera, 0.25, center);
-    const after = planeTransform(0, 0, { ...camera, x: 20 }, 0.25, center);
+  it('moves by the parallax ratio of a pan, whatever its size', () => {
+    const plane = { parallax: 0.25, size: 3, pivot: { x: 0, y: 0 } };
+    const before = planeTransform(0, 0, camera, plane, origin);
+    const after = planeTransform(0, 0, { ...camera, x: 20 }, plane, origin);
     // Panning 20 map units at zoom 2 moves the map 40 pixels; the plane moves 10.
     expect(after.x - before.x).toBeCloseTo(10);
+  });
+
+  it('at size 1/parallax lines up with the map at the pivot', () => {
+    // The pivot (50, 50) is under the origin, as is its point on the plane.
+    const plane = { parallax: 0.25, size: 4, pivot: { x: 50, y: 50 } };
+    const t = planeTransform(50, 50, camera, plane, origin);
+    expect([t.x, t.y]).toEqual([100, 100]);
+    // A map point 10 units away lands 10 map units away on screen, as on the map.
+    expect(planeTransform(60, 50, camera, plane, origin).x).toBeCloseTo(120);
   });
 });
 
