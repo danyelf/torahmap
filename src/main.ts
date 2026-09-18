@@ -469,7 +469,7 @@ async function main(): Promise<void> {
 
     let overlayWantsRerender = false;
     if (currentOverlay?.setHoveredVerse) {
-      overlayWantsRerender = currentOverlay.setHoveredVerse(null);
+      overlayWantsRerender = currentOverlay.setHoveredVerse(null, currentSettings());
     }
 
     if (overlayWantsRerender) {
@@ -553,7 +553,7 @@ async function main(): Promise<void> {
 
       let overlayWantsRerender = false;
       if (currentOverlay?.setHoveredVerse) {
-        overlayWantsRerender = currentOverlay.setHoveredVerse(verse);
+        overlayWantsRerender = currentOverlay.setHoveredVerse(verse, currentSettings());
       }
 
       if (overlayWantsRerender) {

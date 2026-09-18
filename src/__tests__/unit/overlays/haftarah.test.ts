@@ -511,16 +511,16 @@ describe('Haftarah Overlay', () => {
 
     it('returns true when hovering relevant verse from null', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
+      const shouldRerender = haftarahOverlay.setHoveredVerse(torahVerse);
 
       expect(shouldRerender).toBe(true);
     });
 
     it('returns true when clearing hover from relevant verse', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.setHoveredVerse(torahVerse);
 
-      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(null);
+      const shouldRerender = haftarahOverlay.setHoveredVerse(null);
 
       expect(shouldRerender).toBe(true);
     });
@@ -529,8 +529,8 @@ describe('Haftarah Overlay', () => {
       const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
       const ruthVerse = createVerse({ book: 'Ruth', chapter: 1, verse: 1 });
 
-      haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
-      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(ruthVerse);
+      haftarahOverlay.setHoveredVerse(psalmsVerse);
+      const shouldRerender = haftarahOverlay.setHoveredVerse(ruthVerse);
 
       expect(shouldRerender).toBe(false);
     });
@@ -539,8 +539,8 @@ describe('Haftarah Overlay', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
-      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
-      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
+      haftarahOverlay.setHoveredVerse(torahVerse);
+      const shouldRerender = haftarahOverlay.setHoveredVerse(psalmsVerse);
 
       expect(shouldRerender).toBe(true);
     });
@@ -551,11 +551,11 @@ describe('Haftarah Overlay', () => {
       const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
       // Hover relevant verse (causes dimming)
-      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.setHoveredVerse(torahVerse);
       // Move to non-relevant verse
-      haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
+      haftarahOverlay.setHoveredVerse(psalmsVerse);
       // Move off canvas (null)
-      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(null);
+      const shouldRerender = haftarahOverlay.setHoveredVerse(null);
 
       // Should return false because hover is already effectively cleared
       // (non-relevant verses are treated as null)
@@ -571,8 +571,8 @@ describe('Haftarah Overlay', () => {
         [number, number, number] | null;
 
       // Hover relevant verse, then non-relevant verse
-      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
-      haftarahOverlay.overlay.setHoveredVerse?.(psalmsVerse);
+      haftarahOverlay.setHoveredVerse(torahVerse);
+      haftarahOverlay.setHoveredVerse(psalmsVerse);
 
       // After moving to non-relevant verse, should see base color (not desaturated)
       const colorAfterNonRelevant = haftarahOverlay.getVerseColor(torahVerse) as
@@ -590,7 +590,7 @@ describe('Haftarah Overlay', () => {
       const baseOtherColor = haftarahOverlay.getVerseColor(otherParsha) as [number, number, number];
 
       // Hover the torah verse
-      haftarahOverlay.overlay.setHoveredVerse?.(torahVerse);
+      haftarahOverlay.setHoveredVerse(torahVerse);
 
       const hoveredColor = haftarahOverlay.getVerseColor(torahVerse) as [number, number, number];
       const otherColor = haftarahOverlay.getVerseColor(otherParsha) as [number, number, number];
@@ -605,18 +605,17 @@ describe('Haftarah Overlay', () => {
       expect(otherColor).not.toEqual(baseOtherColor);
     });
 
-    it("keeps setHoveredVerse's relevance check in step with the custom actually painted", () => {
-      // A verse that is only a haftarah verse under Sephardi: Isaiah 43:1-10 is
+    it('judges relevance against the settings it is handed, not a stale custom', () => {
+      // A verse that is only a haftarah verse under Sephardi: Isaiah 43:5 is
       // read for Bereshit in the sample data under Sephardi, not Ashkenazi.
       const sephardiOnly = createVerse({ book: 'Isaiah', chapter: 43, verse: 5 });
 
-      // Paint with Sephardi showing, which records it as the custom setHoveredVerse
-      // should judge relevance against.
       haftarahOverlay.restore({ custom: 'sephardi' });
-      haftarahOverlay.getVerseColor(sephardiOnly);
+      expect(haftarahOverlay.setHoveredVerse(sephardiOnly)).toBe(true);
 
-      const shouldRerender = haftarahOverlay.overlay.setHoveredVerse?.(sephardiOnly);
-      expect(shouldRerender).toBe(true);
+      haftarahOverlay.setHoveredVerse(null);
+      haftarahOverlay.restore({ custom: 'ashkenazi' });
+      expect(haftarahOverlay.setHoveredVerse(sephardiOnly)).toBe(false);
     });
   });
 

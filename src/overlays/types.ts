@@ -72,7 +72,7 @@ export interface Overlay<T = TanakhIdentity, S = unknown> {
   getHoverInfo?(verse: T, settings: S): string | null;
 
   // Returns true if the overlay needs a re-render for the new hover state.
-  setHoveredVerse?(verse: T | null): boolean;
+  setHoveredVerse?(verse: T | null, settings: S): boolean;
 
   // For a repaint the overlay needs when something other than its settings
   // changes what it shows.

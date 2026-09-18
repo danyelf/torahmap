@@ -107,18 +107,6 @@ interface HaftarahDerivation {
 // rather than rebuilding one on every call.
 const derivationCache = new Map<Custom, HaftarahDerivation>();
 
-/**
- * The derivation getVerseColor last painted the map with.
- *
- * setHoveredVerse has no settings argument of its own — main.ts calls it with
- * only the hovered verse — so its relevance check reads this instead. It is
- * safe to trust because getVerseColor is called only by the live map's own
- * repaint, always with the settings actually showing; colorsFor also serves
- * the story blender, with a story stop's settings, which need not be what is
- * on screen, so it never writes here.
- */
-let lastPaintedDerivation: HaftarahDerivation = deriveHaftarah(undefined);
-
 function getVerseCount(book: string, chapter: number): number {
   if (!structure) return 200; // Safe fallback
   const bookData = structure.books.find((b) => b.name === book);
@@ -267,6 +255,11 @@ function colorAt(
   derived: HaftarahDerivation,
   hovered: TanakhIdentity | null,
 ): Color | Color[] | null {
+  // A hovered verse outside every reading brightens nothing and desaturates
+  // nothing — the same as no hover at all. Filtered once, here, so neither
+  // caller has to get this right on its own.
+  const relevantHover = hovered && isRelevantVerse(hovered, derived) ? hovered : null;
+
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
 
   // Torah verses belong to exactly one parsha.
@@ -274,7 +267,7 @@ function colorAt(
   if (parshaFromTorah) {
     const baseColor = derived.itemToColor.get(parshaFromTorah);
     if (!baseColor) return null;
-    return resolveHoverColors([baseColor], [parshaFromTorah], hovered, derived);
+    return resolveHoverColors([baseColor], [parshaFromTorah], relevantHover, derived);
   }
 
   // Haftarah verses can belong to multiple items (parshiot or special occasions).
@@ -283,7 +276,7 @@ function colorAt(
     const colors = itemsFromHaftarah
       .map((item) => derived.itemToColor.get(item))
       .filter((c): c is Color => c !== undefined);
-    return resolveHoverColors(colors, itemsFromHaftarah, hovered, derived);
+    return resolveHoverColors(colors, itemsFromHaftarah, relevantHover, derived);
   }
 
   return null;
@@ -320,7 +313,6 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
       // Both customs' derivations were built (if at all) from data that no
       // longer applies.
       derivationCache.clear();
-      lastPaintedDerivation = deriveHaftarah(undefined);
     } catch (e) {
       console.error('Failed to initialize haftarah overlay:', e);
     }
@@ -333,9 +325,10 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     hoveredVerse = null;
   },
 
-  setHoveredVerse(verse: TanakhIdentity | null): boolean {
-    const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse, lastPaintedDerivation) : false;
-    const isRelevant = verse ? isRelevantVerse(verse, lastPaintedDerivation) : false;
+  setHoveredVerse(verse: TanakhIdentity | null, settings: HaftarahSettings): boolean {
+    const derived = deriveHaftarah(settings.custom);
+    const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse, derived) : false;
+    const isRelevant = verse ? isRelevantVerse(verse, derived) : false;
 
     // Track only relevant verses, so hovering empty space doesn't desaturate
     // every reading.
@@ -364,18 +357,13 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   getVerseColor(verse: TanakhIdentity, settings: HaftarahSettings): Color | Color[] | null {
     if (!data) return null;
     const derived = deriveHaftarah(settings.custom);
-    lastPaintedDerivation = derived;
     return colorAt(verse, derived, hoveredVerse);
   },
 
   colorsFor(items, settings, hovered) {
     if (!data) return items.map(() => null);
     const derived = deriveHaftarah(settings.custom);
-    // A hovered verse outside every reading desaturates nothing, the same as
-    // setHoveredVerse already treats it — checked against this call's own
-    // derivation, not whatever custom the live map is showing.
-    const relevantHover = hovered && isRelevantVerse(hovered, derived) ? hovered : null;
-    return items.map((item) => colorAt(item, derived, relevantHover));
+    return items.map((item) => colorAt(item, derived, hovered));
   },
 
   defaultSettings(): HaftarahSettings {

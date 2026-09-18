@@ -25,6 +25,8 @@ export interface OverlayHost<S> {
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
   getVerseColor(verse: TanakhIdentity): ReturnType<Overlay['getVerseColor']>;
+  /** Returns false when the overlay declares no setHoveredVerse of its own. */
+  setHoveredVerse(verse: TanakhIdentity | null): boolean;
   getHoverInfo(verse: TanakhIdentity): string | null;
   highlightVerseText(text: string, language: TextLanguage): DocumentFragment;
   renderLegend(container: HTMLElement): void;
@@ -72,6 +74,9 @@ export function hostOverlay<S>(overlay: Overlay<TanakhIdentity, S>): OverlayHost
     },
     getVerseColor(verse) {
       return overlay.getVerseColor(verse, store.get(overlay));
+    },
+    setHoveredVerse(verse) {
+      return overlay.setHoveredVerse?.(verse, store.get(overlay)) ?? false;
     },
     getHoverInfo(verse) {
       return overlay.getHoverInfo?.(verse, store.get(overlay)) ?? null;
