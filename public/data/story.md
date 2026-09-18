@@ -68,7 +68,7 @@ After Genesis, he is usually named alongside Isaac and Jacob. (Jacob's name, in 
 
 Now we switch from search to the commentary overlay, which shows how often the prayer book quotes each verse.
 
-The Amidah, the central prayer said three times a day, opens with its words: “God of Abraham, God of Isaac, and God of Jacob.”
+The Amidah, the central prayer said three times a day, opens with the words of this verse: “God of Abraham, God of Isaac, and God of Jacob.”
 
 Of all the verses that name Abraham, this is the one the prayer book cites most.
 
