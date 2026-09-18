@@ -1,6 +1,5 @@
 import type { ResolvedStoryStop } from './types';
 import type { TanakhLayout } from '../types';
-import { tanakhKey } from '../types';
 import type { Color } from '../overlays/types.ts';
 import type { Overlay } from '../overlays/types.ts';
 import { getOverlay } from '../overlays/registry';
@@ -8,13 +7,14 @@ import { getDefaultColor } from '../itemColoring';
 import { blendColorArrays } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
 
-// Keyed on overlay id + the validated settings (canonical because it's what the
-// URL carries), so two stops that ask for the same thing share an entry and
-// this module never has to know what a stop is called or how many exist.
-// Only Haftarah's colours depend on the hovered verse — it's the one overlay
-// that declares setHoveredVerse — so the hover key joins the cache key only
-// for overlays that actually read it; everyone else would just miss the cache
-// every frame the cursor moved.
+// Keyed on overlay id + the validated settings, so two stops that ask for the
+// same thing share an entry and this module never has to know what a stop is
+// called or how many exist. Settings are the only thing this caches by: an
+// overlay whose colours depend on the hovered verse (only Haftarah — it's the
+// one overlay that declares setHoveredVerse) is evaluated fresh, uncached,
+// whenever a verse is actually hovered. Hit detection re-runs every frame the
+// cursor is on the map, so caching by hover too would add one ~23,000-colour
+// entry per frame and almost never reuse one.
 const colorsCache = new Map<string, (Color | Color[])[]>();
 
 // UrlParamValues declares every key optional; validateOverlayParams only ever
@@ -26,15 +26,9 @@ function definedEntries(values: UrlParamValues): [string, string][] {
   );
 }
 
-function cacheKeyFor(
-  overlay: Overlay,
-  settings: UrlParamValues,
-  hovered: TanakhLayout | null,
-): string {
+function cacheKeyFor(overlay: Overlay, settings: UrlParamValues): string {
   const settingsKey = new URLSearchParams(Object.fromEntries(definedEntries(settings))).toString();
-  if (!overlay.setHoveredVerse) return `${overlay.id}?${settingsKey}`;
-  const hoverKey = hovered ? tanakhKey(hovered.book, hovered.chapter, hovered.verse) : '';
-  return `${overlay.id}?${settingsKey}#${hoverKey}`;
+  return `${overlay.id}?${settingsKey}`;
 }
 
 function getColorsForStop(
@@ -43,18 +37,24 @@ function getColorsForStop(
   hovered: TanakhLayout | null,
 ): (Color | Color[])[] {
   const overlay = stop.overlay ? getOverlay(stop.overlay) : undefined;
-  if (!overlay) {
+  // No overlay, or one that doesn't answer as a function of settings: default
+  // colours, the same as a stop with no overlay at all.
+  if (!overlay || !overlay.colorsFor) {
     return verses.map((_, i) => getDefaultColor(i));
   }
 
   const settings = validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {});
-  const key = cacheKeyFor(overlay, settings, hovered);
+
+  if (overlay.setHoveredVerse && hovered) {
+    const colors = overlay.colorsFor(verses, settings, hovered);
+    return colors.map((c, i) => c ?? getDefaultColor(i));
+  }
+
+  const key = cacheKeyFor(overlay, settings);
   const cached = colorsCache.get(key);
   if (cached) return cached;
 
-  const colors = overlay.colorsFor
-    ? overlay.colorsFor(verses, settings, hovered)
-    : verses.map((verse) => overlay.getVerseColor(verse));
+  const colors = overlay.colorsFor(verses, settings, hovered);
   const resolved = colors.map((c, i) => c ?? getDefaultColor(i));
   colorsCache.set(key, resolved);
   return resolved;

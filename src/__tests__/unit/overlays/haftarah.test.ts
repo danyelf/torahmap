@@ -628,5 +628,20 @@ describe('Haftarah Overlay', () => {
 
       expect(hot).not.toEqual(cold);
     });
+
+    it('treats a hovered verse outside every reading the same as no hover', async () => {
+      await haftarahOverlay.init?.();
+      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
+      const outsideEveryReading = { book: 'Psalms', chapter: 1, verse: 1 };
+
+      const noHover = haftarahOverlay.colorsFor!(items, { custom: 'ashkenazi' }, null);
+      const irrelevantHover = haftarahOverlay.colorsFor!(
+        items,
+        { custom: 'ashkenazi' },
+        outsideEveryReading,
+      );
+
+      expect(irrelevantHover).toEqual(noHover);
+    });
   });
 });

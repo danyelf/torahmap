@@ -191,11 +191,9 @@ function deriveHaftarah(custom: string | undefined): HaftarahDerivation {
   return derivation;
 }
 
-function isRelevantVerse(verse: TanakhIdentity): boolean {
+function isRelevantVerse(verse: TanakhIdentity, derived: HaftarahDerivation): boolean {
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-  return (
-    currentDerivation.torahVerseToParsha.has(key) || currentDerivation.haftarahVerseToItem.has(key)
-  );
+  return derived.torahVerseToParsha.has(key) || derived.haftarahVerseToItem.has(key);
 }
 
 /** What the hovered verse (if any) belongs to, within one custom's derivation. */
@@ -329,8 +327,8 @@ export const haftarahOverlay: Overlay = {
   },
 
   setHoveredVerse(verse: TanakhIdentity | null): boolean {
-    const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse) : false;
-    const isRelevant = verse ? isRelevantVerse(verse) : false;
+    const wasRelevant = hoveredVerse ? isRelevantVerse(hoveredVerse, currentDerivation) : false;
+    const isRelevant = verse ? isRelevantVerse(verse, currentDerivation) : false;
 
     // Track only relevant verses, so hovering empty space doesn't desaturate
     // every reading.
@@ -364,7 +362,11 @@ export const haftarahOverlay: Overlay = {
   colorsFor(items, settings, hovered) {
     if (!data) return items.map(() => null);
     const derived = deriveHaftarah(settings.custom);
-    return items.map((item) => colorAt(item, derived, hovered));
+    // A hovered verse outside every reading desaturates nothing, the same as
+    // setHoveredVerse already treats it — checked against this call's own
+    // derivation, not whatever custom the overlay itself is showing.
+    const relevantHover = hovered && isRelevantVerse(hovered, derived) ? hovered : null;
+    return items.map((item) => colorAt(item, derived, relevantHover));
   },
 
   renderControls(container: HTMLElement) {

@@ -238,3 +238,59 @@ describe('the blender memoises colours by settings', () => {
     expect(colorsForSpy).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('the blender only skips the memo for a hover-responsive overlay', () => {
+  it('recomputes a hover-responsive overlay every call, but memoises one that never reads hover', () => {
+    const hoverColorsFor = vi.fn((items: TanakhLayout[]) =>
+      items.map(() => [0.3, 0.3, 0.3] as [number, number, number]),
+    );
+    const hoverOverlay: Overlay = {
+      id: 'test-hover',
+      name: 'Test Hover',
+      getVerseColor: () => [0.3, 0.3, 0.3] as [number, number, number],
+      colorsFor: hoverColorsFor,
+      setHoveredVerse: () => false,
+    };
+    registerOverlay(hoverOverlay);
+
+    const noHoverColorsFor = vi.fn((items: TanakhLayout[]) =>
+      items.map(() => [0.4, 0.4, 0.4] as [number, number, number]),
+    );
+    const noHoverOverlay: Overlay = {
+      id: 'test-no-hover',
+      name: 'Test No Hover',
+      getVerseColor: () => [0.4, 0.4, 0.4] as [number, number, number],
+      colorsFor: noHoverColorsFor,
+    };
+    registerOverlay(noHoverOverlay);
+
+    const hoverStop: ResolvedStoryStop = {
+      id: 'h',
+      title: 'H',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-hover',
+    };
+    const noHoverStop: ResolvedStoryStop = {
+      id: 'n',
+      title: 'N',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-no-hover',
+    };
+
+    const [verseA, verseB] = verses;
+
+    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseA);
+    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseB);
+    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseA);
+    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseB);
+
+    // Declares setHoveredVerse: its colours could depend on which verse is
+    // hovered, so every call with a hovered verse is evaluated fresh.
+    expect(hoverColorsFor).toHaveBeenCalledTimes(2);
+    // Doesn't declare setHoveredVerse: hover isn't part of its cache key, so
+    // the second call (same settings) hits the entry the first call made.
+    expect(noHoverColorsFor).toHaveBeenCalledTimes(1);
+  });
+});
