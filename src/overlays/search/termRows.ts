@@ -44,6 +44,13 @@ export interface TermRowsHost {
 let host: TermRowsHost | null = null;
 let container: HTMLElement | null = null;
 let addTermButton: HTMLButtonElement | null = null;
+/**
+ * Held so unmount can take it off again. Today's caller rebuilds its elements
+ * before every mount, so the button a listener sits on is discarded anyway —
+ * but that is a fact about the caller, and whatever adds a listener should be
+ * the thing that removes it.
+ */
+let onAddClick: (() => void) | null = null;
 
 export function mountTermRows(
   elements: { container: HTMLElement | null; addTermButton: HTMLButtonElement | null },
@@ -53,16 +60,30 @@ export function mountTermRows(
   container = elements.container;
   addTermButton = elements.addTermButton;
 
-  addTermButton?.addEventListener('click', () => {
+  onAddClick = () => {
     host?.addRow();
     focusOpenInput();
-  });
+  };
+  addTermButton?.addEventListener('click', onAddClick);
 }
 
 export function unmountTermRows(): void {
+  if (addTermButton && onAddClick) {
+    addTermButton.removeEventListener('click', onAddClick);
+  }
+  onAddClick = null;
   host = null;
   container = null;
   addTermButton = null;
+}
+
+/**
+ * The number a row shows for itself, blank for a row the search is not running
+ * — an empty box, or a single letter. A row that matches nothing still shows 0.
+ */
+function hitCountText(term: SearchTerm): string {
+  const hits = host?.hitCount(term);
+  return hits == null ? '' : String(hits);
 }
 
 /** The caret belongs in the row the reader just opened. */
@@ -325,7 +346,7 @@ function updateCollapsedRow(row: HTMLElement, term: SearchTerm): void {
     : '';
 
   const count = row.querySelector<HTMLElement>('.term-count')!;
-  count.textContent = host?.hitCount(term)?.toString() ?? '';
+  count.textContent = hitCountText(term);
 }
 
 function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
@@ -422,7 +443,7 @@ function updateOpenRow(row: HTMLElement, term: SearchTerm, index: number): void 
   swatch.style.visibility = term.text.trim() ? 'visible' : 'hidden';
 
   const count = row.querySelector<HTMLElement>('.term-count')!;
-  count.textContent = host?.hitCount(term)?.toString() ?? '';
+  count.textContent = hitCountText(term);
 
   // Offered only once there is something to undo.
   const all = row.querySelector<HTMLElement>('.term-all')!;
