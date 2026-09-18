@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createBookLabels, updateLabelPositions } from '../../labels';
+import { createBookLabels, createSectionLabels, updateLabelPositions } from '../../labels';
 import { createVerse, SAMPLE_VERSES } from '../helpers';
 import { HEBREW_LABEL_SCALE } from '../../constants/labels';
 
@@ -796,6 +796,45 @@ describe('labels', () => {
         expect(labels.length).toBe(100);
         expect(labels.every((label) => label.style.left !== '')).toBe(true);
       });
+    });
+  });
+
+  describe('createSectionLabels', () => {
+    const verses = [
+      createVerse({ book: 'Genesis', x: 0, y: 0, size: 6 }),
+      createVerse({ book: 'Exodus', x: 100, y: 40, size: 6 }),
+      createVerse({ book: 'Joshua', x: 50, y: 200, size: 6 }),
+    ];
+    const sectionOf = (book: string) => (book === 'Joshua' ? 'neviim' : 'torah');
+
+    function sectionLabels(): { labels: HTMLDivElement; sections: HTMLElement[] } {
+      const labels = createBookLabels(verses, container);
+      createSectionLabels(verses, labels, sectionOf);
+      return { labels, sections: [...labels.querySelectorAll<HTMLElement>('[data-section]')] };
+    }
+
+    it('adds one label per section, Hebrew then English', () => {
+      const { sections } = sectionLabels();
+      expect(sections.map((l) => l.dataset.section)).toEqual(['torah', 'neviim']);
+      expect(sections[0].textContent).toBe('תורה | Five Books');
+      expect(sections[1].textContent).toBe('נביאים | Prophets');
+    });
+
+    it("sits beside the section's right edge, centred on its rows", () => {
+      const { labels, sections } = sectionLabels();
+      updateLabelPositions(labels, { x: 0, y: 0 }, 1);
+      // Right edge 106, plus half an em of 32px; rows span 0 to 46.
+      expect(sections[0].style.left).toBe('122px');
+      expect(sections[0].style.top).toBe('23px');
+      expect(sections[0].style.transform).toContain('rotate(90deg)');
+    });
+
+    it('clamps its size so it stays readable zoomed out', () => {
+      const { labels, sections } = sectionLabels();
+      updateLabelPositions(labels, { x: 0, y: 0 }, 0.1);
+      expect(sections[0].style.fontSize).toBe('14px');
+      updateLabelPositions(labels, { x: 0, y: 0 }, 10);
+      expect(sections[0].style.fontSize).toBe('64px');
     });
   });
 });
