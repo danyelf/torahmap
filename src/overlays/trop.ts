@@ -19,9 +19,23 @@ let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
 const URL_PARAMS = [{ key: 'trop', kind: 'token' }] as const satisfies readonly UrlParamSpec[];
 
-/** The trop mark selected, named by its URL slug, or none. */
+/**
+ * The mark clicked, and the mark the pointer is over in the chart, each named
+ * by its URL slug. The map shows the hovered mark while there is one; only the
+ * clicked one goes into a link.
+ */
 export interface TropSettings {
   readonly mark: string | null;
+  readonly preview: string | null;
+}
+
+function shownMark(settings: TropSettings): string | null {
+  return settings.preview ?? settings.mark;
+}
+
+function entryFor(mark: string | null): TropIndexEntry | null {
+  if (!mark) return null;
+  return tropByFrequency.find((t) => slugify(t.name) === mark) ?? null;
 }
 
 interface TropDerivation {
@@ -34,8 +48,7 @@ const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
 
 /** The colours and lookup table for one trop mark, named by its URL slug. */
 function deriveTrop(mark: string | null): TropDerivation | null {
-  if (!mark) return null;
-  const entry = tropByFrequency.find((t) => slugify(t.name) === mark);
+  const entry = entryFor(mark);
   if (!entry) return null;
 
   const verseLookup = new Map<string, number>();
@@ -63,17 +76,11 @@ function derivationFor(settings: TropSettings): TropDerivation | null {
   if (derivations.has(settings)) {
     value = derivations.get(settings) ?? null;
   } else {
-    value = deriveTrop(settings.mark);
+    value = deriveTrop(shownMark(settings));
     derivations.set(settings, value);
   }
   lastDerivation = { of: settings, value };
   return value;
-}
-
-/** The chart entry for the mark a settings value names, or null when none is selected. */
-function selectedEntry(settings: TropSettings): TropIndexEntry | null {
-  if (!settings.mark) return null;
-  return tropByFrequency.find((t) => slugify(t.name) === settings.mark) ?? null;
 }
 
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
@@ -148,7 +155,6 @@ function renderTropChart(
       </div>
     `;
     chart = container.querySelector('.trop-chart') as HTMLElement;
-    const info = container.querySelector('.trop-info') as HTMLElement;
 
     for (const entry of tropByFrequency) {
       const slug = slugify(entry.name);
@@ -163,35 +169,33 @@ function renderTropChart(
       }
 
       button.addEventListener('mouseenter', () => {
-        info.textContent = tropInfoLine(entry, { withOccurrencesWord: true });
+        onChange((current) => ({ ...current, preview: slug }));
       });
 
       button.addEventListener('mouseleave', () => {
-        const selected = chart!.querySelector<HTMLButtonElement>('button.selected');
-        const selEntry = selected
-          ? tropByFrequency.find((e) => e.unicode === selected.dataset.unicode)
-          : undefined;
-        info.textContent = selEntry ? tropInfoLine(selEntry) : '';
+        onChange((current) => ({ ...current, preview: null }));
       });
 
       button.addEventListener('click', () => {
-        onChange((current) => ({ mark: current.mark === slug ? null : slug }));
+        onChange((current) => ({ ...current, mark: current.mark === slug ? null : slug }));
       });
 
       chart.appendChild(button);
     }
   }
 
-  const info = container.querySelector('.trop-info') as HTMLElement;
-  let entryShown: TropIndexEntry | undefined;
   chart.querySelectorAll<HTMLButtonElement>('button').forEach((button) => {
-    const isSelected = button.dataset.slug === settings.mark;
-    button.classList.toggle('selected', isSelected);
-    if (isSelected) {
-      entryShown = tropByFrequency.find((e) => e.unicode === button.dataset.unicode);
-    }
+    button.classList.toggle('selected', button.dataset.slug === settings.mark);
   });
-  info.textContent = entryShown ? tropInfoLine(entryShown) : '';
+
+  const info = container.querySelector('.trop-info') as HTMLElement;
+  const previewed = entryFor(settings.preview);
+  const selected = entryFor(settings.mark);
+  info.textContent = previewed
+    ? tropInfoLine(previewed, { withOccurrencesWord: true })
+    : selected
+      ? tropInfoLine(selected)
+      : '';
 }
 
 export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
@@ -215,13 +219,13 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   },
 
   defaultSettings() {
-    return { mark: null };
+    return { mark: null, preview: null };
   },
 
   urlParams: URL_PARAMS,
 
   settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): TropSettings {
-    return { mark: params.trop ?? null };
+    return { mark: params.trop ?? null, preview: null };
   },
 
   settingsToUrl(settings): Record<string, string> {
@@ -233,7 +237,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   },
 
   renderLegend(container, settings) {
-    const entry = selectedEntry(settings);
+    const entry = entryFor(shownMark(settings));
     if (!entry) {
       container.innerHTML =
         '<div style="color: #666; font-size: 11px;">Select a trop mark above</div>';
@@ -261,7 +265,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   },
 
   getHoverInfo(verse, settings) {
-    const entry = selectedEntry(settings);
+    const entry = entryFor(shownMark(settings));
     if (!entry) return null;
 
     const loc = entry.verses.find((v) => tanakhIdentitiesEqual(v, verse));
@@ -270,7 +274,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
 
   highlightVerseText(text: string, language: TextLanguage, settings): DocumentFragment {
     const fragment = document.createDocumentFragment();
-    const entry = selectedEntry(settings);
+    const entry = entryFor(shownMark(settings));
     if (language !== 'he' || !entry) {
       fragment.appendChild(document.createTextNode(text));
       return fragment;
