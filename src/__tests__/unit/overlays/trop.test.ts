@@ -17,6 +17,7 @@ describe('Trop Overlay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
 
     testVerseTexts = {
       'Genesis': {
@@ -156,6 +157,7 @@ describe('Trop Overlay', () => {
       expect(info.textContent).not.toBe('');
 
       button.dispatchEvent(new MouseEvent('mouseleave'));
+      vi.runAllTimers();
       expect(info.textContent).toBe('');
     });
 
@@ -236,6 +238,7 @@ describe('Trop Overlay', () => {
 
         button.dispatchEvent(new MouseEvent('mouseenter'));
         button.dispatchEvent(new MouseEvent('mouseleave'));
+        vi.runAllTimers();
 
         expect(colours(host).every((c) => c === null)).toBe(true);
       });
@@ -252,7 +255,23 @@ describe('Trop Overlay', () => {
         expect(host.toUrl()).toEqual({ trop: first.dataset.slug });
 
         second.dispatchEvent(new MouseEvent('mouseleave'));
+        vi.runAllTimers();
         expect(colours(host)).toEqual(coloursClicked(0));
+      });
+
+      it('goes straight from one hovered mark to the next, never through no mark', () => {
+        const host = makeHost();
+        const [first, second] = Array.from(
+          host.renderControls().querySelectorAll('button'),
+        ) as HTMLButtonElement[];
+
+        first.dispatchEvent(new MouseEvent('mouseenter'));
+        first.dispatchEvent(new MouseEvent('mouseleave'));
+        expect(colours(host)).toEqual(coloursClicked(0));
+
+        second.dispatchEvent(new MouseEvent('mouseenter'));
+        vi.runAllTimers();
+        expect(colours(host)).toEqual(coloursClicked(1));
       });
 
       it('names the hovered mark in the legend', () => {

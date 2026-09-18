@@ -29,6 +29,9 @@ export interface TropSettings {
   readonly preview: string | null;
 }
 
+/** How long a preview outlasts the pointer, so crossing the gap between buttons does not blink the map. */
+const PREVIEW_LINGER_MS = 150;
+
 function shownMark(settings: TropSettings): string | null {
   return settings.preview ?? settings.mark;
 }
@@ -155,6 +158,7 @@ function renderTropChart(
       </div>
     `;
     chart = container.querySelector('.trop-chart') as HTMLElement;
+    let leaving: ReturnType<typeof setTimeout> | undefined;
 
     for (const entry of tropByFrequency) {
       const slug = slugify(entry.name);
@@ -169,11 +173,15 @@ function renderTropChart(
       }
 
       button.addEventListener('mouseenter', () => {
+        clearTimeout(leaving);
         onChange((current) => ({ ...current, preview: slug }));
       });
 
       button.addEventListener('mouseleave', () => {
-        onChange((current) => ({ ...current, preview: null }));
+        leaving = setTimeout(
+          () => onChange((current) => ({ ...current, preview: null })),
+          PREVIEW_LINGER_MS,
+        );
       });
 
       button.addEventListener('click', () => {
