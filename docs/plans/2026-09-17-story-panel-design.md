@@ -132,9 +132,10 @@ design no longer has.
 ## Mobile
 
 The panel stays a bottom sheet at 50vh and holds the same three zones. The band
-is the picker and the legend, without the summary line. Sized for the tallest
-legend (Text Dating, 136px) plus the picker's 53px, it is about 190px, leaving
-roughly 230px of story on an 844px phone.
+is the picker and a one-line summary of the legend: the picker's measured 53px
+plus one line, about 90px, leaving roughly 330px of story on an 844px phone.
+The full legend appears when the reader takes the wheel or puts the story
+away.
 
 ## Open questions
 
@@ -147,11 +148,10 @@ Written down because they were not settled, not because they are unimportant.
 - **Whether a hidden story stays hidden on a return visit** is undecided. It is
   the same question as the help modal's `torahMap.helpSeen`, and should probably
   get the same answer.
-- **Mobile story room.** Once the band has to fit any overlay's legend, a phone
-  keeps about 230px of story, down from the 282px it had when the band only
-  fitted today's story. If that is too little, the likely lever is a one-line
-  summary for the legend too, on mobile only.
-- **What the footer costs on mobile** has not been measured. The 230px figure
+- **What a one-line legend summary says** is undecided per overlay. A
+  continuous scale might become a thin gradient strip; a category legend
+  might become its swatches without labels.
+- **What the footer costs on mobile** has not been measured. The 330px figure
   above does not account for it.
 
 ## Prototype
