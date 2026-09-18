@@ -9,7 +9,7 @@ export type CameraRef = CameraPosition | 'initial' | { kind: 'verse'; ref: strin
 
 export interface StoryStop {
   id: string;
-  title: string;
+  title?: string;
   text: string;
   camera: CameraRef;
   overlay: string | null;

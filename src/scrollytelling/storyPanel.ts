@@ -39,9 +39,11 @@ export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HT
     el.className = 'story-stop';
     el.dataset.stopId = stop.id;
 
-    const title = document.createElement('h2');
-    title.textContent = stop.title;
-    el.appendChild(title);
+    if (stop.title) {
+      const title = document.createElement('h2');
+      title.textContent = stop.title;
+      el.appendChild(title);
+    }
 
     const textContainer = document.createElement('div');
     textContainer.className = 'story-text';
