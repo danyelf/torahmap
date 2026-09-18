@@ -16,7 +16,7 @@ const options: Options = {
   hostname: typeof location === 'undefined' ? '' : location.hostname,
   send: (body) => navigator.sendBeacon('/api/event', body),
   getMode: () => 'story',
-  visitId: crypto.randomUUID(),
+  visitId: '',
 };
 let storyStopsSent = new Set<string>();
 
@@ -25,8 +25,16 @@ export function configureAnalytics(changes: Partial<Options>): void {
   Object.assign(options, changes);
 }
 
+// crypto.randomUUID needs a secure context (HTTPS) and a recent browser;
+// getRandomValues works everywhere, including plain http and older Safari.
+function makeVisitId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 function track<E extends EventName>(event: E, fields: EventFields<E>): void {
   if (options.hostname !== SITE_HOSTNAME) return;
+  if (!options.visitId) options.visitId = makeVisitId();
   options.send(JSON.stringify({ event, visit: options.visitId, mode: options.getMode(), fields }));
 }
 
