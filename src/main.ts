@@ -633,6 +633,16 @@ async function main(): Promise<void> {
     );
   }
 
+  /**
+   * Redraw the popup for the verse it shows, pinned or else hovered. It reads
+   * the overlay's settings when drawn, so it goes stale when they change under
+   * a verse that stays put, as when two story stops pin the same verse.
+   */
+  function refreshVersePopup(): void {
+    if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
+    else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
+  }
+
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
     if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
@@ -744,6 +754,7 @@ async function main(): Promise<void> {
     renderOverlayControls();
     renderOverlayLegend();
     renderOverlaySummary();
+    refreshVersePopup();
   }
 
   /**
@@ -759,6 +770,7 @@ async function main(): Promise<void> {
     renderOverlayLegend();
     renderOverlayControls();
     renderOverlaySummary();
+    refreshVersePopup();
     render();
     saveUrlState(false);
   }
