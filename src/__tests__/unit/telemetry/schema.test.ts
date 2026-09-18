@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { toDataPoint } from '../../../telemetry/schema.ts';
 
-const context = { country: 'IL', device: 'mobile' };
+const context = { country: 'IL', device: 'mobile', host: 'torahmap.org' };
 
 describe('toDataPoint', () => {
   it('lays out common columns, then the event fields in schema order', () => {
@@ -16,7 +16,7 @@ describe('toDataPoint', () => {
     );
     expect(point).toEqual({
       indexes: ['v1'],
-      blobs: ['story_stop', 'story', 'IL', 'mobile', 'abraham'],
+      blobs: ['story_stop', 'story', 'IL', 'mobile', 'torahmap.org', 'abraham'],
       doubles: [3, 9],
     });
   });
@@ -26,7 +26,16 @@ describe('toDataPoint', () => {
       { event: 'view_settled', visit: 'v1', mode: 'explore', fields: { book: 'Genesis' } },
       context,
     );
-    expect(point?.blobs).toEqual(['view_settled', 'explore', 'IL', 'mobile', 'Genesis', '', '']);
+    expect(point?.blobs).toEqual([
+      'view_settled',
+      'explore',
+      'IL',
+      'mobile',
+      'torahmap.org',
+      'Genesis',
+      '',
+      '',
+    ]);
     expect(point?.doubles).toEqual([0]);
   });
 
@@ -53,8 +62,8 @@ describe('toDataPoint', () => {
       },
       context,
     );
-    expect(point?.blobs[4]).toHaveLength(100);
-    expect(point?.blobs[5]).toBe('');
+    expect(point?.blobs[5]).toHaveLength(100);
+    expect(point?.blobs[6]).toBe('');
     expect(point?.doubles).toEqual([0]);
   });
 });

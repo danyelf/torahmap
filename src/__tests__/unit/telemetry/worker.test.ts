@@ -36,7 +36,7 @@ describe('telemetry worker', () => {
     expect(response.status).toBe(204);
     expect(e.EVENTS.writeDataPoint).toHaveBeenCalledWith({
       indexes: ['v1'],
-      blobs: ['story_exit', 'story', '', 'mobile', 'sinai'],
+      blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai'],
       doubles: [4],
     });
   });
@@ -46,6 +46,68 @@ describe('telemetry worker', () => {
     const response = await worker.fetch(post(valid, { Origin: 'http://localhost:5173' }), e);
     expect(response.status).toBe(403);
     expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
+  it('takes the host from the request URL when the Origin matches it', async () => {
+    const e = env();
+    const previewUrl = 'https://telemetry-torahmap.example.workers.dev/api/event';
+    const request = new Request(previewUrl, {
+      method: 'POST',
+      body: valid,
+      headers: {
+        Origin: 'https://telemetry-torahmap.example.workers.dev',
+        'User-Agent': 'Mozilla/5.0 (iPhone) Mobile',
+      },
+    });
+    const response = await worker.fetch(request, e);
+    expect(response.status).toBe(204);
+    expect(e.EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['v1'],
+      blobs: [
+        'story_exit',
+        'story',
+        '',
+        'mobile',
+        'telemetry-torahmap.example.workers.dev',
+        'sinai',
+      ],
+      doubles: [4],
+    });
+  });
+
+  it('rejects a mismatched Origin in either direction', async () => {
+    const e = env();
+    const toSite = new Request('https://torahmap.org/api/event', {
+      method: 'POST',
+      body: valid,
+      headers: { Origin: 'https://telemetry-torahmap.example.workers.dev' },
+    });
+    const toPreview = new Request('https://telemetry-torahmap.example.workers.dev/api/event', {
+      method: 'POST',
+      body: valid,
+      headers: { Origin: 'https://torahmap.org' },
+    });
+    expect((await worker.fetch(toSite, e)).status).toBe(403);
+    expect((await worker.fetch(toPreview, e)).status).toBe(403);
+    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
+  it('ignores a host claimed in the payload', async () => {
+    const e = env();
+    const spoofed = JSON.stringify({
+      event: 'story_exit',
+      visit: 'v1',
+      mode: 'story',
+      host: 'evil.example',
+      fields: { stop_id: 'sinai', stop_number: 4 },
+    });
+    const response = await worker.fetch(post(spoofed), e);
+    expect(response.status).toBe(204);
+    expect(e.EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['v1'],
+      blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai'],
+      doubles: [4],
+    });
   });
 
   it('writes nothing for an oversized body, bad JSON or an unknown event', async () => {

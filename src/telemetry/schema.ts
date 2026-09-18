@@ -1,6 +1,7 @@
 // The one place that says which Analytics Engine column holds what. Columns
-// are positional: blob1-4 and index1 are common to every event, then each
-// event's own strings from blob5 and numbers from double1, in the order below.
+// are positional: index1 is the visit id; blob1 event, blob2 mode, blob3
+// country, blob4 device and blob5 host are common to every event, then each
+// event's own strings from blob6 and numbers from double1, in the order below.
 // Appending a field is safe; reordering one silently changes what old rows mean.
 
 export const EVENTS = {
@@ -49,7 +50,7 @@ function isEventName(name: unknown): name is EventName {
 /** The data point for a payload from the page, or null if it is not one we accept. */
 export function toDataPoint(
   payload: unknown,
-  context: { country: string; device: string },
+  context: { country: string; device: string; host: string },
 ): DataPoint | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const { event, visit, mode, fields } = payload as Partial<EventPayload>;
@@ -70,7 +71,7 @@ export function toDataPoint(
 
   return {
     indexes: [visit],
-    blobs: [event, mode, context.country, context.device, ...schema.blobs.map(blob)],
+    blobs: [event, mode, context.country, context.device, context.host, ...schema.blobs.map(blob)],
     doubles: schema.doubles.map(double),
   };
 }

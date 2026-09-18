@@ -3,7 +3,15 @@
 import type { TextLanguage } from './types.ts';
 import type { EventFields, EventName, Mode } from './telemetry/schema.ts';
 
-const SITE_HOSTNAME = 'torahmap.org';
+const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
+
+/** True for the dev server: no host, localhost, an IPv6 loopback, a LAN IPv4 address, or an mDNS `.local` name. */
+export function isDevHost(hostname: string): boolean {
+  if (hostname === '' || hostname === 'localhost') return true;
+  if (hostname === '::1' || hostname === '[::1]') return true;
+  if (hostname.endsWith('.local')) return true;
+  return IPV4.test(hostname);
+}
 
 interface Options {
   hostname: string;
@@ -33,7 +41,7 @@ function makeVisitId(): string {
 }
 
 function track<E extends EventName>(event: E, fields: EventFields<E>): void {
-  if (options.hostname !== SITE_HOSTNAME) return;
+  if (isDevHost(options.hostname)) return;
   if (!options.visitId) options.visitId = makeVisitId();
   options.send(JSON.stringify({ event, visit: options.visitId, mode: options.getMode(), fields }));
 }

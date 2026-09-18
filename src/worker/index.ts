@@ -12,11 +12,10 @@ export interface Env {
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
-const SITE_ORIGIN = 'https://torahmap.org';
-
 async function handleEvent(request: Request, env: Env): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405 });
-  if (request.headers.get('Origin') !== SITE_ORIGIN) return new Response(null, { status: 403 });
+  const url = new URL(request.url);
+  if (request.headers.get('Origin') !== url.origin) return new Response(null, { status: 403 });
 
   // Reject by the declared size before reading the body, so an oversized
   // request never has to be buffered in full. The header can be absent or
@@ -41,7 +40,7 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
   const device = /Mobi|Android/i.test(request.headers.get('User-Agent') ?? '')
     ? 'mobile'
     : 'desktop';
-  const point = toDataPoint(payload, { country, device });
+  const point = toDataPoint(payload, { country, device, host: url.hostname });
   if (!point) return new Response(null, { status: 400 });
 
   env.EVENTS.writeDataPoint(point);
