@@ -322,6 +322,7 @@ async function main(): Promise<void> {
     storyStrip.setAttribute('aria-expanded', String(open));
     panelControls.inert = open;
     storyContent.inert = !open;
+    updateSummaryShown();
   }
 
   // On a phone the sheet can also be lowered to its summary line, giving the
@@ -358,6 +359,7 @@ async function main(): Promise<void> {
     } else {
       setStoryOpen(storyOpen);
     }
+    updateSummaryShown();
   }
 
   // Crossing into or out of phone width turns the story from a column into a
@@ -384,6 +386,16 @@ async function main(): Promise<void> {
     toColors: (Color | Color[])[];
   } | null = null;
 
+  /**
+   * On a phone, "No overlay" reads as the first thing to do, so while the
+   * story drives with no overlay on the line is left out. It comes back once
+   * the reader takes the map.
+   */
+  function updateSummaryShown(): void {
+    const quiet = currentOverlayId === 'none' && storyOpen && !sheetDown && driver.by !== 'reader';
+    document.body.classList.toggle('no-overlay-quiet', quiet);
+  }
+
   /** Anything the reader does that changes what the map shows hands them the map. */
   function takeOver(): void {
     if (!storyOpen || driver.by === 'reader') return;
@@ -392,6 +404,7 @@ async function main(): Promise<void> {
     // The reader's view is painted from the overlay, not from a story blend.
     transition = null;
     applyOverlay();
+    updateSummaryShown();
     saveUrlState(true);
   }
 
@@ -803,6 +816,7 @@ async function main(): Promise<void> {
       drawnColors(overlayControlsContainer, '.term-swatch'),
       drawnColors(overlayLegendContainer),
     );
+    updateSummaryShown();
   }
 
   /** Draw the active overlay's controls and legend from its current settings. */
@@ -1086,6 +1100,7 @@ async function main(): Promise<void> {
         lastSyncedStopId = null;
       }
     }
+    updateSummaryShown();
 
     const state = currentStoryState();
 

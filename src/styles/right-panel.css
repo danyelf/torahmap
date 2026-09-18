@@ -372,6 +372,10 @@ body.story-folded #story-content {
 
   /* Lowered, the top line is always the summary field, even when the open
      controls had shrunk it to a bar. */
+  body.no-overlay-quiet #controls-toggle {
+    display: none;
+  }
+
   body.sheet-down #controls-toggle {
     justify-content: flex-start;
     margin: 12px 16px;
