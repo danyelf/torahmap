@@ -407,8 +407,18 @@ body.story-at-end #story-cue {
 
   /* Lowered, the top line is always the summary field, even when the open
      controls had shrunk it to a bar. */
+  /* Faded rather than removed. Removed, it changed the story's height as a
+     swipe crossed into the first stop with an overlay, and the page settled
+     short of where the swipe snapped. */
+  #controls-toggle {
+    transition:
+      opacity var(--accordion-duration) ease,
+      visibility var(--accordion-duration);
+  }
+
   body.no-overlay-quiet #controls-toggle {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
   }
 
   body.sheet-down #controls-toggle {

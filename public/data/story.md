@@ -4,12 +4,13 @@ easing: ease-in-out
 
 <!-- stop: intro | camera: Genesis.25.1 | zoom 0.5 -->
 
-# The Torahmap
-
 The Tanakh — the Hebrew Bible — consists of almost twenty-three thousand verses. In the Torahmap, we lay them out as colored squares.
 
 The Five Books of the Torah run across the top row,
 right to left, following Hebrew order.
+
+<!-- stop: overview | camera: Joshua.24.1 | zoom: 0.5 -->
+
 The Prophets are in the middle; the Writings at the bottom.
 
 Each book is a column.
