@@ -255,14 +255,9 @@ export const tropOverlay: Overlay = {
 
   applyUrlParams(params: UrlParamValues<typeof URL_PARAMS>): void {
     const slug = params.trop;
-    if (slug) {
-      const entry = tropByFrequency.find((t) => slugify(t.name) === slug);
-      if (entry) {
-        selectedTrop = entry;
-        updateCache();
-        updateCallback?.();
-      }
-    }
+    selectedTrop = (slug && tropByFrequency.find((t) => slugify(t.name) === slug)) || null;
+    updateCache();
+    updateCallback?.();
   },
 
   highlightVerseText(text: string, language: TextLanguage): DocumentFragment {

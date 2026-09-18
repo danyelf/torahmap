@@ -211,16 +211,13 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.getUrlParams?.()).toEqual({});
     });
 
-    it('updates the dropdown when restoring from a link', () => {
-      const container = document.createElement('div');
-      haftarahOverlay.renderControls?.(container);
-      document.body.appendChild(container);
-
+    it('draws the dropdown from the custom a link restored', () => {
       applyOverlayParams(haftarahOverlay, new URLSearchParams('custom=sephardi'));
 
-      const select = container.querySelector('select') as HTMLSelectElement;
-      expect(select.value).toBe('sephardi');
-      document.body.removeChild(container);
+      const container = document.createElement('div');
+      haftarahOverlay.renderControls?.(container);
+
+      expect(container.querySelector('select')?.value).toBe('sephardi');
     });
 
     it('does not announce a settings change, leaving that to the restorer', () => {

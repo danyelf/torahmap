@@ -43,6 +43,14 @@ describe('parseUrlState', () => {
     });
   });
 
+  it('parses a camera-only hash with no overlay', () => {
+    mockWindowLocation('http://localhost:5173/#zoom=4&x=100&y=200');
+    const state = parseUrlState(overlayUrlParams);
+
+    expect(state.zoom).toBe(4);
+    expect(state.overlay).toBeUndefined();
+  });
+
   it('parses overlay parameter', () => {
     mockWindowLocation('http://localhost:5173/#overlay=commentary');
     const state = parseUrlState(overlayUrlParams);

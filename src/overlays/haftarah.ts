@@ -470,10 +470,5 @@ export const haftarahOverlay: Overlay = {
 
     currentCustom = custom;
     currentDerivation = deriveHaftarah(currentCustom);
-    // Update the dropdown if it exists
-    const select = document.querySelector('#custom-select') as HTMLSelectElement | null;
-    if (select) {
-      select.value = currentCustom;
-    }
   },
 };

@@ -21,6 +21,7 @@ import {
   verseToUrlFormat,
   type UrlState,
 } from './urlState.ts';
+import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
@@ -193,6 +194,7 @@ async function main(): Promise<void> {
     }
 
     applyOverlayParams(currentOverlay, stop.overlayParams ?? {});
+    renderOverlayUi();
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -600,10 +602,7 @@ async function main(): Promise<void> {
 
   let currentOverlayId = 'none';
 
-  /**
-   * Internal: switch the active overlay without painting/rendering or writing URL.
-   * Used by both setOverlay (with side effects) and applyStoryStop (without).
-   */
+  /** Switch the active overlay without drawing its UI, painting or writing the URL. */
   function activateOverlay(id: string): void {
     currentOverlayId = id;
     currentOverlay?.destroy?.();
@@ -611,10 +610,7 @@ async function main(): Promise<void> {
 
     currentOverlay?.onUpdate?.(() => {
       applyOverlay();
-      if (overlayLegendContainer) {
-        overlayLegendContainer.innerHTML = '';
-        currentOverlay?.renderLegend?.(overlayLegendContainer);
-      }
+      renderOverlayLegend();
       render();
       // Save URL state when overlay params change (replaceState).
       // No guard needed here: applyingExternalState() turns URL writes off
@@ -622,31 +618,32 @@ async function main(): Promise<void> {
       // change it was just handed cannot write it back.
       saveUrlState(false);
     });
+  }
 
-    if (overlayControlsContainer) {
-      overlayControlsContainer.innerHTML = '';
-      currentOverlay?.renderControls?.(overlayControlsContainer);
-    }
+  function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
       currentOverlay?.renderLegend?.(overlayLegendContainer);
     }
   }
 
-  function setOverlay(id: string, opts: { fromUrlRestore?: boolean } = {}): void {
-    const { fromUrlRestore = false } = opts;
-    if (!fromUrlRestore) {
-      trackOverlaySwitch(id, currentOverlayId);
+  /** Draw the active overlay's controls and legend from its current settings. */
+  function renderOverlayUi(): void {
+    if (overlaySelect) overlaySelect.value = currentOverlayId;
+    if (overlayControlsContainer) {
+      overlayControlsContainer.innerHTML = '';
+      currentOverlay?.renderControls?.(overlayControlsContainer);
     }
+    renderOverlayLegend();
+  }
 
+  function setOverlay(id: string): void {
+    trackOverlaySwitch(id, currentOverlayId);
     activateOverlay(id);
-
+    renderOverlayUi();
     applyOverlay();
     render();
-
-    if (!fromUrlRestore) {
-      saveUrlState(true);
-    }
+    saveUrlState(true);
   }
 
   // Clicking a word in the verse popup.
@@ -870,89 +867,53 @@ async function main(): Promise<void> {
     }
   });
 
-  function restoreOverlayFromUrl(urlState: UrlState): void {
-    if (!urlState.overlay) return;
-
-    setOverlay(urlState.overlay, { fromUrlRestore: true });
-    if (overlaySelect) {
-      overlaySelect.value = urlState.overlay;
-    }
-
-    // Hand the overlay back its own settings, already validated.
-    //
-    // activateOverlay drew the legend before this point, while the overlay was
-    // still on its defaults, so it has to be redrawn once the settings land.
-    // (Controls are left alone: each overlay updates its own inside
-    // applyUrlParams, and redrawing them here would throw away what it just
-    // put there.)
-    if (currentOverlay?.applyUrlParams) {
-      applyOverlayParams(currentOverlay, urlState.overlayParams);
-      if (overlayLegendContainer) {
-        overlayLegendContainer.innerHTML = '';
-        currentOverlay.renderLegend?.(overlayLegendContainer);
-      }
-    }
-  }
-
-  function restoreVerseFromUrl(urlState: UrlState): boolean {
-    if (!urlState.verse) return false;
-
-    const parsed = parseVerseFromUrl(urlState.verse);
-    if (!parsed) return false;
-
-    const verse = findTanakhItem(verses, parsed);
-    if (!verse) return false;
-
-    // Pin without saveUrlState since we're restoring FROM the URL
-    pinnedVerse = verse;
-    updateSidebarWrapper(verse, true);
-    centerOnVerse(verse);
-    return true;
-  }
-
-  function restoreCameraFromUrl(urlState: UrlState, hasVerse: boolean): void {
-    if (urlState.zoom !== undefined) {
-      camera.zoom = urlState.zoom;
-    }
-
-    if (!hasVerse && urlState.x !== undefined && urlState.y !== undefined) {
-      camera.x = urlState.x;
-      camera.y = urlState.y;
-    }
-  }
-
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
   function restoreFromUrl(): void {
-    applyingExternalState(restoreFromUrlUnguarded);
+    const next = resolveViewState(
+      parseUrlState((id) => getOverlay(id)?.urlParams),
+      { ...initialCamera, zoom: DEFAULT_ZOOM },
+      (id) => getOverlay(id) !== undefined,
+    );
+    applyingExternalState(() => applyViewState(next));
   }
 
-  function restoreFromUrlUnguarded(): void {
-    const urlState = parseUrlState((id) => getOverlay(id)?.urlParams);
-
-    if (urlState.story) {
-      appMode = 'story';
+  /**
+   * Replace the whole view with `next`, in an order where each step can rely on
+   * the one before: settings before the controls that draw them, the verse
+   * before the camera that centres on it.
+   */
+  function applyViewState(next: ViewState): void {
+    if (next.mode === 'story') {
       // Force the next settled scroll frame to apply the stop's state.
       lastSyncedStopId = null;
       switchToStory(storyPanel, explorePanel, storyContent, 0);
-      const stopIndex = resolvedStops.findIndex((s) => s.id === urlState.story);
-      if (stopIndex >= 0 && stopElements[stopIndex]) {
-        stopElements[stopIndex].scrollIntoView();
-      }
-      return;
-    }
-
-    if (urlState.overlay || urlState.verse) {
-      appMode = 'explore';
+    } else {
+      if (appMode === 'story') lastStoryScrollTop = storyContent.scrollTop;
       switchToExplore(storyPanel, explorePanel);
     }
+    appMode = next.mode;
 
-    restoreOverlayFromUrl(urlState);
-    const hasVerse = restoreVerseFromUrl(urlState);
-    restoreCameraFromUrl(urlState, hasVerse);
+    activateOverlay(next.overlay);
+    applyOverlayParams(currentOverlay, next.overlaySettings);
+    renderOverlayUi();
+
+    const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
+    pinnedVerse = verse;
+    updateSidebarWrapper(verse, verse !== null);
+
+    cancelCameraGlide();
+    Object.assign(camera, cameraForView(next.camera, verse, window.innerWidth, window.innerHeight));
 
     applyOverlay();
     render();
+
+    // The story drives the map from its scroll position, so it takes over here.
+    if (next.mode === 'story') {
+      const stopIndex = resolvedStops.findIndex((s) => s.id === next.storyStop);
+      stopElements[stopIndex]?.scrollIntoView();
+      storyContent.dispatchEvent(new Event('scroll'));
+    }
   }
 
   if (window.location.hash) {
