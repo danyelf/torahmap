@@ -327,15 +327,24 @@ async function main(): Promise<void> {
     if (!open && storyOpen) {
       cancelOpening?.();
       heldStop = storyStopIndex();
-      storyStripTitle.textContent = stopLabel(resolvedStops[heldStop]);
+      storyStripTitle.textContent = stopLabel(resolvedStops[heldStop]) || `Stop ${heldStop + 1}`;
     }
     storyOpen = open;
     document.body.classList.toggle('story-folded', !open);
     controlsToggle.setAttribute('aria-expanded', String(!open));
     storyStrip.setAttribute('aria-expanded', String(open));
-    panelControls.inert = open;
-    storyContent.inert = !open;
+    updateInert();
     updateSummaryShown();
+  }
+
+  // Only what is on screen can take focus or a click: the open section, and
+  // nothing but the summary line while the sheet is lowered.
+  function updateInert(): void {
+    panelControls.inert = sheetDown || storyOpen;
+    storyContent.inert = sheetDown || !storyOpen;
+    storyStrip.inert = sheetDown;
+    const footer = document.getElementById('panel-footer');
+    if (footer) footer.inert = sheetDown;
   }
 
   // On a phone the sheet can also be lowered to its summary line, giving the
@@ -368,17 +377,10 @@ async function main(): Promise<void> {
   function setSheetDown(down: boolean): void {
     sheetDown = down;
     document.body.classList.toggle('sheet-down', down);
-    const footer = document.getElementById('panel-footer');
-    if (footer) footer.inert = down;
-    storyStrip.inert = down;
-    if (down) {
-      panelControls.inert = true;
-      storyContent.inert = true;
-    } else {
-      setStoryOpen(storyOpen);
-    }
+    updateInert();
     updateSummaryShown();
   }
+  updateInert();
 
   /**
    * On a phone, "No overlay" reads as the first thing to do, so while the
@@ -1197,7 +1199,13 @@ async function main(): Promise<void> {
     syncUrl();
   }
 
-  window.addEventListener('resize', scheduleStoryFrame);
+  // A stop's camera puts its verse against the map's size, which the window
+  // sets. The map also grows as a phone's sheet lowers, but that leaves the
+  // verse where it is on screen, so it is not followed.
+  window.addEventListener('resize', () => {
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
+    scheduleStoryFrame();
+  });
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
