@@ -1,6 +1,10 @@
 # Story panel implementation plan
 
-**Status:** Not started.
+**Status:** Tasks 1–5 and Task 8 Step 1 done. Tasks 6–7 wait for the overlay
+refactor; until then the band holds each overlay's full controls, 240px on
+desktop and the picker alone (90px) on a phone. The hidden story is
+remembered from the × and Show the story only, not from `setStoryShown`, so a
+shared link that opens with it hidden is not remembered.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
