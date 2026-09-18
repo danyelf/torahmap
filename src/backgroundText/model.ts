@@ -2,11 +2,11 @@
 // text is at a given zoom, and where the layer's anchor point is. Nothing here
 // touches the DOM; the layer module does that.
 
-import { MIN_ZOOM, MAX_ZOOM, type Camera } from './camera.ts';
-import { screenToWorld } from './hitDetection.ts';
-import { stripNikkud } from './hebrew.ts';
-import { getVerseText, type VerseTexts } from './verseTexts.ts';
-import type { TanakhLayout } from './types.ts';
+import { MIN_ZOOM, MAX_ZOOM, type Camera } from '../camera.ts';
+import { screenToWorld } from '../hitDetection.ts';
+import { stripNikkud } from '../hebrew.ts';
+import { getVerseText, type VerseTexts } from '../verseTexts.ts';
+import type { TanakhLayout } from '../types.ts';
 
 export type Layer = 'behind' | 'above';
 export type Anchor = 'viewport' | 'square';

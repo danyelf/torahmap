@@ -2,7 +2,7 @@
 // live, keeps them in localStorage across reloads, and copies them as JSON so a
 // combination that works can be pasted into a conversation.
 
-import { DEFAULT_SETTINGS, PRESETS, type BackgroundTextSettings } from './backgroundText.ts';
+import { DEFAULT_SETTINGS, PRESETS, type BackgroundTextSettings } from './model.ts';
 
 const STORAGE_KEY = 'bgtext-settings';
 

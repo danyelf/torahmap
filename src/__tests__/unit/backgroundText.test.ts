@@ -13,7 +13,7 @@ import {
   shouldRegenerate,
   stripMarks,
   windowAround,
-} from '../../backgroundText';
+} from '../../backgroundText/model';
 import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
 

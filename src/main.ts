@@ -5,8 +5,7 @@ declare const __GIT_BRANCH__: string;
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
-import { createBackgroundTextLayer, type BackgroundTextLayer } from './backgroundTextLayer.ts';
-import { createBackgroundTextPanel, loadSettings } from './backgroundTextPanel.ts';
+import { installBackgroundText } from './backgroundText/index.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
@@ -280,8 +279,7 @@ async function main(): Promise<void> {
   const TAP_THRESHOLD = 10; // max px movement to count as tap
   const TAP_MAX_DURATION = 300; // max ms to count as tap
 
-  // Background Hebrew text prototype; created below only when ?bgtext=1
-  let backgroundText: BackgroundTextLayer | null = null;
+  let updateBackgroundText: (() => void) | null = null;
 
   function render(): void {
     renderFrame(
@@ -292,7 +290,7 @@ async function main(): Promise<void> {
       pinnedVerse,
       tanakhIdentitiesEqual,
     );
-    backgroundText?.update();
+    updateBackgroundText?.();
   }
 
   function centerOnVerse(verse: TanakhLayout): void {
@@ -371,25 +369,15 @@ async function main(): Promise<void> {
   createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
 
-  if (new URLSearchParams(window.location.search).get('bgtext') === '1') {
-    const settings = loadSettings();
-    backgroundText = createBackgroundTextLayer({
-      verses,
-      texts: verseTexts,
-      camera,
-      settings,
-      container: document.body,
-    });
-    renderState.transparentBackground = settings.layer === 'behind';
-    document.body.appendChild(
-      createBackgroundTextPanel(settings, (next) => {
-        backgroundText?.setSettings(next);
-        renderState.transparentBackground = next.layer === 'behind';
-        render();
-      }),
-    );
-    render();
-  }
+  updateBackgroundText = installBackgroundText({
+    verses,
+    texts: verseTexts,
+    camera,
+    renderState,
+    render,
+  });
+  if (updateBackgroundText) render();
+
   canvas.addEventListener(
     'wheel',
     (e: WheelEvent) => {

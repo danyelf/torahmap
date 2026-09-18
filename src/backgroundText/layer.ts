@@ -3,10 +3,10 @@
 // Every frame both pages are moved by a CSS transform computed from the camera.
 // A WebGL text path would replace this file and nothing else.
 
-import type { Camera } from './camera.ts';
-import type { TanakhLayout } from './types.ts';
-import type { VerseTexts } from './verseTexts.ts';
-import { screenToWorld } from './hitDetection.ts';
+import type { Camera } from '../camera.ts';
+import type { TanakhLayout } from '../types.ts';
+import type { VerseTexts } from '../verseTexts.ts';
+import { screenToWorld } from '../hitDetection.ts';
 import {
   advancePlacement,
   anchorWorldPoint,
@@ -24,7 +24,7 @@ import {
   type BackgroundTextSettings,
   type PagePlacement,
   type Passage,
-} from './backgroundText.ts';
+} from './model.ts';
 
 // Pages are laid out once at this size; zoom applies a CSS scale on top, so a
 // zoom never reflows the paragraph.
