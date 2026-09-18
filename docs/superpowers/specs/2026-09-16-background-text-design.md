@@ -268,3 +268,25 @@ very quiet (opacity 0.1 with the exclusion blend), grows to nearly four times
 its zoomed-out size when fully in (12 to 45), and passages dissolve into each
 other slowly (1100ms). Neighbours and width are not used by fill mode and are
 kept only for the window and centre modes.
+
+## Round three: the centre is not visible (2026-09-18)
+
+Rebased onto main and gathered into `src/backgroundText/`, which main.ts
+reaches through one call.
+
+Lighting the hovered and pinned verse in the text was "really fun, and a
+terrible idea": it turned the background into a game of finding the verse
+nearest the screen centre. That was the problem all along. The screen centre
+is not marked, so neither is the verse that picks the passage, and the text
+changed for reasons the reader could not see.
+
+The `follow` setting now chooses by something visible. `book` (the default) and
+`chapter` take the unit with the most verses on screen and show it from its
+first verse, hung from the top of the screen. The text changes only on crossing
+into another unit. The drift is off in these modes: the passage stays the same
+for a whole book, and a long pan would slide it off the screen. Books have
+labels on the map and chapters do not, so book is the one a reader can
+actually see.
+
+Rejected: tying each chapter's text to its own block of squares. A word is
+wider than a square, so the text cannot sit behind the verses it belongs to.

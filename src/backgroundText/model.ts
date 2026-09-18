@@ -13,9 +13,17 @@ export type Anchor = 'viewport' | 'square';
 export type Content = 'center' | 'window' | 'fill';
 export type Marks = 'all' | 'no-trop' | 'letters';
 export type Font = 'noto' | 'frank' | 'david';
+export type Follow = 'verse' | 'chapter' | 'book';
 export type Blend = 'normal' | 'difference' | 'exclusion' | 'overlay';
 
 export interface BackgroundTextSettings {
+  /**
+   * What picks the passage. 'verse' is the verse nearest the screen centre,
+   * which the reader cannot see. 'chapter' and 'book' are the one with the
+   * most verses on screen; the passage starts at its beginning and is fixed to
+   * the screen, since it stays the same for as long as that unit does.
+   */
+  follow: Follow;
   /** Under the canvas (squares occlude the text) or over it at low opacity. */
   layer: Layer;
   /** How much of the map's screen movement the text follows: 0 is fixed to the glass, 1 is glued to the map. */
@@ -50,6 +58,7 @@ export interface BackgroundTextSettings {
 // Danyel's pick after two rounds with the panel (2026-09-16): drifting at a
 // third of the map's speed, very quiet, letters only, a slow dissolve between passages.
 export const DEFAULT_SETTINGS: BackgroundTextSettings = {
+  follow: 'book',
   layer: 'above',
   parallax: 0.3,
   anchor: 'viewport',
@@ -220,6 +229,55 @@ export function rangeToFill(
     growBefore = !growBefore;
   }
   return { start, end };
+}
+
+/** The range from `start` onward whose text runs to at least `targetChars` characters. */
+export function rangeFromStart(
+  verses: TanakhLayout[],
+  texts: VerseTexts,
+  start: number,
+  targetChars: number,
+): { start: number; end: number } {
+  let end = start;
+  let chars = 0;
+  for (; end < verses.length; end++) {
+    const v = verses[end];
+    chars += (getVerseText(texts, v.book, v.chapter, v.verse)?.he.length ?? 0) + 1;
+    if (chars >= targetChars) break;
+  }
+  return { start, end: Math.min(end, verses.length - 1) };
+}
+
+/**
+ * Index of the first verse of the book (or chapter) with the most verse
+ * squares centred inside the world rectangle, or null when none are.
+ * Assumes `verses` is in reading order.
+ */
+export function dominantUnitStart(
+  verses: TanakhLayout[],
+  rect: { left: number; top: number; right: number; bottom: number },
+  unit: 'chapter' | 'book',
+): number | null {
+  const counts = new Map<string, number>();
+  const firsts = new Map<string, number>();
+  verses.forEach((v, i) => {
+    const key = unit === 'book' ? v.book : `${v.book} ${v.chapter}`;
+    if (!firsts.has(key)) firsts.set(key, i);
+    const cx = v.x + v.size / 2;
+    const cy = v.y + v.size / 2;
+    if (cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom) {
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  });
+  let best: number | null = null;
+  let bestCount = 0;
+  for (const [key, n] of counts) {
+    if (n > bestCount) {
+      bestCount = n;
+      best = firsts.get(key) ?? null;
+    }
+  }
+  return best;
 }
 
 /**

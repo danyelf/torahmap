@@ -10,6 +10,7 @@ import { screenToWorld } from '../hitDetection.ts';
 import {
   advancePlacement,
   anchorWorldPoint,
+  dominantUnitStart,
   fontSizeForZoom,
   lineGridSnap,
   nearestVerseIndex,
@@ -17,6 +18,7 @@ import {
   pageTransform,
   passageAround,
   passageForRange,
+  rangeFromStart,
   rangeToFill,
   shouldRegenerate,
   worldToScreen,
@@ -145,7 +147,10 @@ export function createBackgroundTextLayer(options: {
     let targetChars = charsPerLine * (targetHeight / (BASE_FONT_PX * LINE_HEIGHT));
     let center: HTMLSpanElement;
     for (let attempt = 0; ; attempt++) {
-      const range = rangeToFill(verses, texts, centerIndex, targetChars);
+      const range =
+        settings.follow === 'verse'
+          ? rangeToFill(verses, texts, centerIndex, targetChars)
+          : rangeFromStart(verses, texts, centerIndex, targetChars);
       center = fillPage(page, passageForRange(verses, texts, range, settings.marks), centerIndex);
       const wholeCorpus = range.start === 0 && range.end === verses.length - 1;
       if (page.el.offsetHeight >= targetHeight || wholeCorpus || attempt >= 4) break;
@@ -174,20 +179,28 @@ export function createBackgroundTextLayer(options: {
     // it is the top of the center verse's first line. Horizontally, a square
     // anchor wants the verse's first word (the right end of that line) on the
     // square; a viewport anchor wants the paragraph centred on the screen.
+    // Following a book or chapter, the page instead hangs from the top centre
+    // of the screen, so the unit's opening words are the first line.
     const pageRect = page.el.getBoundingClientRect();
     const firstLine = center.getClientRects()[0] ?? pageRect;
+    const byUnit = settings.follow !== 'verse';
     const refOffset = {
-      x: settings.anchor === 'square' ? firstLine.right - pageRect.left : pageRect.width / 2,
-      y: firstLine.top - pageRect.top,
+      x:
+        settings.anchor === 'square' && !byUnit
+          ? firstLine.right - pageRect.left
+          : pageRect.width / 2,
+      y: byUnit ? 0 : firstLine.top - pageRect.top,
     };
 
-    const anchorWorld = anchorWorldPoint(settings.anchor, verse, camera, viewport());
+    const anchorWorld = byUnit
+      ? screenToWorld(viewport().width / 2, 0, camera)
+      : anchorWorldPoint(settings.anchor, verse, camera, viewport());
     const anchorScreenAtBuild = worldToScreen(anchorWorld.x, anchorWorld.y, camera);
 
     // Shift the new page by less than a line so its rows land on the old
     // page's rows, and the crossfade changes the words but not the grid.
     if (settings.snapLines && old.placement) {
-      const oldY = pageTransform(old.placement, settings.parallax, zoomFollow(), scale).y;
+      const oldY = pageTransform(old.placement, parallax(), zoomFollow(), scale).y;
       const newY = anchorScreenAtBuild.y - refOffset.y * scale;
       anchorScreenAtBuild.y += lineGridSnap(oldY, newY, LINE_HEIGHT * BASE_FONT_PX * scale);
     }
@@ -205,13 +218,19 @@ export function createBackgroundTextLayer(options: {
   // A square anchor tracks its square through a zoom; a viewport anchor
   // stays where it is and only grows.
   function zoomFollow(): number {
-    return settings.anchor === 'square' ? 1 : 0;
+    return settings.anchor === 'square' && settings.follow === 'verse' ? 1 : 0;
+  }
+
+  // A book-long pan would drift the page off the screen, since the passage
+  // does not change until the book does.
+  function parallax(): number {
+    return settings.follow === 'verse' ? settings.parallax : 0;
   }
 
   function place(page: Page): void {
     if (!page.placement) return;
     const scale = currentScale();
-    const t = pageTransform(page.placement, settings.parallax, zoomFollow(), scale);
+    const t = pageTransform(page.placement, parallax(), zoomFollow(), scale);
     page.el.style.transform = `translate(${t.x}px, ${t.y}px) scale(${scale})`;
   }
 
@@ -223,9 +242,23 @@ export function createBackgroundTextLayer(options: {
     return ratio > RESCALE_REBUILD_RATIO || ratio < 1 / RESCALE_REBUILD_RATIO;
   }
 
+  /** The verse the passage is built around: the centre verse, or the first verse of the dominant unit. */
+  function passageVerse(): number {
+    if (settings.follow === 'verse') return centerVerseIndex();
+    const vp = viewport();
+    const topLeft = screenToWorld(0, 0, camera);
+    const bottomRight = screenToWorld(vp.width, vp.height, camera);
+    const rect = { left: topLeft.x, top: topLeft.y, right: bottomRight.x, bottom: bottomRight.y };
+    return dominantUnitStart(verses, rect, settings.follow) ?? builtAround ?? centerVerseIndex();
+  }
+
+  function hysteresis(): number {
+    return settings.follow === 'verse' ? settings.hysteresis : 0;
+  }
+
   function maybeRegenerate(): void {
-    const center = centerVerseIndex();
-    if (!shouldRegenerate(builtAround, center, settings.hysteresis) && !rescaledSinceBuild()) {
+    const center = passageVerse();
+    if (!shouldRegenerate(builtAround, center, hysteresis()) && !rescaledSinceBuild()) {
       return;
     }
     if (settings.settleMs === 0) {
@@ -235,8 +268,8 @@ export function createBackgroundTextLayer(options: {
     if (settleTimer !== null) window.clearTimeout(settleTimer);
     settleTimer = window.setTimeout(() => {
       settleTimer = null;
-      const settled = centerVerseIndex();
-      if (shouldRegenerate(builtAround, settled, settings.hysteresis) || rescaledSinceBuild()) {
+      const settled = passageVerse();
+      if (shouldRegenerate(builtAround, settled, hysteresis()) || rescaledSinceBuild()) {
         build(settled);
       }
     }, settings.settleMs);
@@ -279,7 +312,7 @@ export function createBackgroundTextLayer(options: {
       window.clearTimeout(settleTimer);
       settleTimer = null;
     }
-    build(centerVerseIndex());
+    build(passageVerse());
     for (const page of pages) place(page);
   }
 

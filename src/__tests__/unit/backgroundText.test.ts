@@ -3,7 +3,9 @@ import { MIN_ZOOM, MAX_ZOOM } from '../../camera';
 import {
   advancePlacement,
   DEFAULT_SETTINGS,
+  dominantUnitStart,
   fontSizeForZoom,
+  rangeFromStart,
   newPlacement,
   lineGridSnap,
   nearestVerseIndex,
@@ -69,6 +71,27 @@ describe('passageAround', () => {
   it('shows only the center verse when content is center', () => {
     const settings = { ...DEFAULT_SETTINGS, content: 'center' as const, marks: 'all' as const };
     expect(passageAround(verses, texts, 1, settings)).toEqual({ start: 1, verses: ['ב'] });
+  });
+});
+
+describe('dominantUnitStart', () => {
+  it('picks the book with the most squares in view and returns its first verse', () => {
+    // Exodus 1:1 and 1:2 are in view, Genesis 50:25 only.
+    const rect = { left: 10, top: -1, right: 110, bottom: 10 };
+    expect(dominantUnitStart(verses, rect, 'book')).toBe(2);
+  });
+
+  it('is null when nothing is in view', () => {
+    const rect = { left: 500, top: 500, right: 600, bottom: 600 };
+    expect(dominantUnitStart(verses, rect, 'book')).toBeNull();
+  });
+});
+
+describe('rangeFromStart', () => {
+  it('grows forward only, until the text is long enough', () => {
+    // Each verse is one letter plus a separator: two characters.
+    expect(rangeFromStart(verses, texts, 1, 3)).toEqual({ start: 1, end: 2 });
+    expect(rangeFromStart(verses, texts, 2, 100)).toEqual({ start: 2, end: 3 });
   });
 });
 

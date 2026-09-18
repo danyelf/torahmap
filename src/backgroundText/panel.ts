@@ -110,6 +110,7 @@ export function createBackgroundTextPanel(
   presets.appendChild(copy);
   panel.appendChild(presets);
 
+  row('follow', select('follow', ['verse', 'chapter', 'book']));
   row('layer', select('layer', ['behind', 'above']));
   row('anchor', select('anchor', ['viewport', 'square']));
   row('parallax', range('parallax', 0, 1, 0.05));
