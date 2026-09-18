@@ -2,7 +2,7 @@
 easing: ease-in-out
 ---
 
-<!-- stop: intro | camera: initial -->
+<!-- stop: intro | camera: Genesis.25.1 | zoom 0.5 -->
 
 # The Torahmap
 

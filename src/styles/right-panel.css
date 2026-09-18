@@ -30,6 +30,12 @@ body.story-folded #right-panel {
   grid-template-rows: auto 1fr auto 0fr auto;
 }
 
+/* One column. Named for every child, or two that share a row would be given a
+   column each rather than laid over one another. */
+#right-panel > * {
+  grid-column: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   #right-panel {
     transition: none;
@@ -266,6 +272,35 @@ body.story-folded #story-content {
   border-top: none;
 }
 
+/* A cue that there is more story: a tall angle bracket, turned to point down
+   here and pointing right on a phone, where the stops sit side by side. It
+   lies over the story, in its grid cell. */
+#story-cue {
+  grid-row: 4;
+  justify-self: center;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 44px;
+  transform: rotate(90deg);
+  pointer-events: none;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#story-cue polyline {
+  vector-effect: non-scaling-stroke;
+}
+
+body.story-folded #story-cue,
+body.story-at-end #story-cue {
+  display: none;
+}
+
 /* Paragraphs sit half a panel apart, so when one is centred the next starts
    at the bottom edge. The first starts mid-panel and the last can scroll up
    to it. cqh is the story's height, not the window's. */
@@ -425,5 +460,14 @@ body.story-folded #story-content {
 
   body.story-folded #return-to-story {
     display: inline;
+  }
+
+  #story-cue {
+    justify-self: end;
+    align-self: center;
+    width: 10px;
+    height: 72px;
+    margin-right: 6px;
+    transform: none;
   }
 }

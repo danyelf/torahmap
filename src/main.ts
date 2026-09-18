@@ -1138,6 +1138,11 @@ async function main(): Promise<void> {
     updateSummaryShown();
 
     const state = currentStoryState();
+    // Nothing further to scroll to, so no cue to.
+    document.body.classList.toggle(
+      'story-at-end',
+      state.toStop === resolvedStops[resolvedStops.length - 1],
+    );
 
     // A new page on a phone eases in rather than cutting to it.
     if (phoneLayout.matches && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
