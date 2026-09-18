@@ -72,6 +72,7 @@ import {
   configureSearch,
   configureVerseLength,
   type Overlay,
+  type Color,
 } from './overlays/index.ts';
 import { searchForMeaning, canAddTerm } from './overlays/search/index.ts';
 import {
@@ -87,8 +88,20 @@ import {
   resolveStops,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
-import { computeBlendedColors } from './scrollytelling/overlayBlender';
-import type { ResolvedStoryStop } from './scrollytelling/types';
+import { colorsForStop, computeBlendedColors } from './scrollytelling/overlayBlender';
+import { blendColorArrays } from './scrollytelling/colorBlending';
+import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
+import {
+  STORY_DRIVING,
+  readerAsStop,
+  readerTakesOver,
+  rejoinNow,
+  rejoinProgress,
+  settle,
+  storyScrolled,
+  type Driver,
+} from './scrollytelling/driver';
+import type { CameraPosition, InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
@@ -204,6 +217,8 @@ async function main(): Promise<void> {
 
   const touchState = createTouchState();
 
+  const storyContent = document.getElementById('story-content')!;
+
   // Whether the story section is showing. With it put away the controls have
   // the panel to themselves and nothing moves the map but the reader.
   let storyShown = true;
@@ -211,6 +226,24 @@ async function main(): Promise<void> {
   function setStoryShown(shown: boolean): void {
     storyShown = shown;
     document.body.classList.toggle('story-hidden', !shown);
+  }
+
+  let driver: Driver = STORY_DRIVING;
+
+  // Both ends of an ease-back, captured when it starts, so each frame blends
+  // two arrays instead of re-running the overlays' colouring.
+  let rejoin: {
+    fromCamera: CameraPosition;
+    fromColors: (Color | Color[])[];
+    toColors: (Color | Color[])[];
+  } | null = null;
+
+  /** Anything the reader does that changes what the map shows hands them the map. */
+  function takeOver(): void {
+    if (!storyShown || driver.by === 'reader') return;
+    driver = readerTakesOver(storyContent.scrollTop);
+    rejoin = null;
+    saveUrlState(true);
   }
 
   let lastStoryScrollTop = 0;
@@ -274,7 +307,10 @@ async function main(): Promise<void> {
     });
   }
 
+  // pinVerse, unpinVerse and zoomAt answer only the reader's gestures; the story
+  // sets the view directly. So each takes the wheel.
   function pinVerse(verse: TanakhLayout, centerCamera: boolean = false): void {
+    takeOver();
     trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
@@ -287,6 +323,7 @@ async function main(): Promise<void> {
   }
 
   function unpinVerse(): void {
+    takeOver();
     pinnedVerse = null;
     updateSidebarWrapper(null);
     applyOverlay();
@@ -296,6 +333,7 @@ async function main(): Promise<void> {
 
   /** Zoom by `factor`, holding whatever is under (screenX, screenY) still. */
   function zoomAt(factor: number, screenX: number, screenY: number): void {
+    takeOver();
     const newZoom = clampZoom(camera.zoom * factor);
     const pan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, screenX, screenY);
     camera.x = pan.x;
@@ -397,6 +435,7 @@ async function main(): Promise<void> {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
+      if (dx !== 0 || dy !== 0) takeOver();
       camera.x += dx / camera.zoom;
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
@@ -654,6 +693,7 @@ async function main(): Promise<void> {
         // opened, and a keyboard reader can add a word in between.
         if (!canAddTerm()) return;
 
+        takeOver();
         if (currentOverlayId !== 'search') {
           setOverlay('search');
           if (overlaySelect) overlaySelect.value = 'search';
@@ -666,6 +706,14 @@ async function main(): Promise<void> {
       },
     });
   });
+
+  // Capturing, so the reader has the wheel before any control acts. The story
+  // sets controls without DOM events, so only the reader's own actions reach
+  // this.
+  const panelControls = document.getElementById('panel-controls');
+  for (const type of ['input', 'change', 'click'] as const) {
+    panelControls?.addEventListener(type, takeOver, { capture: true });
+  }
 
   overlaySelect?.addEventListener('change', () => {
     setOverlay(overlaySelect.value);
@@ -722,7 +770,6 @@ async function main(): Promise<void> {
   if (panelFooter) initHelp(panelFooter);
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
-  const storyContent = document.getElementById('story-content')!;
 
   let storyData = await loadStoryData();
   let resolvedStops = resolveStops(
@@ -749,7 +796,7 @@ async function main(): Promise<void> {
     // Force re-apply: stops may have changed (overlay/params/verse), and stop
     // object identities are fresh after re-resolving.
     lastSyncedStopId = null;
-    storyContent.dispatchEvent(new Event('scroll'));
+    scheduleStoryFrame();
   }
 
   if (import.meta.hot) {
@@ -760,69 +807,124 @@ async function main(): Promise<void> {
 
   document.getElementById('hide-story')?.addEventListener('click', () => {
     lastStoryScrollTop = storyContent.scrollTop;
+    driver = readerTakesOver(storyContent.scrollTop);
+    rejoin = null;
     setStoryShown(false);
     // The URL stops naming a story stop and names the overlay instead.
     saveUrlState(true);
   });
 
+  // Showing the story hands it the map at once, easing back as a deliberate
+  // scroll would.
   document.getElementById('show-story')?.addEventListener('click', () => {
-    lastSyncedStopId = null;
     setStoryShown(true);
     storyContent.scrollTop = lastStoryScrollTop;
-    storyContent.dispatchEvent(new Event('scroll'));
+    driver = rejoinNow(performance.now());
+    beginRejoin();
+    scheduleStoryFrame();
   });
 
-  let scrollRAF: number | null = null;
+  // Scrolling is the only thing that moves the story on. While the reader
+  // drives it only counts towards handing the map back.
   storyContent.addEventListener('scroll', () => {
     if (!storyShown) return;
-    if (scrollRAF) return;
-    scrollRAF = requestAnimationFrame(() => {
-      scrollRAF = null;
-      const offsets = computeStopOffsets(stopElements);
-      const heights = stopElements.map((el) => el.offsetHeight);
-      const totalHeight = storyContent.scrollHeight;
-      const state = computeInterpolatedState(
-        resolvedStops,
-        offsets,
-        totalHeight,
-        storyContent.scrollTop,
-        storyData.defaults?.easing ?? 'ease-in-out',
-        heights,
-        storyContent.clientHeight,
-      );
 
-      camera.x = state.camera.x;
-      camera.y = state.camera.y;
-      camera.zoom = state.camera.zoom;
-
-      const settled = state.fromStop === state.toStop;
-      // Pick the stop whose state should be "current" — settled stop, or the
-      // dominant transitioning stop. Sync explore state to it on every change
-      // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
-      const dominantStop = settled ? state.fromStop : state.t > 0.5 ? state.toStop : state.fromStop;
-      if (lastSyncedStopId !== dominantStop.id) {
-        syncStoryStopState(dominantStop);
-        lastSyncedStopId = dominantStop.id;
-      }
-
-      if (settled) {
-        // At rest: paint via the explore-mode color pipeline.
-        applyOverlay();
-      } else {
-        // Mid-scroll: blender paints interpolated colors directly to the GPU buffer.
-        const blendedColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses);
-        rebuildGeometry(renderContext.gl, renderState, blendedColors);
-      }
-      render();
-      updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
-    });
+    const before = driver.by;
+    driver = storyScrolled(driver, storyContent.scrollTop, performance.now());
+    if (driver.by === 'reader') return;
+    if (before === 'reader') beginRejoin();
+    scheduleStoryFrame();
   });
 
-  window.addEventListener('resize', () => {
-    if (storyShown) {
-      storyContent.dispatchEvent(new Event('scroll'));
+  let storyFrame: number | null = null;
+
+  /** Repaint from the story without counting as a scroll. */
+  function scheduleStoryFrame(): void {
+    if (storyFrame === null) storyFrame = requestAnimationFrame(paintStoryFrame);
+  }
+
+  function currentStoryState(): InterpolatedState {
+    return computeInterpolatedState(
+      resolvedStops,
+      computeStopOffsets(stopElements),
+      storyContent.scrollHeight,
+      storyContent.scrollTop,
+      storyData.defaults?.easing ?? 'ease-in-out',
+      stopElements.map((el) => el.offsetHeight),
+      storyContent.clientHeight,
+    );
+  }
+
+  /** Start easing from whatever the reader has on screen to where the story is. */
+  function beginRejoin(): void {
+    const state = currentStoryState();
+    const reader = readerAsStop(
+      { x: camera.x, y: camera.y, zoom: camera.zoom },
+      currentOverlayId,
+      currentOverlay?.getUrlParams?.() ?? {},
+    );
+    // The reader's colours first: working out the story's hands its settings to
+    // the overlay, which is where the ease-back ends anyway.
+    const fromColors = colorsForStop(reader, verses);
+    const toColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses);
+    rejoin = { fromCamera: reader.camera, fromColors, toColors };
+  }
+
+  function paintStoryFrame(now: number): void {
+    storyFrame = null;
+    if (!storyShown || driver.by === 'reader') return;
+
+    if (driver.by === 'rejoining') {
+      driver = settle(driver, now);
+      if (driver.by === 'story') {
+        // Done: the next lines re-sync the overlay, its settings and the pin.
+        rejoin = null;
+        lastSyncedStopId = null;
+      }
     }
-  });
+
+    const state = currentStoryState();
+
+    if (driver.by === 'rejoining' && rejoin) {
+      const t = easingFunctions['ease-in-out'](rejoinProgress(driver, now));
+      Object.assign(camera, lerpCamera(rejoin.fromCamera, state.camera, t));
+      rebuildGeometry(
+        renderContext.gl,
+        renderState,
+        blendColorArrays(rejoin.fromColors, rejoin.toColors, t),
+      );
+      render();
+      scheduleStoryFrame();
+      return;
+    }
+
+    camera.x = state.camera.x;
+    camera.y = state.camera.y;
+    camera.zoom = state.camera.zoom;
+
+    const settled = state.fromStop === state.toStop;
+    // Pick the stop whose state should be "current" — settled stop, or the
+    // dominant transitioning stop. Sync explore state to it on every change
+    // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
+    const dominantStop = settled ? state.fromStop : state.t > 0.5 ? state.toStop : state.fromStop;
+    if (lastSyncedStopId !== dominantStop.id) {
+      syncStoryStopState(dominantStop);
+      lastSyncedStopId = dominantStop.id;
+    }
+
+    if (settled) {
+      // At rest: paint via the explore-mode color pipeline.
+      applyOverlay();
+    } else {
+      // Mid-scroll: blender paints interpolated colors directly to the GPU buffer.
+      const blendedColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses);
+      rebuildGeometry(renderContext.gl, renderState, blendedColors);
+    }
+    render();
+    updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
+  }
+
+  window.addEventListener('resize', scheduleStoryFrame);
 
   function restoreOverlayFromUrl(urlState: UrlState): void {
     if (!urlState.overlay) return;
@@ -887,6 +989,8 @@ async function main(): Promise<void> {
     if (urlState.story) {
       // Force the next settled scroll frame to apply the stop's state.
       lastSyncedStopId = null;
+      driver = STORY_DRIVING;
+      rejoin = null;
       setStoryShown(true);
       storyContent.scrollTop = 0;
       const stopIndex = resolvedStops.findIndex((s) => s.id === urlState.story);
@@ -897,6 +1001,8 @@ async function main(): Promise<void> {
     }
 
     if (urlState.overlay || urlState.verse) {
+      driver = readerTakesOver(storyContent.scrollTop);
+      rejoin = null;
       setStoryShown(false);
     }
 
@@ -916,9 +1022,7 @@ async function main(): Promise<void> {
     restoreFromUrl();
   });
 
-  if (storyShown) {
-    storyContent.dispatchEvent(new Event('scroll'));
-  }
+  scheduleStoryFrame();
 
   prefetchMorphology();
 }

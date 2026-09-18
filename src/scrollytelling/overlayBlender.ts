@@ -6,7 +6,10 @@ import { getDefaultColor } from '../itemColoring';
 import { blendColorArrays } from './colorBlending';
 import { applyOverlayParams } from '../overlays/applyParams';
 
-function getColorsForStop(stop: ResolvedStoryStop, verses: TanakhLayout[]): (Color | Color[])[] {
+export function colorsForStop(
+  stop: ResolvedStoryStop,
+  verses: TanakhLayout[],
+): (Color | Color[])[] {
   const overlay = stop.overlay ? getOverlay(stop.overlay) : undefined;
   if (!overlay) {
     return verses.map((_, i) => getDefaultColor(i));
@@ -37,11 +40,11 @@ export function computeBlendedColors(
   verses: TanakhLayout[],
 ): (Color | Color[])[] {
   if (fromStop === toStop || t === 0) {
-    return getColorsForStop(fromStop, verses);
+    return colorsForStop(fromStop, verses);
   }
   if (t >= 1) {
-    return getColorsForStop(toStop, verses);
+    return colorsForStop(toStop, verses);
   }
 
-  return blendColorArrays(getColorsForStop(fromStop, verses), getColorsForStop(toStop, verses), t);
+  return blendColorArrays(colorsForStop(fromStop, verses), colorsForStop(toStop, verses), t);
 }

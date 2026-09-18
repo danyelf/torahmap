@@ -1,6 +1,6 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { computeBlendedColors } from '../overlayBlender';
+import { colorsForStop, computeBlendedColors } from '../overlayBlender';
 import { registerOverlay } from '../../overlays/registry';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
@@ -161,5 +161,23 @@ describe('story stop settings reach the overlay', () => {
     const stop = stopWith({ mode: 'off', nonsense: 'x' });
     computeBlendedColors(stop, stop, 0, verses);
     expect(received).toEqual({ mode: 'off' });
+  });
+});
+
+describe('colorsForStop', () => {
+  beforeEach(() => {
+    registerOverlay(stippleOverlay);
+  });
+
+  it('gives a stop the same colours whether asked directly or as a zero blend', () => {
+    const stop: ResolvedStoryStop = {
+      id: 's1',
+      title: 'S',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-stipple',
+    };
+
+    expect(colorsForStop(stop, verses)).toEqual(computeBlendedColors(stop, stop, 0, verses));
   });
 });
