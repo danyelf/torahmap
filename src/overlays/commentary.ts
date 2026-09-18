@@ -29,28 +29,34 @@ let cachedMaxValues: Record<string, number> = {};
 let verses: TanakhLayout[] = [];
 
 /** Rebuilt per call: the maximum moves when the category changes. */
-function linkScale(): Scale {
-  return scale(0, getMaxValue(), LOG, HEATMAP_STOPS);
+function linkScale(category: string): Scale {
+  return scale(0, getMaxValue(category), LOG, HEATMAP_STOPS);
 }
 
-function getCount(book: string, chapter: number, verse: number): number {
+function getCount(book: string, chapter: number, verse: number, category: string): number {
   const verseData = data[book]?.[String(chapter)]?.[String(verse)];
   if (!verseData) return 0;
-  if (currentCategory === 'total') return verseData.total;
-  return verseData.categories[currentCategory] || 0;
+  if (category === 'total') return verseData.total;
+  return verseData.categories[category] || 0;
 }
 
-function getMaxValue(): number {
-  if (cachedMaxValues[currentCategory] !== undefined) {
-    return cachedMaxValues[currentCategory];
+function getMaxValue(category: string): number {
+  if (cachedMaxValues[category] !== undefined) {
+    return cachedMaxValues[category];
   }
   let max = 0;
   for (const v of verses) {
-    const count = getCount(v.book, v.chapter, v.verse);
+    const count = getCount(v.book, v.chapter, v.verse, category);
     if (count > max) max = count;
   }
-  cachedMaxValues[currentCategory] = max;
+  cachedMaxValues[category] = max;
   return max;
+}
+
+function commentaryColorAt(verse: TanakhIdentity, category: string): Color | null {
+  const count = getCount(verse.book, verse.chapter, verse.verse, category);
+  if (count === 0) return NO_LINKS;
+  return linkScale(category).colorOf(count);
 }
 
 export const commentaryOverlay: Overlay = {
@@ -92,9 +98,12 @@ export const commentaryOverlay: Overlay = {
   },
 
   getVerseColor(verse: TanakhIdentity): Color | null {
-    const count = getCount(verse.book, verse.chapter, verse.verse);
-    if (count === 0) return NO_LINKS;
-    return linkScale().colorOf(count);
+    return commentaryColorAt(verse, currentCategory);
+  },
+
+  colorsFor(items, settings, _hovered) {
+    const category = settings.category ?? 'total';
+    return items.map((item) => commentaryColorAt(item, category));
   },
 
   renderControls(container: HTMLElement) {
@@ -137,7 +146,7 @@ export const commentaryOverlay: Overlay = {
   },
 
   renderLegend(container: HTMLElement) {
-    const maxValue = getMaxValue();
+    const maxValue = getMaxValue(currentCategory);
 
     const ticks: number[] = [0];
     for (let value = 1; value <= maxValue; value *= 10) {
@@ -147,7 +156,7 @@ export const commentaryOverlay: Overlay = {
       ticks.push(maxValue);
     }
 
-    container.innerHTML = renderAxis(linkScale(), ticks);
+    container.innerHTML = renderAxis(linkScale(currentCategory), ticks);
   },
 
   getHoverInfo(verse: TanakhIdentity): string | null {

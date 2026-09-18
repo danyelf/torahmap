@@ -771,4 +771,26 @@ describe('Commentary Overlay', () => {
       assertColorEquals(commentaryOverlay.getVerseColor(unlinked) as number[], [0.15, 0.15, 0.2]);
     });
   });
+
+  describe('colorsFor', () => {
+    beforeEach(async () => {
+      await commentaryOverlay.init?.();
+    });
+
+    it('answers for settings it is handed without changing what it is showing', async () => {
+      await commentaryOverlay.init?.();
+      commentaryOverlay.applyUrlParams?.({ category: 'Midrash' });
+
+      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
+
+      // Asking about another category must not move the overlay off Midrash.
+      commentaryOverlay.colorsFor!(items, { category: 'total' }, null);
+      expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
+
+      // And asking about the category it is on must agree with what it paints.
+      expect(commentaryOverlay.colorsFor!(items, { category: 'Midrash' }, null)).toEqual([
+        commentaryOverlay.getVerseColor(items[0]),
+      ]);
+    });
+  });
 });
