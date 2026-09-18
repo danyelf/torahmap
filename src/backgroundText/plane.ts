@@ -52,14 +52,20 @@ export function createBackPlane(options: {
     boxes.forEach((box: BookBox, i) => {
       const width = box.right - box.left;
       const height = box.bottom - box.top;
-      const chars = (width / (font * GLYPH_EM)) * (height / (font * LINE_HEIGHT));
-      const range = rangeFromStart(verses, texts, box.first, chars);
-      range.end = Math.min(range.end, box.last);
       const el = blocks[i];
       el.style.width = `${width}px`;
       el.style.height = `${height}px`;
       el.style.fontSize = `${font}px`;
-      el.textContent = passageForRange(verses, texts, range, settings.marks).verses.join(' ');
+      // The estimate counts the marks that `marks` may strip, so grow until the
+      // text overflows the outline rather than trusting it.
+      let chars = (width / (font * GLYPH_EM)) * (height / (font * LINE_HEIGHT));
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const range = rangeFromStart(verses, texts, box.first, chars);
+        range.end = Math.min(range.end, box.last);
+        el.textContent = passageForRange(verses, texts, range, settings.marks).verses.join(' ');
+        if (el.scrollHeight > el.clientHeight || range.end === box.last) break;
+        chars *= 1.5;
+      }
     });
   }
 
