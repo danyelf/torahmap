@@ -495,8 +495,9 @@ export const searchOverlay: Overlay = {
     searchResults = null;
     searchHitCaption = null;
     updateCallback = null;
-    onVerseClickCallback = null;
-    // terms, currentResults and matchingTerms are left alone: they should
+    // terms, currentResults, matchingTerms, verses and onVerseClickCallback are
+    // left alone: verses and the click callback are configuration handed in
+    // once by configure(), not per-activation state, and the rest should
     // persist across overlay switches so the reader can return to their
     // search, including the mode each term was being matched by.
   },
