@@ -76,19 +76,19 @@ export function overlayColorsFor<T, S>(
 /**
  * Which colour layer a move of the hovered verse makes stale: a story
  * transition's blend, the settled overlay's colours if they depend on the
- * hover, or neither. A pin leaves the hover where it was, so it recomputes
- * nothing.
+ * hover, or neither. A timed ease blends colours captured when it began,
+ * and a pin leaves the hover where it was, so neither recomputes anything.
  */
 export function layerToRecompute<T, S>(
-  inTransition: boolean,
+  source: 'overlay' | 'blend' | 'ease',
   overlay: Overlay<T, S> | null,
   settings: S,
   before: T | null,
   after: T | null,
   itemsEqual: (a: T | null, b: T | null) => boolean,
 ): 'blend' | 'overlay' | null {
-  if (itemsEqual(before, after)) return null;
-  if (inTransition) return 'blend';
+  if (itemsEqual(before, after) || source === 'ease') return null;
+  if (source === 'blend') return 'blend';
   return overlay?.hoverChangesColors?.(before, after, settings) ? 'overlay' : null;
 }
 

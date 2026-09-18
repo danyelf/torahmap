@@ -1,6 +1,8 @@
-// Who is moving the map: the story, the reader, or the story easing the map
-// back from wherever the reader left it.
+// Who is moving the map, and so what it shows: the story, at rest on a stop or
+// blending two; the reader; or a timed ease from what was on screen to where
+// the story is.
 
+import type { Color } from '../overlays/types';
 import type { CameraPosition, ResolvedStoryStop } from './types';
 
 /**
@@ -19,35 +21,67 @@ export const REJOIN_EASE_MS = 700;
  */
 export const SWIPE_EASE_MS = 1500;
 
+type Colors = (Color | Color[])[];
+
+/** Between two stops as the story scrolls, `t` of the way from one to the other. */
+export interface StoryBlend {
+  from: ResolvedStoryStop;
+  to: ResolvedStoryStop;
+  t: number;
+}
+
 export type Driver =
-  | { by: 'story' }
+  | { by: 'story'; blend: StoryBlend | null }
   | { by: 'reader'; lastScrollTop: number; travelled: number }
-  | { by: 'rejoining'; since: number; duration: number };
+  // The colours at both ends are captured when the ease starts, so each frame
+  // blends two arrays instead of re-running the overlays' colouring. The camera
+  // eases towards wherever the story is on each frame.
+  | {
+      by: 'rejoining';
+      since: number;
+      duration: number;
+      fromCamera: CameraPosition;
+      fromColors: Colors;
+      toColors: Colors;
+    };
 
-export const STORY_DRIVING: Driver = { by: 'story' };
+export const STORY_DRIVING: Driver = { by: 'story', blend: null };
 
-export function readerTakesOver(scrollTop: number): Driver {
+type ReaderDriving = Extract<Driver, { by: 'reader' }>;
+
+export function readerTakesOver(scrollTop: number): ReaderDriving {
   return { by: 'reader', lastScrollTop: scrollTop, travelled: 0 };
 }
 
-/** Ease the map from what is on screen to where the story is, over `duration` ms. */
-export function rejoinNow(now: number, duration = REJOIN_EASE_MS): Driver {
-  return { by: 'rejoining', since: now, duration };
+export function rejoin(
+  now: number,
+  duration: number,
+  fromCamera: CameraPosition,
+  fromColors: Colors,
+  toColors: Colors,
+): Driver {
+  return {
+    by: 'rejoining',
+    since: now,
+    duration,
+    fromCamera: { ...fromCamera },
+    fromColors,
+    toColors,
+  };
 }
 
 /**
- * Counts distance, not events: a trackpad fires many small scroll events where
- * a wheel fires few large ones.
+ * A scroll while the reader drives only counts towards handing the map back,
+ * and returns 'rejoin' once it has. Counts distance, not events: a trackpad
+ * fires many small scroll events where a wheel fires few large ones.
  */
-export function storyScrolled(driver: Driver, scrollTop: number, now: number): Driver {
-  if (driver.by !== 'reader') return driver;
-
+export function storyScrolled(driver: ReaderDriving, scrollTop: number): ReaderDriving | 'rejoin' {
   const travelled = driver.travelled + Math.abs(scrollTop - driver.lastScrollTop);
-  if (travelled >= REJOIN_SCROLL_PX) return rejoinNow(now);
+  if (travelled >= REJOIN_SCROLL_PX) return 'rejoin';
   return { by: 'reader', lastScrollTop: scrollTop, travelled };
 }
 
-/** How far through the ease-back, 0 to 1. */
+/** How far through the ease, 0 to 1. */
 export function rejoinProgress(driver: Driver, now: number): number {
   if (driver.by !== 'rejoining') return 1;
   return Math.min(1, Math.max(0, (now - driver.since) / driver.duration));
@@ -57,18 +91,8 @@ export function settle(driver: Driver, now: number): Driver {
   return driver.by === 'rejoining' && rejoinProgress(driver, now) >= 1 ? STORY_DRIVING : driver;
 }
 
-/** The reader's view as a story stop, so the story's own blending can start from it. */
-export function readerAsStop(
-  camera: CameraPosition,
-  overlayId: string,
-  params: Record<string, string>,
-): ResolvedStoryStop {
-  return {
-    id: 'reader',
-    title: '',
-    text: '',
-    camera: { ...camera },
-    overlay: overlayId === 'none' ? null : overlayId,
-    overlayParams: params,
-  };
+/** What the colour layer is drawn from, for deciding what a hover makes stale. */
+export function colorSource(driver: Driver): 'overlay' | 'blend' | 'ease' {
+  if (driver.by === 'rejoining') return 'ease';
+  return driver.by === 'story' && driver.blend ? 'blend' : 'overlay';
 }

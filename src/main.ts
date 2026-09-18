@@ -60,6 +60,7 @@ import {
   applyItemColors,
   overlayColorsFor,
   layerToRecompute,
+  getDefaultColor,
 } from './itemColoring.ts';
 import {
   createRenderContext,
@@ -95,21 +96,22 @@ import {
   type StoryFocus,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
-import { colorsForStop, computeBlendedColors } from './scrollytelling/overlayBlender';
+import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { blendColorArrays } from './scrollytelling/colorBlending';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
+  REJOIN_EASE_MS,
   STORY_DRIVING,
   SWIPE_EASE_MS,
-  readerAsStop,
+  colorSource,
   readerTakesOver,
-  rejoinNow,
+  rejoin,
   rejoinProgress,
   settle,
   storyScrolled,
   type Driver,
 } from './scrollytelling/driver';
-import type { CameraPosition, InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
+import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { drawnColors, summaryHtml } from './panelSummary.ts';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
@@ -188,8 +190,7 @@ async function main(): Promise<void> {
   // on the hovered verse, which a blend's may.
   let colorLayer: (Color | Color[] | null)[] = [];
 
-  // The story transition on screen; null at rest on a stop, or outside the story.
-  let transition: { from: ResolvedStoryStop; to: ResolvedStoryStop; t: number } | null = null;
+  let driver: Driver = STORY_DRIVING;
 
   function composite(): void {
     const verseStates = computeItemStates(
@@ -216,8 +217,8 @@ async function main(): Promise<void> {
   }
 
   function blendTransition(): void {
-    if (!transition) return;
-    const { from, to, t } = transition;
+    if (driver.by !== 'story' || !driver.blend) return;
+    const { from, to, t } = driver.blend;
     setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse));
   }
 
@@ -228,7 +229,7 @@ async function main(): Promise<void> {
    */
   function repaint(hoveredBefore: TanakhLayout | null = mouseState.hoveredVerse): void {
     const layer = layerToRecompute(
-      transition !== null,
+      colorSource(driver),
       currentOverlay,
       currentSettings(),
       hoveredBefore,
@@ -377,16 +378,6 @@ async function main(): Promise<void> {
     return stopLabel(state.t > 0.5 ? state.toStop : state.fromStop);
   }
 
-  let driver: Driver = STORY_DRIVING;
-
-  // Both ends of an ease-back, captured when it starts, so each frame blends
-  // two arrays instead of re-running the overlays' colouring.
-  let rejoin: {
-    fromCamera: CameraPosition;
-    fromColors: (Color | Color[])[];
-    toColors: (Color | Color[])[];
-  } | null = null;
-
   /**
    * On a phone, "No overlay" reads as the first thing to do, so while the
    * story drives with no overlay on the line is left out. It comes back once
@@ -401,9 +392,6 @@ async function main(): Promise<void> {
   function takeOver(): void {
     if (!storyOpen || driver.by === 'reader') return;
     driver = readerTakesOver(storyPosition());
-    rejoin = null;
-    // The reader's view is painted from the overlay, not from a story blend.
-    transition = null;
     applyOverlay();
     updateSummaryShown();
     saveUrlState(true);
@@ -1021,8 +1009,7 @@ async function main(): Promise<void> {
       started = true;
       rightPanel.removeEventListener('transitionend', onTransitionEnd);
       setStoryPosition(foldedPosition);
-      driver = rejoinNow(performance.now());
-      beginRejoin();
+      beginEase(REJOIN_EASE_MS, performance.now());
       scheduleStoryFrame();
     };
     const onTransitionEnd = (e: TransitionEvent): void => {
@@ -1046,10 +1033,14 @@ async function main(): Promise<void> {
   storyContent.addEventListener('scroll', () => {
     if (!storyOpen) return;
 
-    const before = driver.by;
-    driver = storyScrolled(driver, storyPosition(), performance.now());
-    if (driver.by === 'reader') return;
-    if (before === 'reader') beginRejoin();
+    if (driver.by === 'reader') {
+      const next = storyScrolled(driver, storyPosition());
+      if (next !== 'rejoin') {
+        driver = next;
+        return;
+      }
+      beginEase(REJOIN_EASE_MS, performance.now());
+    }
     scheduleStoryFrame();
   });
 
@@ -1062,7 +1053,7 @@ async function main(): Promise<void> {
 
   function currentStoryState(): InterpolatedState {
     // On a phone the story is at whichever page is showing. Moving between
-    // pages is eased on a timer (beginSwipe), not tracked through the swipe.
+    // pages is eased on a timer (beginEase), not tracked through the swipe.
     if (phoneLayout.matches) {
       const page = Math.round(storyContent.scrollLeft / Math.max(1, storyContent.clientWidth));
       const stop = resolvedStops[Math.min(resolvedStops.length - 1, Math.max(0, page))];
@@ -1080,46 +1071,19 @@ async function main(): Promise<void> {
   }
 
   /**
-   * Ease the map to `to` over SWIPE_EASE_MS, from whatever is on screen: the
-   * stop it rests on, or partway through an ease a second swipe interrupted.
+   * Ease the map over `duration` from what is on screen, which may be partway
+   * through an earlier ease, to where the story is.
    */
-  function beginSwipe(to: ResolvedStoryStop, now: number): void {
-    const from = resolvedStops.find((s) => s.id === lastSyncedStopId);
-    const fromColors =
-      driver.by === 'rejoining' && rejoin
-        ? blendColorArrays(
-            rejoin.fromColors,
-            rejoin.toColors,
-            easingFunctions['ease-in-out'](rejoinProgress(driver, now)),
-          )
-        : from
-          ? colorsForStop(from, verses, null)
-          : colorsForStop(to, verses, null);
-    rejoin = {
-      fromCamera: { x: camera.x, y: camera.y, zoom: camera.zoom },
-      fromColors,
-      toColors: colorsForStop(to, verses, null),
-    };
-    driver = rejoinNow(now, SWIPE_EASE_MS);
-    transition = null;
-    // The controls and the popup move to the new stop as it starts.
-    syncStoryStopState(to);
-    lastSyncedStopId = to.id;
-  }
-
-  /** Start easing from whatever the reader has on screen to where the story is. */
-  function beginRejoin(): void {
+  function beginEase(duration: number, now: number): void {
+    cancelCameraGlide();
     const state = currentStoryState();
-    const reader = readerAsStop(
-      { x: camera.x, y: camera.y, zoom: camera.zoom },
-      currentOverlayId,
-      buildOverlayParamsForUrl(),
+    driver = rejoin(
+      now,
+      duration,
+      camera,
+      colorLayer.map((c, i) => c ?? getDefaultColor(i)),
+      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
     );
-    // Both ends are taken without the hover, which composite() draws on top.
-    const fromColors = colorsForStop(reader, verses, null);
-    const toColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null);
-    rejoin = { fromCamera: reader.camera, fromColors, toColors };
-    transition = null;
   }
 
   function paintStoryFrame(now: number): void {
@@ -1129,11 +1093,8 @@ async function main(): Promise<void> {
 
     if (driver.by === 'rejoining') {
       driver = settle(driver, now);
-      if (driver.by === 'story') {
-        // Done: the next lines re-sync the overlay, its settings and the pin.
-        rejoin = null;
-        lastSyncedStopId = null;
-      }
+      // Done: the next lines re-sync the overlay, its settings and the pin.
+      if (driver.by === 'story') lastSyncedStopId = null;
     }
     updateSummaryShown();
 
@@ -1146,13 +1107,16 @@ async function main(): Promise<void> {
 
     // A new page on a phone eases in rather than cutting to it.
     if (phoneLayout.matches && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
-      beginSwipe(state.toStop, now);
+      beginEase(SWIPE_EASE_MS, now);
+      // The controls and the popup move to the new stop as it starts.
+      syncStoryStopState(state.toStop);
+      lastSyncedStopId = state.toStop.id;
     }
 
-    if (driver.by === 'rejoining' && rejoin) {
+    if (driver.by === 'rejoining') {
       const t = easingFunctions['ease-in-out'](rejoinProgress(driver, now));
-      Object.assign(camera, lerpCamera(rejoin.fromCamera, state.camera, t));
-      setColorLayer(blendColorArrays(rejoin.fromColors, rejoin.toColors, t));
+      Object.assign(camera, lerpCamera(driver.fromCamera, state.camera, t));
+      setColorLayer(blendColorArrays(driver.fromColors, driver.toColors, t));
       render();
       scheduleStoryFrame();
       return;
@@ -1183,10 +1147,10 @@ async function main(): Promise<void> {
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline.
-      transition = null;
+      driver = STORY_DRIVING;
       applyOverlay();
     } else {
-      transition = { from: state.fromStop, to: state.toStop, t: state.t };
+      driver = { by: 'story', blend: { from: state.fromStop, to: state.toStop, t: state.t } };
       blendTransition();
     }
     render();
@@ -1212,8 +1176,6 @@ async function main(): Promise<void> {
    * before the camera that centres on it.
    */
   function applyViewState(next: ViewState): void {
-    rejoin = null;
-    transition = null;
     if (next.mode === 'story') {
       // Force the next settled story frame to apply the stop's state.
       lastSyncedStopId = null;

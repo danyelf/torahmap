@@ -4,62 +4,56 @@ import {
   REJOIN_EASE_MS,
   SWIPE_EASE_MS,
   STORY_DRIVING,
+  colorSource,
   readerTakesOver,
   storyScrolled,
-  rejoinNow,
+  rejoin,
   rejoinProgress,
   settle,
-  readerAsStop,
+  type Driver,
 } from '../driver';
+import type { ResolvedStoryStop } from '../types';
+
+const camera = { x: 1, y: 2, zoom: 3 };
+const easeBack = (now: number, duration = REJOIN_EASE_MS): Driver =>
+  rejoin(now, duration, camera, [], []);
 
 describe('the story drives until the reader takes over', () => {
-  it('ignores scrolling while the story is already driving', () => {
-    expect(storyScrolled(STORY_DRIVING, 500, 0)).toBe(STORY_DRIVING);
-  });
-
   it('keeps the reader driving through a nudge', () => {
-    let driver = readerTakesOver(1000);
-    driver = storyScrolled(driver, 1020, 0);
-    driver = storyScrolled(driver, 1045, 0);
+    const driver = storyScrolled(readerTakesOver(1000), 1020);
+    if (driver === 'rejoin') throw new Error('handed back too soon');
 
-    expect(driver.by).toBe('reader');
+    expect(storyScrolled(driver, 1045)).toEqual({
+      by: 'reader',
+      lastScrollTop: 1045,
+      travelled: 45,
+    });
   });
 
   it('hands back once the reader has scrolled the threshold', () => {
-    let driver = readerTakesOver(1000);
-    driver = storyScrolled(driver, 1000 + REJOIN_SCROLL_PX, 42);
-
-    expect(driver).toEqual({ by: 'rejoining', since: 42, duration: REJOIN_EASE_MS });
+    expect(storyScrolled(readerTakesOver(1000), 1000 + REJOIN_SCROLL_PX)).toBe('rejoin');
   });
 
   it('measures distance, so many small scrolls count the same as one large one', () => {
-    let small = readerTakesOver(0);
-    for (let top = 5; top <= REJOIN_SCROLL_PX; top += 5) small = storyScrolled(small, top, 0);
+    let small: ReturnType<typeof storyScrolled> = readerTakesOver(0);
+    for (let top = 5; top <= REJOIN_SCROLL_PX && small !== 'rejoin'; top += 5) {
+      small = storyScrolled(small, top);
+    }
 
-    const large = storyScrolled(readerTakesOver(0), REJOIN_SCROLL_PX, 0);
-
-    expect(small.by).toBe('rejoining');
-    expect(large.by).toBe('rejoining');
+    expect(small).toBe('rejoin');
   });
 
   it('counts scrolling back up as distance too', () => {
-    let driver = readerTakesOver(1000);
-    driver = storyScrolled(driver, 1000 - REJOIN_SCROLL_PX / 2, 0);
-    driver = storyScrolled(driver, 1000, 0);
+    const driver = storyScrolled(readerTakesOver(1000), 1000 - REJOIN_SCROLL_PX / 2);
+    if (driver === 'rejoin') throw new Error('handed back too soon');
 
-    expect(driver.by).toBe('rejoining');
-  });
-
-  it('lets the reader take over again in the middle of an ease-back', () => {
-    const driver = readerTakesOver(700);
-
-    expect(driver).toEqual({ by: 'reader', lastScrollTop: 700, travelled: 0 });
+    expect(storyScrolled(driver, 1000)).toBe('rejoin');
   });
 });
 
 describe('easing back', () => {
   it('runs from 0 to 1 over the ease-back time', () => {
-    const driver = rejoinNow(1000);
+    const driver = easeBack(1000);
 
     expect(rejoinProgress(driver, 1000)).toBe(0);
     expect(rejoinProgress(driver, 1000 + REJOIN_EASE_MS / 2)).toBeCloseTo(0.5);
@@ -67,7 +61,7 @@ describe('easing back', () => {
   });
 
   it('hands the map back to the story when it finishes', () => {
-    const driver = rejoinNow(0);
+    const driver = easeBack(0);
 
     expect(settle(driver, REJOIN_EASE_MS - 1).by).toBe('rejoining');
     expect(settle(driver, REJOIN_EASE_MS)).toEqual(STORY_DRIVING);
@@ -80,24 +74,35 @@ describe('easing back', () => {
   });
 
   it('can take its own time, as a phone swipe does', () => {
-    const driver = rejoinNow(0, SWIPE_EASE_MS);
+    const driver = easeBack(0, SWIPE_EASE_MS);
 
     expect(rejoinProgress(driver, SWIPE_EASE_MS / 2)).toBeCloseTo(0.5);
     expect(settle(driver, REJOIN_EASE_MS).by).toBe('rejoining');
     expect(settle(driver, SWIPE_EASE_MS)).toEqual(STORY_DRIVING);
   });
+
+  it('keeps its own copy of the camera it starts from', () => {
+    const moving = { ...camera };
+    const driver = rejoin(0, REJOIN_EASE_MS, moving, [], []);
+    moving.x = 99;
+
+    expect(driver.by === 'rejoining' && driver.fromCamera).toEqual(camera);
+  });
 });
 
-describe('readerAsStop', () => {
-  it('describes what the reader has on screen the way a story stop would', () => {
-    const stop = readerAsStop({ x: 1, y: 2, zoom: 3 }, 'search', { q: 'אברם' });
+describe('what the colours on the map are drawn from', () => {
+  const stop = { id: 'a' } as ResolvedStoryStop;
 
-    expect(stop.camera).toEqual({ x: 1, y: 2, zoom: 3 });
-    expect(stop.overlay).toBe('search');
-    expect(stop.overlayParams).toEqual({ q: 'אברם' });
+  it('is the overlay when the reader drives or the story rests on a stop', () => {
+    expect(colorSource(readerTakesOver(0))).toBe('overlay');
+    expect(colorSource(STORY_DRIVING)).toBe('overlay');
   });
 
-  it('treats no overlay as no overlay', () => {
-    expect(readerAsStop({ x: 0, y: 0, zoom: 1 }, 'none', {}).overlay).toBeNull();
+  it('is a blend while the story scrolls between stops', () => {
+    expect(colorSource({ by: 'story', blend: { from: stop, to: stop, t: 0.5 } })).toBe('blend');
+  });
+
+  it('is the ease while the map eases', () => {
+    expect(colorSource(easeBack(0))).toBe('ease');
   });
 });
