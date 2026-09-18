@@ -100,11 +100,12 @@ export function getSefariaUrl(
   chapter: number,
   verse: number,
   currentOverlay: Overlay | null = null,
+  overlaySettings: unknown = undefined,
 ): string {
   const sefariaBook = book.replace(/ /g, '_');
   const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
 
-  const param = currentOverlay?.getSefariaConnectionParam?.();
+  const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings);
   if (param) {
     return `${baseUrl}?with=${encodeURIComponent(param)}`;
   }
@@ -117,6 +118,7 @@ export function updateSidebar(
   verse: TanakhLayout | null,
   verseTexts: VerseTexts,
   currentOverlay: Overlay | null,
+  overlaySettings: unknown,
   getVerseText: (
     texts: VerseTexts,
     book: string,
@@ -141,11 +143,11 @@ export function updateSidebar(
     ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
   }
   if (overlayInfo) {
-    const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned);
+    const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned, overlaySettings);
     if (sidebarInfo) {
       overlayInfo.replaceChildren(sidebarInfo);
     } else {
-      overlayInfo.textContent = currentOverlay?.getHoverInfo?.(verse) || '';
+      overlayInfo.textContent = currentOverlay?.getHoverInfo?.(verse, overlaySettings) || '';
     }
   }
   if (hebrew) {
@@ -159,21 +161,30 @@ export function updateSidebar(
     const verseKey = tanakhKey(verse.book, verse.chapter, verse.verse);
     setVerseOnScreen(verseKey, hebrewText)?.then(() => {
       if (verseOnScreen() === verseKey) {
-        updateSidebar(elements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
+        updateSidebar(
+          elements,
+          verse,
+          verseTexts,
+          currentOverlay,
+          overlaySettings,
+          getVerseText,
+          isPinned,
+        );
       }
     });
 
     // Whatever the overlay produced, words are wrapped afterwards, so a click
     // finds a word whether or not anything is highlighting the text.
     const fragment =
-      currentOverlay?.highlightVerseText?.(hebrewText, 'he') ?? textFragment(hebrewText);
+      currentOverlay?.highlightVerseText?.(hebrewText, 'he', overlaySettings) ??
+      textFragment(hebrewText);
 
     hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
     attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
   }
   if (english) {
     const englishText = text?.en || 'Loading...';
-    const highlighted = currentOverlay?.highlightVerseText?.(englishText, 'en');
+    const highlighted = currentOverlay?.highlightVerseText?.(englishText, 'en', overlaySettings);
     if (highlighted) {
       english.replaceChildren(highlighted);
     } else {
@@ -181,7 +192,13 @@ export function updateSidebar(
     }
   }
   if (link) {
-    link.href = getSefariaUrl(verse.book, verse.chapter, verse.verse, currentOverlay);
+    link.href = getSefariaUrl(
+      verse.book,
+      verse.chapter,
+      verse.verse,
+      currentOverlay,
+      overlaySettings,
+    );
   }
 
   sidebar.classList.add('visible');

@@ -33,10 +33,10 @@ describe('URL Parameter Security Validation', () => {
       expect(state.overlayParams.trop).toBeUndefined();
     });
 
-    it('rejects category parameter with HTML tags', () => {
+    it('rejects category parameter with HTML tags, falling back to the default', () => {
       mockWindowLocation('http://localhost:5173/#overlay=commentary&category=<img src=x>');
       const state = parseUrlState(overlayUrlParams);
-      expect(state.overlayParams.category).toBeUndefined();
+      expect(state.overlayParams.category).toBe('total');
     });
 
     it('sanitizes search query with HTML tags by encoding them', () => {
@@ -212,17 +212,17 @@ describe('URL Parameter Security Validation', () => {
       });
     });
 
-    it('rejects category with special characters', () => {
+    it('rejects category with special characters, falling back to the default', () => {
       mockWindowLocation('http://localhost:5173/#overlay=commentary&category=Test<script>');
       const state = parseUrlState(overlayUrlParams);
-      expect(state.overlayParams.category).toBeUndefined();
+      expect(state.overlayParams.category).toBe('total');
     });
 
-    it('rejects excessively long category names', () => {
+    it('rejects excessively long category names, falling back to the default', () => {
       const longCategory = 'a'.repeat(100);
       mockWindowLocation(`http://localhost:5173/#overlay=commentary&category=${longCategory}`);
       const state = parseUrlState(overlayUrlParams);
-      expect(state.overlayParams.category).toBeUndefined();
+      expect(state.overlayParams.category).toBe('total');
     });
   });
 

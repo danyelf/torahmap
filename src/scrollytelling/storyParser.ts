@@ -89,6 +89,10 @@ function parseStops(body: string): StoryStop[] {
   STOP_COMMENT_RE.lastIndex = 0;
   while ((match = STOP_COMMENT_RE.exec(body)) !== null) {
     const { id, params } = parseStopComment(match[1], match[2]);
+    // Scrolling resyncs a stop only when the id changes, and the URL names a stop by id.
+    if (metas.some((m) => m.id === id)) {
+      console.error(`[story] duplicate stop id "${id}"; each stop needs its own`);
+    }
     metas.push({
       id,
       params,

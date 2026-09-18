@@ -7,16 +7,16 @@
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure, highlightSearchTerms } from '../../../overlays/search';
+import { configure } from '../../../overlays/search';
 import { buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
-import { applyOverlayParams } from '../../helpers/overlayUrlParams';
+import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';
 import { SEARCH_COLORS } from '../../../utils/color';
 import type { VerseTexts } from '../../../verseTexts';
 
 registerAllOverlays();
-const searchOverlay = getOverlay('search')!;
+const searchOverlay = hostOverlay(getOverlay('search')!);
 
 const texts: VerseTexts = {
   Genesis: {
@@ -60,7 +60,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   configure({ verses });
-  applyOverlayParams(searchOverlay, { q: '', mode: undefined, m: undefined });
+  searchOverlay.restore({ q: '', mode: undefined, m: undefined });
 });
 
 describe('a surviving term keeps one colour', () => {
@@ -93,12 +93,25 @@ describe('a surviving term keeps one colour', () => {
     typeIntoInput(rowInput(container, 1), 'spirit');
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
-    const fragment = highlightSearchTerms('and the spirit of God hovered', 'en');
+    const fragment = searchOverlay.highlightVerseText('and the spirit of God hovered', 'en');
     const holder = document.createElement('div');
     holder.appendChild(fragment);
 
     const mark = holder.querySelector('mark')!;
     expect(mark.textContent).toBe('spirit');
     expect(mark.className).toBe('term-1');
+  });
+
+  it('keeps the second colour on the map', () => {
+    const container = render();
+
+    typeIntoInput(rowInput(container, 0), 'created');
+    container.querySelector<HTMLButtonElement>('#add-term')!.click();
+    typeIntoInput(rowInput(container, 1), 'spirit');
+    container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
+
+    // Genesis 1:2 holds "spirit". Settings rebuilt from the URL would give the
+    // survivor colour 0 once it moves to the first position.
+    expect(searchOverlay.getVerseColor(verses[1])).toEqual(SEARCH_COLORS[1]);
   });
 });

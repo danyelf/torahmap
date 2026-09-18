@@ -41,6 +41,7 @@ describe('words in the verse popup', () => {
       createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
       texts,
       null,
+      undefined,
       getVerseText,
       true,
     );
@@ -59,6 +60,7 @@ describe('words in the verse popup', () => {
       createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
       texts,
       null,
+      undefined,
       getVerseText,
       true,
     );
@@ -82,6 +84,7 @@ describe('words in the verse popup', () => {
       createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
       texts,
       null,
+      undefined,
       getVerseText,
       true,
     );
@@ -96,6 +99,7 @@ describe('words in the verse popup', () => {
       createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
       texts,
       null,
+      undefined,
       getVerseText,
       true,
     );
@@ -141,6 +145,7 @@ describe('words in the verse popup', () => {
       createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
       texts,
       mockOverlay,
+      undefined,
       getVerseText,
       true,
     );

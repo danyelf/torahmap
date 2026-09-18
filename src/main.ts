@@ -21,6 +21,7 @@ import {
   verseToUrlFormat,
   type UrlState,
 } from './urlState.ts';
+import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
@@ -54,17 +55,22 @@ import {
   tanakhKey,
 } from './types.ts';
 import { findItemAtPoint } from './hitDetection.ts';
-import { computeItemStates, applyItemColors } from './itemColoring.ts';
+import {
+  computeItemStates,
+  applyItemColors,
+  overlayColorsFor,
+  layerToRecompute,
+} from './itemColoring.ts';
 import {
   createRenderContext,
   createRenderState,
   rebuildGeometry,
   render as renderFrame,
 } from './rendering.ts';
-import type { TanakhLayout } from './types.ts';
+import type { TanakhIdentity, TanakhLayout } from './types.ts';
 import {
   registerAllOverlays,
-  applyOverlayParams,
+  createOverlaySettings,
   getOverlay,
   getAllOverlays,
   configureCommentary,
@@ -74,7 +80,7 @@ import {
   type Overlay,
   type Color,
 } from './overlays/index.ts';
-import { searchForMeaning, canAddTerm } from './overlays/search/index.ts';
+import { searchOverlay, searchForMeaning, canAddTerm } from './overlays/search/index.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -164,10 +170,26 @@ async function main(): Promise<void> {
 
   let currentOverlay: Overlay | null = null;
 
-  function applyOverlay(): void {
+  // Every overlay's settings, kept while another overlay is showing.
+  const overlaySettings = createOverlaySettings();
+
+  function currentSettings(): unknown {
+    return currentOverlay ? overlaySettings.get(currentOverlay) : undefined;
+  }
+
+  // The one colour layer on the map: either a settled overlay's colours or a
+  // story transition's blend. composite() paints the hover and pin on top of
+  // it. A pin never recomputes it; a hover does only when the colours depend
+  // on the hovered verse, which a blend's may.
+  let colorLayer: (Color | Color[] | null)[] = [];
+
+  // The story transition on screen; null at rest on a stop, or outside the story.
+  let transition: { from: ResolvedStoryStop; to: ResolvedStoryStop; t: number } | null = null;
+
+  function composite(): void {
     const verseStates = computeItemStates(
       verses,
-      currentOverlay,
+      colorLayer,
       mouseState.hoveredVerse,
       pinnedVerse,
       tanakhIdentitiesEqual,
@@ -177,17 +199,53 @@ async function main(): Promise<void> {
     rebuildGeometry(renderContext.gl, renderState, colors);
   }
 
+  function setColorLayer(next: (Color | Color[] | null)[]): void {
+    colorLayer = next;
+    composite();
+  }
+
+  function applyOverlay(): void {
+    setColorLayer(
+      overlayColorsFor(currentOverlay, verses, currentSettings(), mouseState.hoveredVerse),
+    );
+  }
+
+  function blendTransition(): void {
+    if (!transition) return;
+    const { from, to, t } = transition;
+    setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse));
+  }
+
+  /**
+   * Repaint after the hovered or pinned verse changes. `hoveredBefore` is the
+   * hover the colour layer was drawn for; a pin leaves the hover alone, so it
+   * passes nothing and only composites.
+   */
+  function repaint(hoveredBefore: TanakhLayout | null = mouseState.hoveredVerse): void {
+    const layer = layerToRecompute(
+      transition !== null,
+      currentOverlay,
+      currentSettings(),
+      hoveredBefore,
+      mouseState.hoveredVerse,
+      tanakhIdentitiesEqual,
+    );
+    if (layer === 'blend') blendTransition();
+    else if (layer === 'overlay') applyOverlay();
+    else composite();
+    render();
+  }
+
   /**
    * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
    * Does NOT paint the buffer — caller decides (settled paints via applyOverlay,
    * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
    * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
-   * heading toward; otherwise hover events fired during a transition would call
-   * applyOverlay against a stale `currentOverlay` and clobber the blender's buffer.
+   * heading toward, for the sidebar and the hover text.
    *
    * The stop is external state, like a link, so URL writes are off throughout:
-   * in story mode the URL is the stop id, and the explore-mode URL that an
-   * overlay's update handler would write has no business overwriting it.
+   * in story mode the URL is the stop id, and an explore-mode URL has no
+   * business overwriting it.
    */
   function syncStoryStopState(stop: ResolvedStoryStop): void {
     applyingExternalState(() => syncStoryStopStateUnguarded(stop));
@@ -197,12 +255,10 @@ async function main(): Promise<void> {
     const wantedOverlay = stop.overlay ?? 'none';
     if (wantedOverlay !== currentOverlayId) {
       activateOverlay(wantedOverlay);
-      // So the controls show what the map shows when the reader opens them.
-      if (overlaySelect) overlaySelect.value = wantedOverlay;
     }
 
-    applyOverlayParams(currentOverlay, stop.overlayParams ?? {});
-    updateSummary();
+    if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
+    renderOverlayUi();
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -227,6 +283,10 @@ async function main(): Promise<void> {
   let pinnedVerse: TanakhLayout | null = null;
 
   const mouseState = createMouseState();
+
+  // A scroll fires no pointer event, so the mid-scroll branch needs the last
+  // known cursor position to re-run hit detection as the camera moves under it.
+  let lastPointerPosition: { x: number; y: number } | null = null;
 
   const touchState = createTouchState();
 
@@ -253,22 +313,9 @@ async function main(): Promise<void> {
     storyContent.inert = !open;
   }
 
-  setStoryOpen(true);
-
   function currentStopLabel(): string {
     const state = currentStoryState();
     return stopLabel(state.t > 0.5 ? state.toStop : state.fromStop);
-  }
-
-  function updateSummary(): void {
-    controlsSummary.innerHTML = summaryHtml(
-      currentOverlayId,
-      currentOverlay?.name,
-      currentOverlay?.getUrlParams?.() ?? {},
-      // Search's term rows; its results list draws coloured dots too.
-      drawnColors(overlayControlsContainer, '.term-swatch'),
-      drawnColors(overlayLegendContainer),
-    );
   }
 
   let driver: Driver = STORY_DRIVING;
@@ -286,6 +333,9 @@ async function main(): Promise<void> {
     if (!storyOpen || driver.by === 'reader') return;
     driver = readerTakesOver(storyContent.scrollTop);
     rejoin = null;
+    // The reader's view is painted from the overlay, not from a story blend.
+    transition = null;
+    applyOverlay();
     saveUrlState(true);
   }
 
@@ -359,8 +409,7 @@ async function main(): Promise<void> {
     if (centerCamera) {
       centerOnVerse(verse);
     }
-    applyOverlay();
-    render();
+    repaint();
     saveUrlState(true);
   }
 
@@ -368,8 +417,7 @@ async function main(): Promise<void> {
     takeOver();
     pinnedVerse = null;
     updateSidebarWrapper(null);
-    applyOverlay();
-    render();
+    repaint();
     saveUrlState(true);
   }
 
@@ -523,25 +571,18 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('pointerleave', () => {
-    const wasHovering = mouseState.hoveredVerse !== null;
+    const previousHover = mouseState.hoveredVerse;
     clearHover(mouseState);
+    lastPointerPosition = null;
     canvas.style.cursor = 'default';
 
-    let overlayWantsRerender = false;
-    if (currentOverlay?.setHoveredVerse) {
-      overlayWantsRerender = currentOverlay.setHoveredVerse(null);
-    }
-
-    if (wasHovering || overlayWantsRerender) {
-      applyOverlay();
-      render();
-    }
+    if (previousHover) repaint(previousHover);
   });
 
   const sidebarElements = getSidebarElements();
 
   function buildOverlayParamsForUrl(): Record<string, string> {
-    return currentOverlay?.getUrlParams?.() ?? {};
+    return currentOverlay ? overlaySettings.toUrl(currentOverlay) : {};
   }
 
   function buildCurrentUrlState(): UrlState {
@@ -579,18 +620,25 @@ async function main(): Promise<void> {
   const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    updateSidebar(sidebarElements, verse, verseTexts, currentOverlay, getVerseText, isPinned);
+    updateSidebar(
+      sidebarElements,
+      verse,
+      verseTexts,
+      currentOverlay,
+      currentSettings(),
+      getVerseText,
+      isPinned,
+    );
   }
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
     if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
+      lastPointerPosition = { x: e.clientX, y: e.clientY };
       const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
-
-      const hoverChanged = !tanakhIdentitiesEqual(previousHover, verse);
 
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
@@ -598,15 +646,7 @@ async function main(): Promise<void> {
         canvas.style.cursor = 'default';
       }
 
-      let overlayWantsRerender = false;
-      if (currentOverlay?.setHoveredVerse) {
-        overlayWantsRerender = currentOverlay.setHoveredVerse(verse);
-      }
-
-      if (hoverChanged || overlayWantsRerender) {
-        applyOverlay();
-        render();
-      }
+      if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
 
       if (pinnedVerse) {
         // Keep showing pinned verse
@@ -660,55 +700,74 @@ async function main(): Promise<void> {
 
   let currentOverlayId = 'none';
 
-  /**
-   * Internal: switch the active overlay without painting/rendering or writing URL.
-   * Used by both setOverlay (with side effects) and applyStoryStop (without).
-   */
+  /** Switch the active overlay without drawing its UI, painting or writing the URL. */
   function activateOverlay(id: string): void {
     currentOverlayId = id;
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
-
-    currentOverlay?.onUpdate?.(() => {
-      applyOverlay();
-      if (overlayLegendContainer) {
-        overlayLegendContainer.innerHTML = '';
-        currentOverlay?.renderLegend?.(overlayLegendContainer);
-      }
-      render();
-      updateSummary();
-      // Save URL state when overlay params change (replaceState).
-      // No guard needed here: applyingExternalState() turns URL writes off
-      // around every restore and every story stop, so an overlay announcing a
-      // change it was just handed cannot write it back.
-      saveUrlState(false);
-    });
-
-    if (overlayControlsContainer) {
-      overlayControlsContainer.innerHTML = '';
-      currentOverlay?.renderControls?.(overlayControlsContainer);
-    }
-    if (overlayLegendContainer) {
-      overlayLegendContainer.innerHTML = '';
-      currentOverlay?.renderLegend?.(overlayLegendContainer);
-    }
-    updateSummary();
   }
 
-  function setOverlay(id: string, opts: { fromUrlRestore?: boolean } = {}): void {
-    const { fromUrlRestore = false } = opts;
-    if (!fromUrlRestore) {
-      trackOverlaySwitch(id, currentOverlayId);
+  function renderOverlayLegend(): void {
+    if (overlayLegendContainer) {
+      overlayLegendContainer.innerHTML = '';
+      currentOverlay?.renderLegend?.(overlayLegendContainer, currentSettings());
     }
+  }
 
-    activateOverlay(id);
+  /** Draw the active overlay's controls into what is already there. */
+  function renderOverlayControls(): void {
+    const overlay = currentOverlay;
+    if (!overlay || !overlayControlsContainer) return;
+    overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), (update) =>
+      changeSettings(overlay, update),
+    );
+  }
+
+  /** The one line that stands for the controls while the story is open. */
+  function renderOverlaySummary(): void {
+    controlsSummary.innerHTML = summaryHtml(
+      currentOverlayId,
+      currentOverlay?.name,
+      buildOverlayParamsForUrl(),
+      // Search's term rows; its results list draws coloured dots too.
+      drawnColors(overlayControlsContainer, '.term-swatch'),
+      drawnColors(overlayLegendContainer),
+    );
+  }
+
+  /** Draw the active overlay's controls and legend from its current settings. */
+  function renderOverlayUi(): void {
+    if (overlaySelect) overlaySelect.value = currentOverlayId;
+    if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
+    renderOverlayControls();
+    renderOverlayLegend();
+    renderOverlaySummary();
+  }
+
+  /**
+   * Apply a change a reader asked for to the settings held for `overlay`. A
+   * control left over from an overlay that is no longer showing still changes
+   * that overlay's settings, but paints nothing.
+   */
+  function changeSettings<S>(overlay: Overlay<TanakhIdentity, S>, update: (current: S) => S): void {
+    overlaySettings.set(overlay, update(overlaySettings.get(overlay)));
+    if (overlay !== currentOverlay) return;
 
     applyOverlay();
+    renderOverlayLegend();
+    renderOverlayControls();
+    renderOverlaySummary();
     render();
+    saveUrlState(false);
+  }
 
-    if (!fromUrlRestore) {
-      saveUrlState(true);
-    }
+  function setOverlay(id: string): void {
+    trackOverlaySwitch(id, currentOverlayId);
+    activateOverlay(id);
+    renderOverlayUi();
+    applyOverlay();
+    render();
+    saveUrlState(true);
   }
 
   // Clicking a word in the verse popup.
@@ -728,25 +787,26 @@ async function main(): Promise<void> {
       word: click.text,
       meanings,
       anchor: click.element,
-      paletteFull: !canAddTerm(),
+      paletteFull: !canAddTerm(overlaySettings.get(searchOverlay)),
       onChoose: (meaning) => {
-        // Ask before anything is spent. setOverlay() destroys the outgoing
-        // overlay and its settings, so a search that is going to be refused
-        // must be refused first - otherwise the reader loses their Haftarah
-        // view and gains nothing. The panel's own count was taken when it
-        // opened, and a keyboard reader can add a word in between.
-        if (!canAddTerm()) return;
+        // Ask before anything is spent. setOverlay() takes the showing overlay
+        // off the map, so a search that is going to be refused must be refused
+        // first - otherwise the reader loses their Haftarah view and gains
+        // nothing. The panel's own count was taken when it opened, and a
+        // keyboard reader can add a word in between.
+        if (!canAddTerm(overlaySettings.get(searchOverlay))) return;
 
         takeOver();
         if (currentOverlayId !== 'search') {
           setOverlay('search');
-          if (overlaySelect) overlaySelect.value = 'search';
         }
 
-        // No repaint here, and no second history entry: running the search
-        // announces itself through the overlay's update callback, which paints
-        // the map and writes the URL over whatever setOverlay just pushed.
-        searchForMeaning(word, meaning?.keys ?? null);
+        // Replaces the URL setOverlay just pushed rather than adding a second
+        // history entry.
+        changeSettings(
+          searchOverlay,
+          (current) => searchForMeaning(current, word, meaning?.keys ?? null) ?? current,
+        );
       },
     });
   });
@@ -772,11 +832,8 @@ async function main(): Promise<void> {
         let extraParts = '';
         if (currentOverlay) {
           extraParts += ` | overlay: ${currentOverlay.id}`;
-          const params = currentOverlay.getUrlParams?.();
-          if (params) {
-            for (const [key, value] of Object.entries(params)) {
-              extraParts += ` | ${key}: ${value}`;
-            }
+          for (const [key, value] of Object.entries(overlaySettings.toUrl(currentOverlay))) {
+            extraParts += ` | ${key}: ${value}`;
           }
         }
         if (pinnedVerse) {
@@ -853,12 +910,10 @@ async function main(): Promise<void> {
   }
 
   function openControls(): void {
-    driver = readerTakesOver(storyContent.scrollTop);
-    rejoin = null;
+    takeOver();
     setStoryOpen(false);
     rememberStoryFolded(true);
-    // The URL stops naming a story stop and names the overlay instead.
-    saveUrlState(true);
+    render();
   }
 
   const rightPanel = document.getElementById('right-panel')!;
@@ -929,17 +984,18 @@ async function main(): Promise<void> {
     const reader = readerAsStop(
       { x: camera.x, y: camera.y, zoom: camera.zoom },
       currentOverlayId,
-      currentOverlay?.getUrlParams?.() ?? {},
+      buildOverlayParamsForUrl(),
     );
-    // The reader's colours first: working out the story's hands its settings to
-    // the overlay, which is where the ease-back ends anyway.
-    const fromColors = colorsForStop(reader, verses);
-    const toColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses);
+    // Both ends are taken without the hover, which composite() draws on top.
+    const fromColors = colorsForStop(reader, verses, null);
+    const toColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null);
     rejoin = { fromCamera: reader.camera, fromColors, toColors };
+    transition = null;
   }
 
   function paintStoryFrame(now: number): void {
     storyFrame = null;
+    // The reader can take the map, or fold the story, between the scroll and this frame.
     if (!storyOpen || driver.by === 'reader') return;
 
     if (driver.by === 'rejoining') {
@@ -956,11 +1012,7 @@ async function main(): Promise<void> {
     if (driver.by === 'rejoining' && rejoin) {
       const t = easingFunctions['ease-in-out'](rejoinProgress(driver, now));
       Object.assign(camera, lerpCamera(rejoin.fromCamera, state.camera, t));
-      rebuildGeometry(
-        renderContext.gl,
-        renderState,
-        blendColorArrays(rejoin.fromColors, rejoin.toColors, t),
-      );
+      setColorLayer(blendColorArrays(rejoin.fromColors, rejoin.toColors, t));
       render();
       scheduleStoryFrame();
       return;
@@ -980,13 +1032,22 @@ async function main(): Promise<void> {
       lastSyncedStopId = dominantStop.id;
     }
 
+    // A scroll fires no pointer event, so re-run hit detection under the
+    // last known cursor position now that the camera has moved.
+    if (lastPointerPosition) {
+      setHoveredVerse(
+        mouseState,
+        findItemAtPoint(verses, camera, lastPointerPosition.x, lastPointerPosition.y),
+      );
+    }
+
     if (settled) {
       // At rest: paint via the explore-mode color pipeline.
+      transition = null;
       applyOverlay();
     } else {
-      // Mid-scroll: blender paints interpolated colors directly to the GPU buffer.
-      const blendedColors = computeBlendedColors(state.fromStop, state.toStop, state.t, verses);
-      rebuildGeometry(renderContext.gl, renderState, blendedColors);
+      transition = { from: state.fromStop, to: state.toStop, t: state.t };
+      blendTransition();
     }
     render();
     updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
@@ -994,93 +1055,56 @@ async function main(): Promise<void> {
 
   window.addEventListener('resize', scheduleStoryFrame);
 
-  function restoreOverlayFromUrl(urlState: UrlState): void {
-    if (!urlState.overlay) return;
-
-    setOverlay(urlState.overlay, { fromUrlRestore: true });
-    if (overlaySelect) {
-      overlaySelect.value = urlState.overlay;
-    }
-
-    // Hand the overlay back its own settings, already validated.
-    //
-    // activateOverlay drew the legend before this point, while the overlay was
-    // still on its defaults, so it has to be redrawn once the settings land.
-    // (Controls are left alone: each overlay updates its own inside
-    // applyUrlParams, and redrawing them here would throw away what it just
-    // put there.)
-    if (currentOverlay?.applyUrlParams) {
-      applyOverlayParams(currentOverlay, urlState.overlayParams);
-      if (overlayLegendContainer) {
-        overlayLegendContainer.innerHTML = '';
-        currentOverlay.renderLegend?.(overlayLegendContainer);
-      }
-      updateSummary();
-    }
-  }
-
-  function restoreVerseFromUrl(urlState: UrlState): boolean {
-    if (!urlState.verse) return false;
-
-    const parsed = parseVerseFromUrl(urlState.verse);
-    if (!parsed) return false;
-
-    const verse = findTanakhItem(verses, parsed);
-    if (!verse) return false;
-
-    // Pin without saveUrlState since we're restoring FROM the URL
-    pinnedVerse = verse;
-    updateSidebarWrapper(verse, true);
-    centerOnVerse(verse);
-    return true;
-  }
-
-  function restoreCameraFromUrl(urlState: UrlState, hasVerse: boolean): void {
-    if (urlState.zoom !== undefined) {
-      camera.zoom = urlState.zoom;
-    }
-
-    if (!hasVerse && urlState.x !== undefined && urlState.y !== undefined) {
-      camera.x = urlState.x;
-      camera.y = urlState.y;
-    }
-  }
-
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
   function restoreFromUrl(): void {
-    applyingExternalState(restoreFromUrlUnguarded);
+    const next = resolveViewState(
+      parseUrlState((id) => getOverlay(id)?.urlParams),
+      { ...initialCamera, zoom: DEFAULT_ZOOM },
+      (id) => getOverlay(id) !== undefined,
+    );
+    applyingExternalState(() => applyViewState(next));
   }
 
-  function restoreFromUrlUnguarded(): void {
-    const urlState = parseUrlState((id) => getOverlay(id)?.urlParams);
-
-    if (urlState.story) {
-      // Force the next settled scroll frame to apply the stop's state.
+  /**
+   * Replace the whole view with `next`, in an order where each step can rely on
+   * the one before: settings before the controls that draw them, the verse
+   * before the camera that centres on it.
+   */
+  function applyViewState(next: ViewState): void {
+    rejoin = null;
+    transition = null;
+    if (next.mode === 'story') {
+      // Force the next settled story frame to apply the stop's state.
       lastSyncedStopId = null;
       driver = STORY_DRIVING;
-      rejoin = null;
       setStoryOpen(true);
       storyContent.scrollTop = 0;
-      const stopIndex = resolvedStops.findIndex((s) => s.id === urlState.story);
-      if (stopIndex >= 0 && stopElements[stopIndex]) {
-        stopElements[stopIndex].scrollIntoView();
-      }
-      return;
-    }
-
-    if (urlState.overlay || urlState.verse) {
+    } else {
       driver = readerTakesOver(storyContent.scrollTop);
-      rejoin = null;
       setStoryOpen(false);
     }
 
-    restoreOverlayFromUrl(urlState);
-    const hasVerse = restoreVerseFromUrl(urlState);
-    restoreCameraFromUrl(urlState, hasVerse);
+    activateOverlay(next.overlay);
+    if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
+    renderOverlayUi();
+
+    const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
+    pinnedVerse = verse;
+    updateSidebarWrapper(verse, verse !== null);
+
+    cancelCameraGlide();
+    Object.assign(camera, cameraForView(next.camera, verse, window.innerWidth, window.innerHeight));
 
     applyOverlay();
     render();
+
+    // The story drives the map from its scroll position, so it takes over here.
+    if (next.mode === 'story') {
+      const stopIndex = resolvedStops.findIndex((s) => s.id === next.storyStop);
+      stopElements[stopIndex]?.scrollIntoView();
+      scheduleStoryFrame();
+    }
   }
 
   if (window.location.hash) {

@@ -15,7 +15,8 @@ import {
 } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { createOverlaySettings } from '../../overlays/settings';
 
 describe('URL State Sync Integration', () => {
   let originalLocation: Location;
@@ -52,12 +53,13 @@ describe('URL State Sync Integration', () => {
       const overlay = getOverlay('commentary');
       await overlay?.init?.();
 
-      // Apply URL params
+      // Restore settings from a link
       const params = new URLSearchParams('category=talmud');
-      applyOverlayParams(overlay, params);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params);
 
       // Get URL params back
-      const urlParams = overlay?.getUrlParams?.();
+      const urlParams = settings.toUrl(overlay!);
       expect(urlParams).toEqual({ category: 'talmud' });
     });
 
@@ -65,12 +67,13 @@ describe('URL State Sync Integration', () => {
       const overlay = getOverlay('trop');
       await overlay?.init?.();
 
-      // Apply URL params
+      // Restore settings from a link
       const params = new URLSearchParams('trop=tipcha');
-      applyOverlayParams(overlay, params);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params);
 
       // Get URL params back
-      const urlParams = overlay?.getUrlParams?.();
+      const urlParams = settings.toUrl(overlay!);
       expect(urlParams).toEqual({ trop: 'tipcha' });
     });
 
@@ -80,10 +83,11 @@ describe('URL State Sync Integration', () => {
 
       // Apply URL params
       const params = new URLSearchParams('q=moses');
-      applyOverlayParams(overlay, params);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params);
 
       // Get URL params back
-      const urlParams = overlay?.getUrlParams?.();
+      const urlParams = settings.toUrl(overlay!);
       expect(urlParams).toEqual({ q: 'moses' });
     });
 
@@ -129,9 +133,14 @@ describe('URL State Sync Integration', () => {
       await overlay?.init?.();
 
       const container = document.createElement('div');
-      overlay?.renderControls?.(container);
+      const settings = createOverlaySettings();
+      const draw = () =>
+        overlay?.renderControls?.(container, settings.get(overlay), (update) =>
+          settings.set(overlay, update(settings.get(overlay))),
+        );
+      draw();
       (container.querySelector('button') as HTMLButtonElement).click();
-      const chosen = overlay?.getUrlParams?.().trop;
+      const chosen = settings.toUrl(overlay!).trop;
       expect(chosen, 'the trop overlay reported no selection').toBeTruthy();
 
       const state: UrlState = {
@@ -155,13 +164,13 @@ describe('URL State Sync Integration', () => {
       // so the assertion below is about the restore and not state the
       // overlay happened to be carrying already.
       container.innerHTML = '';
-      overlay?.renderControls?.(container);
+      draw();
       (container.querySelector('button') as HTMLButtonElement).click();
-      expect(overlay?.getUrlParams?.().trop, 'failed to clear the selection').toBeUndefined();
+      expect(settings.toUrl(overlay!).trop, 'failed to clear the selection').toBeUndefined();
 
-      applyOverlayParams(overlay, restored.overlayParams);
+      settings.restore(overlay!, restored.overlayParams);
 
-      expect(overlay?.getUrlParams?.().trop).toBe(chosen);
+      expect(settings.toUrl(overlay!).trop).toBe(chosen);
     });
   });
 
@@ -356,12 +365,13 @@ describe('URL State Sync Integration', () => {
       const overlay = getOverlay('commentary');
       await overlay?.init?.();
 
-      // Apply initial state
+      // Restore initial state
       const params1 = new URLSearchParams('category=talmud');
-      applyOverlayParams(overlay, params1);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params1);
 
       // Get URL params
-      const urlParams1 = overlay?.getUrlParams?.();
+      const urlParams1 = settings.toUrl(overlay!);
       expect(urlParams1).toEqual({ category: 'talmud' });
 
       // Build URL state

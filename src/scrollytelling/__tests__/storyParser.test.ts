@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { parseStoryMarkdown } from '../storyParser';
 
 describe('parseStoryMarkdown', () => {
@@ -38,15 +38,6 @@ Abraham first appears in Genesis 12.`;
     expect(data.stops[1].id).toBe('abraham');
     expect(data.stops[1].overlay).toBe('search');
     expect(data.stops[1].overlayParams).toEqual({ q: 'אברהם' });
-  });
-
-  it('leaves a stop without a heading untitled', () => {
-    const md = `<!-- stop: rename | camera: initial -->
-Five chapters later, God renames him.`;
-
-    const [stop] = parseStoryMarkdown(md).stops;
-    expect(stop.title).toBeUndefined();
-    expect(stop.text).toBe('Five chapters later, God renames him.');
   });
 
   it('parses camera coordinates', () => {
@@ -155,5 +146,27 @@ Text.`;
     const data = parseStoryMarkdown(md);
     expect(data.stops[0].overlay).toBe('haftarah');
     expect(data.stops[0].overlayParams).toBeUndefined();
+  });
+
+  it('leaves the title empty when a stop has no heading', () => {
+    const md = `<!-- stop: untitled | camera: initial -->
+Each book is a column.`;
+
+    const data = parseStoryMarkdown(md);
+    expect(data.stops[0].title).toBeUndefined();
+    expect(data.stops[0].text).toBe('Each book is a column.');
+  });
+
+  it('reports a stop id used twice', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const md = `<!-- stop: abram | camera: initial -->
+Text.
+
+<!-- stop: abram | camera: initial | verse: Genesis.12.1 -->
+Text.`;
+
+    parseStoryMarkdown(md);
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('"abram"'));
+    error.mockRestore();
   });
 });

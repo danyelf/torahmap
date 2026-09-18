@@ -94,7 +94,7 @@ function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number }
   return verseData || null;
 }
 
-export const textDatingOverlay: Overlay = {
+export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
   id: 'text-dating',
   name: 'Text Dating',
   description:
@@ -128,6 +128,10 @@ export const textDatingOverlay: Overlay = {
     const midpointBCE = Math.abs((startBCE + endBCE) / 2);
 
     return getVerseColorFromDate(midpointBCE);
+  },
+
+  colorsFor(items, settings, _hovered) {
+    return items.map((item) => this.getVerseColor(item, settings));
   },
 
   renderLegend(container: HTMLElement) {

@@ -33,6 +33,13 @@ export interface UrlParamSpec {
   readonly kind: UrlParamKind;
   /** When present, the value must be one of these after validation. */
   readonly allowed?: readonly string[];
+  /**
+   * The value the overlay holds when the URL says nothing — the other half of
+   * the rule overlays already follow when they omit a default on the way out.
+   * An overlay that has no such value (a selection that can be empty, say)
+   * leaves this unset, and the key stays absent instead.
+   */
+  readonly default?: string;
 }
 
 /**
@@ -180,7 +187,7 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   const values: Record<string, string> = {};
   for (const spec of specs ?? []) {
     if (RESERVED_KEYS.has(spec.key)) continue;
-    const value = validateOneParam(spec, read(spec.key));
+    const value = validateOneParam(spec, read(spec.key)) ?? spec.default;
     if (value) values[spec.key] = value;
   }
   // The one assertion in the chain, and the place it belongs: the loop above
@@ -319,10 +326,11 @@ let urlWritesSuspended = 0;
  * Run something that puts state *into* the app from outside — a link being
  * restored, a story stop being applied — with URL writes turned off.
  *
- * This is the one place the rule lives. Anything an overlay does in response,
- * including calling its own update handler, cannot reach the URL from in here,
- * so no overlay has to be careful about it and a new overlay gets the same
- * treatment without anyone remembering to give it.
+ * It blocks writes made synchronously inside `apply` and nothing else: a
+ * control that calls onChange while being drawn would otherwise have
+ * changeSettings write the URL midway through a restore or a story stop.
+ * Deferred work, such as debouncedSaveUrlState or a scroll frame, runs after
+ * this returns and is not covered.
  */
 export function applyingExternalState<T>(apply: () => T): T {
   urlWritesSuspended++;

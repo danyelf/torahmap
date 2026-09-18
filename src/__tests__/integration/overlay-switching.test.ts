@@ -16,7 +16,7 @@ import {
   SAMPLE_VERSE_TEXTS,
 } from '../helpers/fixtures';
 import { mockFetch, restoreAllMocks } from '../helpers/mocks';
-import { applyOverlayParams } from '../helpers/overlayUrlParams';
+import { createOverlaySettings, type OverlaySettings } from '../../overlays/settings';
 
 describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
@@ -24,6 +24,8 @@ describe('Overlay Switching Integration', () => {
   let verses = SAMPLE_VERSES;
   let currentOverlay: Overlay | null = null;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
+  // The settings the app holds for each overlay, as main.ts holds them.
+  let settings: OverlaySettings;
 
   beforeEach(() => {
     // Create real DOM elements for testing (jsdom)
@@ -45,6 +47,7 @@ describe('Overlay Switching Integration', () => {
 
     currentOverlay = null;
     lastColors = [];
+    settings = createOverlaySettings();
   });
 
   afterEach(() => {
@@ -68,20 +71,17 @@ describe('Overlay Switching Integration', () => {
     // Initialize if needed
     await overlay.init?.();
 
-    // Wire up update callback
-    overlay.onUpdate?.(() => {
-      // Update callback registered for overlay
-    });
-
     // Render controls and legend
     mockControlsContainer.innerHTML = '';
-    overlay.renderControls?.(mockControlsContainer);
+    overlay.renderControls?.(mockControlsContainer, settings.get(overlay), (update) =>
+      settings.set(overlay, update(settings.get(overlay))),
+    );
 
     mockLegendContainer.innerHTML = '';
-    overlay.renderLegend?.(mockLegendContainer);
+    overlay.renderLegend?.(mockLegendContainer, settings.get(overlay));
 
     // Apply colors
-    lastColors = verses.map((v) => overlay.getVerseColor(v));
+    lastColors = verses.map((v) => overlay.getVerseColor(v, settings.get(overlay)));
 
     currentOverlay = overlay;
     return overlay;
@@ -244,19 +244,21 @@ describe('Overlay Switching Integration', () => {
 
     it('updates legend when overlay state changes', async () => {
       const overlay = await switchToOverlay('commentary');
+      const initialLegend = mockLegendContainer.innerHTML;
 
-      // Simulate category change by directly calling the callback
-      const updateCallback = vi.fn(() => {
-        mockLegendContainer.innerHTML = '';
-        overlay.renderLegend?.(mockLegendContainer);
-      });
-      overlay.onUpdate?.(updateCallback);
+      // Change the category through the real control, as a reader would.
+      mockControlsContainer.innerHTML = '';
+      overlay.renderControls?.(mockControlsContainer, settings.get(overlay), (update) =>
+        settings.set(overlay, update(settings.get(overlay))),
+      );
+      const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
+      select.value = 'Midrash';
+      select.dispatchEvent(new Event('change'));
 
-      // Trigger update (would normally be from UI interaction)
-      updateCallback();
+      mockLegendContainer.innerHTML = '';
+      overlay.renderLegend?.(mockLegendContainer, settings.get(overlay));
 
-      // Legend should have been re-rendered
-      expect(updateCallback).toHaveBeenCalled();
+      expect(mockLegendContainer.innerHTML).not.toBe(initialLegend);
     });
   });
 
@@ -269,7 +271,7 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse) {
-        const color = currentOverlay!.getVerseColor(genesisVerse);
+        const color = currentOverlay!.getVerseColor(genesisVerse, settings.get(currentOverlay!));
         expect(color).not.toBeNull();
       }
     });
@@ -283,35 +285,36 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse && currentOverlay?.getHoverInfo) {
-        const info = currentOverlay.getHoverInfo!(genesisVerse);
+        const info = currentOverlay.getHoverInfo!(genesisVerse, settings.get(currentOverlay));
         expect(info).toBeTruthy();
         expect(typeof info).toBe('string');
       }
     });
   });
 
-  describe('Update Callbacks', () => {
-    it('registers update callback for dynamic overlays', async () => {
+  describe('Settings Changes', () => {
+    it('notifies onChange when a control changes settings', async () => {
       const overlay = await switchToOverlay('commentary');
 
-      const updateCallback = vi.fn();
-      overlay.onUpdate?.(updateCallback);
+      const onChange = vi.fn();
+      mockControlsContainer.innerHTML = '';
+      overlay.renderControls?.(mockControlsContainer, settings.get(overlay), onChange);
 
-      expect(overlay.onUpdate).toBeDefined();
+      const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
+      select.value = 'Midrash';
+      select.dispatchEvent(new Event('change'));
+
+      expect(onChange).toHaveBeenCalled();
     });
 
-    it('unregisters callbacks when overlay is destroyed', async () => {
+    it("keeps an overlay's settings after switching away", async () => {
       const overlay = await switchToOverlay('commentary');
-
-      const updateCallback = vi.fn();
-      overlay.onUpdate?.(updateCallback);
+      settings.set(overlay, { category: 'Midrash' });
 
       // Switch away (calls destroy)
       await switchToOverlay('trop');
 
-      // Callback should not fire after destroy
-      // (This is implicitly tested by the destroy call)
-      expect(overlay.destroy).toBeDefined();
+      expect(settings.get(overlay)).toEqual({ category: 'Midrash' });
     });
   });
 
@@ -383,57 +386,25 @@ describe('Overlay Switching Integration', () => {
     });
   });
 
-  describe('Hover State Integration', () => {
-    it('supports cross-highlighting with setHoveredVerse', async () => {
-      const overlay = await switchToOverlay('search');
-
-      if (overlay.setHoveredVerse) {
-        const verse = verses[0];
-        const shouldRerender = overlay.setHoveredVerse(verse);
-
-        // Should return boolean indicating if re-render needed
-        expect(typeof shouldRerender).toBe('boolean');
-
-        // Clear hover
-        overlay.setHoveredVerse(null);
-      } else {
-        // Search overlay may not implement this yet
-        expect(overlay.setHoveredVerse).toBeUndefined();
-      }
-    });
-
-    it('clears hover state when switching overlays', async () => {
-      await switchToOverlay('commentary');
-
-      // Set hover state if supported
-      if (currentOverlay?.setHoveredVerse) {
-        currentOverlay.setHoveredVerse!(verses[0]);
-      }
-
-      // Switch overlay
-      await switchToOverlay('search');
-
-      // Previous hover state should not affect new overlay
-      expect(lastColors.length).toBe(verses.length);
-    });
+  it('only Haftarah says its colours depend on the hovered verse', () => {
+    const hoverSensitive = getAllOverlays().filter((o) => o.hoverChangesColors);
+    expect(hoverSensitive.map((o) => o.id)).toEqual(['haftarah']);
   });
 
   describe('URL State Persistence', () => {
-    it('provides URL params for overlays that support it', async () => {
-      await switchToOverlay('commentary');
+    it('provides URL params through the settings store', async () => {
+      const overlay = await switchToOverlay('commentary');
 
-      if (currentOverlay?.getUrlParams) {
-        const params = currentOverlay.getUrlParams!();
-        expect(params).toBeDefined();
-        expect(typeof params).toBe('object');
-      }
+      const params = settings.toUrl(overlay);
+      expect(params).toBeDefined();
+      expect(typeof params).toBe('object');
     });
 
     it('applies URL params when restoring overlay state', async () => {
       const overlay = await switchToOverlay('trop');
 
       // Should not throw
-      expect(() => applyOverlayParams(overlay, new URLSearchParams('trop=tipcha'))).not.toThrow();
+      expect(() => settings.restore(overlay, new URLSearchParams('trop=tipcha'))).not.toThrow();
     });
   });
 
@@ -479,8 +450,8 @@ describe('Overlay Switching Integration', () => {
       await switchToOverlay('commentary');
 
       const verse = verses[0];
-      const color1 = currentOverlay!.getVerseColor(verse);
-      const color2 = currentOverlay!.getVerseColor(verse);
+      const color1 = currentOverlay!.getVerseColor(verse, settings.get(currentOverlay!));
+      const color2 = currentOverlay!.getVerseColor(verse, settings.get(currentOverlay!));
 
       // Same verse should return same color (reference equality not guaranteed, but values should match)
       expect(JSON.stringify(color1)).toBe(JSON.stringify(color2));
@@ -523,7 +494,7 @@ describe('Overlay Switching Integration', () => {
 
       // Should not throw when trying to get colors
       expect(() => {
-        verses.forEach((v) => currentOverlay!.getVerseColor(v));
+        verses.forEach((v) => currentOverlay!.getVerseColor(v, settings.get(currentOverlay!)));
       }).not.toThrow();
 
       // Should provide valid colors even with malformed data

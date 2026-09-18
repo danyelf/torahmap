@@ -6,16 +6,16 @@
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure, highlightSearchTerms } from '../../../overlays/search';
+import { configure } from '../../../overlays/search';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
-import { applyOverlayParams } from '../../helpers/overlayUrlParams';
+import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
 
 registerAllOverlays();
-const searchOverlay = getOverlay('search')!;
+const searchOverlay = hostOverlay(getOverlay('search')!);
 
 // Real Hebrew, so the lexeme index has something to resolve.
 const texts: VerseTexts = {
@@ -47,7 +47,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  applyOverlayParams(searchOverlay, { q: '', mode: undefined, m: undefined });
+  searchOverlay.restore({ q: '', mode: undefined, m: undefined });
 });
 
 describe('the meaning list', () => {
@@ -112,11 +112,11 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
 
     const figLeaves = verses[0];
-    expect(searchOverlay.getVerseColor?.(figLeaves)).not.toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(figLeaves)).not.toEqual(dimmed());
 
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor?.(figLeaves)).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(figLeaves)).toEqual(dimmed());
   });
 
   it('keeps the verses of the meanings still checked', () => {
@@ -124,7 +124,7 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor?.(verses[2])).not.toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[2])).not.toEqual(dimmed());
   });
 
   it('will not let the reader uncheck the last one', () => {
@@ -140,11 +140,18 @@ describe('narrowing repaints the map', () => {
 });
 
 describe('the URL', () => {
+  it('writes back the q, mode and m it was read from', () => {
+    const link = { q: 'עלה, רוח, light', mode: 'm,w,', m: '<LH/@heb,,' };
+    const settings = searchOverlay.fromUrl(link);
+
+    expect(searchOverlay.overlay.settingsToUrl!(settings)).toEqual(link);
+  });
+
   it('says nothing about meanings until one is unchecked', () => {
     const container = render();
     type(container, 'עלה');
 
-    expect(searchOverlay.getUrlParams?.().m).toBeUndefined();
+    expect(searchOverlay.toUrl().m).toBeUndefined();
   });
 
   it('carries the narrowing', () => {
@@ -155,18 +162,18 @@ describe('the URL', () => {
       .flatMap((m) => m.keys);
     uncheck(container, 'ascend');
 
-    expect(searchOverlay.getUrlParams?.().m).toBe(kept.join('|'));
+    expect(searchOverlay.toUrl().m).toBe(kept.join('|'));
   });
 
   it('restores it', () => {
-    applyOverlayParams(searchOverlay, { q: 'עלה', mode: 'r', m: '<LH/@heb' });
+    searchOverlay.restore({ q: 'עלה', mode: 'r', m: '<LH/@heb' });
     const container = render();
 
     const checked = [...container.querySelectorAll<HTMLInputElement>('.meaning-row input')].filter(
       (b) => b.checked,
     );
     expect(checked).toHaveLength(1);
-    expect(searchOverlay.getVerseColor?.(verses[0])).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[0])).toEqual(dimmed());
   });
 });
 
@@ -278,7 +285,7 @@ describe('showing only one meaning', () => {
     only(container, 'burnt-offering');
 
     // Genesis 3:7 is the fig-leaf verse, so it goes.
-    expect(searchOverlay.getVerseColor?.(verses[0])).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[0])).toEqual(dimmed());
   });
 
   it('offers a way back only once something is narrowed', () => {
@@ -307,11 +314,11 @@ describe('showing only one meaning', () => {
     const container = render();
     type(container, 'עלה');
     only(container, 'burnt-offering');
-    expect(searchOverlay.getUrlParams?.().m).toBe('<LH/@heb');
+    expect(searchOverlay.toUrl().m).toBe('<LH/@heb');
 
     container.querySelector<HTMLButtonElement>('.term-all')!.click();
 
-    expect(searchOverlay.getUrlParams?.().m).toBeUndefined();
+    expect(searchOverlay.toUrl().m).toBeUndefined();
   });
 });
 
@@ -320,7 +327,7 @@ describe('highlighting a verse when the terms are not all one language', () => {
     const container = render();
     type(container, 'עלה, leaves');
 
-    const marks = [...highlightSearchTerms('ויתפרו עלה תאנה', 'he').childNodes]
+    const marks = [...searchOverlay.highlightVerseText('ויתפרו עלה תאנה', 'he').childNodes]
       .filter((n) => (n as Element).tagName === 'MARK')
       .map((n) => n.textContent);
 
@@ -331,7 +338,7 @@ describe('highlighting a verse when the terms are not all one language', () => {
     const container = render();
     type(container, 'עלה, leaves');
 
-    const marks = [...highlightSearchTerms('they sewed fig leaves', 'en').childNodes]
+    const marks = [...searchOverlay.highlightVerseText('they sewed fig leaves', 'en').childNodes]
       .filter((n) => (n as Element).tagName === 'MARK')
       .map((n) => n.textContent);
 
@@ -353,11 +360,11 @@ describe('a row that is empty or too short to search', () => {
   it('does not change what the map paints', () => {
     const container = render();
     type(container, 'עלה');
-    const before = searchOverlay.getVerseColor?.(verses[0]);
+    const before = searchOverlay.getVerseColor(verses[0]);
 
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
 
-    expect(searchOverlay.getVerseColor?.(verses[0])).toEqual(before);
+    expect(searchOverlay.getVerseColor(verses[0])).toEqual(before);
   });
 
   it('does not steal the count from the row below it', () => {
@@ -373,5 +380,36 @@ describe('a row that is empty or too short to search', () => {
     const counts = [...container.querySelectorAll('.term-count')].map((c) => c.textContent);
     expect(counts[0]).toBe('');
     expect(Number(counts[1])).toBeGreaterThan(0);
+  });
+});
+
+// The line under a verse's reference names each word as typed, followed by the
+// meanings of it that this verse holds.
+describe('the Matches line', () => {
+  it('names the meaning each verse holds', () => {
+    const container = render();
+    type(container, 'עלה');
+
+    expect(searchOverlay.getHoverInfo(verses[0])).toBe('Matches: עלה (leafage)');
+    expect(searchOverlay.getHoverInfo(verses[2])).toBe('Matches: עלה (ascend)');
+  });
+
+  it('names every meaning a verse holds', () => {
+    const container = render();
+    type(container, 'עלה');
+
+    // ויעל עלת: the verb and the offering in one verse.
+    expect(searchOverlay.getHoverInfo(verses[1])).toBe('Matches: עלה (ascend, burnt-offering)');
+  });
+
+  it('leaves out a meaning the reader has unchecked, even where the verse holds it', () => {
+    const container = render();
+    type(container, 'עלה');
+    const row = [...container.querySelectorAll('.meaning-row')].find(
+      (r) => r.querySelector('.meaning-gloss')?.textContent === 'burnt-offering',
+    )!;
+    row.querySelector<HTMLButtonElement>('.meaning-only')!.click();
+
+    expect(searchOverlay.getHoverInfo(verses[1])).toBe('Matches: עלה (burnt-offering)');
   });
 });

@@ -8,11 +8,15 @@ import {
   subscribeToHashChange,
   applyingExternalState,
   isApplyingExternalState,
+  validateOverlayParams,
   type UrlState,
+  type UrlParamSpec,
 } from '../../urlState';
 import { mockHistory, mockWindowLocation } from '../helpers/mocks';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
-import { overlayUrlParams, applyOverlayParams } from '../helpers/overlayUrlParams';
+import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { createOverlaySettings } from '../../overlays/settings';
+import type { Overlay } from '../../overlays/types';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -39,6 +43,14 @@ describe('parseUrlState', () => {
     expect(state).toEqual({
       overlayParams: {},
     });
+  });
+
+  it('parses a camera-only hash with no overlay', () => {
+    mockWindowLocation('http://localhost:5173/#zoom=4&x=100&y=200');
+    const state = parseUrlState(overlayUrlParams);
+
+    expect(state.zoom).toBe(4);
+    expect(state.overlay).toBeUndefined();
   });
 
   it('parses overlay parameter', () => {
@@ -945,10 +957,10 @@ describe('overlay-supplied parameters', () => {
     expect(state.overlayParams).toEqual({});
   });
 
-  it('rejects a value outside the set the overlay allows', () => {
+  it('falls back to the default when the value is outside the set the overlay allows', () => {
     mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=yemenite');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.custom).toBeUndefined();
+    expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
   it('accepts every value in the set the overlay allows', () => {
@@ -978,19 +990,34 @@ describe('overlay-supplied parameters', () => {
   });
 });
 
+// A plausible value for each key an overlay declared.
+function plausibleSettings(overlay: Overlay): Record<string, string> {
+  const settings: Record<string, string> = {};
+  for (const spec of overlay.urlParams ?? []) {
+    settings[spec.key] = spec.allowed?.[0] ?? 'x';
+  }
+  return settings;
+}
+
 describe('what every overlay must hold to', () => {
   // The point of the redesign: an overlay that saves settings has to say which
   // keys it uses, or urlState.ts will never read them back out of a link.
   getAllOverlays().forEach((overlay) => {
-    const savesSettings = Boolean(overlay.getUrlParams || overlay.applyUrlParams);
+    // Declared, not inferred from a value: an overlay whose default settings
+    // are undefined still saves settings if it implements settingsToUrl.
+    const savesSettings = overlay.settingsToUrl !== undefined;
 
-    it(`${overlay.id}: declares its keys if it saves any settings`, () => {
+    it(`${overlay.id}: declares its keys if and only if it saves settings`, () => {
       if (savesSettings) {
         expect(overlay.urlParams, `${overlay.id} has no urlParams`).toBeDefined();
         expect(overlay.urlParams!.length).toBeGreaterThan(0);
       } else {
         expect(overlay.urlParams).toBeUndefined();
       }
+    });
+
+    it(`${overlay.id}: answers colorsFor, or the story's blend shows it grey`, () => {
+      expect(overlay.colorsFor).toBeTypeOf('function');
     });
 
     it(`${overlay.id}: has a name, which is what the menu shows`, () => {
@@ -1008,57 +1035,12 @@ describe('what every overlay must hold to', () => {
 
     it(`${overlay.id}: only reports settings under keys it declared`, () => {
       const declared = new Set((overlay.urlParams ?? []).map((spec) => spec.key));
-      const reported = Object.keys(overlay.getUrlParams?.() ?? {});
+      const store = createOverlaySettings();
+      store.restore(overlay, plausibleSettings(overlay));
+      const reported = Object.keys(store.toUrl(overlay));
       for (const key of reported) {
         expect(declared, `${overlay.id} reported undeclared "${key}"`).toContain(key);
       }
-    });
-
-    it(`${overlay.id}: writes no URL state while being restored`, () => {
-      // Restoring a link must not rewrite the link, for every overlay, whether
-      // or not that overlay remembers to be careful. Two things are checked.
-      //
-      // First, that URL writes really are off for the whole time the overlay
-      // is being handed its settings — true for every overlay, including ones
-      // that ignore the particular values this test can invent.
-      //
-      // Second, end to end: an overlay announces a settings change by calling
-      // the handler the app gave it, and in the app that handler saves URL
-      // state. So wire up a handler that does exactly that and watch the
-      // history API. (Commentary and search do announce; that is what makes
-      // this half of the test bite.)
-      const { pushState, replaceState } = mockHistory('http://localhost:5173/');
-
-      overlay.onUpdate?.(() => {
-        updateUrl({ overlay: overlay.id, overlayParams: {} }, false);
-      });
-
-      let writesWereSuspended: boolean | null = null;
-      if (overlay.applyUrlParams) {
-        const realApply = overlay.applyUrlParams.bind(overlay);
-        vi.spyOn(overlay, 'applyUrlParams').mockImplementation((params) => {
-          writesWereSuspended = isApplyingExternalState();
-          realApply(params);
-        });
-      }
-
-      // Feed it a plausible value for each key it declared.
-      const settings: Record<string, string> = {};
-      for (const spec of overlay.urlParams ?? []) {
-        settings[spec.key] = spec.allowed?.[0] ?? 'x';
-      }
-      applyOverlayParams(overlay, settings);
-
-      if (overlay.applyUrlParams) {
-        expect(
-          writesWereSuspended,
-          `${overlay.id} was given settings with URL writes still live`,
-        ).toBe(true);
-      }
-      expect(pushState, `${overlay.id} pushed a history entry`).not.toHaveBeenCalled();
-      expect(replaceState, `${overlay.id} wrote URL state`).not.toHaveBeenCalled();
-
-      vi.restoreAllMocks();
     });
   });
 });
@@ -1108,10 +1090,10 @@ describe('haftarah custom in the URL', () => {
     expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
-  it('rejects a custom that is not one of the two', () => {
+  it('falls back to Ashkenazi for a custom that is not one of the two', () => {
     mockWindowLocation('http://localhost:5173/#overlay=haftarah&custom=yemenite');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.custom).toBeUndefined();
+    expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
   it('roundtrips the Sephardi custom', () => {
@@ -1153,5 +1135,32 @@ describe('whole links, parsed with the real overlay declarations', () => {
     expect(rebuilt).toContain('verse=Exodus.20.1');
     expect(rebuilt).toContain('zoom=3');
     expect(rebuilt).toContain('category=Talmud');
+  });
+});
+
+describe('validateOverlayParams defaults', () => {
+  const specs = [
+    { key: 'category', kind: 'category', default: 'total' },
+    { key: 'note', kind: 'token' },
+  ] as const satisfies readonly UrlParamSpec[];
+
+  it('fills a declared default when the key is absent', () => {
+    expect(validateOverlayParams(specs, {})).toEqual({ category: 'total' });
+  });
+
+  it('fills a declared default when the value is rejected', () => {
+    expect(validateOverlayParams(specs, { category: '<script>' })).toEqual({
+      category: 'total',
+    });
+  });
+
+  it('prefers a valid supplied value over the default', () => {
+    expect(validateOverlayParams(specs, { category: 'Midrash' })).toEqual({
+      category: 'Midrash',
+    });
+  });
+
+  it('leaves a key with no declared default absent', () => {
+    expect(validateOverlayParams(specs, {})).not.toHaveProperty('note');
   });
 });
