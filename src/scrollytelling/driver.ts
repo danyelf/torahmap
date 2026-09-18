@@ -13,10 +13,16 @@ export const REJOIN_SCROLL_PX = 60;
 /** How long the story takes to ease the map back. Not yet tuned. */
 export const REJOIN_EASE_MS = 700;
 
+/**
+ * How long a phone's swipe to the next stop takes to move the map. A swipe
+ * snaps in a fraction of a second, which played the transition as a blink.
+ */
+export const SWIPE_EASE_MS = 1500;
+
 export type Driver =
   | { by: 'story' }
   | { by: 'reader'; lastScrollTop: number; travelled: number }
-  | { by: 'rejoining'; since: number };
+  | { by: 'rejoining'; since: number; duration: number };
 
 export const STORY_DRIVING: Driver = { by: 'story' };
 
@@ -24,8 +30,9 @@ export function readerTakesOver(scrollTop: number): Driver {
   return { by: 'reader', lastScrollTop: scrollTop, travelled: 0 };
 }
 
-export function rejoinNow(now: number): Driver {
-  return { by: 'rejoining', since: now };
+/** Ease the map from what is on screen to where the story is, over `duration` ms. */
+export function rejoinNow(now: number, duration = REJOIN_EASE_MS): Driver {
+  return { by: 'rejoining', since: now, duration };
 }
 
 /**
@@ -43,7 +50,7 @@ export function storyScrolled(driver: Driver, scrollTop: number, now: number): D
 /** How far through the ease-back, 0 to 1. */
 export function rejoinProgress(driver: Driver, now: number): number {
   if (driver.by !== 'rejoining') return 1;
-  return Math.min(1, Math.max(0, (now - driver.since) / REJOIN_EASE_MS));
+  return Math.min(1, Math.max(0, (now - driver.since) / driver.duration));
 }
 
 export function settle(driver: Driver, now: number): Driver {

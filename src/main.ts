@@ -100,6 +100,7 @@ import { blendColorArrays } from './scrollytelling/colorBlending';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
   STORY_DRIVING,
+  SWIPE_EASE_MS,
   readerAsStop,
   readerTakesOver,
   rejoinNow,
@@ -1060,16 +1061,50 @@ async function main(): Promise<void> {
   }
 
   function currentStoryState(): InterpolatedState {
-    const across = phoneLayout.matches;
+    // On a phone the story is at whichever page is showing. Moving between
+    // pages is eased on a timer (beginSwipe), not tracked through the swipe.
+    if (phoneLayout.matches) {
+      const page = Math.round(storyContent.scrollLeft / Math.max(1, storyContent.clientWidth));
+      const stop = resolvedStops[Math.min(resolvedStops.length - 1, Math.max(0, page))];
+      return { camera: { ...stop.camera }, fromStop: stop, toStop: stop, t: 0 };
+    }
     return computeInterpolatedState(
       resolvedStops,
-      stopElements.map((el) => (across ? el.offsetLeft : el.offsetTop)),
-      across ? storyContent.scrollWidth : storyContent.scrollHeight,
-      storyPosition(),
+      stopElements.map((el) => el.offsetTop),
+      storyContent.scrollHeight,
+      storyContent.scrollTop,
       storyData.defaults?.easing ?? 'ease-in-out',
-      stopElements.map((el) => (across ? el.offsetWidth : el.offsetHeight)),
-      across ? storyContent.clientWidth : storyContent.clientHeight,
+      stopElements.map((el) => el.offsetHeight),
+      storyContent.clientHeight,
     );
+  }
+
+  /**
+   * Ease the map to `to` over SWIPE_EASE_MS, from whatever is on screen: the
+   * stop it rests on, or partway through an ease a second swipe interrupted.
+   */
+  function beginSwipe(to: ResolvedStoryStop, now: number): void {
+    const from = resolvedStops.find((s) => s.id === lastSyncedStopId);
+    const fromColors =
+      driver.by === 'rejoining' && rejoin
+        ? blendColorArrays(
+            rejoin.fromColors,
+            rejoin.toColors,
+            easingFunctions['ease-in-out'](rejoinProgress(driver, now)),
+          )
+        : from
+          ? colorsForStop(from, verses, null)
+          : colorsForStop(to, verses, null);
+    rejoin = {
+      fromCamera: { x: camera.x, y: camera.y, zoom: camera.zoom },
+      fromColors,
+      toColors: colorsForStop(to, verses, null),
+    };
+    driver = rejoinNow(now, SWIPE_EASE_MS);
+    transition = null;
+    // The controls and the popup move to the new stop as it starts.
+    syncStoryStopState(to);
+    lastSyncedStopId = to.id;
   }
 
   /** Start easing from whatever the reader has on screen to where the story is. */
@@ -1103,6 +1138,11 @@ async function main(): Promise<void> {
     updateSummaryShown();
 
     const state = currentStoryState();
+
+    // A new page on a phone eases in rather than cutting to it.
+    if (phoneLayout.matches && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
+      beginSwipe(state.toStop, now);
+    }
 
     if (driver.by === 'rejoining' && rejoin) {
       const t = easingFunctions['ease-in-out'](rejoinProgress(driver, now));

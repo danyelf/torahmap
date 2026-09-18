@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   REJOIN_SCROLL_PX,
   REJOIN_EASE_MS,
+  SWIPE_EASE_MS,
   STORY_DRIVING,
   readerTakesOver,
   storyScrolled,
@@ -28,7 +29,7 @@ describe('the story drives until the reader takes over', () => {
     let driver = readerTakesOver(1000);
     driver = storyScrolled(driver, 1000 + REJOIN_SCROLL_PX, 42);
 
-    expect(driver).toEqual({ by: 'rejoining', since: 42 });
+    expect(driver).toEqual({ by: 'rejoining', since: 42, duration: REJOIN_EASE_MS });
   });
 
   it('measures distance, so many small scrolls count the same as one large one', () => {
@@ -76,6 +77,14 @@ describe('easing back', () => {
     const driver = readerTakesOver(0);
 
     expect(settle(driver, 10_000)).toBe(driver);
+  });
+
+  it('can take its own time, as a phone swipe does', () => {
+    const driver = rejoinNow(0, SWIPE_EASE_MS);
+
+    expect(rejoinProgress(driver, SWIPE_EASE_MS / 2)).toBeCloseTo(0.5);
+    expect(settle(driver, REJOIN_EASE_MS).by).toBe('rejoining');
+    expect(settle(driver, SWIPE_EASE_MS)).toEqual(STORY_DRIVING);
   });
 });
 
