@@ -91,9 +91,14 @@ export function createBackPlane(options: {
 
   function update(): void {
     if (settings.follow !== 'plane') return;
-    // Reading starts top-right, so that is where the plane meets the map: a
-    // book whose opening is up there has its back text lined up with it.
-    const origin = { x: options.viewport().width, y: 0 };
+    // The pivot lines up with the map when it is under the origin, so each
+    // pivot has its own: the start of Genesis at the top right, where reading
+    // starts, and the middle of the map at the middle of the view.
+    const vp = options.viewport();
+    const origin =
+      settings.planePivot === 'start'
+        ? { x: vp.width, y: 0 }
+        : { x: vp.width / 2, y: vp.height / 2 };
     const plane = {
       parallax: settings.parallax,
       size: settings.planeSize,
