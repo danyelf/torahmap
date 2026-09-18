@@ -28,9 +28,10 @@ import {
   createCamera,
   clampZoom,
   panForZoom,
-  panToCenter,
-  viewCenteredOn,
+  panToFocus,
+  viewFocusedOn,
   animateCameraTo,
+  type ScreenPoint,
 } from './camera.ts';
 import {
   createMouseState,
@@ -93,7 +94,6 @@ import {
   renderStoryPanel,
   resolveStops,
   stopLabel,
-  type StoryFocus,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
@@ -125,7 +125,7 @@ declare global {
 
 const STORY_FOLDED_KEY = 'torahMap.storyFolded';
 
-// How far down a phone's map the story puts the verse it names. Halfway down,
+// How far down a phone's map a verse brought into view is put. Halfway down,
 // the verse lands behind the popup that sits just above the sheet.
 const PHONE_STORY_FOCUS = 0.4;
 
@@ -346,18 +346,23 @@ async function main(): Promise<void> {
 
   // On a phone the stops sit side by side and a swipe moves one; elsewhere
   // they stack and scroll. Either way the story is driven by how far along
-  // that one axis it has been moved.
+  // that one axis it has been moved. The axis is read from the story's layout,
+  // so the script cannot disagree with the stylesheet about it.
+  function storyIsSideways(): boolean {
+    return getComputedStyle(storyContent).display === 'flex';
+  }
+
   function storyPosition(): number {
-    return phoneLayout.matches ? storyContent.scrollLeft : storyContent.scrollTop;
+    return storyIsSideways() ? storyContent.scrollLeft : storyContent.scrollTop;
   }
 
   function setStoryPosition(position: number): void {
-    if (phoneLayout.matches) storyContent.scrollLeft = position;
+    if (storyIsSideways()) storyContent.scrollLeft = position;
     else storyContent.scrollTop = position;
   }
 
   function showStop(stop: HTMLElement | undefined): void {
-    stop?.scrollIntoView(phoneLayout.matches ? { block: 'nearest', inline: 'center' } : undefined);
+    stop?.scrollIntoView(storyIsSideways() ? { block: 'nearest', inline: 'center' } : undefined);
   }
 
   function setSheetDown(down: boolean): void {
@@ -414,7 +419,7 @@ async function main(): Promise<void> {
   }
 
   function centerOnVerse(verse: TanakhLayout): void {
-    Object.assign(camera, panToCenter(verse, camera.zoom, window.innerWidth, window.innerHeight));
+    Object.assign(camera, panToFocus(verse, camera.zoom, mapFocus()));
   }
 
   // A verse is one square six pixels across, so centring it while scaled out
@@ -439,13 +444,7 @@ async function main(): Promise<void> {
   function glideToVerse(verse: TanakhLayout): void {
     cancelCameraGlide();
 
-    const target = viewCenteredOn(
-      verse,
-      camera.zoom,
-      RESULT_CLICK_ZOOM,
-      window.innerWidth,
-      window.innerHeight,
-    );
+    const target = viewFocusedOn(verse, camera.zoom, RESULT_CLICK_ZOOM, mapFocus());
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
@@ -940,10 +939,11 @@ async function main(): Promise<void> {
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
 
   /**
-   * Where on the map the story puts the verse a stop names: the middle, or on
-   * a phone higher up, clear of the verse popup that sits above the sheet.
+   * Where a verse is put when the story, a link or the reader brings it into
+   * view: the middle of the map, or on a phone higher up, clear of the verse
+   * popup that sits above the sheet.
    */
-  function storyFocus(): StoryFocus {
+  function mapFocus(): ScreenPoint {
     const height = phoneLayout.matches
       ? canvas.clientHeight * PHONE_STORY_FOCUS
       : canvas.clientHeight / 2;
@@ -951,7 +951,7 @@ async function main(): Promise<void> {
   }
 
   let storyData = await loadStoryData();
-  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
+  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
 
   // Crossing into or out of phone width turns the story from a column into a
@@ -960,7 +960,7 @@ async function main(): Promise<void> {
   // no longer says which stop it was at; the last stop synced does.
   phoneLayout.addEventListener('change', () => {
     if (!phoneLayout.matches && sheetDown) setSheetDown(false);
-    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
       // That scroll was ours, not the reader's.
@@ -972,7 +972,7 @@ async function main(): Promise<void> {
   async function reloadStory(): Promise<void> {
     const position = storyPosition();
     storyData = await loadStoryData();
-    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, storyFocus());
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     setStoryPosition(position);
     // Force re-apply: stops may have changed (overlay/params/verse), and stop
@@ -1033,7 +1033,10 @@ async function main(): Promise<void> {
       }
       scheduleStoryFrame();
     };
-    if (wasOpen) {
+    const growMs = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--accordion-duration'),
+    );
+    if (wasOpen || !growMs) {
       start();
       return;
     }
@@ -1042,8 +1045,8 @@ async function main(): Promise<void> {
       if (e.target === rightPanel && e.propertyName === 'grid-template-rows') start();
     };
     rightPanel.addEventListener('transitionend', onTransitionEnd);
-    // No transitionend without a transition, as with reduced motion.
-    const fallback = setTimeout(start, 400);
+    // In case transitionend never comes, as when the transition is interrupted.
+    const fallback = setTimeout(start, growMs + 150);
     cancelOpening = () => {
       rightPanel.removeEventListener('transitionend', onTransitionEnd);
       clearTimeout(fallback);
@@ -1091,7 +1094,7 @@ async function main(): Promise<void> {
   function currentStoryState(): InterpolatedState {
     // On a phone the story is at whichever page is showing. Moving between
     // pages is eased on a timer (beginEase), not tracked through the swipe.
-    if (phoneLayout.matches) {
+    if (storyIsSideways()) {
       const page = Math.round(storyContent.scrollLeft / Math.max(1, storyContent.clientWidth));
       const stop = resolvedStops[Math.min(resolvedStops.length - 1, Math.max(0, page))];
       return { camera: { ...stop.camera }, fromStop: stop, toStop: stop, t: 0 };
@@ -1143,7 +1146,7 @@ async function main(): Promise<void> {
     );
 
     // A new page on a phone eases in rather than cutting to it.
-    if (phoneLayout.matches && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
+    if (storyIsSideways() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
       beginEase(SWIPE_EASE_MS, now);
       // The controls and the popup move to the new stop as it starts.
       syncStoryStopState(state.toStop);
@@ -1227,7 +1230,7 @@ async function main(): Promise<void> {
     updateSidebarWrapper(verse, verse !== null);
 
     cancelCameraGlide();
-    Object.assign(camera, cameraForView(next.camera, verse, window.innerWidth, window.innerHeight));
+    Object.assign(camera, cameraForView(next.camera, verse, mapFocus()));
 
     applyOverlay();
     render();

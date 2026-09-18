@@ -3,6 +3,7 @@ import type { TanakhLayout } from '../types';
 import { findTanakhItem } from '../types';
 import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
+import { panToFocus, type ScreenPoint } from '../camera';
 
 function isVerseRef(cam: CameraRef): cam is { kind: 'verse'; ref: string } {
   return typeof cam === 'object' && 'kind' in cam && cam.kind === 'verse';
@@ -68,17 +69,8 @@ export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HT
 }
 
 /** A point on the map, in CSS pixels, where the story puts the verse it names. */
-export interface StoryFocus {
-  x: number;
-  y: number;
-}
-
-function cameraForVerse(verse: TanakhLayout, zoom: number, focus: StoryFocus): CameraPosition {
-  return {
-    x: focus.x / zoom - verse.x - verse.size / 2,
-    y: focus.y / zoom - verse.y - verse.size / 2,
-    zoom,
-  };
+function cameraForVerse(verse: TanakhLayout, zoom: number, focus: ScreenPoint): CameraPosition {
+  return { ...panToFocus(verse, zoom, focus), zoom };
 }
 
 // "initial" uses the app's default camera position, unless the stop names a
@@ -87,7 +79,7 @@ export function resolveStops(
   stops: StoryStop[],
   initialCamera: CameraPosition,
   verses?: TanakhLayout[],
-  focus?: StoryFocus,
+  focus?: ScreenPoint,
 ): ResolvedStoryStop[] {
   return stops.map((stop) => {
     const cam = stop.camera;

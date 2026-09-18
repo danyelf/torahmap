@@ -5,6 +5,12 @@
 :root {
   --accordion-duration: 250ms;
   --story-bg: #16181d;
+  /* The summary field. A lowered sheet leaves it on screen, with the field's
+     border and the sheet's own top border. */
+  --field-margin: 12px;
+  --field-padding: 8px;
+  --field-line: 17px;
+  --sheet-bar: calc(2 * var(--field-margin) + 2 * var(--field-padding) + var(--field-line) + 3px);
 }
 
 #right-panel {
@@ -37,8 +43,8 @@ body.story-folded #right-panel {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #right-panel {
-    transition: none;
+  :root {
+    --accordion-duration: 0ms;
   }
 }
 
@@ -49,14 +55,15 @@ body.story-folded #right-panel {
   align-items: center;
   gap: 8px;
   min-width: 0;
-  margin: 12px 16px;
-  padding: 8px 10px;
+  margin: var(--field-margin) 16px;
+  padding: var(--field-padding) 10px;
   border: 1px solid #444;
   border-radius: 4px;
   background: #222;
   color: #ddd;
   font: inherit;
   font-size: 14px;
+  line-height: var(--field-line);
   text-align: left;
   cursor: pointer;
 }
@@ -67,8 +74,8 @@ body.story-folded #right-panel {
 
 /* Open, the controls speak for themselves; the line shrinks to a bar that
    closes them. The summary stays readable to a screen reader, as the button's
-   name. */
-body.story-folded #controls-toggle {
+   name. A lowered sheet keeps the field, the only line it shows. */
+body.story-folded:not(.sheet-down) #controls-toggle {
   justify-content: center;
   margin: 0;
   padding: 7px 20px;
@@ -78,11 +85,11 @@ body.story-folded #controls-toggle {
   background: none;
 }
 
-body.story-folded #controls-toggle:hover {
+body.story-folded:not(.sheet-down) #controls-toggle:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-body.story-folded #controls-summary {
+body.story-folded:not(.sheet-down) #controls-summary {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -114,7 +121,7 @@ body.story-folded #controls-summary {
   transform: translateY(-4px) rotate(45deg);
 }
 
-body.story-folded #controls-toggle .chevron {
+body.story-folded:not(.sheet-down) #controls-toggle .chevron {
   margin: 0;
   transform: translateY(2px) rotate(-135deg);
 }
@@ -375,7 +382,6 @@ body.story-at-end #story-cue {
 @media (max-width: 768px) {
   :root {
     --sheet-height: 30svh;
-    --sheet-bar: 60px;
     --sheet-shown: var(--sheet-height);
   }
 
@@ -405,8 +411,6 @@ body.story-at-end #story-cue {
     height: calc(100svh - var(--sheet-shown));
   }
 
-  /* Lowered, the top line is always the summary field, even when the open
-     controls had shrunk it to a bar. */
   /* Faded rather than removed. Removed, it changed the story's height as a
      swipe crossed into the first stop with an overlay, and the page settled
      short of where the swipe snapped. */
@@ -419,22 +423,6 @@ body.story-at-end #story-cue {
   body.no-overlay-quiet #controls-toggle {
     opacity: 0;
     visibility: hidden;
-  }
-
-  body.sheet-down #controls-toggle {
-    justify-content: flex-start;
-    margin: 12px 16px;
-    padding: 8px 10px;
-    border: 1px solid #444;
-    border-radius: 4px;
-    background: #222;
-  }
-
-  body.sheet-down #controls-summary {
-    position: static;
-    width: auto;
-    height: auto;
-    clip-path: none;
   }
 
   body.sheet-down #controls-toggle .chevron {
