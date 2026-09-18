@@ -11,7 +11,7 @@ import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
-import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
+import { trackOverlaySwitch, trackVerseClick } from './analytics.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -373,12 +373,9 @@ async function main(): Promise<void> {
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       zoomAt(zoomFactor, e.clientX, e.clientY);
       debouncedSaveUrlState();
-      debouncedTrackZoom();
     },
     { passive: false },
   );
-
-  const debouncedTrackZoom = debounce(() => trackZoomLevel(camera.zoom), 1000);
 
   const zoomInBtn = document.getElementById('zoom-in');
   const zoomOutBtn = document.getElementById('zoom-out');

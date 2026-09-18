@@ -18,6 +18,7 @@ import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay'
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { configureAnalytics } from '../../../analytics.ts';
 
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
@@ -1355,26 +1356,23 @@ describe('Search Overlay', () => {
   });
 
   describe('Colours for settings it is handed', () => {
-    afterEach(() => {
-      delete window.gtag;
-    });
-
     /** The colours for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
       return searchOverlay.overlay.colorsFor!(items, searchOverlay.fromUrl({ q }), null);
     }
 
     it('answers for a query it is handed without changing the search or firing analytics', async () => {
-      const gtag = vi.fn();
-      window.gtag = gtag;
+      const send = vi.fn();
+      configureAnalytics({ hostname: 'torahmap.org', send });
       await searchOverlay.overlay.init?.();
       searchOverlay.restore({ q: 'אור' });
-      gtag.mockClear();
+      send.mockClear();
 
       colorsFor([createVerse({ book: 'Genesis', chapter: 1, verse: 3 })], 'אברם');
 
       expect(searchOverlay.toUrl().q).toBe('אור');
-      expect(gtag).not.toHaveBeenCalled();
+      expect(send).not.toHaveBeenCalled();
+      configureAnalytics({ hostname: 'localhost' });
     });
 
     it('neither redraws the panel nor asks the app to repaint', () => {
