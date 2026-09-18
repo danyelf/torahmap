@@ -1361,6 +1361,12 @@ describe('Search Overlay', () => {
       return searchOverlay.overlay.colorsFor!(items, searchOverlay.fromUrl({ q }), null);
     }
 
+    // A failing assertion below must not skip this and leave later tests
+    // sending analytics as torahmap.org.
+    afterEach(() => {
+      configureAnalytics({ hostname: 'localhost' });
+    });
+
     it('answers for a query it is handed without changing the search or firing analytics', async () => {
       const send = vi.fn();
       configureAnalytics({ hostname: 'torahmap.org', send });
@@ -1372,7 +1378,6 @@ describe('Search Overlay', () => {
 
       expect(searchOverlay.toUrl().q).toBe('אור');
       expect(send).not.toHaveBeenCalled();
-      configureAnalytics({ hostname: 'localhost' });
     });
 
     it('neither redraws the panel nor asks the app to repaint', () => {
