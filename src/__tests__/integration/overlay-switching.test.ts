@@ -250,19 +250,21 @@ describe('Overlay Switching Integration', () => {
 
     it('updates legend when overlay state changes', async () => {
       const overlay = await switchToOverlay('commentary');
+      const initialLegend = mockLegendContainer.innerHTML;
 
-      // Simulate category change by directly calling the callback
-      const updateCallback = vi.fn(() => {
-        mockLegendContainer.innerHTML = '';
-        overlay.renderLegend?.(mockLegendContainer, settings.get(overlay));
-      });
-      overlay.onUpdate?.(updateCallback);
+      // Change the category through the real control, as a reader would.
+      mockControlsContainer.innerHTML = '';
+      overlay.renderControls?.(mockControlsContainer, settings.get(overlay), (update) =>
+        settings.set(overlay, update(settings.get(overlay))),
+      );
+      const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
+      select.value = 'Midrash';
+      select.dispatchEvent(new Event('change'));
 
-      // Trigger update (would normally be from UI interaction)
-      updateCallback();
+      mockLegendContainer.innerHTML = '';
+      overlay.renderLegend?.(mockLegendContainer, settings.get(overlay));
 
-      // Legend should have been re-rendered
-      expect(updateCallback).toHaveBeenCalled();
+      expect(mockLegendContainer.innerHTML).not.toBe(initialLegend);
     });
   });
 
@@ -296,28 +298,29 @@ describe('Overlay Switching Integration', () => {
     });
   });
 
-  describe('Update Callbacks', () => {
-    it('registers update callback for dynamic overlays', async () => {
+  describe('Settings Changes', () => {
+    it('notifies onChange when a control changes settings', async () => {
       const overlay = await switchToOverlay('commentary');
 
-      const updateCallback = vi.fn();
-      overlay.onUpdate?.(updateCallback);
+      const onChange = vi.fn();
+      mockControlsContainer.innerHTML = '';
+      overlay.renderControls?.(mockControlsContainer, settings.get(overlay), onChange);
 
-      expect(overlay.onUpdate).toBeDefined();
+      const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
+      select.value = 'Midrash';
+      select.dispatchEvent(new Event('change'));
+
+      expect(onChange).toHaveBeenCalled();
     });
 
-    it('unregisters callbacks when overlay is destroyed', async () => {
+    it("keeps an overlay's settings after switching away", async () => {
       const overlay = await switchToOverlay('commentary');
-
-      const updateCallback = vi.fn();
-      overlay.onUpdate?.(updateCallback);
+      settings.set(overlay, { category: 'Midrash' });
 
       // Switch away (calls destroy)
       await switchToOverlay('trop');
 
-      // Callback should not fire after destroy
-      // (This is implicitly tested by the destroy call)
-      expect(overlay.destroy).toBeDefined();
+      expect(settings.get(overlay)).toEqual({ category: 'Midrash' });
     });
   });
 
@@ -425,14 +428,12 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('URL State Persistence', () => {
-    it('provides URL params for overlays that support it', async () => {
-      await switchToOverlay('commentary');
+    it('provides URL params through the settings store', async () => {
+      const overlay = await switchToOverlay('commentary');
 
-      if (currentOverlay?.getUrlParams) {
-        const params = currentOverlay.getUrlParams!();
-        expect(params).toBeDefined();
-        expect(typeof params).toBe('object');
-      }
+      const params = settings.toUrl(overlay);
+      expect(params).toBeDefined();
+      expect(typeof params).toBe('object');
     });
 
     it('applies URL params when restoring overlay state', async () => {

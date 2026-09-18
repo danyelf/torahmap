@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { computeBlendedColors } from '../overlayBlender';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
+import { createOverlaySettings } from '../../overlays/settings';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Overlay, UrlParamValues } from '../../overlays/types';
@@ -195,7 +196,15 @@ describe('the blender evaluates without disturbing the overlay', () => {
   });
 
   it('leaves the overlay showing what it showed before the blend', () => {
-    commentaryOverlay.applyUrlParams?.({ category: 'Midrash' });
+    // The overlay holds no settings of its own; the app does. The blend reads
+    // each stop's own settings and never touches what the app is holding, so
+    // this holds by construction — the assertion is that a held settings
+    // value still paints the same colours after a blend runs.
+    const settings = createOverlaySettings();
+    settings.restore(commentaryOverlay, { category: 'Midrash' });
+    const held = settings.get(commentaryOverlay);
+    const verse = verses[0];
+    const before = commentaryOverlay.getVerseColor(verse, held);
 
     const fromStop: ResolvedStoryStop = {
       id: 'a',
@@ -215,7 +224,8 @@ describe('the blender evaluates without disturbing the overlay', () => {
     };
     computeBlendedColors(fromStop, toStop, 0.5, verses, null);
 
-    expect(commentaryOverlay.getUrlParams?.()).toEqual({ category: 'Midrash' });
+    expect(settings.get(commentaryOverlay)).toBe(held);
+    expect(commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay))).toEqual(before);
   });
 });
 

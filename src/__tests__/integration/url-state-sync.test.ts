@@ -53,12 +53,13 @@ describe('URL State Sync Integration', () => {
       const overlay = getOverlay('commentary');
       await overlay?.init?.();
 
-      // Apply URL params
+      // Restore settings from a link
       const params = new URLSearchParams('category=talmud');
-      applyOverlayParams(overlay, params);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params);
 
       // Get URL params back
-      const urlParams = overlay?.getUrlParams?.();
+      const urlParams = settings.toUrl(overlay!);
       expect(urlParams).toEqual({ category: 'talmud' });
     });
 
@@ -363,12 +364,13 @@ describe('URL State Sync Integration', () => {
       const overlay = getOverlay('commentary');
       await overlay?.init?.();
 
-      // Apply initial state
+      // Restore initial state
       const params1 = new URLSearchParams('category=talmud');
-      applyOverlayParams(overlay, params1);
+      const settings = createOverlaySettings();
+      settings.restore(overlay!, params1);
 
       // Get URL params
-      const urlParams1 = overlay?.getUrlParams?.();
+      const urlParams1 = settings.toUrl(overlay!);
       expect(urlParams1).toEqual({ category: 'talmud' });
 
       // Build URL state
