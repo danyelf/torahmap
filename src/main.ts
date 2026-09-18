@@ -112,6 +112,16 @@ declare global {
   }
 }
 
+const STORY_HIDDEN_KEY = 'torahMap.storyHidden';
+
+function storyWasHidden(): boolean {
+  try {
+    return localStorage.getItem(STORY_HIDDEN_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
 async function main(): Promise<void> {
   document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
 
@@ -805,11 +815,23 @@ async function main(): Promise<void> {
     });
   }
 
+  // Remembered only when the reader puts the story away themselves, not when a
+  // shared link opens with it hidden.
+  function rememberStoryHidden(hidden: boolean): void {
+    try {
+      if (hidden) localStorage.setItem(STORY_HIDDEN_KEY, 'true');
+      else localStorage.removeItem(STORY_HIDDEN_KEY);
+    } catch {
+      // Storage can be unavailable; the story simply shows next time.
+    }
+  }
+
   document.getElementById('hide-story')?.addEventListener('click', () => {
     lastStoryScrollTop = storyContent.scrollTop;
     driver = readerTakesOver(storyContent.scrollTop);
     rejoin = null;
     setStoryShown(false);
+    rememberStoryHidden(true);
     // The URL stops naming a story stop and names the overlay instead.
     saveUrlState(true);
   });
@@ -818,6 +840,7 @@ async function main(): Promise<void> {
   // scroll would.
   document.getElementById('show-story')?.addEventListener('click', () => {
     setStoryShown(true);
+    rememberStoryHidden(false);
     storyContent.scrollTop = lastStoryScrollTop;
     driver = rejoinNow(performance.now());
     beginRejoin();
@@ -1016,6 +1039,12 @@ async function main(): Promise<void> {
 
   if (window.location.hash) {
     restoreFromUrl();
+  }
+
+  // A link to a story stop always shows the story.
+  if (storyShown && !parseUrlState().story && storyWasHidden()) {
+    driver = readerTakesOver(0);
+    setStoryShown(false);
   }
 
   subscribeToHashChange(() => {
