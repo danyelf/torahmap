@@ -36,7 +36,7 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => strin
   overview: {
     title: 'Overview',
     content: `
-      <h2>Torah Map</h2>
+      <h2>Torahmap</h2>
       <p>An interactive visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position.</p>
       <p>The map is divided into three sections, stacked vertically:</p>
       <ul>
@@ -73,7 +73,7 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => strin
   credits: {
     title: 'Credits',
     content: () => `
-      <p>Data Sources for the Torah Map.</p>
+      <p>Data Sources for Torahmap.</p>
       ${renderCreditsHtml(getAllOverlays())}
     `,
   },

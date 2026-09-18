@@ -1,0 +1,7 @@
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "torahmap",
+  "compatibility_date": "2026-08-27",
+  "assets": { "directory": "./dist" },
+  "routes": [{ "pattern": "torahmap.org", "custom_domain": true }],
+}

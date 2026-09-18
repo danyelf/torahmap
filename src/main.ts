@@ -109,7 +109,7 @@ declare global {
 }
 
 async function main(): Promise<void> {
-  document.title = `Tanakh Map [${__GIT_BRANCH__}]`;
+  document.title = __GIT_BRANCH__ === 'main' ? 'Torahmap' : `Torahmap [${__GIT_BRANCH__}]`;
 
   const [torahData, verseTexts] = await Promise.all([
     loadTanakhStructure(),
