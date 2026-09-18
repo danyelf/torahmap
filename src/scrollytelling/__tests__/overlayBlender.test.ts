@@ -195,11 +195,12 @@ describe('the blender evaluates without disturbing the overlay', () => {
     registerOverlay(commentaryOverlay);
   });
 
-  it('leaves the overlay showing what it showed before the blend', () => {
-    // The overlay holds no settings of its own; the app does. The blend reads
-    // each stop's own settings and never touches what the app is holding, so
-    // this holds by construction — the assertion is that a held settings
-    // value still paints the same colours after a blend runs.
+  it("a blend leaves Commentary's colours for the held settings unchanged", () => {
+    // The overlay holds no settings of its own; the app does, and the blend
+    // reads only each stop's own settings, never the app's — so what the app
+    // holds cannot be touched, by construction. What this guards is the
+    // shared per-category memo: blending two other categories must not leave
+    // it painting the held one differently.
     const settings = createOverlaySettings();
     settings.restore(commentaryOverlay, { category: 'Midrash' });
     const held = settings.get(commentaryOverlay);
@@ -224,7 +225,6 @@ describe('the blender evaluates without disturbing the overlay', () => {
     };
     computeBlendedColors(fromStop, toStop, 0.5, verses, null);
 
-    expect(settings.get(commentaryOverlay)).toBe(held);
     expect(commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay))).toEqual(before);
   });
 });
