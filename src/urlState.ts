@@ -326,8 +326,11 @@ let urlWritesSuspended = 0;
  * Run something that puts state *into* the app from outside — a link being
  * restored, a story stop being applied — with URL writes turned off.
  *
- * This is the one place the rule lives. Nothing that runs in response can
- * reach the URL from in here, so no code path has to be careful about it.
+ * It blocks writes made synchronously inside `apply` and nothing else: a
+ * control that calls onChange while being drawn would otherwise have
+ * changeSettings write the URL midway through a restore or a story stop.
+ * Deferred work, such as debouncedSaveUrlState or a scroll frame, runs after
+ * this returns and is not covered.
  */
 export function applyingExternalState<T>(apply: () => T): T {
   urlWritesSuspended++;

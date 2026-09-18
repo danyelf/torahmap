@@ -26,7 +26,10 @@ export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHac
 // and overlays with different settings can no longer share one list.
 //
 // An overlay either has settings, and implements every member of
-// OverlayWithSettings, or has none and implements none of them.
+// OverlayWithSettings, or has none and implements none of them. An overlay
+// missing one of those members, with urlParams written inline, gets a tsc error
+// that `kind: string` is not assignable to `UrlParamKind`, not one naming the
+// missing member.
 export type Overlay<T = TanakhIdentity, S = unknown> = OverlayMembers<T, S> &
   (OverlayWithSettings<S> | OverlayWithoutSettings);
 
