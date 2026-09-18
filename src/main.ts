@@ -19,7 +19,9 @@ import {
   trackStoryReturn,
   trackStoryStop,
   trackVerseClick,
+  trackViewSettled,
 } from './analytics.ts';
+import { centreBook } from './telemetry/centreBook.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -335,7 +337,7 @@ async function main(): Promise<void> {
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
-      debouncedSaveUrlState();
+      debouncedCameraSettled();
     });
   }
 
@@ -382,7 +384,7 @@ async function main(): Promise<void> {
       cancelCameraGlide();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       zoomAt(zoomFactor, e.clientX, e.clientY);
-      debouncedSaveUrlState();
+      debouncedCameraSettled();
     },
     { passive: false },
   );
@@ -392,12 +394,12 @@ async function main(): Promise<void> {
 
   zoomInBtn?.addEventListener('click', () => {
     zoomAt(ZOOM_IN_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedSaveUrlState();
+    debouncedCameraSettled();
   });
 
   zoomOutBtn?.addEventListener('click', () => {
     zoomAt(ZOOM_OUT_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedSaveUrlState();
+    debouncedCameraSettled();
   });
 
   canvas.addEventListener(
@@ -438,7 +440,7 @@ async function main(): Promise<void> {
       releaseTouch(touchState, touch.identifier);
     }
     if (touchState.activeTouches.size === 0) {
-      debouncedSaveUrlState();
+      debouncedCameraSettled();
     }
   });
 
@@ -470,7 +472,7 @@ async function main(): Promise<void> {
     const wasDragging = mouseState.isDragging;
     if (wasDragging) {
       stopDrag(mouseState);
-      debouncedSaveUrlState();
+      debouncedCameraSettled();
     }
 
     if (pointerDownPos) {
@@ -550,7 +552,12 @@ async function main(): Promise<void> {
     updateUrl(state, pushHistory);
   }
 
-  const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
+  const debouncedCameraSettled = debounce(() => {
+    saveUrlState(false);
+    if (appMode !== 'explore') return;
+    const book = centreBook(verses, camera, window.innerWidth, window.innerHeight);
+    trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
+  }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
     updateSidebar(
