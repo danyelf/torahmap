@@ -460,7 +460,7 @@ describe('Commentary Overlay', () => {
       const verse = testVerses[0]; // Genesis 1:1, total: 150
       const info = commentaryOverlay.getHoverInfo(verse);
 
-      expect(info).toBe('150 links');
+      expect(info).toBe('150 references');
     });
 
     it('returns category count when filtered', () => {
@@ -473,7 +473,16 @@ describe('Commentary Overlay', () => {
       const verse = testVerses[0]; // Genesis 1:1, Midrash: 50
       const info = commentaryOverlay.getHoverInfo(verse);
 
-      expect(info).toBe('50 Midrash');
+      expect(info).toBe('50 references in midrash');
+    });
+
+    it('writes one reference in the singular and large counts with a separator', async () => {
+      testData.Genesis['1']['2'] = { total: 1, categories: {} };
+      testData.Genesis['1']['3'] = { total: 1734, categories: {} };
+      await commentaryOverlay.overlay.init?.();
+
+      expect(commentaryOverlay.getHoverInfo(testVerses[1])).toBe('1 reference');
+      expect(commentaryOverlay.getHoverInfo(testVerses[2])).toBe('1,734 references');
     });
 
     it('returns null for verses without data', () => {
@@ -483,7 +492,7 @@ describe('Commentary Overlay', () => {
       expect(info).toBeNull();
     });
 
-    it('returns "no <category>" for category with zero count', () => {
+    it('says "no references" for a category with zero count', () => {
       const container = commentaryOverlay.renderControls();
 
       const select = container.querySelector('select') as HTMLSelectElement;
@@ -493,7 +502,7 @@ describe('Commentary Overlay', () => {
       const verse = testVerses[0]; // Genesis 1:1, no Kabbalah
       const info = commentaryOverlay.getHoverInfo(verse);
 
-      expect(info).toBe('no Kabbalah');
+      expect(info).toBe('no references in Kabbalah');
     });
   });
 

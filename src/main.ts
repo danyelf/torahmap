@@ -669,6 +669,7 @@ async function main(): Promise<void> {
     applyOverlay();
     renderOverlayLegend();
     renderOverlayControls();
+    if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
     render();
     saveUrlState(false);
   }
@@ -678,6 +679,7 @@ async function main(): Promise<void> {
     activateOverlay(id);
     renderOverlayUi();
     applyOverlay();
+    if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
     render();
     saveUrlState(true);
   }

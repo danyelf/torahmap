@@ -20,6 +20,24 @@ const URL_PARAMS = [
   { key: 'category', kind: 'category', default: 'total' },
 ] as const satisfies readonly UrlParamSpec[];
 
+/** How each category reads after "42 references in …". */
+const WHERE: Record<string, string> = {
+  'Commentary': 'commentaries',
+  'Quoting Commentary': 'quoting commentaries',
+  'Talmud': 'the Talmud',
+  'Midrash': 'midrash',
+  'Mishnah': 'the Mishnah',
+  'Tosefta': 'the Tosefta',
+  'Halakhah': 'works of halakhah',
+  'Responsa': 'responsa',
+  'Jewish Thought': 'Jewish thought',
+  'Kabbalah': 'Kabbalah',
+  'Chasidut': 'Chasidut',
+  'Musar': 'Musar',
+  'Liturgy': 'the liturgy',
+  'Second Temple': 'Second Temple texts',
+};
+
 export interface CommentarySettings {
   readonly category: string;
 }
@@ -176,11 +194,13 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
   getHoverInfo(verse, settings) {
     const verseData = data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
     if (!verseData) return null;
-    if (settings.category === 'total') {
-      return `${verseData.total} links`;
-    }
-    const count = verseData.categories[settings.category];
-    return count ? `${count} ${settings.category}` : `no ${settings.category}`;
+    const count = getCount(verse.book, verse.chapter, verse.verse, settings.category);
+    const counted =
+      count === 0
+        ? 'no references'
+        : `${count.toLocaleString()} reference${count === 1 ? '' : 's'}`;
+    if (settings.category === 'total') return counted;
+    return `${counted} in ${WHERE[settings.category] ?? settings.category}`;
   },
 
   getSefariaConnectionParam(settings) {
