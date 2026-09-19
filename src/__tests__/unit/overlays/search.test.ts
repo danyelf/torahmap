@@ -15,6 +15,7 @@ const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
+import { SEARCH_RECORD_DELAY_MS } from '../../../constants/app';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
@@ -1469,6 +1470,77 @@ describe('Search Overlay', () => {
     function colorsFor(items: TanakhLayout[], q: string) {
       return searchOverlay.overlay.colorsFor!(items, searchOverlay.fromUrl({ q }), null);
     }
+  });
+
+  describe('Recording a search', () => {
+    let send: ReturnType<typeof vi.fn<(body: string) => void>>;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      send = vi.fn<(body: string) => void>();
+      configureAnalytics({ hostname: 'torahmap.org', send });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      configureAnalytics({ hostname: 'localhost' });
+    });
+
+    function sent(): { term: string; result_count: number }[] {
+      return send.mock.calls.map(([body]) => {
+        const { event, fields } = JSON.parse(body);
+        expect(event).toBe('search_execute');
+        return { term: fields.term, result_count: fields.result_count };
+      });
+    }
+
+    /** Type a word into the open row a letter at a time. */
+    function typeSlowly(container: HTMLElement, word: string): void {
+      for (let i = 1; i <= word.length; i++) {
+        typeInSearch(container, word.slice(0, i));
+        vi.advanceTimersByTime(100);
+      }
+    }
+
+    it('records a word once the reader stops typing it', () => {
+      const container = render();
+      typeSlowly(container, 'heavens');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS - 101);
+      expect(send).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1);
+      expect(sent()).toEqual([{ term: 'heavens', result_count: 2 }]);
+    });
+
+    it('records only the word added, each with its own count', () => {
+      const container = render();
+      typeSlowly(container, 'heavens');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      container.querySelector<HTMLButtonElement>('#add-term')!.click();
+      typeSlowly(container, 'names');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+
+      expect(sent()).toEqual([
+        { term: 'heavens', result_count: 2 },
+        { term: 'names', result_count: 1 },
+      ]);
+    });
+
+    it('records nothing for a term too short to search on', () => {
+      typeSlowly(render(), 'h');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it('does not record a restored word when the reader adds another', () => {
+      const container = render();
+      searchOverlay.restore({ q: 'heavens' });
+      container.querySelector<HTMLButtonElement>('#add-term')!.click();
+      typeSlowly(container, 'names');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+
+      expect(sent()).toEqual([{ term: 'names', result_count: 1 }]);
+    });
   });
 
   describe('Hebrew Substring Position Bug Fix', () => {

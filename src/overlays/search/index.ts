@@ -39,7 +39,9 @@ import {
   type SearchTerm,
 } from '../../search/terms.ts';
 import { SEARCH_COLORS } from '../../utils/color.ts';
-import { MIN_SEARCH_TERM_LENGTH } from '../../constants/app.ts';
+import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
+import { debounce } from '../../utils/debounce.ts';
+import { termsToRecord, type Recorded } from './recording.ts';
 import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';
 import { trackSearchExecute } from '../../analytics.ts';
 
@@ -207,16 +209,39 @@ function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
   return { results, matchingTerms: getMatchingVerseTerms(results) };
 }
 
-/**
- * Record a reader searching. Sent when the reader changes the search, never
- * when a colour is computed or a link is restored.
- */
-function trackSearch(settings: SearchSettings): void {
-  const { active, results } = searchFor(settings);
-  for (const term of active) {
-    const hebrew = termIsHebrew(term);
-    trackSearchExecute(term.text, hebrew ? 'he' : 'en', effectiveMode(term), results.length);
+// A search is recorded only when the reader changes it, never when a colour is
+// computed or a link is restored.
+let recorded: Recorded = new Map();
+/** The settings the reader's last change produced. Any others came from a link. */
+let lastChanged: SearchSettings | null = null;
+
+const recordSettledSearch = debounce(() => {
+  const settings = lastChanged;
+  if (!settings) return;
+
+  const { send, recorded: next } = termsToRecord(recorded, searchFor(settings).active);
+  recorded = next;
+  for (const term of send) {
+    const language = termIsHebrew(term) ? 'he' : 'en';
+    trackSearchExecute(term.text, language, effectiveMode(term), termHitCount(settings, term) ?? 0);
   }
+}, SEARCH_RECORD_DELAY_MS);
+
+/**
+ * Note a change the reader made, from `current` to `next`, and return `next`.
+ *
+ * When `current` is not what the reader's last change produced, a link has
+ * replaced the search since. Its terms count as recorded, so the next event
+ * names what the reader changed on the map they were looking at, and a
+ * restored word is never sent as though they had typed it.
+ */
+function readerChanged(current: SearchSettings, next: SearchSettings): SearchSettings {
+  if (current !== lastChanged) {
+    recorded = termsToRecord(new Map(), searchFor(current).active).recorded;
+  }
+  lastChanged = next;
+  recordSettledSearch();
+  return next;
 }
 
 /**
@@ -273,9 +298,7 @@ export function searchForMeaning(
 
   // The word the click just added is the one the reader is looking at.
   openTermId = id;
-  const next = { terms };
-  trackSearch(next);
-  return next;
+  return readerChanged(settings, { terms });
 }
 
 /**
@@ -379,9 +402,7 @@ const termRowsHost: TermRowsHost = {
   hitCount: (term) => (shown ? termHitCount(shown, term) : null),
   edit(change) {
     requestChange?.((current) => {
-      const next = { terms: change(current.terms) };
-      trackSearch(next);
-      return next;
+      return readerChanged(current, { terms: change(current.terms) });
     });
   },
   openRow,
@@ -389,7 +410,7 @@ const termRowsHost: TermRowsHost = {
     requestChange?.((current) => {
       const terms = addTerm(current.terms, '');
       openTermId = terms[terms.length - 1].id;
-      return { terms };
+      return readerChanged(current, { terms });
     });
   },
 };
