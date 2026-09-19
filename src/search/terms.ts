@@ -10,6 +10,7 @@ import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
 import { isHebrewQuery } from '../search.ts';
 import { TERM_SEPARATORS } from '../constants/app.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
+import type { TextLanguage } from '../types.ts';
 
 /**
  * How a term is matched. Meanings resolves a written form to the dictionary words
@@ -288,6 +289,27 @@ export function modesOffered(term: SearchTerm): SearchMode[] {
 /** Only a Hebrew term in meanings mode consults the dictionary. */
 export function meaningsApply(term: SearchTerm): boolean {
   return termIsHebrew(term) && effectiveMode(term) === 'meanings';
+}
+
+/** Everything a term is matched on: terms with equal queries find the same verses. */
+export interface TermQuery {
+  text: string;
+  language: TextLanguage;
+  mode: SearchMode;
+  /** The lexemes of the chosen meanings, or null when the term is matched by its text. */
+  meaningKeys: string[] | null;
+}
+
+export function termQuery(term: SearchTerm): TermQuery {
+  return {
+    text: term.text.trim(),
+    language: termIsHebrew(term) ? 'he' : 'en',
+    mode: effectiveMode(term),
+    // A word the dictionary does not know is matched by its text even in
+    // meanings mode, so a lexeme index that failed to load does not leave
+    // Hebrew finding nothing.
+    meaningKeys: meaningsApply(term) && term.meanings.length > 0 ? selectedKeys(term) : null,
+  };
 }
 
 /**

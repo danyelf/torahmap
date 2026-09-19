@@ -54,6 +54,19 @@ describe('termsToRecord', () => {
     expect(termsToRecord(recorded, [narrowed]).send).toEqual([narrowed]);
   });
 
+  it('does not send a term whose meanings changed while it is matched by its text', () => {
+    const [plain] = addTerm([], 'עלה');
+    const both: SearchTerm = {
+      ...plain,
+      mode: 'substring',
+      meanings: [meaning('a'), meaning('b')],
+      selected: new Set(['a', 'b']),
+    };
+    const { recorded } = termsToRecord(none, [both]);
+    const narrowed = { ...both, selected: new Set(['a']) };
+    expect(termsToRecord(recorded, [narrowed]).send).toEqual([]);
+  });
+
   it('forgets a removed term, so bringing it back sends it again', () => {
     const terms = addTerm(addTerm([], 'light'), 'dark');
     const { recorded } = termsToRecord(none, terms);

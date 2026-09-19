@@ -1,17 +1,16 @@
 // Which searched terms are worth an analytics event: the ones the reader has
 // changed since they were last recorded.
-import { effectiveMode, selectedKeys, type SearchTerm } from '../../search/terms.ts';
+import { termQuery, type SearchTerm } from '../../search/terms.ts';
 
 /** What was last recorded for each term, by term id. */
 export type Recorded = ReadonlyMap<string, string>;
 
-/** Everything about a term that changes what it finds. */
 function recordOf(term: SearchTerm): string {
-  return JSON.stringify([term.text.trim(), effectiveMode(term), selectedKeys(term)]);
+  return JSON.stringify(termQuery(term));
 }
 
 /**
- * The terms among `active` that are new or differ from `previous`, and the
+ * The terms among `active` that are new or whose termQuery differs from `previous`, and the
  * record to keep afterwards: exactly the active terms, so a removed term is
  * forgotten.
  */

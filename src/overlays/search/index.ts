@@ -26,17 +26,16 @@ import {
   colorIndexAt,
   setTermText,
   onlyMeaning,
-  selectedKeys,
   encodeMeanings,
   applyMeanings,
   setMode,
-  effectiveMode,
   meaningsApply,
-  termIsHebrew,
+  termQuery,
   encodeModes,
   applyModes,
   MAX_TERMS,
   type SearchTerm,
+  type TermQuery,
 } from '../../search/terms.ts';
 import { SEARCH_COLORS } from '../../utils/color.ts';
 import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
@@ -181,38 +180,28 @@ export function configure(config: {
 function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
   if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
-  // Every term is matched on its own, in its own language. Only a Hebrew term
-  // in meanings mode consults the chosen meanings; everything else is text.
-  // Matching text scans the corpus, so it is done only for the terms that need
-  // it — a Hebrew term answered from the dictionary never pays for it.
-  const textVerses = (term: SearchTerm): Set<string> => {
-    const mode = effectiveMode(term);
-    return verseSetsForTerms([term.text.trim()], {
+  // Every term is matched on its own, in its own language. Matching text scans
+  // the corpus, so it is done only for the terms that need it — a Hebrew term
+  // answered from the dictionary never pays for it.
+  const textVerses = ({ text, mode }: TermQuery): Set<string> =>
+    verseSetsForTerms([text], {
       wholeWordEnglish: mode === 'word',
-      // A Hebrew term reaches this path only when the dictionary has nothing
-      // for it, and meanings has always fallen back to whole word there.
+      // A Hebrew term reaches this path in meanings mode only when the
+      // dictionary has nothing for it, and meanings falls back to whole word.
       hebrewMode: mode === 'meanings' ? 'word' : mode,
     })[0];
-  };
 
+  const queries = active.map(termQuery);
   const results = resultsForVerseSets(
-    active.map((term) => {
-      if (!meaningsApply(term)) return textVerses(term);
-      // A term the dictionary does not know falls back to whole-word matching,
-      // as meanings mode always has. Meanings is the default now, so a lexeme index
-      // that failed to load must not mean Hebrew silently finds nothing.
-      return term.meanings.length > 0 ? versesFor(selectedKeys(term)) : textVerses(term);
-    }),
-    active.map((term) => (termIsHebrew(term) ? 'he' : 'en')),
+    queries.map((query) => (query.meaningKeys ? versesFor(query.meaningKeys) : textVerses(query))),
+    queries.map((query) => query.language),
   );
 
   return { results, matchingTerms: getMatchingVerseTerms(results) };
 }
 
-// A search is recorded only when the reader changes it, never when a colour is
-// computed or a link is restored.
 let recorded: Recorded = new Map();
-/** The settings the reader's last change produced. Any others came from a link. */
+/** The search the reader's last change produced. */
 let lastChanged: SearchSettings | null = null;
 
 const recordSettledSearch = debounce(() => {
@@ -222,23 +211,31 @@ const recordSettledSearch = debounce(() => {
   const { send, recorded: next } = termsToRecord(recorded, searchFor(settings).active);
   recorded = next;
   for (const term of send) {
-    const language = termIsHebrew(term) ? 'he' : 'en';
-    trackSearchExecute(term.text, language, effectiveMode(term), termHitCount(settings, term) ?? 0);
+    const { language, mode } = termQuery(term);
+    trackSearchExecute(term.text, language, mode, termHitCount(settings, term)!);
   }
 }, SEARCH_RECORD_DELAY_MS);
 
 /**
- * Note a change the reader made, from `current` to `next`, and return `next`.
- *
- * When `current` is not what the reader's last change produced, a link has
- * replaced the search since. Its terms count as recorded, so the next event
- * names what the reader changed on the map they were looking at, and a
- * restored word is never sent as though they had typed it.
+ * Take `settings` as the search on the map. One the reader's last change did
+ * not produce came from a link: a word still waiting to be recorded is dropped,
+ * and the link's terms count as recorded, so a restored word is never sent as
+ * though the reader had typed it and the next event names only what they
+ * change.
+ */
+function searchOnMap(settings: SearchSettings): void {
+  if (settings === lastChanged) return;
+  recordSettledSearch.cancel();
+  recorded = termsToRecord(new Map(), searchFor(settings).active).recorded;
+  lastChanged = settings;
+}
+
+/**
+ * Note a change the reader made, from `current` to `next`, and return `next`,
+ * to be recorded once the search has sat unchanged for SEARCH_RECORD_DELAY_MS.
  */
 function readerChanged(current: SearchSettings, next: SearchSettings): SearchSettings {
-  if (current !== lastChanged) {
-    recorded = termsToRecord(new Map(), searchFor(current).active).recorded;
-  }
+  searchOnMap(current);
   lastChanged = next;
   recordSettledSearch();
   return next;
@@ -401,16 +398,14 @@ const termRowsHost: TermRowsHost = {
   openId: () => (shown ? (openTerm(shown)?.id ?? null) : null),
   hitCount: (term) => (shown ? termHitCount(shown, term) : null),
   edit(change) {
-    requestChange?.((current) => {
-      return readerChanged(current, { terms: change(current.terms) });
-    });
+    requestChange?.((current) => ({ terms: change(current.terms) }));
   },
   openRow,
   addRow() {
     requestChange?.((current) => {
       const terms = addTerm(current.terms, '');
       openTermId = terms[terms.length - 1].id;
-      return readerChanged(current, { terms });
+      return { terms };
     });
   },
 };
@@ -523,7 +518,9 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
   renderControls(container, settings, onChange) {
     const previous = shown;
     shown = settings;
-    requestChange = onChange;
+    searchOnMap(settings);
+    // Every change the panel asks for is the reader's.
+    requestChange = (update) => onChange((current) => readerChanged(current, update(current)));
 
     if (!searchResults || !container.contains(searchResults)) {
       container.innerHTML = `
@@ -581,6 +578,8 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     searchHitCaption = null;
     shown = null;
     requestChange = null;
+    // A search the reader leaves before it settles is not recorded.
+    recordSettledSearch.cancel();
     // verses and onVerseClickCallback are configuration handed in once by
     // configure(), not per-activation state, so they stay.
   },

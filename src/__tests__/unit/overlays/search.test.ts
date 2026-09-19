@@ -1365,6 +1365,7 @@ describe('Search Overlay', () => {
     // A failing assertion below must not skip this and leave later tests
     // sending analytics as torahmap.org.
     afterEach(() => {
+      vi.useRealTimers();
       configureAnalytics({ hostname: 'localhost' });
     });
 
@@ -1372,10 +1373,12 @@ describe('Search Overlay', () => {
       const send = vi.fn();
       configureAnalytics({ hostname: 'torahmap.org', send });
       await searchOverlay.overlay.init?.();
+      vi.useFakeTimers();
       searchOverlay.restore({ q: 'אור' });
       send.mockClear();
 
       colorsFor([createVerse({ book: 'Genesis', chapter: 1, verse: 3 })], 'אברם');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
 
       expect(searchOverlay.toUrl().q).toBe('אור');
       expect(send).not.toHaveBeenCalled();
@@ -1540,6 +1543,35 @@ describe('Search Overlay', () => {
       vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
 
       expect(sent()).toEqual([{ term: 'names', result_count: 1 }]);
+    });
+
+    it('records a word again when the reader changes how it is matched', () => {
+      const container = render();
+      typeSlowly(container, 'heavens');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      container
+        .querySelector<HTMLButtonElement>('.term-row[data-open="true"] [data-mode="word"]')!
+        .click();
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+
+      expect(send.mock.calls.map(([body]) => JSON.parse(body).fields.search_mode)).toEqual([
+        'substring',
+        'word',
+      ]);
+    });
+
+    it('does not record a half-typed word a restore replaces', () => {
+      typeSlowly(render(), 'hea');
+      searchOverlay.restore({ q: 'God' });
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it('does not record a word the reader leaves before it settles', () => {
+      typeSlowly(render(), 'hea');
+      searchOverlay.destroy();
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      expect(send).not.toHaveBeenCalled();
     });
   });
 
