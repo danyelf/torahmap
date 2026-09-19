@@ -65,6 +65,12 @@ export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HT
     stopElements.push(el);
   }
 
+  const ending = document.createElement('button');
+  ending.type = 'button';
+  ending.className = 'story-leave';
+  ending.textContent = 'Explore the map yourself';
+  stopElements[stopElements.length - 1]?.appendChild(ending);
+
   return stopElements;
 }
 

@@ -1073,6 +1073,11 @@ async function main(): Promise<void> {
   });
   storyStrip.addEventListener('click', readerOpensStory);
   document.getElementById('return-to-story')?.addEventListener('click', readerOpensStory);
+  document.getElementById('leave-story')?.addEventListener('click', openControls);
+  // Delegated, because reloading the story redraws its stops.
+  storyContent.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('.story-leave')) openControls();
+  });
 
   // Scrolling is the only thing that moves the story on. While the reader
   // drives it only counts towards handing the map back.

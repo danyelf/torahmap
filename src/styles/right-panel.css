@@ -337,6 +337,22 @@ body.story-at-end #story-cue {
   margin: 0;
 }
 
+.story-leave {
+  margin-top: 20px;
+  padding: 8px 14px;
+  border: 1px solid #6ab0f3;
+  border-radius: 4px;
+  background: none;
+  color: #6ab0f3;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.story-leave:hover {
+  background: rgba(106, 176, 243, 0.12);
+}
+
 #panel-footer {
   grid-row: 5;
   display: flex;
@@ -345,9 +361,7 @@ body.story-at-end #story-cue {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* On a phone it stands in for the folded story's strip. */
-#return-to-story {
-  display: none;
+.footer-link {
   background: none;
   border: none;
   padding: 0;
@@ -357,9 +371,15 @@ body.story-at-end #story-cue {
   cursor: pointer;
 }
 
-#return-to-story:hover {
+.footer-link:hover {
   color: #9cd;
   text-decoration: underline;
+}
+
+/* Leaving and returning swap as the story folds and opens. */
+body.story-folded #leave-story,
+body:not(.story-folded) #return-to-story {
+  display: none;
 }
 
 /* Canvas sizing to accommodate panel */
@@ -454,10 +474,6 @@ body.story-at-end #story-cue {
   /* Folded, the story is reached from the footer rather than its strip. */
   body.story-folded #story-strip {
     display: none;
-  }
-
-  body.story-folded #return-to-story {
-    display: inline;
   }
 
   #story-cue {
