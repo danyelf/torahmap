@@ -213,7 +213,9 @@ async function main(): Promise<void> {
   // on the hovered verse, which a blend's may.
   let colorLayer: (Color | Color[] | null)[] = [];
 
-  let driver: Driver = STORY_DRIVING;
+  // A story folded earlier in the session opens folded, unless the link names a stop.
+  const opensFolded = !parseUrlState().story && storyWasFolded();
+  let driver: Driver = opensFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
 
   function composite(): void {
@@ -429,6 +431,7 @@ async function main(): Promise<void> {
   function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
+    updateSummaryShown();
     if (!event) return;
     const stop = stopAt(resolvedStops, storyStopIndex());
     // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
@@ -447,9 +450,9 @@ async function main(): Promise<void> {
     setDriver(next, how);
   }
 
-  /** A change that leaves the same one driving. Before the page view nothing is a hand-over. */
+  /** A change that leaves the same one driving. */
   function keepDriving(next: Driver): void {
-    if (import.meta.env.DEV && recordingDriver && driverKind(next) !== driverKind(driver)) {
+    if (import.meta.env.DEV && driverKind(next) !== driverKind(driver)) {
       throw new Error(`keepDriving passed the map from ${driver.by} to ${next.by}; use handOver`);
     }
     setDriver(next, null);
@@ -460,7 +463,6 @@ async function main(): Promise<void> {
     if (!storyOpen || driver.by === 'reader') return;
     handOver(readerTakesOver(storyPosition()), how);
     applyOverlay();
-    updateSummaryShown();
   }
 
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
@@ -1116,16 +1118,17 @@ async function main(): Promise<void> {
 
     const start = (): void => {
       cancelOpening?.();
-      heldStop = null;
       showStop(stopElements[stop]);
+      // Handed over while the stop is still held, so the return names `stop`
+      // rather than wherever the story's scroll has got to.
       if (arrive === 'ease') {
         handOver(beginEase(REJOIN_EASE_MS, performance.now()), how);
-        updateSummaryShown();
       } else {
         handOver(STORY_DRIVING, how);
         // Make the next frame apply the stop's overlay, settings and pin.
         lastSyncedStopId = null;
       }
+      heldStop = null;
       scheduleStoryFrame();
     };
     const growMs = parseFloat(
@@ -1231,7 +1234,6 @@ async function main(): Promise<void> {
         return;
       }
       handOver(beginEase(REJOIN_EASE_MS, performance.now()), 'rejoin');
-      updateSummaryShown();
     }
     scheduleStoryFrame();
   });
@@ -1265,7 +1267,7 @@ async function main(): Promise<void> {
   /**
    * The driver that eases the map over `duration` from what is on screen,
    * which may be partway through an earlier ease, to where the story is. The
-   * caller hands it over or keeps driving with it, then updates the summary.
+   * caller hands it over or keeps driving with it.
    */
   function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
@@ -1312,7 +1314,6 @@ async function main(): Promise<void> {
     // A new page on a phone eases in rather than cutting to it.
     if (storyIsSideways() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
       keepDriving(beginEase(SWIPE_EASE_MS, now));
-      updateSummaryShown();
       // The controls and the popup move to the new stop as it starts.
       arriveAtStop(state.toStop);
     }
@@ -1417,8 +1418,9 @@ async function main(): Promise<void> {
   }
 
   // A link to a story stop always opens the story.
-  if (storyOpen && !parseUrlState().story && storyWasFolded()) {
-    keepDriving(readerTakesOver(0));
+  if (storyOpen && opensFolded) {
+    // A link that names nothing has opened the story and handed it the map.
+    if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
     setStoryOpen(false);
   }
 
