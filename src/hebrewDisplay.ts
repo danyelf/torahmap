@@ -1,12 +1,12 @@
 // The reader's choice to hide the Hebrew in the verse popup and the map labels.
 // Search still takes Hebrew; only what is displayed changes.
 
-const STORAGE_KEY = 'torahmap-english-only';
+const STORAGE_KEY = 'torahMap.englishOnly';
 const CLASS = 'english-only';
 
 function load(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY) === '1';
+    return localStorage.getItem(STORAGE_KEY) === 'true';
   } catch {
     return false;
   }
@@ -14,7 +14,7 @@ function load(): boolean {
 
 function save(englishOnly: boolean): void {
   try {
-    localStorage.setItem(STORAGE_KEY, englishOnly ? '1' : '0');
+    localStorage.setItem(STORAGE_KEY, String(englishOnly));
   } catch {
     // Private windows can refuse storage; the choice then lasts the visit.
   }

@@ -18,7 +18,7 @@ const BASE_LABEL_GAP = 10; // Gap between label bottom and verse top at BASE_FON
 const BASE_FONT_SIZE = 13; // Font size at zoom=1
 const MIN_FONT_SIZE = 5; // Minimum font size when zoomed out
 const MAX_FONT_SIZE = 50; // Maximum font size when zoomed in
-// Show English subtitle when book's screen width exceeds this many pixels
+// Below this screen width a book is too narrow for its English name as well.
 const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 
 // No minimum: a label keeps its length on the map, about 275 units against the
@@ -48,6 +48,7 @@ export function createBookLabels(
 
   for (const [name, pos] of Object.entries(books)) {
     const label = document.createElement('div');
+    label.className = 'book-label';
     label.style.cssText = `
       position:absolute;
       color:#eee;
@@ -185,10 +186,7 @@ export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoo
       label.style.transform = 'translateX(-100%)';
 
       const bookScreenWidth = bookWidth * zoom;
-      const enSpan = label.querySelector<HTMLElement>('.book-label-en');
-      if (enSpan) {
-        enSpan.style.display = bookScreenWidth >= ENGLISH_MIN_BOOK_WIDTH_PX ? '' : 'none';
-      }
+      label.classList.toggle('narrow', bookScreenWidth < ENGLISH_MIN_BOOK_WIDTH_PX);
     }
   }
 }

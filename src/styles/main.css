@@ -50,8 +50,7 @@ body.english-only .section-label-he {
   display: none;
 }
 
-/* With no Hebrew name, the English is the label, so it stays even where
-   labels.ts would hide it for want of room. */
-body.english-only .book-label-en {
-  display: inline !important;
+/* A narrow book keeps only its Hebrew name, unless the Hebrew is hidden. */
+body:not(.english-only) .book-label.narrow .book-label-en {
+  display: none;
 }
