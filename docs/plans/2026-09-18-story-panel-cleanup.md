@@ -1,7 +1,7 @@
 # Story Panel Clean-up
 
 **Date:** 2026-09-18
-**Status:** To do, before PR #198 leaves draft. Written to hand over to a fresh session.
+**Status:** Done. Decisions made along the way are under "Outcome" at the end.
 
 ## Where things stand
 
@@ -147,3 +147,22 @@ throttled.
   machine: `vite preview` on 4173 and a `cloudflared` quick tunnel. Stop both
   (`pkill -f "vite preview"`, `pkill -f "cloudflared tunnel"`) if nobody is
   using them.
+
+## Outcome
+
+All five parts are done as described, with these decisions:
+
+- **(a)** The scroll blend moved into `Driver` too, not only the ease, so
+  `Driver` alone says what the map shows.
+- **(b)** Each overlay answers `summary(settings)`; nothing is read off the
+  page. The one-letter case only ever lasted until the second letter.
+- **(d)** While the story is open the URL names the stop alone, even when the
+  reader has taken the map: sharing is for exploring outside the story, and a
+  reload puts a lost reader back on it. Folding, opening, pinning and
+  switching overlay add a history entry; panning, zooming, typing and
+  scrolling the story replace it.
+- **Phone, no-overlay stop:** on a lowered sheet the summary line opens the
+  controls, at every stop.
+- **Landscape phone:** left as is, #221.
+- **Dead CSS:** not dead. The phone's `max-height: 40vh` still applies in the
+  search test harness, which draws results outside the panel. Left alone.
