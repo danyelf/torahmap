@@ -5,7 +5,7 @@ import worker from '../../../worker/index.ts';
 
 function env() {
   return {
-    EVENTS: { writeDataPoint: vi.fn() },
+    TORAHMAP_EVENTS: { writeDataPoint: vi.fn() },
     ASSETS: { fetch: vi.fn(async () => new Response('asset', { status: 404 })) },
   };
 }
@@ -34,7 +34,7 @@ describe('telemetry worker', () => {
     const e = env();
     const response = await worker.fetch(post(valid), e);
     expect(response.status).toBe(204);
-    expect(e.EVENTS.writeDataPoint).toHaveBeenCalledWith({
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
       indexes: ['v1'],
       blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai'],
       doubles: [4],
@@ -45,7 +45,7 @@ describe('telemetry worker', () => {
     const e = env();
     const response = await worker.fetch(post(valid, { Origin: 'http://localhost:5173' }), e);
     expect(response.status).toBe(403);
-    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
   });
 
   it('takes the host from the request URL when the Origin matches it', async () => {
@@ -61,7 +61,7 @@ describe('telemetry worker', () => {
     });
     const response = await worker.fetch(request, e);
     expect(response.status).toBe(204);
-    expect(e.EVENTS.writeDataPoint).toHaveBeenCalledWith({
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
       indexes: ['v1'],
       blobs: [
         'story_exit',
@@ -89,7 +89,7 @@ describe('telemetry worker', () => {
     });
     expect((await worker.fetch(toSite, e)).status).toBe(403);
     expect((await worker.fetch(toPreview, e)).status).toBe(403);
-    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
   });
 
   it('ignores a host claimed in the payload', async () => {
@@ -103,7 +103,7 @@ describe('telemetry worker', () => {
     });
     const response = await worker.fetch(post(spoofed), e);
     expect(response.status).toBe(204);
-    expect(e.EVENTS.writeDataPoint).toHaveBeenCalledWith({
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
       indexes: ['v1'],
       blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai'],
       doubles: [4],
@@ -117,14 +117,14 @@ describe('telemetry worker', () => {
     expect(
       (await worker.fetch(post('{"event":"nope","visit":"v","mode":"story"}'), e)).status,
     ).toBe(400);
-    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
   });
 
   it('rejects an oversized body by its Content-Length header, without reading it', async () => {
     const e = env();
     const response = await worker.fetch(post('x', { 'Content-Length': String(3000) }), e);
     expect(response.status).toBe(413);
-    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
   });
 
   it('measures the body in bytes, not characters', async () => {
@@ -140,7 +140,7 @@ describe('telemetry worker', () => {
     expect(body.length).toBeLessThan(2048);
     const response = await worker.fetch(post(body), e);
     expect(response.status).toBe(413);
-    expect(e.EVENTS.writeDataPoint).not.toHaveBeenCalled();
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
   });
 
   it('refuses a GET on the endpoint and hands other paths to the static assets', async () => {

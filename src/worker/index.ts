@@ -8,7 +8,7 @@ interface EventsDataset {
 }
 
 export interface Env {
-  EVENTS: EventsDataset;
+  TORAHMAP_EVENTS: EventsDataset;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -43,7 +43,7 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
   const point = toDataPoint(payload, { country, device, host: url.hostname });
   if (!point) return new Response(null, { status: 400 });
 
-  env.EVENTS.writeDataPoint(point);
+  env.TORAHMAP_EVENTS.writeDataPoint(point);
   return new Response(null, { status: 204 });
 }
 
