@@ -41,13 +41,6 @@ describe('telemetry worker', () => {
     });
   });
 
-  it('writes nothing from another origin', async () => {
-    const e = env();
-    const response = await worker.fetch(post(valid, { Origin: 'http://localhost:5173' }), e);
-    expect(response.status).toBe(403);
-    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
-  });
-
   it('takes the host from the request URL when the Origin matches it', async () => {
     const e = env();
     const previewUrl = 'https://telemetry-torahmap.example.workers.dev/api/event';

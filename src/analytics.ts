@@ -7,7 +7,7 @@ import type { EventFields, EventName, EventPayload, Mode } from './telemetry/sch
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 
 /** True for the dev server: no host, localhost, an IPv6 loopback, a LAN IPv4 address, or an mDNS `.local` name. */
-export function isDevHost(hostname: string): boolean {
+function isDevHost(hostname: string): boolean {
   if (hostname === '' || hostname === 'localhost') return true;
   if (hostname === '::1' || hostname === '[::1]') return true;
   if (hostname.endsWith('.local')) return true;

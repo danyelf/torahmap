@@ -25,7 +25,6 @@ import {
   trackWordSearch,
 } from './analytics.ts';
 import { centreBook } from './telemetry/centreBook.ts';
-import { cameraMoved } from './telemetry/cameraMoved.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -561,9 +560,9 @@ async function main(): Promise<void> {
   const debouncedCameraSettled = debounce(() => {
     saveUrlState(false);
     if (appMode !== 'explore') return;
-    const current = { x: camera.x, y: camera.y, zoom: camera.zoom };
-    if (!cameraMoved(lastSettledCamera, current)) return;
-    lastSettledCamera = current;
+    const last = lastSettledCamera;
+    if (last && last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
+    lastSettledCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
     const book = centreBook(verses, camera, canvas.clientWidth, canvas.clientHeight);
     trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);

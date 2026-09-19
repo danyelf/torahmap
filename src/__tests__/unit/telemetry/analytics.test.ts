@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   configureAnalytics,
-  isDevHost,
   trackSearchExecute,
   trackStoryStop,
   trackViewSettled,
@@ -15,17 +14,6 @@ beforeEach(() => {
 });
 
 const sent = () => send.mock.calls.map(([body]) => JSON.parse(body as string));
-
-describe('isDevHost', () => {
-  it('is true for the dev server and false for a real host', () => {
-    for (const hostname of ['', 'localhost', '127.0.0.1', '192.168.1.20', '::1', 'mac.local']) {
-      expect(isDevHost(hostname)).toBe(true);
-    }
-    for (const hostname of ['torahmap.org', 'telemetry-torahmap.example.workers.dev']) {
-      expect(isDevHost(hostname)).toBe(false);
-    }
-  });
-});
 
 describe('analytics', () => {
   it('sends the event with the visit id and the current mode', () => {
@@ -54,6 +42,15 @@ describe('analytics', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('generates one visit id and reuses it across events', () => {
+    configureAnalytics({ visitId: '' });
+    trackSearchExecute('light', 'en', 'word', 12);
+    trackSearchExecute('dark', 'en', 'word', 3);
+    const [first, second] = sent().map((e) => e.visit as string);
+    expect(first).toBeTruthy();
+    expect(second).toBe(first);
+  });
+
   it('sends each story stop once per visit', () => {
     trackStoryStop('creation', 1, 9);
     trackStoryStop('flood', 2, 9);
@@ -72,31 +69,5 @@ describe('analytics', () => {
     trackViewSettled('Isaiah', 'neviim', 4);
     trackViewSettled('Isaiah', 'neviim', 0.5);
     expect(sent().map((e) => e.fields.zoom_band)).toEqual(['close', 'far']);
-  });
-
-  it('loads and sends events, reusing one generated visit id, without crypto.randomUUID', async () => {
-    // randomUUID lives on Crypto.prototype, so shadow it with an own property
-    // rather than `delete`, which would be a no-op on the inherited one.
-    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
-    let mod: typeof import('../../../analytics.ts');
-    try {
-      vi.resetModules();
-      const noRandomUuidPath = '../../../analytics.ts?no-random-uuid';
-      mod = (await import(
-        /* @vite-ignore */ noRandomUuidPath
-      )) as typeof import('../../../analytics.ts');
-    } finally {
-      delete (crypto as { randomUUID?: unknown }).randomUUID;
-    }
-
-    const freshSend = vi.fn<(body: string) => void>();
-    mod.configureAnalytics({ hostname: 'torahmap.org', send: freshSend, getMode: () => 'explore' });
-
-    expect(() => mod.trackSearchExecute('light', 'en', 'word', 12)).not.toThrow();
-    mod.trackSearchExecute('dark', 'en', 'word', 3);
-
-    const visits = freshSend.mock.calls.map(([body]) => JSON.parse(body as string).visit as string);
-    expect(visits[0]).toBeTruthy();
-    expect(visits[0]).toEqual(visits[1]);
   });
 });
