@@ -32,7 +32,7 @@ Every event carries the current mode, and the page records its view, each story 
 
 ### Task 5: Where readers look — `view_settled`
 
-**Files:** `src/telemetry/centreBook.ts`, `src/main.ts`; test `src/__tests__/unit/telemetry/centreBook.test.ts`.
+**Files:** `src/main.ts`, `src/hitDetection.ts`; test `src/__tests__/unit/hitDetection.test.ts`.
 
 When the camera settles in explore mode, the page records the book under the middle of the screen, its section and the zoom.
 
