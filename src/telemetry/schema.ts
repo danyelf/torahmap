@@ -4,7 +4,7 @@
 // then each event's own strings follow, and its numbers start at double1.
 // Appending a field is safe; reordering one silently changes what old rows mean.
 
-import { MODES, type Mode } from '../scrollytelling/modeSwitch.ts';
+import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
 
 const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
@@ -12,8 +12,8 @@ type CommonColumn = (typeof COMMON_COLUMNS)[number];
 export const EVENTS = {
   page_view: { blobs: ['story_stop', 'referrer'], doubles: [] },
   story_stop: { blobs: ['stop_id'], doubles: ['stop_number', 'total_stops'] },
-  story_exit: { blobs: ['stop_id'], doubles: ['stop_number'] },
-  story_return: { blobs: ['stop_id'], doubles: [] },
+  story_exit: { blobs: ['stop_id', 'how'], doubles: ['stop_number'] },
+  story_return: { blobs: ['stop_id', 'how'], doubles: [] },
   view_settled: { blobs: ['book', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
@@ -42,7 +42,7 @@ export type EventFields<E extends EventName> = { [K in Blobs<E>]: string } & {
 export interface EventPayload<E extends EventName = EventName> {
   event: E;
   visit: string;
-  mode: Mode;
+  mode: DriverKind;
   fields: EventFields<E>;
 }
 
@@ -59,8 +59,8 @@ function isEventName(name: unknown): name is EventName {
   return typeof name === 'string' && Object.prototype.hasOwnProperty.call(EVENTS, name);
 }
 
-function isMode(mode: unknown): mode is Mode {
-  return (MODES as readonly unknown[]).includes(mode);
+function isMode(mode: unknown): mode is DriverKind {
+  return (DRIVER_KINDS as readonly unknown[]).includes(mode);
 }
 
 /** The data point for a payload from the page, or null if it is not one we accept. */

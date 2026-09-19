@@ -1,17 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { MODES } from '../../../scrollytelling/modeSwitch.ts';
+import { DRIVER_KINDS } from '../../../scrollytelling/driver.ts';
 import { toDataPoint } from '../../../telemetry/schema.ts';
 
 const context = { country: 'IL', device: 'mobile', host: 'torahmap.org' };
 
 describe('toDataPoint', () => {
-  it('accepts exactly the modes in MODES', () => {
-    for (const mode of MODES) {
+  it('accepts exactly the modes in DRIVER_KINDS', () => {
+    for (const mode of DRIVER_KINDS) {
       expect(toDataPoint({ event: 'page_view', visit: 'v', mode, fields: {} }, context)).not.toBe(
         null,
       );
     }
-    expect(MODES).toEqual(['story', 'explore']);
+    expect(
+      toDataPoint({ event: 'page_view', visit: 'v', mode: 'explore', fields: {} }, context),
+    ).toBeNull();
   });
 
   it('lays out common columns, then the event fields in schema order', () => {
@@ -33,12 +35,12 @@ describe('toDataPoint', () => {
 
   it('fills a missing field with an empty string or zero', () => {
     const point = toDataPoint(
-      { event: 'view_settled', visit: 'v1', mode: 'explore', fields: { book: 'Genesis' } },
+      { event: 'view_settled', visit: 'v1', mode: 'reader', fields: { book: 'Genesis' } },
       context,
     );
     expect(point?.blobs).toEqual([
       'view_settled',
-      'explore',
+      'reader',
       'IL',
       'mobile',
       'torahmap.org',
@@ -67,7 +69,7 @@ describe('toDataPoint', () => {
       {
         event: 'search_execute',
         visit: 'v',
-        mode: 'explore',
+        mode: 'reader',
         fields: {
           term: 'x'.repeat(500),
           language: 7,

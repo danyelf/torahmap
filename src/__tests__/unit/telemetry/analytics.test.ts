@@ -12,7 +12,7 @@ let send: ReturnType<typeof vi.fn<(body: string) => void>>;
 
 beforeEach(() => {
   send = vi.fn<(body: string) => void>();
-  configureAnalytics({ hostname: 'torahmap.org', send, getMode: () => 'explore', visitId: 'v1' });
+  configureAnalytics({ hostname: 'torahmap.org', send, getMode: () => 'reader', visitId: 'v1' });
 });
 
 const sent = () => send.mock.calls.map(([body]) => JSON.parse(body as string));
@@ -24,7 +24,7 @@ describe('analytics', () => {
       {
         event: 'search_execute',
         visit: 'v1',
-        mode: 'explore',
+        mode: 'reader',
         fields: { term: 'light', language: 'en', search_mode: 'word', result_count: 12 },
       },
     ]);
@@ -67,12 +67,12 @@ describe('analytics', () => {
     expect(send).toHaveBeenCalledTimes(2);
   });
 
-  it('sends story_exit with the stop and its number, story_return with the stop', () => {
-    trackStoryExit('sinai', 4);
-    trackStoryReturn('flood');
+  it('sends story_exit with the stop, its number and how; story_return with the stop and how', () => {
+    trackStoryExit('sinai', 4, 'fold');
+    trackStoryReturn('flood', 'rejoin');
     expect(sent().map((e) => [e.event, e.fields])).toEqual([
-      ['story_exit', { stop_id: 'sinai', stop_number: 4 }],
-      ['story_return', { stop_id: 'flood' }],
+      ['story_exit', { stop_id: 'sinai', stop_number: 4, how: 'fold' }],
+      ['story_return', { stop_id: 'flood', how: 'rejoin' }],
     ]);
   });
 

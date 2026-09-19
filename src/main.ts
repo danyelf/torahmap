@@ -16,6 +16,8 @@ import {
   trackOverlaySwitch,
   trackPageView,
   trackSefariaClick,
+  trackStoryExit,
+  trackStoryReturn,
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
@@ -115,6 +117,7 @@ import {
   STORY_DRIVING,
   SWIPE_EASE_MS,
   colorSource,
+  driverKind,
   readerTakesOver,
   rejoin,
   rejoinProgress,
@@ -122,7 +125,12 @@ import {
   storyScrolled,
   type Driver,
 } from './scrollytelling/driver';
-import { stopNumber } from './scrollytelling/modeSwitch';
+import {
+  driverChangeEvent,
+  stopAt,
+  type ExitHow,
+  type ReturnHow,
+} from './telemetry/driverChange.ts';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { summaryHtml } from './panelSummary.ts';
 import { sheetAfterDrag, sheetAfterTap, type Sheet } from './sheet.ts';
@@ -204,7 +212,7 @@ async function main(): Promise<void> {
   let colorLayer: (Color | Color[] | null)[] = [];
 
   let driver: Driver = STORY_DRIVING;
-  configureAnalytics({ getMode: () => (driver.by === 'reader' ? 'explore' : 'story') });
+  configureAnalytics({ getMode: () => driverKind(driver) });
 
   function composite(): void {
     const verseStates = computeItemStates(
@@ -412,10 +420,31 @@ async function main(): Promise<void> {
     document.body.classList.toggle('no-overlay-quiet', quiet);
   }
 
+  // Off until the page view is sent: who drives when the page opens is part of it.
+  let recordingDriver = false;
+
+  /**
+   * Every change of driver goes through here. When the map passes between the
+   * story and the reader, `how` says what did it; a change that keeps the same
+   * one driving needs none.
+   */
+  function drive(next: Driver, how?: ExitHow | ReturnHow): void {
+    const event = recordingDriver ? driverChangeEvent(driver, next) : null;
+    driver = next;
+    if (!event) return;
+    const stop = stopAt(resolvedStops, storyStopIndex());
+    if (event === 'story_exit') {
+      markViewSettled();
+      trackStoryExit(stop.id, stop.number, how as ExitHow);
+    } else {
+      trackStoryReturn(stop.id, how as ReturnHow);
+    }
+  }
+
   /** Anything the reader does that changes what the map shows hands them the map. */
-  function takeOver(): void {
+  function takeOver(how: ExitHow): void {
     if (!storyOpen || driver.by === 'reader') return;
-    driver = readerTakesOver(storyPosition());
+    drive(readerTakesOver(storyPosition()), how);
     applyOverlay();
     updateSummaryShown();
   }
@@ -477,7 +506,7 @@ async function main(): Promise<void> {
   // pinVerse, unpinVerse and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
   function pinVerse(verse: TanakhLayout, centerCamera: boolean = false): void {
-    takeOver();
+    takeOver('takeover');
     trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
@@ -489,7 +518,7 @@ async function main(): Promise<void> {
   }
 
   function unpinVerse(): void {
-    takeOver();
+    takeOver('takeover');
     pinnedVerse = null;
     updateSidebarWrapper(null);
     repaint();
@@ -498,7 +527,7 @@ async function main(): Promise<void> {
 
   /** Zoom by `factor`, holding whatever is under (screenX, screenY) still. */
   function zoomAt(factor: number, screenX: number, screenY: number): void {
-    takeOver();
+    takeOver('takeover');
     const newZoom = clampZoom(camera.zoom * factor);
     const pan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, screenX, screenY);
     camera.x = pan.x;
@@ -601,7 +630,7 @@ async function main(): Promise<void> {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
-      if (dx !== 0 || dy !== 0) takeOver();
+      if (dx !== 0 || dy !== 0) takeOver('takeover');
       camera.x += dx / camera.zoom;
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
@@ -908,7 +937,7 @@ async function main(): Promise<void> {
 
         trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
 
-        takeOver();
+        takeOver('takeover');
         if (currentOverlayId !== 'search') {
           setOverlay('search');
         }
@@ -1013,7 +1042,7 @@ async function main(): Promise<void> {
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
       // That scroll was ours, not the reader's.
-      if (driver.by === 'reader') driver = readerTakesOver(storyPosition());
+      if (driver.by === 'reader') drive(readerTakesOver(storyPosition()));
     }
     scheduleStoryFrame();
   });
@@ -1050,7 +1079,7 @@ async function main(): Promise<void> {
   }
 
   function openControls(): void {
-    takeOver();
+    takeOver('fold');
     setStoryOpen(false);
     rememberStoryFolded(true);
     render();
@@ -1065,7 +1094,7 @@ async function main(): Promise<void> {
    * tall the story is, so an opening story waits until it has grown; a fold or
    * another open before then cancels the wait.
    */
-  function openStory(stop: number, arrive: 'ease' | 'cut'): void {
+  function openStory(stop: number, arrive: 'ease' | 'cut', how: ReturnHow): void {
     cancelOpening?.();
     const wasOpen = storyOpen;
     heldStop = stop;
@@ -1076,9 +1105,9 @@ async function main(): Promise<void> {
       heldStop = null;
       showStop(stopElements[stop]);
       if (arrive === 'ease') {
-        beginEase(REJOIN_EASE_MS, performance.now());
+        beginEase(REJOIN_EASE_MS, performance.now(), how);
       } else {
-        driver = STORY_DRIVING;
+        drive(STORY_DRIVING, how);
         // Make the next frame apply the stop's overlay, settings and pin.
         lastSyncedStopId = null;
       }
@@ -1106,7 +1135,7 @@ async function main(): Promise<void> {
   }
 
   function readerOpensStory(): void {
-    openStory(storyStopIndex(), 'ease');
+    openStory(storyStopIndex(), 'ease', 'open');
     rememberStoryFolded(false);
     syncUrl(true);
   }
@@ -1183,10 +1212,10 @@ async function main(): Promise<void> {
     if (driver.by === 'reader') {
       const next = storyScrolled(driver, storyPosition());
       if (next !== 'rejoin') {
-        driver = next;
+        drive(next);
         return;
       }
-      beginEase(REJOIN_EASE_MS, performance.now());
+      beginEase(REJOIN_EASE_MS, performance.now(), 'rejoin');
     }
     scheduleStoryFrame();
   });
@@ -1221,15 +1250,18 @@ async function main(): Promise<void> {
    * Ease the map over `duration` from what is on screen, which may be partway
    * through an earlier ease, to where the story is.
    */
-  function beginEase(duration: number, now: number): void {
+  function beginEase(duration: number, now: number, how?: ReturnHow): void {
     cancelCameraGlide();
     const state = currentStoryState();
-    driver = rejoin(
-      now,
-      duration,
-      camera,
-      colorLayer.map((c, i) => c ?? getDefaultColor(i)),
-      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
+    drive(
+      rejoin(
+        now,
+        duration,
+        camera,
+        colorLayer.map((c, i) => c ?? getDefaultColor(i)),
+        computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
+      ),
+      how,
     );
     updateSummaryShown();
   }
@@ -1238,7 +1270,11 @@ async function main(): Promise<void> {
   function arriveAtStop(stop: ResolvedStoryStop): void {
     syncStoryStopState(stop);
     lastSyncedStopId = stop.id;
-    trackStoryStop(stop.id, stopNumber(resolvedStops, stop.id), resolvedStops.length);
+    trackStoryStop(
+      stop.id,
+      stopAt(resolvedStops, resolvedStops.indexOf(stop)).number,
+      resolvedStops.length,
+    );
   }
 
   function paintStoryFrame(now: number): void {
@@ -1247,9 +1283,10 @@ async function main(): Promise<void> {
     if (!storyOpen || heldStop !== null || driver.by === 'reader') return;
 
     if (driver.by === 'rejoining') {
-      driver = settle(driver, now);
+      const next = settle(driver, now);
+      drive(next);
       // Done: the next lines re-sync the overlay, its settings and the pin.
-      if (driver.by === 'story') lastSyncedStopId = null;
+      if (next.by === 'story') lastSyncedStopId = null;
     }
 
     const state = currentStoryState();
@@ -1299,10 +1336,10 @@ async function main(): Promise<void> {
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline.
-      driver = STORY_DRIVING;
+      drive(STORY_DRIVING);
       applyOverlay();
     } else {
-      driver = { by: 'story', blend: { from: state.fromStop, to: state.toStop, t: state.t } };
+      drive({ by: 'story', blend: { from: state.fromStop, to: state.toStop, t: state.t } });
       blendTransition();
     }
     render();
@@ -1335,7 +1372,7 @@ async function main(): Promise<void> {
    */
   function applyViewState(next: ViewState): void {
     if (next.mode === 'explore') {
-      driver = readerTakesOver(storyPosition());
+      drive(readerTakesOver(storyPosition()), 'fold');
       setStoryOpen(false);
     }
 
@@ -1355,7 +1392,7 @@ async function main(): Promise<void> {
 
     if (next.mode === 'story') {
       const stop = resolvedStops.findIndex((s) => s.id === next.storyStop);
-      openStory(Math.max(0, stop), 'cut');
+      openStory(Math.max(0, stop), 'cut', 'link');
     }
   }
 
@@ -1365,12 +1402,14 @@ async function main(): Promise<void> {
 
   // A link to a story stop always opens the story.
   if (storyOpen && !parseUrlState().story && storyWasFolded()) {
-    driver = readerTakesOver(0);
+    drive(readerTakesOver(0), 'fold');
     setStoryOpen(false);
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
   trackPageView(parseUrlState().story ?? '', referrer === location.hostname ? '' : referrer);
+  recordingDriver = true;
+  markViewSettled();
 
   subscribeToHashChange(() => {
     restoreFromUrl();

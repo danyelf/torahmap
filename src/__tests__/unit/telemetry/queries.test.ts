@@ -7,9 +7,10 @@ import { columns, EVENTS, type EventName } from '../../../telemetry/schema.ts';
 const dir = join(__dirname, '../../../../scripts/telemetry');
 const queries = readdirSync(dir).filter((f) => f.endsWith('.sql'));
 
-// An alias that reads one column across events, naming the field it holds for each.
+// An alias other than the column's schema name, and the field it reads for each event.
 const ALIASES: Record<string, Partial<Record<EventName, string>>> = {
   choice_or_verse: { word_menu_open: 'verse', word_search: 'choice' },
+  driver: { page_view: 'mode' },
 };
 
 function eventsRead(sql: string): string[] {

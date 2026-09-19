@@ -6,7 +6,7 @@
 ## Problem
 
 We want to know how the map is used: whether people read the story, how far
-they get, where they go once they are free, and what they do in explore mode.
+they get, where they go once they take the map, and what they do there.
 
 ## Decisions
 
@@ -48,23 +48,31 @@ drops whole visits.
 ## Events
 
 Each event's fields, and the columns every event shares, are listed in
-`src/telemetry/schema.ts`. Every event carries the **mode** (story or
-explore): in story mode the camera, zoom and pinned verse belong to the
-story's author, so the same action means something different in each mode.
+`src/telemetry/schema.ts`. Every event carries the **mode**: who drives the
+map, `story` or `reader` (`src/scrollytelling/driver.ts`). While the story drives, the camera, zoom and
+pinned verse belong to its author, so the same action means something
+different for each. The story easing the map back counts as the story. On
+`page_view` the mode is who drives as the page opens: `reader` for a link
+that opens with the story folded.
 
 | Event | Sent when |
 |---|---|
 | `page_view` | the page loads |
-| `story_stop` | a stop is reached for the first time in the visit |
-| `story_exit` | the reader leaves the story, by "Explore freely" or Back/Forward |
-| `story_return` | the reader comes back to the story, by "Back to story" or Back/Forward |
-| `view_settled` | the camera stops moving, in explore mode only |
+| `story_stop` | the story, driving, reaches a stop for the first time in the visit |
+| `story_exit` | the reader takes the map from the story; `how` is `takeover` (acting on the map while the story is open) or `fold` (Leave story, the controls, or Back/Forward to a folded link) |
+| `story_return` | the story takes the map back; `how` is `rejoin` (scrolling the story), `open` (opening the folded story) or `link` (Back/Forward or a link to a stop) |
+| `view_settled` | the camera stops somewhere new while the reader drives |
 | `overlay_switch` | the overlay changes |
 | `search_execute` | the reader changes the search, once per term |
 | `verse_click` | a verse on the map is clicked |
 | `word_menu_open` | a word in the verse text is clicked |
 | `word_search` | a choice in the word menu is picked |
 | `sefaria_click` | the sidebar's Sefaria link is clicked |
+
+Both story events name the stop the story is at, and are sent from the one
+function in `main.ts` that changes the driver, only when it passes between
+the story and the reader. Folding a story the reader already drives sends
+nothing.
 
 "Finished the story" is a `story_stop` whose number equals the total. How far
 a visit got is its furthest `story_stop`. A visit opened on a link to a stop
@@ -87,8 +95,8 @@ sampling.
 
 ## Testing
 
-The tests are in `src/__tests__/unit/telemetry/`, and the choice of stop for
-an exit or return in `src/scrollytelling/__tests__/modeSwitch.test.ts`. What
+The tests are in `src/__tests__/unit/telemetry/`, and who drives, as the mode
+records it, in `src/scrollytelling/__tests__/driver.test.ts`. What
 they cannot reach is the live pipeline: after deploy, load the site, run the
 report and find the visit.
 

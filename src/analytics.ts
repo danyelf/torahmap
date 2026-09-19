@@ -2,7 +2,8 @@
 // browser storage: the visit id lives in memory, so a reload is a new visit.
 import type { TextLanguage } from './types.ts';
 import type { SearchMode } from './search/terms.ts';
-import type { Mode } from './scrollytelling/modeSwitch.ts';
+import type { DriverKind } from './scrollytelling/driver.ts';
+import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
 import type { EventFields, EventName, EventPayload } from './telemetry/schema.ts';
 
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
@@ -18,7 +19,7 @@ function isDevHost(hostname: string): boolean {
 interface Options {
   hostname: string;
   send: (body: string) => void;
-  getMode: () => Mode;
+  getMode: () => DriverKind;
   visitId: string;
 }
 
@@ -64,12 +65,12 @@ export function trackStoryStop(stopId: string, stopNumber: number, totalStops: n
   track('story_stop', { stop_id: stopId, stop_number: stopNumber, total_stops: totalStops });
 }
 
-export function trackStoryExit(stopId: string, stopNumber: number): void {
-  track('story_exit', { stop_id: stopId, stop_number: stopNumber });
+export function trackStoryExit(stopId: string, stopNumber: number, how: ExitHow): void {
+  track('story_exit', { stop_id: stopId, stop_number: stopNumber, how });
 }
 
-export function trackStoryReturn(stopId: string): void {
-  track('story_return', { stop_id: stopId });
+export function trackStoryReturn(stopId: string, how: ReturnHow): void {
+  track('story_return', { stop_id: stopId, how });
 }
 
 export function trackViewSettled(book: string, section: string, zoom: number): void {

@@ -47,6 +47,14 @@ export type Driver =
 
 export const STORY_DRIVING: Driver = { by: 'story', blend: null };
 
+export const DRIVER_KINDS = ['story', 'reader'] as const;
+export type DriverKind = (typeof DRIVER_KINDS)[number];
+
+/** Who has the map; an ease back to the story is the story's. */
+export function driverKind(driver: Driver): DriverKind {
+  return driver.by === 'reader' ? 'reader' : 'story';
+}
+
 type ReaderDriving = Extract<Driver, { by: 'reader' }>;
 
 export function readerTakesOver(scrollTop: number): ReaderDriving {
