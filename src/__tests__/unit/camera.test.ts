@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createCamera, clampZoom, panForZoom } from '../../camera';
+import { createCamera, clampZoom, panForZoom, cameraToFit } from '../../camera';
 import type { Bounds } from '../../types';
 
 describe('camera', () => {
@@ -207,5 +207,38 @@ describe('camera', () => {
       expect(newPan.x).toBeCloseTo(1000 - 3072, 5);
       expect(newPan.y).toBeCloseTo(1000 - 1728, 5);
     });
+  });
+});
+
+describe('cameraToFit', () => {
+  const box = { minX: 100, minY: 50, maxX: 500, maxY: 250 };
+  const onScreen = (x: number, y: number, c: { x: number; y: number; zoom: number }) => ({
+    x: (x + c.x) * c.zoom,
+    y: (y + c.y) * c.zoom,
+  });
+
+  it('fits a wide box to the width, centred', () => {
+    const c = cameraToFit(box, 832, 1000);
+    expect(c.zoom).toBeCloseTo(2);
+    const topLeft = onScreen(box.minX, box.minY, c);
+    const bottomRight = onScreen(box.maxX, box.maxY, c);
+    expect(topLeft.x).toBeCloseTo(16);
+    expect(bottomRight.x).toBeCloseTo(816);
+    // Centred below the room kept for book labels.
+    expect(topLeft.y - 40).toBeCloseTo(1000 - 16 - bottomRight.y);
+  });
+
+  it('fits a tall box to the height, below the book labels', () => {
+    const c = cameraToFit(box, 4000, 256);
+    expect(c.zoom).toBeCloseTo(1);
+    expect(onScreen(box.minX, box.minY, c).y).toBeCloseTo(40);
+    expect(onScreen(box.maxX, box.maxY, c).y).toBeCloseTo(240);
+    expect(onScreen(300, 150, c).x).toBeCloseTo(2000);
+  });
+
+  it('keeps the box centred at a given zoom', () => {
+    const c = cameraToFit(box, 832, 1000, 0.5);
+    expect(c.zoom).toBe(0.5);
+    expect(onScreen(300, 150, c).x).toBeCloseTo(416);
   });
 });

@@ -26,6 +26,14 @@ const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 const BASE_SECTION_FONT_SIZE = 32;
 const MAX_SECTION_FONT_SIZE = 64;
 const SECTION_LABEL_GAP_EM = 0.5;
+const SECTION_LABEL_LINE_EM = 1.2;
+
+/**
+ * How far right of its section a section label reaches, in map units, while
+ * its font is still growing with the zoom.
+ */
+export const SECTION_LABEL_REACH =
+  BASE_SECTION_FONT_SIZE * (SECTION_LABEL_GAP_EM + SECTION_LABEL_LINE_EM);
 
 /** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
 function hebrewSpan(text: string, className: string): HTMLSpanElement {
@@ -128,7 +136,7 @@ export function createSectionLabels(
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
-      line-height:1.2em;
+      line-height:${SECTION_LABEL_LINE_EM}em;
     `;
     label.dataset.section = section;
     label.dataset.leftX = String(b.maxX);
