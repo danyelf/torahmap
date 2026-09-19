@@ -5,17 +5,19 @@ import {
   SWIPE_EASE_MS,
   STORY_DRIVING,
   colorSource,
+  DRIVER_KINDS,
+  driverKind,
   readerTakesOver,
   storyScrolled,
   rejoin,
   rejoinProgress,
   settle,
-  type Driver,
+  type StoryHasMap,
 } from '../driver';
 import type { ResolvedStoryStop } from '../types';
 
 const camera = { x: 1, y: 2, zoom: 3 };
-const easeBack = (now: number, duration = REJOIN_EASE_MS): Driver =>
+const easeBack = (now: number, duration = REJOIN_EASE_MS): StoryHasMap =>
   rejoin(now, duration, camera, [], []);
 
 describe('the story drives until the reader takes over', () => {
@@ -67,10 +69,8 @@ describe('easing back', () => {
     expect(settle(driver, REJOIN_EASE_MS)).toEqual(STORY_DRIVING);
   });
 
-  it('leaves the reader alone', () => {
-    const driver = readerTakesOver(0);
-
-    expect(settle(driver, 10_000)).toBe(driver);
+  it('leaves the story driving alone', () => {
+    expect(settle(STORY_DRIVING, 10_000)).toBe(STORY_DRIVING);
   });
 
   it('can take its own time, as a phone swipe does', () => {
@@ -104,5 +104,14 @@ describe('what the colours on the map are drawn from', () => {
 
   it('is the ease while the map eases', () => {
     expect(colorSource(easeBack(0))).toBe('ease');
+  });
+});
+
+describe('who has the map', () => {
+  it('is the story while it drives or eases back, the reader while they drive', () => {
+    expect(driverKind(STORY_DRIVING)).toBe('story');
+    expect(driverKind(easeBack(0))).toBe('story');
+    expect(driverKind(readerTakesOver(0))).toBe('reader');
+    expect(DRIVER_KINDS).toEqual(['story', 'reader']);
   });
 });

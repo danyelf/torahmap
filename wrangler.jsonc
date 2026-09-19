@@ -1,8 +1,10 @@
 {
   "$schema": "https://unpkg.com/wrangler/config-schema.json",
   "name": "torahmap",
+  "main": "src/worker/index.ts",
   "compatibility_date": "2026-08-27",
-  "assets": { "directory": "./dist" },
+  "assets": { "directory": "./dist", "binding": "ASSETS" },
+  "analytics_engine_datasets": [{ "binding": "TORAHMAP_EVENTS", "dataset": "torahmap_events" }],
   "routes": [{ "pattern": "torahmap.org", "custom_domain": true }],
   // Each pull request's build gets a public workers.dev link to try it at.
   "preview_urls": true,
