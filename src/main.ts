@@ -561,13 +561,18 @@ async function main(): Promise<void> {
     updateUrl(state, pushHistory);
   }
 
-  let lastSettledCamera: Camera | null = null;
+  // The camera when explore began or last sent view_settled. Every pointer up
+  // settles, a click included, so only a camera that has left it is sent.
+  let settledCamera: Camera = { ...camera };
+  function markViewSettled(): void {
+    settledCamera = { ...camera };
+  }
   const debouncedCameraSettled = debounce(() => {
     saveUrlState(false);
     if (appMode !== 'explore') return;
-    const last = lastSettledCamera;
-    if (last && last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
-    lastSettledCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
+    const last = settledCamera;
+    if (last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
+    markViewSettled();
     const centre = screenToWorld(canvas.clientWidth / 2, canvas.clientHeight / 2, camera);
     const book = findNearestItem(verses, centre.x, centre.y)?.book ?? '';
     trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
@@ -872,6 +877,7 @@ async function main(): Promise<void> {
   document.getElementById('exit-story')?.addEventListener('click', () => {
     lastStoryScrollTop = storyContent.scrollTop;
     changeMode('explore', null);
+    markViewSettled();
     transition = null;
     applyOverlay();
     render();
@@ -1009,6 +1015,8 @@ async function main(): Promise<void> {
       const stopIndex = resolvedStops.findIndex((s) => s.id === next.storyStop);
       stopElements[stopIndex]?.scrollIntoView();
       storyContent.dispatchEvent(new Event('scroll'));
+    } else {
+      markViewSettled();
     }
   }
 
