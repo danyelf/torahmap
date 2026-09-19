@@ -372,7 +372,11 @@ async function main(): Promise<void> {
   }
 
   function showStop(stop: HTMLElement | undefined): void {
-    stop?.scrollIntoView(storyIsSideways() ? { block: 'nearest', inline: 'center' } : undefined);
+    // Centred, where the story holds a stop still; top-aligned, a stop shorter
+    // than the story settles partway into the next.
+    stop?.scrollIntoView(
+      storyIsSideways() ? { block: 'nearest', inline: 'center' } : { block: 'center' },
+    );
   }
 
   function setSheet(next: Sheet): void {
@@ -1091,6 +1095,8 @@ async function main(): Promise<void> {
     handle.addEventListener('pointerdown', (e) => {
       if (!phoneLayout.matches) return;
       from = e.clientY;
+      // A touch that moved fires no click, so a drag's flag is cleared here too.
+      dragged = false;
       handle.setPointerCapture(e.pointerId);
     });
     handle.addEventListener('pointerup', (e) => {
