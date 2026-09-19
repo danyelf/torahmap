@@ -564,7 +564,7 @@ async function main(): Promise<void> {
     const current = { x: camera.x, y: camera.y, zoom: camera.zoom };
     if (!cameraMoved(lastSettledCamera, current)) return;
     lastSettledCamera = current;
-    const book = centreBook(verses, camera, window.innerWidth, window.innerHeight);
+    const book = centreBook(verses, camera, canvas.clientWidth, canvas.clientHeight);
     trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
