@@ -23,7 +23,6 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import { centreBook } from './telemetry/centreBook.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -67,7 +66,7 @@ import {
   prevTanakhItem,
   tanakhKey,
 } from './types.ts';
-import { findItemAtPoint } from './hitDetection.ts';
+import { findItemAtPoint, findNearestItem, screenToWorld } from './hitDetection.ts';
 import {
   computeItemStates,
   applyItemColors,
@@ -562,7 +561,8 @@ async function main(): Promise<void> {
     const last = lastSettledCamera;
     if (last && last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
     lastSettledCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
-    const book = centreBook(verses, camera, canvas.clientWidth, canvas.clientHeight);
+    const centre = screenToWorld(canvas.clientWidth / 2, canvas.clientHeight / 2, camera);
+    const book = findNearestItem(verses, centre.x, centre.y)?.book ?? '';
     trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
