@@ -1,6 +1,6 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { computeBlendedColors } from '../overlayBlender';
+import { colorsForStop, computeBlendedColors } from '../overlayBlender';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';
@@ -335,5 +335,21 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     // Doesn't declare hoverChangesColors: hover isn't part of its cache key, so
     // the second call (same settings) hits the entry the first call made.
     expect(noHoverColorsFor).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('colorsForStop', () => {
+  it('gives a stop the same colours whether asked directly or as a zero blend', () => {
+    registerOverlay(stippleOverlay);
+    const stop: ResolvedStoryStop = {
+      id: 's1',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-stipple',
+    };
+
+    expect(colorsForStop(stop, verses, null)).toEqual(
+      computeBlendedColors(stop, stop, 0, verses, null),
+    );
   });
 });

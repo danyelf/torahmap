@@ -352,11 +352,13 @@ export function isApplyingExternalState(): boolean {
  *
  * pushHistory creates a new history entry, for a significant change like
  * overlay or verse; otherwise it replaces the current entry, for pan/zoom.
+ * A URL that would not change is left alone, so it adds no history entry.
  */
 export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   if (urlWritesSuspended > 0) return;
 
   const hash = buildUrlHash(state);
+  if (hash === window.location.hash) return;
   const newUrl = window.location.pathname + window.location.search + hash;
 
   if (pushHistory) {

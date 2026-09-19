@@ -1,56 +1,323 @@
+/* An accordion of two sections, controls above the story, exactly one open.
+   The two rows that open swap between 0fr and 1fr, which grid can animate.
+   Every child is placed on its row, because the story strip is only shown
+   while the story is folded. */
+:root {
+  --accordion-duration: 250ms;
+  --story-bg: #16181d;
+  /* The summary field. A lowered sheet leaves it on screen, with the grab
+     zone above it, the field's border and the sheet's own top border. */
+  --field-margin: 12px;
+  --field-padding: 8px;
+  --field-line: 17px;
+  --grab-pad: 0px;
+  --sheet-bar: calc(
+    var(--grab-pad) + 2 * var(--field-margin) + 2 * var(--field-padding) + var(--field-line) + 3px
+  );
+}
+
 #right-panel {
   position: fixed;
   top: 0;
   right: 0;
-  width: 380px;
+  width: var(--panel-width);
   height: 100vh;
   background: rgba(0, 0, 0, 0.92);
   z-index: 10;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 0fr auto 1fr auto;
+  /* minmax(0, …): an auto column grows to its widest unbreakable line, so a
+     long story strip would push the panel past the screen's edge. */
+  grid-template-columns: minmax(0, 1fr);
+  transition: grid-template-rows var(--accordion-duration) ease;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   font-family: system-ui, sans-serif;
   color: #fff;
 }
 
-#story-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+body.story-folded #right-panel {
+  grid-template-rows: auto 1fr auto 0fr auto;
 }
 
-.story-header {
-  padding: 16px 20px;
+/* One column. Named for every child, or two that share a row would be given a
+   column each rather than laid over one another. */
+#right-panel > * {
+  grid-column: 1;
+}
+
+#sheet-grabber {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --accordion-duration: 0ms;
+  }
+}
+
+/* Styled as a form field, so it reads as something to open and change. */
+#controls-toggle {
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: var(--field-margin) 16px;
+  padding: var(--field-padding) 10px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #ddd;
+  font: inherit;
+  font-size: 14px;
+  line-height: var(--field-line);
+  text-align: left;
+  cursor: pointer;
+}
+
+#controls-toggle:hover {
+  border-color: #666;
+}
+
+/* Open, the controls speak for themselves; the line shrinks to a bar that
+   closes them. The summary stays readable to a screen reader, as the button's
+   name. A lowered sheet keeps the field, the only line it shows. */
+body.story-folded:not(.sheet-down) #controls-toggle {
+  justify-content: center;
+  margin: 0;
+  padding: 7px 20px;
+  border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  background: none;
+}
+
+body.story-folded:not(.sheet-down) #controls-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.story-folded:not(.sheet-down) #controls-summary {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+#controls-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Drawn rather than a ▾ glyph, which renders small and faint in system fonts. */
+#right-panel .chevron {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #ddd;
+  border-bottom: 2px solid #ddd;
+  transition: transform var(--accordion-duration) ease;
+}
+
+#controls-toggle .chevron {
+  margin: 0 4px -3px auto;
+  transform: translateY(-4px) rotate(45deg);
+}
+
+body.story-folded:not(.sheet-down) #controls-toggle .chevron {
+  margin: 0;
+  transform: translateY(2px) rotate(-135deg);
+}
+
+#story-strip .chevron {
+  transform: rotate(-45deg);
+}
+
+.summary-name {
+  font-weight: 600;
+}
+
+.summary-name.dim {
+  color: #888;
+  font-weight: 400;
+}
+
+.summary-sep,
+.summary-detail {
+  color: #999;
+}
+
+.summary-term,
+.summary-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.summary-swatch {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.summary-swatch.strip {
+  width: 60px;
+}
+
+#panel-controls {
+  grid-row: 2;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-controls-inner {
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-color: #444 transparent;
+  padding: 0 20px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-controls-inner > * {
   flex-shrink: 0;
 }
 
-#exit-story {
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+/* Search's results fill what the open controls have, in their own scroll,
+   rather than a share of the window that runs past the panel's edge. Every
+   other overlay's controls keep their height and the column scrolls. */
+#overlay-controls:has(#search-results) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#overlay-controls:has(#search-results) > * {
+  flex-shrink: 0;
+}
+
+#panel-controls #search-results {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: none;
+}
+
+.panel-picker label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
   color: #aaa;
-  padding: 6px 14px;
+}
+
+.panel-picker select {
+  width: 100%;
+}
+
+/* Reaches the overlay picker and any select an overlay renders into its
+   controls. Keyed to the panel rather than to a control's id, so an overlay
+   added later is dark without knowing this rule exists.
+
+   color-scheme matters as much as the colours: without it the popup list keeps
+   the system's light theme and disagrees with the closed control. */
+#panel-controls select {
+  padding: 6px 8px;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-#exit-story:hover {
+  border: 1px solid #444;
+  background: #222;
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.6);
+  color-scheme: dark;
+  font-size: 14px;
+  cursor: pointer;
 }
 
+#story-strip {
+  grid-row: 3;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--story-bg);
+  color: #eee;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+#story-strip:hover {
+  color: #fff;
+  background: #1d2026;
+}
+
+body.story-folded #story-strip {
+  display: flex;
+}
+
+#story-strip-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Folded to no height rather than hidden, so it keeps its scroll position. */
 #story-content {
-  flex: 1;
+  grid-row: 4;
+  min-height: 0;
   overflow-y: auto;
   padding: 0;
   container-type: size;
+  scrollbar-color: #444 transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--story-bg);
+}
+
+body.story-folded #story-content {
+  border-top: none;
+}
+
+/* A cue that there is more story: a tall angle bracket, turned to point down
+   here and pointing right on a phone, where the stops sit side by side. It
+   lies over the story, in its grid cell. */
+#story-cue {
+  grid-row: 4;
+  justify-self: center;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 44px;
+  transform: rotate(90deg);
+  pointer-events: none;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#story-cue polyline {
+  vector-effect: non-scaling-stroke;
+}
+
+body.story-folded #story-cue,
+body.story-at-end #story-cue {
+  display: none;
 }
 
 /* Paragraphs sit half a panel apart, so when one is centred the next starts
    at the bottom edge. The first starts mid-panel and the last can scroll up
-   to it. cqh is the panel's height, not the window's: on a phone the panel
-   is half the screen. */
+   to it. cqh is the story's height, not the window's. */
 .story-stop {
   padding: 25cqh 24px;
 }
@@ -77,60 +344,49 @@
   margin: 0;
 }
 
-/* Explore mode */
-#explore-panel {
-  flex-direction: column;
-  height: 100%;
-  padding: 16px 20px;
-}
-
-.explore-header {
-  margin-bottom: 16px;
-}
-
-.explore-header label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: #aaa;
-}
-
-/* Reaches the overlay picker and any select an overlay renders into its
-   controls. Keyed to the panel rather than to a control's id, so an overlay
-   added later is dark without knowing this rule exists.
-
-   color-scheme matters as much as the colours: without it the popup list keeps
-   the system's light theme and disagrees with the closed control. */
-#explore-panel select {
-  padding: 6px 8px;
+.story-leave {
+  margin-top: 20px;
+  padding: 8px 14px;
+  border: 1px solid #6ab0f3;
   border-radius: 4px;
-  border: 1px solid #444;
-  background: #222;
-  color: #fff;
-  color-scheme: dark;
+  background: none;
+  color: #6ab0f3;
+  font: inherit;
   font-size: 14px;
   cursor: pointer;
 }
 
-.explore-header select {
-  width: 100%;
+.story-leave:hover {
+  background: rgba(106, 176, 243, 0.12);
 }
 
-.explore-footer {
-  margin-top: auto;
-  padding: 16px 0;
+#panel-footer {
+  grid-row: 5;
+  display: flex;
+  gap: 20px;
+  padding: 10px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-#back-to-story {
+.footer-link {
+  background: none;
+  border: none;
+  padding: 0;
   color: #6ab0f3;
-  text-decoration: none;
-  font-size: 14px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
 }
 
-#back-to-story:hover {
+.footer-link:hover {
   color: #9cd;
   text-decoration: underline;
+}
+
+/* Leaving and returning swap as the story folds and opens. */
+body.story-folded #leave-story,
+body:not(.story-folded) #return-to-story {
+  display: none;
 }
 
 /* Canvas sizing to accommodate panel */
@@ -138,11 +394,74 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: calc(100vw - 380px);
+  width: calc(100vw - var(--panel-width));
   height: 100vh;
 }
 
+/* On a phone the panel is a sheet along the bottom. 30svh leaves every story
+   stop room for about 150px of text on an 844px-tall screen. svh, not vh: a
+   phone's vh counts the space behind the browser's toolbar, so the map would
+   run under it and the verse the story centres would sit lower than it looks.
+
+   Lowered, the sheet slides down until only its summary line shows. It slides
+   rather than shrinks, so the story keeps its place. --sheet-shown is how much
+   of it is on screen, which the map and the verse popup make room for.
+
+   Tall, it grows up over the map rather than shrinking it, so the map and the
+   verse the story placed on it stay where they are underneath. */
 @media (max-width: 768px) {
+  :root {
+    --sheet-height: 30svh;
+    --sheet-tall: 85svh;
+    --grab-pad: 8px;
+    --sheet-shown: var(--sheet-height);
+  }
+
+  body.sheet-down {
+    --sheet-shown: var(--sheet-bar);
+  }
+
+  body.sheet-tall #right-panel {
+    height: var(--sheet-tall);
+  }
+
+  /* The whole top of the sheet, above the summary field, with a short pill
+     drawn in it. A narrower target is missed by a few pixels, and the finger
+     scrolls whatever lies beside it. */
+  #sheet-grabber {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(var(--grab-pad) + var(--field-margin));
+    padding: 0;
+    border: none;
+    background: none;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  #sheet-grabber::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 2px;
+    background: #666;
+  }
+
+  /* "Return to story" leaves the controls, and the grabber resizes them, so the
+     bar that folds them has no job here. */
+  body.story-folded:not(.sheet-down) #controls-toggle {
+    display: none;
+  }
+
+  body.story-folded .panel-controls-inner {
+    padding-top: var(--field-margin);
+  }
+
   #right-panel {
     position: fixed;
     top: auto;
@@ -150,14 +469,79 @@
     left: 0;
     right: 0;
     width: 100%;
-    height: 50vh;
+    height: var(--sheet-height);
+    transform: translateY(calc(var(--sheet-height) - var(--sheet-shown)));
+    transition:
+      grid-template-rows var(--accordion-duration) ease,
+      transform var(--accordion-duration) ease,
+      height var(--accordion-duration) ease;
     border-left: none;
+    padding-top: var(--grab-pad);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px 16px 0 0;
   }
 
+  /* A drag on the field resizes the sheet rather than panning the page. */
+  #controls-toggle {
+    touch-action: none;
+  }
+
   #canvas {
     width: 100vw;
-    height: 50vh;
+    height: calc(100svh - var(--sheet-shown));
+  }
+
+  /* Faded rather than removed. Removed, it changed the story's height as a
+     swipe crossed into the first stop with an overlay, and the page settled
+     short of where the swipe snapped. */
+  #controls-toggle {
+    transition:
+      opacity var(--accordion-duration) ease,
+      visibility var(--accordion-duration);
+  }
+
+  body.no-overlay-quiet #controls-toggle {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  body.sheet-down #controls-toggle .chevron {
+    margin: 0 4px 0 auto;
+    transform: translateY(2px) rotate(-135deg);
+  }
+
+  /* The stops sit side by side, a page each, and a swipe moves one. Each
+     stop's centre is where the story rests on it. */
+  #story-content {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .story-stop,
+  .story-stop:first-child,
+  .story-stop:last-child {
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    padding: 4px 24px 8px;
+    overflow-y: auto;
+    scroll-snap-align: center;
+  }
+
+  /* Folded, the story is reached from the footer rather than its strip. */
+  body.story-folded #story-strip {
+    display: none;
+  }
+
+  #story-cue {
+    justify-self: end;
+    align-self: center;
+    width: 10px;
+    height: 72px;
+    margin-right: 6px;
+    transform: none;
   }
 }

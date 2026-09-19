@@ -30,14 +30,17 @@ export function renderAxis(
     })
     .join('');
 
-  const gradient = buildLegendGradient(GRADIENT_SAMPLES, (i) =>
-    interpolateGradient(i / (GRADIENT_SAMPLES - 1), scale.palette),
-  );
-
   return `
-      <div class="legend-gradient" style="background: ${gradient}"></div>
+      <div class="legend-gradient" style="background: ${axisGradient(scale)}"></div>
       <div class="legend-ticks">${labels}</div>
     `;
+}
+
+/** A continuous scale's colours as a CSS gradient. */
+export function axisGradient(scale: Scale): string {
+  return buildLegendGradient(GRADIENT_SAMPLES, (i) =>
+    interpolateGradient(i / (GRADIENT_SAMPLES - 1), scale.palette),
+  );
 }
 
 interface PlacedTick {

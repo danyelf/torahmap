@@ -32,7 +32,7 @@ function withDefaults(colors: (Color | Color[] | null)[]): (Color | Color[])[] {
   return colors.map((c, i) => c ?? getDefaultColor(i));
 }
 
-function getColorsForStop(
+export function colorsForStop(
   stop: ResolvedStoryStop,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
@@ -80,15 +80,15 @@ export function computeBlendedColors(
   hovered: TanakhLayout | null,
 ): (Color | Color[])[] {
   if (fromStop === toStop || t === 0) {
-    return getColorsForStop(fromStop, verses, hovered);
+    return colorsForStop(fromStop, verses, hovered);
   }
   if (t >= 1) {
-    return getColorsForStop(toStop, verses, hovered);
+    return colorsForStop(toStop, verses, hovered);
   }
 
   return blendColorArrays(
-    getColorsForStop(fromStop, verses, hovered),
-    getColorsForStop(toStop, verses, hovered),
+    colorsForStop(fromStop, verses, hovered),
+    colorsForStop(toStop, verses, hovered),
     t,
   );
 }

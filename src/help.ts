@@ -159,12 +159,12 @@ function hideHelp(): void {
   modal?.classList.remove('visible');
 }
 
-export function initHelp(controlsPanel: HTMLElement): void {
-  // Add help button to controls panel
-  const helpBtn = document.createElement('button');
-  helpBtn.id = 'help-btn';
-  helpBtn.textContent = '?';
-  helpBtn.title = 'How to use';
-  helpBtn.addEventListener('click', showHelp);
-  controlsPanel.appendChild(helpBtn);
+/** The story is the way in, so the modal never opens by itself. */
+export function initHelp(footer: HTMLElement): void {
+  const aboutBtn = document.createElement('button');
+  aboutBtn.id = 'about-btn';
+  aboutBtn.type = 'button';
+  aboutBtn.textContent = 'About & credits';
+  aboutBtn.addEventListener('click', showHelp);
+  footer.appendChild(aboutBtn);
 }

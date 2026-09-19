@@ -1,23 +1,15 @@
-#help-btn {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid #4a8ac9;
-  background: #2a3f55;
+#about-btn {
+  background: none;
+  border: none;
+  padding: 0;
   color: #6ab0f3;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
-#help-btn:hover {
-  border-color: #6ab0f3;
-  color: #8ec5f7;
-  background: #3a5270;
+#about-btn:hover {
+  color: #9cd;
+  text-decoration: underline;
 }
 
 .help-modal {
