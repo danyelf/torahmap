@@ -4,6 +4,7 @@ import {
   isPointInItem,
   findExactHit,
   findFuzzyHit,
+  findNearestItem,
   findItemAtPoint,
 } from '../../hitDetection';
 import type { TanakhLayout } from '../../types';
@@ -213,6 +214,22 @@ describe('hitDetection', () => {
       const hit = findFuzzyHit(verses, 16, 5);
 
       expect(hit).toBe(verses[1]); // Finds verse[1], not verse[0]
+    });
+  });
+
+  describe('findNearestItem', () => {
+    const verses: TanakhLayout[] = [
+      createVerse({ x: 0, y: 0, size: 10 }),
+      createVerse({ verse: 2, x: 100, y: 100, size: 10 }),
+    ];
+
+    it('finds the nearest centre at any distance when given no limit', () => {
+      expect(findNearestItem(verses, 500, 500)).toBe(verses[1]);
+      expect(findNearestItem(verses, 40, 40)).toBe(verses[0]);
+    });
+
+    it('finds nothing beyond the limit it is given', () => {
+      expect(findNearestItem(verses, 40, 40, 10)).toBe(null);
     });
   });
 
