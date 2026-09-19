@@ -59,7 +59,7 @@ story's author, so the same action means something different in each mode.
 | `story_exit` | the reader leaves the story, by "Explore freely" or Back/Forward |
 | `story_return` | the reader comes back to the story, by "Back to story" or Back/Forward |
 | `view_settled` | the camera stops moving, in explore mode only |
-| `overlay_switch` | the reader picks an overlay |
+| `overlay_switch` | the overlay changes |
 | `search_execute` | the reader changes the search, once per term |
 | `verse_click` | a verse on the map is clicked |
 | `word_menu_open` | a word in the verse text is clicked |
@@ -80,25 +80,17 @@ by zoom band.
 ## Reading the data
 
 `scripts/telemetry/report.sh` runs the `.sql` files beside it against the
-Analytics Engine SQL API with `curl` and prints each as a table: visits per
-day, story reach by stop, where people leave the story, overlay use, top
-searches and word searches, Sefaria clicks. It reads `CLOUDFLARE_ACCOUNT_ID`
-and `CLOUDFLARE_API_TOKEN` (permission: Account Analytics Read). Counts use
-`SUM(_sample_interval)`, which stays correct under sampling.
+Analytics Engine SQL API with `curl` and prints each as a table. It reads
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` (permission: Account
+Analytics Read). Counts use `SUM(_sample_interval)`, which stays correct under
+sampling.
 
 ## Testing
 
-- Worker: rejects an Origin that does not match the request URL, unknown
-  events and oversized bodies; takes the host from the request URL, not the
-  payload; maps fields to the right columns, against a fake binding.
-- Page: sends nothing from the dev server (localhost, a LAN address, an
-  `.local` name, or no host); sends from `torahmap.org` and from a preview's
-  `workers.dev` host; sends each story stop once per visit.
-- Queries: every column a report query reads is, by the schema, the one its
-  name says.
-- `wrangler dev`: `/api/event` reaches the script and static assets still
-  load. The real check is after deploy: load the site, run the report, find
-  the visit.
+The tests are in `src/__tests__/unit/telemetry/`, and the choice of stop for
+an exit or return in `src/scrollytelling/__tests__/modeSwitch.test.ts`. What
+they cannot reach is the live pipeline: after deploy, load the site, run the
+report and find the visit.
 
 The Worker declares the one binding method it uses, so it needs no Worker
 types package.
