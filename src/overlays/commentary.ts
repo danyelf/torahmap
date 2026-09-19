@@ -2,7 +2,7 @@ import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout, CommentaryData } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
-import { renderAxis } from './legend.ts';
+import { axisGradient, renderAxis } from './legend.ts';
 import { loadJson } from './loadJson.ts';
 
 const HEATMAP_STOPS: ColorStop[] = [
@@ -189,6 +189,13 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
     }
 
     container.innerHTML = renderAxis(linkScale(settings.category), ticks);
+  },
+
+  summary(settings) {
+    return {
+      detail: settings.category === 'total' ? undefined : settings.category,
+      colors: [axisGradient(linkScale(settings.category))],
+    };
   },
 
   getHoverInfo(verse, settings) {

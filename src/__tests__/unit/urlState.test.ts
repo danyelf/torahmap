@@ -522,11 +522,16 @@ describe('updateUrl', () => {
   });
 
   it('removes hash when state is empty', () => {
-    const state: UrlState = {
-      overlayParams: {},
-    };
-    updateUrl(state);
+    mockHistory('http://localhost:5173/#overlay=commentary');
+    updateUrl({ overlayParams: {} });
     expect(history.replaceState).toHaveBeenCalledWith(null, '', '/');
+  });
+
+  it('leaves an unchanged URL alone, adding no history entry', () => {
+    mockHistory('http://localhost:5173/#story=intro');
+    updateUrl({ story: 'intro', overlayParams: {} }, true);
+    expect(history.pushState).not.toHaveBeenCalled();
+    expect(history.replaceState).not.toHaveBeenCalled();
   });
 });
 

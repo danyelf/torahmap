@@ -1,3 +1,9 @@
+:root {
+  --panel-width: 380px;
+  /* How much of the phone's bottom sheet is on screen, set in right-panel.css. */
+  --sheet-shown: 0px;
+}
+
 * {
   margin: 0;
   padding: 0;

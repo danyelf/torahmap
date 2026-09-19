@@ -37,7 +37,7 @@ import {
   type SearchTerm,
   type TermQuery,
 } from '../../search/terms.ts';
-import { SEARCH_COLORS } from '../../utils/color.ts';
+import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
@@ -496,6 +496,15 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
   urlParams: URL_PARAMS,
 
   settingsFromUrl,
+
+  summary(settings) {
+    return {
+      terms: searchFor(settings).active.map((t) => ({
+        text: t.text.trim(),
+        color: colorToCss(SEARCH_COLORS[t.colorIndex]),
+      })),
+    };
+  },
 
   settingsToUrl(settings) {
     const { active } = searchFor(settings);

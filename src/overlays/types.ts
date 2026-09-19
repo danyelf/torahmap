@@ -89,6 +89,10 @@ interface OverlayMembers<T, S> {
   ): void;
   renderLegend?(container: HTMLElement, settings: S): void;
 
+  // What the panel's one-line summary shows after the overlay's name; colours
+  // are CSS values. Absent, the line is the name alone.
+  summary?(settings: S): OverlaySummary;
+
   getHoverInfo?(verse: T, settings: S): string | null;
 
   // Declaring this marks an overlay's colours as depending on the hovered verse:
@@ -108,4 +112,11 @@ interface OverlayMembers<T, S> {
   // tab. Omit when the overlay derives everything from already-credited text;
   // a test enforces this for everything else.
   credits?: readonly Credit[];
+}
+
+export interface OverlaySummary {
+  /** Words, each in its own colour, as search shows its terms. */
+  terms?: { text: string; color: string }[];
+  detail?: string;
+  colors?: string[];
 }

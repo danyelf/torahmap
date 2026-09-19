@@ -61,40 +61,44 @@ export function panForZoom(
   };
 }
 
+/** A point on the map's canvas, in CSS pixels. */
+export interface ScreenPoint {
+  x: number;
+  y: number;
+}
+
 /**
- * Where the camera has to sit for an item to be in the middle of the window.
+ * Where the camera has to sit for an item to be at `focus`.
  *
  * Takes the zoom rather than reading it, because moving and zooming at once
  * has to aim at where the item will be, not where it is now.
  */
-export function panToCenter(
+export function panToFocus(
   item: { x: number; y: number; size: number },
   zoom: number,
-  cssWidth: number,
-  cssHeight: number,
+  focus: ScreenPoint,
 ): { x: number; y: number } {
   return {
-    x: cssWidth / 2 / zoom - item.x - item.size / 2,
-    y: cssHeight / 2 / zoom - item.y - item.size / 2,
+    x: focus.x / zoom - item.x - item.size / 2,
+    y: focus.y / zoom - item.y - item.size / 2,
   };
 }
 
 /**
- * The camera that brings an item into view: centred, and zoomed in if the map
+ * The camera that brings an item into view at `focus`, zoomed in if the map
  * is currently scaled out past `minZoom`.
  *
  * A reader already closer than `minZoom` has said what they want to see, so
  * their zoom is left alone rather than pulled back.
  */
-export function viewCenteredOn(
+export function viewFocusedOn(
   item: { x: number; y: number; size: number },
   currentZoom: number,
   minZoom: number,
-  cssWidth: number,
-  cssHeight: number,
+  focus: ScreenPoint,
 ): Camera {
   const zoom = clampZoom(Math.max(currentZoom, minZoom));
-  return { ...panToCenter(item, zoom, cssWidth, cssHeight), zoom };
+  return { ...panToFocus(item, zoom, focus), zoom };
 }
 
 /** How long a camera glide takes. Long enough to read as travel over the map. */

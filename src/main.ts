@@ -16,8 +16,6 @@ import {
   trackOverlaySwitch,
   trackPageView,
   trackSefariaClick,
-  trackStoryExit,
-  trackStoryReturn,
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
@@ -40,10 +38,11 @@ import {
   createCamera,
   clampZoom,
   panForZoom,
-  panToCenter,
-  viewCenteredOn,
+  panToFocus,
+  viewFocusedOn,
   animateCameraTo,
   type Camera,
+  type ScreenPoint,
 } from './camera.ts';
 import {
   createMouseState,
@@ -73,6 +72,7 @@ import {
   applyItemColors,
   overlayColorsFor,
   layerToRecompute,
+  getDefaultColor,
 } from './itemColoring.ts';
 import {
   createRenderContext,
@@ -103,19 +103,29 @@ import {
 import {
   loadStoryData,
   renderStoryPanel,
-  computeStopOffsets,
   resolveStops,
+  stopLabel,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
+import { blendColorArrays } from './scrollytelling/colorBlending';
+import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
-  stopForModeChange,
-  stopNumber,
-  switchToExplore,
-  switchToStory,
-  type Mode,
-} from './scrollytelling/modeSwitch';
-import type { ResolvedStoryStop } from './scrollytelling/types';
+  REJOIN_EASE_MS,
+  STORY_DRIVING,
+  SWIPE_EASE_MS,
+  colorSource,
+  readerTakesOver,
+  rejoin,
+  rejoinProgress,
+  settle,
+  storyScrolled,
+  type Driver,
+} from './scrollytelling/driver';
+import { stopNumber } from './scrollytelling/modeSwitch';
+import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
+import { summaryHtml } from './panelSummary.ts';
+import { sheetAfterDrag, sheetAfterTap, type Sheet } from './sheet.ts';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
@@ -123,6 +133,20 @@ import './styles/verse-popup.css';
 declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
+  }
+}
+
+const STORY_FOLDED_KEY = 'torahMap.storyFolded';
+
+// How far down a phone's map a verse brought into view is put. Halfway down,
+// the verse lands behind the popup that sits just above the sheet.
+const PHONE_STORY_FOCUS = 0.4;
+
+function storyWasFolded(): boolean {
+  try {
+    return sessionStorage.getItem(STORY_FOLDED_KEY) === 'true';
+  } catch {
+    return false;
   }
 }
 
@@ -179,8 +203,8 @@ async function main(): Promise<void> {
   // on the hovered verse, which a blend's may.
   let colorLayer: (Color | Color[] | null)[] = [];
 
-  // The story transition on screen; null at rest on a stop, or outside the story.
-  let transition: { from: ResolvedStoryStop; to: ResolvedStoryStop; t: number } | null = null;
+  let driver: Driver = STORY_DRIVING;
+  configureAnalytics({ getMode: () => (driver.by === 'reader' ? 'explore' : 'story') });
 
   function composite(): void {
     const verseStates = computeItemStates(
@@ -207,8 +231,8 @@ async function main(): Promise<void> {
   }
 
   function blendTransition(): void {
-    if (!transition) return;
-    const { from, to, t } = transition;
+    if (driver.by !== 'story' || !driver.blend) return;
+    const { from, to, t } = driver.blend;
     setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse));
   }
 
@@ -219,7 +243,7 @@ async function main(): Promise<void> {
    */
   function repaint(hoveredBefore: TanakhLayout | null = mouseState.hoveredVerse): void {
     const layer = layerToRecompute(
-      transition !== null,
+      colorSource(driver),
       currentOverlay,
       currentSettings(),
       hoveredBefore,
@@ -254,7 +278,7 @@ async function main(): Promise<void> {
     }
 
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
-    renderOverlayUi();
+    overlayChanged(true);
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -286,14 +310,120 @@ async function main(): Promise<void> {
 
   const touchState = createTouchState();
 
-  let appMode: Mode = 'story';
-  configureAnalytics({ getMode: () => appMode });
-  let lastStoryScrollTop = 0;
-  // The last stop the reader reached; unlike lastSyncedStopId, nothing clears it.
-  let lastReachedStopId = '';
+  const storyContent = document.getElementById('story-content')!;
+
+  const panelControls = document.getElementById('panel-controls')!;
+  const controlsToggle = document.getElementById('controls-toggle')!;
+  const controlsSummary = document.getElementById('controls-summary')!;
+  const storyStrip = document.getElementById('story-strip')!;
+  const storyStripTitle = document.getElementById('story-strip-title')!;
+
+  // The panel is an accordion: the story open and the controls folded to one
+  // line, or the controls open and the story folded to its title. With the
+  // story folded nothing moves the map but the reader.
+  let storyOpen = true;
+
+  // The stop the story is at while it cannot be scrolled there: folded, it has
+  // no height, and opening, it has not yet grown to its full height. Null while
+  // its scroll says where it is.
+  let heldStop: number | null = null;
+
+  // Cancels an opening story's wait to grow before it starts; see openStory.
+  let cancelOpening: (() => void) | null = null;
+
+  function storyStopIndex(): number {
+    if (heldStop !== null) return heldStop;
+    const state = currentStoryState();
+    return resolvedStops.indexOf(state.t > 0.5 ? state.toStop : state.fromStop);
+  }
+
+  function setStoryOpen(open: boolean): void {
+    if (!open && storyOpen) {
+      cancelOpening?.();
+      heldStop = storyStopIndex();
+      storyStripTitle.textContent = stopLabel(resolvedStops[heldStop]) || `Stop ${heldStop + 1}`;
+    }
+    storyOpen = open;
+    document.body.classList.toggle('story-folded', !open);
+    controlsToggle.setAttribute('aria-expanded', String(!open));
+    storyStrip.setAttribute('aria-expanded', String(open));
+    updateInert();
+    updateSummaryShown();
+  }
+
+  // Only what is on screen can take focus or a click: the open section, and
+  // nothing but the summary line while the sheet is lowered.
+  function updateInert(): void {
+    panelControls.inert = sheet === 'down' || storyOpen;
+    storyContent.inert = sheet === 'down' || !storyOpen;
+    storyStrip.inert = sheet === 'down';
+    const footer = document.getElementById('panel-footer');
+    if (footer) footer.inert = sheet === 'down';
+  }
+
+  // On a phone the panel is a sheet, lowered to its summary line to give the
+  // map the screen, or tall for reading and searching. Its height never
+  // changes which section is open.
+  const phoneLayout = window.matchMedia('(max-width: 768px)');
+  let sheet: Sheet = 'normal';
+
+  // On a phone the stops sit side by side and a swipe moves one; elsewhere
+  // they stack and scroll. Either way the story is driven by how far along
+  // that one axis it has been moved. The axis is read from the story's layout,
+  // so the script cannot disagree with the stylesheet about it.
+  function storyIsSideways(): boolean {
+    return getComputedStyle(storyContent).display === 'flex';
+  }
+
+  function storyPosition(): number {
+    return storyIsSideways() ? storyContent.scrollLeft : storyContent.scrollTop;
+  }
+
+  function setStoryPosition(position: number): void {
+    if (storyIsSideways()) storyContent.scrollLeft = position;
+    else storyContent.scrollTop = position;
+  }
+
+  function showStop(stop: HTMLElement | undefined): void {
+    // Centred, where the story holds a stop still; top-aligned, a stop shorter
+    // than the story settles partway into the next.
+    stop?.scrollIntoView(
+      storyIsSideways() ? { block: 'nearest', inline: 'center' } : { block: 'center' },
+    );
+  }
+
+  function setSheet(next: Sheet): void {
+    sheet = next;
+    document.body.classList.toggle('sheet-down', next === 'down');
+    document.body.classList.toggle('sheet-tall', next === 'tall');
+    updateInert();
+    updateSummaryShown();
+  }
+  updateInert();
+
+  /**
+   * On a phone, "No overlay" reads as the first thing to do, so while the
+   * story drives with no overlay on the line is left out. It comes back once
+   * the reader takes the map.
+   */
+  function updateSummaryShown(): void {
+    const quiet =
+      currentOverlayId === 'none' && storyOpen && sheet !== 'down' && driver.by !== 'reader';
+    document.body.classList.toggle('no-overlay-quiet', quiet);
+  }
+
+  /** Anything the reader does that changes what the map shows hands them the map. */
+  function takeOver(): void {
+    if (!storyOpen || driver.by === 'reader') return;
+    driver = readerTakesOver(storyPosition());
+    applyOverlay();
+    updateSummaryShown();
+  }
+
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
-  // Reset on mode switches (explore may have changed overlay/pin out from under us).
+  // Reset whenever the story comes back, since the reader may have changed the
+  // overlay or pin out from under it.
   let lastSyncedStopId: string | null = null;
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
   const TAP_THRESHOLD = 10; // max px movement to count as tap
@@ -311,7 +441,7 @@ async function main(): Promise<void> {
   }
 
   function centerOnVerse(verse: TanakhLayout): void {
-    Object.assign(camera, panToCenter(verse, camera.zoom, window.innerWidth, window.innerHeight));
+    Object.assign(camera, panToFocus(verse, camera.zoom, mapFocus()));
   }
 
   // A verse is one square six pixels across, so centring it while scaled out
@@ -336,13 +466,7 @@ async function main(): Promise<void> {
   function glideToVerse(verse: TanakhLayout): void {
     cancelCameraGlide();
 
-    const target = viewCenteredOn(
-      verse,
-      camera.zoom,
-      RESULT_CLICK_ZOOM,
-      window.innerWidth,
-      window.innerHeight,
-    );
+    const target = viewFocusedOn(verse, camera.zoom, RESULT_CLICK_ZOOM, mapFocus());
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
@@ -350,7 +474,10 @@ async function main(): Promise<void> {
     });
   }
 
+  // pinVerse, unpinVerse and zoomAt answer only the reader's gestures; the story
+  // sets the view directly. So each takes the wheel.
   function pinVerse(verse: TanakhLayout, centerCamera: boolean = false): void {
+    takeOver();
     trackVerseClick(verse.book, verse.chapter, verse.verse);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
@@ -358,18 +485,20 @@ async function main(): Promise<void> {
       centerOnVerse(verse);
     }
     repaint();
-    saveUrlState(true);
+    syncUrl(true);
   }
 
   function unpinVerse(): void {
+    takeOver();
     pinnedVerse = null;
     updateSidebarWrapper(null);
     repaint();
-    saveUrlState(true);
+    syncUrl(true);
   }
 
   /** Zoom by `factor`, holding whatever is under (screenX, screenY) still. */
   function zoomAt(factor: number, screenX: number, screenY: number): void {
+    takeOver();
     const newZoom = clampZoom(camera.zoom * factor);
     const pan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, screenX, screenY);
     camera.x = pan.x;
@@ -458,6 +587,8 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+    // Any touch on a phone's map says the reader wants the map.
+    if (phoneLayout.matches && sheet !== 'down') setSheet('down');
     // A hand on the map outranks a glide that is still running.
     cancelCameraGlide();
     startDrag(mouseState, e.clientX, e.clientY);
@@ -470,6 +601,7 @@ async function main(): Promise<void> {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
+      if (dx !== 0 || dy !== 0) takeOver();
       camera.x += dx / camera.zoom;
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
@@ -556,20 +688,28 @@ async function main(): Promise<void> {
     return state;
   }
 
-  function saveUrlState(pushHistory: boolean = false): void {
-    const state = buildCurrentUrlState();
-    updateUrl(state, pushHistory);
+  /**
+   * Write the URL for what is on screen. While the story is open it names the
+   * stop alone, whoever is driving, so reloading puts a lost reader back on the
+   * story; folded, it describes the reader's view. `push` adds a history entry,
+   * for a discrete step rather than a pan or a scroll.
+   */
+  function syncUrl(push: boolean = false): void {
+    const state: UrlState = storyOpen
+      ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
+      : buildCurrentUrlState();
+    updateUrl(state, push);
   }
 
-  // The camera when explore began or last sent view_settled. Every pointer up
-  // settles, a click included, so only a camera that has left it is sent.
+  // The camera when the reader took the map or last sent view_settled. Every
+  // pointer up settles, a click included, so only a camera that has left it is sent.
   let settledCamera: Camera = { ...camera };
   function markViewSettled(): void {
     settledCamera = { ...camera };
   }
   const debouncedCameraSettled = debounce(() => {
-    saveUrlState(false);
-    if (appMode !== 'explore') return;
+    syncUrl(false);
+    if (driver.by !== 'reader') return;
     const last = settledCamera;
     if (last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
     markViewSettled();
@@ -588,6 +728,16 @@ async function main(): Promise<void> {
       getVerseText,
       isPinned,
     );
+  }
+
+  /**
+   * Redraw the popup for the verse it shows, pinned or else hovered. It reads
+   * the overlay's settings when drawn, so it goes stale when they change under
+   * a verse that stays put, as when two story stops pin the same verse.
+   */
+  function refreshVersePopup(): void {
+    if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
+    else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
   }
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
@@ -682,12 +832,24 @@ async function main(): Promise<void> {
     );
   }
 
-  /** Draw the active overlay's controls and legend from its current settings. */
-  function renderOverlayUi(): void {
-    if (overlaySelect) overlaySelect.value = currentOverlayId;
-    if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
+  /**
+   * Redraw everything that shows the active overlay or its settings. `fresh`
+   * clears the controls first, for a different overlay or settings from
+   * elsewhere; a reader's own edit redraws into them, keeping their focus.
+   */
+  function overlayChanged(fresh: boolean): void {
+    if (fresh) {
+      if (overlaySelect) overlaySelect.value = currentOverlayId;
+      if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
+    }
     renderOverlayControls();
     renderOverlayLegend();
+    controlsSummary.innerHTML = summaryHtml(
+      currentOverlay?.name,
+      currentOverlay?.summary?.(currentSettings()) ?? {},
+    );
+    updateSummaryShown();
+    refreshVersePopup();
   }
 
   /**
@@ -700,21 +862,18 @@ async function main(): Promise<void> {
     if (overlay !== currentOverlay) return;
 
     applyOverlay();
-    renderOverlayLegend();
-    renderOverlayControls();
-    if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
+    overlayChanged(false);
     render();
-    saveUrlState(false);
+    syncUrl(false);
   }
 
   function setOverlay(id: string): void {
     trackOverlaySwitch(id, currentOverlayId);
     activateOverlay(id);
-    renderOverlayUi();
+    overlayChanged(true);
     applyOverlay();
-    if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
     render();
-    saveUrlState(true);
+    syncUrl(true);
   }
 
   // Clicking a word in the verse popup.
@@ -749,6 +908,7 @@ async function main(): Promise<void> {
 
         trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
 
+        takeOver();
         if (currentOverlayId !== 'search') {
           setOverlay('search');
         }
@@ -774,10 +934,12 @@ async function main(): Promise<void> {
     setOverlay(overlaySelect.value);
   });
 
-  window.addEventListener('resize', () => {
+  // The window resizing is not the only thing that resizes the map: on a phone
+  // it grows as the sheet lowers.
+  new ResizeObserver(() => {
     resizeCanvas();
     render();
-  });
+  }).observe(canvas);
 
   // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
   if (import.meta.hot) {
@@ -812,46 +974,60 @@ async function main(): Promise<void> {
     callbacks: {
       // Most hits are off screen, so travel to the verse as well as pinning it.
       onVerseClick: (verse: TanakhLayout) => {
+        // A tall sheet would hide the glide.
+        if (sheet === 'tall') setSheet('normal');
         pinVerse(verse);
         glideToVerse(verse);
       },
     },
   });
 
-  const rightPanel = document.getElementById('right-panel');
-  if (rightPanel) {
-    initHelp(rightPanel);
-  }
+  const panelFooter = document.getElementById('panel-footer');
+  if (panelFooter) initHelp(panelFooter);
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
-  const storyContent = document.getElementById('story-content')!;
+
+  /**
+   * Where a verse is put when the story, a link or the reader brings it into
+   * view: the middle of the map, or on a phone higher up, clear of the verse
+   * popup that sits above the sheet.
+   */
+  function mapFocus(): ScreenPoint {
+    const height = phoneLayout.matches
+      ? canvas.clientHeight * PHONE_STORY_FOCUS
+      : canvas.clientHeight / 2;
+    return { x: canvas.clientWidth / 2, y: height };
+  }
 
   let storyData = await loadStoryData();
-  let resolvedStops = resolveStops(
-    storyData.stops,
-    initialCamera,
-    verses,
-    canvas.clientWidth,
-    canvas.clientHeight,
-  );
+  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
 
+  // Crossing into or out of phone width turns the story from a column into a
+  // row, or back, and moves where it centres verses; keep the reader's stop.
+  // By the time this runs the story is laid out on its new axis, so its scroll
+  // no longer says which stop it was at; the last stop synced does.
+  phoneLayout.addEventListener('change', () => {
+    if (!phoneLayout.matches) setSheet('normal');
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
+    if (heldStop === null) {
+      showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
+      // That scroll was ours, not the reader's.
+      if (driver.by === 'reader') driver = readerTakesOver(storyPosition());
+    }
+    scheduleStoryFrame();
+  });
+
   async function reloadStory(): Promise<void> {
-    const scrollTop = storyContent.scrollTop;
+    const position = storyPosition();
     storyData = await loadStoryData();
-    resolvedStops = resolveStops(
-      storyData.stops,
-      initialCamera,
-      verses,
-      canvas.clientWidth,
-      canvas.clientHeight,
-    );
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
     stopElements = renderStoryPanel(storyContent, storyData.stops);
-    storyContent.scrollTop = scrollTop;
+    setStoryPosition(position);
     // Force re-apply: stops may have changed (overlay/params/verse), and stop
     // object identities are fresh after re-resolving.
     lastSyncedStopId = null;
-    storyContent.dispatchEvent(new Event('scroll'));
+    scheduleStoryFrame();
   }
 
   if (import.meta.hot) {
@@ -860,123 +1036,296 @@ async function main(): Promise<void> {
     });
   }
 
-  const storyPanel = document.getElementById('story-panel')!;
-  const explorePanel = document.getElementById('explore-panel')!;
-
-  // After startup, every switch between story and explore goes through here,
-  // so each is recorded once.
-  function changeMode(next: Mode, resumeAt: string | null): void {
-    if (next !== appMode) {
-      const stopId = stopForModeChange(resolvedStops, next, lastReachedStopId, resumeAt)?.id ?? '';
-      if (next === 'explore') trackStoryExit(stopId, stopNumber(resolvedStops, stopId));
-      else trackStoryReturn(stopId);
+  // Kept for the tab's session: a reload leaves the reader where they were,
+  // but a new visit starts in the story rather than on controls with nothing
+  // chosen. Written only when the reader opens or closes a section, not when
+  // a shared link opens with the story folded.
+  function rememberStoryFolded(folded: boolean): void {
+    try {
+      if (folded) sessionStorage.setItem(STORY_FOLDED_KEY, 'true');
+      else sessionStorage.removeItem(STORY_FOLDED_KEY);
+    } catch {
+      // Storage can be unavailable; the story simply opens next time.
     }
-    appMode = next;
   }
 
-  document.getElementById('exit-story')?.addEventListener('click', () => {
-    lastStoryScrollTop = storyContent.scrollTop;
-    changeMode('explore', null);
-    markViewSettled();
-    transition = null;
-    applyOverlay();
+  function openControls(): void {
+    takeOver();
+    setStoryOpen(false);
+    rememberStoryFolded(true);
     render();
-    switchToExplore(storyPanel, explorePanel);
-    // Update URL to explore mode (remove story param)
-    saveUrlState(true);
-  });
+    syncUrl(true);
+  }
 
-  document.getElementById('back-to-story')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    changeMode('story', lastReachedStopId);
-    // Reset settled tracker — explore mode may have changed overlay/pin, so
-    // force the next settled frame to re-apply the resting stop's state.
-    lastSyncedStopId = null;
-    switchToStory(storyPanel, explorePanel, storyContent, lastStoryScrollTop);
-    storyContent.dispatchEvent(new Event('scroll'));
-  });
+  const rightPanel = document.getElementById('right-panel')!;
 
-  let scrollRAF: number | null = null;
-  storyContent.addEventListener('scroll', () => {
-    if (appMode !== 'story') return;
-    if (scrollRAF) return;
-    scrollRAF = requestAnimationFrame(() => {
-      scrollRAF = null;
-      // The reader can leave the story between the scroll and this frame.
-      if (appMode !== 'story') return;
-      const offsets = computeStopOffsets(stopElements);
-      const heights = stopElements.map((el) => el.offsetHeight);
-      const totalHeight = storyContent.scrollHeight;
-      const state = computeInterpolatedState(
-        resolvedStops,
-        offsets,
-        totalHeight,
-        storyContent.scrollTop,
-        storyData.defaults?.easing ?? 'ease-in-out',
-        heights,
-        storyContent.clientHeight,
-      );
+  /**
+   * Open the story at `stop` and hand it the map, easing from the reader's view
+   * or cutting to the stop, as a link does. Where a stop sits depends on how
+   * tall the story is, so an opening story waits until it has grown; a fold or
+   * another open before then cancels the wait.
+   */
+  function openStory(stop: number, arrive: 'ease' | 'cut'): void {
+    cancelOpening?.();
+    const wasOpen = storyOpen;
+    heldStop = stop;
+    setStoryOpen(true);
 
-      camera.x = state.camera.x;
-      camera.y = state.camera.y;
-      camera.zoom = state.camera.zoom;
-
-      const settled = state.fromStop === state.toStop;
-      // Pick the stop whose state should be "current" — settled stop, or the
-      // dominant transitioning stop. Sync explore state to it on every change
-      // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
-      const dominantStop = settled ? state.fromStop : state.t > 0.5 ? state.toStop : state.fromStop;
-      if (lastSyncedStopId !== dominantStop.id) {
-        syncStoryStopState(dominantStop);
-        lastSyncedStopId = dominantStop.id;
-        trackStoryStop(
-          dominantStop.id,
-          stopNumber(resolvedStops, dominantStop.id),
-          resolvedStops.length,
-        );
-        lastReachedStopId = dominantStop.id;
-      }
-
-      // A scroll fires no pointer event, so re-run hit detection under the
-      // last known cursor position now that the camera has moved.
-      if (lastPointerPosition) {
-        setHoveredVerse(
-          mouseState,
-          findItemAtPoint(verses, camera, lastPointerPosition.x, lastPointerPosition.y),
-        );
-      }
-
-      if (settled) {
-        // At rest: paint via the explore-mode color pipeline.
-        transition = null;
-        applyOverlay();
+    const start = (): void => {
+      cancelOpening?.();
+      heldStop = null;
+      showStop(stopElements[stop]);
+      if (arrive === 'ease') {
+        beginEase(REJOIN_EASE_MS, performance.now());
       } else {
-        transition = { from: state.fromStop, to: state.toStop, t: state.t };
-        blendTransition();
+        driver = STORY_DRIVING;
+        // Make the next frame apply the stop's overlay, settings and pin.
+        lastSyncedStopId = null;
       }
-      render();
-      updateUrl({ story: dominantStop.id, overlayParams: {} }, false);
+      scheduleStoryFrame();
+    };
+    const growMs = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--accordion-duration'),
+    );
+    if (wasOpen || !growMs) {
+      start();
+      return;
+    }
+
+    const onTransitionEnd = (e: TransitionEvent): void => {
+      if (e.target === rightPanel && e.propertyName === 'grid-template-rows') start();
+    };
+    rightPanel.addEventListener('transitionend', onTransitionEnd);
+    // In case transitionend never comes, as when the transition is interrupted.
+    const fallback = setTimeout(start, growMs + 150);
+    cancelOpening = () => {
+      rightPanel.removeEventListener('transitionend', onTransitionEnd);
+      clearTimeout(fallback);
+      cancelOpening = null;
+    };
+  }
+
+  function readerOpensStory(): void {
+    openStory(storyStopIndex(), 'ease');
+    rememberStoryFolded(false);
+    syncUrl(true);
+  }
+
+  // The line stands for the controls, so on a lowered sheet it raises the
+  // sheet with them open; the story is back through "Return to story".
+  controlsToggle.addEventListener('click', () => {
+    if (sheet === 'down') {
+      setSheet('normal');
+      if (storyOpen) openControls();
+    } else if (storyOpen) openControls();
+    else readerOpensStory();
+  });
+  storyStrip.addEventListener('click', readerOpensStory);
+  document.getElementById('return-to-story')?.addEventListener('click', readerOpensStory);
+  document.getElementById('leave-story')?.addEventListener('click', openControls);
+
+  // On a phone, a vertical drag on the grabber or the summary line moves the
+  // sheet one height, judged on release; the sheet does not follow the finger.
+  // A tap keeps each one's own meaning.
+  function resizesSheet(handle: HTMLElement): void {
+    let from: number | null = null;
+    let dragged = false;
+    handle.addEventListener('pointerdown', (e) => {
+      if (!phoneLayout.matches) return;
+      from = e.clientY;
+      // A touch that moved fires no click, so a drag's flag is cleared here too.
+      dragged = false;
+      handle.setPointerCapture(e.pointerId);
     });
+    handle.addEventListener('pointerup', (e) => {
+      if (from === null) return;
+      const next = sheetAfterDrag(sheet, e.clientY - from);
+      from = null;
+      if (next) {
+        dragged = true;
+        setSheet(next);
+      }
+    });
+    handle.addEventListener('pointercancel', () => {
+      from = null;
+    });
+    // A drag still ends in a click; it must not also count as a tap.
+    handle.addEventListener(
+      'click',
+      (e) => {
+        if (!dragged) return;
+        dragged = false;
+        e.stopImmediatePropagation();
+      },
+      { capture: true },
+    );
+  }
+
+  const grabber = document.getElementById('sheet-grabber')!;
+  resizesSheet(grabber);
+  resizesSheet(controlsToggle);
+  grabber.addEventListener('click', () => setSheet(sheetAfterTap(sheet)));
+
+  // Typing into the controls wants room for the words and their results.
+  panelControls.addEventListener('focusin', (e) => {
+    if (phoneLayout.matches && e.target instanceof HTMLInputElement) setSheet('tall');
+  });
+  // Delegated, because reloading the story redraws its stops.
+  storyContent.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('.story-leave')) openControls();
   });
 
-  window.addEventListener('resize', () => {
-    if (appMode === 'story') {
-      storyContent.dispatchEvent(new Event('scroll'));
+  // Scrolling is the only thing that moves the story on. While the reader
+  // drives it only counts towards handing the map back.
+  storyContent.addEventListener('scroll', () => {
+    if (!storyOpen || heldStop !== null) return;
+
+    if (driver.by === 'reader') {
+      const next = storyScrolled(driver, storyPosition());
+      if (next !== 'rejoin') {
+        driver = next;
+        return;
+      }
+      beginEase(REJOIN_EASE_MS, performance.now());
     }
+    scheduleStoryFrame();
+  });
+
+  let storyFrame: number | null = null;
+
+  /** Repaint from the story without counting as a scroll. */
+  function scheduleStoryFrame(): void {
+    if (storyFrame === null) storyFrame = requestAnimationFrame(paintStoryFrame);
+  }
+
+  function currentStoryState(): InterpolatedState {
+    // On a phone the story is at whichever page is showing. Moving between
+    // pages is eased on a timer (beginEase), not tracked through the swipe.
+    if (storyIsSideways()) {
+      const page = Math.round(storyContent.scrollLeft / Math.max(1, storyContent.clientWidth));
+      const stop = resolvedStops[Math.min(resolvedStops.length - 1, Math.max(0, page))];
+      return { camera: { ...stop.camera }, fromStop: stop, toStop: stop, t: 0 };
+    }
+    return computeInterpolatedState(
+      resolvedStops,
+      stopElements.map((el) => el.offsetTop),
+      storyContent.scrollHeight,
+      storyContent.scrollTop,
+      storyData.defaults?.easing ?? 'ease-in-out',
+      stopElements.map((el) => el.offsetHeight),
+      storyContent.clientHeight,
+    );
+  }
+
+  /**
+   * Ease the map over `duration` from what is on screen, which may be partway
+   * through an earlier ease, to where the story is.
+   */
+  function beginEase(duration: number, now: number): void {
+    cancelCameraGlide();
+    const state = currentStoryState();
+    driver = rejoin(
+      now,
+      duration,
+      camera,
+      colorLayer.map((c, i) => c ?? getDefaultColor(i)),
+      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
+    );
+    updateSummaryShown();
+  }
+
+  // Reaching a stop is sent once per visit, however often the reader scrolls past it.
+  function arriveAtStop(stop: ResolvedStoryStop): void {
+    syncStoryStopState(stop);
+    lastSyncedStopId = stop.id;
+    trackStoryStop(stop.id, stopNumber(resolvedStops, stop.id), resolvedStops.length);
+  }
+
+  function paintStoryFrame(now: number): void {
+    storyFrame = null;
+    // The reader can take the map, or fold the story, between the scroll and this frame.
+    if (!storyOpen || heldStop !== null || driver.by === 'reader') return;
+
+    if (driver.by === 'rejoining') {
+      driver = settle(driver, now);
+      // Done: the next lines re-sync the overlay, its settings and the pin.
+      if (driver.by === 'story') lastSyncedStopId = null;
+    }
+
+    const state = currentStoryState();
+    // Nothing further to scroll to, so no cue to.
+    document.body.classList.toggle(
+      'story-at-end',
+      state.toStop === resolvedStops[resolvedStops.length - 1],
+    );
+
+    // A new page on a phone eases in rather than cutting to it.
+    if (storyIsSideways() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
+      beginEase(SWIPE_EASE_MS, now);
+      // The controls and the popup move to the new stop as it starts.
+      arriveAtStop(state.toStop);
+    }
+
+    if (driver.by === 'rejoining') {
+      const t = easingFunctions['ease-in-out'](rejoinProgress(driver, now));
+      Object.assign(camera, lerpCamera(driver.fromCamera, state.camera, t));
+      setColorLayer(blendColorArrays(driver.fromColors, driver.toColors, t));
+      render();
+      scheduleStoryFrame();
+      return;
+    }
+
+    camera.x = state.camera.x;
+    camera.y = state.camera.y;
+    camera.zoom = state.camera.zoom;
+
+    const settled = state.fromStop === state.toStop;
+    // Pick the stop whose state should be "current" — settled stop, or the
+    // dominant transitioning stop. Sync explore state to it on every change
+    // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
+    const dominantStop = settled ? state.fromStop : state.t > 0.5 ? state.toStop : state.fromStop;
+    if (lastSyncedStopId !== dominantStop.id) {
+      arriveAtStop(dominantStop);
+    }
+
+    // A scroll fires no pointer event, so re-run hit detection under the
+    // last known cursor position now that the camera has moved.
+    if (lastPointerPosition) {
+      setHoveredVerse(
+        mouseState,
+        findItemAtPoint(verses, camera, lastPointerPosition.x, lastPointerPosition.y),
+      );
+    }
+
+    if (settled) {
+      // At rest: paint via the explore-mode color pipeline.
+      driver = STORY_DRIVING;
+      applyOverlay();
+    } else {
+      driver = { by: 'story', blend: { from: state.fromStop, to: state.toStop, t: state.t } };
+      blendTransition();
+    }
+    render();
+    syncUrl();
+  }
+
+  // A stop's camera puts its verse against the map's size, which the window
+  // sets. The map also grows as a phone's sheet lowers, but that leaves the
+  // verse where it is on screen, so it is not followed.
+  window.addEventListener('resize', () => {
+    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
+    scheduleStoryFrame();
   });
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  function restoreFromUrl(next: ViewState): void {
-    applyingExternalState(() => applyViewState(next));
-  }
-
-  function viewFromUrl(): ViewState {
-    return resolveViewState(
+  function restoreFromUrl(): void {
+    const next = resolveViewState(
       parseUrlState((id) => getOverlay(id)?.urlParams),
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
+    applyingExternalState(() => applyViewState(next));
   }
 
   /**
@@ -985,59 +1334,49 @@ async function main(): Promise<void> {
    * before the camera that centres on it.
    */
   function applyViewState(next: ViewState): void {
-    if (next.mode === 'story') {
-      // Force the next settled scroll frame to apply the stop's state.
-      lastSyncedStopId = null;
-      switchToStory(storyPanel, explorePanel, storyContent, 0);
-    } else {
-      if (appMode === 'story') lastStoryScrollTop = storyContent.scrollTop;
-      switchToExplore(storyPanel, explorePanel);
+    if (next.mode === 'explore') {
+      driver = readerTakesOver(storyPosition());
+      setStoryOpen(false);
     }
-    changeMode(next.mode, next.storyStop);
-    transition = null;
 
     activateOverlay(next.overlay);
     if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
-    renderOverlayUi();
+    overlayChanged(true);
 
     const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
     pinnedVerse = verse;
     updateSidebarWrapper(verse, verse !== null);
 
     cancelCameraGlide();
-    Object.assign(camera, cameraForView(next.camera, verse, window.innerWidth, window.innerHeight));
+    Object.assign(camera, cameraForView(next.camera, verse, mapFocus()));
 
     applyOverlay();
     render();
 
-    // The story drives the map from its scroll position, so it takes over here.
     if (next.mode === 'story') {
-      const stopIndex = resolvedStops.findIndex((s) => s.id === next.storyStop);
-      stopElements[stopIndex]?.scrollIntoView();
-      storyContent.dispatchEvent(new Event('scroll'));
-    } else {
-      markViewSettled();
+      const stop = resolvedStops.findIndex((s) => s.id === next.storyStop);
+      openStory(Math.max(0, stop), 'cut');
     }
   }
 
   if (window.location.hash) {
-    // Opening in a mode is not a change of mode, so it sends no event.
-    const opened = viewFromUrl();
-    appMode = opened.mode;
-    restoreFromUrl(opened);
+    restoreFromUrl();
   }
 
-  const urlStop = parseUrlState().story ?? '';
+  // A link to a story stop always opens the story.
+  if (storyOpen && !parseUrlState().story && storyWasFolded()) {
+    driver = readerTakesOver(0);
+    setStoryOpen(false);
+  }
+
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
-  trackPageView(urlStop, referrer === location.hostname ? '' : referrer);
+  trackPageView(parseUrlState().story ?? '', referrer === location.hostname ? '' : referrer);
 
   subscribeToHashChange(() => {
-    restoreFromUrl(viewFromUrl());
+    restoreFromUrl();
   });
 
-  if (appMode === 'story') {
-    storyContent.dispatchEvent(new Event('scroll'));
-  }
+  scheduleStoryFrame();
 
   prefetchMorphology();
 }

@@ -49,29 +49,43 @@
     </div>
 
     <div id="right-panel">
-      <div id="story-panel">
-        <div class="story-header">
-          <button id="exit-story">Explore freely</button>
+      <button
+        id="sheet-grabber"
+        type="button"
+        aria-label="Make the panel taller or shorter"
+      ></button>
+      <button id="controls-toggle" type="button" aria-controls="panel-controls">
+        <span id="controls-summary"></span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+      <div id="panel-controls">
+        <div class="panel-controls-inner">
+          <div class="panel-picker">
+            <label for="overlay-select">Overlay</label>
+            <!-- The overlays themselves are added here at startup, from the
+               registry. Do not list them: that is what the registry is for. -->
+            <select id="overlay-select">
+              <option value="none">None</option>
+            </select>
+          </div>
+          <div id="overlay-controls"></div>
+          <div id="overlay-legend"></div>
         </div>
-        <div id="story-content"></div>
       </div>
 
-      <!-- Explore mode content (hidden by default) -->
-      <div id="explore-panel" style="display: none">
-        <div class="explore-header">
-          <label>Overlay</label>
-          <!-- The overlays themselves are added here at startup, from the
-             registry. Do not list them: that is what the registry is for. -->
-          <select id="overlay-select">
-            <option value="none">None</option>
-          </select>
-        </div>
-        <div id="overlay-controls"></div>
-        <div id="overlay-legend"></div>
-        <div class="explore-footer">
-          <a href="#" id="back-to-story">Back to story</a>
-        </div>
-      </div>
+      <button id="story-strip" type="button" aria-controls="story-content">
+        <span class="chevron" aria-hidden="true"></span>
+        <span id="story-strip-title"></span>
+      </button>
+      <div id="story-content"></div>
+      <svg id="story-cue" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="1,2 9,50 1,98" />
+      </svg>
+
+      <footer id="panel-footer">
+        <button id="leave-story" class="footer-link" type="button">Leave story</button>
+        <button id="return-to-story" class="footer-link" type="button">Return to story</button>
+      </footer>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

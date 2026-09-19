@@ -115,3 +115,17 @@ describe('a surviving term keeps one colour', () => {
     expect(searchOverlay.getVerseColor(verses[1])).toEqual(SEARCH_COLORS[1]);
   });
 });
+
+describe('the panel summary', () => {
+  it('shows only the searched words, each in its own row’s colour', () => {
+    const container = render();
+
+    typeIntoInput(rowInput(container, 0), 'c');
+    container.querySelector<HTMLButtonElement>('#add-term')!.click();
+    typeIntoInput(rowInput(container, 1), 'spirit');
+
+    expect(searchOverlay.overlay.summary!(searchOverlay.settings)).toEqual({
+      terms: [{ text: 'spirit', color: css(1) }],
+    });
+  });
+});

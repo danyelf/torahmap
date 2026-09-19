@@ -1,7 +1,9 @@
 import { parseVerseFromUrl, type OverlayParams, type UrlState } from './urlState.ts';
-import { panToCenter, type Camera } from './camera.ts';
-import type { Mode } from './scrollytelling/modeSwitch.ts';
+import { panToFocus, type Camera, type ScreenPoint } from './camera.ts';
 import type { TanakhIdentity } from './types.ts';
+
+/** Whether a link opens with the story showing, or with it folded and the controls open. */
+export type AppMode = 'story' | 'explore';
 
 /**
  * Everything a link decides, with nothing left out. A field the link does not
@@ -9,7 +11,7 @@ import type { TanakhIdentity } from './types.ts';
  * rather than layering over it.
  */
 export interface ViewState {
-  mode: Mode;
+  mode: AppMode;
   storyStop: string | null;
   overlay: string;
   overlayParams: OverlayParams;
@@ -49,16 +51,15 @@ export function resolveViewState(
 }
 
 /**
- * The camera a view lands on: its zoom, then its position, then centred on its
- * verse. The verse is centred last so that it is centred at the zoom the link
- * asked for; centring first and zooming after moves it off screen.
+ * The camera a view lands on: its zoom, then its position, then its verse at
+ * `focus`. The verse is placed last so that it is placed at the zoom the link
+ * asked for; placing it first and zooming after moves it off screen.
  */
 export function cameraForView(
   camera: Camera,
   verse: { x: number; y: number; size: number } | null,
-  cssWidth: number,
-  cssHeight: number,
+  focus: ScreenPoint,
 ): Camera {
   if (!verse) return { ...camera };
-  return { ...panToCenter(verse, camera.zoom, cssWidth, cssHeight), zoom: camera.zoom };
+  return { ...panToFocus(verse, camera.zoom, focus), zoom: camera.zoom };
 }

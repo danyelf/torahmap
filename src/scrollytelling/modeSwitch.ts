@@ -20,19 +20,3 @@ export function stopForModeChange<S extends { id: string }>(
 export function stopNumber(stops: readonly { id: string }[], id: string): number {
   return stops.findIndex((s) => s.id === id) + 1;
 }
-
-export function switchToExplore(storyPanel: HTMLElement, explorePanel: HTMLElement): void {
-  storyPanel.style.display = 'none';
-  explorePanel.style.display = 'flex';
-}
-
-export function switchToStory(
-  storyPanel: HTMLElement,
-  explorePanel: HTMLElement,
-  storyContent: HTMLElement,
-  lastScrollTop: number,
-): void {
-  explorePanel.style.display = 'none';
-  storyPanel.style.display = 'flex';
-  storyContent.scrollTop = lastScrollTop;
-}
