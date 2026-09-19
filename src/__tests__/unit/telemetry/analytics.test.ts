@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   configureAnalytics,
-  trackModeChange,
+  trackStoryExit,
+  trackStoryReturn,
   trackSearchExecute,
   trackStoryStop,
   trackViewSettled,
@@ -66,19 +67,13 @@ describe('analytics', () => {
     expect(send).toHaveBeenCalledTimes(2);
   });
 
-  it('sends story_exit leaving the story and story_return coming back', () => {
-    trackModeChange('story', 'explore', 'sinai', 4);
-    trackModeChange('explore', 'story', 'flood', 2);
+  it('sends story_exit with the stop and its number, story_return with the stop', () => {
+    trackStoryExit('sinai', 4);
+    trackStoryReturn('flood');
     expect(sent().map((e) => [e.event, e.fields])).toEqual([
       ['story_exit', { stop_id: 'sinai', stop_number: 4 }],
       ['story_return', { stop_id: 'flood' }],
     ]);
-  });
-
-  it('sends nothing when the mode does not change', () => {
-    trackModeChange('story', 'story', 'sinai', 4);
-    trackModeChange('explore', 'explore', 'sinai', 4);
-    expect(send).not.toHaveBeenCalled();
   });
 
   it('bands the zoom of a settled view', () => {

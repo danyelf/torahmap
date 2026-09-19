@@ -13,10 +13,11 @@ import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
 import {
   configureAnalytics,
-  trackModeChange,
   trackOverlaySwitch,
   trackPageView,
   trackSefariaClick,
+  trackStoryExit,
+  trackStoryReturn,
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
@@ -107,7 +108,13 @@ import {
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
-import { switchToExplore, switchToStory, type Mode } from './scrollytelling/modeSwitch';
+import {
+  stopForModeChange,
+  stopNumber,
+  switchToExplore,
+  switchToStory,
+  type Mode,
+} from './scrollytelling/modeSwitch';
 import type { ResolvedStoryStop } from './scrollytelling/types';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
@@ -851,16 +858,14 @@ async function main(): Promise<void> {
   const storyPanel = document.getElementById('story-panel')!;
   const explorePanel = document.getElementById('explore-panel')!;
 
-  /**
-   * Every switch between story and explore goes through here, so each one is
-   * recorded once. Leaving names the last stop reached; returning names
-   * `resumeAt`. With no such stop, the story is at, or resumes from, the top.
-   */
+  // After startup, every switch between story and explore goes through here,
+  // so each is recorded once.
   function changeMode(next: Mode, resumeAt: string | null): void {
-    const named = next === 'story' ? resumeAt : lastReachedStopId;
-    const stop = resolvedStops.find((s) => s.id === named) ?? resolvedStops[0];
-    const stopNumber = stop ? resolvedStops.indexOf(stop) + 1 : 0;
-    trackModeChange(appMode, next, stop?.id ?? '', stopNumber);
+    if (next !== appMode) {
+      const stopId = stopForModeChange(resolvedStops, next, lastReachedStopId, resumeAt)?.id ?? '';
+      if (next === 'explore') trackStoryExit(stopId, stopNumber(resolvedStops, stopId));
+      else trackStoryReturn(stopId);
+    }
     appMode = next;
   }
 
@@ -918,8 +923,11 @@ async function main(): Promise<void> {
       if (lastSyncedStopId !== dominantStop.id) {
         syncStoryStopState(dominantStop);
         lastSyncedStopId = dominantStop.id;
-        const stopIndex = resolvedStops.findIndex((s) => s.id === dominantStop.id);
-        trackStoryStop(dominantStop.id, stopIndex + 1, resolvedStops.length);
+        trackStoryStop(
+          dominantStop.id,
+          stopNumber(resolvedStops, dominantStop.id),
+          resolvedStops.length,
+        );
         lastReachedStopId = dominantStop.id;
       }
 
@@ -953,8 +961,7 @@ async function main(): Promise<void> {
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  function restoreFromUrl(): void {
-    const next = viewFromUrl();
+  function restoreFromUrl(next: ViewState): void {
     applyingExternalState(() => applyViewState(next));
   }
 
@@ -1007,8 +1014,9 @@ async function main(): Promise<void> {
 
   if (window.location.hash) {
     // Opening in a mode is not a change of mode, so it sends no event.
-    appMode = viewFromUrl().mode;
-    restoreFromUrl();
+    const opened = viewFromUrl();
+    appMode = opened.mode;
+    restoreFromUrl(opened);
   }
 
   const urlStop = parseUrlState().story ?? '';
@@ -1016,7 +1024,7 @@ async function main(): Promise<void> {
   trackPageView(urlStop, referrer === location.hostname ? '' : referrer);
 
   subscribeToHashChange(() => {
-    restoreFromUrl();
+    restoreFromUrl(viewFromUrl());
   });
 
   if (appMode === 'story') {
