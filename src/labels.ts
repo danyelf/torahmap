@@ -63,7 +63,7 @@ export function createBookLabels(
     label.dataset.topY = String(pos.minY);
     label.dataset.bookWidth = String(pos.maxX - pos.minX);
 
-    // Hebrew name (always shown, without nikkud)
+    // Hebrew name, without nikkud
     const heSpan = document.createElement('span');
     heSpan.className = 'book-label-he';
     heSpan.style.fontFamily = HEBREW_LABEL_FONT;
@@ -130,6 +130,7 @@ export function createSectionLabels(
     label.dataset.topY = String(b.minY);
 
     const heSpan = document.createElement('span');
+    heSpan.className = 'section-label-he';
     heSpan.style.fontFamily = HEBREW_LABEL_FONT;
     heSpan.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
     heSpan.textContent = SECTION_NAMES[section].he;
