@@ -42,6 +42,10 @@ body.story-folded #right-panel {
   grid-column: 1;
 }
 
+#sheet-grabber {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --accordion-duration: 0ms;
@@ -398,15 +402,60 @@ body:not(.story-folded) #return-to-story {
 
    Lowered, the sheet slides down until only its summary line shows. It slides
    rather than shrinks, so the story keeps its place. --sheet-shown is how much
-   of it is on screen, which the map and the verse popup make room for. */
+   of it is on screen, which the map and the verse popup make room for.
+
+   Tall, it grows up over the map rather than shrinking it, so the map and the
+   verse the story placed on it stay where they are underneath. */
 @media (max-width: 768px) {
   :root {
     --sheet-height: 30svh;
+    --sheet-tall: 85svh;
     --sheet-shown: var(--sheet-height);
   }
 
   body.sheet-down {
     --sheet-shown: var(--sheet-bar);
+  }
+
+  body.sheet-tall #right-panel {
+    height: var(--sheet-tall);
+  }
+
+  /* A wide target with a short pill drawn in it, in the summary field's top
+     margin. */
+  #sheet-grabber {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 72px;
+    height: var(--field-margin);
+    transform: translateX(-50%);
+    padding: 0;
+    border: none;
+    background: none;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  #sheet-grabber::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 4px auto 0;
+    border-radius: 2px;
+    background: #666;
+  }
+
+  /* "Return to story" leaves the controls, and the grabber resizes them, so the
+     bar that folds them has no job here. */
+  body.story-folded:not(.sheet-down) #controls-toggle {
+    display: none;
+  }
+
+  body.story-folded .panel-controls-inner {
+    padding-top: var(--field-margin);
   }
 
   #right-panel {
@@ -420,7 +469,8 @@ body:not(.story-folded) #return-to-story {
     transform: translateY(calc(var(--sheet-height) - var(--sheet-shown)));
     transition:
       grid-template-rows var(--accordion-duration) ease,
-      transform var(--accordion-duration) ease;
+      transform var(--accordion-duration) ease,
+      height var(--accordion-duration) ease;
     border-left: none;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px 16px 0 0;

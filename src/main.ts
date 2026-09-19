@@ -113,6 +113,7 @@ import {
 } from './scrollytelling/driver';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { summaryHtml } from './panelSummary.ts';
+import { sheetAfterGesture, type Sheet } from './sheet.ts';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
@@ -340,18 +341,18 @@ async function main(): Promise<void> {
   // Only what is on screen can take focus or a click: the open section, and
   // nothing but the summary line while the sheet is lowered.
   function updateInert(): void {
-    panelControls.inert = sheetDown || storyOpen;
-    storyContent.inert = sheetDown || !storyOpen;
-    storyStrip.inert = sheetDown;
+    panelControls.inert = sheet === 'down' || storyOpen;
+    storyContent.inert = sheet === 'down' || !storyOpen;
+    storyStrip.inert = sheet === 'down';
     const footer = document.getElementById('panel-footer');
-    if (footer) footer.inert = sheetDown;
+    if (footer) footer.inert = sheet === 'down';
   }
 
-  // On a phone the sheet can also be lowered to its summary line, giving the
-  // map the screen. Lowering hides the sheet without changing which section is
-  // open, so raising it brings back what was there.
+  // On a phone the panel is a sheet, lowered to its summary line to give the
+  // map the screen, or tall for reading and searching. Its height never
+  // changes which section is open.
   const phoneLayout = window.matchMedia('(max-width: 768px)');
-  let sheetDown = false;
+  let sheet: Sheet = 'normal';
 
   // On a phone the stops sit side by side and a swipe moves one; elsewhere
   // they stack and scroll. Either way the story is driven by how far along
@@ -374,9 +375,10 @@ async function main(): Promise<void> {
     stop?.scrollIntoView(storyIsSideways() ? { block: 'nearest', inline: 'center' } : undefined);
   }
 
-  function setSheetDown(down: boolean): void {
-    sheetDown = down;
-    document.body.classList.toggle('sheet-down', down);
+  function setSheet(next: Sheet): void {
+    sheet = next;
+    document.body.classList.toggle('sheet-down', next === 'down');
+    document.body.classList.toggle('sheet-tall', next === 'tall');
     updateInert();
     updateSummaryShown();
   }
@@ -388,7 +390,8 @@ async function main(): Promise<void> {
    * the reader takes the map.
    */
   function updateSummaryShown(): void {
-    const quiet = currentOverlayId === 'none' && storyOpen && !sheetDown && driver.by !== 'reader';
+    const quiet =
+      currentOverlayId === 'none' && storyOpen && sheet !== 'down' && driver.by !== 'reader';
     document.body.classList.toggle('no-overlay-quiet', quiet);
   }
 
@@ -571,7 +574,7 @@ async function main(): Promise<void> {
 
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
     // Any touch on a phone's map says the reader wants the map.
-    if (phoneLayout.matches && !sheetDown) setSheetDown(true);
+    if (phoneLayout.matches && sheet !== 'down') setSheet('down');
     // A hand on the map outranks a glide that is still running.
     cancelCameraGlide();
     startDrag(mouseState, e.clientX, e.clientY);
@@ -929,6 +932,8 @@ async function main(): Promise<void> {
     callbacks: {
       // Most hits are off screen, so travel to the verse as well as pinning it.
       onVerseClick: (verse: TanakhLayout) => {
+        // A tall sheet would hide the glide.
+        if (sheet === 'tall') setSheet('normal');
         pinVerse(verse);
         glideToVerse(verse);
       },
@@ -961,7 +966,7 @@ async function main(): Promise<void> {
   // By the time this runs the story is laid out on its new axis, so its scroll
   // no longer says which stop it was at; the last stop synced does.
   phoneLayout.addEventListener('change', () => {
-    if (!phoneLayout.matches && sheetDown) setSheetDown(false);
+    if (!phoneLayout.matches) setSheet('normal');
     resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
@@ -1065,8 +1070,8 @@ async function main(): Promise<void> {
   // The line stands for the controls, so on a lowered sheet it raises the
   // sheet with them open; the story is back through "Return to story".
   controlsToggle.addEventListener('click', () => {
-    if (sheetDown) {
-      setSheetDown(false);
+    if (sheet === 'down') {
+      setSheet('normal');
       if (storyOpen) openControls();
     } else if (storyOpen) openControls();
     else readerOpensStory();
@@ -1074,6 +1079,33 @@ async function main(): Promise<void> {
   storyStrip.addEventListener('click', readerOpensStory);
   document.getElementById('return-to-story')?.addEventListener('click', readerOpensStory);
   document.getElementById('leave-story')?.addEventListener('click', openControls);
+
+  // The grabber resizes a phone's sheet: a drag moves it one height, a tap
+  // toggles normal and tall. Judged on release; the sheet does not follow the
+  // finger.
+  const grabber = document.getElementById('sheet-grabber')!;
+  let grabbedAt: number | null = null;
+  grabber.addEventListener('pointerdown', (e) => {
+    grabbedAt = e.clientY;
+    grabber.setPointerCapture(e.pointerId);
+  });
+  grabber.addEventListener('pointerup', (e) => {
+    if (grabbedAt === null) return;
+    setSheet(sheetAfterGesture(sheet, e.clientY - grabbedAt));
+    grabbedAt = null;
+  });
+  grabber.addEventListener('pointercancel', () => {
+    grabbedAt = null;
+  });
+  // A pointer is handled above; a click with no pointer behind it is a key.
+  grabber.addEventListener('click', (e) => {
+    if (e.detail === 0) setSheet(sheetAfterGesture(sheet, 0));
+  });
+
+  // Typing into the controls wants room for the words and their results.
+  panelControls.addEventListener('focusin', (e) => {
+    if (phoneLayout.matches && e.target instanceof HTMLInputElement) setSheet('tall');
+  });
   // Delegated, because reloading the story redraws its stops.
   storyContent.addEventListener('click', (e) => {
     if ((e.target as Element).closest('.story-leave')) openControls();

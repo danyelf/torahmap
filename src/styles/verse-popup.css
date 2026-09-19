@@ -122,4 +122,10 @@
     width: calc(100vw - 20px);
     max-height: 200px;
   }
+
+  /* A tall sheet covers the map the popup belongs to; it is back when the
+     sheet shrinks. */
+  body.sheet-tall #verse-popup {
+    visibility: hidden;
+  }
 }
