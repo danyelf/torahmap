@@ -111,7 +111,7 @@ import {
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { switchToExplore, switchToStory } from './scrollytelling/modeSwitch';
-import type { AppMode } from './scrollytelling/modeSwitch';
+import type { Mode } from './telemetry/schema.ts';
 import type { ResolvedStoryStop } from './scrollytelling/types';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
@@ -283,7 +283,7 @@ async function main(): Promise<void> {
 
   const touchState = createTouchState();
 
-  let appMode: AppMode = 'story';
+  let appMode: Mode = 'story';
   configureAnalytics({ getMode: () => appMode });
   let lastStoryScrollTop = 0;
   let storyExitStopId = '';

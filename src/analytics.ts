@@ -1,7 +1,8 @@
 // Events for the site's own Worker (src/worker/index.ts). No cookies and no
 // browser storage: the visit id lives in memory, so a reload is a new visit.
 import type { TextLanguage } from './types.ts';
-import type { EventFields, EventName, Mode } from './telemetry/schema.ts';
+import type { SearchMode } from './search/terms.ts';
+import type { EventFields, EventName, EventPayload, Mode } from './telemetry/schema.ts';
 
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 
@@ -43,7 +44,13 @@ function makeVisitId(): string {
 function track<E extends EventName>(event: E, fields: EventFields<E>): void {
   if (isDevHost(options.hostname)) return;
   if (!options.visitId) options.visitId = makeVisitId();
-  options.send(JSON.stringify({ event, visit: options.visitId, mode: options.getMode(), fields }));
+  const payload: EventPayload<E> = {
+    event,
+    visit: options.visitId,
+    mode: options.getMode(),
+    fields,
+  };
+  options.send(JSON.stringify(payload));
 }
 
 export function trackPageView(storyStop: string, referrer: string): void {
@@ -76,7 +83,7 @@ export function trackOverlaySwitch(overlay: string, previousOverlay: string): vo
 export function trackSearchExecute(
   term: string,
   language: TextLanguage,
-  searchMode: string,
+  searchMode: SearchMode,
   resultCount: number,
 ): void {
   track('search_execute', {

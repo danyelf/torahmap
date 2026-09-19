@@ -1,5 +1,3 @@
-export type AppMode = 'story' | 'explore';
-
 export function switchToExplore(storyPanel: HTMLElement, explorePanel: HTMLElement): void {
   storyPanel.style.display = 'none';
   explorePanel.style.display = 'flex';

@@ -1,6 +1,6 @@
 import { parseVerseFromUrl, type OverlayParams, type UrlState } from './urlState.ts';
 import { panToCenter, type Camera } from './camera.ts';
-import type { AppMode } from './scrollytelling/modeSwitch.ts';
+import type { Mode } from './telemetry/schema.ts';
 import type { TanakhIdentity } from './types.ts';
 
 /**
@@ -9,7 +9,7 @@ import type { TanakhIdentity } from './types.ts';
  * rather than layering over it.
  */
 export interface ViewState {
-  mode: AppMode;
+  mode: Mode;
   storyStop: string | null;
   overlay: string;
   overlayParams: OverlayParams;

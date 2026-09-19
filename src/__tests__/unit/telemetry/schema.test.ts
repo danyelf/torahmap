@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { toDataPoint } from '../../../telemetry/schema.ts';
+import { MODES, toDataPoint } from '../../../telemetry/schema.ts';
 
 const context = { country: 'IL', device: 'mobile', host: 'torahmap.org' };
 
 describe('toDataPoint', () => {
+  it('accepts exactly the modes in MODES', () => {
+    for (const mode of MODES) {
+      expect(toDataPoint({ event: 'page_view', visit: 'v', mode, fields: {} }, context)).not.toBe(
+        null,
+      );
+    }
+    expect(MODES).toEqual(['story', 'explore']);
+  });
+
   it('lays out common columns, then the event fields in schema order', () => {
     const point = toDataPoint(
       {
@@ -58,7 +67,12 @@ describe('toDataPoint', () => {
         event: 'search_execute',
         visit: 'v',
         mode: 'explore',
-        fields: { term: 'x'.repeat(500), language: 7, search_mode: 'root', result_count: 'many' },
+        fields: {
+          term: 'x'.repeat(500),
+          language: 7,
+          search_mode: 'meanings',
+          result_count: 'many',
+        },
       },
       context,
     );

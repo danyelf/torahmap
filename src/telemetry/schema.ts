@@ -25,13 +25,15 @@ export type EventFields<E extends EventName> = { [K in Blobs<E>]: string } & {
   [K in Doubles<E>]: number;
 };
 
-export type Mode = 'story' | 'explore';
+export const MODES = ['story', 'explore'] as const;
+export type Mode = (typeof MODES)[number];
 
-export interface EventPayload {
-  event: string;
+/** The body the page sends to /api/event. */
+export interface EventPayload<E extends EventName = EventName> {
+  event: E;
   visit: string;
-  mode: string;
-  fields: Record<string, unknown>;
+  mode: Mode;
+  fields: EventFields<E>;
 }
 
 export interface DataPoint {
@@ -47,17 +49,22 @@ function isEventName(name: unknown): name is EventName {
   return typeof name === 'string' && Object.prototype.hasOwnProperty.call(EVENTS, name);
 }
 
+function isMode(mode: unknown): mode is Mode {
+  return (MODES as readonly unknown[]).includes(mode);
+}
+
 /** The data point for a payload from the page, or null if it is not one we accept. */
 export function toDataPoint(
   payload: unknown,
   context: { country: string; device: string; host: string },
 ): DataPoint | null {
   if (typeof payload !== 'object' || payload === null) return null;
-  const { event, visit, mode, fields } = payload as Partial<EventPayload>;
+  const { event, visit, mode, fields } = payload as { [K in keyof EventPayload]?: unknown };
   if (!isEventName(event)) return null;
   if (typeof visit !== 'string' || visit.length === 0 || visit.length > 64) return null;
-  if (mode !== 'story' && mode !== 'explore') return null;
-  const given = typeof fields === 'object' && fields !== null ? fields : {};
+  if (!isMode(mode)) return null;
+  const given: Record<string, unknown> =
+    typeof fields === 'object' && fields !== null ? (fields as Record<string, unknown>) : {};
 
   const schema = EVENTS[event];
   const blob = (name: string) => {
