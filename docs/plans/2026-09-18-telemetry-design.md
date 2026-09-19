@@ -1,21 +1,20 @@
 # Telemetry Design
 
 **Date:** 2026-09-18
-**Status:** Implemented; PR open. Issue #213.
+**Status:** Shipped — `src/telemetry/`, `src/worker/`, `scripts/telemetry/`.
 
 ## Problem
 
 We want to know how the map is used: whether people read the story, how far
 they get, where they go once they are free, and what they do in explore mode.
-Today the page loads Google Analytics 4, which records none of the story, sets
-cookies (so EU visitors may need a consent banner we do not have), and counts
-visits from the dev server alongside real ones.
 
 ## Decisions
 
-- **Google Analytics is removed.** Events go to Cloudflare Workers Analytics
-  Engine through the site's own Worker. No cookies, nothing stored in the
-  browser, no third party.
+- **No Google Analytics.** It records none of the story, sets cookies (so EU
+  visitors may need a consent banner the site does not have), and counts
+  visits from the dev server alongside real ones. Events go to Cloudflare
+  Workers Analytics Engine through the site's own Worker. No cookies, nothing
+  stored in the browser, no third party.
 - **Analytics Engine keeps three months of data.** Accepted for now. D1 is
   built for read-heavy work, Pipelines needs the Workers Paid plan, and one R2
   object per event needs a compaction job; Honeycomb's free tier keeps 60 days.
@@ -48,32 +47,35 @@ drops whole visits.
 
 ## Events
 
-Every event carries the visit id, country, device, host and **mode** (story or
-explore). In story mode the camera, zoom and pinned verse belong to the
+Each event's fields, and the columns every event shares, are listed in
+`src/telemetry/schema.ts`. Every event carries the **mode** (story or
+explore): in story mode the camera, zoom and pinned verse belong to the
 story's author, so the same action means something different in each mode.
 
-| Event | Fields | Sent when |
-|---|---|---|
-| `page_view` | mode, story stop named in the URL, referrer's domain | the page loads |
-| `story_stop` | stop id, stop number, total stops | a stop is reached for the first time in the visit |
-| `story_exit` | stop id, stop number | "Explore freely" is pressed |
-| `story_return` | stop id | "Back to story" is pressed |
-| `view_settled` | centre book, section (Torah, Nevi'im, Ketuvim), zoom band, zoom | the camera stops moving, in explore mode only |
-| `overlay_switch` | overlay, previous overlay | as before |
-| `search_execute` | term (first 40 characters), language, search mode (substring, word, root), result count | as before |
-| `verse_click` | book, chapter, verse | as before |
-| `word_menu_open` | word, verse, meanings offered, five-word limit reached | a word in the verse text is clicked |
-| `word_search` | word, choice (a meaning, or the exact spelling), verse | a choice in the word menu is picked |
-| `sefaria_click` | book, chapter, verse, current overlay | the sidebar's Sefaria link is clicked |
+| Event | Sent when |
+|---|---|
+| `page_view` | the page loads |
+| `story_stop` | a stop is reached for the first time in the visit |
+| `story_exit` | the reader leaves the story, by "Explore freely" or Back/Forward |
+| `story_return` | the reader comes back to the story, by "Back to story" or Back/Forward |
+| `view_settled` | the camera stops moving, in explore mode only |
+| `overlay_switch` | the reader picks an overlay |
+| `search_execute` | the reader changes the search, once per term |
+| `verse_click` | a verse on the map is clicked |
+| `word_menu_open` | a word in the verse text is clicked |
+| `word_search` | a choice in the word menu is picked |
+| `sefaria_click` | the sidebar's Sefaria link is clicked |
 
 "Finished the story" is a `story_stop` whose number equals the total. How far
 a visit got is its furthest `story_stop`. A visit opened on a link to a stop
 names it in `page_view`, so it does not look like one that scrolled there.
+`word_menu_open` records whether the word limit was reached, since a full
+palette refuses the choice.
 
-`view_settled` replaces `zoom_level`. The centre book is the book under the
-middle of the screen, or the nearest one when the middle falls between books.
-At far zoom most of the Tanakh is on screen and the centre book says little;
-analysis should group by zoom band.
+The centre book in `view_settled` is the book under the middle of the screen,
+or the nearest one when the middle falls between books. At far zoom most of
+the Tanakh is on screen and the centre book says little; analysis should group
+by zoom band.
 
 ## Reading the data
 
@@ -92,12 +94,14 @@ and `CLOUDFLARE_API_TOKEN` (permission: Account Analytics Read). Counts use
 - Page: sends nothing from the dev server (localhost, a LAN address, an
   `.local` name, or no host); sends from `torahmap.org` and from a preview's
   `workers.dev` host; sends each story stop once per visit.
+- Queries: every column a report query reads is, by the schema, the one its
+  name says.
 - `wrangler dev`: `/api/event` reaches the script and static assets still
   load. The real check is after deploy: load the site, run the report, find
   the visit.
 
 The Worker declares the one binding method it uses, so it needs no Worker
-types package. See `src/telemetry/schema.ts` for the column layout.
+types package.
 
 ## Out of scope
 
