@@ -962,7 +962,12 @@ async function main(): Promise<void> {
   }
 
   let storyData = await loadStoryData();
-  let resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
+  const resolveStory = (): ResolvedStoryStop[] =>
+    resolveStops(storyData.stops, initialCamera, verses, mapFocus(), {
+      width: canvas.clientWidth,
+      height: canvas.clientHeight,
+    });
+  let resolvedStops = resolveStory();
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
 
   // Crossing into or out of phone width turns the story from a column into a
@@ -971,7 +976,7 @@ async function main(): Promise<void> {
   // no longer says which stop it was at; the last stop synced does.
   phoneLayout.addEventListener('change', () => {
     if (!phoneLayout.matches) setSheet('normal');
-    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
+    resolvedStops = resolveStory();
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
       // That scroll was ours, not the reader's.
@@ -983,7 +988,7 @@ async function main(): Promise<void> {
   async function reloadStory(): Promise<void> {
     const position = storyPosition();
     storyData = await loadStoryData();
-    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
+    resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     setStoryPosition(position);
     // Force re-apply: stops may have changed (overlay/params/verse), and stop
@@ -1266,11 +1271,12 @@ async function main(): Promise<void> {
     syncUrl();
   }
 
-  // A stop's camera puts its verse against the map's size, which the window
-  // sets. The map also grows as a phone's sheet lowers, but that leaves the
-  // verse where it is on screen, so it is not followed.
+  // A stop's camera places its verse, or fits its region, against the map's
+  // size, which the window sets. The map also grows as a phone's sheet lowers,
+  // but that leaves what the stop showed where it is on screen, so it is not
+  // followed.
   window.addEventListener('resize', () => {
-    resolvedStops = resolveStops(storyData.stops, initialCamera, verses, mapFocus());
+    resolvedStops = resolveStory();
     scheduleStoryFrame();
   });
 

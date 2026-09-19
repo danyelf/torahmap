@@ -2,16 +2,16 @@
 easing: ease-in-out
 ---
 
-<!-- stop: intro | camera: I.Samuel.1.1 | zoom: 0.3 -->
+<!-- stop: intro | camera: everything -->
 
 The Tanakh — the Hebrew Bible — consists of almost twenty-three thousand verses. The Torahmap lays them out as colored squares.
 
-<!-- stop: intro_fivebooks | camera: Genesis.25.1 | zoom: 0.5 -->
+<!-- stop: intro_fivebooks | camera: Torah -->
 
 The Five Books of the Torah run across the top row,
 right to left, following Hebrew order.
 
-<!-- stop: overview | camera: Joshua.24.1 | zoom: 0.5 -->
+<!-- stop: overview | camera: Neviim, Ketuvim -->
 
 The Prophets are in the middle; the Writings at the bottom.
 
@@ -45,7 +45,7 @@ Five chapters later, God gives Abram a new name: “you shall no longer be calle
 
 In Genesis, Abraham is everywhere: even after his burial in chapter 25, his name is a continuing presence.
 
-<!-- stop: gone | camera: I.Samuel.1.1 | zoom: 0.5 | overlay: search | q: אברם,אברהם -->
+<!-- stop: gone | camera: everything | overlay: search | q: אברם,אברהם -->
 
 And then he almost disappears.
 
@@ -59,7 +59,7 @@ When he does appear, he is usually the first of the forefathers: Abraham, Isaac,
 
 At the burning bush, God tells Moses to tell the Israelites that he was sent by “the God of Abraham, the God of Isaac, and the God of Jacob.”
 
-<!-- stop: name_in_list_worldwide_three_names | camera: I.Samuel.1.1 | zoom: 0.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם,יצחק,יעקב -->
+<!-- stop: name_in_list_worldwide_three_names | camera: everything | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם,יצחק,יעקב -->
 
 After Genesis, he is usually named alongside Isaac and Jacob. (Jacob's name, in pink, appears more often.)
 
@@ -87,10 +87,10 @@ Leviticus's “I will remember My covenant with Abraham”;
 
 and Micah's “loyalty to Abraham”.
 
-<!-- stop: abraham_again | camera: I.Samuel.1.1 | zoom: 0.5 | verse: Leviticus.26.42 | overlay: search | q: אברם,אברהם,, -->
+<!-- stop: abraham_again | camera: everything | verse: Leviticus.26.42 | overlay: search | q: אברם,אברהם,, -->
 
 Even though the Tanakh allows him to slip into the background, the prayer book is built from the places where the Tanakh remembers.
 
-<!-- stop: conclusion | camera: I.Samuel.1.1 | zoom: 0.5 | overlay: commentary | category: total-->
+<!-- stop: conclusion | camera: everything | overlay: commentary | category: total-->
 
 There's a lot to explore in the Torahmap. Try the different overlays and see what you discover!

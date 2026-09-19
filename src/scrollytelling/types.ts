@@ -4,8 +4,16 @@ export interface CameraPosition {
   zoom: number;
 }
 
-/** Camera reference: an explicit position, the app's initial camera, or a verse to center on. */
-export type CameraRef = CameraPosition | 'initial' | { kind: 'verse'; ref: string }; // ref in URL format, e.g. "Genesis.12.1"
+/**
+ * Camera reference: an explicit position, the app's initial camera, a verse to
+ * center on, or regions to fit in view together. A region is `everything`, a
+ * section (`Torah`, `Neviim`, `Ketuvim`) or a book in URL form (`I.Samuel`).
+ */
+export type CameraRef =
+  | CameraPosition
+  | 'initial'
+  | { kind: 'verse'; ref: string } // ref in URL format, e.g. "Genesis.12.1"
+  | { kind: 'regions'; names: string[] };
 
 export interface StoryStop {
   id: string;
@@ -16,7 +24,7 @@ export interface StoryStop {
   overlayParams?: Record<string, string>;
   verse?: string; // "Genesis.1.1" format — pins this verse in the sidebar
   easing?: EasingName;
-  zoom?: number; // optional zoom override (used when camera is a verse-ref)
+  zoom?: number; // zoom for a verse camera, or instead of fitting a region camera
 }
 
 /** A StoryStop with camera resolved to actual coordinates */

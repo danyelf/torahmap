@@ -31,15 +31,6 @@ describe('story.md', () => {
     expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
   });
 
-  it('writes every camera in a form the parser reads', () => {
-    // An unreadable camera falls back to 'initial', the same as one left out.
-    const fellBack = comments
-      .filter(([, , settings = '']) => /camera:\s*(?!initial)\S/.test(settings))
-      .map(([, id]) => id.trim())
-      .filter((id) => stops.find((s) => s.id === id)?.camera === 'initial');
-    expect(fellBack).toEqual([]);
-  });
-
   it('names only verses that exist', () => {
     const texts = JSON.parse(fs.readFileSync(path.join(dataDir, 'all-texts.json'), 'utf-8'));
     const exists = (ref: string): boolean => {
@@ -51,6 +42,26 @@ describe('story.md', () => {
       return refs.filter((r): r is string => !!r && !exists(r)).map((r) => `${s.id}: ${r}`);
     });
     expect(missing).toEqual([]);
+  });
+
+  it('names only regions that exist', () => {
+    // A camera the parser does not otherwise read is taken as region names.
+    const structure = JSON.parse(
+      fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8'),
+    );
+    const regions = new Set([
+      'everything',
+      'Torah',
+      'Neviim',
+      'Ketuvim',
+      ...structure.books.map((b: { name: string }) => b.name.replace(/ /g, '.')),
+    ]);
+    const unknown = stops.flatMap((s) =>
+      typeof s.camera === 'object' && 'names' in s.camera
+        ? s.camera.names.filter((n) => !regions.has(n)).map((n) => `${s.id}: ${n}`)
+        : [],
+    );
+    expect(unknown).toEqual([]);
   });
 
   it('uses only overlays that exist, with settings they take', () => {

@@ -84,6 +84,39 @@ export function panToFocus(
   };
 }
 
+/** A rectangle in map (world) coordinates. */
+export interface WorldBox {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+// Screen pixels kept clear around a fitted box. The top is larger because the
+// book labels sit above the verses.
+const FIT_MARGIN = 16;
+const FIT_TOP_MARGIN = 40;
+
+/**
+ * The camera that centres `box` on a `width` × `height` canvas, at the largest
+ * zoom that fits it inside the margins, unless `zoom` is given.
+ */
+export function cameraToFit(box: WorldBox, width: number, height: number, zoom?: number): Camera {
+  const boxWidth = box.maxX - box.minX;
+  const boxHeight = box.maxY - box.minY;
+  const fitted = Math.min(
+    (width - 2 * FIT_MARGIN) / boxWidth,
+    (height - FIT_MARGIN - FIT_TOP_MARGIN) / boxHeight,
+  );
+  const z = clampZoom(zoom ?? fitted);
+  const centreY = FIT_TOP_MARGIN + (height - FIT_MARGIN - FIT_TOP_MARGIN) / 2;
+  return {
+    x: width / 2 / z - (box.minX + boxWidth / 2),
+    y: centreY / z - (box.minY + boxHeight / 2),
+    zoom: z,
+  };
+}
+
 /**
  * The camera that brings an item into view at `focus`, zoomed in if the map
  * is currently scaled out past `minZoom`.

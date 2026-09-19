@@ -3,10 +3,16 @@ import type { TanakhLayout } from '../types';
 import { findTanakhItem } from '../types';
 import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
-import { panToFocus, type ScreenPoint } from '../camera';
+import { getBookSection } from '../constants/books';
+import { SECTION_LABEL_REACH } from '../labels';
+import { cameraToFit, panToFocus, type ScreenPoint, type WorldBox } from '../camera';
 
 function isVerseRef(cam: CameraRef): cam is { kind: 'verse'; ref: string } {
   return typeof cam === 'object' && 'kind' in cam && cam.kind === 'verse';
+}
+
+function isRegions(cam: CameraRef): cam is { kind: 'regions'; names: string[] } {
+  return typeof cam === 'object' && 'kind' in cam && cam.kind === 'regions';
 }
 
 export async function loadStoryData(): Promise<StoryData> {
@@ -79,19 +85,65 @@ function cameraForVerse(verse: TanakhLayout, zoom: number, focus: ScreenPoint): 
   return { ...panToFocus(verse, zoom, focus), zoom };
 }
 
+const SECTIONS: Record<string, 'torah' | 'neviim' | 'ketuvim'> = {
+  Torah: 'torah',
+  Neviim: 'neviim',
+  Ketuvim: 'ketuvim',
+};
+
+function inRegion(verse: TanakhLayout, name: string): boolean {
+  if (name === 'everything') return true;
+  const section = SECTIONS[name];
+  if (section) return getBookSection(verse.book) === section;
+  return verse.book === name.split('.').join(' ');
+}
+
+/**
+ * The box around every verse in the named regions and the section label to
+ * their right, or null if they hold none.
+ */
+function regionBox(verses: TanakhLayout[], names: string[]): WorldBox | null {
+  const inside = names.flatMap((name) => {
+    const found = verses.filter((v) => inRegion(v, name));
+    if (found.length === 0) console.warn(`[story] no region named "${name}"`);
+    return found;
+  });
+  if (inside.length === 0) return null;
+  return {
+    minX: Math.min(...inside.map((v) => v.x)),
+    minY: Math.min(...inside.map((v) => v.y)),
+    maxX: Math.max(...inside.map((v) => v.x + v.size)) + SECTION_LABEL_REACH,
+    maxY: Math.max(...inside.map((v) => v.y + v.size)),
+  };
+}
+
+/** The map's canvas, in CSS pixels. */
+export interface MapSize {
+  width: number;
+  height: number;
+}
+
 // "initial" uses the app's default camera position, unless the stop names a
-// verse to pin on, in which case that verse is put at `focus` instead.
+// verse to pin on, in which case that verse is put at `focus` instead. A region
+// camera fits its regions to `mapSize`.
 export function resolveStops(
   stops: StoryStop[],
   initialCamera: CameraPosition,
   verses?: TanakhLayout[],
   focus?: ScreenPoint,
+  mapSize?: MapSize,
 ): ResolvedStoryStop[] {
   return stops.map((stop) => {
     const cam = stop.camera;
     let camera: CameraPosition;
 
-    if (isVerseRef(cam)) {
+    if (isRegions(cam)) {
+      const box = verses && mapSize ? regionBox(verses, cam.names) : null;
+      camera =
+        box && mapSize
+          ? cameraToFit(box, mapSize.width, mapSize.height, stop.zoom)
+          : { ...initialCamera };
+    } else if (isVerseRef(cam)) {
       const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
       const verseLayout = parsed && verses && focus ? findTanakhItem(verses, parsed) : null;
