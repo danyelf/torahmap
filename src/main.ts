@@ -5,6 +5,7 @@ declare const __GIT_BRANCH__: string;
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
+import { installBackgroundText } from './backgroundText/index.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
@@ -475,6 +476,8 @@ async function main(): Promise<void> {
   const TAP_THRESHOLD = 10; // max px movement to count as tap
   const TAP_MAX_DURATION = 300; // max ms to count as tap
 
+  let updateBackgroundText: (() => void) | null = null;
+
   function render(): void {
     renderFrame(
       renderContext,
@@ -484,6 +487,7 @@ async function main(): Promise<void> {
       pinnedVerse,
       tanakhIdentitiesEqual,
     );
+    updateBackgroundText?.();
   }
 
   function centerOnVerse(verse: TanakhLayout): void {
@@ -560,6 +564,16 @@ async function main(): Promise<void> {
   const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
   createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+
+  updateBackgroundText = installBackgroundText({
+    verses,
+    texts: verseTexts,
+    camera,
+    renderState,
+    render,
+    litVerses: () => [mouseState.hoveredVerse, pinnedVerse],
+  });
+  if (updateBackgroundText) render();
 
   canvas.addEventListener(
     'wheel',

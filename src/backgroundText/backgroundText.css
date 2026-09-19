@@ -1,0 +1,98 @@
+#bgtext {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  direction: rtl;
+}
+#bgtext[data-layer='behind'] {
+  z-index: -1;
+}
+#bgtext[data-layer='above'] {
+  z-index: 1;
+}
+.bgtext-page {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  line-height: 1.6;
+  text-align: justify;
+  opacity: 0;
+  transition: opacity var(--bgtext-fade, 300ms) linear;
+}
+.bgtext-plane {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  direction: rtl;
+}
+.bgtext-plane[data-layer='behind'] {
+  z-index: -1;
+}
+.bgtext-plane[data-layer='above'] {
+  z-index: 1;
+}
+.bgtext-book {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  overflow: hidden;
+  line-height: 1.6;
+  text-align: justify;
+  color: rgb(184 173 152 / var(--bgtext-opacity, 0.25));
+}
+
+/* Faintness is in the text colour, not the page's opacity, because a child
+   can never be more opaque than its parent and a lit verse must be. */
+.bgtext-page.front {
+  opacity: 1;
+}
+.bgtext-page span {
+  color: rgb(184 173 152 / var(--bgtext-opacity, 0.25));
+  transition: color 250ms linear;
+}
+.bgtext-page span.bgtext-lit {
+  color: rgb(184 173 152 / var(--bgtext-lit-opacity, 0.4));
+}
+
+#bgtext-panel {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ddd;
+  font:
+    11px system-ui,
+    sans-serif;
+  border-radius: 4px;
+}
+#bgtext-panel label {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+#bgtext-panel .bgtext-range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#bgtext-panel input[type='range'] {
+  width: 110px;
+}
+#bgtext-panel output {
+  min-width: 32px;
+  text-align: right;
+}
+#bgtext-panel .bgtext-presets {
+  display: flex;
+  gap: 4px;
+}
