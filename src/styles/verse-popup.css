@@ -129,3 +129,7 @@
     visibility: hidden;
   }
 }
+
+body.english-only #verse-popup .verse-hebrew {
+  display: none;
+}
