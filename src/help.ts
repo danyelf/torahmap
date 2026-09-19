@@ -164,6 +164,7 @@ export function initHelp(footer: HTMLElement): void {
   const aboutBtn = document.createElement('button');
   aboutBtn.id = 'about-btn';
   aboutBtn.type = 'button';
+  aboutBtn.className = 'footer-link';
   aboutBtn.textContent = 'About & credits';
   aboutBtn.addEventListener('click', showHelp);
   footer.appendChild(aboutBtn);
