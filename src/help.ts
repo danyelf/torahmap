@@ -36,14 +36,15 @@ const TAB_CONTENT: Record<TabId, { title: string; content: string | (() => strin
     title: 'Overview',
     content: `
       <h2>Torahmap</h2>
-      <p>An interactive visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position.</p>
-      <p>The map is divided into three sections, stacked vertically:</p>
-      <ul>
-        <li><strong>Torah</strong> — The Five Books of Moses</li>
-        <li><strong>Nevi'im</strong> — The Prophets</li>
-        <li><strong>Ketuvim</strong> — The Writings</li>
-      </ul>
-      <p>Switch between different analytical overlays to reveal patterns across 23,000+ verses.</p>
+      <p>
+        All 23,206 verses of the Hebrew Bible, each one a square that never moves. The story walks
+        through how they are arranged.
+      </p>
+      <p>
+        Because the squares stay put, every overlay colors the same map, and one can be held against
+        another: where a word appears, how much commentary a verse has drawn, which passages are read
+        as haftarah, how long the verses run.
+      </p>
       <p class="credits">
         By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a> ·
         <a href="https://github.com/danyelf/torahmap" target="_blank" rel="noopener noreferrer">GitHub</a> ·

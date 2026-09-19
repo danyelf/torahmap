@@ -4,7 +4,9 @@ easing: ease-in-out
 
 <!-- stop: intro | camera: everything -->
 
-The Tanakh — the Hebrew Bible — consists of almost twenty-three thousand verses. The Torahmap lays them out as colored squares.
+# Torahmap
+
+The Tanakh — the Hebrew Bible — laid out so that every verse has a place of its own, and keeps it.
 
 <!-- stop: intro_fivebooks | camera: Torah -->
 
