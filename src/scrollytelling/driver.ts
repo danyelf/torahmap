@@ -45,7 +45,11 @@ export type Driver =
       toColors: Colors;
     };
 
-export const STORY_DRIVING: Driver = { by: 'story', blend: null };
+export type ReaderDriving = Extract<Driver, { by: 'reader' }>;
+/** The story drives, or eases the map back to itself. */
+export type StoryHasMap = Exclude<Driver, { by: 'reader' }>;
+
+export const STORY_DRIVING: StoryHasMap = { by: 'story', blend: null };
 
 export const DRIVER_KINDS = ['story', 'reader'] as const;
 export type DriverKind = (typeof DRIVER_KINDS)[number];
@@ -54,8 +58,6 @@ export type DriverKind = (typeof DRIVER_KINDS)[number];
 export function driverKind(driver: Driver): DriverKind {
   return driver.by === 'reader' ? 'reader' : 'story';
 }
-
-type ReaderDriving = Extract<Driver, { by: 'reader' }>;
 
 export function readerTakesOver(scrollTop: number): ReaderDriving {
   return { by: 'reader', lastScrollTop: scrollTop, travelled: 0 };
@@ -67,7 +69,7 @@ export function rejoin(
   fromCamera: CameraPosition,
   fromColors: Colors,
   toColors: Colors,
-): Driver {
+): StoryHasMap {
   return {
     by: 'rejoining',
     since: now,
@@ -95,7 +97,7 @@ export function rejoinProgress(driver: Driver, now: number): number {
   return Math.min(1, Math.max(0, (now - driver.since) / driver.duration));
 }
 
-export function settle(driver: Driver, now: number): Driver {
+export function settle(driver: StoryHasMap, now: number): StoryHasMap {
   return driver.by === 'rejoining' && rejoinProgress(driver, now) >= 1 ? STORY_DRIVING : driver;
 }
 

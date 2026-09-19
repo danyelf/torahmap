@@ -12,12 +12,12 @@ import {
   rejoin,
   rejoinProgress,
   settle,
-  type Driver,
+  type StoryHasMap,
 } from '../driver';
 import type { ResolvedStoryStop } from '../types';
 
 const camera = { x: 1, y: 2, zoom: 3 };
-const easeBack = (now: number, duration = REJOIN_EASE_MS): Driver =>
+const easeBack = (now: number, duration = REJOIN_EASE_MS): StoryHasMap =>
   rejoin(now, duration, camera, [], []);
 
 describe('the story drives until the reader takes over', () => {
@@ -69,10 +69,8 @@ describe('easing back', () => {
     expect(settle(driver, REJOIN_EASE_MS)).toEqual(STORY_DRIVING);
   });
 
-  it('leaves the reader alone', () => {
-    const driver = readerTakesOver(0);
-
-    expect(settle(driver, 10_000)).toBe(driver);
+  it('leaves the story driving alone', () => {
+    expect(settle(STORY_DRIVING, 10_000)).toBe(STORY_DRIVING);
   });
 
   it('can take its own time, as a phone swipe does', () => {

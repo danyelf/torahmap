@@ -2,7 +2,7 @@
 
 **Status:** Shipped — see `2026-09-18-telemetry-design.md`.
 
-**Goal:** Replace Google Analytics with cookieless events sent through the site's Worker into Workers Analytics Engine, covering the story, where readers look in explore mode, word clicks and the Sefaria link.
+**Goal:** Replace Google Analytics with cookieless events sent through the site's Worker into Workers Analytics Engine, covering the story, where readers look once they take the map from the story, word clicks and the Sefaria link.
 
 This records how the work was divided. The code is the reference for how it works now.
 
@@ -28,13 +28,13 @@ The Worker answers `/api/event`, validates the request and writes one data point
 
 **Files:** `src/main.ts`.
 
-Every event carries the current mode, and the page records its view, each story stop reached, and leaving and returning to the story.
+Every event carries its mode, who drives the map (story or reader), and the page records its view, each story stop reached, and each time the reader takes the map or the story takes it back.
 
 ### Task 5: Where readers look — `view_settled`
 
 **Files:** `src/main.ts`, `src/hitDetection.ts`; test `src/__tests__/unit/hitDetection.test.ts`.
 
-When the camera settles in explore mode, the page records the book under the middle of the screen, its section and the zoom.
+When the camera settles somewhere new while the reader drives the map, the page records the book under the middle of the screen, its section and the zoom.
 
 ### Task 6: Word clicks and the Sefaria link
 

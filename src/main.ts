@@ -124,6 +124,8 @@ import {
   settle,
   storyScrolled,
   type Driver,
+  type ReaderDriving,
+  type StoryHasMap,
 } from './scrollytelling/driver';
 import {
   driverChangeEvent,
@@ -423,16 +425,13 @@ async function main(): Promise<void> {
   // Off until the page view is sent: who drives when the page opens is part of it.
   let recordingDriver = false;
 
-  /**
-   * Every change of driver goes through here. When the map passes between the
-   * story and the reader, `how` says what did it; a change that keeps the same
-   * one driving needs none.
-   */
-  function drive(next: Driver, how?: ExitHow | ReturnHow): void {
+  // Every change of driver goes through here, by way of handOver or keepDriving.
+  function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
     if (!event) return;
     const stop = stopAt(resolvedStops, storyStopIndex());
+    // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
     if (event === 'story_exit') {
       markViewSettled();
       trackStoryExit(stop.id, stop.number, how as ExitHow);
@@ -441,10 +440,25 @@ async function main(): Promise<void> {
     }
   }
 
+  /** Give the map to `next`, which may pass it between the story and the reader, for the reason `how`. */
+  function handOver(next: ReaderDriving, how: ExitHow): void;
+  function handOver(next: StoryHasMap, how: ReturnHow): void;
+  function handOver(next: Driver, how: ExitHow | ReturnHow): void {
+    setDriver(next, how);
+  }
+
+  /** A change that leaves the same one driving. Before the page view nothing is a hand-over. */
+  function keepDriving(next: Driver): void {
+    if (import.meta.env.DEV && recordingDriver && driverKind(next) !== driverKind(driver)) {
+      throw new Error(`keepDriving passed the map from ${driver.by} to ${next.by}; use handOver`);
+    }
+    setDriver(next, null);
+  }
+
   /** Anything the reader does that changes what the map shows hands them the map. */
   function takeOver(how: ExitHow): void {
     if (!storyOpen || driver.by === 'reader') return;
-    drive(readerTakesOver(storyPosition()), how);
+    handOver(readerTakesOver(storyPosition()), how);
     applyOverlay();
     updateSummaryShown();
   }
@@ -1042,7 +1056,7 @@ async function main(): Promise<void> {
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
       // That scroll was ours, not the reader's.
-      if (driver.by === 'reader') drive(readerTakesOver(storyPosition()));
+      if (driver.by === 'reader') keepDriving(readerTakesOver(storyPosition()));
     }
     scheduleStoryFrame();
   });
@@ -1105,9 +1119,10 @@ async function main(): Promise<void> {
       heldStop = null;
       showStop(stopElements[stop]);
       if (arrive === 'ease') {
-        beginEase(REJOIN_EASE_MS, performance.now(), how);
+        handOver(beginEase(REJOIN_EASE_MS, performance.now()), how);
+        updateSummaryShown();
       } else {
-        drive(STORY_DRIVING, how);
+        handOver(STORY_DRIVING, how);
         // Make the next frame apply the stop's overlay, settings and pin.
         lastSyncedStopId = null;
       }
@@ -1212,10 +1227,11 @@ async function main(): Promise<void> {
     if (driver.by === 'reader') {
       const next = storyScrolled(driver, storyPosition());
       if (next !== 'rejoin') {
-        drive(next);
+        keepDriving(next);
         return;
       }
-      beginEase(REJOIN_EASE_MS, performance.now(), 'rejoin');
+      handOver(beginEase(REJOIN_EASE_MS, performance.now()), 'rejoin');
+      updateSummaryShown();
     }
     scheduleStoryFrame();
   });
@@ -1247,23 +1263,20 @@ async function main(): Promise<void> {
   }
 
   /**
-   * Ease the map over `duration` from what is on screen, which may be partway
-   * through an earlier ease, to where the story is.
+   * The driver that eases the map over `duration` from what is on screen,
+   * which may be partway through an earlier ease, to where the story is. The
+   * caller hands it over or keeps driving with it, then updates the summary.
    */
-  function beginEase(duration: number, now: number, how?: ReturnHow): void {
+  function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
     const state = currentStoryState();
-    drive(
-      rejoin(
-        now,
-        duration,
-        camera,
-        colorLayer.map((c, i) => c ?? getDefaultColor(i)),
-        computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
-      ),
-      how,
+    return rejoin(
+      now,
+      duration,
+      camera,
+      colorLayer.map((c, i) => c ?? getDefaultColor(i)),
+      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
     );
-    updateSummaryShown();
   }
 
   // Reaching a stop is sent once per visit, however often the reader scrolls past it.
@@ -1284,7 +1297,7 @@ async function main(): Promise<void> {
 
     if (driver.by === 'rejoining') {
       const next = settle(driver, now);
-      drive(next);
+      keepDriving(next);
       // Done: the next lines re-sync the overlay, its settings and the pin.
       if (next.by === 'story') lastSyncedStopId = null;
     }
@@ -1298,7 +1311,8 @@ async function main(): Promise<void> {
 
     // A new page on a phone eases in rather than cutting to it.
     if (storyIsSideways() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
-      beginEase(SWIPE_EASE_MS, now);
+      keepDriving(beginEase(SWIPE_EASE_MS, now));
+      updateSummaryShown();
       // The controls and the popup move to the new stop as it starts.
       arriveAtStop(state.toStop);
     }
@@ -1336,10 +1350,10 @@ async function main(): Promise<void> {
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline.
-      drive(STORY_DRIVING);
+      keepDriving(STORY_DRIVING);
       applyOverlay();
     } else {
-      drive({ by: 'story', blend: { from: state.fromStop, to: state.toStop, t: state.t } });
+      keepDriving({ by: 'story', blend: { from: state.fromStop, to: state.toStop, t: state.t } });
       blendTransition();
     }
     render();
@@ -1363,6 +1377,8 @@ async function main(): Promise<void> {
       (id) => getOverlay(id) !== undefined,
     );
     applyingExternalState(() => applyViewState(next));
+    // The link moved the camera, not the reader.
+    markViewSettled();
   }
 
   /**
@@ -1372,7 +1388,7 @@ async function main(): Promise<void> {
    */
   function applyViewState(next: ViewState): void {
     if (next.mode === 'explore') {
-      drive(readerTakesOver(storyPosition()), 'fold');
+      handOver(readerTakesOver(storyPosition()), 'fold');
       setStoryOpen(false);
     }
 
@@ -1402,7 +1418,7 @@ async function main(): Promise<void> {
 
   // A link to a story stop always opens the story.
   if (storyOpen && !parseUrlState().story && storyWasFolded()) {
-    drive(readerTakesOver(0), 'fold');
+    keepDriving(readerTakesOver(0));
     setStoryOpen(false);
   }
 
