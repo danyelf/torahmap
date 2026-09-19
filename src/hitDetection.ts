@@ -40,16 +40,17 @@ export function findExactHit<T>(
 }
 
 /**
- * Find nearest verse within fuzzy radius from world coordinates.
- * Uses distance to verse center, not bounds.
+ * Find the item whose centre is nearest a world point, closer than
+ * `maxDistance` if one is given.
  */
-export function findFuzzyHit<T>(
+export function findNearestItem<T>(
   verses: SpatialItem<T>[],
   worldX: number,
   worldY: number,
+  maxDistance: number = Infinity,
 ): SpatialItem<T> | null {
   let nearestItem: SpatialItem<T> | null = null;
-  let nearestDistSq = HIGHLIGHT_CONSTANTS.FUZZY_RADIUS * HIGHLIGHT_CONSTANTS.FUZZY_RADIUS;
+  let nearestDistSq = maxDistance * maxDistance;
 
   for (const v of verses) {
     const centerX = v.x + v.size / 2;
@@ -66,6 +67,15 @@ export function findFuzzyHit<T>(
   }
 
   return nearestItem;
+}
+
+/** Find the nearest verse within the fuzzy radius of a world point. */
+export function findFuzzyHit<T>(
+  verses: SpatialItem<T>[],
+  worldX: number,
+  worldY: number,
+): SpatialItem<T> | null {
+  return findNearestItem(verses, worldX, worldY, HIGHLIGHT_CONSTANTS.FUZZY_RADIUS);
 }
 
 /**

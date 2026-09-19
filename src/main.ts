@@ -11,7 +11,19 @@ import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
-import { trackOverlaySwitch, trackVerseClick, trackZoomLevel } from './analytics.ts';
+import {
+  configureAnalytics,
+  trackOverlaySwitch,
+  trackPageView,
+  trackSefariaClick,
+  trackStoryExit,
+  trackStoryReturn,
+  trackStoryStop,
+  trackVerseClick,
+  trackViewSettled,
+  trackWordMenuOpen,
+  trackWordSearch,
+} from './analytics.ts';
 import {
   parseUrlState,
   parseVerseFromUrl,
@@ -31,6 +43,7 @@ import {
   panToCenter,
   viewCenteredOn,
   animateCameraTo,
+  type Camera,
 } from './camera.ts';
 import {
   createMouseState,
@@ -54,7 +67,7 @@ import {
   prevTanakhItem,
   tanakhKey,
 } from './types.ts';
-import { findItemAtPoint } from './hitDetection.ts';
+import { findItemAtPoint, findNearestItem, screenToWorld } from './hitDetection.ts';
 import {
   computeItemStates,
   applyItemColors,
@@ -95,8 +108,13 @@ import {
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
-import { switchToExplore, switchToStory } from './scrollytelling/modeSwitch';
-import type { AppMode } from './scrollytelling/modeSwitch';
+import {
+  stopForModeChange,
+  stopNumber,
+  switchToExplore,
+  switchToStory,
+  type Mode,
+} from './scrollytelling/modeSwitch';
 import type { ResolvedStoryStop } from './scrollytelling/types';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
@@ -268,8 +286,11 @@ async function main(): Promise<void> {
 
   const touchState = createTouchState();
 
-  let appMode: AppMode = 'story';
+  let appMode: Mode = 'story';
+  configureAnalytics({ getMode: () => appMode });
   let lastStoryScrollTop = 0;
+  // The last stop the reader reached; unlike lastSyncedStopId, nothing clears it.
+  let lastReachedStopId = '';
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
   // Reset on mode switches (explore may have changed overlay/pin out from under us).
@@ -325,7 +346,7 @@ async function main(): Promise<void> {
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
-      debouncedSaveUrlState();
+      debouncedCameraSettled();
     });
   }
 
@@ -372,25 +393,22 @@ async function main(): Promise<void> {
       cancelCameraGlide();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       zoomAt(zoomFactor, e.clientX, e.clientY);
-      debouncedSaveUrlState();
-      debouncedTrackZoom();
+      debouncedCameraSettled();
     },
     { passive: false },
   );
-
-  const debouncedTrackZoom = debounce(() => trackZoomLevel(camera.zoom), 1000);
 
   const zoomInBtn = document.getElementById('zoom-in');
   const zoomOutBtn = document.getElementById('zoom-out');
 
   zoomInBtn?.addEventListener('click', () => {
     zoomAt(ZOOM_IN_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedSaveUrlState();
+    debouncedCameraSettled();
   });
 
   zoomOutBtn?.addEventListener('click', () => {
     zoomAt(ZOOM_OUT_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedSaveUrlState();
+    debouncedCameraSettled();
   });
 
   canvas.addEventListener(
@@ -431,7 +449,7 @@ async function main(): Promise<void> {
       releaseTouch(touchState, touch.identifier);
     }
     if (touchState.activeTouches.size === 0) {
-      debouncedSaveUrlState();
+      debouncedCameraSettled();
     }
   });
 
@@ -463,7 +481,7 @@ async function main(): Promise<void> {
     const wasDragging = mouseState.isDragging;
     if (wasDragging) {
       stopDrag(mouseState);
-      debouncedSaveUrlState();
+      debouncedCameraSettled();
     }
 
     if (pointerDownPos) {
@@ -543,7 +561,22 @@ async function main(): Promise<void> {
     updateUrl(state, pushHistory);
   }
 
-  const debouncedSaveUrlState = debounce(() => saveUrlState(false), URL_UPDATE_DEBOUNCE_MS);
+  // The camera when explore began or last sent view_settled. Every pointer up
+  // settles, a click included, so only a camera that has left it is sent.
+  let settledCamera: Camera = { ...camera };
+  function markViewSettled(): void {
+    settledCamera = { ...camera };
+  }
+  const debouncedCameraSettled = debounce(() => {
+    saveUrlState(false);
+    if (appMode !== 'explore') return;
+    const last = settledCamera;
+    if (last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
+    markViewSettled();
+    const centre = screenToWorld(canvas.clientWidth / 2, canvas.clientHeight / 2, camera);
+    const book = findNearestItem(verses, centre.x, centre.y)?.book ?? '';
+    trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
+  }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
     updateSidebar(
@@ -697,11 +730,15 @@ async function main(): Promise<void> {
       click.index,
     );
 
+    const ref = `${click.book} ${click.chapter}:${click.verse}`;
+    const paletteFull = !canAddTerm(overlaySettings.get(searchOverlay));
+    trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
+
     openWordMenu({
       word: click.text,
       meanings,
       anchor: click.element,
-      paletteFull: !canAddTerm(overlaySettings.get(searchOverlay)),
+      paletteFull,
       onChoose: (meaning) => {
         // Ask before anything is spent. setOverlay() takes the showing overlay
         // off the map, so a search that is going to be refused must be refused
@@ -709,6 +746,8 @@ async function main(): Promise<void> {
         // nothing. The panel's own count was taken when it opened, and a
         // keyboard reader can add a word in between.
         if (!canAddTerm(overlaySettings.get(searchOverlay))) return;
+
+        trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
 
         if (currentOverlayId !== 'search') {
           setOverlay('search');
@@ -722,6 +761,13 @@ async function main(): Promise<void> {
         );
       },
     });
+  });
+
+  // sendBeacon survives the page navigating away, so following the link to
+  // Sefaria doesn't lose the event.
+  sidebarElements.link?.addEventListener('click', () => {
+    const verse = pinnedVerse ?? mouseState.hoveredVerse;
+    if (verse) trackSefariaClick(verse.book, verse.chapter, verse.verse, currentOverlayId);
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -817,9 +863,21 @@ async function main(): Promise<void> {
   const storyPanel = document.getElementById('story-panel')!;
   const explorePanel = document.getElementById('explore-panel')!;
 
+  // After startup, every switch between story and explore goes through here,
+  // so each is recorded once.
+  function changeMode(next: Mode, resumeAt: string | null): void {
+    if (next !== appMode) {
+      const stopId = stopForModeChange(resolvedStops, next, lastReachedStopId, resumeAt)?.id ?? '';
+      if (next === 'explore') trackStoryExit(stopId, stopNumber(resolvedStops, stopId));
+      else trackStoryReturn(stopId);
+    }
+    appMode = next;
+  }
+
   document.getElementById('exit-story')?.addEventListener('click', () => {
     lastStoryScrollTop = storyContent.scrollTop;
-    appMode = 'explore';
+    changeMode('explore', null);
+    markViewSettled();
     transition = null;
     applyOverlay();
     render();
@@ -830,7 +888,7 @@ async function main(): Promise<void> {
 
   document.getElementById('back-to-story')?.addEventListener('click', (e) => {
     e.preventDefault();
-    appMode = 'story';
+    changeMode('story', lastReachedStopId);
     // Reset settled tracker — explore mode may have changed overlay/pin, so
     // force the next settled frame to re-apply the resting stop's state.
     lastSyncedStopId = null;
@@ -871,6 +929,12 @@ async function main(): Promise<void> {
       if (lastSyncedStopId !== dominantStop.id) {
         syncStoryStopState(dominantStop);
         lastSyncedStopId = dominantStop.id;
+        trackStoryStop(
+          dominantStop.id,
+          stopNumber(resolvedStops, dominantStop.id),
+          resolvedStops.length,
+        );
+        lastReachedStopId = dominantStop.id;
       }
 
       // A scroll fires no pointer event, so re-run hit detection under the
@@ -903,13 +967,16 @@ async function main(): Promise<void> {
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  function restoreFromUrl(): void {
-    const next = resolveViewState(
+  function restoreFromUrl(next: ViewState): void {
+    applyingExternalState(() => applyViewState(next));
+  }
+
+  function viewFromUrl(): ViewState {
+    return resolveViewState(
       parseUrlState((id) => getOverlay(id)?.urlParams),
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
-    applyingExternalState(() => applyViewState(next));
   }
 
   /**
@@ -926,7 +993,7 @@ async function main(): Promise<void> {
       if (appMode === 'story') lastStoryScrollTop = storyContent.scrollTop;
       switchToExplore(storyPanel, explorePanel);
     }
-    appMode = next.mode;
+    changeMode(next.mode, next.storyStop);
     transition = null;
 
     activateOverlay(next.overlay);
@@ -948,15 +1015,24 @@ async function main(): Promise<void> {
       const stopIndex = resolvedStops.findIndex((s) => s.id === next.storyStop);
       stopElements[stopIndex]?.scrollIntoView();
       storyContent.dispatchEvent(new Event('scroll'));
+    } else {
+      markViewSettled();
     }
   }
 
   if (window.location.hash) {
-    restoreFromUrl();
+    // Opening in a mode is not a change of mode, so it sends no event.
+    const opened = viewFromUrl();
+    appMode = opened.mode;
+    restoreFromUrl(opened);
   }
 
+  const urlStop = parseUrlState().story ?? '';
+  const referrer = document.referrer ? new URL(document.referrer).hostname : '';
+  trackPageView(urlStop, referrer === location.hostname ? '' : referrer);
+
   subscribeToHashChange(() => {
-    restoreFromUrl();
+    restoreFromUrl(viewFromUrl());
   });
 
   if (appMode === 'story') {

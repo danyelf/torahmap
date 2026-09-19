@@ -15,9 +15,11 @@ const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
+import { SEARCH_RECORD_DELAY_MS } from '../../../constants/app';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { configureAnalytics } from '../../../analytics.ts';
 
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
@@ -1355,26 +1357,31 @@ describe('Search Overlay', () => {
   });
 
   describe('Colours for settings it is handed', () => {
-    afterEach(() => {
-      delete window.gtag;
-    });
-
     /** The colours for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
       return searchOverlay.overlay.colorsFor!(items, searchOverlay.fromUrl({ q }), null);
     }
 
+    // A failing assertion below must not skip this and leave later tests
+    // sending analytics as torahmap.org.
+    afterEach(() => {
+      vi.useRealTimers();
+      configureAnalytics({ hostname: 'localhost' });
+    });
+
     it('answers for a query it is handed without changing the search or firing analytics', async () => {
-      const gtag = vi.fn();
-      window.gtag = gtag;
+      const send = vi.fn();
+      configureAnalytics({ hostname: 'torahmap.org', send });
       await searchOverlay.overlay.init?.();
+      vi.useFakeTimers();
       searchOverlay.restore({ q: 'אור' });
-      gtag.mockClear();
+      send.mockClear();
 
       colorsFor([createVerse({ book: 'Genesis', chapter: 1, verse: 3 })], 'אברם');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
 
       expect(searchOverlay.toUrl().q).toBe('אור');
-      expect(gtag).not.toHaveBeenCalled();
+      expect(send).not.toHaveBeenCalled();
     });
 
     it('neither redraws the panel nor asks the app to repaint', () => {
@@ -1466,6 +1473,106 @@ describe('Search Overlay', () => {
     function colorsFor(items: TanakhLayout[], q: string) {
       return searchOverlay.overlay.colorsFor!(items, searchOverlay.fromUrl({ q }), null);
     }
+  });
+
+  describe('Recording a search', () => {
+    let send: ReturnType<typeof vi.fn<(body: string) => void>>;
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      send = vi.fn<(body: string) => void>();
+      configureAnalytics({ hostname: 'torahmap.org', send });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      configureAnalytics({ hostname: 'localhost' });
+    });
+
+    function sent(): { term: string; result_count: number }[] {
+      return send.mock.calls.map(([body]) => {
+        const { event, fields } = JSON.parse(body);
+        expect(event).toBe('search_execute');
+        return { term: fields.term, result_count: fields.result_count };
+      });
+    }
+
+    /** Type a word into the open row a letter at a time. */
+    function typeSlowly(container: HTMLElement, word: string): void {
+      for (let i = 1; i <= word.length; i++) {
+        typeInSearch(container, word.slice(0, i));
+        vi.advanceTimersByTime(100);
+      }
+    }
+
+    it('records a word once the reader stops typing it', () => {
+      const container = render();
+      typeSlowly(container, 'heavens');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS - 101);
+      expect(send).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1);
+      expect(sent()).toEqual([{ term: 'heavens', result_count: 2 }]);
+    });
+
+    it('records only the word added, each with its own count', () => {
+      const container = render();
+      typeSlowly(container, 'heavens');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      container.querySelector<HTMLButtonElement>('#add-term')!.click();
+      typeSlowly(container, 'names');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+
+      expect(sent()).toEqual([
+        { term: 'heavens', result_count: 2 },
+        { term: 'names', result_count: 1 },
+      ]);
+    });
+
+    it('records nothing for a term too short to search on', () => {
+      typeSlowly(render(), 'h');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it('does not record a restored word when the reader adds another', () => {
+      const container = render();
+      searchOverlay.restore({ q: 'heavens' });
+      container.querySelector<HTMLButtonElement>('#add-term')!.click();
+      typeSlowly(container, 'names');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+
+      expect(sent()).toEqual([{ term: 'names', result_count: 1 }]);
+    });
+
+    it('records a word again when the reader changes how it is matched', () => {
+      const container = render();
+      typeSlowly(container, 'heavens');
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      container
+        .querySelector<HTMLButtonElement>('.term-row[data-open="true"] [data-mode="word"]')!
+        .click();
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+
+      expect(send.mock.calls.map(([body]) => JSON.parse(body).fields.search_mode)).toEqual([
+        'substring',
+        'word',
+      ]);
+    });
+
+    it('does not record a half-typed word a restore replaces', () => {
+      typeSlowly(render(), 'hea');
+      searchOverlay.restore({ q: 'God' });
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it('does not record a word the reader leaves before it settles', () => {
+      typeSlowly(render(), 'hea');
+      searchOverlay.destroy();
+      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+      expect(send).not.toHaveBeenCalled();
+    });
   });
 
   describe('Hebrew Substring Position Bug Fix', () => {

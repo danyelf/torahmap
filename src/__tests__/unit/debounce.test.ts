@@ -25,6 +25,20 @@ describe('debounce', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
+  it('never calls a cancelled call, and calls a later one', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, 100);
+
+    debounced();
+    debounced.cancel();
+    vi.advanceTimersByTime(100);
+    expect(fn).not.toHaveBeenCalled();
+
+    debounced();
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it('resets timer on subsequent calls', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
