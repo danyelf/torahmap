@@ -2,9 +2,11 @@
 easing: ease-in-out
 ---
 
-<!-- stop: intro | camera: Genesis.25.1 | zoom 0.5 -->
+<!-- stop: intro | camera: I.Samuel.1.1 | zoom: 0.3 -->
 
 The Tanakh — the Hebrew Bible — consists of almost twenty-three thousand verses. The Torahmap lays them out as colored squares.
+
+<!-- stop: intro_fivebooks | camera: Genesis.25.1 | zoom: 0.5 -->
 
 The Five Books of the Torah run across the top row,
 right to left, following Hebrew order.
@@ -67,13 +69,11 @@ Now we switch from search to the commentary overlay, which shows how often the p
 
 <!-- stop: liturgy_verse_II | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
-The Amidah prayer opens with the words of this verse: “God of Abraham, God of Isaac, and God of Jacob.”
-
-Of all the verses that name Abraham, this is the one the prayer book cites most.
+The Amidah prayer, the central prayer said three times a day, opens with the words of this verse: “God of Abraham, God of Isaac, and God of Jacob.”
 
 <!-- stop: liturgy_verse_III | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
-(You can click on the Sefaria link to see the citations on their website.)
+Of all the verses that name Abraham, this is the one the prayer book cites most. You can click on the Sefaria link to see the citations on their website.
 
 <!-- stop: liturgy_zoom_out | camera: Exodus.3.15 | zoom: 1.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
