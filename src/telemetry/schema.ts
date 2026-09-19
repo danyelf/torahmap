@@ -1,8 +1,11 @@
-// The one place that says which Analytics Engine column holds what. Columns
-// are positional: index1 is the visit id; blob1 event, blob2 mode, blob3
-// country, blob4 device and blob5 host are common to every event, then each
-// event's own strings from blob6 and numbers from double1, in the order below.
+// The one definition of which Analytics Engine column holds what; the queries
+// in scripts/telemetry are checked against it by queries.test.ts. Columns are
+// positional: index1 is the visit id, the blobs start with COMMON_COLUMNS,
+// then each event's own strings follow, and its numbers start at double1.
 // Appending a field is safe; reordering one silently changes what old rows mean.
+
+export const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
+type CommonColumn = (typeof COMMON_COLUMNS)[number];
 
 export const EVENTS = {
   page_view: { blobs: ['story_stop', 'referrer'], doubles: [] },
@@ -56,7 +59,7 @@ function isMode(mode: unknown): mode is Mode {
 /** The data point for a payload from the page, or null if it is not one we accept. */
 export function toDataPoint(
   payload: unknown,
-  context: { country: string; device: string; host: string },
+  context: Record<Exclude<CommonColumn, 'event' | 'mode'>, string>,
 ): DataPoint | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const { event, visit, mode, fields } = payload as { [K in keyof EventPayload]?: unknown };
@@ -76,9 +79,10 @@ export function toDataPoint(
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;
   };
 
+  const common: Record<CommonColumn, string> = { event, mode, ...context };
   return {
     indexes: [visit],
-    blobs: [event, mode, context.country, context.device, context.host, ...schema.blobs.map(blob)],
+    blobs: [...COMMON_COLUMNS.map((name) => common[name]), ...schema.blobs.map(blob)],
     doubles: schema.doubles.map(double),
   };
 }

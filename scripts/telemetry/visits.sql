@@ -1,5 +1,5 @@
-SELECT toStartOfDay(timestamp) AS day, blob2 AS opened_in, SUM(_sample_interval) AS visits
+SELECT toStartOfDay(timestamp) AS day, blob2 AS mode, SUM(_sample_interval) AS visits
 FROM torahmap_events
-WHERE blob1 = 'page_view' AND blob5 = 'torahmap.org' AND timestamp > NOW() - INTERVAL '{{DAYS}}' DAY
-GROUP BY day, opened_in
-ORDER BY day, opened_in
+WHERE blob1 = 'page_view' AND {{SITE}}
+GROUP BY day, mode
+ORDER BY day, mode
