@@ -63,12 +63,14 @@ export function trackStoryStop(stopId: string, stopNumber: number, totalStops: n
   track('story_stop', { stop_id: stopId, stop_number: stopNumber, total_stops: totalStops });
 }
 
-export function trackStoryExit(stopId: string, stopNumber: number): void {
-  track('story_exit', { stop_id: stopId, stop_number: stopNumber });
-}
-
-export function trackStoryReturn(stopId: string): void {
-  track('story_return', { stop_id: stopId });
+/**
+ * Leaving the story sends story_exit with the stop the reader left; coming
+ * back sends story_return with the stop the story resumes at.
+ */
+export function trackModeChange(from: Mode, to: Mode, stopId: string, stopNumber: number): void {
+  if (from === to) return;
+  if (to === 'explore') track('story_exit', { stop_id: stopId, stop_number: stopNumber });
+  else track('story_return', { stop_id: stopId });
 }
 
 export function trackViewSettled(book: string, section: string, zoom: number): void {

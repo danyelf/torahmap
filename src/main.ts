@@ -13,11 +13,10 @@ import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
 import {
   configureAnalytics,
+  trackModeChange,
   trackOverlaySwitch,
   trackPageView,
   trackSefariaClick,
-  trackStoryExit,
-  trackStoryReturn,
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
@@ -285,7 +284,8 @@ async function main(): Promise<void> {
   let appMode: Mode = 'story';
   configureAnalytics({ getMode: () => appMode });
   let lastStoryScrollTop = 0;
-  let storyExitStopId = '';
+  // The last stop the reader reached; unlike lastSyncedStopId, nothing clears it.
+  let lastReachedStopId = '';
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
   // Reset on mode switches (explore may have changed overlay/pin out from under us).
@@ -852,12 +852,22 @@ async function main(): Promise<void> {
   const storyPanel = document.getElementById('story-panel')!;
   const explorePanel = document.getElementById('explore-panel')!;
 
+  /**
+   * Every switch between story and explore goes through here, so each one is
+   * recorded once. Leaving names the last stop reached; returning names
+   * `resumeAt`. With no such stop, the story is at, or resumes from, the top.
+   */
+  function changeMode(next: Mode, resumeAt: string | null): void {
+    const named = next === 'story' ? resumeAt : lastReachedStopId;
+    const stop = resolvedStops.find((s) => s.id === named) ?? resolvedStops[0];
+    const stopNumber = stop ? resolvedStops.indexOf(stop) + 1 : 0;
+    trackModeChange(appMode, next, stop?.id ?? '', stopNumber);
+    appMode = next;
+  }
+
   document.getElementById('exit-story')?.addEventListener('click', () => {
-    storyExitStopId = lastSyncedStopId ?? '';
-    const exitIndex = resolvedStops.findIndex((s) => s.id === storyExitStopId);
-    trackStoryExit(storyExitStopId, exitIndex + 1);
     lastStoryScrollTop = storyContent.scrollTop;
-    appMode = 'explore';
+    changeMode('explore', null);
     transition = null;
     applyOverlay();
     render();
@@ -868,8 +878,7 @@ async function main(): Promise<void> {
 
   document.getElementById('back-to-story')?.addEventListener('click', (e) => {
     e.preventDefault();
-    trackStoryReturn(storyExitStopId);
-    appMode = 'story';
+    changeMode('story', lastReachedStopId);
     // Reset settled tracker — explore mode may have changed overlay/pin, so
     // force the next settled frame to re-apply the resting stop's state.
     lastSyncedStopId = null;
@@ -912,6 +921,7 @@ async function main(): Promise<void> {
         lastSyncedStopId = dominantStop.id;
         const stopIndex = resolvedStops.findIndex((s) => s.id === dominantStop.id);
         trackStoryStop(dominantStop.id, stopIndex + 1, resolvedStops.length);
+        lastReachedStopId = dominantStop.id;
       }
 
       // A scroll fires no pointer event, so re-run hit detection under the
@@ -945,12 +955,16 @@ async function main(): Promise<void> {
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
   function restoreFromUrl(): void {
-    const next = resolveViewState(
+    const next = viewFromUrl();
+    applyingExternalState(() => applyViewState(next));
+  }
+
+  function viewFromUrl(): ViewState {
+    return resolveViewState(
       parseUrlState((id) => getOverlay(id)?.urlParams),
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
-    applyingExternalState(() => applyViewState(next));
   }
 
   /**
@@ -967,7 +981,7 @@ async function main(): Promise<void> {
       if (appMode === 'story') lastStoryScrollTop = storyContent.scrollTop;
       switchToExplore(storyPanel, explorePanel);
     }
-    appMode = next.mode;
+    changeMode(next.mode, next.storyStop);
     transition = null;
 
     activateOverlay(next.overlay);
@@ -993,6 +1007,8 @@ async function main(): Promise<void> {
   }
 
   if (window.location.hash) {
+    // Opening in a mode is not a change of mode, so it sends no event.
+    appMode = viewFromUrl().mode;
     restoreFromUrl();
   }
 
