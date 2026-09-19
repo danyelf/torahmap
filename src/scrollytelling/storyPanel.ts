@@ -1,5 +1,5 @@
 import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
-import type { TanakhLayout } from '../types';
+import type { Book, TanakhLayout } from '../types';
 import { findTanakhItem } from '../types';
 import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
@@ -85,7 +85,7 @@ function cameraForVerse(verse: TanakhLayout, zoom: number, focus: ScreenPoint): 
   return { ...panToFocus(verse, zoom, focus), zoom };
 }
 
-const SECTIONS: Record<string, 'torah' | 'neviim' | 'ketuvim'> = {
+const SECTIONS: Record<string, Book['section']> = {
   Torah: 'torah',
   Neviim: 'neviim',
   Ketuvim: 'ketuvim',

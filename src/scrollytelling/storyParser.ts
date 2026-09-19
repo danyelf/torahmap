@@ -77,8 +77,7 @@ function parseCamera(params: Record<string, string>): CameraRef {
     return { kind: 'verse', ref: cameraStr };
   }
 
-  // e.g. "everything", "Genesis" or "Neviim, Ketuvim"; names are checked
-  // against the map when the stop is resolved.
+  // Region names, checked against the map when the stop is resolved.
   const names = cameraStr
     .split(',')
     .map((s) => s.trim())
