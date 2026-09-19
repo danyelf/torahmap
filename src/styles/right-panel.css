@@ -5,12 +5,15 @@
 :root {
   --accordion-duration: 250ms;
   --story-bg: #16181d;
-  /* The summary field. A lowered sheet leaves it on screen, with the field's
-     border and the sheet's own top border. */
+  /* The summary field. A lowered sheet leaves it on screen, with the grab
+     zone above it, the field's border and the sheet's own top border. */
   --field-margin: 12px;
   --field-padding: 8px;
   --field-line: 17px;
-  --sheet-bar: calc(2 * var(--field-margin) + 2 * var(--field-padding) + var(--field-line) + 3px);
+  --grab-pad: 0px;
+  --sheet-bar: calc(
+    var(--grab-pad) + 2 * var(--field-margin) + 2 * var(--field-padding) + var(--field-line) + 3px
+  );
 }
 
 #right-panel {
@@ -410,6 +413,7 @@ body:not(.story-folded) #return-to-story {
   :root {
     --sheet-height: 30svh;
     --sheet-tall: 85svh;
+    --grab-pad: 8px;
     --sheet-shown: var(--sheet-height);
   }
 
@@ -421,16 +425,16 @@ body:not(.story-folded) #return-to-story {
     height: var(--sheet-tall);
   }
 
-  /* A wide target with a short pill drawn in it, in the summary field's top
-     margin. */
+  /* The whole top of the sheet, above the summary field, with a short pill
+     drawn in it. A narrower target is missed by a few pixels, and the finger
+     scrolls whatever lies beside it. */
   #sheet-grabber {
     display: block;
     position: absolute;
     top: 0;
-    left: 50%;
-    width: 72px;
-    height: var(--field-margin);
-    transform: translateX(-50%);
+    left: 0;
+    width: 100%;
+    height: calc(var(--grab-pad) + var(--field-margin));
     padding: 0;
     border: none;
     background: none;
@@ -443,7 +447,7 @@ body:not(.story-folded) #return-to-story {
     display: block;
     width: 36px;
     height: 4px;
-    margin: 4px auto 0;
+    margin: 8px auto 0;
     border-radius: 2px;
     background: #666;
   }
@@ -472,8 +476,14 @@ body:not(.story-folded) #return-to-story {
       transform var(--accordion-duration) ease,
       height var(--accordion-duration) ease;
     border-left: none;
+    padding-top: var(--grab-pad);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px 16px 0 0;
+  }
+
+  /* A drag on the field resizes the sheet rather than panning the page. */
+  #controls-toggle {
+    touch-action: none;
   }
 
   #canvas {

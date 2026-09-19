@@ -113,7 +113,7 @@ import {
 } from './scrollytelling/driver';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { summaryHtml } from './panelSummary.ts';
-import { sheetAfterGesture, type Sheet } from './sheet.ts';
+import { sheetAfterDrag, sheetAfterTap, type Sheet } from './sheet.ts';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
@@ -132,7 +132,7 @@ const PHONE_STORY_FOCUS = 0.4;
 
 function storyWasFolded(): boolean {
   try {
-    return localStorage.getItem(STORY_FOLDED_KEY) === 'true';
+    return sessionStorage.getItem(STORY_FOLDED_KEY) === 'true';
   } catch {
     return false;
   }
@@ -994,12 +994,14 @@ async function main(): Promise<void> {
     });
   }
 
-  // Remembered only when the reader opens or closes a section themselves, not
-  // when a shared link opens with the story folded.
+  // Kept for the tab's session: a reload leaves the reader where they were,
+  // but a new visit starts in the story rather than on controls with nothing
+  // chosen. Written only when the reader opens or closes a section, not when
+  // a shared link opens with the story folded.
   function rememberStoryFolded(folded: boolean): void {
     try {
-      if (folded) localStorage.setItem(STORY_FOLDED_KEY, 'true');
-      else localStorage.removeItem(STORY_FOLDED_KEY);
+      if (folded) sessionStorage.setItem(STORY_FOLDED_KEY, 'true');
+      else sessionStorage.removeItem(STORY_FOLDED_KEY);
     } catch {
       // Storage can be unavailable; the story simply opens next time.
     }
@@ -1080,27 +1082,45 @@ async function main(): Promise<void> {
   document.getElementById('return-to-story')?.addEventListener('click', readerOpensStory);
   document.getElementById('leave-story')?.addEventListener('click', openControls);
 
-  // The grabber resizes a phone's sheet: a drag moves it one height, a tap
-  // toggles normal and tall. Judged on release; the sheet does not follow the
-  // finger.
+  // On a phone, a vertical drag on the grabber or the summary line moves the
+  // sheet one height, judged on release; the sheet does not follow the finger.
+  // A tap keeps each one's own meaning.
+  function resizesSheet(handle: HTMLElement): void {
+    let from: number | null = null;
+    let dragged = false;
+    handle.addEventListener('pointerdown', (e) => {
+      if (!phoneLayout.matches) return;
+      from = e.clientY;
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointerup', (e) => {
+      if (from === null) return;
+      const next = sheetAfterDrag(sheet, e.clientY - from);
+      from = null;
+      if (next) {
+        dragged = true;
+        setSheet(next);
+      }
+    });
+    handle.addEventListener('pointercancel', () => {
+      from = null;
+    });
+    // A drag still ends in a click; it must not also count as a tap.
+    handle.addEventListener(
+      'click',
+      (e) => {
+        if (!dragged) return;
+        dragged = false;
+        e.stopImmediatePropagation();
+      },
+      { capture: true },
+    );
+  }
+
   const grabber = document.getElementById('sheet-grabber')!;
-  let grabbedAt: number | null = null;
-  grabber.addEventListener('pointerdown', (e) => {
-    grabbedAt = e.clientY;
-    grabber.setPointerCapture(e.pointerId);
-  });
-  grabber.addEventListener('pointerup', (e) => {
-    if (grabbedAt === null) return;
-    setSheet(sheetAfterGesture(sheet, e.clientY - grabbedAt));
-    grabbedAt = null;
-  });
-  grabber.addEventListener('pointercancel', () => {
-    grabbedAt = null;
-  });
-  // A pointer is handled above; a click with no pointer behind it is a key.
-  grabber.addEventListener('click', (e) => {
-    if (e.detail === 0) setSheet(sheetAfterGesture(sheet, 0));
-  });
+  resizesSheet(grabber);
+  resizesSheet(controlsToggle);
+  grabber.addEventListener('click', () => setSheet(sheetAfterTap(sheet)));
 
   // Typing into the controls wants room for the words and their results.
   panelControls.addEventListener('focusin', (e) => {
