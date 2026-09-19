@@ -6,7 +6,7 @@
 
 import { MODES, type Mode } from '../scrollytelling/modeSwitch.ts';
 
-export const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
+const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
 
 export const EVENTS = {
@@ -24,6 +24,14 @@ export const EVENTS = {
 } as const satisfies Record<string, { blobs: readonly string[]; doubles: readonly string[] }>;
 
 export type EventName = keyof typeof EVENTS;
+
+/** An event's columns in order: its strings from blob1, its numbers from double1. */
+export function columns(event: EventName): { blobs: string[]; doubles: string[] } {
+  return {
+    blobs: [...COMMON_COLUMNS, ...EVENTS[event].blobs],
+    doubles: [...EVENTS[event].doubles],
+  };
+}
 type Blobs<E extends EventName> = (typeof EVENTS)[E]['blobs'][number];
 type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
 export type EventFields<E extends EventName> = { [K in Blobs<E>]: string } & {
@@ -68,7 +76,6 @@ export function toDataPoint(
   const given: Record<string, unknown> =
     typeof fields === 'object' && fields !== null ? (fields as Record<string, unknown>) : {};
 
-  const schema = EVENTS[event];
   const blob = (name: string) => {
     const value = given[name];
     return typeof value === 'string' ? value.slice(0, MAX_BLOB_CHARS) : '';
@@ -78,10 +85,11 @@ export function toDataPoint(
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;
   };
 
-  const common: Record<CommonColumn, string> = { event, mode, ...context };
+  const common: Record<string, string> = { event, mode, ...context };
+  const { blobs, doubles } = columns(event);
   return {
     indexes: [visit],
-    blobs: [...COMMON_COLUMNS.map((name) => common[name]), ...schema.blobs.map(blob)],
-    doubles: schema.doubles.map(double),
+    blobs: blobs.map((name, i) => (i < COMMON_COLUMNS.length ? common[name] : blob(name))),
+    doubles: doubles.map(double),
   };
 }
