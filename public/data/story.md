@@ -4,7 +4,7 @@ easing: ease-in-out
 
 <!-- stop: intro | camera: Genesis.25.1 | zoom 0.5 -->
 
-The Tanakh — the Hebrew Bible — consists of almost twenty-three thousand verses. In the Torahmap, we lay them out as colored squares.
+The Tanakh — the Hebrew Bible — consists of almost twenty-three thousand verses. The Torahmap lays them out as colored squares.
 
 The Five Books of the Torah run across the top row,
 right to left, following Hebrew order.
@@ -27,7 +27,7 @@ This is Genesis 1:1, the first verse of the Bible.
 
 <!-- stop: abraham_zoom | camera: Genesis.12.1 | zoom: 1.5 | overlay: search | q: אברם -->
 
-We can overlay the map with data. To show how, let's trace the story of how the forefather Abraham is remembered in the Tanakh.
+We can overlay the map with data. Let's trace the story of how the forefather Abraham is remembered in the Tanakh.
 
 We can search for his name, **אברם**, Abram.
 
@@ -67,13 +67,13 @@ Now we switch from search to the commentary overlay, which shows how often the p
 
 <!-- stop: liturgy_verse_II | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
-The Amidah, the central prayer said three times a day, opens with the words of this verse: “God of Abraham, God of Isaac, and God of Jacob.”
+The Amidah prayer opens with the words of this verse: “God of Abraham, God of Isaac, and God of Jacob.”
 
 Of all the verses that name Abraham, this is the one the prayer book cites most.
 
 <!-- stop: liturgy_verse_III | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
-(You can click on the Sefaria icon to go see the citations on their website.)
+(You can click on the Sefaria link to see the citations on their website.)
 
 <!-- stop: liturgy_zoom_out | camera: Exodus.3.15 | zoom: 1.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
