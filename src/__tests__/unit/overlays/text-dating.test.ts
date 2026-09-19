@@ -1,15 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { getVerseDatingInfo } from '../../../overlays/text-dating';
+import { textDatingOverlay as overlay, getVerseDatingInfo } from '../../../overlays/text-dating';
 
-// The registry is where overlays come from — populate it the way the app does.
-registerAllOverlays();
-const textDatingOverlay = hostOverlay(getOverlay('text-dating')!);
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { Color } from '../../../overlays/types';
 import { hostOverlay } from '../../helpers/overlayHost';
+
+// Off the menu for now, so it is not in the registry.
+const textDatingOverlay = hostOverlay(overlay);
 
 describe('Text Dating Overlay', () => {
   let mockFetch: ReturnType<typeof vi.fn>;
