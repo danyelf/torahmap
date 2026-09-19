@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MODES, toDataPoint } from '../../../telemetry/schema.ts';
+import { MODES } from '../../../scrollytelling/modeSwitch.ts';
+import { toDataPoint } from '../../../telemetry/schema.ts';
 
 const context = { country: 'IL', device: 'mobile', host: 'torahmap.org' };
 

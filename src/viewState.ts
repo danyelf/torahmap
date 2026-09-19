@@ -1,6 +1,6 @@
 import { parseVerseFromUrl, type OverlayParams, type UrlState } from './urlState.ts';
 import { panToCenter, type Camera } from './camera.ts';
-import type { Mode } from './telemetry/schema.ts';
+import type { Mode } from './scrollytelling/modeSwitch.ts';
 import type { TanakhIdentity } from './types.ts';
 
 /**

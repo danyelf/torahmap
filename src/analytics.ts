@@ -2,7 +2,8 @@
 // browser storage: the visit id lives in memory, so a reload is a new visit.
 import type { TextLanguage } from './types.ts';
 import type { SearchMode } from './search/terms.ts';
-import type { EventFields, EventName, EventPayload, Mode } from './telemetry/schema.ts';
+import type { Mode } from './scrollytelling/modeSwitch.ts';
+import type { EventFields, EventName, EventPayload } from './telemetry/schema.ts';
 
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
 

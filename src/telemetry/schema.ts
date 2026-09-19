@@ -4,6 +4,8 @@
 // then each event's own strings follow, and its numbers start at double1.
 // Appending a field is safe; reordering one silently changes what old rows mean.
 
+import { MODES, type Mode } from '../scrollytelling/modeSwitch.ts';
+
 export const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
 
@@ -27,9 +29,6 @@ type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
 export type EventFields<E extends EventName> = { [K in Blobs<E>]: string } & {
   [K in Doubles<E>]: number;
 };
-
-export const MODES = ['story', 'explore'] as const;
-export type Mode = (typeof MODES)[number];
 
 /** The body the page sends to /api/event. */
 export interface EventPayload<E extends EventName = EventName> {

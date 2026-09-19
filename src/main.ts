@@ -108,8 +108,7 @@ import {
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
-import { switchToExplore, switchToStory } from './scrollytelling/modeSwitch';
-import type { Mode } from './telemetry/schema.ts';
+import { switchToExplore, switchToStory, type Mode } from './scrollytelling/modeSwitch';
 import type { ResolvedStoryStop } from './scrollytelling/types';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
