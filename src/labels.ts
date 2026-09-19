@@ -18,7 +18,7 @@ const BASE_LABEL_GAP = 10; // Gap between label bottom and verse top at BASE_FON
 const BASE_FONT_SIZE = 13; // Font size at zoom=1
 const MIN_FONT_SIZE = 5; // Minimum font size when zoomed out
 const MAX_FONT_SIZE = 50; // Maximum font size when zoomed in
-// Show English subtitle when book's screen width exceeds this many pixels
+// Below this screen width a book is too narrow for its English name as well.
 const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 
 // No minimum: a label keeps its length on the map, about 275 units against the
@@ -26,6 +26,24 @@ const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
 const BASE_SECTION_FONT_SIZE = 32;
 const MAX_SECTION_FONT_SIZE = 64;
 const SECTION_LABEL_GAP_EM = 0.5;
+const SECTION_LABEL_LINE_EM = 1.2;
+
+/**
+ * How far right of its section a section label reaches, in map units, while
+ * its font is still growing with the zoom.
+ */
+export const SECTION_LABEL_REACH =
+  BASE_SECTION_FONT_SIZE * (SECTION_LABEL_GAP_EM + SECTION_LABEL_LINE_EM);
+
+/** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
+function hebrewSpan(text: string, className: string): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = className;
+  span.style.fontFamily = HEBREW_LABEL_FONT;
+  span.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
+  span.textContent = text;
+  return span;
+}
 
 export function createBookLabels(
   verses: TanakhLayout[],
@@ -48,6 +66,7 @@ export function createBookLabels(
 
   for (const [name, pos] of Object.entries(books)) {
     const label = document.createElement('div');
+    label.className = 'book-label';
     label.style.cssText = `
       position:absolute;
       color:#eee;
@@ -63,14 +82,8 @@ export function createBookLabels(
     label.dataset.topY = String(pos.minY);
     label.dataset.bookWidth = String(pos.maxX - pos.minX);
 
-    // Hebrew name (always shown, without nikkud)
-    const heSpan = document.createElement('span');
-    heSpan.className = 'book-label-he';
-    heSpan.style.fontFamily = HEBREW_LABEL_FONT;
-    // Only the Hebrew: the English sibling is a sans face and needs no correction.
-    heSpan.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
-    heSpan.textContent = hebrewNames?.[name] ?? name;
-    label.appendChild(heSpan);
+    // Hebrew name, without nikkud
+    label.appendChild(hebrewSpan(hebrewNames?.[name] ?? name, 'book-label-he'));
 
     // English name (shown when there's room)
     const enSpan = document.createElement('span');
@@ -123,17 +136,13 @@ export function createSectionLabels(
       font-weight:700;
       text-shadow:0 1px 3px rgba(0,0,0,0.8);
       white-space:nowrap;
-      line-height:1.2em;
+      line-height:${SECTION_LABEL_LINE_EM}em;
     `;
     label.dataset.section = section;
     label.dataset.leftX = String(b.maxX);
     label.dataset.topY = String(b.minY);
 
-    const heSpan = document.createElement('span');
-    heSpan.style.fontFamily = HEBREW_LABEL_FONT;
-    heSpan.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
-    heSpan.textContent = SECTION_NAMES[section].he;
-    label.appendChild(heSpan);
+    label.appendChild(hebrewSpan(SECTION_NAMES[section].he, 'section-label-he'));
 
     const enSpan = document.createElement('span');
     enSpan.style.fontFamily = 'system-ui,sans-serif';
@@ -184,10 +193,7 @@ export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoo
       label.style.transform = 'translateX(-100%)';
 
       const bookScreenWidth = bookWidth * zoom;
-      const enSpan = label.querySelector<HTMLElement>('.book-label-en');
-      if (enSpan) {
-        enSpan.style.display = bookScreenWidth >= ENGLISH_MIN_BOOK_WIDTH_PX ? '' : 'none';
-      }
+      label.classList.toggle('narrow', bookScreenWidth < ENGLISH_MIN_BOOK_WIDTH_PX);
     }
   }
 }

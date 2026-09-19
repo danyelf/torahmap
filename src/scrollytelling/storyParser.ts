@@ -77,8 +77,12 @@ function parseCamera(params: Record<string, string>): CameraRef {
     return { kind: 'verse', ref: cameraStr };
   }
 
-  console.warn(`[story] unrecognized camera value "${cameraStr}", falling back to initial`);
-  return 'initial';
+  // Region names, checked against the map when the stop is resolved.
+  const names = cameraStr
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { kind: 'regions', names };
 }
 
 function parseStops(body: string): StoryStop[] {

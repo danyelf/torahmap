@@ -127,14 +127,15 @@ Text.`;
     expect(data.stops[0].camera).toEqual({ kind: 'verse', ref: 'I.Samuel.1.5' });
   });
 
-  it('falls back to initial when camera is unparseable', () => {
-    const md = `<!-- stop: bogus | camera: not-a-real-thing -->
-# Bogus
+  it('parses camera as regions to fit', () => {
+    const md = `<!-- stop: rest | camera: Neviim, I.Samuel, | zoom: 0.4 -->
+# Rest
 
 Text.`;
 
     const data = parseStoryMarkdown(md);
-    expect(data.stops[0].camera).toBe('initial');
+    expect(data.stops[0].camera).toEqual({ kind: 'regions', names: ['Neviim', 'I.Samuel'] });
+    expect(data.stops[0].zoom).toBe(0.4);
   });
 
   it('handles stop with no overlay params', () => {

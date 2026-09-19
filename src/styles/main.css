@@ -44,3 +44,13 @@ canvas {
 #overlay-legend .label {
   line-height: 1.2;
 }
+
+body.english-only .book-label-he,
+body.english-only .section-label-he {
+  display: none;
+}
+
+/* A narrow book keeps only its Hebrew name, unless the Hebrew is hidden. */
+body:not(.english-only) .book-label.narrow .book-label-en {
+  display: none;
+}
