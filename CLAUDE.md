@@ -23,7 +23,7 @@ The core design principle is **position stability** - each verse occupies a perm
   How a word is matched — substring, whole word, or root — belongs to that
   word, so one term can be searched by root while another is pinned to an
   exact spelling
-- **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Text Dating (6 historical periods), Verse Length. Each overlay carries its own one-sentence description, and the help modal's Overlays tab is built from them.
+- **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, and the help modal's Overlays tab is built from them.
 
 ## Quick Start
 

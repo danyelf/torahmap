@@ -4,7 +4,6 @@ import { commentaryOverlay } from './commentary.ts';
 import { tropOverlay } from './trop.ts';
 import { searchOverlay } from './search/index.ts';
 import { haftarahOverlay } from './haftarah.ts';
-import { textDatingOverlay } from './text-dating.ts';
 import { verseLengthOverlay } from './verse-length.ts';
 
 export type { Overlay, Color, UrlParamSpec, UrlParamKind, UrlParamValues } from './types.ts';
@@ -13,7 +12,6 @@ export { createOverlaySettings, settingsFromLink } from './settings.ts';
 export { configure as configureCommentary } from './commentary.ts';
 export { configure as configureTrop, highlightTropInText } from './trop.ts';
 export { configure as configureSearch, highlightSearchTerms } from './search/index.ts';
-export { getVerseDatingInfo } from './text-dating.ts';
 export { configure as configureVerseLength } from './verse-length.ts';
 
 // Every overlay the app ships, in the order the reader sees them in the menu.
@@ -22,7 +20,6 @@ const ALL_OVERLAYS: readonly Overlay[] = [
   commentaryOverlay,
   tropOverlay,
   haftarahOverlay,
-  textDatingOverlay,
   verseLengthOverlay,
 ];
 
