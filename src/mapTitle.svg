@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  The map's title. This file is the artwork: edit it here, in a text editor or
-  a vector editor, and the app picks the change up.
+  The map's title. mapTitle.ts scales this to a fixed width on the map and
+  reads nothing from it but the viewBox, so any edit here — moving a line,
+  retyping the tagline, changing a size — needs no change to the code.
 
-  Coordinates are in the viewBox's own units, where the name is set at 100, so
-  every number below reads as a percentage of the name's size. mapTitle.ts
-  reads the viewBox to learn the block's shape and never touches the contents,
-  so moving a line or retyping the tagline needs no change to the code.
-
-  Two placements are deliberate. The Hebrew is anchored at the right edge,
-  which puts it over "map" — letters with no ascenders, so it can sit low in
-  space that would otherwise go unused, and right is where Hebrew starts and
-  where every row of the map ends. The tagline sits close under the name
-  because only the "p" descends.
+  Two placements are deliberate. The Hebrew is anchored right, which puts it
+  over "map", whose letters have no ascenders, so it can sit low in space that
+  would otherwise go unused; right is also where Hebrew starts and where every
+  row of the map ends. The tagline sits close under the name because only the
+  "p" descends.
 -->
 <svg
   xmlns="http://www.w3.org/2000/svg"

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createMapTitle, updateMapTitlePosition, artworkSize } from '../../mapTitle';
+import { createMapTitle, updateMapTitlePosition, type MapTitle } from '../../mapTitle';
 import { createVerse } from '../helpers';
 
 // A Torah row starting at x=1000 above a Prophets row reaching back to x=0:
@@ -14,18 +14,16 @@ const isTorah = (book: string): boolean => book === 'Genesis' || book === 'Deute
 const TORAH_TOP_Y = 0;
 const ZOOMS = [0.05, 0.2, 0.315, 0.63, 1, 2.5, 10];
 
-const svgOf = (title: HTMLElement): SVGSVGElement => {
-  const svg = title.querySelector('svg');
-  if (!svg) throw new Error('no artwork');
-  return svg;
-};
+const at = (zoom: number, x = 0, y = 0): { x: number; y: number; zoom: number } => ({ x, y, zoom });
 
 describe('mapTitle', () => {
   let container: HTMLElement;
+  let title: MapTitle;
 
   beforeEach(() => {
     container = document.createElement('div');
     document.body.appendChild(container);
+    title = createMapTitle(VERSES, container, isTorah);
   });
 
   afterEach(() => {
@@ -34,118 +32,73 @@ describe('mapTitle', () => {
 
   describe('createMapTitle', () => {
     it('keeps the title out of the book-label container, which rewrites its children', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-
-      expect(title.id).toBe('map-title');
-      expect(title.parentElement).toBe(container);
-      expect(title.closest('#book-labels')).toBeNull();
+      expect(container.querySelector('#map-title')).not.toBeNull();
+      expect(title.svg.closest('#book-labels')).toBeNull();
     });
 
     it('carries the Hebrew name, the English name and the tagline', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-      const lines = [...svgOf(title).querySelectorAll('text')].map((t) => t.textContent);
+      const lines = [...title.svg.querySelectorAll('text')].map((t) => t.textContent);
 
       expect(lines).toEqual(['מפת התנ״ך', 'Torahmap', 'A visual concordance to the Hebrew Bible']);
     });
 
     it('centres on the gap between the map’s left edge and the Torah’s', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-
-      expect(parseFloat(svgOf(title).dataset.centreX!)).toBe(500);
+      expect(title.centreX).toBe(500);
     });
 
-    it('sits above the Torah by a gap measured in map units', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-
-      expect(parseFloat(svgOf(title).dataset.topY!)).toBeLessThan(TORAH_TOP_Y);
+    it('sits above the Torah', () => {
+      expect(title.topY).toBeLessThan(TORAH_TOP_Y);
     });
 
     it('survives an empty layout', () => {
-      const title = createMapTitle([], container, isTorah);
-      const svg = svgOf(title);
+      const empty = createMapTitle([], container, isTorah);
 
-      expect(parseFloat(svg.dataset.centreX!)).toBe(0);
-      expect(Number.isFinite(parseFloat(svg.dataset.topY!))).toBe(true);
+      expect(empty.centreX).toBe(0);
+      expect(Number.isFinite(empty.topY)).toBe(true);
     });
   });
 
   describe('it is painted on the map', () => {
     it('grows with the zoom and is never capped', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-      const svg = svgOf(title);
-      const art = artworkSize(svg);
-
-      for (const zoom of ZOOMS) {
-        updateMapTitlePosition(title, { x: 0, y: 0 }, zoom);
-        expect(parseFloat(svg.getAttribute('width')!)).toBeCloseTo(
-          (art.width * 205 * zoom) / 100,
-          4,
-        );
-      }
-    });
-
-    it('holds the same distance from the verses at every zoom', () => {
-      // In map units, not screen pixels: the book labels use a clamped screen
-      // gap and so drift against the verses, which is exactly what the title
-      // must not do.
-      const title = createMapTitle(VERSES, container, isTorah);
-      const svg = svgOf(title);
-
-      const gaps = ZOOMS.map((zoom) => {
-        updateMapTitlePosition(title, { x: 0, y: 0 }, zoom);
-        const torahTopOnScreen = TORAH_TOP_Y * zoom;
-        return (torahTopOnScreen - parseFloat(svg.style.top)) / zoom;
-      });
-
-      for (const gap of gaps) expect(gap).toBeCloseTo(gaps[0], 6);
-    });
-
-    it('keeps its size against the verses at every zoom', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-      const svg = svgOf(title);
-
       const widths = ZOOMS.map((zoom) => {
-        updateMapTitlePosition(title, { x: 0, y: 0 }, zoom);
-        return parseFloat(svg.getAttribute('width')!) / zoom;
+        updateMapTitlePosition(title, at(zoom));
+        return parseFloat(title.svg.getAttribute('width')!) / zoom;
       });
 
       for (const w of widths) expect(w).toBeCloseTo(widths[0], 6);
     });
 
-    it('tracks the pan', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-      const svg = svgOf(title);
-      const topY = parseFloat(svg.dataset.topY!);
+    it('holds the same distance from the verses at every zoom', () => {
+      // In map units, not screen pixels: the book labels use a clamped screen
+      // gap and so drift against the verses, which is what this must not do.
+      const gaps = ZOOMS.map((zoom) => {
+        updateMapTitlePosition(title, at(zoom));
+        return (TORAH_TOP_Y * zoom - parseFloat(title.svg.style.top)) / zoom;
+      });
 
-      updateMapTitlePosition(title, { x: 100, y: 50 }, 0.3);
-
-      expect(parseFloat(svg.style.left)).toBeCloseTo((500 + 100) * 0.3, 5);
-      expect(parseFloat(svg.style.top)).toBeCloseTo((topY + 50) * 0.3, 5);
+      for (const gap of gaps) expect(gap).toBeCloseTo(gaps[0], 6);
     });
 
-    it('scales as one piece, so the lines cannot drift against each other', () => {
-      // Sizing the artwork through its viewBox is what holds the three
-      // baselines in proportion; laying each line out per size does not, as
-      // the font metrics round differently at every size.
-      const title = createMapTitle(VERSES, container, isTorah);
-      const svg = svgOf(title);
-      const art = artworkSize(svg);
+    it('tracks the pan', () => {
+      updateMapTitlePosition(title, at(0.3, 100, 50));
 
+      expect(parseFloat(title.svg.style.left)).toBeCloseTo((500 + 100) * 0.3, 5);
+      expect(parseFloat(title.svg.style.top)).toBeCloseTo((title.topY + 50) * 0.3, 5);
+    });
+
+    it('keeps the artwork’s own proportions at every zoom', () => {
       for (const zoom of ZOOMS) {
-        updateMapTitlePosition(title, { x: 0, y: 0 }, zoom);
-        const w = parseFloat(svg.getAttribute('width')!);
-        const h = parseFloat(svg.getAttribute('height')!);
-        expect(w / h).toBeCloseTo(art.width / art.height, 6);
+        updateMapTitlePosition(title, at(zoom));
+        const w = parseFloat(title.svg.getAttribute('width')!);
+        const h = parseFloat(title.svg.getAttribute('height')!);
+        expect(h / w).toBeCloseTo(title.aspect, 6);
       }
     });
 
     it('never fades: paint does not thin out as you lean in', () => {
-      const title = createMapTitle(VERSES, container, isTorah);
-      const svg = svgOf(title);
-
       for (const zoom of ZOOMS) {
-        updateMapTitlePosition(title, { x: 0, y: 0 }, zoom);
-        expect(svg.style.opacity).toBe('');
+        updateMapTitlePosition(title, at(zoom));
+        expect(title.svg.style.opacity).toBe('');
       }
     });
   });

@@ -11,17 +11,11 @@
 // title says or how its lines are arranged.
 
 import artwork from './mapTitle.svg?raw';
+import type { Camera } from './camera.ts';
 import type { TanakhLayout } from './types.ts';
 
-interface Pan {
-  x: number;
-  y: number;
-}
-
-/** The name's size in map units; the artwork sets it at 100 of its own. */
-const NAME_SIZE = 205;
-/** The name's size in the artwork's own units, which its viewBox is drawn against. */
-const ARTWORK_NAME_SIZE = 100;
+/** How wide the title is on the map, in map units. Its corner is about 1795 wide. */
+const TITLE_WIDTH = 929;
 
 /**
  * How far above the Torah's first row the title's top sits, in map units.
@@ -33,12 +27,15 @@ const ARTWORK_NAME_SIZE = 100;
  */
 const RISE_ABOVE_TORAH = 28;
 
-/** The artwork's own width and height, read from its viewBox. */
-export function artworkSize(svg: SVGSVGElement): { width: number; height: number } {
-  const [, , width, height] = (svg.getAttribute('viewBox') || '0 0 1 1')
-    .split(/[\s,]+/)
-    .map(Number);
-  return { width: width || 1, height: height || 1 };
+/** A placed title: the artwork, and where on the map it belongs. */
+export interface MapTitle {
+  svg: SVGSVGElement;
+  /** Midway across the empty corner, in map units. */
+  centreX: number;
+  /** The artwork's own top edge, in map units. */
+  topY: number;
+  /** Its height as a fraction of its width, so only the width needs deciding. */
+  aspect: number;
 }
 
 /**
@@ -52,7 +49,7 @@ export function createMapTitle(
   verses: TanakhLayout[],
   container: HTMLElement,
   isTorah: (book: string) => boolean,
-): HTMLDivElement {
+): MapTitle {
   let mapMinX = Infinity;
   let torahMinX = Infinity;
   let torahTopY = Infinity;
@@ -63,38 +60,36 @@ export function createMapTitle(
       torahTopY = Math.min(torahTopY, v.y);
     }
   }
-  const haveCorner = Number.isFinite(mapMinX) && Number.isFinite(torahMinX);
+  // Every Torah verse is a verse, so finding one settles both corners.
+  const haveTorah = Number.isFinite(torahMinX);
 
-  const title = document.createElement('div');
-  title.id = 'map-title';
-  title.innerHTML = artwork;
+  const host = document.createElement('div');
+  host.id = 'map-title';
+  host.innerHTML = artwork;
+  container.appendChild(host);
 
-  const svg = title.querySelector('svg');
-  if (svg) {
-    svg.dataset.centreX = String(haveCorner ? (mapMinX + torahMinX) / 2 : 0);
-    svg.dataset.topY = String((Number.isFinite(torahTopY) ? torahTopY : 0) - RISE_ABOVE_TORAH);
-  }
+  const svg = host.querySelector('svg');
+  if (!svg) throw new Error('mapTitle.svg has no root <svg>');
 
-  container.appendChild(title);
-  return title;
+  const box = svg.viewBox.baseVal;
+  return {
+    svg,
+    centreX: haveTorah ? (mapMinX + torahMinX) / 2 : 0,
+    topY: (haveTorah ? torahTopY : 0) - RISE_ABOVE_TORAH,
+    aspect: box.height / box.width,
+  };
 }
 
-export function updateMapTitlePosition(title: HTMLElement, pan: Pan, zoom: number): void {
-  const svg = title.querySelector('svg');
-  if (!svg) return;
-
-  const centreX = parseFloat(svg.dataset.centreX || '0');
-  const topY = parseFloat(svg.dataset.topY || '0');
-
+export function updateMapTitlePosition(title: MapTitle, camera: Camera): void {
+  const { svg, centreX, topY, aspect } = title;
   // The viewBox does the scaling, so the parts of the artwork keep their
   // proportions exactly. Sizing each line separately instead does not: every
   // line box takes its metrics from the font rounded at whatever size it is
   // asked for, and those roundings do not agree across sizes.
-  const size = artworkSize(svg);
-  const scale = (NAME_SIZE * zoom) / ARTWORK_NAME_SIZE;
+  const width = TITLE_WIDTH * camera.zoom;
 
-  svg.setAttribute('width', String(size.width * scale));
-  svg.setAttribute('height', String(size.height * scale));
-  svg.style.left = (centreX + pan.x) * zoom + 'px';
-  svg.style.top = (topY + pan.y) * zoom + 'px';
+  svg.setAttribute('width', String(width));
+  svg.setAttribute('height', String(width * aspect));
+  svg.style.left = (centreX + camera.x) * camera.zoom + 'px';
+  svg.style.top = (topY + camera.y) * camera.zoom + 'px';
 }

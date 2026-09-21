@@ -157,7 +157,7 @@ export function render<T>(
     updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
   }
   if (window.mapTitle) {
-    updateMapTitlePosition(window.mapTitle, { x: camera.x, y: camera.y }, camera.zoom);
+    updateMapTitlePosition(window.mapTitle, camera);
   }
 }
 
