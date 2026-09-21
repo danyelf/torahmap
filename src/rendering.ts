@@ -4,6 +4,7 @@ import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } f
 import { buildItemGeometry, createBuffer } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
+import { updateMapTitlePosition } from './mapTitle';
 import type { SpatialItem, TanakhIdentity, ShaderProgram } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
@@ -154,6 +155,12 @@ export function render<T>(
 
   if (window.bookLabels) {
     updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+  }
+  if (window.mapTitle) {
+    updateMapTitlePosition(window.mapTitle, { x: camera.x, y: camera.y }, camera.zoom, {
+      width: canvas.clientWidth,
+      height: canvas.clientHeight,
+    });
   }
 }
 

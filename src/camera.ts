@@ -97,6 +97,14 @@ export interface WorldBox {
 const FIT_MARGIN = 16;
 const FIT_TOP_MARGIN = 40;
 
+/** The largest zoom that fits `box` inside the margins of a `width` × `height` canvas. */
+export function fitZoom(box: WorldBox, width: number, height: number): number {
+  return Math.min(
+    (width - 2 * FIT_MARGIN) / (box.maxX - box.minX),
+    (height - FIT_MARGIN - FIT_TOP_MARGIN) / (box.maxY - box.minY),
+  );
+}
+
 /**
  * The camera that centres `box` on a `width` × `height` canvas, at the largest
  * zoom that fits it inside the margins, unless `zoom` is given.
@@ -104,11 +112,7 @@ const FIT_TOP_MARGIN = 40;
 export function cameraToFit(box: WorldBox, width: number, height: number, zoom?: number): Camera {
   const boxWidth = box.maxX - box.minX;
   const boxHeight = box.maxY - box.minY;
-  const fitted = Math.min(
-    (width - 2 * FIT_MARGIN) / boxWidth,
-    (height - FIT_MARGIN - FIT_TOP_MARGIN) / boxHeight,
-  );
-  const z = clampZoom(zoom ?? fitted);
+  const z = clampZoom(zoom ?? fitZoom(box, width, height));
   const centreY = FIT_TOP_MARGIN + (height - FIT_MARGIN - FIT_TOP_MARGIN) / 2;
   return {
     x: width / 2 / z - (box.minX + boxWidth / 2),
