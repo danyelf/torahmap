@@ -564,10 +564,7 @@ async function main(): Promise<void> {
   createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
   window.mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
-  updateMapTitlePosition(window.mapTitle, { x: camera.x, y: camera.y }, camera.zoom, {
-    width: canvas.clientWidth,
-    height: canvas.clientHeight,
-  });
+  updateMapTitlePosition(window.mapTitle, { x: camera.x, y: camera.y }, camera.zoom);
 
   canvas.addEventListener(
     'wheel',

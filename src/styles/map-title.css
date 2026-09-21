@@ -1,11 +1,9 @@
 /*
- * The map's title, set in the empty corner that the right-to-left layout
- * leaves above the Prophets and to the left of the Torah.
+ * The map's title. The artwork itself is mapTitle.svg, which carries the type,
+ * the colours and the arrangement; this file only places it over the map.
  *
- * One font-size is set on the block and every part below is an em of it, so
- * the Hebrew, the name and the tagline hold their proportions at every zoom.
- * The book and section labels each clamp their own size and so drift against
- * one another; this block does not.
+ * The svg is sized by its width and height attributes and scales through its
+ * viewBox, so the parts of the title hold their proportions at every zoom.
  */
 
 #map-title {
@@ -15,41 +13,8 @@
   pointer-events: none;
 }
 
-#map-title .title-block {
+#map-title svg {
   position: absolute;
-  white-space: nowrap;
-  line-height: 1.05;
-  text-align: left;
   /* Anchored on the middle of the empty corner, not its left edge. */
   transform: translateX(-50%);
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95);
-}
-
-/*
- * Flush right, which puts it over "map" — letters with no ascenders, so the
- * negative margin can drop it into space that would otherwise go unused.
- * Right is also where Hebrew starts, and where every row of the map ends.
- */
-#map-title .title-he {
-  font-weight: 700;
-  font-size: 0.34em;
-  line-height: 1;
-  text-align: right;
-  margin-bottom: -0.3em;
-  color: #b9b9b9;
-}
-
-#map-title .title-name {
-  font-weight: 700;
-  color: #eee;
-}
-
-/* Only the "p" descends, so the tagline can sit this close under the name. */
-#map-title .title-tagline {
-  font-family: system-ui, sans-serif;
-  font-size: 0.19em;
-  letter-spacing: 0.01em;
-  line-height: 1.3;
-  margin-top: 0.2em;
-  color: #a8a8a8;
 }
