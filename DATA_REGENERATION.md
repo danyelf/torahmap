@@ -12,7 +12,7 @@ only an index (`books.json`) and some helper scripts, so the
 `raw.githubusercontent.com` URLs that other instructions point at return 404 —
 do not follow them.
 
-The Hebrew lexeme index behind root-mode search comes from the
+The Hebrew lexeme index behind meanings-mode search comes from the
 [ETCBC BHSA](https://github.com/ETCBC/bhsa) database instead.
 
 Every source named here is also credited in the app, in the Credits tab of the

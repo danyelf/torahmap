@@ -17,13 +17,19 @@ The core design principle is **position stability** - each verse occupies a perm
 - **23,000+ verses** rendered as colored squares using WebGL (Torah → Nevi'im → Ketuvim)
 - **Smooth zoom/pan** with mouse wheel and drag
 - **Verse details** on hover/click with Hebrew text, English translation, and Sefaria link
-- **Full-text search** with Hebrew/English support, nikkud-insensitive; root
-  mode resolves a written form to the dictionary words it can be, so every
-  inflected form is found and words that merely share a spelling stay apart.
-  How a word is matched — substring, whole word, or root — belongs to that
-  word, so one term can be searched by root while another is pinned to an
-  exact spelling
+- **Full-text search** with Hebrew/English support, nikkud-insensitive;
+  meanings mode resolves a written form to the dictionary words it can be, so
+  every inflected form is found and words that merely share a spelling stay
+  apart. How a word is matched — substring, whole word, or meanings — belongs
+  to that word, so one term can be searched by meaning while another is pinned
+  to an exact spelling.
 - **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, and the help modal's Overlays tab is built from them.
+  Text Dating is written and tested but off the menu on purpose: it is meant to
+  come back as a mode of its own rather than a menu entry. Registering it again
+  is one line in `src/overlays/index.ts`.
+- **A guided story** in the right panel. Scrolling it moves the map from stop to
+  stop; folding it away leaves the overlay controls and free exploration. The
+  text is `public/data/story.md`, which the dev server hot-reloads.
 
 ## Quick Start
 
@@ -103,14 +109,16 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
   a `scrollytelling/` mode, a `talmud/` mode with its own `main-talmud.ts`
-  entry point, and `styles/`.
-- `public/data/` — shipped data: bundled verse texts, structure, and one
-  directory per overlay for what only it reads (commentary counts, the
-  haftarah mapping, the search lexeme index, Talmud text).
+  entry point, `styles/`, the `worker/` that serves the deployed site, and the
+  `telemetry/` it records through.
+- `public/data/` — shipped data: bundled verse texts, structure, the story, and
+  a directory for what only one part of the app reads — `overlays/commentary`,
+  `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
+  text.
 - `data/` — sources and downloads behind that shipped data, not itself
   shipped. Largely gitignored; see DATA_REGENERATION.md.
-- `scripts/` — tooling to regenerate the data above, one directory per
-  overlay for what only it needs, plus `demo/` and `talmud/`.
+- `scripts/` — tooling to regenerate the data above, laid out to match
+  `public/data/`, plus `demo/`, `talmud/` and the `telemetry/` queries.
 - `docs/plans/` — design docs, one per feature, each dated and headed with
   its status.
 - `experiments/` — prototypes that never shipped.
@@ -121,7 +129,24 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - **TypeScript** - Type-safe source code
 - **Vite** - Build tool and dev server
 - **WebGL 2** - GPU-accelerated rendering
+- **Cloudflare Workers** - Serves the deployed site and receives its telemetry
 - **No runtime dependencies** - Everything from scratch
+
+## Deployment
+
+The map is live at [torahmap.org](https://torahmap.org), served by a Cloudflare
+Worker configured in `wrangler.jsonc`. Cloudflare builds and deploys on every
+push to main, which takes about a minute; there is no deploy command to run by
+hand. Every pull request also gets its own public `workers.dev` link, so a UI
+change can be looked at without checking the branch out —
+`scripts/prpreview.sh <pr>` serves one locally instead.
+
+Static files are served before the Worker runs. The only route it owns is
+`/api/event`, which writes one Analytics Engine data point per event
+(`src/worker/index.ts`, with the client half in `src/analytics.ts`). No cookies
+and nothing in browser storage; the dev server sends nothing. What each column
+means is in `src/telemetry/schema.ts`, and `scripts/telemetry/report.sh` prints
+every saved query — it needs a Cloudflare account id and an API token.
 
 ## Architecture
 
@@ -147,22 +172,31 @@ The codebase follows a **functional, modular design** with clear separation of c
 ## Data
 
 Verse texts, structure and commentary counts come from
-[Sefaria](https://www.sefaria.org/). The Hebrew lexeme index behind root-mode
-search comes from the [ETCBC BHSA](https://github.com/ETCBC/bhsa) database, read
-through Text-Fabric. The haftarah readings come from
+[Sefaria](https://www.sefaria.org/). The Hebrew lexeme index behind
+meanings-mode search comes from the [ETCBC BHSA](https://github.com/ETCBC/bhsa)
+database, read through Text-Fabric. The haftarah readings come from
 [hebcal's leyning tables](https://github.com/hebcal/hebcal-leyning). See
 [DATA_REGENERATION.md](DATA_REGENERATION.md) for instructions on updating data
 files.
 
 ## Interactions
 
-- **Mouse wheel** - Zoom (0.1x - 10x)
-- **Click + drag** - Pan
-- **Hover** - Show verse reference
-- **Click verse** - Pin and show sidebar with text
-- **Click pinned verse** - Unpin
+The help modal's Controls tab is the list readers see, and it is the one to keep
+in step with the code:
+
+- **Mouse wheel, or pinch** - Zoom (0.1x - 10x); the buttons in the corner do
+  the same
+- **Drag** - Pan
+- **Hover** - Preview verse details
+- **Click or tap a verse** - Pin it and show the sidebar; again to unpin, or
+  Escape
+- **Arrow keys** - Move from verse to verse
 - **Overlay selector** - Switch between visualization modes
 - **Search box** - Type to search Hebrew/English text with live results
+- **Story strip** - Fold the story away for the controls, or open it again
+
+The URL carries the overlay, its settings, the pinned verse, the camera and the
+story stop (`src/urlState.ts`), so any view can be linked to.
 
 ## License
 
