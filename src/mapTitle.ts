@@ -1,11 +1,16 @@
-// The map's title, anchored in the map rather than pinned to the window.
+// The map's title, painted onto the map rather than laid over it.
+//
+// Everything here is in map units, and nothing is clamped. The title grows and
+// moves exactly as the verses do, so its size against them and its distance
+// from them never change — it behaves like paint on the map, not like the book
+// and section labels, which clamp their size so as to stay readable and
+// therefore drift against the verses as you zoom.
 //
 // The artwork lives in mapTitle.svg and is inlined at build time. This module
 // only decides where it goes and how large it is; nothing here knows what the
 // title says or how its lines are arranged.
 
 import artwork from './mapTitle.svg?raw';
-import { bookLabelRise } from './labels.ts';
 import type { TanakhLayout } from './types.ts';
 
 interface Pan {
@@ -13,25 +18,20 @@ interface Pan {
   y: number;
 }
 
-/** The name's size in map units at zoom 1; the artwork sets it at 100 of its own. */
-const BASE_FONT_SIZE = 205;
-/** Past this the title would tower over the verses it sits beside. */
-const MAX_FONT_SIZE = 130;
+/** The name's size in map units; the artwork sets it at 100 of its own. */
+const NAME_SIZE = 205;
 /** The name's size in the artwork's own units, which its viewBox is drawn against. */
-const ARTWORK_FONT_SIZE = 100;
+const ARTWORK_NAME_SIZE = 100;
 
-// Measured in plain zoom rather than against the zoom that fits the map: what
-// the title must not compete with is legible verse text, and legibility is a
-// matter of pixels per verse, which is what zoom already says.
-const FADE_FROM_ZOOM = 1.5;
-const FADE_TO_ZOOM = 4;
-
-/** How visible the title is: full until the verses themselves are worth reading. */
-export function titleOpacity(zoom: number): number {
-  if (zoom <= FADE_FROM_ZOOM) return 1;
-  if (zoom >= FADE_TO_ZOOM) return 0;
-  return (FADE_TO_ZOOM - zoom) / (FADE_TO_ZOOM - FADE_FROM_ZOOM);
-}
+/**
+ * How far above the Torah's first row the title's top sits, in map units.
+ *
+ * A map-unit gap, not a screen-pixel one, because that is what holds the title
+ * the same distance from the verses at every zoom. It is the gap the book
+ * labels happen to leave at the view that fits the whole map, so the title
+ * lines up with them there.
+ */
+const RISE_ABOVE_TORAH = 28;
 
 /** The artwork's own width and height, read from its viewBox. */
 export function artworkSize(svg: SVGSVGElement): { width: number; height: number } {
@@ -43,8 +43,7 @@ export function artworkSize(svg: SVGSVGElement): { width: number; height: number
 
 /**
  * Builds the title and gives it a place in map coordinates: centred across the
- * gap between the map's left edge and the Torah's, on the line the book labels
- * start from.
+ * gap between the map's left edge and the Torah's, above the Torah's first row.
  *
  * It gets a container of its own because `updateLabelPositions` rewrites the
  * position of every child of the book-label container, which would fight this.
@@ -73,7 +72,7 @@ export function createMapTitle(
   const svg = title.querySelector('svg');
   if (svg) {
     svg.dataset.centreX = String(haveCorner ? (mapMinX + torahMinX) / 2 : 0);
-    svg.dataset.topY = String(Number.isFinite(torahTopY) ? torahTopY : 0);
+    svg.dataset.topY = String((Number.isFinite(torahTopY) ? torahTopY : 0) - RISE_ABOVE_TORAH);
   }
 
   container.appendChild(title);
@@ -92,11 +91,10 @@ export function updateMapTitlePosition(title: HTMLElement, pan: Pan, zoom: numbe
   // line box takes its metrics from the font rounded at whatever size it is
   // asked for, and those roundings do not agree across sizes.
   const size = artworkSize(svg);
-  const scale = Math.min(BASE_FONT_SIZE * zoom, MAX_FONT_SIZE) / ARTWORK_FONT_SIZE;
+  const scale = (NAME_SIZE * zoom) / ARTWORK_NAME_SIZE;
 
   svg.setAttribute('width', String(size.width * scale));
   svg.setAttribute('height', String(size.height * scale));
   svg.style.left = (centreX + pan.x) * zoom + 'px';
-  svg.style.top = (topY + pan.y) * zoom - bookLabelRise(zoom) + 'px';
-  svg.style.opacity = String(titleOpacity(zoom));
+  svg.style.top = (topY + pan.y) * zoom + 'px';
 }

@@ -172,22 +172,8 @@ function positionSectionLabel(
   label.style.transform = 'rotate(90deg) translateY(-100%)';
 }
 
-function bookLabelFontSize(zoom: number): number {
-  return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
-}
-
-/**
- * How far above its first row of verses a book label's top sits, in screen
- * pixels. The map title rides this same line, so it lifts and settles with the
- * labels instead of drifting against them as the font size clamps.
- */
-export function bookLabelRise(zoom: number): number {
-  const fontSize = bookLabelFontSize(zoom);
-  return fontSize + BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
-}
-
 export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
-  const fontSize = bookLabelFontSize(zoom);
+  const fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
   const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
 
   for (const label of labelsContainer.children) {
