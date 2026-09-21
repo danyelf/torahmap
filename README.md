@@ -7,6 +7,8 @@ I love the idea of being able to lay out an entire text as an interactive surfac
 
 The Tanakh -- the Jewish Bible -- is a rich and deep text, with years of study around it. This project visualizes the Tanakh across a number of different dimensions.
 
+The map is at **[torahmap.org](https://torahmap.org)**. It opens on a short story that walks you through it; fold the story away and the whole map is yours to explore.
+
 Overlays, in the order the map offers them:
 
 - **Text Search** — every verse holding the word you type, in the Hebrew or in the English. A Hebrew word is looked up as a dictionary word by default, so every form it takes is found.

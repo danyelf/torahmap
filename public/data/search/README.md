@@ -1,6 +1,6 @@
 # Search data
 
-These four files are the Hebrew dictionary behind root-mode search — the mode
+These four files are the Hebrew dictionary behind meanings-mode search — the mode
 where typing מלך finds every inflected form of the word, not just that spelling.
 All four are generated. Do not hand-edit them.
 
