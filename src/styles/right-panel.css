@@ -18,12 +18,12 @@
 
 #right-panel {
   position: fixed;
+  /* Pinned to both edges rather than given a height. On an iPad 100vh counts
+     the space behind Safari's toolbar, which would hide the footer. */
   top: 0;
+  bottom: 0;
   right: 0;
   width: var(--panel-width);
-  /* svh, not vh: on an iPad vh counts the space behind Safari's toolbar, which
-     this page never scrolls away, so a vh-tall panel hides its footer under it. */
-  height: 100svh;
   background: rgba(0, 0, 0, 0.92);
   z-index: 10;
   display: grid;
@@ -397,7 +397,8 @@ body:not(.story-folded) #return-to-story {
   top: 0;
   left: 0;
   width: calc(100vw - var(--panel-width));
-  height: 100svh;
+  /* A canvas does not stretch between its edges; 100% is of the visible window. */
+  height: 100%;
 }
 
 /* On a phone the panel is a sheet along the bottom. 30svh leaves every story
