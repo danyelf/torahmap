@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The map's title. mapTitle.ts scales this to a fixed width on the map and
+  reads nothing from it but the viewBox, so any edit here — moving a line,
+  retyping the tagline, changing a size — needs no change to the code.
+
+  Two placements are deliberate. The Hebrew is anchored right, which puts it
+  over "map", whose letters have no ascenders, so it can sit low in space that
+  would otherwise go unused; right is also where Hebrew starts and where every
+  row of the map ends. The tagline sits close under the name because only the
+  "p" descends.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 453.19 157.3"
+  width="453.19"
+  height="157.3"
+  overflow="visible"
+  role="img"
+  aria-label="Torahmap — a visual concordance to the Hebrew Bible"
+>
+  <filter id="map-title-shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="2" stdDeviation="7" flood-color="#000" flood-opacity="0.95" />
+  </filter>
+
+  <g filter="url(#map-title-shadow)" font-family="David Libre, system-ui, sans-serif">
+    <text x="453.19" y="27" text-anchor="end" font-size="34" font-weight="700" fill="#b9b9b9">מפת התנ״ך</text>
+    <text x="0" y="103.81" font-size="100" font-weight="700" fill="#eee">Torahmap</text>
+    <text x="0" y="151.61" font-family="system-ui, sans-serif" font-size="19" letter-spacing="0.19" fill="#a8a8a8">A visual concordance to the Hebrew Bible</text>
+  </g>
+</svg>

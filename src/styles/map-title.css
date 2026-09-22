@@ -1,0 +1,20 @@
+/*
+ * The map's title. The artwork itself is mapTitle.svg, which carries the type,
+ * the colours and the arrangement; this file only places it over the map.
+ *
+ * The svg is sized by its width and height attributes and scales through its
+ * viewBox, so the parts of the title hold their proportions at every zoom.
+ */
+
+#map-title {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+#map-title svg {
+  position: absolute;
+  /* Anchored on the middle of the empty corner, not its left edge. */
+  transform: translateX(-50%);
+}

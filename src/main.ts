@@ -137,6 +137,8 @@ import {
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { summaryHtml } from './panelSummary.ts';
 import { sheetAfterDrag, sheetAfterTap, type Sheet } from './sheet.ts';
+import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
+import './styles/map-title.css';
 import './styles/zoom-buttons.css';
 import './styles/right-panel.css';
 import './styles/verse-popup.css';
@@ -144,6 +146,7 @@ import './styles/verse-popup.css';
 declare global {
   interface Window {
     bookLabels?: HTMLDivElement;
+    mapTitle?: MapTitle;
   }
 }
 
@@ -560,6 +563,8 @@ async function main(): Promise<void> {
   const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
   createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
   updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+  window.mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
+  updateMapTitlePosition(window.mapTitle, camera);
 
   canvas.addEventListener(
     'wheel',
