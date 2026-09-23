@@ -134,8 +134,13 @@ that something was copied.
 - Whether the resting sheet on a phone with nothing on says "No overlay" or
   disappears. The decision was "No overlay", but it is worth looking at once it
   is real.
-- The rail's icons. Five glyphs have to survive being small and unlabelled at
-  narrow widths, and the ones in the mockup are placeholders.
+- The rail's icons, which are a design job of their own. The emoji in the
+  mockup are stand-ins and look like it. What replaces them has to survive
+  being small and unlabelled, read at a glance against a dark background, and
+  sit with the rest of the site rather than borrowing a generic icon set. Five
+  are needed on desktop, plus search, share and ☰ on the phone bar. Worth
+  settling before the frame ships, since the rail is the first thing a reader
+  meets outside a story.
 - Whether search results on desktop belong in the panel, as they are today, or
   deserve more room now that the panel is narrower.
 
