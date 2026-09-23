@@ -96,8 +96,9 @@ into the menu, and the story links into the mode itself.
 ## What each overlay says about itself (#237)
 
 The description each overlay already carries is shown at the top of its panel,
-above its options, on both sizes. The help window's Overlays tab keeps being
-built from the same strings, so there is still one source. An overlay with
+above its options, on both sizes, and in the Overlays panel beside each one's
+name — the descriptions registered with the overlays stay the single source,
+and the help window's Overlays tab goes away. An overlay with
 sub-options (Commentary's category, Haftarah's custom) describes the sub-option
 on the same line it is chosen from, since "Liturgy" alone does not say what it
 counts.
@@ -167,10 +168,12 @@ show in miniature.
   bottom-left on desktop, above the sheet on a phone.
 - **The zoom buttons stay as they are** (`src/styles/zoom-buttons.css`): a
   corner control on desktop, hidden on phones, where pinch does the job.
-- **The URL** names things directly: `story=<story name>&stop=<stop id>` for a
-  story, and `search=<terms>&overlay=<overlay id>` for the explore view, since
-  the two are no longer alternatives. `RESERVED_KEYS` in `src/urlState.ts` is
-  the list to change, and `overlay=search` stops being a legal value.
+- **The URL** names things directly: roughly `story=<story name>&stop=<stop id>`
+  for a story and `search=<terms>&overlay=<overlay id>` for the explore view,
+  since the two are no longer alternatives. The exact spelling of the keys is
+  still to be settled — what is decided is that a search and an overlay both
+  appear, and that `overlay=search` stops being a legal value. `RESERVED_KEYS`
+  in `src/urlState.ts` is the list to change.
 - **How far the background overlay dims** is a number to find by eye once it is
   on screen, not a decision to make on paper.
 - **Telemetry** (`src/analytics.ts`, `src/telemetry/schema.ts`) mostly stands.
@@ -185,17 +188,25 @@ show in miniature.
   (which panel is open, what a folded line says, what the URL holds) stays in
   vitest, where the existing 1,900 tests are.
 
-**Still open in the code:**
+**The help window dissolves into the panel.** There is no modal. "About" opens
+from the menu like any other panel and scrolls in the column: what this is,
+then the controls, then the credits. The Overlays tab goes, because each
+overlay's sentence now sits in the Overlays panel beside the thing it
+describes, and the Controls list is rewritten for the interactions this design
+leaves. `src/help.ts` and `src/styles/help.css` become a panel; `src/credits.ts`
+is unchanged data. The credits are rows of source and link and the column is
+narrower than the old 500px modal, so if they look cramped once they are real,
+widening the panel for that one view is the answer rather than bringing a
+second kind of surface back.
 
-- **The help window.** About & credits moves into the menu, but the modal
-  itself keeps four tabs, one of which is Controls — a list of interactions
-  this design rewrites, and another is Overlays, built from the same
-  descriptions now shown in the panel. Whether it stays a modal, becomes a
-  menu section, or splits is undecided.
-- **The phone's sheet heights.** `down`, `normal` and `tall` were built around
-  one open thing. With folded lines the resting height is the lines themselves,
-  and the tall state exists for reading and typing, so the ladder needs
-  rethinking rather than porting.
+**The phone's sheet is as tall as what is open, and no taller.** `down`,
+`normal` and `tall` go. The sheet has two resting shapes: the folded lines, or
+one panel open at its content's height, capped at about half the screen. The
+one gesture that survives is a drag upward to full, for a long search results
+list, which stays until that panel is closed. Focusing a text input still
+floats the sheet above the keyboard. During a story the sheet is a constant
+height — stop texts vary, the camera is already moving between stops, and a
+sheet that resized underneath it would make the whole screen unstable.
 
 ## What this leaves open
 
