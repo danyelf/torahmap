@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A Playwright suite that loads the real map in a real browser at six screen sizes, checks the layout against rules that hold for any good layout, and writes a contact sheet of every state for Danyel to look at.
+**Goal:** A Playwright suite that loads the real map in a real browser at four screen sizes, checks the layout against rules that hold for any good layout, and writes a contact sheet of every state for Danyel to look at.
 
 **Architecture:** `@playwright/test` runs against a Vite dev server it starts itself, with SwiftShader so WebGL renders headless. Layout rules are pure functions over measured rectangles that return a list of violations, so they are testable without a browser and read well when they fail. A small custom reporter lays every screenshot out as states × screen sizes. It runs as `npm run test:layout`, outside the pre-commit hook.
 
@@ -44,7 +44,7 @@ Today's interface will break some rules. Each measured failure is listed in `lay
 layout/
   playwright.config.ts   runner config: server, SwiftShader, screen sizes, reporters
   tsconfig.json          typechecks layout/ with Node types
-  screens.ts             the six screen sizes, as Playwright projects
+  screens.ts             the four screen sizes, as Playwright projects
   geometry.ts            pure rectangle rules, each returning violations
   geometry.spec.ts       tests for geometry.ts (no browser)
   page.ts                opening the map, measuring elements, counting pixels
@@ -137,20 +137,12 @@ In `src/main.ts`, after `scheduleStoryFrame();` at the end of `main()`, add:
 import { devices, type PlaywrightTestOptions } from '@playwright/test';
 
 // The phone layout starts at max-width 768px (src/styles/right-panel.css), so
-// the tablet and the landscape phone below get the desktop layout.
+// the tablet gets the desktop layout.
 export const SCREENS: { name: string; use: Partial<PlaywrightTestOptions> }[] = [
   { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
   { name: 'laptop', use: { viewport: { width: 1280, height: 720 } } },
   { name: 'tablet', use: { viewport: { width: 820, height: 1180 }, hasTouch: true } },
-  { name: 'phone', use: { ...devices['iPhone 14'], defaultBrowserType: 'chromium' } },
-  {
-    name: 'small-phone',
-    use: { viewport: { width: 360, height: 640 }, isMobile: true, hasTouch: true },
-  },
-  {
-    name: 'phone-landscape',
-    use: { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true },
-  },
+  { name: 'phone', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } },
 ];
 ```
 
@@ -281,10 +273,10 @@ Expected: `drawn` in the tens of thousands, `colours` well above 8. Remove the `
 Temporarily change `openMap`'s poll to `.toBeGreaterThan(10_000_000)` and run again.
 Expected: FAIL with a timeout naming the poll. Revert.
 
-- [ ] **Step 9: Run all six screens**
+- [ ] **Step 9: Run all four screens**
 
 Run: `npm run test:layout`
-Expected: 6 passed (one per screen). The `rules` project has no tests yet and reports nothing.
+Expected: 4 passed (one per screen). The `rules` project has no tests yet and reports nothing.
 
 - [ ] **Step 10: Typecheck and commit**
 
@@ -293,7 +285,7 @@ Expected: no errors.
 
 ```bash
 git add package.json package-lock.json .gitignore src/main.ts layout/
-git commit -m "Layout tests: Playwright loads the real map at six screen sizes
+git commit -m "Layout tests: Playwright loads the real map at four screen sizes
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ```
@@ -807,7 +799,7 @@ Run: `npm run test:layout`
 Expected: ends with `Contact sheet: …/layout-report/index.html`.
 
 Run: `open layout-report/index.html`
-Expected: seven rows of states, six columns of screen sizes, a screenshot in each cell, known defects in yellow under the cells they belong to. Read two or three screenshots at full size: the map has coloured squares in them, and the Hebrew title is in David Libre rather than a fallback serif.
+Expected: seven rows of states, four columns of screen sizes, a screenshot in each cell, known defects in yellow under the cells they belong to. Read two or three screenshots at full size: the map has coloured squares in them, and the Hebrew title is in David Libre rather than a fallback serif.
 
 - [ ] **Step 4: Typecheck and commit**
 
@@ -835,8 +827,8 @@ In `## Testing`, after the `npm run test:coverage` code block, add:
 ````markdown
 ### Layout tests
 
-The interface is tested for layout in a real browser, at six screen sizes from
-a small phone to a desktop:
+The interface is tested for layout in a real browser, at four screen sizes, from
+a phone to a desktop:
 
 ```bash
 npm run test:layout
@@ -881,7 +873,7 @@ git commit -m "Say how and when to run the layout tests
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 git push -u origin layout-tests
-gh pr create --base main --title "Layout tests: the real map, six screen sizes, a contact sheet" --body "…"
+gh pr create --base main --title "Layout tests: the real map, four screen sizes, a contact sheet" --body "…"
 ```
 
 The PR body leads with what the suite checks and why, lists the known defects of today's interface that Danyel accepted in Task 3, and embeds two or three contact-sheet screenshots by commit-pinned URL (commit them under `docs/plans/images/2026-09-23-layout-tests/`; relative image paths 404 until the PR merges). It ends with:
