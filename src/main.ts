@@ -3,6 +3,7 @@
 declare const __GIT_BRANCH__: string;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
+import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
@@ -198,6 +199,10 @@ async function main(): Promise<void> {
     canvas.height = height * dpr;
   }
   resizeCanvas();
+
+  /** Where a pointer is on the map: the canvas need not start at the window's corner. */
+  const onMap = (e: { clientX: number; clientY: number }): { x: number; y: number } =>
+    mapPoint(e.clientX, e.clientY, canvas.getBoundingClientRect());
 
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext.gl, verses, dpr);
@@ -572,7 +577,8 @@ async function main(): Promise<void> {
       e.preventDefault();
       cancelCameraGlide();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
-      zoomAt(zoomFactor, e.clientX, e.clientY);
+      const p = onMap(e);
+      zoomAt(zoomFactor, p.x, p.y);
       debouncedCameraSettled();
     },
     { passive: false },
@@ -595,7 +601,8 @@ async function main(): Promise<void> {
     'touchstart',
     (e: TouchEvent) => {
       for (const touch of e.changedTouches) {
-        trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
+        const p = onMap(touch);
+        trackTouch(touchState, touch.identifier, p.x, p.y);
       }
       if (touchState.activeTouches.size === 2) {
         touchState.lastPinchDistance = getPinchDistance(touchState);
@@ -608,7 +615,8 @@ async function main(): Promise<void> {
     'touchmove',
     (e: TouchEvent) => {
       for (const touch of e.changedTouches) {
-        trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
+        const p = onMap(touch);
+        trackTouch(touchState, touch.identifier, p.x, p.y);
       }
 
       if (touchState.activeTouches.size >= 2) {
@@ -642,20 +650,22 @@ async function main(): Promise<void> {
     if (phoneLayout.matches && sheet !== 'down') setSheet('down');
     // A hand on the map outranks a glide that is still running.
     cancelCameraGlide();
-    startDrag(mouseState, e.clientX, e.clientY);
+    const p = onMap(e);
+    startDrag(mouseState, p.x, p.y);
     canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
-    pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
+    pointerDownPos = { x: p.x, y: p.y, time: Date.now() };
   });
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
-      const dx = e.clientX - mouseState.dragStart.x;
-      const dy = e.clientY - mouseState.dragStart.y;
+      const p = onMap(e);
+      const dx = p.x - mouseState.dragStart.x;
+      const dy = p.y - mouseState.dragStart.y;
       if (dx !== 0 || dy !== 0) takeOver('takeover');
       camera.x += dx / camera.zoom;
       camera.y += dy / camera.zoom;
-      mouseState.dragStart = { x: e.clientX, y: e.clientY };
+      mouseState.dragStart = { x: p.x, y: p.y };
       render();
     }
   });
@@ -668,12 +678,13 @@ async function main(): Promise<void> {
     }
 
     if (pointerDownPos) {
-      const dx = Math.abs(e.clientX - pointerDownPos.x);
-      const dy = Math.abs(e.clientY - pointerDownPos.y);
+      const p = onMap(e);
+      const dx = Math.abs(p.x - pointerDownPos.x);
+      const dy = Math.abs(p.y - pointerDownPos.y);
       const duration = Date.now() - pointerDownPos.time;
 
       if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
-        const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
+        const verse = findItemAtPoint(verses, camera, p.x, p.y);
         if (verse) {
           if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
             unpinVerse();
@@ -688,7 +699,8 @@ async function main(): Promise<void> {
     }
 
     if (wasDragging) {
-      const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
+      const p = onMap(e);
+      const verse = findItemAtPoint(verses, camera, p.x, p.y);
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
       } else {
@@ -795,8 +807,9 @@ async function main(): Promise<void> {
     if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
-      lastPointerPosition = { x: e.clientX, y: e.clientY };
-      const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
+      const p = onMap(e);
+      lastPointerPosition = { x: p.x, y: p.y };
+      const verse = findItemAtPoint(verses, camera, p.x, p.y);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 

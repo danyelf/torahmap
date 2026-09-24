@@ -12,8 +12,8 @@ export interface Camera {
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10.0;
 
-// Keeps Genesis 1:1 clear of the right-panel sidebar; wider than the panel
-// itself so the verse isn't flush against its edge.
+// How far in from the right edge the opening camera puts Genesis 1:1, the
+// map's rightmost verse.
 const RIGHT_MARGIN = 320;
 // Top margin to leave room for book labels above the first row
 const TOP_MARGIN = 40;

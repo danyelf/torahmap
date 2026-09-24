@@ -395,7 +395,7 @@ body:not(.story-folded) #return-to-story {
 #canvas {
   position: fixed;
   top: 0;
-  left: 0;
+  left: var(--map-left);
   width: calc(100vw - var(--panel-width));
   /* A canvas does not stretch between its edges; 100% is of the visible window. */
   height: 100%;

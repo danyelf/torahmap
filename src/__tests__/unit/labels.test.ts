@@ -95,7 +95,7 @@ describe('labels', () => {
 
         expect(labels.style.position).toBe('fixed');
         expect(labels.style.top).toBe('0px');
-        expect(labels.style.left).toBe('0px');
+        expect(labels.style.left).toBe('var(--map-left)');
         expect(labels.style.pointerEvents).toBe('none');
       });
 

@@ -9,7 +9,7 @@
 #map-title {
   position: fixed;
   top: 0;
-  left: 0;
+  left: var(--map-left);
   pointer-events: none;
 }
 

@@ -1,5 +1,7 @@
 :root {
   --panel-width: 380px;
+  /* Where the map starts across the window. The canvas, the book labels and the title all sit here. */
+  --map-left: 0px;
   /* How much of the phone's bottom sheet is on screen, set in right-panel.css. */
   --sheet-shown: 0px;
 }
