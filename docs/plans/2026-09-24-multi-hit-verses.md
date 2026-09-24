@@ -7,8 +7,7 @@
 
 A verse that two or more search terms hit used to grow a halo three units wide
 past its square, about 30% filled with random specks of the terms' colours. It
-was sparse, took a lot of space, and blurred into mud from a distance. It also
-made multi-hit verses look more important than single hits.
+was sparse, took a lot of space, and blurred into mud from a distance.
 
 ![Before, Genesis at zoom 4](images/2026-09-24-multi-hit-verses/before-close.png)
 
