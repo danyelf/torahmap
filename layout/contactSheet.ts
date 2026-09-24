@@ -29,12 +29,9 @@ export default class ContactSheet implements Reporter {
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
-    // The rules project has no page and never attaches a screenshot; every other
-    // project runs against a screen and belongs on the sheet even when a test
-    // fails before it gets as far as capturing one.
+    // The rules project has no page and never attaches a screenshot.
     const screen = test.parent.project()!.name;
     if (screen === 'rules') return;
-    if (!this.screens.includes(screen)) this.screens.push(screen);
 
     const shot = result.attachments.find((a) => a.name === 'layout' && a.path);
     let file: string | undefined;
@@ -43,6 +40,12 @@ export default class ContactSheet implements Reporter {
       file = `shots/${sanitizeFilename(test.title)}--${sanitizeFilename(screen)}.png`;
       copyFileSync(shot.path, join(this.dir, file));
     }
+
+    // A passing check with no screenshot (the render and measurement checks)
+    // has nothing to show; a failing one still belongs on the sheet, whether
+    // or not it got as far as capturing one.
+    if (!file && result.status === 'passed') return;
+    if (!this.screens.includes(screen)) this.screens.push(screen);
 
     const failures = result.errors.map((e) => stripAnsi(e.message ?? '').split('\n')[0]);
     if (!file && failures.length > 0) failures.unshift('no screenshot: failed before capture');
