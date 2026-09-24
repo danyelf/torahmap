@@ -15,20 +15,33 @@ made multi-hit verses look more important than single hits.
 ## What we wanted
 
 - Every hit visible on its own square, even from a distance.
-- No extra weight for a verse several terms hit.
-- Still clear that there are several.
+- Verses several terms hit told apart from single hits, even from a distance.
+- No black gaps, no static, nothing that reads as swollen.
 
 ## The decision
 
-A multi-colour verse keeps exactly its own square, split corner to corner into
-one band per colour. Single hits are unchanged. This is the shared shader, so
-Haftarah's multi-item verses get the same treatment.
+A multi-colour verse is split corner to corner into one band per colour, and
+grows by 0.75 units on every side: a 5.5-unit square among 4-unit ones. Single
+hits are unchanged. This is the shared shader and geometry, so Haftarah's
+multi-item verses get the same treatment.
 
 ![After, Genesis at zoom 4](images/2026-09-24-multi-hit-verses/after-close.png)
 ![After, three-term verses in Exodus 3–6](images/2026-09-24-multi-hit-verses/after-exodus.png)
 
 A diagonal cut, not a vertical one: a square split down the middle reads as two
 neighbouring verses.
+
+The growth is what marks a verse as multi-hit when zoomed out, where its bands
+blur into one colour. Without it, multi-hit verses were indistinguishable from
+single hits at the whole-Torah zoom. The gap between squares is 2 units, so
+growth under 1 never touches a neighbour; 0.5 was too subtle zoomed out, and 1
+closed the gap.
+
+![Growth compared: none, 0.5, 0.75, 1](images/2026-09-24-multi-hit-verses/growth-compared.jpg)
+
+| Before, whole Torah | After, whole Torah |
+| --- | --- |
+| ![](images/2026-09-24-multi-hit-verses/before-wide.png) | ![](images/2026-09-24-multi-hit-verses/after-wide.png) |
 
 ## What we tried
 
@@ -45,7 +58,9 @@ prototype is on branch `multi-hit-246-prototype`, every style behind
 - **Growing every hit, with a speckled halo, a solid edge or a translucent
   glow.** The gap between squares is two units, a couple of screen pixels at
   the zooms that matter. Anything drawn there reads as the square being bigger
-  or blurrier, never as a halo: every version looked swollen or static.
+  or blurrier, never as a halo: every version looked swollen or static. Size
+  only helps as a signal when it marks the difference, which is why the
+  shipped design grows multi-hit verses alone.
 - **An edge a fixed number of screen pixels wide.** Holds up best of the
   growing kind, but still adds an outline nobody asked for.
 

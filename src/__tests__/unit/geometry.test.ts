@@ -88,14 +88,26 @@ describe('buildItemGeometry', () => {
       expect(buffer[floatsPerVertex]).toBe(expectedX);
     });
 
-    it('draws a multi-color verse in exactly its own square', () => {
+    it('grows a multi-color verse by less than half the gap, so neighbours never touch', () => {
       const verse = createVerse({ x: 100, y: 200, size: 10 });
       const buffer = buildItemGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.BLUE]]);
 
-      expect(buffer[0]).toBe(100); // top-left x
-      expect(buffer[1]).toBe(200); // top-left y
-      expect(buffer[floatsPerVertex * 5]).toBe(108); // bottom-right x
-      expect(buffer[floatsPerVertex * 5 + 1]).toBe(208); // bottom-right y
+      const left = buffer[0];
+      const right = buffer[floatsPerVertex * 5];
+      const growth = 100 - left;
+      expect(growth).toBeGreaterThan(0);
+      expect(growth).toBeLessThan(1); // the gap between squares is 2
+      expect(right).toBe(108 + growth);
+      expect(buffer[1]).toBe(200 - growth); // top
+      expect(buffer[floatsPerVertex * 5 + 1]).toBe(208 + growth); // bottom
+    });
+
+    it('keeps a single-color verse to exactly its own square', () => {
+      const verse = createVerse({ x: 100, y: 200, size: 10 });
+      const buffer = buildItemGeometry([verse], [TEST_COLORS.RED]);
+
+      expect(buffer[0]).toBe(100);
+      expect(buffer[floatsPerVertex * 5]).toBe(108);
     });
 
     it('handles different verse sizes correctly', () => {

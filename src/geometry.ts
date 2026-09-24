@@ -16,6 +16,11 @@ function isColorArray(color: Color | Color[] | undefined): color is Color[] {
 // says what it means here.
 const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 
+// World units a verse with several colors grows on every side, so it stands
+// out from single-color verses when zoomed out. Squares sit 2 units apart, so
+// up to 1 keeps a gap between neighbours.
+const MULTICOLOR_GROWTH = 0.75;
+
 export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
@@ -43,10 +48,11 @@ export function buildItemGeometry<T>(
     }
     const colorCount = vertexColors.length;
 
-    const x0 = v.x;
-    const y0 = v.y;
-    const x1 = v.x + v.size - 2; // -2 for gap
-    const y1 = v.y + v.size - 2;
+    const grow = colorCount > 1 ? MULTICOLOR_GROWTH : 0;
+    const x0 = v.x - grow;
+    const y0 = v.y - grow;
+    const x1 = v.x + v.size - 2 + grow; // -2 for gap
+    const y1 = v.y + v.size - 2 + grow;
 
     // Pad to 4 colors with black
     while (vertexColors.length < 4) {
