@@ -11,7 +11,7 @@ import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import { initHelp } from './help.ts';
-import { initHebrewToggle } from './hebrewDisplay.ts';
+import { applyHebrewChoice } from './hebrewDisplay.ts';
 import {
   configureAnalytics,
   trackOverlaySwitch,
@@ -1035,7 +1035,7 @@ async function main(): Promise<void> {
 
   const panelFooter = document.getElementById('panel-footer');
   if (panelFooter) {
-    initHebrewToggle(panelFooter);
+    applyHebrewChoice();
     initHelp(panelFooter);
   }
 
