@@ -59,6 +59,10 @@ not merged by then.
 - **The phone's sheet** is as tall as what is open, capped at half the screen,
   with a drag to full, and a constant height during a story. *(Design.)*
 - **The verse popup and the zoom buttons stay as they are.** *(Design.)*
+- **The rail and the panel go on the left**, as the mockups drew them —
+  Danyel's decision on 2026-09-24. The map therefore needs its own origin:
+  the frame plan, as amended on the `ui-frame` branch, adds a task that
+  measures every pointer from the canvas's corner before the panel moves.
 - **The URL** will carry a search and an overlay side by side, and a story and
   its stop. Danyel's `story=<name>&stop=<id>` and `search=<terms>&overlay=<id>`
   were an approximation; the key names are not settled. *(Design.)*
@@ -69,12 +73,6 @@ not merged by then.
 
 ## Open, for Danyel
 
-- **The rail's side.** The mockups drew the rail and the panel on the left.
-  The frame plan puts them on the right, where the panel is today, because
-  `main.ts` treats the pointer's window coordinates as map coordinates and
-  that only holds while the map starts at the window's left edge. Moving it
-  left is possible but means offsetting every pointer and label coordinate
-  first.
 - **The rail's icons** are placeholders. Danyel wants them clean and
   thematically right; they are a design task of their own.
 - **When the phone's top bar comes back** after hiding. The plan uses 2
