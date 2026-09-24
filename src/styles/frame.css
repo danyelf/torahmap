@@ -168,8 +168,17 @@ body[data-mode='explore'] #tools {
 }
 
 #story-progress {
-  color: #999;
-  font-size: 13px;
+  flex: 1 1 auto;
+  height: 3px;
+  border-radius: 2px;
+  background: #333;
+  overflow: hidden;
+}
+
+#story-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
 }
 
 #menu {
@@ -252,6 +261,29 @@ body[data-menu] #story-content {
 
 body.story-at-end #story-cue,
 body[data-menu] #story-cue {
+  display: none;
+}
+
+/* With the status line showing, the cue hugs the content's bottom edge
+   rather than the status line's: 44px is .folded-line's min-height, less
+   the cue's usual 8px overhang past that edge. */
+#story:has(#story-status:not([hidden])) #story-cue {
+  bottom: 36px;
+}
+
+/* The story's own status line, at the foot of its column: the folded line's
+   look, reused, but not a control. */
+#story-status {
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+  cursor: default;
+}
+
+#story-status:hover {
+  background: none;
+}
+
+#story-status[hidden] {
   display: none;
 }
 
@@ -440,10 +472,6 @@ body[data-open='menu'] #menu-panel {
 #folded {
   flex-shrink: 0;
   border-top: 1px solid var(--line);
-}
-
-body[data-open='overlay'] #folded {
-  display: none;
 }
 
 .folded-line {

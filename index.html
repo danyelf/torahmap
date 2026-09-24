@@ -128,13 +128,16 @@
           >
             ☰
           </button>
-          <span id="story-progress"></span>
+          <div id="story-progress" role="progressbar" aria-label="Story progress" aria-valuemin="1">
+            <div id="story-progress-fill"></div>
+          </div>
           <div id="menu" class="menu" hidden></div>
         </div>
         <div id="story-content"></div>
         <svg id="story-cue" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="1,2 9,50 1,98" />
         </svg>
+        <div id="story-status" class="folded-line" hidden><span class="folded-summary"></span></div>
       </section>
 
       <section id="tools">

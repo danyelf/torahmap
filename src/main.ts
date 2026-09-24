@@ -347,10 +347,13 @@ async function main(): Promise<void> {
   const storyMenu = document.getElementById('menu')!;
   const storyMenuButton = document.getElementById('story-menu')!;
   const storyProgress = document.getElementById('story-progress')!;
+  const storyProgressFill = document.getElementById('story-progress-fill')!;
   const menuPanel = document.getElementById('menu-panel')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
   const foldedSummary = document.querySelector<HTMLElement>('#folded-overlay .folded-summary')!;
+  const storyStatus = document.getElementById('story-status')!;
+  const storyStatusSummary = storyStatus.querySelector<HTMLElement>('.folded-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
   const railButtons = [...document.querySelectorAll<HTMLButtonElement>('.rail-button[data-panel]')];
   const railMenuButton = document.querySelector<HTMLButtonElement>('.rail-menu')!;
@@ -973,10 +976,14 @@ async function main(): Promise<void> {
     renderOverlayControls();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
-    foldedSummary.innerHTML = summaryHtml(
+    const summary = summaryHtml(
       currentOverlay?.name,
       currentOverlay?.summary?.(currentSettings()) ?? {},
     );
+    foldedSummary.innerHTML = summary;
+    storyStatusSummary.innerHTML = summary;
+    // A story's opening stops carry no overlay; "No overlay" there reads as something to do.
+    storyStatus.hidden = currentOverlayId === 'none';
     refreshVersePopup();
   }
 
@@ -1346,7 +1353,9 @@ async function main(): Promise<void> {
     syncStoryStopState(stop);
     lastSyncedStopId = stop.id;
     const { number } = stopAt(resolvedStops, resolvedStops.indexOf(stop));
-    storyProgress.textContent = `${number} of ${resolvedStops.length}`;
+    storyProgressFill.style.width = `${(number / resolvedStops.length) * 100}%`;
+    storyProgress.setAttribute('aria-valuenow', String(number));
+    storyProgress.setAttribute('aria-valuemax', String(resolvedStops.length));
     trackStoryStop(stop.id, number, resolvedStops.length);
   }
 
