@@ -13,15 +13,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:layout": "playwright test -c layout",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --project tsconfig.build.json --noEmit",
+    "typecheck": "tsc --project tsconfig.build.json --noEmit && tsc --project layout/tsconfig.json --noEmit",
     "test:ci": "npm run typecheck && npm run test",
     "validate:haftarah": "npx tsx scripts/overlays/haftarah/generate.ts",
     "generate:text-dating": "npx tsx scripts/generate-text-dating.ts",
     "report:click-resolution": "npx tsx scripts/search/click-resolution-report.ts"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
     "@vitest/coverage-v8": "^4.0.18",
     "happy-dom": "^20.1.0",
     "playwright": "^1.58.2",
