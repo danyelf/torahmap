@@ -17,7 +17,7 @@
 - The rail and the panel sit on the **left**, as the mockups draw them (Danyel's decision). Everything the map draws or hit-tests is in the map's own coordinates, measured from the canvas's top-left corner, which sits at `--map-left` (Task 3). Never read a pointer's `clientX`/`clientY` as a map position.
 - `--panel-width` (380px, `src/styles/main.css:2`) stays the width of everything left of the map, in both modes: the story column is 380px; the rail (56px) and the open panel (324px) together are 380px. The map does not change width when the mode changes.
 - The verse popup stays at the bottom-left of the map and the zoom buttons at its bottom-right, with their styles unchanged; only their offsets follow the map. Hide Hebrew keeps its storage key, `torahMap.englishOnly`.
-- Every new touch target on a phone is at least 44×44 CSS px.
+- Every new touch target is at least 24×24 CSS px, WCAG 2.2 AA's minimum (Danyel's choice: this is a map to read, not a panel of buttons). The frame's own controls are built at 44, which clears it.
 - Telemetry values stay as they are: `ExitHow` `'fold'` now means "left the story for the tools", because `scripts/telemetry/` filters on the value.
 - Comments follow AGENTS.md: present tense, only what the code cannot say. No ticket numbers or step labels in code.
 - `npm` only. The pre-commit hook (prettier on staged files, typecheck, vitest) must pass on every commit. The code in this plan is not guaranteed to be in Prettier's layout, so every commit step runs `npm run format` first.

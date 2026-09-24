@@ -32,7 +32,7 @@ A screenshot compared against a screenshot of the same code proves nothing. Thes
 | `chrome-apart` | popup under the panel, zoom buttons under the popup |
 | `map-clear-of-panel` | the panel covering the map it describes |
 | `text-not-clipped` | labels cut off or spilling out of their box |
-| `touch-targets`, on touch screens | controls too small for a thumb: under 44×44 CSS px, Apple's guideline (WCAG AA's floor is 24) |
+| `touch-targets`, on touch screens | controls too small to hit: under 24×24 CSS px, WCAG 2.2 AA (Danyel chose it over Apple's 44: this is a map to read, not a panel of buttons) |
 | the map rendered, in more than one colour | a blank canvas |
 
 There is no rule against horizontal scrolling. Everything in this interface is fixed-position, which never widens the document, and `body` hides its overflow, so an element too wide is cut off rather than scrollable; `chrome-in-viewport` catches it.
@@ -629,7 +629,7 @@ export const RULES = [
   'touch-targets',
 ] as const;
 
-const TOUCH_MIN = 44;
+const TOUCH_MIN = 24;
 
 export async function checkLayout(page: Page, state: string, chrome: Chrome): Promise<void> {
   const info = test.info();
