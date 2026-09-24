@@ -3,13 +3,18 @@ import { join, resolve } from 'node:path';
 import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
 interface Cell {
-  shot: string;
+  shot?: string;
   failures: string[];
   known: string[];
 }
 
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// A test's own errors carry ANSI colour codes from Playwright's terminal reporter.
+const stripAnsi = (s: string): string => s.replace(/\u001b\[[0-9;]*m/g, '');
+
+const sanitizeFilename = (s: string): string => s.replace(/[^A-Za-z0-9._-]/g, '-');
 
 /** Writes every layout screenshot as a grid: states down, screen sizes across. */
 export default class ContactSheet implements Reporter {
@@ -24,17 +29,28 @@ export default class ContactSheet implements Reporter {
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
-    const shot = result.attachments.find((a) => a.name === 'layout' && a.path);
-    if (!shot?.path) return;
+    // The rules project has no page and never attaches a screenshot; every other
+    // project runs against a screen and belongs on the sheet even when a test
+    // fails before it gets as far as capturing one.
     const screen = test.parent.project()!.name;
+    if (screen === 'rules') return;
     if (!this.screens.includes(screen)) this.screens.push(screen);
-    mkdirSync(join(this.dir, 'shots'), { recursive: true });
-    const file = `shots/${test.title}--${screen}.png`;
-    copyFileSync(shot.path, join(this.dir, file));
+
+    const shot = result.attachments.find((a) => a.name === 'layout' && a.path);
+    let file: string | undefined;
+    if (shot?.path) {
+      mkdirSync(join(this.dir, 'shots'), { recursive: true });
+      file = `shots/${sanitizeFilename(test.title)}--${sanitizeFilename(screen)}.png`;
+      copyFileSync(shot.path, join(this.dir, file));
+    }
+
+    const failures = result.errors.map((e) => stripAnsi(e.message ?? '').split('\n')[0]);
+    if (!file && failures.length > 0) failures.unshift('no screenshot: failed before capture');
+
     const row = this.cells.get(test.title) ?? new Map<string, Cell>();
     row.set(screen, {
       shot: file,
-      failures: result.errors.map((e) => (e.message ?? '').split('\n')[0]),
+      failures,
       known: test.annotations
         .filter((a) => a.type === 'known layout defect')
         .map((a) => a.description ?? ''),
@@ -55,7 +71,10 @@ export default class ContactSheet implements Reporter {
               ...c.failures.map((f) => `<li class="fail">${esc(f)}</li>`),
               ...c.known.map((k) => `<li class="known">${esc(k)}</li>`),
             ].join('');
-            return `<td><a href="${c.shot}"><img src="${c.shot}" loading="lazy"></a><ul>${notes}</ul></td>`;
+            const img = c.shot
+              ? `<a href="${esc(c.shot)}"><img src="${esc(c.shot)}" loading="lazy"></a>`
+              : '';
+            return `<td>${img}<ul>${notes}</ul></td>`;
           })
           .join('');
         return `<tr><th>${esc(state)}</th>${tds}</tr>`;
