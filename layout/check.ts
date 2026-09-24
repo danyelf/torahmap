@@ -23,7 +23,10 @@ export const RULES = [
   'touch-targets',
 ] as const;
 
-const TOUCH_MIN = 44;
+// WCAG 2.2 AA (success criterion 2.5.8) sets 24×24 as its minimum; this
+// interface is a map to read, not a panel of buttons, so it isn't held to
+// the stricter 44px some style guides prefer.
+const TOUCH_MIN = 24;
 
 export async function checkLayout(page: Page, state: string, chrome: Chrome): Promise<void> {
   const info = test.info();

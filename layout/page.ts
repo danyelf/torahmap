@@ -115,13 +115,16 @@ export async function boxes(page: Page, selector: string): Promise<Box[]> {
  * Elements whose text does not fit their box. A block is measured by its
  * scroll width; an inline element has none, so its text is measured against
  * its parent's box instead. Anything a pixel or less across is hidden for
- * screen readers on purpose, and skipped.
+ * screen readers on purpose, and skipped, as is an element whose
+ * `text-overflow` is `ellipsis`: that is a summary truncated on purpose, not
+ * a layout defect.
  */
 export async function clippedText(page: Page, selector: string): Promise<string[]> {
   return page.$$eval(selector, (els) =>
     els.flatMap((el) => {
       const h = el as HTMLElement;
       if (h.closest('[inert]') || !h.textContent?.trim()) return [];
+      if (getComputedStyle(h).textOverflow === 'ellipsis') return [];
       const box = h.getBoundingClientRect();
       if (box.width <= 1 || box.height <= 1) return [];
       const name = h.id ? `#${h.id}` : `${h.tagName.toLowerCase()}.${[...h.classList].join('.')}`;
