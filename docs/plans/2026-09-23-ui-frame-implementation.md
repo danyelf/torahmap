@@ -20,7 +20,7 @@
 - Every new touch target on a phone is at least 44×44 CSS px.
 - Telemetry values stay as they are: `ExitHow` `'fold'` now means "left the story for the tools", because `scripts/telemetry/` filters on the value.
 - Comments follow AGENTS.md: present tense, only what the code cannot say. No ticket numbers or step labels in code.
-- `npm` only. The pre-commit hook (prettier, typecheck, vitest) must pass on every commit.
+- `npm` only. The pre-commit hook (prettier on staged files, typecheck, vitest) must pass on every commit. The code in this plan is not guaranteed to be in Prettier's layout, so every commit step runs `npm run format` first.
 - This is a UI change: it is not done until Danyel has looked at it on the PR's preview link and agreed.
 
 ## Decisions this plan takes that Danyel has not seen
@@ -54,7 +54,7 @@ src/main.ts                   the wiring
 src/__tests__/unit/frame.test.ts, menu.test.ts, storiesPanel.test.ts, aboutPanel.test.ts   NEW
 src/__tests__/unit/overlays/descriptions.test.ts   NEW (the registry checks from help.test.ts)
 src/__tests__/unit/sheet.test.ts, help.test.ts     DELETED
-layout/app.spec.ts            the frame's states (after the layout-tests branch merges)
+layout/app.ts                 the frame's chrome and states (after the layout-tests branch merges)
 CLAUDE.md                     Features and Interactions
 ```
 
@@ -306,10 +306,12 @@ Expected: all pass.
 - [ ] **Step 6: Commit**
 
 ```bash
+npm run format
 git add src/frame.ts src/__tests__/unit/frame.test.ts
 git commit -m "The frame's state and transitions, as a pure module
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -611,7 +613,7 @@ export function aboutHtml(overlays: readonly { name: string; credits?: readonly 
 
 If the overview or controls text in `src/help.ts` differs from the above when you read it, copy what `src/help.ts` says; it is the source.
 
-`src/styles/about.css`: copy these rules from `src/styles/help.css`, renaming the `.help-body` prefix to `#about-panel` where a rule has it: `.controls-table` and its three descendants, every `.credit*` rule (`.credits-list`, `.credit-block`, `.credit-block-title`, `.credit-rows`, `.credit-row`, `.credit-source`, `.credit-license`, `.credit-meta`, `a.credit-license` and its hover), the `@media (max-width: 480px)` block, and `.help-body p`, `.help-body ul`, `.help-body li`, `.help-body h2` as `#about-panel p`, `ul`, `li`, `.panel-title`. Drop every `.help-modal`, `.help-backdrop`, `.help-content`, `.help-header`, `.help-tab*`, `.help-close`, `.overlay-list*` and `.link-button` rule. Then add:
+`src/styles/about.css`: copy these rules from `src/styles/help.css`, renaming the `.help-body` prefix to `#about-panel` where a rule has it: `.controls-table` and its three descendants, every `.credit*` rule (`.credits-list`, `.credit-block`, `.credit-block-title`, `.credit-rows`, `.credit-row`, `.credit-source`, `.credit-license`, `.credit-meta`, `a.credit-license` and its hover), the `@media (max-width: 480px)` block, and `.help-body p`, `.help-body ul`, `.help-body li`, `.help-body h2` as `#about-panel p`, `ul`, `li`, `.panel-title`. Keep the link colours, with their comment on contrast: `.help-body a`, `.help-body a:hover` and `.help-body a:focus-visible` become `#about-panel a` and its `:hover` and `:focus-visible` — in `help.css` each is grouped with a `.link-button` selector, so take the `.link-button` half out of the group rather than dropping the rule. Drop every `.help-modal`, `.help-backdrop`, `.help-content`, `.help-header`, `.help-tab*`, `.help-close`, `.overlay-list*` rule and the rules for `.link-button` alone. Then add:
 
 ```css
 .about-section {
@@ -688,10 +690,12 @@ Run: `npm run typecheck && npx vitest run`
 Expected: no type errors; every test passes, including the old `help.test.ts`.
 
 ```bash
+npm run format
 git add src/menu.ts src/storiesPanel.ts src/aboutPanel.ts src/styles/about.css src/hebrewDisplay.ts src/main.ts src/__tests__/unit/menu.test.ts src/__tests__/unit/storiesPanel.test.ts src/__tests__/unit/aboutPanel.test.ts src/__tests__/unit/overlays/descriptions.test.ts
 git commit -m "The menu, Stories and About panels, as HTML the frame will place
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -710,7 +714,7 @@ This task replaces the markup, the stylesheet and the panel wiring in `main.ts` 
 - Produces, as the contract with the stylesheet and the layout tests:
   - on `<body>`: `data-mode="story|explore"`, `data-open="overlay|stories|about|menu"` (absent when nothing is open), `data-menu` (story menu down), `data-full` (phone sheet full), `data-bar-hidden` (phone top bar hidden)
   - ids: `#rail`, `#top-bar`, `#top-menu`, `#panel`, `#sheet-grabber`, `#story`, `#story-menu`, `#story-progress`, `#menu`, `#story-content`, `#story-cue`, `#tools`, `#panel-body`, `#overlay-panel`, `#overlay-select`, `#overlay-description`, `#overlay-controls`, `#overlay-legend`, `#stories-panel`, `#about-panel`, `#menu-panel`, `#folded`, `#folded-overlay`
-  - classes: `.rail-button[data-panel]`, `.menu-button`, `.menu-item[data-action]`, `.folded-line[data-panel]`, `.tool[data-panel]`
+  - classes: `.rail-button[data-panel]`, `.menu-button`, `.menu-item[data-action]`, `.folded-line[data-panel]`, `.tool`
 
 - [ ] **Step 1: Replace the panel's markup**
 
@@ -766,7 +770,7 @@ Then, in `index.html`, replace everything from `<div id="right-panel">` to its c
 
       <section id="tools">
         <div id="panel-body">
-          <div id="overlay-panel" class="tool" data-panel="overlay">
+          <div id="overlay-panel" class="tool">
             <div class="panel-picker">
               <label for="overlay-select">Overlay</label>
               <!-- The overlays themselves are added here at startup, from the
@@ -779,9 +783,9 @@ Then, in `index.html`, replace everything from `<div id="right-panel">` to its c
             <div id="overlay-controls"></div>
             <div id="overlay-legend"></div>
           </div>
-          <div id="stories-panel" class="tool" data-panel="stories"></div>
-          <div id="about-panel" class="tool" data-panel="about"></div>
-          <div id="menu-panel" class="tool menu" data-panel="menu"></div>
+          <div id="stories-panel" class="tool"></div>
+          <div id="about-panel" class="tool"></div>
+          <div id="menu-panel" class="tool menu"></div>
         </div>
         <div id="folded">
           <button id="folded-overlay" class="folded-line" type="button" data-panel="overlay">
@@ -1095,10 +1099,12 @@ body[data-menu] #story-cue {
   flex-direction: column;
 }
 
+/* A panel keeps its height and #panel-body scrolls it. Search's results are
+   the exception, below. */
 .tool {
   display: none;
   flex-direction: column;
-  min-height: 0;
+  flex-shrink: 0;
 }
 
 body[data-open='overlay'] #overlay-panel,
@@ -1318,6 +1324,13 @@ body[data-open='overlay'] #folded {
     --bar-height: 52px;
   }
 
+  /* Set here rather than measured, so the story's stops are resolved against
+     the map's final height from the first frame. main.ts measures it only
+     while exploring; this rule on <body> outranks its value on <html>. */
+  body[data-mode='story'] {
+    --sheet-shown: var(--story-sheet);
+  }
+
   #canvas {
     width: 100vw;
     height: calc(100svh - var(--sheet-shown));
@@ -1369,7 +1382,7 @@ body[data-open='overlay'] #folded {
     display: block;
     flex-shrink: 0;
     width: 100%;
-    height: 22px;
+    height: 44px;
     padding: 0;
     border: none;
     background: none;
@@ -1472,7 +1485,9 @@ body[data-open='overlay'] #folded {
 
 In `src/styles/verse-popup.css`, change `body.sheet-tall #verse-popup` to `body[data-full] #verse-popup`. Then:
 
-Run: `grep -rn "story-folded\|sheet-down\|sheet-tall\|no-overlay-quiet\|right-panel\|panel-footer\|controls-toggle\|story-strip\|footer-link" src index.html`
+Two more places name the old panel. In `scripts/og-image.mjs`, the style that hides the interface for the link-preview image lists `#right-panel`; change it to `#panel,#rail,#top-bar`. In `src/camera.ts`, the comment near line 15 says "the right-panel sidebar"; change it to "the panel".
+
+Run: `grep -rn "story-folded\|sheet-down\|sheet-tall\|no-overlay-quiet\|right-panel\|panel-footer\|controls-toggle\|story-strip\|footer-link" src scripts index.html`
 Expected: matches only in `src/main.ts`, which Step 5 rewrites. Any match elsewhere is an old selector to update.
 
 - [ ] **Step 5: Rewire `main.ts`**
@@ -1486,8 +1501,9 @@ import { DRAG_PX, STORY, exploreFrame, nextFrame, type Frame, type FrameEvent, t
 import { menuHtml, type StoryPlace } from './menu.ts';
 import { storiesHtml } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
-import { bindHebrewToggle } from './hebrewDisplay.ts';
 ```
+
+and add `bindHebrewToggle` to the existing import from `./hebrewDisplay.ts`, which Task 2 left importing `applyHebrewChoice`.
 
 Keep `applyHebrewChoice` imported from Task 2. Add `stopLabel` to the existing import from `./scrollytelling/storyPanel` if it is not already imported (it is, for the story strip). Import `getAllOverlays` from `./overlays/registry.ts` if `main.ts` does not already.
 
@@ -1571,7 +1587,13 @@ Delete `let cancelOpening` (line 348) and its comment.
     }
   }
 
+  const sameFrame = (a: Frame, b: Frame): boolean =>
+    a.mode === b.mode && a.open === b.open && a.menu === b.menu && a.full === b.full;
+
   function setFrame(next: Frame): void {
+    // Every touch on the map arrives here; most change nothing, and redrawing
+    // an open panel mid-click would lose what was clicked.
+    if (sameFrame(next, frame)) return;
     frame = next;
     applyFrame();
   }
@@ -1588,7 +1610,9 @@ Delete `let cancelOpening` (line 348) and its comment.
   }
 ```
 
-`resolvedStops` is declared later (near line 1062), but `applyFrame` only reads it when a menu or panel is drawn, which cannot happen before the story has loaded. The one early call, `setStoryOpen` during startup, draws no panel: the story menu is up and nothing is open.
+`setStoryOpen` assigns `frame` and calls `applyFrame` directly rather than through `setFrame`, because entering or leaving the story must always redraw.
+
+`resolvedStops` is declared later (near line 1062), but `applyFrame` only reads it when a menu or panel is drawn, which cannot happen before the story has loaded. The one early call, 5p's `applyFrame()` at startup, draws no panel: the story menu is up and nothing is open.
 
 **5g. The map lowers the sheet, and hides the phone's bar.** In the canvas `pointerdown` handler (line 642), replace:
 
@@ -1707,7 +1731,9 @@ Delete `const rightPanel = …` (line 1119). Replace `openStory` (lines 1121-116
       syncUrl(true);
       return;
     }
-    const panelName = action ?? target.closest<HTMLElement>('[data-panel]')?.dataset.panel;
+    // Only the rail and the folded lines choose a panel; a click inside an open one must not.
+    const chooser = target.closest<HTMLElement>('.rail-button[data-panel], .folded-line[data-panel]');
+    const panelName = action ?? chooser?.dataset.panel;
     if (panelName) dispatch({ type: 'choose', panel: panelName as Panel });
   }
   for (const id of ['panel', 'rail', 'top-bar']) {
@@ -1763,17 +1789,14 @@ Delete `const rightPanel = …` (line 1119). Replace `openStory` (lines 1121-116
     storyProgress.textContent = `${stopAt(resolvedStops, resolvedStops.indexOf(stop)).number} of ${resolvedStops.length}`;
 ```
 
-**5o. The canvas can now change height with the mode.** On a phone the sheet's height differs between the story and the explore view, so the canvas does too, and a stop's camera is resolved against the canvas's size. In the canvas `ResizeObserver` (near line 990), after `resizeCanvas(); render();`, add:
+**5o. The map's height during a story.** A stop's camera is resolved against the canvas's size, and `main.ts` deliberately does not re-resolve when a phone's sheet changes the map's height. That stays right, because the story's sheet is a constant height and `frame.css` sets `--sheet-shown` for the story in CSS from the first paint (`body[data-mode='story']` in the phone block), so the story always resolves against the same map. Do not add a re-resolve to the canvas `ResizeObserver`. Update the comment above the window `resize` listener (near line 1377), which describes the old sheet, to:
 
 ```ts
-      // A stop centres its verse at a height that depends on the canvas's.
-      if (typeof resolvedStops !== 'undefined') {
-        resolvedStops = resolveStory();
-        scheduleStoryFrame();
-      }
+  // A stop's camera places its verse, or fits its region, against the map's
+  // size, which the window sets. A phone's sheet also changes the map's
+  // height, but only outside the story, whose sheet is a constant height, so
+  // it is not followed.
 ```
-
-If `resolvedStops` is declared with `let` after this observer, the `typeof` guard does not protect against the temporal dead zone. In that case move the observer's `.observe(canvas)` call to just after `let resolvedStops = resolveStory();` instead, and drop the guard.
 
 **5p. Startup.** At the end of `main()`'s synchronous setup, before `restoreFromUrl` runs, make sure the page starts in the story frame: add `applyFrame();` directly after `let stopElements = renderStoryPanel(…)` (near line 1063).
 
@@ -1805,7 +1828,7 @@ Run it in the background and confirm it responds: `curl -s -o /dev/null -w "%{ht
 Check each of these by hand at desktop width, then with the window under 768px wide:
 - `http://localhost:5299/` opens the story: the column, the map, one ☰, "1 of 21" in the header.
 - ☰ drops the menu over the top of the story, which stays visible and dimmed below; ☰ again lifts it; touching the map lifts it.
-- "Overlays" in the menu leaves the story: on a desktop the rail appears with Overlay lit; on a phone the sheet shrinks to the folded line, and the top bar appears.
+- "Overlays" in the menu leaves the story and opens the overlay panel: on a desktop beside the rail, with Overlay lit; on a phone in the sheet, with the top bar above the map. Tapping the map then folds the phone's sheet to its line.
 - The rail's Stories shows "Stop N of 21" with the stop the story was at; Continue returns to it; "Start from the beginning" goes to stop 1.
 - About & settings shows Hide Hebrew; it hides the Hebrew in the verse popup and in the map's labels, and survives a reload.
 - On a desktop with About open, the overlay's folded line sits at the bottom of the column; clicking it opens the overlay panel.
@@ -1818,10 +1841,12 @@ Stop the server by its PID when done.
 - [ ] **Step 9: Commit**
 
 ```bash
+npm run format
 git add -A index.html src
 git commit -m "The frame: the story as a mode, a rail and panel on desktop, a sheet on a phone
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -1855,10 +1880,12 @@ In **Interactions**, the opening line points at "The help modal's Controls tab";
 - [ ] **Step 2: Commit**
 
 ```bash
+npm run format
 git add CLAUDE.md
 git commit -m "Describe the frame in CLAUDE.md
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -1868,10 +1895,10 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 **Depends on:** the `layout-tests` branch (`docs/plans/2026-09-23-layout-tests-implementation.md`) merged into `main`. If it has not merged, stop here, open the PR as a draft with Tasks 1-4, and say so.
 
 **Files:**
-- Modify: `layout/app.spec.ts`, `layout/known.ts`
+- Modify: `layout/app.ts`, `layout/known.ts`
 
 **Interfaces:**
-- Consumes: `openMap`, `mapPixels` (`layout/page.ts`); `checkLayout`, `Chrome` (`layout/check.ts`); `KNOWN` (`layout/known.ts`).
+- Consumes: `Chrome` (`layout/check.ts`); `State`, `CHROME`, `STATES` (`layout/app.ts`, which `layout/app.spec.ts` and `layout/known.spec.ts` import); `KNOWN` (`layout/known.ts`).
 
 - [ ] **Step 1: Bring the layout tests in**
 
@@ -1881,20 +1908,24 @@ git rebase origin/main
 npm install
 ```
 
-Expected: `ls layout/app.spec.ts` exists.
+Expected: `ls layout/app.ts layout/app.spec.ts` both exist.
 
 - [ ] **Step 2: Point the rules at the frame's chrome and states**
 
-In `layout/app.spec.ts`, replace `CHROME` and `STATES` with:
+In `layout/app.ts`, replace the exported `CHROME` and `STATES` — keep them exported, and keep the `State` interface — with:
 
 ```ts
-const CHROME: Chrome = {
+// The frame (index.html, src/styles/frame.css). The top bar is left out of
+// `fixed`: on a phone it lies over the map by design. Links in the story's
+// prose and in the credits are running text, which touch-size rules exempt.
+export const CHROME: Chrome = {
   fixed: '#panel, #rail, #zoom-controls, #verse-popup.visible',
   map: '#canvas',
   panel: '#panel, #rail',
   interactive:
-    '#panel button, #panel select, #panel input, #panel a, #rail button, #top-bar button, ' +
-    '#verse-popup button, #verse-popup a, #zoom-controls button',
+    '#panel button, #panel select, #panel input, ' +
+    '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
+    '#rail button, #top-bar button, #verse-popup button, #verse-popup a, #zoom-controls button',
   text: '.folded-line, .menu-item, .rail-label, #story-progress, #panel label, #verse-popup .ref-text',
 };
 
@@ -1904,7 +1935,7 @@ async function viaMenu(page: Page, action: string): Promise<void> {
   await page.locator(`.menu-item[data-action="${action}"]:visible`).click();
 }
 
-const STATES: State[] = [
+export const STATES: State[] = [
   { name: 'story-opening', hash: 'story=intro' },
   { name: 'story-stop-with-verse', hash: 'story=abraham_call' },
   {
@@ -1929,11 +1960,11 @@ const STATES: State[] = [
 ];
 ```
 
-The top bar is left out of `fixed` on purpose: on a phone it lies over the map by design, and the map-and-panel rule would report it.
+There is no `modal` any more: the About panel is part of the panel. The test "measuring finds the panel and its controls" in `app.spec.ts` reads `CHROME.panel` and `CHROME.interactive`, so it follows these selectors with no change.
 
 - [ ] **Step 3: Start `known.ts` again**
 
-Every entry in `layout/known.ts` describes the interface this branch removed. Empty it back to `{}`; stale keys naming states that no longer exist would never be checked and never be noticed.
+Every entry in `layout/known.ts` describes the interface this branch removed. Empty it to `{}`; `known.spec.ts` would reject its keys anyway, since they name states that no longer exist.
 
 - [ ] **Step 4: Run, and bring the failures to Danyel**
 
@@ -1945,10 +1976,12 @@ Fix what is plainly a defect of the frame — overlap, clipping, a small touch t
 - [ ] **Step 5: Commit**
 
 ```bash
+npm run format
 git add layout/
 git commit -m "Layout tests cover the frame's states
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
