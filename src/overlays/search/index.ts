@@ -433,11 +433,7 @@ function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] |
 
   if (termIndices && termIndices.length > 0) {
     const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(active, i)]);
-    if (colors.length === 1) {
-      return colors[0];
-    }
-    // The shader draws at most four.
-    return colors.slice(0, 4) as Color[];
+    return colors.length === 1 ? colors[0] : colors;
   }
 
   const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;

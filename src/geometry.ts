@@ -48,10 +48,6 @@ export function buildItemGeometry<T>(
     const x1 = v.x + v.size - 2; // -2 for gap
     const y1 = v.y + v.size - 2;
 
-    // Verse world position seeds the shader's per-verse dithering noise
-    const seedX = v.x;
-    const seedY = v.y;
-
     // Pad to 4 colors with black
     while (vertexColors.length < 4) {
       vertexColors.push([0, 0, 0]);
@@ -68,8 +64,9 @@ export function buildItemGeometry<T>(
       data[offset++] = colorCount;
       data[offset++] = u;
       data[offset++] = vCoord;
-      data[offset++] = seedX;
-      data[offset++] = seedY;
+      // The verse's corner seeds the shader's per-verse dithering noise
+      data[offset++] = x0;
+      data[offset++] = y0;
     };
 
     // Triangle 1 (top-left, top-right, bottom-left)
