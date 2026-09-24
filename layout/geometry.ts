@@ -60,3 +60,24 @@ export function tooSmallToTouch(boxes: Box[], min: number): string[] {
     .filter((b) => b.width < min - SLACK || b.height < min - SLACK)
     .map((b) => `${b.name} is ${px(b.width)}×${px(b.height)}px, under ${min}`);
 }
+
+/** An element's full box, and the part of it not hidden or clipped away (null: none). */
+export interface Shown {
+  full: Box;
+  visible: Rect | null;
+}
+
+/** What keeps the elements `selector` matched from showing in full, if anything. */
+export function notShownInFull(selector: string, found: Shown[]): string[] {
+  if (found.length === 0) return [`${selector} matches nothing`];
+  return found.flatMap(({ full, visible }) => {
+    if (!visible) return [`${full.name} is hidden`];
+    const sides = [
+      visible.x > full.x + SLACK && 'left',
+      visible.y > full.y + SLACK && 'top',
+      visible.x + visible.width < full.x + full.width - SLACK && 'right',
+      visible.y + visible.height < full.y + full.height - SLACK && 'bottom',
+    ].filter(Boolean);
+    return sides.length ? [`${full.name} is cut off at the ${sides.join(', ')} edge`] : [];
+  });
+}

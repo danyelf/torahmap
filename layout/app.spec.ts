@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CHROME, STATES } from './app.ts';
-import { checkLayout } from './check.ts';
-import { boxes, DRAWN_FLOOR, mapPixels, openMap } from './page.ts';
+import { checkLayout, measureLayout } from './check.ts';
+import { boxes, DRAWN_FLOOR, mapPixels, mapReady, openMap } from './page.ts';
 
 test('the map renders in more than one colour with an overlay on', async ({ page }) => {
   await openMap(page, 'overlay=commentary');
@@ -16,7 +16,7 @@ test('the render check sees a map that drew nothing', async ({ page }) => {
     WebGL2RenderingContext.prototype.drawArrays = () => {};
   });
   await page.goto('/#overlay=commentary');
-  await page.locator('html[data-map-ready]').waitFor({ state: 'attached', timeout: 30_000 });
+  await mapReady(page);
   expect((await mapPixels(page)).drawn).toBeLessThan(DRAWN_FLOOR);
 });
 
@@ -26,14 +26,37 @@ test('measuring finds the panel and its controls', async ({ page }) => {
   expect(await boxes(page, CHROME.interactive)).not.toEqual([]);
 });
 
+test('the rules report a layout broken on purpose', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one screen proves the rules can fail');
+  const state = STATES.find((s) => s.name === 'explore-verse-pinned')!;
+  await openMap(page, state.hash);
+  await page.addStyleTag({
+    content:
+      '#right-panel { right: -100px !important; } #canvas { width: 100vw !important; } ' +
+      '#zoom-controls { right: 0 !important; }',
+  });
+  await page.locator('#overlay-select').evaluate((el) => el.remove());
+  const measured = await measureLayout(page, CHROME, state.shown);
+  expect(measured['chrome-in-viewport']).toContain('#right-panel crosses the right edge');
+  expect(measured['chrome-apart']).toContainEqual(
+    expect.stringMatching(/^#zoom-controls overlaps #right-panel by/),
+  );
+  expect(measured['map-clear-of-panel']).toContainEqual(
+    expect.stringMatching(/^#canvas overlaps #right-panel by/),
+  );
+  expect(measured['expected-shown']).toEqual(['#overlay-select matches nothing']);
+});
+
 for (const state of STATES) {
   test(state.name, async ({ page }, info) => {
-    await openMap(page, state.hash);
+    const errors = await openMap(page, state.hash);
     await state.then?.(page);
+    expect(errors, `page errors after opening ${state.name}`).toEqual([]);
     const shot = info.outputPath('screen.png');
     await page.screenshot({ path: shot });
     await info.attach('layout', { path: shot, contentType: 'image/png' });
-    await checkLayout(page, state.name, CHROME);
+    await checkLayout(page, state, CHROME);
+    expect(errors, 'page errors while measuring').toEqual([]);
   });
 }
 

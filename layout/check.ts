@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { apart, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
+import type { State } from './app.ts';
+import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
 import { KNOWN } from './known.ts';
-import { boxes, clippedText } from './page.ts';
+import { boxes, clippedText, shown } from './page.ts';
 
 /** The selectors the rules measure, which belong to the interface being tested. */
 export interface Chrome {
@@ -21,36 +22,49 @@ export const RULES = [
   'map-clear-of-panel',
   'text-not-clipped',
   'touch-targets',
+  'expected-shown',
 ] as const;
+
+export type Rule = (typeof RULES)[number];
 
 // WCAG 2.2 AA (success criterion 2.5.8) sets 24×24 as its minimum; this
 // interface is a map to read, not a panel of buttons, so it isn't held to
 // the stricter 44px some style guides prefer.
 const TOUCH_MIN = 24;
 
-export async function checkLayout(page: Page, state: string, chrome: Chrome): Promise<void> {
-  const info = test.info();
+/** Each rule's violations on the page as it is; touch targets only on a touch screen. */
+export async function measureLayout(
+  page: Page,
+  chrome: Chrome,
+  expected: string[] = [],
+): Promise<Partial<Record<Rule, string[]>>> {
   const screen = page.viewportSize()!;
-  const touch = Boolean(info.project.use.hasTouch);
   const onScreen = [chrome.fixed, chrome.interactive, chrome.modal].filter(Boolean).join(', ');
-
-  const measure: Record<(typeof RULES)[number], (() => Promise<string[]>) | null> = {
-    'chrome-in-viewport': async () =>
-      outsideOf(await boxes(page, onScreen), { x: 0, y: 0, ...screen }),
-    'chrome-apart': async () => overlapping(await boxes(page, chrome.fixed)),
-    'map-clear-of-panel': async () =>
-      apart(await boxes(page, chrome.map), await boxes(page, chrome.panel)),
-    'text-not-clipped': () => clippedText(page, chrome.text),
-    'touch-targets': touch
-      ? async () => tooSmallToTouch(await boxes(page, chrome.interactive), TOUCH_MIN)
-      : null,
+  const out: Partial<Record<Rule, string[]>> = {
+    'chrome-in-viewport': outsideOf(await boxes(page, onScreen), { x: 0, y: 0, ...screen }),
+    'chrome-apart': overlapping(await boxes(page, chrome.fixed)),
+    'map-clear-of-panel': apart(await boxes(page, chrome.map), await boxes(page, chrome.panel)),
+    'text-not-clipped': await clippedText(page, chrome.text),
   };
+  if (test.info().project.use.hasTouch) {
+    out['touch-targets'] = tooSmallToTouch(await boxes(page, chrome.interactive), TOUCH_MIN);
+  }
+  const missing: string[] = [];
+  for (const selector of expected) {
+    missing.push(...notShownInFull(selector, await shown(page, selector)));
+  }
+  out['expected-shown'] = missing;
+  return out;
+}
 
+/** Measures the page and fails on every violation that `KNOWN` does not record exactly. */
+export async function checkLayout(page: Page, state: State, chrome: Chrome): Promise<void> {
+  const info = test.info();
+  const measured = await measureLayout(page, chrome, state.shown);
   for (const rule of RULES) {
-    const run = measure[rule];
-    if (!run) continue;
-    const key = `${state}/${info.project.name}/${rule}`;
-    const violations = await run();
+    const violations = measured[rule];
+    if (!violations) continue;
+    const key = `${state.name}/${info.project.name}/${rule}`;
     const known = KNOWN[key];
     if (!known) {
       expect.soft(violations, key).toEqual([]);

@@ -4,14 +4,22 @@ export interface Known {
   violations: string[];
 }
 
+const REPLACED =
+  'Accepted until the redesigned panel replaces the footer links, the controls toggle and the help window.';
+const REPLACED_OR_KEPT =
+  'Accepted until the redesigned panel replaces the footer links, the controls toggle and the ' +
+  'help window, and keeps the other controls listed here at 24px or larger.';
+
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
  * failure whose violations change — fixed, or joined by another — fails the
- * run, so update or remove its entry when it does.
+ * run, so update or remove its entry when it does. The sizes are measured in
+ * Chromium on macOS with its system fonts, so a font or platform change moves
+ * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
   'story-opening/tablet/touch-targets': {
-    reason: 'the footer links go when the panel becomes a menu',
+    reason: REPLACED,
     violations: [
       '#leave-story is 70×16px, under 24',
       '#hebrew-toggle is 78×16px, under 24',
@@ -19,9 +27,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'story-stop-with-verse/tablet/touch-targets': {
-    reason:
-      "the footer links go when the panel becomes a menu; the verse popup's close button and " +
-      'Sefaria link carry over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       'a.sefaria-link is 103×15px, under 24',
       'button.close-btn is 20×20px, under 24',
@@ -31,7 +37,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-no-overlay/tablet/touch-targets': {
-    reason: 'the controls-toggle bar and footer links go when the panel becomes a menu',
+    reason: REPLACED,
     violations: [
       '#controls-toggle is 379×23px, under 24',
       '#return-to-story is 90×16px, under 24',
@@ -40,7 +46,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-commentary/tablet/touch-targets': {
-    reason: 'the controls-toggle bar and footer links go when the panel becomes a menu',
+    reason: REPLACED,
     violations: [
       '#controls-toggle is 379×23px, under 24',
       '#return-to-story is 90×16px, under 24',
@@ -49,9 +55,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-search/tablet/touch-targets': {
-    reason:
-      'the controls-toggle bar and footer links go when the panel becomes a menu; the search ' +
-      'clear button and match-mode chips carry over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       '#controls-toggle is 379×23px, under 24',
       '#search-clear is 17×20px, under 24',
@@ -64,9 +68,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-verse-pinned/tablet/touch-targets': {
-    reason:
-      "the controls-toggle bar and footer links go when the panel becomes a menu; the verse popup's " +
-      'close button and Sefaria link carry over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       'a.sefaria-link is 103×15px, under 24',
       'button.close-btn is 20×20px, under 24',
@@ -77,8 +79,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'about-open/tablet/touch-targets': {
-    reason:
-      'the controls-toggle bar, footer links and help window go when the panel becomes a menu',
+    reason: REPLACED,
     violations: [
       '#controls-toggle is 379×23px, under 24',
       '#return-to-story is 90×16px, under 24',
@@ -88,9 +89,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'story-opening/phone/touch-targets': {
-    reason:
-      "the footer links go when the panel becomes a menu; the phone sheet's grabber carries " +
-      'over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       '#sheet-grabber is 390×20px, under 24',
       '#leave-story is 70×16px, under 24',
@@ -99,9 +98,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'story-stop-with-verse/phone/touch-targets': {
-    reason:
-      'the footer links go when the panel becomes a menu; the sheet grabber, verse ' +
-      "popup's close button and Sefaria link carry over to the new panel, held to 24 there",
+    reason: REPLACED_OR_KEPT,
     violations: [
       'a.sefaria-link is 103×15px, under 24',
       'button.close-btn is 20×20px, under 24',
@@ -112,9 +109,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-no-overlay/phone/touch-targets': {
-    reason:
-      "the footer links go when the panel becomes a menu; the phone sheet's grabber carries " +
-      'over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       '#sheet-grabber is 390×20px, under 24',
       '#return-to-story is 90×16px, under 24',
@@ -123,9 +118,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-commentary/phone/touch-targets': {
-    reason:
-      "the footer links go when the panel becomes a menu; the phone sheet's grabber carries " +
-      'over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       '#sheet-grabber is 390×20px, under 24',
       '#return-to-story is 90×16px, under 24',
@@ -134,9 +127,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-search/phone/touch-targets': {
-    reason:
-      'the footer links go when the panel becomes a menu; the sheet grabber, search clear ' +
-      'button and match-mode chips carry over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       '#sheet-grabber is 390×20px, under 24',
       '#search-clear is 17×20px, under 24',
@@ -149,9 +140,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'explore-verse-pinned/phone/touch-targets': {
-    reason:
-      'the footer links go when the panel becomes a menu; the sheet grabber, ' +
-      "verse popup's close button and Sefaria link carry over to the new panel, held to 24 there",
+    reason: REPLACED_OR_KEPT,
     violations: [
       'a.sefaria-link is 103×15px, under 24',
       'button.close-btn is 20×20px, under 24',
@@ -162,9 +151,7 @@ export const KNOWN: Record<string, Known> = {
     ],
   },
   'about-open/phone/touch-targets': {
-    reason:
-      "the footer links and help window go when the panel becomes a menu; the phone sheet's " +
-      'grabber carries over to the new panel, held to 24 there',
+    reason: REPLACED_OR_KEPT,
     violations: [
       '#sheet-grabber is 390×20px, under 24',
       '#return-to-story is 90×16px, under 24',

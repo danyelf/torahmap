@@ -1,6 +1,6 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
+import type { FullConfig, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
 
 interface Cell {
   shot?: string;
@@ -16,16 +16,29 @@ const stripAnsi = (s: string): string => s.replace(/\u001b\[[0-9;]*m/g, '');
 
 const sanitizeFilename = (s: string): string => s.replace(/[^A-Za-z0-9._-]/g, '-');
 
-/** Writes every layout screenshot as a grid: states down, screen sizes across. */
+/**
+ * Writes every layout screenshot as a grid: states down in the order the spec
+ * declares them, screen sizes across in the config's order.
+ */
 export default class ContactSheet implements Reporter {
   private readonly dir: string;
   private readonly cells = new Map<string, Map<string, Cell>>();
-  private readonly screens: string[] = [];
+  private readonly screens = new Set<string>();
+  private order: string[] = [];
+  // Tests made in a loop share a source line, so rows follow the suite's order instead.
+  private readonly rank = new Map<string, number>();
 
   // Playwright passes a reporter's options through as given, adding configDir;
   // a relative outputDir would otherwise resolve against the working directory.
   constructor(options: { outputDir: string; configDir: string }) {
     this.dir = resolve(options.configDir, options.outputDir);
+  }
+
+  onBegin(config: FullConfig, suite: Suite): void {
+    this.order = config.projects.map((p) => p.name);
+    for (const t of suite.allTests()) {
+      if (!this.rank.has(t.title)) this.rank.set(t.title, this.rank.size);
+    }
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
@@ -41,11 +54,11 @@ export default class ContactSheet implements Reporter {
       copyFileSync(shot.path, join(this.dir, file));
     }
 
-    // A passing check with no screenshot (the render and measurement checks)
+    // A passing or skipped check with no screenshot (the render and measurement checks)
     // has nothing to show; a failing one still belongs on the sheet, whether
     // or not it got as far as capturing one.
-    if (!file && result.status === 'passed') return;
-    if (!this.screens.includes(screen)) this.screens.push(screen);
+    if (!file && (result.status === 'passed' || result.status === 'skipped')) return;
+    this.screens.add(screen);
 
     const failures = result.errors.map((e) => stripAnsi(e.message ?? '').split('\n')[0]);
     if (!file && failures.length > 0) failures.unshift('no screenshot: failed before capture');
@@ -63,10 +76,12 @@ export default class ContactSheet implements Reporter {
 
   onEnd(): void {
     if (this.cells.size === 0) return;
-    const head = this.screens.map((s) => `<th>${esc(s)}</th>`).join('');
+    const screens = this.order.filter((s) => this.screens.has(s));
+    const head = screens.map((s) => `<th>${esc(s)}</th>`).join('');
     const rows = [...this.cells]
+      .sort(([a], [b]) => (this.rank.get(a) ?? 0) - (this.rank.get(b) ?? 0))
       .map(([state, row]) => {
-        const tds = this.screens
+        const tds = screens
           .map((s) => {
             const c = row.get(s);
             if (!c) return '<td></td>';

@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { apart, outsideOf, overlapping, tooSmallToTouch, type Box } from './geometry.ts';
+import {
+  apart,
+  notShownInFull,
+  outsideOf,
+  overlapping,
+  tooSmallToTouch,
+  type Box,
+} from './geometry.ts';
 
 const box = (name: string, x: number, y: number, width: number, height: number): Box => ({
   name,
@@ -49,5 +56,25 @@ test.describe('tooSmallToTouch', () => {
   });
   test('reports the measured size', () => {
     expect(tooSmallToTouch([box('a', 0, 0, 80, 20)], 44)).toEqual(['a is 80×20px, under 44']);
+  });
+});
+
+test.describe('notShownInFull', () => {
+  const full = box('a', 0, 0, 100, 50);
+  test('an element shown in full passes', () => {
+    expect(
+      notShownInFull('.a', [{ full, visible: { x: 0.3, y: 0, width: 99.5, height: 50 } }]),
+    ).toEqual([]);
+  });
+  test('a selector that matches nothing is reported', () => {
+    expect(notShownInFull('.a', [])).toEqual(['.a matches nothing']);
+  });
+  test('a hidden element is reported', () => {
+    expect(notShownInFull('.a', [{ full, visible: null }])).toEqual(['a is hidden']);
+  });
+  test('names every side the element is cut off at', () => {
+    expect(
+      notShownInFull('.a', [{ full, visible: { x: 0, y: 10, width: 100, height: 30 } }]),
+    ).toEqual(['a is cut off at the top, bottom edge']);
   });
 });

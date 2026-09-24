@@ -5,6 +5,8 @@ export interface State {
   name: string;
   hash: string;
   then?: (page: Page) => Promise<void>;
+  /** Elements that must show in full, so a selector that stops matching fails rather than measuring nothing. */
+  shown?: string[];
 }
 
 // Today's panel, story strip, footer and help window (index.html,
@@ -25,15 +27,32 @@ export const CHROME: Chrome = {
 };
 
 export const STATES: State[] = [
-  { name: 'story-opening', hash: 'story=intro' },
-  { name: 'story-stop-with-verse', hash: 'story=abraham_call' },
-  { name: 'explore-no-overlay', hash: 'zoom=0.5' },
-  { name: 'explore-commentary', hash: 'overlay=commentary' },
-  { name: 'explore-search', hash: `overlay=search&q=${encodeURIComponent('אברהם')}` },
-  { name: 'explore-verse-pinned', hash: 'overlay=commentary&verse=Genesis.12.1' },
+  {
+    name: 'story-opening',
+    hash: 'story=intro',
+    shown: ['#story-content', '.story-stop[data-stop-id="intro"] .story-text'],
+  },
+  {
+    name: 'story-stop-with-verse',
+    hash: 'story=abraham_call',
+    shown: ['#story-content', '.story-stop[data-stop-id="abraham_call"] .story-text'],
+  },
+  { name: 'explore-no-overlay', hash: 'zoom=0.5', shown: ['#overlay-select'] },
+  { name: 'explore-commentary', hash: 'overlay=commentary', shown: ['#overlay-select'] },
+  {
+    name: 'explore-search',
+    hash: `overlay=search&q=${encodeURIComponent('אברהם')}`,
+    shown: ['#overlay-select', '#search-input'],
+  },
+  {
+    name: 'explore-verse-pinned',
+    hash: 'overlay=commentary&verse=Genesis.12.1',
+    shown: ['#overlay-select', '#verse-popup'],
+  },
   {
     name: 'about-open',
     hash: 'overlay=commentary',
     then: (page) => page.locator('#about-btn').click(),
+    shown: ['#help-modal .help-content'],
   },
 ];

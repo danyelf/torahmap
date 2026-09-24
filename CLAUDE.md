@@ -82,15 +82,17 @@ npm run test:layout
 ```
 
 It starts its own dev server on port 5199 (`LAYOUT_PORT` to change it), renders
-the map with software WebGL, and checks every state in `layout/app.ts` against
-rules any good layout keeps: nothing off screen or overlapping, no clipped
-text, touch targets at least 24×24 (WCAG 2.2 AA), and a map that actually drew.
+the map with software WebGL, and checks every state in `layout/app.ts`: no
+control off screen; the panel, the zoom buttons and the verse popup clear of
+each other, and the panel clear of the map; no clipped text; on the touch
+screens (tablet and phone), touch targets at least 24×24 (WCAG 2.2 AA); the
+elements each state must show, shown in full; and a map that actually drew.
 Text ending in a deliberate ellipsis counts as fitting. `layout/known.ts` lists
 the failures accepted for now, what each measures and why. It ends by writing
 `layout-report/index.html`, every state at every size side by side.
 
-It takes about a minute, so the pre-commit hook does not run it. Run it before
-opening any pull request that changes the interface.
+It takes about 20 seconds on four workers, too long for the pre-commit hook.
+Run it before opening any pull request that changes the interface.
 
 ### Test Harness
 
@@ -143,6 +145,7 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   its status.
 - `experiments/` — prototypes that never shipped.
 - `test-harness/` — the search-UI test harness (see Testing, below).
+- `layout/` — the layout tests (see Layout tests, above).
 
 ## Tech Stack
 
