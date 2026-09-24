@@ -8,7 +8,7 @@ export default defineConfig({
   outputDir: '../test-results',
   fullyParallel: true,
   workers: 4,
-  reporter: 'list',
+  reporter: [['list'], ['./contactSheet.ts', { outputDir: '../layout-report' }]],
   use: {
     baseURL: `http://localhost:${PORT}/`,
     // Transitions finish at once, so nothing is measured mid-animation.
