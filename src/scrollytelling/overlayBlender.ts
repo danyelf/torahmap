@@ -63,8 +63,8 @@ export function colorsForStop(
   return resolved;
 }
 
-// Stipple multi-color arrays are preserved at rest and during transitions:
-// each stipple slot lerps independently, and the short side pads with the
+// Multi-color arrays are preserved at rest and during transitions:
+// each slot lerps independently, and the short side pads with the
 // default color so slots fade in/out cleanly.
 //
 // main.ts only calls this mid-transition, where 0 < t < 1, so the t === 0 and

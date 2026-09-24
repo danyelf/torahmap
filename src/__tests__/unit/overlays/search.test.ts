@@ -1284,7 +1284,7 @@ describe('Search Overlay', () => {
             // Single color
             assertValidColor(color as Color);
           } else {
-            // Array of colors (stipple)
+            // Array of colors (split corner to corner)
             for (const c of color as unknown as Color[]) {
               assertValidColor(c);
             }

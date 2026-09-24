@@ -53,7 +53,7 @@ export function buildOutlineGeometry(
       data[offset++] = color[1];
       data[offset++] = color[2];
     }
-    data[offset++] = 1; // colorCount = 1 (single color, no stipple)
+    data[offset++] = 1; // colorCount = 1 (single color)
     data[offset++] = 0; // u (not used for solid colors)
     data[offset++] = 0; // v (not used for solid colors)
     data[offset++] = seedX;

@@ -5,7 +5,7 @@ import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 type Color = [number, number, number];
 
-// Helper to check if color is an array of colors (stipple mode)
+// Helper to check if color is an array of colors (a verse split between them)
 function isColorArray(color: Color | Color[] | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
@@ -42,20 +42,13 @@ export function buildItemGeometry<T>(
       vertexColors = [verseColor || baseColor];
     }
     const colorCount = vertexColors.length;
-    const isMulticolor = colorCount > 1;
 
-    // For multicolor verses, expand bounds to allow bleed
-    const bleed = isMulticolor ? HIGHLIGHT_CONSTANTS.BLEED_PIXELS : 0;
-    const x0 = v.x - bleed;
-    const y0 = v.y - bleed;
-    const x1 = v.x + v.size - 2 + bleed; // -2 for gap, +bleed for expansion
-    const y1 = v.y + v.size - 2 + bleed;
+    const x0 = v.x;
+    const y0 = v.y;
+    const x1 = v.x + v.size - 2; // -2 for gap
+    const y1 = v.y + v.size - 2;
 
-    // UV coords need to account for bleed zone (-bleed to size+bleed maps to -epsilon to 1+epsilon)
-    const uvMin = isMulticolor ? -bleed / (v.size - 2) : 0;
-    const uvMax = isMulticolor ? 1 + bleed / (v.size - 2) : 1;
-
-    // Use verse world position as seed for unique stipple pattern
+    // Verse world position seeds the shader's per-verse dithering noise
     const seedX = v.x;
     const seedY = v.y;
 
@@ -80,14 +73,14 @@ export function buildItemGeometry<T>(
     };
 
     // Triangle 1 (top-left, top-right, bottom-left)
-    writeVertex(x0, y0, uvMin, uvMin);
-    writeVertex(x1, y0, uvMax, uvMin);
-    writeVertex(x0, y1, uvMin, uvMax);
+    writeVertex(x0, y0, 0, 0);
+    writeVertex(x1, y0, 1, 0);
+    writeVertex(x0, y1, 0, 1);
 
     // Triangle 2 (bottom-left, top-right, bottom-right)
-    writeVertex(x0, y1, uvMin, uvMax);
-    writeVertex(x1, y0, uvMax, uvMin);
-    writeVertex(x1, y1, uvMax, uvMax);
+    writeVertex(x0, y1, 0, 1);
+    writeVertex(x1, y0, 1, 0);
+    writeVertex(x1, y1, 1, 1);
   }
 
   return data;

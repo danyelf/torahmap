@@ -422,7 +422,8 @@ function showVerse(result: SearchResult): void {
 
 /**
  * A verse's colour given what a term list found: each matching term's own
- * colour, stippled when there are several, or dimmed grey when none match.
+ * colour, split corner to corner when there are several, or dimmed grey when
+ * none match.
  */
 function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
   const { active, matchingTerms } = search;
@@ -435,7 +436,7 @@ function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] |
     if (colors.length === 1) {
       return colors[0];
     }
-    // Stipple effect for multiple matches, capped at 4 colors.
+    // The shader draws at most four.
     return colors.slice(0, 4) as Color[];
   }
 

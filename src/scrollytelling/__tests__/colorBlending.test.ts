@@ -39,7 +39,7 @@ describe('blendColorArrays', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('lerps stipple slot-by-slot, padding short side from default color', () => {
+  it('lerps multi-color slot-by-slot, padding short side from default color', () => {
     // Verse with [cyan] in fromStop and [cyan, orange] in toStop, at t=0.5.
     // Slot 0: cyan -> cyan = cyan unchanged.
     // Slot 1: default (0.15,0.15,0.15) -> orange, half-faded.

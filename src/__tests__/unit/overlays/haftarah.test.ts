@@ -429,7 +429,7 @@ describe('Haftarah Overlay', () => {
     });
   });
 
-  describe('Multi-Item Verses (Stipple)', () => {
+  describe('Multi-Item Verses', () => {
     beforeEach(async () => {
       await haftarahOverlay.overlay.init?.();
     });

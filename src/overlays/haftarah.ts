@@ -391,7 +391,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
       </div>
       ${legendCaption(`Torah portion & haftarah (${customLabel}) use same color`, { marginLeft: 28 })}
       ${legendCaption('Includes holidays, fast days, special Shabbatot', { marginLeft: 28 })}
-      ${legendCaption('Multi-item verses show stippled pattern', { marginLeft: 28 })}
+      ${legendCaption('Multi-item verses are split corner to corner, one band per item', { marginLeft: 28 })}
       ${legendCaption('Hover brightens the reading & its haftarah, desaturates others', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
     `;
   },

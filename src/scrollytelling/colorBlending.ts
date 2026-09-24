@@ -4,9 +4,9 @@ import { lerpColor } from './interpolation';
 /**
  * Blend two arrays of (single-or-multi) verse colors slot-by-slot.
  *
- * Multi-color stipple is preserved through the transition: each slot lerps
+ * Multi-color verses stay multi-color through the transition: each slot lerps
  * independently. When one side has fewer slots than the other, the shorter
- * side is padded with the default color so missing stipple slots fade in/out
+ * side is padded with the default color so missing slots fade in/out
  * cleanly from the unmatched-verse fallback.
  *
  * If a verse ends up with a single slot, the result is returned as a plain
