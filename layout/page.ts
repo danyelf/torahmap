@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import type { Box } from './geometry.ts';
 
 /** The canvas's clear colour and the page's background: #1a1a1a. */
 const BACKGROUND = 26;
@@ -68,5 +69,74 @@ export async function mapPixels(page: Page): Promise<{ drawn: number; colours: n
       return { drawn, colours: colours.size };
     },
     { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
+  );
+}
+
+/**
+ * The visible part of every element matching `selector`. An element inside a
+ * collapsed or scrolled container still has its full bounding rect, so each is
+ * cut to the ancestors that clip it. The walk stops at <body>, whose overflow
+ * the browser hands to the viewport, and after the first fixed-position box,
+ * since nothing above a fixed box clips it.
+ */
+export async function boxes(page: Page, selector: string): Promise<Box[]> {
+  return page.$$eval(selector, (els) =>
+    els.flatMap((el) => {
+      if (el.closest('[inert]')) return [];
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return [];
+      for (let a: Element | null = el; a; a = a.parentElement) {
+        if (getComputedStyle(a).opacity === '0') return [];
+      }
+      let { left, top, right, bottom } = el.getBoundingClientRect();
+      if (style.position !== 'fixed') {
+        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+          const s = getComputedStyle(a);
+          if (s.overflowX !== 'visible' || s.overflowY !== 'visible') {
+            const r = a.getBoundingClientRect();
+            left = Math.max(left, r.left);
+            top = Math.max(top, r.top);
+            right = Math.min(right, r.right);
+            bottom = Math.min(bottom, r.bottom);
+          }
+          if (s.position === 'fixed') break;
+        }
+      }
+      if (right - left < 1 || bottom - top < 1) return [];
+      const name = el.id
+        ? `#${el.id}`
+        : el.tagName.toLowerCase() + [...el.classList].map((c) => `.${c}`).join('');
+      return [{ name, x: left, y: top, width: right - left, height: bottom - top }];
+    }),
+  );
+}
+
+/**
+ * Elements whose text does not fit their box. A block is measured by its
+ * scroll width; an inline element has none, so its text is measured against
+ * its parent's box instead. Anything a pixel or less across is hidden for
+ * screen readers on purpose, and skipped.
+ */
+export async function clippedText(page: Page, selector: string): Promise<string[]> {
+  return page.$$eval(selector, (els) =>
+    els.flatMap((el) => {
+      const h = el as HTMLElement;
+      if (h.closest('[inert]') || !h.textContent?.trim()) return [];
+      const box = h.getBoundingClientRect();
+      if (box.width <= 1 || box.height <= 1) return [];
+      const name = h.id ? `#${h.id}` : `${h.tagName.toLowerCase()}.${[...h.classList].join('.')}`;
+      if (getComputedStyle(h).display === 'inline') {
+        const range = document.createRange();
+        range.selectNodeContents(h);
+        const text = range.getBoundingClientRect();
+        const parent = h.parentElement!.getBoundingClientRect();
+        return text.left < parent.left - 1 || text.right > parent.right + 1
+          ? [`${name} runs ${Math.round(text.right - parent.right)}px past its parent`]
+          : [];
+      }
+      return h.scrollWidth > h.clientWidth + 1
+        ? [`${name} needs ${h.scrollWidth}px, has ${h.clientWidth}`]
+        : [];
+    }),
   );
 }

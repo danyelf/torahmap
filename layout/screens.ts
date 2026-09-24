@@ -1,8 +1,8 @@
-import { devices, type Project } from '@playwright/test';
+import { devices, type PlaywrightTestProject } from '@playwright/test';
 
 // The phone layout starts at max-width 768px (src/styles/right-panel.css), so
 // the tablet gets the desktop layout.
-export const SCREENS: { name: string; use: Project['use'] }[] = [
+export const SCREENS: { name: string; use: PlaywrightTestProject['use'] }[] = [
   { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
   { name: 'laptop', use: { viewport: { width: 1280, height: 720 } } },
   { name: 'tablet', use: { viewport: { width: 820, height: 1180 }, hasTouch: true } },
