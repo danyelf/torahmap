@@ -1,0 +1,688 @@
+/* The frame. On a desktop everything left of the map is --panel-width wide in
+   both modes — the story's column, or the rail and the open panel together —
+   so the map never moves or changes width when the mode does. The map starts
+   at --map-left (src/styles/main.css), which the canvas, the book labels and
+   the title all read. On a phone the panel is a sheet along the bottom and a
+   bar along the top that hides while the map moves. The mode and the open
+   panel are data- attributes on <body>, set by main.ts from src/frame.ts. */
+:root {
+  --rail-width: 56px;
+  --story-bg: #16181d;
+  --panel-bg: rgba(0, 0, 0, 0.92);
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: #6ab0f3;
+}
+
+#canvas {
+  position: fixed;
+  top: 0;
+  left: var(--map-left);
+  width: calc(100vw - var(--panel-width));
+  /* A canvas does not stretch between its edges; 100% is of the visible window. */
+  height: 100%;
+}
+
+#panel {
+  position: fixed;
+  /* Pinned to both edges rather than given a height. On an iPad 100vh counts
+     the space behind Safari's toolbar. */
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--panel-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--line);
+  box-sizing: border-box;
+  z-index: 10;
+  font-family: system-ui, sans-serif;
+  color: #fff;
+}
+
+body[data-mode='explore'] #panel {
+  left: var(--rail-width);
+  width: calc(var(--panel-width) - var(--rail-width));
+}
+
+#top-bar,
+#rail,
+#sheet-grabber {
+  display: none;
+}
+
+#top-bar,
+#rail {
+  font-family: system-ui, sans-serif;
+  color: #fff;
+}
+
+body[data-mode='explore'] #rail {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--rail-width);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  box-sizing: border-box;
+  background: #000;
+  border-right: 1px solid var(--line);
+  z-index: 11;
+}
+
+.rail-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  color: #aaa;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.rail-button:hover {
+  color: #fff;
+}
+
+.rail-button[aria-pressed='true'] {
+  color: var(--accent);
+}
+
+.rail-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.rail-menu {
+  margin-top: auto;
+}
+
+#story,
+#tools {
+  display: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+
+body[data-mode='story'] #story {
+  display: flex;
+  position: relative;
+  background: var(--story-bg);
+}
+
+body[data-mode='explore'] #tools {
+  display: flex;
+}
+
+/* The story's header: its menu button and where it has got to. The menu drops
+   from here over the top of the story, which stays visible below it. */
+.story-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.menu-button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: none;
+  color: #ddd;
+  font: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.menu-button:hover {
+  border-color: #777;
+  color: #fff;
+}
+
+/* The rail's menu button is drawn like the rail's other buttons. */
+.rail-button.menu-button {
+  border: none;
+  border-radius: 0;
+  color: #aaa;
+  font-size: 11px;
+}
+
+.rail-button.menu-button:hover {
+  color: #fff;
+}
+
+#story-progress {
+  color: #999;
+  font-size: 13px;
+}
+
+#menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 6px 0;
+  background: #111;
+  border-bottom: 1px solid #444;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+#menu[hidden] {
+  display: none;
+}
+
+body[data-menu] #story-content {
+  opacity: 0.3;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  background: none;
+  color: #eee;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.menu-item[data-action='story'] {
+  color: var(--accent);
+}
+
+.menu-detail {
+  color: #999;
+  font-size: 13px;
+}
+
+#story-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  container-type: size;
+  scrollbar-color: #444 transparent;
+}
+
+/* A cue that there is more story: a tall angle bracket, pointing down here
+   and right on a phone, where the stops sit side by side. */
+#story-cue {
+  position: absolute;
+  left: calc(50% - 6px);
+  bottom: -8px;
+  width: 12px;
+  height: 44px;
+  transform: rotate(90deg);
+  pointer-events: none;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#story-cue polyline {
+  vector-effect: non-scaling-stroke;
+}
+
+body.story-at-end #story-cue,
+body[data-menu] #story-cue {
+  display: none;
+}
+
+/* Paragraphs sit half a panel apart, so when one is centred the next starts
+   at the bottom edge. The first starts mid-panel and the last can scroll up
+   to it. cqh is the story's height, not the window's. */
+.story-stop {
+  padding: 25cqh 24px;
+}
+
+.story-stop:first-child {
+  padding-top: 50cqh;
+}
+
+.story-stop:last-child {
+  padding-bottom: 50cqh;
+}
+
+.story-stop h2 {
+  color: #fff;
+  font-size: 20px;
+  margin: 0 0 16px 0;
+  font-weight: 500;
+}
+
+.story-stop p {
+  color: #ccc;
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.story-leave {
+  margin-top: 20px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.story-leave:hover {
+  background: rgba(106, 176, 243, 0.12);
+}
+
+/* The open panel scrolls; the folded lines stay at the bottom edge. */
+#panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 12px;
+  scrollbar-color: #444 transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+/* A panel keeps its height and #panel-body scrolls it. Search's results are
+   the exception, below. */
+.tool {
+  display: none;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+body[data-open='overlay'] #overlay-panel,
+body[data-open='stories'] #stories-panel,
+body[data-open='about'] #about-panel,
+body[data-open='menu'] #menu-panel {
+  display: flex;
+}
+
+#menu-panel {
+  margin: -16px -20px 0;
+}
+
+.panel-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.panel-picker label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.panel-picker select {
+  width: 100%;
+}
+
+#overlay-description {
+  margin: 8px 0 12px;
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#overlay-description:empty {
+  display: none;
+}
+
+/* Search's results fill what the open panel has, in their own scroll. Every
+   other overlay's controls keep their height and the panel scrolls. */
+#overlay-panel:has(#search-results),
+#overlay-controls:has(#search-results) {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#overlay-controls:has(#search-results) {
+  display: flex;
+  flex-direction: column;
+}
+
+#overlay-controls:has(#search-results) > * {
+  flex-shrink: 0;
+}
+
+#panel #search-results {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: none;
+}
+
+/* Reaches the overlay picker and any select an overlay renders into its
+   controls. color-scheme matters as much as the colours: without it the popup
+   list keeps the system's light theme. */
+#panel select {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  color-scheme: dark;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.story-card {
+  padding: 14px;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.story-card h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.story-card-place {
+  margin: 0 0 12px;
+  color: #aaa;
+  font-size: 13px;
+}
+
+.story-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.story-card-action {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.story-card-action.secondary {
+  border-color: #444;
+  color: #ddd;
+}
+
+/* Anything on but not open: one labelled line each, at the bottom edge. */
+#folded {
+  flex-shrink: 0;
+  border-top: 1px solid var(--line);
+}
+
+body[data-open='overlay'] #folded {
+  display: none;
+}
+
+.folded-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  background: none;
+  color: #ddd;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.folded-line:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.folded-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Drawn rather than a ▴ glyph, which renders small and faint in system fonts. */
+.folded-line .chevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #ddd;
+  border-bottom: 2px solid #ddd;
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.summary-name {
+  font-weight: 600;
+}
+
+.summary-name.dim {
+  color: #888;
+  font-weight: 400;
+}
+
+.summary-sep,
+.summary-detail {
+  color: #999;
+}
+
+.summary-term,
+.summary-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.summary-swatch {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.summary-swatch.strip {
+  width: 60px;
+}
+
+/* On a phone the panel is a sheet along the bottom.
+
+   In a story it is a constant 30svh, which leaves every stop room for about
+   150px of text on an 844px-tall screen; the camera already moves between
+   stops, and a sheet resizing under it would move the whole screen. svh, not
+   vh: a phone's vh counts the space behind the browser's toolbar.
+
+   Exploring, the sheet is as tall as its open panel, up to half the screen,
+   or only its folded lines when nothing is open. Dragged to full, it grows up
+   over the map rather than shrinking it. --sheet-shown is the height the map
+   and the verse popup make room for; main.ts measures it. */
+@media (max-width: 768px) {
+  :root {
+    --story-sheet: 30svh;
+    --sheet-cap: 50svh;
+    --sheet-full: 85svh;
+    --bar-height: 52px;
+  }
+
+  /* Set here rather than measured, so the story's stops are resolved against
+     the map's final height from the first frame. main.ts measures it only
+     while exploring; this rule on <body> outranks its value on <html>. */
+  body[data-mode='story'] {
+    --sheet-shown: var(--story-sheet);
+  }
+
+  #canvas {
+    width: 100vw;
+    height: calc(100svh - var(--sheet-shown));
+  }
+
+  body[data-mode='explore'] #rail {
+    display: none;
+  }
+
+  #panel,
+  body[data-mode='explore'] #panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: var(--sheet-cap);
+    border-right: none;
+    border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+  }
+
+  body[data-mode='story'] #panel {
+    height: var(--story-sheet);
+    max-height: none;
+  }
+
+  body[data-full] #panel {
+    height: var(--sheet-full);
+    max-height: none;
+  }
+
+  /* The story's menu needs more room than the story's sheet has, so the sheet
+     grows over the map while it is down, as full height does. */
+  body[data-mode='story'][data-menu] #panel {
+    height: var(--sheet-cap);
+  }
+
+  body[data-mode='explore']:not([data-open]) #panel-body {
+    display: none;
+  }
+
+  body[data-mode='explore']:not([data-open]) #folded {
+    border-top: none;
+  }
+
+  /* The top of an open sheet, with a short pill drawn in it: tap to go full
+     height or back, drag to do the same or to fold. */
+  body[data-mode='explore'][data-open] #sheet-grabber {
+    display: block;
+    flex-shrink: 0;
+    width: 100%;
+    height: 44px;
+    padding: 0;
+    border: none;
+    background: none;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  #sheet-grabber::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 2px;
+    background: #666;
+  }
+
+  body[data-mode='explore'] #top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--bar-height);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.85);
+    border-bottom: 1px solid var(--line);
+    z-index: 12;
+    transition:
+      background 200ms ease,
+      border-color 200ms ease;
+  }
+
+  .top-name {
+    font-family: 'David Libre', Georgia, serif;
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  /* Hidden, the bar leaves its menu button floating over the map. */
+  body[data-bar-hidden] #top-bar {
+    background: transparent;
+    border-bottom-color: transparent;
+    pointer-events: none;
+  }
+
+  body[data-bar-hidden] .top-name {
+    visibility: hidden;
+  }
+
+  body[data-bar-hidden] #top-menu {
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  /* The stops sit side by side, a page each, and a swipe moves one. */
+  #story-content {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .story-stop,
+  .story-stop:first-child,
+  .story-stop:last-child {
+    flex: 0 0 100%;
+    box-sizing: border-box;
+    padding: 4px 24px 8px;
+    overflow-y: auto;
+    scroll-snap-align: center;
+  }
+
+  #story-cue {
+    left: auto;
+    right: 6px;
+    top: calc(50% - 14px);
+    bottom: auto;
+    width: 10px;
+    height: 72px;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #top-bar {
+    transition: none;
+  }
+}

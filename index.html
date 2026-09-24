@@ -34,7 +34,7 @@
     />
     <link rel="stylesheet" href="/src/styles/main.css" />
   </head>
-  <body>
+  <body data-mode="story">
     <noscript>
       <p>
         Torahmap lays out all 23,000 verses of the Hebrew Bible — Torah, Prophets and Writings — as
@@ -77,45 +77,78 @@
       <div class="verse-english"></div>
     </div>
 
-    <div id="right-panel">
+    <header id="top-bar">
+      <button id="top-menu" class="menu-button" type="button" aria-label="Menu">☰</button>
+      <span class="top-name">Torahmap</span>
+    </header>
+
+    <nav id="rail" aria-label="Tools">
+      <button class="rail-button" type="button" data-panel="stories">
+        <span class="rail-icon" aria-hidden="true">📖</span><span class="rail-label">Stories</span>
+      </button>
+      <button class="rail-button" type="button" data-panel="overlay">
+        <span class="rail-icon" aria-hidden="true">◧</span><span class="rail-label">Overlay</span>
+      </button>
+      <button class="rail-button menu-button rail-menu" type="button" aria-label="Menu">
+        <span class="rail-icon" aria-hidden="true">☰</span><span class="rail-label">Menu</span>
+      </button>
+    </nav>
+
+    <aside id="panel">
       <button
         id="sheet-grabber"
         type="button"
         aria-label="Make the panel taller or shorter"
       ></button>
-      <button id="controls-toggle" type="button" aria-controls="panel-controls">
-        <span id="controls-summary"></span>
-        <span class="chevron" aria-hidden="true"></span>
-      </button>
-      <div id="panel-controls">
-        <div class="panel-controls-inner">
-          <div class="panel-picker">
-            <label for="overlay-select">Overlay</label>
-            <!-- The overlays themselves are added here at startup, from the
-               registry. Do not list them: that is what the registry is for. -->
-            <select id="overlay-select">
-              <option value="none">None</option>
-            </select>
-          </div>
-          <div id="overlay-controls"></div>
-          <div id="overlay-legend"></div>
+
+      <section id="story" aria-label="Story">
+        <div class="story-head">
+          <button
+            id="story-menu"
+            class="menu-button"
+            type="button"
+            aria-label="Menu"
+            aria-expanded="false"
+            aria-controls="menu"
+          >
+            ☰
+          </button>
+          <span id="story-progress"></span>
+          <div id="menu" class="menu" hidden></div>
         </div>
-      </div>
+        <div id="story-content"></div>
+        <svg id="story-cue" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="1,2 9,50 1,98" />
+        </svg>
+      </section>
 
-      <button id="story-strip" type="button" aria-controls="story-content">
-        <span class="chevron" aria-hidden="true"></span>
-        <span id="story-strip-title"></span>
-      </button>
-      <div id="story-content"></div>
-      <svg id="story-cue" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">
-        <polyline points="1,2 9,50 1,98" />
-      </svg>
-
-      <footer id="panel-footer">
-        <button id="leave-story" class="footer-link" type="button">Leave story</button>
-        <button id="return-to-story" class="footer-link" type="button">Return to story</button>
-      </footer>
-    </div>
+      <section id="tools">
+        <div id="panel-body">
+          <div id="overlay-panel" class="tool">
+            <div class="panel-picker">
+              <label for="overlay-select">Overlay</label>
+              <!-- The overlays themselves are added here at startup, from the
+                 registry. Do not list them: that is what the registry is for. -->
+              <select id="overlay-select">
+                <option value="none">None</option>
+              </select>
+              <p id="overlay-description"></p>
+            </div>
+            <div id="overlay-controls"></div>
+            <div id="overlay-legend"></div>
+          </div>
+          <div id="stories-panel" class="tool"></div>
+          <div id="about-panel" class="tool"></div>
+          <div id="menu-panel" class="tool menu"></div>
+        </div>
+        <div id="folded">
+          <button id="folded-overlay" class="folded-line" type="button" data-panel="overlay">
+            <span class="folded-summary"></span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
+        </div>
+      </section>
+    </aside>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

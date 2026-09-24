@@ -1,7 +1,7 @@
 #verse-popup {
   position: fixed;
   bottom: 20px;
-  left: 20px;
+  left: calc(var(--map-left) + 20px);
   width: 320px;
   max-height: 400px;
   overflow-y: auto;
@@ -125,7 +125,7 @@
 
   /* A tall sheet covers the map the popup belongs to; it is back when the
      sheet shrinks. */
-  body.sheet-tall #verse-popup {
+  body[data-full] #verse-popup {
     visibility: hidden;
   }
 }

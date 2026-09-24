@@ -8,10 +8,10 @@ import { chromium } from 'playwright';
 const BASE = process.argv[2] ?? 'http://localhost:5173/';
 const CAMERA = 'overlay=commentary&zoom=0.7&x=-1716&y=66.6';
 
-// The canvas leaves room for the right panel, and measures itself once at
+// The canvas leaves room for the panel, and measures itself once at
 // startup, so the panel has to be gone before the page loads, not after.
 const HIDE_UI =
-  '<style>#right-panel,#zoom-controls,#verse-popup{display:none!important}' +
+  '<style>#panel,#rail,#top-bar,#zoom-controls,#verse-popup{display:none!important}:root{--map-left:0px!important}' +
   '#canvas{width:100vw!important;height:100vh!important}</style>';
 
 const browser = await chromium.launch({
