@@ -8,6 +8,13 @@ import { updateMapTitlePosition } from './mapTitle';
 import type { SpatialItem, TanakhIdentity, ShaderProgram } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
+import {
+  edgePixels,
+  multiHitAlpha,
+  multiHitBleed,
+  multiHitCurve,
+  multiHitStyleIndex,
+} from './multiHitStyle';
 
 /** Immutable WebGL infrastructure created once at startup. */
 export interface RenderContext {
@@ -93,6 +100,14 @@ export function render<T>(
   gl.uniform2f(programs.main.uniforms.resolution, canvas.width, canvas.height);
   gl.uniform2f(programs.main.uniforms.pan, camera.x, camera.y);
   gl.uniform1f(programs.main.uniforms.zoom, camera.zoom * dpr);
+  gl.uniform1i(programs.main.uniforms.multiStyle, multiHitStyleIndex);
+  gl.uniform1f(programs.main.uniforms.bleed, multiHitBleed);
+  gl.uniform1f(programs.main.uniforms.alpha, multiHitAlpha);
+  gl.uniform1f(programs.main.uniforms.curve, multiHitCurve);
+  gl.uniform1f(programs.main.uniforms.edgeUnits, edgePixels / camera.zoom);
+  // Keeps the canvas itself opaque while colours blend onto it.
+  gl.enable(gl.BLEND);
+  gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 

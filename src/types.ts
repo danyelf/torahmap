@@ -152,6 +152,11 @@ export interface ShaderProgram {
     resolution: WebGLUniformLocation | null;
     pan: WebGLUniformLocation | null;
     zoom: WebGLUniformLocation | null;
+    multiStyle: WebGLUniformLocation | null;
+    bleed: WebGLUniformLocation | null;
+    alpha: WebGLUniformLocation | null;
+    curve: WebGLUniformLocation | null;
+    edgeUnits: WebGLUniformLocation | null;
   };
 }
 

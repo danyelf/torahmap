@@ -59,12 +59,183 @@ const FRAGMENT_SHADER = `#version 300 es
     return fract(sin(dot(p, vec2(39.346, 11.135))) * 83758.5453);
   }
 
+  uniform int u_multiStyle;
+  uniform float u_bleed;
+  uniform float u_alpha;
+  uniform float u_curve;
+  uniform float u_edgeUnits;
+
+  vec3 pick(int idx) {
+    if (idx == 0) return v_color;
+    if (idx == 1) return v_color2;
+    if (idx == 2) return v_color3;
+    return v_color4;
+  }
+
+  // One wedge per color, clockwise from twelve o'clock.
+  vec3 wedge() {
+    vec2 p = v_uv - 0.5;
+    float t = fract(atan(p.x, -p.y) / 6.2831853 + 1.0);
+    return pick(int(floor(t * float(v_colorCount))));
+  }
+
+  // The square in the first color, each further color a solid ring around it,
+  // sharing the growth past the edge (1.5 units; one UV unit is 4).
+  vec3 rings() {
+    vec2 out2 = max(-v_uv, v_uv - 1.0);
+    float d = max(max(out2.x, out2.y), 0.0) * 4.0;
+    if (d <= 0.0) return v_color;
+    float band = 1.5 / float(v_colorCount - 1);
+    return pick(min(1 + int(floor(d / band)), v_colorCount - 1));
+  }
+
+  // One band per color along the diagonal, so a split never looks like two
+  // neighbouring verses.
+  vec3 diagonalBands() {
+    float d = clamp((v_uv.x + v_uv.y) * 0.5, 0.0, 0.999);
+    return pick(int(floor(d * float(v_colorCount))));
+  }
+
+  // Which diagonal band of the whole grown square a UV point falls in.
+  int grownBand(vec2 uv) {
+    float b = u_bleed / 4.0;
+    float d = clamp(((uv.x + uv.y) * 0.5 + b) / (1.0 + 2.0 * b), 0.0, 0.999);
+    return int(floor(d * float(v_colorCount)));
+  }
+
+  // Every hit grows solid; several terms split it corner to corner.
+  vec3 grownDiagonal() {
+    return pick(grownBand(v_uv));
+  }
+
+  // A solid square split corner to corner, inside a coarse speckled edge
+  // whose specks take the colour of the nearest part of the square.
+  vec3 haloOrdered() {
+    bool inSquare = v_uv == clamp(v_uv, 0.0, 1.0);
+    if (inSquare) return diagonalBands();
+    vec2 c = floor(v_uv * 4.0);
+    if (hash(c + v_seed * 0.1) > 0.3) discard;
+    vec2 nearest = clamp((c + 0.5) / 4.0, 0.0, 1.0);
+    float d = clamp((nearest.x + nearest.y) * 0.5, 0.0, 0.999);
+    return pick(int(floor(d * float(v_colorCount))));
+  }
+
+  // Colour of the square's diagonal band nearest a UV point.
+  vec3 nearestBand(vec2 uv) {
+    vec2 n = clamp(uv, 0.0, 1.0);
+    float d = clamp((n.x + n.y) * 0.5, 0.0, 0.999);
+    return pick(int(floor(d * float(v_colorCount))));
+  }
+
+  // World units from the square's edge, keeping its corners square.
+  float distPastEdge() {
+    vec2 o = max(max(-v_uv, v_uv - 1.0), 0.0);
+    return max(o.x, o.y) * 4.0;
+  }
+
+  // A square split corner to corner, inside a translucent edge: flat at
+  // u_alpha, or fading from u_alpha to nothing at the edge's outer limit.
+  // u_curve above 1 holds the fade bright longer before it drops.
+  vec4 glow(bool fade) {
+    if (v_uv == clamp(v_uv, 0.0, 1.0)) return vec4(diagonalBands(), 1.0);
+    float d = distPastEdge();
+    if (d > u_bleed) discard;
+    float a = fade ? u_alpha * (1.0 - pow(d / u_bleed, u_curve)) : u_alpha;
+    return vec4(nearestBand(v_uv), a);
+  }
+
+  // A square split corner to corner, inside an edge a fixed number of screen
+  // pixels wide (u_edgeUnits is that width in world units at this zoom),
+  // fading from u_alpha to nothing.
+  vec4 screenEdge() {
+    if (v_uv == clamp(v_uv, 0.0, 1.0)) return vec4(diagonalBands(), 1.0);
+    float w = min(u_edgeUnits, u_bleed);
+    float d = distPastEdge();
+    if (d > w) discard;
+    return vec4(nearestBand(v_uv), u_alpha * (1.0 - d / w));
+  }
+
+  // A checkerboard whose cell count follows the zoom, keeping cells about
+  // two screen pixels or more.
+  vec3 screenChecker() {
+    float px = 1.0 / max(fwidth(v_uv.x), 1e-5);
+    float cells = clamp(floor(px / 2.0), 2.0, 4.0);
+    vec2 c = floor(v_uv * cells);
+    float rowStep = (v_colorCount == 4) ? 2.0 : 1.0;
+    return pick(int(mod(c.x + c.y * rowStep, float(v_colorCount))));
+  }
+
+  // A pale centre in a frame, one side per color: top, right, bottom, left.
+  vec3 pictureFrame() {
+    vec2 p = v_uv - 0.5;
+    if (max(abs(p.x), abs(p.y)) < 0.2) return vec3(0.95);
+    int side = abs(p.y) >= abs(p.x) ? (p.y < 0.0 ? 0 : 2) : (p.x > 0.0 ? 1 : 3);
+    return pick(side - (side / v_colorCount) * v_colorCount);
+  }
+
+  // Diagonal bands, plus a strip in the gap below with one segment per color.
+  vec3 underline() {
+    if (v_uv.x < 0.0 || v_uv.x > 1.0 || v_uv.y < 0.0) discard;
+    float n = float(v_colorCount);
+    if (v_uv.y > 1.0) return pick(int(min(floor(v_uv.x * n), n - 1.0)));
+    return diagonalBands();
+  }
+
+  // Scattered cells: cellsPerUv sets the cell size (one UV unit is the
+  // verse's 4-unit square), density the share of bleed cells drawn.
+  vec3 scatterAt(float bleedCells, float innerCells, float density) {
+    bool inBleedZone = v_uv.x < 0.0 || v_uv.x > 1.0 || v_uv.y < 0.0 || v_uv.y > 1.0;
+    if (inBleedZone) {
+      vec2 c = floor(v_uv * bleedCells) + v_seed * 0.1;
+      if (hash(c) > density) discard;
+      return pick(int(floor(hash2(c) * float(v_colorCount))));
+    }
+    vec2 c = floor(v_uv * innerCells + fract(v_seed * 0.0731) * innerCells);
+    return pick(int(floor(hash(c + v_seed * 0.0137) * float(v_colorCount))));
+  }
+
   void main() {
     vec3 color;
+    float alpha = 1.0;
 
-    if (v_colorCount <= 1) {
+    if (u_multiStyle == 17) {
+      vec4 e = screenEdge();
+      color = e.rgb;
+      alpha = e.a;
+    } else if (u_multiStyle == 16) {
+      color = v_colorCount <= 1 ? v_color : diagonalBands();
+    } else if (u_multiStyle == 14 || u_multiStyle == 15) {
+      vec4 g = glow(u_multiStyle == 15);
+      color = g.rgb;
+      alpha = g.a;
+    } else if (u_multiStyle == 12) {
+      color = grownDiagonal();
+    } else if (u_multiStyle == 13) {
+      color = haloOrdered();
+    } else if (u_multiStyle == 11) {
+      // Coarse halo around every hit; a single hit's square stays solid.
+      color = v_colorCount <= 1 && v_uv == clamp(v_uv, 0.0, 1.0)
+        ? v_color
+        : scatterAt(4.0, 2.5, 0.3);
+    } else if (v_colorCount <= 1) {
       // Single color - use directly
       color = v_color;
+    } else if (u_multiStyle == 1 || u_multiStyle == 10) {
+      color = scatterAt(4.0, 2.5, 0.3);
+    } else if (u_multiStyle == 2) {
+      color = scatterAt(8.0, 5.0, 0.7);
+    } else if (u_multiStyle == 5) {
+      color = rings();
+    } else if (u_multiStyle == 6) {
+      color = diagonalBands();
+    } else if (u_multiStyle == 7) {
+      color = screenChecker();
+    } else if (u_multiStyle == 8) {
+      color = pictureFrame();
+    } else if (u_multiStyle == 9) {
+      color = underline();
+    } else if (u_multiStyle >= 3) {
+      color = wedge();
     } else {
       // Multiple colors with bleed effect
       // UV < 0 or > 1 means we're in the bleed zone
@@ -119,7 +290,7 @@ const FRAGMENT_SHADER = `#version 300 es
     float noise = (hash(noiseCoord + v_seed * 0.01) - 0.5) * 0.1;
     color = color + noise;
 
-    fragColor = vec4(color, 1.0);
+    fragColor = vec4(color, alpha);
   }
 `;
 
@@ -194,6 +365,11 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
+      multiStyle: gl.getUniformLocation(program, 'u_multiStyle'),
+      bleed: gl.getUniformLocation(program, 'u_bleed'),
+      alpha: gl.getUniformLocation(program, 'u_alpha'),
+      curve: gl.getUniformLocation(program, 'u_curve'),
+      edgeUnits: gl.getUniformLocation(program, 'u_edgeUnits'),
     },
   };
 }

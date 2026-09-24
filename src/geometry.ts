@@ -2,6 +2,7 @@
 
 import type { SpatialItem } from './types.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
+import { haloOnEveryHit, multiHitBleed } from './multiHitStyle.ts';
 
 type Color = [number, number, number];
 
@@ -27,8 +28,13 @@ export function buildItemGeometry<T>(
   const verticesPerQuad = 6;
   const data = new Float32Array(verses.length * verticesPerQuad * floatsPerVertex);
 
+  // Verses that grow are drawn last, so no neighbour covers their edge.
+  const indices = verses.map((_, i) => i);
+  const grows = (i: number) => isColorArray(colors?.[i]);
+  const order = [...indices.filter((i) => !grows(i)), ...indices.filter(grows)];
+
   let offset = 0;
-  for (let i = 0; i < verses.length; i++) {
+  for (const i of order) {
     const v = verses[i];
     const verseColor = colors?.[i];
 
@@ -42,10 +48,10 @@ export function buildItemGeometry<T>(
       vertexColors = [verseColor || baseColor];
     }
     const colorCount = vertexColors.length;
-    const isMulticolor = colorCount > 1;
+    const isMulticolor = colorCount > 1 || (haloOnEveryHit && isColorArray(verseColor));
 
     // For multicolor verses, expand bounds to allow bleed
-    const bleed = isMulticolor ? HIGHLIGHT_CONSTANTS.BLEED_PIXELS : 0;
+    const bleed = isMulticolor ? multiHitBleed : 0;
     const x0 = v.x - bleed;
     const y0 = v.y - bleed;
     const x1 = v.x + v.size - 2 + bleed; // -2 for gap, +bleed for expansion

@@ -43,6 +43,8 @@ import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
 import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';
 import { trackSearchExecute } from '../../analytics.ts';
+import { haloOnEveryHit, missStrength, searchBackground } from '../../multiHitStyle.ts';
+import { verseLengthOverlay } from '../verse-length.ts';
 
 /**
  * A list of terms, each with its own text, its own meanings, its own colour and
@@ -433,10 +435,20 @@ function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] |
   if (termIndices && termIndices.length > 0) {
     const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(active, i)]);
     if (colors.length === 1) {
-      return colors[0];
+      return haloOnEveryHit ? colors : colors[0];
     }
     // Stipple effect for multiple matches, capped at 4 colors.
     return colors.slice(0, 4) as Color[];
+  }
+
+  if (searchBackground === 'length' || missStrength !== null) {
+    const base: Color =
+      searchBackground === 'length'
+        ? ((verseLengthOverlay.getVerseColor(verse, undefined) as Color | null) ?? [0.6, 0.6, 0.6])
+        : [0.6, 0.6, 0.6];
+    const s = missStrength ?? (searchBackground === 'length' ? 0.4 : 0.16);
+    const canvas = 0.1;
+    return base.map((c) => canvas + (c - canvas) * s) as Color;
   }
 
   const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
