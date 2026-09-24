@@ -4,7 +4,7 @@
 
 **Goal:** A Playwright suite that loads the real map in a real browser at four screen sizes, checks the layout against rules that hold for any good layout, and writes a contact sheet of every state for Danyel to look at.
 
-**Architecture:** `@playwright/test` runs against a Vite dev server it starts itself, with SwiftShader so WebGL renders headless. Layout rules are pure functions over measured rectangles that return a list of violations, so they are testable without a browser and read well when they fail. A small custom reporter lays every screenshot out as states × screen sizes. It runs as `npm run test:layout`, outside the pre-commit hook.
+**Architecture:** `@playwright/test` runs against a Vite dev server it starts itself, with SwiftShader so WebGL renders headless. Layout rules are pure functions over measured rectangles that return a list of violations, so they are testable without a browser and read well when they fail. Every measurement and every rule is also shown to be able to fail. A small custom reporter lays every screenshot out as states × screen sizes. It runs as `npm run test:layout`, outside the pre-commit hook.
 
 **Tech Stack:** `@playwright/test` 1.58.2 (pinned to match the installed `playwright`), Chromium 1208 already in `~/Library/Caches/ms-playwright`, Vite 7, TypeScript 7.
 
@@ -14,9 +14,11 @@
 
 - Work in a new worktree off `origin/main`, branch `layout-tests`. Not in the primary checkout, and not on the design branch.
 - `@playwright/test` must be exactly `1.58.2`, the version of the installed `playwright`. Danyel's `~/.npmrc` refuses packages published in the last 7 days; 1.58.2 was published 2026-02-06. If npm refuses anyway, stop and report — do not override the policy.
-- The pre-commit hook stays as it is: prettier, typecheck, vitest, about six seconds. Browser tests do not go in it.
+- The pre-commit hook stays as it is: prettier on staged files, typecheck, vitest, about six seconds. Browser tests do not go in it.
+- Before every commit, run `npx prettier --write` on the files you are committing. The code in this plan is not guaranteed to be in Prettier's layout, and the hook rejects anything that is not.
 - The test server gets its own port (`5199`, `--strictPort`) and is started by Playwright. Never reuse a dev server that is already running: if the port is taken, the run must fail loudly.
 - No new runtime dependencies. The app ships none.
+- Imports inside `layout/` carry the `.ts` extension, as `src/` does.
 - Comments follow AGENTS.md: present tense, only what the code cannot say.
 - `npm` only (the repo has `package-lock.json`).
 
@@ -26,17 +28,18 @@ A screenshot compared against a screenshot of the same code proves nothing. Thes
 
 | rule | what it catches |
 |---|---|
-| no horizontal page scroll | anything wider than the screen |
-| chrome inside the viewport | controls pushed off an edge |
-| chrome does not overlap chrome | popup under the panel, zoom buttons under the popup |
-| the map and the panel do not overlap | the panel covering the map it describes |
-| text is not clipped | labels cut off or spilling out of their box |
-| touch targets at least 44×44 CSS px, on touch screens | footer links too small for a thumb (44 is Apple's guideline; WCAG AA's floor is 24) |
-| the map rendered, in more than one colour | a blank or single-colour canvas |
+| `chrome-in-viewport` | controls, panels or a dialog pushed off an edge |
+| `chrome-apart` | popup under the panel, zoom buttons under the popup |
+| `map-clear-of-panel` | the panel covering the map it describes |
+| `text-not-clipped` | labels cut off or spilling out of their box |
+| `touch-targets`, on touch screens | controls too small for a thumb: under 44×44 CSS px, Apple's guideline (WCAG AA's floor is 24) |
+| the map rendered, in more than one colour | a blank canvas |
 
-The render rule compares against the constant background `#1a1a1a` (`gl.clearColor(0.1, 0.1, 0.1)` in `src/rendering.ts:87`, and `body` in `src/styles/main.css:13`), not against anything the app computes. Its thresholds are floors against "nothing drew", not a measure of correctness.
+There is no rule against horizontal scrolling. Everything in this interface is fixed-position, which never widens the document, and `body` hides its overflow, so an element too wide is cut off rather than scrollable; `chrome-in-viewport` catches it.
 
-Today's interface will break some rules. Each measured failure is listed in `layout/known.ts` with a reason, after Danyel has looked at it. A listed failure that stops failing fails the run, so the list cannot go stale.
+The render check hides everything drawn over the canvas before it counts pixels — the book labels, the title and every control carry enough anti-aliased text to pass for a map on their own — and compares against the constant background `#1a1a1a` (`gl.clearColor(0.1, 0.1, 0.1)` in `src/rendering.ts:87`, and `body` in `src/styles/main.css:13`). A test with WebGL's draw call stubbed out proves it fails on a map that drew nothing.
+
+Today's interface will break some rules. Each measured failure goes into `layout/known.ts` with the exact violations it produces and a reason, after Danyel has looked at it. A known failure whose violations change — fixed, or joined by a new one — fails the run, and a test checks that every entry names a state, screen and rule that are actually checked.
 
 ## File Structure
 
@@ -48,9 +51,11 @@ layout/
   geometry.ts            pure rectangle rules, each returning violations
   geometry.spec.ts       tests for geometry.ts (no browser)
   page.ts                opening the map, measuring elements, counting pixels
-  known.ts               layout failures accepted for now, with reasons
-  check.ts               applies the rules to a page and reconciles with known.ts
-  app.spec.ts            the app's states, checked at every screen size
+  check.ts               the rules applied to a page, reconciled with known.ts
+  known.ts               layout failures accepted for now, with their violations
+  known.spec.ts          every known failure names something that is checked
+  app.ts                 the interface's chrome selectors and its states
+  app.spec.ts            the states, checked at every screen size
   contactSheet.ts        reporter writing layout-report/index.html
 src/main.ts              one line: marks the map ready
 package.json             devDependency and scripts
@@ -60,14 +65,14 @@ CLAUDE.md, AGENTS.md     how and when to run it
 
 ---
 
-### Task 1: The runner loads the map and sees it render
+### Task 1: The runner loads the map and can tell whether it drew
 
 **Files:**
 - Create: `layout/playwright.config.ts`, `layout/tsconfig.json`, `layout/screens.ts`, `layout/page.ts`, `layout/app.spec.ts`
-- Modify: `package.json` (devDependency, scripts), `.gitignore`, `src/main.ts` (end of `main()`, after `scheduleStoryFrame();` near line 1467)
+- Modify: `package.json` (devDependency, scripts), `.gitignore`, `src/main.ts` (end of `main()`, after `scheduleStoryFrame();`, near line 1451)
 
 **Interfaces:**
-- Produces: `SCREENS: { name: string; use: PlaywrightTestOptions }[]` in `screens.ts`; `openMap(page: Page, hash: string): Promise<void>` and `mapPixels(page: Page): Promise<{ drawn: number; colours: number }>` in `page.ts`; the attribute `data-map-ready` on `<html>`.
+- Produces: `SCREENS: { name: string; use: Project['use'] }[]` in `screens.ts`; `openMap(page: Page, hash: string): Promise<void>`, `mapPixels(page: Page): Promise<{ drawn: number; colours: number }>` and `DRAWN_FLOOR = 1000` in `page.ts`; the attribute `data-map-ready` on `<html>`.
 
 - [ ] **Step 1: Create the worktree**
 
@@ -79,7 +84,7 @@ cd .claude/worktrees/layout-tests
 npm install
 ```
 
-Expected: `npm install` finishes; `ls node_modules/.bin/vitest` exists.
+Expected: `ls node_modules/.bin/vitest` exists.
 
 - [ ] **Step 2: Add the dependency and scripts**
 
@@ -89,7 +94,7 @@ npm install --save-dev --save-exact @playwright/test@1.58.2
 
 Expected: `package.json` gains `"@playwright/test": "1.58.2"`. If npm refuses because of the release-age policy, stop and report.
 
-Then edit `package.json` scripts: add after `"test:coverage"`:
+Edit `package.json` scripts: add after `"test:coverage"`:
 
 ```json
     "test:layout": "playwright test -c layout",
@@ -134,14 +139,15 @@ In `src/main.ts`, after `scheduleStoryFrame();` at the end of `main()`, add:
 `layout/screens.ts`:
 
 ```ts
-import { devices, type PlaywrightTestOptions } from '@playwright/test';
+import { devices, type Project } from '@playwright/test';
 
 // The phone layout starts at max-width 768px (src/styles/right-panel.css), so
 // the tablet gets the desktop layout.
-export const SCREENS: { name: string; use: Partial<PlaywrightTestOptions> }[] = [
+export const SCREENS: { name: string; use: Project['use'] }[] = [
   { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
   { name: 'laptop', use: { viewport: { width: 1280, height: 720 } } },
   { name: 'tablet', use: { viewport: { width: 820, height: 1180 }, hasTouch: true } },
+  // Playwright's iPhone 13 is 390×664: the part of the screen Safari leaves the page.
   { name: 'phone', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } },
 ];
 ```
@@ -150,7 +156,7 @@ export const SCREENS: { name: string; use: Partial<PlaywrightTestOptions> }[] = 
 
 ```ts
 import { defineConfig } from '@playwright/test';
-import { SCREENS } from './screens';
+import { SCREENS } from './screens.ts';
 
 const PORT = Number(process.env.LAYOUT_PORT ?? 5199);
 
@@ -159,10 +165,11 @@ export default defineConfig({
   outputDir: '../test-results',
   fullyParallel: true,
   workers: 4,
-  reporter: [['list'], ['./contactSheet.ts', { outputDir: '../layout-report' }]],
+  reporter: 'list',
   use: {
     baseURL: `http://localhost:${PORT}/`,
-    reducedMotion: 'reduce',
+    // Transitions finish at once, so nothing is measured mid-animation.
+    contextOptions: { reducedMotion: 'reduce' },
     launchOptions: {
       // Headless Chromium has no WebGL2 without software rendering.
       args: [
@@ -174,7 +181,8 @@ export default defineConfig({
     },
   },
   projects: [
-    { name: 'rules', testMatch: 'geometry.spec.ts' },
+    // Pure checks, no page. The web server still starts: it is shared by every project.
+    { name: 'rules', testMatch: ['geometry.spec.ts', 'known.spec.ts'] },
     ...SCREENS.map((s) => ({ name: s.name, use: s.use, testMatch: 'app.spec.ts' })),
   ],
   webServer: {
@@ -187,7 +195,7 @@ export default defineConfig({
 });
 ```
 
-The reporter file does not exist until Task 4. Until then, change the `reporter` line to `reporter: 'list',` and restore it in Task 4.
+Task 4 replaces `reporter: 'list'` with the contact sheet.
 
 - [ ] **Step 5: Write `page.ts`**
 
@@ -198,26 +206,46 @@ import { expect, type Page } from '@playwright/test';
 const BACKGROUND = 26;
 /** A channel this far from the background counts as drawn. */
 const DRAWN_DELTA = 12;
+/** Fewer drawn pixels than this is a map that did not draw. */
+export const DRAWN_FLOOR = 1000;
 
-/** Loads the map at `hash` and waits until it has drawn. */
+/**
+ * Loads the map at `hash` and waits until it has drawn and settled: the story
+ * applies a stop on the animation frame after startup, and the title face
+ * arrives from Google Fonts with display=swap, changing text widths.
+ */
 export async function openMap(page: Page, hash: string): Promise<void> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(hash ? `/#${hash}` : '/');
   await page.locator('html[data-map-ready]').waitFor({ timeout: 30_000 });
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  });
   await expect
     .poll(async () => (await mapPixels(page)).drawn, { timeout: 15_000 })
-    .toBeGreaterThan(1000);
+    .toBeGreaterThan(DRAWN_FLOOR);
   expect(errors, 'page errors').toEqual([]);
 }
 
 /**
  * Counts the map's drawn pixels and its distinct colours, from a screenshot of
- * the canvas: a screenshot is what the reader sees, and reading the WebGL
- * buffer directly would depend on preserveDrawingBuffer.
+ * the canvas with everything over it hidden: the labels, the title and the
+ * controls carry enough text to pass for a map on their own. A screenshot is
+ * what the reader sees; reading the WebGL buffer would depend on
+ * preserveDrawingBuffer.
  */
 export async function mapPixels(page: Page): Promise<{ drawn: number; colours: number }> {
-  const png = await page.locator('#canvas').screenshot();
+  const hide = await page.addStyleTag({
+    content: 'body *:not(#canvas) { visibility: hidden !important; }',
+  });
+  let png: Buffer;
+  try {
+    png = await page.locator('#canvas').screenshot();
+  } finally {
+    await hide.evaluate((el) => el.remove());
+  }
   return page.evaluate(
     async ({ b64, bg, delta }) => {
       const img = new Image();
@@ -244,50 +272,57 @@ export async function mapPixels(page: Page): Promise<{ drawn: number; colours: n
 }
 ```
 
-- [ ] **Step 6: Write a first spec that must pass**
+- [ ] **Step 6: Write the render checks, including the one that must fail**
 
 `layout/app.spec.ts`:
 
 ```ts
 import { expect, test } from '@playwright/test';
-import { mapPixels, openMap } from './page';
+import { DRAWN_FLOOR, mapPixels, openMap } from './page.ts';
 
-test('the map renders with an overlay on', async ({ page }) => {
+test('the map renders in more than one colour with an overlay on', async ({ page }) => {
   await openMap(page, 'overlay=commentary');
   const { drawn, colours } = await mapPixels(page);
-  expect(drawn).toBeGreaterThan(1000);
+  expect(drawn).toBeGreaterThan(DRAWN_FLOOR);
   expect(colours).toBeGreaterThanOrEqual(8);
+});
+
+test('the render check sees a map that drew nothing', async ({ page }) => {
+  // The map draws with drawArrays alone (src/rendering.ts); the clear still runs.
+  await page.addInitScript(() => {
+    WebGL2RenderingContext.prototype.drawArrays = () => {};
+  });
+  await page.goto('/#overlay=commentary');
+  await page.locator('html[data-map-ready]').waitFor({ timeout: 30_000 });
+  expect((await mapPixels(page)).drawn).toBeLessThan(DRAWN_FLOOR);
 });
 ```
 
 - [ ] **Step 7: Run it**
 
 Run: `npm run test:layout -- --project=desktop`
-Expected: 1 passed. Then print the measured numbers once, to see how far above the floors they sit:
+Expected: 2 passed.
 
-Run: `npm run test:layout -- --project=desktop` with a temporary `console.log(await mapPixels(page))` in the test.
-Expected: `drawn` in the tens of thousands, `colours` well above 8. Remove the `console.log`. If `drawn` is 0, SwiftShader is not active: check the launch args before anything else.
+Then print the real numbers once, to see how far above the floors they sit: add `console.log(await mapPixels(page))` to the first test, run the same command, and remove it.
+Expected: `drawn` in the tens of thousands, `colours` well above 8. If the first test fails with `drawn` at 0, SwiftShader is not active: check the launch args before anything else. If the second test fails, the pixel count is seeing something other than the map: find what, and hide it too.
 
-- [ ] **Step 8: Prove the check can fail**
-
-Temporarily change `openMap`'s poll to `.toBeGreaterThan(10_000_000)` and run again.
-Expected: FAIL with a timeout naming the poll. Revert.
-
-- [ ] **Step 9: Run all four screens**
+- [ ] **Step 8: Run all four screens**
 
 Run: `npm run test:layout`
-Expected: 4 passed (one per screen). The `rules` project has no tests yet and reports nothing.
+Expected: 8 passed (two per screen). The `rules` project has no tests yet.
 
-- [ ] **Step 10: Typecheck and commit**
+- [ ] **Step 9: Typecheck, format and commit**
 
 Run: `npm run typecheck`
 Expected: no errors.
 
 ```bash
+npx prettier --write layout/ package.json
 git add package.json package-lock.json .gitignore src/main.ts layout/
 git commit -m "Layout tests: Playwright loads the real map at four screen sizes
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -302,9 +337,9 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
   - `interface Rect { x: number; y: number; width: number; height: number }`
   - `interface Box extends Rect { name: string }`
   - `overlapping(boxes: Box[]): string[]`
+  - `apart(a: Box[], b: Box[]): string[]` — every box in `a` clear of every box in `b`
   - `outsideOf(boxes: Box[], frame: Rect): string[]`
   - `tooSmallToTouch(boxes: Box[], min: number): string[]`
-  - `apart(a: Box[], b: Box[]): string[]` — every box in `a` clear of every box in `b`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -312,10 +347,14 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 ```ts
 import { expect, test } from '@playwright/test';
-import { apart, outsideOf, overlapping, tooSmallToTouch, type Box } from './geometry';
+import { apart, outsideOf, overlapping, tooSmallToTouch, type Box } from './geometry.ts';
 
 const box = (name: string, x: number, y: number, width: number, height: number): Box => ({
-  name, x, y, width, height,
+  name,
+  x,
+  y,
+  width,
+  height,
 });
 
 test.describe('overlapping', () => {
@@ -328,6 +367,14 @@ test.describe('overlapping', () => {
   test('names both boxes and the shared area', () => {
     expect(overlapping([box('a', 0, 0, 10, 10), box('b', 5, 5, 10, 10)])).toEqual([
       'a overlaps b by 5×5px',
+    ]);
+  });
+});
+
+test.describe('apart', () => {
+  test('reports a box from each side that meet', () => {
+    expect(apart([box('map', 0, 0, 100, 100)], [box('panel', 90, 0, 50, 100)])).toEqual([
+      'map overlaps panel by 10×100px',
     ]);
   });
 });
@@ -352,20 +399,12 @@ test.describe('tooSmallToTouch', () => {
     expect(tooSmallToTouch([box('a', 0, 0, 80, 20)], 44)).toEqual(['a is 80×20px, under 44']);
   });
 });
-
-test.describe('apart', () => {
-  test('reports a box from each side that meet', () => {
-    expect(apart([box('map', 0, 0, 100, 100)], [box('panel', 90, 0, 50, 100)])).toEqual([
-      'map overlaps panel by 10×100px',
-    ]);
-  });
-});
 ```
 
 - [ ] **Step 2: Run to see them fail**
 
 Run: `npm run test:layout -- --project=rules`
-Expected: FAIL — cannot find module `./geometry`.
+Expected: FAIL — cannot find module `./geometry.ts`.
 
 - [ ] **Step 3: Implement**
 
@@ -441,13 +480,15 @@ export function tooSmallToTouch(boxes: Box[], min: number): string[] {
 Run: `npm run test:layout -- --project=rules`
 Expected: 8 passed.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Format and commit**
 
 ```bash
+npx prettier --write layout/geometry.ts layout/geometry.spec.ts
 git add layout/geometry.ts layout/geometry.spec.ts
 git commit -m "Layout rules as pure functions over measured boxes
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -455,48 +496,53 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 ### Task 3: Every state of today's interface, checked at every screen size
 
 **Files:**
-- Modify: `layout/page.ts` (add measuring), `layout/app.spec.ts` (replace the first spec)
-- Create: `layout/check.ts`, `layout/known.ts`
+- Modify: `layout/page.ts` (add measuring), `layout/app.spec.ts` (add the states)
+- Create: `layout/check.ts`, `layout/known.ts`, `layout/known.spec.ts`, `layout/app.ts`
 
 **Interfaces:**
-- Consumes: `openMap`, `mapPixels` (Task 1); `overlapping`, `apart`, `outsideOf`, `tooSmallToTouch`, `Box` (Task 2).
+- Consumes: `openMap`, `mapPixels`, `DRAWN_FLOOR` (Task 1); `overlapping`, `apart`, `outsideOf`, `tooSmallToTouch`, `Box` (Task 2); `SCREENS` (Task 1).
 - Produces:
-  - `boxes(page: Page, selector: string): Promise<Box[]>` — visible boxes only, clipped to scrolling or overflow-hidden ancestors, skipping inert subtrees.
+  - `boxes(page: Page, selector: string): Promise<Box[]>` — the visible part of each match
   - `clippedText(page: Page, selector: string): Promise<string[]>`
-  - `horizontalScroll(page: Page): Promise<string[]>`
-  - `interface Chrome { fixed: string; map: string; panel: string; interactive: string; text: string }` — the selectors a layout's rules are applied to.
-  - `checkLayout(page: Page, state: string, chrome: Chrome): Promise<void>`
-  - `KNOWN: Record<string, string>` keyed `"<state>/<screen>/<rule>"`.
+  - `interface Chrome { fixed: string; modal?: string; map: string; panel: string; interactive: string; text: string }`
+  - `RULES` (the rule names, `as const`) and `checkLayout(page: Page, state: string, chrome: Chrome): Promise<void>` in `check.ts`
+  - `interface Known { reason: string; violations: string[] }` and `KNOWN: Record<string, Known>` keyed `"<state>/<screen>/<rule>"` in `known.ts`
+  - `interface State { name: string; hash: string; then?: (page: Page) => Promise<void> }`, `CHROME: Chrome` and `STATES: State[]` in `app.ts`
 
 - [ ] **Step 1: Add measuring to `page.ts`**
 
-Add `import type { Box } from './geometry';` to the imports at the top, then append:
+Add `import type { Box } from './geometry.ts';` to the imports at the top, then append:
 
 ```ts
 /**
  * The visible part of every element matching `selector`. An element inside a
- * collapsed or scrolled container still has a full bounding rect, so each is
- * cut to the ancestors that clip it; what is left of it is what the reader can
- * see and touch.
+ * collapsed or scrolled container still has its full bounding rect, so each is
+ * cut to the ancestors that clip it. The walk stops at <body>, whose overflow
+ * the browser hands to the viewport, and after the first fixed-position box,
+ * since nothing above a fixed box clips it.
  */
 export async function boxes(page: Page, selector: string): Promise<Box[]> {
   return page.$$eval(selector, (els) =>
     els.flatMap((el) => {
       if (el.closest('[inert]')) return [];
       const style = getComputedStyle(el);
-      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-        return [];
+      if (style.display === 'none' || style.visibility === 'hidden') return [];
+      for (let a: Element | null = el; a; a = a.parentElement) {
+        if (getComputedStyle(a).opacity === '0') return [];
       }
       let { left, top, right, bottom } = el.getBoundingClientRect();
-      for (let a = el.parentElement; a; a = a.parentElement) {
-        const s = getComputedStyle(a);
-        if (s.opacity === '0' || s.visibility === 'hidden') return [];
-        if (s.overflowX === 'visible' && s.overflowY === 'visible') continue;
-        const r = a.getBoundingClientRect();
-        left = Math.max(left, r.left);
-        top = Math.max(top, r.top);
-        right = Math.min(right, r.right);
-        bottom = Math.min(bottom, r.bottom);
+      if (style.position !== 'fixed') {
+        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+          const s = getComputedStyle(a);
+          if (s.overflowX !== 'visible' || s.overflowY !== 'visible') {
+            const r = a.getBoundingClientRect();
+            left = Math.max(left, r.left);
+            top = Math.max(top, r.top);
+            right = Math.min(right, r.right);
+            bottom = Math.min(bottom, r.bottom);
+          }
+          if (s.position === 'fixed') break;
+        }
       }
       if (right - left < 1 || bottom - top < 1) return [];
       const name = el.id
@@ -507,56 +553,81 @@ export async function boxes(page: Page, selector: string): Promise<Box[]> {
   );
 }
 
-/** Elements whose text is wider than their box: cut off, or spilling out. */
+/**
+ * Elements whose text does not fit their box. A block is measured by its
+ * scroll width; an inline element has none, so its text is measured against
+ * its parent's box instead. Anything a pixel or less across is hidden for
+ * screen readers on purpose, and skipped.
+ */
 export async function clippedText(page: Page, selector: string): Promise<string[]> {
   return page.$$eval(selector, (els) =>
     els.flatMap((el) => {
       const h = el as HTMLElement;
-      if (h.closest('[inert]') || h.getClientRects().length === 0 || !h.textContent?.trim()) return [];
+      if (h.closest('[inert]') || !h.textContent?.trim()) return [];
+      const box = h.getBoundingClientRect();
+      if (box.width <= 1 || box.height <= 1) return [];
+      const name = h.id ? `#${h.id}` : `${h.tagName.toLowerCase()}.${[...h.classList].join('.')}`;
+      if (getComputedStyle(h).display === 'inline') {
+        const range = document.createRange();
+        range.selectNodeContents(h);
+        const text = range.getBoundingClientRect();
+        const parent = h.parentElement!.getBoundingClientRect();
+        return text.left < parent.left - 1 || text.right > parent.right + 1
+          ? [`${name} runs ${Math.round(text.right - parent.right)}px past its parent`]
+          : [];
+      }
       return h.scrollWidth > h.clientWidth + 1
-        ? [`${h.id ? '#' + h.id : h.className || h.tagName} needs ${h.scrollWidth}px, has ${h.clientWidth}`]
+        ? [`${name} needs ${h.scrollWidth}px, has ${h.clientWidth}`]
         : [];
     }),
   );
-}
-
-export async function horizontalScroll(page: Page): Promise<string[]> {
-  const { scroll, width } = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollWidth,
-    width: window.innerWidth,
-  }));
-  return scroll > width ? [`the page is ${scroll}px wide on a ${width}px screen`] : [];
 }
 ```
 
 - [ ] **Step 2: Write `known.ts`, empty**
 
 ```ts
+/** A layout failure accepted for now: why, and exactly what it measures. */
+export interface Known {
+  reason: string;
+  violations: string[];
+}
+
 /**
- * Layout failures accepted for now, keyed "<state>/<screen>/<rule>", each with
- * the reason it is accepted. A listed failure that stops happening fails the
- * run, so remove it when it is fixed.
+ * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
+ * failure whose violations change — fixed, or joined by another — fails the
+ * run, so update or remove its entry when it does.
  */
-export const KNOWN: Record<string, string> = {};
+export const KNOWN: Record<string, Known> = {};
 ```
 
 - [ ] **Step 3: Write `check.ts`**
 
 ```ts
 import { expect, test, type Page } from '@playwright/test';
-import { apart, outsideOf, overlapping, tooSmallToTouch } from './geometry';
-import { KNOWN } from './known';
-import { boxes, clippedText, horizontalScroll } from './page';
+import { apart, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
+import { KNOWN } from './known.ts';
+import { boxes, clippedText } from './page.ts';
 
-/** The selectors the rules measure, which belong to the layout being tested. */
+/** The selectors the rules measure, which belong to the interface being tested. */
 export interface Chrome {
   /** Fixed-position chrome that must not overlap itself. */
   fixed: string;
+  /** A dialog, which covers the rest by design but must fit the screen. */
+  modal?: string;
   map: string;
   panel: string;
   interactive: string;
   text: string;
 }
+
+export const RULES = [
+  'chrome-in-viewport',
+  'chrome-apart',
+  'map-clear-of-panel',
+  'text-not-clipped',
+  'touch-targets',
+] as const;
 
 const TOUCH_MIN = 44;
 
@@ -564,66 +635,69 @@ export async function checkLayout(page: Page, state: string, chrome: Chrome): Pr
   const info = test.info();
   const screen = page.viewportSize()!;
   const touch = Boolean(info.project.use.hasTouch);
+  const onScreen = [chrome.fixed, chrome.interactive, chrome.modal].filter(Boolean).join(', ');
 
-  const rules: Record<string, () => Promise<string[]>> = {
-    'no-horizontal-scroll': () => horizontalScroll(page),
+  const measure: Record<(typeof RULES)[number], (() => Promise<string[]>) | null> = {
     'chrome-in-viewport': async () =>
-      outsideOf(
-        [...(await boxes(page, chrome.fixed)), ...(await boxes(page, chrome.interactive))],
-        { x: 0, y: 0, ...screen },
-      ),
+      outsideOf(await boxes(page, onScreen), { x: 0, y: 0, ...screen }),
     'chrome-apart': async () => overlapping(await boxes(page, chrome.fixed)),
     'map-clear-of-panel': async () =>
       apart(await boxes(page, chrome.map), await boxes(page, chrome.panel)),
     'text-not-clipped': () => clippedText(page, chrome.text),
-    ...(touch && {
-      'touch-targets': async () =>
-        tooSmallToTouch(await boxes(page, chrome.interactive), TOUCH_MIN),
-    }),
+    'touch-targets': touch
+      ? async () => tooSmallToTouch(await boxes(page, chrome.interactive), TOUCH_MIN)
+      : null,
   };
 
-  for (const [rule, measure] of Object.entries(rules)) {
+  for (const rule of RULES) {
+    const run = measure[rule];
+    if (!run) continue;
     const key = `${state}/${info.project.name}/${rule}`;
-    const violations = await measure();
+    const violations = await run();
     const known = KNOWN[key];
-    if (known && violations.length) {
-      info.annotations.push({ type: 'known layout defect', description: `${key}: ${known}` });
-    } else if (known) {
-      expect.soft(violations, `${key} is listed in known.ts but passes: remove it`).not.toEqual([]);
-    } else {
+    if (!known) {
       expect.soft(violations, key).toEqual([]);
+    } else if (JSON.stringify(violations) === JSON.stringify(known.violations)) {
+      info.annotations.push({ type: 'known layout defect', description: `${key}: ${known.reason}` });
+    } else {
+      expect
+        .soft(violations, `${key} no longer measures what known.ts records: update or remove it`)
+        .toEqual(known.violations);
     }
   }
 }
 ```
 
-- [ ] **Step 4: Write the states spec**
-
-Replace `layout/app.spec.ts` with:
+- [ ] **Step 4: Write `app.ts`: today's chrome and states**
 
 ```ts
-import { expect, test, type Page } from '@playwright/test';
-import { checkLayout, type Chrome } from './check';
-import { mapPixels, openMap } from './page';
+import type { Page } from '@playwright/test';
+import type { Chrome } from './check.ts';
 
-// Today's panel, story strip and footer (index.html, src/styles/right-panel.css).
-const CHROME: Chrome = {
-  fixed: '#right-panel, #zoom-controls, #verse-popup.visible',
-  map: '#canvas',
-  panel: '#right-panel',
-  interactive:
-    '#right-panel button, #right-panel select, #right-panel input, #right-panel a, ' +
-    '#verse-popup button, #verse-popup a, #zoom-controls button',
-  text: '#controls-summary, #story-strip-title, .footer-link, #right-panel label, #verse-popup .ref-text',
-};
-
-interface State {
+export interface State {
   name: string;
   hash: string;
   then?: (page: Page) => Promise<void>;
 }
 
-const STATES: State[] = [
+// Today's panel, story strip, footer and help window (index.html,
+// src/styles/right-panel.css, src/help.ts). Links inside the story's prose are
+// running text, which touch-size rules exempt.
+export const CHROME: Chrome = {
+  fixed: '#right-panel, #zoom-controls, #verse-popup.visible',
+  modal: '#help-modal.visible .help-content',
+  map: '#canvas',
+  panel: '#right-panel',
+  interactive:
+    '#right-panel button, #right-panel select, #right-panel input, ' +
+    '#right-panel a:not(.story-stop a), #verse-popup button, #verse-popup a, ' +
+    '#zoom-controls button, #help-modal.visible button',
+  text:
+    '#controls-summary, #story-strip-title, .footer-link, #right-panel label, ' +
+    '#verse-popup .ref-text, #help-modal.visible .help-tab',
+};
+
+export const STATES: State[] = [
   { name: 'story-opening', hash: 'story=intro' },
   { name: 'story-stop-with-verse', hash: 'story=abraham_call' },
   { name: 'explore-no-overlay', hash: 'zoom=0.5' },
@@ -636,6 +710,26 @@ const STATES: State[] = [
     then: (page) => page.locator('#about-btn').click(),
   },
 ];
+```
+
+Check the names the states rely on before going on:
+
+Run: `grep -n "stop: abraham_call" public/data/story.md; grep -n "about-btn\|help-modal\|help-content\|help-tab" src/help.ts | head; grep -n "'q'\|key: 'q'" src/overlays/search/index.ts`
+Expected: the stop exists (it pins `Genesis.12.1`); `#about-btn`, `#help-modal`, `.help-content` and `.help-tab` exist; search's URL key is `q`. Change any name the source spells differently.
+
+- [ ] **Step 5: Check the states, and check that the measurements see something**
+
+Append to `layout/app.spec.ts`, and add `boxes` to its import from `./page.ts`:
+
+```ts
+import { CHROME, STATES } from './app.ts';
+import { checkLayout } from './check.ts';
+
+test('measuring finds the panel and its controls', async ({ page }) => {
+  await openMap(page, 'overlay=commentary');
+  expect(await boxes(page, CHROME.panel)).not.toEqual([]);
+  expect(await boxes(page, CHROME.interactive)).not.toEqual([]);
+});
 
 for (const state of STATES) {
   test(state.name, async ({ page }, info) => {
@@ -648,42 +742,67 @@ for (const state of STATES) {
   });
 }
 
-test('the map renders more than one colour with an overlay on', async ({ page }) => {
-  await openMap(page, 'overlay=commentary');
-  expect((await mapPixels(page)).colours).toBeGreaterThanOrEqual(8);
-});
-
 test('the title face loads', async ({ page }) => {
   await openMap(page, 'story=intro');
-  const loaded = await page.evaluate(async () => {
-    await document.fonts.ready;
-    return document.fonts.check('700 32px "David Libre"');
-  });
-  expect(loaded, 'David Libre comes from Google Fonts, so this needs the network').toBe(true);
+  // document.fonts.check() is true for a face that was never declared; load() is not.
+  const faces = await page.evaluate(
+    async () => (await document.fonts.load('700 32px "David Libre"')).length,
+  );
+  expect(faces, 'David Libre comes from Google Fonts, so this needs the network').toBeGreaterThan(
+    0,
+  );
 });
 ```
 
-- [ ] **Step 5: Check the story stop exists**
+Move the imports to the top of the file with the others.
 
-Run: `grep -n "stop: abraham_call" public/data/story.md`
-Expected: one line. If not, pick another stop that pins a verse from `grep -n "verse:" public/data/story.md` and use its id.
+- [ ] **Step 6: Check that every known failure names something checked**
 
-- [ ] **Step 6: Run everything and collect the failures**
+`layout/known.spec.ts`:
 
-Run: `npm run test:layout 2>&1 | tee test-results/first-run.txt`
-Expected: some failures on today's interface. Each soft failure prints its key (`state/screen/rule`) and its violations.
+```ts
+import { expect, test } from '@playwright/test';
+import { STATES } from './app.ts';
+import { RULES } from './check.ts';
+import { KNOWN } from './known.ts';
+import { SCREENS } from './screens.ts';
 
-- [ ] **Step 7: Prove each rule can fail on purpose**
+test('every known failure names a state, screen and rule that are checked', () => {
+  const states = new Set(STATES.map((s) => s.name));
+  const touch = new Map(SCREENS.map((s) => [s.name, Boolean(s.use?.hasTouch)]));
+  for (const key of Object.keys(KNOWN)) {
+    const [state, screen, rule] = key.split('/');
+    expect(states.has(state), `${key}: no such state`).toBe(true);
+    expect(touch.has(screen), `${key}: no such screen`).toBe(true);
+    expect(RULES as readonly string[], `${key}: no such rule`).toContain(rule);
+    if (rule === 'touch-targets') {
+      expect(touch.get(screen), `${key}: touch targets are checked only on touch screens`).toBe(
+        true,
+      );
+    }
+  }
+});
+```
 
-For each rule, confirm at least one real failure appeared in Step 6, or make one: e.g. temporarily set `TOUCH_MIN = 400` and confirm `touch-targets` fails on `phone`; temporarily add `#canvas` to `fixed` and confirm `chrome-apart` fails. Revert each. A rule that cannot be made to fail is not measuring anything — fix it before going on.
+Run: `npm run test:layout -- --project=rules`
+Expected: 9 passed.
 
-- [ ] **Step 8: Stop and review the failures with Danyel**
+- [ ] **Step 7: Run everything and keep the output**
 
-Do not edit `known.ts` alone. Write the list of failing keys and their violation text into the PR description draft, grouped by rule, and ask Danyel which are real defects of today's interface and which mean a rule is wrong. Only then:
-- a real defect that the frame replaces goes into `KNOWN` with a one-line reason;
-- a rule that is wrong is fixed in `check.ts` or `geometry.ts`, with a test in `geometry.spec.ts` when the fix is in the geometry.
+Run: `mkdir -p layout-report && npm run test:layout 2>&1 | tee layout-report/first-run.txt`
+Expected: "measuring finds the panel and its controls" passes on all four screens — if it fails, the measurement is broken and nothing after it means anything; fix it first. Then some state failures on today's interface: each soft failure prints its key (`state/screen/rule`) and its violations. (`layout-report/` rather than `test-results/`, which Playwright empties at the start of every run.)
 
-- [ ] **Step 9: Run clean and commit**
+- [ ] **Step 8: Prove each rule can fail on purpose**
+
+For each rule with no failure in Step 7, make one and revert it: `TOUCH_MIN = 400` for `touch-targets` on `phone`; `#canvas` added to `CHROME.fixed` for `chrome-apart`; `CHROME.panel` set to `'#canvas'` for `map-clear-of-panel`; a style tag setting `#right-panel { right: -100px }` in a state's `then` for `chrome-in-viewport`; `#controls-summary { width: 20px }` for `text-not-clipped`. A rule that cannot be made to fail is not measuring anything — fix it before going on.
+
+- [ ] **Step 9: Stop and review the failures with Danyel**
+
+Do not edit `known.ts` alone. Write the failing keys and their violation text into the PR description draft, grouped by rule, with the screenshot each comes from, and ask Danyel which are real defects of today's interface and which mean a rule is wrong. Only then:
+- a real defect goes into `KNOWN` with its reason and its violations copied exactly from the run;
+- a wrong rule is fixed in `check.ts`, `page.ts` or `geometry.ts`, with a test in `geometry.spec.ts` when the fix is in the geometry.
+
+- [ ] **Step 10: Run clean, typecheck, format and commit**
 
 Run: `npm run test:layout`
 Expected: all pass, with known defects listed as annotations.
@@ -692,10 +811,12 @@ Run: `npm run typecheck`
 Expected: no errors.
 
 ```bash
+npx prettier --write layout/
 git add layout/
 git commit -m "Layout tests: every state of the interface at every screen size
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -704,7 +825,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 **Files:**
 - Create: `layout/contactSheet.ts`
-- Modify: `layout/playwright.config.ts` (restore the reporter line)
+- Modify: `layout/playwright.config.ts` (the reporter line)
 
 **Interfaces:**
 - Consumes: attachments named `layout` (Task 3), annotations of type `known layout defect` (Task 3).
@@ -714,7 +835,7 @@ Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
 
 ```ts
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { Reporter, TestCase, TestResult } from '@playwright/test/reporter';
 
 interface Cell {
@@ -723,14 +844,19 @@ interface Cell {
   known: string[];
 }
 
+const esc = (s: string): string =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 /** Writes every layout screenshot as a grid: states down, screen sizes across. */
 export default class ContactSheet implements Reporter {
   private readonly dir: string;
   private readonly cells = new Map<string, Map<string, Cell>>();
   private readonly screens: string[] = [];
 
-  constructor(options: { outputDir: string }) {
-    this.dir = options.outputDir;
+  // Playwright passes a reporter's options through as given, adding configDir;
+  // a relative outputDir would otherwise resolve against the working directory.
+  constructor(options: { outputDir: string; configDir: string }) {
+    this.dir = resolve(options.configDir, options.outputDir);
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
@@ -754,8 +880,6 @@ export default class ContactSheet implements Reporter {
 
   onEnd(): void {
     if (this.cells.size === 0) return;
-    const esc = (s: string): string =>
-      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const head = this.screens.map((s) => `<th>${esc(s)}</th>`).join('');
     const rows = [...this.cells]
       .map(([state, row]) => {
@@ -787,7 +911,9 @@ img{max-width:260px;max-height:320px;display:block}ul{margin:4px 0 0;padding-lef
 }
 ```
 
-- [ ] **Step 2: Restore the reporter line in the config**
+- [ ] **Step 2: Use it in the config**
+
+In `layout/playwright.config.ts`, replace `reporter: 'list',` with:
 
 ```ts
   reporter: [['list'], ['./contactSheet.ts', { outputDir: '../layout-report' }]],
@@ -796,21 +922,23 @@ img{max-width:260px;max-height:320px;display:block}ul{margin:4px 0 0;padding-lef
 - [ ] **Step 3: Run and open it**
 
 Run: `npm run test:layout`
-Expected: ends with `Contact sheet: …/layout-report/index.html`.
+Expected: ends with `Contact sheet: <worktree>/layout-report/index.html` — inside the worktree, not beside it.
 
 Run: `open layout-report/index.html`
 Expected: seven rows of states, four columns of screen sizes, a screenshot in each cell, known defects in yellow under the cells they belong to. Read two or three screenshots at full size: the map has coloured squares in them, and the Hebrew title is in David Libre rather than a fallback serif.
 
-- [ ] **Step 4: Typecheck and commit**
+- [ ] **Step 4: Typecheck, format and commit**
 
 Run: `npm run typecheck`
 Expected: no errors.
 
 ```bash
+npx prettier --write layout/contactSheet.ts layout/playwright.config.ts
 git add layout/contactSheet.ts layout/playwright.config.ts
 git commit -m "Layout tests write a contact sheet: states down, screen sizes across
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 ```
 
 ---
@@ -835,17 +963,18 @@ npm run test:layout
 ```
 
 It starts its own dev server on port 5199 (`LAYOUT_PORT` to change it), renders
-the map with software WebGL, and checks every state in `layout/app.spec.ts`
-against rules any good layout keeps: nothing off screen or overlapping, no
-clipped text, touch targets large enough for a thumb, and a map that actually
-drew. `layout/known.ts` lists the failures accepted for now and why. It ends by
-writing `layout-report/index.html`, every state at every size side by side.
+the map with software WebGL, and checks every state in `layout/app.ts` against
+rules any good layout keeps: nothing off screen or overlapping, no clipped
+text, touch targets large enough for a thumb, and a map that actually drew.
+`layout/known.ts` lists the failures accepted for now, what each measures and
+why. It ends by writing `layout-report/index.html`, every state at every size
+side by side.
 
 It takes about a minute, so the pre-commit hook does not run it. Run it before
 opening any pull request that changes the interface.
 ````
 
-The Test Harness paragraph says the harness is for headless browsers "where WebGL is unavailable". Change that sentence to:
+The Test Harness paragraph says the harness is for headless browsers "where WebGL is unavailable". Change that paragraph to:
 
 ```markdown
 A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow on its own, without the map. Source lives in `test-harness/`.
@@ -871,7 +1000,8 @@ Expected: all pass.
 git add CLAUDE.md AGENTS.md
 git commit -m "Say how and when to run the layout tests
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 git push -u origin layout-tests
 gh pr create --base main --title "Layout tests: the real map, four screen sizes, a contact sheet" --body "…"
 ```
@@ -888,6 +1018,7 @@ Expected: the PR URL is printed; `gh pr view` shows it open against `main`.
 
 ## Self-Review
 
-- **Spec coverage.** The design's Testing bullet asks for the frame's states to be driven and looked at in a real browser, with state kept in vitest. This plan builds the browser half against today's interface; the frame plan adds the frame's states to `app.spec.ts` and its `CHROME` selectors. The vitest half is unchanged and belongs to the frame plan.
-- **Placeholders.** The PR body in Task 5 is described rather than written, because it lists the known defects Task 3 has not yet measured. Everything else is literal.
-- **Names.** `openMap`, `mapPixels`, `boxes`, `clippedText`, `horizontalScroll`, `checkLayout`, `Chrome`, `KNOWN`, `overlapping`, `apart`, `outsideOf`, `tooSmallToTouch`, `Box`, `Rect` are each defined once and used with the same signatures throughout.
+- **Spec coverage.** The design's Testing bullet asks for the frame's states to be driven and looked at in a real browser, with state kept in vitest. This plan builds the browser half against today's interface; the frame plan replaces `CHROME` and `STATES` in `layout/app.ts` with the frame's. The vitest half belongs to the frame plan.
+- **Every check can fail.** The render check has a test that stubs out drawing; the measurement has a test that it finds the panel; each rule is made to fail once by hand in Task 3 Step 8; `known.ts` entries are pinned to their exact violations and to names that exist.
+- **Placeholders.** The PR body in Task 5 is described rather than written, because it lists the known defects Task 3 has not yet measured.
+- **Names.** `openMap`, `mapPixels`, `DRAWN_FLOOR`, `boxes`, `clippedText`, `checkLayout`, `RULES`, `Chrome`, `Known`, `KNOWN`, `State`, `CHROME`, `STATES`, `SCREENS`, `overlapping`, `apart`, `outsideOf`, `tooSmallToTouch`, `Box`, `Rect` are each defined once and used with the same signatures.
