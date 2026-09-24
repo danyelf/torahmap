@@ -14,9 +14,9 @@
 
 - Work in a new worktree, branch `ui-frame`, based on `worktree-ui-information-hierarchy` (the design branch, which carries the spec). Rebase onto `origin/main` once the design PR has merged.
 - Step 1 only. Search stays an overlay in the overlay list; there is no Share; there is one story. The rail therefore has Stories, Overlay and ☰ — Search and Share join it in later steps.
-- The rail and the panel sit on the **right**, where the panel is today. Pointer handling in `main.ts` treats `clientX`/`clientY` as map coordinates, which holds only while the canvas starts at the window's left edge. The mockups drew the rail on the left; moving it there needs every pointer and label coordinate offset first, and is not this plan.
-- `--panel-width` (380px, `src/styles/main.css:2`) stays the width of everything right of the map, in both modes: the story column is 380px; the rail (56px) and the open panel (324px) together are 380px. The map does not change width when the mode changes.
-- The verse popup and the zoom buttons keep their places and styles. Hide Hebrew keeps its storage key, `torahMap.englishOnly`.
+- The rail and the panel sit on the **left**, as the mockups draw them (Danyel's decision). Everything the map draws or hit-tests is in the map's own coordinates, measured from the canvas's top-left corner, which sits at `--map-left` (Task 3). Never read a pointer's `clientX`/`clientY` as a map position.
+- `--panel-width` (380px, `src/styles/main.css:2`) stays the width of everything left of the map, in both modes: the story column is 380px; the rail (56px) and the open panel (324px) together are 380px. The map does not change width when the mode changes.
+- The verse popup stays at the bottom-left of the map and the zoom buttons at its bottom-right, with their styles unchanged; only their offsets follow the map. Hide Hebrew keeps its storage key, `torahMap.englishOnly`.
 - Every new touch target on a phone is at least 44×44 CSS px.
 - Telemetry values stay as they are: `ExitHow` `'fold'` now means "left the story for the tools", because `scripts/telemetry/` filters on the value.
 - Comments follow AGENTS.md: present tense, only what the code cannot say. No ticket numbers or step labels in code.
@@ -32,7 +32,7 @@ Each is a constant or a string in one place, so changing it is one edit. List th
 3. **The Stories panel calls the story "The guided tour"**, since the story file has no title yet; titles arrive with the multiple-stories step.
 4. **Each overlay's description shows under the overlay picker** now, not in step 3. The help window's Overlays tab goes away in this step, and without this the descriptions would vanish from the interface until step 3.
 5. **At rest on a phone, a link into the explore view opens with nothing open** — the map and the folded line — and on a desktop with the Overlay panel open.
-6. **The rail and the panel stay on the right**, where the panel is today, though the mockups drew them on the left. See Global Constraints for why.
+6. **The zoom buttons move to the window's bottom-right corner**, since the map now runs to that edge, and the verse popup to the bottom-left of the map rather than of the window.
 
 ## File Structure
 
@@ -47,11 +47,14 @@ src/sheet.ts, src/help.ts     DELETED
 src/styles/frame.css          NEW  (replaces src/styles/right-panel.css)
 src/styles/about.css          NEW  (the content rules of src/styles/help.css)
 src/styles/right-panel.css, src/styles/help.css   DELETED
-src/styles/verse-popup.css    one selector
+src/mapPoint.ts                NEW  a pointer's position in the map's own coordinates
+src/labels.ts, src/styles/map-title.css   the labels and the title sit at --map-left
+src/styles/main.css           --map-left
+src/styles/verse-popup.css, src/styles/zoom-buttons.css   offsets that follow the map
 src/telemetry/driverChange.ts one doc comment
 index.html                    the panel's markup, the rail, the phone's top bar
 src/main.ts                   the wiring
-src/__tests__/unit/frame.test.ts, menu.test.ts, storiesPanel.test.ts, aboutPanel.test.ts   NEW
+src/__tests__/unit/frame.test.ts, menu.test.ts, storiesPanel.test.ts, aboutPanel.test.ts, mapPoint.test.ts   NEW
 src/__tests__/unit/overlays/descriptions.test.ts   NEW (the registry checks from help.test.ts)
 src/__tests__/unit/sheet.test.ts, help.test.ts     DELETED
 layout/app.ts                 the frame's chrome and states (after the layout-tests branch merges)
@@ -324,7 +327,7 @@ Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 - Modify: `src/hebrewDisplay.ts`
 - Read before deleting anything: `src/help.ts`, `src/__tests__/unit/help.test.ts`, `src/styles/help.css`
 
-`src/help.ts`, its test and its stylesheet stay in place until Task 3, because `main.ts` still imports them; this task only builds what replaces them.
+`src/help.ts`, its test and its stylesheet stay in place until Task 4, because `main.ts` still imports them; this task only builds what replaces them.
 
 **Interfaces:**
 - Consumes: `escapeHtml` from `src/utils/html.ts`; `renderCreditsHtml` from `src/credits.ts`; `getAllOverlays` from `src/overlays/registry.ts`.
@@ -495,7 +498,7 @@ export function bindHebrewToggle(button: HTMLButtonElement): void {
 }
 ```
 
-`main.ts` still calls `initHebrewToggle` until Task 3, so the typecheck fails between this step and Task 3. Do not commit this step on its own; Task 2 commits once, at the end, and Step 12 restores a compiling `main.ts` temporarily. (See Step 12.)
+`main.ts` still calls `initHebrewToggle` until Task 4, so the typecheck fails between this step and Task 4. Do not commit this step on its own; Task 2 commits once, at the end, and Step 12 restores a compiling `main.ts` temporarily. (See Step 12.)
 
 - [ ] **Step 8: Write the About panel's failing test**
 
@@ -674,7 +677,7 @@ Expected: 1 passed. If an overlay has no description, that is a real gap: stop a
 
 - [ ] **Step 11: Style the menu and Stories panel**
 
-These rules go in `src/styles/frame.css`, which Task 3 creates. Keep them in a scratch note for now; Task 3 Step 3 includes them.
+These rules go in `src/styles/frame.css`, which Task 4 creates. Keep them in a scratch note for now; Task 4 Step 3 includes them.
 
 - [ ] **Step 12: Commit with a compiling tree**
 
@@ -684,7 +687,7 @@ These rules go in `src/styles/frame.css`, which Task 3 creates. Keep them in a s
     applyHebrewChoice();
 ```
 
-and its import from `./hebrewDisplay.ts` to `applyHebrewChoice`. The footer loses its Hebrew button until Task 3 replaces the footer; that is acceptable inside the branch.
+and its import from `./hebrewDisplay.ts` to `applyHebrewChoice`. The footer loses its Hebrew button until Task 4 replaces the footer; that is acceptable inside the branch.
 
 Run: `npm run typecheck && npx vitest run`
 Expected: no type errors; every test passes, including the old `help.test.ts`.
@@ -700,14 +703,146 @@ Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 
 ---
 
-### Task 3: The frame, drawn and wired
+### Task 3: The map measures from its own corner
+
+The rail and the panel move to the left in Task 4, so the map will no longer start at the window's left edge. Today everything the map draws or hit-tests is measured from the window's corner: the canvas, the book labels and the title are fixed at `left: 0`, and every pointer handler in `main.ts` passes `clientX`/`clientY` straight to the camera as map coordinates. This task gives the map one offset, `--map-left`, that the canvas, the labels and the title all sit at, and converts every pointer position into the map's own coordinates. `--map-left` stays `0px` here, so nothing on screen changes; Task 4 sets it.
+
+The camera needs no change: its coordinates are already the map's own (`createCamera`, `zoomAt`, `findItemAtPoint` and `mapFocus` all work in canvas pixels). Only the pointer's origin was wrong.
+
+**Files:**
+- Create: `src/mapPoint.ts`, `src/__tests__/unit/mapPoint.test.ts`
+- Modify: `src/main.ts` (the pointer handlers), `src/labels.ts:66`, `src/styles/map-title.css:12`, `src/styles/main.css:2`, `src/styles/right-panel.css` (the `#canvas` rule, near line 395), `src/camera.ts:15` (a comment)
+
+**Interfaces:**
+- Produces: `mapPoint(clientX: number, clientY: number, origin: { left: number; top: number }): { x: number; y: number }` in `src/mapPoint.ts`; the custom property `--map-left` on `:root`, which Task 4 sets on a desktop.
+
+- [ ] **Step 1: Write the failing test**
+
+`src/__tests__/unit/mapPoint.test.ts`:
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { mapPoint } from '../../mapPoint';
+
+describe('mapPoint', () => {
+  it('is the window point when the map starts at the window corner', () => {
+    expect(mapPoint(120, 80, { left: 0, top: 0 })).toEqual({ x: 120, y: 80 });
+  });
+
+  it('measures from the map corner when the map starts to the right of a panel', () => {
+    expect(mapPoint(500, 80, { left: 380, top: 0 })).toEqual({ x: 120, y: 80 });
+  });
+});
+```
+
+- [ ] **Step 2: Run it to see it fail**
+
+Run: `npx vitest run src/__tests__/unit/mapPoint.test.ts`
+Expected: FAIL — cannot resolve `../../mapPoint`.
+
+- [ ] **Step 3: Implement**
+
+`src/mapPoint.ts`:
+
+```ts
+/**
+ * A pointer's position in the map's own coordinates, which the camera, hit
+ * detection and the labels all use: measured from the canvas's top-left
+ * corner rather than the window's.
+ */
+export function mapPoint(
+  clientX: number,
+  clientY: number,
+  origin: { left: number; top: number },
+): { x: number; y: number } {
+  return { x: clientX - origin.left, y: clientY - origin.top };
+}
+```
+
+Run: `npx vitest run src/__tests__/unit/mapPoint.test.ts`
+Expected: 2 passed.
+
+- [ ] **Step 4: Convert every pointer position in `main.ts`**
+
+Import `mapPoint` from `./mapPoint.ts`. Just after `resizeCanvas();` (near line 199), add:
+
+```ts
+  /** Where a pointer is on the map: the canvas need not start at the window's corner. */
+  const onMap = (e: { clientX: number; clientY: number }): { x: number; y: number } =>
+    mapPoint(e.clientX, e.clientY, canvas.getBoundingClientRect());
+```
+
+Then replace each use of a pointer's `clientX`/`clientY` as a map position. Every site, from `grep -n "clientX\|clientY" src/main.ts` on the design branch:
+
+- the `wheel` handler (near line 575): `zoomAt(zoomFactor, e.clientX, e.clientY)` → compute `const p = onMap(e);` and call `zoomAt(zoomFactor, p.x, p.y)`.
+- `touchstart` and `touchmove` (near lines 598 and 611): `trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY)` → `const p = onMap(touch);` then `trackTouch(touchState, touch.identifier, p.x, p.y)`. The pinch centre is then in map coordinates, which is what `zoomAt` wants.
+- `pointerdown` (near lines 645 and 648): `startDrag(mouseState, e.clientX, e.clientY)` and `pointerDownPos = { x: e.clientX, y: e.clientY, … }` → both from one `const p = onMap(e);`.
+- `pointermove` while dragging (near lines 653-658): the deltas and the new `dragStart` → from `const p = onMap(e);`. A delta is the same in either coordinate system, but mixing the two in one handler invites the next reader to wonder.
+- `pointerup` (near lines 671-676): the tap test's deltas and `findItemAtPoint(verses, camera, e.clientX, e.clientY)` → from `const p = onMap(e);`.
+- the click that unpins (near line 691): `findItemAtPoint(…, e.clientX, e.clientY)` → from `onMap(e)`.
+- hover (near lines 798-799): `lastPointerPosition = { x: e.clientX, y: e.clientY }` and its `findItemAtPoint` → from `const p = onMap(e);`. `lastPointerPosition` is then in map coordinates, which is how the mid-scroll re-hit uses it.
+
+Leave the phone sheet's drag handlers (`from = e.clientY`, near line 1196) alone: they measure a finger's travel on the page, not a place on the map.
+
+Run: `grep -n "clientX\|clientY" src/main.ts`
+Expected: only the `onMap` definition and the sheet-drag lines.
+
+- [ ] **Step 5: Put the map's layers at `--map-left`**
+
+- `src/styles/main.css`: in the `:root` rule that declares `--panel-width` (line 2), add `--map-left: 0px;` with the comment `/* Where the map starts across the window. The canvas, the book labels and the title all sit here. */`
+- `src/styles/right-panel.css`, the `#canvas` rule (near line 395): `left: 0;` → `left: var(--map-left);`
+- `src/labels.ts:66`: `'position:fixed;top:0;left:0;pointer-events:none;'` → `'position:fixed;top:0;left:var(--map-left);pointer-events:none;'`
+- `src/styles/map-title.css:12`: `left: 0;` → `left: var(--map-left);`
+
+- [ ] **Step 6: The camera's comment**
+
+`src/camera.ts:15-16` says `RIGHT_MARGIN` "keeps Genesis 1:1 clear of the right-panel sidebar". The panel is leaving the right. Rewrite it to say what the constant does, which is true wherever the panel is:
+
+```ts
+// How far in from the right edge the opening camera puts Genesis 1:1, the
+// map's rightmost verse.
+```
+
+- [ ] **Step 7: Prove the offset is honoured**
+
+Nothing on screen changes while `--map-left` is `0px`, so prove it by moving it. Temporarily set `--map-left: 200px;` in `src/styles/main.css`. Start your own dev server in the background (never reuse one that is running):
+
+```bash
+npx vite --port 5298 --strictPort
+```
+
+and confirm it responds: `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5298/` prints `200`.
+
+Write a throwaway script **outside the repository**, in `/private/tmp/claude-501/-Users-danyel-code-MISC-torahmap/5b820963-c0fe-44bd-af03-5f4a56bfc3cd/scratchpad/mapleft-check.mjs`, importing `chromium` from the worktree's `node_modules/playwright` by absolute path, launched with the SwiftShader flags `scripts/og-image.mjs` uses. It loads `http://localhost:5298/#overlay=commentary&zoom=2&x=-2000&y=0` at 1440×900, waits 5 seconds, hovers the mouse at window position (200 + 400, 300), and prints `#verse-popup .ref-text`'s text and the book label nearest that point. Run it with `--map-left: 200px`, then set it back to `0px`, reload the server's page, hover at window position (400, 300), and run it again.
+
+Expected: both runs name the same verse. If they differ, a pointer site still reads window coordinates: find it before going on. Then also look at one screenshot from the 200px run (`page.screenshot`) and confirm the book labels sit over their books rather than 200px to their left.
+
+Set `--map-left` back to `0px`. Stop the dev server by its PID.
+
+- [ ] **Step 8: Test, format and commit**
+
+Run: `npm run typecheck && npx vitest run`
+Expected: no type errors; all tests pass.
+
+```bash
+npm run format
+git add src/mapPoint.ts src/__tests__/unit/mapPoint.test.ts src/main.ts src/labels.ts src/camera.ts src/styles/main.css src/styles/right-panel.css src/styles/map-title.css
+git commit -m "The map measures pointers and places labels from its own corner
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
+```
+
+---
+
+### Task 4: The frame, drawn and wired
 
 This task replaces the markup, the stylesheet and the panel wiring in `main.ts` together. They cannot be split: the old wiring looks up elements the new markup removes, and the page is broken between any two of the three.
 
 **Files:**
 - Modify: `index.html` (lines 80-118, `#right-panel` and everything inside it)
 - Create: `src/styles/frame.css`; delete `src/styles/right-panel.css`, `src/styles/help.css`, `src/help.ts`, `src/sheet.ts`, `src/__tests__/unit/help.test.ts`, `src/__tests__/unit/sheet.test.ts`
-- Modify: `src/main.ts`, `src/styles/verse-popup.css:128`, `src/telemetry/driverChange.ts:3`
+- Modify: `src/main.ts`, `src/styles/main.css`, `src/styles/verse-popup.css`, `src/styles/zoom-buttons.css`, `scripts/og-image.mjs`, `src/telemetry/driverChange.ts:3`
 
 **Interfaces:**
 - Consumes: everything from Tasks 1 and 2; `summaryHtml` from `src/panelSummary.ts`; `stopLabel` from `src/scrollytelling/storyPanel.ts`; `stopAt` (already imported in `main.ts`).
@@ -809,12 +944,14 @@ git rm src/styles/right-panel.css src/styles/help.css src/help.ts src/sheet.ts \
 Before writing it, read the deleted `right-panel.css` from git (`git show HEAD:src/styles/right-panel.css`): the story rules below are carried from it, including its comments on why stops are spaced in `cqh` and why the phone uses `svh`.
 
 ```css
-/* The frame. On a desktop everything right of the map is --panel-width wide in
+/* The frame. On a desktop everything left of the map is --panel-width wide in
    both modes — the story's column, or the rail and the open panel together —
-   so the map never changes width when the mode does. On a phone the panel is a
-   sheet along the bottom and a bar along the top that hides while the map
-   moves. The mode and the open panel are data- attributes on <body>, set by
-   main.ts from src/frame.ts. */
+   so the map never moves or changes width when the mode does. The map starts
+   at --map-left (src/styles/main.css), which the canvas, the book labels and
+   the title all read. On
+   a phone the panel is a sheet along the bottom and a bar along the top that
+   hides while the map moves. The mode and the open panel are data- attributes
+   on <body>, set by main.ts from src/frame.ts. */
 :root {
   --rail-width: 56px;
   --story-bg: #16181d;
@@ -826,7 +963,7 @@ Before writing it, read the deleted `right-panel.css` from git (`git show HEAD:s
 #canvas {
   position: fixed;
   top: 0;
-  left: 0;
+  left: var(--map-left);
   width: calc(100vw - var(--panel-width));
   /* A canvas does not stretch between its edges; 100% is of the visible window. */
   height: 100%;
@@ -838,19 +975,20 @@ Before writing it, read the deleted `right-panel.css` from git (`git show HEAD:s
      the space behind Safari's toolbar. */
   top: 0;
   bottom: 0;
-  right: 0;
+  left: 0;
   width: var(--panel-width);
   display: flex;
   flex-direction: column;
   background: var(--panel-bg);
-  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  box-sizing: border-box;
   z-index: 10;
   font-family: system-ui, sans-serif;
   color: #fff;
 }
 
 body[data-mode='explore'] #panel {
-  right: var(--rail-width);
+  left: var(--rail-width);
   width: calc(var(--panel-width) - var(--rail-width));
 }
 
@@ -864,7 +1002,7 @@ body[data-mode='explore'] #rail {
   position: fixed;
   top: 0;
   bottom: 0;
-  right: 0;
+  left: 0;
   width: var(--rail-width);
   display: flex;
   flex-direction: column;
@@ -872,7 +1010,7 @@ body[data-mode='explore'] #rail {
   padding: 8px 0;
   box-sizing: border-box;
   background: #000;
-  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
   z-index: 11;
 }
 
@@ -1347,7 +1485,7 @@ body[data-open='overlay'] #folded {
     right: 0;
     width: 100%;
     max-height: var(--sheet-cap);
-    border-left: none;
+    border-right: none;
     border-top: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
   }
@@ -1479,13 +1617,28 @@ body[data-open='overlay'] #folded {
 }
 ```
 
-`#panel` sits on the right on a desktop in both modes, so `--panel-width` is unchanged and `src/styles/zoom-buttons.css` needs nothing.
+Then move the map right of the panel, in `src/styles/main.css`, where Task 3 declared `--map-left: 0px`. Keep every declaration of it in this one file: `frame.css` is imported by `main.ts` and `main.css` is linked from `index.html`, and their order differs between the dev server and the build, so a second `:root` declaration would win or lose by accident. Change it to `--map-left: var(--panel-width);`, and add at the end of `main.css`:
 
-- [ ] **Step 4: Point the verse popup at the new full-height attribute**
+```css
+/* On a phone the panel is a sheet below the map, which starts at the left edge. */
+@media (max-width: 768px) {
+  :root {
+    --map-left: 0px;
+  }
+}
+```
 
-In `src/styles/verse-popup.css`, change `body.sheet-tall #verse-popup` to `body[data-full] #verse-popup`. Then:
+The map keeps its width, `100vw - --panel-width`, so the camera's opening view is unchanged; only where the map sits on the window moves.
 
-Two more places name the old panel. In `scripts/og-image.mjs`, the style that hides the interface for the link-preview image lists `#right-panel`; change it to `#panel,#rail,#top-bar`. In `src/camera.ts`, the comment near line 15 says "the right-panel sidebar"; change it to "the panel".
+- [ ] **Step 4: The popup, the zoom buttons, and other names of the old panel**
+
+The map now runs to the window's right edge and starts right of the panel, so:
+- `src/styles/zoom-buttons.css:5`: `right: calc(var(--panel-width) + 40px);` → `right: 20px;` The comment above the rule already says "bottom-right of the canvas", which is now true of the window too.
+- `src/styles/verse-popup.css`, the desktop `#verse-popup` rule (line 4): `left: 20px;` → `left: calc(var(--map-left) + 20px);` — the bottom-left of the map, where it is today. The phone rule's `left: 10px` stays: there `--map-left` is 0.
+- `src/styles/verse-popup.css`: change `body.sheet-tall #verse-popup` to `body[data-full] #verse-popup`.
+- `scripts/og-image.mjs`: its `HIDE_UI` style lists `#right-panel`; change that to `#panel,#rail,#top-bar`, and add `:root{--map-left:0px!important}` to the same style so the full-window canvas and its labels line up.
+
+Then:
 
 Run: `grep -rn "story-folded\|sheet-down\|sheet-tall\|no-overlay-quiet\|right-panel\|panel-footer\|controls-toggle\|story-strip\|footer-link" src scripts index.html`
 Expected: matches only in `src/main.ts`, which Step 5 rewrites. Any match elsewhere is an old selector to update.
@@ -1826,6 +1979,8 @@ npx vite --port 5299 --strictPort
 Run it in the background and confirm it responds: `curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5299/` prints `200`.
 
 Check each of these by hand at desktop width, then with the window under 768px wide:
+- Hovering a verse names that verse in the popup, and clicking it pins that verse: the map now starts right of the panel, and every pointer must be measured from the map's corner. Try a verse near the map's left edge and one near its right.
+- The book labels and the title sit over their books, not offset from them.
 - `http://localhost:5299/` opens the story: the column, the map, one ☰, "1 of 21" in the header.
 - ☰ drops the menu over the top of the story, which stays visible and dimmed below; ☰ again lifts it; touching the map lifts it.
 - "Overlays" in the menu leaves the story and opens the overlay panel: on a desktop beside the rail, with Overlay lit; on a phone in the sheet, with the top bar above the map. Tapping the map then folds the phone's sheet to its line.
@@ -1842,7 +1997,7 @@ Stop the server by its PID when done.
 
 ```bash
 npm run format
-git add -A index.html src
+git add -A index.html src scripts
 git commit -m "The frame: the story as a mode, a rail and panel on desktop, a sheet on a phone
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
@@ -1851,7 +2006,7 @@ Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 
 ---
 
-### Task 4: Say how the interface works now
+### Task 5: Say how the interface works now
 
 **Files:**
 - Modify: `CLAUDE.md` (Features, Interactions)
@@ -1890,9 +2045,9 @@ Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 
 ---
 
-### Task 5: Layout tests for the frame
+### Task 6: Layout tests for the frame
 
-**Depends on:** the `layout-tests` branch (`docs/plans/2026-09-23-layout-tests-implementation.md`) merged into `main`. If it has not merged, stop here, open the PR as a draft with Tasks 1-4, and say so.
+**Depends on:** the `layout-tests` branch (`docs/plans/2026-09-23-layout-tests-implementation.md`) merged into `main`. If it has not merged, stop here, open the PR as a draft with Tasks 1-5, and say so.
 
 **Files:**
 - Modify: `layout/app.ts`, `layout/known.ts`
@@ -1986,12 +2141,12 @@ Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37"
 
 ---
 
-### Task 6: Open the PR
+### Task 7: Open the PR
 
 - [ ] **Step 1: Every gate**
 
 Run: `npm run typecheck && npx vitest run && npm run test:layout`
-Expected: all pass (the last only if Task 5 ran).
+Expected: all pass (the last only if Task 6 ran).
 
 - [ ] **Step 2: Screenshots for the PR**
 
@@ -2016,6 +2171,6 @@ Expected: the PR URL is printed. `gh pr view --json comments` shows the Cloudfla
 
 ## Self-Review
 
-- **Spec coverage.** The design's frame: the story as a mode with only ☰ (Task 3 markup and `data-mode`); the menu dropping into the story's column with the stop visible below (`#menu`, `body[data-menu] #story-content`); "Continue the story" first (`menuHtml`); leaving through the menu or the story's end, landing on the story's view (`leaveStory`, which keeps `takeOver('fold')`); the rail on desktop and the sheet on a phone (`frame.css`); folded lines (`#folded`); the phone's top bar hiding while the map moves (`mapMoved`); the sheet as tall as its content, capped at half, dragged to full, constant in a story (`frame.ts`, `frame.css`); the help window dissolved into About (Task 2); each overlay's description by its picker (Task 3, 5h). Out of scope by the design's order of work: search as its own tool, share, several stories.
-- **Placeholders.** The PR body is described rather than written, because it embeds screenshots taken in Task 5.
+- **Spec coverage.** The design's frame: the story as a mode with only ☰ (Task 4 markup and `data-mode`); the menu dropping into the story's column with the stop visible below (`#menu`, `body[data-menu] #story-content`); "Continue the story" first (`menuHtml`); leaving through the menu or the story's end, landing on the story's view (`leaveStory`, which keeps `takeOver('fold')`); the rail on desktop and the sheet on a phone (`frame.css`); folded lines (`#folded`); the phone's top bar hiding while the map moves (`mapMoved`); the sheet as tall as its content, capped at half, dragged to full, constant in a story (`frame.ts`, `frame.css`); the help window dissolved into About (Task 2); each overlay's description by its picker (Task 4, 5h). Out of scope by the design's order of work: search as its own tool, share, several stories.
+- **Placeholders.** The PR body is described rather than written, because it embeds screenshots taken in Task 6.
 - **Names.** `Frame`, `FrameEvent`, `Panel`, `STORY`, `DRAG_PX`, `exploreFrame`, `nextFrame`, `StoryPlace`, `menuHtml`, `storiesHtml`, `aboutHtml`, `applyHebrewChoice`, `bindHebrewToggle`, `applyFrame`, `setFrame`, `dispatch`, `leaveStory`, `mapMoved`, `storyPlace` are each defined once and used with the same signatures.
