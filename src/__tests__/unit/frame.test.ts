@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DRAG_PX, STORY, exploreFrame, nextFrame, type Frame } from '../../frame';
+import { DRAG_PX, STORY, exploreFrame, isPanel, nextFrame, type Frame } from '../../frame';
 
 const explore = (open: Frame['open'], full = false): Frame => ({
   mode: 'explore',
@@ -117,5 +117,14 @@ describe('crossing from phone width to desktop width', () => {
     expect(nextFrame(explore('about', true), { type: 'layout-changed' }, DESKTOP)).toEqual(
       explore('about'),
     );
+  });
+});
+
+describe('panel names', () => {
+  it('accepts the panels and nothing else', () => {
+    expect(['overlay', 'stories', 'about', 'menu'].every(isPanel)).toBe(true);
+    expect(isPanel('story')).toBe(false);
+    expect(isPanel('restart')).toBe(false);
+    expect(isPanel(undefined)).toBe(false);
   });
 });

@@ -62,7 +62,9 @@ export function createBookLabels(
 
   const labels = document.createElement('div');
   labels.id = 'book-labels';
-  labels.style.cssText = 'position:fixed;top:0;left:var(--map-left);pointer-events:none;';
+  // Clipped to the map, so a label beside it never shows through the panel or the sheet.
+  labels.style.cssText =
+    'position:fixed;left:var(--map-left);right:0;top:0;bottom:var(--sheet-shown);overflow:hidden;pointer-events:none;';
 
   for (const [name, pos] of Object.entries(books)) {
     const label = document.createElement('div');

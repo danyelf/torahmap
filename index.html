@@ -78,7 +78,16 @@
     </div>
 
     <header id="top-bar">
-      <button id="top-menu" class="menu-button" type="button" aria-label="Menu">☰</button>
+      <button
+        id="top-menu"
+        class="menu-button"
+        type="button"
+        aria-label="Menu"
+        aria-expanded="false"
+        aria-controls="menu-panel"
+      >
+        ☰
+      </button>
       <span class="top-name">Torahmap</span>
     </header>
 
@@ -89,7 +98,13 @@
       <button class="rail-button" type="button" data-panel="overlay">
         <span class="rail-icon" aria-hidden="true">◧</span><span class="rail-label">Overlay</span>
       </button>
-      <button class="rail-button menu-button rail-menu" type="button" aria-label="Menu">
+      <button
+        class="rail-button menu-button rail-menu"
+        type="button"
+        aria-label="Menu"
+        aria-expanded="false"
+        aria-controls="menu-panel"
+      >
         <span class="rail-icon" aria-hidden="true">☰</span><span class="rail-label">Menu</span>
       </button>
     </nav>

@@ -123,9 +123,10 @@
     max-height: 200px;
   }
 
-  /* A tall sheet covers the map the popup belongs to; it is back when the
-     sheet shrinks. */
-  body[data-full] #verse-popup {
+  /* A full-height sheet, or the story's menu, covers the map the popup belongs
+     to; it is back when the sheet shrinks. */
+  body[data-full] #verse-popup,
+  body[data-menu] #verse-popup {
     visibility: hidden;
   }
 }

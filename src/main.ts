@@ -18,7 +18,7 @@ import {
   nextFrame,
   type Frame,
   type FrameEvent,
-  type Panel,
+  isPanel,
 } from './frame.ts';
 import { menuHtml, type StoryPlace } from './menu.ts';
 import { storiesHtml } from './storiesPanel.ts';
@@ -353,6 +353,8 @@ async function main(): Promise<void> {
   const foldedSummary = document.querySelector<HTMLElement>('#folded-overlay .folded-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
   const railButtons = [...document.querySelectorAll<HTMLButtonElement>('.rail-button[data-panel]')];
+  const railMenuButton = document.querySelector<HTMLButtonElement>('.rail-menu')!;
+  const topMenuButton = document.getElementById('top-menu')!;
 
   // What the panel shows (src/frame.ts). storyOpen is its mode, kept as a
   // boolean because the story's driver logic reads it on every frame.
@@ -396,6 +398,10 @@ async function main(): Promise<void> {
     storyContent.inert = frame.menu;
     for (const button of railButtons) {
       button.setAttribute('aria-pressed', String(button.dataset.panel === frame.open));
+    }
+    railMenuButton.setAttribute('aria-pressed', String(frame.open === 'menu'));
+    for (const button of [railMenuButton, topMenuButton]) {
+      button.setAttribute('aria-expanded', String(frame.open === 'menu'));
     }
     if (frame.menu || frame.open === 'menu') {
       const html = menuHtml(storyPlace());
@@ -1223,12 +1229,13 @@ async function main(): Promise<void> {
       syncUrl(true);
       return;
     }
-    // Only the rail and the folded lines choose a panel; a click inside an open one must not.
+    // Menu items, the rail and the folded lines choose a panel; nothing else
+    // inside an open panel does.
     const chooser = target.closest<HTMLElement>(
       '.rail-button[data-panel], .folded-line[data-panel]',
     );
     const panelName = action ?? chooser?.dataset.panel;
-    if (panelName) dispatch({ type: 'choose', panel: panelName as Panel });
+    if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
   }
   for (const id of ['panel', 'rail', 'top-bar']) {
     document.getElementById(id)!.addEventListener('click', onChromeClick);

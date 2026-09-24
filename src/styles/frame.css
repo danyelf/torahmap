@@ -163,6 +163,10 @@ body[data-mode='explore'] #tools {
   color: #fff;
 }
 
+.rail-button.menu-button[aria-pressed='true'] {
+  color: var(--accent);
+}
+
 #story-progress {
   color: #999;
   font-size: 13px;
@@ -575,6 +579,19 @@ body[data-open='overlay'] #folded {
      grows over the map while it is down, as full height does. */
   body[data-mode='story'][data-menu] #panel {
     height: var(--sheet-cap);
+  }
+
+  /* A stop's text starts at the top of the sheet rather than its middle, so
+     the menu pushes the story down instead of dropping over it. */
+  .story-head {
+    flex-wrap: wrap;
+  }
+
+  #menu {
+    position: static;
+    /* The header's full width, past its 12px side padding. */
+    flex-basis: calc(100% + 24px);
+    margin: 8px -12px -8px;
   }
 
   body[data-mode='explore']:not([data-open]) #panel-body {

@@ -2,7 +2,12 @@
 // Outside it one panel is open — on a phone possibly none, leaving the map and
 // the folded lines — and a phone's sheet can be dragged to full height.
 
-export type Panel = 'overlay' | 'stories' | 'about' | 'menu';
+const PANELS = ['overlay', 'stories', 'about', 'menu'] as const;
+export type Panel = (typeof PANELS)[number];
+
+export function isPanel(name: string | undefined): name is Panel {
+  return PANELS.some((panel) => panel === name);
+}
 
 export interface Frame {
   mode: 'story' | 'explore';
