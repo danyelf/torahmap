@@ -356,8 +356,7 @@ async function main(): Promise<void> {
   const railMenuButton = document.querySelector<HTMLButtonElement>('.rail-menu')!;
   const topMenuButton = document.getElementById('top-menu')!;
 
-  // What the panel shows (src/frame.ts). storyOpen is its mode, kept as a
-  // boolean because the story's driver logic reads it on every frame.
+  // What the panel shows (src/frame.ts), and whether the story is open.
   let frame: Frame = STORY;
   let storyOpen = true;
 
@@ -733,6 +732,7 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('pointerup', (e: PointerEvent) => {
+    const p = onMap(e);
     const wasDragging = mouseState.isDragging;
     if (wasDragging) {
       stopDrag(mouseState);
@@ -740,7 +740,6 @@ async function main(): Promise<void> {
     }
 
     if (pointerDownPos) {
-      const p = onMap(e);
       const dx = Math.abs(p.x - pointerDownPos.x);
       const dy = Math.abs(p.y - pointerDownPos.y);
       const duration = Date.now() - pointerDownPos.time;
@@ -761,7 +760,6 @@ async function main(): Promise<void> {
     }
 
     if (wasDragging) {
-      const p = onMap(e);
       const verse = findItemAtPoint(verses, camera, p.x, p.y);
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
@@ -898,6 +896,10 @@ async function main(): Promise<void> {
   });
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && frame.menu) {
+      dispatch({ type: 'menu' });
+      return;
+    }
     if (!pinnedVerse) return;
 
     if (e.key === 'Escape') {
@@ -1196,6 +1198,7 @@ async function main(): Promise<void> {
   function openStory(stop: number, arrive: 'ease' | 'cut', how: ReturnHow): void {
     heldStop = stop;
     setStoryOpen(true);
+    resolvedStops = resolveStory();
     showStop(stopElements[stop]);
     // Handed over while the stop is still held, so the return names `stop`
     // rather than wherever the story's scroll has got to.
@@ -1273,7 +1276,10 @@ async function main(): Promise<void> {
 
   // Typing wants room for the words and their results.
   panel.addEventListener('focusin', (e) => {
-    if (e.target instanceof HTMLInputElement) dispatch({ type: 'typing' });
+    const t = e.target;
+    if (t instanceof HTMLInputElement && (t.type === 'text' || t.type === 'search')) {
+      dispatch({ type: 'typing' });
+    }
   });
 
   // Scrolling is the only thing that moves the story on. While the reader
@@ -1339,12 +1345,9 @@ async function main(): Promise<void> {
   function arriveAtStop(stop: ResolvedStoryStop): void {
     syncStoryStopState(stop);
     lastSyncedStopId = stop.id;
-    storyProgress.textContent = `${stopAt(resolvedStops, resolvedStops.indexOf(stop)).number} of ${resolvedStops.length}`;
-    trackStoryStop(
-      stop.id,
-      stopAt(resolvedStops, resolvedStops.indexOf(stop)).number,
-      resolvedStops.length,
-    );
+    const { number } = stopAt(resolvedStops, resolvedStops.indexOf(stop));
+    storyProgress.textContent = `${number} of ${resolvedStops.length}`;
+    trackStoryStop(stop.id, number, resolvedStops.length);
   }
 
   function paintStoryFrame(now: number): void {
@@ -1417,10 +1420,10 @@ async function main(): Promise<void> {
   }
 
   // A stop's camera places its verse, or fits its region, against the map's
-  // size, which the window sets. A phone's sheet also changes the map's
-  // height, but only outside the story, whose sheet is a constant height, so
-  // it is not followed.
+  // size, which the window sets. Outside the story the map's height is not the
+  // story's, so the stops wait for openStory to resolve them.
   window.addEventListener('resize', () => {
+    if (!storyOpen) return;
     resolvedStops = resolveStory();
     scheduleStoryFrame();
   });

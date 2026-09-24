@@ -570,9 +570,11 @@ body[data-open='overlay'] #folded {
     max-height: none;
   }
 
+  /* Opaque: at full height the map behind is only a distraction. */
   body[data-full] #panel {
     height: var(--sheet-full);
     max-height: none;
+    background: #000;
   }
 
   /* The story's menu needs more room than the story's sheet has, so the sheet

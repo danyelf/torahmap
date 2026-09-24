@@ -29,8 +29,11 @@ describe('the About panel', () => {
     expect(text).toContain('Danyel Fisher');
   });
 
-  it('lists the controls', async () => {
-    expect((await about()).querySelector('.controls-table')).not.toBeNull();
+  it('lists the controls, the menu among them', async () => {
+    const labels = [...(await about()).querySelectorAll('.controls-table td:first-child')].map(
+      (td) => td.textContent,
+    );
+    expect(labels).toContain('☰');
   });
 
   it('carries the credits, the map first', async () => {

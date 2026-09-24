@@ -1,3 +1,7 @@
+#about-panel {
+  line-height: 1.6;
+}
+
 #about-panel p {
   margin: 0 0 12px;
   color: #bbb;
@@ -13,39 +17,52 @@
   margin-bottom: 6px;
 }
 
+#about-panel .byline {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #2c2c2c;
+}
+
 #about-panel .panel-title {
   margin: 0 0 12px;
   font-size: 20px;
   color: #fff;
 }
 
-.controls-table {
-  width: 100%;
-  border-collapse: collapse;
+/* Each control's name sits above what it does: the panel is too narrow for
+   two columns without wrapping the names. */
+.controls-table,
+.controls-table tbody,
+.controls-table tr,
+.controls-table td {
+  display: block;
 }
 
-.controls-table td {
-  padding: 10px 12px;
+.controls-table tr {
+  padding: 8px 0;
   border-bottom: 1px solid #333;
 }
 
-.controls-table td:first-child {
-  color: #6ab0f3;
-  font-weight: 500;
-  width: 120px;
+.controls-table tr:last-child {
+  border-bottom: none;
 }
 
-.controls-table tr:last-child td {
-  border-bottom: none;
+/* Neutral, not the accent: blue in this panel means a link. */
+.controls-table td:first-child {
+  color: #ddd;
+  font-weight: 600;
+}
+
+.controls-table td:last-child {
+  color: #bbb;
 }
 
 /* Links.
  *
- * Against #1e1e1e, #8ec5f7 reaches 9.11:1, above the body text's own 8.68:1
- * (#bbb), so a link reads brighter than the prose around it. #6ab0f3, used
- * elsewhere in the panel for emphasis (the controls table's first column),
- * reaches only 7.24:1 and would read dimmer than that prose. The underline
- * carries the distinction without depending on colour at all.
+ * On the panel (#020202 once composited), #8ec5f7 reaches 11.3:1, above the
+ * body text's 10.8:1 (#bbb), so a link reads brighter than the prose around
+ * it; the frame's accent, #6ab0f3, reaches only 9.0:1 and would read dimmer.
+ * The underline carries the distinction without depending on colour at all.
  */
 #about-panel a {
   color: #8ec5f7;
@@ -69,13 +86,8 @@
   border-radius: 2px;
 }
 
-/* Credits.
- *
- * Blue means clickable here and nothing else, so block headings are quiet
- * labels rather than the accent the controls table uses for emphasis. Nearly
- * every row carries a link, and reusing the accent for headings too would
- * blur that distinction.
- */
+/* Credits. Blue means clickable here and nothing else, so block headings are
+   quiet grey labels. */
 .credits-list {
   margin-top: 20px;
 }
@@ -160,13 +172,8 @@ span.credit-source {
   }
 }
 
-/* A licence pill that links to its deed.
- *
- * Creative Commons 4.0 asks for a link to the licence, so these became
- * anchors. Blue still means clickable, which keeps the tab's one rule intact
- * and makes linked pills legibly different from the plain ones — but the
- * underline is dropped, since the pill's own border already bounds it.
- */
+/* A licence pill that links to its deed, as Creative Commons 4.0 asks. Blue
+   marks it as a link; the pill's border stands in for the underline. */
 #about-panel a.credit-license {
   border-color: #3f5a73;
   color: #8ec5f7;
