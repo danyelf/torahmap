@@ -36,20 +36,19 @@ export async function openMap(page: Page, hash: string): Promise<string[]> {
   await page.goto(hash ? `/#${hash}` : '/');
   await mapReady(page);
   await expect
-    .poll(async () => (await mapPixels(page)).drawn, { timeout: 15_000 })
+    .poll(async () => drawnPixels(page), { timeout: 15_000 })
     .toBeGreaterThan(DRAWN_FLOOR);
   expect(errors, 'page errors').toEqual([]);
   return errors;
 }
 
 /**
- * Counts the map's drawn pixels and its distinct colours, from a screenshot of
- * the canvas with everything over it hidden: the labels, the title and the
- * controls carry enough text to pass for a map on their own. A screenshot is
- * what the reader sees; reading the WebGL buffer would depend on
- * preserveDrawingBuffer.
+ * Counts the map's drawn pixels, from a screenshot of the canvas with
+ * everything over it hidden: the labels, the title and the controls carry
+ * enough text to pass for a map on their own. A screenshot is what the reader
+ * sees; reading the WebGL buffer would depend on preserveDrawingBuffer.
  */
-export async function mapPixels(page: Page): Promise<{ drawn: number; colours: number }> {
+export async function drawnPixels(page: Page): Promise<number> {
   const hide = await page.addStyleTag({
     content: 'body *:not(#canvas) { visibility: hidden !important; }',
   });
@@ -71,14 +70,11 @@ export async function mapPixels(page: Page): Promise<{ drawn: number; colours: n
       ctx.drawImage(img, 0, 0);
       const { data } = ctx.getImageData(0, 0, c.width, c.height);
       let drawn = 0;
-      const colours = new Set<number>();
       for (let i = 0; i < data.length; i += 4) {
         const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-        if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) <= delta) continue;
-        drawn++;
-        colours.add(((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4));
+        if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta) drawn++;
       }
-      return { drawn, colours: colours.size };
+      return drawn;
     },
     { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
   );

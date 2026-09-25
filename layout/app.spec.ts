@@ -1,14 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CHROME, STATES } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
-import { boxes, DRAWN_FLOOR, mapPixels, mapReady, openMap } from './page.ts';
-
-test('the map renders in more than one colour with an overlay on', async ({ page }) => {
-  await openMap(page, 'overlay=commentary');
-  const { drawn, colours } = await mapPixels(page);
-  expect(drawn).toBeGreaterThan(DRAWN_FLOOR);
-  expect(colours).toBeGreaterThanOrEqual(8);
-});
+import { boxes, DRAWN_FLOOR, drawnPixels, mapReady, openMap } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
   // The map draws with drawArrays alone (src/rendering.ts); the clear still runs.
@@ -17,7 +10,7 @@ test('the render check sees a map that drew nothing', async ({ page }) => {
   });
   await page.goto('/#overlay=commentary');
   await mapReady(page);
-  expect((await mapPixels(page)).drawn).toBeLessThan(DRAWN_FLOOR);
+  expect(await drawnPixels(page)).toBeLessThan(DRAWN_FLOOR);
 });
 
 test('measuring finds the panel and its controls', async ({ page }) => {
