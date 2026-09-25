@@ -200,19 +200,6 @@ describe('Search Overlay', () => {
       expect(color).toEqual(SEARCH_COLORS[1]);
     });
 
-    it('caps color array at 4 colors', () => {
-      const container = render();
-      // Create a contrived scenario - in practice hard to match 5 terms in one verse
-      type(container, 'the, and, of, in, be');
-
-      for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
-        if (Array.isArray(color) && color.length > 1) {
-          expect(color.length).toBeLessThanOrEqual(4);
-        }
-      }
-    });
-
     it('assigns different colors to different terms', () => {
       // First term gets first color, second term gets second color
       expect(SEARCH_COLORS[0]).not.toEqual(SEARCH_COLORS[1]);
@@ -1284,7 +1271,7 @@ describe('Search Overlay', () => {
             // Single color
             assertValidColor(color as Color);
           } else {
-            // Array of colors (stipple)
+            // Array of colors (split corner to corner)
             for (const c of color as unknown as Color[]) {
               assertValidColor(c);
             }

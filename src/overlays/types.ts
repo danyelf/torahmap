@@ -66,7 +66,7 @@ interface OverlayMembers<T, S> {
   init?(): Promise<void>;
   destroy?(): void;
 
-  // null renders default gray; Color[] stipples multiple colors via noise dithering.
+  // null renders default gray; Color[] splits the square corner to corner, one band per color.
   getVerseColor(verse: T, settings: S): Color | Color[] | null;
 
   // The same colours for many items at once, as the map and the story's blend

@@ -88,6 +88,28 @@ describe('buildItemGeometry', () => {
       expect(buffer[floatsPerVertex]).toBe(expectedX);
     });
 
+    it('grows a multi-color verse by less than half the gap, so neighbours never touch', () => {
+      const verse = createVerse({ x: 100, y: 200, size: 10 });
+      const buffer = buildItemGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.BLUE]]);
+
+      const left = buffer[0];
+      const right = buffer[floatsPerVertex * 5];
+      const growth = 100 - left;
+      expect(growth).toBeGreaterThan(0);
+      expect(growth).toBeLessThan(1); // the gap between squares is 2
+      expect(right).toBe(108 + growth);
+      expect(buffer[1]).toBe(200 - growth); // top
+      expect(buffer[floatsPerVertex * 5 + 1]).toBe(208 + growth); // bottom
+    });
+
+    it('keeps a single-color verse to exactly its own square', () => {
+      const verse = createVerse({ x: 100, y: 200, size: 10 });
+      const buffer = buildItemGeometry([verse], [TEST_COLORS.RED]);
+
+      expect(buffer[0]).toBe(100);
+      expect(buffer[floatsPerVertex * 5]).toBe(108);
+    });
+
     it('handles different verse sizes correctly', () => {
       const verse1 = createVerse({ x: 0, y: 0, size: 6 });
       const verse2 = createVerse({ x: 10, y: 10, size: 12 });
@@ -254,7 +276,7 @@ describe('buildItemGeometry', () => {
     });
   });
 
-  describe('color handling - multiple colors (stipple)', () => {
+  describe('color handling - multiple colors', () => {
     it('handles 2 colors correctly', () => {
       const verse = createVerse();
       const buffer = buildItemGeometry([verse], [[TEST_COLORS.RED, TEST_COLORS.BLUE]]);
@@ -363,7 +385,7 @@ describe('buildItemGeometry', () => {
     });
   });
 
-  describe('UV coordinates for stipple effect', () => {
+  describe('UV coordinates', () => {
     it('sets correct UV coordinates for quad corners', () => {
       const verse = createVerse();
       const buffer = buildItemGeometry([verse]);

@@ -13,9 +13,6 @@ export const HIGHLIGHT_CONSTANTS = {
   // Outline/border color for verses
   OUTLINE_COLOR: [0.6, 0.6, 0.6] as Color,
 
-  // Bleed distance for multicolor verses (pixels outside normal bounds)
-  BLEED_PIXELS: 3,
-
   // Highlight color for search/selection
   HIGHLIGHT_COLOR: [0.2, 0.9, 1.0] as Color,
 

@@ -18,13 +18,13 @@ beforeEach(() => {
   ];
 });
 
-// Stub overlay that returns multi-color stipple for the first verse
-const stippleOverlay: Overlay = {
-  id: 'test-stipple',
-  name: 'Test Stipple',
+// Stub overlay that returns several colors for the first verse
+const multiColorOverlay: Overlay = {
+  id: 'test-multi-color',
+  name: 'Test Multi-color',
   getVerseColor: (verse) => {
     if (verse.verse === 1) {
-      // Multi-color stipple: red + blue
+      // Multi-color: red + blue
       return [
         [1, 0, 0],
         [0, 0, 1],
@@ -33,26 +33,26 @@ const stippleOverlay: Overlay = {
     return [0.5, 0.5, 0.5] as [number, number, number];
   },
   colorsFor(items, settings) {
-    return items.map((item) => stippleOverlay.getVerseColor(item, settings));
+    return items.map((item) => multiColorOverlay.getVerseColor(item, settings));
   },
 };
 
-describe('computeBlendedColors stipple preservation', () => {
+describe('computeBlendedColors multi-color preservation', () => {
   beforeEach(() => {
-    registerOverlay(stippleOverlay);
+    registerOverlay(multiColorOverlay);
   });
 
   afterEach(() => {
     // No deregister API; that's fine — registry holds it for the test session.
   });
 
-  it('preserves stipple Color[] at rest when fromStop === toStop', () => {
+  it('preserves multi-color Color[] at rest when fromStop === toStop', () => {
     const stop: ResolvedStoryStop = {
       id: 's1',
       title: 'S',
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-stipple',
+      overlay: 'test-multi-color',
     };
     const result = computeBlendedColors(stop, stop, 0, verses, null);
 
@@ -72,20 +72,20 @@ describe('computeBlendedColors stipple preservation', () => {
     expect(c1).toEqual([0.5, 0.5, 0.5]);
   });
 
-  it('preserves stipple at t === 0 with different stops', () => {
+  it('preserves multi-color at t === 0 with different stops', () => {
     const fromStop: ResolvedStoryStop = {
       id: 's1',
       title: 'S1',
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-stipple',
+      overlay: 'test-multi-color',
     };
     const toStop: ResolvedStoryStop = {
       id: 's2',
       title: 'S2',
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-stipple',
+      overlay: 'test-multi-color',
     };
     const result = computeBlendedColors(fromStop, toStop, 0, verses, null);
     const c0 = result[0];
@@ -97,25 +97,25 @@ describe('computeBlendedColors stipple preservation', () => {
     ]);
   });
 
-  it('preserves stipple Color[] during in-progress transition (0 < t < 1)', () => {
+  it('preserves multi-color Color[] during in-progress transition (0 < t < 1)', () => {
     const fromStop: ResolvedStoryStop = {
       id: 's1',
       title: 'S1',
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-stipple',
+      overlay: 'test-multi-color',
     };
     const toStop: ResolvedStoryStop = {
       id: 's2',
       title: 'S2',
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-stipple',
+      overlay: 'test-multi-color',
     };
     const result = computeBlendedColors(fromStop, toStop, 0.5, verses, null);
     const c0 = result[0];
-    // During transition between two identical stipple stops, slot-by-slot lerp
-    // (red→red, blue→blue) keeps the stipple array intact.
+    // During transition between two identical multi-color stops, slot-by-slot lerp
+    // (red→red, blue→blue) keeps the multi-color array intact.
     expect(Array.isArray(c0)).toBe(true);
     expect(Array.isArray((c0 as unknown[])[0])).toBe(true); // first elem is itself a tuple => Color[]
     expect(c0).toEqual([
@@ -340,12 +340,12 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
 
 describe('colorsForStop', () => {
   it('gives a stop the same colours whether asked directly or as a zero blend', () => {
-    registerOverlay(stippleOverlay);
+    registerOverlay(multiColorOverlay);
     const stop: ResolvedStoryStop = {
       id: 's1',
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-stipple',
+      overlay: 'test-multi-color',
     };
 
     expect(colorsForStop(stop, verses, null)).toEqual(

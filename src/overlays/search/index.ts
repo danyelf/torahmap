@@ -422,7 +422,8 @@ function showVerse(result: SearchResult): void {
 
 /**
  * A verse's colour given what a term list found: each matching term's own
- * colour, stippled when there are several, or dimmed grey when none match.
+ * colour, split corner to corner when there are several, or dimmed grey when
+ * none match.
  */
 function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
   const { active, matchingTerms } = search;
@@ -432,11 +433,7 @@ function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] |
 
   if (termIndices && termIndices.length > 0) {
     const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(active, i)]);
-    if (colors.length === 1) {
-      return colors[0];
-    }
-    // Stipple effect for multiple matches, capped at 4 colors.
-    return colors.slice(0, 4) as Color[];
+    return colors.length === 1 ? colors[0] : colors;
   }
 
   const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;

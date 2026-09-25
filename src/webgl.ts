@@ -49,70 +49,25 @@ const FRAGMENT_SHADER = `#version 300 es
   in vec2 v_seed;
   out vec4 fragColor;
 
-  // Simple hash for dithering noise and stipple selection
+  // Simple hash for dithering noise
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
   }
 
-  // Second hash with different coefficients for variety
-  float hash2(vec2 p) {
-    return fract(sin(dot(p, vec2(39.346, 11.135))) * 83758.5453);
+  // Several colors split the square into bands running corner to corner, one
+  // per color. A diagonal cut keeps a two-color verse from reading as two
+  // neighbouring verses, as a vertical split does.
+  vec3 diagonalBand() {
+    float d = min((v_uv.x + v_uv.y) * 0.5, 0.999);
+    int idx = int(floor(d * float(v_colorCount)));
+    if (idx == 0) return v_color;
+    if (idx == 1) return v_color2;
+    if (idx == 2) return v_color3;
+    return v_color4;
   }
 
   void main() {
-    vec3 color;
-
-    if (v_colorCount <= 1) {
-      // Single color - use directly
-      color = v_color;
-    } else {
-      // Multiple colors with bleed effect
-      // UV < 0 or > 1 means we're in the bleed zone
-      bool inBleedZone = v_uv.x < 0.0 || v_uv.x > 1.0 || v_uv.y < 0.0 || v_uv.y > 1.0;
-
-      if (inBleedZone) {
-        // In bleed zone: sparse scattered pixels
-        // Use seed + UV to create unique pattern per verse
-        vec2 scatterCoord = floor(v_uv * 8.0) + v_seed * 0.1;
-        float scatter = hash(scatterCoord);
-        float scatter2 = hash2(scatterCoord);
-
-        // Only render ~30% of pixels in bleed zone (sparse scatter)
-        if (scatter > 0.3) {
-          discard;
-        }
-
-        // Pick a color from the available colors
-        int idx = int(floor(scatter2 * float(v_colorCount)));
-        if (idx == 0) {
-          color = v_color;
-        } else if (idx == 1) {
-          color = v_color2;
-        } else if (idx == 2) {
-          color = v_color3;
-        } else {
-          color = v_color4;
-        }
-      } else {
-        // Inside verse: use seed-varied stipple pattern
-        // Combine UV with verse seed for unique pattern per verse
-        // Use a 5x5 grid with per-verse offset for more organic feel
-        vec2 blockCoord = floor(v_uv * 5.0 + fract(v_seed * 0.0731) * 5.0);
-        float h = hash(blockCoord + v_seed * 0.0137);
-        int idx = int(floor(h * float(v_colorCount)));
-
-        // Select color based on hash
-        if (idx == 0) {
-          color = v_color;
-        } else if (idx == 1) {
-          color = v_color2;
-        } else if (idx == 2) {
-          color = v_color3;
-        } else {
-          color = v_color4;
-        }
-      }
-    }
+    vec3 color = v_colorCount <= 1 ? v_color : diagonalBand();
 
     // Add subtle dithering noise to break up moiré patterns (UV-based for zoom stability)
     vec2 noiseCoord = floor(v_uv * 12.0);

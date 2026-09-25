@@ -243,7 +243,7 @@ describe('buildOutlineGeometry', () => {
   });
 
   describe('color handling', () => {
-    it('sets colorCount to 1 (single color, no stipple)', () => {
+    it('sets colorCount to 1 (single color)', () => {
       const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
