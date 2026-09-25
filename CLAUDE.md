@@ -217,7 +217,8 @@ in step with the code:
 - **Arrow keys** - Move from verse to verse
 - **Overlay selector** - Switch between visualization modes
 - **Search box** - Type to search Hebrew/English text with live results
-- **☰** - The menu: continue the story, overlays, stories, About & settings
+- **☰** - The menu: continue the story, overlays, stories, About & settings;
+  Escape closes it
 - **Rail** (desktop) - Open a tool's panel; anything on but not open is folded
   to a line at the bottom of the panel
 - **Sheet** (phone) - Tap a folded line to open it; the grabber takes it to
