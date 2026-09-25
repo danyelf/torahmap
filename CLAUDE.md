@@ -72,9 +72,31 @@ precaution, and the setting on Danyel's machine) — then `prepare` is skipped
 silently and you must run the script by hand. See it for what else it checks
 and when it refuses to run.
 
+### Layout tests
+
+The interface is tested for layout in a real browser, at four screen sizes, from
+a phone to a desktop:
+
+```bash
+npm run test:layout
+```
+
+It starts its own dev server on port 5199 (`LAYOUT_PORT` to change it), renders
+the map with software WebGL, and checks every state in `layout/app.ts`: no
+control off screen; the panel, the zoom buttons and the verse popup clear of
+each other, and the panel clear of the map; no clipped text; on the touch
+screens (tablet and phone), touch targets at least 24×24 (WCAG 2.2 AA); the
+elements each state must show, shown in full; and a map that actually drew.
+Text ending in a deliberate ellipsis counts as fitting. `layout/known.ts` lists
+the failures accepted for now, what each measures and why. It ends by writing
+`layout-report/index.html`, every state at every size side by side.
+
+It takes about 20 seconds on four workers, too long for the pre-commit hook.
+Run it before opening any pull request that changes the interface.
+
 ### Test Harness
 
-A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow without WebGL. Use this for visual testing of the search UI in headless browsers like Playwright where WebGL is unavailable. Source lives in `test-harness/`.
+A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow on its own, without the map. Source lives in `test-harness/`.
 
 ## Formatting
 
@@ -123,6 +145,7 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   its status.
 - `experiments/` — prototypes that never shipped.
 - `test-harness/` — the search-UI test harness (see Testing, below).
+- `layout/` — the layout tests (see Layout tests, above).
 
 ## Tech Stack
 

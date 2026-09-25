@@ -12,11 +12,13 @@ this, so a `git checkout -b` in the primary checkout will simply be refused. Onc
 worktree, work there as autonomously as you can on the corresponding issue.
 
 **UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until
-Danyel has looked at it and agreed it's ready to close. Cloudflare builds every pull request and
-gives it a public `workers.dev` link, which is how he looks without checking the branch out — so say
-in the PR what to look at and where. The link arrives as a comment from
-`cloudflare-workers-and-pages` (`gh pr view <n> --json comments`), which is also where a failed
-build shows up.
+Danyel has looked at it and agreed it's ready to close. Run `npm run test:layout` first, and embed in
+the PR the screenshots it writes to `layout-report/shots/` for the states the change touches: commit
+them and link them by commit-pinned URL, since relative image paths 404 until the PR merges.
+Cloudflare builds every pull request and gives it a public `workers.dev` link, which is how he looks
+without checking the branch out — so say in the PR what to look at and where. The link arrives as
+a comment from `cloudflare-workers-and-pages` (`gh pr view <n> --json comments`), which is also
+where a failed build shows up.
 
 **Shorter is better than longer.** Every word earns its place or goes. This
 applies to comments, docstrings, commit messages and documents alike.

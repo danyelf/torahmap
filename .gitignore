@@ -25,3 +25,8 @@ data-transient/
 
 # Local state from `wrangler dev`
 .wrangler
+
+# Layout test output (npm run test:layout)
+test-results/
+layout-report/
+playwright-report/

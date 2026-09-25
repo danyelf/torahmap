@@ -1450,6 +1450,9 @@ async function main(): Promise<void> {
 
   scheduleStoryFrame();
 
+  // Layout tests wait on this; nothing in the app reads it.
+  document.documentElement.dataset.mapReady = '';
+
   prefetchMorphology();
 }
 
