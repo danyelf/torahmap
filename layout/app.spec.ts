@@ -25,19 +25,19 @@ test('the rules report a layout broken on purpose', async ({ page }, info) => {
   await openMap(page, state.hash);
   await page.addStyleTag({
     content:
-      '#right-panel { right: -100px !important; } #canvas { width: 100vw !important; } ' +
-      '#zoom-controls { right: 0 !important; }',
+      '#panel { left: -100px !important; } #canvas { left: 0 !important; } ' +
+      '#zoom-controls { left: 100px !important; right: auto !important; }',
   });
-  await page.locator('#overlay-select').evaluate((el) => el.remove());
+  await page.locator('#folded-overlay').evaluate((el) => el.remove());
   const measured = await measureLayout(page, CHROME, state.shown);
-  expect(measured['chrome-in-viewport']).toContain('#right-panel crosses the right edge');
+  expect(measured['chrome-in-viewport']).toContain('#panel crosses the left edge');
   expect(measured['chrome-apart']).toContainEqual(
-    expect.stringMatching(/^#zoom-controls overlaps #right-panel by/),
+    expect.stringMatching(/^#zoom-controls overlaps #panel by/),
   );
   expect(measured['map-clear-of-panel']).toContainEqual(
-    expect.stringMatching(/^#canvas overlaps #right-panel by/),
+    expect.stringMatching(/^#canvas overlaps #panel by/),
   );
-  expect(measured['expected-shown']).toEqual(['#overlay-select matches nothing']);
+  expect(measured['expected-shown']).toEqual(['#folded-overlay matches nothing']);
 });
 
 for (const state of STATES) {

@@ -9,50 +9,71 @@ export interface State {
   shown?: string[];
 }
 
-// Today's panel, story strip, footer and help window (index.html,
-// src/styles/right-panel.css, src/help.ts). Links inside the story's prose are
-// running text, which touch-size rules exempt.
+// The frame (index.html, src/styles/frame.css). The top bar is left out of
+// `fixed`: on a phone it lies over the map by design. Links in the story's
+// prose and in the credits are running text, which touch-size rules exempt.
 export const CHROME: Chrome = {
-  fixed: '#right-panel, #zoom-controls, #verse-popup.visible',
-  modal: '#help-modal.visible .help-content',
+  fixed: '#panel, #rail, #zoom-controls, #verse-popup.visible',
   map: '#canvas',
-  panel: '#right-panel',
+  panel: '#panel, #rail',
   interactive:
-    '#right-panel button, #right-panel select, #right-panel input, ' +
-    '#right-panel a:not(.story-stop a), #verse-popup button, #verse-popup a, ' +
-    '#zoom-controls button, #help-modal.visible button',
+    '#panel button, #panel select, #panel input, ' +
+    '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
+    '#rail button, #top-bar button, #verse-popup button, #verse-popup a, #zoom-controls button',
   text:
-    '#controls-summary, #story-strip-title, .footer-link, #right-panel label, ' +
-    '#verse-popup .ref-text, #help-modal.visible .help-tab',
+    '.folded-summary, .menu-item, .rail-label, .panel-title, #panel label, ' +
+    '.story-card-place, #verse-popup .ref-text',
 };
 
+/** Opens a menu item by whichever ☰ is showing: the story's, the rail's, or the phone's. */
+async function viaMenu(page: Page, action: string): Promise<void> {
+  await page.locator('.menu-button:visible').first().click();
+  await page.locator(`.menu-item[data-action="${action}"]:visible`).click();
+}
+
+const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
+
 export const STATES: State[] = [
-  {
-    name: 'story-opening',
-    hash: 'story=intro',
-    shown: ['#story-content', '.story-stop[data-stop-id="intro"] .story-text'],
-  },
+  { name: 'story-opening', hash: 'story=intro', shown: ['#story-menu', stop('intro')] },
   {
     name: 'story-stop-with-verse',
     hash: 'story=abraham_call',
-    shown: ['#story-content', '.story-stop[data-stop-id="abraham_call"] .story-text'],
+    shown: ['#story-menu', '#story-progress', stop('abraham_call')],
   },
-  { name: 'explore-no-overlay', hash: 'zoom=0.5', shown: ['#overlay-select'] },
-  { name: 'explore-commentary', hash: 'overlay=commentary', shown: ['#overlay-select'] },
+  {
+    name: 'story-menu-down',
+    hash: 'story=abraham_call',
+    then: (page) => page.locator('#story-menu').click(),
+    shown: ['#menu'],
+  },
+  { name: 'explore-link', hash: 'overlay=commentary', shown: ['#folded-overlay'] },
+  {
+    name: 'explore-overlay-open',
+    hash: 'overlay=commentary',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select', '#folded-overlay'],
+  },
   {
     name: 'explore-search',
     hash: `overlay=search&q=${encodeURIComponent('אברהם')}`,
+    then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select', '#search-input'],
   },
   {
     name: 'explore-verse-pinned',
     hash: 'overlay=commentary&verse=Genesis.12.1',
-    shown: ['#overlay-select', '#verse-popup'],
+    shown: ['#verse-popup', '#folded-overlay'],
   },
   {
-    name: 'about-open',
+    name: 'stories-panel',
     hash: 'overlay=commentary',
-    then: (page) => page.locator('#about-btn').click(),
-    shown: ['#help-modal .help-content'],
+    then: (page) => viaMenu(page, 'stories'),
+    shown: ['.story-card'],
+  },
+  {
+    name: 'about-panel',
+    hash: 'overlay=commentary',
+    then: (page) => viaMenu(page, 'about'),
+    shown: ['#hebrew-toggle'],
   },
 ];
