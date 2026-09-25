@@ -43,15 +43,22 @@ export function apart(a: Box[], b: Box[]): string[] {
   );
 }
 
+/** The edges at which `inner` extends past `outer`. */
+function edgesPast(inner: Rect, outer: Rect): string {
+  return [
+    inner.x < outer.x - SLACK && 'left',
+    inner.y < outer.y - SLACK && 'top',
+    inner.x + inner.width > outer.x + outer.width + SLACK && 'right',
+    inner.y + inner.height > outer.y + outer.height + SLACK && 'bottom',
+  ]
+    .filter(Boolean)
+    .join(', ');
+}
+
 export function outsideOf(boxes: Box[], frame: Rect): string[] {
   return boxes.flatMap((b) => {
-    const sides = [
-      b.x < frame.x - SLACK && 'left',
-      b.y < frame.y - SLACK && 'top',
-      b.x + b.width > frame.x + frame.width + SLACK && 'right',
-      b.y + b.height > frame.y + frame.height + SLACK && 'bottom',
-    ].filter(Boolean);
-    return sides.length ? [`${b.name} crosses the ${sides.join(', ')} edge`] : [];
+    const sides = edgesPast(b, frame);
+    return sides ? [`${b.name} crosses the ${sides} edge`] : [];
   });
 }
 
@@ -72,12 +79,7 @@ export function notShownInFull(selector: string, found: Shown[]): string[] {
   if (found.length === 0) return [`${selector} matches nothing`];
   return found.flatMap(({ full, visible }) => {
     if (!visible) return [`${full.name} is hidden`];
-    const sides = [
-      visible.x > full.x + SLACK && 'left',
-      visible.y > full.y + SLACK && 'top',
-      visible.x + visible.width < full.x + full.width - SLACK && 'right',
-      visible.y + visible.height < full.y + full.height - SLACK && 'bottom',
-    ].filter(Boolean);
-    return sides.length ? [`${full.name} is cut off at the ${sides.join(', ')} edge`] : [];
+    const sides = edgesPast(full, visible);
+    return sides ? [`${full.name} is cut off at the ${sides} edge`] : [];
   });
 }

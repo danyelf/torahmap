@@ -40,20 +40,24 @@ export async function measureLayout(
 ): Promise<Partial<Record<Rule, string[]>>> {
   const screen = page.viewportSize()!;
   const onScreen = [chrome.fixed, chrome.interactive, chrome.modal].filter(Boolean).join(', ');
+  const touch = test.info().project.use.hasTouch;
+  const [inViewport, fixed, map, panel, text, interactive, found] = await Promise.all([
+    boxes(page, onScreen),
+    boxes(page, chrome.fixed),
+    boxes(page, chrome.map),
+    boxes(page, chrome.panel),
+    clippedText(page, chrome.text),
+    touch ? boxes(page, chrome.interactive) : null,
+    Promise.all(expected.map((selector) => shown(page, selector))),
+  ]);
   const out: Partial<Record<Rule, string[]>> = {
-    'chrome-in-viewport': outsideOf(await boxes(page, onScreen), { x: 0, y: 0, ...screen }),
-    'chrome-apart': overlapping(await boxes(page, chrome.fixed)),
-    'map-clear-of-panel': apart(await boxes(page, chrome.map), await boxes(page, chrome.panel)),
-    'text-not-clipped': await clippedText(page, chrome.text),
+    'chrome-in-viewport': outsideOf(inViewport, { x: 0, y: 0, ...screen }),
+    'chrome-apart': overlapping(fixed),
+    'map-clear-of-panel': apart(map, panel),
+    'text-not-clipped': text,
+    'expected-shown': expected.flatMap((selector, i) => notShownInFull(selector, found[i])),
   };
-  if (test.info().project.use.hasTouch) {
-    out['touch-targets'] = tooSmallToTouch(await boxes(page, chrome.interactive), TOUCH_MIN);
-  }
-  const missing: string[] = [];
-  for (const selector of expected) {
-    missing.push(...notShownInFull(selector, await shown(page, selector)));
-  }
-  out['expected-shown'] = missing;
+  if (interactive) out['touch-targets'] = tooSmallToTouch(interactive, TOUCH_MIN);
   return out;
 }
 

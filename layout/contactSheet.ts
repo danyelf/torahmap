@@ -1,6 +1,7 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { FullConfig, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
+import { SCREENS } from './screens.ts';
 
 interface Cell {
   shot?: string;
@@ -42,9 +43,8 @@ export default class ContactSheet implements Reporter {
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
-    // The rules project has no page and never attaches a screenshot.
     const screen = test.parent.project()!.name;
-    if (screen === 'rules') return;
+    if (!SCREENS.some((s) => s.name === screen)) return;
 
     const shot = result.attachments.find((a) => a.name === 'layout' && a.path);
     let file: string | undefined;

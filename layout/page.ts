@@ -152,7 +152,9 @@ export async function clippedText(page: Page, selector: string): Promise<string[
       const ellipsis = style.textOverflow === 'ellipsis' && style.overflowX !== 'visible';
       const box = h.getBoundingClientRect();
       if (box.width <= 1 || box.height <= 1) return [];
-      const name = h.id ? `#${h.id}` : `${h.tagName.toLowerCase()}.${[...h.classList].join('.')}`;
+      const name = h.id
+        ? `#${h.id}`
+        : h.tagName.toLowerCase() + [...h.classList].map((c) => `.${c}`).join('');
       if (style.display === 'inline') {
         const range = document.createRange();
         range.selectNodeContents(h);

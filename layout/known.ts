@@ -4,11 +4,10 @@ export interface Known {
   violations: string[];
 }
 
-const REPLACED =
-  'Accepted until the redesigned panel replaces the footer links, the controls toggle and the help window.';
-const REPLACED_OR_KEPT =
-  'Accepted until the redesigned panel replaces the footer links, the controls toggle and the ' +
-  'help window, and keeps the other controls listed here at 24px or larger.';
+const UNTIL =
+  'Accepted until the redesigned panel replaces the footer links, the controls toggle and the help window';
+const REPLACED = `${UNTIL}.`;
+const REPLACED_OR_KEPT = `${UNTIL}, and keeps the other controls listed here at 24px or larger.`;
 
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
