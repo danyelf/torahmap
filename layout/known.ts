@@ -4,10 +4,8 @@ export interface Known {
   violations: string[];
 }
 
-const UNTIL =
-  'Accepted until the redesigned panel replaces the footer links, the controls toggle and the help window';
-const REPLACED = `${UNTIL}.`;
-const REPLACED_OR_KEPT = `${UNTIL}, and keeps the other controls listed here at 24px or larger.`;
+const POPUP = 'The verse popup is unchanged from before the frame; accepted as it is for now.';
+const SEARCH = "Search's controls are rebuilt when search becomes a tool of its own.";
 
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
@@ -17,146 +15,42 @@ const REPLACED_OR_KEPT = `${UNTIL}, and keeps the other controls listed here at 
  * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
-  'story-opening/tablet/touch-targets': {
-    reason: REPLACED,
+  'explore-search/phone/touch-targets': {
+    reason: SEARCH,
     violations: [
-      '#leave-story is 70×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'story-stop-with-verse/tablet/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      'a.sefaria-link is 103×15px, under 24',
-      'button.close-btn is 20×20px, under 24',
-      '#leave-story is 70×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'explore-no-overlay/tablet/touch-targets': {
-    reason: REPLACED,
-    violations: [
-      '#controls-toggle is 379×23px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'explore-commentary/tablet/touch-targets': {
-    reason: REPLACED,
-    violations: [
-      '#controls-toggle is 379×23px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
+      '#search-clear is 17×20px, under 24',
+      'button.term-mode-option is 64×17px, under 24',
+      'button.term-mode-option is 42×17px, under 24',
+      'button.term-mode-option.on is 64×17px, under 24',
     ],
   },
   'explore-search/tablet/touch-targets': {
-    reason: REPLACED_OR_KEPT,
+    reason: SEARCH,
     violations: [
-      '#controls-toggle is 379×23px, under 24',
       '#search-clear is 17×20px, under 24',
       'button.term-mode-option is 64×17px, under 24',
       'button.term-mode-option is 42×17px, under 24',
       'button.term-mode-option.on is 64×17px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'explore-verse-pinned/tablet/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      'a.sefaria-link is 103×15px, under 24',
-      'button.close-btn is 20×20px, under 24',
-      '#controls-toggle is 379×23px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'about-open/tablet/touch-targets': {
-    reason: REPLACED,
-    violations: [
-      '#controls-toggle is 379×23px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-      'button.link-button is 121×21px, under 24',
-    ],
-  },
-  'story-opening/phone/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      '#sheet-grabber is 390×20px, under 24',
-      '#leave-story is 70×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'story-stop-with-verse/phone/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      'a.sefaria-link is 103×15px, under 24',
-      'button.close-btn is 20×20px, under 24',
-      '#sheet-grabber is 390×20px, under 24',
-      '#leave-story is 70×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'explore-no-overlay/phone/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      '#sheet-grabber is 390×20px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'explore-commentary/phone/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      '#sheet-grabber is 390×20px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
-  },
-  'explore-search/phone/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      '#sheet-grabber is 390×20px, under 24',
-      '#search-clear is 17×20px, under 24',
-      'button.term-mode-option is 64×17px, under 24',
-      'button.term-mode-option is 42×17px, under 24',
-      'button.term-mode-option.on is 64×17px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
     ],
   },
   'explore-verse-pinned/phone/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      'a.sefaria-link is 103×15px, under 24',
-      'button.close-btn is 20×20px, under 24',
-      '#sheet-grabber is 390×20px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-    ],
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
   },
-  'about-open/phone/touch-targets': {
-    reason: REPLACED_OR_KEPT,
-    violations: [
-      '#sheet-grabber is 390×20px, under 24',
-      '#return-to-story is 90×16px, under 24',
-      '#hebrew-toggle is 78×16px, under 24',
-      '#about-btn is 94×16px, under 24',
-      'button.link-button is 121×21px, under 24',
-    ],
+  'explore-verse-pinned/tablet/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  },
+  'story-menu-down/tablet/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  },
+  'story-stop-with-verse/phone/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  },
+  'story-stop-with-verse/tablet/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
   },
 };

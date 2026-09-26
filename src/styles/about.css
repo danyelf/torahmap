@@ -1,0 +1,211 @@
+#about-panel {
+  line-height: 1.6;
+}
+
+#about-panel p {
+  margin: 0 0 12px;
+  color: #bbb;
+}
+
+#about-panel ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: #bbb;
+}
+
+#about-panel li {
+  margin-bottom: 6px;
+}
+
+#about-panel .byline {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #2c2c2c;
+}
+
+#about-panel .panel-title {
+  margin: 0 0 12px;
+  font-size: 20px;
+  color: #fff;
+}
+
+/* Each control's name sits above what it does: the panel is too narrow for
+   two columns without wrapping the names. */
+.controls-table,
+.controls-table tbody,
+.controls-table tr,
+.controls-table td {
+  display: block;
+}
+
+.controls-table tr {
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+}
+
+.controls-table tr:last-child {
+  border-bottom: none;
+}
+
+/* Neutral, not the accent: blue in this panel means a link. */
+.controls-table td:first-child {
+  color: #ddd;
+  font-weight: 600;
+}
+
+.controls-table td:last-child {
+  color: #bbb;
+}
+
+/* Links.
+ *
+ * On the panel (#020202 once composited), #8ec5f7 reaches 11.3:1, above the
+ * body text's 10.8:1 (#bbb), so a link reads brighter than the prose around
+ * it; the frame's accent, #6ab0f3, reaches only 9.0:1 and would read dimmer.
+ * The underline carries the distinction without depending on colour at all.
+ */
+#about-panel a {
+  color: #8ec5f7;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(142, 197, 247, 0.45);
+  text-underline-offset: 2px;
+  transition:
+    color 0.15s,
+    text-decoration-color 0.15s;
+}
+
+#about-panel a:hover {
+  color: #b6d9fa;
+  text-decoration-color: #b6d9fa;
+}
+
+#about-panel a:focus-visible {
+  outline: 2px solid #8ec5f7;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Credits. Blue means clickable here and nothing else, so block headings are
+   quiet grey labels. */
+.credits-list {
+  margin-top: 20px;
+}
+
+.credit-block {
+  margin-top: 24px;
+}
+
+.credit-block:first-child {
+  margin-top: 0;
+}
+
+.credit-block-title {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+
+/* Outranks the generic `#about-panel ul`, which would otherwise indent every row
+   away from the heading above it. */
+#about-panel .credit-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Scoped past the generic `#about-panel li`, whose bottom margin would otherwise
+   add 6px to the spacing every row already gets from its own padding. */
+#about-panel .credit-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 5px 12px;
+  margin: 0;
+  padding: 11px 0;
+  border-top: 1px solid #2c2c2c;
+}
+
+#about-panel .credit-row:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.credit-source {
+  font-size: 14px;
+  overflow-wrap: break-word;
+}
+
+span.credit-source {
+  color: #ddd;
+}
+
+.credit-license {
+  justify-self: end;
+  padding: 2px 9px;
+  border: 1px solid #3a3a3a;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #9a9a9a;
+  white-space: nowrap;
+}
+
+#about-panel .credit-meta {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8a8a8a;
+}
+
+/* Narrow screens: let the licence drop below the name rather than squeezing it. */
+@media (max-width: 480px) {
+  #about-panel .credit-row {
+    grid-template-columns: 1fr;
+  }
+
+  .credit-license {
+    justify-self: start;
+  }
+}
+
+/* A licence pill that links to its deed, as Creative Commons 4.0 asks. Blue
+   marks it as a link; the pill's border stands in for the underline. */
+#about-panel a.credit-license {
+  border-color: #3f5a73;
+  color: #8ec5f7;
+  text-decoration: none;
+}
+
+#about-panel a.credit-license:hover {
+  border-color: #8ec5f7;
+  color: #b6d9fa;
+}
+
+.about-section {
+  margin: 0 0 20px;
+}
+
+.about-section h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+.setting-toggle {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}

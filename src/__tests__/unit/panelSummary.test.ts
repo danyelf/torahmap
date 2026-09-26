@@ -14,10 +14,6 @@ const swatches = (html: string): HTMLElement[] => [
 ];
 
 describe('summaryHtml', () => {
-  it('says so when there is no overlay', () => {
-    expect(text(summaryHtml(undefined, {}))).toBe('No overlay');
-  });
-
   it('shows each term in its own colour', () => {
     const html = summaryHtml('Text Search', {
       terms: [

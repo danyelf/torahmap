@@ -89,13 +89,15 @@ describe('labels', () => {
         expect(labelsInDom).not.toBeNull();
       });
 
-      it('applies fixed positioning styles', () => {
+      it('is fixed and clipped to the map', () => {
         const verses = [createVerse()];
         const labels = createBookLabels(verses, container);
 
         expect(labels.style.position).toBe('fixed');
         expect(labels.style.top).toBe('0px');
-        expect(labels.style.left).toBe('0px');
+        expect(labels.style.left).toBe('var(--map-left)');
+        expect(labels.style.bottom).toBe('var(--sheet-shown)');
+        expect(labels.style.overflow).toBe('hidden');
         expect(labels.style.pointerEvents).toBe('none');
       });
 

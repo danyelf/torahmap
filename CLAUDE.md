@@ -23,12 +23,13 @@ The core design principle is **position stability** - each verse occupies a perm
   apart. How a word is matched — substring, whole word, or meanings — belongs
   to that word, so one term can be searched by meaning while another is pinned
   to an exact spelling.
-- **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, and the help modal's Overlays tab is built from them.
+- **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, shown under the overlay picker.
   Text Dating is written and tested but off the menu on purpose: it is meant to
   come back as a mode of its own rather than a menu entry. Registering it again
   is one line in `src/overlays/index.ts`.
-- **A guided story** in the right panel. Scrolling it moves the map from stop to
-  stop; folding it away leaves the overlay controls and free exploration. The
+- **A guided story**, a mode of its own. Scrolling it moves the map from stop to
+  stop; its ☰ menu leads to the overlays, the stories and About & settings,
+  and choosing one leaves the story where it is, to be continued later. The
   text is `public/data/story.md`, which the dev server hot-reloads.
 
 ## Quick Start
@@ -204,7 +205,7 @@ files.
 
 ## Interactions
 
-The help modal's Controls tab is the list readers see, and it is the one to keep
+The About panel's Controls list is the one readers see, and it is the one to keep
 in step with the code:
 
 - **Mouse wheel, or pinch** - Zoom (0.1x - 10x); the buttons in the corner do
@@ -216,7 +217,13 @@ in step with the code:
 - **Arrow keys** - Move from verse to verse
 - **Overlay selector** - Switch between visualization modes
 - **Search box** - Type to search Hebrew/English text with live results
-- **Story strip** - Fold the story away for the controls, or open it again
+- **☰** - The menu: continue the story, overlays, stories, About & settings;
+  Escape closes it
+- **Legend** - Names what colours the map, on the map itself; tap a row to open
+  its tool
+- **Rail** (desktop) - Open a tool's panel
+- **Sheet** (phone) - The open panel; the grabber takes it to full height and
+  back, and a drag down folds it
 
 The URL carries the overlay, its settings, the pinned verse, the camera and the
 story stop (`src/urlState.ts`), so any view can be linked to.

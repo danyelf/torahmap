@@ -2,7 +2,7 @@
 #zoom-controls {
   position: fixed;
   bottom: 20px;
-  right: calc(var(--panel-width) + 40px);
+  right: 20px;
   display: flex;
   flex-direction: column;
   gap: 2px;

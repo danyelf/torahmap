@@ -1,0 +1,269 @@
+# Where everything lives: menus, modes and the panel
+
+**Date:** 2026-09-23
+**Status:** Step 1 (the frame) built in #251; steps 2-4 designed, not built.
+**Issues:** #236 (the phone), #234 (search beside an overlay), #235 (more than
+one story), #237 (what an overlay is), and the "share a view" half of #232
+
+## The problem
+
+Four issues arrived separately and turned out to be one. The interface grew a
+control at a time, and every control ended up in the same container: the 380px
+right panel on desktop, the bottom sheet on a phone. That container now holds
+the story, the overlay picker, the chosen overlay's options, its legend, a line
+summarising all of it, and a footer of links. Two of those things are modes and
+the rest are tools, but nothing on screen says so.
+
+The visible symptoms:
+
+- A reader on a phone sees a strip of colour above the story and cannot tell
+  what it is (#236). It is the overlay summary and legend, and nothing labels
+  it.
+- Picking a search replaces the overlay and picking an overlay clears the
+  search, because Text Search is an entry in the overlay list (#234).
+- Leaving or resuming the story is a link in a footer, so the mode switch is
+  the least visible control on the page.
+- An overlay's one-sentence description exists but is only shown in the help
+  window, where nobody reads it while using the overlay (#237).
+- There is one story and no way to offer a second (#235).
+
+## The shape
+
+![The settled shape](images/2026-09-23-ui-hierarchy/settled-shape.png)
+
+Three ideas carry the whole design.
+
+**A story is a mode, not a drawer.** While a story runs there are no tools on
+screen: a column of text on desktop, a sheet on a phone, the map, and one ☰.
+There is no exit button, because "leave" was two different things wearing one
+word. Moving the map during a story — panning, zooming, pinning a verse — takes
+the camera from the story and gives it back at the next stop; that already
+works and is not leaving. Leaving is wanting a tool the story does not offer,
+so it happens through the menu, or when the story runs out and hands you the
+map. A story keeps its place, so Stories always offers to resume.
+
+**The menu drops into the panel the story already owns.** ☰ slides the menu
+down over the top of the column, leaving the current stop visible below it,
+dimmed. The first item is "Continue the story · 7/21"; then Search, Overlays,
+Stories, Share this view, and Settings & About. Closing it returns to the
+story; choosing a tool ends the story and leaves the reader standing on the
+view it had reached, with its colours still on.
+
+**The legend lives on the map.** Whatever colours the map is named on the map
+itself, in a card with one row per thing that is on: "Search · ■ אברם",
+"Commentary · ▬▬". It is in the same place in every mode, whatever panel is
+open, because it describes the picture, not a tool. Each row is a button that
+opens its tool; inside a story that leaves the story, as choosing the tool from
+the menu does. With nothing on, there is no card. When search becomes a tool of
+its own the card simply gains a second row.
+
+This replaced an earlier rule, that anything on but not open folds to a labelled
+line at the bottom edge of the panel. In use that line read as out of place,
+and as a status that could not be pressed; and outside a story it mostly
+repeated what the open panel's own picker already said. Two placements were
+mocked on the real build (2026-09-25): the card on the map, and a strip at the
+top of the left column. The strip was consistent but repeated the overlay
+picker directly above itself and pushed every panel down; the card won.
+
+| On the map (chosen): in a story | Overlay panel open | About open |
+|---|---|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-a-story.png) | ![](images/2026-09-23-ui-hierarchy/legend-a-overlay.png) | ![](images/2026-09-23-ui-hierarchy/legend-a-about.png) |
+
+| Rejected: a strip at the top of the column |
+|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-b-overlay.png) |
+
+## Search and an overlay together (#234)
+
+Search stops being an overlay and becomes its own tool: its own rail icon on
+desktop, its own icon in the top bar on a phone. The overlay picker then only
+chooses how the map is coloured.
+
+When both are on, the search hits take the fill in their term colours and the
+overlay stays behind them, dimmed. This reads at every zoom and keeps the five
+term colours working. The alternative of ringing each hit was rejected: ring
+thickness is measured in map units, so at the zoom where you want to see a
+word's distribution across the Tanakh the rings are thinner than the squares.
+
+The overlay becomes context rather than a value you can read off a hit. For
+"which of these verses is in the prayerbook", the shape of the dimmed
+background answers roughly and the pinned verse answers exactly. A stricter
+answer — dim every non-matching verse, and let the overlay colour only the
+matches — is worth offering later as a switch beside the search box, but it is
+not the default, because it throws away the map of everything.
+
+## The two layouts
+
+**Desktop** gets an icon rail: Stories, Search, Overlay, Share, and ☰ Menu at
+the foot. The rail is only present outside a story — its absence is what makes
+a story a mode. Clicking an icon opens that tool's panel in the column beside
+it.
+
+**Phone** has no top bar. A single ☰ floats in the top-left corner in both
+modes, over the map; the menu drops from it and carries the name, "Torahmap",
+as its heading. The legend card sits at the map's bottom edge, just above the
+sheet, and the verse popup stacks above the card. With nothing open the sheet
+is gone and the map runs to the bottom of the screen. In a story the sheet is
+only the story's text: no header row, no progress bar, since the ☰ is in the
+corner and the menu's "Continue the story" says where you are.
+
+| Phone: in a story | Story, menu open | Exploring, nothing open | Verse pinned |
+|---|---|---|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-p2b-story.png) | ![](images/2026-09-23-ui-hierarchy/legend-p2b-story-menu.png) | ![](images/2026-09-23-ui-hierarchy/legend-p2b-rest.png) | ![](images/2026-09-23-ui-hierarchy/legend-p2b-verse.png) |
+
+Also mocked: the legend inside a top bar (the most map, but the bar grew and in
+a story had nowhere to live), and the legend as the folded sheet (tidy
+exploring, but in a story it took the story's own fixed-height sheet, leaving
+one line of text).
+
+| Rejected: legend in the top bar | Rejected: the sheet as legend, in a story |
+|---|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-p1-rest.png) | ![](images/2026-09-23-ui-hierarchy/legend-p3-story.png) |
+
+Neither layout has a story strip, a summary line, or a footer of links any
+more. The footer's contents move: Hide Hebrew into Settings, About & credits
+into the menu, and the story links into the mode itself.
+
+## What each overlay says about itself (#237)
+
+The description each overlay already carries is shown at the top of its panel,
+above its options, on both sizes, and in the Overlays panel beside each one's
+name — the descriptions registered with the overlays stay the single source,
+and the help window's Overlays tab goes away. An overlay with
+sub-options (Commentary's category, Haftarah's custom) describes the sub-option
+on the same line it is chosen from, since "Liturgy" alone does not say what it
+counts.
+
+## Stories as a list (#235, #232a)
+
+Stories move from one file to several under `public/data/stories/`, each with a
+title and a one-line description the app can read for the menu. The URL names
+the story and the stop. Today's `#story=<stopId>` assumes a single story, and
+#235 says back-compatibility is not needed, so the hash carries both: story and
+stop.
+
+A story shows its progress while it runs and remembers where it got to, which
+is what makes "Continue the story" and "Resume" honest. Where that memory lives
+— the session, or the address — is an implementation question, not a design
+one.
+
+Nothing here hosts other people's stories; that is #232c and stays out of
+scope.
+
+## Sharing a view (#232b)
+
+"Share this view" in the menu copies a link to exactly what is on screen: the
+overlay and its settings, the search terms and their modes, the pinned verse,
+the camera. On a phone it opens the system share sheet. Inside a story it
+shares the stop instead, since that is what the reader is looking at. The URL
+already carries all of this; the work is a control, a copy, and a confirmation
+that something was copied.
+
+## How this lands in the code today
+
+The design moves furniture that is spread across a dozen modules. This is the
+map, so that a plan can be written without rediscovering it.
+
+**The container.** `index.html` holds the panel's markup; `src/styles/right-panel.css`
+makes it a five-row grid accordion where exactly one of the controls and the
+story is open, and turns it into a bottom sheet under `max-width: 768px`.
+`src/main.ts` owns the wiring — `phoneLayout`, `setSheet`, the toggle handlers,
+the fold and open calls. `src/sheet.ts` holds the phone's three heights
+(`down`, `normal`, `tall`) and the drag arithmetic. `src/panelSummary.ts` builds
+the summary line that the legend card reuses. The accordion, the summary line
+and the footer all go; the rail, the legend card and the menu are new.
+
+**The story.** `src/scrollytelling/storyPanel.ts` fetches and renders
+`public/data/story.md`; `storyParser.ts` reads the stop directives;
+`driver.ts` decides when the reader has taken the camera and when the story
+gets it back; `overlayBlender.ts` and `colorBlending.ts` carry the colours
+between stops. The mode rule — which links open the story — is
+`resolveViewState` in `src/viewState.ts`, and it already has a `story` /
+`explore` distinction to build on.
+
+**Search as an overlay.** `src/overlays/index.ts` registers it alongside the
+other four; `src/overlays/search/` is the overlay itself, with the term rows,
+results list and highlighting; `src/search/` holds the matching and dictionary
+work, which does not care how it is presented. Pulling search out of the
+registry is the change with the widest blast radius, because the registry is
+what the URL, the story stops, the help tab and the summary line all read.
+
+**Colouring.** `src/itemColoring.ts` computes each verse's state and then
+applies colours in two passes, which is where hits-in-front-of-a-dimmed-overlay
+belongs. `src/overlays/legend.ts` builds the legend axes the legend card will
+show in miniature.
+
+**Settled while writing this:**
+
+- **The verse popup stays as it is** (`src/sidebar.ts`, `src/styles/verse-popup.css`):
+  bottom-left on desktop, above the sheet on a phone.
+- **The zoom buttons stay as they are** (`src/styles/zoom-buttons.css`): a
+  corner control on desktop, hidden on phones, where pinch does the job.
+- **The URL** names things directly: roughly `story=<story name>&stop=<stop id>`
+  for a story and `search=<terms>&overlay=<overlay id>` for the explore view,
+  since the two are no longer alternatives. The exact spelling of the keys is
+  still to be settled — what is decided is that a search and an overlay both
+  appear, and that `overlay=search` stops being a legal value. `RESERVED_KEYS`
+  in `src/urlState.ts` is the list to change.
+- **How far the background overlay dims** is a number to find by eye once it is
+  on screen, not a decision to make on paper.
+- **Telemetry** (`src/analytics.ts`, `src/telemetry/schema.ts`) mostly stands.
+  Two events describe things that change shape: `overlay_switch` will never
+  again report `search` as an overlay, and `story_exit`'s `how` values come
+  from controls — the footer link, the summary toggle — that this design
+  removes. Both want re-reading against the new controls rather than redesign.
+- **Testing.** `playwright` is already a devDependency and the headless browser
+  renders the map, so the frame's states — rail, legend card, menu over the
+  story, the phone sheet — can be driven and looked at directly, which
+  matters for a change whose whole content is layout. The state underneath
+  (which panel is open, what the legend says, what the URL holds) stays in
+  vitest, where the existing 1,900 tests are.
+
+**The help window dissolves into the panel.** There is no modal. "About" opens
+from the menu like any other panel and scrolls in the column: what this is,
+then the controls, then the credits. The Overlays tab goes, because each
+overlay's sentence now sits in the Overlays panel beside the thing it
+describes, and the Controls list is rewritten for the interactions this design
+leaves. `src/help.ts` and `src/styles/help.css` become a panel; `src/credits.ts`
+is unchanged data. The credits are rows of source and link and the column is
+narrower than the old 500px modal, so if they look cramped once they are real,
+widening the panel for that one view is the answer rather than bringing a
+second kind of surface back.
+
+**The phone's sheet is as tall as what is open, and no taller.** `down`,
+`normal` and `tall` go. The sheet has two resting shapes: gone, or
+one panel open at its content's height, capped at about half the screen. The
+one gesture that survives is a drag upward to full, for a long search results
+list, which stays until that panel is closed. Focusing a text input still
+floats the sheet above the keyboard. During a story the sheet is a constant
+height — stop texts vary, the camera is already moving between stops, and a
+sheet that resized underneath it would make the whole screen unstable.
+
+## What this leaves open
+
+- Whether the "dim everything that doesn't match" switch ships with this or
+  later.
+- The rail's icons, which are a design job of their own. The emoji in the
+  mockup are stand-ins and look like it. What replaces them has to survive
+  being small and unlabelled, read at a glance against a dark background, and
+  sit with the rest of the site rather than borrowing a generic icon set. Five
+  are needed on desktop, plus search, share and ☰ on the phone bar. Worth
+  settling before the frame ships, since the rail is the first thing a reader
+  meets outside a story.
+- Whether search results on desktop belong in the panel, as they are today, or
+  deserve more room now that the panel is narrower.
+
+## Order of work
+
+Each step should be a branch that stands on its own, and each changes what the
+reader sees, so each wants your eyes before the next.
+
+1. **The frame.** The rail, the panel, the legend on the map, the ☰ menu, the
+   phone's floating ☰. Story mode is still the existing single story; the overlay
+   list still contains Text Search. Nothing about the map changes.
+2. **Search leaves the overlay list** and becomes a tool, with hits drawn over
+   a dimmed overlay. This is the only step that touches colouring.
+3. **Descriptions and share.** Each overlay's sentence in its panel, "Share
+   this view" in the menu.
+4. **More than one story.** The stories directory, the menu list, the URL, and
+   resume.
