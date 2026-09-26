@@ -3,7 +3,7 @@ import { STORY_DRIVING, readerTakesOver, rejoin } from '../../../scrollytelling/
 import { driverChangeEvent, stopAt } from '../../../telemetry/driverChange.ts';
 
 const reader = readerTakesOver(0);
-const easing = rejoin(0, 700, { x: 0, y: 0, zoom: 1 }, [], []);
+const easing = rejoin(0, 700, { x: 0, y: 0, zoom: 1 }, { colors: [] }, { colors: [] });
 
 describe('driverChangeEvent', () => {
   it('is story_exit when the reader takes the map from the story', () => {

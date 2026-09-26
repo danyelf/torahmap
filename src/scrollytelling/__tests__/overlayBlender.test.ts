@@ -160,20 +160,20 @@ describe('story stop settings reach the overlay', () => {
 
   it('passes a declared setting through', () => {
     const stop = stopWith({ mode: 'on' });
-    computeBlendedColors(stop, stop, 0, verses, null).colors;
+    computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({ mode: 'on' });
   });
 
   it('drops a value the overlay did not allow', () => {
     // Story stops are hand-written, so they are checked like any link.
     const stop = stopWith({ mode: 'sideways' });
-    computeBlendedColors(stop, stop, 0, verses, null).colors;
+    computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({});
   });
 
   it('drops a key the overlay never declared', () => {
     const stop = stopWith({ mode: 'off', nonsense: 'x' });
-    computeBlendedColors(stop, stop, 0, verses, null).colors;
+    computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({ mode: 'off' });
   });
 
@@ -195,7 +195,7 @@ describe('story stop settings reach the overlay', () => {
     registerOverlay(typedOverlay);
 
     const stop = { ...stopWith({ mode: 'on' }), overlay: 'test-typed-settings' };
-    computeBlendedColors(stop, stop, 0, verses, null).colors;
+    computeBlendedColors(stop, stop, 0, verses, null);
     expect(handed).toEqual({ on: true });
   });
 });
@@ -233,7 +233,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
       overlay: 'commentary',
       overlayParams: { category: 'Mishnah' },
     };
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null).colors;
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
 
     expect(commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay))).toEqual(before);
   });
@@ -273,8 +273,8 @@ describe('the blender memoises colours by settings', () => {
       overlayParams: { mode: 'b' },
     };
 
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null).colors;
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null).colors;
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
 
     // Two distinct settings (mode 'a' and 'b') across two blends: once each,
     // not once per call — the second blend shares both cache entries.
