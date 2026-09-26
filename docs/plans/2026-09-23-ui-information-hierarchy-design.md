@@ -1,7 +1,7 @@
 # Where everything lives: menus, modes and the panel
 
 **Date:** 2026-09-23
-**Status:** Designed, not built.
+**Status:** Step 1 (the frame) built in #251; steps 2-4 designed, not built.
 **Issues:** #236 (the phone), #234 (search beside an overlay), #235 (more than
 one story), #237 (what an overlay is), and the "share a view" half of #232
 
@@ -49,14 +49,29 @@ Stories, Share this view, and Settings & About. Closing it returns to the
 story; choosing a tool ends the story and leaves the reader standing on the
 view it had reached, with its colours still on.
 
-**Outside a story, anything on but not open is a folded line at the bottom edge
-of the panel.** On desktop the panel is a column beside an icon rail; on a
-phone it is the sheet. A folded line names the thing and shows its legend in
-one row — "Commentary ▬▬ to 1,734 ⌃", or a swatch, the search word and its hit
-count. Tapping it expands it in place, and whatever was open folds down to take
-its place. Nothing travels across the screen, and nothing colours the map
-without a label somewhere on it. Since a story is a mode rather than a tool, at
-most two lines can be folded at once.
+**The legend lives on the map.** Whatever colours the map is named on the map
+itself, in a card with one row per thing that is on: "Search · ■ אברם",
+"Commentary · ▬▬". It is in the same place in every mode, whatever panel is
+open, because it describes the picture, not a tool. Each row is a button that
+opens its tool; inside a story that leaves the story, as choosing the tool from
+the menu does. With nothing on, there is no card. When search becomes a tool of
+its own the card simply gains a second row.
+
+This replaced an earlier rule, that anything on but not open folds to a labelled
+line at the bottom edge of the panel. In use that line read as out of place,
+and as a status that could not be pressed; and outside a story it mostly
+repeated what the open panel's own picker already said. Two placements were
+mocked on the real build (2026-09-25): the card on the map, and a strip at the
+top of the left column. The strip was consistent but repeated the overlay
+picker directly above itself and pushed every panel down; the card won.
+
+| On the map (chosen): in a story | Overlay panel open | About open |
+|---|---|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-a-story.png) | ![](images/2026-09-23-ui-hierarchy/legend-a-overlay.png) | ![](images/2026-09-23-ui-hierarchy/legend-a-about.png) |
+
+| Rejected: a strip at the top of the column |
+|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-b-overlay.png) |
 
 ## Search and an overlay together (#234)
 
@@ -84,10 +99,26 @@ the foot. The rail is only present outside a story — its absence is what makes
 a story a mode. Clicking an icon opens that tool's panel in the column beside
 it.
 
-**Phone** gets a top bar — ☰, the name, search, share — that hides as soon as
-the map moves, leaving a floating ☰ behind. At rest the sheet is nothing but
-the folded lines, one per active thing. The ☰ menu lists the same items as the
-desktop menu.
+**Phone** has no top bar. A single ☰ floats in the top-left corner in both
+modes, over the map; the menu drops from it and carries the name, "Torahmap",
+as its heading. The legend card sits at the map's bottom edge, just above the
+sheet, and the verse popup stacks above the card. With nothing open the sheet
+is gone and the map runs to the bottom of the screen. In a story the sheet is
+only the story's text: no header row, no progress bar, since the ☰ is in the
+corner and the menu's "Continue the story" says where you are.
+
+| Phone: in a story | Story, menu open | Exploring, nothing open | Verse pinned |
+|---|---|---|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-p2b-story.png) | ![](images/2026-09-23-ui-hierarchy/legend-p2b-story-menu.png) | ![](images/2026-09-23-ui-hierarchy/legend-p2b-rest.png) | ![](images/2026-09-23-ui-hierarchy/legend-p2b-verse.png) |
+
+Also mocked: the legend inside a top bar (the most map, but the bar grew and in
+a story had nowhere to live), and the legend as the folded sheet (tidy
+exploring, but in a story it took the story's own fixed-height sheet, leaving
+one line of text).
+
+| Rejected: legend in the top bar | Rejected: the sheet as legend, in a story |
+|---|---|
+| ![](images/2026-09-23-ui-hierarchy/legend-p1-rest.png) | ![](images/2026-09-23-ui-hierarchy/legend-p3-story.png) |
 
 Neither layout has a story strip, a summary line, or a footer of links any
 more. The footer's contents move: Hide Hebrew into Settings, About & credits
@@ -139,8 +170,8 @@ story is open, and turns it into a bottom sheet under `max-width: 768px`.
 `src/main.ts` owns the wiring — `phoneLayout`, `setSheet`, the toggle handlers,
 the fold and open calls. `src/sheet.ts` holds the phone's three heights
 (`down`, `normal`, `tall`) and the drag arithmetic. `src/panelSummary.ts` builds
-the summary line that the folded lines replace. The accordion, the summary line
-and the footer all go; the rail, the folded lines and the menu are new.
+the summary line that the legend card reuses. The accordion, the summary line
+and the footer all go; the rail, the legend card and the menu are new.
 
 **The story.** `src/scrollytelling/storyPanel.ts` fetches and renders
 `public/data/story.md`; `storyParser.ts` reads the stop directives;
@@ -159,7 +190,7 @@ what the URL, the story stops, the help tab and the summary line all read.
 
 **Colouring.** `src/itemColoring.ts` computes each verse's state and then
 applies colours in two passes, which is where hits-in-front-of-a-dimmed-overlay
-belongs. `src/overlays/legend.ts` builds the legend axes the folded lines will
+belongs. `src/overlays/legend.ts` builds the legend axes the legend card will
 show in miniature.
 
 **Settled while writing this:**
@@ -182,10 +213,10 @@ show in miniature.
   from controls — the footer link, the summary toggle — that this design
   removes. Both want re-reading against the new controls rather than redesign.
 - **Testing.** `playwright` is already a devDependency and the headless browser
-  renders the map, so the frame's states — rail, folded lines, menu over the
-  story, the phone bar hiding — can be driven and looked at directly, which
+  renders the map, so the frame's states — rail, legend card, menu over the
+  story, the phone sheet — can be driven and looked at directly, which
   matters for a change whose whole content is layout. The state underneath
-  (which panel is open, what a folded line says, what the URL holds) stays in
+  (which panel is open, what the legend says, what the URL holds) stays in
   vitest, where the existing 1,900 tests are.
 
 **The help window dissolves into the panel.** There is no modal. "About" opens
@@ -200,7 +231,7 @@ widening the panel for that one view is the answer rather than bringing a
 second kind of surface back.
 
 **The phone's sheet is as tall as what is open, and no taller.** `down`,
-`normal` and `tall` go. The sheet has two resting shapes: the folded lines, or
+`normal` and `tall` go. The sheet has two resting shapes: gone, or
 one panel open at its content's height, capped at about half the screen. The
 one gesture that survives is a drag upward to full, for a long search results
 list, which stays until that panel is closed. Focusing a text input still
@@ -212,9 +243,6 @@ sheet that resized underneath it would make the whole screen unstable.
 
 - Whether the "dim everything that doesn't match" switch ships with this or
   later.
-- Whether the resting sheet on a phone with nothing on says "No overlay" or
-  disappears. The decision was "No overlay", but it is worth looking at once it
-  is real.
 - The rail's icons, which are a design job of their own. The emoji in the
   mockup are stand-ins and look like it. What replaces them has to survive
   being small and unlabelled, read at a glance against a dark background, and
@@ -230,8 +258,8 @@ sheet that resized underneath it would make the whole screen unstable.
 Each step should be a branch that stands on its own, and each changes what the
 reader sees, so each wants your eyes before the next.
 
-1. **The frame.** The rail, the panel, folded lines, the ☰ menu, the phone top
-   bar that hides. Story mode is still the existing single story; the overlay
+1. **The frame.** The rail, the panel, the legend on the map, the ☰ menu, the
+   phone's floating ☰. Story mode is still the existing single story; the overlay
    list still contains Text Search. Nothing about the map changes.
 2. **Search leaves the overlay list** and becomes a tool, with hits drawn over
    a dimmed overlay. This is the only step that touches colouring.
