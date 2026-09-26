@@ -532,11 +532,6 @@ body[data-open='menu'] #menu-panel {
   font-weight: 600;
 }
 
-.summary-name.dim {
-  color: #888;
-  font-weight: 400;
-}
-
 .summary-sep,
 .summary-detail {
   color: #999;

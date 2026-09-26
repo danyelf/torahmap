@@ -117,6 +117,15 @@ describe('exploring on a phone', () => {
   });
 });
 
+describe('crossing from desktop width to phone width', () => {
+  it('drops the menu from the corner rather than keeping it in a panel', () => {
+    expect(nextFrame(explore('menu'), { type: 'layout-changed' }, PHONE)).toEqual({
+      ...explore(null),
+      menu: true,
+    });
+  });
+});
+
 describe('crossing from phone width to desktop width', () => {
   it('opens the overlay if nothing was open, and drops full height', () => {
     expect(nextFrame(explore(null), { type: 'layout-changed' }, DESKTOP)).toEqual(

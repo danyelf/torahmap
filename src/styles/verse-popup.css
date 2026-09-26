@@ -123,8 +123,8 @@
     max-height: 200px;
   }
 
-  /* A full-height sheet, or the menu, covers the map the popup belongs
-     to; it is back when the sheet shrinks. */
+  /* A full-height sheet covers the map the popup belongs to, and the menu,
+     dropping from the top, reaches down over it; it is back when either goes. */
   body[data-full] #verse-popup,
   body[data-menu] #verse-popup {
     visibility: hidden;

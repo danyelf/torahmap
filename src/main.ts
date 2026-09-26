@@ -422,7 +422,7 @@ async function main(): Promise<void> {
   }
 
   // An exploring phone's sheet is as tall as its content, or gone with nothing
-  // open; the map and the verse popup make room for it. Full height grows over
+  // open; the map, the legend and the verse popup make room for it. Full height grows over
   // the map instead.
   function measureSheet(): void {
     if (!phoneLayout.matches || frame.full) return;
@@ -444,8 +444,12 @@ async function main(): Promise<void> {
     // Every touch on the map arrives here; most change nothing, and redrawing
     // an open panel mid-click would lose what was clicked.
     if (sameFrame(next, frame)) return;
+    const menuOpened = next.menu && !frame.menu;
     frame = next;
     applyFrame();
+    // The menu is not next to the ☰ that opened it in the page's order, so Tab
+    // would not reach it.
+    if (menuOpened) droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
   }
 
   /** Every control that changes the panel comes through here. */
@@ -696,7 +700,7 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-    // A touch on the map lifts the story's menu and folds a phone's sheet.
+    // A touch on the map lifts the menu and folds a phone's sheet.
     dispatch({ type: 'map-touched' });
     // A hand on the map outranks a glide that is still running.
     cancelCameraGlide();
@@ -962,12 +966,13 @@ async function main(): Promise<void> {
     renderOverlayControls();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
-    const summary = summaryHtml(
-      currentOverlay?.name,
-      currentOverlay?.summary?.(currentSettings()) ?? {},
-    );
-    mapLegendSummary.innerHTML = summary;
-    mapLegend.hidden = currentOverlayId === 'none';
+    mapLegend.hidden = !currentOverlay;
+    if (currentOverlay) {
+      mapLegendSummary.innerHTML = summaryHtml(
+        currentOverlay.name,
+        currentOverlay.summary?.(currentSettings()) ?? {},
+      );
+    }
     refreshVersePopup();
   }
 

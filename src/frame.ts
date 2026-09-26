@@ -49,9 +49,13 @@ export function nextFrame(frame: Frame, event: FrameEvent, phone: boolean): Fram
   return fit(step(frame, event, phone), phone);
 }
 
-/** A desktop always has a panel open, has no full height, and exploring keeps its menu in a panel. */
+/**
+ * A desktop always has a panel open, has no full height, and exploring keeps
+ * its menu in a panel; a phone drops the menu from its corner instead.
+ */
 function fit(frame: Frame, phone: boolean): Frame {
-  if (phone || frame.mode === 'story') return frame;
+  if (phone) return frame.open === 'menu' ? { ...frame, open: null, menu: true } : frame;
+  if (frame.mode === 'story') return frame;
   return { ...frame, open: frame.open ?? 'overlay', full: false, menu: false };
 }
 
