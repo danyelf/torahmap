@@ -40,12 +40,14 @@ import { getSidebarElements, updateSidebar, setWordClickHandler } from './sideba
 import {
   createCamera,
   clampZoom,
-  panForZoom,
-  panToFocus,
+  zoomAtPoint,
+  centreForFocus,
+  viewOffset,
   viewFocusedOn,
   animateCameraTo,
   type Camera,
   type ScreenPoint,
+  type Viewport,
 } from './camera.ts';
 import {
   createMouseState,
@@ -69,7 +71,7 @@ import {
   prevTanakhItem,
   tanakhKey,
 } from './types.ts';
-import { findItemAtPoint, findNearestItem, screenToWorld } from './hitDetection.ts';
+import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import {
   computeItemStates,
   applyItemColors,
@@ -314,7 +316,7 @@ async function main(): Promise<void> {
     }
   }
 
-  const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
+  const camera = createCamera(mapViewport(), bounds, window.innerWidth);
 
   let pinnedVerse: TanakhLayout | null = null;
 
@@ -490,7 +492,7 @@ async function main(): Promise<void> {
   }
 
   function centerOnVerse(verse: TanakhLayout): void {
-    Object.assign(camera, panToFocus(verse, camera.zoom, mapFocus()));
+    Object.assign(camera, centreForFocus(verse, camera.zoom, mapFocus(), mapViewport()));
   }
 
   // A verse is one square six pixels across, so centring it while scaled out
@@ -515,7 +517,7 @@ async function main(): Promise<void> {
   function glideToVerse(verse: TanakhLayout): void {
     cancelCameraGlide();
 
-    const target = viewFocusedOn(verse, camera.zoom, RESULT_CLICK_ZOOM, mapFocus());
+    const target = viewFocusedOn(verse, camera.zoom, RESULT_CLICK_ZOOM, mapFocus(), mapViewport());
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
@@ -549,10 +551,7 @@ async function main(): Promise<void> {
   function zoomAt(factor: number, screenX: number, screenY: number): void {
     takeOver('takeover');
     const newZoom = clampZoom(camera.zoom * factor);
-    const pan = panForZoom({ x: camera.x, y: camera.y }, camera.zoom, newZoom, screenX, screenY);
-    camera.x = pan.x;
-    camera.y = pan.y;
-    camera.zoom = newZoom;
+    Object.assign(camera, zoomAtPoint(camera, newZoom, { x: screenX, y: screenY }, mapViewport()));
     render();
   }
 
@@ -562,9 +561,10 @@ async function main(): Promise<void> {
   window.bookLabels = createBookLabels(verses, document.body, hebrewNames);
   const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
   createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
-  updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+  const offset = viewOffset(camera, mapViewport());
+  updateLabelPositions(window.bookLabels, offset, camera.zoom);
   window.mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
-  updateMapTitlePosition(window.mapTitle, camera);
+  updateMapTitlePosition(window.mapTitle, offset, camera.zoom);
 
   canvas.addEventListener(
     'wheel',
@@ -653,8 +653,8 @@ async function main(): Promise<void> {
       const dx = e.clientX - mouseState.dragStart.x;
       const dy = e.clientY - mouseState.dragStart.y;
       if (dx !== 0 || dy !== 0) takeOver('takeover');
-      camera.x += dx / camera.zoom;
-      camera.y += dy / camera.zoom;
+      camera.x -= dx / camera.zoom;
+      camera.y -= dy / camera.zoom;
       mouseState.dragStart = { x: e.clientX, y: e.clientY };
       render();
     }
@@ -673,7 +673,7 @@ async function main(): Promise<void> {
       const duration = Date.now() - pointerDownPos.time;
 
       if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
-        const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
+        const verse = findItemAtPoint(verses, camera, mapViewport(), e.clientX, e.clientY);
         if (verse) {
           if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
             unpinVerse();
@@ -688,7 +688,7 @@ async function main(): Promise<void> {
     }
 
     if (wasDragging) {
-      const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
+      const verse = findItemAtPoint(verses, camera, mapViewport(), e.clientX, e.clientY);
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
       } else {
@@ -764,8 +764,7 @@ async function main(): Promise<void> {
     const last = settledCamera;
     if (last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
     markViewSettled();
-    const centre = screenToWorld(canvas.clientWidth / 2, canvas.clientHeight / 2, camera);
-    const book = findNearestItem(verses, centre.x, centre.y)?.book ?? '';
+    const book = findNearestItem(verses, camera.x, camera.y)?.book ?? '';
     trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
@@ -796,7 +795,7 @@ async function main(): Promise<void> {
 
     if (!mouseState.isDragging) {
       lastPointerPosition = { x: e.clientX, y: e.clientY };
-      const verse = findItemAtPoint(verses, camera, e.clientX, e.clientY);
+      const verse = findItemAtPoint(verses, camera, mapViewport(), e.clientX, e.clientY);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
@@ -1046,6 +1045,10 @@ async function main(): Promise<void> {
    * view: the middle of the map, or on a phone higher up, clear of the verse
    * popup that sits above the sheet.
    */
+  function mapViewport(): Viewport {
+    return { width: canvas.clientWidth, height: canvas.clientHeight };
+  }
+
   function mapFocus(): ScreenPoint {
     const height = phoneLayout.matches
       ? canvas.clientHeight * PHONE_STORY_FOCUS
@@ -1359,7 +1362,13 @@ async function main(): Promise<void> {
     if (lastPointerPosition) {
       setHoveredVerse(
         mouseState,
-        findItemAtPoint(verses, camera, lastPointerPosition.x, lastPointerPosition.y),
+        findItemAtPoint(
+          verses,
+          camera,
+          mapViewport(),
+          lastPointerPosition.x,
+          lastPointerPosition.y,
+        ),
       );
     }
 
@@ -1417,7 +1426,7 @@ async function main(): Promise<void> {
     updateSidebarWrapper(verse, verse !== null);
 
     cancelCameraGlide();
-    Object.assign(camera, cameraForView(next.camera, verse, mapFocus()));
+    Object.assign(camera, cameraForView(next.camera, verse, mapFocus(), mapViewport()));
 
     applyOverlay();
     render();

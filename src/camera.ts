@@ -12,19 +12,26 @@ export interface Camera {
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10.0;
 
-// Keeps Genesis 1:1 clear of the right-panel sidebar; wider than the panel
-// itself so the verse isn't flush against its edge.
+/** The map's canvas, in CSS pixels. */
+export interface Viewport {
+  width: number;
+  height: number;
+}
+
+// Opens with Genesis 1:1, the rightmost verse after the RTL mirror, this far
+// in from the window's right edge.
 const RIGHT_MARGIN = 320;
-// Top margin to leave room for book labels above the first row
+// Room for the book labels above the first row.
 const TOP_MARGIN = 40;
 
-// At zoom=1, screenX = worldX + pan.x, and Genesis 1:1 sits near worldX ≈
-// bounds.width (rightmost after RTL mirror). Solving screenX = cssWidth -
-// RIGHT_MARGIN for pan.x gives the offset below.
-export function createCamera(cssWidth: number, _cssHeight: number, bounds: Bounds): Camera {
+export function createCamera(
+  viewport: Viewport,
+  bounds: Bounds,
+  windowWidth: number = viewport.width,
+): Camera {
   return {
-    x: cssWidth - RIGHT_MARGIN - bounds.width,
-    y: TOP_MARGIN,
+    x: bounds.width - (windowWidth - RIGHT_MARGIN - viewport.width / 2),
+    y: viewport.height / 2 - TOP_MARGIN,
     zoom: 1.0,
   };
 }
@@ -33,44 +40,10 @@ export function clampZoom(zoom: number): number {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
 }
 
-/**
- * Adjust pan to keep world point under mouse fixed during zoom.
- *
- * Formula:
- *   Before: worldX = mouseX / oldZoom - pan.x
- *   After:  worldX = mouseX / newZoom - newPan.x
- *   Solving: newPan.x = pan.x + mouseX * (1/newZoom - 1/oldZoom)
- *
- * @param pan - Current pan position
- * @param oldZoom - Zoom level before change
- * @param newZoom - Zoom level after change
- * @param mouseX - Mouse X position in screen coordinates
- * @param mouseY - Mouse Y position in screen coordinates
- * @returns New pan position
- */
-export function panForZoom(
-  pan: { x: number; y: number },
-  oldZoom: number,
-  newZoom: number,
-  mouseX: number,
-  mouseY: number,
-): { x: number; y: number } {
-  return {
-    x: pan.x + mouseX * (1 / newZoom - 1 / oldZoom),
-    y: pan.y + mouseY * (1 / newZoom - 1 / oldZoom),
-  };
-}
-
 /** A point on the map's canvas, in CSS pixels. */
 export interface ScreenPoint {
   x: number;
   y: number;
-}
-
-/** The map's canvas, in CSS pixels. */
-export interface Viewport {
-  width: number;
-  height: number;
 }
 
 export function worldToScreen(
@@ -139,23 +112,6 @@ export function centreForFocus(
   };
 }
 
-/**
- * Where the camera has to sit for an item to be at `focus`.
- *
- * Takes the zoom rather than reading it, because moving and zooming at once
- * has to aim at where the item will be, not where it is now.
- */
-export function panToFocus(
-  item: { x: number; y: number; size: number },
-  zoom: number,
-  focus: ScreenPoint,
-): { x: number; y: number } {
-  return {
-    x: focus.x / zoom - item.x - item.size / 2,
-    y: focus.y / zoom - item.y - item.size / 2,
-  };
-}
-
 /** A rectangle in map (world) coordinates. */
 export interface WorldBox {
   minX: number;
@@ -183,8 +139,8 @@ export function cameraToFit(box: WorldBox, width: number, height: number, zoom?:
   const z = clampZoom(zoom ?? fitted);
   const centreY = FIT_TOP_MARGIN + (height - FIT_MARGIN - FIT_TOP_MARGIN) / 2;
   return {
-    x: width / 2 / z - (box.minX + boxWidth / 2),
-    y: centreY / z - (box.minY + boxHeight / 2),
+    x: box.minX + boxWidth / 2,
+    y: box.minY + boxHeight / 2 - (centreY - height / 2) / z,
     zoom: z,
   };
 }
@@ -201,9 +157,10 @@ export function viewFocusedOn(
   currentZoom: number,
   minZoom: number,
   focus: ScreenPoint,
+  viewport: Viewport,
 ): Camera {
   const zoom = clampZoom(Math.max(currentZoom, minZoom));
-  return { ...panToFocus(item, zoom, focus), zoom };
+  return { ...centreForFocus(item, zoom, focus, viewport), zoom };
 }
 
 /** How long a camera glide takes. Long enough to read as travel over the map. */

@@ -14,7 +14,7 @@ const isTorah = (book: string): boolean => book === 'Genesis' || book === 'Deute
 const TORAH_TOP_Y = 0;
 const ZOOMS = [0.05, 0.2, 0.315, 0.63, 1, 2.5, 10];
 
-const at = (zoom: number, x = 0, y = 0): { x: number; y: number; zoom: number } => ({ x, y, zoom });
+const at = (zoom: number, x = 0, y = 0) => [{ x, y }, zoom] as const;
 
 describe('mapTitle', () => {
   let container: HTMLElement;
@@ -61,7 +61,7 @@ describe('mapTitle', () => {
   describe('it is painted on the map', () => {
     it('grows with the zoom and is never capped', () => {
       const widths = ZOOMS.map((zoom) => {
-        updateMapTitlePosition(title, at(zoom));
+        updateMapTitlePosition(title, ...at(zoom));
         return parseFloat(title.svg.getAttribute('width')!) / zoom;
       });
 
@@ -72,7 +72,7 @@ describe('mapTitle', () => {
       // In map units, not screen pixels: the book labels use a clamped screen
       // gap and so drift against the verses, which is what this must not do.
       const gaps = ZOOMS.map((zoom) => {
-        updateMapTitlePosition(title, at(zoom));
+        updateMapTitlePosition(title, ...at(zoom));
         return (TORAH_TOP_Y * zoom - parseFloat(title.svg.style.top)) / zoom;
       });
 
@@ -80,7 +80,7 @@ describe('mapTitle', () => {
     });
 
     it('tracks the pan', () => {
-      updateMapTitlePosition(title, at(0.3, 100, 50));
+      updateMapTitlePosition(title, ...at(0.3, 100, 50));
 
       expect(parseFloat(title.svg.style.left)).toBeCloseTo((500 + 100) * 0.3, 5);
       expect(parseFloat(title.svg.style.top)).toBeCloseTo((title.topY + 50) * 0.3, 5);
@@ -88,7 +88,7 @@ describe('mapTitle', () => {
 
     it('keeps the artwork’s own proportions at every zoom', () => {
       for (const zoom of ZOOMS) {
-        updateMapTitlePosition(title, at(zoom));
+        updateMapTitlePosition(title, ...at(zoom));
         const w = parseFloat(title.svg.getAttribute('width')!);
         const h = parseFloat(title.svg.getAttribute('height')!);
         expect(h / w).toBeCloseTo(title.aspect, 6);
@@ -97,7 +97,7 @@ describe('mapTitle', () => {
 
     it('never fades: paint does not thin out as you lean in', () => {
       for (const zoom of ZOOMS) {
-        updateMapTitlePosition(title, at(zoom));
+        updateMapTitlePosition(title, ...at(zoom));
         expect(title.svg.style.opacity).toBe('');
       }
     });

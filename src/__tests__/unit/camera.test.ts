@@ -2,64 +2,35 @@ import { describe, it, expect } from 'vitest';
 import {
   createCamera,
   clampZoom,
-  panForZoom,
   cameraToFit,
   worldToScreen,
   screenToWorld,
   viewOffset,
   zoomAtPoint,
   centreForFocus,
+  type Camera,
 } from '../../camera';
 import type { Bounds } from '../../types';
 
 describe('camera', () => {
   describe('createCamera', () => {
-    it('positions Genesis 1:1 near top-right with sidebar clearance', () => {
+    it('opens with Genesis 1:1 320 px in from the window’s right edge, below the labels', () => {
       const bounds: Bounds = { width: 1000, height: 800 };
-      const camera = createCamera(1920, 1080, bounds);
+      const view = { width: 1540, height: 1080 };
+      const camera = createCamera(view, bounds, 1920);
 
-      expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(1920 - 320 - 1000); // 600
-      expect(camera.y).toBe(40);
+      expect(camera.zoom).toBe(1);
+      // Genesis 1:1 is the rightmost verse, so its right edge is the map's.
+      const corner = worldToScreen({ x: bounds.width, y: 0 }, camera, view);
+      expect(corner.x).toBeCloseTo(1920 - 320, 10);
+      expect(corner.y).toBeCloseTo(40, 10);
     });
 
-    it('handles small window size', () => {
-      const bounds: Bounds = { width: 1000, height: 800 };
-      const camera = createCamera(800, 600, bounds);
-
-      expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(800 - 320 - 1000); // -520
-      expect(camera.y).toBe(40);
-    });
-
-    it('handles large window size', () => {
+    it('measures from the canvas when no window width is given', () => {
       const bounds: Bounds = { width: 500, height: 400 };
-      const camera = createCamera(3840, 2160, bounds);
-
-      expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(3840 - 320 - 500); // 3020
-      expect(camera.y).toBe(40);
-    });
-
-    it('handles zero-sized bounds', () => {
-      const bounds: Bounds = { width: 0, height: 0 };
-      const camera = createCamera(1920, 1080, bounds);
-
-      expect(camera.zoom).toBe(1.0);
-      expect(camera.x).toBe(1920 - 320);
-      expect(camera.y).toBe(40);
-    });
-
-    it('always returns 1.0 zoom regardless of input', () => {
-      const bounds: Bounds = { width: 100, height: 100 };
-
-      const camera1 = createCamera(800, 600, bounds);
-      const camera2 = createCamera(3840, 2160, bounds);
-      const camera3 = createCamera(1024, 768, bounds);
-
-      expect(camera1.zoom).toBe(1.0);
-      expect(camera2.zoom).toBe(1.0);
-      expect(camera3.zoom).toBe(1.0);
+      const view = { width: 800, height: 600 };
+      const corner = worldToScreen({ x: 500, y: 0 }, createCamera(view, bounds), view);
+      expect(corner.x).toBeCloseTo(800 - 320, 10);
     });
   });
 
@@ -94,144 +65,18 @@ describe('camera', () => {
       expect(clampZoom(9.99999999)).toBe(9.99999999);
     });
   });
-
-  describe('panForZoom', () => {
-    it('adjusts pan when zooming in to keep mouse point fixed', () => {
-      const pan = { x: 100, y: 100 };
-      const oldZoom = 1.0;
-      const newZoom = 2.0;
-      const mouseX = 400;
-      const mouseY = 300;
-
-      const newPan = panForZoom(pan, oldZoom, newZoom, mouseX, mouseY);
-
-      // Delta should be: mouseX * (1/newZoom - 1/oldZoom)
-      // = 400 * (0.5 - 1.0) = 400 * (-0.5) = -200
-      expect(newPan.x).toBeCloseTo(100 - 200, 5); // -100
-      expect(newPan.y).toBeCloseTo(100 - 150, 5); // -50
-    });
-
-    it('adjusts pan when zooming out to keep mouse point fixed', () => {
-      const pan = { x: 100, y: 100 };
-      const oldZoom = 2.0;
-      const newZoom = 1.0;
-      const mouseX = 400;
-      const mouseY = 300;
-
-      const newPan = panForZoom(pan, oldZoom, newZoom, mouseX, mouseY);
-
-      // Delta should be: mouseX * (1/newZoom - 1/oldZoom)
-      // = 400 * (1.0 - 0.5) = 400 * 0.5 = 200
-      expect(newPan.x).toBeCloseTo(100 + 200, 5); // 300
-      expect(newPan.y).toBeCloseTo(100 + 150, 5); // 250
-    });
-
-    it('returns same pan when zoom does not change', () => {
-      const pan = { x: 100, y: 100 };
-      const zoom = 1.5;
-      const mouseX = 400;
-      const mouseY = 300;
-
-      const newPan = panForZoom(pan, zoom, zoom, mouseX, mouseY);
-
-      expect(newPan.x).toBeCloseTo(100, 5);
-      expect(newPan.y).toBeCloseTo(100, 5);
-    });
-
-    it('handles zero mouse position', () => {
-      const pan = { x: 100, y: 100 };
-      const oldZoom = 1.0;
-      const newZoom = 2.0;
-
-      const newPan = panForZoom(pan, oldZoom, newZoom, 0, 0);
-
-      // No adjustment since mouse is at 0,0
-      expect(newPan.x).toBeCloseTo(100, 5);
-      expect(newPan.y).toBeCloseTo(100, 5);
-    });
-
-    it('preserves world coordinate under mouse', () => {
-      const pan = { x: 100, y: 200 };
-      const oldZoom = 1.0;
-      const newZoom = 2.0;
-      const mouseX = 500;
-      const mouseY = 400;
-
-      // Calculate world coordinate before zoom
-      const worldXBefore = mouseX / oldZoom - pan.x;
-      const worldYBefore = mouseY / oldZoom - pan.y;
-
-      const newPan = panForZoom(pan, oldZoom, newZoom, mouseX, mouseY);
-
-      // Calculate world coordinate after zoom
-      const worldXAfter = mouseX / newZoom - newPan.x;
-      const worldYAfter = mouseY / newZoom - newPan.y;
-
-      // World coordinates should be identical
-      expect(worldXAfter).toBeCloseTo(worldXBefore, 10);
-      expect(worldYAfter).toBeCloseTo(worldYBefore, 10);
-    });
-
-    it('handles negative pan values', () => {
-      const pan = { x: -50, y: -75 };
-      const oldZoom = 1.0;
-      const newZoom = 1.5;
-      const mouseX = 300;
-      const mouseY = 200;
-
-      const newPan = panForZoom(pan, oldZoom, newZoom, mouseX, mouseY);
-
-      // Delta: 300 * (1/1.5 - 1/1.0) = 300 * (2/3 - 1) = 300 * (-1/3) = -100
-      // Delta: 200 * (1/1.5 - 1/1.0) = 200 * (-1/3) = -66.666...
-      expect(newPan.x).toBeCloseTo(-150, 5);
-      expect(newPan.y).toBeCloseTo(-141.666667, 5);
-    });
-
-    it('handles fractional zoom levels', () => {
-      const pan = { x: 0, y: 0 };
-      const oldZoom = 0.5;
-      const newZoom = 1.7;
-      const mouseX = 600;
-      const mouseY = 800;
-
-      const newPan = panForZoom(pan, oldZoom, newZoom, mouseX, mouseY);
-
-      // Delta X: 600 * (1/1.7 - 1/0.5) = 600 * (1/1.7 - 2)
-      // Delta Y: 800 * (1/1.7 - 1/0.5) = 800 * (1/1.7 - 2)
-      // Using lower precision (1 decimal) to account for floating point
-      expect(newPan.x).toBeCloseTo(-847.06, 1);
-      expect(newPan.y).toBeCloseTo(-1129.41, 1);
-    });
-
-    it('handles large mouse coordinates', () => {
-      const pan = { x: 1000, y: 1000 };
-      const oldZoom = 1.0;
-      const newZoom = 5.0;
-      const mouseX = 3840;
-      const mouseY = 2160;
-
-      const newPan = panForZoom(pan, oldZoom, newZoom, mouseX, mouseY);
-
-      // Delta X: 3840 * (1/5 - 1/1) = 3840 * (0.2 - 1.0) = 3840 * (-0.8) = -3072
-      // Delta Y: 2160 * (0.2 - 1.0) = 2160 * (-0.8) = -1728
-      expect(newPan.x).toBeCloseTo(1000 - 3072, 5);
-      expect(newPan.y).toBeCloseTo(1000 - 1728, 5);
-    });
-  });
 });
 
 describe('cameraToFit', () => {
   const box = { minX: 100, minY: 50, maxX: 500, maxY: 250 };
-  const onScreen = (x: number, y: number, c: { x: number; y: number; zoom: number }) => ({
-    x: (x + c.x) * c.zoom,
-    y: (y + c.y) * c.zoom,
-  });
+  const onScreen = (x: number, y: number, c: Camera, width: number, height: number) =>
+    worldToScreen({ x, y }, c, { width, height });
 
   it('fits a wide box to the width, centred', () => {
     const c = cameraToFit(box, 832, 1000);
     expect(c.zoom).toBeCloseTo(2);
-    const topLeft = onScreen(box.minX, box.minY, c);
-    const bottomRight = onScreen(box.maxX, box.maxY, c);
+    const topLeft = onScreen(box.minX, box.minY, c, 832, 1000);
+    const bottomRight = onScreen(box.maxX, box.maxY, c, 832, 1000);
     expect(topLeft.x).toBeCloseTo(16);
     expect(bottomRight.x).toBeCloseTo(816);
     // Centred below the room kept for book labels.
@@ -241,15 +86,15 @@ describe('cameraToFit', () => {
   it('fits a tall box to the height, below the book labels', () => {
     const c = cameraToFit(box, 4000, 256);
     expect(c.zoom).toBeCloseTo(1);
-    expect(onScreen(box.minX, box.minY, c).y).toBeCloseTo(40);
-    expect(onScreen(box.maxX, box.maxY, c).y).toBeCloseTo(240);
-    expect(onScreen(300, 150, c).x).toBeCloseTo(2000);
+    expect(onScreen(box.minX, box.minY, c, 4000, 256).y).toBeCloseTo(40);
+    expect(onScreen(box.maxX, box.maxY, c, 4000, 256).y).toBeCloseTo(240);
+    expect(onScreen(300, 150, c, 4000, 256).x).toBeCloseTo(2000);
   });
 
   it('keeps the box centred at a given zoom', () => {
     const c = cameraToFit(box, 832, 1000, 0.5);
     expect(c.zoom).toBe(0.5);
-    expect(onScreen(300, 150, c).x).toBeCloseTo(416);
+    expect(onScreen(300, 150, c, 832, 1000).x).toBeCloseTo(416);
   });
 });
 
