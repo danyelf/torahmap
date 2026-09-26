@@ -42,9 +42,10 @@ works and is not leaving. Leaving is wanting a tool the story does not offer,
 so it happens through the menu, or when the story runs out and hands you the
 map. A story keeps its place, so Stories always offers to resume.
 
-**The menu drops into the panel the story already owns.** ☰ slides the menu
-down over the top of the column, leaving the current stop visible below it,
-dimmed. The first item is "Continue the story · 7/21"; then Search, Overlays,
+**The menu drops into the column.** ☰ slides the menu down over the top of the
+left column, leaving what is there — the current stop, or the open tool —
+visible below it, dimmed. It is the same menu, from the same corner, in both
+modes and on both sizes; it is never a panel of its own. The first item is "Continue the story · 7/21"; then Search, Overlays,
 Stories, Share this view, and Settings & About. Closing it returns to the
 story; choosing a tool ends the story and leaves the reader standing on the
 view it had reached, with its colours still on.
@@ -75,9 +76,9 @@ picker directly above itself and pushed every panel down; the card won.
 
 ## Search and an overlay together (#234)
 
-Search stops being an overlay and becomes its own tool: its own rail icon on
-desktop, its own icon in the top bar on a phone. The overlay picker then only
-chooses how the map is coloured.
+Search stops being an overlay and becomes its own tool: its own item in the ☰
+menu, and its own row in the legend while it is on. The overlay picker then
+only chooses how the map is coloured.
 
 When both are on, the search hits take the fill in their term colours and the
 overlay stays behind them, dimmed. This reads at every zoom and keeps the five
@@ -94,10 +95,20 @@ not the default, because it throws away the map of everything.
 
 ## The two layouts
 
-**Desktop** gets an icon rail: Stories, Search, Overlay, Share, and ☰ Menu at
-the foot. The rail is only present outside a story — its absence is what makes
-a story a mode. Clicking an icon opens that tool's panel in the column beside
-it.
+**Desktop** is one column beside the map in both modes, headed by the ☰: in a
+story the header holds the story's progress, outside it the open tool's name,
+and the column below is the story or that tool's panel. There is no rail.
+
+An icon rail — Stories, Search, Overlay, Share, ☰ at the foot — was built first
+and removed (2026-09-26). It offered the same tools as the menu, less Continue
+and About, and the menu behaved differently beside it: dropped over the story,
+but a panel of its own while exploring. Once the legend opened the tools that
+are on with one tap, the rail's remaining job was to list the tools, which the
+menu already does. The cost is a second click to reach a tool that is off.
+
+| With the rail (removed) | Without: the Overlay panel | Without: the menu dropped |
+|---|---|---|
+| ![](images/2026-09-23-ui-hierarchy/rail-overlay.png) | ![](images/2026-09-23-ui-hierarchy/norail-overlay.png) | ![](images/2026-09-23-ui-hierarchy/norail-overlay-menu.png) |
 
 **Phone** has no top bar. A single ☰ floats in the top-left corner in both
 modes, over the map; the menu drops from it and carries the name, "Torahmap",
@@ -171,7 +182,7 @@ story is open, and turns it into a bottom sheet under `max-width: 768px`.
 the fold and open calls. `src/sheet.ts` holds the phone's three heights
 (`down`, `normal`, `tall`) and the drag arithmetic. `src/panelSummary.ts` builds
 the summary line that the legend card reuses. The accordion, the summary line
-and the footer all go; the rail, the legend card and the menu are new.
+and the footer all go; the ☰ column header, the legend card and the menu are new.
 
 **The story.** `src/scrollytelling/storyPanel.ts` fetches and renders
 `public/data/story.md`; `storyParser.ts` reads the stop directives;
@@ -213,7 +224,7 @@ show in miniature.
   from controls — the footer link, the summary toggle — that this design
   removes. Both want re-reading against the new controls rather than redesign.
 - **Testing.** `playwright` is already a devDependency and the headless browser
-  renders the map, so the frame's states — rail, legend card, menu over the
+  renders the map, so the frame's states — legend card, menu over the
   story, the phone sheet — can be driven and looked at directly, which
   matters for a change whose whole content is layout. The state underneath
   (which panel is open, what the legend says, what the URL holds) stays in
@@ -243,13 +254,6 @@ sheet that resized underneath it would make the whole screen unstable.
 
 - Whether the "dim everything that doesn't match" switch ships with this or
   later.
-- The rail's icons, which are a design job of their own. The emoji in the
-  mockup are stand-ins and look like it. What replaces them has to survive
-  being small and unlabelled, read at a glance against a dark background, and
-  sit with the rest of the site rather than borrowing a generic icon set. Five
-  are needed on desktop, plus search, share and ☰ on the phone bar. Worth
-  settling before the frame ships, since the rail is the first thing a reader
-  meets outside a story.
 - Whether search results on desktop belong in the panel, as they are today, or
   deserve more room now that the panel is narrower.
 
@@ -258,7 +262,7 @@ sheet that resized underneath it would make the whole screen unstable.
 Each step should be a branch that stands on its own, and each changes what the
 reader sees, so each wants your eyes before the next.
 
-1. **The frame.** The rail, the panel, the legend on the map, the ☰ menu, the
+1. **The frame.** The column, the legend on the map, the ☰ menu, the
    phone's floating ☰. Story mode is still the existing single story; the overlay
    list still contains Text Search. Nothing about the map changes.
 2. **Search leaves the overlay list** and becomes a tool, with hits drawn over
