@@ -1040,15 +1040,15 @@ async function main(): Promise<void> {
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
 
+  function mapViewport(): Viewport {
+    return { width: canvas.clientWidth, height: canvas.clientHeight };
+  }
+
   /**
    * Where a verse is put when the story, a link or the reader brings it into
    * view: the middle of the map, or on a phone higher up, clear of the verse
    * popup that sits above the sheet.
    */
-  function mapViewport(): Viewport {
-    return { width: canvas.clientWidth, height: canvas.clientHeight };
-  }
-
   function mapFocus(): ScreenPoint {
     const height = phoneLayout.matches
       ? canvas.clientHeight * PHONE_STORY_FOCUS
@@ -1385,9 +1385,9 @@ async function main(): Promise<void> {
   }
 
   // A stop's camera places its verse, or fits its region, against the map's
-  // size, which the window sets. The map also grows as a phone's sheet lowers,
-  // but that leaves what the stop showed where it is on screen, so it is not
-  // followed.
+  // size, which the window sets. The map also grows as a phone's sheet lowers;
+  // the camera keeps its centre, so the stop's verse moves down by half the
+  // growth, about as far as the raised focus does, and it is not followed.
   window.addEventListener('resize', () => {
     resolvedStops = resolveStory();
     scheduleStoryFrame();
