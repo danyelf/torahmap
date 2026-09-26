@@ -221,7 +221,6 @@ in step with the code:
   Escape closes it
 - **Legend** - Names what colours the map, on the map itself; tap a row to open
   its tool
-- **Rail** (desktop) - Open a tool's panel
 - **Sheet** (phone) - The open panel; the grabber takes it to full height and
   back, and a drag down folds it
 

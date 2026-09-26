@@ -99,24 +99,6 @@
 
     <div id="menu" class="menu" hidden></div>
 
-    <nav id="rail" aria-label="Tools">
-      <button class="rail-button" type="button" data-panel="stories">
-        <span class="rail-icon" aria-hidden="true">📖</span><span class="rail-label">Stories</span>
-      </button>
-      <button class="rail-button" type="button" data-panel="overlay">
-        <span class="rail-icon" aria-hidden="true">◧</span><span class="rail-label">Overlay</span>
-      </button>
-      <button
-        class="rail-button menu-button rail-menu"
-        type="button"
-        aria-label="Menu"
-        aria-expanded="false"
-        aria-controls="menu-panel"
-      >
-        <span class="rail-icon" aria-hidden="true">☰</span><span class="rail-label">Menu</span>
-      </button>
-    </nav>
-
     <aside id="panel">
       <button
         id="sheet-grabber"
@@ -125,7 +107,7 @@
       ></button>
 
       <section id="story" aria-label="Story">
-        <div class="story-head">
+        <div class="column-head">
           <button
             id="story-menu"
             class="menu-button"
@@ -147,6 +129,19 @@
       </section>
 
       <section id="tools">
+        <div class="column-head">
+          <button
+            id="tools-menu"
+            class="menu-button"
+            type="button"
+            aria-label="Menu"
+            aria-expanded="false"
+            aria-controls="menu"
+          >
+            ☰
+          </button>
+          <h2 id="tools-title" class="column-title"></h2>
+        </div>
         <div id="panel-body">
           <div id="overlay-panel" class="tool">
             <div class="panel-picker">
@@ -163,7 +158,6 @@
           </div>
           <div id="stories-panel" class="tool"></div>
           <div id="about-panel" class="tool"></div>
-          <div id="menu-panel" class="tool menu"></div>
         </div>
       </section>
     </aside>

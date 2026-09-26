@@ -1,15 +1,14 @@
-/* The frame. On a desktop everything left of the map is --panel-width wide in
-   both modes — the story's column, or the rail and the open panel together —
-   so the map never moves or changes width when the mode does. The map starts
+/* The frame. On a desktop everything left of the map is one --panel-width
+   column in both modes — the story, or the open tool — headed by the ☰ that
+   drops the menu, so the map never moves or changes width when the mode does. The map starts
    at --map-left (src/styles/main.css), which the canvas, the book labels and
    the title all read. What colours the map is named on the map, in the legend
    card. On a phone the panel is a sheet along the bottom and the ☰ floats in
    the top-left corner. The mode and the open panel are data- attributes on
    <body>, set by main.ts from src/frame.ts. */
 :root {
-  --rail-width: 56px;
-  /* The story's header row, which the menu drops from. */
-  --story-head-height: 61px;
+  /* The column's header row, which the menu drops from. */
+  --column-head-height: 61px;
   /* The legend's height and the gap above it, where the phone's verse popup
      stacks; main.ts measures it. */
   --legend-shown: 0px;
@@ -49,69 +48,9 @@
   color: #fff;
 }
 
-body[data-mode='explore'] #panel {
-  left: var(--rail-width);
-  width: calc(var(--panel-width) - var(--rail-width));
-}
-
 #top-bar,
-#rail,
 #sheet-grabber {
   display: none;
-}
-
-#top-bar,
-#rail {
-  font-family: system-ui, sans-serif;
-  color: #fff;
-}
-
-body[data-mode='explore'] #rail {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--rail-width);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 0;
-  box-sizing: border-box;
-  background: #000;
-  border-right: 1px solid var(--line);
-  z-index: 11;
-}
-
-.rail-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  min-height: 52px;
-  padding: 6px 0;
-  border: none;
-  background: none;
-  color: #aaa;
-  font: inherit;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.rail-button:hover {
-  color: #fff;
-}
-
-.rail-button[aria-pressed='true'] {
-  color: var(--accent);
-}
-
-.rail-icon {
-  font-size: 18px;
-  line-height: 1;
-}
-
-.rail-menu {
-  margin-top: auto;
 }
 
 #story,
@@ -132,13 +71,15 @@ body[data-mode='explore'] #tools {
   display: flex;
 }
 
-/* The story's header: its menu button and where it has got to. The menu drops
-   from here over the top of the story, which stays visible below it. */
-.story-head {
+/* The column's header: the ☰, then where the story has got to or which tool is
+   open. The menu drops from here over the top of the column, which stays
+   visible below it. */
+.column-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  height: var(--story-head-height);
+  flex-shrink: 0;
+  height: var(--column-head-height);
   padding: 8px 12px;
   box-sizing: border-box;
   border-bottom: 1px solid var(--line);
@@ -161,22 +102,6 @@ body[data-mode='explore'] #tools {
   color: #fff;
 }
 
-/* The rail's menu button is drawn like the rail's other buttons. */
-.rail-button.menu-button {
-  border: none;
-  border-radius: 0;
-  color: #aaa;
-  font-size: 11px;
-}
-
-.rail-button.menu-button:hover {
-  color: #fff;
-}
-
-.rail-button.menu-button[aria-pressed='true'] {
-  color: var(--accent);
-}
-
 #story-progress {
   flex: 1 1 auto;
   height: 3px;
@@ -193,7 +118,7 @@ body[data-mode='explore'] #tools {
 
 #menu {
   position: fixed;
-  top: var(--story-head-height);
+  top: var(--column-head-height);
   left: 0;
   width: var(--panel-width);
   box-sizing: border-box;
@@ -209,8 +134,15 @@ body[data-mode='explore'] #tools {
   display: none;
 }
 
-body[data-menu] #story-content {
+body[data-menu] #story-content,
+body[data-menu] #panel-body {
   opacity: 0.3;
+}
+
+.column-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .menu-title {
@@ -352,16 +284,14 @@ body[data-menu] #story-cue {
 
 body[data-open='overlay'] #overlay-panel,
 body[data-open='stories'] #stories-panel,
-body[data-open='about'] #about-panel,
-body[data-open='menu'] #menu-panel {
+body[data-open='about'] #about-panel {
   display: flex;
 }
 
-#menu-panel {
-  margin: -16px -20px 0;
-}
-
+/* A panel's own title shows only on a phone; a desktop names the open tool in
+   the column's header. */
 .panel-title {
+  display: none;
   margin: 0 0 16px;
   font-size: 18px;
   font-weight: 600;
@@ -588,10 +518,6 @@ body[data-open='menu'] #menu-panel {
     height: calc(100svh - var(--sheet-shown));
   }
 
-  body[data-mode='explore'] #rail {
-    display: none;
-  }
-
   #panel,
   body[data-mode='explore'] #panel {
     top: auto;
@@ -620,15 +546,20 @@ body[data-open='menu'] #menu-panel {
     display: none;
   }
 
-  /* The ☰ lives in the corner in both modes, so the story's sheet is only
-     its text. */
-  .story-head {
+  /* The ☰ lives in the corner in both modes, so the column's header goes: the
+     story's sheet is only its text, and a tool's panel carries its own title. */
+  .column-head {
     display: none;
+  }
+
+  .panel-title {
+    display: block;
   }
 
   #top-bar {
     display: block;
     position: fixed;
+    font-family: system-ui, sans-serif;
     top: 10px;
     left: 10px;
     z-index: 16;

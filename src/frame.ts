@@ -2,7 +2,7 @@
 // Outside it one panel is open — on a phone possibly none, leaving only the
 // map — and a phone's sheet can be dragged to full height.
 
-const PANELS = ['overlay', 'stories', 'about', 'menu'] as const;
+const PANELS = ['overlay', 'stories', 'about'] as const;
 export type Panel = (typeof PANELS)[number];
 
 export function isPanel(name: string | undefined): name is Panel {
@@ -13,7 +13,7 @@ export interface Frame {
   mode: 'story' | 'explore';
   /** The open panel, while exploring. Null on a phone at rest, never on a desktop. */
   open: Panel | null;
-  /** The menu has dropped: over the story's column on a desktop, from the corner on a phone. */
+  /** The ☰ menu has dropped: over the column on a desktop, from the corner on a phone. */
   menu: boolean;
   /** A phone's open panel, dragged to full height. */
   full: boolean;
@@ -49,30 +49,26 @@ export function nextFrame(frame: Frame, event: FrameEvent, phone: boolean): Fram
   return fit(step(frame, event, phone), phone);
 }
 
-/**
- * A desktop always has a panel open, has no full height, and exploring keeps
- * its menu in a panel; a phone drops the menu from its corner instead.
- */
+/** A desktop always has a panel open while exploring, and has no full height. */
 function fit(frame: Frame, phone: boolean): Frame {
-  if (phone) return frame.open === 'menu' ? { ...frame, open: null, menu: true } : frame;
-  if (frame.mode === 'story') return frame;
-  return { ...frame, open: frame.open ?? 'overlay', full: false, menu: false };
+  if (phone || frame.mode === 'story') return frame;
+  return { ...frame, open: frame.open ?? 'overlay', full: false };
 }
 
 function step(frame: Frame, event: FrameEvent, phone: boolean): Frame {
   switch (event.type) {
     case 'menu':
-      if (frame.mode === 'story' || phone) return { ...frame, menu: !frame.menu };
-      return explore(frame.open === 'menu' ? null : 'menu');
+      return { ...frame, menu: !frame.menu };
     case 'choose': {
-      const again = phone && frame.mode === 'explore' && frame.open === event.panel;
+      // Tapping the legend for the open panel folds a phone's sheet; choosing
+      // that panel from the menu keeps it open.
+      const again = phone && frame.mode === 'explore' && !frame.menu && frame.open === event.panel;
       return explore(again ? null : event.panel);
     }
     case 'story':
       return STORY;
     case 'map-touched':
-      if (frame.mode === 'story') return { ...frame, menu: false };
-      return phone ? explore(null) : frame;
+      return phone && frame.mode === 'explore' ? explore(null) : { ...frame, menu: false };
     case 'drag':
       if (!phone || frame.mode === 'story' || frame.open === null) return frame;
       if (Math.abs(event.dy) < DRAG_PX) return frame;

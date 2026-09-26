@@ -18,6 +18,7 @@ import {
   nextFrame,
   type Frame,
   type FrameEvent,
+  type Panel,
   isPanel,
 } from './frame.ts';
 import { menuHtml, type StoryPlace } from './menu.ts';
@@ -210,9 +211,16 @@ async function main(): Promise<void> {
   }
   resizeCanvas();
 
+  // Where the canvas starts, read when it resizes rather than per pointer
+  // event: reading it then forces a layout on every hover and drag.
+  let canvasOrigin = canvas.getBoundingClientRect();
+  new ResizeObserver(() => {
+    canvasOrigin = canvas.getBoundingClientRect();
+  }).observe(canvas);
+
   /** Where a pointer is on the map: the canvas need not start at the window's corner. */
   const onMap = (e: { clientX: number; clientY: number }): { x: number; y: number } =>
-    mapPoint(e.clientX, e.clientY, canvas.getBoundingClientRect());
+    mapPoint(e.clientX, e.clientY, canvasOrigin);
 
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext.gl, verses, dpr);
@@ -329,7 +337,11 @@ async function main(): Promise<void> {
     }
   }
 
-  const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
+  const camera = createCamera(
+    canvas.clientWidth || window.innerWidth,
+    canvas.clientHeight || window.innerHeight,
+    bounds,
+  );
 
   let pinnedVerse: TanakhLayout | null = null;
 
@@ -348,14 +360,14 @@ async function main(): Promise<void> {
   const storyMenuButton = document.getElementById('story-menu')!;
   const storyProgress = document.getElementById('story-progress')!;
   const storyProgressFill = document.getElementById('story-progress-fill')!;
-  const menuPanel = document.getElementById('menu-panel')!;
+  const toolsMenuButton = document.getElementById('tools-menu')!;
+  const toolsTitle = document.getElementById('tools-title')!;
+  const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
   const mapLegend = document.getElementById('map-legend')!;
   const mapLegendSummary = mapLegend.querySelector<HTMLElement>('.map-legend-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
-  const railButtons = [...document.querySelectorAll<HTMLButtonElement>('.rail-button[data-panel]')];
-  const railMenuButton = document.querySelector<HTMLButtonElement>('.rail-menu')!;
   const topMenuButton = document.getElementById('top-menu')!;
 
   // What the panel shows (src/frame.ts), and whether the story is open.
@@ -374,56 +386,65 @@ async function main(): Promise<void> {
 
   const phoneLayout = window.matchMedia('(max-width: 768px)');
 
-  function setStoryOpen(open: boolean): void {
+  /** Opens or closes the story; closing it lands on `exploring`. */
+  function setStoryOpen(open: boolean, exploring = exploreFrame(phoneLayout.matches)): void {
     if (!open && storyOpen) heldStop = storyStopIndex();
     storyOpen = open;
+    const previous = frame;
     if (open) frame = STORY;
-    else if (frame.mode === 'story') frame = exploreFrame(phoneLayout.matches);
-    applyFrame();
+    else if (frame.mode === 'story') frame = exploring;
+    applyFrame(previous);
   }
 
   function storyPlace(): StoryPlace {
     return { number: stopAt(resolvedStops, storyStopIndex()).number, total: resolvedStops.length };
   }
 
-  /** Puts the frame on the page. The stylesheet reads the attributes; the panels are drawn as they open. */
-  function applyFrame(): void {
+  const TOOL_TITLES: Record<Panel, string> = {
+    overlay: 'Overlay',
+    stories: 'Stories',
+    about: 'About & settings',
+  };
+
+  /**
+   * Puts the frame on the page. The stylesheet reads the attributes; the menu
+   * and the panels are drawn as they open, and left alone while they stay open.
+   */
+  function applyFrame(previous: Frame | null = null): void {
     const body = document.body;
     body.dataset.mode = frame.mode;
     if (frame.open) body.dataset.open = frame.open;
     else delete body.dataset.open;
     body.toggleAttribute('data-menu', frame.menu);
     body.toggleAttribute('data-full', frame.full);
+    const focusInMenu = droppedMenu.contains(document.activeElement);
     droppedMenu.hidden = !frame.menu;
-    storyMenuButton.setAttribute('aria-expanded', String(frame.menu));
+    for (const button of [storyMenuButton, toolsMenuButton, topMenuButton]) {
+      button.setAttribute('aria-expanded', String(frame.menu));
+    }
     storyContent.inert = frame.menu;
-    for (const button of railButtons) {
-      button.setAttribute('aria-pressed', String(button.dataset.panel === frame.open));
-    }
-    railMenuButton.setAttribute('aria-pressed', String(frame.open === 'menu'));
-    railMenuButton.setAttribute('aria-expanded', String(frame.open === 'menu'));
-    topMenuButton.setAttribute('aria-expanded', String(frame.menu));
-    if (frame.menu || frame.open === 'menu') {
-      const html = menuHtml(storyPlace());
-      droppedMenu.innerHTML = html;
-      menuPanel.innerHTML = html;
-    }
-    if (frame.open === 'stories') {
+    panelBody.inert = frame.menu;
+    toolsTitle.textContent = frame.open ? TOOL_TITLES[frame.open] : '';
+    if (frame.menu && !previous?.menu) droppedMenu.innerHTML = menuHtml(storyPlace());
+    const opened = frame.open !== previous?.open;
+    if (opened && frame.open === 'stories') {
       storiesPanel.innerHTML = storiesHtml({
         ...storyPlace(),
         label: stopLabel(resolvedStops[storyStopIndex()]),
       });
     }
-    if (frame.open === 'about') {
+    if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(getAllOverlays());
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
     }
     measureSheet();
+    // Hidden, the menu would drop focus to the top of the page.
+    if (focusInMenu && !frame.menu) menuButton().focus();
   }
 
   // An exploring phone's sheet is as tall as its content, or gone with nothing
-  // open; the map, the legend and the verse popup make room for it. Full height grows over
-  // the map instead.
+  // open; the map, the legend and the verse popup make room for it. Full
+  // height grows over the map instead.
   function measureSheet(): void {
     if (!phoneLayout.matches || frame.full) return;
     document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
@@ -440,16 +461,19 @@ async function main(): Promise<void> {
   const sameFrame = (a: Frame, b: Frame): boolean =>
     a.mode === b.mode && a.open === b.open && a.menu === b.menu && a.full === b.full;
 
+  /** The ☰ on screen: the corner's on a phone, otherwise the column's. */
+  function menuButton(): HTMLElement {
+    if (phoneLayout.matches) return topMenuButton;
+    return frame.mode === 'story' ? storyMenuButton : toolsMenuButton;
+  }
+
   function setFrame(next: Frame): void {
     // Every touch on the map arrives here; most change nothing, and redrawing
     // an open panel mid-click would lose what was clicked.
     if (sameFrame(next, frame)) return;
-    const menuOpened = next.menu && !frame.menu;
+    const previous = frame;
     frame = next;
-    applyFrame();
-    // The menu is not next to the ☰ that opened it in the page's order, so Tab
-    // would not reach it.
-    if (menuOpened) droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
+    applyFrame(previous);
   }
 
   /** Every control that changes the panel comes through here. */
@@ -459,8 +483,13 @@ async function main(): Promise<void> {
       readerOpensStory();
       return;
     }
-    if (frame.mode === 'story' && next.mode === 'explore') leaveStory();
+    if (frame.mode === 'story' && next.mode === 'explore') leaveStory(next);
     setFrame(next);
+    // The menu is not next to its ☰ in the page's order, so Tab would not
+    // reach it; the ☰ hands focus over.
+    if (event.type === 'menu' && frame.menu) {
+      droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
+    }
   }
 
   // On a phone the stops sit side by side and a swipe moves one; elsewhere
@@ -1179,9 +1208,9 @@ async function main(): Promise<void> {
     }
   }
 
-  function leaveStory(): void {
+  function leaveStory(exploring?: Frame): void {
     takeOver('fold');
-    setStoryOpen(false);
+    setStoryOpen(false, exploring);
     rememberStoryFolded(true);
     render();
     syncUrl(true);
@@ -1209,8 +1238,8 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   }
 
-  function readerOpensStory(): void {
-    openStory(storyStopIndex(), 'ease', 'open');
+  function readerOpensStory(stop = storyStopIndex()): void {
+    openStory(stop, 'ease', 'open');
     rememberStoryFolded(false);
     syncUrl(true);
   }
@@ -1222,19 +1251,14 @@ async function main(): Promise<void> {
     if (target.closest('.story-leave')) return dispatch({ type: 'choose', panel: 'overlay' });
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'story') return dispatch({ type: 'story' });
-    if (action === 'restart') {
-      openStory(0, 'ease', 'open');
-      rememberStoryFolded(false);
-      syncUrl(true);
-      return;
-    }
-    // Menu items, the rail and the legend choose a panel; nothing else inside
-    // an open panel does.
-    const chooser = target.closest<HTMLElement>('.rail-button[data-panel], .map-legend-row');
+    if (action === 'restart') return readerOpensStory(0);
+    // Menu items and the legend choose a panel; nothing else inside an open
+    // panel does.
+    const chooser = target.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
   }
-  for (const id of ['panel', 'rail', 'top-bar', 'menu', 'map-legend']) {
+  for (const id of ['panel', 'top-bar', 'menu', 'map-legend']) {
     document.getElementById(id)!.addEventListener('click', onChromeClick);
   }
 

@@ -4,7 +4,7 @@ export interface Known {
   violations: string[];
 }
 
-const POPUP = 'The verse popup is unchanged from before the frame; accepted as it is for now.';
+const POPUP = "The verse popup's Sefaria link and close button are under 24px; accepted for now.";
 const SEARCH = "Search's controls are rebuilt when search becomes a tool of its own.";
 
 /**

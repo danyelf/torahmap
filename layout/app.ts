@@ -14,20 +14,20 @@ export interface State {
 // the story's prose and in the credits are running text, which touch-size
 // rules exempt.
 export const CHROME: Chrome = {
-  fixed: '#panel, #rail, #top-bar, #map-legend, #zoom-controls, #verse-popup.visible',
+  fixed: '#panel, #top-bar, #map-legend, #zoom-controls, #verse-popup.visible',
   map: '#canvas',
-  panel: '#panel, #rail',
+  panel: '#panel',
   interactive:
     '#panel button, #panel select, #panel input, ' +
     '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
-    '#rail button, #top-bar button, #menu button, #map-legend button, ' +
+    '#top-bar button, #menu button, #map-legend button, ' +
     '#verse-popup button, #verse-popup a, #zoom-controls button',
   text:
-    '.map-legend-summary, .menu-title, .menu-item, .rail-label, .panel-title, #panel label, ' +
+    '.map-legend-summary, .menu-title, .menu-item, .column-title, .panel-title, #panel label, ' +
     '.story-card-place, #verse-popup .ref-text',
 };
 
-/** Opens a menu item by whichever ☰ is showing: the story's, the rail's, or the phone's. */
+/** Opens a menu item by whichever ☰ is showing: the column's, or the phone's corner one. */
 async function viaMenu(page: Page, action: string): Promise<void> {
   await page.locator('.menu-button:visible').first().click();
   await page.locator(`.menu-item[data-action="${action}"]:visible`).click();
@@ -49,6 +49,12 @@ export const STATES: State[] = [
     shown: ['#menu', '#map-legend'],
   },
   { name: 'explore-link', hash: 'overlay=commentary', shown: ['#map-legend'] },
+  {
+    name: 'explore-menu-down',
+    hash: 'overlay=commentary',
+    then: (page) => page.locator('.menu-button:visible').first().click(),
+    shown: ['#menu', '#map-legend'],
+  },
   {
     name: 'explore-overlay-open',
     hash: 'overlay=commentary',

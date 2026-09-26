@@ -54,8 +54,18 @@ describe('exploring on a desktop', () => {
     );
   });
 
-  it('closes the menu panel back to the overlay on ☰', () => {
-    expect(nextFrame(explore('menu'), { type: 'menu' }, DESKTOP)).toEqual(explore('overlay'));
+  it('drops the menu over the open panel on ☰, and lifts it on ☰ or a touch on the map', () => {
+    const down = nextFrame(explore('about'), { type: 'menu' }, DESKTOP);
+    expect(down).toEqual({ ...explore('about'), menu: true });
+    expect(nextFrame(down, { type: 'menu' }, DESKTOP)).toEqual(explore('about'));
+    expect(nextFrame(down, { type: 'map-touched' }, DESKTOP)).toEqual(explore('about'));
+  });
+
+  it('opens the panel chosen from the menu', () => {
+    const down = { ...explore('overlay'), menu: true };
+    expect(nextFrame(down, { type: 'choose', panel: 'stories' }, DESKTOP)).toEqual(
+      explore('stories'),
+    );
   });
 
   it('never goes full height', () => {
@@ -93,6 +103,13 @@ describe('exploring on a phone', () => {
     );
   });
 
+  it('keeps the open panel open when the menu chooses it again', () => {
+    const down = { ...explore('overlay'), menu: true };
+    expect(nextFrame(down, { type: 'choose', panel: 'overlay' }, PHONE)).toEqual(
+      explore('overlay'),
+    );
+  });
+
   it('goes full height on a drag up, then back, then folds', () => {
     const full = nextFrame(explore('overlay'), { type: 'drag', dy: -40 }, PHONE);
     expect(full).toEqual(explore('overlay', true));
@@ -117,15 +134,6 @@ describe('exploring on a phone', () => {
   });
 });
 
-describe('crossing from desktop width to phone width', () => {
-  it('drops the menu from the corner rather than keeping it in a panel', () => {
-    expect(nextFrame(explore('menu'), { type: 'layout-changed' }, PHONE)).toEqual({
-      ...explore(null),
-      menu: true,
-    });
-  });
-});
-
 describe('crossing from phone width to desktop width', () => {
   it('opens the overlay if nothing was open, and drops full height', () => {
     expect(nextFrame(explore(null), { type: 'layout-changed' }, DESKTOP)).toEqual(
@@ -135,17 +143,12 @@ describe('crossing from phone width to desktop width', () => {
       explore('about'),
     );
   });
-
-  it("lifts a phone's dropped menu, which a desktop keeps in a panel", () => {
-    expect(
-      nextFrame({ ...explore(null), menu: true }, { type: 'layout-changed' }, DESKTOP),
-    ).toEqual(explore('overlay'));
-  });
 });
 
 describe('panel names', () => {
   it('accepts the panels and nothing else', () => {
-    expect(['overlay', 'stories', 'about', 'menu'].every(isPanel)).toBe(true);
+    expect(['overlay', 'stories', 'about'].every(isPanel)).toBe(true);
+    expect(isPanel('menu')).toBe(false);
     expect(isPanel('story')).toBe(false);
     expect(isPanel('restart')).toBe(false);
     expect(isPanel(undefined)).toBe(false);
