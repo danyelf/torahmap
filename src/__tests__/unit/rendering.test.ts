@@ -29,9 +29,9 @@ describe('rendering', () => {
       const context = createRenderContext(canvas);
 
       expect(context.programs.main.program).toBeDefined();
-      expect(context.programs.main.attribs.position).toBeDefined();
-      expect(context.programs.main.attribs.color).toBeDefined();
-      expect(context.programs.main.attribs.uv).toBeDefined();
+      expect(context.programs.main.attribs.a_rect).toBeDefined();
+      expect(context.programs.main.attribs.a_color).toBeDefined();
+      expect(context.programs.main.attribs.a_colorCount).toBeDefined();
     });
 
     it('initializes outline shader program with correct attributes', () => {
@@ -211,25 +211,27 @@ describe('rendering', () => {
       expect(context.gl.bindBuffer).toHaveBeenCalledWith(context.gl.ARRAY_BUFFER, state.buffer);
     });
 
-    it('enables all vertex attributes', () => {
+    it('reads every verse attribute once per verse', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
-      expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
-        context.programs.main.attribs.position,
-      );
-      expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
-        context.programs.main.attribs.color,
-      );
-      expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
-        context.programs.main.attribs.uv,
-      );
+      for (const location of Object.values(context.programs.main.attribs)) {
+        expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(location);
+        expect(context.gl.vertexAttribDivisor).toHaveBeenCalledWith(location, 1);
+      }
     });
 
-    it('draws correct number of vertices', () => {
+    it('draws six corners for each verse', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
-      // 10 verses * 6 vertices per verse = 60 vertices
-      expect(context.gl.drawArrays).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 60);
+      expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 10);
+    });
+
+    it('leaves its per-verse setup behind before drawing outlines', () => {
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+
+      const bind = vi.mocked(context.gl.bindVertexArray).mock.calls;
+      expect(bind[0]).toEqual([context.programs.main.vertexArray]);
+      expect(bind.at(-1)).toEqual([null]);
     });
 
     it('does not render outline when no verses hovered or pinned', () => {
@@ -293,7 +295,7 @@ describe('rendering', () => {
       state.verses = [];
 
       expect(() => render(context, state, camera, null, null, tanakhIdentitiesEqual)).not.toThrow();
-      expect(context.gl.drawArrays).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 0);
+      expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 0);
     });
 
     it('scales zoom by dpr for high-DPI displays', () => {

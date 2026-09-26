@@ -1,20 +1,37 @@
 // WebGL utilities for rendering verse quads
 
-import type { ShaderProgram } from './types.ts';
+import { VERSE_ATTRIBUTES, type VerseAttributeName } from './geometry.ts';
+
+export interface ShaderProgram {
+  program: WebGLProgram;
+  vertexArray: WebGLVertexArrayObject;
+  attribs: Record<VerseAttributeName, number>;
+  uniforms: {
+    resolution: WebGLUniformLocation | null;
+    pan: WebGLUniformLocation | null;
+    zoom: WebGLUniformLocation | null;
+  };
+}
+
+const GLSL_TYPES = { 1: 'float', 2: 'vec2', 3: 'vec3', 4: 'vec4' } as const;
+
+const VERSE_INPUTS = VERSE_ATTRIBUTES.map((a) => `in ${GLSL_TYPES[a.size]} ${a.name};`).join(
+  '\n  ',
+);
 
 const VERTEX_SHADER = `#version 300 es
   uniform vec2 u_resolution;
   uniform vec2 u_pan;
   uniform float u_zoom;
 
-  in vec2 a_position;
-  in vec3 a_color;
-  in vec3 a_color2;
-  in vec3 a_color3;
-  in vec3 a_color4;
-  in float a_colorCount;
-  in vec2 a_uv;
-  in vec2 a_seed;
+  ${VERSE_INPUTS}
+
+  // The two triangles of a square, as fractions of the way across it. Every
+  // verse is drawn from these six corners, picked by gl_VertexID.
+  const vec2 CORNERS[6] = vec2[6](
+    vec2(0, 0), vec2(1, 0), vec2(0, 1),
+    vec2(0, 1), vec2(1, 0), vec2(1, 1)
+  );
 
   out vec3 v_color;
   out vec3 v_color2;
@@ -25,7 +42,8 @@ const VERTEX_SHADER = `#version 300 es
   out vec2 v_seed;
 
   void main() {
-    vec2 pos = (a_position + u_pan) * u_zoom;
+    vec2 uv = CORNERS[gl_VertexID];
+    vec2 pos = (mix(a_rect.xy, a_rect.zw, uv) + u_pan) * u_zoom;
     vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
     v_color = a_color;
@@ -33,8 +51,9 @@ const VERTEX_SHADER = `#version 300 es
     v_color3 = a_color3;
     v_color4 = a_color4;
     v_colorCount = int(a_colorCount);
-    v_uv = a_uv;
-    v_seed = a_seed;
+    v_uv = uv;
+    // The verse's corner seeds its dithering noise
+    v_seed = a_rect.xy;
   }
 `;
 
@@ -133,18 +152,17 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
     throw new Error(gl.getProgramInfoLog(program) || 'Program linking failed');
   }
 
+  const vertexArray = gl.createVertexArray();
+  if (!vertexArray) throw new Error('Failed to create vertex array');
+
   return {
     program,
-    attribs: {
-      position: gl.getAttribLocation(program, 'a_position'),
-      color: gl.getAttribLocation(program, 'a_color'),
-      color2: gl.getAttribLocation(program, 'a_color2'),
-      color3: gl.getAttribLocation(program, 'a_color3'),
-      color4: gl.getAttribLocation(program, 'a_color4'),
-      colorCount: gl.getAttribLocation(program, 'a_colorCount'),
-      uv: gl.getAttribLocation(program, 'a_uv'),
-      seed: gl.getAttribLocation(program, 'a_seed'),
-    },
+    // Holds the per-verse attribute setup, so the outline program, which draws
+    // corner by corner, never inherits it.
+    vertexArray,
+    attribs: Object.fromEntries(
+      VERSE_ATTRIBUTES.map((a) => [a.name, gl.getAttribLocation(program, a.name)]),
+    ) as ShaderProgram['attribs'],
     uniforms: {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
       pan: gl.getUniformLocation(program, 'u_pan'),

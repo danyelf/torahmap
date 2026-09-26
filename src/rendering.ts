@@ -1,11 +1,17 @@
 // Rendering module - handles WebGL rendering state and operations
 
-import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } from './webgl';
-import { buildItemGeometry, createBuffer } from './geometry';
+import {
+  initWebGL,
+  createProgram,
+  createOutlineProgram,
+  type OutlineProgram,
+  type ShaderProgram,
+} from './webgl';
+import { buildItemGeometry, createBuffer, VERSE_ATTRIBUTES, FLOATS_PER_VERSE } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
 import { updateMapTitlePosition } from './mapTitle';
-import type { SpatialItem, TanakhIdentity, ShaderProgram } from './types';
+import type { SpatialItem, TanakhIdentity } from './types';
 import type { Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -94,36 +100,23 @@ export function render<T>(
   gl.uniform2f(programs.main.uniforms.pan, camera.x, camera.y);
   gl.uniform1f(programs.main.uniforms.zoom, camera.zoom * dpr);
 
+  gl.bindVertexArray(programs.main.vertexArray);
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
-  // Vertex layout: x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-  const stride = 19 * 4; // 19 floats * 4 bytes
+  const stride = FLOATS_PER_VERSE * 4;
+  let offset = 0;
+  for (const { name, size } of VERSE_ATTRIBUTES) {
+    const location = programs.main.attribs[name];
+    gl.enableVertexAttribArray(location);
+    gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, offset * 4);
+    // Advance once per verse rather than once per corner
+    gl.vertexAttribDivisor(location, 1);
+    offset += size;
+  }
 
-  gl.enableVertexAttribArray(programs.main.attribs.position);
-  gl.vertexAttribPointer(programs.main.attribs.position, 2, gl.FLOAT, false, stride, 0);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color);
-  gl.vertexAttribPointer(programs.main.attribs.color, 3, gl.FLOAT, false, stride, 2 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color2);
-  gl.vertexAttribPointer(programs.main.attribs.color2, 3, gl.FLOAT, false, stride, 5 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color3);
-  gl.vertexAttribPointer(programs.main.attribs.color3, 3, gl.FLOAT, false, stride, 8 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color4);
-  gl.vertexAttribPointer(programs.main.attribs.color4, 3, gl.FLOAT, false, stride, 11 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.colorCount);
-  gl.vertexAttribPointer(programs.main.attribs.colorCount, 1, gl.FLOAT, false, stride, 14 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.uv);
-  gl.vertexAttribPointer(programs.main.attribs.uv, 2, gl.FLOAT, false, stride, 15 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.seed);
-  gl.vertexAttribPointer(programs.main.attribs.seed, 2, gl.FLOAT, false, stride, 17 * 4);
-
-  gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
+  // Six corners (two triangles) for each verse
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, verses.length);
+  gl.bindVertexArray(null);
 
   if (hoveredVerse && !itemsEqual(hoveredVerse, pinnedVerse)) {
     const hoverColor = pinnedVerse

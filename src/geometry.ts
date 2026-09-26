@@ -1,4 +1,4 @@
-// Build vertex buffer from spatial items (identity-agnostic)
+// Build the per-verse buffer from spatial items (identity-agnostic)
 
 import type { SpatialItem } from './types.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
@@ -21,16 +21,32 @@ const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 // up to 1 keeps a gap between neighbours.
 const MULTICOLOR_GROWTH = 0.75;
 
+/**
+ * What the buffer holds for each verse, in order. The GPU draws one square per
+ * verse from it and reads each entry once per verse, not once per corner. The
+ * shader declares an input per entry under the same name, and rendering.ts
+ * points each at its slice, so a new per-verse value is a line here, a write in
+ * buildItemGeometry, and its use in the shader.
+ */
+export const VERSE_ATTRIBUTES = [
+  { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units
+  { name: 'a_color', size: 3 },
+  { name: 'a_color2', size: 3 },
+  { name: 'a_color3', size: 3 },
+  { name: 'a_color4', size: 3 },
+  { name: 'a_colorCount', size: 1 },
+] as const;
+
+export type VerseAttributeName = (typeof VERSE_ATTRIBUTES)[number]['name'];
+
+export const FLOATS_PER_VERSE = VERSE_ATTRIBUTES.reduce((sum, a) => sum + a.size, 0);
+
 export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
   baseColor: Color = DEFAULT_FILL_COLOR,
 ): Float32Array {
-  // Each verse = 2 triangles = 6 vertices
-  // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-  const floatsPerVertex = 19;
-  const verticesPerQuad = 6;
-  const data = new Float32Array(verses.length * verticesPerQuad * floatsPerVertex);
+  const data = new Float32Array(verses.length * FLOATS_PER_VERSE);
 
   let offset = 0;
   for (let i = 0; i < verses.length; i++) {
@@ -49,41 +65,21 @@ export function buildItemGeometry<T>(
     const colorCount = vertexColors.length;
 
     const grow = colorCount > 1 ? MULTICOLOR_GROWTH : 0;
-    const x0 = v.x - grow;
-    const y0 = v.y - grow;
-    const x1 = v.x + v.size - 2 + grow; // -2 for gap
-    const y1 = v.y + v.size - 2 + grow;
+    data[offset++] = v.x - grow;
+    data[offset++] = v.y - grow;
+    data[offset++] = v.x + v.size - 2 + grow; // -2 for gap
+    data[offset++] = v.y + v.size - 2 + grow;
 
     // Pad to 4 colors with black
     while (vertexColors.length < 4) {
       vertexColors.push([0, 0, 0]);
     }
-
-    const writeVertex = (x: number, y: number, u: number, vCoord: number) => {
-      data[offset++] = x;
-      data[offset++] = y;
-      for (let c = 0; c < 4; c++) {
-        data[offset++] = vertexColors[c][0];
-        data[offset++] = vertexColors[c][1];
-        data[offset++] = vertexColors[c][2];
-      }
-      data[offset++] = colorCount;
-      data[offset++] = u;
-      data[offset++] = vCoord;
-      // The verse's corner seeds the shader's per-verse dithering noise
-      data[offset++] = x0;
-      data[offset++] = y0;
-    };
-
-    // Triangle 1 (top-left, top-right, bottom-left)
-    writeVertex(x0, y0, 0, 0);
-    writeVertex(x1, y0, 1, 0);
-    writeVertex(x0, y1, 0, 1);
-
-    // Triangle 2 (bottom-left, top-right, bottom-right)
-    writeVertex(x0, y1, 0, 1);
-    writeVertex(x1, y0, 1, 0);
-    writeVertex(x1, y1, 1, 1);
+    for (let c = 0; c < 4; c++) {
+      data[offset++] = vertexColors[c][0];
+      data[offset++] = vertexColors[c][1];
+      data[offset++] = vertexColors[c][2];
+    }
+    data[offset++] = colorCount;
   }
 
   return data;

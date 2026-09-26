@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { initWebGL, createProgram } from '../../webgl';
+import { VERSE_ATTRIBUTES } from '../../geometry';
 import { createMockWebGL2Context, createMockCanvas } from '../helpers';
 
 describe('initWebGL', () => {
@@ -177,7 +178,7 @@ describe('createProgram', () => {
       expect(vertexSource).toContain('uniform vec2 u_resolution');
       expect(vertexSource).toContain('uniform vec2 u_pan');
       expect(vertexSource).toContain('uniform float u_zoom');
-      expect(vertexSource).toContain('in vec2 a_position');
+      expect(vertexSource).toContain('in vec4 a_rect');
       expect(vertexSource).toContain('in vec3 a_color');
     });
 
@@ -194,19 +195,14 @@ describe('createProgram', () => {
       expect(fragmentSource).toContain('out vec4 fragColor');
     });
 
-    it('vertex shader includes all required attributes', () => {
+    it('declares an input for every verse attribute, sized as the buffer holds it', () => {
       createProgram(gl);
 
       const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
-
-      // Check for specific attribute declarations
-      expect(vertexSource).toContain('in vec2 a_position');
-      expect(vertexSource).toContain('in vec3 a_color');
-      expect(vertexSource).toContain('in vec3 a_color2');
-      expect(vertexSource).toContain('in vec3 a_color3');
-      expect(vertexSource).toContain('in vec3 a_color4');
-      expect(vertexSource).toContain('in float a_colorCount');
-      expect(vertexSource).toContain('in vec2 a_uv');
+      const types = { 1: 'float', 2: 'vec2', 3: 'vec3', 4: 'vec4' };
+      for (const { name, size } of VERSE_ATTRIBUTES) {
+        expect(vertexSource).toContain(`in ${types[size]} ${name};`);
+      }
     });
 
     it('vertex shader includes all required uniforms', () => {
@@ -229,42 +225,14 @@ describe('createProgram', () => {
   });
 
   describe('attribute locations', () => {
-    it('returns all required attribute locations', () => {
+    it('looks up every verse attribute by its name', () => {
       const program = createProgram(gl);
 
-      expect(program.attribs).toBeDefined();
-      expect(program.attribs.position).toBeDefined();
-      expect(program.attribs.color).toBeDefined();
-      expect(program.attribs.color2).toBeDefined();
-      expect(program.attribs.color3).toBeDefined();
-      expect(program.attribs.color4).toBeDefined();
-      expect(program.attribs.colorCount).toBeDefined();
-      expect(program.attribs.uv).toBeDefined();
-    });
-
-    it('queries correct attribute names', () => {
-      createProgram(gl);
-
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_position');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color2');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color3');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color4');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_colorCount');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_uv');
-    });
-
-    it('attribute locations match mock values', () => {
-      const program = createProgram(gl);
-
-      // Mock returns specific indices for each attribute
-      expect(program.attribs.position).toBe(0);
-      expect(program.attribs.color).toBe(1);
-      expect(program.attribs.color2).toBe(2);
-      expect(program.attribs.color3).toBe(3);
-      expect(program.attribs.color4).toBe(4);
-      expect(program.attribs.colorCount).toBe(5);
-      expect(program.attribs.uv).toBe(6);
+      for (const { name } of VERSE_ATTRIBUTES) {
+        expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, name);
+        expect(program.attribs[name]).toBe(vi.mocked(gl.getAttribLocation)(mockProgram, name));
+      }
+      expect(Object.keys(program.attribs)).toHaveLength(VERSE_ATTRIBUTES.length);
     });
   });
 
@@ -405,21 +373,6 @@ describe('createProgram', () => {
       expect(program.program).toBe(mockProgram);
     });
 
-    it('attribs contains all 8 attributes', () => {
-      const program = createProgram(gl);
-
-      const attribKeys = Object.keys(program.attribs);
-      expect(attribKeys).toHaveLength(8);
-      expect(attribKeys).toContain('position');
-      expect(attribKeys).toContain('color');
-      expect(attribKeys).toContain('color2');
-      expect(attribKeys).toContain('color3');
-      expect(attribKeys).toContain('color4');
-      expect(attribKeys).toContain('colorCount');
-      expect(attribKeys).toContain('uv');
-      expect(attribKeys).toContain('seed');
-    });
-
     it('uniforms contains all 3 uniforms', () => {
       const program = createProgram(gl);
 
@@ -542,7 +495,7 @@ describe('createProgram', () => {
       createProgram(gl);
       const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
 
-      expect(vertexSource).toContain('a_position + u_pan');
+      expect(vertexSource).toContain('mix(a_rect.xy, a_rect.zw, uv) + u_pan');
       expect(vertexSource).toContain('* u_zoom');
       expect(vertexSource).toContain('gl_Position');
     });
