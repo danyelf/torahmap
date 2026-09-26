@@ -51,6 +51,8 @@ export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
   baseColor: Color = DEFAULT_FILL_COLOR,
+  // How far each verse has grown, 0 to 1; by default, fully if it has several colors.
+  growth?: number[],
 ): Float32Array {
   const data = new Float32Array(verses.length * FLOATS_PER_VERSE);
 
@@ -70,7 +72,7 @@ export function buildItemGeometry<T>(
     }
     const colorCount = verseColors.length;
 
-    const grow = colorCount > 1 ? MULTICOLOR_GROWTH : 0;
+    const grow = MULTICOLOR_GROWTH * (growth?.[i] ?? (colorCount > 1 ? 1 : 0));
     const rect = base + VERSE_OFFSETS.a_rect;
     data[rect] = v.x - grow;
     data[rect + 1] = v.y - grow;

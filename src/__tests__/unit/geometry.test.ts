@@ -46,6 +46,15 @@ describe('buildItemGeometry', () => {
       expect([top, right, bottom]).toEqual([200 - growth, 108 + growth, 208 + growth]);
     });
 
+    it('grows a verse by the fraction it is given, whatever its colors', () => {
+      const verse = createVerse({ x: 100, y: 200, size: 10 });
+      const colors = [[TEST_COLORS.RED, TEST_COLORS.BLUE]];
+      const full = 100 - buildItemGeometry([verse], colors)[0];
+
+      expect(100 - buildItemGeometry([verse], colors, undefined, [0.5])[0]).toBeCloseTo(full / 2);
+      expect(buildItemGeometry([verse], colors, undefined, [0])[0]).toBe(100);
+    });
+
     it('keeps fractional positions', () => {
       const buffer = buildItemGeometry([createVerse({ x: 100.5, y: 200.75, size: 8 })]);
       expect(field(buffer, 0, 'a_rect')).toEqual([100.5, 200.75, 106.5, 206.75]);

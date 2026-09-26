@@ -54,7 +54,7 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(stop, stop, 0, verses, null);
+    const result = computeBlendedColors(stop, stop, 0, verses, null).colors;
 
     // Verse 0 should be a Color[] (array of tuples), not a flattened single tuple
     const c0 = result[0];
@@ -87,7 +87,7 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(fromStop, toStop, 0, verses, null);
+    const result = computeBlendedColors(fromStop, toStop, 0, verses, null).colors;
     const c0 = result[0];
     expect(Array.isArray(c0)).toBe(true);
     expect(Array.isArray((c0 as unknown[])[0])).toBe(true);
@@ -112,7 +112,7 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+    const result = computeBlendedColors(fromStop, toStop, 0.5, verses, null).colors;
     const c0 = result[0];
     // During transition between two identical multi-color stops, slot-by-slot lerp
     // (red→red, blue→blue) keeps the multi-color array intact.
@@ -160,20 +160,20 @@ describe('story stop settings reach the overlay', () => {
 
   it('passes a declared setting through', () => {
     const stop = stopWith({ mode: 'on' });
-    computeBlendedColors(stop, stop, 0, verses, null);
+    computeBlendedColors(stop, stop, 0, verses, null).colors;
     expect(received).toEqual({ mode: 'on' });
   });
 
   it('drops a value the overlay did not allow', () => {
     // Story stops are hand-written, so they are checked like any link.
     const stop = stopWith({ mode: 'sideways' });
-    computeBlendedColors(stop, stop, 0, verses, null);
+    computeBlendedColors(stop, stop, 0, verses, null).colors;
     expect(received).toEqual({});
   });
 
   it('drops a key the overlay never declared', () => {
     const stop = stopWith({ mode: 'off', nonsense: 'x' });
-    computeBlendedColors(stop, stop, 0, verses, null);
+    computeBlendedColors(stop, stop, 0, verses, null).colors;
     expect(received).toEqual({ mode: 'off' });
   });
 
@@ -195,7 +195,7 @@ describe('story stop settings reach the overlay', () => {
     registerOverlay(typedOverlay);
 
     const stop = { ...stopWith({ mode: 'on' }), overlay: 'test-typed-settings' };
-    computeBlendedColors(stop, stop, 0, verses, null);
+    computeBlendedColors(stop, stop, 0, verses, null).colors;
     expect(handed).toEqual({ on: true });
   });
 });
@@ -233,7 +233,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
       overlay: 'commentary',
       overlayParams: { category: 'Mishnah' },
     };
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null).colors;
 
     expect(commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay))).toEqual(before);
   });
@@ -273,8 +273,8 @@ describe('the blender memoises colours by settings', () => {
       overlayParams: { mode: 'b' },
     };
 
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null).colors;
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null).colors;
 
     // Two distinct settings (mode 'a' and 'b') across two blends: once each,
     // not once per call — the second blend shares both cache entries.
@@ -349,7 +349,7 @@ describe('colorsForStop', () => {
     };
 
     expect(colorsForStop(stop, verses, null)).toEqual(
-      computeBlendedColors(stop, stop, 0, verses, null),
+      computeBlendedColors(stop, stop, 0, verses, null).colors,
     );
   });
 });

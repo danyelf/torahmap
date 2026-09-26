@@ -108,8 +108,9 @@ export function rebuildGeometry<T>(
   gl: WebGL2RenderingContext,
   state: RenderState<T>,
   colors?: ([number, number, number] | [number, number, number][])[],
+  growth?: number[],
 ): void {
-  const geometry = buildItemGeometry(state.verses, colors);
+  const geometry = buildItemGeometry(state.verses, colors, undefined, growth);
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
