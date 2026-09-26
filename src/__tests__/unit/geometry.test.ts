@@ -102,6 +102,15 @@ describe('buildItemGeometry', () => {
       expect(buffer[floatsPerVertex * 5 + 1]).toBe(208 + growth); // bottom
     });
 
+    it('grows a verse by the fraction it is given, whatever its colors', () => {
+      const verse = createVerse({ x: 100, y: 200, size: 10 });
+      const colors = [[TEST_COLORS.RED, TEST_COLORS.BLUE]];
+      const full = 100 - buildItemGeometry([verse], colors)[0];
+
+      expect(100 - buildItemGeometry([verse], colors, undefined, [0.5])[0]).toBeCloseTo(full / 2);
+      expect(buildItemGeometry([verse], colors, undefined, [0])[0]).toBe(100);
+    });
+
     it('keeps a single-color verse to exactly its own square', () => {
       const verse = createVerse({ x: 100, y: 200, size: 10 });
       const buffer = buildItemGeometry([verse], [TEST_COLORS.RED]);

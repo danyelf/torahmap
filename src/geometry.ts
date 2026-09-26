@@ -25,6 +25,8 @@ export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
   colors?: (Color | Color[])[],
   baseColor: Color = DEFAULT_FILL_COLOR,
+  // How far each verse has grown, 0 to 1; by default, fully if it has several colors.
+  growth?: number[],
 ): Float32Array {
   // Each verse = 2 triangles = 6 vertices
   // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
@@ -48,7 +50,7 @@ export function buildItemGeometry<T>(
     }
     const colorCount = vertexColors.length;
 
-    const grow = colorCount > 1 ? MULTICOLOR_GROWTH : 0;
+    const grow = MULTICOLOR_GROWTH * (growth?.[i] ?? (colorCount > 1 ? 1 : 0));
     const x0 = v.x - grow;
     const y0 = v.y - grow;
     const x1 = v.x + v.size - 2 + grow; // -2 for gap
