@@ -16,6 +16,9 @@
   --story-bg: #16181d;
   --panel-bg: rgba(0, 0, 0, 0.92);
   --line: rgba(255, 255, 255, 0.1);
+  /* Where the panel meets the map: brighter than --line, because the story's
+     background is nearly the map's own and the edge would otherwise vanish. */
+  --edge: rgba(255, 255, 255, 0.25);
   --accent: #6ab0f3;
 }
 
@@ -39,7 +42,7 @@
   display: flex;
   flex-direction: column;
   background: var(--panel-bg);
-  border-right: 1px solid var(--line);
+  border-right: 1px solid var(--edge);
   box-sizing: border-box;
   z-index: 10;
   font-family: system-ui, sans-serif;
@@ -597,7 +600,7 @@ body[data-open='menu'] #menu-panel {
     width: 100%;
     max-height: var(--sheet-cap);
     border-right: none;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--edge);
     border-radius: 16px 16px 0 0;
   }
 
