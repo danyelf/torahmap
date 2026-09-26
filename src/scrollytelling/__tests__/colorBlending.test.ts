@@ -7,21 +7,21 @@ describe('blendColorArrays', () => {
   it('returns fromColors at t=0', () => {
     const from: Color[] = [[1, 0, 0]];
     const to: Color[] = [[0, 1, 0]];
-    const result = blendColorArrays(from, to, 0).colors;
+    const result = blendColorArrays({ colors: from }, { colors: to }, 0).colors;
     expect(result[0]).toEqual([1, 0, 0]);
   });
 
   it('returns toColors at t=1', () => {
     const from: Color[] = [[1, 0, 0]];
     const to: Color[] = [[0, 1, 0]];
-    const result = blendColorArrays(from, to, 1).colors;
+    const result = blendColorArrays({ colors: from }, { colors: to }, 1).colors;
     expect(result[0]).toEqual([0, 1, 0]);
   });
 
   it('blends at t=0.5', () => {
     const from: Color[] = [[1, 0, 0]];
     const to: Color[] = [[0, 1, 0]];
-    const result = blendColorArrays(from, to, 0.5).colors;
+    const result = blendColorArrays({ colors: from }, { colors: to }, 0.5).colors;
     const c0 = result[0] as Color;
     expect(c0[0]).toBeCloseTo(0.5);
     expect(c0[1]).toBeCloseTo(0.5);
@@ -35,7 +35,7 @@ describe('blendColorArrays', () => {
       ],
     ];
     const to: (Color | Color[])[] = [[0, 1, 0]];
-    const result = blendColorArrays(from, to, 0.5).colors;
+    const result = blendColorArrays({ colors: from }, { colors: to }, 0.5).colors;
     expect(result).toHaveLength(1);
   });
 
@@ -46,7 +46,8 @@ describe('blendColorArrays', () => {
     const orange: Color = [1, 0.5, 0];
     const red: Color = [1, 0, 0];
 
-    const slots = blendColorArrays([cyan], [[cyan, orange, red]], 0.5).colors[0] as Color[];
+    const slots = blendColorArrays({ colors: [cyan] }, { colors: [[cyan, orange, red]] }, 0.5)
+      .colors[0] as Color[];
 
     expect(slots).toHaveLength(3);
     expect(slots[0]).toEqual(cyan);
@@ -61,16 +62,26 @@ describe('blendColorArrays', () => {
   it('spreads the shorter side over the stripes nearest its own bands', () => {
     const a: Color = [1, 0, 0];
     const b: Color = [0, 0, 1];
-    const slots = blendColorArrays([[a, b]], [[a, a, a, a]], 0).colors[0] as Color[];
+    const slots = blendColorArrays({ colors: [[a, b]] }, { colors: [[a, a, a, a]] }, 0)
+      .colors[0] as Color[];
     expect(slots).toEqual([a, a, b, b]);
   });
 
   it('eases the size from one stop to the other', () => {
     const a: Color = [1, 0, 0];
     const b: Color = [0, 0, 1];
-    expect(blendColorArrays([a], [[a, b]], 0.25).growth).toEqual([0.25]);
-    expect(blendColorArrays([[a, b]], [a], 0.25).growth).toEqual([0.75]);
-    expect(blendColorArrays([[a, b]], [[b, a]], 0.25).growth).toEqual([1]);
-    expect(blendColorArrays([a], [b], 0.25).growth).toEqual([0]);
+    expect(blendColorArrays({ colors: [a] }, { colors: [[a, b]] }, 0.25).growth).toEqual([0.25]);
+    expect(blendColorArrays({ colors: [[a, b]] }, { colors: [a] }, 0.25).growth).toEqual([0.75]);
+    expect(blendColorArrays({ colors: [[a, b]] }, { colors: [[b, a]] }, 0.25).growth).toEqual([1]);
+    expect(blendColorArrays({ colors: [a] }, { colors: [b] }, 0.25).growth).toEqual([0]);
+  });
+
+  it('starts from the size a layer was given, not the one its stripes suggest', () => {
+    // An ease that begins partway through a transition, from a verse drawn 30% grown.
+    const a: Color = [1, 0, 0];
+    const b: Color = [0, 0, 1];
+    const partway = { colors: [[a, b]], growth: [0.3] };
+    expect(blendColorArrays(partway, { colors: [[a, b]] }, 0).growth).toEqual([0.3]);
+    expect(blendColorArrays(partway, { colors: [[a, b]] }, 0.5).growth![0]).toBeCloseTo(0.65);
   });
 });

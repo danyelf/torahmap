@@ -2,12 +2,17 @@ import type { Color } from '../overlays/types.ts';
 import { lerpColor } from './interpolation';
 
 /**
- * A blended colour layer, and how far each verse has grown towards the size a
- * multi-colour verse is drawn at: 0 is a plain square, 1 fully grown.
+ * A colour per verse, and how far each verse has grown towards the size a
+ * multi-colour verse is drawn at: 0 is a plain square, 1 fully grown. Without
+ * `growth`, a verse is fully grown exactly when it has several colours.
  */
-export interface BlendedLayer {
-  colors: (Color | Color[])[];
-  growth: number[];
+export interface ColorLayer<C = Color | Color[]> {
+  colors: C[];
+  growth?: number[];
+}
+
+function growthAt(layer: ColorLayer, i: number, slots: number): number {
+  return layer.growth?.[i] ?? (slots > 1 ? 1 : 0);
 }
 
 /**
@@ -23,18 +28,14 @@ export interface BlendedLayer {
  * Color (not [Color]) so the geometry buffer emits it the same way it would
  * at rest.
  */
-export function blendColorArrays(
-  from: (Color | Color[])[],
-  to: (Color | Color[])[],
-  t: number,
-): BlendedLayer {
-  const len = Math.max(from.length, to.length);
+export function blendColorArrays(from: ColorLayer, to: ColorLayer, t: number): ColorLayer {
+  const len = Math.max(from.colors.length, to.colors.length);
   const colors: (Color | Color[])[] = new Array(len);
   const growth: number[] = new Array(len);
 
   for (let i = 0; i < len; i++) {
-    const fromArr = toColorArray(i < from.length ? from[i] : undefined);
-    const toArr = toColorArray(i < to.length ? to[i] : undefined);
+    const fromArr = toColorArray(from.colors[i]);
+    const toArr = toColorArray(to.colors[i]);
     const maxLen = Math.max(fromArr.length, toArr.length, 1);
 
     const blendedSlots: Color[] = new Array(maxLen);
@@ -43,8 +44,8 @@ export function blendColorArrays(
     }
 
     colors[i] = maxLen === 1 ? blendedSlots[0] : blendedSlots;
-    const grownFrom = fromArr.length > 1 ? 1 : 0;
-    const grownTo = toArr.length > 1 ? 1 : 0;
+    const grownFrom = growthAt(from, i, fromArr.length);
+    const grownTo = growthAt(to, i, toArr.length);
     growth[i] = grownFrom + (grownTo - grownFrom) * t;
   }
 
