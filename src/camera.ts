@@ -67,6 +67,78 @@ export interface ScreenPoint {
   y: number;
 }
 
+/** The map's canvas, in CSS pixels. */
+export interface Viewport {
+  width: number;
+  height: number;
+}
+
+export function worldToScreen(
+  p: { x: number; y: number },
+  camera: Camera,
+  viewport: Viewport,
+): ScreenPoint {
+  return {
+    x: (p.x - camera.x) * camera.zoom + viewport.width / 2,
+    y: (p.y - camera.y) * camera.zoom + viewport.height / 2,
+  };
+}
+
+export function screenToWorld(
+  p: ScreenPoint,
+  camera: Camera,
+  viewport: Viewport,
+): { x: number; y: number } {
+  return {
+    x: (p.x - viewport.width / 2) / camera.zoom + camera.x,
+    y: (p.y - viewport.height / 2) / camera.zoom + camera.y,
+  };
+}
+
+/**
+ * The offset that puts a map point on screen at `(point + offset) × zoom`,
+ * which is how the shaders and the labels position what they draw.
+ */
+export function viewOffset(camera: Camera, viewport: Viewport): { x: number; y: number } {
+  return {
+    x: viewport.width / (2 * camera.zoom) - camera.x,
+    y: viewport.height / (2 * camera.zoom) - camera.y,
+  };
+}
+
+/** The camera at `newZoom` that keeps the map point under `point` where it is. */
+export function zoomAtPoint(
+  camera: Camera,
+  newZoom: number,
+  point: ScreenPoint,
+  viewport: Viewport,
+): Camera {
+  const anchor = screenToWorld(point, camera, viewport);
+  return {
+    x: anchor.x - (point.x - viewport.width / 2) / newZoom,
+    y: anchor.y - (point.y - viewport.height / 2) / newZoom,
+    zoom: newZoom,
+  };
+}
+
+/**
+ * The centre that puts an item at `focus`.
+ *
+ * Takes the zoom rather than reading it, because moving and zooming at once
+ * has to aim at where the item will be, not where it is now.
+ */
+export function centreForFocus(
+  item: { x: number; y: number; size: number },
+  zoom: number,
+  focus: ScreenPoint,
+  viewport: Viewport,
+): { x: number; y: number } {
+  return {
+    x: item.x + item.size / 2 - (focus.x - viewport.width / 2) / zoom,
+    y: item.y + item.size / 2 - (focus.y - viewport.height / 2) / zoom,
+  };
+}
+
 /**
  * Where the camera has to sit for an item to be at `focus`.
  *
