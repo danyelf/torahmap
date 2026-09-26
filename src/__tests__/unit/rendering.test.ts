@@ -10,7 +10,7 @@ import {
 } from '../../rendering';
 import type { Camera } from '../../camera';
 import { tanakhIdentitiesEqual } from '../../types';
-import { createMockCanvas, createMockWebGL2Context, createVerse, createVerses } from '../helpers';
+import { createMockCanvas, createVerse, createVerses } from '../helpers';
 
 describe('rendering', () => {
   describe('createRenderContext', () => {
@@ -53,15 +53,18 @@ describe('rendering', () => {
   });
 
   describe('createRenderState', () => {
+    let context: RenderContext;
     let gl: WebGL2RenderingContext;
 
     beforeEach(() => {
-      gl = createMockWebGL2Context();
+      context = createRenderContext(createMockCanvas());
+      gl = context.gl;
+      vi.clearAllMocks();
     });
 
     it('creates render state with buffer and verses', () => {
       const verses = createVerses(5);
-      const state = createRenderState(gl, verses, 2.0);
+      const state = createRenderState(context, verses, 2.0);
 
       expect(state.buffer).toBeDefined();
       expect(state.verses).toBe(verses);
@@ -70,7 +73,7 @@ describe('rendering', () => {
 
     it('initializes outline buffers as null', () => {
       const verses = createVerses(3);
-      const state = createRenderState(gl, verses, 1.0);
+      const state = createRenderState(context, verses, 1.0);
 
       expect(state.outlineBuffer).toBeNull();
       expect(state.hoverOutlineBuffer).toBeNull();
@@ -78,13 +81,13 @@ describe('rendering', () => {
 
     it('creates buffer via WebGL createBuffer', () => {
       const verses = createVerses(2);
-      createRenderState(gl, verses, 1.0);
+      createRenderState(context, verses, 1.0);
 
       expect(gl.createBuffer).toHaveBeenCalled();
     });
 
     it('handles empty verse array', () => {
-      const state = createRenderState(gl, [], 1.0);
+      const state = createRenderState(context, [], 1.0);
 
       expect(state.verses).toEqual([]);
       expect(state.buffer).toBeDefined();
@@ -93,9 +96,9 @@ describe('rendering', () => {
     it('stores device pixel ratio correctly', () => {
       const verses = createVerses(1);
 
-      const state1 = createRenderState(gl, verses, 1.0);
-      const state2 = createRenderState(gl, verses, 2.0);
-      const state3 = createRenderState(gl, verses, 1.5);
+      const state1 = createRenderState(context, verses, 1.0);
+      const state2 = createRenderState(context, verses, 2.0);
+      const state3 = createRenderState(context, verses, 1.5);
 
       expect(state1.dpr).toBe(1.0);
       expect(state2.dpr).toBe(2.0);
@@ -104,10 +107,22 @@ describe('rendering', () => {
 
     it('uploads geometry to GPU via bufferData', () => {
       const verses = createVerses(3);
-      createRenderState(gl, verses, 1.0);
+      createRenderState(context, verses, 1.0);
 
       expect(gl.bindBuffer).toHaveBeenCalled();
       expect(gl.bufferData).toHaveBeenCalled();
+    });
+
+    it('points every verse attribute at the buffer, read once per verse', () => {
+      const state = createRenderState(context, createVerses(3), 1.0);
+
+      expect(gl.bindVertexArray).toHaveBeenNthCalledWith(1, state.vertexArray);
+      expect(gl.bindBuffer).toHaveBeenLastCalledWith(gl.ARRAY_BUFFER, state.buffer);
+      for (const location of Object.values(context.programs.main.attribs)) {
+        expect(gl.enableVertexAttribArray).toHaveBeenCalledWith(location);
+        expect(gl.vertexAttribDivisor).toHaveBeenCalledWith(location, 1);
+      }
+      expect(gl.bindVertexArray).toHaveBeenLastCalledWith(null);
     });
   });
 
@@ -116,9 +131,10 @@ describe('rendering', () => {
     let state: RenderState;
 
     beforeEach(() => {
-      gl = createMockWebGL2Context();
+      const context = createRenderContext(createMockCanvas());
+      gl = context.gl;
       const verses = createVerses(5);
-      state = createRenderState(gl, verses, 1.0);
+      state = createRenderState(context, verses, 1.0);
       vi.clearAllMocks(); // Clear calls from createRenderState
     });
 
@@ -167,7 +183,7 @@ describe('rendering', () => {
       const canvas = createMockCanvas();
       context = createRenderContext(canvas);
       const verses = createVerses(10);
-      state = createRenderState(context.gl, verses, 2.0);
+      state = createRenderState(context, verses, 2.0);
       camera = { x: 100, y: 200, zoom: 1.5 };
       vi.clearAllMocks();
     });
@@ -205,19 +221,12 @@ describe('rendering', () => {
       );
     });
 
-    it('binds vertex buffer', () => {
+    it('binds the vertex array without setting up attributes again', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
-      expect(context.gl.bindBuffer).toHaveBeenCalledWith(context.gl.ARRAY_BUFFER, state.buffer);
-    });
-
-    it('reads every verse attribute once per verse', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
-
-      for (const location of Object.values(context.programs.main.attribs)) {
-        expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(location);
-        expect(context.gl.vertexAttribDivisor).toHaveBeenCalledWith(location, 1);
-      }
+      expect(context.gl.bindVertexArray).toHaveBeenCalledWith(state.vertexArray);
+      expect(context.gl.vertexAttribPointer).not.toHaveBeenCalled();
+      expect(context.gl.vertexAttribDivisor).not.toHaveBeenCalled();
     });
 
     it('draws six corners for each verse', () => {
@@ -230,7 +239,7 @@ describe('rendering', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       const bind = vi.mocked(context.gl.bindVertexArray).mock.calls;
-      expect(bind[0]).toEqual([context.programs.main.vertexArray]);
+      expect(bind[0]).toEqual([state.vertexArray]);
       expect(bind.at(-1)).toEqual([null]);
     });
 
@@ -332,7 +341,7 @@ describe('rendering', () => {
     beforeEach(() => {
       const canvas = createMockCanvas();
       context = createRenderContext(canvas);
-      state = createRenderState(context.gl, createVerses(5), 2.0);
+      state = createRenderState(context, createVerses(5), 2.0);
       camera = { x: 50, y: 100, zoom: 1.0 };
       verse = createVerse({ x: 10, y: 20, size: 6 });
       vi.clearAllMocks();
@@ -468,19 +477,20 @@ describe('rendering', () => {
 
   describe('RenderState immutability', () => {
     it('does not modify verses array when creating state', () => {
-      const gl = createMockWebGL2Context();
+      const context = createRenderContext(createMockCanvas());
       const verses = createVerses(3);
       const versesCopy = [...verses];
 
-      createRenderState(gl, verses, 1.0);
+      createRenderState(context, verses, 1.0);
 
       expect(verses).toEqual(versesCopy);
     });
 
     it('does not modify verses when rebuilding geometry', () => {
-      const gl = createMockWebGL2Context();
+      const context = createRenderContext(createMockCanvas());
+      const gl = context.gl;
       const verses = createVerses(3);
-      const state = createRenderState(gl, verses, 1.0);
+      const state = createRenderState(context, verses, 1.0);
       const versesCopy = [...verses.map((v) => ({ ...v }))];
 
       rebuildGeometry(gl, state);
@@ -494,7 +504,7 @@ describe('rendering', () => {
       const canvas = createMockCanvas();
       const context = createRenderContext(canvas);
       const verses = createVerses(5);
-      const state = createRenderState(context.gl, verses, 1.0);
+      const state = createRenderState(context, verses, 1.0);
 
       const cameras: Camera[] = [
         { x: 0, y: 0, zoom: 1.0 },
@@ -528,7 +538,7 @@ describe('rendering', () => {
 
       testCases.forEach(({ dpr, zoom, expected }) => {
         vi.clearAllMocks();
-        const state = createRenderState(context.gl, verses, dpr);
+        const state = createRenderState(context, verses, dpr);
         const camera = { x: 0, y: 0, zoom };
 
         render(context, state, camera, null, null, tanakhIdentitiesEqual);

@@ -205,6 +205,39 @@ describe('createProgram', () => {
       }
     });
 
+    it('draws each square as two triangles that cover it exactly once', () => {
+      createProgram(gl);
+
+      const vertexSource: string = (gl.shaderSource as any).mock.calls[0][1];
+      const table = vertexSource.match(/CORNERS\[6\] = vec2\[6\]\(([^;]*)\);/)?.[1] ?? '';
+      const corners = [...table.matchAll(/vec2\(([\d.]+),\s*([\d.]+)\)/g)].map((m) => [
+        Number(m[1]),
+        Number(m[2]),
+      ]);
+
+      // uv runs 0 to 1 across the square; the stripes and dithering read it
+      expect(corners).toEqual([
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [0, 1],
+        [1, 0],
+        [1, 1],
+      ]);
+
+      const signedArea = ([a, b, c]: number[][]) =>
+        ((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) / 2;
+      const first = corners.slice(0, 3);
+      const second = corners.slice(3);
+      // Same winding, and half the square each, so together they cover it once
+      expect(signedArea(first)).toBe(0.5);
+      expect(signedArea(second)).toBe(0.5);
+      // They meet along the diagonal from (1, 0) to (0, 1)
+      const key = (c: number[]) => c.join(',');
+      const shared = first.map(key).filter((k) => second.map(key).includes(k));
+      expect(shared.sort()).toEqual(['0,1', '1,0']);
+    });
+
     it('vertex shader includes all required uniforms', () => {
       createProgram(gl);
 

@@ -4,7 +4,6 @@ import { VERSE_ATTRIBUTES, type VerseAttributeName } from './geometry.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
-  vertexArray: WebGLVertexArrayObject;
   attribs: Record<VerseAttributeName, number>;
   uniforms: {
     resolution: WebGLUniformLocation | null;
@@ -152,14 +151,8 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
     throw new Error(gl.getProgramInfoLog(program) || 'Program linking failed');
   }
 
-  const vertexArray = gl.createVertexArray();
-  if (!vertexArray) throw new Error('Failed to create vertex array');
-
   return {
     program,
-    // Holds the per-verse attribute setup, so the outline program, which draws
-    // corner by corner, never inherits it.
-    vertexArray,
     attribs: Object.fromEntries(
       VERSE_ATTRIBUTES.map((a) => [a.name, gl.getAttribLocation(program, a.name)]),
     ) as ShaderProgram['attribs'],

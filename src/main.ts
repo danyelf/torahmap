@@ -200,7 +200,7 @@ async function main(): Promise<void> {
   resizeCanvas();
 
   const renderContext = createRenderContext(canvas);
-  const renderState = createRenderState(renderContext.gl, verses, dpr);
+  const renderState = createRenderState(renderContext, verses, dpr);
 
   let currentOverlay: Overlay | null = null;
 
