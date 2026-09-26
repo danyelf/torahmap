@@ -60,8 +60,8 @@ function step(frame: Frame, event: FrameEvent, phone: boolean): Frame {
     case 'menu':
       return { ...frame, menu: !frame.menu };
     case 'choose': {
-      // Tapping the legend for the open panel folds a phone's sheet; choosing
-      // that panel from the menu keeps it open.
+      // Tapping the legend for the open panel folds a phone's sheet; while the
+      // menu is down, choosing that panel keeps it open.
       const again = phone && frame.mode === 'explore' && !frame.menu && frame.open === event.panel;
       return explore(again ? null : event.panel);
     }

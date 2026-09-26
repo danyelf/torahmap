@@ -48,7 +48,7 @@ describe('exploring on a desktop', () => {
     );
   });
 
-  it('keeps a panel open when its rail icon is clicked again', () => {
+  it('keeps a panel open when it is chosen again', () => {
     expect(nextFrame(explore('about'), { type: 'choose', panel: 'about' }, DESKTOP)).toEqual(
       explore('about'),
     );

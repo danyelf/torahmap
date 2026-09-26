@@ -10,9 +10,9 @@ export interface State {
 }
 
 // The frame (index.html, src/styles/frame.css). The menu is left out of
-// `fixed`: on a desktop it drops over the story's column by design. Links in
-// the story's prose and in the credits are running text, which touch-size
-// rules exempt.
+// `fixed`: on a desktop it drops over the column by design. Links in the
+// story's prose and in the credits are running text, which touch-size rules
+// exempt.
 export const CHROME: Chrome = {
   fixed: '#panel, #top-bar, #map-legend, #zoom-controls, #verse-popup.visible',
   map: '#canvas',
