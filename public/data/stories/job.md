@@ -11,10 +11,10 @@ TODO: Job as a block.
 
 TODO: Prose opening, chapters 1–2: long verses.
 
-<!-- stop: poem | camera: Job.3.3 | zoom: 2 | verse: Job.3.3 | overlay: trop | trop: Dehi -->
+<!-- stop: poem | camera: Job.3.3 | zoom: 2 | verse: Job.3.3 | overlay: trop | trop: dehi -->
 
 TODO: The poem uses the poetic trop, dehi.
 
-<!-- stop: close | camera: Job.42.7 | zoom: 2 | verse: Job.42.7 | overlay: trop | trop: Dehi -->
+<!-- stop: close | camera: Job.42.7 | zoom: 2 | verse: Job.42.7 | overlay: trop | trop: dehi -->
 
 TODO: Back to prose at 42:7.
