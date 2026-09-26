@@ -126,7 +126,8 @@ import {
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
-import { blendColorArrays, type ColorLayer } from './scrollytelling/colorBlending';
+import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
+import type { Picture } from './geometry';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
   REJOIN_EASE_MS,
@@ -240,7 +241,10 @@ async function main(): Promise<void> {
   // story transition's blend. composite() paints the hover and pin on top of
   // it. A pin never recomputes it; a hover does only when the colours depend
   // on the hovered verse, which a blend's may.
-  let colorLayer: ColorLayer<Color | Color[] | null> = { colors: [] };
+  let colorLayer: ColorLayer<Color | Color[] | null> = still({ colors: [] });
+  // What the verse buffer was last built from. A fade in progress changes only
+  // its amount, so a frame that keeps these redraws without rebuilding.
+  let built: unknown[] = [];
 
   // A story folded earlier in the session opens folded, unless the link names a stop.
   const opensFolded = !parseUrlState().story && storyWasFolded();
@@ -248,16 +252,35 @@ async function main(): Promise<void> {
   configureAnalytics({ getMode: () => driverKind(driver) });
 
   function composite(): void {
-    const verseStates = computeItemStates(
-      verses,
-      colorLayer.colors,
+    const { from, to, t } = colorLayer;
+    renderState.fade = to ? t : 0;
+
+    // The colour arrays, not the pictures: a story stop's are cached, while
+    // the pictures around them are made afresh each frame.
+    const inputs = [
+      from.colors,
+      from.growth,
+      to?.colors,
+      to?.growth,
       mouseState.hoveredVerse,
       pinnedVerse,
-      tanakhIdentitiesEqual,
-    );
-    const colors = applyItemColors(verseStates);
+    ];
+    if (inputs.every((input, i) => input === built[i])) return;
+    built = inputs;
 
-    rebuildGeometry(renderContext.gl, renderState, colors, colorLayer.growth);
+    const shown = (picture: Picture<Color | Color[] | null>): Picture => ({
+      colors: applyItemColors(
+        computeItemStates(
+          verses,
+          picture.colors,
+          mouseState.hoveredVerse,
+          pinnedVerse,
+          tanakhIdentitiesEqual,
+        ),
+      ),
+      growth: picture.growth,
+    });
+    rebuildGeometry(renderContext.gl, renderState, shown(from), to && shown(to));
   }
 
   function setColorLayer(next: ColorLayer<Color | Color[] | null>): void {
@@ -266,9 +289,16 @@ async function main(): Promise<void> {
   }
 
   function applyOverlay(): void {
-    setColorLayer({
-      colors: overlayColorsFor(currentOverlay, verses, currentSettings(), mouseState.hoveredVerse),
-    });
+    setColorLayer(
+      still({
+        colors: overlayColorsFor(
+          currentOverlay,
+          verses,
+          currentSettings(),
+          mouseState.hoveredVerse,
+        ),
+      }),
+    );
   }
 
   function blendTransition(): void {
@@ -1328,6 +1358,14 @@ async function main(): Promise<void> {
    * which may be partway through an earlier ease, to where the story is. The
    * caller hands it over or keeps driving with it.
    */
+  function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
+    const fill = (p: Picture<Color | Color[] | null>): Picture => ({
+      colors: p.colors.map((c, i) => c ?? getDefaultColor(i)),
+      growth: p.growth,
+    });
+    return { from: fill(layer.from), to: layer.to && fill(layer.to), t: layer.t };
+  }
+
   function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
     const state = currentStoryState();
@@ -1335,11 +1373,8 @@ async function main(): Promise<void> {
       now,
       duration,
       camera,
-      {
-        colors: colorLayer.colors.map((c, i) => c ?? getDefaultColor(i)),
-        growth: colorLayer.growth,
-      },
-      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null),
+      flatten(withDefaults(colorLayer)),
+      flatten(computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null)),
     );
   }
 
@@ -1383,7 +1418,7 @@ async function main(): Promise<void> {
     if (driver.by === 'rejoining') {
       const t = easingFunctions['ease-in-out'](rejoinProgress(driver, now));
       Object.assign(camera, lerpCamera(driver.fromCamera, state.camera, t));
-      setColorLayer(blendColorArrays(driver.fromLayer, driver.toLayer, t));
+      setColorLayer({ from: driver.fromPicture, to: driver.toPicture, t });
       render();
       scheduleStoryFrame();
       return;

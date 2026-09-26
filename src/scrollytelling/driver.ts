@@ -2,7 +2,7 @@
 // blending two; the reader; or a timed ease from what was on screen to where
 // the story is.
 
-import type { ColorLayer } from './colorBlending';
+import type { Picture } from '../geometry';
 import type { CameraPosition, ResolvedStoryStop } from './types';
 
 /**
@@ -31,16 +31,16 @@ export interface StoryBlend {
 export type Driver =
   | { by: 'story'; blend: StoryBlend | null }
   | { by: 'reader'; lastScrollTop: number; travelled: number }
-  // The colours and sizes at both ends are captured when the ease starts, so each frame
-  // blends two layers instead of re-running the overlays' colouring. The camera
+  // The pictures at both ends are captured when the ease starts, so each frame
+  // fades between them instead of re-running the overlays' colouring. The camera
   // eases towards wherever the story is on each frame.
   | {
       by: 'rejoining';
       since: number;
       duration: number;
       fromCamera: CameraPosition;
-      fromLayer: ColorLayer;
-      toLayer: ColorLayer;
+      fromPicture: Picture;
+      toPicture: Picture;
     };
 
 export type ReaderDriving = Extract<Driver, { by: 'reader' }>;
@@ -65,16 +65,16 @@ export function rejoin(
   now: number,
   duration: number,
   fromCamera: CameraPosition,
-  fromLayer: ColorLayer,
-  toLayer: ColorLayer,
+  fromPicture: Picture,
+  toPicture: Picture,
 ): StoryHasMap {
   return {
     by: 'rejoining',
     since: now,
     duration,
     fromCamera: { ...fromCamera },
-    fromLayer,
-    toLayer,
+    fromPicture,
+    toPicture,
   };
 }
 

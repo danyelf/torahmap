@@ -31,7 +31,7 @@ describe('rendering', () => {
       expect(context.programs.main.program).toBeDefined();
       expect(context.programs.main.attribs.a_rect).toBeDefined();
       expect(context.programs.main.attribs.a_color).toBeDefined();
-      expect(context.programs.main.attribs.a_colorCount).toBeDefined();
+      expect(context.programs.main.attribs.a_nextShape).toBeDefined();
     });
 
     it('initializes outline shader program with correct attributes', () => {

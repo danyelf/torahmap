@@ -1,6 +1,6 @@
 // WebGL utilities for rendering verse quads
 
-import { VERSE_ATTRIBUTES, type VerseAttributeName } from './geometry.ts';
+import { MULTICOLOR_GROWTH, VERSE_ATTRIBUTES, type VerseAttributeName } from './geometry.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -9,6 +9,7 @@ export interface ShaderProgram {
     resolution: WebGLUniformLocation | null;
     pan: WebGLUniformLocation | null;
     zoom: WebGLUniformLocation | null;
+    fade: WebGLUniformLocation | null;
   };
 }
 
@@ -22,6 +23,9 @@ const VERTEX_SHADER = `#version 300 es
   uniform vec2 u_resolution;
   uniform vec2 u_pan;
   uniform float u_zoom;
+  // How far each verse has gone from its first picture to its second.
+  // Shared with the fragment shader, so its precision is stated in both.
+  uniform highp float u_fade;
 
   ${VERSE_INPUTS}
 
@@ -37,32 +41,50 @@ const VERTEX_SHADER = `#version 300 es
   out vec3 v_color3;
   out vec3 v_color4;
   flat out int v_colorCount;
+  out vec3 v_nextColor;
+  out vec3 v_nextColor2;
+  out vec3 v_nextColor3;
+  out vec3 v_nextColor4;
+  flat out int v_nextColorCount;
   out vec2 v_uv;
   out vec2 v_seed;
 
   void main() {
     vec2 uv = CORNERS[gl_VertexID];
-    vec2 pos = (mix(a_rect.xy, a_rect.zw, uv) + u_pan) * u_zoom;
+    float grow = mix(a_shape.y, a_nextShape.y, u_fade) * ${MULTICOLOR_GROWTH.toFixed(4)};
+    vec4 rect = a_rect + vec4(-grow, -grow, grow, grow);
+    vec2 pos = (mix(rect.xy, rect.zw, uv) + u_pan) * u_zoom;
     vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
     v_color = a_color;
     v_color2 = a_color2;
     v_color3 = a_color3;
     v_color4 = a_color4;
-    v_colorCount = int(a_colorCount);
+    v_colorCount = int(a_shape.x);
+    v_nextColor = a_nextColor;
+    v_nextColor2 = a_nextColor2;
+    v_nextColor3 = a_nextColor3;
+    v_nextColor4 = a_nextColor4;
+    v_nextColorCount = int(a_nextShape.x);
     v_uv = uv;
     // The verse's corner seeds its dithering noise
-    v_seed = a_rect.xy;
+    v_seed = rect.xy;
   }
 `;
 
 const FRAGMENT_SHADER = `#version 300 es
   precision mediump float;
+  uniform highp float u_fade;
   in vec3 v_color;
   in vec3 v_color2;
   in vec3 v_color3;
   in vec3 v_color4;
   flat in int v_colorCount;
+  in vec3 v_nextColor;
+  in vec3 v_nextColor2;
+  in vec3 v_nextColor3;
+  in vec3 v_nextColor4;
+  flat in int v_nextColorCount;
   in vec2 v_uv;
   in vec2 v_seed;
   out vec4 fragColor;
@@ -75,17 +97,24 @@ const FRAGMENT_SHADER = `#version 300 es
   // Several colors split the square into bands running corner to corner, one
   // per color. A diagonal cut keeps a two-color verse from reading as two
   // neighbouring verses, as a vertical split does.
-  vec3 diagonalBand() {
+  vec3 stripes(vec3 c1, vec3 c2, vec3 c3, vec3 c4, int count) {
+    if (count <= 1) return c1;
     float d = min((v_uv.x + v_uv.y) * 0.5, 0.999);
-    int idx = int(floor(d * float(v_colorCount)));
-    if (idx == 0) return v_color;
-    if (idx == 1) return v_color2;
-    if (idx == 2) return v_color3;
-    return v_color4;
+    int idx = int(floor(d * float(count)));
+    if (idx == 0) return c1;
+    if (idx == 1) return c2;
+    if (idx == 2) return c3;
+    return c4;
   }
 
   void main() {
-    vec3 color = v_colorCount <= 1 ? v_color : diagonalBand();
+    // Each picture is drawn whole and the two are faded, so neither's stripes
+    // have to move to meet the other's.
+    vec3 color = mix(
+      stripes(v_color, v_color2, v_color3, v_color4, v_colorCount),
+      stripes(v_nextColor, v_nextColor2, v_nextColor3, v_nextColor4, v_nextColorCount),
+      u_fade
+    );
 
     // Add subtle dithering noise to break up moiré patterns (UV-based for zoom stability)
     vec2 noiseCoord = floor(v_uv * 12.0);
@@ -160,6 +189,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       resolution: gl.getUniformLocation(program, 'u_resolution'),
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
+      fade: gl.getUniformLocation(program, 'u_fade'),
     },
   };
 }

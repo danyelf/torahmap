@@ -4,7 +4,7 @@ import type { Color } from '../overlays/types.ts';
 import type { Overlay } from '../overlays/types.ts';
 import { getOverlay } from '../overlays/registry';
 import { getDefaultColor } from '../itemColoring';
-import { blendColorArrays, type ColorLayer } from './colorBlending';
+import { still, type ColorLayer } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
 import { settingsFromLink } from '../overlays/settings.ts';
 
@@ -63,9 +63,9 @@ export function colorsForStop(
   return resolved;
 }
 
-// At rest on a stop, which is where a timed ease captures its target, this is
-// the stop's own colours, unblended. So is t === 1, which controller.ts hands
-// over with two different stops when their rest zones touch.
+// One stop's colours fading into the next's. At rest on a stop it is that
+// stop's alone, and so is t === 1, which controller.ts hands over with two
+// different stops when their rest zones touch.
 export function computeBlendedColors(
   fromStop: ResolvedStoryStop,
   toStop: ResolvedStoryStop,
@@ -73,11 +73,13 @@ export function computeBlendedColors(
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
 ): ColorLayer {
-  if (fromStop === toStop || t === 0) return { colors: colorsForStop(fromStop, verses, hovered) };
-  if (t >= 1) return { colors: colorsForStop(toStop, verses, hovered) };
-  return blendColorArrays(
-    { colors: colorsForStop(fromStop, verses, hovered) },
-    { colors: colorsForStop(toStop, verses, hovered) },
+  if (fromStop === toStop || t === 0) {
+    return still({ colors: colorsForStop(fromStop, verses, hovered) });
+  }
+  if (t >= 1) return still({ colors: colorsForStop(toStop, verses, hovered) });
+  return {
+    from: { colors: colorsForStop(fromStop, verses, hovered) },
+    to: { colors: colorsForStop(toStop, verses, hovered) },
     t,
-  );
+  };
 }

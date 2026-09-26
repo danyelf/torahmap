@@ -1,34 +1,41 @@
 import type { Color } from '../overlays/types.ts';
+import type { Picture } from '../geometry.ts';
 import { lerpColor } from './interpolation';
 
-/**
- * A colour per verse, and how far each verse has grown towards the size a
- * multi-colour verse is drawn at: 0 is a plain square, 1 fully grown. Without
- * `growth`, a verse is fully grown exactly when it has several colours.
- */
+/** What the map shows: one picture, `t` of the way to fading into another. */
 export interface ColorLayer<C = Color | Color[]> {
-  colors: C[];
-  growth?: number[];
+  from: Picture<C>;
+  to?: Picture<C>;
+  t: number;
 }
 
-function growthAt(layer: ColorLayer, i: number, slots: number): number {
-  return layer.growth?.[i] ?? (slots > 1 ? 1 : 0);
+export function still<C>(picture: Picture<C>): ColorLayer<C> {
+  return { from: picture, t: 0 };
+}
+
+/** The layer as a single picture: what a new fade starts from. */
+export function flatten(layer: ColorLayer): Picture {
+  return layer.to ? mergePictures(layer.from, layer.to, layer.t) : layer.from;
+}
+
+function growthAt(picture: Picture, i: number, slots: number): number {
+  return picture.growth?.[i] ?? (slots > 1 ? 1 : 0);
 }
 
 /**
- * Blend two arrays of (single-or-multi) verse colors slot-by-slot.
+ * One picture `t` of the way between two, blended stripe by stripe.
  *
- * Multi-color verses stay multi-color through the transition: each slot lerps
- * independently. The side with fewer slots is stretched to match, each of its
- * colours covering the slots nearest where its band lay, so a one-colour
- * square fades straight into the stripes it becomes rather than through dark
- * stripes. Its size eases from one to the other alongside.
+ * The side with fewer stripes is stretched to match, each of its colours
+ * covering the stripes nearest where its band lay. A verse whose stripe count
+ * differs between the two therefore changes its stripe widths, which the
+ * shader's fade between whole pictures avoids; this is only for collapsing a
+ * fade in progress when another has to start from it.
  *
  * If a verse ends up with a single slot, the result is returned as a plain
  * Color (not [Color]) so the geometry buffer emits it the same way it would
  * at rest.
  */
-export function blendColorArrays(from: ColorLayer, to: ColorLayer, t: number): ColorLayer {
+export function mergePictures(from: Picture, to: Picture, t: number): Picture {
   const len = Math.max(from.colors.length, to.colors.length);
   const colors: (Color | Color[])[] = new Array(len);
   const growth: number[] = new Array(len);
