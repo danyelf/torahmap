@@ -20,6 +20,12 @@ describe('menuHtml', () => {
     expect(actions).toEqual(['story', 'overlay', 'stories', 'about']);
   });
 
+  it("is headed with the site's name", () => {
+    const div = document.createElement('div');
+    div.innerHTML = menuHtml({ number: 1, total: 2 });
+    expect(div.firstElementChild?.textContent).toBe('Torahmap');
+  });
+
   it('makes every item a real button', () => {
     for (const b of items(menuHtml({ number: 1, total: 2 }))) expect(b.type).toBe('button');
   });

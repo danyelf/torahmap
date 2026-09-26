@@ -77,6 +77,13 @@
       <div class="verse-english"></div>
     </div>
 
+    <div id="map-legend" hidden>
+      <button class="map-legend-row" type="button" data-panel="overlay">
+        <span class="map-legend-summary"></span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+    </div>
+
     <header id="top-bar">
       <button
         id="top-menu"
@@ -84,12 +91,13 @@
         type="button"
         aria-label="Menu"
         aria-expanded="false"
-        aria-controls="menu-panel"
+        aria-controls="menu"
       >
         ☰
       </button>
-      <span class="top-name">Torahmap</span>
     </header>
+
+    <div id="menu" class="menu" hidden></div>
 
     <nav id="rail" aria-label="Tools">
       <button class="rail-button" type="button" data-panel="stories">
@@ -131,13 +139,11 @@
           <div id="story-progress" role="progressbar" aria-label="Story progress" aria-valuemin="1">
             <div id="story-progress-fill"></div>
           </div>
-          <div id="menu" class="menu" hidden></div>
         </div>
         <div id="story-content"></div>
         <svg id="story-cue" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="1,2 9,50 1,98" />
         </svg>
-        <div id="story-status" class="folded-line" hidden><span class="folded-summary"></span></div>
       </section>
 
       <section id="tools">
@@ -158,12 +164,6 @@
           <div id="stories-panel" class="tool"></div>
           <div id="about-panel" class="tool"></div>
           <div id="menu-panel" class="tool menu"></div>
-        </div>
-        <div id="folded">
-          <button id="folded-overlay" class="folded-line" type="button" data-panel="overlay">
-            <span class="folded-summary"></span>
-            <span class="chevron" aria-hidden="true"></span>
-          </button>
         </div>
       </section>
     </aside>

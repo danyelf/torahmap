@@ -37,8 +37,8 @@ export function aboutHtml(
         <tr><td>&larr; &rarr; arrow keys</td><td>Navigate verses</td></tr>
         <tr><td>Escape</td><td>Unpin verse, or close the menu</td></tr>
         <tr><td>☰</td><td>The menu: continue the story, overlays, stories, About &amp; settings</td></tr>
-        <tr><td>Rail (desktop)</td><td>Open a tool's panel; anything on but not open folds to a line at the bottom of the panel</td></tr>
-        <tr><td>Folded line</td><td>Tap to open it</td></tr>
+        <tr><td>Rail (desktop)</td><td>Open a tool's panel</td></tr>
+        <tr><td>Legend</td><td>What colours the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>
       </table>
     </section>

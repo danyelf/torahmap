@@ -1,5 +1,5 @@
-// The one line that stands for the controls while the story is open: the
-// overlay's name and what its own `summary` says it is showing.
+// A legend row: the overlay's name and what its own `summary` says it is
+// showing.
 import { escapeHtml } from './utils/html.ts';
 import type { OverlaySummary } from './overlays/types.ts';
 

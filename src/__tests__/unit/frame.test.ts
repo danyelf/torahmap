@@ -15,6 +15,7 @@ describe('the story', () => {
     const down = nextFrame(STORY, { type: 'menu' }, DESKTOP);
     expect(down).toEqual({ ...STORY, menu: true });
     expect(nextFrame(down, { type: 'menu' }, DESKTOP)).toEqual(STORY);
+    expect(nextFrame(STORY, { type: 'menu' }, PHONE)).toEqual(down);
   });
 
   it('lifts its menu when the map is touched', () => {
@@ -73,16 +74,23 @@ describe('exploring on a phone', () => {
     );
   });
 
-  it('folds a panel whose line is tapped again', () => {
+  it('folds a panel whose legend row is tapped again', () => {
     expect(nextFrame(explore('overlay'), { type: 'choose', panel: 'overlay' }, PHONE)).toEqual(
       explore(null),
     );
   });
 
-  it('opens and closes the menu panel on ☰', () => {
-    const open = nextFrame(explore(null), { type: 'menu' }, PHONE);
-    expect(open).toEqual(explore('menu'));
-    expect(nextFrame(open, { type: 'menu' }, PHONE)).toEqual(explore(null));
+  it('drops the menu from the corner on ☰, leaving the sheet as it is', () => {
+    const down = nextFrame(explore('overlay'), { type: 'menu' }, PHONE);
+    expect(down).toEqual({ ...explore('overlay'), menu: true });
+    expect(nextFrame(down, { type: 'menu' }, PHONE)).toEqual(explore('overlay'));
+  });
+
+  it('lifts the menu when one of its panels is chosen', () => {
+    const down = { ...explore(null), menu: true };
+    expect(nextFrame(down, { type: 'choose', panel: 'stories' }, PHONE)).toEqual(
+      explore('stories'),
+    );
   });
 
   it('goes full height on a drag up, then back, then folds', () => {
@@ -117,6 +125,12 @@ describe('crossing from phone width to desktop width', () => {
     expect(nextFrame(explore('about', true), { type: 'layout-changed' }, DESKTOP)).toEqual(
       explore('about'),
     );
+  });
+
+  it("lifts a phone's dropped menu, which a desktop keeps in a panel", () => {
+    expect(
+      nextFrame({ ...explore(null), menu: true }, { type: 'layout-changed' }, DESKTOP),
+    ).toEqual(explore('overlay'));
   });
 });
 

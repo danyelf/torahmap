@@ -2,11 +2,17 @@
    both modes — the story's column, or the rail and the open panel together —
    so the map never moves or changes width when the mode does. The map starts
    at --map-left (src/styles/main.css), which the canvas, the book labels and
-   the title all read. On a phone the panel is a sheet along the bottom and a
-   bar along the top that hides while the map moves. The mode and the open
-   panel are data- attributes on <body>, set by main.ts from src/frame.ts. */
+   the title all read. What colours the map is named on the map, in the legend
+   card. On a phone the panel is a sheet along the bottom and the ☰ floats in
+   the top-left corner. The mode and the open panel are data- attributes on
+   <body>, set by main.ts from src/frame.ts. */
 :root {
   --rail-width: 56px;
+  /* The story's header row, which the menu drops from. */
+  --story-head-height: 61px;
+  /* The legend's height and the gap above it, where the phone's verse popup
+     stacks; main.ts measures it. */
+  --legend-shown: 0px;
   --story-bg: #16181d;
   --panel-bg: rgba(0, 0, 0, 0.92);
   --line: rgba(255, 255, 255, 0.1);
@@ -126,11 +132,12 @@ body[data-mode='explore'] #tools {
 /* The story's header: its menu button and where it has got to. The menu drops
    from here over the top of the story, which stays visible below it. */
 .story-head {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
+  height: var(--story-head-height);
   padding: 8px 12px;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--line);
 }
 
@@ -182,12 +189,14 @@ body[data-mode='explore'] #tools {
 }
 
 #menu {
-  position: absolute;
-  top: 100%;
+  position: fixed;
+  top: var(--story-head-height);
   left: 0;
-  right: 0;
-  z-index: 2;
+  width: var(--panel-width);
+  box-sizing: border-box;
+  z-index: 16;
   padding: 6px 0;
+  font-family: system-ui, sans-serif;
   background: #111;
   border-bottom: 1px solid #444;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
@@ -199,6 +208,15 @@ body[data-mode='explore'] #tools {
 
 body[data-menu] #story-content {
   opacity: 0.3;
+}
+
+.menu-title {
+  margin: 6px 16px 4px;
+  font:
+    700 20px 'David Libre',
+    Georgia,
+    serif;
+  color: #fff;
 }
 
 .menu-item {
@@ -264,29 +282,6 @@ body[data-menu] #story-cue {
   display: none;
 }
 
-/* With the status line showing, the cue hugs the content's bottom edge
-   rather than the status line's: 44px is .folded-line's min-height, less
-   the cue's usual 8px overhang past that edge. */
-#story:has(#story-status:not([hidden])) #story-cue {
-  bottom: 36px;
-}
-
-/* The story's own status line, at the foot of its column: the folded line's
-   look, reused, but not a control. */
-#story-status {
-  flex-shrink: 0;
-  border-top: 1px solid var(--line);
-  cursor: default;
-}
-
-#story-status:hover {
-  background: none;
-}
-
-#story-status[hidden] {
-  display: none;
-}
-
 /* Paragraphs sit half a panel apart, so when one is centred the next starts
    at the bottom edge. The first starts mid-panel and the last can scroll up
    to it. cqh is the story's height, not the window's. */
@@ -333,7 +328,7 @@ body[data-menu] #story-cue {
   background: rgba(106, 176, 243, 0.12);
 }
 
-/* The open panel scrolls; the folded lines stay at the bottom edge. */
+/* The open panel scrolls. */
 #panel-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -468,19 +463,34 @@ body[data-open='menu'] #menu-panel {
   color: #ddd;
 }
 
-/* Anything on but not open: one labelled line each, at the bottom edge. */
-#folded {
-  flex-shrink: 0;
-  border-top: 1px solid var(--line);
+/* What colours the map, named on the map: one row per thing that is on, each
+   opening its tool. Top-left of the map on a desktop, whatever is open. */
+#map-legend {
+  position: fixed;
+  top: 16px;
+  left: calc(var(--map-left) + 16px);
+  z-index: 14;
+  min-width: 220px;
+  padding: 2px 0;
+  /* Opaque: a book label passing under it would show through. */
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  font-family: system-ui, sans-serif;
 }
 
-.folded-line {
+#map-legend[hidden] {
+  display: none;
+}
+
+.map-legend-row {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 44px;
-  padding: 0 16px;
+  min-height: 36px;
+  padding: 0 12px;
   border: none;
   background: none;
   color: #ddd;
@@ -490,11 +500,15 @@ body[data-open='menu'] #menu-panel {
   cursor: pointer;
 }
 
-.folded-line:hover {
-  background: rgba(255, 255, 255, 0.05);
+.map-legend-row + .map-legend-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.folded-summary {
+.map-legend-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.map-legend-summary {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -503,15 +517,15 @@ body[data-open='menu'] #menu-panel {
   white-space: nowrap;
 }
 
-/* Drawn rather than a ▴ glyph, which renders small and faint in system fonts. */
-.folded-line .chevron {
+/* Drawn rather than a › glyph, which renders small and faint in system fonts. */
+.map-legend-row .chevron {
   flex-shrink: 0;
   margin-left: auto;
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid #ddd;
-  border-bottom: 2px solid #ddd;
-  transform: translateY(2px) rotate(-135deg);
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid #999;
+  border-bottom: 2px solid #999;
+  transform: rotate(-45deg);
 }
 
 .summary-name {
@@ -554,15 +568,14 @@ body[data-open='menu'] #menu-panel {
    vh: a phone's vh counts the space behind the browser's toolbar.
 
    Exploring, the sheet is as tall as its open panel, up to half the screen,
-   or only its folded lines when nothing is open. Dragged to full, it grows up
-   over the map rather than shrinking it. --sheet-shown is the height the map
+   and gone when nothing is open. Dragged to full, it grows up over the map
+   rather than shrinking it. --sheet-shown is the height the map, the legend
    and the verse popup make room for; main.ts measures it. */
 @media (max-width: 768px) {
   :root {
     --story-sheet: 30svh;
     --sheet-cap: 50svh;
     --sheet-full: 85svh;
-    --bar-height: 52px;
   }
 
   /* Set here rather than measured, so the story's stops are resolved against
@@ -605,31 +618,47 @@ body[data-open='menu'] #menu-panel {
     background: #000;
   }
 
-  /* The story's menu needs more room than the story's sheet has, so the sheet
-     grows over the map while it is down, as full height does. */
-  body[data-mode='story'][data-menu] #panel {
-    height: var(--sheet-cap);
-  }
-
-  /* A stop's text starts at the top of the sheet rather than its middle, so
-     the menu pushes the story down instead of dropping over it. */
-  .story-head {
-    flex-wrap: wrap;
-  }
-
-  #menu {
-    position: static;
-    /* The header's full width, past its 12px side padding. */
-    flex-basis: calc(100% + 24px);
-    margin: 8px -12px -8px;
-  }
-
-  body[data-mode='explore']:not([data-open]) #panel-body {
+  body[data-mode='explore']:not([data-open]) #panel {
     display: none;
   }
 
-  body[data-mode='explore']:not([data-open]) #folded {
-    border-top: none;
+  /* The ☰ lives in the corner in both modes, so the story's sheet is only
+     its text. */
+  .story-head {
+    display: none;
+  }
+
+  #top-bar {
+    display: block;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 16;
+  }
+
+  #top-menu {
+    background: #111;
+  }
+
+  /* Dropped from the corner ☰, over the map. */
+  #menu {
+    top: 64px;
+    left: 10px;
+    width: min(280px, calc(100vw - 20px));
+    border: 1px solid #444;
+    border-radius: 10px;
+  }
+
+  #map-legend {
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: calc(var(--sheet-shown) + 10px);
+  }
+
+  /* At full height the sheet covers the map the legend describes. */
+  body[data-full] #map-legend {
+    display: none;
   }
 
   /* The top of an open sheet, with a short pill drawn in it: tap to go full
@@ -654,47 +683,6 @@ body[data-open='menu'] #menu-panel {
     margin: 8px auto 0;
     border-radius: 2px;
     background: #666;
-  }
-
-  body[data-mode='explore'] #top-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--bar-height);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 8px;
-    box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.85);
-    border-bottom: 1px solid var(--line);
-    z-index: 12;
-    transition:
-      background 200ms ease,
-      border-color 200ms ease;
-  }
-
-  .top-name {
-    font-family: 'David Libre', Georgia, serif;
-    font-weight: 700;
-    font-size: 18px;
-  }
-
-  /* Hidden, the bar leaves its menu button floating over the map. */
-  body[data-bar-hidden] #top-bar {
-    background: transparent;
-    border-bottom-color: transparent;
-    pointer-events: none;
-  }
-
-  body[data-bar-hidden] .top-name {
-    visibility: hidden;
-  }
-
-  body[data-bar-hidden] #top-menu {
-    pointer-events: auto;
-    background: rgba(0, 0, 0, 0.7);
   }
 
   /* The stops sit side by side, a page each, and a swipe moves one. */
@@ -725,11 +713,5 @@ body[data-open='menu'] #menu-panel {
     width: 10px;
     height: 72px;
     transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #top-bar {
-    transition: none;
   }
 }

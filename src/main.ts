@@ -344,16 +344,15 @@ async function main(): Promise<void> {
   const storyContent = document.getElementById('story-content')!;
 
   const panel = document.getElementById('panel')!;
-  const storyMenu = document.getElementById('menu')!;
+  const droppedMenu = document.getElementById('menu')!;
   const storyMenuButton = document.getElementById('story-menu')!;
   const storyProgress = document.getElementById('story-progress')!;
   const storyProgressFill = document.getElementById('story-progress-fill')!;
   const menuPanel = document.getElementById('menu-panel')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
-  const foldedSummary = document.querySelector<HTMLElement>('#folded-overlay .folded-summary')!;
-  const storyStatus = document.getElementById('story-status')!;
-  const storyStatusSummary = storyStatus.querySelector<HTMLElement>('.folded-summary')!;
+  const mapLegend = document.getElementById('map-legend')!;
+  const mapLegendSummary = mapLegend.querySelector<HTMLElement>('.map-legend-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
   const railButtons = [...document.querySelectorAll<HTMLButtonElement>('.rail-button[data-panel]')];
   const railMenuButton = document.querySelector<HTMLButtonElement>('.rail-menu')!;
@@ -395,19 +394,18 @@ async function main(): Promise<void> {
     else delete body.dataset.open;
     body.toggleAttribute('data-menu', frame.menu);
     body.toggleAttribute('data-full', frame.full);
-    storyMenu.hidden = !frame.menu;
+    droppedMenu.hidden = !frame.menu;
     storyMenuButton.setAttribute('aria-expanded', String(frame.menu));
     storyContent.inert = frame.menu;
     for (const button of railButtons) {
       button.setAttribute('aria-pressed', String(button.dataset.panel === frame.open));
     }
     railMenuButton.setAttribute('aria-pressed', String(frame.open === 'menu'));
-    for (const button of [railMenuButton, topMenuButton]) {
-      button.setAttribute('aria-expanded', String(frame.open === 'menu'));
-    }
+    railMenuButton.setAttribute('aria-expanded', String(frame.open === 'menu'));
+    topMenuButton.setAttribute('aria-expanded', String(frame.menu));
     if (frame.menu || frame.open === 'menu') {
       const html = menuHtml(storyPlace());
-      storyMenu.innerHTML = html;
+      droppedMenu.innerHTML = html;
       menuPanel.innerHTML = html;
     }
     if (frame.open === 'stories') {
@@ -423,15 +421,21 @@ async function main(): Promise<void> {
     measureSheet();
   }
 
-  // An exploring phone's sheet is as tall as its content; the map and the verse
-  // popup make room for it. Full height, and the story's menu, grow over the map
-  // instead. Measured on every change of frame as well as on resize: leaving the
-  // story's menu for a panel as tall as the menu resizes nothing.
+  // An exploring phone's sheet is as tall as its content, or gone with nothing
+  // open; the map and the verse popup make room for it. Full height grows over
+  // the map instead.
   function measureSheet(): void {
-    if (!phoneLayout.matches || frame.full || frame.menu) return;
+    if (!phoneLayout.matches || frame.full) return;
     document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
   }
   new ResizeObserver(measureSheet).observe(panel);
+
+  // On a phone the verse popup stacks above the legend, which grows a row for
+  // each thing on the map.
+  new ResizeObserver(() => {
+    const height = mapLegend.offsetHeight;
+    document.documentElement.style.setProperty('--legend-shown', `${height ? height + 8 : 0}px`);
+  }).observe(mapLegend);
 
   const sameFrame = (a: Frame, b: Frame): boolean =>
     a.mode === b.mode && a.open === b.open && a.menu === b.menu && a.full === b.full;
@@ -453,20 +457,6 @@ async function main(): Promise<void> {
     }
     if (frame.mode === 'story' && next.mode === 'explore') leaveStory();
     setFrame(next);
-  }
-
-  // How long the phone's top bar stays hidden after the map stops moving.
-  const BAR_RETURN_MS = 2000;
-  let barTimer: number | undefined;
-
-  function mapMoved(): void {
-    if (!phoneLayout.matches) return;
-    document.body.toggleAttribute('data-bar-hidden', true);
-    clearTimeout(barTimer);
-    barTimer = window.setTimeout(
-      () => document.body.removeAttribute('data-bar-hidden'),
-      BAR_RETURN_MS,
-    );
   }
 
   // On a phone the stops sit side by side and a swipe moves one; elsewhere
@@ -685,7 +675,6 @@ async function main(): Promise<void> {
         if (newDist && center && touchState.lastPinchDistance) {
           const scale = newDist / touchState.lastPinchDistance;
           zoomAt(scale, center.x, center.y);
-          mapMoved();
         }
         touchState.lastPinchDistance = newDist;
       }
@@ -723,10 +712,7 @@ async function main(): Promise<void> {
       const p = onMap(e);
       const dx = p.x - mouseState.dragStart.x;
       const dy = p.y - mouseState.dragStart.y;
-      if (dx !== 0 || dy !== 0) {
-        takeOver('takeover');
-        mapMoved();
-      }
+      if (dx !== 0 || dy !== 0) takeOver('takeover');
       camera.x += dx / camera.zoom;
       camera.y += dy / camera.zoom;
       mouseState.dragStart = { x: p.x, y: p.y };
@@ -980,10 +966,8 @@ async function main(): Promise<void> {
       currentOverlay?.name,
       currentOverlay?.summary?.(currentSettings()) ?? {},
     );
-    foldedSummary.innerHTML = summary;
-    storyStatusSummary.innerHTML = summary;
-    // A story's opening stops carry no overlay; "No overlay" there reads as something to do.
-    storyStatus.hidden = currentOverlayId === 'none';
+    mapLegendSummary.innerHTML = summary;
+    mapLegend.hidden = currentOverlayId === 'none';
     refreshVersePopup();
   }
 
@@ -1239,15 +1223,13 @@ async function main(): Promise<void> {
       syncUrl(true);
       return;
     }
-    // Menu items, the rail and the folded lines choose a panel; nothing else
-    // inside an open panel does.
-    const chooser = target.closest<HTMLElement>(
-      '.rail-button[data-panel], .folded-line[data-panel]',
-    );
+    // Menu items, the rail and the legend choose a panel; nothing else inside
+    // an open panel does.
+    const chooser = target.closest<HTMLElement>('.rail-button[data-panel], .map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
   }
-  for (const id of ['panel', 'rail', 'top-bar']) {
+  for (const id of ['panel', 'rail', 'top-bar', 'menu', 'map-legend']) {
     document.getElementById(id)!.addEventListener('click', onChromeClick);
   }
 

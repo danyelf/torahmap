@@ -219,10 +219,11 @@ in step with the code:
 - **Search box** - Type to search Hebrew/English text with live results
 - **☰** - The menu: continue the story, overlays, stories, About & settings;
   Escape closes it
-- **Rail** (desktop) - Open a tool's panel; anything on but not open is folded
-  to a line at the bottom of the panel
-- **Sheet** (phone) - Tap a folded line to open it; the grabber takes it to
-  full height and back, and a drag down folds it
+- **Legend** - Names what colours the map, on the map itself; tap a row to open
+  its tool
+- **Rail** (desktop) - Open a tool's panel
+- **Sheet** (phone) - The open panel; the grabber takes it to full height and
+  back, and a drag down folds it
 
 The URL carries the overlay, its settings, the pinned verse, the camera and the
 story stop (`src/urlState.ts`), so any view can be linked to.

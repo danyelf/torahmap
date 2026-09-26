@@ -9,9 +9,10 @@ const item = (action: string, label: string, detail = ''): string =>
   (detail ? ` <span class="menu-detail">${detail}</span>` : '') +
   `</button>`;
 
-/** The menu's items. Each carries the action it takes; the panel's click handler reads it. */
+/** The menu: the site's name, then its items. Each item carries the action it takes; the click handler reads it. */
 export function menuHtml(place: StoryPlace): string {
   return [
+    '<h2 class="menu-title">Torahmap</h2>',
     item('story', 'Continue the story', `${place.number} of ${place.total}`),
     item('overlay', 'Overlays'),
     item('stories', 'Stories'),

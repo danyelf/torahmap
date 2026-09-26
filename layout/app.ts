@@ -9,19 +9,21 @@ export interface State {
   shown?: string[];
 }
 
-// The frame (index.html, src/styles/frame.css). The top bar is left out of
-// `fixed`: on a phone it lies over the map by design. Links in the story's
-// prose and in the credits are running text, which touch-size rules exempt.
+// The frame (index.html, src/styles/frame.css). The menu is left out of
+// `fixed`: on a desktop it drops over the story's column by design. Links in
+// the story's prose and in the credits are running text, which touch-size
+// rules exempt.
 export const CHROME: Chrome = {
-  fixed: '#panel, #rail, #zoom-controls, #verse-popup.visible',
+  fixed: '#panel, #rail, #top-bar, #map-legend, #zoom-controls, #verse-popup.visible',
   map: '#canvas',
   panel: '#panel, #rail',
   interactive:
     '#panel button, #panel select, #panel input, ' +
     '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
-    '#rail button, #top-bar button, #verse-popup button, #verse-popup a, #zoom-controls button',
+    '#rail button, #top-bar button, #menu button, #map-legend button, ' +
+    '#verse-popup button, #verse-popup a, #zoom-controls button',
   text:
-    '.folded-summary, .menu-item, .rail-label, .panel-title, #panel label, ' +
+    '.map-legend-summary, .menu-title, .menu-item, .rail-label, .panel-title, #panel label, ' +
     '.story-card-place, #verse-popup .ref-text',
 };
 
@@ -34,24 +36,24 @@ async function viaMenu(page: Page, action: string): Promise<void> {
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 
 export const STATES: State[] = [
-  { name: 'story-opening', hash: 'story=intro', shown: ['#story-menu', stop('intro')] },
+  { name: 'story-opening', hash: 'story=intro', shown: [stop('intro')] },
   {
     name: 'story-stop-with-verse',
     hash: 'story=abraham_call',
-    shown: ['#story-menu', '#story-progress', stop('abraham_call')],
+    shown: ['#map-legend', stop('abraham_call')],
   },
   {
     name: 'story-menu-down',
     hash: 'story=abraham_call',
-    then: (page) => page.locator('#story-menu').click(),
-    shown: ['#menu'],
+    then: (page) => page.locator('.menu-button:visible').first().click(),
+    shown: ['#menu', '#map-legend'],
   },
-  { name: 'explore-link', hash: 'overlay=commentary', shown: ['#folded-overlay'] },
+  { name: 'explore-link', hash: 'overlay=commentary', shown: ['#map-legend'] },
   {
     name: 'explore-overlay-open',
     hash: 'overlay=commentary',
     then: (page) => viaMenu(page, 'overlay'),
-    shown: ['#overlay-select', '#folded-overlay'],
+    shown: ['#overlay-select', '#map-legend'],
   },
   {
     name: 'explore-search',
@@ -62,7 +64,7 @@ export const STATES: State[] = [
   {
     name: 'explore-verse-pinned',
     hash: 'overlay=commentary&verse=Genesis.12.1',
-    shown: ['#verse-popup', '#folded-overlay'],
+    shown: ['#verse-popup', '#map-legend'],
   },
   {
     name: 'stories-panel',

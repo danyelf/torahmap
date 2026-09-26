@@ -118,12 +118,12 @@
 @media (max-width: 768px) {
   #verse-popup {
     left: 10px;
-    bottom: calc(var(--sheet-shown) + 10px);
+    bottom: calc(var(--sheet-shown) + var(--legend-shown) + 10px);
     width: calc(100vw - 20px);
     max-height: 200px;
   }
 
-  /* A full-height sheet, or the story's menu, covers the map the popup belongs
+  /* A full-height sheet, or the menu, covers the map the popup belongs
      to; it is back when the sheet shrinks. */
   body[data-full] #verse-popup,
   body[data-menu] #verse-popup {
