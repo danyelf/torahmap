@@ -50,6 +50,7 @@ import {
 } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
+import { lingeringHover } from './utils/hover.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
   createCamera,
@@ -974,18 +975,23 @@ async function main(): Promise<void> {
 
   // A legend entry marked with `data-hover-verse` hovers that verse, colouring
   // the map as the cursor over it would; the popup stays shut.
+  const legendHover = lingeringHover<TanakhLayout>((verse) => {
+    const previousHover = mouseState.hoveredVerse;
+    if (tanakhIdentitiesEqual(previousHover, verse)) return;
+    setHoveredVerse(mouseState, verse);
+    repaint(previousHover);
+  });
+
   function hoverFromLegend(e: PointerEvent): void {
     if (e.pointerType === 'touch') return;
     const target =
       e.type === 'pointerleave' ? null : (e.target as Element).closest('[data-hover-verse]');
     const ref = target instanceof HTMLElement ? target.dataset.hoverVerse : undefined;
     const parsed = ref ? parseVerseFromUrl(ref) : null;
-    const verse = parsed ? (findTanakhItem(verses, parsed) ?? null) : null;
+    const verse = parsed ? findTanakhItem(verses, parsed) : undefined;
 
-    const previousHover = mouseState.hoveredVerse;
-    if (tanakhIdentitiesEqual(previousHover, verse)) return;
-    setHoveredVerse(mouseState, verse);
-    repaint(previousHover);
+    if (verse) legendHover.enter(verse);
+    else legendHover.leave();
   }
   overlayLegendContainer?.addEventListener('pointerover', hoverFromLegend);
   overlayLegendContainer?.addEventListener('pointerleave', hoverFromLegend);

@@ -36,6 +36,22 @@
   border-radius: 2px;
 }
 
+/* Each hover area reaches halfway across the gaps around it, so the pointer
+   passes from one reading straight to the next. */
+.haftarah-key [data-hover-verse] {
+  position: relative;
+}
+
+.haftarah-key [data-hover-verse]::before {
+  content: '';
+  position: absolute;
+  inset: -3px -1.5px;
+}
+
+.haftarah-key-segment::before {
+  inset: -3px -1px;
+}
+
 .haftarah-key [data-hover-verse]:hover {
   outline: 1px solid #fff;
   outline-offset: 1px;
