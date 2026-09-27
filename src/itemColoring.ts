@@ -35,9 +35,9 @@ function dim(color: VerseColor, factor: number): VerseColor {
  *
  * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
  * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
- * search leads, 1 while the overlay leads and nothing dims. A front-tool
- * switch passes intermediate values to ease between the two rather than snap.
- * It does nothing with search alone, which always dims to its own grey.
+ * search leads, 1 while the overlay leads, or anything between while a
+ * front-tool switch eases from one to the other; it does nothing with search
+ * alone, which always dims to its own grey.
  */
 export function combineLayers(
   count: number,
@@ -72,6 +72,27 @@ export function combineLayers(
  */
 export function frontFadeLevels(from: number, to: number, steps: number): number[] {
   return Array.from({ length: steps }, (_, i) => from + ((to - from) * (i + 1)) / steps);
+}
+
+/** One level of a front-tool fade, and how long after the previous one to show it. */
+export interface FrontFadeStep {
+  level: number;
+  delayMs: number;
+}
+
+/**
+ * frontFadeLevels timed to reach `to` exactly `durationMs` after the switch
+ * starts: `steps` steps, each `durationMs / steps` after the one before,
+ * including the first.
+ */
+export function frontFadeSchedule(
+  from: number,
+  to: number,
+  steps: number,
+  durationMs: number,
+): FrontFadeStep[] {
+  const delayMs = durationMs / steps;
+  return frontFadeLevels(from, to, steps).map((level) => ({ level, delayMs }));
 }
 
 /**

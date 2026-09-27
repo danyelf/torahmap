@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { combineLayers, frontFadeLevels, getDefaultColor, toolsPicture } from '../../itemColoring';
+import {
+  combineLayers,
+  frontFadeLevels,
+  frontFadeSchedule,
+  getDefaultColor,
+  toolsPicture,
+} from '../../itemColoring';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from '../../constants';
 import type { Color, Overlay } from '../../overlays/types';
 import { createVerse } from '../helpers/fixtures';
@@ -112,6 +118,17 @@ describe('frontFadeLevels', () => {
     const levels = frontFadeLevels(0.4, 1, 2);
     expect(levels[0]).toBeCloseTo(0.7);
     expect(levels[1]).toBeCloseTo(1);
+  });
+});
+
+describe('frontFadeSchedule', () => {
+  it('spends the whole duration reaching the target, including in the first step', () => {
+    const schedule = frontFadeSchedule(1, 0.4, 3, 250);
+    expect(schedule).toHaveLength(3);
+    expect(schedule.every((step) => step.delayMs === schedule[0].delayMs)).toBe(true);
+    const total = schedule.reduce((sum, step) => sum + step.delayMs, 0);
+    expect(total).toBeCloseTo(250);
+    expect(schedule.at(-1)!.level).toBeCloseTo(0.4);
   });
 });
 

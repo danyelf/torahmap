@@ -94,7 +94,9 @@ import {
   toolsPicture,
   layerToRecompute,
   getDefaultColor,
-  frontFadeLevels,
+  combineLayers,
+  frontFadeSchedule,
+  overlayColorsFor,
 } from './itemColoring.ts';
 import {
   createRenderContext,
@@ -350,10 +352,9 @@ async function main(): Promise<void> {
   }
 
   /**
-   * Move the front tool to `next`. With both tools on, the non-match dim it
-   * changes eases over FRONT_FADE.DURATION_MS in a few discrete steps rather
-   * than every animation frame; with only one tool on, or on the other end of
-   * the switch, there is nothing to see, so it snaps.
+   * Move the front tool to `next`, easing the non-match dim it changes over
+   * FRONT_FADE.DURATION_MS in a few discrete steps rather than every
+   * animation frame. Snaps with only one tool on, or under reduced motion.
    */
   function setFrontTool(next: FrontTool): void {
     if (next === frontTool) return;
@@ -365,17 +366,34 @@ async function main(): Promise<void> {
       return;
     }
     cancelFrontFade();
-    const levels = frontFadeLevels(frontDim, dimFor(next), FRONT_FADE.STEPS);
-    const stepMs = FRONT_FADE.DURATION_MS / levels.length;
+    // Each tool's colours, once, so a step is just combineLayers at a new dim.
+    const searchColors = overlayColorsFor(
+      tools.search.tool,
+      verses,
+      tools.search.settings,
+      mouseState.hoveredVerse,
+    );
+    const overlayColors = overlayColorsFor(
+      tools.overlay.tool,
+      verses,
+      tools.overlay.settings,
+      mouseState.hoveredVerse,
+    );
+    const schedule = frontFadeSchedule(
+      frontDim,
+      dimFor(next),
+      FRONT_FADE.STEPS,
+      FRONT_FADE.DURATION_MS,
+    );
     let i = 0;
     const step = (): void => {
-      frontDim = levels[i];
-      setColorLayer(still(toolsPicture(tools, verses, mouseState.hoveredVerse, frontDim)));
+      frontDim = schedule[i].level;
+      setColorLayer(still(combineLayers(verses.length, searchColors, overlayColors, frontDim)));
       render();
       i += 1;
-      frontFadeTimer = i < levels.length ? setTimeout(step, stepMs) : null;
+      frontFadeTimer = i < schedule.length ? setTimeout(step, schedule[i].delayMs) : null;
     };
-    step();
+    frontFadeTimer = setTimeout(step, schedule[0].delayMs);
   }
 
   function blendTransition(): void {
@@ -616,6 +634,9 @@ async function main(): Promise<void> {
 
   // Every change of driver goes through here, by way of handOver or keepDriving.
   function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
+    // The story taking the map back mid-fade would otherwise still get the
+    // fade's later steps, painting a stale explore picture over its own.
+    if (next.by !== 'reader') cancelFrontFade();
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
     if (!event) return;
@@ -1603,10 +1624,11 @@ async function main(): Promise<void> {
     if (next.mode === 'explore') {
       handOver(readerTakesOver(storyPosition()), 'fold');
       const open = next.searchParams.search ? 'search' : 'overlay';
-      // Set before opening the frame: a phone opens with no panel shown, so
-      // applyFrame's own tracking of the open panel would miss it, and doing
-      // it first also spares applyFrame a redundant fade against stale state.
-      frontTool = open;
+      // Only for a story exit: a phone opens with no panel shown, so
+      // applyFrame's own tracking of the open panel can't see it land here.
+      // Any other hash change (Back/Forward while already exploring) must
+      // leave frontTool at whatever the reader last chose from the legend.
+      if (frame.mode === 'story') frontTool = open;
       setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
     }
 
