@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { parseStoryMarkdown } from '../../scrollytelling/storyParser';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
-import { parseVerseFromUrl } from '../../urlState';
+import { buildUrlHash, parseUrlState, parseVerseFromUrl } from '../../urlState';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 const storiesDir = path.join(process.cwd(), 'src', 'stories');
@@ -19,6 +19,12 @@ describe.each(files)('%s', (file) => {
   const story = parseStoryMarkdown(markdown);
   const { stops } = story;
   const comments = [...markdown.matchAll(/<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g)];
+
+  it('has a file name a link can carry', () => {
+    const id = file.replace(/\.md$/, '');
+    window.location.hash = buildUrlHash({ story: id, overlayParams: {} });
+    expect(parseUrlState().story).toBe(id);
+  });
 
   it('has a title and a description', () => {
     expect(story.title).toBeTruthy();

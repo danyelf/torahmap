@@ -34,13 +34,13 @@ export interface ResolvedStoryStop extends Omit<StoryStop, 'camera'> {
 
 export interface StoryData {
   stops: StoryStop[];
-  /** Shown in the Stories panel and the menu. */
-  title?: string;
-  description?: string;
+  /** Shown in the Stories panel and the menu; empty if the file gives none. */
+  title: string;
+  description: string;
   /** Where the story sits in the menu; stories without one come after. */
   order?: number;
   /** Listed while it is being written, except on the live site. */
-  draft?: boolean;
+  draft: boolean;
   defaults?: {
     easing?: EasingName;
   };

@@ -32,9 +32,10 @@ describe('story frontmatter', () => {
     expect(story.draft).toBe(false);
   });
 
-  it('leaves them out when the story has no frontmatter', () => {
+  it('leaves them empty when the story has no frontmatter', () => {
     const story = parseStoryMarkdown('<!-- stop: a | camera: Job -->\nText.');
-    expect(story.title).toBeUndefined();
-    expect(story.description).toBeUndefined();
+    expect(story.title).toBe('');
+    expect(story.description).toBe('');
+    expect(story.draft).toBe(false);
   });
 });

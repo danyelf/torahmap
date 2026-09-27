@@ -3,7 +3,7 @@ import { listedStories, storyToOpen, type Story } from '../../scrollytelling/sto
 
 const story = (id: string, over: Partial<Story['data']> = {}): Story => ({
   id,
-  data: { stops: [], draft: false, ...over },
+  data: { stops: [], title: id, description: '', draft: false, ...over },
 });
 const ids = (stories: Story[]): string[] => stories.map((s) => s.id);
 

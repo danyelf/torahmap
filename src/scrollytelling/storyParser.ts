@@ -14,8 +14,8 @@ export function parseStoryMarkdown(markdown: string): StoryData {
   return {
     stops,
     defaults: easing ? { easing } : undefined,
-    title: front.title,
-    description: front.description,
+    title: front.title ?? '',
+    description: front.description ?? '',
     order: front.order !== undefined && Number.isFinite(order) ? order : undefined,
     draft: front.draft === 'true',
   };

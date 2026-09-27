@@ -239,7 +239,7 @@ async function main(): Promise<void> {
   // on the hovered verse, which a blend's may.
   let colorLayer: (Color | Color[] | null)[] = [];
 
-  // A story folded earlier in the session opens folded, unless the link names a stop.
+  // A story folded earlier in the session opens folded, unless the link names a story.
   const opensFolded = !parseUrlState().story && storyWasFolded();
   let driver: Driver = opensFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
@@ -412,7 +412,7 @@ async function main(): Promise<void> {
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
-      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: storyData.title ?? storyId });
+      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: storyData.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
@@ -1168,6 +1168,8 @@ async function main(): Promise<void> {
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     lastSyncedStopId = null;
+    // A stop held for the old story means nothing in this one.
+    if (heldStop !== null) heldStop = 0;
   }
 
   function reloadStory(): void {
@@ -1252,9 +1254,9 @@ async function main(): Promise<void> {
       const at = id === storyId ? storyStopIndex() : places.get(id);
       return {
         id,
-        draft: !!data.draft,
-        title: data.title ?? id,
-        description: data.description ?? '',
+        draft: data.draft,
+        title: data.title,
+        description: data.description,
         place:
           at === undefined
             ? null

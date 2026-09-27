@@ -82,10 +82,11 @@ Reading mode is otherwise unchanged.
   a pure function of the stories and the hostname.
 - `storyParser.ts` reads `title`, `description`, `order` and `draft` from the
   frontmatter it already parses for `easing`.
-- In `main.ts`, `heldStop` becomes the current story's id and a stop per story.
-  An edited story reloads in place on the dev server.
-- Choosing a story from a card goes through the same routine a
-  `#story=…&stop=…` link does.
+- `main.ts` keeps one current story, and a map of where each other story was
+  left. `switchStory` changes the current story and records the place of the
+  one it replaces; a card and a `#story=…&stop=…` link both call it, then open
+  the story — a card easing the camera there, a link cutting to it. An edited
+  story reloads in place on the dev server.
 
 ## Telemetry
 
