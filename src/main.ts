@@ -820,7 +820,7 @@ async function main(): Promise<void> {
   function syncUrl(push: boolean = false): void {
     const state: UrlState =
       frame.mode === 'story'
-        ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
+        ? { story: storyId, stop: resolvedStops[storyStopIndex()].id, overlayParams: {} }
         : buildCurrentUrlState();
     updateUrl(state, push);
   }
@@ -1134,7 +1134,7 @@ async function main(): Promise<void> {
   }
 
   const listed = listedStories(await loadStoryIndex(), location.hostname);
-  const storyId = storyToOpen(listed, null);
+  const storyId = storyToOpen(listed, parseUrlState().story ?? null);
   let storyData = await loadStoryData(storyId);
   const resolveStory = (): ResolvedStoryStop[] =>
     resolveStops(storyData.stops, initialCamera, verses, mapFocus(), {
@@ -1477,7 +1477,7 @@ async function main(): Promise<void> {
     render();
 
     if (next.mode === 'story') {
-      const stop = resolvedStops.findIndex((s) => s.id === next.storyStop);
+      const stop = resolvedStops.findIndex((s) => s.id === next.stop);
       openStory(Math.max(0, stop), 'cut', 'link');
     }
   }
@@ -1494,7 +1494,7 @@ async function main(): Promise<void> {
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
-  trackPageView(parseUrlState().story ?? '', referrer === location.hostname ? '' : referrer);
+  trackPageView(parseUrlState().stop ?? '', referrer === location.hostname ? '' : referrer);
   recordingDriver = true;
   markViewSettled();
 
