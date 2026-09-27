@@ -127,15 +127,12 @@ until the next scene starts.
 
 ## Unsolved
 
-1. **Headless screenshots show no mouse pointer.** In a `do:` scene the viewer
-   would see buttons respond to nothing. The harness draws its own: an arrow
-   added to the page from outside, gliding to each target before the click.
-2. **CSS transitions do not follow the fake clock.** Each frame takes 340 ms
+1. **CSS transitions do not follow the fake clock.** Each frame takes 340 ms
    of real time, so a 200 ms panel slide finishes between two screenshots. The
    browser lists every running CSS animation (`document.getAnimations()`), and
    each can be paused and set to an exact moment; the renderer does that
    before each screenshot. This only matters in `do:` scenes.
-3. **Gliding to a pinned verse.** With a verse pinned, the app centres the
+2. **Gliding to a pinned verse.** With a verse pinned, the app centres the
    camera on it and leaves `x` and `y` out of the URL
    (`cameraForView` in `src/viewState.ts`), so the harness does not know where
    the glide ends. Try measuring it from outside first. If that proves
@@ -154,6 +151,6 @@ until the next scene starts.
 
 1. Script parser and timeline.
 2. Renderer, with `story:` and `view:` scenes.
-3. `do:` scenes, with the drawn pointer and the CSS animations held to the
-   clock.
+3. `do:` scenes, with the CSS animations held to the clock. No mouse pointer
+   is drawn: headless screenshots show none, and the video does not need one.
 4. Rehearsal page and capture.
