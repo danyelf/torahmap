@@ -1,55 +1,58 @@
-import { describe, it, expect, vi } from 'vitest';
-import { listedStories, storyCache, storyToOpen } from '../../scrollytelling/storyIndex';
+import { describe, it, expect } from 'vitest';
+import { listedStories, storyToOpen, type Story } from '../../scrollytelling/storyIndex';
 
-const index = [{ id: 'tour' }, { id: 'sample', draft: true }, { id: 'job' }];
+const story = (id: string, over: Partial<Story['data']> = {}): Story => ({
+  id,
+  data: { stops: [], draft: false, ...over },
+});
+const ids = (stories: Story[]): string[] => stories.map((s) => s.id);
 
 describe('listedStories', () => {
+  it('puts every story with an order before every story without one', () => {
+    const stories = [story('a'), story('z', { order: 99 })];
+    expect(ids(listedStories(stories, 'localhost'))).toEqual(['z', 'a']);
+  });
+
+  it('puts a lower order before a higher one', () => {
+    const stories = [story('a', { order: 2 }), story('b', { order: -1 }), story('c', { order: 1 })];
+    expect(ids(listedStories(stories, 'localhost'))).toEqual(['b', 'c', 'a']);
+  });
+
+  it('orders ties, and stories without an order, by file name', () => {
+    const stories = [
+      story('job'),
+      story('haftarah'),
+      story('tour', { order: 1 }),
+      story('shalshelet', { order: 1 }),
+    ];
+    expect(ids(listedStories(stories, 'localhost'))).toEqual([
+      'shalshelet',
+      'tour',
+      'haftarah',
+      'job',
+    ]);
+  });
+
   it('hides drafts on the live site', () => {
+    const stories = [story('tour'), story('sample', { draft: true })];
     for (const host of ['torahmap.org', 'www.torahmap.org']) {
-      expect(listedStories(index, host).map((s) => s.id)).toEqual(['tour', 'job']);
+      expect(ids(listedStories(stories, host))).toEqual(['tour']);
     }
   });
 
-  it('lists drafts everywhere else, in index order', () => {
+  it('lists drafts everywhere else', () => {
+    const stories = [story('tour'), story('sample', { draft: true })];
     for (const host of ['localhost', 'torahmap-pr-12.danyelf.workers.dev', '']) {
-      expect(listedStories(index, host).map((s) => s.id)).toEqual(['tour', 'sample', 'job']);
+      expect(ids(listedStories(stories, host))).toEqual(['sample', 'tour']);
     }
   });
 });
 
 describe('storyToOpen', () => {
-  const listed = [{ id: 'tour' }, { id: 'job' }];
-  it('opens the story a link names', () => expect(storyToOpen(listed, 'job')).toBe('job'));
+  const listed = [story('tour'), story('job')];
+  it('opens the story a link names', () => expect(storyToOpen(listed, 'job').id).toBe('job'));
   it('opens the first story when a link names none', () =>
-    expect(storyToOpen(listed, null)).toBe('tour'));
+    expect(storyToOpen(listed, null).id).toBe('tour'));
   it('opens the first story when a link names one not listed', () =>
-    expect(storyToOpen(listed, 'abraham_call')).toBe('tour'));
-});
-
-describe('storyCache', () => {
-  const data = { stops: [] };
-
-  it('loads each story once', async () => {
-    const load = vi.fn(async () => data);
-    const cache = storyCache(load);
-    await cache.get('tour');
-    await cache.get('tour');
-    expect(load).toHaveBeenCalledTimes(1);
-  });
-
-  it('tries again after a load fails', async () => {
-    const load = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(data);
-    const cache = storyCache(load);
-    await expect(cache.get('tour')).rejects.toThrow('offline');
-    await expect(cache.get('tour')).resolves.toBe(data);
-  });
-
-  it('loads a story again once forgotten', async () => {
-    const load = vi.fn(async () => data);
-    const cache = storyCache(load);
-    await cache.get('tour');
-    cache.forget('tour');
-    await cache.get('tour');
-    expect(load).toHaveBeenCalledTimes(2);
-  });
+    expect(storyToOpen(listed, 'abraham_call').id).toBe('tour'));
 });

@@ -1,33 +1,41 @@
 # More than one story
 
 **Date:** 2026-09-27
-**Status:** Designed, not built.
-**Issues:** #235, the first half of #232. Step 4 of
+**Status:** Built in #265.
+**Issues:** #235, the first half of #232, #264. Step 4 of
 [Where everything lives](2026-09-23-ui-information-hierarchy-design.md).
 
-## Files and the index
+## The story files
 
-The tour moves from `public/data/story.md` to `public/data/stories/tour.md`,
-unchanged apart from a `title:` and `description:` in its frontmatter — the
-same shape as the drafts in #254.
+Each story is a Markdown file in `src/stories/`, and its file name is the id
+the URL uses. The tour moves there from `public/data/story.md`, unchanged apart
+from its frontmatter — the same shape as the drafts in #254:
 
-`public/data/stories/index.json` lists the stories in menu order:
-
-```json
-[{ "id": "tour" }, { "id": "test", "draft": true }]
+```
+---
+title: The Guided Tour
+description: Introduces the Torahmap by following how Abraham is remembered across the Tanakh.
+order: 1
+---
 ```
 
-The first non-draft entry is what a bare `torahmap.org` opens. Drafts are
-listed everywhere except on torahmap.org, decided by hostname at startup.
-Drafts exist so Danyel can see a story while writing it; nothing is done to
-make a draft's link meaningful or shareable on the live site.
+Every story is built into the page. A story is about 5 KB, under 2 KB
+compressed, so a dozen of them add about 20 KB to a page whose verse text alone
+is 8.8 MB, and in return there is no second fetch before the story appears and
+nothing to fail when switching stories.
 
-A short draft story with two or three stops lives beside the tour, so the list
-can be tested with more than one entry. It is fetchable on torahmap.org by path,
-but nothing links to it.
+**Order.** A story with an `order` comes before any story without one; a lower
+`order` comes before a higher one; ties, and stories without an order, go by
+file name. The first story listed is what a bare `torahmap.org` opens.
 
-Only the story the URL names is fetched on load. The others are fetched when
-the Stories panel opens, for their titles.
+**Drafts.** `draft: true` lists a story everywhere except on torahmap.org,
+decided by hostname at startup. Drafts exist so Danyel can see a story while
+writing it; nothing is done to make a draft's link meaningful or shareable on
+the live site, and drafts are in the live site's code even though it does not
+list them.
+
+A short draft story with two stops, `sample.md`, lives beside the tour so the
+list can be tested with more than one entry.
 
 ## The URL
 
@@ -46,7 +54,7 @@ as today.
 
 ## The Stories panel and the menu
 
-One card per listed story, in index order: title, then description.
+One card per listed story, in menu order: title, then description.
 
 - A story read this visit also shows "Stop 7 of 21: *label*", with
   **Continue** and **Start from the beginning** — today's card.
@@ -58,19 +66,24 @@ Opening a story from a card enters reading mode the way Continue does today,
 with the same camera move, and replaces the column's text with that story's.
 
 The menu's first item continues the story last read, and names it:
-"Continue *The guided tour* · 7/21". Before any story has been read it offers
+"Continue *The Guided Tour* 7/21". Before any story has been read it offers
 the first listed one at its first stop.
+
+Accepted as they are: the current story's card offers Continue at stop 1 when
+the page opened on an explore link, though the reader never read it; and the
+page-view event records the story the link named, not the one that opened.
 
 Reading mode is otherwise unchanged.
 
 ## Code
 
-- `src/scrollytelling/storyIndex.ts` (new) reads the index and decides what is
-  listed — a pure function of the entries and the hostname.
-- `storyParser.ts` reads `title` and `description` from the frontmatter it
-  already parses for `easing`.
-- `loadStoryData` takes a story id.
+- `src/stories/index.ts` gathers every `.md` beside it at build time.
+- `src/scrollytelling/storyIndex.ts` decides what is listed, and in what order —
+  a pure function of the stories and the hostname.
+- `storyParser.ts` reads `title`, `description`, `order` and `draft` from the
+  frontmatter it already parses for `easing`.
 - In `main.ts`, `heldStop` becomes the current story's id and a stop per story.
+  An edited story reloads in place on the dev server.
 - Choosing a story from a card goes through the same routine a
   `#story=…&stop=…` link does.
 
@@ -85,15 +98,16 @@ the tour.
 
 ## Tests
 
-In vitest: the listing rule; every `.md` in `public/data/stories/` is in the
-index and every entry has a file; the URL's `story` and `stop` both ways; the
-fallbacks for an unknown story or stop; a place kept per story.
+In vitest: the order and draft rules; every story has a title and description,
+and an `order` that reads as a number; the URL's `story` and `stop` both ways;
+the fallbacks for an unknown story or stop.
 
-In the layout tests: the Stories panel with the tour and the test story, and
-the menu with its longer first item at phone width.
+In the layout tests: the Stories panel with the tour and the sample, the second
+card scrolled into view on a phone, the menu with its longer first item, and
+the sample story itself.
 
 ## Alongside
 
 PR #260 (cross-fade) also changes `main.ts` and the story code; whichever lands
-second rebases. The tour's text and stops are moved, not edited, so the drafts
-in #254 are unaffected.
+second rebases. The drafts in #254 move from `public/data/stories/` to
+`src/stories/` and gain `draft: true` when they are merged in.

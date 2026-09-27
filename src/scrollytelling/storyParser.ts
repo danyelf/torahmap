@@ -1,19 +1,23 @@
 import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
 import { parseVerseFromUrl } from '../urlState';
 
-// A story is optional YAML frontmatter (`title`, `description`, `easing`)
-// followed by stops, each opened by `<!-- stop: id | camera: ... | overlay: ... | key: value -->`
-// and a `# Title` heading; params other than camera/overlay/easing/verse/zoom
-// become that stop's overlay params. See public/data/stories/ for examples.
+// A story is optional YAML frontmatter (`title`, `description`, `order`,
+// `draft`, `easing`) followed by stops, each opened by
+// `<!-- stop: id | camera: ... | overlay: ... | key: value -->` and a `# Title`
+// heading; params other than camera/overlay/easing/verse/zoom become that
+// stop's overlay params. See src/stories/ for examples.
 export function parseStoryMarkdown(markdown: string): StoryData {
   const front = parseFrontmatter(markdown);
   const stops = parseStops(stripFrontmatter(markdown));
   const easing = front.easing as EasingName | undefined;
+  const order = Number(front.order);
   return {
     stops,
     defaults: easing ? { easing } : undefined,
     title: front.title,
     description: front.description,
+    order: front.order !== undefined && Number.isFinite(order) ? order : undefined,
+    draft: front.draft === 'true',
   };
 }
 

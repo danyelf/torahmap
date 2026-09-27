@@ -20,6 +20,18 @@ describe('story frontmatter', () => {
     expect(story.defaults?.easing).toBe('linear');
   });
 
+  it('reads the order as a number and a draft as true', () => {
+    const story = parseStoryMarkdown('---\norder: 2.5\ndraft: true\n---\n');
+    expect(story.order).toBe(2.5);
+    expect(story.draft).toBe(true);
+  });
+
+  it('gives no order for a value that is not a number, and is not a draft unless it says so', () => {
+    const story = parseStoryMarkdown('---\norder: first\ndraft: no\n---\n');
+    expect(story.order).toBeUndefined();
+    expect(story.draft).toBe(false);
+  });
+
   it('leaves them out when the story has no frontmatter', () => {
     const story = parseStoryMarkdown('<!-- stop: a | camera: Job -->\nText.');
     expect(story.title).toBeUndefined();

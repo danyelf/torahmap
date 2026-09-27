@@ -1,6 +1,7 @@
 ---
 title: A Short Sample
 description: Two stops, for trying the list of stories. Never shown on torahmap.org.
+draft: true
 ---
 
 <!-- stop: book | camera: Job | overlay: verse-length -->

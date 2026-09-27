@@ -9,40 +9,26 @@ import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { parseVerseFromUrl } from '../../urlState';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
-const storiesDir = path.join(dataDir, 'stories');
-const index: { id: string }[] = JSON.parse(
-  fs.readFileSync(path.join(storiesDir, 'index.json'), 'utf-8'),
-);
-const readMarkdown = (id: string): string =>
-  fs.readFileSync(path.join(storiesDir, `${id}.md`), 'utf-8');
+const storiesDir = path.join(process.cwd(), 'src', 'stories');
+const files = fs.readdirSync(storiesDir).filter((f) => f.endsWith('.md'));
 
 registerAllOverlays();
 
-describe('stories/index.json', () => {
-  it('lists every story in the directory, and only those', () => {
-    const files = fs
-      .readdirSync(storiesDir)
-      .filter((f) => f.endsWith('.md'))
-      .map((f) => f.replace(/\.md$/, ''))
-      .sort();
-    expect(index.map((s) => s.id).sort()).toEqual(files);
-  });
-
-  it('gives every story a title and a description', () => {
-    const missing = index
-      .filter(({ id }) => {
-        const story = parseStoryMarkdown(readMarkdown(id));
-        return !story.title || !story.description;
-      })
-      .map(({ id }) => id);
-    expect(missing).toEqual([]);
-  });
-});
-
-describe.each(index.map((s) => s.id))('%s.md', (id) => {
-  const markdown = readMarkdown(id);
-  const { stops } = parseStoryMarkdown(markdown);
+describe.each(files)('%s', (file) => {
+  const markdown = fs.readFileSync(path.join(storiesDir, file), 'utf-8');
+  const story = parseStoryMarkdown(markdown);
+  const { stops } = story;
   const comments = [...markdown.matchAll(/<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g)];
+
+  it('has a title and a description', () => {
+    expect(story.title).toBeTruthy();
+    expect(story.description).toBeTruthy();
+  });
+
+  it('writes its order, if it has one, as a number', () => {
+    const written = markdown.match(/^---\s*\n[\s\S]*?^order:\s*(.*)$/m)?.[1];
+    if (written !== undefined) expect(story.order).toBe(Number(written));
+  });
 
   it('writes every setting as key: value', () => {
     const unread = comments.flatMap(([, id, settings]) =>

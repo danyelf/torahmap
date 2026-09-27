@@ -118,18 +118,9 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
-import {
-  loadStoryData,
-  renderStoryPanel,
-  resolveStops,
-  stopLabel,
-} from './scrollytelling/storyPanel';
-import {
-  listedStories,
-  loadStoryIndex,
-  storyCache,
-  storyToOpen,
-} from './scrollytelling/storyIndex';
+import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
+import { listedStories, storyToOpen, type Story } from './scrollytelling/storyIndex';
+import { STORIES } from './stories/index.ts';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { blendColorArrays } from './scrollytelling/colorBlending';
@@ -155,7 +146,7 @@ import {
   type ExitHow,
   type ReturnHow,
 } from './telemetry/driverChange.ts';
-import type { InterpolatedState, ResolvedStoryStop, StoryData } from './scrollytelling/types';
+import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { summaryHtml } from './panelSummary.ts';
 import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
 import './styles/map-title.css';
@@ -424,7 +415,7 @@ async function main(): Promise<void> {
       droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: storyData.title ?? storyId });
     }
     const opened = frame.open !== previous?.open;
-    if (opened && frame.open === 'stories') void drawStories();
+    if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(getAllOverlays());
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
@@ -1138,14 +1129,11 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  const listed = listedStories(await loadStoryIndex(), location.hostname);
-  const stories = storyCache(loadStoryData);
-  const story = (id: string): Promise<StoryData> => stories.get(id);
+  let listed = listedStories(STORIES, location.hostname);
   // The stop each story was left at, for this visit.
   const places = new Map<string, number>();
 
-  let storyId = storyToOpen(listed, parseUrlState().story ?? null);
-  let storyData = await story(storyId);
+  let { id: storyId, data: storyData } = storyToOpen(listed, parseUrlState().story ?? null);
   const resolveStory = (): ResolvedStoryStop[] =>
     resolveStops(storyData.stops, initialCamera, verses, mapFocus(), {
       width: canvas.clientWidth,
@@ -1171,22 +1159,20 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   });
 
-  /** Makes `id` the current story, remembering where the one it replaces was left. */
-  async function switchStory(id: string): Promise<void> {
-    if (id === storyId) return;
+  /** Makes `next` the current story, remembering where the one it replaces was left. */
+  function switchStory(next: Story): void {
+    if (next.id === storyId) return;
     places.set(storyId, storyStopIndex());
-    const next = await story(id);
-    storyId = id;
-    storyData = next;
+    storyId = next.id;
+    storyData = next.data;
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     lastSyncedStopId = null;
   }
 
-  async function reloadStory(): Promise<void> {
+  function reloadStory(): void {
     const position = storyPosition();
-    stories.forget(storyId);
-    storyData = await story(storyId);
+    ({ id: storyId, data: storyData } = storyToOpen(listed, storyId));
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     setStoryPosition(position);
@@ -1196,10 +1182,12 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   }
 
+  // An edited story reloads in place on the dev server, keeping the reader's scroll.
   if (import.meta.hot) {
-    import.meta.hot.on('story-update', ({ id }: { id: string }) => {
-      if (id === storyId) reloadStory();
-      else stories.forget(id);
+    import.meta.hot.accept('./stories/index.ts', (module) => {
+      if (!module) return;
+      listed = listedStories(module.STORIES as Story[], location.hostname);
+      reloadStory();
     });
   }
 
@@ -1253,39 +1241,31 @@ async function main(): Promise<void> {
   }
 
   /** Opens a story from the Stories panel: where it was left this visit, or its start. */
-  async function readStory(id: string, fromStart: boolean): Promise<void> {
+  function readStory(id: string, fromStart: boolean): void {
     const left = id === storyId ? storyStopIndex() : (places.get(id) ?? 0);
-    await switchStory(id);
+    switchStory(storyToOpen(listed, id));
     readerOpensStory(fromStart ? 0 : left);
   }
 
-  /**
-   * Fills the Stories panel once every listed story has been read for its
-   * title. A story that fails to load is left out; opening the panel again retries it.
-   */
-  async function drawStories(): Promise<void> {
-    const loaded = await Promise.allSettled(
-      listed.map(async ({ id, draft }): Promise<StoryCard> => {
-        const data = await story(id);
-        const at = id === storyId ? storyStopIndex() : places.get(id);
-        return {
-          id,
-          draft: !!draft,
-          title: data.title ?? id,
-          description: data.description ?? '',
-          place:
-            at === undefined
-              ? null
-              : {
-                  number: stopAt(data.stops, at).number,
-                  total: data.stops.length,
-                  label: stopLabel(data.stops[at]),
-                },
-        };
-      }),
-    );
-    const cards = loaded.flatMap((card) => (card.status === 'fulfilled' ? [card.value] : []));
-    if (frame.open === 'stories') storiesPanel.innerHTML = storiesHtml(cards);
+  function drawStories(): void {
+    const cards = listed.map(({ id, data }): StoryCard => {
+      const at = id === storyId ? storyStopIndex() : places.get(id);
+      return {
+        id,
+        draft: !!data.draft,
+        title: data.title ?? id,
+        description: data.description ?? '',
+        place:
+          at === undefined
+            ? null
+            : {
+                number: stopAt(data.stops, at).number,
+                total: data.stops.length,
+                label: stopLabel(data.stops[at]),
+              },
+      };
+    });
+    storiesPanel.innerHTML = storiesHtml(cards);
   }
 
   // Delegated: the menus and panels are redrawn as they open.
@@ -1298,7 +1278,7 @@ async function main(): Promise<void> {
     if (action === 'open-story') {
       const button = target.closest<HTMLElement>('[data-action]')!;
       const card = button.closest<HTMLElement>('[data-story]')!;
-      return void readStory(card.dataset.story!, button.dataset.from === 'start');
+      return readStory(card.dataset.story!, button.dataset.from === 'start');
     }
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
@@ -1504,13 +1484,13 @@ async function main(): Promise<void> {
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  async function restoreFromUrl(): Promise<void> {
+  function restoreFromUrl(): void {
     const next = resolveViewState(
       parseUrlState((id) => getOverlay(id)?.urlParams),
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
-    if (next.mode === 'story') await switchStory(storyToOpen(listed, next.story));
+    if (next.mode === 'story') switchStory(storyToOpen(listed, next.story));
     applyingExternalState(() => applyViewState(next));
     // The link moved the camera, not the reader.
     markViewSettled();
@@ -1548,7 +1528,7 @@ async function main(): Promise<void> {
   }
 
   if (window.location.hash) {
-    await restoreFromUrl();
+    restoreFromUrl();
   }
 
   // A link to a story stop always opens the story.
