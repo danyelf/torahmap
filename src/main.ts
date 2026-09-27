@@ -3,6 +3,7 @@
 declare const __GIT_BRANCH__: string;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
+import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
@@ -10,8 +11,20 @@ import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
-import { initHelp } from './help.ts';
-import { initHebrewToggle } from './hebrewDisplay.ts';
+import {
+  DRAG_PX,
+  STORY,
+  exploreFrame,
+  nextFrame,
+  type Frame,
+  type FrameEvent,
+  PANEL_TITLES,
+  isPanel,
+} from './frame.ts';
+import { menuHtml, type StoryPlace } from './menu.ts';
+import { storiesHtml } from './storiesPanel.ts';
+import { aboutHtml } from './aboutPanel.ts';
+import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
   configureAnalytics,
   trackOverlaySwitch,
@@ -138,11 +151,10 @@ import {
 } from './telemetry/driverChange.ts';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { summaryHtml } from './panelSummary.ts';
-import { sheetAfterDrag, sheetAfterTap, type Sheet } from './sheet.ts';
 import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
 import './styles/map-title.css';
 import './styles/zoom-buttons.css';
-import './styles/right-panel.css';
+import './styles/frame.css';
 import './styles/verse-popup.css';
 
 declare global {
@@ -200,6 +212,17 @@ async function main(): Promise<void> {
     canvas.height = height * dpr;
   }
   resizeCanvas();
+
+  // Where the canvas starts, read when it resizes rather than per pointer
+  // event: reading it then forces a layout on every hover and drag.
+  let canvasOrigin = canvas.getBoundingClientRect();
+  new ResizeObserver(() => {
+    canvasOrigin = canvas.getBoundingClientRect();
+  }).observe(canvas);
+
+  /** Where a pointer is on the map: the canvas need not start at the window's corner. */
+  const onMap = (e: { clientX: number; clientY: number }): { x: number; y: number } =>
+    mapPoint(e.clientX, e.clientY, canvasOrigin);
 
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext.gl, verses, dpr);
@@ -316,7 +339,7 @@ async function main(): Promise<void> {
     }
   }
 
-  const camera = createCamera(mapViewport(), bounds, window.innerWidth);
+  const camera = createCamera(mapViewport(), bounds);
 
   let pinnedVerse: TanakhLayout | null = null;
 
@@ -330,24 +353,25 @@ async function main(): Promise<void> {
 
   const storyContent = document.getElementById('story-content')!;
 
-  const panelControls = document.getElementById('panel-controls')!;
-  const controlsToggle = document.getElementById('controls-toggle')!;
-  const controlsSummary = document.getElementById('controls-summary')!;
-  const storyStrip = document.getElementById('story-strip')!;
-  const storyStripTitle = document.getElementById('story-strip-title')!;
+  const panel = document.getElementById('panel')!;
+  const droppedMenu = document.getElementById('menu')!;
+  const storyProgress = document.getElementById('story-progress')!;
+  const storyProgressFill = document.getElementById('story-progress-fill')!;
+  const toolsTitle = document.getElementById('tools-title')!;
+  const panelBody = document.getElementById('panel-body')!;
+  const storiesPanel = document.getElementById('stories-panel')!;
+  const aboutPanel = document.getElementById('about-panel')!;
+  const mapLegend = document.getElementById('map-legend')!;
+  const mapLegendSummary = mapLegend.querySelector<HTMLElement>('.map-legend-summary')!;
+  const overlayDescription = document.getElementById('overlay-description')!;
+  const menuToggle = document.getElementById('menu-toggle')!;
 
-  // The panel is an accordion: the story open and the controls folded to one
-  // line, or the controls open and the story folded to its title. With the
-  // story folded nothing moves the map but the reader.
-  let storyOpen = true;
+  // What the panel shows (src/frame.ts); the story is open while its mode is 'story'.
+  let frame: Frame = STORY;
 
-  // The stop the story is at while it cannot be scrolled there: folded, it has
-  // no height, and opening, it has not yet grown to its full height. Null while
-  // its scroll says where it is.
+  // The stop the story is at while it cannot be scrolled there: hidden, it has
+  // no height. Null while its scroll says where it is.
   let heldStop: number | null = null;
-
-  // Cancels an opening story's wait to grow before it starts; see openStory.
-  let cancelOpening: (() => void) | null = null;
 
   function storyStopIndex(): number {
     if (heldStop !== null) return heldStop;
@@ -355,35 +379,97 @@ async function main(): Promise<void> {
     return resolvedStops.indexOf(state.t > 0.5 ? state.toStop : state.fromStop);
   }
 
-  function setStoryOpen(open: boolean): void {
-    if (!open && storyOpen) {
-      cancelOpening?.();
-      heldStop = storyStopIndex();
-      storyStripTitle.textContent = stopLabel(resolvedStops[heldStop]) || `Stop ${heldStop + 1}`;
-    }
-    storyOpen = open;
-    document.body.classList.toggle('story-folded', !open);
-    controlsToggle.setAttribute('aria-expanded', String(!open));
-    storyStrip.setAttribute('aria-expanded', String(open));
-    updateInert();
-    updateSummaryShown();
-  }
-
-  // Only what is on screen can take focus or a click: the open section, and
-  // nothing but the summary line while the sheet is lowered.
-  function updateInert(): void {
-    panelControls.inert = sheet === 'down' || storyOpen;
-    storyContent.inert = sheet === 'down' || !storyOpen;
-    storyStrip.inert = sheet === 'down';
-    const footer = document.getElementById('panel-footer');
-    if (footer) footer.inert = sheet === 'down';
-  }
-
-  // On a phone the panel is a sheet, lowered to its summary line to give the
-  // map the screen, or tall for reading and searching. Its height never
-  // changes which section is open.
   const phoneLayout = window.matchMedia('(max-width: 768px)');
-  let sheet: Sheet = 'normal';
+
+  /** Opens or closes the story; closing it lands on `exploring`. */
+  function setStoryOpen(open: boolean, exploring = exploreFrame(phoneLayout.matches)): void {
+    if (!open && frame.mode === 'story') heldStop = storyStopIndex();
+    const previous = frame;
+    if (open) frame = STORY;
+    else if (frame.mode === 'story') frame = exploring;
+    applyFrame(previous);
+  }
+
+  function storyPlace(): StoryPlace {
+    return { number: stopAt(resolvedStops, storyStopIndex()).number, total: resolvedStops.length };
+  }
+
+  /**
+   * Puts the frame on the page. The stylesheet reads the attributes; the menu
+   * and the panels are drawn as they open, and left alone while they stay open.
+   */
+  function applyFrame(previous: Frame | null = null): void {
+    const body = document.body;
+    body.dataset.mode = frame.mode;
+    if (frame.open) body.dataset.open = frame.open;
+    else delete body.dataset.open;
+    body.toggleAttribute('data-menu', frame.menu);
+    body.toggleAttribute('data-full', frame.full);
+    const focusInMenu = droppedMenu.contains(document.activeElement);
+    droppedMenu.hidden = !frame.menu;
+    menuToggle.setAttribute('aria-expanded', String(frame.menu));
+    storyContent.inert = frame.menu;
+    panelBody.inert = frame.menu;
+    toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
+    if (frame.menu && !previous?.menu) droppedMenu.innerHTML = menuHtml(storyPlace());
+    const opened = frame.open !== previous?.open;
+    if (opened && frame.open === 'stories') {
+      storiesPanel.innerHTML = storiesHtml({
+        ...storyPlace(),
+        label: stopLabel(resolvedStops[storyStopIndex()]),
+      });
+    }
+    if (opened && frame.open === 'about') {
+      aboutPanel.innerHTML = aboutHtml(getAllOverlays());
+      bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
+    }
+    measureSheet();
+    // Hidden, the menu would drop focus to the top of the page.
+    if (focusInMenu && !frame.menu) menuToggle.focus();
+  }
+
+  // An exploring phone's sheet is as tall as its content, or gone with nothing
+  // open; the map, the legend and the verse popup make room for it. Full
+  // height grows over the map instead.
+  function measureSheet(): void {
+    if (!phoneLayout.matches || frame.full) return;
+    document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
+  }
+  new ResizeObserver(measureSheet).observe(panel);
+
+  // On a phone the verse popup stacks above the legend, which grows a row for
+  // each thing on the map.
+  new ResizeObserver(() => {
+    const height = mapLegend.offsetHeight;
+    document.documentElement.style.setProperty('--legend-shown', `${height ? height + 8 : 0}px`);
+  }).observe(mapLegend);
+
+  const sameFrame = (a: Frame, b: Frame): boolean =>
+    a.mode === b.mode && a.open === b.open && a.menu === b.menu && a.full === b.full;
+
+  function setFrame(next: Frame): void {
+    // Every touch on the map arrives here; most change nothing, and redrawing
+    // an open panel mid-click would lose what was clicked.
+    if (sameFrame(next, frame)) return;
+    const previous = frame;
+    frame = next;
+    applyFrame(previous);
+  }
+
+  /** Every control that changes the panel comes through here. */
+  function dispatch(event: FrameEvent): void {
+    const next = nextFrame(frame, event, phoneLayout.matches);
+    if (frame.mode === 'explore' && next.mode === 'story') {
+      readerOpensStory();
+      return;
+    }
+    if (frame.mode === 'story' && next.mode === 'explore') leaveStory(next);
+    setFrame(next);
+    // Opened from the keyboard or not, the ☰ hands focus to the menu's first item.
+    if (event.type === 'menu' && frame.menu) {
+      droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
+    }
+  }
 
   // On a phone the stops sit side by side and a swipe moves one; elsewhere
   // they stack and scroll. Either way the story is driven by how far along
@@ -410,26 +496,6 @@ async function main(): Promise<void> {
     );
   }
 
-  function setSheet(next: Sheet): void {
-    sheet = next;
-    document.body.classList.toggle('sheet-down', next === 'down');
-    document.body.classList.toggle('sheet-tall', next === 'tall');
-    updateInert();
-    updateSummaryShown();
-  }
-  updateInert();
-
-  /**
-   * On a phone, "No overlay" reads as the first thing to do, so while the
-   * story drives with no overlay on the line is left out. It comes back once
-   * the reader takes the map.
-   */
-  function updateSummaryShown(): void {
-    const quiet =
-      currentOverlayId === 'none' && storyOpen && sheet !== 'down' && driver.by !== 'reader';
-    document.body.classList.toggle('no-overlay-quiet', quiet);
-  }
-
   // Off until the page view is sent: who drives when the page opens is part of it.
   let recordingDriver = false;
 
@@ -437,7 +503,6 @@ async function main(): Promise<void> {
   function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
-    updateSummaryShown();
     if (!event) return;
     const stop = stopAt(resolvedStops, storyStopIndex());
     // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
@@ -466,7 +531,7 @@ async function main(): Promise<void> {
 
   /** Anything the reader does that changes what the map shows hands them the map. */
   function takeOver(how: ExitHow): void {
-    if (!storyOpen || driver.by === 'reader') return;
+    if (frame.mode !== 'story' || driver.by === 'reader') return;
     handOver(readerTakesOver(storyPosition()), how);
     applyOverlay();
   }
@@ -572,7 +637,8 @@ async function main(): Promise<void> {
       e.preventDefault();
       cancelCameraGlide();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
-      zoomAt(zoomFactor, e.clientX, e.clientY);
+      const p = onMap(e);
+      zoomAt(zoomFactor, p.x, p.y);
       debouncedCameraSettled();
     },
     { passive: false },
@@ -595,7 +661,8 @@ async function main(): Promise<void> {
     'touchstart',
     (e: TouchEvent) => {
       for (const touch of e.changedTouches) {
-        trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
+        const p = onMap(touch);
+        trackTouch(touchState, touch.identifier, p.x, p.y);
       }
       if (touchState.activeTouches.size === 2) {
         touchState.lastPinchDistance = getPinchDistance(touchState);
@@ -608,7 +675,8 @@ async function main(): Promise<void> {
     'touchmove',
     (e: TouchEvent) => {
       for (const touch of e.changedTouches) {
-        trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY);
+        const p = onMap(touch);
+        trackTouch(touchState, touch.identifier, p.x, p.y);
       }
 
       if (touchState.activeTouches.size >= 2) {
@@ -638,29 +706,32 @@ async function main(): Promise<void> {
   });
 
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-    // Any touch on a phone's map says the reader wants the map.
-    if (phoneLayout.matches && sheet !== 'down') setSheet('down');
+    // A touch on the map lifts the menu and folds a phone's sheet.
+    dispatch({ type: 'map-touched' });
     // A hand on the map outranks a glide that is still running.
     cancelCameraGlide();
-    startDrag(mouseState, e.clientX, e.clientY);
+    const p = onMap(e);
+    startDrag(mouseState, p.x, p.y);
     canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
-    pointerDownPos = { x: e.clientX, y: e.clientY, time: Date.now() };
+    pointerDownPos = { x: p.x, y: p.y, time: Date.now() };
   });
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
     if (mouseState.isDragging && touchState.activeTouches.size < 2) {
-      const dx = e.clientX - mouseState.dragStart.x;
-      const dy = e.clientY - mouseState.dragStart.y;
+      const p = onMap(e);
+      const dx = p.x - mouseState.dragStart.x;
+      const dy = p.y - mouseState.dragStart.y;
       if (dx !== 0 || dy !== 0) takeOver('takeover');
       camera.x -= dx / camera.zoom;
       camera.y -= dy / camera.zoom;
-      mouseState.dragStart = { x: e.clientX, y: e.clientY };
+      mouseState.dragStart = { x: p.x, y: p.y };
       render();
     }
   });
 
   canvas.addEventListener('pointerup', (e: PointerEvent) => {
+    const p = onMap(e);
     const wasDragging = mouseState.isDragging;
     if (wasDragging) {
       stopDrag(mouseState);
@@ -668,12 +739,12 @@ async function main(): Promise<void> {
     }
 
     if (pointerDownPos) {
-      const dx = Math.abs(e.clientX - pointerDownPos.x);
-      const dy = Math.abs(e.clientY - pointerDownPos.y);
+      const dx = Math.abs(p.x - pointerDownPos.x);
+      const dy = Math.abs(p.y - pointerDownPos.y);
       const duration = Date.now() - pointerDownPos.time;
 
       if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
-        const verse = findItemAtPoint(verses, camera, mapViewport(), e.clientX, e.clientY);
+        const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
         if (verse) {
           if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
             unpinVerse();
@@ -688,7 +759,7 @@ async function main(): Promise<void> {
     }
 
     if (wasDragging) {
-      const verse = findItemAtPoint(verses, camera, mapViewport(), e.clientX, e.clientY);
+      const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
       } else {
@@ -746,9 +817,10 @@ async function main(): Promise<void> {
    * for a discrete step rather than a pan or a scroll.
    */
   function syncUrl(push: boolean = false): void {
-    const state: UrlState = storyOpen
-      ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
-      : buildCurrentUrlState();
+    const state: UrlState =
+      frame.mode === 'story'
+        ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
+        : buildCurrentUrlState();
     updateUrl(state, push);
   }
 
@@ -794,8 +866,9 @@ async function main(): Promise<void> {
     if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
     if (!mouseState.isDragging) {
-      lastPointerPosition = { x: e.clientX, y: e.clientY };
-      const verse = findItemAtPoint(verses, camera, mapViewport(), e.clientX, e.clientY);
+      const p = onMap(e);
+      lastPointerPosition = { x: p.x, y: p.y };
+      const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
       const previousHover = mouseState.hoveredVerse;
       setHoveredVerse(mouseState, verse);
 
@@ -822,6 +895,10 @@ async function main(): Promise<void> {
   });
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && frame.menu) {
+      dispatch({ type: 'menu' });
+      return;
+    }
     if (!pinnedVerse) return;
 
     if (e.key === 'Escape') {
@@ -894,11 +971,14 @@ async function main(): Promise<void> {
     }
     renderOverlayControls();
     renderOverlayLegend();
-    controlsSummary.innerHTML = summaryHtml(
-      currentOverlay?.name,
-      currentOverlay?.summary?.(currentSettings()) ?? {},
-    );
-    updateSummaryShown();
+    overlayDescription.textContent = currentOverlay?.description ?? '';
+    mapLegend.hidden = !currentOverlay;
+    if (currentOverlay) {
+      mapLegendSummary.innerHTML = summaryHtml(
+        currentOverlay.name,
+        currentOverlay.summary?.(currentSettings()) ?? {},
+      );
+    }
     refreshVersePopup();
   }
 
@@ -1024,19 +1104,15 @@ async function main(): Promise<void> {
     callbacks: {
       // Most hits are off screen, so travel to the verse as well as pinning it.
       onVerseClick: (verse: TanakhLayout) => {
-        // A tall sheet would hide the glide.
-        if (sheet === 'tall') setSheet('normal');
+        // A full-height sheet would hide the glide.
+        if (frame.full) setFrame({ ...frame, full: false });
         pinVerse(verse);
         glideToVerse(verse);
       },
     },
   });
 
-  const panelFooter = document.getElementById('panel-footer');
-  if (panelFooter) {
-    initHebrewToggle(panelFooter);
-    initHelp(panelFooter);
-  }
+  applyHebrewChoice();
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
 
@@ -1064,13 +1140,15 @@ async function main(): Promise<void> {
     });
   let resolvedStops = resolveStory();
   let stopElements = renderStoryPanel(storyContent, storyData.stops);
+  applyFrame();
 
   // Crossing into or out of phone width turns the story from a column into a
   // row, or back, and moves where it centres verses; keep the reader's stop.
   // By the time this runs the story is laid out on its new axis, so its scroll
   // no longer says which stop it was at; the last stop synced does.
   phoneLayout.addEventListener('change', () => {
-    if (!phoneLayout.matches) setSheet('normal');
+    if (!phoneLayout.matches) document.documentElement.style.removeProperty('--sheet-shown');
+    setFrame(nextFrame(frame, { type: 'layout-changed' }, phoneLayout.matches));
     resolvedStops = resolveStory();
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
@@ -1111,138 +1189,102 @@ async function main(): Promise<void> {
     }
   }
 
-  function openControls(): void {
+  function leaveStory(exploring?: Frame): void {
     takeOver('fold');
-    setStoryOpen(false);
+    setStoryOpen(false, exploring);
     rememberStoryFolded(true);
     render();
     syncUrl(true);
   }
 
-  const rightPanel = document.getElementById('right-panel')!;
-
   /**
    * Open the story at `stop` and hand it the map, easing from the reader's view
-   * or cutting to the stop, as a link does. Where a stop sits depends on how
-   * tall the story is, so an opening story waits until it has grown; a fold or
-   * another open before then cancels the wait.
+   * or cutting to the stop, as a link does.
    */
   function openStory(stop: number, arrive: 'ease' | 'cut', how: ReturnHow): void {
-    cancelOpening?.();
-    const wasOpen = storyOpen;
     heldStop = stop;
     setStoryOpen(true);
-
-    const start = (): void => {
-      cancelOpening?.();
-      showStop(stopElements[stop]);
-      // Handed over while the stop is still held, so the return names `stop`
-      // rather than wherever the story's scroll has got to.
-      if (arrive === 'ease') {
-        handOver(beginEase(REJOIN_EASE_MS, performance.now()), how);
-      } else {
-        handOver(STORY_DRIVING, how);
-        // Make the next frame apply the stop's overlay, settings and pin.
-        lastSyncedStopId = null;
-      }
-      heldStop = null;
-      scheduleStoryFrame();
-    };
-    const growMs = parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue('--accordion-duration'),
-    );
-    if (wasOpen || !growMs) {
-      start();
-      return;
+    resolvedStops = resolveStory();
+    showStop(stopElements[stop]);
+    // Handed over while the stop is still held, so the return names `stop`
+    // rather than wherever the story's scroll has got to.
+    if (arrive === 'ease') {
+      handOver(beginEase(REJOIN_EASE_MS, performance.now()), how);
+    } else {
+      handOver(STORY_DRIVING, how);
+      // Make the next frame apply the stop's overlay, settings and pin.
+      lastSyncedStopId = null;
     }
-
-    const onTransitionEnd = (e: TransitionEvent): void => {
-      if (e.target === rightPanel && e.propertyName === 'grid-template-rows') start();
-    };
-    rightPanel.addEventListener('transitionend', onTransitionEnd);
-    // In case transitionend never comes, as when the transition is interrupted.
-    const fallback = setTimeout(start, growMs + 150);
-    cancelOpening = () => {
-      rightPanel.removeEventListener('transitionend', onTransitionEnd);
-      clearTimeout(fallback);
-      cancelOpening = null;
-    };
+    heldStop = null;
+    scheduleStoryFrame();
   }
 
-  function readerOpensStory(): void {
-    openStory(storyStopIndex(), 'ease', 'open');
+  function readerOpensStory(stop = storyStopIndex()): void {
+    openStory(stop, 'ease', 'open');
     rememberStoryFolded(false);
     syncUrl(true);
   }
 
-  // The line stands for the controls, so on a lowered sheet it raises the
-  // sheet with them open; the story is back through "Return to story".
-  controlsToggle.addEventListener('click', () => {
-    if (sheet === 'down') {
-      setSheet('normal');
-      if (storyOpen) openControls();
-    } else if (storyOpen) openControls();
-    else readerOpensStory();
-  });
-  storyStrip.addEventListener('click', readerOpensStory);
-  document.getElementById('return-to-story')?.addEventListener('click', readerOpensStory);
-  document.getElementById('leave-story')?.addEventListener('click', openControls);
-
-  // On a phone, a vertical drag on the grabber or the summary line moves the
-  // sheet one height, judged on release; the sheet does not follow the finger.
-  // A tap keeps each one's own meaning.
-  function resizesSheet(handle: HTMLElement): void {
-    let from: number | null = null;
-    let dragged = false;
-    handle.addEventListener('pointerdown', (e) => {
-      if (!phoneLayout.matches) return;
-      from = e.clientY;
-      // A touch that moved fires no click, so a drag's flag is cleared here too.
-      dragged = false;
-      handle.setPointerCapture(e.pointerId);
-    });
-    handle.addEventListener('pointerup', (e) => {
-      if (from === null) return;
-      const next = sheetAfterDrag(sheet, e.clientY - from);
-      from = null;
-      if (next) {
-        dragged = true;
-        setSheet(next);
-      }
-    });
-    handle.addEventListener('pointercancel', () => {
-      from = null;
-    });
-    // A drag still ends in a click; it must not also count as a tap.
-    handle.addEventListener(
-      'click',
-      (e) => {
-        if (!dragged) return;
-        dragged = false;
-        e.stopImmediatePropagation();
-      },
-      { capture: true },
-    );
+  // Delegated: the menus and panels are redrawn as they open.
+  function onChromeClick(e: MouseEvent): void {
+    const target = e.target as Element;
+    if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
+    if (target.closest('.story-leave')) return dispatch({ type: 'choose', panel: 'overlay' });
+    const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
+    if (action === 'story') return dispatch({ type: 'story' });
+    if (action === 'restart') return readerOpensStory(0);
+    // Menu items and the legend choose a panel; nothing else inside an open
+    // panel does.
+    const chooser = target.closest<HTMLElement>('.map-legend-row');
+    const panelName = action ?? chooser?.dataset.panel;
+    if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
+  }
+  for (const id of ['panel', 'menu-toggle', 'menu', 'map-legend']) {
+    document.getElementById(id)!.addEventListener('click', onChromeClick);
   }
 
+  // On a phone the grabber takes the open sheet to full height and back on a
+  // tap, and a vertical drag does the same or folds it, judged on release.
   const grabber = document.getElementById('sheet-grabber')!;
-  resizesSheet(grabber);
-  resizesSheet(controlsToggle);
-  grabber.addEventListener('click', () => setSheet(sheetAfterTap(sheet)));
-
-  // Typing into the controls wants room for the words and their results.
-  panelControls.addEventListener('focusin', (e) => {
-    if (phoneLayout.matches && e.target instanceof HTMLInputElement) setSheet('tall');
+  let dragFrom: number | null = null;
+  let dragged = false;
+  grabber.addEventListener('pointerdown', (e) => {
+    dragFrom = e.clientY;
+    dragged = false;
+    grabber.setPointerCapture(e.pointerId);
   });
-  // Delegated, because reloading the story redraws its stops.
-  storyContent.addEventListener('click', (e) => {
-    if ((e.target as Element).closest('.story-leave')) openControls();
+  grabber.addEventListener('pointerup', (e) => {
+    if (dragFrom === null) return;
+    const dy = e.clientY - dragFrom;
+    dragFrom = null;
+    if (Math.abs(dy) < DRAG_PX) return;
+    dragged = true;
+    dispatch({ type: 'drag', dy });
+  });
+  grabber.addEventListener('pointercancel', () => {
+    dragFrom = null;
+  });
+  grabber.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (dragged) {
+      dragged = false;
+      return;
+    }
+    dispatch({ type: 'drag', dy: frame.full ? DRAG_PX : -DRAG_PX });
+  });
+
+  // Typing wants room for the words and their results.
+  panel.addEventListener('focusin', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && (t.type === 'text' || t.type === 'search')) {
+      dispatch({ type: 'typing' });
+    }
   });
 
   // Scrolling is the only thing that moves the story on. While the reader
   // drives it only counts towards handing the map back.
   storyContent.addEventListener('scroll', () => {
-    if (!storyOpen || heldStop !== null) return;
+    if (frame.mode !== 'story' || heldStop !== null) return;
 
     if (driver.by === 'reader') {
       const next = storyScrolled(driver, storyPosition());
@@ -1302,17 +1344,17 @@ async function main(): Promise<void> {
   function arriveAtStop(stop: ResolvedStoryStop): void {
     syncStoryStopState(stop);
     lastSyncedStopId = stop.id;
-    trackStoryStop(
-      stop.id,
-      stopAt(resolvedStops, resolvedStops.indexOf(stop)).number,
-      resolvedStops.length,
-    );
+    const { number } = stopAt(resolvedStops, resolvedStops.indexOf(stop));
+    storyProgressFill.style.width = `${(number / resolvedStops.length) * 100}%`;
+    storyProgress.setAttribute('aria-valuenow', String(number));
+    storyProgress.setAttribute('aria-valuemax', String(resolvedStops.length));
+    trackStoryStop(stop.id, number, resolvedStops.length);
   }
 
   function paintStoryFrame(now: number): void {
     storyFrame = null;
     // The reader can take the map, or fold the story, between the scroll and this frame.
-    if (!storyOpen || heldStop !== null || driver.by === 'reader') return;
+    if (frame.mode !== 'story' || heldStop !== null || driver.by === 'reader') return;
 
     if (driver.by === 'rejoining') {
       const next = settle(driver, now);
@@ -1385,10 +1427,10 @@ async function main(): Promise<void> {
   }
 
   // A stop's camera places its verse, or fits its region, against the map's
-  // size, which the window sets. The map also grows as a phone's sheet lowers;
-  // the camera keeps its centre, so the stop's verse moves down by half the
-  // growth, about as far as the raised focus does, and it is not followed.
+  // size, which the window sets. Outside the story the map's height is not the
+  // story's, so the stops wait for openStory to resolve them.
   window.addEventListener('resize', () => {
+    if (frame.mode !== 'story') return;
     resolvedStops = resolveStory();
     scheduleStoryFrame();
   });
@@ -1442,7 +1484,7 @@ async function main(): Promise<void> {
   }
 
   // A link to a story stop always opens the story.
-  if (storyOpen && opensFolded) {
+  if (frame.mode === 'story' && opensFolded) {
     // A link that names nothing has opened the story and handed it the map.
     if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
     setStoryOpen(false);

@@ -6,10 +6,14 @@
  * viewBox, so the parts of the title hold their proportions at every zoom.
  */
 
+/* Clipped to the map, so the title never shows through the panel or the sheet. */
 #map-title {
   position: fixed;
+  left: var(--map-left);
+  right: 0;
   top: 0;
-  left: 0;
+  bottom: var(--sheet-shown);
+  overflow: hidden;
   pointer-events: none;
 }
 

@@ -1,5 +1,5 @@
-// The one line that stands for the controls while the story is open: the
-// overlay's name and what its own `summary` says it is showing.
+// A legend row: the overlay's name and what its own `summary` says it is
+// showing.
 import { escapeHtml } from './utils/html.ts';
 import type { OverlaySummary } from './overlays/types.ts';
 
@@ -11,9 +11,7 @@ function swatch(color: string): string {
   return `<i class="summary-swatch${shape}" style="background: ${escapeHtml(color)}"></i>`;
 }
 
-export function summaryHtml(overlayName: string | undefined, summary: OverlaySummary): string {
-  if (!overlayName) return '<span class="summary-name dim">No overlay</span>';
-
+export function summaryHtml(overlayName: string, summary: OverlaySummary): string {
   let detail = (summary.terms ?? [])
     .map(
       ({ text, color }) => `<span class="summary-term">${swatch(color)}${escapeHtml(text)}</span>`,

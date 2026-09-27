@@ -1,6 +1,10 @@
 import { driverKind, type Driver } from '../scrollytelling/driver.ts';
 
-/** How the reader took the map: acting on it while the story was open, or folding the story. */
+/**
+ * How the reader took the map: acting on it while the story was open, or
+ * leaving the story — a tool chosen from its menu, its last stop's button, or
+ * a link into the explore view followed after the page has loaded.
+ */
 export type ExitHow = 'takeover' | 'fold';
 /** How the story took it back: scrolling it, opening it, or a link or Back/Forward. */
 export type ReturnHow = 'rejoin' | 'open' | 'link';

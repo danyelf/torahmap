@@ -1,7 +1,7 @@
 #verse-popup {
   position: fixed;
   bottom: 20px;
-  left: 20px;
+  left: calc(var(--map-left) + 20px);
   width: 320px;
   max-height: 400px;
   overflow-y: auto;
@@ -118,14 +118,15 @@
 @media (max-width: 768px) {
   #verse-popup {
     left: 10px;
-    bottom: calc(var(--sheet-shown) + 10px);
+    bottom: calc(var(--sheet-shown) + var(--legend-shown) + 10px);
     width: calc(100vw - 20px);
     max-height: 200px;
   }
 
-  /* A tall sheet covers the map the popup belongs to; it is back when the
-     sheet shrinks. */
-  body.sheet-tall #verse-popup {
+  /* A full-height sheet covers the map the popup belongs to, and the menu,
+     dropping from the top, reaches down over it; it is back when either goes. */
+  body[data-full] #verse-popup,
+  body[data-menu] #verse-popup {
     visibility: hidden;
   }
 }

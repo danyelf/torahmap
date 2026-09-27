@@ -20,22 +20,21 @@ function save(englishOnly: boolean): void {
   }
 }
 
-export function initHebrewToggle(footer: HTMLElement): void {
-  const button = document.createElement('button');
-  button.id = 'hebrew-toggle';
-  button.type = 'button';
-  button.className = 'footer-link';
+/** Applies the reader's stored choice. Runs at startup, before any panel exists. */
+export function applyHebrewChoice(): void {
+  document.body.classList.toggle(CLASS, load());
+}
 
-  const apply = (englishOnly: boolean): void => {
-    document.body.classList.toggle(CLASS, englishOnly);
-    button.textContent = englishOnly ? 'Show Hebrew' : 'Hide Hebrew';
+/** Makes `button` show and flip the choice. The About panel draws it afresh each time it opens. */
+export function bindHebrewToggle(button: HTMLButtonElement): void {
+  const label = (): void => {
+    button.textContent = document.body.classList.contains(CLASS) ? 'Show Hebrew' : 'Hide Hebrew';
   };
-
-  apply(load());
+  label();
   button.addEventListener('click', () => {
     const englishOnly = !document.body.classList.contains(CLASS);
-    apply(englishOnly);
+    document.body.classList.toggle(CLASS, englishOnly);
     save(englishOnly);
+    label();
   });
-  footer.appendChild(button);
 }

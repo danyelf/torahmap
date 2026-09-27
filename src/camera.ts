@@ -19,7 +19,8 @@ export interface Viewport {
 }
 
 // Opens with Genesis 1:1, the rightmost verse after the RTL mirror, this far
-// in from the window's right edge.
+// in from the right edge of `windowWidth`: the map's own width unless a panel
+// covers part of it.
 const RIGHT_MARGIN = 320;
 // Room for the book labels above the first row.
 const TOP_MARGIN = 40;
