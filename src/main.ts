@@ -1,6 +1,7 @@
 // Tanakh Map - Main entry point
 
 declare const __GIT_BRANCH__: string;
+declare const __SHOW_DRAFTS__: boolean;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
@@ -21,8 +22,8 @@ import {
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
-import { menuHtml, type StoryPlace } from './menu.ts';
-import { storiesHtml, type StoryCard } from './storiesPanel.ts';
+import { CONTINUE_STORY, menuHtml, type StoryPlace } from './menu.ts';
+import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
@@ -1130,8 +1131,8 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let listed = listedStories(STORIES, location.hostname);
-  // The stop each story was left at, for this visit.
+  let listed = listedStories(STORIES, __SHOW_DRAFTS__);
+  // Where each story other than the current one was left, this visit.
   const places = new Map<string, number>();
 
   let story = storyToOpen(listed, parseUrlState().story ?? null);
@@ -1175,6 +1176,7 @@ async function main(): Promise<void> {
   function switchStory(next: Story): void {
     if (next.id === story.id) return;
     places.set(story.id, storyStopIndex());
+    places.delete(next.id);
     loadStory(next);
     // A stop held for the old story means nothing in this one.
     if (heldStop !== null) heldStop = 0;
@@ -1196,7 +1198,7 @@ async function main(): Promise<void> {
   if (import.meta.hot) {
     import.meta.hot.accept('./stories/index.ts', (module) => {
       if (!module) return;
-      listed = listedStories(module.STORIES as Story[], location.hostname);
+      listed = listedStories(module.STORIES as Story[], __SHOW_DRAFTS__);
       reloadStory();
     });
   }
@@ -1279,13 +1281,10 @@ async function main(): Promise<void> {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
     if (target.closest('.story-leave')) return dispatch({ type: 'choose', panel: 'overlay' });
-    const actor = target.closest<HTMLElement>('[data-action]');
-    const action = actor?.dataset.action;
-    if (action === 'story') return dispatch({ type: 'story' });
-    if (action === 'open-story') {
-      const card = actor!.closest<HTMLElement>('[data-story]')!;
-      return readStory(card.dataset.story!, actor!.dataset.from === 'start');
-    }
+    const chosen = storyChosen(target);
+    if (chosen) return readStory(chosen.id, chosen.fromStart);
+    const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
+    if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
     const chooser = target.closest<HTMLElement>('.map-legend-row');
@@ -1370,7 +1369,7 @@ async function main(): Promise<void> {
       stopElements.map((el) => el.offsetTop),
       storyContent.scrollHeight,
       storyContent.scrollTop,
-      story.data.easing ?? 'ease-in-out',
+      story.data.easing,
       stopElements.map((el) => el.offsetHeight),
       storyContent.clientHeight,
     );

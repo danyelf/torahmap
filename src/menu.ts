@@ -6,6 +6,9 @@ export interface StoryPlace {
   total: number;
 }
 
+/** The menu item that returns to the story being read. */
+export const CONTINUE_STORY = 'story';
+
 const item = (action: string, label: string, detail = ''): string =>
   `<button type="button" class="menu-item" data-action="${action}">${label}` +
   (detail ? ` <span class="menu-detail">${detail}</span>` : '') +
@@ -15,7 +18,7 @@ const item = (action: string, label: string, detail = ''): string =>
 export function menuHtml(place: StoryPlace & { title: string }): string {
   return [
     '<h2 class="menu-title">Torahmap</h2>',
-    item('story', `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
+    item(CONTINUE_STORY, `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
     item('overlay', 'Overlays'),
     item('stories', 'Stories'),
     item('about', 'About &amp; settings'),

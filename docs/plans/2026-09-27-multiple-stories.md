@@ -28,8 +28,10 @@ nothing to fail when switching stories.
 `order` comes before a higher one; ties, and stories without an order, go by
 file name. The first story listed is what a bare `torahmap.org` opens.
 
-**Drafts.** `draft: true` lists a story everywhere except on torahmap.org,
-decided by hostname at startup. Drafts exist so Danyel can see a story while
+**Drafts.** `draft: true` lists a story on the dev server and on every branch's
+preview, but not on the live site, which is the build of `main`. The build
+decides (`__SHOW_DRAFTS__` in `vite.config.ts`); nothing looks at the address.
+Drafts exist so Danyel can see a story while
 writing it; nothing is done to make a draft's link meaningful or shareable on
 the live site, and drafts are in the live site's code even though it does not
 list them.
@@ -79,9 +81,10 @@ Reading mode is otherwise unchanged.
 
 - `src/stories/index.ts` gathers every `.md` beside it at build time.
 - `src/scrollytelling/storyIndex.ts` decides what is listed, and in what order —
-  a pure function of the stories and the hostname.
-- `storyParser.ts` reads `title`, `description`, `order` and `draft` from the
-  frontmatter it already parses for `easing`.
+  a pure function of the stories and whether drafts are shown.
+- `storyParser.ts` reads the frontmatter keys listed in `STORY_HEADER_KEYS`. A
+  test refuses any other key in a story file, a `draft` that is not `true` or
+  `false`, and an `easing` that names no easing.
 - `main.ts` keeps one current story, and a map of where each other story was
   left. `switchStory` changes the current story and records the place of the
   one it replaces; a card and a `#story=…&stop=…` link both call it, then open
@@ -94,8 +97,8 @@ The story events — `page_view`, `story_stop`, `story_exit`, `story_return` —
 record a stop id, and stop ids can repeat across stories. Each gains a `story`
 blob, appended after the existing blobs in `src/telemetry/schema.ts` so no
 column moves. `story-reach.sql`, `story-exits.sql` and `story-returns.sql`
-group by story as well; rows from before this have an empty story, which means
-the tour.
+group by story as well. Rows from before this have an empty story; they were
+all the tour, but the queries show them as a row of their own.
 
 ## Tests
 

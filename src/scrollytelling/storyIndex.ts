@@ -6,17 +6,14 @@ export interface Story {
   data: StoryData;
 }
 
-const LIVE_HOSTS = ['torahmap.org', 'www.torahmap.org'];
-
 /**
- * The stories to offer here, in menu order: by `order`, lowest first, then
- * those without one; ties by file name. Drafts are left out on the live site.
+ * The stories to offer, in menu order: by `order`, lowest first, then those
+ * without one; ties by file name. Drafts only when `showDrafts`.
  */
-export function listedStories(stories: Story[], hostname: string): Story[] {
-  const live = LIVE_HOSTS.includes(hostname);
+export function listedStories(stories: Story[], showDrafts: boolean): Story[] {
   const rank = (s: Story): number => s.data.order ?? Infinity;
   return stories
-    .filter((s) => !live || !s.data.draft)
+    .filter((s) => showDrafts || !s.data.draft)
     .sort((a, b) => rank(a) - rank(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 

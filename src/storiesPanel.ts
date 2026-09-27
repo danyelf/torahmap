@@ -11,9 +11,20 @@ export interface StoryCard {
   place: (StoryPlace & { label: string }) | null;
 }
 
-const button = (from: 'place' | 'start', label: string, secondary = false): string =>
+const OPEN_STORY = 'open-story';
+type From = 'place' | 'start';
+
+const button = (from: From, label: string, secondary = false): string =>
   `<button type="button" class="story-card-action${secondary ? ' secondary' : ''}" ` +
-  `data-action="open-story" data-from="${from}">${label}</button>`;
+  `data-action="${OPEN_STORY}" data-from="${from}">${label}</button>`;
+
+/** The story a click inside the panel chose, and whether from its start; null if none. */
+export function storyChosen(target: Element): { id: string; fromStart: boolean } | null {
+  const button = target.closest<HTMLElement>(`[data-action="${OPEN_STORY}"]`);
+  const id = button?.closest<HTMLElement>('[data-story]')?.dataset.story;
+  if (!button || !id) return null;
+  return { id, fromStart: (button.dataset.from as From) === 'start' };
+}
 
 function cardHtml({ id, title, description, draft, place }: StoryCard): string {
   const actions = place

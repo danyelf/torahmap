@@ -6,6 +6,9 @@ import { lerpCamera, easingFunctions } from './interpolation';
 // Transitions happen in the scroll gap between rest zones.
 const REST_ZONE_FRACTION = 0.4;
 
+// How the camera moves between stops when neither the story nor the stop says.
+const DEFAULT_EASING: EasingName = 'ease-in-out';
+
 // The scrollTop at which each stop's visual center aligns with the viewport center.
 function computeStopScrollCenters(
   stopOffsets: number[],
@@ -23,7 +26,7 @@ export function computeInterpolatedState(
   stopOffsets: number[],
   totalHeight: number,
   scrollTop: number,
-  defaultEasing: EasingName = 'ease-in-out',
+  defaultEasing: EasingName = DEFAULT_EASING,
   stopHeights?: number[],
   viewportHeight?: number,
 ): InterpolatedState {
@@ -73,7 +76,7 @@ export function computeInterpolatedState(
           : 1;
 
       const easingName = stops[i].easing ?? defaultEasing;
-      const easeFn = easingFunctions[easingName] ?? easingFunctions['ease-in-out'];
+      const easeFn = easingFunctions[easingName] ?? easingFunctions[DEFAULT_EASING];
       const t = easeFn(Math.max(0, Math.min(1, rawT)));
 
       return {

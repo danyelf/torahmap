@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { storiesHtml, type StoryCard } from '../../storiesPanel';
+import { storiesHtml, storyChosen, type StoryCard } from '../../storiesPanel';
 
 const card = (over: Partial<StoryCard>): StoryCard => ({
   id: 'tour',
@@ -62,5 +62,28 @@ describe('storiesHtml', () => {
       ]),
     );
     expect(div.querySelector('img')).toBeNull();
+  });
+});
+
+describe('storyChosen', () => {
+  const buttons = (html: string): HTMLElement[] => [
+    ...parse(html).querySelectorAll<HTMLElement>('button'),
+  ];
+
+  it("reads a card's Read as its story from the start", () => {
+    const [read] = buttons(storiesHtml([card({ id: 'job' })]));
+    expect(storyChosen(read)).toEqual({ id: 'job', fromStart: true });
+  });
+
+  it("reads a card's Continue and Start from the beginning", () => {
+    const [cont, restart] = buttons(
+      storiesHtml([card({ place: { number: 2, total: 4, label: 'x' } })]),
+    );
+    expect(storyChosen(cont)).toEqual({ id: 'tour', fromStart: false });
+    expect(storyChosen(restart)).toEqual({ id: 'tour', fromStart: true });
+  });
+
+  it('reads nothing from an element outside a card', () => {
+    expect(storyChosen(document.createElement('button'))).toBeNull();
   });
 });

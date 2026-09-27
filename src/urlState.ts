@@ -73,7 +73,15 @@ export type OverlayParams = UrlParamValues;
 export type OverlayParamSpecLookup = (overlayId: string) => readonly UrlParamSpec[] | undefined;
 
 // Keys this module owns; an overlay may not claim one of these.
-const RESERVED_KEYS = new Set(['story', 'stop', 'overlay', 'verse', 'zoom', 'x', 'y']);
+export const RESERVED_KEYS: ReadonlySet<string> = new Set([
+  'story',
+  'stop',
+  'overlay',
+  'verse',
+  'zoom',
+  'x',
+  'y',
+]);
 
 const MAX_PAN_POSITION = 1000000;
 const MAX_STRING_LENGTH = 50;

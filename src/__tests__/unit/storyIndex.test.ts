@@ -10,12 +10,12 @@ const ids = (stories: Story[]): string[] => stories.map((s) => s.id);
 describe('listedStories', () => {
   it('puts every story with an order before every story without one', () => {
     const stories = [story('a'), story('z', { order: 99 })];
-    expect(ids(listedStories(stories, 'localhost'))).toEqual(['z', 'a']);
+    expect(ids(listedStories(stories, true))).toEqual(['z', 'a']);
   });
 
   it('puts a lower order before a higher one', () => {
     const stories = [story('a', { order: 2 }), story('b', { order: -1 }), story('c', { order: 1 })];
-    expect(ids(listedStories(stories, 'localhost'))).toEqual(['b', 'c', 'a']);
+    expect(ids(listedStories(stories, true))).toEqual(['b', 'c', 'a']);
   });
 
   it('orders ties, and stories without an order, by file name', () => {
@@ -25,26 +25,13 @@ describe('listedStories', () => {
       story('tour', { order: 1 }),
       story('shalshelet', { order: 1 }),
     ];
-    expect(ids(listedStories(stories, 'localhost'))).toEqual([
-      'shalshelet',
-      'tour',
-      'haftarah',
-      'job',
-    ]);
+    expect(ids(listedStories(stories, true))).toEqual(['shalshelet', 'tour', 'haftarah', 'job']);
   });
 
-  it('hides drafts on the live site', () => {
+  it('leaves drafts out unless asked for them', () => {
     const stories = [story('tour'), story('sample', { draft: true })];
-    for (const host of ['torahmap.org', 'www.torahmap.org']) {
-      expect(ids(listedStories(stories, host))).toEqual(['tour']);
-    }
-  });
-
-  it('lists drafts everywhere else', () => {
-    const stories = [story('tour'), story('sample', { draft: true })];
-    for (const host of ['localhost', 'torahmap-pr-12.danyelf.workers.dev', '']) {
-      expect(ids(listedStories(stories, host))).toEqual(['sample', 'tour']);
-    }
+    expect(ids(listedStories(stories, false))).toEqual(['tour']);
+    expect(ids(listedStories(stories, true))).toEqual(['sample', 'tour']);
   });
 });
 

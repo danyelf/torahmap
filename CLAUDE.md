@@ -226,8 +226,8 @@ in step with the code:
 - **Sheet** (phone) - The open panel; the grabber takes it to full height and
   back, and a drag down folds it
 
-The URL carries the overlay, its settings, the pinned verse, the camera and the
-story stop (`src/urlState.ts`), so any view can be linked to.
+The URL carries the overlay, its settings, the pinned verse, the camera and,
+while reading, the story and its stop (`src/urlState.ts`), so any view can be linked to.
 
 ## License
 

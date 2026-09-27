@@ -8,6 +8,7 @@ import {
   subscribeToHashChange,
   applyingExternalState,
   isApplyingExternalState,
+  RESERVED_KEYS,
   validateOverlayParams,
   type UrlState,
   type UrlParamSpec,
@@ -1057,7 +1058,7 @@ describe('what every overlay must hold to', () => {
       const keys = (overlay.urlParams ?? []).map((spec) => spec.key);
       expect(new Set(keys).size).toBe(keys.length);
       for (const key of keys) {
-        expect(['story', 'stop', 'overlay', 'verse', 'zoom', 'x', 'y']).not.toContain(key);
+        expect(RESERVED_KEYS.has(key)).toBe(false);
       }
     });
 
