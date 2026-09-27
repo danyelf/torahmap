@@ -15,6 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "test:layout": "playwright test -c layout",
     "video": "node video/render.ts",
+    "rehearse": "vite --open '/video/rehearse.html?script=sample'",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --project tsconfig.build.json --noEmit && tsc --project layout/tsconfig.json --noEmit && tsc --project video/tsconfig.json --noEmit",

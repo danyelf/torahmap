@@ -147,6 +147,9 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `experiments/` — prototypes that never shipped.
 - `test-harness/` — the search-UI test harness (see Testing, below).
 - `layout/` — the layout tests (see Layout tests, above).
+- `video/` — scripted video of the map: `npm run rehearse` to time a script
+  against your narration, `npm run video -- <script.md>` to render it to MP4.
+  See `docs/plans/2026-09-27-video-harness-design.md`.
 
 ## Tech Stack
 
