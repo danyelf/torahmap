@@ -1,5 +1,5 @@
 ---
-title: Job's Frame and Poem
+title: Prose and Poetry in the Torah
 description: The prose story around Job and the poem inside it look different on the map.
 ---
 
