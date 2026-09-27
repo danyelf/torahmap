@@ -509,9 +509,9 @@ async function main(): Promise<void> {
     // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
     if (event === 'story_exit') {
       markViewSettled();
-      trackStoryExit(stop.id, stop.number, how as ExitHow);
+      trackStoryExit(storyId, stop.id, stop.number, how as ExitHow);
     } else {
-      trackStoryReturn(stop.id, how as ReturnHow);
+      trackStoryReturn(storyId, stop.id, how as ReturnHow);
     }
   }
 
@@ -1409,7 +1409,7 @@ async function main(): Promise<void> {
     storyProgressFill.style.width = `${(number / resolvedStops.length) * 100}%`;
     storyProgress.setAttribute('aria-valuenow', String(number));
     storyProgress.setAttribute('aria-valuemax', String(resolvedStops.length));
-    trackStoryStop(stop.id, number, resolvedStops.length);
+    trackStoryStop(storyId, stop.id, number, resolvedStops.length);
   }
 
   function paintStoryFrame(now: number): void {
@@ -1553,7 +1553,12 @@ async function main(): Promise<void> {
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
-  trackPageView(parseUrlState().stop ?? '', referrer === location.hostname ? '' : referrer);
+  const opened = parseUrlState();
+  trackPageView(
+    opened.story ?? '',
+    opened.stop ?? '',
+    referrer === location.hostname ? '' : referrer,
+  );
   recordingDriver = true;
   markViewSettled();
 

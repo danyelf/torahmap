@@ -55,22 +55,33 @@ function track<E extends EventName>(event: E, fields: EventFields<E>): void {
   options.send(JSON.stringify(payload));
 }
 
-export function trackPageView(storyStop: string, referrer: string): void {
-  track('page_view', { story_stop: storyStop, referrer });
+export function trackPageView(story: string, storyStop: string, referrer: string): void {
+  track('page_view', { story_stop: storyStop, referrer, story });
 }
 
-export function trackStoryStop(stopId: string, stopNumber: number, totalStops: number): void {
-  if (storyStopsSent.has(stopId)) return;
-  storyStopsSent.add(stopId);
-  track('story_stop', { stop_id: stopId, stop_number: stopNumber, total_stops: totalStops });
+export function trackStoryStop(
+  story: string,
+  stopId: string,
+  stopNumber: number,
+  totalStops: number,
+): void {
+  const key = `${story}/${stopId}`;
+  if (storyStopsSent.has(key)) return;
+  storyStopsSent.add(key);
+  track('story_stop', { stop_id: stopId, story, stop_number: stopNumber, total_stops: totalStops });
 }
 
-export function trackStoryExit(stopId: string, stopNumber: number, how: ExitHow): void {
-  track('story_exit', { stop_id: stopId, stop_number: stopNumber, how });
+export function trackStoryExit(
+  story: string,
+  stopId: string,
+  stopNumber: number,
+  how: ExitHow,
+): void {
+  track('story_exit', { stop_id: stopId, stop_number: stopNumber, how, story });
 }
 
-export function trackStoryReturn(stopId: string, how: ReturnHow): void {
-  track('story_return', { stop_id: stopId, how });
+export function trackStoryReturn(story: string, stopId: string, how: ReturnHow): void {
+  track('story_return', { stop_id: stopId, how, story });
 }
 
 export function trackViewSettled(book: string, section: string, zoom: number): void {

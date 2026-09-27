@@ -22,13 +22,13 @@ describe('toDataPoint', () => {
         event: 'story_stop',
         visit: 'v1',
         mode: 'story',
-        fields: { stop_id: 'abraham', stop_number: 3, total_stops: 9 },
+        fields: { stop_id: 'abraham', story: 'tour', stop_number: 3, total_stops: 9 },
       },
       context,
     );
     expect(point).toEqual({
       indexes: ['v1'],
-      blobs: ['story_stop', 'story', 'IL', 'mobile', 'torahmap.org', 'abraham'],
+      blobs: ['story_stop', 'story', 'IL', 'mobile', 'torahmap.org', 'abraham', 'tour'],
       doubles: [3, 9],
     });
   });
