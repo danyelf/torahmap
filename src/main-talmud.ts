@@ -17,7 +17,7 @@ import {
 } from './rendering.ts';
 import { computeItemStates, applyItemColors, overlayColorsFor } from './itemColoring.ts';
 import { findItemAtPoint } from './hitDetection.ts';
-import { createCamera, clampZoom, panForZoom } from './camera.ts';
+import { createCamera, clampZoom, zoomAtPoint } from './camera.ts';
 import { createMouseState, startDrag, stopDrag } from './mouseState.ts';
 import type { Overlay } from './overlays/types.ts';
 import { segmentLengthOverlay, ingestTractateLengths } from './talmud/overlays/segment-length.ts';
@@ -70,7 +70,7 @@ async function main(): Promise<void> {
   // Start zoomed out to fit the whole bookshelf with a small margin.
   // The Bavli total bounds are wide (4 tall shelves of tractates) so the
   // default 1.0 zoom from createCamera is almost always too zoomed in.
-  const camera = createCamera(window.innerWidth, window.innerHeight, bounds);
+  const camera = createCamera({ width: window.innerWidth, height: window.innerHeight }, bounds);
   const fitZoomX = (window.innerWidth - 80) / bounds.width;
   const fitZoomY = (window.innerHeight - 80) / bounds.height;
   const fitZoom = Math.min(fitZoomX, fitZoomY, 1.0);
@@ -187,16 +187,15 @@ async function main(): Promise<void> {
       e.preventDefault();
       const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
       const newZoom = clampZoom(camera.zoom * zoomFactor);
-      const newPan = panForZoom(
-        { x: camera.x, y: camera.y },
-        camera.zoom,
-        newZoom,
-        e.clientX,
-        e.clientY,
+      Object.assign(
+        camera,
+        zoomAtPoint(
+          camera,
+          newZoom,
+          { x: e.clientX, y: e.clientY },
+          { width: window.innerWidth, height: window.innerHeight },
+        ),
       );
-      camera.x = newPan.x;
-      camera.y = newPan.y;
-      camera.zoom = newZoom;
       doRender();
       updateTalmudLabelPositions(labels, { x: camera.x, y: camera.y }, camera.zoom);
     },
@@ -217,6 +216,7 @@ async function main(): Promise<void> {
     const hit = findItemAtPoint<TalmudIdentity>(
       items as SpatialItem<TalmudIdentity>[],
       camera,
+      { width: window.innerWidth, height: window.innerHeight },
       e.clientX,
       e.clientY,
     );
@@ -246,6 +246,7 @@ async function main(): Promise<void> {
     const hit = findItemAtPoint<TalmudIdentity>(
       items as SpatialItem<TalmudIdentity>[],
       camera,
+      { width: window.innerWidth, height: window.innerHeight },
       e.clientX,
       e.clientY,
     );

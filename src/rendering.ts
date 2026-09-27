@@ -18,8 +18,16 @@ import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
 import { updateMapTitlePosition } from './mapTitle';
 import type { SpatialItem, TanakhIdentity } from './types';
-import type { Camera } from './camera';
+import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
+
+function offsetFor(
+  canvas: HTMLCanvasElement,
+  dpr: number,
+  camera: Camera,
+): { x: number; y: number } {
+  return viewOffset(camera, { width: canvas.width / dpr, height: canvas.height / dpr });
+}
 
 /** Immutable WebGL infrastructure created once at startup. */
 export interface RenderContext {
@@ -125,7 +133,8 @@ export function render<T>(
 
   // Scale zoom by dpr for high-DPI displays
   gl.uniform2f(programs.main.uniforms.resolution, canvas.width, canvas.height);
-  gl.uniform2f(programs.main.uniforms.pan, camera.x, camera.y);
+  const offset = offsetFor(canvas, dpr, camera);
+  gl.uniform2f(programs.main.uniforms.pan, offset.x, offset.y);
   gl.uniform1f(programs.main.uniforms.zoom, camera.zoom * dpr);
 
   gl.bindVertexArray(vertexArray);
@@ -162,10 +171,10 @@ export function render<T>(
   }
 
   if (window.bookLabels) {
-    updateLabelPositions(window.bookLabels, { x: camera.x, y: camera.y }, camera.zoom);
+    updateLabelPositions(window.bookLabels, offset, camera.zoom);
   }
   if (window.mapTitle) {
-    updateMapTitlePosition(window.mapTitle, camera);
+    updateMapTitlePosition(window.mapTitle, offset, camera.zoom);
   }
 }
 
@@ -195,7 +204,8 @@ export function renderOutline<T>(
 
   // Same pan/zoom as the main render
   gl.uniform2f(programs.outline.uniforms.resolution, canvas.width, canvas.height);
-  gl.uniform2f(programs.outline.uniforms.pan, camera.x, camera.y);
+  const offset = offsetFor(canvas, dpr, camera);
+  gl.uniform2f(programs.outline.uniforms.pan, offset.x, offset.y);
   gl.uniform1f(programs.outline.uniforms.zoom, camera.zoom * dpr);
   gl.uniform3f(programs.outline.uniforms.color, ...color);
 

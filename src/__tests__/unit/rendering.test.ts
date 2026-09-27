@@ -212,8 +212,9 @@ describe('rendering', () => {
       );
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.main.uniforms.pan,
-        100,
-        200,
+        // The 800×600 canvas at dpr 2 is 400×300 CSS pixels.
+        400 / (2 * 1.5) - 100,
+        300 / (2 * 1.5) - 200,
       );
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.main.uniforms.zoom,
@@ -374,8 +375,8 @@ describe('rendering', () => {
       );
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.outline.uniforms.pan,
-        50,
-        100,
+        400 / 2 - 50,
+        300 / 2 - 100,
       );
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.outline.uniforms.zoom,
@@ -511,8 +512,8 @@ describe('rendering', () => {
 
         expect(context.gl.uniform2f).toHaveBeenCalledWith(
           context.programs.main.uniforms.pan,
-          camera.x,
-          camera.y,
+          800 / (2 * camera.zoom) - camera.x,
+          600 / (2 * camera.zoom) - camera.y,
         );
       });
     });
