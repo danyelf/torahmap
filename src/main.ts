@@ -380,18 +380,19 @@ async function main(): Promise<void> {
 
   /** Opens or closes the story; closing it lands on `exploring`. */
   function setStoryOpen(open: boolean, exploring = exploreFrame(phoneLayout.matches)): void {
-    if (!open && frame.mode === 'story') {
-      heldStop = storyStopIndex();
-      places.set(storyId, heldStop);
-    }
+    if (!open && frame.mode === 'story') heldStop = storyStopIndex();
     const previous = frame;
     if (open) frame = STORY;
     else if (frame.mode === 'story') frame = exploring;
     applyFrame(previous);
   }
 
+  function placeIn(stops: readonly { id: string }[], index: number): StoryPlace {
+    return { number: stopAt(stops, index).number, total: stops.length };
+  }
+
   function storyPlace(): StoryPlace {
-    return { number: stopAt(resolvedStops, storyStopIndex()).number, total: resolvedStops.length };
+    return placeIn(resolvedStops, storyStopIndex());
   }
 
   /**
@@ -412,7 +413,7 @@ async function main(): Promise<void> {
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
-      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: storyData.title });
+      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
@@ -505,9 +506,9 @@ async function main(): Promise<void> {
     // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
     if (event === 'story_exit') {
       markViewSettled();
-      trackStoryExit(storyId, stop.id, stop.number, how as ExitHow);
+      trackStoryExit(stop.id, stop.number, how as ExitHow);
     } else {
-      trackStoryReturn(storyId, stop.id, how as ReturnHow);
+      trackStoryReturn(stop.id, how as ReturnHow);
     }
   }
 
@@ -816,7 +817,7 @@ async function main(): Promise<void> {
   function syncUrl(push: boolean = false): void {
     const state: UrlState =
       frame.mode === 'story'
-        ? { story: storyId, stop: resolvedStops[storyStopIndex()].id, overlayParams: {} }
+        ? { story: story.id, stop: resolvedStops[storyStopIndex()].id, overlayParams: {} }
         : buildCurrentUrlState();
     updateUrl(state, push);
   }
@@ -1133,14 +1134,25 @@ async function main(): Promise<void> {
   // The stop each story was left at, for this visit.
   const places = new Map<string, number>();
 
-  let { id: storyId, data: storyData } = storyToOpen(listed, parseUrlState().story ?? null);
+  let story = storyToOpen(listed, parseUrlState().story ?? null);
+  configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
-    resolveStops(storyData.stops, initialCamera, verses, mapFocus(), {
+    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), {
       width: canvas.clientWidth,
       height: canvas.clientHeight,
     });
-  let resolvedStops = resolveStory();
-  let stopElements = renderStoryPanel(storyContent, storyData.stops);
+  let resolvedStops: ResolvedStoryStop[] = [];
+  let stopElements: HTMLElement[] = [];
+
+  /** Puts `next` in the story column, with no stop yet applied to the map. */
+  function loadStory(next: Story): void {
+    story = next;
+    resolvedStops = resolveStory();
+    stopElements = renderStoryPanel(storyContent, story.data.stops);
+    lastSyncedStopId = null;
+  }
+
+  loadStory(story);
   applyFrame();
 
   // Crossing into or out of phone width turns the story from a column into a
@@ -1161,26 +1173,22 @@ async function main(): Promise<void> {
 
   /** Makes `next` the current story, remembering where the one it replaces was left. */
   function switchStory(next: Story): void {
-    if (next.id === storyId) return;
-    places.set(storyId, storyStopIndex());
-    storyId = next.id;
-    storyData = next.data;
-    resolvedStops = resolveStory();
-    stopElements = renderStoryPanel(storyContent, storyData.stops);
-    lastSyncedStopId = null;
+    if (next.id === story.id) return;
+    places.set(story.id, storyStopIndex());
+    loadStory(next);
     // A stop held for the old story means nothing in this one.
     if (heldStop !== null) heldStop = 0;
   }
 
+  /** The stop `id` was left at this visit; undefined if it has not been opened. */
+  function leftAt(id: string): number | undefined {
+    return id === story.id ? storyStopIndex() : places.get(id);
+  }
+
   function reloadStory(): void {
     const position = storyPosition();
-    ({ id: storyId, data: storyData } = storyToOpen(listed, storyId));
-    resolvedStops = resolveStory();
-    stopElements = renderStoryPanel(storyContent, storyData.stops);
+    loadStory(storyToOpen(listed, story.id));
     setStoryPosition(position);
-    // Force re-apply: stops may have changed (overlay/params/verse), and stop
-    // object identities are fresh after re-resolving.
-    lastSyncedStopId = null;
     scheduleStoryFrame();
   }
 
@@ -1244,14 +1252,14 @@ async function main(): Promise<void> {
 
   /** Opens a story from the Stories panel: where it was left this visit, or its start. */
   function readStory(id: string, fromStart: boolean): void {
-    const left = id === storyId ? storyStopIndex() : (places.get(id) ?? 0);
+    const left = leftAt(id) ?? 0;
     switchStory(storyToOpen(listed, id));
     readerOpensStory(fromStart ? 0 : left);
   }
 
   function drawStories(): void {
     const cards = listed.map(({ id, data }): StoryCard => {
-      const at = id === storyId ? storyStopIndex() : places.get(id);
+      const at = leftAt(id);
       return {
         id,
         draft: data.draft,
@@ -1260,11 +1268,7 @@ async function main(): Promise<void> {
         place:
           at === undefined
             ? null
-            : {
-                number: stopAt(data.stops, at).number,
-                total: data.stops.length,
-                label: stopLabel(data.stops[at]),
-              },
+            : { ...placeIn(data.stops, at), label: stopLabel(data.stops[at]) },
       };
     });
     storiesPanel.innerHTML = storiesHtml(cards);
@@ -1275,12 +1279,12 @@ async function main(): Promise<void> {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
     if (target.closest('.story-leave')) return dispatch({ type: 'choose', panel: 'overlay' });
-    const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
+    const actor = target.closest<HTMLElement>('[data-action]');
+    const action = actor?.dataset.action;
     if (action === 'story') return dispatch({ type: 'story' });
     if (action === 'open-story') {
-      const button = target.closest<HTMLElement>('[data-action]')!;
-      const card = button.closest<HTMLElement>('[data-story]')!;
-      return readStory(card.dataset.story!, button.dataset.from === 'start');
+      const card = actor!.closest<HTMLElement>('[data-story]')!;
+      return readStory(card.dataset.story!, actor!.dataset.from === 'start');
     }
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
@@ -1366,7 +1370,7 @@ async function main(): Promise<void> {
       stopElements.map((el) => el.offsetTop),
       storyContent.scrollHeight,
       storyContent.scrollTop,
-      storyData.defaults?.easing ?? 'ease-in-out',
+      story.data.easing ?? 'ease-in-out',
       stopElements.map((el) => el.offsetHeight),
       storyContent.clientHeight,
     );
@@ -1397,7 +1401,7 @@ async function main(): Promise<void> {
     storyProgressFill.style.width = `${(number / resolvedStops.length) * 100}%`;
     storyProgress.setAttribute('aria-valuenow', String(number));
     storyProgress.setAttribute('aria-valuemax', String(resolvedStops.length));
-    trackStoryStop(storyId, stop.id, number, resolvedStops.length);
+    trackStoryStop(stop.id, number, resolvedStops.length);
   }
 
   function paintStoryFrame(now: number): void {
@@ -1492,7 +1496,6 @@ async function main(): Promise<void> {
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
-    if (next.mode === 'story') switchStory(storyToOpen(listed, next.story));
     applyingExternalState(() => applyViewState(next));
     // The link moved the camera, not the reader.
     markViewSettled();
@@ -1524,6 +1527,7 @@ async function main(): Promise<void> {
     render();
 
     if (next.mode === 'story') {
+      switchStory(storyToOpen(listed, next.story));
       const stop = resolvedStops.findIndex((s) => s.id === next.stop);
       openStory(Math.max(0, stop), 'cut', 'link');
     }

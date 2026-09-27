@@ -9,14 +9,13 @@ import { parseVerseFromUrl } from '../urlState';
 export function parseStoryMarkdown(markdown: string): StoryData {
   const front = parseFrontmatter(markdown);
   const stops = parseStops(stripFrontmatter(markdown));
-  const easing = front.easing as EasingName | undefined;
   const order = Number(front.order);
   return {
     stops,
-    defaults: easing ? { easing } : undefined,
+    easing: front.easing as EasingName | undefined,
     title: front.title ?? '',
     description: front.description ?? '',
-    order: front.order !== undefined && Number.isFinite(order) ? order : undefined,
+    order: Number.isFinite(order) ? order : undefined,
     draft: front.draft === 'true',
   };
 }

@@ -20,6 +20,8 @@ interface Options {
   hostname: string;
   send: (body: string) => void;
   getMode: () => DriverKind;
+  /** The story the reader is in, which every story event names. */
+  getStory: () => string;
   visitId: string;
 }
 
@@ -27,6 +29,7 @@ const options: Options = {
   hostname: typeof location === 'undefined' ? '' : location.hostname,
   send: (body) => navigator.sendBeacon('/api/event', body),
   getMode: () => 'story',
+  getStory: () => '',
   visitId: '',
 };
 let storyStopsSent = new Set<string>();
@@ -55,33 +58,25 @@ function track<E extends EventName>(event: E, fields: EventFields<E>): void {
   options.send(JSON.stringify(payload));
 }
 
+/** The story and stop as the link named them, which need not be what opened. */
 export function trackPageView(story: string, storyStop: string, referrer: string): void {
   track('page_view', { story_stop: storyStop, referrer, story });
 }
 
-export function trackStoryStop(
-  story: string,
-  stopId: string,
-  stopNumber: number,
-  totalStops: number,
-): void {
+export function trackStoryStop(stopId: string, stopNumber: number, totalStops: number): void {
+  const story = options.getStory();
   const key = `${story}/${stopId}`;
   if (storyStopsSent.has(key)) return;
   storyStopsSent.add(key);
   track('story_stop', { stop_id: stopId, story, stop_number: stopNumber, total_stops: totalStops });
 }
 
-export function trackStoryExit(
-  story: string,
-  stopId: string,
-  stopNumber: number,
-  how: ExitHow,
-): void {
-  track('story_exit', { stop_id: stopId, stop_number: stopNumber, how, story });
+export function trackStoryExit(stopId: string, stopNumber: number, how: ExitHow): void {
+  track('story_exit', { stop_id: stopId, stop_number: stopNumber, how, story: options.getStory() });
 }
 
-export function trackStoryReturn(story: string, stopId: string, how: ReturnHow): void {
-  track('story_return', { stop_id: stopId, how, story });
+export function trackStoryReturn(stopId: string, how: ReturnHow): void {
+  track('story_return', { stop_id: stopId, how, story: options.getStory() });
 }
 
 export function trackViewSettled(book: string, section: string, zoom: number): void {

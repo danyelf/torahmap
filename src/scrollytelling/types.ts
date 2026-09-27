@@ -41,9 +41,8 @@ export interface StoryData {
   order?: number;
   /** Listed while it is being written, except on the live site. */
   draft: boolean;
-  defaults?: {
-    easing?: EasingName;
-  };
+  /** How the camera moves between stops, unless a stop says otherwise. */
+  easing?: EasingName;
 }
 
 export type EasingName = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
