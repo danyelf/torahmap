@@ -86,10 +86,20 @@ function adjustBrightness(color: Color, factor: number): Color {
   ];
 }
 
-function desaturate(color: Color, factor: number): Color {
-  const { h, s, l } = rgbToHsl(color);
-  return hslToRgb({ h, s: s * factor, l });
+/**
+ * A reading that is not hovered keeps a dark tint of its hue, so the pattern
+ * stays faintly visible while the hovered reading stands out at any zoom.
+ */
+function darkTint(color: Color): Color {
+  return hslToRgb({ h: rgbToHsl(color).h, s: 0.5, l: 0.2 });
 }
+
+/** A verse in no reading while a reading is hovered: the grey search gives a verse it does not match. */
+const NO_READING_WHILE_HOVERED: Color = [
+  0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR,
+  0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR,
+  0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR,
+];
 
 const CUSTOMS = ['ashkenazi', 'sephardi'] as const;
 type Custom = (typeof CUSTOMS)[number];
@@ -234,7 +244,7 @@ function isHoveredItem(
 }
 
 /**
- * Brightens `colors` if any of `items` is the hovered reading, desaturates
+ * Brightens `colors` if any of `items` is the hovered reading, darkens them
  * otherwise; unwraps to a single color when there's only one. Shared by the
  * Torah-verse (single item) and haftarah-verse (possibly multiple items)
  * branches of colorAt.
@@ -254,9 +264,7 @@ function resolveHoverColors(
   );
 
   const resolved = colors.map((c) =>
-    isHovered
-      ? adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR)
-      : desaturate(c, HIGHLIGHT_CONSTANTS.DESATURATE_FACTOR),
+    isHovered ? adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR) : darkTint(c),
   );
   return resolved.length === 1 ? resolved[0] : resolved;
 }
@@ -267,7 +275,7 @@ function colorAt(
   derived: HaftarahDerivation,
   hovered: TanakhIdentity | null,
 ): Color | Color[] | null {
-  // A hovered verse outside every reading brightens nothing and desaturates
+  // A hovered verse outside every reading brightens nothing and darkens
   // nothing — the same as no hover at all. Filtered once, here, so neither
   // caller has to get this right on its own.
   const relevantHover = hovered && isRelevantVerse(hovered, derived) ? hovered : null;
@@ -291,7 +299,7 @@ function colorAt(
     return resolveHoverColors(colors, itemsFromHaftarah, relevantHover, derived);
   }
 
-  return null;
+  return relevantHover ? NO_READING_WHILE_HOVERED : null;
 }
 
 /**
@@ -500,7 +508,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
       ${legendCaption(`Torah portion & haftarah (${customLabel}) use same color`, { marginLeft: 28 })}
       ${legendCaption('Includes holidays, fast days, special Shabbatot', { marginLeft: 28 })}
       ${legendCaption('Multi-item verses are split corner to corner, one band per item', { marginLeft: 28 })}
-      ${legendCaption('Hover brightens the reading & its haftarah, desaturates others', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
+      ${legendCaption('Hover brightens the reading & its haftarah, darkens others', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
       ${renderKey(settings.custom)}
     `;
   },

@@ -10,6 +10,7 @@ import { assertValidColor } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import { overlayColorsFor } from '../../../itemColoring';
 import type { Color } from '../../../overlays/types';
+import { rgbToHsl } from '../../../utils/color';
 
 const sum = (c: Color) => c[0] + c[1] + c[2];
 
@@ -629,22 +630,32 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.toUrl()).toEqual({ custom: 'sephardi' });
     });
 
-    it('brightens the hovered pairing and desaturates the rest', async () => {
+    it('brightens the hovered pairing, darkens other readings to a tint, and greys the rest', async () => {
       await haftarahOverlay.overlay.init?.();
       const torah = { book: 'Genesis', chapter: 1, verse: 1 };
       const itsHaftarah = { book: 'Isaiah', chapter: 42, verse: 5 };
       const otherParsha = { book: 'Genesis', chapter: 7, verse: 1 };
-      const items = [torah, itsHaftarah, otherParsha];
+      const noReading = { book: 'Psalms', chapter: 1, verse: 1 };
+      const items = [torah, itsHaftarah, otherParsha, noReading];
       const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
-      const cold = haftarahOverlay.overlay.colorsFor!(items, settings, null) as Color[];
+      const cold = haftarahOverlay.overlay.colorsFor!(items, settings, null) as (Color | null)[];
       const hot = haftarahOverlay.overlay.colorsFor!(items, settings, torah) as Color[];
 
       for (const i of [0, 1]) {
-        hot[i].forEach((channel, c) => expect(channel).toBeGreaterThanOrEqual(cold[i][c]));
-        expect(sum(hot[i])).toBeGreaterThan(sum(cold[i]));
+        hot[i].forEach((channel, c) => expect(channel).toBeGreaterThanOrEqual(cold[i]![c]));
+        expect(sum(hot[i])).toBeGreaterThan(sum(cold[i]!));
       }
-      expect(hot[2]).not.toEqual(cold[2]);
+
+      // Noach keeps its hue, darkened.
+      expect(sum(hot[2])).toBeLessThan(sum(cold[2]!));
+      expect(Math.round(rgbToHsl(hot[2]).h)).toBe(Math.round(rgbToHsl(cold[2]!).h));
+
+      expect(cold[3]).toBeNull();
+      const [r, g, b] = hot[3];
+      expect(r).toBe(g);
+      expect(g).toBe(b);
+      expect(r).toBeLessThan(0.25);
     });
 
     it('is what the settled map shows for a hovered verse', async () => {
