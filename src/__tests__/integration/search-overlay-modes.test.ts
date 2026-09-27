@@ -113,15 +113,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
     });
 
     it('substring mode finds more results than word mode', () => {
-      searchOverlay.renderControls?.(container);
+      searchOverlay.restore(new URLSearchParams('q=אלה&mode=s'));
 
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-
-      // Search for "אלה" in substring mode (default)
-      input.value = 'אלה';
-      input.dispatchEvent(new Event('input'));
-
-      // Check results (Exodus 1:1 has "ואלה" - substring match)
+      // Exodus 1:1 has "ואלה" - substring match
       const verse = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
       const substringColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
@@ -134,14 +128,8 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
 
-      // Should be dimmed (not matched as whole word)
-      // Word mode should not match "אלה" in "ואלה"
-      expect(wordColor).not.toBeNull();
-      expect(Array.isArray(wordColor)).toBe(true);
-      const wc = wordColor as [number, number, number];
-      expect(wc[0]).toBeLessThan(1);
-      expect(wc[0]).toBe(wc[1]);
-      expect(wc[1]).toBe(wc[2]);
+      // Word mode does not match "אלה" inside "ואלה"
+      expect(wordColor).toBeNull();
     });
 
     it('word mode correctly matches proper nouns', () => {

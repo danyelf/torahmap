@@ -88,7 +88,7 @@ import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import {
   computeItemStates,
   applyItemColors,
-  overlayColorsFor,
+  toolsPicture,
   layerToRecompute,
   getDefaultColor,
 } from './itemColoring.ts';
@@ -111,7 +111,9 @@ import {
   type Overlay,
   type Color,
 } from './overlays/index.ts';
-import { searchOverlay, searchForMeaning, canAddTerm } from './overlays/search/index.ts';
+import { searchTool, searchForMeaning, canAddTerm } from './overlays/search/index.ts';
+import { toolsShown } from './tools.ts';
+import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -125,7 +127,7 @@ import {
   stopLabel,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
-import { computeBlendedColors } from './scrollytelling/overlayBlender';
+import { computeBlendedColors, stopSearchParams } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
 import type { Picture } from './geometry';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
@@ -260,8 +262,10 @@ async function main(): Promise<void> {
     const inputs = [
       from.colors,
       from.growth,
+      from.rings,
       to?.colors,
       to?.growth,
+      to?.rings,
       mouseState.hoveredVerse,
       pinnedVerse,
     ];
@@ -279,6 +283,7 @@ async function main(): Promise<void> {
         ),
       ),
       growth: picture.growth,
+      rings: picture.rings,
     });
     rebuildGeometry(renderContext.gl, renderState, shown(from), to && shown(to));
   }
@@ -288,17 +293,13 @@ async function main(): Promise<void> {
     composite();
   }
 
-  function applyOverlay(): void {
-    setColorLayer(
-      still({
-        colors: overlayColorsFor(
-          currentOverlay,
-          verses,
-          currentSettings(),
-          mouseState.hoveredVerse,
-        ),
-      }),
-    );
+  /** The overlay and the search as they stand, each null while off. */
+  function toolsNow(): Tools {
+    return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool));
+  }
+
+  function applyTools(): void {
+    setColorLayer(still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse)));
   }
 
   function blendTransition(): void {
@@ -322,14 +323,14 @@ async function main(): Promise<void> {
       tanakhIdentitiesEqual,
     );
     if (layer === 'blend') blendTransition();
-    else if (layer === 'overlay') applyOverlay();
+    else if (layer === 'overlay') applyTools();
     else composite();
     render();
   }
 
   /**
    * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
-   * Does NOT paint the buffer — caller decides (settled paints via applyOverlay,
+   * Does NOT paint the buffer — caller decides (settled paints via applyTools,
    * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
    * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
    * heading toward, for the sidebar and the hover text.
@@ -349,6 +350,7 @@ async function main(): Promise<void> {
     }
 
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
+    overlaySettings.restore(searchTool, stopSearchParams(stop));
     overlayChanged(true);
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
@@ -563,7 +565,7 @@ async function main(): Promise<void> {
   function takeOver(how: ExitHow): void {
     if (frame.mode !== 'story' || driver.by === 'reader') return;
     handOver(readerTakesOver(storyPosition()), how);
-    applyOverlay();
+    applyTools();
   }
 
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
@@ -816,6 +818,7 @@ async function main(): Promise<void> {
   function buildCurrentUrlState(): UrlState {
     const state: UrlState = {
       overlayParams: {},
+      searchParams: overlaySettings.toUrl(searchTool),
     };
 
     if (currentOverlay) {
@@ -1021,7 +1024,7 @@ async function main(): Promise<void> {
     overlaySettings.set(overlay, update(overlaySettings.get(overlay)));
     if (overlay !== currentOverlay) return;
 
-    applyOverlay();
+    applyTools();
     overlayChanged(false);
     render();
     syncUrl(false);
@@ -1031,7 +1034,7 @@ async function main(): Promise<void> {
     trackOverlaySwitch(id, currentOverlayId);
     activateOverlay(id);
     overlayChanged(true);
-    applyOverlay();
+    applyTools();
     render();
     syncUrl(true);
   }
@@ -1050,7 +1053,7 @@ async function main(): Promise<void> {
     );
 
     const ref = `${click.book} ${click.chapter}:${click.verse}`;
-    const paletteFull = !canAddTerm(overlaySettings.get(searchOverlay));
+    const paletteFull = !canAddTerm(overlaySettings.get(searchTool));
     trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
 
     openWordMenu({
@@ -1064,7 +1067,7 @@ async function main(): Promise<void> {
         // first - otherwise the reader loses their Haftarah view and gains
         // nothing. The panel's own count was taken when it opened, and a
         // keyboard reader can add a word in between.
-        if (!canAddTerm(overlaySettings.get(searchOverlay))) return;
+        if (!canAddTerm(overlaySettings.get(searchTool))) return;
 
         trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
 
@@ -1076,7 +1079,7 @@ async function main(): Promise<void> {
         // Replaces the URL setOverlay just pushed rather than adding a second
         // history entry.
         changeSettings(
-          searchOverlay,
+          searchTool,
           (current) => searchForMeaning(current, word, meaning?.keys ?? null) ?? current,
         );
       },
@@ -1363,8 +1366,8 @@ async function main(): Promise<void> {
    */
   function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
     const fill = (p: Picture<Color | Color[] | null>): Picture => ({
+      ...p,
       colors: p.colors.map((c, i) => c ?? getDefaultColor(i)),
-      growth: p.growth,
     });
     return { from: fill(layer.from), to: layer.to && fill(layer.to), t: layer.t };
   }
@@ -1461,7 +1464,7 @@ async function main(): Promise<void> {
       // that repaints replaces the layer, so it is painted again next frame.
       keepDriving(STORY_DRIVING);
       if (colorLayer !== restingLayer || state.fromStop !== restingStop) {
-        applyOverlay();
+        applyTools();
         restingLayer = colorLayer;
         restingStop = state.fromStop;
       }
@@ -1508,6 +1511,7 @@ async function main(): Promise<void> {
 
     activateOverlay(next.overlay);
     if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
+    overlaySettings.restore(searchTool, next.searchParams);
     overlayChanged(true);
 
     const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
@@ -1517,7 +1521,7 @@ async function main(): Promise<void> {
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, verse, mapFocus(), mapViewport()));
 
-    applyOverlay();
+    applyTools();
     render();
 
     if (next.mode === 'story') {

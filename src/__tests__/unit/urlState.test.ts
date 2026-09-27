@@ -461,6 +461,9 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
       overlayParams: {
         q: 'בראשית',
       },
+      searchParams: {
+        q: 'בראשית',
+      },
     };
     const hash = buildUrlHash(original);
     mockWindowLocation(`http://localhost:5173/${hash}`);
@@ -1167,5 +1170,32 @@ describe('validateOverlayParams defaults', () => {
 
   it('leaves a key with no declared default absent', () => {
     expect(validateOverlayParams(specs, {})).not.toHaveProperty('note');
+  });
+});
+
+describe('the search in a link', () => {
+  beforeEach(() => {
+    mockHistory();
+  });
+
+  it('is read whatever overlay is on', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=commentary&q=אברם&mode=w');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlay).toBe('commentary');
+    expect(state.searchParams).toEqual({ q: 'אברם', mode: 'w' });
+  });
+
+  it('is left out of a link that does not search', () => {
+    mockWindowLocation('http://localhost:5173/#overlay=commentary');
+    expect(parseUrlState(overlayUrlParams).searchParams).toBeUndefined();
+  });
+
+  it('is written first, before the overlay it sits over', () => {
+    const hash = buildUrlHash({
+      searchParams: { q: 'אברם' },
+      overlay: 'commentary',
+      overlayParams: { category: 'Liturgy' },
+    });
+    expect(hash).toBe(`#q=${encodeURIComponent('אברם')}&overlay=commentary&category=Liturgy`);
   });
 });

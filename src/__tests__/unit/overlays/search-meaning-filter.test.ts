@@ -112,11 +112,11 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
 
     const figLeaves = verses[0];
-    expect(searchOverlay.getVerseColor(figLeaves)).not.toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(figLeaves)).not.toBeNull();
 
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor(figLeaves)).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(figLeaves)).toBeNull();
   });
 
   it('keeps the verses of the meanings still checked', () => {
@@ -124,7 +124,7 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor(verses[2])).not.toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[2])).not.toBeNull();
   });
 
   it('will not let the reader uncheck the last one', () => {
@@ -173,7 +173,7 @@ describe('the URL', () => {
       (b) => b.checked,
     );
     expect(checked).toHaveLength(1);
-    expect(searchOverlay.getVerseColor(verses[0])).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[0])).toBeNull();
   });
 });
 
@@ -244,11 +244,6 @@ describe('the Hebrew default', () => {
   });
 });
 
-function dimmed(): [number, number, number] {
-  const b = (0.4 + 0.2) * 0.3;
-  return [b, b, b];
-}
-
 function uncheck(container: HTMLElement, gloss: string): void {
   const row = [...container.querySelectorAll('.meaning-row')].find(
     (r) => r.querySelector('.meaning-gloss')?.textContent === gloss,
@@ -285,7 +280,7 @@ describe('showing only one meaning', () => {
     only(container, 'burnt-offering');
 
     // Genesis 3:7 is the fig-leaf verse, so it goes.
-    expect(searchOverlay.getVerseColor(verses[0])).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[0])).toBeNull();
   });
 
   it('offers a way back only once something is narrowed', () => {

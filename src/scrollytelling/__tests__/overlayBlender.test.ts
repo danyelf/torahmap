@@ -1,12 +1,17 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { colorsForStop, computeBlendedColors } from '../overlayBlender';
+import { pictureForStop, computeBlendedColors } from '../overlayBlender';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Overlay, UrlParamValues } from '../../overlays/types';
+import { searchTool } from '../../overlays/search/index';
+import { buildSearchIndex } from '../../search';
+import { SAMPLE_VERSE_TEXTS } from '../../__tests__/helpers/fixtures';
+import { SEARCH_COLORS } from '../../utils/color';
+import { HIGHLIGHT_CONSTANTS } from '../../constants';
 
 // The blender memoises per verses array, so a fresh one keeps each test's
 // colours its own.
@@ -336,7 +341,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
   });
 });
 
-describe('colorsForStop', () => {
+describe('pictureForStop', () => {
   it('gives a stop the same colours whether asked directly or as a zero blend', () => {
     registerOverlay(multiColorOverlay);
     const stop: ResolvedStoryStop = {
@@ -346,8 +351,32 @@ describe('colorsForStop', () => {
       overlay: 'test-multi-color',
     };
 
-    expect(colorsForStop(stop, verses, null)).toEqual(
-      computeBlendedColors(stop, stop, 0, verses, null).from.colors,
+    expect(pictureForStop(stop, verses, null)).toEqual(
+      computeBlendedColors(stop, stop, 0, verses, null).from,
     );
+  });
+});
+
+describe('a stop that searches', () => {
+  beforeEach(() => {
+    buildSearchIndex(SAMPLE_VERSE_TEXTS);
+    registerOverlay(searchTool);
+  });
+
+  it('fills its matches and dims the rest, as search alone always has', () => {
+    // "God" is in Genesis 1:1 and not 1:2.
+    const stop: ResolvedStoryStop = {
+      id: 'search',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'search',
+      overlayParams: { q: 'God' },
+    };
+    const picture = pictureForStop(stop, verses, null);
+    const grey = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+
+    expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
+    expect(picture.colors[1]).toEqual([grey, grey, grey]);
+    expect(picture.rings).toBeUndefined();
   });
 });

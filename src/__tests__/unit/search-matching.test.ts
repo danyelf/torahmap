@@ -2,7 +2,7 @@
 // Each case below is one a rule of their own would make them disagree on.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { searchOverlay as overlay } from '../../overlays/search';
+import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
 const searchOverlay = hostOverlay(overlay);

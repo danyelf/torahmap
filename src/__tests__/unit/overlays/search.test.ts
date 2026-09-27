@@ -9,9 +9,6 @@ import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS } from '../../../utils/color';
-import { HIGHLIGHT_CONSTANTS } from '../../../constants';
-
-const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
@@ -156,18 +153,9 @@ describe('Search Overlay', () => {
       expect(color3).toEqual(SEARCH_COLORS[0]);
     });
 
-    it('returns dimmed color for non-matching verses', () => {
+    it('gives no colour to a verse it does not match', () => {
       // Genesis 1:2 does not contain "God"
-      const verse = testVerses[1];
-      const color = searchOverlay.getVerseColor(verse) as Color;
-
-      expect(color).not.toBeNull();
-      assertValidColor(color);
-
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
-      expect(color[0]).toBeCloseTo(brightness, 2);
-      expect(color[1]).toBeCloseTo(brightness, 2);
-      expect(color[2]).toBeCloseTo(brightness, 2);
+      expect(searchOverlay.getVerseColor(testVerses[1])).toBeNull();
     });
 
     it('uses correct color from SEARCH_COLORS palette', () => {
@@ -223,14 +211,9 @@ describe('Search Overlay', () => {
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
 
-    it('dims verses without Hebrew matches', () => {
+    it('gives no colour to a verse without a Hebrew match', () => {
       // Genesis 2:1 does not contain אלהים
-      const verse = testVerses[3];
-      const color = searchOverlay.getVerseColor(verse) as Color;
-
-      expect(color).not.toBeNull();
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
-      expect(color[0]).toBeCloseTo(brightness, 2);
+      expect(searchOverlay.getVerseColor(testVerses[3])).toBeNull();
     });
 
     it('handles nikkud-insensitive search', () => {
@@ -874,10 +857,7 @@ describe('Search Overlay', () => {
       type(container, 'xyzabc123'); // Should not match anything
 
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as Color;
-        // All verses should be dimmed
-        const brightness = (0.4 + 0.2) * DIM_FACTOR;
-        expect(color[0]).toBeCloseTo(brightness, 2);
+        expect(searchOverlay.getVerseColor(verse)).toBeNull();
       }
     });
 
@@ -886,10 +866,7 @@ describe('Search Overlay', () => {
       type(container, 'God');
 
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      const color = searchOverlay.getVerseColor(verse) as Color;
-
-      const brightness = (0.4 + 0.2) * DIM_FACTOR;
-      expect(color[0]).toBeCloseTo(brightness, 2);
+      expect(searchOverlay.getVerseColor(verse)).toBeNull();
     });
 
     it('handles comma-separated terms', () => {
@@ -1261,10 +1238,10 @@ describe('Search Overlay', () => {
       type(container, 'God');
     });
 
-    it('returns valid RGB colors for all verses', () => {
+    it('returns valid RGB colors for every verse it matches', () => {
+      expect(testVerses.some((verse) => searchOverlay.getVerseColor(verse) !== null)).toBe(true);
       for (const verse of testVerses) {
         const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
-        expect(color).not.toBeNull();
 
         if (Array.isArray(color)) {
           if (typeof color[0] === 'number') {

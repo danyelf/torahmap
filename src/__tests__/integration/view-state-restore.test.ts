@@ -59,6 +59,17 @@ describe('restoring a link as one complete view', () => {
   });
 
   describe('which mode a link opens in', () => {
+    it('opens a link that only searches in Explore, with its search', () => {
+      const view = viewFor('#q=light');
+      expect(view.mode).toBe('explore');
+      expect(view.overlay).toBe('none');
+      expect(view.searchParams).toEqual({ q: 'light' });
+    });
+
+    it('keeps the search whatever overlay the link names', () => {
+      expect(viewFor('#q=light&overlay=trop').searchParams).toEqual({ q: 'light' });
+    });
+
     it('opens a camera-only hash in Explore', () => {
       const view = viewFor('#zoom=3&x=0&y=0');
 
@@ -72,6 +83,7 @@ describe('restoring a link as one complete view', () => {
         storyStop: null,
         overlay: 'none',
         overlayParams: {},
+        searchParams: {},
         verse: null,
         camera: DEFAULT_CAMERA,
       });

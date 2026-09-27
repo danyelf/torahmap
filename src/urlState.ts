@@ -57,6 +57,15 @@ export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParam
     : string;
 };
 
+/** The search's keys, read whatever overlay is on. */
+export const SEARCH_URL_PARAMS = [
+  { key: 'q', kind: 'text' },
+  // Positional across the terms in q, one letter each, and an empty entry for
+  // a term still on its default (see MODE_LETTERS in search/terms.ts).
+  { key: 'mode', kind: 'token' },
+  { key: 'm', kind: 'names' },
+] as const satisfies readonly UrlParamSpec[];
+
 /**
  * Overlay-specific settings held alongside the view state.
  *
@@ -215,6 +224,8 @@ export interface UrlState {
   x?: number;
   y?: number;
   overlayParams: OverlayParams;
+  /** The search's own keys, when the link searches. */
+  searchParams?: UrlParamValues;
 }
 
 /**
@@ -273,6 +284,8 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
     state.overlayParams = validateOverlayParams(lookupOverlayParams?.(state.overlay), params);
   }
 
+  const search = validateOverlayParams(SEARCH_URL_PARAMS, params);
+  if (Object.keys(search).length > 0) state.searchParams = search;
   return state;
 }
 
@@ -283,6 +296,10 @@ export function buildUrlHash(state: UrlState): string {
   }
 
   const params = new URLSearchParams();
+  // The search first, then the overlay it sits over.
+  for (const [key, value] of Object.entries(state.searchParams ?? {})) {
+    if (value) params.set(key, value);
+  }
 
   if (state.overlay) {
     params.set('overlay', state.overlay);

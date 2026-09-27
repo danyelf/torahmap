@@ -1,7 +1,7 @@
 // Color computation and hover highlighting for spatial items
 
 import type { SpatialItem, ItemState } from './types';
-import type { Overlay, Color } from './overlays/types';
+import type { Overlay, Color, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
@@ -114,6 +114,17 @@ export function overlayColorsFor<T, S>(
 ): (Color | Color[] | null)[] {
   if (overlay?.colorsFor) return overlay.colorsFor(items, settings, hovered);
   return items.map((v) => getOverlayColor(overlay, v, settings));
+}
+
+/** The map's colours for the tools a view shows. */
+export function toolsPicture<T>(
+  tools: Tools<T>,
+  items: SpatialItem<T>[],
+  hovered: SpatialItem<T> | null,
+): Picture<VerseColor | null> {
+  const colorsOf = (on: ToolOnMap<T> | null) =>
+    on && overlayColorsFor(on.tool, items, on.settings, hovered);
+  return combineLayers(items.length, colorsOf(tools.search), colorsOf(tools.overlay));
 }
 
 /**

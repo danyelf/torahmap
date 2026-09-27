@@ -1,4 +1,9 @@
-import { parseVerseFromUrl, type OverlayParams, type UrlState } from './urlState.ts';
+import {
+  parseVerseFromUrl,
+  type OverlayParams,
+  type UrlParamValues,
+  type UrlState,
+} from './urlState.ts';
 import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './camera.ts';
 import type { TanakhIdentity } from './types.ts';
 
@@ -15,6 +20,7 @@ export interface ViewState {
   storyStop: string | null;
   overlay: string;
   overlayParams: OverlayParams;
+  searchParams: UrlParamValues;
   verse: TanakhIdentity | null;
   camera: Camera;
 }
@@ -29,6 +35,7 @@ export function resolveViewState(
   isOverlay: (id: string) => boolean,
 ): ViewState {
   const namesNothing =
+    url.searchParams === undefined &&
     url.overlay === undefined &&
     url.verse === undefined &&
     url.zoom === undefined &&
@@ -41,6 +48,7 @@ export function resolveViewState(
     storyStop: url.story ?? null,
     overlay,
     overlayParams: overlay === 'none' ? {} : url.overlayParams,
+    searchParams: url.searchParams ?? {},
     verse: url.verse ? parseVerseFromUrl(url.verse) : null,
     camera: {
       zoom: url.zoom ?? defaultCamera.zoom,

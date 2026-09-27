@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { combineLayers, getDefaultColor } from '../../itemColoring';
+import { combineLayers, getDefaultColor, toolsPicture } from '../../itemColoring';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from '../../constants';
-import type { Color } from '../../overlays/types';
+import type { Color, Overlay } from '../../overlays/types';
+import { createVerse } from '../helpers/fixtures';
 
 const CYAN: Color = [0.1, 0.7, 0.8];
 const ORANGE: Color = [1, 0.5, 0];
@@ -77,5 +78,29 @@ describe('combineLayers', () => {
       expect(colors).toEqual([scaled(RED, DIM), scaled(BLUE, DIM)]);
       expect(rings).toEqual([null, null]);
     });
+  });
+});
+
+describe('toolsPicture', () => {
+  it('asks each tool for its colours and combines them, search over overlay', () => {
+    const overlay: Overlay = { id: 'o', name: 'O', getVerseColor: () => RED };
+    const search: Overlay = {
+      id: 's',
+      name: 'S',
+      getVerseColor: (v) => (v.verse === 1 ? CYAN : null),
+    };
+    const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
+
+    const picture = toolsPicture(
+      {
+        overlay: { tool: overlay, settings: undefined },
+        search: { tool: search, settings: undefined },
+      },
+      items,
+      null,
+    );
+
+    expect(picture.colors).toEqual([RED, scaled(RED, DIM)]);
+    expect(picture.rings).toEqual([CYAN, null]);
   });
 });

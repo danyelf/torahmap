@@ -120,3 +120,15 @@ export interface OverlaySummary {
   detail?: string;
   colors?: string[];
 }
+
+/** A tool on the map, with the settings the app holds for it. */
+export interface ToolOnMap<T = TanakhIdentity> {
+  tool: Overlay<T>;
+  settings: unknown;
+}
+
+/** What colours the map: the overlay and the search, each null while off. */
+export interface Tools<T = TanakhIdentity> {
+  overlay: ToolOnMap<T> | null;
+  search: ToolOnMap<T> | null;
+}
