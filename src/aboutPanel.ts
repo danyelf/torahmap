@@ -10,7 +10,7 @@ export function aboutHtml(
     'about',
     `<section class="about-section">
       <h3>Settings</h3>
-      <button type="button" id="hebrew-toggle" class="setting-toggle ${CONTROL.toggle}"></button>
+      <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
       <h3>Torahmap</h3>

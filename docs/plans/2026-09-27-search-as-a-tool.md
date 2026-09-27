@@ -1,7 +1,7 @@
 # Search as a tool of its own
 
 **Date:** 2026-09-27
-**Status:** Design agreed; not yet built.
+**Status:** Built (#266).
 **Issue:** #234. Step 2 of `2026-09-23-ui-information-hierarchy-design.md`.
 
 ## The problem

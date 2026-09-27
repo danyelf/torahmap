@@ -29,7 +29,7 @@ The core design principle is **position stability** - each verse occupies a perm
   is one line in `src/overlays/index.ts`.
 - **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.
 - **A guided story**, a mode of its own. Scrolling it moves the map from stop to
-  stop; its ☰ menu leads to the overlays, the stories and About & settings,
+  stop; its ☰ menu leads to search, the overlays, the stories and About & settings,
   and choosing one leaves the story where it is, to be continued later. The
   text is `public/data/story.md`, which the dev server hot-reloads.
 

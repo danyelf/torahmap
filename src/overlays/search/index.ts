@@ -419,7 +419,10 @@ function showVerse(result: SearchResult): void {
   }
 }
 
-/** A verse's colour given what a term list found: each matching term's own colour, split corner to corner when there are several. */
+/**
+ * A verse's colour given what a term list found: each matching term's own
+ * colour, split corner to corner when there are several.
+ */
 function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
   const termIndices = search.matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
   if (!termIndices || termIndices.length === 0) return null;

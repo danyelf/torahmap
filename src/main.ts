@@ -1054,7 +1054,10 @@ async function main(): Promise<void> {
    * them, keeping their focus.
    */
   function searchChanged(fresh: boolean): void {
-    if (fresh) searchControls.innerHTML = '';
+    if (fresh) {
+      searchTool.destroy?.();
+      searchControls.innerHTML = '';
+    }
     searchTool.renderControls?.(searchControls, overlaySettings.get(searchTool), changeSearch);
     updateLegend();
     refreshVersePopup();
@@ -1293,7 +1296,8 @@ async function main(): Promise<void> {
   function onChromeClick(e: MouseEvent): void {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
-    if (target.closest('.story-leave')) return dispatch({ type: 'choose', panel: 'overlay' });
+    if (target.closest('.story-leave'))
+      return dispatch({ type: 'choose', panel: toolsNow().search ? 'search' : 'overlay' });
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'story') return dispatch({ type: 'story' });
     if (action === 'restart') return readerOpensStory(0);

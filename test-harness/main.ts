@@ -149,7 +149,7 @@ async function main(): Promise<void> {
 
   // Hold the search's settings the way the app does, and draw the controls again
   // after every change.
-  const controlsContainer = document.getElementById('overlay-controls')!;
+  const controlsContainer = document.getElementById('search-controls')!;
   const settings = createOverlaySettings();
 
   function draw(): void {
