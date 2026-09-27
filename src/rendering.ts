@@ -13,6 +13,7 @@ import {
   VERSE_ATTRIBUTES,
   VERSE_OFFSETS,
   FLOATS_PER_VERSE,
+  type Picture,
 } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
@@ -54,6 +55,8 @@ export interface RenderState<T = TanakhIdentity> {
   hoverOutlineBuffer: WebGLBuffer | null;
   verses: SpatialItem<T>[];
   dpr: number;
+  /** How far the verses have gone from their first picture to their second, 0 to 1. */
+  fade: number;
 }
 
 export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
@@ -97,19 +100,22 @@ export function createRenderState<T>(
     hoverOutlineBuffer: null,
     verses,
     dpr,
+    fade: 0,
   };
 }
 
 /**
  * Refills the per-verse buffer with updated colors. Call after overlay changes.
  * The buffer object stays the same, so the vertex array still points at it.
+ * Given a second picture, `state.fade` then moves between the two.
  */
 export function rebuildGeometry<T>(
   gl: WebGL2RenderingContext,
   state: RenderState<T>,
-  colors?: ([number, number, number] | [number, number, number][])[],
+  from?: Picture,
+  to?: Picture,
 ): void {
-  const geometry = buildItemGeometry(state.verses, colors);
+  const geometry = buildItemGeometry(state.verses, from, to);
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
@@ -136,6 +142,7 @@ export function render<T>(
   const offset = offsetFor(canvas, dpr, camera);
   gl.uniform2f(programs.main.uniforms.pan, offset.x, offset.y);
   gl.uniform1f(programs.main.uniforms.zoom, camera.zoom * dpr);
+  gl.uniform1f(programs.main.uniforms.fade, state.fade);
 
   gl.bindVertexArray(vertexArray);
   // Six corners (two triangles) for each verse

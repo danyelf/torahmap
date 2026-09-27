@@ -1,43 +1,70 @@
 import type { Color } from '../overlays/types.ts';
+import type { Picture } from '../geometry.ts';
 import { lerpColor } from './interpolation';
 
+/** What the map shows: one picture, `t` of the way to fading into another. */
+export interface ColorLayer<C = Color | Color[]> {
+  from: Picture<C>;
+  to?: Picture<C>;
+  t: number;
+}
+
+export function still<C>(picture: Picture<C>): ColorLayer<C> {
+  return { from: picture, t: 0 };
+}
+
+/** The layer as a single picture: what a new fade starts from. */
+export function flatten(layer: ColorLayer): Picture {
+  return layer.to ? mergePictures(layer.from, layer.to, layer.t) : layer.from;
+}
+
+function growthAt(picture: Picture, i: number, slots: number): number {
+  return picture.growth?.[i] ?? (slots > 1 ? 1 : 0);
+}
+
 /**
- * Blend two arrays of (single-or-multi) verse colors slot-by-slot.
+ * One picture `t` of the way between two, blended stripe by stripe.
  *
- * Multi-color verses stay multi-color through the transition: each slot lerps
- * independently. When one side has fewer slots than the other, the shorter
- * side is padded with the default color so missing slots fade in/out
- * cleanly from the unmatched-verse fallback.
+ * The side with fewer stripes is stretched to match, each of its colours
+ * covering the stripes nearest where its band lay. A verse whose stripe count
+ * differs between the two therefore changes its stripe widths, which the
+ * shader's fade between whole pictures avoids; this is only for collapsing a
+ * fade in progress when another has to start from it.
  *
  * If a verse ends up with a single slot, the result is returned as a plain
  * Color (not [Color]) so the geometry buffer emits it the same way it would
  * at rest.
  */
-export function blendColorArrays(
-  from: (Color | Color[])[],
-  to: (Color | Color[])[],
-  t: number,
-): (Color | Color[])[] {
-  const len = Math.max(from.length, to.length);
-  const result: (Color | Color[])[] = new Array(len);
-  const defaultColor: Color = [0.15, 0.15, 0.15];
+export function mergePictures(from: Picture, to: Picture, t: number): Picture {
+  const len = Math.max(from.colors.length, to.colors.length);
+  const colors: (Color | Color[])[] = new Array(len);
+  const growth: number[] = new Array(len);
 
   for (let i = 0; i < len; i++) {
-    const fromArr = toColorArray(i < from.length ? from[i] : undefined);
-    const toArr = toColorArray(i < to.length ? to[i] : undefined);
+    const fromArr = toColorArray(from.colors[i]);
+    const toArr = toColorArray(to.colors[i]);
     const maxLen = Math.max(fromArr.length, toArr.length, 1);
 
     const blendedSlots: Color[] = new Array(maxLen);
     for (let j = 0; j < maxLen; j++) {
-      const a = j < fromArr.length ? fromArr[j] : defaultColor;
-      const b = j < toArr.length ? toArr[j] : defaultColor;
-      blendedSlots[j] = lerpColor(a, b, t);
+      blendedSlots[j] = lerpColor(stretched(fromArr, j, maxLen), stretched(toArr, j, maxLen), t);
     }
 
-    result[i] = maxLen === 1 ? blendedSlots[0] : blendedSlots;
+    colors[i] = maxLen === 1 ? blendedSlots[0] : blendedSlots;
+    const grownFrom = growthAt(from, i, fromArr.length);
+    const grownTo = growthAt(to, i, toArr.length);
+    growth[i] = grownFrom + (grownTo - grownFrom) * t;
   }
 
-  return result;
+  return { colors, growth };
+}
+
+const EMPTY_SLOT: Color = [0.15, 0.15, 0.15];
+
+// The colour at slot `j` of `slots` spread over `count` equal bands.
+function stretched(slots: Color[], j: number, count: number): Color {
+  if (slots.length === 0) return EMPTY_SLOT;
+  return slots[Math.floor((j * slots.length) / count)];
 }
 
 // A single Color is a 3-tuple of numbers; Color[] is an array of those tuples.

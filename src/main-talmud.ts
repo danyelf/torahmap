@@ -107,7 +107,7 @@ async function main(): Promise<void> {
       talmudSegmentsEqual,
     );
     const colors = applyItemColors(states);
-    rebuildGeometry(renderContext.gl, renderState, colors);
+    rebuildGeometry(renderContext.gl, renderState, { colors });
   }
 
   function doRender(): void {

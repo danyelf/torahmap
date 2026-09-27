@@ -54,7 +54,7 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(stop, stop, 0, verses, null);
+    const result = computeBlendedColors(stop, stop, 0, verses, null).from.colors;
 
     // Verse 0 should be a Color[] (array of tuples), not a flattened single tuple
     const c0 = result[0];
@@ -87,7 +87,7 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(fromStop, toStop, 0, verses, null);
+    const result = computeBlendedColors(fromStop, toStop, 0, verses, null).from.colors;
     const c0 = result[0];
     expect(Array.isArray(c0)).toBe(true);
     expect(Array.isArray((c0 as unknown[])[0])).toBe(true);
@@ -97,7 +97,7 @@ describe('computeBlendedColors multi-color preservation', () => {
     ]);
   });
 
-  it('preserves multi-color Color[] during in-progress transition (0 < t < 1)', () => {
+  it('hands both stops their own colours to fade between mid-transition (0 < t < 1)', () => {
     const fromStop: ResolvedStoryStop = {
       id: 's1',
       title: 'S1',
@@ -112,16 +112,14 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(fromStop, toStop, 0.5, verses, null);
-    const c0 = result[0];
-    // During transition between two identical multi-color stops, slot-by-slot lerp
-    // (red→red, blue→blue) keeps the multi-color array intact.
-    expect(Array.isArray(c0)).toBe(true);
-    expect(Array.isArray((c0 as unknown[])[0])).toBe(true); // first elem is itself a tuple => Color[]
-    expect(c0).toEqual([
+    const layer = computeBlendedColors(fromStop, toStop, 0.5, verses, null);
+    const stripes = [
       [1, 0, 0],
       [0, 0, 1],
-    ]);
+    ];
+    expect(layer.from.colors[0]).toEqual(stripes);
+    expect(layer.to?.colors[0]).toEqual(stripes);
+    expect(layer.t).toBe(0.5);
   });
 });
 
@@ -349,7 +347,7 @@ describe('colorsForStop', () => {
     };
 
     expect(colorsForStop(stop, verses, null)).toEqual(
-      computeBlendedColors(stop, stop, 0, verses, null),
+      computeBlendedColors(stop, stop, 0, verses, null).from.colors,
     );
   });
 });
