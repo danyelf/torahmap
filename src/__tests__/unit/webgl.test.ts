@@ -180,7 +180,7 @@ describe('createProgram', () => {
       expect(vertexSource).toContain('uniform vec2 u_pan');
       expect(vertexSource).toContain('uniform float u_zoom');
       expect(vertexSource).toContain('in vec4 a_rect');
-      expect(vertexSource).toContain('in vec3 a_color');
+      expect(vertexSource).toContain('in vec4 a_fill');
     });
 
     it('compiles fragment shader with correct source', () => {
@@ -190,7 +190,7 @@ describe('createProgram', () => {
 
       expect(fragmentSource).toContain('#version 300 es');
       expect(fragmentSource).toContain('precision mediump float');
-      expect(fragmentSource).toContain('in vec3 v_color');
+      expect(fragmentSource).toContain('flat in highp vec4 v_fill');
       expect(fragmentSource).toContain('out vec4 fragColor');
     });
 
@@ -228,7 +228,7 @@ describe('createProgram', () => {
       createProgram(gl);
 
       const fragmentSource = shaderSourceOf(gl, 1);
-      expect(fragmentSource).toContain('v_colorCount');
+      expect(fragmentSource).toContain('v_counts');
       expect(fragmentSource).toContain('v_uv');
       expect(fragmentSource).toContain('hash');
     });
@@ -254,6 +254,7 @@ describe('createProgram', () => {
       expect(program.uniforms.resolution).toBeDefined();
       expect(program.uniforms.pan).toBeDefined();
       expect(program.uniforms.zoom).toBeDefined();
+      expect(program.uniforms.ring).toBeDefined();
     });
 
     it('queries correct uniform names', () => {
@@ -383,15 +384,16 @@ describe('createProgram', () => {
       expect(program.program).toBe(mockProgram);
     });
 
-    it('uniforms contains all 4 uniforms', () => {
+    it('uniforms contains all 5 uniforms', () => {
       const program = createProgram(gl);
 
       const uniformKeys = Object.keys(program.uniforms);
-      expect(uniformKeys).toHaveLength(4);
+      expect(uniformKeys).toHaveLength(5);
       expect(uniformKeys).toContain('resolution');
       expect(uniformKeys).toContain('pan');
       expect(uniformKeys).toContain('zoom');
       expect(uniformKeys).toContain('fade');
+      expect(uniformKeys).toContain('ring');
     });
   });
 
@@ -474,39 +476,43 @@ describe('createProgram', () => {
       expect(fragmentSource).toMatch(/^#version 300 es/);
     });
 
-    it('vertex shader passes colors to fragment shader', () => {
+    it('vertex shader passes both pictures, fill and ring, to the fragment shader', () => {
       createProgram(gl);
       const vertexSource = shaderSourceOf(gl, 0);
 
-      expect(vertexSource).toContain('out vec3 v_color');
-      expect(vertexSource).toContain('out vec3 v_color2');
-      expect(vertexSource).toContain('out vec3 v_color3');
-      expect(vertexSource).toContain('out vec3 v_color4');
-      expect(vertexSource).toContain('v_color = a_color');
+      for (const name of ['v_fill', 'v_ring', 'v_nextFill', 'v_nextRing']) {
+        expect(vertexSource).toContain(`flat out highp vec4 ${name}`);
+      }
+      expect(vertexSource).toContain('v_fill = a_fill');
     });
 
-    it('fragment shader receives colors from vertex shader', () => {
+    it('fragment shader receives both pictures, and their stripe counts, unblended', () => {
       createProgram(gl);
       const fragmentSource = shaderSourceOf(gl, 1);
 
-      expect(fragmentSource).toContain('in vec3 v_color');
-      expect(fragmentSource).toContain('in vec3 v_color2');
-      expect(fragmentSource).toContain('in vec3 v_color3');
-      expect(fragmentSource).toContain('in vec3 v_color4');
+      for (const name of ['v_fill', 'v_ring', 'v_nextFill', 'v_nextRing']) {
+        expect(fragmentSource).toContain(`flat in highp vec4 ${name}`);
+      }
+      expect(fragmentSource).toContain('flat in ivec4 v_counts');
     });
 
-    it('fragment shader uses flat interpolation for colorCount', () => {
+    it('both shaders read the ring widths', () => {
       createProgram(gl);
-      const fragmentSource = shaderSourceOf(gl, 1);
+      expect(shaderSourceOf(gl, 0)).toContain('uniform highp vec3 u_ring');
+      expect(shaderSourceOf(gl, 1)).toContain('uniform highp vec3 u_ring');
+    });
 
-      expect(fragmentSource).toContain('flat in int v_colorCount');
+    it('measures the ring in from the drawn edge', () => {
+      createProgram(gl);
+      expect(shaderSourceOf(gl, 1)).toContain('float inset = u_ring.x + u_ring.y');
     });
 
     it('vertex shader transforms positions correctly', () => {
       createProgram(gl);
       const vertexSource = shaderSourceOf(gl, 0);
 
-      expect(vertexSource).toContain('mix(rect.xy, rect.zw, uv) + u_pan');
+      expect(vertexSource).toContain('mix(rect.xy, rect.zw, uv)');
+      expect(vertexSource).toContain('(world + u_pan) * u_zoom');
       expect(vertexSource).toContain('* u_zoom');
       expect(vertexSource).toContain('gl_Position');
     });
