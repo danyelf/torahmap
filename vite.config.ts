@@ -1,6 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import { execSync } from 'child_process';
-import { resolve } from 'path';
+import { basename, resolve } from 'path';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -16,17 +16,22 @@ function getGitBranch(): string {
 }
 
 /**
- * Vite plugin: send HMR event when story.md changes in public/data/.
+ * Vite plugin: send HMR event when a story in public/data/stories/ changes.
  * The app listens for this to hot-reload the story without a full page refresh.
  */
 function storyHotReload(): Plugin {
+  const dir = resolve(__dirname, 'public/data/stories');
   return {
     name: 'story-hot-reload',
     configureServer(server) {
-      server.watcher.add(resolve(__dirname, 'public/data/story.md'));
+      server.watcher.add(dir);
       server.watcher.on('change', (file) => {
-        if (file.endsWith('story.md')) {
-          server.ws.send({ type: 'custom', event: 'story-update' });
+        if (file.startsWith(dir) && file.endsWith('.md')) {
+          server.ws.send({
+            type: 'custom',
+            event: 'story-update',
+            data: { id: basename(file, '.md') },
+          });
         }
       });
     },

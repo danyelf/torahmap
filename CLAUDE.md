@@ -27,10 +27,11 @@ The core design principle is **position stability** - each verse occupies a perm
   Text Dating is written and tested but off the menu on purpose: it is meant to
   come back as a mode of its own rather than a menu entry. Registering it again
   is one line in `src/overlays/index.ts`.
-- **A guided story**, a mode of its own. Scrolling it moves the map from stop to
-  stop; its ☰ menu leads to the overlays, the stories and About & settings,
+- **Guided stories**, a mode of their own. Scrolling one moves the map from stop
+  to stop; its ☰ menu leads to the overlays, the stories and About & settings,
   and choosing one leaves the story where it is, to be continued later. The
-  text is `public/data/story.md`, which the dev server hot-reloads.
+  stories are in `public/data/stories/`, listed in order in its `index.json`;
+  the dev server hot-reloads them.
 
 ## Quick Start
 

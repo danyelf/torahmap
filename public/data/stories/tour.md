@@ -1,4 +1,6 @@
 ---
+title: The guided tour
+description: What the map shows, how to read it, and how Abraham is remembered across the Tanakh.
 easing: ease-in-out
 ---
 

@@ -124,6 +124,7 @@ import {
   resolveStops,
   stopLabel,
 } from './scrollytelling/storyPanel';
+import { listedStories, loadStoryIndex, storyToOpen } from './scrollytelling/storyIndex';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { blendColorArrays } from './scrollytelling/colorBlending';
@@ -1132,7 +1133,9 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let storyData = await loadStoryData();
+  const listed = listedStories(await loadStoryIndex(), location.hostname);
+  const storyId = storyToOpen(listed, null);
+  let storyData = await loadStoryData(storyId);
   const resolveStory = (): ResolvedStoryStop[] =>
     resolveStops(storyData.stops, initialCamera, verses, mapFocus(), {
       width: canvas.clientWidth,
@@ -1160,7 +1163,7 @@ async function main(): Promise<void> {
 
   async function reloadStory(): Promise<void> {
     const position = storyPosition();
-    storyData = await loadStoryData();
+    storyData = await loadStoryData(storyId);
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     setStoryPosition(position);
@@ -1171,8 +1174,8 @@ async function main(): Promise<void> {
   }
 
   if (import.meta.hot) {
-    import.meta.hot.on('story-update', () => {
-      reloadStory();
+    import.meta.hot.on('story-update', ({ id }: { id: string }) => {
+      if (id === storyId) reloadStory();
     });
   }
 

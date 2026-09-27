@@ -15,10 +15,9 @@ function isRegions(cam: CameraRef): cam is { kind: 'regions'; names: string[] } 
   return typeof cam === 'object' && 'kind' in cam && cam.kind === 'regions';
 }
 
-export async function loadStoryData(): Promise<StoryData> {
-  const response = await fetch('/data/story.md');
-  const markdown = await response.text();
-  return parseStoryMarkdown(markdown);
+export async function loadStoryData(id: string): Promise<StoryData> {
+  const response = await fetch(`/data/stories/${id}.md`);
+  return parseStoryMarkdown(await response.text());
 }
 
 // Minimal markdown-to-HTML for story text: **bold**, *italic*, [links](url),

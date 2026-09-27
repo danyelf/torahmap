@@ -1,4 +1,4 @@
-// The shipped story reads the way it was written. The parser drops what it
+// Every shipped story reads the way it was written. The parser drops what it
 // cannot read without failing, so a slip such as `zoom 0.5` quietly changes
 // the view instead of stopping the commit.
 import { describe, it, expect } from 'vitest';
@@ -9,13 +9,41 @@ import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { parseVerseFromUrl } from '../../urlState';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
-const markdown = fs.readFileSync(path.join(dataDir, 'story.md'), 'utf-8');
-const { stops } = parseStoryMarkdown(markdown);
-const comments = [...markdown.matchAll(/<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g)];
+const storiesDir = path.join(dataDir, 'stories');
+const index: { id: string }[] = JSON.parse(
+  fs.readFileSync(path.join(storiesDir, 'index.json'), 'utf-8'),
+);
+const readMarkdown = (id: string): string =>
+  fs.readFileSync(path.join(storiesDir, `${id}.md`), 'utf-8');
 
 registerAllOverlays();
 
-describe('story.md', () => {
+describe('stories/index.json', () => {
+  it('lists every story in the directory, and only those', () => {
+    const files = fs
+      .readdirSync(storiesDir)
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => f.replace(/\.md$/, ''))
+      .sort();
+    expect(index.map((s) => s.id).sort()).toEqual(files);
+  });
+
+  it('gives every story a title and a description', () => {
+    const missing = index
+      .filter(({ id }) => {
+        const story = parseStoryMarkdown(readMarkdown(id));
+        return !story.title || !story.description;
+      })
+      .map(({ id }) => id);
+    expect(missing).toEqual([]);
+  });
+});
+
+describe.each(index.map((s) => s.id))('%s.md', (id) => {
+  const markdown = readMarkdown(id);
+  const { stops } = parseStoryMarkdown(markdown);
+  const comments = [...markdown.matchAll(/<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g)];
+
   it('writes every setting as key: value', () => {
     const unread = comments.flatMap(([, id, settings]) =>
       (settings === undefined ? ([] as string[]) : settings.split('|'))
