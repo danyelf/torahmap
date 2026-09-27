@@ -57,14 +57,16 @@ export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParam
     : string;
 };
 
-/** The search's keys, read whatever overlay is on. */
+/** The search's keys, read whatever overlay is on; no overlay may claim them. */
 export const SEARCH_URL_PARAMS = [
-  { key: 'q', kind: 'text' },
-  // Positional across the terms in q, one letter each, and an empty entry for
-  // a term still on its default (see MODE_LETTERS in search/terms.ts).
+  { key: 'search', kind: 'text' },
+  // Positional across the terms in `search`, one letter each, and an empty
+  // entry for a term still on its default (see MODE_LETTERS in search/terms.ts).
   { key: 'mode', kind: 'token' },
   { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
+
+export const SEARCH_KEYS: ReadonlySet<string> = new Set(SEARCH_URL_PARAMS.map((p) => p.key));
 
 /**
  * Overlay-specific settings held alongside the view state.

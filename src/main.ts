@@ -127,7 +127,7 @@ import {
   stopLabel,
 } from './scrollytelling/storyPanel';
 import { computeInterpolatedState } from './scrollytelling/controller';
-import { computeBlendedColors, stopSearchParams } from './scrollytelling/overlayBlender';
+import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
 import type { Picture } from './geometry';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
@@ -350,7 +350,7 @@ async function main(): Promise<void> {
     }
 
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
-    overlaySettings.restore(searchTool, stopSearchParams(stop));
+    overlaySettings.restore(searchTool, stop.searchParams ?? {});
     overlayChanged(true);
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
@@ -1114,11 +1114,15 @@ async function main(): Promise<void> {
         const zoom = Math.round(camera.zoom * 100) / 100;
 
         let extraParts = '';
-        if (currentOverlay) {
-          extraParts += ` | overlay: ${currentOverlay.id}`;
-          for (const [key, value] of Object.entries(overlaySettings.toUrl(currentOverlay))) {
+        const { overlay } = toolsNow();
+        if (overlay) {
+          extraParts += ` | overlay: ${overlay.tool.id}`;
+          for (const [key, value] of Object.entries(overlaySettings.toUrl(overlay.tool))) {
             extraParts += ` | ${key}: ${value}`;
           }
+        }
+        for (const [key, value] of Object.entries(overlaySettings.toUrl(searchTool))) {
+          extraParts += ` | ${key}: ${value}`;
         }
         if (pinnedVerse) {
           const book = pinnedVerse.book.replace(/ /g, '.');

@@ -39,7 +39,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  searchOverlay.restore({ q: '' });
+  searchOverlay.restore({ search: '' });
   configure({ verses: [createVerse({ book: 'Genesis', chapter: 8, verse: 20 })] });
 
   // Twice, because that is what the app does. The first call names the verse
@@ -64,7 +64,7 @@ function marks(): Array<[string, string]> {
 
 /** Search for עלה twice over, narrowed to the verb and to the nouns. */
 function searchBothReadings(): void {
-  searchOverlay.restore({ q: 'עלה, עלה', m: `${ASCEND},${OFFERINGS}` });
+  searchOverlay.restore({ search: 'עלה, עלה', m: `${ASCEND},${OFFERINGS}` });
 }
 
 describe('marking a verse that holds two words of one spelling', () => {
@@ -81,13 +81,13 @@ describe('marking a verse that holds two words of one spelling', () => {
   });
 
   it('marks the verb alone when only the verb is searched for', () => {
-    searchOverlay.restore({ q: 'עלה', m: ASCEND });
+    searchOverlay.restore({ search: 'עלה', m: ASCEND });
 
     expect(marks()).toEqual([['term-0', 'ויעל']]);
   });
 
   it('marks the offering alone when only the nouns are searched for', () => {
-    searchOverlay.restore({ q: 'עלה', m: OFFERINGS });
+    searchOverlay.restore({ search: 'עלה', m: OFFERINGS });
 
     expect(marks()).toEqual([['term-0', 'עלת']]);
   });
@@ -95,7 +95,7 @@ describe('marking a verse that holds two words of one spelling', () => {
   it('still marks both when the term is not narrowed at all', () => {
     // Nothing chosen means every reading, so the spelling is the whole
     // question again and both words belong to the one term.
-    searchOverlay.restore({ q: 'עלה' });
+    searchOverlay.restore({ search: 'עלה' });
 
     expect(marks().map(([, word]) => word)).toEqual(['ויעל', 'עלת']);
   });

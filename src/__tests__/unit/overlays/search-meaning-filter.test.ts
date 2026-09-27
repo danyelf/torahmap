@@ -47,7 +47,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  searchOverlay.restore({ q: '', mode: undefined, m: undefined });
+  searchOverlay.restore({ search: '', mode: undefined, m: undefined });
 });
 
 describe('the meaning list', () => {
@@ -140,8 +140,8 @@ describe('narrowing repaints the map', () => {
 });
 
 describe('the URL', () => {
-  it('writes back the q, mode and m it was read from', () => {
-    const link = { q: 'עלה, רוח, light', mode: 'm,w,', m: '<LH/@heb,,' };
+  it('writes back the search, mode and m it was read from', () => {
+    const link = { search: 'עלה, רוח, light', mode: 'm,w,', m: '<LH/@heb,,' };
     const settings = searchOverlay.fromUrl(link);
 
     expect(searchOverlay.overlay.settingsToUrl!(settings)).toEqual(link);
@@ -166,7 +166,7 @@ describe('the URL', () => {
   });
 
   it('restores it', () => {
-    searchOverlay.restore({ q: 'עלה', mode: 'r', m: '<LH/@heb' });
+    searchOverlay.restore({ search: 'עלה', mode: 'r', m: '<LH/@heb' });
     const container = render();
 
     const checked = [...container.querySelectorAll<HTMLInputElement>('.meaning-row input')].filter(

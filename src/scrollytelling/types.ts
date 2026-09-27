@@ -22,6 +22,7 @@ export interface StoryStop {
   camera: CameraRef;
   overlay: string | null;
   overlayParams?: Record<string, string>;
+  searchParams?: Record<string, string>; // the search's own keys: search, mode, m
   verse?: string; // "Genesis.1.1" format — pins this verse in the sidebar
   easing?: EasingName;
   zoom?: number; // zoom for a verse camera, or instead of fitting a region camera

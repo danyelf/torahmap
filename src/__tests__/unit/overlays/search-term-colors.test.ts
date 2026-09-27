@@ -60,7 +60,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   configure({ verses });
-  searchOverlay.restore({ q: '', mode: undefined, m: undefined });
+  searchOverlay.restore({ search: '', mode: undefined, m: undefined });
 });
 
 describe('a surviving term keeps one colour', () => {

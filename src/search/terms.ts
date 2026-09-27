@@ -156,12 +156,12 @@ export function selectedKeys(term: SearchTerm): string[] {
 /**
  * The narrowed meanings, for the URL's `m` parameter.
  *
- * Positional alongside the comma-separated terms in `q`: one entry per term,
+ * Positional alongside the comma-separated terms in `search`: one entry per term,
  * `|` between the lexemes of one term, and an empty entry for a term the reader
  * has not narrowed. A search with nothing narrowed writes nothing at all, so an
  * ordinary URL is unchanged.
  *
- * Positions are safe here in a way they are not in the live list, because `q`
+ * Positions are safe here in a way they are not in the live list, because `search`
  * and `m` are written and read as one snapshot. It is editing that needs
  * identity.
  *
@@ -329,7 +329,7 @@ const MODE_BY_LETTER = new Map<string, SearchMode>(
 /**
  * The chosen modes, for the URL's `mode` parameter.
  *
- * Positional alongside the comma-separated terms in `q`, exactly as `m` is:
+ * Positional alongside the comma-separated terms in `search`, exactly as `m` is:
  * one entry per term, and an empty entry for a term still on its default. A
  * search where nobody has chosen writes nothing at all, so an ordinary link is
  * unchanged.

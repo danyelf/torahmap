@@ -130,24 +130,22 @@ describe('parseUrlState', () => {
   });
 
   it('parses search query parameter', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=search&q=בראשית');
+    mockWindowLocation('http://localhost:5173/#search=בראשית');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlay).toBe('search');
-    expect(state.overlayParams.q).toBe('בראשית');
+    expect(state.overlay).toBeUndefined();
+    expect(state.searchParams?.search).toBe('בראשית');
   });
 
   it('parses search query with special characters', () => {
-    mockWindowLocation(
-      'http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA',
-    );
+    mockWindowLocation('http://localhost:5173/#search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.q).toBe('בראשית');
+    expect(state.searchParams?.search).toBe('בראשית');
   });
 
   it('parses search query with spaces', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=search&q=In%20the%20beginning');
+    mockWindowLocation('http://localhost:5173/#search=In%20the%20beginning');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams.q).toBe('In the beginning');
+    expect(state.searchParams?.search).toBe('In the beginning');
   });
 
   it('parses complete state with all parameters', () => {
@@ -358,25 +356,21 @@ describe('buildUrlHash', () => {
 
   it('includes search query', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'בראשית',
-      },
+      searchParams: { search: 'בראשית' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
-    expect(hash).toContain('overlay=search');
-    expect(hash).toContain('q=');
+    expect(hash).not.toContain('overlay=');
+    expect(hash).toContain('search=');
   });
 
   it('encodes special characters in search query', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'test & special',
-      },
+      searchParams: { search: 'test & special' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
-    expect(hash).toContain('q=test+%26+special');
+    expect(hash).toContain('search=test+%26+special');
   });
 
   it('builds complete hash with multiple parameters', () => {
@@ -457,13 +451,8 @@ describe('parseUrlState and buildUrlHash roundtrip', () => {
 
   it('roundtrips search overlay with Hebrew', () => {
     const original: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'בראשית',
-      },
-      searchParams: {
-        q: 'בראשית',
-      },
+      searchParams: { search: 'בראשית' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(original);
     mockWindowLocation(`http://localhost:5173/${hash}`);
@@ -729,80 +718,68 @@ describe('backward compatibility', () => {
 describe('special character encoding', () => {
   it('handles Hebrew characters in search queries', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים',
-      },
+      searchParams: { search: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const parsed = parseUrlState(overlayUrlParams);
-    expect(parsed.overlayParams.q).toBe('בְּרֵאשִׁית בָּרָא אֱלֹהִים');
+    expect(parsed.searchParams?.search).toBe('בְּרֵאשִׁית בָּרָא אֱלֹהִים');
   });
 
   it('handles ampersands in search queries', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'heaven & earth',
-      },
+      searchParams: { search: 'heaven & earth' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const parsed = parseUrlState(overlayUrlParams);
-    expect(parsed.overlayParams.q).toBe('heaven & earth');
+    expect(parsed.searchParams?.search).toBe('heaven & earth');
   });
 
   it('handles quotes in search queries', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: '"In the beginning"',
-      },
+      searchParams: { search: '"In the beginning"' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const parsed = parseUrlState(overlayUrlParams);
-    expect(parsed.overlayParams.q).toBe('"In the beginning"');
+    expect(parsed.searchParams?.search).toBe('"In the beginning"');
   });
 
   it('handles special punctuation in search', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'word1, word2; word3!',
-      },
+      searchParams: { search: 'word1, word2; word3!' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const parsed = parseUrlState(overlayUrlParams);
-    expect(parsed.overlayParams.q).toBe('word1, word2; word3!');
+    expect(parsed.searchParams?.search).toBe('word1, word2; word3!');
   });
 
   it('handles plus signs in search queries', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'word+with+plus',
-      },
+      searchParams: { search: 'word+with+plus' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const parsed = parseUrlState(overlayUrlParams);
-    expect(parsed.overlayParams.q).toBe('word+with+plus');
+    expect(parsed.searchParams?.search).toBe('word+with+plus');
   });
 
   it('handles equals signs in search queries', () => {
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: {
-        q: 'test=value',
-      },
+      searchParams: { search: 'test=value' },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const parsed = parseUrlState(overlayUrlParams);
-    expect(parsed.overlayParams.q).toBe('test=value');
+    expect(parsed.searchParams?.search).toBe('test=value');
   });
 
   it('handles slashes in category names', () => {
@@ -823,13 +800,13 @@ describe('edge cases and error handling', () => {
   it('handles very long search queries', () => {
     const longQuery = 'a'.repeat(1000);
     const state: UrlState = {
-      overlay: 'search',
-      overlayParams: { q: longQuery },
+      searchParams: { search: longQuery },
+      overlayParams: {},
     };
     const hash = buildUrlHash(state);
     mockWindowLocation(`http://localhost:5173/${hash}`);
     const parsed = parseUrlState(overlayUrlParams);
-    expect(parsed.overlayParams.q).toBe(longQuery);
+    expect(parsed.searchParams?.search).toBe(longQuery);
   });
 
   it('handles extreme zoom values at boundaries', () => {
@@ -934,10 +911,10 @@ describe('edge cases and error handling', () => {
 
 describe('overlay-supplied parameters', () => {
   it('reads only the keys the active overlay declares', () => {
-    // "trop" belongs to the trop overlay, not to search
-    mockWindowLocation('http://localhost:5173/#overlay=search&q=light&trop=etnachta');
+    // "category" belongs to commentary, not to trop
+    mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta&category=x');
     const state = parseUrlState(overlayUrlParams);
-    expect(state.overlayParams).toEqual({ q: 'light' });
+    expect(state.overlayParams).toEqual({ trop: 'etnachta' });
   });
 
   it('ignores keys no overlay declared', () => {
@@ -947,13 +924,13 @@ describe('overlay-supplied parameters', () => {
   });
 
   it('reads nothing for an overlay that declares no parameters', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=text-dating&q=light');
+    mockWindowLocation('http://localhost:5173/#overlay=text-dating&search=light');
     const state = parseUrlState(overlayUrlParams);
     expect(state.overlayParams).toEqual({});
   });
 
   it('reads nothing when no overlay is active', () => {
-    mockWindowLocation('http://localhost:5173/#q=light&trop=etnachta');
+    mockWindowLocation('http://localhost:5173/#search=light&trop=etnachta');
     const state = parseUrlState(overlayUrlParams);
     expect(state.overlayParams).toEqual({});
   });
@@ -1121,9 +1098,6 @@ describe('whole links, parsed with the real overlay declarations', () => {
     ['#overlay=trop&trop=etnachta', { trop: 'etnachta' }],
     ['#overlay=commentary&category=Midrash', { category: 'Midrash' }],
     ['#overlay=commentary&category=Jewish%20Thought', { category: 'Jewish Thought' }],
-    ['#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', { q: 'בראשית' }],
-    ['#overlay=search&q=light&mode=w', { q: 'light', mode: 'w' }],
-    ['#overlay=search&q=light,%D7%A2%D7%9C%D7%94&mode=w,r', { q: 'light,עלה', mode: 'w,r' }],
   ];
 
   links.forEach(([hash, expected]) => {
@@ -1143,6 +1117,23 @@ describe('whole links, parsed with the real overlay declarations', () => {
     expect(rebuilt).toContain('verse=Exodus.20.1');
     expect(rebuilt).toContain('zoom=3');
     expect(rebuilt).toContain('category=Talmud');
+  });
+});
+
+describe('whole links that search', () => {
+  const links: Array<[string, Record<string, string>]> = [
+    ['#search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', { search: 'בראשית' }],
+    ['#search=light&mode=w', { search: 'light', mode: 'w' }],
+    ['#search=light,%D7%A2%D7%9C%D7%94&mode=w,r', { search: 'light,עלה', mode: 'w,r' }],
+  ];
+
+  links.forEach(([hash, expected]) => {
+    it(`parses ${hash}`, () => {
+      mockWindowLocation(`http://localhost:5173/${hash}`);
+      const state = parseUrlState(overlayUrlParams);
+      expect(state.searchParams).toEqual(expected);
+      expect(state.overlayParams).toEqual({});
+    });
   });
 });
 
@@ -1179,10 +1170,10 @@ describe('the search in a link', () => {
   });
 
   it('is read whatever overlay is on', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=commentary&q=אברם&mode=w');
+    mockWindowLocation('http://localhost:5173/#overlay=commentary&search=אברם&mode=w');
     const state = parseUrlState(overlayUrlParams);
     expect(state.overlay).toBe('commentary');
-    expect(state.searchParams).toEqual({ q: 'אברם', mode: 'w' });
+    expect(state.searchParams).toEqual({ search: 'אברם', mode: 'w' });
   });
 
   it('is left out of a link that does not search', () => {
@@ -1192,10 +1183,10 @@ describe('the search in a link', () => {
 
   it('is written first, before the overlay it sits over', () => {
     const hash = buildUrlHash({
-      searchParams: { q: 'אברם' },
+      searchParams: { search: 'אברם' },
       overlay: 'commentary',
       overlayParams: { category: 'Liturgy' },
     });
-    expect(hash).toBe(`#q=${encodeURIComponent('אברם')}&overlay=commentary&category=Liturgy`);
+    expect(hash).toBe(`#search=${encodeURIComponent('אברם')}&overlay=commentary&category=Liturgy`);
   });
 });

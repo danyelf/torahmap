@@ -82,13 +82,13 @@ describe('URL State Sync Integration', () => {
       await overlay?.init?.();
 
       // Apply URL params
-      const params = new URLSearchParams('q=moses');
+      const params = new URLSearchParams('search=moses');
       const settings = createOverlaySettings();
       settings.restore(overlay!, params);
 
       // Get URL params back
       const urlParams = settings.toUrl(overlay!);
-      expect(urlParams).toEqual({ q: 'moses' });
+      expect(urlParams).toEqual({ search: 'moses' });
     });
 
     it('handles overlay switch in URL', async () => {
@@ -266,18 +266,18 @@ describe('URL State Sync Integration', () => {
 
     it('handles special characters in search query', () => {
       const state: UrlState = {
-        overlay: 'search',
-        overlayParams: { q: 'שלום עולם' },
+        searchParams: { search: 'שלום עולם' },
+        overlayParams: {},
       };
 
       const hash = buildUrlHash(state);
-      expect(hash).toContain('overlay=search');
-      expect(hash).toContain('q=');
+      expect(hash).not.toContain('overlay=');
+      expect(hash).toContain('search=');
 
       // Parse it back
       mockWindowLocation(`http://localhost:5173/${hash}`);
       const parsed = parseUrlState(overlayUrlParams);
-      expect(parsed.overlayParams.q).toBe('שלום עולם');
+      expect(parsed.searchParams?.search).toBe('שלום עולם');
     });
 
     it('handles URL with many parameters', () => {
@@ -433,15 +433,15 @@ describe('URL State Sync Integration', () => {
 
       // Switch to search
       const state3: UrlState = {
-        overlay: 'search',
-        overlayParams: { q: 'abraham' },
+        searchParams: { search: 'abraham' },
+        overlayParams: {},
         zoom: 1.5,
       };
       updateUrl(state3, true);
 
       parsed = parseUrlState(overlayUrlParams);
-      expect(parsed.overlay).toBe('search');
-      expect(parsed.overlayParams.q).toBe('abraham');
+      expect(parsed.overlay).toBeUndefined();
+      expect(parsed.searchParams?.search).toBe('abraham');
       expect(parsed.overlayParams.trop).toBeUndefined();
 
       // History should have 3 entries
@@ -499,21 +499,21 @@ describe('URL State Sync Integration', () => {
 
     it('handles search-then-select workflow', async () => {
       const searchState: UrlState = {
-        overlay: 'search',
-        overlayParams: { q: 'covenant' },
+        searchParams: { search: 'covenant' },
+        overlayParams: {},
       };
       updateUrl(searchState, true);
 
       const selectedState: UrlState = {
-        overlay: 'search',
-        overlayParams: { q: 'covenant' },
+        searchParams: { search: 'covenant' },
+        overlayParams: {},
         verse: 'Genesis.17.2',
         zoom: 2.0,
       };
       updateUrl(selectedState, true);
 
       expect(historyStates.length).toBe(2);
-      expect(historyStates[0]).toContain('q=covenant');
+      expect(historyStates[0]).toContain('search=covenant');
       expect(historyStates[1]).toContain('verse=Genesis.17.2');
     });
 

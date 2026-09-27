@@ -7,6 +7,7 @@ import * as path from 'path';
 import { parseStoryMarkdown } from '../../scrollytelling/storyParser';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { parseVerseFromUrl } from '../../urlState';
+import { isSearching, searchFromLink } from '../../overlays/search/index';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 const markdown = fs.readFileSync(path.join(dataDir, 'story.md'), 'utf-8');
@@ -94,5 +95,12 @@ describe('story.md', () => {
       .filter((s) => !categories.has(s.overlayParams!.category))
       .map((s) => `${s.id}: ${s.overlayParams!.category}`);
     expect(unknown).toEqual([]);
+  });
+
+  it('searches, where a stop searches, for words long enough to search on', () => {
+    const idle = stops
+      .filter((s) => s.searchParams && !isSearching(searchFromLink(s.searchParams)))
+      .map((s) => s.id);
+    expect(idle).toEqual([]);
   });
 });

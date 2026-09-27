@@ -429,7 +429,7 @@ function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] |
 
 /** The term list a link describes, with its modes and meanings laid over it. */
 function settingsFromUrl(params: UrlParamValues<typeof SEARCH_URL_PARAMS>): SearchSettings {
-  let terms = parseSearchTerms(params.q ?? '').reduce(addTerm, [] as SearchTerm[]);
+  let terms = parseSearchTerms(params.search ?? '').reduce(addTerm, [] as SearchTerm[]);
   if (terms.length === 0) terms = addTerm([], '');
   if (params.mode) terms = applyModes(terms, params.mode);
   if (params.m) terms = applyMeanings(terms, params.m);
@@ -505,7 +505,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     const params: Record<string, string> = {};
     const query = active.map((t) => t.text).join(', ');
     if (query) {
-      params.q = query;
+      params.search = query;
       // Both are positional over the same list, so they are written together
       // and a term that has chosen nothing contributes an empty entry rather
       // than being skipped — skipping it would shift every later term.

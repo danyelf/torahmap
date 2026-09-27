@@ -56,7 +56,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  searchOverlay.restore({ q: '', mode: undefined, m: undefined });
+  searchOverlay.restore({ search: '', mode: undefined, m: undefined });
 });
 
 describe('searching for a clicked word', () => {
@@ -71,7 +71,7 @@ describe('searching for a clicked word', () => {
     expect(container.querySelector<HTMLInputElement>('.term-input')!.value).toBe('עלה');
 
     const params = searchOverlay.toUrl();
-    expect(params.q).toBe('עלה');
+    expect(params.search).toBe('עלה');
     expect(params.m).toContain(leaf.keys[0]);
   });
 
@@ -85,7 +85,7 @@ describe('searching for a clicked word', () => {
 
   it('switches Hebrew mode to meanings, since a meaning cannot be matched as a substring', () => {
     render();
-    searchOverlay.restore({ q: '', mode: 's', m: undefined });
+    searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
     clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
@@ -96,7 +96,7 @@ describe('searching for a clicked word', () => {
 
   it('leaves the row showing the mode the click put it in', () => {
     const container = render();
-    searchOverlay.restore({ q: '', mode: 's', m: undefined });
+    searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
     clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
@@ -140,7 +140,7 @@ describe('searching for a clicked word', () => {
     // would be resolved to its dictionary entry - neither is what "exactly"
     // means.
     const container = render();
-    searchOverlay.restore({ q: '', mode: 's', m: undefined });
+    searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
     clickWord('עלה', null);
 

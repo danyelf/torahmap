@@ -31,18 +31,11 @@ function paramsKey(values: UrlParamValues): string {
   return new URLSearchParams(Object.fromEntries(definedEntries(values))).toString();
 }
 
-type StopTools = Pick<StoryStop, 'overlay' | 'overlayParams'>;
-
-/** A stop's search. A stop searches by naming the search as its overlay. */
-export function stopSearchParams(stop: StopTools): Record<string, string> {
-  return stop.overlay === 'search' ? (stop.overlayParams ?? {}) : {};
-}
-
-function cacheKeyFor(overlay: Overlay | null, stop: StopTools): string {
+function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
   const overlayKey = overlay
     ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
     : 'none';
-  const searchKey = paramsKey(validateOverlayParams(SEARCH_URL_PARAMS, stopSearchParams(stop)));
+  const searchKey = paramsKey(validateOverlayParams(SEARCH_URL_PARAMS, stop.searchParams ?? {}));
   return `${overlayKey}#${searchKey}`;
 }
 
@@ -72,7 +65,7 @@ export function pictureForStop(
   const tools = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
-    searchFromLink(stopSearchParams(stop)),
+    searchFromLink(stop.searchParams ?? {}),
   );
   const picture = withDefaults(toolsPicture(tools, verses, hovered));
   if (!byHover) cache.set(key, picture);

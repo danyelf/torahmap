@@ -7,11 +7,10 @@ import { createOverlaySettings } from '../../overlays/settings';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Overlay, UrlParamValues } from '../../overlays/types';
-import { searchTool } from '../../overlays/search/index';
 import { buildSearchIndex } from '../../search';
 import { SAMPLE_VERSE_TEXTS } from '../../__tests__/helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
-import { HIGHLIGHT_CONSTANTS } from '../../constants';
+import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from '../../constants';
 
 // The blender memoises per verses array, so a fresh one keeps each test's
 // colours its own.
@@ -358,25 +357,43 @@ describe('pictureForStop', () => {
 });
 
 describe('a stop that searches', () => {
+  const grey = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+  const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
+
   beforeEach(() => {
     buildSearchIndex(SAMPLE_VERSE_TEXTS);
-    registerOverlay(searchTool);
+    registerOverlay(multiColorOverlay);
   });
+
+  function stopWith(extra: Partial<ResolvedStoryStop>): ResolvedStoryStop {
+    return { id: 'search', text: '', camera: { x: 0, y: 0, zoom: 1 }, overlay: null, ...extra };
+  }
 
   it('fills its matches and dims the rest, as search alone always has', () => {
     // "God" is in Genesis 1:1 and not 1:2.
-    const stop: ResolvedStoryStop = {
-      id: 'search',
-      text: '',
-      camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'search',
-      overlayParams: { q: 'God' },
-    };
-    const picture = pictureForStop(stop, verses, null);
-    const grey = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+    const picture = pictureForStop(stopWith({ searchParams: { search: 'God' } }), verses, null);
 
     expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
     expect(picture.colors[1]).toEqual([grey, grey, grey]);
     expect(picture.rings).toBeUndefined();
+  });
+
+  it('rings its matches over its overlay and dims the rest', () => {
+    const stop = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
+    const picture = pictureForStop(stop, verses, null);
+
+    expect(picture.colors[0]).toEqual([
+      [1, 0, 0],
+      [0, 0, 1],
+    ]);
+    expect(picture.rings![0]).toEqual(SEARCH_COLORS[0]);
+    expect(picture.colors[1]).toEqual([0.5 * DIM, 0.5 * DIM, 0.5 * DIM]);
+    expect(picture.rings![1]).toBeNull();
+  });
+
+  it('keeps apart stops that differ only in their search', () => {
+    const god = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
+    const earth = { ...god, id: 'earth', searchParams: { search: 'earth' } };
+    expect(pictureForStop(god, verses, null)).not.toEqual(pictureForStop(earth, verses, null));
   });
 });
