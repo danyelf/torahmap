@@ -20,9 +20,9 @@
   gap: 3px;
 }
 
-/* Touching, so a book reads as one bar. */
+/* Narrower than between swatches, so a book still reads as one bar. */
 .haftarah-key-swatches:has(.haftarah-key-segment) {
-  gap: 0;
+  gap: 2px;
 }
 
 .haftarah-key-segment {
