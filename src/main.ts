@@ -225,7 +225,7 @@ async function main(): Promise<void> {
     mapPoint(e.clientX, e.clientY, canvasOrigin);
 
   const renderContext = createRenderContext(canvas);
-  const renderState = createRenderState(renderContext.gl, verses, dpr);
+  const renderState = createRenderState(renderContext, verses, dpr);
 
   let currentOverlay: Overlay | null = null;
 

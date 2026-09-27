@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildOutlineGeometry } from '../../outline';
-import type { OutlineBounds, OutlineOptions } from '../../outline';
-import { HIGHLIGHT_CONSTANTS } from '../../constants';
-import { TEST_COLORS, FLOATS_PER_VERTEX as floatsPerVertex } from '../helpers';
+import type { OutlineBounds } from '../../outline';
+
+const floatsPerVertex = 2; // x, y
 
 describe('buildOutlineGeometry', () => {
   describe('basic buffer properties', () => {
@@ -12,30 +12,13 @@ describe('buildOutlineGeometry', () => {
       expect(buffer).toBeInstanceOf(Float32Array);
     });
 
-    it('returns correct buffer size for outline (24 vertices * 19 floats)', () => {
+    it('holds 4 borders of 6 corners, x and y each', () => {
       const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-      // 4 borders * 6 vertices per border * 19 floats per vertex = 456 floats
-      expect(buffer.length).toBe(456);
-    });
-
-    it('generates 4 borders (24 vertices total)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-      const verticesPerBorder = 6;
-      const borderCount = 4;
-      const expectedFloats = borderCount * verticesPerBorder * floatsPerVertex;
-      expect(buffer.length).toBe(expectedFloats);
-    });
-
-    it('each vertex has 19 floats (x, y, 4 colors, colorCount, u, v, seedX, seedY)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-      expect(buffer.length % floatsPerVertex).toBe(0);
+      expect(buildOutlineGeometry(bounds)).toHaveLength(48);
     });
   });
 
-  describe('default options', () => {
+  describe('default thickness', () => {
     it('uses default thickness of 2 when not specified', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
@@ -53,63 +36,18 @@ describe('buildOutlineGeometry', () => {
       expect(buffer[floatsPerVertex * 2]).toBe(x0);
       expect(buffer[floatsPerVertex * 2 + 1]).toBe(y0 + thickness); // y0 - 2 + 2 = 200
     });
-
-    it('uses HIGHLIGHT_CONSTANTS.OUTLINE_COLOR when color not specified', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-
-      const colorOffset = 2;
-      const expectedColor = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
-
-      // Check first color slot (use toBeCloseTo for Float32Array precision)
-      expect(buffer[colorOffset]).toBeCloseTo(expectedColor[0], 5);
-      expect(buffer[colorOffset + 1]).toBeCloseTo(expectedColor[1], 5);
-      expect(buffer[colorOffset + 2]).toBeCloseTo(expectedColor[2], 5);
-    });
   });
 
-  describe('custom options', () => {
+  describe('custom thickness', () => {
     it('uses custom thickness when provided', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
-      const options: OutlineOptions = { thickness: 5 };
-      const buffer = buildOutlineGeometry(bounds, options);
+      const buffer = buildOutlineGeometry(bounds, 5);
 
       const thickness = 5;
       const y0 = 200 - thickness; // Extends outside
 
       // Third vertex of top border (bottom-left of top border)
       expect(buffer[floatsPerVertex * 2 + 1]).toBe(y0 + thickness); // 200 - 5 + 5 = 200
-    });
-
-    it('uses custom color when provided', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const options: OutlineOptions = { color: TEST_COLORS.RED };
-      const buffer = buildOutlineGeometry(bounds, options);
-
-      const colorOffset = 2;
-
-      // Check first color slot is red
-      expect(buffer[colorOffset]).toBe(1);
-      expect(buffer[colorOffset + 1]).toBe(0);
-      expect(buffer[colorOffset + 2]).toBe(0);
-    });
-
-    it('accepts both thickness and color options', () => {
-      const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
-      const options: OutlineOptions = { thickness: 3, color: TEST_COLORS.BLUE };
-      const buffer = buildOutlineGeometry(bounds, options);
-
-      const colorOffset = 2;
-      const thickness = 3;
-      const y0 = 20 - thickness; // Extends outside
-
-      // Check thickness
-      expect(buffer[floatsPerVertex * 2 + 1]).toBe(y0 + thickness); // 20 - 3 + 3 = 20
-
-      // Check color
-      expect(buffer[colorOffset]).toBe(0);
-      expect(buffer[colorOffset + 1]).toBe(0);
-      expect(buffer[colorOffset + 2]).toBe(1);
     });
   });
 
@@ -242,103 +180,6 @@ describe('buildOutlineGeometry', () => {
     });
   });
 
-  describe('color handling', () => {
-    it('sets colorCount to 1 (single color)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-
-      const colorCountOffset = 14; // After x, y, and 4 colors (2 + 12)
-
-      // Check first vertex
-      expect(buffer[colorCountOffset]).toBe(1);
-
-      // Check a few more vertices to ensure consistency
-      expect(buffer[floatsPerVertex + colorCountOffset]).toBe(1);
-      expect(buffer[floatsPerVertex * 10 + colorCountOffset]).toBe(1);
-      expect(buffer[floatsPerVertex * 23 + colorCountOffset]).toBe(1);
-    });
-
-    it('duplicates color to all 4 color slots', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const options: OutlineOptions = { color: TEST_COLORS.GREEN };
-      const buffer = buildOutlineGeometry(bounds, options);
-
-      const colorOffset = 2;
-
-      // Check all 4 color slots have the same green color
-      for (let slot = 0; slot < 4; slot++) {
-        const offset = colorOffset + slot * 3;
-        expect(buffer[offset]).toBe(0); // r
-        expect(buffer[offset + 1]).toBe(1); // g
-        expect(buffer[offset + 2]).toBe(0); // b
-      }
-    });
-
-    it('applies same color to all vertices', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const options: OutlineOptions = { color: TEST_COLORS.YELLOW };
-      const buffer = buildOutlineGeometry(bounds, options);
-
-      const colorOffset = 2;
-
-      // Check all 24 vertices have the same color
-      for (let v = 0; v < 24; v++) {
-        const offset = v * floatsPerVertex + colorOffset;
-        expect(buffer[offset]).toBe(1); // r
-        expect(buffer[offset + 1]).toBe(1); // g
-        expect(buffer[offset + 2]).toBe(0); // b
-      }
-    });
-
-    it('color values are in valid range [0, 1]', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-
-      for (let v = 0; v < 24; v++) {
-        const offset = v * floatsPerVertex;
-        for (let c = 0; c < 4; c++) {
-          const colorOffset = offset + 2 + c * 3;
-          expect(buffer[colorOffset]).toBeGreaterThanOrEqual(0);
-          expect(buffer[colorOffset]).toBeLessThanOrEqual(1);
-          expect(buffer[colorOffset + 1]).toBeGreaterThanOrEqual(0);
-          expect(buffer[colorOffset + 1]).toBeLessThanOrEqual(1);
-          expect(buffer[colorOffset + 2]).toBeGreaterThanOrEqual(0);
-          expect(buffer[colorOffset + 2]).toBeLessThanOrEqual(1);
-        }
-      }
-    });
-  });
-
-  describe('UV and seed coordinates', () => {
-    it('sets UV coordinates to 0 (not used for solid outlines)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-
-      const uvOffset = 15;
-
-      // Check all vertices have u=0, v=0
-      for (let v = 0; v < 24; v++) {
-        const offset = v * floatsPerVertex + uvOffset;
-        expect(buffer[offset]).toBe(0); // u
-        expect(buffer[offset + 1]).toBe(0); // v
-      }
-    });
-
-    it('sets seed coordinates to verse position', () => {
-      const bounds: OutlineBounds = { x: 123, y: 456, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-
-      const seedOffset = 17;
-
-      // Check all vertices have same seed (verse position)
-      for (let v = 0; v < 24; v++) {
-        const offset = v * floatsPerVertex + seedOffset;
-        expect(buffer[offset]).toBe(123); // seedX
-        expect(buffer[offset + 1]).toBe(456); // seedY
-      }
-    });
-  });
-
   describe('data layout integrity', () => {
     it('all floats are finite numbers', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
@@ -387,7 +228,7 @@ describe('buildOutlineGeometry', () => {
       const thickness = 2;
       expect(buffer[0]).toBe(0 - thickness); // extends left (negative)
       expect(buffer[1]).toBe(0 - thickness); // extends up (negative)
-      expect(buffer.length).toBe(456);
+      expect(buffer.length).toBe(48);
     });
 
     it('handles negative coordinates', () => {
@@ -397,7 +238,7 @@ describe('buildOutlineGeometry', () => {
       const thickness = 2;
       expect(buffer[0]).toBe(-100 - thickness); // extends further left
       expect(buffer[1]).toBe(-200 - thickness); // extends further up
-      expect(buffer.length).toBe(456);
+      expect(buffer.length).toBe(48);
     });
 
     it('handles very large coordinates', () => {
@@ -438,8 +279,7 @@ describe('buildOutlineGeometry', () => {
 
     it('handles zero thickness', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
-      const options: OutlineOptions = { thickness: 0 };
-      const buffer = buildOutlineGeometry(bounds, options);
+      const buffer = buildOutlineGeometry(bounds, 0);
 
       const thickness = 0;
       const y0 = 200 - thickness; // No extension
@@ -450,36 +290,13 @@ describe('buildOutlineGeometry', () => {
 
     it('handles very thick outline', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 20 };
-      const options: OutlineOptions = { thickness: 10 };
-      const buffer = buildOutlineGeometry(bounds, options);
+      const buffer = buildOutlineGeometry(bounds, 10);
 
       const thickness = 10;
       const y0 = 200 - thickness; // Extends up by 10
 
       // Top border with thickness 10 (bottom edge of top border)
       expect(buffer[floatsPerVertex * 2 + 1]).toBe(y0 + thickness); // 200 - 10 + 10 = 200
-    });
-
-    it('handles black outline color', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const options: OutlineOptions = { color: TEST_COLORS.BLACK };
-      const buffer = buildOutlineGeometry(bounds, options);
-
-      const colorOffset = 2;
-      expect(buffer[colorOffset]).toBe(0);
-      expect(buffer[colorOffset + 1]).toBe(0);
-      expect(buffer[colorOffset + 2]).toBe(0);
-    });
-
-    it('handles white outline color', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const options: OutlineOptions = { color: TEST_COLORS.WHITE };
-      const buffer = buildOutlineGeometry(bounds, options);
-
-      const colorOffset = 2;
-      expect(buffer[colorOffset]).toBe(1);
-      expect(buffer[colorOffset + 1]).toBe(1);
-      expect(buffer[colorOffset + 2]).toBe(1);
     });
   });
 

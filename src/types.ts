@@ -136,25 +136,6 @@ export interface TanakhCommentary {
 export type CommentaryData = Record<string, Record<string, Record<string, TanakhCommentary>>>;
 // Structure: { [book]: { [chapter]: { [verse]: TanakhCommentary } } }
 
-export interface ShaderProgram {
-  program: WebGLProgram;
-  attribs: {
-    position: number;
-    color: number;
-    color2: number;
-    color3: number;
-    color4: number;
-    colorCount: number;
-    uv: number;
-    seed: number;
-  };
-  uniforms: {
-    resolution: WebGLUniformLocation | null;
-    pan: WebGLUniformLocation | null;
-    zoom: WebGLUniformLocation | null;
-  };
-}
-
 // Trop index: maps trop unicode -> list of verse locations containing it
 interface TropVerseLocation {
   book: string;

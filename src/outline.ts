@@ -2,34 +2,20 @@
 
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
-type Color = [number, number, number];
-
 export interface OutlineBounds {
   x: number;
   y: number;
   size: number;
 }
 
-// The defaults below are the only place either value is decided: callers that
-// want the ordinary outline leave the field out rather than naming it again.
-export interface OutlineOptions {
-  thickness?: number;
-  color?: Color;
-}
-
-/** Build outline geometry as 4 border rectangles (24 vertices) around a verse. */
+/** Build outline geometry as 4 border rectangles (24 corners, x and y each) around a verse. */
 export function buildOutlineGeometry(
   bounds: OutlineBounds,
-  options: OutlineOptions = {},
+  thickness: number = HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
 ): Float32Array {
-  const thickness = options.thickness ?? HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS;
-  const color = options.color ?? HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
-
-  // Each vertex = x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-  const floatsPerVertex = 19;
   const verticesPerBorder = 6; // 2 triangles
   const borderCount = 4; // top, right, bottom, left
-  const data = new Float32Array(borderCount * verticesPerBorder * floatsPerVertex);
+  const data = new Float32Array(borderCount * verticesPerBorder * 2);
 
   // Calculate outline bounds - extend OUTSIDE the verse by thickness
   // so the outline doesn't cover the verse itself
@@ -38,26 +24,11 @@ export function buildOutlineGeometry(
   const x1 = bounds.x + bounds.size - 2 + thickness; // -2 for gap, +thickness for outer edge
   const y1 = bounds.y + bounds.size - 2 + thickness;
 
-  // Use verse position as seed for consistent pattern
-  const seedX = bounds.x;
-  const seedY = bounds.y;
-
   let offset = 0;
 
   const writeVertex = (x: number, y: number) => {
     data[offset++] = x;
     data[offset++] = y;
-    // Write color to all 4 slots (single color mode)
-    for (let c = 0; c < 4; c++) {
-      data[offset++] = color[0];
-      data[offset++] = color[1];
-      data[offset++] = color[2];
-    }
-    data[offset++] = 1; // colorCount = 1 (single color)
-    data[offset++] = 0; // u (not used for solid colors)
-    data[offset++] = 0; // v (not used for solid colors)
-    data[offset++] = seedX;
-    data[offset++] = seedY;
   };
 
   const writeRect = (rx0: number, ry0: number, rx1: number, ry1: number) => {

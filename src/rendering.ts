@@ -1,11 +1,23 @@
 // Rendering module - handles WebGL rendering state and operations
 
-import { initWebGL, createProgram, createOutlineProgram, type OutlineProgram } from './webgl';
-import { buildItemGeometry, createBuffer } from './geometry';
+import {
+  initWebGL,
+  createProgram,
+  createOutlineProgram,
+  type OutlineProgram,
+  type ShaderProgram,
+} from './webgl';
+import {
+  buildItemGeometry,
+  createBuffer,
+  VERSE_ATTRIBUTES,
+  VERSE_OFFSETS,
+  FLOATS_PER_VERSE,
+} from './geometry';
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
 import { updateMapTitlePosition } from './mapTitle';
-import type { SpatialItem, TanakhIdentity, ShaderProgram } from './types';
+import type { SpatialItem, TanakhIdentity } from './types';
 import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
 
@@ -36,6 +48,8 @@ export interface RenderContext {
  */
 export interface RenderState<T = TanakhIdentity> {
   buffer: WebGLBuffer;
+  /** Points each per-verse attribute of the main program at its slice of `buffer`. */
+  vertexArray: WebGLVertexArrayObject;
   outlineBuffer: WebGLBuffer | null;
   hoverOutlineBuffer: WebGLBuffer | null;
   verses: SpatialItem<T>[];
@@ -53,15 +67,32 @@ export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
 }
 
 export function createRenderState<T>(
-  gl: WebGL2RenderingContext,
+  context: RenderContext,
   verses: SpatialItem<T>[],
   dpr: number,
 ): RenderState<T> {
+  const { gl, programs } = context;
   const geometry = buildItemGeometry(verses);
   const buffer = createBuffer(gl, geometry);
 
+  const vertexArray = gl.createVertexArray();
+  if (!vertexArray) throw new Error('Failed to create vertex array');
+  gl.bindVertexArray(vertexArray);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  const stride = FLOATS_PER_VERSE * 4;
+  for (const { name, size } of VERSE_ATTRIBUTES) {
+    const location = programs.main.attribs[name];
+    gl.enableVertexAttribArray(location);
+    gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, VERSE_OFFSETS[name] * 4);
+    // Advance once per verse rather than once per corner
+    gl.vertexAttribDivisor(location, 1);
+  }
+  // Unbound, so the outline program's setup is not recorded into it
+  gl.bindVertexArray(null);
+
   return {
     buffer,
+    vertexArray,
     outlineBuffer: null,
     hoverOutlineBuffer: null,
     verses,
@@ -69,7 +100,10 @@ export function createRenderState<T>(
   };
 }
 
-/** Rebuilds the vertex geometry buffer with updated colors. Call after overlay changes. */
+/**
+ * Refills the per-verse buffer with updated colors. Call after overlay changes.
+ * The buffer object stays the same, so the vertex array still points at it.
+ */
 export function rebuildGeometry<T>(
   gl: WebGL2RenderingContext,
   state: RenderState<T>,
@@ -89,7 +123,7 @@ export function render<T>(
   itemsEqual: (a: T | null, b: T | null) => boolean,
 ): void {
   const { gl, programs, canvas } = context;
-  const { buffer, verses, dpr } = state;
+  const { vertexArray, verses, dpr } = state;
 
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(0.1, 0.1, 0.1, 1.0);
@@ -103,36 +137,10 @@ export function render<T>(
   gl.uniform2f(programs.main.uniforms.pan, offset.x, offset.y);
   gl.uniform1f(programs.main.uniforms.zoom, camera.zoom * dpr);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-
-  // Vertex layout: x, y, r1,g1,b1, r2,g2,b2, r3,g3,b3, r4,g4,b4, colorCount, u, v, seedX, seedY
-  const stride = 19 * 4; // 19 floats * 4 bytes
-
-  gl.enableVertexAttribArray(programs.main.attribs.position);
-  gl.vertexAttribPointer(programs.main.attribs.position, 2, gl.FLOAT, false, stride, 0);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color);
-  gl.vertexAttribPointer(programs.main.attribs.color, 3, gl.FLOAT, false, stride, 2 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color2);
-  gl.vertexAttribPointer(programs.main.attribs.color2, 3, gl.FLOAT, false, stride, 5 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color3);
-  gl.vertexAttribPointer(programs.main.attribs.color3, 3, gl.FLOAT, false, stride, 8 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.color4);
-  gl.vertexAttribPointer(programs.main.attribs.color4, 3, gl.FLOAT, false, stride, 11 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.colorCount);
-  gl.vertexAttribPointer(programs.main.attribs.colorCount, 1, gl.FLOAT, false, stride, 14 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.uv);
-  gl.vertexAttribPointer(programs.main.attribs.uv, 2, gl.FLOAT, false, stride, 15 * 4);
-
-  gl.enableVertexAttribArray(programs.main.attribs.seed);
-  gl.vertexAttribPointer(programs.main.attribs.seed, 2, gl.FLOAT, false, stride, 17 * 4);
-
-  gl.drawArrays(gl.TRIANGLES, 0, verses.length * 6);
+  gl.bindVertexArray(vertexArray);
+  // Six corners (two triangles) for each verse
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, verses.length);
+  gl.bindVertexArray(null);
 
   if (hoveredVerse && !itemsEqual(hoveredVerse, pinnedVerse)) {
     const hoverColor = pinnedVerse
@@ -182,17 +190,7 @@ export function renderOutline<T>(
   const { gl, programs, canvas } = context;
   const { dpr } = state;
 
-  const geometry = buildOutlineGeometry(
-    {
-      x: verse.x,
-      y: verse.y,
-      size: verse.size,
-    },
-    {
-      thickness,
-      color: color,
-    },
-  );
+  const geometry = buildOutlineGeometry(verse, thickness);
 
   let currentBuffer = buffer;
   if (!currentBuffer) {
@@ -213,10 +211,8 @@ export function renderOutline<T>(
 
   gl.bindBuffer(gl.ARRAY_BUFFER, currentBuffer);
 
-  // Same 19-float vertex layout as the main render
-  const stride = 19 * 4;
   gl.enableVertexAttribArray(programs.outline.attribs.position);
-  gl.vertexAttribPointer(programs.outline.attribs.position, 2, gl.FLOAT, false, stride, 0);
+  gl.vertexAttribPointer(programs.outline.attribs.position, 2, gl.FLOAT, false, 0, 0);
 
   // 4 borders * 6 vertices each = 24 vertices
   gl.drawArrays(gl.TRIANGLES, 0, 24);

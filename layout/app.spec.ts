@@ -4,9 +4,12 @@ import { checkLayout, measureLayout } from './check.ts';
 import { boxes, DRAWN_FLOOR, drawnPixels, mapReady, openMap } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
-  // The map draws with drawArrays alone (src/rendering.ts); the clear still runs.
+  // No draw call runs; the clear still does.
   await page.addInitScript(() => {
-    WebGL2RenderingContext.prototype.drawArrays = () => {};
+    const proto = WebGL2RenderingContext.prototype as unknown as Record<string, unknown>;
+    for (const name of Object.getOwnPropertyNames(proto)) {
+      if (/^draw(Arrays|Elements|RangeElements)/.test(name)) proto[name] = () => {};
+    }
   });
   await page.goto('/#overlay=commentary');
   await mapReady(page);

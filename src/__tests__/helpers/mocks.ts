@@ -40,12 +40,12 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
     getAttribLocation: vi.fn((_program, name) => {
       const locations: Record<string, number> = {
         'a_position': 0,
+        'a_rect': 0,
         'a_color': 1,
         'a_color2': 2,
         'a_color3': 3,
         'a_color4': 4,
         'a_colorCount': 5,
-        'a_uv': 6,
       };
       return locations[name] ?? -1;
     }),
@@ -60,7 +60,10 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
     // Vertex attributes
     enableVertexAttribArray: vi.fn(),
     vertexAttribPointer: vi.fn(),
+    vertexAttribDivisor: vi.fn(),
     disableVertexAttribArray: vi.fn(),
+    createVertexArray: vi.fn(() => ({})),
+    bindVertexArray: vi.fn(),
 
     // Uniforms
     uniform1f: vi.fn(),
@@ -73,6 +76,7 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
 
     // Drawing
     drawArrays: vi.fn(),
+    drawArraysInstanced: vi.fn(),
     drawElements: vi.fn(),
 
     // State

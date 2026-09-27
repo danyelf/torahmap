@@ -65,7 +65,7 @@ async function main(): Promise<void> {
   resizeCanvas();
 
   const renderContext = createRenderContext(canvas);
-  const renderState = createRenderState(renderContext.gl, items, dpr);
+  const renderState = createRenderState(renderContext, items, dpr);
 
   // Start zoomed out to fit the whole bookshelf with a small margin.
   // The Bavli total bounds are wide (4 tall shelves of tractates) so the

@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { initWebGL, createProgram } from '../../webgl';
+import { VERSE_ATTRIBUTES } from '../../geometry';
 import { createMockWebGL2Context, createMockCanvas } from '../helpers';
+
+const shaderSourceOf = (gl: WebGL2RenderingContext, call: number): string =>
+  (gl.shaderSource as any).mock.calls[call][1];
 
 describe('initWebGL', () => {
   describe('successful context creation', () => {
@@ -169,24 +173,20 @@ describe('createProgram', () => {
     it('compiles vertex shader with correct source', () => {
       createProgram(gl);
 
-      const shaderSourceCalls = (gl.shaderSource as any).mock.calls;
-      const vertexShaderCall = shaderSourceCalls[0];
-      const vertexSource = vertexShaderCall[1];
+      const vertexSource = shaderSourceOf(gl, 0);
 
       expect(vertexSource).toContain('#version 300 es');
       expect(vertexSource).toContain('uniform vec2 u_resolution');
       expect(vertexSource).toContain('uniform vec2 u_pan');
       expect(vertexSource).toContain('uniform float u_zoom');
-      expect(vertexSource).toContain('in vec2 a_position');
+      expect(vertexSource).toContain('in vec4 a_rect');
       expect(vertexSource).toContain('in vec3 a_color');
     });
 
     it('compiles fragment shader with correct source', () => {
       createProgram(gl);
 
-      const shaderSourceCalls = (gl.shaderSource as any).mock.calls;
-      const fragmentShaderCall = shaderSourceCalls[1];
-      const fragmentSource = fragmentShaderCall[1];
+      const fragmentSource = shaderSourceOf(gl, 1);
 
       expect(fragmentSource).toContain('#version 300 es');
       expect(fragmentSource).toContain('precision mediump float');
@@ -194,25 +194,31 @@ describe('createProgram', () => {
       expect(fragmentSource).toContain('out vec4 fragColor');
     });
 
-    it('vertex shader includes all required attributes', () => {
+    it('draws each square as two triangles, corners in a fixed order', () => {
       createProgram(gl);
 
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
+      const table = vertexSource.match(/CORNERS\[6\] = vec2\[6\]\(([^;]*)\);/)?.[1] ?? '';
+      const corners = [...table.matchAll(/vec2\(([\d.]+),\s*([\d.]+)\)/g)].map((m) => [
+        Number(m[1]),
+        Number(m[2]),
+      ]);
 
-      // Check for specific attribute declarations
-      expect(vertexSource).toContain('in vec2 a_position');
-      expect(vertexSource).toContain('in vec3 a_color');
-      expect(vertexSource).toContain('in vec3 a_color2');
-      expect(vertexSource).toContain('in vec3 a_color3');
-      expect(vertexSource).toContain('in vec3 a_color4');
-      expect(vertexSource).toContain('in float a_colorCount');
-      expect(vertexSource).toContain('in vec2 a_uv');
+      // uv runs 0 to 1 across the square; the stripes and dithering read it
+      expect(corners).toEqual([
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [0, 1],
+        [1, 0],
+        [1, 1],
+      ]);
     });
 
     it('vertex shader includes all required uniforms', () => {
       createProgram(gl);
 
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
       expect(vertexSource).toContain('uniform vec2 u_resolution');
       expect(vertexSource).toContain('uniform vec2 u_pan');
       expect(vertexSource).toContain('uniform float u_zoom');
@@ -221,7 +227,7 @@ describe('createProgram', () => {
     it('fragment shader includes color interpolation logic', () => {
       createProgram(gl);
 
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
       expect(fragmentSource).toContain('v_colorCount');
       expect(fragmentSource).toContain('v_uv');
       expect(fragmentSource).toContain('hash');
@@ -229,42 +235,14 @@ describe('createProgram', () => {
   });
 
   describe('attribute locations', () => {
-    it('returns all required attribute locations', () => {
+    it('looks up every verse attribute by its name', () => {
       const program = createProgram(gl);
 
-      expect(program.attribs).toBeDefined();
-      expect(program.attribs.position).toBeDefined();
-      expect(program.attribs.color).toBeDefined();
-      expect(program.attribs.color2).toBeDefined();
-      expect(program.attribs.color3).toBeDefined();
-      expect(program.attribs.color4).toBeDefined();
-      expect(program.attribs.colorCount).toBeDefined();
-      expect(program.attribs.uv).toBeDefined();
-    });
-
-    it('queries correct attribute names', () => {
-      createProgram(gl);
-
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_position');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color2');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color3');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_color4');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_colorCount');
-      expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, 'a_uv');
-    });
-
-    it('attribute locations match mock values', () => {
-      const program = createProgram(gl);
-
-      // Mock returns specific indices for each attribute
-      expect(program.attribs.position).toBe(0);
-      expect(program.attribs.color).toBe(1);
-      expect(program.attribs.color2).toBe(2);
-      expect(program.attribs.color3).toBe(3);
-      expect(program.attribs.color4).toBe(4);
-      expect(program.attribs.colorCount).toBe(5);
-      expect(program.attribs.uv).toBe(6);
+      for (const { name } of VERSE_ATTRIBUTES) {
+        expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, name);
+        expect(program.attribs[name]).toBe(vi.mocked(gl.getAttribLocation)(mockProgram, name));
+      }
+      expect(Object.keys(program.attribs)).toHaveLength(VERSE_ATTRIBUTES.length);
     });
   });
 
@@ -405,21 +383,6 @@ describe('createProgram', () => {
       expect(program.program).toBe(mockProgram);
     });
 
-    it('attribs contains all 8 attributes', () => {
-      const program = createProgram(gl);
-
-      const attribKeys = Object.keys(program.attribs);
-      expect(attribKeys).toHaveLength(8);
-      expect(attribKeys).toContain('position');
-      expect(attribKeys).toContain('color');
-      expect(attribKeys).toContain('color2');
-      expect(attribKeys).toContain('color3');
-      expect(attribKeys).toContain('color4');
-      expect(attribKeys).toContain('colorCount');
-      expect(attribKeys).toContain('uv');
-      expect(attribKeys).toContain('seed');
-    });
-
     it('uniforms contains all 3 uniforms', () => {
       const program = createProgram(gl);
 
@@ -500,19 +463,19 @@ describe('createProgram', () => {
   describe('shader source validation', () => {
     it('vertex shader uses GLSL ES 3.0', () => {
       createProgram(gl);
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
       expect(vertexSource).toMatch(/^#version 300 es/);
     });
 
     it('fragment shader uses GLSL ES 3.0', () => {
       createProgram(gl);
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
       expect(fragmentSource).toMatch(/^#version 300 es/);
     });
 
     it('vertex shader passes colors to fragment shader', () => {
       createProgram(gl);
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
 
       expect(vertexSource).toContain('out vec3 v_color');
       expect(vertexSource).toContain('out vec3 v_color2');
@@ -523,7 +486,7 @@ describe('createProgram', () => {
 
     it('fragment shader receives colors from vertex shader', () => {
       createProgram(gl);
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
 
       expect(fragmentSource).toContain('in vec3 v_color');
       expect(fragmentSource).toContain('in vec3 v_color2');
@@ -533,16 +496,16 @@ describe('createProgram', () => {
 
     it('fragment shader uses flat interpolation for colorCount', () => {
       createProgram(gl);
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
 
       expect(fragmentSource).toContain('flat in int v_colorCount');
     });
 
     it('vertex shader transforms positions correctly', () => {
       createProgram(gl);
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
 
-      expect(vertexSource).toContain('a_position + u_pan');
+      expect(vertexSource).toContain('mix(a_rect.xy, a_rect.zw, uv) + u_pan');
       expect(vertexSource).toContain('* u_zoom');
       expect(vertexSource).toContain('gl_Position');
     });
