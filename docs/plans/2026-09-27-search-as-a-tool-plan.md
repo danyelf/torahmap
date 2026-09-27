@@ -39,7 +39,7 @@ The spec leaves these open; each is a choice made here.
 20. The nine story stops change in Task 3, with the parser, rather than last: the story-file test checks every stop against the parser, so leaving them would fail the suite until the end.
 21. Until Task 4, search is both in the overlay list and in its own slot; `toolsShown` ignores it in the overlay slot, and a story stop that names `overlay: search` searches (Task 2 only). The prototype links in Task 2 use `q=`, the key before Task 3 renames it.
 22. Search's description is dropped: nothing shows it once it leaves the overlay picker.
-23. One panel builder (Danyel's answer): `panelHtml(panel, body)` in `src/panel.ts` builds every panel, Search, Overlay, Stories and About, with its phone-only `.panel-title` from `PANEL_TITLES`, and `CONTROL` names one shared set of control classes in `src/styles/controls.css`: `control-button` (and `quiet`), `control-toggle`, `control-segments`/`control-segment`, `control-icon` and `control-select`. Every one is at least `--tap` (44px) tall on every screen, the rule `src/styles/frame.css` states for the frame ("every control in the frame is at least this tall"), and `control-icon` is 44px wide too. So the search × is 44×44, each mode switch 44px tall, and Clear, "+ add a word", Continue, "Start from the beginning", the Hebrew toggle and every panel select are 44px tall. Each control keeps its own class as a hook (`term-remove`, `story-card-action`, `setting-toggle`), and the per-panel CSS that sized and drew them goes. Inline text buttons (`all`, `only this one`) and an overlay's own chart (Trop's marks) stay as they are.
+23. One panel builder (Danyel's answer): `panelHtml(panel, body)` in `src/panel.ts` builds every panel, Search, Overlay, Stories and About, each opening with its phone-only `.panel-title` from `PANEL_TITLES`. Shared controls have one implementation each, in `src/styles/controls.css`, named by `CONTROL`: `control-button` (and `quiet`), drawn as the Stories card's buttons; `control-toggle`, as the Hebrew toggle; `control-select`, as the overlay picker; and `control-icon`, the ×. Each keeps its original's size and look, so the Overlay, Stories and About panels do not change; nothing imposes a size on every control. The search × uses `control-icon` in both its places and is 24×24 (its glyph as today, 16px, #666; its box was 17×20). The mode switches, "+ add a word" and Clear are the search's own and keep their styling in `src/styles/overlays/search.css`: the mode switches stay 17px tall on a mouse and grow to 24px tall on a touch screen (`@media (pointer: coarse)`), their widths (64px and 42px) unchanged; "+ add a word" is unchanged (about 26px), and Clear is drawn like it. Each control keeps its own class as a hook (`term-remove`, `story-card-action`, `setting-toggle`). Inline text buttons (`all`, `only this one`) and an overlay's own chart (Trop's marks) stay as they are.
 24. Search's source credit stays in the About panel: `aboutHtml` is handed `searchTool` with the registered overlays.
 25. The word-click handler keeps its check that the palette has room (the menu counted words when it opened), and loses the overlay switch and the comment explaining it.
 
@@ -1900,7 +1900,7 @@ Part A builds every panel with one builder and one set of controls. Part B: sear
 
 #### Part A: one panel builder
 
-Every panel is built by `panelHtml` in `src/panel.ts`, and its controls take the shared classes in `src/styles/controls.css`, each at least `--tap` tall. This part moves the three panels that exist today onto it; Part B adds Search.
+Every panel is built by `panelHtml` in `src/panel.ts`, and a control panels share has one implementation in `src/styles/controls.css`, drawn exactly as the control it replaces, so no panel changes look. This part moves the three panels that exist today onto it; Part B adds Search.
 
 - [ ] **Step A1: Write the failing tests**
 
@@ -1981,8 +1981,6 @@ export const CONTROL = {
   button: 'control-button',
   quiet: 'control-button quiet',
   toggle: 'control-toggle',
-  segments: 'control-segments',
-  segment: 'control-segment',
   icon: 'control-icon',
   select: 'control-select',
 } as const;
@@ -1995,25 +1993,20 @@ export function panelHtml(panel: Panel, body: string): string {
 Create `src/styles/controls.css`:
 
 ```css
-/* The controls every panel shares (src/panel.ts). Each is at least --tap
-   tall, the height src/styles/frame.css gives every control in the frame. */
-.control-button,
-.control-toggle,
-.control-select,
-.control-icon,
-.control-segment {
-  min-height: var(--tap);
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
+/* The controls panels share (src/panel.ts): one implementation of each, drawn
+   as the control it was first written for. */
 
+/* The Stories card's buttons. */
 .control-button {
+  min-height: var(--tap);
   padding: 0 14px;
   border: 1px solid var(--accent);
   border-radius: 4px;
   background: none;
   color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .control-button.quiet {
@@ -2021,70 +2014,48 @@ Create `src/styles/controls.css`:
   color: #ddd;
 }
 
-.control-toggle,
-.control-select {
+/* The Hebrew toggle. */
+.control-toggle {
+  min-height: var(--tap);
   padding: 0 14px;
   border: 1px solid #444;
   border-radius: 4px;
   background: #222;
   color: #fff;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-/* color-scheme matters as much as the colours: without it the popup list
-   keeps the system's light theme. */
+/* The overlay picker. color-scheme matters as much as the colours: without it
+   the popup list keeps the system's light theme. */
 .control-select {
-  padding: 0 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
   color-scheme: dark;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-/* A glyph alone, such as ×: square. */
+/* A glyph alone, such as ×: the search's ×, on the 24px square the layout
+   suite asks of a touch target. */
 .control-icon {
-  min-width: var(--tap);
+  min-width: 24px;
+  min-height: 24px;
   padding: 0;
   border: none;
   background: none;
-  color: #888;
-  font-size: 18px;
+  color: #666;
+  font-size: 16px;
   line-height: 1;
+  cursor: pointer;
 }
 
-/* A row of choices, one of them on. */
-.control-segments {
-  display: inline-flex;
-  border: 1px solid #3d3d3d;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #202020;
-}
-
-.control-segment {
-  padding: 0 12px;
-  border: none;
-  border-right: 1px solid #3d3d3d;
-  background: none;
-  color: #8a8a8a;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.control-segment:last-child {
-  border-right: none;
-}
-
-.control-icon:hover,
-.control-segment:hover,
-.control-button.quiet:hover:not(:disabled) {
+.control-icon:hover {
   color: #fff;
-}
-
-.control-segment.on {
-  background: #2f5f8a;
-  color: #fff;
-}
-
-.control-button:disabled {
-  opacity: 0.35;
-  cursor: default;
 }
 ```
 
@@ -2144,12 +2115,12 @@ export function overlayPanelHtml(): string {
 Delete the per-panel control CSS the shared classes replace:
 
 - `src/styles/frame.css`: the `#panel select` rule and the comment above it; the `.story-card-action` and `.story-card-action.secondary` rules.
-- `src/styles/about.css`: the `.setting-toggle` rule, and the `#about-panel .panel-title` rule, so every panel's title looks the same.
+- `src/styles/about.css`: the `.setting-toggle` rule. (`#about-panel .panel-title` stays: it is how About's title looks today.)
 
 - [ ] **Step A4: Run the tests, the type checker and the layout suite**
 
 Run: `npm run typecheck && npx vitest run && npm run test:layout`
-Expected: all pass, apart from the two story states that Task 3 leaves failing (`story-stop-with-verse`, `story-menu-down`), which Part B fixes. The overlay picker, Continue, "Start from the beginning" and the Hebrew toggle are 44px tall on every screen, and a phone now shows the Overlay panel's title too.
+Expected: all pass, apart from the two story states that Task 3 leaves failing (`story-stop-with-verse`, `story-menu-down`), which Part B fixes. Nothing changes size or look in the Overlay, Stories and About panels; a phone now shows the Overlay panel's title too. Compare the layout shots of `explore-overlay-open`, `stories-panel` and `about-panel` with those from before this part.
 
 - [ ] **Step A5: Commit**
 
@@ -2158,9 +2129,9 @@ git add -A src index.html
 git commit -m "$(cat <<'EOF'
 Build every panel with one builder and shared controls
 
-Each panel opens with its title from PANEL_TITLES, and its buttons,
-toggles and selects take one set of control classes, each at least
---tap tall.
+Each panel opens with its title from PANEL_TITLES, and a button,
+toggle or select panels share has one implementation, drawn as the
+control it replaces.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37
@@ -2214,17 +2185,14 @@ In `src/__tests__/unit/overlays/search.test.ts`:
     });
   });
 
-  it("draws its buttons with the panels' shared controls", () => {
+  it("draws its × with the shared icon control", () => {
     const container = render();
     type(container, 'אלהים');
 
     const has = (selector: string, name: string) =>
       [...container.querySelectorAll(selector)].every((el) => el.classList.contains(name));
     expect(has('.term-remove', 'control-icon')).toBe(true);
-    expect(has('.term-mode', 'control-segments')).toBe(true);
-    expect(has('.term-mode-option', 'control-segment')).toBe(true);
-    expect(has('#add-term, #search-clear-all', 'control-button')).toBe(true);
-    expect(container.querySelectorAll('.term-mode-option').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.term-remove').length).toBeGreaterThan(0);
   });
 ```
 
@@ -2330,14 +2298,14 @@ export function registerOverlay(overlay: Overlay): void {
 
 - `name: 'Text Search',` → `name: 'Search',`; delete `description`.
 - Add a module variable beside `searchHitCaption`: `let searchClear: HTMLButtonElement | null = null;`
-- Import `{ CONTROL } from '../../panel.ts'`. In `renderControls`, the template becomes:
+- In `renderControls`, the template becomes:
 
 ```ts
       container.innerHTML = `
         <div id="search-terms"></div>
         <div class="search-actions">
-          <button type="button" id="add-term" class="${CONTROL.quiet}">+ add a word</button>
-          <button type="button" id="search-clear-all" class="${CONTROL.quiet}">Clear</button>
+          <button type="button" id="add-term">+ add a word</button>
+          <button type="button" id="search-clear-all">Clear</button>
         </div>
         <div id="search-hit-caption"></div>
         <div id="search-results"></div>
@@ -2419,11 +2387,22 @@ In `src/__tests__/unit/panel.test.ts`, import `searchPanelHtml` too and add, ins
 }
 ```
 
-`src/styles/overlays/search.css`: the search's buttons take the shared classes (Step 3 and `termRows.ts` below), so their own sizing and drawing go:
+`src/styles/overlays/search.css`: the × is drawn by the shared `control-icon` (`termRows.ts` below), and the search's own controls keep their look here:
 
 - `.term-remove`: keep only `flex: 0 0 auto;`; delete the rest of the rule and `.term-remove:hover`.
-- Delete the `.term-mode`, `.term-mode-option`, `.term-mode-option:last-child`, `.term-mode-option:hover` and `.term-mode-option.on` rules, and add `.term-mode { margin: 3px 0 5px; }`.
-- Replace the `#add-term`, `#add-term:hover:not(:disabled)` and `#add-term:disabled` rules with:
+- After the `.term-mode-option.on` rule, add:
+
+```css
+/* On a touch screen each switch is a 24px target; with a mouse it keeps its
+   slimmer look. */
+@media (pointer: coarse) {
+  .term-mode-option {
+    min-height: 24px;
+  }
+}
+```
+
+- Replace the `#add-term` rule with the one below, and extend the two rules after it to Clear: `#add-term:hover:not(:disabled), #search-clear-all:hover:not(:disabled)` and `#add-term:disabled, #search-clear-all:disabled`.
 
 ```css
 /* Adding a word and clearing them all, side by side. */
@@ -2433,26 +2412,34 @@ In `src/__tests__/unit/panel.test.ts`, import `searchPanelHtml` too and add, ins
   margin-bottom: 12px;
 }
 
+#add-term,
+#search-clear-all {
+  background: none;
+  border-radius: 4px;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
 #add-term {
   flex: 1 1 auto;
+  border: 1px dashed #444;
+}
+
+#search-clear-all {
+  flex: 0 0 auto;
+  border: 1px solid #444;
 }
 ```
 
-`src/overlays/search/termRows.ts`: import `{ CONTROL } from '../../panel.ts'`, and give the × (both places) and the mode switch the shared classes beside their own:
+`src/overlays/search/termRows.ts`: import `{ CONTROL } from '../../panel.ts'`, and in both places the × is built:
 
 ```ts
   remove.className = `term-remove ${CONTROL.icon}`;
 ```
 
-```ts
-  control.className = `term-mode ${CONTROL.segments}`;
-```
-
-```ts
-    option.className = `term-mode-option ${CONTROL.segment}`;
-```
-
-The inline text buttons `all` and `only this one` stay as they are.
+The mode switch, and the inline text buttons `all` and `only this one`, stay as they are.
 
 
 - [ ] **Step 5: Implement: wiring in `src/main.ts`**
@@ -2687,7 +2674,7 @@ and in `main()` delete `const legendContainer = …` and the two legend lines in
   },
 ```
 
-`layout/known.ts`: delete the `SEARCH` constant and the two `explore-search/…/touch-targets` entries.
+`layout/known.ts`: delete the `SEARCH` constant and the two `explore-search/…/touch-targets` entries: the × is now 24×24 everywhere, and the mode switches 24px tall on the tablet and the phone. If the run still reports `button.term-mode-option` under 24px on those screens, the suite's touch emulation is not matching `(pointer: coarse)`: switch the query to `(hover: none)`, which `search.css` already uses for touch screens, and run again. If neither matches, keep the mode switches as they are and restore the two entries with only their `term-mode-option` lines and the reason "The mode switches keep their slim look; touch screens get 24px through a pointer media query the layout suite's emulation does not match."
 
 `CLAUDE.md`:
 
@@ -2700,7 +2687,7 @@ and in `main()` delete `const legendContainer = …` and the two legend lines in
 - [ ] **Step 8: Run the tests, the type checker and the layout suite**
 
 Run: `npm run typecheck && npx vitest run && npm run test:layout`
-Expected: all pass, including `story-stop-with-verse` and `story-menu-down`, whose stop now shows a legend row for its search. The layout suite reports no touch-target failures for `explore-search` on tablet or phone. If it reports another search control under 24px, give it the matching shared class from `CONTROL` rather than sizing it in `search.css`, and run it again.
+Expected: all pass, including `story-stop-with-verse` and `story-menu-down`, whose stop now shows a legend row for its search. The layout suite reports no touch-target failures for `explore-search` on tablet or phone. If it reports another search control under 24px, give it `min-height: 24px` inside the same touch-screen media query in `search.css`, and run it again.
 
 - [ ] **Step 9: Commit**
 
