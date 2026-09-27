@@ -383,14 +383,15 @@ describe('createProgram', () => {
       expect(program.program).toBe(mockProgram);
     });
 
-    it('uniforms contains all 3 uniforms', () => {
+    it('uniforms contains all 4 uniforms', () => {
       const program = createProgram(gl);
 
       const uniformKeys = Object.keys(program.uniforms);
-      expect(uniformKeys).toHaveLength(3);
+      expect(uniformKeys).toHaveLength(4);
       expect(uniformKeys).toContain('resolution');
       expect(uniformKeys).toContain('pan');
       expect(uniformKeys).toContain('zoom');
+      expect(uniformKeys).toContain('fade');
     });
   });
 
@@ -505,7 +506,7 @@ describe('createProgram', () => {
       createProgram(gl);
       const vertexSource = shaderSourceOf(gl, 0);
 
-      expect(vertexSource).toContain('mix(a_rect.xy, a_rect.zw, uv) + u_pan');
+      expect(vertexSource).toContain('mix(rect.xy, rect.zw, uv) + u_pan');
       expect(vertexSource).toContain('* u_zoom');
       expect(vertexSource).toContain('gl_Position');
     });

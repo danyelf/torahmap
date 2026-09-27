@@ -18,7 +18,7 @@ import type { ResolvedStoryStop } from '../types';
 
 const camera = { x: 1, y: 2, zoom: 3 };
 const easeBack = (now: number, duration = REJOIN_EASE_MS): StoryHasMap =>
-  rejoin(now, duration, camera, [], []);
+  rejoin(now, duration, camera, { colors: [] }, { colors: [] });
 
 describe('the story drives until the reader takes over', () => {
   it('keeps the reader driving through a nudge', () => {
@@ -83,7 +83,7 @@ describe('easing back', () => {
 
   it('keeps its own copy of the camera it starts from', () => {
     const moving = { ...camera };
-    const driver = rejoin(0, REJOIN_EASE_MS, moving, [], []);
+    const driver = rejoin(0, REJOIN_EASE_MS, moving, { colors: [] }, { colors: [] });
     moving.x = 99;
 
     expect(driver.by === 'rejoining' && driver.fromCamera).toEqual(camera);

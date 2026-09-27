@@ -2,7 +2,7 @@
 // blending two; the reader; or a timed ease from what was on screen to where
 // the story is.
 
-import type { Color } from '../overlays/types';
+import type { Picture } from '../geometry';
 import type { CameraPosition, ResolvedStoryStop } from './types';
 
 /**
@@ -21,8 +21,6 @@ export const REJOIN_EASE_MS = 700;
  */
 export const SWIPE_EASE_MS = 1500;
 
-type Colors = (Color | Color[])[];
-
 /** Between two stops as the story scrolls, `t` of the way from one to the other. */
 export interface StoryBlend {
   from: ResolvedStoryStop;
@@ -33,16 +31,16 @@ export interface StoryBlend {
 export type Driver =
   | { by: 'story'; blend: StoryBlend | null }
   | { by: 'reader'; lastScrollTop: number; travelled: number }
-  // The colours at both ends are captured when the ease starts, so each frame
-  // blends two arrays instead of re-running the overlays' colouring. The camera
+  // The pictures at both ends are captured when the ease starts, so each frame
+  // fades between them instead of re-running the overlays' colouring. The camera
   // eases towards wherever the story is on each frame.
   | {
       by: 'rejoining';
       since: number;
       duration: number;
       fromCamera: CameraPosition;
-      fromColors: Colors;
-      toColors: Colors;
+      fromPicture: Picture;
+      toPicture: Picture;
     };
 
 export type ReaderDriving = Extract<Driver, { by: 'reader' }>;
@@ -67,16 +65,16 @@ export function rejoin(
   now: number,
   duration: number,
   fromCamera: CameraPosition,
-  fromColors: Colors,
-  toColors: Colors,
+  fromPicture: Picture,
+  toPicture: Picture,
 ): StoryHasMap {
   return {
     by: 'rejoining',
     since: now,
     duration,
     fromCamera: { ...fromCamera },
-    fromColors,
-    toColors,
+    fromPicture,
+    toPicture,
   };
 }
 

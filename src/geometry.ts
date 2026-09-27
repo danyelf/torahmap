@@ -18,20 +18,41 @@ const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 
 // World units a verse with several colors grows on every side, so it stands
 // out from single-color verses when zoomed out. Squares sit 2 units apart, so
-// up to 1 keeps a gap between neighbours.
-const MULTICOLOR_GROWTH = 0.75;
+// up to 1 keeps a gap between neighbours. The shader applies it.
+export const MULTICOLOR_GROWTH = 0.75;
+
+/**
+ * One colouring of the map: a colour, or stripes, per verse, and how far each
+ * verse has grown towards the size a multi-colour verse is drawn at, 0 to 1.
+ * Without `growth`, a verse is fully grown exactly when it has several colours.
+ */
+export interface Picture<C = Color | Color[]> {
+  colors: C[];
+  growth?: number[];
+}
+
+const NO_COLORS: Picture = { colors: [] };
 
 /**
  * What the buffer holds for each verse, read once per verse. Each name is a
  * shader input, and rendering.ts points it at its slice.
+ *
+ * Each verse carries two pictures, which the shader mixes by one fade for the
+ * whole map, so moving between them redraws without rebuilding this buffer.
+ * At rest the two are the same.
  */
 export const VERSE_ATTRIBUTES = [
-  { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units
+  { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units, before growing
   { name: 'a_color', size: 3 },
   { name: 'a_color2', size: 3 },
   { name: 'a_color3', size: 3 },
   { name: 'a_color4', size: 3 },
-  { name: 'a_colorCount', size: 1 },
+  { name: 'a_shape', size: 2 }, // stripe count, growth
+  { name: 'a_nextColor', size: 3 },
+  { name: 'a_nextColor2', size: 3 },
+  { name: 'a_nextColor3', size: 3 },
+  { name: 'a_nextColor4', size: 3 },
+  { name: 'a_nextShape', size: 2 },
 ] as const;
 
 export type VerseAttributeName = (typeof VERSE_ATTRIBUTES)[number]['name'];
@@ -45,42 +66,52 @@ for (const { name, size } of VERSE_ATTRIBUTES) {
 }
 export const FLOATS_PER_VERSE = floats;
 
-const COLOR_SLOTS = ['a_color', 'a_color2', 'a_color3', 'a_color4'] as const;
+const SLOTS = {
+  from: { colors: ['a_color', 'a_color2', 'a_color3', 'a_color4'], shape: 'a_shape' },
+  to: {
+    colors: ['a_nextColor', 'a_nextColor2', 'a_nextColor3', 'a_nextColor4'],
+    shape: 'a_nextShape',
+  },
+} as const;
 
 export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
-  colors?: (Color | Color[])[],
+  from: Picture = NO_COLORS,
+  to: Picture = from,
   baseColor: Color = DEFAULT_FILL_COLOR,
 ): Float32Array {
   const data = new Float32Array(verses.length * FLOATS_PER_VERSE);
 
-  for (let i = 0; i < verses.length; i++) {
-    const v = verses[i];
-    const verseColor = colors?.[i];
+  const writePicture = (picture: Picture, slots: (typeof SLOTS)['from' | 'to'], i: number) => {
+    const verseColor = picture.colors[i];
     const base = i * FLOATS_PER_VERSE;
 
-    let verseColors: Color[];
+    let stripes: Color[];
     // Check for empty array first (before isColorArray which would fail on empty)
     if (Array.isArray(verseColor) && (verseColor as unknown[]).length === 0) {
-      verseColors = [baseColor];
+      stripes = [baseColor];
     } else if (isColorArray(verseColor)) {
-      verseColors = verseColor.slice(0, 4) as Color[]; // Cap at 4 colors
+      stripes = verseColor.slice(0, 4) as Color[]; // Cap at 4 colors
     } else {
-      verseColors = [verseColor || baseColor];
+      stripes = [verseColor || baseColor];
     }
-    const colorCount = verseColors.length;
 
-    const grow = colorCount > 1 ? MULTICOLOR_GROWTH : 0;
-    const rect = base + VERSE_OFFSETS.a_rect;
-    data[rect] = v.x - grow;
-    data[rect + 1] = v.y - grow;
-    data[rect + 2] = v.x + v.size - 2 + grow; // -2 for gap
-    data[rect + 3] = v.y + v.size - 2 + grow;
     // Unused colour slots stay zero
-    for (let c = 0; c < colorCount; c++) {
-      data.set(verseColors[c], base + VERSE_OFFSETS[COLOR_SLOTS[c]]);
-    }
-    data[base + VERSE_OFFSETS.a_colorCount] = colorCount;
+    stripes.forEach((color, c) => data.set(color, base + VERSE_OFFSETS[slots.colors[c]]));
+    const shape = base + VERSE_OFFSETS[slots.shape];
+    data[shape] = stripes.length;
+    data[shape + 1] = picture.growth?.[i] ?? (stripes.length > 1 ? 1 : 0);
+  };
+
+  for (let i = 0; i < verses.length; i++) {
+    const v = verses[i];
+    const rect = i * FLOATS_PER_VERSE + VERSE_OFFSETS.a_rect;
+    data[rect] = v.x;
+    data[rect + 1] = v.y;
+    data[rect + 2] = v.x + v.size - 2; // -2 for gap
+    data[rect + 3] = v.y + v.size - 2;
+    writePicture(from, SLOTS.from, i);
+    writePicture(to, SLOTS.to, i);
   }
 
   return data;

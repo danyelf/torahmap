@@ -4,7 +4,7 @@ import type { Color } from '../overlays/types.ts';
 import type { Overlay } from '../overlays/types.ts';
 import { getOverlay } from '../overlays/registry';
 import { getDefaultColor } from '../itemColoring';
-import { blendColorArrays } from './colorBlending';
+import { still, type ColorLayer } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
 import { settingsFromLink } from '../overlays/settings.ts';
 
@@ -63,32 +63,23 @@ export function colorsForStop(
   return resolved;
 }
 
-// Multi-color arrays are preserved at rest and during transitions:
-// each slot lerps independently, and the short side pads with the
-// default color so slots fade in/out cleanly.
-//
-// main.ts only calls this mid-transition, where 0 < t < 1, so the t === 0 and
-// t >= 1 branches below are a guard rather than a path it takes: a zero-width
-// gap between two stops' rest zones (pathologically short stop heights) makes
-// controller.ts hand this t === 1 without fromStop === toStop, so the guard
-// stays rather than being deleted.
+// One stop's colours fading into the next's. At rest on a stop it is that
+// stop's alone, and so is t === 1, which controller.ts hands over with two
+// different stops when their rest zones touch.
 export function computeBlendedColors(
   fromStop: ResolvedStoryStop,
   toStop: ResolvedStoryStop,
   t: number,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
-): (Color | Color[])[] {
+): ColorLayer {
   if (fromStop === toStop || t === 0) {
-    return colorsForStop(fromStop, verses, hovered);
+    return still({ colors: colorsForStop(fromStop, verses, hovered) });
   }
-  if (t >= 1) {
-    return colorsForStop(toStop, verses, hovered);
-  }
-
-  return blendColorArrays(
-    colorsForStop(fromStop, verses, hovered),
-    colorsForStop(toStop, verses, hovered),
+  if (t >= 1) return still({ colors: colorsForStop(toStop, verses, hovered) });
+  return {
+    from: { colors: colorsForStop(fromStop, verses, hovered) },
+    to: { colors: colorsForStop(toStop, verses, hovered) },
     t,
-  );
+  };
 }
