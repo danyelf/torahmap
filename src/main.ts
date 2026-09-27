@@ -22,7 +22,7 @@ import {
   isPanel,
 } from './frame.ts';
 import { menuHtml, type StoryPlace } from './menu.ts';
-import { storiesHtml } from './storiesPanel.ts';
+import { storiesHtml, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
@@ -415,14 +415,11 @@ async function main(): Promise<void> {
     storyContent.inert = frame.menu;
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
-    if (frame.menu && !previous?.menu) droppedMenu.innerHTML = menuHtml(storyPlace());
-    const opened = frame.open !== previous?.open;
-    if (opened && frame.open === 'stories') {
-      storiesPanel.innerHTML = storiesHtml({
-        ...storyPlace(),
-        label: stopLabel(resolvedStops[storyStopIndex()]),
-      });
+    if (frame.menu && !previous?.menu) {
+      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: storyData.title ?? storyId });
     }
+    const opened = frame.open !== previous?.open;
+    if (opened && frame.open === 'stories') void drawStories();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(getAllOverlays());
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
@@ -1260,6 +1257,31 @@ async function main(): Promise<void> {
     readerOpensStory(fromStart ? 0 : left);
   }
 
+  /** Fills the Stories panel once every listed story has been read for its title. */
+  async function drawStories(): Promise<void> {
+    const cards = await Promise.all(
+      listed.map(async ({ id, draft }): Promise<StoryCard> => {
+        const data = await story(id);
+        const at = id === storyId ? storyStopIndex() : places.get(id);
+        return {
+          id,
+          draft: !!draft,
+          title: data.title ?? id,
+          description: data.description ?? '',
+          place:
+            at === undefined
+              ? null
+              : {
+                  number: stopAt(data.stops, at).number,
+                  total: data.stops.length,
+                  label: stopLabel(data.stops[at]),
+                },
+        };
+      }),
+    );
+    if (frame.open === 'stories') storiesPanel.innerHTML = storiesHtml(cards);
+  }
+
   // Delegated: the menus and panels are redrawn as they open.
   function onChromeClick(e: MouseEvent): void {
     const target = e.target as Element;
@@ -1267,7 +1289,6 @@ async function main(): Promise<void> {
     if (target.closest('.story-leave')) return dispatch({ type: 'choose', panel: 'overlay' });
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'story') return dispatch({ type: 'story' });
-    if (action === 'restart') return readerOpensStory(0);
     if (action === 'open-story') {
       const button = target.closest<HTMLElement>('[data-action]')!;
       const card = button.closest<HTMLElement>('[data-story]')!;
