@@ -118,7 +118,7 @@ import {
   canAddTerm,
   type SearchSettings,
 } from './overlays/search/index.ts';
-import { toolsShown } from './tools.ts';
+import { toolsShown, togglesSearch } from './tools.ts';
 import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -904,6 +904,7 @@ async function main(): Promise<void> {
       currentSettings(),
       getVerseText,
       isPinned,
+      toolsNow().search,
     );
   }
 
@@ -1060,11 +1061,13 @@ async function main(): Promise<void> {
   }
 
   function changeSearch(update: (current: SearchSettings) => SearchSettings): void {
-    overlaySettings.set(searchTool, update(overlaySettings.get(searchTool)));
+    const before = overlaySettings.get(searchTool);
+    const after = update(before);
+    overlaySettings.set(searchTool, after);
     applyTools();
     searchChanged(false);
     render();
-    syncUrl(false);
+    syncUrl(togglesSearch(before, after));
   }
 
   function setOverlay(id: string): void {

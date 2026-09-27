@@ -16,3 +16,8 @@ export function toolsShown(
     search: isSearching(search) ? { tool: searchTool, settings: search } : null,
   };
 }
+
+/** Whether a change turns the search on or off, a step Back can undo, rather than edits it. */
+export function togglesSearch(before: SearchSettings, after: SearchSettings): boolean {
+  return isSearching(before) !== isSearching(after);
+}
