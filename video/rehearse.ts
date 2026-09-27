@@ -34,8 +34,19 @@ let index = -1;
 let startedAt = 0;
 let times: Record<string, number> = {};
 let playing = 0; // bumped to cancel a glide or steps still running
+// While a do: scene holds the cursor in a text box, Space still moves on:
+// otherwise it would type a space into the box in the middle of the scene.
+let acting = false;
+
+/** Cancels whatever is still playing, and takes back the cursor a do: scene placed. */
+function cancel(): void {
+  playing++;
+  if (acting) (frame.contentDocument?.activeElement as HTMLElement | null)?.blur();
+  acting = false;
+}
 
 function advance(): void {
+  cancel();
   if (index === -1) startedAt = performance.now();
   const at = Math.round((performance.now() - startedAt) / 100) / 10;
   index++;
@@ -56,7 +67,7 @@ function advance(): void {
 function restart(): void {
   index = -1;
   times = {};
-  playing++;
+  cancel();
   status.textContent = 'Space: start · R: restart';
   now.textContent = script.scenes[0].narration;
   next.textContent = '';
@@ -100,12 +111,11 @@ function play(scene: Scene, previous: Scene | null): void {
   }
 
   const events = doEvents(scene.steps);
-  // Typing leaves the cursor in a text box, where Space would type a space
-  // instead of moving on; once the steps are done, the cursor leaves it.
+  acting = true;
   const lastAt = events.length > 0 ? events[events.length - 1].at : 0;
   setTimeout(
     () => {
-      if (run === playing) (doc.activeElement as HTMLElement | null)?.blur();
+      if (run === playing) cancel();
     },
     lastAt * 1000 + 100,
   );
@@ -131,7 +141,7 @@ function play(scene: Scene, previous: Scene | null): void {
 function onKey(e: KeyboardEvent): void {
   const target = e.target as Element | null;
   const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
-  if (typing) return;
+  if (typing && !acting) return;
   if (e.key === ' ') {
     e.preventDefault();
     advance();
