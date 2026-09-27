@@ -6,11 +6,12 @@
 // The times come from the file beside the script, sample.times.json. The last
 // four options make a rough cut: fewer, smaller frames, of one stretch.
 
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { parseArgs } from 'node:util';
-import type { Page } from 'playwright';
+import type { Browser, Page } from 'playwright';
 import { parseScript } from './script.ts';
 import {
   buildTimeline,
@@ -20,6 +21,7 @@ import {
   transition,
   viewHash,
   doEvents,
+  actionsDue,
   type Camera,
   type Segment,
   type TimedAction,
@@ -56,20 +58,23 @@ const out =
   values.out ?? join(dirname(scriptPath), '..', 'out', `${basename(scriptPath, '.md')}.mp4`);
 mkdirSync(dirname(out), { recursive: true });
 
-const server = await startServer();
-const browser = await launch();
+let server: ChildProcess | undefined;
+let browser: Browser | undefined;
 try {
-  await render();
+  if (spawnSync('ffmpeg', ['-version']).error) throw new Error('ffmpeg is not installed');
+  server = await startServer();
+  browser = await launch();
+  await render(browser);
   console.log(`\nwrote ${out}`);
 } catch (e) {
   console.error(`\n${e instanceof Error ? e.message : e}`);
   process.exitCode = 1;
 } finally {
-  await browser.close();
-  server.kill();
+  await browser?.close();
+  server?.kill();
 }
 
-async function render(): Promise<void> {
+async function render(browser: Browser): Promise<void> {
   const cameras = await measureCameras(browser, BASE, script);
   const page = await openMap(browser, BASE, script.width, script.height, true);
   // Called with no argument, it reads the page's own document.
@@ -116,7 +121,13 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
   let hash = '';
   let fromTop = 0;
   let fromCamera: Camera | null = null;
-  let pending: TimedAction[] = [];
+  let actions: TimedAction[] = [];
+  let fired = 0;
+
+  const fireDue = async (segment: Segment, t: number) => {
+    const due = actionsDue(segment, actions, t);
+    for (; fired < due.length; fired++) await act(page, segment.scene.id, due[fired]);
+  };
 
   const setHash = async (next: string) => {
     if (next === hash) return;
@@ -141,13 +152,15 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
       const previous = segment.previous;
       fromCamera = glides(segment) && previous ? (cameras.get(previous.id) ?? null) : null;
     } else {
-      pending = doEvents(scene.steps);
+      actions = doEvents(scene.steps);
+      fired = 0;
     }
   }
 
   return {
     async show(segment: Segment, t: number): Promise<void> {
       if (segment !== current) {
+        if (current?.scene.kind === 'do') await fireDue(current, current.end);
         current = segment;
         await enter(segment);
       }
@@ -162,9 +175,7 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
       } else if (scene.kind === 'view') {
         await setHash(viewHash(scene, fromCamera, cameras.get(scene.id)!, p));
       } else {
-        while (pending.length > 0 && segment.start + pending[0].at <= t) {
-          await act(page, scene.id, pending.shift()!);
-        }
+        await fireDue(segment, t);
       }
     },
   };
@@ -215,12 +226,16 @@ function startEncoder(file: string, rate: number, factor: number) {
       code === 0 ? resolve() : reject(new Error(`ffmpeg exited ${code}`)),
     );
   });
+  // An early exit is reported through `done`, on the next write; unhandled,
+  // either would end the process before the dev server is stopped.
+  let failure: Error | null = null;
+  done.catch((e: Error) => (failure = e));
+  ffmpeg.stdin.on('error', () => {});
   return {
-    write: (image: Buffer) =>
-      new Promise<void>((resolve) => {
-        if (ffmpeg.stdin.write(image)) resolve();
-        else ffmpeg.stdin.once('drain', () => resolve());
-      }),
+    write: async (image: Buffer) => {
+      if (failure) throw failure;
+      if (!ffmpeg.stdin.write(image)) await Promise.race([once(ffmpeg.stdin, 'drain'), done]);
+    },
     finish: async () => {
       ffmpeg.stdin.end();
       await done;
@@ -228,28 +243,44 @@ function startEncoder(file: string, rate: number, factor: number) {
     // On SIGTERM ffmpeg finishes the file, waiting on an input that never
     // closes, so the pipe is shut and the process killed outright.
     abort: () => {
-      done.catch(() => {});
       ffmpeg.stdin.destroy();
       ffmpeg.kill('SIGKILL');
     },
   };
 }
 
+/**
+ * Starts vite and waits for its own banner. A request to the port is no test:
+ * another server already on it would answer, and the video would be rendered
+ * from its code.
+ */
 async function startServer(): Promise<ChildProcess> {
   const vite = spawn('node_modules/.bin/vite', ['--port', String(PORT), '--strictPort'], {
-    stdio: 'ignore',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
-  for (let i = 0; i < 100; i++) {
-    if (
-      await fetch(BASE).then(
-        (r) => r.ok,
-        () => false,
-      )
-    ) {
-      return vite;
-    }
-    await new Promise((r) => setTimeout(r, 300));
-  }
-  vite.kill();
-  throw new Error(`the dev server did not answer on port ${PORT}`);
+  vite.stderr.resume();
+  await new Promise<void>((resolve, reject) => {
+    const fail = (message: string) => {
+      clearTimeout(timer);
+      vite.kill();
+      reject(new Error(message));
+    };
+    const timer = setTimeout(() => fail('the dev server did not start within 30 seconds'), 30_000);
+    vite.on('exit', () =>
+      fail(`the dev server could not start; is port ${PORT} in use? VIDEO_PORT picks another`),
+    );
+    vite.stdout.on('data', (chunk: Buffer) => {
+      // The banner prints the port in bold.
+      if (
+        chunk
+          .toString()
+          .replace(/\x1b\[[0-9;]*m/g, '')
+          .includes(`:${PORT}/`)
+      ) {
+        clearTimeout(timer);
+        resolve();
+      }
+    });
+  });
+  return vite;
 }

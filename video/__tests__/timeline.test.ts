@@ -9,6 +9,7 @@ import {
   cameraOf,
   viewHash,
   doEvents,
+  actionsDue,
   TYPE_INTERVAL_S,
   CLICK_PAUSE_S,
 } from '../timeline.ts';
@@ -54,6 +55,11 @@ describe('buildTimeline', () => {
 
   it('refuses steps that run past the end of their scene', () => {
     expect(() => buildTimeline(script, { ...times, end: 10.5 })).toThrow(/"e"/);
+  });
+
+  it('rounds the seconds it reports', () => {
+    const seven = parseScript('<!-- scene: s | do: type "abcdefg" -->');
+    expect(() => buildTimeline(seven, { s: 0, end: 0.2 })).toThrow(/needs 0\.48s,/);
   });
 });
 
@@ -136,6 +142,16 @@ describe('doEvents', () => {
       { at: CLICK_PAUSE_S, action: { kind: 'key', text: 'א' } },
       { at: CLICK_PAUSE_S + TYPE_INTERVAL_S, action: { kind: 'key', text: 'ב' } },
     ]);
+  });
+
+  it('owes every action once its scene has ended, even one no frame reached', () => {
+    const [ab] = parseScript('<!-- scene: ab | do: type "ab" -->').scenes;
+    if (ab.kind !== 'do') throw new Error('expected a do scene');
+    const events = doEvents(ab.steps);
+    const segment = { scene: ab, previous: null, start: 0, end: 0.1 };
+    // At 10 frames a second the only frame inside the scene is t = 0.
+    expect(actionsDue(segment, events, 0)).toHaveLength(1);
+    expect(actionsDue(segment, events, 0.1)).toHaveLength(2);
   });
 
   it('keeps nikkud with nothing lost, and waits add time', () => {

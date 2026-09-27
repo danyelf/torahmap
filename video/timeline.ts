@@ -53,7 +53,7 @@ export function buildTimeline(script: Script, times: Times): Segment[] {
       scene.kind === 'do' ? lastActionAt(scene.steps) : glides(segment) ? scene.over : 0;
     if (needs > end - start) {
       throw new Error(
-        `scene "${scene.id}" needs ${needs}s, but lasts only ${end - start}s before what follows`,
+        `scene "${scene.id}" needs ${seconds(needs)}s, but lasts only ${seconds(end - start)}s before what follows`,
       );
     }
     return segment;
@@ -134,6 +134,18 @@ export function doEvents(steps: Step[]): TimedAction[] {
     }
   }
   return events;
+}
+
+/**
+ * The actions of a do: scene due by `t`: all of them once the scene has
+ * ended, since the last may fall between two frames and no frame would fire it.
+ */
+export function actionsDue(segment: Segment, events: TimedAction[], t: number): TimedAction[] {
+  return events.filter((e) => t >= segment.end || segment.start + e.at <= t);
+}
+
+function seconds(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function lastActionAt(steps: Step[]): number {
