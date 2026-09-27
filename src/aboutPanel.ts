@@ -1,12 +1,14 @@
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
+import { PANEL_TITLES } from './frame.ts';
+import { escapeHtml } from './utils/html.ts';
 
 /** About & settings: one scrolling panel, settings first because they are what a returning reader wants. */
 export function aboutHtml(
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
 ): string {
   return `
-    <h2 class="panel-title">About &amp; settings</h2>
+    <h2 class="panel-title">${escapeHtml(PANEL_TITLES.about)}</h2>
     <section class="about-section">
       <h3>Settings</h3>
       <button type="button" id="hebrew-toggle" class="setting-toggle"></button>

@@ -5,6 +5,13 @@
 const PANELS = ['overlay', 'stories', 'about'] as const;
 export type Panel = (typeof PANELS)[number];
 
+/** What each panel is called, in the column's header and at the top of the panel. */
+export const PANEL_TITLES: Record<Panel, string> = {
+  overlay: 'Overlay',
+  stories: 'Stories',
+  about: 'About & settings',
+};
+
 export function isPanel(name: string | undefined): name is Panel {
   return PANELS.some((panel) => panel === name);
 }

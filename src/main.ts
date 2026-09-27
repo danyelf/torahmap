@@ -18,7 +18,7 @@ import {
   nextFrame,
   type Frame,
   type FrameEvent,
-  type Panel,
+  PANEL_TITLES,
   isPanel,
 } from './frame.ts';
 import { menuHtml, type StoryPlace } from './menu.ts';
@@ -370,9 +370,8 @@ async function main(): Promise<void> {
   const overlayDescription = document.getElementById('overlay-description')!;
   const topMenuButton = document.getElementById('top-menu')!;
 
-  // What the panel shows (src/frame.ts), and whether the story is open.
+  // What the panel shows (src/frame.ts); the story is open while its mode is 'story'.
   let frame: Frame = STORY;
-  let storyOpen = true;
 
   // The stop the story is at while it cannot be scrolled there: hidden, it has
   // no height. Null while its scroll says where it is.
@@ -388,8 +387,7 @@ async function main(): Promise<void> {
 
   /** Opens or closes the story; closing it lands on `exploring`. */
   function setStoryOpen(open: boolean, exploring = exploreFrame(phoneLayout.matches)): void {
-    if (!open && storyOpen) heldStop = storyStopIndex();
-    storyOpen = open;
+    if (!open && frame.mode === 'story') heldStop = storyStopIndex();
     const previous = frame;
     if (open) frame = STORY;
     else if (frame.mode === 'story') frame = exploring;
@@ -399,12 +397,6 @@ async function main(): Promise<void> {
   function storyPlace(): StoryPlace {
     return { number: stopAt(resolvedStops, storyStopIndex()).number, total: resolvedStops.length };
   }
-
-  const TOOL_TITLES: Record<Panel, string> = {
-    overlay: 'Overlay',
-    stories: 'Stories',
-    about: 'About & settings',
-  };
 
   /**
    * Puts the frame on the page. The stylesheet reads the attributes; the menu
@@ -424,7 +416,7 @@ async function main(): Promise<void> {
     }
     storyContent.inert = frame.menu;
     panelBody.inert = frame.menu;
-    toolsTitle.textContent = frame.open ? TOOL_TITLES[frame.open] : '';
+    toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) droppedMenu.innerHTML = menuHtml(storyPlace());
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') {
@@ -552,7 +544,7 @@ async function main(): Promise<void> {
 
   /** Anything the reader does that changes what the map shows hands them the map. */
   function takeOver(how: ExitHow): void {
-    if (!storyOpen || driver.by === 'reader') return;
+    if (frame.mode !== 'story' || driver.by === 'reader') return;
     handOver(readerTakesOver(storyPosition()), how);
     applyOverlay();
   }
@@ -840,9 +832,10 @@ async function main(): Promise<void> {
    * for a discrete step rather than a pan or a scroll.
    */
   function syncUrl(push: boolean = false): void {
-    const state: UrlState = storyOpen
-      ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
-      : buildCurrentUrlState();
+    const state: UrlState =
+      frame.mode === 'story'
+        ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
+        : buildCurrentUrlState();
     updateUrl(state, push);
   }
 
@@ -1303,7 +1296,7 @@ async function main(): Promise<void> {
   // Scrolling is the only thing that moves the story on. While the reader
   // drives it only counts towards handing the map back.
   storyContent.addEventListener('scroll', () => {
-    if (!storyOpen || heldStop !== null) return;
+    if (frame.mode !== 'story' || heldStop !== null) return;
 
     if (driver.by === 'reader') {
       const next = storyScrolled(driver, storyPosition());
@@ -1373,7 +1366,7 @@ async function main(): Promise<void> {
   function paintStoryFrame(now: number): void {
     storyFrame = null;
     // The reader can take the map, or fold the story, between the scroll and this frame.
-    if (!storyOpen || heldStop !== null || driver.by === 'reader') return;
+    if (frame.mode !== 'story' || heldStop !== null || driver.by === 'reader') return;
 
     if (driver.by === 'rejoining') {
       const next = settle(driver, now);
@@ -1443,7 +1436,7 @@ async function main(): Promise<void> {
   // size, which the window sets. Outside the story the map's height is not the
   // story's, so the stops wait for openStory to resolve them.
   window.addEventListener('resize', () => {
-    if (!storyOpen) return;
+    if (frame.mode !== 'story') return;
     resolvedStops = resolveStory();
     scheduleStoryFrame();
   });
@@ -1497,7 +1490,7 @@ async function main(): Promise<void> {
   }
 
   // A link to a story stop always opens the story.
-  if (storyOpen && opensFolded) {
+  if (frame.mode === 'story' && opensFolded) {
     // A link that names nothing has opened the story and handed it the map.
     if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
     setStoryOpen(false);

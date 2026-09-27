@@ -64,8 +64,13 @@
  * it; the frame's accent, #6ab0f3, reaches only 9.0:1 and would read dimmer.
  * The underline carries the distinction without depending on colour at all.
  */
+#about-panel {
+  --link: #8ec5f7;
+  --link-hover: #b6d9fa;
+}
+
 #about-panel a {
-  color: #8ec5f7;
+  color: var(--link);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-decoration-color: rgba(142, 197, 247, 0.45);
@@ -76,12 +81,12 @@
 }
 
 #about-panel a:hover {
-  color: #b6d9fa;
-  text-decoration-color: #b6d9fa;
+  color: var(--link-hover);
+  text-decoration-color: var(--link-hover);
 }
 
 #about-panel a:focus-visible {
-  outline: 2px solid #8ec5f7;
+  outline: 2px solid var(--link);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -176,13 +181,13 @@ span.credit-source {
    marks it as a link; the pill's border stands in for the underline. */
 #about-panel a.credit-license {
   border-color: #3f5a73;
-  color: #8ec5f7;
+  color: var(--link);
   text-decoration: none;
 }
 
 #about-panel a.credit-license:hover {
-  border-color: #8ec5f7;
-  color: #b6d9fa;
+  border-color: var(--link);
+  color: var(--link-hover);
 }
 
 .about-section {
@@ -199,7 +204,7 @@ span.credit-source {
 }
 
 .setting-toggle {
-  min-height: 44px;
+  min-height: var(--tap);
   padding: 0 14px;
   border: 1px solid #444;
   border-radius: 4px;

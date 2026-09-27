@@ -7,8 +7,12 @@
    the top-left corner. The mode and the open panel are data- attributes on
    <body>, set by main.ts from src/frame.ts. */
 :root {
-  /* The column's header row, which the menu drops from. */
-  --column-head-height: 61px;
+  /* A finger's worth: every control in the frame is at least this tall. */
+  --tap: 44px;
+  /* The column's header row, which the menu drops from: the ☰, its padding,
+     and the rule under it. */
+  --column-head-pad: 8px;
+  --column-head-height: calc(var(--tap) + 2 * var(--column-head-pad) + 1px);
   /* The legend's height and the gap above it, where the phone's verse popup
      stacks; main.ts measures it. */
   --legend-shown: 0px;
@@ -80,14 +84,14 @@ body[data-mode='explore'] #tools {
   gap: 10px;
   flex-shrink: 0;
   height: var(--column-head-height);
-  padding: 8px 12px;
+  padding: var(--column-head-pad) 12px;
   box-sizing: border-box;
   border-bottom: 1px solid var(--line);
 }
 
 .menu-button {
-  min-width: 44px;
-  min-height: 44px;
+  min-width: var(--tap);
+  min-height: var(--tap);
   border: 1px solid #444;
   border-radius: 6px;
   background: none;
@@ -159,7 +163,7 @@ body[data-menu] #panel-body {
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 44px;
+  min-height: var(--tap);
   padding: 0 16px;
   border: none;
   background: none;
@@ -198,7 +202,7 @@ body[data-menu] #panel-body {
   left: calc(50% - 6px);
   bottom: -8px;
   width: 12px;
-  height: 44px;
+  height: var(--tap);
   transform: rotate(90deg);
   pointer-events: none;
   fill: none;
@@ -248,7 +252,7 @@ body[data-menu] #story-cue {
 
 .story-leave {
   margin-top: 20px;
-  min-height: 44px;
+  min-height: var(--tap);
   padding: 8px 14px;
   border: 1px solid var(--accent);
   border-radius: 4px;
@@ -380,7 +384,7 @@ body[data-open='about'] #about-panel {
 }
 
 .story-card-action {
-  min-height: 44px;
+  min-height: var(--tap);
   padding: 0 14px;
   border: 1px solid var(--accent);
   border-radius: 4px;
@@ -504,6 +508,8 @@ body[data-open='about'] #about-panel {
     --story-sheet: 30svh;
     --sheet-cap: 50svh;
     --sheet-full: 85svh;
+    /* How far the ☰ sits in from the screen's corner. */
+    --corner: 10px;
   }
 
   /* Set here rather than measured, so the story's stops are resolved against
@@ -560,8 +566,8 @@ body[data-open='about'] #about-panel {
     display: block;
     position: fixed;
     font-family: system-ui, sans-serif;
-    top: 10px;
-    left: 10px;
+    top: var(--corner);
+    left: var(--corner);
     z-index: 16;
   }
 
@@ -571,8 +577,8 @@ body[data-open='about'] #about-panel {
 
   /* Dropped from the corner ☰, over the map. */
   #menu {
-    top: 64px;
-    left: 10px;
+    top: calc(2 * var(--corner) + var(--tap));
+    left: var(--corner);
     width: min(280px, calc(100vw - 20px));
     border: 1px solid #444;
     border-radius: 10px;
@@ -596,7 +602,7 @@ body[data-open='about'] #about-panel {
     display: block;
     flex-shrink: 0;
     width: 100%;
-    height: 44px;
+    height: var(--tap);
     padding: 0;
     border: none;
     background: none;
