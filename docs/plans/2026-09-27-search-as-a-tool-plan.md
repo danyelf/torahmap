@@ -18,9 +18,9 @@ The spec leaves these open; each is a choice made here.
 
 1. Search keeps the shape of an `Overlay` (so the settings store, the test helper `hostOverlay` and the legend summary serve it unchanged) but is never registered; its export is renamed `searchOverlay` → `searchTool`, and its name becomes "Search".
 2. Search's settings live in the same settings store as the overlays', under its id `search`.
-3. The search counts as on when at least one word is two or more characters long; a lone letter leaves it off: nothing dims, no legend row, no history entry.
+3. The search counts as on when it has a term it searches on, by the rule it already has: `MIN_SEARCH_TERM_LENGTH` (2, `src/constants/app.ts`: "Terms shorter than this are dropped"), applied by `parseSearchTerms` in `src/search.ts` and by `searchFor`'s `active` list in `src/overlays/search/index.ts`, and pinned by "handles single-character query in all modes" (`search-hebrew-modes.test.ts`), "resolves a single letter to nothing" (`search-mixed-language.test.ts`) and "shows minimum character warning for short terms" (`overlays/search.test.ts`). `isSearching` reads that same `active` filter, extracted as `activeTerms`, so a lone letter leaves the search off: nothing dims, no legend row, no history entry.
 4. With an overlay on, a verse the search does not match is drawn at `NON_MATCH_DIM` = 0.85 of its overlay colour (or of its grey): a smidge, to be tuned by eye at the Task 2 stop. With no overlay, it keeps search's present dark grey (0.18) exactly, so search alone looks as it does today. The one tunable number applies only with an overlay on.
-5. A match over an overlay that gives that verse no colour has a grey hole (the ordinary undimmed grey).
+5. A match over an overlay that gives that verse no colour has a grey hole (the ordinary undimmed grey). Agreed by Danyel.
 6. The ring starts at 1.5px outside and 1px inside, and falls back to a whole square below 8 CSS pixels a side (zoom 2 on the map's 4-unit squares). All four numbers live in `SEARCH_WITH_OVERLAY` in `src/constants.ts`.
 7. A verse with several colours (a multi-word match, or Haftarah's stripes) reaches out by the larger of the multi-colour growth and the ring's outside width, not their sum, and its ring is measured in from that outer edge, so every ring is 2.5px thick (1.5 + 1) whatever the verse's growth.
 7a. The spec's "under half the 2-unit gap, so rings never touch" cannot hold: `layout.ts` jitters each square by up to 1 unit (`JITTER_RANGE` 2), so neighbours sit 0 to 4 units apart. Rings can touch where jitter brings squares close, as the multi-colour growth already can; the plan keeps no test that claims otherwise.
@@ -28,18 +28,18 @@ The spec leaves these open; each is a choice made here.
 9. Story blending: since #260 the shader fades between whole pictures, and each picture now carries its rings, so a donut fades in as one picture fading into the next, its outside growing from nothing as the multi-colour growth does. Only `mergePictures`, which collapses a fade in progress when a new one must start from it, mixes rings stripe by stripe. The spec says this (3dd05a7).
 10. `layerToRecompute` stays as it is: search's colours never depend on the hovered verse, so asking the overlay is already asking both.
 11. Hovering a donut brightens its hole (the fill); the ring keeps its colour.
-12. Proposed, awaiting Danyel: the popup shows both tools' lines, as the spec says, but only one tool can mark the verse text, so while a search is on its word marking replaces the overlay's own marks (Trop's). Composing both markings is the alternative if he wants it.
+12. The verse text shows both tools' marks: the overlay's (Trop's) and the search's words (Danyel's answer). `combineMarks` in `src/verseMarks.ts` reads each tool's marked fragment as stretches of the text and lays them into one; where a mark of the overlay's shares any character with one of the search's, the search's is kept and the overlay's dropped. If either fragment's text differs from the verse's, the search's fragment is used alone.
 13. The new Clear button has the id `search-clear-all`; `#search-clear` stays on the first word's ×, which many tests use.
 14. Clear sits beside "+ add a word" and is disabled while no word is typed.
 15. A word clicked in the verse popup opens the Search panel only while exploring; in the story it changes the map and leaves the story open, as today.
-16. A link that names a search opens on the Search panel on a desktop; any other explore link opens on Overlay, as now.
+16. A link that names a search opens on the Search panel on a desktop; any other explore link opens on Overlay, as now. Agreed by Danyel.
 17. The reserved keys are enforced where overlays are registered: `registerOverlay` throws for an overlay that declares `search`, `mode` or `m`.
 18. Search's parameter declarations move to `src/urlState.ts` as `SEARCH_URL_PARAMS`, beside the other keys that module owns; the search module uses them.
 19. A link writes the search's keys first, then the overlay and the rest, as in the spec's example.
 20. The nine story stops change in Task 3, with the parser, rather than last: the story-file test checks every stop against the parser, so leaving them would fail the suite until the end.
 21. Until Task 4, search is both in the overlay list and in its own slot; `toolsShown` ignores it in the overlay slot, and a story stop that names `overlay: search` searches (Task 2 only). The prototype links in Task 2 use `q=`, the key before Task 3 renames it.
 22. Search's description is dropped: nothing shows it once it leaves the overlay picker.
-23. The search × and the three mode switches are enlarged to 24px everywhere, not only on touch screens.
+23. One panel builder (Danyel's answer): `panelHtml(panel, body)` in `src/panel.ts` builds every panel, Search, Overlay, Stories and About, with its phone-only `.panel-title` from `PANEL_TITLES`, and `CONTROL` names one shared set of control classes in `src/styles/controls.css`: `control-button` (and `quiet`), `control-toggle`, `control-segments`/`control-segment`, `control-icon` and `control-select`. Every one is at least `--tap` (44px) tall on every screen, the rule `src/styles/frame.css` states for the frame ("every control in the frame is at least this tall"), and `control-icon` is 44px wide too. So the search × is 44×44, each mode switch 44px tall, and Clear, "+ add a word", Continue, "Start from the beginning", the Hebrew toggle and every panel select are 44px tall. Each control keeps its own class as a hook (`term-remove`, `story-card-action`, `setting-toggle`), and the per-panel CSS that sized and drew them goes. Inline text buttons (`all`, `only this one`) and an overlay's own chart (Trop's marks) stay as they are.
 24. Search's source credit stays in the About panel: `aboutHtml` is handed `searchTool` with the registered overlays.
 25. The word-click handler keeps its check that the palette has room (the menu counted words when it opened), and loses the overlay switch and the comment explaining it.
 
@@ -93,6 +93,8 @@ The spec leaves these open; each is a choice made here.
 | `src/overlays/{index,registry}.ts` | Search leaves the list; the registry refuses search's keys |
 | `src/frame.ts`, `src/menu.ts`, `index.html`, `src/styles/frame.css`, `src/styles/overlays/search.css` | The Search panel, menu item, legend row |
 | `src/mapLegend.ts` (new) | `showLegend`: a row per tool that is on |
+| `src/panel.ts`, `src/styles/controls.css`, `src/toolPanels.ts` (new) | One builder for every panel, and the controls panels share |
+| `src/verseMarks.ts` (new) | `combineMarks`: both tools' marks over one verse text |
 | `src/sidebar.ts` | The verse popup shows both tools |
 | `src/main.ts` | Wiring |
 | `public/data/story.md` | Nine stops say `search: …` |
@@ -1310,11 +1312,26 @@ export function searchFromLink(raw: LinkParams): SearchSettings {
   return settingsFromUrl(validateOverlayParams(SEARCH_URL_PARAMS, raw));
 }
 
-/** Whether the search has a word to search on. A lone letter does not count. */
+/** Whether the search has a term it searches on. */
 export function isSearching(settings: SearchSettings): boolean {
-  return settings.terms.some((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+  return activeTerms(settings).length > 0;
 }
 ```
+
+- `isSearching` reuses the rule `searchFor` already applies, rather than restating it: above `searchFor`, add
+
+```ts
+/**
+ * The terms the search runs. Short ones are left out for the same reason
+ * parseSearchTerms drops them: a single letter matches most of the corpus and
+ * is almost never meant.
+ */
+function activeTerms(settings: SearchSettings): SearchTerm[] {
+  return settings.terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+}
+```
+
+  and in `searchFor`, `const active = settings.terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);` → `const active = activeTerms(settings);`; the doc comment on the `Search` interface's `active` field shrinks to `/** The terms the search actually runs, in order (see activeTerms). */`. `isSearching` does not run the search, so the story blender and the legend can ask it freely.
 
 - `export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {` → `export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {`, and `urlParams: URL_PARAMS,` → `urlParams: SEARCH_URL_PARAMS,`.
 
@@ -1861,22 +1878,297 @@ EOF
 
 ---
 
-### Task 4: The Search panel and the legend
+### Task 4: One panel builder, the Search panel and the legend
 
-Search leaves the overlay list and gets a panel, a menu item, a Clear button and a legend row; a word clicked in the verse popup adds itself without touching the overlay. The legend comes here, before this task's layout run: after Task 3 the story stop `abraham_call` searches with no overlay, and the layout states `story-stop-with-verse` and `story-menu-down` require its legend to show. Task 3 does not run the layout suite; those two states fail between Task 3 and this task.
+Part A builds every panel with one builder and one set of controls. Part B: search leaves the overlay list and gets a panel, a menu item, a Clear button and a legend row; a word clicked in the verse popup adds itself without touching the overlay. The legend comes here, before this task's layout run: after Task 3 the story stop `abraham_call` searches with no overlay, and the layout states `story-stop-with-verse` and `story-menu-down` require its legend to show. Task 3 does not run the layout suite; those two states fail between Task 3 and this task.
 
 **Files:**
-- Modify: `src/overlays/index.ts`, `src/overlays/registry.ts`, `src/overlays/search/index.ts`, `src/tools.ts`, `src/frame.ts`, `src/menu.ts`, `src/aboutPanel.ts:41`, `src/main.ts`, `index.html`, `src/styles/frame.css`, `src/styles/overlays/search.css`, `test-harness/main.ts`, `layout/app.ts`, `layout/known.ts`, `CLAUDE.md`, `README.md`
+- Modify (Part A): `src/storiesPanel.ts`, `src/aboutPanel.ts`, `src/overlays/commentary.ts`, `src/overlays/haftarah.ts`, `src/main.ts`, `index.html`, `src/styles/frame.css`, `src/styles/about.css`
+- Create (Part A): `src/panel.ts`, `src/styles/controls.css`, `src/toolPanels.ts`, `src/__tests__/unit/panel.test.ts`
+- Modify: `src/overlays/index.ts`, `src/overlays/registry.ts`, `src/overlays/search/index.ts`, `src/overlays/search/termRows.ts`, `src/tools.ts`, `src/frame.ts`, `src/menu.ts`, `src/aboutPanel.ts:41`, `src/main.ts`, `index.html`, `src/styles/frame.css`, `src/styles/overlays/search.css`, `test-harness/main.ts`, `layout/app.ts`, `layout/known.ts`, `CLAUDE.md`, `README.md`
 - Create: `src/__tests__/unit/overlays/registry.test.ts`, `src/mapLegend.ts`, `src/__tests__/unit/mapLegend.test.ts`
 - Test: `src/__tests__/unit/frame.test.ts`, `src/__tests__/unit/menu.test.ts`, `src/__tests__/unit/credits.test.ts`, `src/__tests__/unit/overlays/search.test.ts`, `src/__tests__/unit/urlState.test.ts`, `src/__tests__/integration/view-state-restore.test.ts`, `src/__tests__/integration/overlay-switching.test.ts`, `src/__tests__/integration/url-state-sync.test.ts`, `src/scrollytelling/__tests__/overlayBlender.test.ts`, and the six search suites that reach search through the registry
 
 **Interfaces:**
 - Consumes: `searchTool`, `isSearching`, `toolsShown`, `toolsNow`, `applyTools`, `SEARCH_KEYS`.
 - Produces:
+  - `CONTROL` (the shared control classes) and `panelHtml(panel: Panel, body: string): string` in `src/panel.ts`; `overlayPanelHtml()` and `searchPanelHtml()` in `src/toolPanels.ts`.
   - `Panel` includes `'search'`; `PANEL_TITLES.search = 'Search'`; `exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame`.
   - In `src/main.ts`: `searchChanged(fresh: boolean)`, `changeSearch(update: (current: SearchSettings) => SearchSettings)`.
   - DOM: `#search-panel` holding `#search-controls`; the Clear button `#search-clear-all`; legend rows `.map-legend-row[data-panel="search"]` and `[data-panel="overlay"]`.
   - `showLegend(legend: HTMLElement, rows: readonly LegendRow[]): void` and `interface LegendRow { panel: 'search' | 'overlay'; name: string; summary: OverlaySummary }` in `src/mapLegend.ts`; `updateLegend()` in `src/main.ts`.
+
+#### Part A: one panel builder
+
+Every panel is built by `panelHtml` in `src/panel.ts`, and its controls take the shared classes in `src/styles/controls.css`, each at least `--tap` tall. This part moves the three panels that exist today onto it; Part B adds Search.
+
+- [ ] **Step A1: Write the failing tests**
+
+Create `src/__tests__/unit/panel.test.ts`:
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { CONTROL, panelHtml } from '../../panel';
+import { PANEL_TITLES, type Panel } from '../../frame';
+import { storiesHtml } from '../../storiesPanel';
+import { aboutHtml } from '../../aboutPanel';
+import { overlayPanelHtml } from '../../toolPanels';
+
+function parse(html: string): HTMLDivElement {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div;
+}
+
+const SHARED = Object.values(CONTROL).flatMap((names) => names.split(' '));
+
+describe('panelHtml', () => {
+  it('heads the body with the panel title', () => {
+    const div = parse(panelHtml('stories', '<p>body</p>'));
+    expect(div.firstElementChild?.matches('h2.panel-title')).toBe(true);
+    expect(div.firstElementChild?.textContent).toBe(PANEL_TITLES.stories);
+    expect(div.querySelector('p')?.textContent).toBe('body');
+  });
+});
+
+describe('every panel is built by panelHtml, with shared controls', () => {
+  const panels: [Panel, string][] = [
+    ['overlay', overlayPanelHtml()],
+    ['stories', storiesHtml({ number: 1, total: 2, label: 'x' })],
+    ['about', aboutHtml([])],
+  ];
+
+  for (const [panel, html] of panels) {
+    it(`${panel} opens with its title`, () => {
+      const first = parse(html).firstElementChild;
+      expect(first?.matches('h2.panel-title')).toBe(true);
+      expect(first?.textContent).toBe(PANEL_TITLES[panel]);
+    });
+
+    it(`${panel}'s buttons and selects take a shared control class`, () => {
+      const controls = [...parse(html).querySelectorAll('button, select')];
+      expect(controls.length).toBeGreaterThan(0);
+      for (const control of controls) {
+        expect(SHARED.some((name) => control.classList.contains(name)), control.outerHTML).toBe(
+          true,
+        );
+      }
+    });
+  }
+});
+```
+
+In `src/__tests__/unit/overlays/commentary.test.ts`, next to the expectation that `select?.id` is `category-select` (line 322), add `expect(select?.classList.contains('control-select')).toBe(true);`.
+
+- [ ] **Step A2: Run the tests to see them fail**
+
+Run: `npx vitest run src/__tests__/unit/panel.test.ts src/__tests__/unit/overlays/commentary.test.ts`
+Expected: FAIL: `src/panel.ts` and `src/toolPanels.ts` do not exist.
+
+- [ ] **Step A3: Implement**
+
+Create `src/panel.ts`:
+
+```ts
+// Every panel: its title, which a phone shows and a desktop leaves to the
+// column's header, then its body. Controls in a panel take a shared class.
+import './styles/controls.css';
+import { PANEL_TITLES, type Panel } from './frame.ts';
+import { escapeHtml } from './utils/html.ts';
+
+/** The control classes every panel shares (src/styles/controls.css). */
+export const CONTROL = {
+  button: 'control-button',
+  quiet: 'control-button quiet',
+  toggle: 'control-toggle',
+  segments: 'control-segments',
+  segment: 'control-segment',
+  icon: 'control-icon',
+  select: 'control-select',
+} as const;
+
+export function panelHtml(panel: Panel, body: string): string {
+  return `<h2 class="panel-title">${escapeHtml(PANEL_TITLES[panel])}</h2>${body}`;
+}
+```
+
+Create `src/styles/controls.css`:
+
+```css
+/* The controls every panel shares (src/panel.ts). Each is at least --tap
+   tall, the height src/styles/frame.css gives every control in the frame. */
+.control-button,
+.control-toggle,
+.control-select,
+.control-icon,
+.control-segment {
+  min-height: var(--tap);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.control-button {
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: none;
+  color: var(--accent);
+}
+
+.control-button.quiet {
+  border-color: #444;
+  color: #ddd;
+}
+
+.control-toggle,
+.control-select {
+  padding: 0 14px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+}
+
+/* color-scheme matters as much as the colours: without it the popup list
+   keeps the system's light theme. */
+.control-select {
+  padding: 0 8px;
+  color-scheme: dark;
+}
+
+/* A glyph alone, such as ×: square. */
+.control-icon {
+  min-width: var(--tap);
+  padding: 0;
+  border: none;
+  background: none;
+  color: #888;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* A row of choices, one of them on. */
+.control-segments {
+  display: inline-flex;
+  border: 1px solid #3d3d3d;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #202020;
+}
+
+.control-segment {
+  padding: 0 12px;
+  border: none;
+  border-right: 1px solid #3d3d3d;
+  background: none;
+  color: #8a8a8a;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.control-segment:last-child {
+  border-right: none;
+}
+
+.control-icon:hover,
+.control-segment:hover,
+.control-button.quiet:hover:not(:disabled) {
+  color: #fff;
+}
+
+.control-segment.on {
+  background: #2f5f8a;
+  color: #fff;
+}
+
+.control-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+```
+
+Create `src/toolPanels.ts`:
+
+```ts
+import { CONTROL, panelHtml } from './panel.ts';
+
+/**
+ * The picker, then whatever the chosen overlay draws. main.ts fills the picker
+ * from the registry, after None: the registry is the only list of overlays.
+ */
+export function overlayPanelHtml(): string {
+  return panelHtml(
+    'overlay',
+    `<div class="panel-picker">
+      <label for="overlay-select">Overlay</label>
+      <select id="overlay-select" class="${CONTROL.select}">
+        <option value="none">None</option>
+      </select>
+      <p id="overlay-description"></p>
+    </div>
+    <div id="overlay-controls"></div>
+    <div id="overlay-legend"></div>`,
+  );
+}
+```
+
+`src/storiesPanel.ts`: import `{ CONTROL, panelHtml } from './panel.ts'` in place of `PANEL_TITLES`, and return:
+
+```ts
+  return panelHtml(
+    'stories',
+    `<div class="story-card">
+      <h3>The guided tour</h3>
+      <p class="story-card-place">Stop ${place.number} of ${place.total}: ${escapeHtml(place.label)}</p>
+      <div class="story-card-actions">
+        <button type="button" class="story-card-action ${CONTROL.button}" data-action="story">Continue</button>
+        <button type="button" class="story-card-action ${CONTROL.quiet}" data-action="restart">Start from the beginning</button>
+      </div>
+    </div>`,
+  );
+```
+
+`src/aboutPanel.ts`: import `{ CONTROL, panelHtml } from './panel.ts'` in place of `PANEL_TITLES`; return `panelHtml('about', …)` around the existing sections, without the markup's own `<h2 class="panel-title">…</h2>` line; the toggle becomes `<button type="button" id="hebrew-toggle" class="setting-toggle ${CONTROL.toggle}"></button>`.
+
+`src/overlays/commentary.ts`: `<select id="category-select">` → `<select id="category-select" class="${CONTROL.select}">`. `src/overlays/haftarah.ts`: `<select id="custom-select" style="flex: 1;">` → `<select id="custom-select" class="${CONTROL.select}" style="flex: 1;">`. Both import `{ CONTROL } from '../panel.ts'`.
+
+`index.html`: `#overlay-panel` becomes empty, `<div id="overlay-panel" class="tool"></div>`; its comment about the registry now sits on `overlayPanelHtml`.
+
+`src/main.ts`: import `{ overlayPanelHtml } from './toolPanels.ts'`, and directly after `const aboutPanel = document.getElementById('about-panel')!;` add:
+
+```ts
+  document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
+```
+
+Delete the per-panel control CSS the shared classes replace:
+
+- `src/styles/frame.css`: the `#panel select` rule and the comment above it; the `.story-card-action` and `.story-card-action.secondary` rules.
+- `src/styles/about.css`: the `.setting-toggle` rule, and the `#about-panel .panel-title` rule, so every panel's title looks the same.
+
+- [ ] **Step A4: Run the tests, the type checker and the layout suite**
+
+Run: `npm run typecheck && npx vitest run && npm run test:layout`
+Expected: all pass, apart from the two story states that Task 3 leaves failing (`story-stop-with-verse`, `story-menu-down`), which Part B fixes. The overlay picker, Continue, "Start from the beginning" and the Hebrew toggle are 44px tall on every screen, and a phone now shows the Overlay panel's title too.
+
+- [ ] **Step A5: Commit**
+
+```bash
+git add -A src index.html
+git commit -m "$(cat <<'EOF'
+Build every panel with one builder and shared controls
+
+Each panel opens with its title from PANEL_TITLES, and its buttons,
+toggles and selects take one set of control classes, each at least
+--tap tall.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37
+EOF
+)"
+```
+
+#### Part B: the Search panel and the legend
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1920,6 +2212,19 @@ In `src/__tests__/unit/overlays/search.test.ts`:
       expect(searchOverlay.toUrl()).toEqual({});
       expect(searchOverlay.settings.terms.map((t) => t.text)).toEqual(['']);
     });
+  });
+
+  it("draws its buttons with the panels' shared controls", () => {
+    const container = render();
+    type(container, 'אלהים');
+
+    const has = (selector: string, name: string) =>
+      [...container.querySelectorAll(selector)].every((el) => el.classList.contains(name));
+    expect(has('.term-remove', 'control-icon')).toBe(true);
+    expect(has('.term-mode', 'control-segments')).toBe(true);
+    expect(has('.term-mode-option', 'control-segment')).toBe(true);
+    expect(has('#add-term, #search-clear-all', 'control-button')).toBe(true);
+    expect(container.querySelectorAll('.term-mode-option').length).toBeGreaterThan(0);
   });
 ```
 
@@ -2025,14 +2330,14 @@ export function registerOverlay(overlay: Overlay): void {
 
 - `name: 'Text Search',` → `name: 'Search',`; delete `description`.
 - Add a module variable beside `searchHitCaption`: `let searchClear: HTMLButtonElement | null = null;`
-- In `renderControls`, the template becomes:
+- Import `{ CONTROL } from '../../panel.ts'`. In `renderControls`, the template becomes:
 
 ```ts
       container.innerHTML = `
         <div id="search-terms"></div>
         <div class="search-actions">
-          <button type="button" id="add-term">+ add a word</button>
-          <button type="button" id="search-clear-all">Clear</button>
+          <button type="button" id="add-term" class="${CONTROL.quiet}">+ add a word</button>
+          <button type="button" id="search-clear-all" class="${CONTROL.quiet}">Clear</button>
         </div>
         <div id="search-hit-caption"></div>
         <div id="search-results"></div>
@@ -2070,13 +2375,24 @@ export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
 
 `src/aboutPanel.ts`, the ☰ row: `The menu: continue the story, search, overlays, stories, About &amp; settings`.
 
-`index.html`, first child of `#panel-body`: (`.panel-title` shows only on a phone; a desktop names the panel in the column header)
+`index.html`, first child of `#panel-body`: `<div id="search-panel" class="tool"></div>`.
 
-```html
-          <div id="search-panel" class="tool">
-            <h2 class="panel-title">Search</h2>
-            <div id="search-controls"></div>
-          </div>
+`src/toolPanels.ts`, beside `overlayPanelHtml`:
+
+```ts
+export function searchPanelHtml(): string {
+  return panelHtml('search', '<div id="search-controls"></div>');
+}
+```
+
+In `src/__tests__/unit/panel.test.ts`, import `searchPanelHtml` too and add, inside `describe('every panel is built by panelHtml, with shared controls', …)`:
+
+```ts
+  it('search opens with its title', () => {
+    const first = parse(searchPanelHtml()).firstElementChild;
+    expect(first?.matches('h2.panel-title')).toBe(true);
+    expect(first?.textContent).toBe(PANEL_TITLES.search);
+  });
 ```
 
 `src/styles/frame.css`:
@@ -2103,11 +2419,11 @@ export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
 }
 ```
 
-`src/styles/overlays/search.css`:
+`src/styles/overlays/search.css`: the search's buttons take the shared classes (Step 3 and `termRows.ts` below), so their own sizing and drawing go:
 
-- `.term-remove`: add `min-width: 24px;` and `min-height: 24px;`.
-- `.term-mode-option`: add `min-height: 24px;`.
-- Replace the `#add-term` rule with:
+- `.term-remove`: keep only `flex: 0 0 auto;`; delete the rest of the rule and `.term-remove:hover`.
+- Delete the `.term-mode`, `.term-mode-option`, `.term-mode-option:last-child`, `.term-mode-option:hover` and `.term-mode-option.on` rules, and add `.term-mode { margin: 3px 0 5px; }`.
+- Replace the `#add-term`, `#add-term:hover:not(:disabled)` and `#add-term:disabled` rules with:
 
 ```css
 /* Adding a word and clearing them all, side by side. */
@@ -2117,33 +2433,32 @@ export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
   margin-bottom: 12px;
 }
 
-#add-term,
-#search-clear-all {
-  min-height: 24px;
-  background: none;
-  border-radius: 4px;
-  color: #888;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 5px 10px;
-}
-
 #add-term {
   flex: 1 1 auto;
-  border: 1px dashed #444;
-}
-
-#search-clear-all {
-  flex: 0 0 auto;
-  border: 1px solid #444;
 }
 ```
 
-  and extend the two following rules to both buttons: `#add-term:hover:not(:disabled), #search-clear-all:hover:not(:disabled)` and `#add-term:disabled, #search-clear-all:disabled`.
+`src/overlays/search/termRows.ts`: import `{ CONTROL } from '../../panel.ts'`, and give the × (both places) and the mode switch the shared classes beside their own:
+
+```ts
+  remove.className = `term-remove ${CONTROL.icon}`;
+```
+
+```ts
+  control.className = `term-mode ${CONTROL.segments}`;
+```
+
+```ts
+    option.className = `term-mode-option ${CONTROL.segment}`;
+```
+
+The inline text buttons `all` and `only this one` stay as they are.
+
 
 - [ ] **Step 5: Implement: wiring in `src/main.ts`**
 
 1. Import `type SearchSettings` with `searchTool` from `./overlays/search/index.ts`, and `exploreFrame` is already imported from `./frame.ts`.
+   Also import `searchPanelHtml` beside `overlayPanelHtml`, and after the line that fills `#overlay-panel` add `document.getElementById('search-panel')!.innerHTML = searchPanelHtml();`.
 2. Beside `const overlayControlsContainer = …`, add `const searchControls = document.getElementById('search-controls')!;`, and after `changeSettings` add:
 
 ```ts
@@ -2385,7 +2700,7 @@ and in `main()` delete `const legendContainer = …` and the two legend lines in
 - [ ] **Step 8: Run the tests, the type checker and the layout suite**
 
 Run: `npm run typecheck && npx vitest run && npm run test:layout`
-Expected: all pass, including `story-stop-with-verse` and `story-menu-down`, whose stop now shows a legend row for its search. The layout suite reports no touch-target failures for `explore-search` on tablet or phone. If it reports another search control under 24px, give that selector `min-height: 24px` (and `min-width: 24px` if it is narrow) in `src/styles/overlays/search.css` and run it again.
+Expected: all pass, including `story-stop-with-verse` and `story-menu-down`, whose stop now shows a legend row for its search. The layout suite reports no touch-target failures for `explore-search` on tablet or phone. If it reports another search control under 24px, give it the matching shared class from `CONTROL` rather than sizing it in `search.css`, and run it again.
 
 - [ ] **Step 9: Commit**
 
@@ -2409,6 +2724,7 @@ EOF
 ### Task 5: The verse popup and history
 
 **Files:**
+- Create: `src/verseMarks.ts`, `src/__tests__/unit/verseMarks.test.ts`
 - Modify: `src/tools.ts`, `src/sidebar.ts`, `src/main.ts`
 - Test: `src/__tests__/unit/tools.test.ts`, `src/__tests__/unit/sidebar.test.ts`
 
@@ -2417,10 +2733,75 @@ EOF
 - Produces:
   - `togglesSearch(before: SearchSettings, after: SearchSettings): boolean` in `src/tools.ts`.
   - `updateSidebar(…, isPinned = false, search: ToolOnMap | null = null)`: a new last parameter.
+  - `combineMarks(text: string, under: DocumentFragment, over: DocumentFragment): DocumentFragment` in `src/verseMarks.ts`.
 
 - [ ] **Step 1: Write the failing tests**
 
-In `src/__tests__/unit/tools.test.ts`, add `togglesSearch` to the `../../tools` import and append:
+Create `src/__tests__/unit/verseMarks.test.ts`:
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { combineMarks } from '../../verseMarks';
+
+const TEXT = 'In the beginning';
+
+/** TEXT with each [start, end, class] wrapped in a mark of that class. */
+function marked(...marks: [number, number, string][]): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+  let at = 0;
+  for (const [start, end, cls] of marks) {
+    fragment.append(TEXT.slice(at, start));
+    const mark = document.createElement('mark');
+    mark.className = cls;
+    mark.textContent = TEXT.slice(start, end);
+    fragment.append(mark);
+    at = end;
+  }
+  fragment.append(TEXT.slice(at));
+  return fragment;
+}
+
+function describeMarks(fragment: DocumentFragment): string[] {
+  expect(fragment.textContent).toBe(TEXT);
+  return [...fragment.querySelectorAll('mark')].map((m) => `${m.className}:${m.textContent}`);
+}
+
+describe('combineMarks', () => {
+  it("keeps the overlay's marks where the search marks nothing", () => {
+    const combined = combineMarks(TEXT, marked([0, 2, 'trop']), marked());
+    expect(describeMarks(combined)).toEqual(['trop:In']);
+  });
+
+  it("keeps the search's marks where the overlay marks nothing", () => {
+    const combined = combineMarks(TEXT, marked(), marked([7, 16, 'term-0']));
+    expect(describeMarks(combined)).toEqual(['term-0:beginning']);
+  });
+
+  it('keeps both where they mark different words', () => {
+    const combined = combineMarks(TEXT, marked([0, 2, 'trop']), marked([7, 16, 'term-0']));
+    expect(describeMarks(combined)).toEqual(['trop:In', 'term-0:beginning']);
+  });
+
+  it("keeps the search's mark where both mark the same word", () => {
+    const combined = combineMarks(
+      TEXT,
+      marked([0, 2, 'trop'], [8, 9, 'trop']),
+      marked([7, 16, 'term-0']),
+    );
+    expect(describeMarks(combined)).toEqual(['trop:In', 'term-0:beginning']);
+  });
+
+  it("falls back to the search's marks when a fragment is not this text", () => {
+    const other = document.createDocumentFragment();
+    other.append('something else');
+    const combined = combineMarks(TEXT, other, marked([7, 16, 'term-0']));
+    expect(describeMarks(combined)).toEqual(['term-0:beginning']);
+  });
+});
+```
+
+In `src/__tests__/unit/tools.test.ts`
+, add `togglesSearch` to the `../../tools` import and append:
 
 ```ts
 describe('togglesSearch', () => {
@@ -2484,28 +2865,56 @@ In `src/__tests__/unit/sidebar.test.ts`, add `import type { ToolOnMap } from '..
           ]);
         });
 
-        it("marks the search's words in the verse rather than the overlay's", () => {
+        /** A marker that wraps text[start, end) in a mark of class `cls`. */
+        function marking(cls: string, start: number, end: number) {
+          return vi.fn((text: string) => {
+            const fragment = document.createDocumentFragment();
+            const mark = document.createElement('mark');
+            mark.className = cls;
+            mark.textContent = text.slice(start, end);
+            fragment.append(text.slice(0, start), mark, text.slice(end));
+            return fragment;
+          });
+        }
+
+        function markedEnglish(overlayMarks: [number, number], searchMarks: [number, number]): string[] {
           const overlay: Overlay = {
             id: 'trop',
             name: 'Trop',
             getVerseColor: () => null,
-            highlightVerseText: vi.fn(() => document.createDocumentFragment()),
+            highlightVerseText: marking('trop-highlight', ...overlayMarks),
           };
-          const search = searchOn(null);
+          const search: ToolOnMap = {
+            tool: {
+              id: 'search',
+              name: 'Search',
+              getVerseColor: () => null,
+              highlightVerseText: marking('term-0', ...searchMarks),
+            },
+            settings: {},
+          };
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
           updateSidebar(elements, verse, verseTexts, overlay, undefined, mockGetVerseText, false, search);
+          expect(elements.english?.textContent).toBe('In the beginning');
+          return [...elements.english!.querySelectorAll('mark')].map(
+            (m) => `${m.className}:${m.textContent}`,
+          );
+        }
 
-          expect(search.tool.highlightVerseText).toHaveBeenCalled();
-          expect(overlay.highlightVerseText).not.toHaveBeenCalled();
-          expect(elements.hebrew?.querySelector('mark')).not.toBeNull();
+        it("marks the overlay's stretches and the search's together", () => {
+          expect(markedEnglish([0, 2], [7, 16])).toEqual(['trop-highlight:In', 'term-0:beginning']);
+        });
+
+        it("keeps the search's mark where both mark the same word", () => {
+          expect(markedEnglish([7, 9], [7, 16])).toEqual(['term-0:beginning']);
         });
       });
 ```
 
 - [ ] **Step 2: Run the tests to see them fail**
 
-Run: `npx vitest run src/__tests__/unit/tools.test.ts src/__tests__/unit/sidebar.test.ts`
-Expected: FAIL: `togglesSearch` does not exist; `updateSidebar` ignores a search.
+Run: `npx vitest run src/__tests__/unit/verseMarks.test.ts src/__tests__/unit/tools.test.ts src/__tests__/unit/sidebar.test.ts`
+Expected: FAIL: `src/verseMarks.ts` and `togglesSearch` do not exist; `updateSidebar` ignores a search.
 
 - [ ] **Step 3: Implement**
 
@@ -2518,7 +2927,60 @@ export function togglesSearch(before: SearchSettings, after: SearchSettings): bo
 }
 ```
 
+Create `src/verseMarks.ts`:
+
+```ts
+// Two tools each hand back a verse's text with some stretches wrapped in a
+// mark; this lays both sets of marks over the one text.
+
+interface Marked {
+  start: number;
+  end: number;
+  element: Element;
+}
+
+/** The marked stretches of `fragment`, or null when its text is not `text`. */
+function marksIn(fragment: DocumentFragment, text: string): Marked[] | null {
+  if (fragment.textContent !== text) return null;
+  const marks: Marked[] = [];
+  let at = 0;
+  for (const node of [...fragment.childNodes]) {
+    const length = node.textContent?.length ?? 0;
+    if (node instanceof Element) marks.push({ start: at, end: at + length, element: node });
+    at += length;
+  }
+  return marks;
+}
+
+/**
+ * `under`'s marks and `over`'s in one fragment of `text`. A mark of `under`
+ * that shares any character with one of `over`'s is dropped: two marks cannot
+ * cover one letter, and `over` is the search the reader typed.
+ */
+export function combineMarks(
+  text: string,
+  under: DocumentFragment,
+  over: DocumentFragment,
+): DocumentFragment {
+  const top = marksIn(over, text);
+  const bottom = marksIn(under, text);
+  if (!top || !bottom) return over;
+
+  const kept = bottom.filter((b) => !top.some((t) => b.start < t.end && t.start < b.end));
+  const fragment = document.createDocumentFragment();
+  let at = 0;
+  for (const { start, end, element } of [...top, ...kept].sort((a, b) => a.start - b.start)) {
+    if (start > at) fragment.append(text.slice(at, start));
+    fragment.append(element);
+    at = end;
+  }
+  if (at < text.length) fragment.append(text.slice(at));
+  return fragment;
+}
+```
+
 In `src/sidebar.ts`:
+
 
 - Change the overlays import to `import type { Overlay, ToolOnMap } from './overlays/types.ts';`.
 - Add after `textFragment`:
@@ -2545,12 +3007,18 @@ function infoLine(line: HTMLElement | string): HTMLElement {
     overlayInfo.replaceChildren(...lines.map(infoLine));
   }
 
-  // While a search is on, its words mark the text rather than the overlay's own marks.
-  const marker: ToolOnMap | null =
-    search ?? (currentOverlay ? { tool: currentOverlay, settings: overlaySettings } : null);
+  // Both tools mark the text; where they mark the same letters, the search's mark is kept.
+  const marked = (text: string, language: TextLanguage): DocumentFragment | null => {
+    const overlayMarks = currentOverlay?.highlightVerseText?.(text, language, overlaySettings);
+    const searchMarks = search?.tool.highlightVerseText?.(text, language, search.settings);
+    if (overlayMarks && searchMarks) return combineMarks(text, overlayMarks, searchMarks);
+    return searchMarks ?? overlayMarks ?? null;
+  };
 ```
 
-- In the Hebrew block, `currentOverlay?.highlightVerseText?.(hebrewText, 'he', overlaySettings)` → `marker?.tool.highlightVerseText?.(hebrewText, 'he', marker.settings)`; in the English block, `currentOverlay?.highlightVerseText?.(englishText, 'en', overlaySettings)` → `marker?.tool.highlightVerseText?.(englishText, 'en', marker.settings)`.
+- In the Hebrew block, `currentOverlay?.highlightVerseText?.(hebrewText, 'he', overlaySettings)` → `marked(hebrewText, 'he')`; in the English block, `currentOverlay?.highlightVerseText?.(englishText, 'en', overlaySettings)` → `marked(englishText, 'en')`.
+- Imports: add `import { combineMarks } from './verseMarks.ts';` and `import type { TextLanguage } from './types.ts';` (merged with the existing `./types.ts` import).
+
 
 In `src/main.ts`:
 
