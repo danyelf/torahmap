@@ -1,21 +1,59 @@
-// The shipped story reads the way it was written. The parser drops what it
+// Every shipped story reads the way it was written. The parser drops what it
 // cannot read without failing, so a slip such as `zoom 0.5` quietly changes
 // the view instead of stopping the commit.
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseStoryMarkdown } from '../../scrollytelling/storyParser';
+import { parseStoryMarkdown, STORY_HEADER_KEYS } from '../../scrollytelling/storyParser';
+import { easingFunctions } from '../../scrollytelling/interpolation';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
-import { parseVerseFromUrl } from '../../urlState';
+import { buildUrlHash, parseUrlState, parseVerseFromUrl } from '../../urlState';
+import { STORY_MARKDOWN } from '../../stories/index';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
-const markdown = fs.readFileSync(path.join(dataDir, 'story.md'), 'utf-8');
-const { stops } = parseStoryMarkdown(markdown);
-const comments = [...markdown.matchAll(/<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g)];
 
 registerAllOverlays();
 
-describe('story.md', () => {
+describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
+  const story = parseStoryMarkdown(markdown);
+  const { stops } = story;
+  const comments = [...markdown.matchAll(/<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g)];
+  // The header as written, read without the parser, which drops what it does not know.
+  const header = Object.fromEntries(
+    (markdown.match(/^---\s*\n([\s\S]*?)\n---/)?.[1] ?? '')
+      .split('\n')
+      .map((line) => line.match(/^([^:]+):\s*(.*)$/))
+      .filter((m): m is RegExpMatchArray => m !== null)
+      .map(([, key, value]) => [key.trim(), value.trim()]),
+  );
+
+  it('has an id a link can carry', () => {
+    window.location.hash = buildUrlHash({ story: id, overlayParams: {} });
+    expect(parseUrlState().story).toBe(id);
+  });
+
+  it('has a title and a description', () => {
+    expect(story.title).toBeTruthy();
+    expect(story.description).toBeTruthy();
+  });
+
+  it('writes only header keys the parser reads', () => {
+    const known: readonly string[] = STORY_HEADER_KEYS;
+    expect(Object.keys(header).filter((key) => !known.includes(key))).toEqual([]);
+  });
+
+  it('writes draft, if it has one, as true or false', () => {
+    if ('draft' in header) expect(['true', 'false']).toContain(header.draft);
+  });
+
+  it('writes its order, if it has one, as a number', () => {
+    if ('order' in header) expect(story.order).toBe(Number(header.order));
+  });
+
+  it('names a real easing, if it names one', () => {
+    if ('easing' in header) expect(Object.keys(easingFunctions)).toContain(header.easing);
+  });
+
   it('writes every setting as key: value', () => {
     const unread = comments.flatMap(([, id, settings]) =>
       (settings === undefined ? ([] as string[]) : settings.split('|'))

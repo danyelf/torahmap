@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   define: {
     __GIT_BRANCH__: JSON.stringify('test'),
+    __SHOW_DRAFTS__: 'true',
   },
   test: {
     include: ['src/**/*.test.ts'],

@@ -270,4 +270,4 @@ reader sees, so each wants your eyes before the next.
 3. **Descriptions and share.** Each overlay's sentence in its panel, "Share
    this view" in the menu.
 4. **More than one story.** The stories directory, the menu list, the URL, and
-   resume.
+   resume. Designed in [More than one story](2026-09-27-multiple-stories.md).

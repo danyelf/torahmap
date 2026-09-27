@@ -10,10 +10,10 @@ const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
 
 export const EVENTS = {
-  page_view: { blobs: ['story_stop', 'referrer'], doubles: [] },
-  story_stop: { blobs: ['stop_id'], doubles: ['stop_number', 'total_stops'] },
-  story_exit: { blobs: ['stop_id', 'how'], doubles: ['stop_number'] },
-  story_return: { blobs: ['stop_id', 'how'], doubles: [] },
+  page_view: { blobs: ['story_stop', 'referrer', 'story'], doubles: [] },
+  story_stop: { blobs: ['stop_id', 'story'], doubles: ['stop_number', 'total_stops'] },
+  story_exit: { blobs: ['stop_id', 'how', 'story'], doubles: ['stop_number'] },
+  story_return: { blobs: ['stop_id', 'how', 'story'], doubles: [] },
   view_settled: { blobs: ['book', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },

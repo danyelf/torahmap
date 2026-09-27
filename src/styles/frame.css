@@ -376,9 +376,32 @@ body[data-open='about'] #about-panel {
   border-radius: 6px;
 }
 
+.story-card + .story-card {
+  margin-top: 12px;
+}
+
 .story-card h3 {
   margin: 0 0 4px;
   font-size: 16px;
+}
+
+.story-draft {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #aaa;
+  font-size: 11px;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.story-card-description {
+  margin: 0 0 8px;
+  color: #ccc;
+  font-size: 14px;
 }
 
 .story-card-place {
