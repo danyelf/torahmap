@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { listedStories, storyToOpen } from '../../scrollytelling/storyIndex';
+import { describe, it, expect, vi } from 'vitest';
+import { listedStories, storyCache, storyToOpen } from '../../scrollytelling/storyIndex';
 
 const index = [{ id: 'tour' }, { id: 'sample', draft: true }, { id: 'job' }];
 
@@ -24,4 +24,32 @@ describe('storyToOpen', () => {
     expect(storyToOpen(listed, null)).toBe('tour'));
   it('opens the first story when a link names one not listed', () =>
     expect(storyToOpen(listed, 'abraham_call')).toBe('tour'));
+});
+
+describe('storyCache', () => {
+  const data = { stops: [] };
+
+  it('loads each story once', async () => {
+    const load = vi.fn(async () => data);
+    const cache = storyCache(load);
+    await cache.get('tour');
+    await cache.get('tour');
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('tries again after a load fails', async () => {
+    const load = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(data);
+    const cache = storyCache(load);
+    await expect(cache.get('tour')).rejects.toThrow('offline');
+    await expect(cache.get('tour')).resolves.toBe(data);
+  });
+
+  it('loads a story again once forgotten', async () => {
+    const load = vi.fn(async () => data);
+    const cache = storyCache(load);
+    await cache.get('tour');
+    cache.forget('tour');
+    await cache.get('tour');
+    expect(load).toHaveBeenCalledTimes(2);
+  });
 });

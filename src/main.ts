@@ -124,7 +124,12 @@ import {
   resolveStops,
   stopLabel,
 } from './scrollytelling/storyPanel';
-import { listedStories, loadStoryIndex, storyToOpen } from './scrollytelling/storyIndex';
+import {
+  listedStories,
+  loadStoryIndex,
+  storyCache,
+  storyToOpen,
+} from './scrollytelling/storyIndex';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { blendColorArrays } from './scrollytelling/colorBlending';
@@ -1134,11 +1139,8 @@ async function main(): Promise<void> {
   }
 
   const listed = listedStories(await loadStoryIndex(), location.hostname);
-  const storyCache = new Map<string, Promise<StoryData>>();
-  const story = (id: string): Promise<StoryData> => {
-    if (!storyCache.has(id)) storyCache.set(id, loadStoryData(id));
-    return storyCache.get(id)!;
-  };
+  const stories = storyCache(loadStoryData);
+  const story = (id: string): Promise<StoryData> => stories.get(id);
   // The stop each story was left at, for this visit.
   const places = new Map<string, number>();
 
@@ -1183,7 +1185,7 @@ async function main(): Promise<void> {
 
   async function reloadStory(): Promise<void> {
     const position = storyPosition();
-    storyCache.delete(storyId);
+    stories.forget(storyId);
     storyData = await story(storyId);
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, storyData.stops);
@@ -1197,7 +1199,7 @@ async function main(): Promise<void> {
   if (import.meta.hot) {
     import.meta.hot.on('story-update', ({ id }: { id: string }) => {
       if (id === storyId) reloadStory();
-      else storyCache.delete(id);
+      else stories.forget(id);
     });
   }
 
@@ -1257,9 +1259,12 @@ async function main(): Promise<void> {
     readerOpensStory(fromStart ? 0 : left);
   }
 
-  /** Fills the Stories panel once every listed story has been read for its title. */
+  /**
+   * Fills the Stories panel once every listed story has been read for its
+   * title. A story that fails to load is left out; opening the panel again retries it.
+   */
   async function drawStories(): Promise<void> {
-    const cards = await Promise.all(
+    const loaded = await Promise.allSettled(
       listed.map(async ({ id, draft }): Promise<StoryCard> => {
         const data = await story(id);
         const at = id === storyId ? storyStopIndex() : places.get(id);
@@ -1279,6 +1284,7 @@ async function main(): Promise<void> {
         };
       }),
     );
+    const cards = loaded.flatMap((card) => (card.status === 'fulfilled' ? [card.value] : []));
     if (frame.open === 'stories') storiesPanel.innerHTML = storiesHtml(cards);
   }
 
