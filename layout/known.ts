@@ -34,4 +34,12 @@ export const KNOWN: Record<string, Known> = {
     reason: POPUP,
     violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
   },
+  'explore-search-and-overlay-pinned/phone/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  },
+  'explore-search-and-overlay-pinned/tablet/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  },
 };
