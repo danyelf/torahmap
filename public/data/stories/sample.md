@@ -1,5 +1,5 @@
 ---
-title: A short sample
+title: A Short Sample
 description: Two stops, for trying the list of stories. Never shown on torahmap.org.
 ---
 
