@@ -115,10 +115,10 @@ overlay, as now.
   the square with the ring colour when it is too small on screen for a hole.
   The outside width must stay under half the 2-unit gap between squares at the
   zooms where donuts show, so rings never touch.
-- **Story blending** (`src/scrollytelling/overlayBlender.ts`,
-  `colorBlending.ts`) mixes fills and rings alike, so a donut fades in as its
-  ring drifts from the fill colour to the search colour. A stop's colours come
-  from its search and its overlay, and the per-stop cache is keyed by both.
+- **Story blending** cross-fades whole pictures between stops (#260), and
+  each picture carries its rings, so a donut fades in with the rest of the
+  picture. A stop's picture comes from its search and its overlay, and the
+  per-stop cache is keyed by both.
 - **Everything else that asked "the overlay"** asks both: hover recolouring
   (`layerToRecompute`), the verse popup (`src/sidebar.ts`), the URL writer and
   reader (`src/urlState.ts`, `src/viewState.ts`), the dev capture tool, and
