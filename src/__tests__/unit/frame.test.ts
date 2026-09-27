@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { DRAG_PX, STORY, exploreFrame, isPanel, nextFrame, type Frame } from '../../frame';
+import {
+  DRAG_PX,
+  STORY,
+  exploreFrame,
+  frontToolAfter,
+  isPanel,
+  nextFrame,
+  type Frame,
+} from '../../frame';
 
 const explore = (open: Frame['open'], full = false): Frame => ({
   mode: 'explore',
@@ -147,6 +155,19 @@ describe('crossing from phone width to desktop width', () => {
     expect(nextFrame(explore('about', true), { type: 'layout-changed' }, DESKTOP)).toEqual(
       explore('about'),
     );
+  });
+});
+
+describe('which tool leads', () => {
+  it('switches to the panel that opens', () => {
+    expect(frontToolAfter('overlay', 'search')).toBe('search');
+    expect(frontToolAfter('search', 'overlay')).toBe('overlay');
+  });
+
+  it('keeps the current tool when Stories, About, or nothing opens', () => {
+    expect(frontToolAfter('search', 'stories')).toBe('search');
+    expect(frontToolAfter('overlay', 'about')).toBe('overlay');
+    expect(frontToolAfter('search', null)).toBe('search');
   });
 });
 

@@ -59,3 +59,9 @@ export const SEARCH_WITH_OVERLAY = {
   // close, as the multi-colour growth already can.
   RING_MIN_SQUARE_PX: 8,
 } as const;
+
+/** How the dimming eases when the tool in front switches, rather than snapping. */
+export const FRONT_FADE = {
+  DURATION_MS: 250,
+  STEPS: 3,
+} as const;

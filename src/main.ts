@@ -15,9 +15,11 @@ import {
   DRAG_PX,
   STORY,
   exploreFrame,
+  frontToolAfter,
   nextFrame,
   type Frame,
   type FrameEvent,
+  type FrontTool,
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
@@ -92,6 +94,7 @@ import {
   toolsPicture,
   layerToRecompute,
   getDefaultColor,
+  frontFadeLevels,
 } from './itemColoring.ts';
 import {
   createRenderContext,
@@ -126,6 +129,7 @@ import {
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
 import {
   loadStoryData,
   renderStoryPanel,
@@ -304,6 +308,27 @@ async function main(): Promise<void> {
     return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool));
   }
 
+  /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
+  function dimFor(front: FrontTool): number {
+    return front === 'search' ? SEARCH_WITH_OVERLAY.NON_MATCH_DIM : 1;
+  }
+
+  // Search or the overlay, whichever's panel opened last (src/frame.ts). Only
+  // matters with both tools on, where it decides which one dims for the other.
+  let frontTool: FrontTool = 'overlay';
+  // The non-match dim actually on screen, so an interrupted fade resumes from
+  // where it is rather than jumping back to frontTool's resting value.
+  let frontDim = dimFor(frontTool);
+  let frontFadeTimer: ReturnType<typeof setTimeout> | null = null;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function cancelFrontFade(): void {
+    if (frontFadeTimer !== null) {
+      clearTimeout(frontFadeTimer);
+      frontFadeTimer = null;
+    }
+  }
+
   function updateLegend(): void {
     const { overlay, search } = toolsNow();
     const rows: LegendRow[] = [];
@@ -319,7 +344,38 @@ async function main(): Promise<void> {
   }
 
   function applyTools(): void {
-    setColorLayer(still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse)));
+    cancelFrontFade();
+    frontDim = dimFor(frontTool);
+    setColorLayer(still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, frontDim)));
+  }
+
+  /**
+   * Move the front tool to `next`. With both tools on, the non-match dim it
+   * changes eases over FRONT_FADE.DURATION_MS in a few discrete steps rather
+   * than every animation frame; with only one tool on, or on the other end of
+   * the switch, there is nothing to see, so it snaps.
+   */
+  function setFrontTool(next: FrontTool): void {
+    if (next === frontTool) return;
+    frontTool = next;
+    const tools = toolsNow();
+    if (!tools.search || !tools.overlay || reducedMotion.matches) {
+      applyTools();
+      render();
+      return;
+    }
+    cancelFrontFade();
+    const levels = frontFadeLevels(frontDim, dimFor(next), FRONT_FADE.STEPS);
+    const stepMs = FRONT_FADE.DURATION_MS / levels.length;
+    let i = 0;
+    const step = (): void => {
+      frontDim = levels[i];
+      setColorLayer(still(toolsPicture(tools, verses, mouseState.hoveredVerse, frontDim)));
+      render();
+      i += 1;
+      frontFadeTimer = i < levels.length ? setTimeout(step, stepMs) : null;
+    };
+    step();
   }
 
   function blendTransition(): void {
@@ -373,6 +429,10 @@ async function main(): Promise<void> {
     overlaySettings.restore(searchTool, stop.searchParams ?? {});
     searchChanged(true);
     overlayChanged(true);
+
+    // A stop with a search puts search in front for it, whether or not the
+    // reader has a panel open to see it (stops don't open panels).
+    if (toolsNow().search) frontTool = 'search';
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -477,6 +537,7 @@ async function main(): Promise<void> {
       aboutPanel.innerHTML = aboutHtml([searchTool, ...getAllOverlays()]);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
     }
+    setFrontTool(frontToolAfter(frontTool, frame.open));
     measureSheet();
     // Hidden, the menu would drop focus to the top of the page.
     if (focusInMenu && !frame.menu) menuToggle.focus();
@@ -1541,10 +1602,12 @@ async function main(): Promise<void> {
   function applyViewState(next: ViewState): void {
     if (next.mode === 'explore') {
       handOver(readerTakesOver(storyPosition()), 'fold');
-      setStoryOpen(
-        false,
-        exploreFrame(phoneLayout.matches, next.searchParams.search ? 'search' : 'overlay'),
-      );
+      const open = next.searchParams.search ? 'search' : 'overlay';
+      // Set before opening the frame: a phone opens with no panel shown, so
+      // applyFrame's own tracking of the open panel would miss it, and doing
+      // it first also spares applyFrame a redundant fade against stale state.
+      frontTool = open;
+      setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
     }
 
     activateOverlay(next.overlay);

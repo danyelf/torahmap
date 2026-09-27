@@ -32,11 +32,18 @@ function dim(color: VerseColor, factor: number): VerseColor {
  * The map's colours from its two layers, search over overlay. `search` is null
  * with no search on and `overlay` null with no overlay; a null colour is
  * painted grey by computeItemStates.
+ *
+ * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
+ * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
+ * search leads, 1 while the overlay leads and nothing dims. A front-tool
+ * switch passes intermediate values to ease between the two rather than snap.
+ * It does nothing with search alone, which always dims to its own grey.
  */
 export function combineLayers(
   count: number,
   search: readonly (VerseColor | null)[] | null,
   overlay: readonly (VerseColor | null)[] | null,
+  nonMatchDim: number = SEARCH_WITH_OVERLAY.NON_MATCH_DIM,
 ): Picture<VerseColor | null> {
   const colors: (VerseColor | null)[] = new Array(count);
   const rings: (VerseColor | null)[] = new Array(count).fill(null);
@@ -52,11 +59,19 @@ export function combineLayers(
       colors[i] = under;
       rings[i] = match;
     } else {
-      colors[i] = dim(under ?? getDefaultColor(i), SEARCH_WITH_OVERLAY.NON_MATCH_DIM);
+      colors[i] = dim(under ?? getDefaultColor(i), nonMatchDim);
     }
   }
 
   return search && overlay ? { colors, rings } : { colors };
+}
+
+/**
+ * The dim levels a front-tool switch eases through on its way from `from` to
+ * `to`: `steps` values, evenly spaced, the last exactly `to`.
+ */
+export function frontFadeLevels(from: number, to: number, steps: number): number[] {
+  return Array.from({ length: steps }, (_, i) => from + ((to - from) * (i + 1)) / steps);
 }
 
 /**
@@ -116,15 +131,16 @@ export function overlayColorsFor<T, S>(
   return items.map((v) => getOverlayColor(overlay, v, settings));
 }
 
-/** The map's colours for the tools a view shows. */
+/** The map's colours for the tools a view shows. `nonMatchDim` passes through to combineLayers. */
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
   hovered: SpatialItem<T> | null,
+  nonMatchDim?: number,
 ): Picture<VerseColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
     on && overlayColorsFor(on.tool, items, on.settings, hovered);
-  return combineLayers(items.length, colorsOf(tools.search), colorsOf(tools.overlay));
+  return combineLayers(items.length, colorsOf(tools.search), colorsOf(tools.overlay), nonMatchDim);
 }
 
 /**

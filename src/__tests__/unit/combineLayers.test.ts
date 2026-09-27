@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { combineLayers, getDefaultColor, toolsPicture } from '../../itemColoring';
+import { combineLayers, frontFadeLevels, getDefaultColor, toolsPicture } from '../../itemColoring';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from '../../constants';
 import type { Color, Overlay } from '../../overlays/types';
 import { createVerse } from '../helpers/fixtures';
@@ -79,6 +79,40 @@ describe('combineLayers', () => {
       expect(rings).toEqual([null, null]);
     });
   });
+
+  describe('with the overlay in front', () => {
+    it('leaves a non-match at the overlay colour, full strength', () => {
+      const { colors, rings } = combineLayers(1, [null], [RED], 1);
+      expect(colors[0]).toEqual(RED);
+      expect(rings![0]).toBeNull();
+    });
+
+    it('still rings a match', () => {
+      const { colors, rings } = combineLayers(1, [CYAN], [RED], 1);
+      expect(colors[0]).toEqual(RED);
+      expect(rings![0]).toEqual(CYAN);
+    });
+
+    it('leaves the default grey undimmed where the overlay has no colour', () => {
+      expect(combineLayers(1, [null], [null], 1).colors[0]).toEqual(getDefaultColor(0));
+    });
+  });
+});
+
+describe('frontFadeLevels', () => {
+  it('steps evenly from the start to the end, landing exactly on it', () => {
+    const levels = frontFadeLevels(1, 0.4, 3);
+    expect(levels).toHaveLength(3);
+    expect(levels[0]).toBeCloseTo(0.8);
+    expect(levels[1]).toBeCloseTo(0.6);
+    expect(levels[2]).toBeCloseTo(0.4);
+  });
+
+  it('works in either direction', () => {
+    const levels = frontFadeLevels(0.4, 1, 2);
+    expect(levels[0]).toBeCloseTo(0.7);
+    expect(levels[1]).toBeCloseTo(1);
+  });
 });
 
 describe('toolsPicture', () => {
@@ -102,5 +136,23 @@ describe('toolsPicture', () => {
 
     expect(picture.colors).toEqual([RED, scaled(RED, DIM)]);
     expect(picture.rings).toEqual([CYAN, null]);
+  });
+
+  it('passes a non-match dim through to combineLayers', () => {
+    const overlay: Overlay = { id: 'o', name: 'O', getVerseColor: () => RED };
+    const search: Overlay = { id: 's', name: 'S', getVerseColor: () => null };
+    const items = [createVerse({ verse: 1 })];
+
+    const picture = toolsPicture(
+      {
+        overlay: { tool: overlay, settings: undefined },
+        search: { tool: search, settings: undefined },
+      },
+      items,
+      null,
+      1,
+    );
+
+    expect(picture.colors).toEqual([RED]);
   });
 });

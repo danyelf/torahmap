@@ -17,6 +17,17 @@ export function isPanel(name: string | undefined): name is Panel {
   return PANELS.some((panel) => panel === name);
 }
 
+/** Search or the overlay, whichever's panel opened most recently. */
+export type FrontTool = 'search' | 'overlay';
+
+/**
+ * Which tool leads after a panel opens. Only Search and Overlay count:
+ * Stories, About and a closed sheet leave the current one in front.
+ */
+export function frontToolAfter(current: FrontTool, opened: Panel | null): FrontTool {
+  return opened === 'search' || opened === 'overlay' ? opened : current;
+}
+
 export interface Frame {
   mode: 'story' | 'explore';
   /** The open panel, while exploring. Null on a phone at rest, never on a desktop. */
