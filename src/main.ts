@@ -972,6 +972,24 @@ async function main(): Promise<void> {
     currentOverlay = getOverlay(id) ?? null;
   }
 
+  // A legend entry marked with `data-hover-verse` hovers that verse, colouring
+  // the map as the cursor over it would; the popup stays shut.
+  function hoverFromLegend(e: PointerEvent): void {
+    if (e.pointerType === 'touch') return;
+    const target =
+      e.type === 'pointerleave' ? null : (e.target as Element).closest('[data-hover-verse]');
+    const ref = target instanceof HTMLElement ? target.dataset.hoverVerse : undefined;
+    const parsed = ref ? parseVerseFromUrl(ref) : null;
+    const verse = parsed ? (findTanakhItem(verses, parsed) ?? null) : null;
+
+    const previousHover = mouseState.hoveredVerse;
+    if (tanakhIdentitiesEqual(previousHover, verse)) return;
+    setHoveredVerse(mouseState, verse);
+    repaint(previousHover);
+  }
+  overlayLegendContainer?.addEventListener('pointerover', hoverFromLegend);
+  overlayLegendContainer?.addEventListener('pointerleave', hoverFromLegend);
+
   function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';

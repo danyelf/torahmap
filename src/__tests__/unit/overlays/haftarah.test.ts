@@ -427,6 +427,60 @@ describe('Haftarah Overlay', () => {
       const innerHTML = container.innerHTML;
       expect(innerHTML).toContain('holidays');
     });
+
+    function keyRows(container: HTMLElement) {
+      return [...container.querySelectorAll('.haftarah-key-row')].map((row) => ({
+        label: row.querySelector('.haftarah-key-label')!.textContent,
+        readings: [...row.querySelectorAll<HTMLElement>('[data-hover-verse]')].map((el) => ({
+          name: el.title,
+          verse: el.dataset.hoverVerse,
+        })),
+      }));
+    }
+
+    it('keys each book by its portions, and occasions by category', () => {
+      const container = document.createElement('div');
+      haftarahOverlay.renderLegend(container);
+
+      expect(keyRows(container)).toEqual([
+        {
+          label: 'Genesis',
+          readings: [
+            { name: 'Bereshit', verse: 'Genesis.1.1' },
+            { name: 'Noach', verse: 'Genesis.6.9' },
+          ],
+        },
+        {
+          label: 'High Holidays',
+          readings: [{ name: 'Rosh Hashanah Day 1', verse: 'I.Samuel.1.1' }],
+        },
+        {
+          label: 'Rosh Chodesh',
+          readings: [{ name: 'Shabbat Rosh Chodesh', verse: 'Isaiah.66.1' }],
+        },
+      ]);
+    });
+
+    it('hovers an occasion by a verse no other reading shares, when it has one', async () => {
+      const overlapping = structuredClone(SAMPLE_HAFTARAH_DATA);
+      // Starts inside Bereshit's Ashkenazi haftarah, which ends at 42:21.
+      overlapping.specialOccasions[0].haftarah.ashkenazi[0] = {
+        book: 'Isaiah',
+        start: { chapter: 42, verse: 5 },
+        end: { chapter: 42, verse: 25 },
+      };
+      installMockFetch({
+        '/data/overlays/haftarah/mappings.json': overlapping,
+        '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
+      });
+      await haftarahOverlay.overlay.init?.();
+
+      const container = document.createElement('div');
+      haftarahOverlay.renderLegend(container);
+
+      const roshChodesh = keyRows(container).find((row) => row.label === 'Rosh Chodesh')!;
+      expect(roshChodesh.readings[0].verse).toBe('Isaiah.42.22');
+    });
   });
 
   describe('Multi-Item Verses', () => {

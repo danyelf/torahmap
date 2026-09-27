@@ -2,9 +2,12 @@ import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TorahData } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
-import { rgbToHsl, hslToRgb, buildLegendGradient } from '../utils/color.ts';
+import { rgbToHsl, hslToRgb, buildLegendGradient, colorToCss } from '../utils/color.ts';
+import { escapeHtml } from '../utils/html.ts';
+import { verseToUrlFormat } from '../urlState.ts';
 import { loadJson } from './loadJson.ts';
 import { legendCaption } from './legend.ts';
+import '../styles/overlays/haftarah.css';
 
 interface VerseRef {
   chapter: number;
@@ -46,6 +49,18 @@ interface SpecialOccasionData {
     sephardi: VerseRange[];
   };
 }
+
+// In the order the legend lists them.
+const CATEGORY_LABELS: Record<OccasionCategory, string> = {
+  'high-holidays': 'High Holidays',
+  sukkot: 'Sukkot',
+  'four-shabbatot': 'Four Shabbatot',
+  pesach: 'Pesach',
+  shavuot: 'Shavuot',
+  'fast-days': 'Fast Days',
+  'rosh-chodesh': 'Rosh Chodesh',
+  other: 'Other',
+};
 
 type HaftarahItem = ParshaData | SpecialOccasionData;
 
@@ -279,6 +294,86 @@ function colorAt(
   return null;
 }
 
+/**
+ * The verse that stands for `item` when its legend swatch is hovered, so the
+ * map lights up as it would under the cursor: a portion's first Torah verse,
+ * or an occasion's first haftarah verse that no other reading shares. A shared
+ * verse would light up every reading that shares it.
+ */
+function standInVerse(item: HaftarahItem, custom: Custom, derived: HaftarahDerivation): string {
+  if (isParsha(item)) {
+    const { book, start } = item.torah;
+    return verseToUrlFormat(book, start.chapter, start.verse);
+  }
+
+  const verses: string[] = [];
+  let unshared: string | undefined;
+  for (const range of item.haftarah[custom]) {
+    forEachVerseInRange(range, (book, ch, v) => {
+      verses.push(verseToUrlFormat(book, ch, v));
+      if (!unshared && derived.haftarahVerseToItem.get(tanakhKey(book, ch, v))?.length === 1) {
+        unshared = verses[verses.length - 1];
+      }
+    });
+  }
+  return unshared ?? verses[0];
+}
+
+/** A row of the legend's key: a label and one hoverable swatch per reading. */
+function keyRow(
+  label: string,
+  items: HaftarahItem[],
+  custom: Custom,
+  derived: HaftarahDerivation,
+  swatchClass: string,
+): string {
+  const swatches = items
+    .map((item) => {
+      const color = derived.itemToColor.get(item);
+      const background = color ? colorToCss(color) : 'transparent';
+      return `<span class="${swatchClass}" style="background: ${background}" title="${escapeHtml(item.name)}" data-hover-verse="${escapeHtml(standInVerse(item, custom, derived))}"></span>`;
+    })
+    .join('');
+  return `<div class="haftarah-key-row"><span class="haftarah-key-label">${escapeHtml(label)}</span><span class="haftarah-key-swatches">${swatches}</span></div>`;
+}
+
+function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
+  const groups = new Map<K, T[]>();
+  for (const item of items) {
+    const key = keyOf(item);
+    const group = groups.get(key);
+    if (group) group.push(item);
+    else groups.set(key, [item]);
+  }
+  return groups;
+}
+
+/** Each book by its portions, then each category of occasion by its readings. */
+function renderKey(custom: Custom): string {
+  if (!data?.parshiot) return '';
+  const derived = deriveHaftarah(custom);
+
+  const byBook = groupBy(data.parshiot, (parsha) => parsha.torah.book);
+  const byCategory = groupBy(data.specialOccasions ?? [], (occasion) => occasion.category);
+
+  const books = [...byBook].map(([book, parshiot]) =>
+    keyRow(book, parshiot, custom, derived, 'haftarah-key-segment'),
+  );
+  const categories = (Object.keys(CATEGORY_LABELS) as OccasionCategory[])
+    .filter((category) => byCategory.has(category))
+    .map((category) =>
+      keyRow(
+        CATEGORY_LABELS[category],
+        byCategory.get(category)!,
+        custom,
+        derived,
+        'haftarah-key-swatch',
+      ),
+    );
+
+  return `<div class="haftarah-key">${books.join('')}${categories.join('')}</div>`;
+}
+
 export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   id: 'haftarah',
   name: 'Haftarah',
@@ -393,6 +488,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
       ${legendCaption('Includes holidays, fast days, special Shabbatot', { marginLeft: 28 })}
       ${legendCaption('Multi-item verses are split corner to corner, one band per item', { marginLeft: 28 })}
       ${legendCaption('Hover brightens the reading & its haftarah, desaturates others', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
+      ${renderKey(settings.custom)}
     `;
   },
 

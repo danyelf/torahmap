@@ -1,0 +1,48 @@
+/* The haftarah legend's key: each book's portions as one bar, each category of
+   occasion as a row of swatches. Only on a desktop; the phone's sheet keeps the
+   short legend. */
+.haftarah-key {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.haftarah-key-row {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+}
+
+.haftarah-key-swatches {
+  display: flex;
+  gap: 3px;
+}
+
+/* Touching, so a book reads as one bar. */
+.haftarah-key-swatches:has(.haftarah-key-segment) {
+  gap: 0;
+}
+
+.haftarah-key-segment {
+  flex: 1;
+  height: 12px;
+}
+
+.haftarah-key-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.haftarah-key [data-hover-verse]:hover {
+  outline: 1px solid #fff;
+  outline-offset: 1px;
+}
+
+@media (max-width: 768px) {
+  .haftarah-key {
+    display: none;
+  }
+}
