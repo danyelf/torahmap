@@ -6,18 +6,9 @@ import type { DriverKind } from './scrollytelling/driver.ts';
 import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
 import type { EventFields, EventName, EventPayload } from './telemetry/schema.ts';
 
-const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
-
-/** True for the dev server: no host, localhost, an IPv6 loopback, a LAN IPv4 address, or an mDNS `.local` name. */
-function isDevHost(hostname: string): boolean {
-  if (hostname === '' || hostname === 'localhost') return true;
-  if (hostname === '::1' || hostname === '[::1]') return true;
-  if (hostname.endsWith('.local')) return true;
-  return IPV4.test(hostname);
-}
-
 interface Options {
-  hostname: string;
+  /** Off on the dev server, which sends nothing. */
+  enabled: boolean;
   send: (body: string) => void;
   getMode: () => DriverKind;
   /** The story the reader is in, which every story event names. */
@@ -26,7 +17,7 @@ interface Options {
 }
 
 const options: Options = {
-  hostname: typeof location === 'undefined' ? '' : location.hostname,
+  enabled: !import.meta.env.DEV,
   send: (body) => navigator.sendBeacon('/api/event', body),
   getMode: () => 'story',
   getStory: () => '',
@@ -47,7 +38,7 @@ function makeVisitId(): string {
 }
 
 function track<E extends EventName>(event: E, fields: EventFields<E>): void {
-  if (isDevHost(options.hostname)) return;
+  if (!options.enabled) return;
   if (!options.visitId) options.visitId = makeVisitId();
   const payload: EventPayload<E> = {
     event,

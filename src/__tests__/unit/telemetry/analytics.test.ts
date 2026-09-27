@@ -13,7 +13,7 @@ let send: ReturnType<typeof vi.fn<(body: string) => void>>;
 beforeEach(() => {
   send = vi.fn<(body: string) => void>();
   configureAnalytics({
-    hostname: 'torahmap.org',
+    enabled: true,
     send,
     getMode: () => 'reader',
     getStory: () => 'tour',
@@ -36,17 +36,9 @@ describe('analytics', () => {
     ]);
   });
 
-  it('sends from a workers.dev preview host, not only torahmap.org', () => {
-    configureAnalytics({ hostname: 'telemetry-torahmap.example.workers.dev' });
+  it('sends nothing while switched off, as on the dev server', () => {
+    configureAnalytics({ enabled: false });
     trackSearchExecute('light', 'en', 'word', 12);
-    expect(send).toHaveBeenCalledTimes(1);
-  });
-
-  it('sends nothing from the dev server', () => {
-    for (const hostname of ['localhost', '127.0.0.1', '192.168.1.20', '::1', 'mac.local', '']) {
-      configureAnalytics({ hostname });
-      trackSearchExecute('light', 'en', 'word', 12);
-    }
     expect(send).not.toHaveBeenCalled();
   });
 
