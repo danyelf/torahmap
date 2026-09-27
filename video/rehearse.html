@@ -41,8 +41,21 @@
       #next {
         color: #888;
       }
+      #capture-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      #shot-name {
+        flex: 1;
+        min-width: 12em;
+      }
       #captured {
-        white-space: pre-wrap;
+        flex: 1;
+        min-height: 12em;
+        background: #1a1a1a;
+        color: #eee;
+        border: 1px solid #333;
         font:
           12px ui-monospace,
           monospace;
@@ -55,11 +68,17 @@
       <div id="status">Space: start · R: restart</div>
       <div id="now"></div>
       <div id="next"></div>
-      <div>
-        <button id="copy-times">Copy timings</button>
-        <button id="capture">Capture</button>
+      <div><button id="copy-times">Copy timings</button></div>
+      <div id="capture-controls">
+        <input id="shot-name" placeholder="name (blank: shot1, shot2…)" />
+        <select id="format">
+          <option value="stop">story.md stop</option>
+          <option value="scene">script scene</option>
+        </select>
+        <button id="capture">Capture (C)</button>
+        <button id="copy-all">Copy all</button>
       </div>
-      <div id="captured"></div>
+      <textarea id="captured" spellcheck="false" wrap="off"></textarea>
     </div>
     <script type="module" src="./rehearse.ts"></script>
   </body>

@@ -1,30 +1,40 @@
 // Rehearsal: the app in an iframe, the narration beside it. Space moves to the
 // next scene and notes the time; Copy timings hands over the times file.
+// Without a script the page only captures: explore the app, and C turns each
+// view into a story.md stop or a script scene.
 //
 //   npm run rehearse   (opens /video/rehearse.html?script=sample)
+//   npm run capture    (opens /video/rehearse.html)
 
 import { parseScript, type Scene } from './script.ts';
 import { cameraOf, doEvents, viewHash } from './timeline.ts';
 import { restingScrollTops } from './inPage.ts';
-import { captureLine } from './capture.ts';
+import { captureLine, storyStopLine } from './capture.ts';
 import { easingFunctions } from '../src/scrollytelling/interpolation.ts';
 
-const name = new URLSearchParams(location.search).get('script') ?? 'sample';
-const script = parseScript(await (await fetch(`/video/scripts/${name}.md`)).text());
+const scriptName = new URLSearchParams(location.search).get('script');
+const script = scriptName
+  ? parseScript(await (await fetch(`/video/scripts/${scriptName}.md`)).text())
+  : null;
+const scenes = script?.scenes ?? [];
+const width = script?.width ?? 1920;
+const height = script?.height ?? 1080;
 
 const frame = document.querySelector<HTMLIFrameElement>('#app')!;
 const stage = document.querySelector<HTMLElement>('#stage')!;
 const status = document.querySelector<HTMLElement>('#status')!;
 const now = document.querySelector<HTMLElement>('#now')!;
 const next = document.querySelector<HTMLElement>('#next')!;
-const captured = document.querySelector<HTMLElement>('#captured')!;
+const captured = document.querySelector<HTMLTextAreaElement>('#captured')!;
+const shotName = document.querySelector<HTMLInputElement>('#shot-name')!;
+const format = document.querySelector<HTMLSelectElement>('#format')!;
 
 // The app is laid out at the video's size, then scaled to fit, so what you
 // rehearse over is what renders.
-frame.width = String(script.width);
-frame.height = String(script.height);
+frame.width = String(width);
+frame.height = String(height);
 function fit(): void {
-  const scale = Math.min(stage.clientWidth / script.width, stage.clientHeight / script.height);
+  const scale = Math.min(stage.clientWidth / width, stage.clientHeight / height);
   frame.style.transform = `scale(${scale})`;
 }
 addEventListener('resize', fit);
@@ -50,26 +60,28 @@ function advance(): void {
   if (index === -1) startedAt = performance.now();
   const at = Math.round((performance.now() - startedAt) / 100) / 10;
   index++;
-  if (index === script.scenes.length) {
+  if (index === scenes.length) {
     times.end = at;
     status.textContent = `Done: ${at}s. Copy timings, or R to go again.`;
     return;
   }
-  if (index > script.scenes.length) return;
-  const scene = script.scenes[index];
+  if (index > scenes.length) return;
+  const scene = scenes[index];
   times[scene.id] = at;
-  status.textContent = `Scene ${index + 1} of ${script.scenes.length}: ${scene.id}`;
+  status.textContent = `Scene ${index + 1} of ${scenes.length}: ${scene.id}`;
   now.textContent = scene.narration;
-  next.textContent = script.scenes[index + 1]?.narration.split('\n')[0] ?? '(last scene)';
-  play(scene, script.scenes[index - 1] ?? null);
+  next.textContent = scenes[index + 1]?.narration.split('\n')[0] ?? '(last scene)';
+  play(scene, scenes[index - 1] ?? null);
 }
 
 function restart(): void {
   index = -1;
   times = {};
   cancel();
-  status.textContent = 'Space: start · R: restart';
-  now.textContent = script.scenes[0].narration;
+  status.textContent = script
+    ? 'Space: start · R: restart · C: capture'
+    : 'Explore the map; C or Capture adds what it shows to the list.';
+  now.textContent = scenes[0]?.narration ?? '';
   next.textContent = '';
 }
 
@@ -140,9 +152,13 @@ function play(scene: Scene, previous: Scene | null): void {
 
 function onKey(e: KeyboardEvent): void {
   const target = e.target as Element | null;
-  const typing = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA';
+  const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '');
   if (typing && !acting) return;
-  if (e.key === ' ') {
+  if (e.key === 'c' || e.key === 'C') {
+    capture();
+  } else if (!script) {
+    return;
+  } else if (e.key === ' ') {
     e.preventDefault();
     advance();
   } else if (e.key === 'r' || e.key === 'R') {
@@ -152,14 +168,34 @@ function onKey(e: KeyboardEvent): void {
 addEventListener('keydown', onKey);
 frame.addEventListener('load', () => frame.contentWindow?.addEventListener('keydown', onKey));
 
+// Scripts are what rehearsal is for; without one, story.md is.
+format.value = script ? 'scene' : 'stop';
 let captures = 0;
-document.querySelector('#capture')!.addEventListener('click', async () => {
-  const line = captureLine(`shot${++captures}`, frame.contentWindow!.location.hash);
-  captured.textContent += `${line}\n`;
-  await navigator.clipboard.writeText(line);
+
+/** Adds what the app shows now to the list, as the chosen kind of line. */
+function capture(): void {
+  const hash = frame.contentWindow!.location.hash;
+  const name = shotName.value.trim() || `shot${++captures}`;
+  const line = format.value === 'stop' ? storyStopLine(name, hash) : `${captureLine(name, hash)}\n`;
+  if (line === null) {
+    status.textContent = 'This is the story itself: leave it, or capture a scene line instead.';
+    return;
+  }
+  captured.value += line;
+  captured.scrollTop = captured.scrollHeight;
+  shotName.value = '';
+  status.textContent = `Captured ${name}.`;
+}
+document.querySelector('#capture')!.addEventListener('click', capture);
+
+document.querySelector('#copy-all')!.addEventListener('click', async () => {
+  await navigator.clipboard.writeText(captured.value);
+  status.textContent = 'The list is on the clipboard.';
 });
 
-document.querySelector('#copy-times')!.addEventListener('click', async () => {
+const copyTimes = document.querySelector<HTMLButtonElement>('#copy-times')!;
+copyTimes.hidden = !script;
+copyTimes.addEventListener('click', async () => {
   await navigator.clipboard.writeText(JSON.stringify(times, null, 2));
   status.textContent = 'Timings copied: save them beside the script as <name>.times.json';
 });
