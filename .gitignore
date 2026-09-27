@@ -30,3 +30,6 @@ data-transient/
 test-results/
 layout-report/
 playwright-report/
+
+# Rendered video (npm run video)
+video/out/

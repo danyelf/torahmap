@@ -5,7 +5,7 @@ export default defineConfig({
     __GIT_BRANCH__: JSON.stringify('test'),
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'video/**/*.test.ts'],
     environment: 'happy-dom',
     setupFiles: ['./src/__tests__/setup.ts'],
     pool: 'forks',
