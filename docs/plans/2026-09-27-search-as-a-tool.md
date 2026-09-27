@@ -37,6 +37,12 @@ for a verse or passes it down.
 - **A verse that does not match**, while a search is on, shows the overlay's
   colour (or grey, with no overlay) dimmed by a smidge. The amount is one
   variable, to be tuned by eye.
+- **The dimming follows the tool in front**: the one whose panel was opened most
+  recently, Search or Overlay (a legend row opens its panel, so the legend is
+  the switch; a story stop with a search puts search in front). With search in
+  front, non-matches dim; with the overlay in front they keep its full colour,
+  and matches still show. A switch fades over about 250ms in three steps, or
+  snaps under reduced motion.
 - **A match with no overlay** is filled in its search colour, and non-matches
   are dimmed grey: search on its own looks as it does today.
 - **With no search on**, the overlay's colours pass through unchanged.
