@@ -24,11 +24,14 @@ export const MULTICOLOR_GROWTH = 0.75;
 /**
  * One colouring of the map: a colour, or stripes, per verse, and how far each
  * verse has grown towards the size a multi-colour verse is drawn at, 0 to 1.
- * Without `growth`, a verse is fully grown exactly when it has several colours.
+ * Without `growth`, a verse is fully grown exactly when its fill or its ring
+ * has several colours. A verse's ring, where `rings` gives one, surrounds its
+ * fill in colours of its own.
  */
 export interface Picture<C = Color | Color[]> {
   colors: C[];
   growth?: number[];
+  rings?: (C | null)[];
 }
 
 const NO_COLORS: Picture = { colors: [] };

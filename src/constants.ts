@@ -45,3 +45,9 @@ export const HIGHLIGHT_CONSTANTS = {
   // Color for rare trop marks with no matches
   RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
 } as const;
+
+/** How a search shows over an overlay. Starting values, to be settled by eye on the map. */
+export const SEARCH_WITH_OVERLAY = {
+  // What a verse the search does not match keeps of its overlay colour
+  NON_MATCH_DIM: 0.85,
+} as const;

@@ -2,8 +2,9 @@
 
 import type { SpatialItem, ItemState } from './types';
 import type { Overlay, Color } from './overlays/types';
+import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
-import { HIGHLIGHT_CONSTANTS } from './constants';
+import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
 
 /**
  * Default gray for a verse with no overlay color, brightness-varied by a
@@ -14,6 +15,48 @@ export function getDefaultColor(verseIndex: number): [number, number, number] {
     HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
     seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
   return [brightness, brightness, brightness];
+}
+
+/** A verse's colour, or its stripes. */
+export type VerseColor = Color | Color[];
+
+const ALONE_SHADE = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+const UNMATCHED_ALONE: Color = [ALONE_SHADE, ALONE_SHADE, ALONE_SHADE];
+
+function dim(color: VerseColor, factor: number): VerseColor {
+  const one = (c: Color): Color => [c[0] * factor, c[1] * factor, c[2] * factor];
+  return Array.isArray(color[0]) ? (color as Color[]).map(one) : one(color as Color);
+}
+
+/**
+ * The map's colours from its two layers, search over overlay. `search` is null
+ * with no search on and `overlay` null with no overlay; a null colour is
+ * painted grey by computeItemStates.
+ */
+export function combineLayers(
+  count: number,
+  search: readonly (VerseColor | null)[] | null,
+  overlay: readonly (VerseColor | null)[] | null,
+): Picture<VerseColor | null> {
+  const colors: (VerseColor | null)[] = new Array(count);
+  const rings: (VerseColor | null)[] = new Array(count).fill(null);
+
+  for (let i = 0; i < count; i++) {
+    const under = overlay?.[i] ?? null;
+    const match = search?.[i] ?? null;
+    if (!search) {
+      colors[i] = under;
+    } else if (!overlay) {
+      colors[i] = match ?? UNMATCHED_ALONE;
+    } else if (match) {
+      colors[i] = under;
+      rings[i] = match;
+    } else {
+      colors[i] = dim(under ?? getDefaultColor(i), SEARCH_WITH_OVERLAY.NON_MATCH_DIM);
+    }
+  }
+
+  return search && overlay ? { colors, rings } : { colors };
 }
 
 /**
