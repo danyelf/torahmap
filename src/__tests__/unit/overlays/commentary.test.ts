@@ -320,6 +320,7 @@ describe('Commentary Overlay', () => {
       const select = container.querySelector('select');
       expect(select).not.toBeNull();
       expect(select?.id).toBe('category-select');
+      expect(select?.classList.contains('control-select')).toBe(true);
     });
 
     it('includes all category options', () => {

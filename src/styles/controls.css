@@ -1,0 +1,64 @@
+/* The controls panels share (src/panel.ts): one implementation of each, drawn
+   as the control it was first written for. */
+
+/* The Stories card's buttons. */
+.control-button {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.control-button.quiet {
+  border-color: #444;
+  color: #ddd;
+}
+
+/* The Hebrew toggle. */
+.control-toggle {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background: #222;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* The overlay picker. color-scheme matters as much as the colours: without it
+   the popup list keeps the system's light theme. */
+.control-select {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  color-scheme: dark;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* A glyph alone, such as ×: the search's ×, on the 24px square the layout
+   suite asks of a touch target. */
+.control-icon {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #666;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.control-icon:hover {
+  color: #fff;
+}

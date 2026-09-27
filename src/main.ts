@@ -24,6 +24,7 @@ import {
 import { menuHtml, type StoryPlace } from './menu.ts';
 import { storiesHtml } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
+import { overlayPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
   configureAnalytics,
@@ -393,6 +394,7 @@ async function main(): Promise<void> {
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
+  document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
   const mapLegendSummary = mapLegend.querySelector<HTMLElement>('.map-legend-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
