@@ -84,8 +84,9 @@ Three kinds of scene:
   new position over `over:`, one URL write per frame, with zoom eased on a log
   scale so it feels even.
 - **`do: <steps>`** acts out the interface: `click "<text>"`,
-  `type "<text>"` a letter at a time, `hover <verse>`, `wait <seconds>`.
-  These are real mouse and keyboard input.
+  `type "<text>"` a letter at a time, `press <key>`, `wait <seconds>`.
+  These are real mouse and keyboard input. There is no step for hovering a
+  verse: from outside, the harness cannot tell where a verse is on screen.
 
 ## Timing
 
@@ -102,9 +103,10 @@ until the next scene starts.
 - The app runs in an iframe on the left; it is the same origin, so the page
   can set its URL, scroll its story and click in it. The teleprompter is on
   the right: this scene's narration large, the next scene's first line below.
-- **Space** moves to the next scene and notes the time. Story and view scenes
-  play at their real pace; `do:` steps run quickly, since rehearsal only has to
-  look right enough to talk over.
+- **Space** moves to the next scene and notes the time. Every scene plays at
+  its scripted pace, so the times you record fit what the render will show.
+  Rehearsal only has to look right enough to talk over: a glide to a pinned
+  verse cuts, since rehearsal does not measure where the verse sits.
 - **Copy timings** puts the times JSON on the clipboard, to save beside the
   script.
 - **Capture** reads the iframe's current state and copies a finished scene line
@@ -135,9 +137,11 @@ until the next scene starts.
 2. **Gliding to a pinned verse.** With a verse pinned, the app centres the
    camera on it and leaves `x` and `y` out of the URL
    (`cameraForView` in `src/viewState.ts`), so the harness does not know where
-   the glide ends. Try measuring it from outside first. If that proves
-   unreliable, the fallback is a one-line change in the app so it always
-   writes `x` and `y` — ask Danyel before making it.
+   the glide ends. Before rendering, the harness opens the scene in a second
+   page and presses Escape: unpinning makes the app write the camera it chose
+   into the URL (`unpinVerse` in `src/main.ts`). If that proves unreliable,
+   the fallback is a one-line change in the app so it always writes `x` and
+   `y` — ask Danyel before making it.
 
 ## Testing
 
