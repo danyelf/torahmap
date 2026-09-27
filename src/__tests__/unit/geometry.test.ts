@@ -4,18 +4,19 @@ import {
   createBuffer,
   FLOATS_PER_VERSE,
   VERSE_ATTRIBUTES,
+  VERSE_OFFSETS,
   type VerseAttributeName,
 } from '../../geometry';
 import { createVerse, createVerses, TEST_COLORS, createMockWebGL2Context } from '../helpers';
 
-// Where each attribute starts within a verse's entry, read from the layout table
-// so these tests follow it rather than restating it.
-const OFFSET = {} as Record<VerseAttributeName, number>;
-VERSE_ATTRIBUTES.reduce((at, a) => ((OFFSET[a.name] = at), at + a.size), 0);
+const SIZE = Object.fromEntries(VERSE_ATTRIBUTES.map((a) => [a.name, a.size])) as Record<
+  VerseAttributeName,
+  number
+>;
 
 function field(buffer: Float32Array, verse: number, name: VerseAttributeName): number[] {
-  const size = VERSE_ATTRIBUTES.find((a) => a.name === name)!.size;
-  const start = verse * FLOATS_PER_VERSE + OFFSET[name];
+  const size = SIZE[name];
+  const start = verse * FLOATS_PER_VERSE + VERSE_OFFSETS[name];
   return Array.from(buffer.subarray(start, start + size));
 }
 
@@ -29,12 +30,7 @@ describe('buildItemGeometry', () => {
   });
 
   describe('rectangle', () => {
-    it('spans the verse, less the 2-unit gap between squares', () => {
-      const buffer = buildItemGeometry([createVerse({ x: 100, y: 200, size: 10 })]);
-      expect(field(buffer, 0, 'a_rect')).toEqual([100, 200, 108, 208]);
-    });
-
-    it('keeps a single-color verse to exactly its own square', () => {
+    it('spans a single-color verse, less the 2-unit gap between squares', () => {
       const verse = createVerse({ x: 100, y: 200, size: 10 });
       const buffer = buildItemGeometry([verse], [TEST_COLORS.RED]);
       expect(field(buffer, 0, 'a_rect')).toEqual([100, 200, 108, 208]);

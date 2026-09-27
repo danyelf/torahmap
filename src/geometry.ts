@@ -22,11 +22,8 @@ const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 const MULTICOLOR_GROWTH = 0.75;
 
 /**
- * What the buffer holds for each verse, in order. The GPU draws one square per
- * verse from it and reads each entry once per verse, not once per corner. The
- * shader declares an input per entry under the same name, and rendering.ts
- * points each at its slice, so a new per-verse value is a line here, a write in
- * buildItemGeometry, and its use in the shader.
+ * What the buffer holds for each verse, read once per verse. Each name is a
+ * shader input, and rendering.ts points it at its slice.
  */
 export const VERSE_ATTRIBUTES = [
   { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units
@@ -39,7 +36,16 @@ export const VERSE_ATTRIBUTES = [
 
 export type VerseAttributeName = (typeof VERSE_ATTRIBUTES)[number]['name'];
 
-export const FLOATS_PER_VERSE = VERSE_ATTRIBUTES.reduce((sum, a) => sum + a.size, 0);
+/** Where each entry starts within a verse's slice, in floats. */
+export const VERSE_OFFSETS = {} as Record<VerseAttributeName, number>;
+let floats = 0;
+for (const { name, size } of VERSE_ATTRIBUTES) {
+  VERSE_OFFSETS[name] = floats;
+  floats += size;
+}
+export const FLOATS_PER_VERSE = floats;
+
+const COLOR_SLOTS = ['a_color', 'a_color2', 'a_color3', 'a_color4'] as const;
 
 export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
@@ -48,38 +54,33 @@ export function buildItemGeometry<T>(
 ): Float32Array {
   const data = new Float32Array(verses.length * FLOATS_PER_VERSE);
 
-  let offset = 0;
   for (let i = 0; i < verses.length; i++) {
     const v = verses[i];
     const verseColor = colors?.[i];
+    const base = i * FLOATS_PER_VERSE;
 
-    let vertexColors: Color[];
+    let verseColors: Color[];
     // Check for empty array first (before isColorArray which would fail on empty)
     if (Array.isArray(verseColor) && (verseColor as unknown[]).length === 0) {
-      vertexColors = [baseColor];
+      verseColors = [baseColor];
     } else if (isColorArray(verseColor)) {
-      vertexColors = verseColor.slice(0, 4) as Color[]; // Cap at 4 colors
+      verseColors = verseColor.slice(0, 4) as Color[]; // Cap at 4 colors
     } else {
-      vertexColors = [verseColor || baseColor];
+      verseColors = [verseColor || baseColor];
     }
-    const colorCount = vertexColors.length;
+    const colorCount = verseColors.length;
 
     const grow = colorCount > 1 ? MULTICOLOR_GROWTH : 0;
-    data[offset++] = v.x - grow;
-    data[offset++] = v.y - grow;
-    data[offset++] = v.x + v.size - 2 + grow; // -2 for gap
-    data[offset++] = v.y + v.size - 2 + grow;
-
-    // Pad to 4 colors with black
-    while (vertexColors.length < 4) {
-      vertexColors.push([0, 0, 0]);
+    const rect = base + VERSE_OFFSETS.a_rect;
+    data[rect] = v.x - grow;
+    data[rect + 1] = v.y - grow;
+    data[rect + 2] = v.x + v.size - 2 + grow; // -2 for gap
+    data[rect + 3] = v.y + v.size - 2 + grow;
+    // Unused colour slots stay zero
+    for (let c = 0; c < colorCount; c++) {
+      data.set(verseColors[c], base + VERSE_OFFSETS[COLOR_SLOTS[c]]);
     }
-    for (let c = 0; c < 4; c++) {
-      data[offset++] = vertexColors[c][0];
-      data[offset++] = vertexColors[c][1];
-      data[offset++] = vertexColors[c][2];
-    }
-    data[offset++] = colorCount;
+    data[base + VERSE_OFFSETS.a_colorCount] = colorCount;
   }
 
   return data;

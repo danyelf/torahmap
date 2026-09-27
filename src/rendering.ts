@@ -7,8 +7,14 @@ import {
   type OutlineProgram,
   type ShaderProgram,
 } from './webgl';
-import { buildItemGeometry, createBuffer, VERSE_ATTRIBUTES, FLOATS_PER_VERSE } from './geometry';
-import { buildOutlineGeometry, FLOATS_PER_OUTLINE_CORNER } from './outline';
+import {
+  buildItemGeometry,
+  createBuffer,
+  VERSE_ATTRIBUTES,
+  VERSE_OFFSETS,
+  FLOATS_PER_VERSE,
+} from './geometry';
+import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
 import { updateMapTitlePosition } from './mapTitle';
 import type { SpatialItem, TanakhIdentity } from './types';
@@ -66,14 +72,12 @@ export function createRenderState<T>(
   gl.bindVertexArray(vertexArray);
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   const stride = FLOATS_PER_VERSE * 4;
-  let offset = 0;
   for (const { name, size } of VERSE_ATTRIBUTES) {
     const location = programs.main.attribs[name];
     gl.enableVertexAttribArray(location);
-    gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, offset * 4);
+    gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, VERSE_OFFSETS[name] * 4);
     // Advance once per verse rather than once per corner
     gl.vertexAttribDivisor(location, 1);
-    offset += size;
   }
   // Unbound, so the outline program's setup is not recorded into it
   gl.bindVertexArray(null);
@@ -177,14 +181,7 @@ export function renderOutline<T>(
   const { gl, programs, canvas } = context;
   const { dpr } = state;
 
-  const geometry = buildOutlineGeometry(
-    {
-      x: verse.x,
-      y: verse.y,
-      size: verse.size,
-    },
-    { thickness },
-  );
+  const geometry = buildOutlineGeometry(verse, thickness);
 
   let currentBuffer = buffer;
   if (!currentBuffer) {
@@ -204,9 +201,8 @@ export function renderOutline<T>(
 
   gl.bindBuffer(gl.ARRAY_BUFFER, currentBuffer);
 
-  const stride = FLOATS_PER_OUTLINE_CORNER * 4;
   gl.enableVertexAttribArray(programs.outline.attribs.position);
-  gl.vertexAttribPointer(programs.outline.attribs.position, 2, gl.FLOAT, false, stride, 0);
+  gl.vertexAttribPointer(programs.outline.attribs.position, 2, gl.FLOAT, false, 0, 0);
 
   // 4 borders * 6 vertices each = 24 vertices
   gl.drawArrays(gl.TRIANGLES, 0, 24);

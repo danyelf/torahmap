@@ -221,10 +221,11 @@ describe('rendering', () => {
       );
     });
 
-    it('binds the vertex array without setting up attributes again', () => {
+    it('binds the vertex array for the draw, then unbinds it, without setting it up again', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
-      expect(context.gl.bindVertexArray).toHaveBeenCalledWith(state.vertexArray);
+      const bind = vi.mocked(context.gl.bindVertexArray).mock.calls;
+      expect(bind).toEqual([[state.vertexArray], [null]]);
       expect(context.gl.vertexAttribPointer).not.toHaveBeenCalled();
       expect(context.gl.vertexAttribDivisor).not.toHaveBeenCalled();
     });
@@ -233,14 +234,6 @@ describe('rendering', () => {
       render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
       expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 10);
-    });
-
-    it('leaves its per-verse setup behind before drawing outlines', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
-
-      const bind = vi.mocked(context.gl.bindVertexArray).mock.calls;
-      expect(bind[0]).toEqual([state.vertexArray]);
-      expect(bind.at(-1)).toEqual([null]);
     });
 
     it('does not render outline when no verses hovered or pinned', () => {

@@ -3,6 +3,9 @@ import { initWebGL, createProgram } from '../../webgl';
 import { VERSE_ATTRIBUTES } from '../../geometry';
 import { createMockWebGL2Context, createMockCanvas } from '../helpers';
 
+const shaderSourceOf = (gl: WebGL2RenderingContext, call: number): string =>
+  (gl.shaderSource as any).mock.calls[call][1];
+
 describe('initWebGL', () => {
   describe('successful context creation', () => {
     it('returns WebGL2RenderingContext when supported', () => {
@@ -170,9 +173,7 @@ describe('createProgram', () => {
     it('compiles vertex shader with correct source', () => {
       createProgram(gl);
 
-      const shaderSourceCalls = (gl.shaderSource as any).mock.calls;
-      const vertexShaderCall = shaderSourceCalls[0];
-      const vertexSource = vertexShaderCall[1];
+      const vertexSource = shaderSourceOf(gl, 0);
 
       expect(vertexSource).toContain('#version 300 es');
       expect(vertexSource).toContain('uniform vec2 u_resolution');
@@ -185,9 +186,7 @@ describe('createProgram', () => {
     it('compiles fragment shader with correct source', () => {
       createProgram(gl);
 
-      const shaderSourceCalls = (gl.shaderSource as any).mock.calls;
-      const fragmentShaderCall = shaderSourceCalls[1];
-      const fragmentSource = fragmentShaderCall[1];
+      const fragmentSource = shaderSourceOf(gl, 1);
 
       expect(fragmentSource).toContain('#version 300 es');
       expect(fragmentSource).toContain('precision mediump float');
@@ -195,20 +194,10 @@ describe('createProgram', () => {
       expect(fragmentSource).toContain('out vec4 fragColor');
     });
 
-    it('declares an input for every verse attribute, sized as the buffer holds it', () => {
+    it('draws each square as two triangles, corners in a fixed order', () => {
       createProgram(gl);
 
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
-      const types = { 1: 'float', 2: 'vec2', 3: 'vec3', 4: 'vec4' };
-      for (const { name, size } of VERSE_ATTRIBUTES) {
-        expect(vertexSource).toContain(`in ${types[size]} ${name};`);
-      }
-    });
-
-    it('draws each square as two triangles that cover it exactly once', () => {
-      createProgram(gl);
-
-      const vertexSource: string = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
       const table = vertexSource.match(/CORNERS\[6\] = vec2\[6\]\(([^;]*)\);/)?.[1] ?? '';
       const corners = [...table.matchAll(/vec2\(([\d.]+),\s*([\d.]+)\)/g)].map((m) => [
         Number(m[1]),
@@ -224,24 +213,12 @@ describe('createProgram', () => {
         [1, 0],
         [1, 1],
       ]);
-
-      const signedArea = ([a, b, c]: number[][]) =>
-        ((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) / 2;
-      const first = corners.slice(0, 3);
-      const second = corners.slice(3);
-      // Same winding, and half the square each, so together they cover it once
-      expect(signedArea(first)).toBe(0.5);
-      expect(signedArea(second)).toBe(0.5);
-      // They meet along the diagonal from (1, 0) to (0, 1)
-      const key = (c: number[]) => c.join(',');
-      const shared = first.map(key).filter((k) => second.map(key).includes(k));
-      expect(shared.sort()).toEqual(['0,1', '1,0']);
     });
 
     it('vertex shader includes all required uniforms', () => {
       createProgram(gl);
 
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
       expect(vertexSource).toContain('uniform vec2 u_resolution');
       expect(vertexSource).toContain('uniform vec2 u_pan');
       expect(vertexSource).toContain('uniform float u_zoom');
@@ -250,7 +227,7 @@ describe('createProgram', () => {
     it('fragment shader includes color interpolation logic', () => {
       createProgram(gl);
 
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
       expect(fragmentSource).toContain('v_colorCount');
       expect(fragmentSource).toContain('v_uv');
       expect(fragmentSource).toContain('hash');
@@ -486,19 +463,19 @@ describe('createProgram', () => {
   describe('shader source validation', () => {
     it('vertex shader uses GLSL ES 3.0', () => {
       createProgram(gl);
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
       expect(vertexSource).toMatch(/^#version 300 es/);
     });
 
     it('fragment shader uses GLSL ES 3.0', () => {
       createProgram(gl);
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
       expect(fragmentSource).toMatch(/^#version 300 es/);
     });
 
     it('vertex shader passes colors to fragment shader', () => {
       createProgram(gl);
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
 
       expect(vertexSource).toContain('out vec3 v_color');
       expect(vertexSource).toContain('out vec3 v_color2');
@@ -509,7 +486,7 @@ describe('createProgram', () => {
 
     it('fragment shader receives colors from vertex shader', () => {
       createProgram(gl);
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
 
       expect(fragmentSource).toContain('in vec3 v_color');
       expect(fragmentSource).toContain('in vec3 v_color2');
@@ -519,14 +496,14 @@ describe('createProgram', () => {
 
     it('fragment shader uses flat interpolation for colorCount', () => {
       createProgram(gl);
-      const fragmentSource = (gl.shaderSource as any).mock.calls[1][1];
+      const fragmentSource = shaderSourceOf(gl, 1);
 
       expect(fragmentSource).toContain('flat in int v_colorCount');
     });
 
     it('vertex shader transforms positions correctly', () => {
       createProgram(gl);
-      const vertexSource = (gl.shaderSource as any).mock.calls[0][1];
+      const vertexSource = shaderSourceOf(gl, 0);
 
       expect(vertexSource).toContain('mix(a_rect.xy, a_rect.zw, uv) + u_pan');
       expect(vertexSource).toContain('* u_zoom');

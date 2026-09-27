@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildOutlineGeometry, FLOATS_PER_OUTLINE_CORNER as floatsPerVertex } from '../../outline';
-import type { OutlineBounds, OutlineOptions } from '../../outline';
+import { buildOutlineGeometry } from '../../outline';
+import type { OutlineBounds } from '../../outline';
+
+const floatsPerVertex = 2; // x, y
 
 describe('buildOutlineGeometry', () => {
   describe('basic buffer properties', () => {
@@ -10,30 +12,13 @@ describe('buildOutlineGeometry', () => {
       expect(buffer).toBeInstanceOf(Float32Array);
     });
 
-    it('returns correct buffer size for outline (24 vertices * 2 floats)', () => {
+    it('holds 4 borders of 6 corners, x and y each', () => {
       const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-      // 4 borders * 6 vertices per border * 2 floats (x, y) per vertex = 48 floats
-      expect(buffer.length).toBe(48);
-    });
-
-    it('generates 4 borders (24 vertices total)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-      const verticesPerBorder = 6;
-      const borderCount = 4;
-      const expectedFloats = borderCount * verticesPerBorder * floatsPerVertex;
-      expect(buffer.length).toBe(expectedFloats);
-    });
-
-    it('each vertex has 2 floats (x, y)', () => {
-      const bounds: OutlineBounds = { x: 0, y: 0, size: 10 };
-      const buffer = buildOutlineGeometry(bounds);
-      expect(buffer.length % floatsPerVertex).toBe(0);
+      expect(buildOutlineGeometry(bounds)).toHaveLength(48);
     });
   });
 
-  describe('default options', () => {
+  describe('default thickness', () => {
     it('uses default thickness of 2 when not specified', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
@@ -53,11 +38,10 @@ describe('buildOutlineGeometry', () => {
     });
   });
 
-  describe('custom options', () => {
+  describe('custom thickness', () => {
     it('uses custom thickness when provided', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
-      const options: OutlineOptions = { thickness: 5 };
-      const buffer = buildOutlineGeometry(bounds, options);
+      const buffer = buildOutlineGeometry(bounds, 5);
 
       const thickness = 5;
       const y0 = 200 - thickness; // Extends outside
@@ -295,8 +279,7 @@ describe('buildOutlineGeometry', () => {
 
     it('handles zero thickness', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
-      const options: OutlineOptions = { thickness: 0 };
-      const buffer = buildOutlineGeometry(bounds, options);
+      const buffer = buildOutlineGeometry(bounds, 0);
 
       const thickness = 0;
       const y0 = 200 - thickness; // No extension
@@ -307,8 +290,7 @@ describe('buildOutlineGeometry', () => {
 
     it('handles very thick outline', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 20 };
-      const options: OutlineOptions = { thickness: 10 };
-      const buffer = buildOutlineGeometry(bounds, options);
+      const buffer = buildOutlineGeometry(bounds, 10);
 
       const thickness = 10;
       const y0 = 200 - thickness; // Extends up by 10

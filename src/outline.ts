@@ -8,26 +8,14 @@ export interface OutlineBounds {
   size: number;
 }
 
-// The default below is the only place the thickness is decided: callers that
-// want the ordinary outline leave the field out rather than naming it again.
-// The color is a shader uniform, set by renderOutline.
-export interface OutlineOptions {
-  thickness?: number;
-}
-
-/** Each corner is just x, y: the outline shader reads nothing else. */
-export const FLOATS_PER_OUTLINE_CORNER = 2;
-
-/** Build outline geometry as 4 border rectangles (24 corners) around a verse. */
+/** Build outline geometry as 4 border rectangles (24 corners, x and y each) around a verse. */
 export function buildOutlineGeometry(
   bounds: OutlineBounds,
-  options: OutlineOptions = {},
+  thickness: number = HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
 ): Float32Array {
-  const thickness = options.thickness ?? HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS;
-
   const verticesPerBorder = 6; // 2 triangles
   const borderCount = 4; // top, right, bottom, left
-  const data = new Float32Array(borderCount * verticesPerBorder * FLOATS_PER_OUTLINE_CORNER);
+  const data = new Float32Array(borderCount * verticesPerBorder * 2);
 
   // Calculate outline bounds - extend OUTSIDE the verse by thickness
   // so the outline doesn't cover the verse itself
