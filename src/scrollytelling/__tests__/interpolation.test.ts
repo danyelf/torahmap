@@ -40,10 +40,19 @@ describe('lerpCamera', () => {
     expect(lerpCamera(from, to, 1)).toEqual(to);
   });
 
-  it('interpolates at t=0.5', () => {
+  it('moves the centre in a straight line', () => {
     const from = { x: 0, y: 0, zoom: 1 };
     const to = { x: 100, y: 50, zoom: 3 };
-    expect(lerpCamera(from, to, 0.5)).toEqual({ x: 50, y: 25, zoom: 2 });
+    const half = lerpCamera(from, to, 0.5);
+    expect(half.x).toBe(50);
+    expect(half.y).toBe(25);
+  });
+
+  it('takes each doubling of zoom in the same time', () => {
+    const from = { x: 0, y: 0, zoom: 1 };
+    const to = { x: 0, y: 0, zoom: 4 };
+    expect(lerpCamera(from, to, 0.5).zoom).toBeCloseTo(2, 10);
+    expect(lerpCamera(from, to, 0.25).zoom).toBeCloseTo(Math.SQRT2, 10);
   });
 });
 

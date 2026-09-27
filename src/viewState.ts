@@ -1,5 +1,5 @@
 import { parseVerseFromUrl, type OverlayParams, type UrlState } from './urlState.ts';
-import { panToFocus, type Camera, type ScreenPoint } from './camera.ts';
+import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './camera.ts';
 import type { TanakhIdentity } from './types.ts';
 
 /** Whether a link opens with the story showing, or with it folded and the controls open. */
@@ -59,7 +59,8 @@ export function cameraForView(
   camera: Camera,
   verse: { x: number; y: number; size: number } | null,
   focus: ScreenPoint,
+  viewport: Viewport,
 ): Camera {
   if (!verse) return { ...camera };
-  return { ...panToFocus(verse, camera.zoom, focus), zoom: camera.zoom };
+  return { ...centreForFocus(verse, camera.zoom, focus, viewport), zoom: camera.zoom };
 }

@@ -11,7 +11,6 @@
 // title says or how its lines are arranged.
 
 import artwork from './mapTitle.svg?raw';
-import type { Camera } from './camera.ts';
 import type { TanakhLayout } from './types.ts';
 
 /** How wide the title is on the map, in map units. Its corner is about 1795 wide. */
@@ -80,16 +79,20 @@ export function createMapTitle(
   };
 }
 
-export function updateMapTitlePosition(title: MapTitle, camera: Camera): void {
+export function updateMapTitlePosition(
+  title: MapTitle,
+  offset: { x: number; y: number },
+  zoom: number,
+): void {
   const { svg, centreX, topY, aspect } = title;
   // The viewBox does the scaling, so the parts of the artwork keep their
   // proportions exactly. Sizing each line separately instead does not: every
   // line box takes its metrics from the font rounded at whatever size it is
   // asked for, and those roundings do not agree across sizes.
-  const width = TITLE_WIDTH * camera.zoom;
+  const width = TITLE_WIDTH * zoom;
 
   svg.setAttribute('width', String(width));
   svg.setAttribute('height', String(width * aspect));
-  svg.style.left = (centreX + camera.x) * camera.zoom + 'px';
-  svg.style.top = (topY + camera.y) * camera.zoom + 'px';
+  svg.style.left = (centreX + offset.x) * zoom + 'px';
+  svg.style.top = (topY + offset.y) * zoom + 'px';
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { parseUrlState } from '../../urlState';
 import { resolveViewState, cameraForView, type ViewState } from '../../viewState';
+import { worldToScreen } from '../../camera';
 import {
   registerAllOverlays,
   getOverlay,
@@ -104,13 +105,14 @@ describe('restoring a link as one complete view', () => {
   it('centres the verse at the zoom the link asked for', () => {
     const view = viewFor('#verse=Genesis.1.1&zoom=8');
     const verse = SAMPLE_VERSES[0];
-    const camera = cameraForView(view.camera, verse, { x: 500, y: 400 });
+    const viewport = { width: 1000, height: 800 };
+    const camera = cameraForView(view.camera, verse, { x: 500, y: 300 }, viewport);
 
-    const screenX = (verse.x + verse.size / 2 + camera.x) * camera.zoom;
-    const screenY = (verse.y + verse.size / 2 + camera.y) * camera.zoom;
+    const middle = { x: verse.x + verse.size / 2, y: verse.y + verse.size / 2 };
+    const screen = worldToScreen(middle, camera, viewport);
     expect(camera.zoom).toBe(8);
-    expect(screenX).toBeCloseTo(500);
-    expect(screenY).toBeCloseTo(400);
+    expect(screen.x).toBeCloseTo(500);
+    expect(screen.y).toBeCloseTo(300);
   });
 
   describe('controls drawn after the settings arrive', () => {

@@ -14,7 +14,8 @@ export function lerpCamera(from: CameraState, to: CameraState, t: number): Camer
   return {
     x: from.x + (to.x - from.x) * t,
     y: from.y + (to.y - from.y) * t,
-    zoom: from.zoom + (to.zoom - from.zoom) * t,
+    // By ratio, so each doubling takes the same time.
+    zoom: from.zoom ** (1 - t) * to.zoom ** t,
   };
 }
 

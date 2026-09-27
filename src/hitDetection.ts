@@ -1,19 +1,8 @@
 // Hit Detection module - handles verse hit detection from screen coordinates
 
 import type { SpatialItem } from './types';
-import type { Camera } from './camera';
+import { screenToWorld, type Camera, type Viewport } from './camera';
 import { HIGHLIGHT_CONSTANTS } from './constants';
-
-export function screenToWorld(
-  screenX: number,
-  screenY: number,
-  camera: Camera,
-): { x: number; y: number } {
-  return {
-    x: screenX / camera.zoom - camera.x,
-    y: screenY / camera.zoom - camera.y,
-  };
-}
 
 /** Check if a point (in world coordinates) is inside a spatial item's bounds. */
 export function isPointInItem<T>(worldX: number, worldY: number, verse: SpatialItem<T>): boolean {
@@ -85,10 +74,11 @@ export function findFuzzyHit<T>(
 export function findItemAtPoint<T>(
   verses: SpatialItem<T>[],
   camera: Camera,
+  viewport: Viewport,
   screenX: number,
   screenY: number,
 ): SpatialItem<T> | null {
-  const { x: worldX, y: worldY } = screenToWorld(screenX, screenY, camera);
+  const { x: worldX, y: worldY } = screenToWorld({ x: screenX, y: screenY }, camera, viewport);
 
   const exactHit = findExactHit(verses, worldX, worldY);
   if (exactHit) {
