@@ -1,33 +1,34 @@
 import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
 import { parseVerseFromUrl } from '../urlState';
 
-// A story is optional YAML frontmatter (currently just `easing`) followed by
-// stops, each opened by `<!-- stop: id | camera: ... | overlay: ... | key: value -->`
+// A story is optional YAML frontmatter (`title`, `description`, `easing`)
+// followed by stops, each opened by `<!-- stop: id | camera: ... | overlay: ... | key: value -->`
 // and a `# Title` heading; params other than camera/overlay/easing/verse/zoom
-// become that stop's overlay params. See public/data/story.md for an example.
+// become that stop's overlay params. See public/data/stories/ for examples.
 export function parseStoryMarkdown(markdown: string): StoryData {
-  const defaults = parseFrontmatter(markdown);
-  const body = stripFrontmatter(markdown);
-  const stops = parseStops(body);
-
-  return { stops, defaults };
+  const front = parseFrontmatter(markdown);
+  const stops = parseStops(stripFrontmatter(markdown));
+  const easing = front.easing as EasingName | undefined;
+  return {
+    stops,
+    defaults: easing ? { easing } : undefined,
+    title: front.title,
+    description: front.description,
+  };
 }
 
 // --- Frontmatter ---
 
-function parseFrontmatter(md: string): StoryData['defaults'] {
+function parseFrontmatter(md: string): Record<string, string> {
   const match = md.match(/^---\s*\n([\s\S]*?)\n---/);
-  if (!match) return undefined;
-
-  const defaults: StoryData['defaults'] = {};
+  const fields: Record<string, string> = {};
+  if (!match) return fields;
   for (const line of match[1].split('\n')) {
     const [key, ...rest] = line.split(':');
     const value = rest.join(':').trim();
-    if (key.trim() === 'easing' && value) {
-      defaults.easing = value as EasingName;
-    }
+    if (key.trim() && value) fields[key.trim()] = value;
   }
-  return Object.keys(defaults).length > 0 ? defaults : undefined;
+  return fields;
 }
 
 function stripFrontmatter(md: string): string {

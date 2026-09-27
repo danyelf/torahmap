@@ -34,6 +34,9 @@ export interface ResolvedStoryStop extends Omit<StoryStop, 'camera'> {
 
 export interface StoryData {
   stops: StoryStop[];
+  /** Shown in the Stories panel and the menu. */
+  title?: string;
+  description?: string;
   defaults?: {
     easing?: EasingName;
   };
