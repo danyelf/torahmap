@@ -19,15 +19,16 @@ The spec leaves these open; each is a choice made here.
 1. Search keeps the shape of an `Overlay` (so the settings store, the test helper `hostOverlay` and the legend summary serve it unchanged) but is never registered; its export is renamed `searchOverlay` → `searchTool`, and its name becomes "Search".
 2. Search's settings live in the same settings store as the overlays', under its id `search`.
 3. The search counts as on when at least one word is two or more characters long; a lone letter leaves it off: nothing dims, no legend row, no history entry.
-4. With an overlay on, a verse the search does not match is drawn at `NON_MATCH_DIM` = 0.6 of its overlay colour (or of its grey). With no overlay, it keeps search's present dark grey (0.18) exactly, so search alone looks as it does today. The one tunable number applies only with an overlay on.
+4. With an overlay on, a verse the search does not match is drawn at `NON_MATCH_DIM` = 0.85 of its overlay colour (or of its grey): a smidge, to be tuned by eye at the Task 2 stop. With no overlay, it keeps search's present dark grey (0.18) exactly, so search alone looks as it does today. The one tunable number applies only with an overlay on.
 5. A match over an overlay that gives that verse no colour has a grey hole (the ordinary undimmed grey).
-6. The ring starts at 1.5px outside and 1px inside, and falls back to a whole square below 8 CSS pixels a side (zoom 2 on the map's 4-unit squares), where the ring's outside is 0.75 world units, under half the 2-unit gap. All four numbers live in `SEARCH_WITH_OVERLAY` in `src/constants.ts`.
-7. A matched verse with several words reaches out by the larger of the multi-colour growth and the ring's outside width, not their sum, so neighbouring rings never touch.
+6. The ring starts at 1.5px outside and 1px inside, and falls back to a whole square below 8 CSS pixels a side (zoom 2 on the map's 4-unit squares). All four numbers live in `SEARCH_WITH_OVERLAY` in `src/constants.ts`.
+7. A verse with several colours (a multi-word match, or Haftarah's stripes) reaches out by the larger of the multi-colour growth and the ring's outside width, not their sum, and its ring is measured in from that outer edge, so every ring is 2.5px thick (1.5 + 1) whatever the verse's growth.
+7a. The spec's "under half the 2-unit gap, so rings never touch" cannot hold: `layout.ts` jitters each square by up to 1 unit (`JITTER_RANGE` 2), so neighbours sit 0 to 4 units apart. Rings can touch where jitter brings squares close, as the multi-colour growth already can; the plan keeps no test that claims otherwise.
 8. Each colour in the verse buffer is packed into one float at 8 bits a channel. A fill and a ring of four stripes each, for two pictures, would need 19 attributes and 20 varyings; WebGL 2 promises only 16 and 15.
-9. Story blending: since #260 the shader fades between whole pictures, and each picture now carries its rings, so a donut fades in as one picture fading into the next, its outside growing from nothing as the multi-colour growth does. Only `mergePictures`, which collapses a fade in progress when a new one must start from it, mixes rings stripe by stripe. **The spec's bullet "Story blending … mixes fills and rings alike, so a donut fades in as its ring drifts from the fill colour to the search colour" needs correcting to say this.**
+9. Story blending: since #260 the shader fades between whole pictures, and each picture now carries its rings, so a donut fades in as one picture fading into the next, its outside growing from nothing as the multi-colour growth does. Only `mergePictures`, which collapses a fade in progress when a new one must start from it, mixes rings stripe by stripe. The spec says this (3dd05a7).
 10. `layerToRecompute` stays as it is: search's colours never depend on the hovered verse, so asking the overlay is already asking both.
 11. Hovering a donut brightens its hole (the fill); the ring keeps its colour.
-12. In the verse popup, while a search is on, its word marking replaces the overlay's own marking of the text (Trop's marks).
+12. Proposed, awaiting Danyel: the popup shows both tools' lines, as the spec says, but only one tool can mark the verse text, so while a search is on its word marking replaces the overlay's own marks (Trop's). Composing both markings is the alternative if he wants it.
 13. The new Clear button has the id `search-clear-all`; `#search-clear` stays on the first word's ×, which many tests use.
 14. Clear sits beside "+ add a word" and is disabled while no word is typed.
 15. A word clicked in the verse popup opens the Search panel only while exploring; in the story it changes the map and leaves the story open, as today.
@@ -46,7 +47,7 @@ The spec leaves these open; each is a choice made here.
 
 - Colouring, top to bottom: "search, the overlay, grey. Each gives a colour for a verse or passes it down."
 - Ring: "The ring is 1.5px outside the square and 1px inside it, in screen pixels, so it does not thin as the map zooms out."
-- "The outside width must stay under half the 2-unit gap between squares at the zooms where donuts show, so rings never touch."
+- "The outside width must stay under half the 2-unit gap between squares at the zooms where donuts show, so rings never touch." Layout jitter makes the gap 0 to 4 units, so this cannot hold everywhere; see Decision 7a.
 - "When the square is too small on screen to leave a hole, the match is filled whole in its search colour."
 - "A match with no overlay is filled in its search colour, and non-matches are dimmed grey: search on its own looks as it does today." "With no search on, the overlay's colours pass through unchanged."
 - URL: "`search=אברם,אברהם`, with today's `mode=` and `m=` for how each word matches." "`search`, `mode` and `m` are reserved, so no overlay can claim them." "`overlay=search` is an unknown overlay and is ignored. Old search links open with no search; they are not translated."
@@ -217,7 +218,7 @@ In `src/constants.ts`, append:
 /** How a search shows over an overlay. Starting values, to be settled by eye on the map. */
 export const SEARCH_WITH_OVERLAY = {
   // What a verse the search does not match keeps of its overlay colour
-  NON_MATCH_DIM: 0.6,
+  NON_MATCH_DIM: 0.85,
 } as const;
 ```
 
@@ -323,14 +324,13 @@ EOF
 Two parts, each committed: A draws rings; B gives the search a slot of its own, so a link can put a search and an overlay on the map together. The task ends with Danyel judging the ring on the real build. **Tasks 3–6 wait for his verdict.**
 
 **Files:**
-- Part A: modify `src/constants.ts`, `src/layout.ts:7`, `src/geometry.ts`, `src/webgl.ts`, `src/rendering.ts`, `src/scrollytelling/colorBlending.ts`, `src/__tests__/helpers/mocks.ts:40-50`; tests `src/__tests__/unit/geometry.test.ts`, `src/__tests__/unit/webgl.test.ts`, `src/__tests__/unit/rendering.test.ts`, `src/scrollytelling/__tests__/colorBlending.test.ts`.
+- Part A: modify `src/constants.ts`, `src/geometry.ts`, `src/webgl.ts`, `src/rendering.ts`, `src/scrollytelling/colorBlending.ts`, `src/__tests__/helpers/mocks.ts:40-50`; tests `src/__tests__/unit/geometry.test.ts`, `src/__tests__/unit/webgl.test.ts`, `src/__tests__/unit/rendering.test.ts`, `src/scrollytelling/__tests__/colorBlending.test.ts`.
 - Part B: modify `src/overlays/types.ts`, `src/urlState.ts`, `src/viewState.ts`, `src/overlays/search/index.ts`, `src/overlays/index.ts`, `src/itemColoring.ts`, `src/scrollytelling/overlayBlender.ts`, `src/main.ts`; create `src/tools.ts`, `src/__tests__/unit/tools.test.ts`; tests `src/__tests__/unit/combineLayers.test.ts`, `src/__tests__/unit/urlState.test.ts`, `src/__tests__/integration/view-state-restore.test.ts`, `src/scrollytelling/__tests__/overlayBlender.test.ts`, `src/__tests__/unit/overlays/search.test.ts`, `src/__tests__/unit/overlays/search-meaning-filter.test.ts`, `src/__tests__/unit/search-matching.test.ts`.
 
 **Interfaces:**
 - Consumes: `combineLayers`, `VerseColor`, `SEARCH_WITH_OVERLAY`, `Picture.rings` (Task 1).
 - Produces:
   - `SEARCH_WITH_OVERLAY.RING_OUTSIDE_PX`, `.RING_INSIDE_PX`, `.RING_MIN_SQUARE_PX` (CSS pixels).
-  - `export const VERSE_SIZE` in `src/layout.ts`.
   - `export function packColor(color: Color): number` in `src/geometry.ts`; `VERSE_ATTRIBUTES` names `a_rect`, `a_fill`, `a_ring`, `a_shape` (fill stripes, growth, ring stripes), `a_nextFill`, `a_nextRing`, `a_nextShape`.
   - `ShaderProgram.uniforms.ring` in `src/webgl.ts`.
   - `ToolOnMap<T>`, `Tools<T>` in `src/overlays/types.ts`.
@@ -569,10 +569,16 @@ In `src/__tests__/unit/webgl.test.ts`, change these expectations (find each by i
       expect(shaderSourceOf(gl, 0)).toContain('uniform highp vec3 u_ring');
       expect(shaderSourceOf(gl, 1)).toContain('uniform highp vec3 u_ring');
     });
+
+    it('measures the ring in from the drawn edge', () => {
+      createProgram(gl);
+      expect(shaderSourceOf(gl, 1)).toContain('float inset = u_ring.x + u_ring.y');
+    });
 ```
 
 - "vertex shader transforms positions correctly": replace its first expectation with `expect(vertexSource).toContain('mix(rect.xy, rect.zw, uv)');` and add `expect(vertexSource).toContain('(world + u_pan) * u_zoom');`.
 - "returns all required uniform locations": add `expect(program.uniforms.ring).toBeDefined();`.
+- "uniforms contains all 4 uniforms": rename it "uniforms contains all 5 uniforms", change `toHaveLength(4)` to `toHaveLength(5)`, and add `expect(uniformKeys).toContain('ring');`.
 
 In `src/__tests__/unit/rendering.test.ts`:
 
@@ -581,7 +587,6 @@ In `src/__tests__/unit/rendering.test.ts`:
 
 ```ts
 import { SEARCH_WITH_OVERLAY } from '../../constants';
-import { VERSE_SIZE } from '../../layout';
 ```
 
 - Inside `describe('render', …)`, after "sets camera uniforms with dpr scaling", add:
@@ -604,15 +609,11 @@ import { VERSE_SIZE } from '../../layout';
 
 ```ts
 describe('the search ring', () => {
-  const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
-  // A zoom is CSS pixels per world unit; a square is its verse less the 2-unit gap.
-  const zoomAtFallBack = RING_MIN_SQUARE_PX / (VERSE_SIZE - 2);
-
-  it('stays under half the gap between squares wherever it has a hole', () => {
-    expect(RING_OUTSIDE_PX / zoomAtFallBack).toBeLessThan(1);
-  });
-
   it('leaves a hole in the smallest square that has one', () => {
+    // There the square is drawn RING_OUTSIDE_PX larger on every side and the
+    // ring is measured in from that edge, so the hole is the square less the
+    // inside width twice.
+    const { RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
     expect(RING_MIN_SQUARE_PX - 2 * RING_INSIDE_PX).toBeGreaterThan(0);
   });
 });
@@ -648,7 +649,7 @@ describe('mergePictures with rings', () => {
 - [ ] **Step 2: Run the tests to see them fail**
 
 Run: `npx vitest run src/__tests__/unit/geometry.test.ts src/__tests__/unit/webgl.test.ts src/__tests__/unit/rendering.test.ts src/scrollytelling/__tests__/colorBlending.test.ts`
-Expected: FAIL: `packColor` and `VERSE_SIZE` are not exported, the attribute names are unknown, and `mergePictures` returns no rings.
+Expected: FAIL: `packColor` is not exported, the attribute names are unknown, and `mergePictures` returns no rings.
 
 - [ ] **Step 3: Implement**
 
@@ -658,18 +659,16 @@ In `src/constants.ts`, replace `SEARCH_WITH_OVERLAY` with:
 /** How a search shows over an overlay. Starting values, to be settled by eye on the map. */
 export const SEARCH_WITH_OVERLAY = {
   // What a verse the search does not match keeps of its overlay colour
-  NON_MATCH_DIM: 0.6,
+  NON_MATCH_DIM: 0.85,
   // The ring around a match, in CSS pixels, outside the square and inside it
   RING_OUTSIDE_PX: 1.5,
   RING_INSIDE_PX: 1,
   // A square smaller than this on screen has no room for a hole and is filled
-  // with its search colour. At 8 the ring's outside is 0.75 world units where
-  // it first shows, under half the 2-unit gap between squares.
+  // with its search colour. Rings can touch where layout jitter brings squares
+  // close, as the multi-colour growth already can.
   RING_MIN_SQUARE_PX: 8,
 } as const;
 ```
-
-In `src/layout.ts`, line 7: `const VERSE_SIZE = 6;` → `export const VERSE_SIZE = 6;`.
 
 In `src/geometry.ts`, replace everything after `const NO_COLORS: Picture = { colors: [] };` up to (not including) `export function createBuffer` with:
 
@@ -798,11 +797,12 @@ const VERTEX_SHADER = `#version 300 es
   // Stripe counts: this picture's fill and ring, then the next's. A ring of
   // no stripes is no ring.
   flat out ivec4 v_counts;
-  // The square's side in device pixels, or 0 when it is too small for a hole.
+  // The drawn square's side in device pixels, growth included, or 0 when the
+  // square is too small for a hole.
   flat out float v_side;
   out vec2 v_uv;
   out vec2 v_seed;
-  // This point in device pixels from the square's top-left corner.
+  // This point in device pixels from the drawn square's top-left corner.
   out vec2 v_px;
 
   // How far a picture's verse reaches past its square, in world units.
@@ -826,9 +826,9 @@ const VERTEX_SHADER = `#version 300 es
     v_nextFill = a_nextFill;
     v_nextRing = a_nextRing;
     v_counts = ivec4(a_shape.x, a_shape.z, a_nextShape.x, a_nextShape.z);
-    v_side = holes ? side : 0.0;
+    v_side = holes ? (rect.z - rect.x) * u_zoom : 0.0;
     v_uv = uv;
-    v_px = (world - a_rect.xy) * u_zoom;
+    v_px = (world - rect.xy) * u_zoom;
     // The square's own corner, which zooming does not move, seeds its dithering noise
     v_seed = a_rect.xy;
   }
@@ -872,11 +872,13 @@ const FRAGMENT_SHADER = `#version 300 es
     return unpack(colors.w);
   }
 
+  // The ring is measured in from the drawn edge, so a grown verse's ring is
+  // as thick as any other's.
   bool inHole() {
-    float inside = u_ring.y;
+    float inset = u_ring.x + u_ring.y;
     return v_side > 0.0 &&
-      all(greaterThanEqual(v_px, vec2(inside))) &&
-      all(lessThan(v_px, vec2(v_side - inside)));
+      all(greaterThanEqual(v_px, vec2(inset))) &&
+      all(lessThan(v_px, vec2(v_side - inset)));
   }
 
   // One picture here: its ring, if it has one and this is not the hole;
@@ -1019,7 +1021,7 @@ A unit test only reads shader source. Run `npm run test:layout` (it starts its o
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/constants.ts src/layout.ts src/geometry.ts src/webgl.ts src/rendering.ts src/scrollytelling/colorBlending.ts src/__tests__/helpers/mocks.ts src/__tests__/unit/geometry.test.ts src/__tests__/unit/webgl.test.ts src/__tests__/unit/rendering.test.ts src/scrollytelling/__tests__/colorBlending.test.ts
+git add src/constants.ts src/geometry.ts src/webgl.ts src/rendering.ts src/scrollytelling/colorBlending.ts src/__tests__/helpers/mocks.ts src/__tests__/unit/geometry.test.ts src/__tests__/unit/webgl.test.ts src/__tests__/unit/rendering.test.ts src/scrollytelling/__tests__/colorBlending.test.ts
 git commit -m "$(cat <<'EOF'
 Draw a ring around a verse that has one
 
@@ -1199,6 +1201,13 @@ In `src/__tests__/unit/overlays/search.test.ts`, the search now colours only its
 - Delete `const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;` and the `HIGHLIGHT_CONSTANTS` import.
 
 In `src/__tests__/unit/overlays/search-meaning-filter.test.ts`, replace `toEqual(dimmed())` with `toBeNull()` and delete the `dimmed` function.
+
+In `src/__tests__/integration/search-overlay-modes.test.ts`, in the test that switches `אלה` to word mode (around line 137), a verse word mode does not match now has no colour: replace the lines from the comment `// Should be dimmed (not matched as whole word)` through `expect(wc[1]).toBe(wc[2]);` with:
+
+```ts
+      // Word mode does not match "אלה" inside "ואלה"
+      expect(wordColor).toBeNull();
+```
 
 In `src/__tests__/unit/search-matching.test.ts`, line 5: `import { searchOverlay as overlay } from '../../overlays/search';` → `import { searchTool as overlay } from '../../overlays/search';`.
 
@@ -1543,15 +1552,15 @@ EOF
 ```
 
    Wait for the `cloudflare-workers-and-pages` comment (`gh pr view --json comments`) and take the preview link from it.
-3. Send Danyel these views, on the preview link and on `http://localhost:PORT/`. Each pins Genesis 17:5 to centre it; press Escape to unpin before judging, since the pin's outline sits where the ring does. Genesis 17:5 holds both אברם and אברהם, so its ring is split.
+3. Send Danyel these views, on the preview link and on `http://localhost:PORT/`. Each pins Genesis 17:5 to centre it; press Escape to unpin before judging, since the pin's outline sits where the ring does. Genesis 17:5 holds both אברם and אברהם, so its ring is split. It is also a multi-colour verse, drawn grown: check that its ring is as thick as a single-word match's beside it (1.5px out, 1px in, measured from the drawn edge).
    - `#overlay=haftarah&q=אברם,אברהם&verse=Genesis.17.5&zoom=6`: close, over strong stripes.
    - `#overlay=commentary&q=אברם,אברהם&verse=Genesis.17.5&zoom=6`: close, over a smooth scale.
    - the same at `zoom=3` and at `zoom=2`, the smallest square that keeps a hole.
    - the same at `zoom=1.9`, just past the fall-back, where matches fill whole.
    - the same at `zoom=0.5`, and `#overlay=commentary&verse=Genesis.17.5&zoom=0.5` beside it, to judge how much the other verses dim.
    - `#story=abraham_rename`: search alone must look as it does on torahmap.org.
-4. Ask him to judge: the ring's widths (1.5px out, 1px in), the fall-back size (8px squares), the dimming (0.6), and whether the ring is the right design at all.
-5. **Stop. Do not start Task 3 until he answers.** If he changes a number, change it in `SEARCH_WITH_OVERLAY` in `src/constants.ts` only, run `npx vitest run src/__tests__/unit/rendering.test.ts` (a width that lets rings touch fails "stays under half the gap"; tell him if it does), and commit the change with the message "Tune the search ring" and the two trailer lines. If he changes the design, rework Parts A and B with him before going on.
+4. Ask him to judge: the ring's widths (1.5px out, 1px in), the fall-back size (8px squares), the dimming (0.85), and whether the ring is the right design at all.
+5. **Stop. Do not start Task 3 until he answers.** If he changes a number, change it in `SEARCH_WITH_OVERLAY` in `src/constants.ts` only, run `npx vitest run src/__tests__/unit/rendering.test.ts`, and commit the change with the message "Tune the search ring" and the two trailer lines. If he changes the design, rework Parts A and B with him before going on.
 
 ---
 
@@ -1599,6 +1608,38 @@ perl -pi -e "
 ```
 
 Then check what is left: `grep -nE "\bq\b" <the same files>`. Only these may remain: the parameter `q: string` of the two local `colorsFor` helpers in `search.test.ts`, and the test name "writes back the q, mode and m it was read from" in `search-meaning-filter.test.ts`, which you rename to "writes back the search, mode and m it was read from". Fix anything else by hand the same way.
+
+Four tests in `src/__tests__/unit/urlState.test.ts` (the one below and the three rows of the whole-links table) still assert `overlayParams` for a link the perl turned into a search, and move to asserting `searchParams`:
+
+- "reads only the keys the active overlay declares" (in `describe('overlay-supplied parameters')`) needs a real overlay now. Replace its body with:
+
+```ts
+    // "category" belongs to commentary, not to trop
+    mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta&category=x');
+    const state = parseUrlState(overlayUrlParams);
+    expect(state.overlayParams).toEqual({ trop: 'etnachta' });
+```
+
+- In `describe('whole links, parsed with the real overlay declarations')`, take the three rows that search (now `#search=%D7%91…`, `#search=light&mode=w`, `#search=light,%D7%A2%D7%9C%D7%94&mode=w,r`) out of `links`, and add after that describe:
+
+```ts
+describe('whole links that search', () => {
+  const links: Array<[string, Record<string, string>]> = [
+    ['#search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', { search: 'בראשית' }],
+    ['#search=light&mode=w', { search: 'light', mode: 'w' }],
+    ['#search=light,%D7%A2%D7%9C%D7%94&mode=w,r', { search: 'light,עלה', mode: 'w,r' }],
+  ];
+
+  links.forEach(([hash, expected]) => {
+    it(`parses ${hash}`, () => {
+      mockWindowLocation(`http://localhost:5173/${hash}`);
+      const state = parseUrlState(overlayUrlParams);
+      expect(state.searchParams).toEqual(expected);
+      expect(state.overlayParams).toEqual({});
+    });
+  });
+});
+```
 
 In `src/__tests__/integration/view-state-restore.test.ts`, add `import { searchTool } from '../../overlays/search/index';` and replace the test "clears the search query when the link names none" with:
 
@@ -1820,13 +1861,13 @@ EOF
 
 ---
 
-### Task 4: The Search panel
+### Task 4: The Search panel and the legend
 
-Search leaves the overlay list and gets a panel, a menu item and a Clear button; a word clicked in the verse popup adds itself without touching the overlay.
+Search leaves the overlay list and gets a panel, a menu item, a Clear button and a legend row; a word clicked in the verse popup adds itself without touching the overlay. The legend comes here, before this task's layout run: after Task 3 the story stop `abraham_call` searches with no overlay, and the layout states `story-stop-with-verse` and `story-menu-down` require its legend to show. Task 3 does not run the layout suite; those two states fail between Task 3 and this task.
 
 **Files:**
 - Modify: `src/overlays/index.ts`, `src/overlays/registry.ts`, `src/overlays/search/index.ts`, `src/tools.ts`, `src/frame.ts`, `src/menu.ts`, `src/aboutPanel.ts:41`, `src/main.ts`, `index.html`, `src/styles/frame.css`, `src/styles/overlays/search.css`, `test-harness/main.ts`, `layout/app.ts`, `layout/known.ts`, `CLAUDE.md`, `README.md`
-- Create: `src/__tests__/unit/overlays/registry.test.ts`
+- Create: `src/__tests__/unit/overlays/registry.test.ts`, `src/mapLegend.ts`, `src/__tests__/unit/mapLegend.test.ts`
 - Test: `src/__tests__/unit/frame.test.ts`, `src/__tests__/unit/menu.test.ts`, `src/__tests__/unit/credits.test.ts`, `src/__tests__/unit/overlays/search.test.ts`, `src/__tests__/unit/urlState.test.ts`, `src/__tests__/integration/view-state-restore.test.ts`, `src/__tests__/integration/overlay-switching.test.ts`, `src/__tests__/integration/url-state-sync.test.ts`, `src/scrollytelling/__tests__/overlayBlender.test.ts`, and the six search suites that reach search through the registry
 
 **Interfaces:**
@@ -1834,7 +1875,8 @@ Search leaves the overlay list and gets a panel, a menu item and a Clear button;
 - Produces:
   - `Panel` includes `'search'`; `PANEL_TITLES.search = 'Search'`; `exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame`.
   - In `src/main.ts`: `searchChanged(fresh: boolean)`, `changeSearch(update: (current: SearchSettings) => SearchSettings)`.
-  - DOM: `#search-panel` holding `#search-controls`; the Clear button `#search-clear-all`.
+  - DOM: `#search-panel` holding `#search-controls`; the Clear button `#search-clear-all`; legend rows `.map-legend-row[data-panel="search"]` and `[data-panel="overlay"]`.
+  - `showLegend(legend: HTMLElement, rows: readonly LegendRow[]): void` and `interface LegendRow { panel: 'search' | 'overlay'; name: string; summary: OverlaySummary }` in `src/mapLegend.ts`; `updateLegend()` in `src/main.ts`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1851,7 +1893,7 @@ perl -0pi -e "
   src/__tests__/unit/search-meaning-url.test.ts
 ```
 
-`grep -n "getOverlay('search')" src test-harness -r` must then list only `src/__tests__/integration/url-state-sync.test.ts`: there, in "integrates with search overlay URL params", replace `const overlay = getOverlay('search');` with `const overlay = searchTool;`, delete `await overlay?.init?.();`, and add `import { searchTool } from '../../overlays/search/index';`.
+`grep -n "getOverlay('search')" src test-harness -r` must then list only `src/__tests__/integration/url-state-sync.test.ts` and `test-harness/main.ts:16` (the harness is fixed in Step 7). In `url-state-sync.test.ts`, in "integrates with search overlay URL params", replace `const overlay = getOverlay('search');` with `const overlay = searchTool;`, delete `await overlay?.init?.();`, and add `import { searchTool } from '../../overlays/search/index';`.
 
 In `src/__tests__/unit/overlays/search.test.ts`:
 
@@ -2028,10 +2070,11 @@ export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
 
 `src/aboutPanel.ts`, the ☰ row: `The menu: continue the story, search, overlays, stories, About &amp; settings`.
 
-`index.html`, first child of `#panel-body`:
+`index.html`, first child of `#panel-body`: (`.panel-title` shows only on a phone; a desktop names the panel in the column header)
 
 ```html
           <div id="search-panel" class="tool">
+            <h2 class="panel-title">Search</h2>
             <div id="search-controls"></div>
           </div>
 ```
@@ -2171,77 +2214,7 @@ export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
 6. After the `configureSearch({ … });` call, add `searchChanged(true);`, so the panel is drawn even when neither a link nor the story restores a search.
 7. In `applyFrame`, `aboutHtml(getAllOverlays())` → `aboutHtml([searchTool, ...getAllOverlays()])`.
 
-- [ ] **Step 6: Implement: the test harness, the layout states and the docs**
-
-`test-harness/main.ts`: replace the overlays import and the two lines after it with:
-
-```ts
-import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
-import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
-```
-
-and in `main()` delete `const legendContainer = …` and the two legend lines inside `draw()`.
-
-`layout/app.ts`, the `explore-search` state becomes:
-
-```ts
-  {
-    name: 'explore-search',
-    hash: `search=${encodeURIComponent('אברהם')}`,
-    then: (page) => viaMenu(page, 'search'),
-    shown: ['#search-input', '#search-clear-all'],
-  },
-```
-
-`layout/known.ts`: delete the `SEARCH` constant and the two `explore-search/…/touch-targets` entries.
-
-`CLAUDE.md`:
-
-- The "Pluggable overlays" bullet begins: `**Pluggable overlays**, in the order the menu offers them: Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length.` Add a bullet after it: `- **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.`
-- Interactions, the ☰ line: `The menu: continue the story, search, overlays, stories, About & settings;`.
-- "The URL carries the overlay, its settings, the pinned verse…" → "The URL carries the search, the overlay and its settings, the pinned verse…".
-
-`README.md`: move the **Text Search** bullet out of the overlay list, rename it **Search**, and put it above "Overlays, in the order the map offers them:" with this sentence added: "It sits beside the overlays: search with one on, and each match rings the overlay's colour."
-
-- [ ] **Step 7: Run the tests, the type checker and the layout suite**
-
-Run: `npm run typecheck && npx vitest run && npm run test:layout`
-Expected: all pass. The layout suite reports no touch-target failures for `explore-search` on tablet or phone. If it reports another search control under 24px, give that selector `min-height: 24px` (and `min-width: 24px` if it is narrow) in `src/styles/overlays/search.css` and run it again.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add -A src index.html test-harness layout CLAUDE.md README.md
-git commit -m "$(cat <<'EOF'
-Move search into a panel of its own
-
-Search leaves the overlay list for its own panel, menu item and Clear
-button. A word clicked in the verse popup adds to the search and leaves
-the overlay alone; an old overlay=search link opens with no search.
-
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37
-EOF
-)"
-```
-
----
-
-### Task 5: The legend, the verse popup and history
-
-**Files:**
-- Create: `src/mapLegend.ts`, `src/__tests__/unit/mapLegend.test.ts`
-- Modify: `src/tools.ts`, `src/sidebar.ts`, `src/main.ts`, `index.html` (`#map-legend`), `src/styles/frame.css` (legend rows)
-- Test: `src/__tests__/unit/tools.test.ts`, `src/__tests__/unit/sidebar.test.ts`
-
-**Interfaces:**
-- Consumes: `toolsNow()`, `changeSearch`, `searchChanged`, `searchFromLink`, `isSearching`, `ToolOnMap`.
-- Produces:
-  - `showLegend(legend: HTMLElement, rows: readonly LegendRow[]): void` and `interface LegendRow { panel: 'search' | 'overlay'; name: string; summary: OverlaySummary }` in `src/mapLegend.ts`.
-  - `togglesSearch(before: SearchSettings, after: SearchSettings): boolean` in `src/tools.ts`.
-  - `updateSidebar(…, isPinned = false, search: ToolOnMap | null = null)`: a new last parameter.
-
-- [ ] **Step 1: Write the failing tests**
+- [ ] **Step 6: The legend: a row for each tool that is on**
 
 Create `src/__tests__/unit/mapLegend.test.ts`:
 
@@ -2301,6 +2274,151 @@ describe('showLegend', () => {
   });
 });
 ```
+
+Run `npx vitest run src/__tests__/unit/mapLegend.test.ts`; expected FAIL, `src/mapLegend.ts` does not exist. Then create `src/mapLegend.ts`:
+
+```ts
+// The legend on the map: a row for each tool that is on, each opening its panel.
+import { summaryHtml } from './panelSummary.ts';
+import type { OverlaySummary } from './overlays/types.ts';
+
+export interface LegendRow {
+  panel: 'search' | 'overlay';
+  name: string;
+  summary: OverlaySummary;
+}
+
+/** Show `rows` in the legend's own order, search above overlay; with none, hide the card. */
+export function showLegend(legend: HTMLElement, rows: readonly LegendRow[]): void {
+  for (const button of legend.querySelectorAll<HTMLElement>('.map-legend-row')) {
+    const row = rows.find((r) => r.panel === button.dataset.panel);
+    button.hidden = !row;
+    if (row) {
+      button.querySelector('.map-legend-summary')!.innerHTML = summaryHtml(row.name, row.summary);
+    }
+  }
+  legend.hidden = rows.length === 0;
+}
+```
+
+`index.html`, `#map-legend` becomes:
+
+```html
+    <div id="map-legend" hidden>
+      <button class="map-legend-row" type="button" data-panel="search" hidden>
+        <span class="map-legend-summary"></span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+      <button class="map-legend-row" type="button" data-panel="overlay" hidden>
+        <span class="map-legend-summary"></span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+    </div>
+```
+
+`src/styles/frame.css`: after the `.map-legend-row` rule add
+
+```css
+.map-legend-row[hidden] {
+  display: none;
+}
+```
+
+and change the selector `.map-legend-row + .map-legend-row` to `.map-legend-row:not([hidden]) ~ .map-legend-row:not([hidden])`.
+
+In `src/main.ts`:
+
+1. Add `import { showLegend, type LegendRow } from './mapLegend.ts';`; delete the `summaryHtml` import and `const mapLegendSummary = …`.
+2. After `toolsNow`, add:
+
+```ts
+  function updateLegend(): void {
+    const { overlay, search } = toolsNow();
+    const rows: LegendRow[] = [];
+    for (const [panel, on] of [
+      ['search', search],
+      ['overlay', overlay],
+    ] as const) {
+      if (on) {
+        rows.push({ panel, name: on.tool.name, summary: on.tool.summary?.(on.settings) ?? {} });
+      }
+    }
+    showLegend(mapLegend, rows);
+  }
+```
+
+3. In `overlayChanged`, replace the lines from `mapLegend.hidden = !currentOverlay;` through the end of the `if (currentOverlay) { mapLegendSummary… }` block with `updateLegend();`.
+4. In `searchChanged`, add `updateLegend();` before `refreshVersePopup();`.
+
+- [ ] **Step 7: Implement: the test harness, the layout states and the docs**
+
+`test-harness/main.ts`: replace the overlays import and the two lines after it with:
+
+```ts
+import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
+import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
+```
+
+and in `main()` delete `const legendContainer = …` and the two legend lines inside `draw()`.
+
+`layout/app.ts`, the `explore-search` state becomes:
+
+```ts
+  {
+    name: 'explore-search',
+    hash: `search=${encodeURIComponent('אברהם')}`,
+    then: (page) => viaMenu(page, 'search'),
+    shown: ['#search-input', '#search-clear-all'],
+  },
+```
+
+`layout/known.ts`: delete the `SEARCH` constant and the two `explore-search/…/touch-targets` entries.
+
+`CLAUDE.md`:
+
+- The "Pluggable overlays" bullet begins: `**Pluggable overlays**, in the order the menu offers them: Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length.` Add a bullet after it: `- **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.`
+- Interactions, the ☰ line: `The menu: continue the story, search, overlays, stories, About & settings;`.
+- "The URL carries the overlay, its settings, the pinned verse…" → "The URL carries the search, the overlay and its settings, the pinned verse…".
+
+`README.md`: move the **Text Search** bullet out of the overlay list, rename it **Search**, and put it above "Overlays, in the order the map offers them:" with this sentence added: "It sits beside the overlays: search with one on, and each match rings the overlay's colour."
+
+- [ ] **Step 8: Run the tests, the type checker and the layout suite**
+
+Run: `npm run typecheck && npx vitest run && npm run test:layout`
+Expected: all pass, including `story-stop-with-verse` and `story-menu-down`, whose stop now shows a legend row for its search. The layout suite reports no touch-target failures for `explore-search` on tablet or phone. If it reports another search control under 24px, give that selector `min-height: 24px` (and `min-width: 24px` if it is narrow) in `src/styles/overlays/search.css` and run it again.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add -A src index.html test-harness layout CLAUDE.md README.md
+git commit -m "$(cat <<'EOF'
+Move search into a panel of its own
+
+Search leaves the overlay list for its own panel, menu item, Clear
+button and legend row. A word clicked in the verse popup adds to the search and leaves
+the overlay alone; an old overlay=search link opens with no search.
+
+Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37
+EOF
+)"
+```
+
+---
+
+### Task 5: The verse popup and history
+
+**Files:**
+- Modify: `src/tools.ts`, `src/sidebar.ts`, `src/main.ts`
+- Test: `src/__tests__/unit/tools.test.ts`, `src/__tests__/unit/sidebar.test.ts`
+
+**Interfaces:**
+- Consumes: `toolsNow()`, `changeSearch`, `searchChanged`, `searchFromLink`, `isSearching`, `ToolOnMap`.
+- Produces:
+  - `togglesSearch(before: SearchSettings, after: SearchSettings): boolean` in `src/tools.ts`.
+  - `updateSidebar(…, isPinned = false, search: ToolOnMap | null = null)`: a new last parameter.
+
+- [ ] **Step 1: Write the failing tests**
 
 In `src/__tests__/unit/tools.test.ts`, add `togglesSearch` to the `../../tools` import and append:
 
@@ -2386,36 +2504,10 @@ In `src/__tests__/unit/sidebar.test.ts`, add `import type { ToolOnMap } from '..
 
 - [ ] **Step 2: Run the tests to see them fail**
 
-Run: `npx vitest run src/__tests__/unit/mapLegend.test.ts src/__tests__/unit/tools.test.ts src/__tests__/unit/sidebar.test.ts`
-Expected: FAIL: `src/mapLegend.ts` and `togglesSearch` do not exist; `updateSidebar` ignores a search.
+Run: `npx vitest run src/__tests__/unit/tools.test.ts src/__tests__/unit/sidebar.test.ts`
+Expected: FAIL: `togglesSearch` does not exist; `updateSidebar` ignores a search.
 
 - [ ] **Step 3: Implement**
-
-Create `src/mapLegend.ts`:
-
-```ts
-// The legend on the map: a row for each tool that is on, each opening its panel.
-import { summaryHtml } from './panelSummary.ts';
-import type { OverlaySummary } from './overlays/types.ts';
-
-export interface LegendRow {
-  panel: 'search' | 'overlay';
-  name: string;
-  summary: OverlaySummary;
-}
-
-/** Show `rows` in the legend's own order, search above overlay; with none, hide the card. */
-export function showLegend(legend: HTMLElement, rows: readonly LegendRow[]): void {
-  for (const button of legend.querySelectorAll<HTMLElement>('.map-legend-row')) {
-    const row = rows.find((r) => r.panel === button.dataset.panel);
-    button.hidden = !row;
-    if (row) {
-      button.querySelector('.map-legend-summary')!.innerHTML = summaryHtml(row.name, row.summary);
-    }
-  }
-  legend.hidden = rows.length === 0;
-}
-```
 
 In `src/tools.ts`, append:
 
@@ -2460,56 +2552,11 @@ function infoLine(line: HTMLElement | string): HTMLElement {
 
 - In the Hebrew block, `currentOverlay?.highlightVerseText?.(hebrewText, 'he', overlaySettings)` → `marker?.tool.highlightVerseText?.(hebrewText, 'he', marker.settings)`; in the English block, `currentOverlay?.highlightVerseText?.(englishText, 'en', overlaySettings)` → `marker?.tool.highlightVerseText?.(englishText, 'en', marker.settings)`.
 
-`index.html`, `#map-legend` becomes:
-
-```html
-    <div id="map-legend" hidden>
-      <button class="map-legend-row" type="button" data-panel="search" hidden>
-        <span class="map-legend-summary"></span>
-        <span class="chevron" aria-hidden="true"></span>
-      </button>
-      <button class="map-legend-row" type="button" data-panel="overlay" hidden>
-        <span class="map-legend-summary"></span>
-        <span class="chevron" aria-hidden="true"></span>
-      </button>
-    </div>
-```
-
-`src/styles/frame.css`: after the `.map-legend-row` rule add
-
-```css
-.map-legend-row[hidden] {
-  display: none;
-}
-```
-
-and change the selector `.map-legend-row + .map-legend-row` to `.map-legend-row:not([hidden]) ~ .map-legend-row:not([hidden])`.
-
 In `src/main.ts`:
 
-1. Imports: add `import { showLegend, type LegendRow } from './mapLegend.ts';`; change the tools import to `import { toolsShown, togglesSearch } from './tools.ts';`; delete the `summaryHtml` import; delete `const mapLegendSummary = …`.
-2. After `toolsNow`, add:
-
-```ts
-  function updateLegend(): void {
-    const { overlay, search } = toolsNow();
-    const rows: LegendRow[] = [];
-    for (const [panel, on] of [
-      ['search', search],
-      ['overlay', overlay],
-    ] as const) {
-      if (on) {
-        rows.push({ panel, name: on.tool.name, summary: on.tool.summary?.(on.settings) ?? {} });
-      }
-    }
-    showLegend(mapLegend, rows);
-  }
-```
-
-3. In `overlayChanged`, replace the lines from `mapLegend.hidden = !currentOverlay;` through the end of the `if (currentOverlay) { mapLegendSummary… }` block with `updateLegend();`.
-4. In `searchChanged`, add `updateLegend();` before `refreshVersePopup();`.
-5. In `updateSidebarWrapper`, pass `toolsNow().search` as the last argument to `updateSidebar`, after `isPinned`.
-6. `changeSearch` becomes:
+1. Change the tools import to `import { toolsShown, togglesSearch } from './tools.ts';`.
+2. In `updateSidebarWrapper`, pass `toolsNow().search` as the last argument to `updateSidebar`, after `isPinned`.
+3. `changeSearch` becomes:
 
 ```ts
   function changeSearch(update: (current: SearchSettings) => SearchSettings): void {
@@ -2533,10 +2580,9 @@ Expected: all pass.
 ```bash
 git add -A src index.html
 git commit -m "$(cat <<'EOF'
-Show both tools in the legend and the verse popup
+Show both tools in the verse popup
 
-The legend has a row for each tool that is on, search first, and the
-verse popup gives the overlay's line and the search's matches. Turning
+The popup gives the overlay's line and the search's matches. Turning
 the search on or off is a step Back can undo; typing is not.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
@@ -2553,7 +2599,7 @@ EOF
 - Modify: `layout/app.ts`, `layout/known.ts`
 
 **Interfaces:**
-- Consumes: the legend rows `.map-legend-row[data-panel="search"]` and `[data-panel="overlay"]` (Task 5), `#overlay-select`, `viaMenu`.
+- Consumes: the legend rows `.map-legend-row[data-panel="search"]` and `[data-panel="overlay"]` (Task 4), `#overlay-select`, `viaMenu`.
 - Produces: layout states `explore-search-and-overlay`, `explore-search-overlay-switched`, `explore-search-and-overlay-pinned`.
 
 - [ ] **Step 1: Add the states**
