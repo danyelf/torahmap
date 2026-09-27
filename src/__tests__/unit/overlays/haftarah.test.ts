@@ -461,14 +461,10 @@ describe('Haftarah Overlay', () => {
       ]);
     });
 
-    it('hovers an occasion by a verse no other reading shares, when it has one', async () => {
+    /** The verse Rosh Chodesh's swatch hovers, with its Ashkenazi haftarah replaced by `ranges`. */
+    async function roshChodeshStandIn(ranges: unknown[]): Promise<string | undefined> {
       const overlapping = structuredClone(SAMPLE_HAFTARAH_DATA);
-      // Starts inside Bereshit's Ashkenazi haftarah, which ends at 42:21.
-      overlapping.specialOccasions[0].haftarah.ashkenazi[0] = {
-        book: 'Isaiah',
-        start: { chapter: 42, verse: 5 },
-        end: { chapter: 42, verse: 25 },
-      };
+      overlapping.specialOccasions[0].haftarah.ashkenazi = ranges as never;
       installMockFetch({
         '/data/overlays/haftarah/mappings.json': overlapping,
         '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
@@ -477,9 +473,25 @@ describe('Haftarah Overlay', () => {
 
       const container = document.createElement('div');
       haftarahOverlay.renderLegend(container);
+      const row = keyRows(container).find((r) => r.label === 'Rosh Chodesh')!;
+      return row.readings[0].verse;
+    }
 
-      const roshChodesh = keyRows(container).find((row) => row.label === 'Rosh Chodesh')!;
-      expect(roshChodesh.readings[0].verse).toBe('Isaiah.42.22');
+    it('hovers an occasion by a verse it shares with another reading', async () => {
+      // Bereshit's Ashkenazi haftarah is 42:5-21.
+      const verse = await roshChodeshStandIn([
+        { book: 'Isaiah', start: { chapter: 42, verse: 1 }, end: { chapter: 42, verse: 25 } },
+      ]);
+      expect(verse).toBe('Isaiah.42.5');
+    });
+
+    it('prefers the larger of two overlaps with different readings', async () => {
+      // Four verses shared with Bereshit (to 42:21), ten with Noach (from 54:1).
+      const verse = await roshChodeshStandIn([
+        { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
+        { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
+      ]);
+      expect(verse).toBe('Isaiah.54.1');
     });
   });
 

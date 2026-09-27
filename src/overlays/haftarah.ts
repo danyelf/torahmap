@@ -297,8 +297,9 @@ function colorAt(
 /**
  * The verse that stands for `item` when its legend swatch is hovered, so the
  * map lights up as it would under the cursor: a portion's first Torah verse,
- * or an occasion's first haftarah verse that no other reading shares. A shared
- * verse would light up every reading that shares it.
+ * or an occasion's haftarah verse shared with the most other readings, which
+ * lights up every one of them. Of two overlaps with different readings, the
+ * longer wins; a verse can show only one.
  */
 function standInVerse(item: HaftarahItem, custom: Custom, derived: HaftarahDerivation): string {
   if (isParsha(item)) {
@@ -306,17 +307,29 @@ function standInVerse(item: HaftarahItem, custom: Custom, derived: HaftarahDeriv
     return verseToUrlFormat(book, start.chapter, start.verse);
   }
 
-  const verses: string[] = [];
-  let unshared: string | undefined;
+  // Verses grouped by the readings that share them.
+  const overlaps = new Map<string, { sharers: number; verses: string[] }>();
   for (const range of item.haftarah[custom]) {
     forEachVerseInRange(range, (book, ch, v) => {
-      verses.push(verseToUrlFormat(book, ch, v));
-      if (!unshared && derived.haftarahVerseToItem.get(tanakhKey(book, ch, v))?.length === 1) {
-        unshared = verses[verses.length - 1];
-      }
+      const sharers = derived.haftarahVerseToItem.get(tanakhKey(book, ch, v)) ?? [item];
+      const key = sharers.map((s) => s.name).join('|');
+      const overlap = overlaps.get(key) ?? { sharers: sharers.length, verses: [] };
+      overlap.verses.push(verseToUrlFormat(book, ch, v));
+      overlaps.set(key, overlap);
     });
   }
-  return unshared ?? verses[0];
+
+  let best: { sharers: number; verses: string[] } | undefined;
+  for (const overlap of overlaps.values()) {
+    if (
+      !best ||
+      overlap.sharers > best.sharers ||
+      (overlap.sharers === best.sharers && overlap.verses.length > best.verses.length)
+    ) {
+      best = overlap;
+    }
+  }
+  return best?.verses[0] ?? '';
 }
 
 /** A row of the legend's key: a label and one hoverable swatch per reading. */
