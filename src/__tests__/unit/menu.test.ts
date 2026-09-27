@@ -15,9 +15,9 @@ describe('menuHtml', () => {
     expect(first.textContent).toContain('7 of 21');
   });
 
-  it('then the overlays, the stories, and about', () => {
+  it('then the search, the overlays, the stories, and about', () => {
     const actions = items(menuHtml({ number: 1, total: 21 })).map((b) => b.dataset.action);
-    expect(actions).toEqual(['story', 'overlay', 'stories', 'about']);
+    expect(actions).toEqual(['story', 'search', 'overlay', 'stories', 'about']);
   });
 
   it("is headed with the site's name", () => {

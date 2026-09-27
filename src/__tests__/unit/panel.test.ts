@@ -3,7 +3,7 @@ import { CONTROL, panelHtml } from '../../panel';
 import { PANEL_TITLES, type Panel } from '../../frame';
 import { storiesHtml } from '../../storiesPanel';
 import { aboutHtml } from '../../aboutPanel';
-import { overlayPanelHtml } from '../../toolPanels';
+import { overlayPanelHtml, searchPanelHtml } from '../../toolPanels';
 
 function parse(html: string): HTMLDivElement {
   const div = document.createElement('div');
@@ -28,6 +28,12 @@ describe('every panel is built by panelHtml, with shared controls', () => {
     ['stories', storiesHtml({ number: 1, total: 2, label: 'x' })],
     ['about', aboutHtml([])],
   ];
+
+  it('search opens with its title', () => {
+    const first = parse(searchPanelHtml()).firstElementChild;
+    expect(first?.matches('h2.panel-title')).toBe(true);
+    expect(first?.textContent).toBe(PANEL_TITLES.search);
+  });
 
   for (const [panel, html] of panels) {
     it(`${panel} opens with its title`, () => {

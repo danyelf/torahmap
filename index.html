@@ -91,7 +91,11 @@
     </div>
 
     <div id="map-legend" hidden>
-      <button class="map-legend-row" type="button" data-panel="overlay">
+      <button class="map-legend-row" type="button" data-panel="search" hidden>
+        <span class="map-legend-summary"></span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+      <button class="map-legend-row" type="button" data-panel="overlay" hidden>
         <span class="map-legend-summary"></span>
         <span class="chevron" aria-hidden="true"></span>
       </button>
@@ -121,6 +125,7 @@
           <h2 id="tools-title" class="column-title"></h2>
         </div>
         <div id="panel-body">
+          <div id="search-panel" class="tool"></div>
           <div id="overlay-panel" class="tool"></div>
           <div id="stories-panel" class="tool"></div>
           <div id="about-panel" class="tool"></div>

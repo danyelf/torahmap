@@ -133,7 +133,7 @@ describe('story stop settings reach the overlay', () => {
   const settingsOverlay: Overlay = {
     id: 'test-settings',
     name: 'Test Settings',
-    urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+    urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
     defaultSettings: () => ({}),
     settingsFromUrl: (params) => params,
     settingsToUrl: () => ({}),
@@ -161,22 +161,22 @@ describe('story stop settings reach the overlay', () => {
   });
 
   it('passes a declared setting through', () => {
-    const stop = stopWith({ mode: 'on' });
+    const stop = stopWith({ state: 'on' });
     computeBlendedColors(stop, stop, 0, verses, null);
-    expect(received).toEqual({ mode: 'on' });
+    expect(received).toEqual({ state: 'on' });
   });
 
   it('drops a value the overlay did not allow', () => {
     // Story stops are hand-written, so they are checked like any link.
-    const stop = stopWith({ mode: 'sideways' });
+    const stop = stopWith({ state: 'sideways' });
     computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({});
   });
 
   it('drops a key the overlay never declared', () => {
-    const stop = stopWith({ mode: 'off', nonsense: 'x' });
+    const stop = stopWith({ state: 'off', nonsense: 'x' });
     computeBlendedColors(stop, stop, 0, verses, null);
-    expect(received).toEqual({ mode: 'off' });
+    expect(received).toEqual({ state: 'off' });
   });
 
   it("hands an overlay with its own settings type the settings it builds from the stop's", () => {
@@ -184,9 +184,9 @@ describe('story stop settings reach the overlay', () => {
     const typedOverlay: Overlay<TanakhLayout, { on: boolean }> = {
       id: 'test-typed-settings',
       name: 'Test Typed Settings',
-      urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+      urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
       defaultSettings: () => ({ on: false }),
-      settingsFromUrl: (params) => ({ on: params.mode === 'on' }),
+      settingsFromUrl: (params) => ({ on: params.state === 'on' }),
       settingsToUrl: () => ({}),
       getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
       colorsFor(items, settings) {
@@ -196,7 +196,7 @@ describe('story stop settings reach the overlay', () => {
     };
     registerOverlay(typedOverlay);
 
-    const stop = { ...stopWith({ mode: 'on' }), overlay: 'test-typed-settings' };
+    const stop = { ...stopWith({ state: 'on' }), overlay: 'test-typed-settings' };
     computeBlendedColors(stop, stop, 0, verses, null);
     expect(handed).toEqual({ on: true });
   });
@@ -249,7 +249,7 @@ describe('the blender memoises colours by settings', () => {
     const memoOverlay: Overlay = {
       id: 'test-memo',
       name: 'Test Memo',
-      urlParams: [{ key: 'mode', kind: 'token' }],
+      urlParams: [{ key: 'state', kind: 'token' }],
       defaultSettings: () => ({}),
       settingsFromUrl: (params) => params,
       settingsToUrl: () => ({}),
@@ -264,7 +264,7 @@ describe('the blender memoises colours by settings', () => {
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-memo',
-      overlayParams: { mode: 'a' },
+      overlayParams: { state: 'a' },
     };
     const toStop: ResolvedStoryStop = {
       id: 'm2',
@@ -272,13 +272,13 @@ describe('the blender memoises colours by settings', () => {
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-memo',
-      overlayParams: { mode: 'b' },
+      overlayParams: { state: 'b' },
     };
 
     computeBlendedColors(fromStop, toStop, 0.5, verses, null);
     computeBlendedColors(fromStop, toStop, 0.5, verses, null);
 
-    // Two distinct settings (mode 'a' and 'b') across two blends: once each,
+    // Two distinct settings (state 'a' and 'b') across two blends: once each,
     // not once per call — the second blend shares both cache entries.
     expect(colorsForSpy).toHaveBeenCalledTimes(2);
   });

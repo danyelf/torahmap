@@ -18,3 +18,7 @@ export function overlayPanelHtml(): string {
     <div id="overlay-legend"></div>`,
   );
 }
+
+export function searchPanelHtml(): string {
+  return panelHtml('search', '<div id="search-controls"></div>');
+}

@@ -3,7 +3,7 @@
 // The mode belongs to a term and is set on that term's row, so these tests
 // click the row.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../overlays/index';
+import { searchTool } from '../../overlays/search/index';
 import { configure } from '../../overlays/search';
 import { buildSearchIndex } from '../../search';
 import type { TanakhLayout } from '../../types';
@@ -12,9 +12,7 @@ import { hostOverlay } from '../helpers/overlayHost';
 import { createVerse } from '../helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
 
-// The registry is where overlays come from — populate it the way the app does.
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
+const searchOverlay = hostOverlay(searchTool);
 
 describe('Search Overlay - Hebrew Mode Integration', () => {
   let testVerses: TanakhLayout[];

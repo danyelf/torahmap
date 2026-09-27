@@ -55,17 +55,6 @@
 
 .term-remove {
   flex: 0 0 auto;
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 2px 4px;
-}
-
-.term-remove:hover {
-  color: #fff;
 }
 
 /* A row the reader is not working in, folded to one line. */
@@ -178,6 +167,14 @@
   color: #fff;
 }
 
+/* On a touch screen each switch is a 24px target; with a mouse it keeps its
+   slimmer look. */
+@media (pointer: coarse) {
+  .term-mode-option {
+    min-height: 24px;
+  }
+}
+
 /* The meanings of one term. Absent for the 88% of words that mean one thing. */
 .term-meanings {
   margin-top: 2px;
@@ -284,24 +281,41 @@
   white-space: nowrap;
 }
 
-#add-term {
+/* Adding a word and clearing them all, side by side. */
+.search-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#add-term,
+#search-clear-all {
   background: none;
-  border: 1px dashed #444;
   border-radius: 4px;
   color: #888;
   font-size: 12px;
   cursor: pointer;
   padding: 5px 10px;
-  margin-bottom: 12px;
-  width: 100%;
 }
 
-#add-term:hover:not(:disabled) {
+#add-term {
+  flex: 1 1 auto;
+  border: 1px dashed #444;
+}
+
+#search-clear-all {
+  flex: 0 0 auto;
+  border: 1px solid #444;
+}
+
+#add-term:hover:not(:disabled),
+#search-clear-all:hover:not(:disabled) {
   color: #fff;
   border-color: #666;
 }
 
-#add-term:disabled {
+#add-term:disabled,
+#search-clear-all:disabled {
   opacity: 0.35;
   cursor: default;
 }

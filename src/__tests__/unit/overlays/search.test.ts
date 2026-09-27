@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { searchTool } from '../../../overlays/search/index';
 import { configure, type SearchSettings } from '../../../overlays/search';
-
-// The registry is where overlays come from — populate it the way the app does.
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
 import type { Color } from '../../../overlays/types';
 import { getWordBoundaries } from '../../../search';
 import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
@@ -17,6 +13,8 @@ import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { configureAnalytics } from '../../../analytics.ts';
+
+const searchOverlay = hostOverlay(searchTool);
 
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
@@ -113,8 +111,39 @@ describe('Search Overlay', () => {
   describe('Overlay Interface', () => {
     it('has correct id and name', () => {
       expect(searchOverlay.overlay.id).toBe('search');
-      expect(searchOverlay.overlay.name).toBe('Text Search');
+      expect(searchOverlay.overlay.name).toBe('Search');
     });
+  });
+
+  describe('Clear', () => {
+    it('is offered only once a word is typed', () => {
+      const container = render();
+      const clear = container.querySelector<HTMLButtonElement>('#search-clear-all')!;
+      expect(clear.disabled).toBe(true);
+
+      type(container, 'God');
+      expect(clear.disabled).toBe(false);
+    });
+
+    it('takes every word away', () => {
+      searchOverlay.restore({ search: 'God,earth' });
+      const container = render();
+
+      container.querySelector<HTMLButtonElement>('#search-clear-all')!.click();
+
+      expect(searchOverlay.toUrl()).toEqual({});
+      expect(searchOverlay.settings.terms.map((t) => t.text)).toEqual(['']);
+    });
+  });
+
+  it('draws its × with the shared icon control', () => {
+    const container = render();
+    type(container, 'אלהים');
+
+    const has = (selector: string, name: string) =>
+      [...container.querySelectorAll(selector)].every((el) => el.classList.contains(name));
+    expect(has('.term-remove', 'control-icon')).toBe(true);
+    expect(container.querySelectorAll('.term-remove').length).toBeGreaterThan(0);
   });
 
   describe('Color Computation - No Search', () => {

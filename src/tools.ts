@@ -4,8 +4,7 @@ import { isSearching, searchTool, type SearchSettings } from './overlays/search/
 
 /**
  * The tools a view shows: the overlay, if one is on, and the search, while it
- * has a word to search on. The search is also still in the overlay list; as
- * the overlay, it shows through its own slot rather than twice.
+ * has a word to search on.
  */
 export function toolsShown(
   overlay: Overlay | null,
@@ -13,8 +12,7 @@ export function toolsShown(
   search: SearchSettings,
 ): Tools {
   return {
-    overlay:
-      overlay && overlay !== searchTool ? { tool: overlay, settings: overlaySettings } : null,
+    overlay: overlay ? { tool: overlay, settings: overlaySettings } : null,
     search: isSearching(search) ? { tool: searchTool, settings: search } : null,
   };
 }

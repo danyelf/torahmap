@@ -4,7 +4,7 @@
 // comparing, and two words in two colours is the comparison.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { searchTool } from '../../../overlays/search/index';
 import {
   configure,
   searchForMeaning,
@@ -18,8 +18,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
+const searchOverlay = hostOverlay(searchTool);
 
 const texts: VerseTexts = {
   Genesis: {

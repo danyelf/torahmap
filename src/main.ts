@@ -24,7 +24,7 @@ import {
 import { menuHtml, type StoryPlace } from './menu.ts';
 import { storiesHtml } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
-import { overlayPanelHtml } from './toolPanels.ts';
+import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
   configureAnalytics,
@@ -112,7 +112,12 @@ import {
   type Overlay,
   type Color,
 } from './overlays/index.ts';
-import { searchTool, searchForMeaning, canAddTerm } from './overlays/search/index.ts';
+import {
+  searchTool,
+  searchForMeaning,
+  canAddTerm,
+  type SearchSettings,
+} from './overlays/search/index.ts';
 import { toolsShown } from './tools.ts';
 import type { Tools } from './overlays/types.ts';
 import {
@@ -154,7 +159,7 @@ import {
   type ReturnHow,
 } from './telemetry/driverChange.ts';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
-import { summaryHtml } from './panelSummary.ts';
+import { showLegend, type LegendRow } from './mapLegend.ts';
 import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
 import './styles/map-title.css';
 import './styles/zoom-buttons.css';
@@ -299,6 +304,20 @@ async function main(): Promise<void> {
     return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool));
   }
 
+  function updateLegend(): void {
+    const { overlay, search } = toolsNow();
+    const rows: LegendRow[] = [];
+    for (const [panel, on] of [
+      ['search', search],
+      ['overlay', overlay],
+    ] as const) {
+      if (on) {
+        rows.push({ panel, name: on.tool.name, summary: on.tool.summary?.(on.settings) ?? {} });
+      }
+    }
+    showLegend(mapLegend, rows);
+  }
+
   function applyTools(): void {
     setColorLayer(still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse)));
   }
@@ -352,6 +371,7 @@ async function main(): Promise<void> {
 
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
     overlaySettings.restore(searchTool, stop.searchParams ?? {});
+    searchChanged(true);
     overlayChanged(true);
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
@@ -395,8 +415,8 @@ async function main(): Promise<void> {
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
+  document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
-  const mapLegendSummary = mapLegend.querySelector<HTMLElement>('.map-legend-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
   const menuToggle = document.getElementById('menu-toggle')!;
 
@@ -454,7 +474,7 @@ async function main(): Promise<void> {
       });
     }
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(getAllOverlays());
+      aboutPanel.innerHTML = aboutHtml([searchTool, ...getAllOverlays()]);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
     }
     measureSheet();
@@ -967,6 +987,7 @@ async function main(): Promise<void> {
   }
 
   const overlayControlsContainer = document.getElementById('overlay-controls');
+  const searchControls = document.getElementById('search-controls')!;
   const overlayLegendContainer = document.getElementById('overlay-legend');
 
   let currentOverlayId = 'none';
@@ -1007,13 +1028,7 @@ async function main(): Promise<void> {
     renderOverlayControls();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
-    mapLegend.hidden = !currentOverlay;
-    if (currentOverlay) {
-      mapLegendSummary.innerHTML = summaryHtml(
-        currentOverlay.name,
-        currentOverlay.summary?.(currentSettings()) ?? {},
-      );
-    }
+    updateLegend();
     refreshVersePopup();
   }
 
@@ -1032,6 +1047,26 @@ async function main(): Promise<void> {
     syncUrl(false);
   }
 
+  /**
+   * Redraw what shows the search. `fresh` clears the controls first, for
+   * settings from a link or a story stop; a reader's own edit redraws into
+   * them, keeping their focus.
+   */
+  function searchChanged(fresh: boolean): void {
+    if (fresh) searchControls.innerHTML = '';
+    searchTool.renderControls?.(searchControls, overlaySettings.get(searchTool), changeSearch);
+    updateLegend();
+    refreshVersePopup();
+  }
+
+  function changeSearch(update: (current: SearchSettings) => SearchSettings): void {
+    overlaySettings.set(searchTool, update(overlaySettings.get(searchTool)));
+    applyTools();
+    searchChanged(false);
+    render();
+    syncUrl(false);
+  }
+
   function setOverlay(id: string): void {
     trackOverlaySwitch(id, currentOverlayId);
     activateOverlay(id);
@@ -1041,11 +1076,6 @@ async function main(): Promise<void> {
     syncUrl(true);
   }
 
-  // Clicking a word in the verse popup.
-  //
-  // The panel is what makes this safe: switching to search destroys whichever
-  // overlay is showing, and a click on a word is too ordinary a gesture to be
-  // allowed to do that on its own.
   setWordClickHandler((click) => {
     const word = lookupForm(click.text);
     const meanings = meaningsInVerse(
@@ -1064,26 +1094,17 @@ async function main(): Promise<void> {
       anchor: click.element,
       paletteFull,
       onChoose: (meaning) => {
-        // Ask before anything is spent. setOverlay() takes the showing overlay
-        // off the map, so a search that is going to be refused must be refused
-        // first - otherwise the reader loses their Haftarah view and gains
-        // nothing. The panel's own count was taken when it opened, and a
-        // keyboard reader can add a word in between.
+        // The menu counted the words when it opened; a keyboard reader can add one since.
         if (!canAddTerm(overlaySettings.get(searchTool))) return;
 
         trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
-
         takeOver('takeover');
-        if (currentOverlayId !== 'search') {
-          setOverlay('search');
-        }
-
-        // Replaces the URL setOverlay just pushed rather than adding a second
-        // history entry.
-        changeSettings(
-          searchTool,
+        changeSearch(
           (current) => searchForMeaning(current, word, meaning?.keys ?? null) ?? current,
         );
+        if (frame.mode === 'explore' && frame.open !== 'search') {
+          dispatch({ type: 'choose', panel: 'search' });
+        }
       },
     });
   });
@@ -1150,6 +1171,7 @@ async function main(): Promise<void> {
       },
     },
   });
+  searchChanged(true);
 
   applyHebrewChoice();
 
@@ -1512,12 +1534,16 @@ async function main(): Promise<void> {
   function applyViewState(next: ViewState): void {
     if (next.mode === 'explore') {
       handOver(readerTakesOver(storyPosition()), 'fold');
-      setStoryOpen(false);
+      setStoryOpen(
+        false,
+        exploreFrame(phoneLayout.matches, next.searchParams.search ? 'search' : 'overlay'),
+      );
     }
 
     activateOverlay(next.overlay);
     if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
     overlaySettings.restore(searchTool, next.searchParams);
+    searchChanged(true);
     overlayChanged(true);
 
     const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;

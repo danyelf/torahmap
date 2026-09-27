@@ -154,6 +154,7 @@ type SettingsChange = (update: (current: SearchSettings) => SearchSettings) => v
 // holds when it applies it, never from `shown`.
 let searchResults: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
+let searchClear: HTMLButtonElement | null = null;
 let requestChange: SettingsChange | null = null;
 let shown: SearchSettings | null = null;
 
@@ -457,10 +458,7 @@ export function highlightSearchTerms(
 
 export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
   id: 'search',
-  name: 'Text Search',
-  description:
-    'Lights up every verse holding the word you type, in the Hebrew or in the English. ' +
-    'Matches the letters you typed, or the dictionary words that spelling can be.',
+  name: 'Search',
   credits: [
     {
       source:
@@ -528,13 +526,20 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     if (!searchResults || !container.contains(searchResults)) {
       container.innerHTML = `
         <div id="search-terms"></div>
-        <button type="button" id="add-term">+ add a word</button>
+        <div class="search-actions">
+          <button type="button" id="add-term">+ add a word</button>
+          <button type="button" id="search-clear-all">Clear</button>
+        </div>
         <div id="search-hit-caption"></div>
         <div id="search-results"></div>
       `;
 
       searchHitCaption = container.querySelector('#search-hit-caption');
       searchResults = container.querySelector('#search-results');
+      searchClear = container.querySelector('#search-clear-all');
+      searchClear?.addEventListener('click', () =>
+        requestChange?.(() => ({ terms: addTerm([], '') })),
+      );
 
       mountTermRows(
         {
@@ -551,6 +556,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     renderTermRows();
     updateHitCaption(settings);
     renderResults(settings);
+    if (searchClear) searchClear.disabled = typedTerms(settings).length === 0;
   },
 
   getHoverInfo(verse, settings) {
@@ -579,6 +585,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     unmountTermRows();
     searchResults = null;
     searchHitCaption = null;
+    searchClear = null;
     shown = null;
     requestChange = null;
     // A search the reader leaves before it settles is not recorded.

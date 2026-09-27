@@ -12,7 +12,7 @@
 // exactly the gap this closes.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { searchTool } from '../../../overlays/search/index';
 import { configure } from '../../../overlays/search';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { setVerseOnScreen } from '../../../search/dictionary';
@@ -20,8 +20,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse } from '../../helpers/fixtures';
 import type { VerseTexts } from '../../../verseTexts';
 
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
+const searchOverlay = hostOverlay(searchTool);
 
 const VERSE = 'Genesis:8:20';
 /** The two readings, as the URL names them: the verb, then the three nouns. */

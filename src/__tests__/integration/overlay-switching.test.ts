@@ -134,7 +134,7 @@ describe('Overlay Switching Integration', () => {
     });
 
     it('switches through all overlays in sequence', async () => {
-      const overlayIds = ['commentary', 'trop', 'search'];
+      const overlayIds = ['commentary', 'trop'];
       const results: string[] = [];
 
       for (const id of overlayIds) {
@@ -197,7 +197,7 @@ describe('Overlay Switching Integration', () => {
       expect(firstSelect).not.toBeNull();
 
       // Switch away (should clean up)
-      await switchToOverlay('search');
+      await switchToOverlay('trop');
       expect(mockControlsContainer.innerHTML).not.toBe('');
 
       // Switch back to commentary (registers new listener)
@@ -222,12 +222,6 @@ describe('Overlay Switching Integration', () => {
 
     it('renders controls for trop overlay', async () => {
       await switchToOverlay('trop');
-
-      expect(mockControlsContainer.innerHTML.length).toBeGreaterThan(0);
-    });
-
-    it('renders controls for search overlay', async () => {
-      await switchToOverlay('search');
 
       expect(mockControlsContainer.innerHTML.length).toBeGreaterThan(0);
     });
@@ -334,7 +328,6 @@ describe('Overlay Switching Integration', () => {
       // Simulate rapid switching
       await switchToOverlay('commentary');
       await switchToOverlay('trop');
-      await switchToOverlay('search');
       await switchToOverlay('trop');
       await switchToOverlay('commentary');
 

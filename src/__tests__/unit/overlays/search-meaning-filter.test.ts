@@ -5,7 +5,7 @@
 // result with one; these tests are about the control that splits them.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { searchTool } from '../../../overlays/search/index';
 import { configure } from '../../../overlays/search';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
@@ -14,8 +14,7 @@ import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay'
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
 
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
+const searchOverlay = hostOverlay(searchTool);
 
 // Real Hebrew, so the lexeme index has something to resolve.
 const texts: VerseTexts = {

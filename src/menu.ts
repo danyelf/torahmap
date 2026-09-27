@@ -14,6 +14,7 @@ export function menuHtml(place: StoryPlace): string {
   return [
     '<h2 class="menu-title">Torahmap</h2>',
     item('story', 'Continue the story', `${place.number} of ${place.total}`),
+    item('search', 'Search'),
     item('overlay', 'Overlays'),
     item('stories', 'Stories'),
     item('about', 'About &amp; settings'),

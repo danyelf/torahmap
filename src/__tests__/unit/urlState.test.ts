@@ -9,6 +9,7 @@ import {
   applyingExternalState,
   isApplyingExternalState,
   validateOverlayParams,
+  SEARCH_KEYS,
   type UrlState,
   type UrlParamSpec,
 } from '../../urlState';
@@ -1015,6 +1016,7 @@ describe('what every overlay must hold to', () => {
       expect(new Set(keys).size).toBe(keys.length);
       for (const key of keys) {
         expect(['story', 'overlay', 'verse', 'zoom', 'x', 'y']).not.toContain(key);
+        expect(SEARCH_KEYS.has(key)).toBe(false);
       }
     });
 

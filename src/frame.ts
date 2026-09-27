@@ -2,11 +2,12 @@
 // Outside it one panel is open — on a phone possibly none, leaving only the
 // map — and a phone's sheet can be dragged to full height.
 
-const PANELS = ['overlay', 'stories', 'about'] as const;
+const PANELS = ['search', 'overlay', 'stories', 'about'] as const;
 export type Panel = (typeof PANELS)[number];
 
 /** What each panel is called, in the column's header and at the top of the panel. */
 export const PANEL_TITLES: Record<Panel, string> = {
+  search: 'Search',
   overlay: 'Overlay',
   stories: 'Stories',
   about: 'About & settings',
@@ -48,8 +49,8 @@ const explore = (open: Panel | null): Frame => ({
 });
 
 /** Where leaving the story, or a link into the explore view, lands. */
-export function exploreFrame(phone: boolean): Frame {
-  return explore(phone ? null : 'overlay');
+export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
+  return explore(phone ? null : open);
 }
 
 export function nextFrame(frame: Frame, event: FrameEvent, phone: boolean): Frame {

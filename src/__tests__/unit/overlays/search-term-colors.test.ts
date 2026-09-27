@@ -6,7 +6,7 @@
 // until a term is removed, and then they are not.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { searchTool } from '../../../overlays/search/index';
 import { configure } from '../../../overlays/search';
 import { buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
@@ -15,8 +15,7 @@ import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay
 import { SEARCH_COLORS } from '../../../utils/color';
 import type { VerseTexts } from '../../../verseTexts';
 
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
+const searchOverlay = hostOverlay(searchTool);
 
 const texts: VerseTexts = {
   Genesis: {

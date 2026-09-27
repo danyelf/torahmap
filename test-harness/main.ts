@@ -4,16 +4,8 @@
 
 import { loadAllVerseTexts } from '../src/verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
-import {
-  registerAllOverlays,
-  getOverlay,
-  configureSearch,
-  createOverlaySettings,
-} from '../src/overlays/index.ts';
-
-// The registry is where overlays come from — fill it the way the app does.
-registerAllOverlays();
-const searchOverlay = getOverlay('search')!;
+import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
+import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
 
 // --- Event log ---
 
@@ -155,10 +147,9 @@ async function main(): Promise<void> {
     },
   });
 
-  // Hold the search's settings the way the app does, and draw the controls and
-  // legend again after every change.
+  // Hold the search's settings the way the app does, and draw the controls again
+  // after every change.
   const controlsContainer = document.getElementById('overlay-controls')!;
-  const legendContainer = document.getElementById('overlay-legend')!;
   const settings = createOverlaySettings();
 
   function draw(): void {
@@ -166,8 +157,6 @@ async function main(): Promise<void> {
       settings.set(searchOverlay, update(settings.get(searchOverlay)));
       draw();
     });
-    legendContainer.innerHTML = '';
-    searchOverlay.renderLegend?.(legendContainer, settings.get(searchOverlay));
   }
   draw();
 

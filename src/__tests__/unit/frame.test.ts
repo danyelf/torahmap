@@ -41,6 +41,11 @@ describe('returning to the story', () => {
 });
 
 describe('exploring on a desktop', () => {
+  it('lands on the panel a link asks for, on a desktop', () => {
+    expect(exploreFrame(DESKTOP, 'search')).toEqual(explore('search'));
+    expect(exploreFrame(PHONE, 'search')).toEqual(explore(null));
+  });
+
   it('always has a panel open', () => {
     expect(exploreFrame(DESKTOP)).toEqual(explore('overlay'));
     expect(nextFrame(explore('stories'), { type: 'map-touched' }, DESKTOP)).toEqual(
@@ -147,7 +152,7 @@ describe('crossing from phone width to desktop width', () => {
 
 describe('panel names', () => {
   it('accepts the panels and nothing else', () => {
-    expect(['overlay', 'stories', 'about'].every(isPanel)).toBe(true);
+    expect(['search', 'overlay', 'stories', 'about'].every(isPanel)).toBe(true);
     expect(isPanel('menu')).toBe(false);
     expect(isPanel('story')).toBe(false);
     expect(isPanel('restart')).toBe(false);

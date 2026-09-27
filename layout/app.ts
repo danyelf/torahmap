@@ -63,9 +63,9 @@ export const STATES: State[] = [
   },
   {
     name: 'explore-search',
-    hash: `overlay=search&q=${encodeURIComponent('אברהם')}`,
-    then: (page) => viaMenu(page, 'overlay'),
-    shown: ['#overlay-select', '#search-input'],
+    hash: `search=${encodeURIComponent('אברהם')}`,
+    then: (page) => viaMenu(page, 'search'),
+    shown: ['#search-input', '#search-clear-all'],
   },
   {
     name: 'explore-verse-pinned',

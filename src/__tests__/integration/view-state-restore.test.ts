@@ -60,6 +60,13 @@ describe('restoring a link as one complete view', () => {
   });
 
   describe('which mode a link opens in', () => {
+    it('opens an old search link with no search and no overlay', () => {
+      const view = viewFor('#overlay=search&q=light');
+      expect(view.mode).toBe('explore');
+      expect(view.overlay).toBe('none');
+      expect(view.searchParams).toEqual({});
+    });
+
     it('opens a link that only searches in Explore, with its search', () => {
       const view = viewFor('#search=light');
       expect(view.mode).toBe('explore');

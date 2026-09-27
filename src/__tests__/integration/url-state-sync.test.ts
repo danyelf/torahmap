@@ -13,6 +13,7 @@ import {
   configureTrop,
   configureSearch,
 } from '../../overlays/index';
+import { searchTool } from '../../overlays/search/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams } from '../helpers/overlayUrlParams';
@@ -78,8 +79,7 @@ describe('URL State Sync Integration', () => {
     });
 
     it('integrates with search overlay URL params', async () => {
-      const overlay = getOverlay('search');
-      await overlay?.init?.();
+      const overlay = searchTool;
 
       // Apply URL params
       const params = new URLSearchParams('search=moses');
