@@ -1328,6 +1328,9 @@ async function main(): Promise<void> {
   });
 
   let storyFrame: number | null = null;
+  // The layer the story last painted at rest, and the stop it was for.
+  let restingLayer: typeof colorLayer | null = null;
+  let restingStop: ResolvedStoryStop | null = null;
 
   /** Repaint from the story without counting as a scroll. */
   function scheduleStoryFrame(): void {
@@ -1453,9 +1456,15 @@ async function main(): Promise<void> {
     }
 
     if (settled) {
-      // At rest: paint via the explore-mode color pipeline.
+      // At rest: paint via the explore-mode color pipeline, once per stop.
+      // Scrolling within a stop changes nothing on the map, and anything else
+      // that repaints replaces the layer, so it is painted again next frame.
       keepDriving(STORY_DRIVING);
-      applyOverlay();
+      if (colorLayer !== restingLayer || state.fromStop !== restingStop) {
+        applyOverlay();
+        restingLayer = colorLayer;
+        restingStop = state.fromStop;
+      }
     } else {
       keepDriving({ by: 'story', blend: { from: state.fromStop, to: state.toStop, t: state.t } });
       blendTransition();
