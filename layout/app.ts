@@ -9,27 +9,27 @@ export interface State {
   shown?: string[];
 }
 
-// The frame (index.html, src/styles/frame.css). The menu is left out of
-// `fixed`: on a desktop it drops over the column by design. Links in the
+// The frame (index.html, src/styles/frame.css). The menu and the ☰ are left
+// out of `fixed`: on a desktop both sit over the column by design. Links in the
 // story's prose and in the credits are running text, which touch-size rules
 // exempt.
 export const CHROME: Chrome = {
-  fixed: '#panel, #top-bar, #map-legend, #zoom-controls, #verse-popup.visible',
+  fixed: '#panel, #map-legend, #zoom-controls, #verse-popup.visible',
   map: '#canvas',
   panel: '#panel',
   interactive:
     '#panel button, #panel select, #panel input, ' +
     '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
-    '#top-bar button, #menu button, #map-legend button, ' +
+    '#menu-toggle, #menu button, #map-legend button, ' +
     '#verse-popup button, #verse-popup a, #zoom-controls button',
   text:
     '.map-legend-summary, .menu-title, .menu-item, .column-title, .panel-title, #panel label, ' +
     '.story-card-place, #verse-popup .ref-text',
 };
 
-/** Opens a menu item by whichever ☰ is showing: the column's, or the phone's corner one. */
+/** Opens a menu item through the ☰. */
 async function viaMenu(page: Page, action: string): Promise<void> {
-  await page.locator('.menu-button:visible').first().click();
+  await page.locator('#menu-toggle').click();
   await page.locator(`.menu-item[data-action="${action}"]:visible`).click();
 }
 
@@ -45,14 +45,14 @@ export const STATES: State[] = [
   {
     name: 'story-menu-down',
     hash: 'story=abraham_call',
-    then: (page) => page.locator('.menu-button:visible').first().click(),
+    then: (page) => page.locator('#menu-toggle').click(),
     shown: ['#menu', '#map-legend'],
   },
   { name: 'explore-link', hash: 'overlay=commentary', shown: ['#map-legend'] },
   {
     name: 'explore-menu-down',
     hash: 'overlay=commentary',
-    then: (page) => page.locator('.menu-button:visible').first().click(),
+    then: (page) => page.locator('#menu-toggle').click(),
     shown: ['#menu', '#map-legend'],
   },
   {

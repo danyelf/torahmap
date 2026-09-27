@@ -44,6 +44,19 @@
     </noscript>
     <canvas id="canvas" style="touch-action: none"></canvas>
 
+    <button
+      id="menu-toggle"
+      class="menu-button"
+      type="button"
+      aria-label="Menu"
+      aria-expanded="false"
+      aria-controls="menu"
+    >
+      ☰
+    </button>
+
+    <div id="menu" class="menu" hidden></div>
+
     <div id="zoom-controls">
       <button id="zoom-in" aria-label="Zoom in">+</button>
       <button id="zoom-out" aria-label="Zoom out">&minus;</button>
@@ -84,21 +97,6 @@
       </button>
     </div>
 
-    <header id="top-bar">
-      <button
-        id="top-menu"
-        class="menu-button"
-        type="button"
-        aria-label="Menu"
-        aria-expanded="false"
-        aria-controls="menu"
-      >
-        ☰
-      </button>
-    </header>
-
-    <div id="menu" class="menu" hidden></div>
-
     <aside id="panel">
       <button
         id="sheet-grabber"
@@ -108,16 +106,6 @@
 
       <section id="story" aria-label="Story">
         <div class="column-head">
-          <button
-            id="story-menu"
-            class="menu-button"
-            type="button"
-            aria-label="Menu"
-            aria-expanded="false"
-            aria-controls="menu"
-          >
-            ☰
-          </button>
           <div id="story-progress" role="progressbar" aria-label="Story progress" aria-valuemin="1">
             <div id="story-progress-fill"></div>
           </div>
@@ -130,16 +118,6 @@
 
       <section id="tools">
         <div class="column-head">
-          <button
-            id="tools-menu"
-            class="menu-button"
-            type="button"
-            aria-label="Menu"
-            aria-expanded="false"
-            aria-controls="menu"
-          >
-            ☰
-          </button>
           <h2 id="tools-title" class="column-title"></h2>
         </div>
         <div id="panel-body">

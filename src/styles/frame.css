@@ -52,7 +52,6 @@
   color: #fff;
 }
 
-#top-bar,
 #sheet-grabber {
   display: none;
 }
@@ -84,9 +83,20 @@ body[data-mode='explore'] #tools {
   gap: 10px;
   flex-shrink: 0;
   height: var(--column-head-height);
-  padding: var(--column-head-pad) 12px;
+  /* The ☰ sits over the start of the header, so its content begins after it. */
+  padding: var(--column-head-pad) 12px var(--column-head-pad) calc(12px + var(--tap) + 10px);
   box-sizing: border-box;
   border-bottom: 1px solid var(--line);
+}
+
+/* One ☰ for every mode and size: over the column's header on a desktop, in
+   the screen's corner on a phone. */
+#menu-toggle {
+  position: fixed;
+  top: var(--column-head-pad);
+  left: 12px;
+  z-index: 16;
+  font-family: system-ui, sans-serif;
 }
 
 .menu-button {
@@ -562,16 +572,9 @@ body[data-open='about'] #about-panel {
     display: block;
   }
 
-  #top-bar {
-    display: block;
-    position: fixed;
-    font-family: system-ui, sans-serif;
+  #menu-toggle {
     top: var(--corner);
     left: var(--corner);
-    z-index: 16;
-  }
-
-  #top-menu {
     background: #111;
   }
 

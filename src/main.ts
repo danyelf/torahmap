@@ -357,10 +357,8 @@ async function main(): Promise<void> {
 
   const panel = document.getElementById('panel')!;
   const droppedMenu = document.getElementById('menu')!;
-  const storyMenuButton = document.getElementById('story-menu')!;
   const storyProgress = document.getElementById('story-progress')!;
   const storyProgressFill = document.getElementById('story-progress-fill')!;
-  const toolsMenuButton = document.getElementById('tools-menu')!;
   const toolsTitle = document.getElementById('tools-title')!;
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
@@ -368,7 +366,7 @@ async function main(): Promise<void> {
   const mapLegend = document.getElementById('map-legend')!;
   const mapLegendSummary = mapLegend.querySelector<HTMLElement>('.map-legend-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
-  const topMenuButton = document.getElementById('top-menu')!;
+  const menuToggle = document.getElementById('menu-toggle')!;
 
   // What the panel shows (src/frame.ts); the story is open while its mode is 'story'.
   let frame: Frame = STORY;
@@ -411,9 +409,7 @@ async function main(): Promise<void> {
     body.toggleAttribute('data-full', frame.full);
     const focusInMenu = droppedMenu.contains(document.activeElement);
     droppedMenu.hidden = !frame.menu;
-    for (const button of [storyMenuButton, toolsMenuButton, topMenuButton]) {
-      button.setAttribute('aria-expanded', String(frame.menu));
-    }
+    menuToggle.setAttribute('aria-expanded', String(frame.menu));
     storyContent.inert = frame.menu;
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
@@ -431,7 +427,7 @@ async function main(): Promise<void> {
     }
     measureSheet();
     // Hidden, the menu would drop focus to the top of the page.
-    if (focusInMenu && !frame.menu) menuButton().focus();
+    if (focusInMenu && !frame.menu) menuToggle.focus();
   }
 
   // An exploring phone's sheet is as tall as its content, or gone with nothing
@@ -453,12 +449,6 @@ async function main(): Promise<void> {
   const sameFrame = (a: Frame, b: Frame): boolean =>
     a.mode === b.mode && a.open === b.open && a.menu === b.menu && a.full === b.full;
 
-  /** The ☰ on screen: the corner's on a phone, otherwise the column's. */
-  function menuButton(): HTMLElement {
-    if (phoneLayout.matches) return topMenuButton;
-    return frame.mode === 'story' ? storyMenuButton : toolsMenuButton;
-  }
-
   function setFrame(next: Frame): void {
     // Every touch on the map arrives here; most change nothing, and redrawing
     // an open panel mid-click would lose what was clicked.
@@ -477,8 +467,7 @@ async function main(): Promise<void> {
     }
     if (frame.mode === 'story' && next.mode === 'explore') leaveStory(next);
     setFrame(next);
-    // The menu is not next to its ☰ in the page's order, so Tab would not
-    // reach it; the ☰ hands focus over.
+    // Opened from the keyboard or not, the ☰ hands focus to the menu's first item.
     if (event.type === 'menu' && frame.menu) {
       droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
     }
@@ -1251,7 +1240,7 @@ async function main(): Promise<void> {
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
   }
-  for (const id of ['panel', 'top-bar', 'menu', 'map-legend']) {
+  for (const id of ['panel', 'menu-toggle', 'menu', 'map-legend']) {
     document.getElementById(id)!.addEventListener('click', onChromeClick);
   }
 
