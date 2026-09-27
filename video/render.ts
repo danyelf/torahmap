@@ -225,9 +225,12 @@ function startEncoder(file: string, rate: number, factor: number) {
       ffmpeg.stdin.end();
       await done;
     },
+    // On SIGTERM ffmpeg finishes the file, waiting on an input that never
+    // closes, so the pipe is shut and the process killed outright.
     abort: () => {
       done.catch(() => {});
-      ffmpeg.kill();
+      ffmpeg.stdin.destroy();
+      ffmpeg.kill('SIGKILL');
     },
   };
 }
