@@ -5,7 +5,7 @@ import { parseVerseFromUrl } from '../urlState';
 import { parseStoryMarkdown } from './storyParser';
 import { getBookSection } from '../constants/books';
 import { SECTION_LABEL_REACH } from '../labels';
-import { cameraToFit, panToFocus, type ScreenPoint, type WorldBox } from '../camera';
+import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera';
 
 function isVerseRef(cam: CameraRef): cam is { kind: 'verse'; ref: string } {
   return typeof cam === 'object' && 'kind' in cam && cam.kind === 'verse';
@@ -80,9 +80,14 @@ export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HT
   return stopElements;
 }
 
-/** A point on the map, in CSS pixels, where the story puts the verse it names. */
-function cameraForVerse(verse: TanakhLayout, zoom: number, focus: ScreenPoint): CameraPosition {
-  return { ...panToFocus(verse, zoom, focus), zoom };
+/** The camera that puts a verse at `focus`. */
+function cameraForVerse(
+  verse: TanakhLayout,
+  zoom: number,
+  focus: ScreenPoint,
+  mapSize: MapSize,
+): CameraPosition {
+  return { ...centreForFocus(verse, zoom, focus, mapSize), zoom };
 }
 
 const SECTIONS: Record<string, Book['section']> = {
@@ -147,18 +152,18 @@ export function resolveStops(
       const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
       const verseLayout = parsed && verses && focus ? findTanakhItem(verses, parsed) : null;
-      if (verseLayout && focus) {
-        camera = cameraForVerse(verseLayout, zoom, focus);
+      if (verseLayout && focus && mapSize) {
+        camera = cameraForVerse(verseLayout, zoom, focus, mapSize);
       } else {
         camera = { ...initialCamera };
       }
     } else if (cam !== 'initial') {
       camera = cam;
-    } else if (stop.verse && verses && focus) {
+    } else if (stop.verse && verses && focus && mapSize) {
       const parsed = parseVerseFromUrl(stop.verse);
       const verseLayout = parsed ? findTanakhItem(verses, parsed) : null;
       if (verseLayout) {
-        camera = cameraForVerse(verseLayout, initialCamera.zoom, focus);
+        camera = cameraForVerse(verseLayout, initialCamera.zoom, focus, mapSize);
       } else {
         camera = { ...initialCamera };
       }
