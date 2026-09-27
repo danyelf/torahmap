@@ -150,7 +150,7 @@ import {
   type ExitHow,
   type ReturnHow,
 } from './telemetry/driverChange.ts';
-import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
+import type { InterpolatedState, ResolvedStoryStop, StoryData } from './scrollytelling/types';
 import { summaryHtml } from './panelSummary.ts';
 import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
 import './styles/map-title.css';
@@ -384,7 +384,10 @@ async function main(): Promise<void> {
 
   /** Opens or closes the story; closing it lands on `exploring`. */
   function setStoryOpen(open: boolean, exploring = exploreFrame(phoneLayout.matches)): void {
-    if (!open && frame.mode === 'story') heldStop = storyStopIndex();
+    if (!open && frame.mode === 'story') {
+      heldStop = storyStopIndex();
+      places.set(storyId, heldStop);
+    }
     const previous = frame;
     if (open) frame = STORY;
     else if (frame.mode === 'story') frame = exploring;
@@ -1134,8 +1137,16 @@ async function main(): Promise<void> {
   }
 
   const listed = listedStories(await loadStoryIndex(), location.hostname);
-  const storyId = storyToOpen(listed, parseUrlState().story ?? null);
-  let storyData = await loadStoryData(storyId);
+  const storyCache = new Map<string, Promise<StoryData>>();
+  const story = (id: string): Promise<StoryData> => {
+    if (!storyCache.has(id)) storyCache.set(id, loadStoryData(id));
+    return storyCache.get(id)!;
+  };
+  // The stop each story was left at, for this visit.
+  const places = new Map<string, number>();
+
+  let storyId = storyToOpen(listed, parseUrlState().story ?? null);
+  let storyData = await story(storyId);
   const resolveStory = (): ResolvedStoryStop[] =>
     resolveStops(storyData.stops, initialCamera, verses, mapFocus(), {
       width: canvas.clientWidth,
@@ -1161,9 +1172,22 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   });
 
+  /** Makes `id` the current story, remembering where the one it replaces was left. */
+  async function switchStory(id: string): Promise<void> {
+    if (id === storyId) return;
+    places.set(storyId, storyStopIndex());
+    const next = await story(id);
+    storyId = id;
+    storyData = next;
+    resolvedStops = resolveStory();
+    stopElements = renderStoryPanel(storyContent, storyData.stops);
+    lastSyncedStopId = null;
+  }
+
   async function reloadStory(): Promise<void> {
     const position = storyPosition();
-    storyData = await loadStoryData(storyId);
+    storyCache.delete(storyId);
+    storyData = await story(storyId);
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, storyData.stops);
     setStoryPosition(position);
@@ -1176,6 +1200,7 @@ async function main(): Promise<void> {
   if (import.meta.hot) {
     import.meta.hot.on('story-update', ({ id }: { id: string }) => {
       if (id === storyId) reloadStory();
+      else storyCache.delete(id);
     });
   }
 
@@ -1228,6 +1253,13 @@ async function main(): Promise<void> {
     syncUrl(true);
   }
 
+  /** Opens a story from the Stories panel: where it was left this visit, or its start. */
+  async function readStory(id: string, fromStart: boolean): Promise<void> {
+    const left = id === storyId ? storyStopIndex() : (places.get(id) ?? 0);
+    await switchStory(id);
+    readerOpensStory(fromStart ? 0 : left);
+  }
+
   // Delegated: the menus and panels are redrawn as they open.
   function onChromeClick(e: MouseEvent): void {
     const target = e.target as Element;
@@ -1236,6 +1268,11 @@ async function main(): Promise<void> {
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
     if (action === 'story') return dispatch({ type: 'story' });
     if (action === 'restart') return readerOpensStory(0);
+    if (action === 'open-story') {
+      const button = target.closest<HTMLElement>('[data-action]')!;
+      const card = button.closest<HTMLElement>('[data-story]')!;
+      return void readStory(card.dataset.story!, button.dataset.from === 'start');
+    }
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
     const chooser = target.closest<HTMLElement>('.map-legend-row');
@@ -1440,12 +1477,13 @@ async function main(): Promise<void> {
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  function restoreFromUrl(): void {
+  async function restoreFromUrl(): Promise<void> {
     const next = resolveViewState(
       parseUrlState((id) => getOverlay(id)?.urlParams),
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
+    if (next.mode === 'story') await switchStory(storyToOpen(listed, next.story));
     applyingExternalState(() => applyViewState(next));
     // The link moved the camera, not the reader.
     markViewSettled();
@@ -1483,7 +1521,7 @@ async function main(): Promise<void> {
   }
 
   if (window.location.hash) {
-    restoreFromUrl();
+    await restoreFromUrl();
   }
 
   // A link to a story stop always opens the story.
