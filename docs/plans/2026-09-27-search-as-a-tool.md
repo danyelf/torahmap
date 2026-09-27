@@ -144,6 +144,7 @@ Each piece can be checked on its own before the next depends on it.
 
 ## Still to settle by eye
 
-- How much non-matching verses dim.
+- How much non-matching verses dim under an overlay: settled at 0.45, where 0.85
+  lost Isaac's orange among Haftarah's stripes.
 - The ring itself: its widths and fall-back size, starting at 1.5px out and
   1px in, and its design, which the prototype may change.

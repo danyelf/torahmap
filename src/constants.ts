@@ -46,10 +46,11 @@ export const HIGHLIGHT_CONSTANTS = {
   RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
 } as const;
 
-/** How a search shows over an overlay. Starting values, to be settled by eye on the map. */
+/** How a search shows over an overlay, judged by eye on the map. */
 export const SEARCH_WITH_OVERLAY = {
-  // What a verse the search does not match keeps of its overlay colour
-  NON_MATCH_DIM: 0.85,
+  // What a verse the search does not match keeps of its overlay colour; above
+  // about half, a warm search colour is lost among Haftarah's stripes
+  NON_MATCH_DIM: 0.45,
   // The ring around a match, in CSS pixels, outside the square and inside it
   RING_OUTSIDE_PX: 1.5,
   RING_INSIDE_PX: 1,
