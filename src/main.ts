@@ -349,8 +349,7 @@ async function main(): Promise<void> {
   /**
    * Move the front tool to `next`, cross-fading the map over
    * FRONT_FADE.DURATION_MS through the renderer's own picture blend — the one
-   * a story ease uses — rather than a separate animation path. Snaps with
-   * only one tool on, or under reduced motion.
+   * a story ease uses. Snaps with only one tool on, or under reduced motion.
    */
   function setFrontTool(next: FrontTool): void {
     if (next === frontTool) return;
@@ -362,8 +361,6 @@ async function main(): Promise<void> {
       return;
     }
     cancelFrontFade();
-    // Both pictures are built once; the shader blends between them every
-    // frame, so nothing here needs recomputing as the fade runs.
     // flatten collapses a fade already in progress to where it is, as a story
     // ease starting mid-blend does (beginEase).
     const from = flatten(withDefaults(colorLayer));
@@ -375,7 +372,10 @@ async function main(): Promise<void> {
       const raw = Math.min(1, (now - since) / FRONT_FADE.DURATION_MS);
       frontFadeFrame = null;
       if (raw >= 1) {
-        setColorLayer(still(to));
+        // The snap picture, not `to`: fillDefaultColors filled the holes a
+        // real overlay leaves for an uncoloured match, which would hover
+        // wrong (computeItemStates reads null there) until the next repaint.
+        applyTools();
       } else {
         setColorLayer({ from, to, t: easingFunctions['ease-in-out'](raw) });
         frontFadeFrame = requestAnimationFrame(step);
@@ -624,7 +624,7 @@ async function main(): Promise<void> {
   // Every change of driver goes through here, by way of handOver or keepDriving.
   function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
     // The story taking the map back mid-fade would otherwise still get the
-    // fade's later steps, painting a stale explore picture over its own.
+    // fade's later frames, painting a stale explore picture over its own.
     if (next.by !== 'reader') cancelFrontFade();
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
@@ -1465,11 +1465,7 @@ async function main(): Promise<void> {
     );
   }
 
-  /**
-   * The driver that eases the map over `duration` from what is on screen,
-   * which may be partway through an earlier ease, to where the story is. The
-   * caller hands it over or keeps driving with it.
-   */
+  /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
   function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
     return {
       from: fillDefaultColors(layer.from),
@@ -1478,6 +1474,11 @@ async function main(): Promise<void> {
     };
   }
 
+  /**
+   * The driver that eases the map over `duration` from what is on screen,
+   * which may be partway through an earlier ease, to where the story is. The
+   * caller hands it over or keeps driving with it.
+   */
   function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
     const state = currentStoryState();

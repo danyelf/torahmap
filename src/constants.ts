@@ -60,7 +60,7 @@ export const SEARCH_WITH_OVERLAY = {
   RING_MIN_SQUARE_PX: 8,
 } as const;
 
-/** How long the dimming takes to ease when the tool in front switches, rather than snapping. */
+/** How long the map takes to cross-fade when the tool in front switches. */
 export const FRONT_FADE = {
   DURATION_MS: 250,
 } as const;
