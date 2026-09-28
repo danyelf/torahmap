@@ -53,8 +53,7 @@ the popup go to it; the search is its context.
 | Nothing, or only a camera | Torahmap | A Visual Concordance of the Hebrew Bible. |
 
 "A Visual Concordance of the Hebrew Bible" also replaces the description in
-`index.html`. The verse's own words in the description are a follow-up; they
-need the verse texts in the Worker.
+`index.html`. The description never quotes the verse.
 
 ## Packages
 
