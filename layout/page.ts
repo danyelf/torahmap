@@ -24,16 +24,16 @@ export async function mapReady(page: Page): Promise<void> {
 }
 
 /**
- * Loads the map at `hash` and waits until it has settled and drawn. Returns the page's uncaught errors and console errors, which keep arriving,
+ * Loads the map at `link` and waits until it has settled and drawn. Returns the page's uncaught errors and console errors, which keep arriving,
  * so check them again after acting on the page.
  */
-export async function openMap(page: Page, hash: string): Promise<string[]> {
+export async function openMap(page: Page, link: string): Promise<string[]> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(`console: ${m.text()}`);
   });
-  await page.goto(hash ? `/#${hash}` : '/');
+  await page.goto(link ? `/?${link}` : '/');
   await mapReady(page);
   await expect
     .poll(async () => drawnPixels(page), { timeout: 15_000 })

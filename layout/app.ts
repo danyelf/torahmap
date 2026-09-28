@@ -3,7 +3,7 @@ import type { Chrome } from './check.ts';
 
 export interface State {
   name: string;
-  hash: string;
+  link: string;
   then?: (page: Page) => Promise<void>;
   /** Elements that must show in full, so a selector that stops matching fails rather than measuring nothing. */
   shown?: string[];
@@ -39,19 +39,19 @@ const ABRAHAM = encodeURIComponent('אברם,אברהם');
 const BOTH_ROWS = ['.map-legend-row[data-panel="search"]', '.map-legend-row[data-panel="overlay"]'];
 
 export const STATES: State[] = [
-  { name: 'story-opening', hash: 'story=tour&stop=intro', shown: [stop('intro')] },
+  { name: 'story-opening', link: 'story=tour&stop=intro', shown: [stop('intro')] },
   {
     name: 'story-stop-with-verse',
-    hash: 'story=tour&stop=abraham_call',
+    link: 'story=tour&stop=abraham_call',
     shown: ['#map-legend', stop('abraham_call')],
   },
   {
     name: 'story-menu-down',
-    hash: 'story=tour&stop=abraham_call',
+    link: 'story=tour&stop=abraham_call',
     then: (page) => page.locator('#menu-toggle').click(),
     shown: ['#menu', '#map-legend'],
   },
-  { name: 'explore-link', hash: 'overlay=commentary', shown: ['#map-legend'] },
+  { name: 'explore-link', link: 'overlay=commentary', shown: ['#map-legend'] },
   {
     name: 'story-closed',
     hash: 'story=tour&stop=intro',
@@ -60,42 +60,42 @@ export const STATES: State[] = [
   },
   {
     name: 'explore-panel-closed',
-    hash: 'overlay=commentary',
+    link: 'overlay=commentary',
     then: (page) => page.keyboard.press('Escape'),
     shown: ['#menu-toggle', '#map-legend'],
   },
   {
     name: 'explore-menu-down',
-    hash: 'overlay=commentary',
+    link: 'overlay=commentary',
     then: (page) => page.locator('#menu-toggle').click(),
     shown: ['#menu', '#map-legend'],
   },
   {
     name: 'explore-overlay-open',
-    hash: 'overlay=commentary',
+    link: 'overlay=commentary',
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select', '#map-legend'],
   },
   {
     name: 'explore-haftarah',
-    hash: 'overlay=haftarah',
+    link: 'overlay=haftarah',
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select'],
   },
   {
     name: 'explore-search',
-    hash: `search=${encodeURIComponent('אברהם')}`,
+    link: `search=${encodeURIComponent('אברהם')}`,
     then: (page) => viaMenu(page, 'search'),
     shown: ['#search-input', '#search-clear-all'],
   },
   {
     name: 'explore-search-and-overlay',
-    hash: `search=${ABRAHAM}&overlay=haftarah`,
+    link: `search=${ABRAHAM}&overlay=haftarah`,
     shown: BOTH_ROWS,
   },
   {
     name: 'explore-search-overlay-switched',
-    hash: `search=${ABRAHAM}&overlay=haftarah`,
+    link: `search=${ABRAHAM}&overlay=haftarah`,
     then: async (page) => {
       await viaMenu(page, 'overlay');
       await page.locator('#overlay-select').selectOption('commentary');
@@ -104,34 +104,34 @@ export const STATES: State[] = [
   },
   {
     name: 'explore-search-and-overlay-pinned',
-    hash: `search=${ABRAHAM}&overlay=commentary&verse=Genesis.17.5`,
+    link: `search=${ABRAHAM}&overlay=commentary&verse=Genesis.17.5`,
     shown: ['#verse-popup', ...BOTH_ROWS],
   },
   {
     name: 'explore-verse-pinned',
-    hash: 'overlay=commentary&verse=Genesis.12.1',
+    link: 'overlay=commentary&verse=Genesis.12.1',
     shown: ['#verse-popup', '#map-legend'],
   },
   {
     name: 'stories-panel',
-    hash: 'overlay=commentary',
+    link: 'overlay=commentary',
     then: (page) => viaMenu(page, 'stories'),
     shown: ['.story-card[data-story="tour"]'],
   },
   {
     // On a phone the sheet holds about one card; the rest scroll into it.
     name: 'stories-panel-scrolled',
-    hash: 'overlay=commentary',
+    link: 'overlay=commentary',
     then: async (page) => {
       await viaMenu(page, 'stories');
       await page.locator('.story-card[data-story="sample"]').scrollIntoViewIfNeeded();
     },
     shown: ['.story-card[data-story="sample"]'],
   },
-  { name: 'story-sample', hash: 'story=sample&stop=book', shown: [stop('book')] },
+  { name: 'story-sample', link: 'story=sample&stop=book', shown: [stop('book')] },
   {
     name: 'about-panel',
-    hash: 'overlay=commentary',
+    link: 'overlay=commentary',
     then: (page) => viaMenu(page, 'about'),
     shown: ['#hebrew-toggle'],
   },

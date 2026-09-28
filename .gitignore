@@ -30,3 +30,6 @@ data-transient/
 test-results/
 layout-report/
 playwright-report/
+
+# Written from packages/stories/markdown/ by packages/stories/generate.mjs
+packages/stories/src/generated.ts

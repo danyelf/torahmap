@@ -5,6 +5,7 @@ import type { VerseTexts } from '../verseTexts.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
+import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
 const PLASMA_STOPS: ColorStop[] = [
@@ -80,11 +81,7 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
 }
 
 export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
-  id: 'verse-length',
-  name: 'Verse Length',
-  description:
-    'Shades each verse by how many Hebrew words it has, the shortest dark and the ' +
-    'longest bright.',
+  ...VERSE_LENGTH,
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);

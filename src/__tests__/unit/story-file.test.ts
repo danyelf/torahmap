@@ -4,12 +4,13 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseStoryMarkdown, STORY_HEADER_KEYS } from '../../scrollytelling/storyParser';
+import { parseStoryMarkdown, STORY_HEADER_KEYS, STORY_MARKDOWN } from '@torahmap/stories';
 import { easingFunctions } from '../../scrollytelling/interpolation';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
-import { buildUrlHash, parseUrlState, parseVerseFromUrl } from '../../urlState';
+import { writeLink, parseVerseFromUrl } from '@torahmap/link';
+import { parseUrlState } from '../../urlState';
 import { isSearching, searchFromLink } from '../../overlays/search/index';
-import { STORY_MARKDOWN } from '../../stories/index';
+import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
@@ -29,7 +30,7 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   );
 
   it('has an id a link can carry', () => {
-    window.location.hash = buildUrlHash({ story: id, overlayParams: {} });
+    setLink(writeLink({ story: id, overlayParams: {} }));
     expect(parseUrlState().story).toBe(id);
   });
 

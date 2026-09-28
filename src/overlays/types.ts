@@ -1,8 +1,8 @@
 import type { TanakhIdentity, TextLanguage } from '../types.ts';
-import type { UrlParamSpec, UrlParamValues } from '../urlState.ts';
+import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 
-export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '../urlState.ts';
+export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '@torahmap/link';
 export type { Credit } from '../credits.ts';
 
 export type Color = [number, number, number];
@@ -37,8 +37,8 @@ interface OverlayWithSettings<S> {
   // The settings an overlay starts with, before the reader or a link says otherwise.
   defaultSettings(): S;
 
-  // Settings to and from a shareable link. urlState.ts reads and validates the
-  // link against urlParams without knowing what the values mean, so
+  // Settings to and from a shareable link. @torahmap/link reads and validates
+  // the link against urlParams without knowing what the values mean, so
   // settingsFromUrl receives only declared keys, with declared defaults filled
   // in. settingsToUrl leaves out any value at its default.
   urlParams: readonly UrlParamSpec[];

@@ -42,15 +42,9 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import {
-  parseUrlState,
-  parseVerseFromUrl,
-  updateUrl,
-  subscribeToHashChange,
-  applyingExternalState,
-  verseToUrlFormat,
-  type UrlState,
-} from './urlState.ts';
+import { parseVerseFromUrl, verseToUrlFormat, linkNamesAView, type UrlState } from '@torahmap/link';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
@@ -132,7 +126,7 @@ import {
 import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
 import { listedStories, storyToOpen, type Story } from './scrollytelling/storyIndex';
-import { STORIES } from './stories/index.ts';
+import { STORIES } from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
@@ -1338,9 +1332,9 @@ async function main(): Promise<void> {
 
   // An edited story reloads in place on the dev server, keeping the reader's scroll.
   if (import.meta.hot) {
-    import.meta.hot.accept('./stories/index.ts', (module) => {
+    import.meta.hot.accept('@torahmap/stories', (module) => {
       if (!module) return;
-      listed = listedStories(module.STORIES as Story[], __SHOW_DRAFTS__);
+      listed = listedStories(module.STORIES, __SHOW_DRAFTS__);
       reloadStory();
     });
   }
@@ -1651,9 +1645,9 @@ async function main(): Promise<void> {
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  function restoreFromUrl(): void {
+  function restoreFromUrl(link: UrlState): void {
     const next = resolveViewState(
-      parseUrlState((id) => getOverlay(id)?.urlParams),
+      link,
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
@@ -1673,7 +1667,7 @@ async function main(): Promise<void> {
       const open = next.searchParams.search ? 'search' : 'overlay';
       // Only for a story exit: a phone opens with no panel shown, so
       // applyFrame's own tracking of the open panel can't see it land here.
-      // Any other hash change (Back/Forward while already exploring) must
+      // Any other link change (Back/Forward while already exploring) must
       // leave frontTool at whatever the reader last chose from the legend.
       if (frame.mode === 'story') frontTool = open;
       setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
@@ -1702,8 +1696,9 @@ async function main(): Promise<void> {
     }
   }
 
-  if (window.location.hash) {
-    restoreFromUrl();
+  const link = parseUrlState(overlayParamSpecs);
+  if (linkNamesAView(link)) {
+    restoreFromUrl(link);
   }
 
   // A link to a story stop always opens the story.
@@ -1723,8 +1718,8 @@ async function main(): Promise<void> {
   recordingDriver = true;
   markViewSettled();
 
-  subscribeToHashChange(() => {
-    restoreFromUrl();
+  subscribeToHistory(() => {
+    restoreFromUrl(parseUrlState(overlayParamSpecs));
   });
 
   scheduleStoryFrame();

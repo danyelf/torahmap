@@ -4,11 +4,14 @@
   "license": "MIT",
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "prepare": "sh scripts/install-hooks.sh --warn-only",
     "dev": "vite",
     "harness": "vite --open /test-harness/",
-    "build": "tsc --project tsconfig.build.json && vite build",
+    "build": "node packages/stories/generate.mjs && tsc --project tsconfig.build.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -16,7 +19,7 @@
     "test:layout": "playwright test -c layout",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --project tsconfig.build.json --noEmit && tsc --project layout/tsconfig.json --noEmit",
+    "typecheck": "node packages/stories/generate.mjs && tsc --project tsconfig.build.json --noEmit && tsc --project layout/tsconfig.json --noEmit",
     "test:ci": "npm run typecheck && npm run test",
     "validate:haftarah": "npx tsx scripts/overlays/haftarah/generate.ts",
     "generate:text-dating": "npx tsx scripts/generate-text-dating.ts",
@@ -31,5 +34,10 @@
     "typescript": "^7.0.2",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "@torahmap/link": "*",
+    "@torahmap/overlay-catalog": "*",
+    "@torahmap/stories": "*"
   }
 }

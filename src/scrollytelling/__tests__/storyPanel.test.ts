@@ -4,7 +4,7 @@ import { initBookData } from '../../constants/books';
 import { cameraToFit } from '../../camera';
 import { SECTION_LABEL_REACH } from '../../labels';
 import type { TanakhLayout } from '../../types';
-import type { StoryStop } from '../types';
+import type { StoryStop } from '@torahmap/stories';
 
 function stop(fields: Partial<StoryStop> = {}): StoryStop {
   return { id: 's', text: 'Text.', camera: 'initial', overlay: null, ...fields };

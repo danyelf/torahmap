@@ -4,7 +4,7 @@
 // verses carry them is in src/trop.ts.
 
 import '../styles/overlays/trop.css';
-import type { Overlay, Color, UrlParamSpec, UrlParamValues, SettingsUpdate } from './types.ts';
+import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry, TextLanguage } from '../types.ts';
 import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
@@ -15,10 +15,10 @@ import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { scaleToGradient, buildLegendGradient, interpolateGradient } from '../utils/color.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { legendRow } from './legend.ts';
+import { TROP } from '@torahmap/overlay-catalog';
 
 let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
-const URL_PARAMS = [{ key: 'trop', kind: 'token' }] as const satisfies readonly UrlParamSpec[];
 
 /**
  * The mark clicked, and the mark the pointer is over in the chart, each named
@@ -206,11 +206,7 @@ function renderTropChart(
 }
 
 export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
-  id: 'trop',
-  name: 'Trop',
-  description:
-    'The cantillation marks that say how the Hebrew is chanted, and where in the text ' +
-    'they punctuate. Pick a mark to see which verses carry it, and how often.',
+  ...TROP,
 
   destroy() {
     lastDerivation = null;
@@ -229,13 +225,11 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
     return { mark: null, preview: null };
   },
 
-  urlParams: URL_PARAMS,
-
-  settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): TropSettings {
+  settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {
     return { mark: params.trop ?? null, preview: null };
   },
 
-  settingsToUrl(settings): Record<string, string> {
+  settingsToUrl(settings: TropSettings): Record<string, string> {
     return settings.mark ? { trop: settings.mark } : {};
   },
 

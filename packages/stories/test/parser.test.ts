@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseStoryMarkdown } from '../storyParser';
+import { parseStoryMarkdown } from '../src/parser';
 
 describe('parseStoryMarkdown', () => {
   it('parses the frontmatter easing', () => {

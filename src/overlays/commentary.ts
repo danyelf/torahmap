@@ -1,10 +1,11 @@
-import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
+import type { Overlay, Color, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout, CommentaryData } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, renderAxis } from './legend.ts';
 import { loadJson } from './loadJson.ts';
 import { CONTROL } from '../panel.ts';
+import { COMMENTARY } from '@torahmap/overlay-catalog';
 
 const HEATMAP_STOPS: ColorStop[] = [
   { t: 0, color: [0.1, 0.13, 0.18] },
@@ -16,10 +17,6 @@ const HEATMAP_STOPS: ColorStop[] = [
 
 /** A verse nothing has been written about. */
 const NO_LINKS: Color = [0.15, 0.15, 0.2];
-
-const URL_PARAMS = [
-  { key: 'category', kind: 'category', default: 'total' },
-] as const satisfies readonly UrlParamSpec[];
 
 /** How each category reads after "42 references in …". */
 const WHERE: Record<string, string> = {
@@ -82,12 +79,7 @@ function commentaryColorAt(verse: TanakhIdentity, category: string): Color | nul
 }
 
 export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
-  id: 'commentary',
-  name: 'Commentary',
-  description:
-    'Shades each verse by how much has been written about it: the brighter the verse, ' +
-    'the more commentary Sefaria records on it. Choose a kind of commentary to count ' +
-    'only that one.',
+  ...COMMENTARY,
   credits: [
     {
       source: 'Sefaria link exports',
@@ -124,13 +116,11 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
     return { category: 'total' };
   },
 
-  urlParams: URL_PARAMS,
-
-  settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): CommentarySettings {
+  settingsFromUrl(params: UrlParamValues<typeof COMMENTARY.urlParams>): CommentarySettings {
     return { category: params.category ?? 'total' };
   },
 
-  settingsToUrl(settings): Record<string, string> {
+  settingsToUrl(settings: CommentarySettings): Record<string, string> {
     // "total" is the default, so it stays out of the URL.
     if (settings.category === 'total') return {};
     return { category: settings.category };

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import { execSync } from 'child_process';
 import { resolve } from 'path';
+import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -16,6 +17,7 @@ function getGitBranch(): string {
 }
 
 export default defineConfig(({ command }) => ({
+  plugins: [storiesPlugin()],
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
     // Draft stories show on the dev server and on every branch's preview; the
