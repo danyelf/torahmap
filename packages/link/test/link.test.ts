@@ -8,25 +8,8 @@ import {
   validateOverlayParams,
   type UrlState,
   type UrlParamSpec,
-  type OverlayParamSpecLookup,
 } from '../src/index.ts';
-
-// Stand-ins for the real overlays' declarations (commentary, trop, haftarah),
-// which this package cannot import.
-const lookup: OverlayParamSpecLookup = (id) => {
-  switch (id) {
-    case 'commentary':
-      return [{ key: 'category', kind: 'category', default: 'total' }];
-    case 'trop':
-      return [{ key: 'trop', kind: 'token' }];
-    case 'haftarah':
-      return [
-        { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'], default: 'ashkenazi' },
-      ];
-    default:
-      return undefined;
-  }
-};
+import { overlayParamSpecs as lookup } from '@torahmap/overlay-catalog';
 
 describe('readLink', () => {
   it('parses empty query to minimal state', () => {
@@ -580,8 +563,8 @@ describe('verseToUrlFormat and parseVerseFromUrl roundtrip', () => {
   });
 });
 
-describe('backward compatibility', () => {
-  it('ignores a bare fragment that names no parameter', () => {
+describe('sparse and malformed queries', () => {
+  it('ignores a bare word that names no parameter', () => {
     const state = readLink('?commentary', lookup);
     // Should parse as empty since it's not a valid param
     expect(state).toEqual({ overlayParams: {} });
@@ -593,7 +576,7 @@ describe('backward compatibility', () => {
     expect(state.overlay).toBeUndefined();
   });
 
-  it('gracefully handles malformed zoom values from old links', () => {
+  it('reads a malformed zoom by its leading number', () => {
     const state = readLink('?zoom=2.5x', lookup);
     // parseFloat('2.5x') returns 2.5, which is valid
     expect(state.zoom).toBe(2.5);

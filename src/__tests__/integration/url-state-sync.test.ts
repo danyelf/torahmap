@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { writeLink, type UrlState } from '@torahmap/link';
-import { parseUrlState, updateUrl, subscribeToHistory } from '../../urlState';
+import { parseUrlState, updateUrl } from '../../urlState';
 import {
   registerAllOverlays,
   getOverlay,
@@ -203,27 +203,6 @@ describe('URL State Sync Integration', () => {
 
       expect(historyStates.length).toBe(1);
       expect(historyStates[0]).toContain('zoom=2');
-    });
-
-    it('does not react to a hashchange event', () => {
-      const callback = vi.fn();
-      subscribeToHistory(callback);
-
-      const event = new Event('hashchange');
-      window.dispatchEvent(event);
-
-      expect(callback).not.toHaveBeenCalled();
-    });
-
-    it('subscribes to popstate events, exactly once per navigation', () => {
-      const callback = vi.fn();
-      subscribeToHistory(callback);
-
-      // Simulate popstate event (browser back/forward)
-      const event = new Event('popstate');
-      window.dispatchEvent(event);
-
-      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 

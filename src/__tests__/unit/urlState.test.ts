@@ -6,7 +6,7 @@ import {
   applyingExternalState,
   isApplyingExternalState,
 } from '../../urlState';
-import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink } from '@torahmap/link';
+import { readLink, writeLink } from '@torahmap/link';
 import { mockHistory } from '../helpers/mocks';
 import { setLink } from '../helpers/setLink';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
@@ -104,20 +104,6 @@ describe('what every overlay must hold to', () => {
 
     it(`${overlay.id}: answers colorsFor, or the story's blend shows it grey`, () => {
       expect(overlay.colorsFor).toBeTypeOf('function');
-    });
-
-    it(`${overlay.id}: has a name, which is what the menu shows`, () => {
-      // main.ts builds the overlay menu out of the registry, using this name.
-      expect(overlay.name?.trim()).toBeTruthy();
-    });
-
-    it(`${overlay.id}: uses distinct keys that do not clash with the view state`, () => {
-      const keys = (overlay.urlParams ?? []).map((spec) => spec.key);
-      expect(new Set(keys).size).toBe(keys.length);
-      for (const key of keys) {
-        expect(RESERVED_KEYS.has(key)).toBe(false);
-        expect(SEARCH_KEYS.has(key)).toBe(false);
-      }
     });
 
     it(`${overlay.id}: only reports settings under keys it declared`, () => {

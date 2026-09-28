@@ -1,10 +1,6 @@
-import type { StoryData } from '@torahmap/stories';
+import type { Story } from '@torahmap/stories';
 
-/** A story and the file name, without `.md`, that the URL calls it by. */
-export interface Story {
-  id: string;
-  data: StoryData;
-}
+export type { Story };
 
 /**
  * The stories to offer, in menu order: by `order`, lowest first, then those

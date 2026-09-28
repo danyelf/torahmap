@@ -6,7 +6,7 @@ import { haftarahOverlay } from './haftarah.ts';
 import { verseLengthOverlay } from './verse-length.ts';
 import { OVERLAYS, type OverlayId } from '@torahmap/overlay-catalog';
 
-export type { Overlay, Color, UrlParamSpec, UrlParamKind, UrlParamValues } from './types.ts';
+export type { Overlay, Color } from './types.ts';
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { createOverlaySettings, settingsFromLink } from './settings.ts';
 export { configure as configureCommentary } from './commentary.ts';

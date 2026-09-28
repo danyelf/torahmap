@@ -21,8 +21,10 @@ describe('the overlay catalog', () => {
     expect(overlayParamSpecs('nope')).toBeUndefined();
   });
 
-  it.each(ALL)('$id claims no key that belongs to the link or the search', (entry) => {
-    for (const { key } of entry.urlParams ?? []) {
+  it.each(ALL)('$id claims distinct keys, none belonging to the link or the search', (entry) => {
+    const keys = (entry.urlParams ?? []).map((spec) => spec.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const key of keys) {
       expect(SEARCH_KEYS.has(key) || RESERVED_KEYS.has(key)).toBe(false);
     }
   });
