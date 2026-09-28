@@ -19,6 +19,7 @@ export function menuHtml(place: StoryPlace & { title: string }): string {
   return [
     '<h2 class="menu-title">Torahmap</h2>',
     item(CONTINUE_STORY, `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
+    item('search', 'Search'),
     item('overlay', 'Overlays'),
     item('stories', 'Stories'),
     item('about', 'About &amp; settings'),

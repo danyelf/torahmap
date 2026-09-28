@@ -1,11 +1,12 @@
 // Sidebar management for verse details display
 
-import type { TanakhLayout } from './types.ts';
+import type { TanakhLayout, TextLanguage } from './types.ts';
 import { tanakhKey } from './types.ts';
-import type { Overlay } from './overlays/types.ts';
+import type { Overlay, ToolOnMap } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
 import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
+import { combineMarks } from './verseMarks.ts';
 
 /** A click on a word in the verse popup's Hebrew text. */
 export interface WordClick {
@@ -25,6 +26,13 @@ function textFragment(text: string): DocumentFragment {
   const fragment = document.createDocumentFragment();
   fragment.appendChild(document.createTextNode(text));
   return fragment;
+}
+
+function infoLine(line: HTMLElement | string): HTMLElement {
+  if (typeof line !== 'string') return line;
+  const div = document.createElement('div');
+  div.textContent = line;
+  return div;
 }
 
 let wordClickHandler: ((click: WordClick) => void) | null = null;
@@ -126,6 +134,7 @@ export function updateSidebar(
     verse: number,
   ) => VerseText | null,
   isPinned: boolean = false,
+  search: ToolOnMap | null = null,
 ): void {
   const { sidebar, ref, overlayInfo, hebrew, english, link } = elements;
 
@@ -143,13 +152,21 @@ export function updateSidebar(
     ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
   }
   if (overlayInfo) {
-    const sidebarInfo = currentOverlay?.renderSidebarInfo?.(verse, isPinned, overlaySettings);
-    if (sidebarInfo) {
-      overlayInfo.replaceChildren(sidebarInfo);
-    } else {
-      overlayInfo.textContent = currentOverlay?.getHoverInfo?.(verse, overlaySettings) || '';
-    }
+    const lines = [
+      currentOverlay?.renderSidebarInfo?.(verse, isPinned, overlaySettings) ??
+        currentOverlay?.getHoverInfo?.(verse, overlaySettings),
+      search?.tool.getHoverInfo?.(verse, search.settings),
+    ].filter((line): line is HTMLElement | string => !!line);
+    overlayInfo.replaceChildren(...lines.map(infoLine));
   }
+
+  // Both tools mark the text; where they mark the same letters, the search's mark is kept.
+  const marked = (text: string, language: TextLanguage): DocumentFragment | null => {
+    const overlayMarks = currentOverlay?.highlightVerseText?.(text, language, overlaySettings);
+    const searchMarks = search?.tool.highlightVerseText?.(text, language, search.settings);
+    if (overlayMarks && searchMarks) return combineMarks(text, overlayMarks, searchMarks);
+    return searchMarks ?? overlayMarks ?? null;
+  };
   if (hebrew) {
     const hebrewText = text?.he || 'Loading...';
 
@@ -169,22 +186,21 @@ export function updateSidebar(
           overlaySettings,
           getVerseText,
           isPinned,
+          search,
         );
       }
     });
 
     // Whatever the overlay produced, words are wrapped afterwards, so a click
     // finds a word whether or not anything is highlighting the text.
-    const fragment =
-      currentOverlay?.highlightVerseText?.(hebrewText, 'he', overlaySettings) ??
-      textFragment(hebrewText);
+    const fragment = marked(hebrewText, 'he') ?? textFragment(hebrewText);
 
     hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
     attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
   }
   if (english) {
     const englishText = text?.en || 'Loading...';
-    const highlighted = currentOverlay?.highlightVerseText?.(englishText, 'en', overlaySettings);
+    const highlighted = marked(englishText, 'en');
     if (highlighted) {
       english.replaceChildren(highlighted);
     } else {

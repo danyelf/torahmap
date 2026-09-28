@@ -1,12 +1,16 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { colorsForStop, computeBlendedColors } from '../overlayBlender';
+import { pictureForStop, computeBlendedColors } from '../overlayBlender';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Overlay, UrlParamValues } from '../../overlays/types';
+import { buildSearchIndex } from '../../search';
+import { SAMPLE_VERSE_TEXTS } from '../../__tests__/helpers/fixtures';
+import { SEARCH_COLORS } from '../../utils/color';
+import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from '../../constants';
 
 // The blender memoises per verses array, so a fresh one keeps each test's
 // colours its own.
@@ -129,7 +133,7 @@ describe('story stop settings reach the overlay', () => {
   const settingsOverlay: Overlay = {
     id: 'test-settings',
     name: 'Test Settings',
-    urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+    urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
     defaultSettings: () => ({}),
     settingsFromUrl: (params) => params,
     settingsToUrl: () => ({}),
@@ -157,22 +161,22 @@ describe('story stop settings reach the overlay', () => {
   });
 
   it('passes a declared setting through', () => {
-    const stop = stopWith({ mode: 'on' });
+    const stop = stopWith({ state: 'on' });
     computeBlendedColors(stop, stop, 0, verses, null);
-    expect(received).toEqual({ mode: 'on' });
+    expect(received).toEqual({ state: 'on' });
   });
 
   it('drops a value the overlay did not allow', () => {
     // Story stops are hand-written, so they are checked like any link.
-    const stop = stopWith({ mode: 'sideways' });
+    const stop = stopWith({ state: 'sideways' });
     computeBlendedColors(stop, stop, 0, verses, null);
     expect(received).toEqual({});
   });
 
   it('drops a key the overlay never declared', () => {
-    const stop = stopWith({ mode: 'off', nonsense: 'x' });
+    const stop = stopWith({ state: 'off', nonsense: 'x' });
     computeBlendedColors(stop, stop, 0, verses, null);
-    expect(received).toEqual({ mode: 'off' });
+    expect(received).toEqual({ state: 'off' });
   });
 
   it("hands an overlay with its own settings type the settings it builds from the stop's", () => {
@@ -180,9 +184,9 @@ describe('story stop settings reach the overlay', () => {
     const typedOverlay: Overlay<TanakhLayout, { on: boolean }> = {
       id: 'test-typed-settings',
       name: 'Test Typed Settings',
-      urlParams: [{ key: 'mode', kind: 'token', allowed: ['on', 'off'] }],
+      urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
       defaultSettings: () => ({ on: false }),
-      settingsFromUrl: (params) => ({ on: params.mode === 'on' }),
+      settingsFromUrl: (params) => ({ on: params.state === 'on' }),
       settingsToUrl: () => ({}),
       getVerseColor: () => [0.5, 0.5, 0.5] as [number, number, number],
       colorsFor(items, settings) {
@@ -192,7 +196,7 @@ describe('story stop settings reach the overlay', () => {
     };
     registerOverlay(typedOverlay);
 
-    const stop = { ...stopWith({ mode: 'on' }), overlay: 'test-typed-settings' };
+    const stop = { ...stopWith({ state: 'on' }), overlay: 'test-typed-settings' };
     computeBlendedColors(stop, stop, 0, verses, null);
     expect(handed).toEqual({ on: true });
   });
@@ -245,7 +249,7 @@ describe('the blender memoises colours by settings', () => {
     const memoOverlay: Overlay = {
       id: 'test-memo',
       name: 'Test Memo',
-      urlParams: [{ key: 'mode', kind: 'token' }],
+      urlParams: [{ key: 'state', kind: 'token' }],
       defaultSettings: () => ({}),
       settingsFromUrl: (params) => params,
       settingsToUrl: () => ({}),
@@ -260,7 +264,7 @@ describe('the blender memoises colours by settings', () => {
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-memo',
-      overlayParams: { mode: 'a' },
+      overlayParams: { state: 'a' },
     };
     const toStop: ResolvedStoryStop = {
       id: 'm2',
@@ -268,13 +272,13 @@ describe('the blender memoises colours by settings', () => {
       text: '',
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-memo',
-      overlayParams: { mode: 'b' },
+      overlayParams: { state: 'b' },
     };
 
     computeBlendedColors(fromStop, toStop, 0.5, verses, null);
     computeBlendedColors(fromStop, toStop, 0.5, verses, null);
 
-    // Two distinct settings (mode 'a' and 'b') across two blends: once each,
+    // Two distinct settings (state 'a' and 'b') across two blends: once each,
     // not once per call — the second blend shares both cache entries.
     expect(colorsForSpy).toHaveBeenCalledTimes(2);
   });
@@ -336,7 +340,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
   });
 });
 
-describe('colorsForStop', () => {
+describe('pictureForStop', () => {
   it('gives a stop the same colours whether asked directly or as a zero blend', () => {
     registerOverlay(multiColorOverlay);
     const stop: ResolvedStoryStop = {
@@ -346,8 +350,50 @@ describe('colorsForStop', () => {
       overlay: 'test-multi-color',
     };
 
-    expect(colorsForStop(stop, verses, null)).toEqual(
-      computeBlendedColors(stop, stop, 0, verses, null).from.colors,
+    expect(pictureForStop(stop, verses, null)).toEqual(
+      computeBlendedColors(stop, stop, 0, verses, null).from,
     );
+  });
+});
+
+describe('a stop that searches', () => {
+  const grey = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+  const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
+
+  beforeEach(() => {
+    buildSearchIndex(SAMPLE_VERSE_TEXTS);
+    registerOverlay(multiColorOverlay);
+  });
+
+  function stopWith(extra: Partial<ResolvedStoryStop>): ResolvedStoryStop {
+    return { id: 'search', text: '', camera: { x: 0, y: 0, zoom: 1 }, overlay: null, ...extra };
+  }
+
+  it('fills its matches and dims the rest, as search alone always has', () => {
+    // "God" is in Genesis 1:1 and not 1:2.
+    const picture = pictureForStop(stopWith({ searchParams: { search: 'God' } }), verses, null);
+
+    expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
+    expect(picture.colors[1]).toEqual([grey, grey, grey]);
+    expect(picture.rings).toBeUndefined();
+  });
+
+  it('rings its matches over its overlay and dims the rest', () => {
+    const stop = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
+    const picture = pictureForStop(stop, verses, null);
+
+    expect(picture.colors[0]).toEqual([
+      [1, 0, 0],
+      [0, 0, 1],
+    ]);
+    expect(picture.rings![0]).toEqual(SEARCH_COLORS[0]);
+    expect(picture.colors[1]).toEqual([0.5 * DIM, 0.5 * DIM, 0.5 * DIM]);
+    expect(picture.rings![1]).toBeNull();
+  });
+
+  it('keeps apart stops that differ only in their search', () => {
+    const god = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
+    const earth = { ...god, id: 'earth', searchParams: { search: 'earth' } };
+    expect(pictureForStop(god, verses, null)).not.toEqual(pictureForStop(earth, verses, null));
   });
 });

@@ -35,6 +35,9 @@ async function viaMenu(page: Page, action: string): Promise<void> {
 
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 
+const ABRAHAM = encodeURIComponent('אברם,אברהם');
+const BOTH_ROWS = ['.map-legend-row[data-panel="search"]', '.map-legend-row[data-panel="overlay"]'];
+
 export const STATES: State[] = [
   { name: 'story-opening', hash: 'story=tour&stop=intro', shown: [stop('intro')] },
   {
@@ -63,9 +66,28 @@ export const STATES: State[] = [
   },
   {
     name: 'explore-search',
-    hash: `overlay=search&q=${encodeURIComponent('אברהם')}`,
-    then: (page) => viaMenu(page, 'overlay'),
-    shown: ['#overlay-select', '#search-input'],
+    hash: `search=${encodeURIComponent('אברהם')}`,
+    then: (page) => viaMenu(page, 'search'),
+    shown: ['#search-input', '#search-clear-all'],
+  },
+  {
+    name: 'explore-search-and-overlay',
+    hash: `search=${ABRAHAM}&overlay=haftarah`,
+    shown: BOTH_ROWS,
+  },
+  {
+    name: 'explore-search-overlay-switched',
+    hash: `search=${ABRAHAM}&overlay=haftarah`,
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-select').selectOption('commentary');
+    },
+    shown: ['#overlay-select', ...BOTH_ROWS],
+  },
+  {
+    name: 'explore-search-and-overlay-pinned',
+    hash: `search=${ABRAHAM}&overlay=commentary&verse=Genesis.17.5`,
+    shown: ['#verse-popup', ...BOTH_ROWS],
   },
   {
     name: 'explore-verse-pinned',

@@ -1,5 +1,5 @@
-// The full-text search overlay: the search a term list describes, and the
-// overlay interface the app sees.
+// The full-text search: the search a term list describes, and the members the
+// app draws, colours and links it through.
 //
 // The term list is the overlay's settings, and the app holds it: every member
 // here is handed the list and none keeps one. The three parts it draws with are
@@ -7,7 +7,7 @@
 // each is handed what it needs. Which row the reader is working in is
 // presentation, not a setting, so it stays here.
 import '../../styles/overlays/search.css';
-import type { Overlay, Color, UrlParamSpec, UrlParamValues } from '../types.ts';
+import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
 import {
@@ -41,8 +41,9 @@ import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
-import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';
 import { trackSearchExecute } from '../../analytics.ts';
+import { SEARCH_URL_PARAMS, validateOverlayParams } from '../../urlState.ts';
+import type { LinkParams } from '../settings.ts';
 
 /**
  * A list of terms, each with its own text, its own meanings, its own colour and
@@ -60,23 +61,11 @@ let verses: TanakhLayout[] = [];
 /** The row the reader last opened. Read through `openTerm`. */
 let openTermId: string | null = null;
 
-const URL_PARAMS = [
-  { key: 'q', kind: 'text' },
-  // Positional across the terms in q, one letter each, and an empty entry for
-  // a term still on its default (see MODE_LETTERS in terms.ts).
-  { key: 'mode', kind: 'token' },
-  { key: 'm', kind: 'names' },
-] as const satisfies readonly UrlParamSpec[];
-
 let onVerseClickCallback: ((verse: TanakhLayout) => void) | null = null;
 
 /** What a term list finds: the terms searched, and the verses they match. */
 interface Search {
-  /**
-   * The terms the search actually runs, in order. Short ones are left out for
-   * the same reason parseSearchTerms drops them: a single letter matches most
-   * of the corpus and is almost never meant.
-   */
+  /** The terms the search actually runs, in order (see activeTerms). */
   active: SearchTerm[];
   results: SearchResult[];
   /** Verse key to the positions, among the searched terms, of the terms it matches. */
@@ -91,12 +80,21 @@ interface Search {
 const searches = new WeakMap<SearchSettings, Search>();
 let lastSearch: { of: SearchSettings; value: Search } | null = null;
 
+/**
+ * The terms the search runs. Short ones are left out for the same reason
+ * parseSearchTerms drops them: a single letter matches most of the corpus and
+ * is almost never meant.
+ */
+function activeTerms(settings: SearchSettings): SearchTerm[] {
+  return settings.terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+}
+
 function searchFor(settings: SearchSettings): Search {
   if (lastSearch?.of === settings) return lastSearch.value;
 
   let value = searches.get(settings);
   if (!value) {
-    const active = settings.terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+    const active = activeTerms(settings);
     value = { active, ...matchesForTerms(active) };
     searches.set(settings, value);
   }
@@ -156,6 +154,7 @@ type SettingsChange = (update: (current: SearchSettings) => SearchSettings) => v
 // holds when it applies it, never from `shown`.
 let searchResults: HTMLDivElement | null = null;
 let searchHitCaption: HTMLDivElement | null = null;
+let searchClear: HTMLButtonElement | null = null;
 let requestChange: SettingsChange | null = null;
 let shown: SearchSettings | null = null;
 
@@ -422,31 +421,33 @@ function showVerse(result: SearchResult): void {
 
 /**
  * A verse's colour given what a term list found: each matching term's own
- * colour, split corner to corner when there are several, or dimmed grey when
- * none match.
+ * colour, split corner to corner when there are several.
  */
 function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
-  const { active, matchingTerms } = search;
-  if (active.length === 0) return null;
+  const termIndices = search.matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+  if (!termIndices || termIndices.length === 0) return null;
 
-  const termIndices = matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
-
-  if (termIndices && termIndices.length > 0) {
-    const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(active, i)]);
-    return colors.length === 1 ? colors[0] : colors;
-  }
-
-  const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
-  return [brightness, brightness, brightness];
+  const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(search.active, i)]);
+  return colors.length === 1 ? colors[0] : colors;
 }
 
 /** The term list a link describes, with its modes and meanings laid over it. */
-function settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): SearchSettings {
-  let terms = parseSearchTerms(params.q ?? '').reduce(addTerm, [] as SearchTerm[]);
+function settingsFromUrl(params: UrlParamValues<typeof SEARCH_URL_PARAMS>): SearchSettings {
+  let terms = parseSearchTerms(params.search ?? '').reduce(addTerm, [] as SearchTerm[]);
   if (terms.length === 0) terms = addTerm([], '');
   if (params.mode) terms = applyModes(terms, params.mode);
   if (params.m) terms = applyMeanings(terms, params.m);
   return { terms };
+}
+
+/** The search a link or a story stop names. */
+export function searchFromLink(raw: LinkParams): SearchSettings {
+  return settingsFromUrl(validateOverlayParams(SEARCH_URL_PARAMS, raw));
+}
+
+/** Whether the search has a term it searches on. */
+export function isSearching(settings: SearchSettings): boolean {
+  return activeTerms(settings).length > 0;
 }
 
 /** The verse text, with every searched term marked in its own colour. */
@@ -458,12 +459,9 @@ export function highlightSearchTerms(
   return highlightTerms(text, language, searchFor(settings).active);
 }
 
-export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
+export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
   id: 'search',
-  name: 'Text Search',
-  description:
-    'Lights up every verse holding the word you type, in the Hebrew or in the English. ' +
-    'Matches the letters you typed, or the dictionary words that spelling can be.',
+  name: 'Search',
   credits: [
     {
       source:
@@ -490,7 +488,7 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     return { terms: addTerm([], '') };
   },
 
-  urlParams: URL_PARAMS,
+  urlParams: SEARCH_URL_PARAMS,
 
   settingsFromUrl,
 
@@ -508,7 +506,7 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     const params: Record<string, string> = {};
     const query = active.map((t) => t.text).join(', ');
     if (query) {
-      params.q = query;
+      params.search = query;
       // Both are positional over the same list, so they are written together
       // and a term that has chosen nothing contributes an empty entry rather
       // than being skipped — skipping it would shift every later term.
@@ -531,13 +529,20 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     if (!searchResults || !container.contains(searchResults)) {
       container.innerHTML = `
         <div id="search-terms"></div>
-        <button type="button" id="add-term">+ add a word</button>
+        <div class="search-actions">
+          <button type="button" id="add-term">+ add a word</button>
+          <button type="button" id="search-clear-all">Clear</button>
+        </div>
         <div id="search-hit-caption"></div>
         <div id="search-results"></div>
       `;
 
       searchHitCaption = container.querySelector('#search-hit-caption');
       searchResults = container.querySelector('#search-results');
+      searchClear = container.querySelector('#search-clear-all');
+      searchClear?.addEventListener('click', () =>
+        requestChange?.(() => ({ terms: addTerm([], '') })),
+      );
 
       mountTermRows(
         {
@@ -554,6 +559,7 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     renderTermRows();
     updateHitCaption(settings);
     renderResults(settings);
+    if (searchClear) searchClear.disabled = typedTerms(settings).length === 0;
   },
 
   getHoverInfo(verse, settings) {
@@ -582,6 +588,7 @@ export const searchOverlay: Overlay<TanakhIdentity, SearchSettings> = {
     unmountTermRows();
     searchResults = null;
     searchHitCaption = null;
+    searchClear = null;
     shown = null;
     requestChange = null;
     // A search the reader leaves before it settles is not recorded.

@@ -4,7 +4,7 @@
 // comparing, and two words in two colours is the comparison.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { searchTool } from '../../../overlays/search/index';
 import {
   configure,
   searchForMeaning,
@@ -18,8 +18,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
+const searchOverlay = hostOverlay(searchTool);
 
 const texts: VerseTexts = {
   Genesis: {
@@ -56,7 +55,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  searchOverlay.restore({ q: '', mode: undefined, m: undefined });
+  searchOverlay.restore({ search: '', mode: undefined, m: undefined });
 });
 
 describe('searching for a clicked word', () => {
@@ -71,7 +70,7 @@ describe('searching for a clicked word', () => {
     expect(container.querySelector<HTMLInputElement>('.term-input')!.value).toBe('עלה');
 
     const params = searchOverlay.toUrl();
-    expect(params.q).toBe('עלה');
+    expect(params.search).toBe('עלה');
     expect(params.m).toContain(leaf.keys[0]);
   });
 
@@ -85,7 +84,7 @@ describe('searching for a clicked word', () => {
 
   it('switches Hebrew mode to meanings, since a meaning cannot be matched as a substring', () => {
     render();
-    searchOverlay.restore({ q: '', mode: 's', m: undefined });
+    searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
     clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
@@ -96,7 +95,7 @@ describe('searching for a clicked word', () => {
 
   it('leaves the row showing the mode the click put it in', () => {
     const container = render();
-    searchOverlay.restore({ q: '', mode: 's', m: undefined });
+    searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
     clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
 
@@ -140,7 +139,7 @@ describe('searching for a clicked word', () => {
     // would be resolved to its dictionary entry - neither is what "exactly"
     // means.
     const container = render();
-    searchOverlay.restore({ q: '', mode: 's', m: undefined });
+    searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
     clickWord('עלה', null);
 

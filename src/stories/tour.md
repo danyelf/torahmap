@@ -30,39 +30,39 @@ Every square is a single verse. The text appears when you hover over a verse; ta
 
 This is Genesis 1:1, the first verse of the Bible.
 
-<!-- stop: abraham_zoom | camera: Genesis.12.1 | zoom: 1.5 | overlay: search | q: אברם -->
+<!-- stop: abraham_zoom | camera: Genesis.12.1 | zoom: 1.5 | search: אברם -->
 
 We can overlay the map with data. Let's trace the story of how the forefather Abraham is remembered in the Tanakh.
 
 We can search for his name, **אברם**, Abram.
 
-<!-- stop: abraham_call | camera: Genesis.12.1 | zoom: 2.5 | verse: Genesis.12.1 | overlay: search | q: אברם -->
+<!-- stop: abraham_call | camera: Genesis.12.1 | zoom: 2.5 | verse: Genesis.12.1 | search: אברם -->
 
 In Genesis 12, God calls to Abram: *Lekh lekha* — “Go forth from your native land and from your father’s house to the land that I will show you.”
 
-<!-- stop: abraham_rename | camera: Genesis.17.5 | zoom: 2.5 | verse: Genesis.17.5 | overlay: search | q: אברם,אברהם -->
+<!-- stop: abraham_rename | camera: Genesis.17.5 | zoom: 2.5 | verse: Genesis.17.5 | search: אברם,אברהם -->
 
 Five chapters later, God gives Abram a new name: “you shall no longer be called Abram, but your name shall be Abraham.” This verse, showing the rename, holds both colors.
 
-<!-- stop: genesis_full | camera: Genesis.24.20 | zoom: 0.8 | verse: Genesis.25.11 | overlay: search | q: אברם,אברהם -->
+<!-- stop: genesis_full | camera: Genesis.24.20 | zoom: 0.8 | verse: Genesis.25.11 | search: אברם,אברהם -->
 
 In Genesis, Abraham is everywhere: even after his burial in chapter 25, his name is a continuing presence.
 
-<!-- stop: gone | camera: everything | overlay: search | q: אברם,אברהם -->
+<!-- stop: gone | camera: everything | search: אברם,אברהם -->
 
 And then he almost disappears.
 
 The other four books of the Torah name him in just a handful of verses.
 
-<!-- stop: name_in_list | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם, -->
+<!-- stop: name_in_list | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | search: אברם,אברהם, -->
 
 When he does appear, he is usually the first of the forefathers: Abraham, Isaac, and Jacob.
 
-<!-- stop: name_in_list_with_isaac | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם,יצחק,יעקב, -->
+<!-- stop: name_in_list_with_isaac | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב, -->
 
 At the burning bush, God tells Moses to tell the Israelites that he was sent by “the God of Abraham, the God of Isaac, and the God of Jacob.”
 
-<!-- stop: name_in_list_worldwide_three_names | camera: everything | verse: Exodus.3.15 | overlay: search | q: אברם,אברהם,יצחק,יעקב -->
+<!-- stop: name_in_list_worldwide_three_names | camera: everything | verse: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב -->
 
 After Genesis, he is usually named alongside Isaac and Jacob. (Jacob's name, in pink, appears more often.)
 
@@ -90,7 +90,7 @@ Leviticus's “I will remember My covenant with Abraham”;
 
 and Micah's “loyalty to Abraham”.
 
-<!-- stop: abraham_again | camera: everything | verse: Leviticus.26.42 | overlay: search | q: אברם,אברהם,, -->
+<!-- stop: abraham_again | camera: everything | verse: Leviticus.26.42 | search: אברם,אברהם,, -->
 
 Even though the Tanakh allows him to slip into the background, the prayer book is built from the places where the Tanakh remembers.
 

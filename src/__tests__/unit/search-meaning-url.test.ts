@@ -13,16 +13,14 @@
 
 import { describe, it, expect } from 'vitest';
 import { validateOverlayParams } from '../../urlState';
-import { registerAllOverlays, getOverlay } from '../../overlays/index';
+import { searchTool } from '../../overlays/search/index';
 import { addTerm, applyMeanings, encodeMeanings, selectedKeys } from '../../search/terms';
 import type { SearchTerm } from '../../search/terms';
-
-registerAllOverlays();
 
 // The overlay's own declaration, not a copy of it: declaring `m` as free text
 // again is the mistake this file exists to catch, and a hand-written spec here
 // would go on passing while the app broke.
-const SPEC = getOverlay('search')!.urlParams!;
+const SPEC = searchTool.urlParams!;
 
 /** A term standing in for a resolved word, narrowed to the keys given. */
 function narrowedTerm(keys: string[], all: string[]): SearchTerm {

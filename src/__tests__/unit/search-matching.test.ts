@@ -2,7 +2,7 @@
 // Each case below is one a rule of their own would make them disagree on.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { searchOverlay as overlay } from '../../overlays/search';
+import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
 const searchOverlay = hostOverlay(overlay);
@@ -35,14 +35,14 @@ describe('the search and the highlighter agree', () => {
     // and for a while only the search side folded.
     expect(search('הארצ', false, 'word')).toHaveLength(1);
 
-    searchOverlay.restore({ q: 'הארצ', mode: 'word' });
+    searchOverlay.restore({ search: 'הארצ', mode: 'word' });
     expect(marked(GENESIS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['הארץ']);
   });
 
   it('on the last word of a verse, which carries the sof pasuq', () => {
     expect(search('הארץ', false, 'word')).toHaveLength(1);
 
-    searchOverlay.restore({ q: 'הארץ', mode: 'word' });
+    searchOverlay.restore({ search: 'הארץ', mode: 'word' });
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);
   });
 });

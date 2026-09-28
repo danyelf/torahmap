@@ -20,7 +20,7 @@ import { updateLabelPositions } from './labels';
 import { updateMapTitlePosition } from './mapTitle';
 import type { SpatialItem, TanakhIdentity } from './types';
 import { viewOffset, type Camera } from './camera';
-import { HIGHLIGHT_CONSTANTS } from './constants';
+import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
 
 function offsetFor(
   canvas: HTMLCanvasElement,
@@ -143,6 +143,13 @@ export function render<T>(
   gl.uniform2f(programs.main.uniforms.pan, offset.x, offset.y);
   gl.uniform1f(programs.main.uniforms.zoom, camera.zoom * dpr);
   gl.uniform1f(programs.main.uniforms.fade, state.fade);
+  const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
+  gl.uniform3f(
+    programs.main.uniforms.ring,
+    RING_OUTSIDE_PX * dpr,
+    RING_INSIDE_PX * dpr,
+    RING_MIN_SQUARE_PX * dpr,
+  );
 
   gl.bindVertexArray(vertexArray);
   // Six corners (two triangles) for each verse

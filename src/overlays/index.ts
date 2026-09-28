@@ -2,7 +2,6 @@ import type { Overlay } from './types.ts';
 import { registerOverlay, clearOverlays } from './registry.ts';
 import { commentaryOverlay } from './commentary.ts';
 import { tropOverlay } from './trop.ts';
-import { searchOverlay } from './search/index.ts';
 import { haftarahOverlay } from './haftarah.ts';
 import { verseLengthOverlay } from './verse-length.ts';
 
@@ -16,7 +15,6 @@ export { configure as configureVerseLength } from './verse-length.ts';
 
 // Every overlay the app ships, in the order the reader sees them in the menu.
 const ALL_OVERLAYS: readonly Overlay[] = [
-  searchOverlay,
   commentaryOverlay,
   tropOverlay,
   haftarahOverlay,

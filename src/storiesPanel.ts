@@ -1,4 +1,4 @@
-import { PANEL_TITLES } from './frame.ts';
+import { CONTROL, panelHtml } from './panel.ts';
 import { escapeHtml } from './utils/html.ts';
 import type { StoryPlace } from './menu.ts';
 
@@ -15,7 +15,7 @@ const OPEN_STORY = 'open-story';
 type From = 'place' | 'start';
 
 const button = (from: From, label: string, secondary = false): string =>
-  `<button type="button" class="story-card-action${secondary ? ' secondary' : ''}" ` +
+  `<button type="button" class="${secondary ? CONTROL.quiet : CONTROL.button}" ` +
   `data-action="${OPEN_STORY}" data-from="${from}">${label}</button>`;
 
 /** The story a click inside the panel chose, and whether from its start; null if none. */
@@ -41,5 +41,5 @@ function cardHtml({ id, title, description, draft, place }: StoryCard): string {
 
 /** The stories on offer, in the index's order. Each keeps its place for the visit. */
 export function storiesHtml(cards: StoryCard[]): string {
-  return `<h2 class="panel-title">${escapeHtml(PANEL_TITLES.stories)}</h2>${cards.map(cardHtml).join('')}`;
+  return panelHtml('stories', cards.map(cardHtml).join(''));
 }

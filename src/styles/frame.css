@@ -296,6 +296,7 @@ body[data-menu] #story-cue {
   flex-shrink: 0;
 }
 
+body[data-open='search'] #search-panel,
 body[data-open='overlay'] #overlay-panel,
 body[data-open='stories'] #stories-panel,
 body[data-open='about'] #about-panel {
@@ -333,20 +334,20 @@ body[data-open='about'] #about-panel {
   display: none;
 }
 
-/* Search's results fill what the open panel has, in their own scroll. Every
-   other overlay's controls keep their height and the panel scrolls. */
-#overlay-panel:has(#search-results),
-#overlay-controls:has(#search-results) {
+/* Search's results fill what the panel has, in their own scroll. Every other
+   panel keeps its height and #panel-body scrolls it. */
+#search-panel,
+#search-controls {
   flex: 1 1 auto;
   min-height: 0;
 }
 
-#overlay-controls:has(#search-results) {
+#search-controls {
   display: flex;
   flex-direction: column;
 }
 
-#overlay-controls:has(#search-results) > * {
+#search-controls > * {
   flex-shrink: 0;
 }
 
@@ -354,20 +355,6 @@ body[data-open='about'] #about-panel {
   flex: 1 1 auto;
   min-height: 120px;
   max-height: none;
-}
-
-/* Reaches the overlay picker and any select an overlay renders into its
-   controls. color-scheme matters as much as the colours: without it the popup
-   list keeps the system's light theme. */
-#panel select {
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #444;
-  background: #222;
-  color: #fff;
-  color-scheme: dark;
-  font-size: 14px;
-  cursor: pointer;
 }
 
 .story-card {
@@ -416,23 +403,6 @@ body[data-open='about'] #about-panel {
   gap: 8px;
 }
 
-.story-card-action {
-  min-height: var(--tap);
-  padding: 0 14px;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  background: none;
-  color: var(--accent);
-  font: inherit;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.story-card-action.secondary {
-  border-color: #444;
-  color: #ddd;
-}
-
 /* What colours the map, named on the map: one row per thing that is on, each
    opening its tool. Top-left of the map on a desktop, whatever is open. */
 #map-legend {
@@ -470,7 +440,11 @@ body[data-open='about'] #about-panel {
   cursor: pointer;
 }
 
-.map-legend-row + .map-legend-row {
+.map-legend-row[hidden] {
+  display: none;
+}
+
+.map-legend-row:not([hidden]) ~ .map-legend-row:not([hidden]) {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 

@@ -23,12 +23,13 @@ The core design principle is **position stability** - each verse occupies a perm
   apart. How a word is matched — substring, whole word, or meanings — belongs
   to that word, so one term can be searched by meaning while another is pinned
   to an exact spelling.
-- **Pluggable overlays**, in the order the menu offers them: Text Search, Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, shown under the overlay picker.
+- **Pluggable overlays**, in the order the menu offers them: Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, shown under the overlay picker.
   Text Dating is written and tested but off the menu on purpose: it is meant to
   come back as a mode of its own rather than a menu entry. Registering it again
   is one line in `src/overlays/index.ts`.
+- **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.
 - **Guided stories**, a mode of their own. Scrolling one moves the map from stop
-  to stop; its ☰ menu leads to the overlays, the stories and About & settings,
+  to stop; its ☰ menu leads to search, the overlays, the stories and About & settings,
   and choosing one leaves the story where it is, to be continued later. The
   stories are the Markdown files in `src/stories/`, built into the page; each
   one's header sets its title, description, `order` and `draft`. The dev
@@ -194,6 +195,9 @@ The codebase follows a **functional, modular design** with clear separation of c
 - **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors
 - **overlays/** are pluggable and easy to add
+- Any animated change to what the map shows goes through the renderer's
+  picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
+  story stops ease with. Don't add another animation path for it.
 
 ## Data
 
@@ -219,15 +223,16 @@ in step with the code:
 - **Arrow keys** - Move from verse to verse
 - **Overlay selector** - Switch between visualization modes
 - **Search box** - Type to search Hebrew/English text with live results
-- **☰** - The menu: continue the story, overlays, stories, About & settings;
+- **☰** - The menu: continue the story, search, overlays, stories, About & settings;
   Escape closes it
 - **Legend** - Names what colours the map, on the map itself; tap a row to open
   its tool
 - **Sheet** (phone) - The open panel; the grabber takes it to full height and
   back, and a drag down folds it
 
-The URL carries the overlay, its settings, the pinned verse, the camera and,
-while reading, the story and its stop (`src/urlState.ts`), so any view can be linked to.
+The URL carries the search, the overlay and its settings, the pinned verse, the
+camera and, while reading, the story and its stop (`src/urlState.ts`), so any
+view can be linked to.
 
 ## License
 

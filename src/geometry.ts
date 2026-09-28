@@ -6,7 +6,7 @@ import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 type Color = [number, number, number];
 
 // Helper to check if color is an array of colors (a verse split between them)
-function isColorArray(color: Color | Color[] | undefined): color is Color[] {
+function isColorArray(color: Color | Color[] | null | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
 
@@ -24,11 +24,14 @@ export const MULTICOLOR_GROWTH = 0.75;
 /**
  * One colouring of the map: a colour, or stripes, per verse, and how far each
  * verse has grown towards the size a multi-colour verse is drawn at, 0 to 1.
- * Without `growth`, a verse is fully grown exactly when it has several colours.
+ * Without `growth`, a verse is fully grown exactly when its fill or its ring
+ * has several colours. A verse's ring, where `rings` gives one, surrounds its
+ * fill in colours of its own.
  */
 export interface Picture<C = Color | Color[]> {
   colors: C[];
   growth?: number[];
+  rings?: (C | null)[];
 }
 
 const NO_COLORS: Picture = { colors: [] };
@@ -40,19 +43,19 @@ const NO_COLORS: Picture = { colors: [] };
  * Each verse carries two pictures, which the shader mixes by one fade for the
  * whole map, so moving between them redraws without rebuilding this buffer.
  * At rest the two are the same.
+ *
+ * A fill and a ring are four stripes each, one colour to a float (packColor):
+ * unpacked, two pictures would need 19 attributes and 20 varyings, and WebGL 2
+ * promises only 16 and 15.
  */
 export const VERSE_ATTRIBUTES = [
   { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units, before growing
-  { name: 'a_color', size: 3 },
-  { name: 'a_color2', size: 3 },
-  { name: 'a_color3', size: 3 },
-  { name: 'a_color4', size: 3 },
-  { name: 'a_shape', size: 2 }, // stripe count, growth
-  { name: 'a_nextColor', size: 3 },
-  { name: 'a_nextColor2', size: 3 },
-  { name: 'a_nextColor3', size: 3 },
-  { name: 'a_nextColor4', size: 3 },
-  { name: 'a_nextShape', size: 2 },
+  { name: 'a_fill', size: 4 },
+  { name: 'a_ring', size: 4 },
+  { name: 'a_shape', size: 3 }, // fill stripe count, growth, ring stripe count (0 for none)
+  { name: 'a_nextFill', size: 4 },
+  { name: 'a_nextRing', size: 4 },
+  { name: 'a_nextShape', size: 3 },
 ] as const;
 
 export type VerseAttributeName = (typeof VERSE_ATTRIBUTES)[number]['name'];
@@ -66,13 +69,23 @@ for (const { name, size } of VERSE_ATTRIBUTES) {
 }
 export const FLOATS_PER_VERSE = floats;
 
+/** A colour as one float, 8 bits a channel; exact, as a float holds every integer below 2^24. */
+export function packColor([r, g, b]: Color): number {
+  const byte = (c: number): number => Math.round(Math.min(1, Math.max(0, c)) * 255);
+  return byte(r) * 0x10000 + byte(g) * 0x100 + byte(b);
+}
+
 const SLOTS = {
-  from: { colors: ['a_color', 'a_color2', 'a_color3', 'a_color4'], shape: 'a_shape' },
-  to: {
-    colors: ['a_nextColor', 'a_nextColor2', 'a_nextColor3', 'a_nextColor4'],
-    shape: 'a_nextShape',
-  },
+  from: { fill: 'a_fill', ring: 'a_ring', shape: 'a_shape' },
+  to: { fill: 'a_nextFill', ring: 'a_nextRing', shape: 'a_nextShape' },
 } as const;
+
+/** A verse's stripes: at most four, and the base colour for none. */
+function stripesOf(color: Color | Color[] | null | undefined, baseColor: Color): Color[] {
+  if (isColorArray(color)) return color.slice(0, 4);
+  if (Array.isArray(color) && (color as unknown[]).length === 0) return [baseColor];
+  return [(color as Color | null | undefined) || baseColor];
+}
 
 export function buildItemGeometry<T>(
   verses: SpatialItem<T>[],
@@ -83,24 +96,18 @@ export function buildItemGeometry<T>(
   const data = new Float32Array(verses.length * FLOATS_PER_VERSE);
 
   const writePicture = (picture: Picture, slots: (typeof SLOTS)['from' | 'to'], i: number) => {
-    const verseColor = picture.colors[i];
     const base = i * FLOATS_PER_VERSE;
+    const fill = stripesOf(picture.colors[i], baseColor);
+    const ringColor = picture.rings?.[i];
+    const ring = ringColor ? stripesOf(ringColor, baseColor) : [];
 
-    let stripes: Color[];
-    // Check for empty array first (before isColorArray which would fail on empty)
-    if (Array.isArray(verseColor) && (verseColor as unknown[]).length === 0) {
-      stripes = [baseColor];
-    } else if (isColorArray(verseColor)) {
-      stripes = verseColor.slice(0, 4) as Color[]; // Cap at 4 colors
-    } else {
-      stripes = [verseColor || baseColor];
-    }
-
-    // Unused colour slots stay zero
-    stripes.forEach((color, c) => data.set(color, base + VERSE_OFFSETS[slots.colors[c]]));
+    // Unused stripes stay zero
+    fill.forEach((color, s) => (data[base + VERSE_OFFSETS[slots.fill] + s] = packColor(color)));
+    ring.forEach((color, s) => (data[base + VERSE_OFFSETS[slots.ring] + s] = packColor(color)));
     const shape = base + VERSE_OFFSETS[slots.shape];
-    data[shape] = stripes.length;
-    data[shape + 1] = picture.growth?.[i] ?? (stripes.length > 1 ? 1 : 0);
+    data[shape] = fill.length;
+    data[shape + 1] = picture.growth?.[i] ?? (Math.max(fill.length, ring.length) > 1 ? 1 : 0);
+    data[shape + 2] = ring.length;
   };
 
   for (let i = 0; i < verses.length; i++) {

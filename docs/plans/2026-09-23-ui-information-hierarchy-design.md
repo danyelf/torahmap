@@ -1,7 +1,7 @@
 # Where everything lives: menus, modes and the panel
 
 **Date:** 2026-09-23
-**Status:** Step 1 (the frame) built in #251; steps 2-4 designed, not built.
+**Status:** Steps 1-2 built (#251, #266); steps 3-4 designed, not built.
 **Issues:** #236 (the phone), #234 (search beside an overlay), #235 (more than
 one story), #237 (what an overlay is), and the "share a view" half of #232
 

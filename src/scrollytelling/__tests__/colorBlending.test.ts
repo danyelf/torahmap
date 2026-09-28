@@ -100,3 +100,26 @@ describe('flatten', () => {
     expect(flatten(layer)).toEqual(mergePictures(layer.from, layer.to, 0.25));
   });
 });
+
+describe('mergePictures with rings', () => {
+  const RED: Color = [1, 0, 0];
+  const BLUE: Color = [0, 0, 1];
+
+  it('fades a ring in from the fill it grows out of', () => {
+    const merged = mergePictures({ colors: [RED] }, { colors: [RED], rings: [BLUE] }, 0.5);
+    expect(merged.rings![0]).toEqual([0.5, 0, 0.5]);
+  });
+
+  it('leaves a verse with a ring on neither side without one', () => {
+    const merged = mergePictures(
+      { colors: [RED, RED] },
+      { colors: [RED, RED], rings: [BLUE, null] },
+      0.5,
+    );
+    expect(merged.rings![1]).toBeNull();
+  });
+
+  it('draws no rings when neither side has any', () => {
+    expect(mergePictures({ colors: [RED] }, { colors: [BLUE] }, 0.5).rings).toBeUndefined();
+  });
+});

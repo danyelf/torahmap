@@ -8,6 +8,7 @@ import { parseStoryMarkdown, STORY_HEADER_KEYS } from '../../scrollytelling/stor
 import { easingFunctions } from '../../scrollytelling/interpolation';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { buildUrlHash, parseUrlState, parseVerseFromUrl } from '../../urlState';
+import { isSearching, searchFromLink } from '../../overlays/search/index';
 import { STORY_MARKDOWN } from '../../stories/index';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
@@ -132,5 +133,12 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
       .filter((s) => !categories.has(s.overlayParams!.category))
       .map((s) => `${s.id}: ${s.overlayParams!.category}`);
     expect(unknown).toEqual([]);
+  });
+
+  it('searches, where a stop searches, for words long enough to search on', () => {
+    const idle = stops
+      .filter((s) => s.searchParams && !isSearching(searchFromLink(s.searchParams)))
+      .map((s) => s.id);
+    expect(idle).toEqual([]);
   });
 });

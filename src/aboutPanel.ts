@@ -1,17 +1,16 @@
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
-import { PANEL_TITLES } from './frame.ts';
-import { escapeHtml } from './utils/html.ts';
+import { CONTROL, panelHtml } from './panel.ts';
 
 /** About & settings: one scrolling panel, settings first because they are what a returning reader wants. */
 export function aboutHtml(
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
 ): string {
-  return `
-    <h2 class="panel-title">${escapeHtml(PANEL_TITLES.about)}</h2>
-    <section class="about-section">
+  return panelHtml(
+    'about',
+    `<section class="about-section">
       <h3>Settings</h3>
-      <button type="button" id="hebrew-toggle" class="setting-toggle"></button>
+      <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
       <h3>Torahmap</h3>
@@ -38,7 +37,7 @@ export function aboutHtml(
         <tr><td>Click pinned / Tap again</td><td>Unpin verse</td></tr>
         <tr><td>&larr; &rarr; arrow keys</td><td>Navigate verses</td></tr>
         <tr><td>Escape</td><td>Unpin verse, or close the menu</td></tr>
-        <tr><td>☰</td><td>The menu: continue the story, overlays, stories, About &amp; settings</td></tr>
+        <tr><td>☰</td><td>The menu: continue the story, search, overlays, stories, About &amp; settings</td></tr>
         <tr><td>Legend</td><td>What colours the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>
       </table>
@@ -46,5 +45,6 @@ export function aboutHtml(
     <section class="about-section">
       <h3>Sources and credits</h3>
       ${renderCreditsHtml(overlays)}
-    </section>`;
+    </section>`,
+  );
 }

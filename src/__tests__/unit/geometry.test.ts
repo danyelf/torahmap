@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   buildItemGeometry,
   createBuffer,
+  packColor,
   FLOATS_PER_VERSE,
   MULTICOLOR_GROWTH,
   VERSE_ATTRIBUTES,
@@ -9,6 +10,7 @@ import {
   type VerseAttributeName,
 } from '../../geometry';
 import { createVerse, createVerses, TEST_COLORS, createMockWebGL2Context } from '../helpers';
+import type { Color } from '../../overlays/types';
 
 const SIZE = Object.fromEntries(VERSE_ATTRIBUTES.map((a) => [a.name, a.size])) as Record<
   VerseAttributeName,
@@ -21,15 +23,28 @@ function field(buffer: Float32Array, verse: number, name: VerseAttributeName): n
   return Array.from(buffer.subarray(start, start + size));
 }
 
-const colorsOf = (buffer: Float32Array, verse = 0) =>
-  (['a_color', 'a_color2', 'a_color3', 'a_color4'] as const).map((n) => field(buffer, verse, n));
+/** Four stripes as the buffer holds them: packed, and zero where unused. */
+const packed = (...colors: Color[]): number[] =>
+  [0, 1, 2, 3].map((s) => (colors[s] ? packColor(colors[s]) : 0));
 
-const nextColorsOf = (buffer: Float32Array, verse = 0) =>
-  (['a_nextColor', 'a_nextColor2', 'a_nextColor3', 'a_nextColor4'] as const).map((n) =>
-    field(buffer, verse, n),
-  );
+const { RED, GREEN, BLUE, WHITE } = TEST_COLORS;
 
-const { RED, GREEN, BLUE, WHITE, BLACK } = TEST_COLORS;
+describe('packColor', () => {
+  it('packs eight bits a channel, red highest', () => {
+    expect(packColor([1, 0, 0])).toBe(0xff0000);
+    expect(packColor([0, 1, 0])).toBe(0x00ff00);
+    expect(packColor([0, 0, 1])).toBe(0x0000ff);
+  });
+
+  it('clamps what hover brightening pushes past 1, and rounds', () => {
+    expect(packColor([1.5, -0.2, 0.5])).toBe(0xff0080);
+  });
+
+  it('survives the float buffer exactly', () => {
+    const white = packColor([1, 1, 1]);
+    expect(new Float32Array([white])[0]).toBe(white);
+  });
+});
 
 describe('buildItemGeometry', () => {
   it('holds one entry per verse', () => {
@@ -68,6 +83,11 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 1, 'a_shape')[1]).toBe(0);
     });
 
+    it('grows a verse whose ring has several colours', () => {
+      const buffer = buildItemGeometry([createVerse()], { colors: [RED], rings: [[GREEN, BLUE]] });
+      expect(field(buffer, 0, 'a_shape')[1]).toBe(1);
+    });
+
     it('grows a verse by the fraction it is given, whatever its colours', () => {
       const buffer = buildItemGeometry([createVerse()], { colors: [[RED, BLUE]], growth: [0.5] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(0.5);
@@ -75,32 +95,32 @@ describe('buildItemGeometry', () => {
   });
 
   describe('colours', () => {
-    it('uses the verse colour, padded with black, and a count of 1', () => {
+    it('packs the verse colour, zero after it, and a count of 1', () => {
       const buffer = buildItemGeometry([createVerse()], { colors: [RED] });
-      expect(colorsOf(buffer)).toEqual([RED, BLACK, BLACK, BLACK]);
+      expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(1);
     });
 
     it('falls back to the base colour, then to the default fill', () => {
-      const base: [number, number, number] = [0.2, 0.3, 0.4];
+      const base: Color = [0.2, 0.3, 0.4];
       const given = buildItemGeometry([createVerse()], undefined, undefined, base);
-      expect(field(given, 0, 'a_color')).toEqual(Array.from(new Float32Array(base)));
+      expect(field(given, 0, 'a_fill')[0]).toBe(packColor(base));
 
       const fallback = buildItemGeometry([createVerse()], { colors: [[]] });
-      field(fallback, 0, 'a_color').forEach((c) => expect(c).toBeCloseTo(0.6, 5));
+      expect(field(fallback, 0, 'a_fill')[0]).toBe(packColor([0.6, 0.6, 0.6]));
     });
 
     it('keeps several colours in order with their count', () => {
       const buffer = buildItemGeometry([createVerse()], { colors: [[RED, GREEN, BLUE]] });
-      expect(colorsOf(buffer)).toEqual([RED, GREEN, BLUE, BLACK]);
+      expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED, GREEN, BLUE));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(3);
     });
 
     it('keeps at most four colours', () => {
       const buffer = buildItemGeometry([createVerse()], {
-        colors: [[RED, GREEN, BLUE, WHITE, BLACK]],
+        colors: [[RED, GREEN, BLUE, WHITE, RED]],
       });
-      expect(colorsOf(buffer)).toEqual([RED, GREEN, BLUE, WHITE]);
+      expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED, GREEN, BLUE, WHITE));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(4);
     });
 
@@ -112,23 +132,55 @@ describe('buildItemGeometry', () => {
     });
   });
 
+  describe('rings', () => {
+    it('holds no ring for a verse without one', () => {
+      const buffer = buildItemGeometry([createVerse()], { colors: [RED], rings: [null] });
+      expect(field(buffer, 0, 'a_ring')).toEqual([0, 0, 0, 0]);
+      expect(field(buffer, 0, 'a_shape')[2]).toBe(0);
+    });
+
+    it('holds a ring in stripes of its own beside the fill', () => {
+      const buffer = buildItemGeometry([createVerse()], {
+        colors: [GREEN],
+        rings: [[RED, BLUE]],
+      });
+      expect(field(buffer, 0, 'a_fill')).toEqual(packed(GREEN));
+      expect(field(buffer, 0, 'a_ring')).toEqual(packed(RED, BLUE));
+      expect(field(buffer, 0, 'a_shape')).toEqual([1, 1, 2]);
+    });
+
+    it('keeps at most four ring stripes', () => {
+      const buffer = buildItemGeometry([createVerse()], {
+        colors: [GREEN],
+        rings: [[RED, GREEN, BLUE, WHITE, RED]],
+      });
+      expect(field(buffer, 0, 'a_ring')).toEqual(packed(RED, GREEN, BLUE, WHITE));
+      expect(field(buffer, 0, 'a_shape')[2]).toBe(4);
+    });
+  });
+
   describe('two pictures', () => {
     it('holds the same picture twice when given one', () => {
-      const buffer = buildItemGeometry([createVerse()], { colors: [[RED, BLUE]] });
-      expect(nextColorsOf(buffer)).toEqual(colorsOf(buffer));
+      const buffer = buildItemGeometry([createVerse()], {
+        colors: [[RED, BLUE]],
+        rings: [GREEN],
+      });
+      expect(field(buffer, 0, 'a_nextFill')).toEqual(field(buffer, 0, 'a_fill'));
+      expect(field(buffer, 0, 'a_nextRing')).toEqual(field(buffer, 0, 'a_ring'));
       expect(field(buffer, 0, 'a_nextShape')).toEqual(field(buffer, 0, 'a_shape'));
     });
 
-    it('holds each picture whole, with its own stripe count and growth', () => {
+    it('holds each picture whole, with its own stripes, growth and ring', () => {
       const buffer = buildItemGeometry(
         [createVerse()],
         { colors: [[RED, BLUE]] },
-        { colors: [[RED, BLUE, GREEN]], growth: [0.25] },
+        { colors: [[RED, BLUE, GREEN]], growth: [0.25], rings: [RED] },
       );
-      expect(colorsOf(buffer)).toEqual([RED, BLUE, BLACK, BLACK]);
-      expect(field(buffer, 0, 'a_shape')).toEqual([2, 1]);
-      expect(nextColorsOf(buffer)).toEqual([RED, BLUE, GREEN, BLACK]);
-      expect(field(buffer, 0, 'a_nextShape')).toEqual([3, 0.25]);
+      expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED, BLUE));
+      expect(field(buffer, 0, 'a_shape')).toEqual([2, 1, 0]);
+      expect(field(buffer, 0, 'a_nextFill')).toEqual(packed(RED, BLUE, GREEN));
+      expect(field(buffer, 0, 'a_nextRing')).toEqual(packed(RED));
+      expect(field(buffer, 0, 'a_nextShape')).toEqual([3, 0.25, 1]);
     });
   });
 });
