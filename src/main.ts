@@ -1645,9 +1645,9 @@ async function main(): Promise<void> {
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  function restoreFromUrl(): void {
+  function restoreFromUrl(link = parseUrlState(overlayParamSpecs)): void {
     const next = resolveViewState(
-      parseUrlState(overlayParamSpecs),
+      link,
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
@@ -1696,8 +1696,9 @@ async function main(): Promise<void> {
     }
   }
 
-  if (linkNamesAView(parseUrlState())) {
-    restoreFromUrl();
+  const link = parseUrlState(overlayParamSpecs);
+  if (linkNamesAView(link)) {
+    restoreFromUrl(link);
   }
 
   // A link to a story stop always opens the story.

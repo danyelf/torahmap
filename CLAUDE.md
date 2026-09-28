@@ -26,7 +26,9 @@ The core design principle is **position stability** - each verse occupies a perm
 - **Pluggable overlays**, in the order the menu offers them: Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, shown under the overlay picker.
   Text Dating is written and tested but off the menu on purpose: it is meant to
   come back as a mode of its own rather than a menu entry. Registering it again
-  is one line in `src/overlays/index.ts`.
+  means moving its id, name and description into `OVERLAYS` in
+  `packages/overlay-catalog`, then adding it to the table in
+  `src/overlays/index.ts`; the typecheck points at whichever is missing.
 - **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.
 - **Guided stories**, a mode of their own. Scrolling one moves the map from stop
   to stop; its ☰ menu leads to search, the overlays, the stories and About & settings,

@@ -10,7 +10,7 @@ import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink } from '@torahmap/link'
 import { mockHistory } from '../helpers/mocks';
 import { setLink } from '../helpers/setLink';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
 import type { Overlay } from '../../overlays/types';
 
@@ -173,14 +173,14 @@ describe('whole links, parsed with the real overlay declarations', () => {
 
   links.forEach(([query, expected]) => {
     it(`parses ${query}`, () => {
-      const state = readLink(query, overlayUrlParams);
+      const state = readLink(query, overlayParamSpecs);
       expect(state.overlayParams).toEqual(expected);
     });
   });
 
   it('keeps a full link intact through a parse and rebuild', () => {
     const query = '?overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud';
-    const rebuilt = writeLink(readLink(query, overlayUrlParams));
+    const rebuilt = writeLink(readLink(query, overlayParamSpecs));
     expect(rebuilt).toContain('overlay=commentary');
     expect(rebuilt).toContain('verse=Exodus.20.1');
     expect(rebuilt).toContain('zoom=3');

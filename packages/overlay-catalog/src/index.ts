@@ -61,18 +61,12 @@ export const VERSE_LENGTH = {
     'longest bright.',
 } as const satisfies OverlayEntry;
 
-export const TEXT_DATING = {
-  id: 'text-dating',
-  name: 'Text Dating',
-  description:
-    'Colours each passage by the period scholars date it to, from before the monarchy ' +
-    'through the Hellenistic era. A pinned verse shows the estimate it was given and ' +
-    'the reasoning behind it.',
-} as const satisfies OverlayEntry;
+/** Every overlay the menu offers, in the order it offers them. */
+export const OVERLAYS = [COMMENTARY, TROP, HAFTARAH, VERSE_LENGTH] as const;
 
-const BY_ID: ReadonlyMap<string, OverlayEntry> = new Map(
-  [COMMENTARY, TROP, HAFTARAH, VERSE_LENGTH, TEXT_DATING].map((e) => [e.id, e]),
-);
+export type OverlayId = (typeof OVERLAYS)[number]['id'];
+
+const BY_ID: ReadonlyMap<string, OverlayEntry> = new Map(OVERLAYS.map((e) => [e.id, e]));
 
 /** The link keys an overlay declares, by id; undefined for an unknown id. */
 export const overlayParamSpecs: OverlayParamSpecLookup = (id) => BY_ID.get(id)?.urlParams;
