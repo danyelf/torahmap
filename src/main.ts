@@ -48,7 +48,7 @@ import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } f
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { tabTitle } from './linkNames.ts';
-import { linkForScreen } from './linkForScreen.ts';
+import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
   createCamera,
@@ -666,7 +666,6 @@ async function main(): Promise<void> {
     if (frame.mode !== 'story' || driver.by === 'reader') return;
     handOver(readerTakesOver(storyPosition()), how);
     applyTools();
-    syncUrl(true);
   }
 
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
@@ -945,19 +944,19 @@ async function main(): Promise<void> {
   }
 
   /**
-   * Write the URL for what is on screen. `push` adds a history entry, for a
-   * discrete step rather than a pan or a scroll.
+   * Write the URL for what is on screen. `push` asks for a history entry, for
+   * a discrete step rather than a pan or a scroll; leaving a story for the
+   * reader's own view pushes regardless, since that is the one Back step to
+   * the stop, however many further writes the same action makes.
    */
   function syncUrl(push: boolean = false): void {
-    updateUrl(
-      linkForScreen({
-        mode: frame.mode,
-        driver: driverKind(driver),
-        story: { id: story.id, stop: resolvedStops[storyStopIndex()].id },
-        explore: buildCurrentUrlState,
-      }),
-      push,
-    );
+    const next = linkForScreen({
+      mode: frame.mode,
+      driver: driverKind(driver),
+      story: { id: story.id, stop: resolvedStops[storyStopIndex()].id },
+      explore: buildCurrentUrlState,
+    });
+    updateUrl(next, pushes(parseUrlState(), next, push));
     showTitle();
   }
 
