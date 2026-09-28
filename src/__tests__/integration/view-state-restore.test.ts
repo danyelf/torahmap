@@ -20,8 +20,8 @@ const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };
 // The settings the app holds for each overlay, as main.ts holds them.
 let settings = createOverlaySettings();
 
-function viewFor(hash: string): ViewState {
-  mockWindowLocation(`http://localhost:5173/${hash}`);
+function viewFor(link: string): ViewState {
+  mockWindowLocation(`http://localhost:5173/${link}`);
   return resolveViewState(
     parseUrlState(overlayUrlParams),
     DEFAULT_CAMERA,
@@ -30,8 +30,8 @@ function viewFor(hash: string): ViewState {
 }
 
 /** Where a view's settings leave an overlay's controls, drawn the way main.ts draws them. */
-async function controlsAfter(hash: string): Promise<HTMLElement> {
-  const view = viewFor(hash);
+async function controlsAfter(link: string): Promise<HTMLElement> {
+  const view = viewFor(link);
   const overlay = getOverlay(view.overlay);
   await overlay?.init?.();
   const container = document.createElement('div');
@@ -61,31 +61,31 @@ describe('restoring a link as one complete view', () => {
 
   describe('which mode a link opens in', () => {
     it('opens an old search link with no search and no overlay', () => {
-      const view = viewFor('#overlay=search&q=light');
+      const view = viewFor('?overlay=search&q=light');
       expect(view.mode).toBe('explore');
       expect(view.overlay).toBe('none');
       expect(view.searchParams).toEqual({});
     });
 
     it('opens a link that only searches in Explore, with its search', () => {
-      const view = viewFor('#search=light');
+      const view = viewFor('?search=light');
       expect(view.mode).toBe('explore');
       expect(view.overlay).toBe('none');
       expect(view.searchParams).toEqual({ search: 'light' });
     });
 
     it('keeps the search whatever overlay the link names', () => {
-      expect(viewFor('#search=light&overlay=trop').searchParams).toEqual({ search: 'light' });
+      expect(viewFor('?search=light&overlay=trop').searchParams).toEqual({ search: 'light' });
     });
 
-    it('opens a camera-only hash in Explore', () => {
-      const view = viewFor('#zoom=3&x=0&y=0');
+    it('opens a camera-only link in Explore', () => {
+      const view = viewFor('?zoom=3&x=0&y=0');
 
       expect(view.mode).toBe('explore');
       expect(view.camera).toEqual({ x: 0, y: 0, zoom: 3 });
     });
 
-    it('opens an empty hash as the story, with Explore reset', () => {
+    it('opens an empty link as the story, with Explore reset', () => {
       expect(viewFor('')).toEqual({
         mode: 'story',
         story: null,
@@ -98,8 +98,8 @@ describe('restoring a link as one complete view', () => {
       });
     });
 
-    it('opens a hash naming a story and stop as that story at that stop', () => {
-      const view = viewFor('#story=tour&stop=intro');
+    it('opens a link naming a story and stop as that story at that stop', () => {
+      const view = viewFor('?story=tour&stop=intro');
 
       expect(view.mode).toBe('story');
       expect(view.story).toBe('tour');
@@ -107,7 +107,7 @@ describe('restoring a link as one complete view', () => {
     });
 
     it('opens an old single-story link as a story, naming no stop', () => {
-      const view = viewFor('#story=abraham_call');
+      const view = viewFor('?story=abraham_call');
 
       expect(view.mode).toBe('story');
       expect(view.story).toBe('abraham_call');
@@ -117,23 +117,23 @@ describe('restoring a link as one complete view', () => {
 
   describe('fields the link leaves out', () => {
     it('holds no overlay and no verse when the link names neither', () => {
-      const view = viewFor('#zoom=2');
+      const view = viewFor('?zoom=2');
 
       expect(view.overlay).toBe('none');
       expect(view.verse).toBeNull();
     });
 
     it('holds the default position when the link gives only a zoom', () => {
-      expect(viewFor('#zoom=2').camera).toEqual({ ...DEFAULT_CAMERA, zoom: 2 });
+      expect(viewFor('?zoom=2').camera).toEqual({ ...DEFAULT_CAMERA, zoom: 2 });
     });
 
     it('holds no overlay for an overlay id nobody registered', () => {
-      expect(viewFor('#overlay=nonexistent').overlay).toBe('none');
+      expect(viewFor('?overlay=nonexistent').overlay).toBe('none');
     });
   });
 
   it('centres the verse at the zoom the link asked for', () => {
-    const view = viewFor('#verse=Genesis.1.1&zoom=8');
+    const view = viewFor('?verse=Genesis.1.1&zoom=8');
     const verse = SAMPLE_VERSES[0];
     const viewport = { width: 1000, height: 800 };
     const camera = cameraForView(view.camera, verse, { x: 500, y: 300 }, viewport);
@@ -147,43 +147,43 @@ describe('restoring a link as one complete view', () => {
 
   describe('controls drawn after the settings arrive', () => {
     it('shows Midrash in the commentary category dropdown', async () => {
-      const controls = await controlsAfter('#overlay=commentary&category=Midrash');
+      const controls = await controlsAfter('?overlay=commentary&category=Midrash');
 
       expect(controls.querySelector<HTMLSelectElement>('#category-select')?.value).toBe('Midrash');
     });
 
     it('returns the commentary dropdown to all links when the link names no category', async () => {
-      await controlsAfter('#overlay=commentary&category=Midrash');
-      const controls = await controlsAfter('#overlay=commentary');
+      await controlsAfter('?overlay=commentary&category=Midrash');
+      const controls = await controlsAfter('?overlay=commentary');
 
       expect(controls.querySelector<HTMLSelectElement>('#category-select')?.value).toBe('total');
     });
 
     it('shows Sephardi in the haftarah custom dropdown', async () => {
-      const controls = await controlsAfter('#overlay=haftarah&custom=sephardi');
+      const controls = await controlsAfter('?overlay=haftarah&custom=sephardi');
 
       expect(controls.querySelector<HTMLSelectElement>('#custom-select')?.value).toBe('sephardi');
     });
 
     it('marks the trop button the link names', async () => {
-      const controls = await controlsAfter('#overlay=trop&trop=tipcha');
+      const controls = await controlsAfter('?overlay=trop&trop=tipcha');
 
       expect(controls.querySelector('button.selected')?.getAttribute('title')).toMatch(/^Tipcha/);
     });
 
     it('clears the trop selection when the link names no mark', async () => {
-      await controlsAfter('#overlay=trop&trop=tipcha');
-      const controls = await controlsAfter('#overlay=trop');
+      await controlsAfter('?overlay=trop&trop=tipcha');
+      const controls = await controlsAfter('?overlay=trop');
 
       expect(settings.toUrl(getOverlay('trop')!)).toEqual({});
       expect(controls.querySelector('button.selected')).toBeNull();
     });
 
     it('clears the search when the link names none', () => {
-      settings.restore(searchTool, viewFor('#search=light').searchParams);
+      settings.restore(searchTool, viewFor('?search=light').searchParams);
       expect(settings.toUrl(searchTool).search).toBe('light');
 
-      settings.restore(searchTool, viewFor('#overlay=trop').searchParams);
+      settings.restore(searchTool, viewFor('?overlay=trop').searchParams);
       expect(settings.toUrl(searchTool)).toEqual({});
     });
   });

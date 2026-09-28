@@ -1,13 +1,14 @@
-import { describe, it, expect, beforeEach, beforeAll, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import {
   parseUrlState,
   updateUrl,
-  subscribeToHashChange,
+  subscribeToHistory,
   applyingExternalState,
   isApplyingExternalState,
 } from '../../urlState';
-import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink, type UrlState } from '@torahmap/link';
-import { mockHistory, mockWindowLocation } from '../helpers/mocks';
+import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink } from '@torahmap/link';
+import { mockHistory } from '../helpers/mocks';
+import { setLink } from '../helpers/setLink';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
 import { overlayUrlParams } from '../helpers/overlayUrlParams';
 import { createOverlaySettings } from '../../overlays/settings';
@@ -23,109 +24,36 @@ beforeAll(() => {
   }
 });
 
-describe('parseUrlState', () => {
-  beforeEach(() => {
-    mockHistory();
+describe('the address holds the view in its query string', () => {
+  it('reads the view from the query string', () => {
+    setLink('?verse=Genesis.1.1&overlay=commentary');
+    expect(parseUrlState()).toMatchObject({ verse: 'Genesis.1.1', overlay: 'commentary' });
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it('ignores a hash link', () => {
+    history.replaceState(null, '', '/#verse=Genesis.1.1');
+    expect(parseUrlState().verse).toBeUndefined();
   });
 
-  it('reads the current address', () => {
-    mockWindowLocation('http://localhost:5173/#overlay=trop&trop=etnachta');
-    const state = parseUrlState(overlayUrlParams);
-    expect(state.overlay).toBe('trop');
-    expect(state.overlayParams.trop).toBe('etnachta');
+  it('writes the query string and drops any hash', () => {
+    history.replaceState(null, '', '/#verse=Genesis.1.1');
+    updateUrl({ verse: 'Exodus.2.3', overlayParams: {} });
+    expect(window.location.search).toBe('?verse=Exodus.2.3');
+    expect(window.location.hash).toBe('');
   });
 
-  it('reads a story and its stop', () => {
-    mockHistory('http://localhost:5173/#story=tour&stop=abraham_call');
-    const state = parseUrlState();
-    expect(state.story).toBe('tour');
-    expect(state.stop).toBe('abraham_call');
-  });
-});
-
-describe('updateUrl', () => {
-  beforeEach(() => {
-    mockHistory('http://localhost:5173/');
+  it('adds no history entry for an unchanged view', () => {
+    setLink('?verse=Genesis.1.1');
+    const before = history.length;
+    updateUrl({ verse: 'Genesis.1.1', overlayParams: {} }, true);
+    expect(history.length).toBe(before);
   });
 
-  it('replaces state by default', () => {
-    const state: UrlState = {
-      overlay: 'commentary',
-      overlayParams: {},
-    };
-    updateUrl(state);
-    expect(history.replaceState).toHaveBeenCalledWith(null, '', '/#overlay=commentary');
-    expect(history.pushState).not.toHaveBeenCalled();
-  });
-
-  it('pushes state when requested', () => {
-    const state: UrlState = {
-      verse: 'Genesis.1.1',
-      overlayParams: {},
-    };
-    updateUrl(state, true);
-    expect(history.pushState).toHaveBeenCalledWith(null, '', '/#verse=Genesis.1.1');
-    expect(history.replaceState).not.toHaveBeenCalled();
-  });
-
-  it('preserves pathname and search params', () => {
-    mockWindowLocation('http://localhost:5173/index.html?debug=true');
-    const state: UrlState = {
-      overlay: 'trop',
-      overlayParams: {},
-    };
-    updateUrl(state);
-    expect(history.replaceState).toHaveBeenCalledWith(
-      null,
-      '',
-      '/index.html?debug=true#overlay=trop',
-    );
-  });
-
-  it('removes hash when state is empty', () => {
-    mockHistory('http://localhost:5173/#overlay=commentary');
-    updateUrl({ overlayParams: {} });
-    expect(history.replaceState).toHaveBeenCalledWith(null, '', '/');
-  });
-
-  it('leaves an unchanged URL alone, adding no history entry', () => {
-    mockHistory('http://localhost:5173/#story=tour&stop=intro');
-    updateUrl({ story: 'tour', stop: 'intro', overlayParams: {} }, true);
-    expect(history.pushState).not.toHaveBeenCalled();
-    expect(history.replaceState).not.toHaveBeenCalled();
-  });
-});
-
-describe('subscribeToHashChange', () => {
-  beforeEach(() => {
-    if (typeof window === 'undefined') {
-      (globalThis as any).window = {};
-    }
-    window.addEventListener = vi.fn();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('subscribes to popstate event', () => {
-    const callback = vi.fn();
-    subscribeToHashChange(callback);
-    expect(window.addEventListener).toHaveBeenCalledWith('popstate', callback);
-  });
-
-  // Registering both popstate and hashchange made a single back/forward
-  // navigation run the restore callback twice, since both fire when history
-  // traversal changes the hash. Only popstate is needed — see the comment on
-  // subscribeToHashChange.
-  it('does not also subscribe to hashchange', () => {
-    const callback = vi.fn();
-    subscribeToHashChange(callback);
-    expect(window.addEventListener).not.toHaveBeenCalledWith('hashchange', callback);
+  it('hears Back and Forward', () => {
+    const heard = vi.fn();
+    subscribeToHistory(heard);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(heard).toHaveBeenCalledOnce();
   });
 });
 

@@ -43,12 +43,7 @@ import {
   trackWordSearch,
 } from './analytics.ts';
 import { parseVerseFromUrl, verseToUrlFormat, type UrlState } from '@torahmap/link';
-import {
-  parseUrlState,
-  updateUrl,
-  subscribeToHashChange,
-  applyingExternalState,
-} from './urlState.ts';
+import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
@@ -1695,7 +1690,7 @@ async function main(): Promise<void> {
     }
   }
 
-  if (window.location.hash) {
+  if (window.location.search) {
     restoreFromUrl();
   }
 
@@ -1716,7 +1711,7 @@ async function main(): Promise<void> {
   recordingDriver = true;
   markViewSettled();
 
-  subscribeToHashChange(() => {
+  subscribeToHistory(() => {
     restoreFromUrl();
   });
 

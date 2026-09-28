@@ -11,6 +11,7 @@ import { writeLink, parseVerseFromUrl } from '@torahmap/link';
 import { parseUrlState } from '../../urlState';
 import { isSearching, searchFromLink } from '../../overlays/search/index';
 import { STORY_MARKDOWN } from '../../stories/index';
+import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
@@ -30,7 +31,7 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   );
 
   it('has an id a link can carry', () => {
-    window.location.hash = writeLink({ story: id, overlayParams: {} });
+    setLink(writeLink({ story: id, overlayParams: {} }));
     expect(parseUrlState().story).toBe(id);
   });
 

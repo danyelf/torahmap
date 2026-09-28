@@ -6,7 +6,7 @@ import { readLink, writeLink, type OverlayParamSpecLookup, type UrlState } from 
 
 /** The view the current address names. */
 export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): UrlState {
-  return readLink(window.location.hash.slice(1), lookupOverlayParams);
+  return readLink(window.location.search, lookupOverlayParams);
 }
 
 // How many nested applyingExternalState() calls are in progress.
@@ -46,10 +46,9 @@ export function isApplyingExternalState(): boolean {
  */
 export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   if (urlWritesSuspended > 0) return;
-
-  const hash = writeLink(state).replace(/^\?/, '#');
-  if (hash === window.location.hash) return;
-  const newUrl = window.location.pathname + window.location.search + hash;
+  const query = writeLink(state);
+  if (query === window.location.search && !window.location.hash) return;
+  const newUrl = window.location.pathname + query;
 
   if (pushHistory) {
     history.pushState(null, '', newUrl);
@@ -58,18 +57,7 @@ export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
   }
 }
 
-/**
- * Subscribe to browser back/forward navigation.
- *
- * This app writes the URL only through history.pushState/replaceState (see
- * updateUrl above), never by assigning location.hash directly. Those calls
- * fire neither event on their own, so the only thing this needs to catch is
- * history traversal — which fires popstate every time, whether or not the
- * hash differs between entries. hashchange would fire for that too (when the
- * hash does differ, which pushHistory navigations arrange for), so adding it
- * only doubles up the same restore; it would only earn its place if something
- * changed location.hash directly, which nothing here does.
- */
-export function subscribeToHashChange(callback: () => void): void {
+/** Back and Forward. The app writes the address only through updateUrl, which fires no event. */
+export function subscribeToHistory(callback: () => void): void {
   window.addEventListener('popstate', callback);
 }
