@@ -17,6 +17,12 @@ describe('story names', () => {
     expect(opening).not.toMatch(/[*_[\]]/);
   });
 
+  it('keeps a closing quote with the sentence it closes', () => {
+    expect(stopOpening('tour', 'abraham_rename')).toBe(
+      'Five chapters later, God gives Abram a new name: “you shall no longer be called Abram, but your name shall be Abraham.”',
+    );
+  });
+
   it('knows nothing of a stop the story lacks', () => {
     expect(stopOpening('tour', 'missing')).toBeUndefined();
     expect(stopOpening('missing', 'intro')).toBeUndefined();
