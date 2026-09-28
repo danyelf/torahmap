@@ -47,6 +47,7 @@ import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
+import { tabTitle } from './linkNames.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
   createCamera,
@@ -182,9 +183,16 @@ function storyWasFolded(): boolean {
   }
 }
 
-async function main(): Promise<void> {
-  document.title = __GIT_BRANCH__ === 'main' ? 'Torahmap' : `Torahmap [${__GIT_BRANCH__}]`;
+/**
+ * Set the tab's title from the address rather than from any state built for
+ * it, so it can never name a view the address does not hold — a write
+ * suppressed by `applyingExternalState` leaves both unchanged.
+ */
+function showTitle(): void {
+  document.title = tabTitle(parseUrlState(overlayParamSpecs), __GIT_BRANCH__);
+}
 
+async function main(): Promise<void> {
   const [torahData, verseTexts] = await Promise.all([
     loadTanakhStructure(),
     loadAllVerseTexts(),
@@ -941,6 +949,7 @@ async function main(): Promise<void> {
         ? { story: story.id, stop: resolvedStops[storyStopIndex()].id, overlayParams: {} }
         : buildCurrentUrlState();
     updateUrl(state, push);
+    showTitle();
   }
 
   // The camera when the reader took the map or last sent view_settled. Every
@@ -1654,6 +1663,7 @@ async function main(): Promise<void> {
     applyingExternalState(() => applyViewState(next));
     // The link moved the camera, not the reader.
     markViewSettled();
+    showTitle();
   }
 
   /**
@@ -1699,6 +1709,7 @@ async function main(): Promise<void> {
   if (linkNamesAView(parseUrlState())) {
     restoreFromUrl();
   }
+  showTitle();
 
   // A link to a story stop always opens the story.
   if (frame.mode === 'story' && opensFolded) {
