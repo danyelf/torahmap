@@ -8,9 +8,10 @@ import {
   HAFTARAH,
   VERSE_LENGTH,
   TEXT_DATING,
+  type OverlayEntry,
 } from '@torahmap/overlay-catalog';
 
-const ALL = [COMMENTARY, TROP, HAFTARAH, VERSE_LENGTH, TEXT_DATING];
+const ALL: readonly OverlayEntry[] = [COMMENTARY, TROP, HAFTARAH, VERSE_LENGTH, TEXT_DATING];
 
 describe('the overlay catalog', () => {
   it('names each overlay by id', () => {

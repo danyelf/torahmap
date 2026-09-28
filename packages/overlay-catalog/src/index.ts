@@ -36,8 +36,11 @@ export const TROP = {
   urlParams: TROP_PARAMS,
 } as const satisfies OverlayEntry;
 
+/** The customs the haftarah overlay offers; also `Custom`'s only source (see `haftarah/readings.ts`). */
+export const HAFTARAH_CUSTOMS = ['ashkenazi', 'sephardi'] as const;
+
 const HAFTARAH_PARAMS = [
-  { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'], default: 'ashkenazi' },
+  { key: 'custom', kind: 'token', allowed: HAFTARAH_CUSTOMS, default: 'ashkenazi' },
 ] as const satisfies readonly UrlParamSpec[];
 
 export const HAFTARAH = {
@@ -56,7 +59,6 @@ export const VERSE_LENGTH = {
   description:
     'Shades each verse by how many Hebrew words it has, the shortest dark and the ' +
     'longest bright.',
-  urlParams: undefined,
 } as const satisfies OverlayEntry;
 
 export const TEXT_DATING = {
@@ -66,7 +68,6 @@ export const TEXT_DATING = {
     'Colours each passage by the period scholars date it to, from before the monarchy ' +
     'through the Hellenistic era. A pinned verse shows the estimate it was given and ' +
     'the reasoning behind it.',
-  urlParams: undefined,
 } as const satisfies OverlayEntry;
 
 const BY_ID: ReadonlyMap<string, OverlayEntry> = new Map(
