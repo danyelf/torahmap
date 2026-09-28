@@ -1,6 +1,6 @@
 // What the panel shows. A story is a mode with no tools, only its menu.
-// Outside it one panel is open — on a phone possibly none, leaving only the
-// map — and a phone's sheet can be dragged to full height.
+// Outside it one panel is open, or none, leaving only the map; a phone's sheet
+// can be dragged to full height.
 
 const PANELS = ['search', 'overlay', 'stories', 'about'] as const;
 export type Panel = (typeof PANELS)[number];
@@ -30,7 +30,7 @@ export function frontToolAfter(current: FrontTool, opened: Panel | null): FrontT
 
 export interface Frame {
   mode: 'story' | 'explore';
-  /** The open panel, while exploring. Null on a phone at rest, never on a desktop. */
+  /** The open panel, while exploring; null when closed. */
   open: Panel | null;
   /** The ☰ menu has dropped: over the column on a desktop, from the corner on a phone. */
   menu: boolean;
@@ -41,6 +41,7 @@ export interface Frame {
 export type FrameEvent =
   | { type: 'menu' }
   | { type: 'choose'; panel: Panel }
+  | { type: 'close' }
   | { type: 'story' }
   | { type: 'map-touched' }
   | { type: 'drag'; dy: number }
@@ -68,10 +69,9 @@ export function nextFrame(frame: Frame, event: FrameEvent, phone: boolean): Fram
   return fit(step(frame, event, phone), phone);
 }
 
-/** A desktop always has a panel open while exploring, and has no full height. */
+/** A desktop has no full height. */
 function fit(frame: Frame, phone: boolean): Frame {
-  if (phone || frame.mode === 'story') return frame;
-  return { ...frame, open: frame.open ?? 'overlay', full: false };
+  return phone ? frame : { ...frame, full: false };
 }
 
 function step(frame: Frame, event: FrameEvent, phone: boolean): Frame {
@@ -84,6 +84,8 @@ function step(frame: Frame, event: FrameEvent, phone: boolean): Frame {
       const again = phone && frame.mode === 'explore' && !frame.menu && frame.open === event.panel;
       return explore(again ? null : event.panel);
     }
+    case 'close':
+      return frame.mode === 'explore' ? explore(null) : frame;
     case 'story':
       return STORY;
     case 'map-touched':

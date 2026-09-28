@@ -1,6 +1,7 @@
 /* The frame. On a desktop everything left of the map is one --panel-width
    column in both modes — the story, or the open tool — headed by the ☰ that
-   drops the menu, so the map never moves or changes width when the mode does. The map starts
+   drops the menu, so the map never moves or changes width when the mode does;
+   closing the tool gives the column to the map. The map starts
    at --map-left (src/styles/main.css), which the canvas, the book labels and
    the title all read. What colours the map is named on the map, in the legend
    card. On a phone the panel is a sheet along the bottom and the ☰ floats in
@@ -29,7 +30,7 @@
   position: fixed;
   top: 0;
   left: var(--map-left);
-  width: calc(100vw - var(--panel-width));
+  width: calc(100vw - var(--map-left));
   /* A canvas does not stretch between its edges; 100% is of the visible window. */
   height: 100%;
 }
@@ -50,6 +51,33 @@
   z-index: 10;
   font-family: system-ui, sans-serif;
   color: #fff;
+}
+
+/* With no panel open the map has the whole window, and the ☰ sits over it. */
+body[data-mode='explore']:not([data-open]) {
+  --map-left: 0px;
+}
+
+body[data-mode='explore']:not([data-open]) #panel {
+  display: none;
+}
+
+body[data-mode='explore']:not([data-open]) #menu-toggle {
+  background: #111;
+}
+
+/* Beside the ☰, where the column's title would start, and level with it: the
+   card's padding and border (6px) and a row make the ☰'s height. A phone's
+   legend is at the bottom. */
+@media (min-width: 769px) {
+  body[data-mode='explore']:not([data-open]) #map-legend {
+    top: var(--column-head-pad);
+    left: calc(12px + var(--tap) + 10px);
+  }
+
+  body[data-mode='explore']:not([data-open]) .map-legend-row {
+    min-height: calc(var(--tap) - 6px);
+  }
 }
 
 #sheet-grabber {
@@ -157,6 +185,23 @@ body[data-menu] #panel-body {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
+}
+
+.panel-close {
+  margin-left: auto;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border: none;
+  background: none;
+  color: #aaa;
+  font: inherit;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.panel-close:hover {
+  color: #fff;
 }
 
 .menu-title {
@@ -553,10 +598,6 @@ body[data-open='about'] #about-panel {
     height: var(--sheet-full);
     max-height: none;
     background: #000;
-  }
-
-  body[data-mode='explore']:not([data-open]) #panel {
-    display: none;
   }
 
   /* The ☰ lives in the corner in both modes, so the column's header goes: the

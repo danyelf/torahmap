@@ -54,11 +54,25 @@ describe('exploring on a desktop', () => {
     expect(exploreFrame(PHONE, 'search')).toEqual(explore(null));
   });
 
-  it('always has a panel open', () => {
+  it('opens on the overlay and keeps its panel when the map is touched', () => {
     expect(exploreFrame(DESKTOP)).toEqual(explore('overlay'));
     expect(nextFrame(explore('stories'), { type: 'map-touched' }, DESKTOP)).toEqual(
       explore('stories'),
     );
+  });
+
+  it('closes its panel, and opens one again from the menu', () => {
+    const closed = nextFrame(explore('search'), { type: 'close' }, DESKTOP);
+    expect(closed).toEqual(explore(null));
+    expect(nextFrame(closed, { type: 'map-touched' }, DESKTOP)).toEqual(closed);
+    const down = nextFrame(closed, { type: 'menu' }, DESKTOP);
+    expect(nextFrame(down, { type: 'choose', panel: 'overlay' }, DESKTOP)).toEqual(
+      explore('overlay'),
+    );
+  });
+
+  it('leaves a story alone on close', () => {
+    expect(nextFrame(STORY, { type: 'close' }, DESKTOP)).toEqual(STORY);
   });
 
   it('keeps a panel open when it is chosen again', () => {
@@ -148,10 +162,8 @@ describe('exploring on a phone', () => {
 });
 
 describe('crossing from phone width to desktop width', () => {
-  it('opens the overlay if nothing was open, and drops full height', () => {
-    expect(nextFrame(explore(null), { type: 'layout-changed' }, DESKTOP)).toEqual(
-      explore('overlay'),
-    );
+  it('keeps a closed panel closed, and drops full height', () => {
+    expect(nextFrame(explore(null), { type: 'layout-changed' }, DESKTOP)).toEqual(explore(null));
     expect(nextFrame(explore('about', true), { type: 'layout-changed' }, DESKTOP)).toEqual(
       explore('about'),
     );
