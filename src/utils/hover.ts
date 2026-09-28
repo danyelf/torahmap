@@ -8,9 +8,14 @@ export const HOVER_LINGER_MS = 150;
 export function lingeringHover<T>(show: (target: T | null) => void): {
   enter(target: T): void;
   leave(): void;
+  /** Forget a pending clear. */
+  cancel(): void;
 } {
   let leaving: ReturnType<typeof setTimeout> | undefined;
   return {
+    cancel() {
+      clearTimeout(leaving);
+    },
     enter(target) {
       clearTimeout(leaving);
       show(target);

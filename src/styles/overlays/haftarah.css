@@ -48,7 +48,7 @@
   inset: -3px -1.5px;
 }
 
-.haftarah-key-segment::before {
+.haftarah-key .haftarah-key-segment::before {
   inset: -3px -1px;
 }
 

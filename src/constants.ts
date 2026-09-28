@@ -42,3 +42,8 @@ export const HIGHLIGHT_CONSTANTS = {
   // Color for rare trop marks with no matches
   RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
 } as const;
+
+const DIMMED = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+
+/** A verse left out: one search does not match, or one in no reading while a haftarah reading is hovered. */
+export const DIMMED_GREY: Color = [DIMMED, DIMMED, DIMMED];

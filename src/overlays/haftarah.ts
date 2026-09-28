@@ -1,7 +1,7 @@
 import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TorahData } from '../types.ts';
 import { tanakhKey } from '../types.ts';
-import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
+import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
 import { rgbToHsl, hslToRgb, buildLegendGradient, colorToCss } from '../utils/color.ts';
 import { escapeHtml } from '../utils/html.ts';
 import { verseToUrlFormat } from '../urlState.ts';
@@ -93,13 +93,6 @@ function adjustBrightness(color: Color, factor: number): Color {
 function darkTint(color: Color): Color {
   return hslToRgb({ h: rgbToHsl(color).h, s: 0.5, l: 0.2 });
 }
-
-/** A verse in no reading while a reading is hovered: the grey search gives a verse it does not match. */
-const NO_READING_WHILE_HOVERED: Color = [
-  0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR,
-  0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR,
-  0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR,
-];
 
 const CUSTOMS = ['ashkenazi', 'sephardi'] as const;
 type Custom = (typeof CUSTOMS)[number];
@@ -299,7 +292,7 @@ function colorAt(
     return resolveHoverColors(colors, itemsFromHaftarah, relevantHover, derived);
   }
 
-  return relevantHover ? NO_READING_WHILE_HOVERED : null;
+  return relevantHover ? DIMMED_GREY : null;
 }
 
 /**
@@ -508,7 +501,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
       ${legendCaption(`Torah portion & haftarah (${customLabel}) use same color`, { marginLeft: 28 })}
       ${legendCaption('Includes holidays, fast days, special Shabbatot', { marginLeft: 28 })}
       ${legendCaption('Multi-item verses are split corner to corner, one band per item', { marginLeft: 28 })}
-      ${legendCaption('Hover brightens the reading & its haftarah, darkens others', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
+      ${legendCaption('Hover brightens the reading & its haftarah, darkens the rest', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
       ${renderKey(settings.custom)}
     `;
   },

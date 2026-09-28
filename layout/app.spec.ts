@@ -57,6 +57,15 @@ for (const state of STATES) {
   });
 }
 
+test("the haftarah legend's key shows only in the desktop layout", async ({ page }) => {
+  const state = STATES.find((s) => s.name === 'explore-haftarah')!;
+  await openMap(page, state.hash);
+  await state.then?.(page);
+  // The phone layout starts at max-width 768px (src/styles/frame.css).
+  const desktop = page.viewportSize()!.width > 768;
+  await expect(page.locator('.haftarah-key')).toBeVisible({ visible: desktop });
+});
+
 test('the title face loads', async ({ page }) => {
   await openMap(page, 'story=tour&stop=intro');
   // document.fonts.check() is true for a face that was never declared; load() is not.

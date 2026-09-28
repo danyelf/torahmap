@@ -62,7 +62,6 @@ export const STATES: State[] = [
     shown: ['#overlay-select', '#map-legend'],
   },
   {
-    // The legend's key of books and occasions shows on a desktop only.
     name: 'explore-haftarah',
     hash: 'overlay=haftarah',
     then: (page) => viaMenu(page, 'overlay'),

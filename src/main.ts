@@ -50,7 +50,7 @@ import {
 } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
-import { lingeringHover } from './utils/hover.ts';
+import { legendHover } from './legendHover.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
   createCamera,
@@ -889,7 +889,8 @@ async function main(): Promise<void> {
    */
   function refreshVersePopup(): void {
     if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
-    else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
+    else if (mouseState.hoveredVerse && !legendHovers.owns())
+      updateSidebarWrapper(mouseState.hoveredVerse, false);
   }
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
@@ -973,30 +974,24 @@ async function main(): Promise<void> {
     currentOverlay = getOverlay(id) ?? null;
   }
 
-  // A legend entry marked with `data-hover-verse` hovers that verse, colouring
-  // the map as the cursor over it would; the popup stays shut.
-  const legendHover = lingeringHover<TanakhLayout>((verse) => {
-    const previousHover = mouseState.hoveredVerse;
-    if (tanakhIdentitiesEqual(previousHover, verse)) return;
-    setHoveredVerse(mouseState, verse);
-    repaint(previousHover);
+  const legendHovers = legendHover<TanakhLayout>({
+    hovered: () => mouseState.hoveredVerse,
+    setHovered: (verse) => {
+      const previousHover = mouseState.hoveredVerse;
+      if (tanakhIdentitiesEqual(previousHover, verse)) return;
+      setHoveredVerse(mouseState, verse);
+      repaint(previousHover);
+    },
+    find: (ref) => {
+      const parsed = parseVerseFromUrl(ref);
+      return parsed ? (findTanakhItem(verses, parsed) ?? null) : null;
+    },
   });
-
-  function hoverFromLegend(e: PointerEvent): void {
-    if (e.pointerType === 'touch') return;
-    const target =
-      e.type === 'pointerleave' ? null : (e.target as Element).closest('[data-hover-verse]');
-    const ref = target instanceof HTMLElement ? target.dataset.hoverVerse : undefined;
-    const parsed = ref ? parseVerseFromUrl(ref) : null;
-    const verse = parsed ? findTanakhItem(verses, parsed) : undefined;
-
-    if (verse) legendHover.enter(verse);
-    else legendHover.leave();
-  }
-  overlayLegendContainer?.addEventListener('pointerover', hoverFromLegend);
-  overlayLegendContainer?.addEventListener('pointerleave', hoverFromLegend);
+  overlayLegendContainer?.addEventListener('pointerover', legendHovers.handle);
+  overlayLegendContainer?.addEventListener('pointerleave', legendHovers.handle);
 
   function renderOverlayLegend(): void {
+    legendHovers.cancel();
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
       currentOverlay?.renderLegend?.(overlayLegendContainer, currentSettings());

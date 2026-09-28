@@ -41,7 +41,7 @@ import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
-import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';
+import { DIMMED_GREY } from '../../constants.ts';
 import { trackSearchExecute } from '../../analytics.ts';
 
 /**
@@ -436,8 +436,7 @@ function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] |
     return colors.length === 1 ? colors[0] : colors;
   }
 
-  const brightness = (0.4 + 0.2) * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
-  return [brightness, brightness, brightness];
+  return DIMMED_GREY;
 }
 
 /** The term list a link describes, with its modes and meanings laid over it. */

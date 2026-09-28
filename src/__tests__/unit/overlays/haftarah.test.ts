@@ -486,6 +486,29 @@ describe('Haftarah Overlay', () => {
       expect(verse).toBe('Isaiah.42.5');
     });
 
+    it("keys each custom by that custom's haftarot", async () => {
+      const differing = structuredClone(SAMPLE_HAFTARAH_DATA);
+      // Noach's Sephardi haftarah.
+      differing.specialOccasions[0].haftarah.sephardi = [
+        { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
+      ];
+      installMockFetch({
+        '/data/overlays/haftarah/mappings.json': differing,
+        '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
+      });
+      await haftarahOverlay.overlay.init?.();
+
+      const standIn = () => {
+        const container = document.createElement('div');
+        haftarahOverlay.renderLegend(container);
+        return keyRows(container).find((r) => r.label === 'Rosh Chodesh')!.readings[0].verse;
+      };
+
+      expect(standIn()).toBe('Isaiah.66.1');
+      haftarahOverlay.restore({ custom: 'sephardi' });
+      expect(standIn()).toBe('Isaiah.54.1');
+    });
+
     it('prefers the larger of two overlaps with different readings', async () => {
       // Four verses shared with Bereshit (to 42:21), ten with Noach (from 54:1).
       const verse = await roshChodeshStandIn([
