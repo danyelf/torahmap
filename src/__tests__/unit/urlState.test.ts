@@ -5,6 +5,7 @@ import {
   subscribeToHistory,
   applyingExternalState,
   isApplyingExternalState,
+  linkNamesAView,
 } from '../../urlState';
 import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink } from '@torahmap/link';
 import { mockHistory } from '../helpers/mocks';
@@ -42,6 +43,19 @@ describe('the address holds the view in its query string', () => {
     expect(window.location.hash).toBe('');
   });
 
+  it('writes the bare pathname for an empty view', () => {
+    setLink('?verse=Genesis.1.1');
+    updateUrl({ overlayParams: {} });
+    expect(window.location.search).toBe('');
+  });
+
+  it('drops a leftover hash even when the query itself is unchanged', () => {
+    history.replaceState(null, '', '/?verse=Genesis.1.1#x');
+    updateUrl({ verse: 'Genesis.1.1', overlayParams: {} });
+    expect(window.location.hash).toBe('');
+    expect(window.location.search).toBe('?verse=Genesis.1.1');
+  });
+
   it('adds no history entry for an unchanged view', () => {
     setLink('?verse=Genesis.1.1');
     const before = history.length;
@@ -54,6 +68,27 @@ describe('the address holds the view in its query string', () => {
     subscribeToHistory(heard);
     window.dispatchEvent(new PopStateEvent('popstate'));
     expect(heard).toHaveBeenCalledOnce();
+  });
+});
+
+describe('a tracking-only link opens the same as a bare address', () => {
+  it('a bare address names no view', () => {
+    expect(linkNamesAView(readLink(''))).toBe(false);
+  });
+
+  it('utm_source and fbclid, the parameters chat apps and Facebook add to a shared link, name no view either', () => {
+    expect(linkNamesAView(readLink('?utm_source=x&fbclid=abc'))).toBe(false);
+  });
+
+  it('a real view field names a view', () => {
+    expect(linkNamesAView(readLink('?verse=Genesis.1.1'))).toBe(true);
+  });
+
+  // writeLink omits a default zoom of 1.0, but the link named it explicitly —
+  // linkNamesAView checks the parsed fields directly, not writeLink's output,
+  // so this still counts as naming a view.
+  it('an explicit default zoom still names a view', () => {
+    expect(linkNamesAView(readLink('?zoom=1'))).toBe(true);
   });
 });
 

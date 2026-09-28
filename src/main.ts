@@ -43,7 +43,13 @@ import {
   trackWordSearch,
 } from './analytics.ts';
 import { parseVerseFromUrl, verseToUrlFormat, type UrlState } from '@torahmap/link';
-import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
+import {
+  parseUrlState,
+  updateUrl,
+  subscribeToHistory,
+  applyingExternalState,
+  linkNamesAView,
+} from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
@@ -1661,7 +1667,7 @@ async function main(): Promise<void> {
       const open = next.searchParams.search ? 'search' : 'overlay';
       // Only for a story exit: a phone opens with no panel shown, so
       // applyFrame's own tracking of the open panel can't see it land here.
-      // Any other hash change (Back/Forward while already exploring) must
+      // Any other link change (Back/Forward while already exploring) must
       // leave frontTool at whatever the reader last chose from the legend.
       if (frame.mode === 'story') frontTool = open;
       setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
@@ -1690,7 +1696,7 @@ async function main(): Promise<void> {
     }
   }
 
-  if (window.location.search) {
+  if (linkNamesAView(parseUrlState())) {
     restoreFromUrl();
   }
 

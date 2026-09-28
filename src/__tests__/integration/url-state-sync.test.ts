@@ -206,7 +206,6 @@ describe('URL State Sync Integration', () => {
     });
 
     it('does not react to a hashchange event', () => {
-      // subscribeToHistory listens only for popstate — see its comment in urlState.ts.
       const callback = vi.fn();
       subscribeToHistory(callback);
 

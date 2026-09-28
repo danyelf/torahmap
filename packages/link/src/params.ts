@@ -190,8 +190,8 @@ function validateOneParam(spec: UrlParamSpec, raw: string | null | undefined): s
  * it declared, each one validated, each one narrowed to the values it allows.
  *
  * This is the single door into an overlay's settings. Everything that reaches
- * an overlay — a URL hash, a story stop — comes through here, so an overlay
- * never has to re-check what its own declaration already promised.
+ * an overlay — a URL query string, a story stop — comes through here, so an
+ * overlay never has to re-check what its own declaration already promised.
  */
 export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   specs: S | undefined,
