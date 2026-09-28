@@ -1019,6 +1019,10 @@ async function main(): Promise<void> {
       dispatch({ type: 'menu' });
       return;
     }
+    if (e.key === 'Escape' && !pinnedVerse) {
+      dispatch({ type: 'close' });
+      return;
+    }
     if (!pinnedVerse) return;
 
     if (e.key === 'Escape') {
@@ -1412,6 +1416,7 @@ async function main(): Promise<void> {
   function onChromeClick(e: MouseEvent): void {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
+    if (target.closest('.panel-close')) return dispatch({ type: 'close' });
     if (target.closest('.story-leave'))
       return dispatch({ type: 'choose', panel: toolsNow().search ? 'search' : 'overlay' });
     const chosen = storyChosen(target);
