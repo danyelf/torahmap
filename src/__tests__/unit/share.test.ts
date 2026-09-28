@@ -52,6 +52,12 @@ describe('shareLink', () => {
     });
     expect(await shareLink(url, 't', { writeText, coarsePointer: false })).toBe('failed');
   });
+
+  it('fails when there is no Clipboard API to call, as outside a secure context', async () => {
+    const insecureNavigator = {} as Navigator; // no `clipboard` property at all
+    const writeText = (t: string) => insecureNavigator.clipboard.writeText(t);
+    expect(await shareLink(url, 't', { writeText, coarsePointer: false })).toBe('failed');
+  });
 });
 
 describe('closeAfterConfirming', () => {
@@ -70,6 +76,19 @@ describe('closeAfterConfirming', () => {
     vi.useFakeTimers();
     const close = vi.fn();
     closeAfterConfirming(() => false, close, 1500);
+    vi.advanceTimersByTime(1500);
+    expect(close).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('leaves alone a menu reopened since, even though it reports open, because its item is gone', () => {
+    vi.useFakeTimers();
+    const close = vi.fn();
+    const item = document.createElement('button');
+    document.body.appendChild(item);
+    const menuOpen = true;
+    closeAfterConfirming(() => menuOpen && item.isConnected, close, 1500);
+    item.remove(); // reopening the menu redraws it, detaching the confirmed item
     vi.advanceTimersByTime(1500);
     expect(close).not.toHaveBeenCalled();
     vi.useRealTimers();

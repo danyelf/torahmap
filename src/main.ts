@@ -488,6 +488,7 @@ async function main(): Promise<void> {
 
   const panel = document.getElementById('panel')!;
   const droppedMenu = document.getElementById('menu')!;
+  const shareStatus = document.getElementById('share-status')!;
   const storyProgress = document.getElementById('story-progress')!;
   const storyProgressFill = document.getElementById('story-progress-fill')!;
   const toolsTitle = document.getElementById('tools-title')!;
@@ -1449,7 +1450,13 @@ async function main(): Promise<void> {
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
     if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
-    if (action === SHARE) return shareCurrentView(actionItem!);
+    if (action === SHARE) {
+      // A share already in flight ignores a second tap: sharing again would
+      // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
+      if (actionItem!.dataset.sharePending) return;
+      actionItem!.dataset.sharePending = 'true';
+      return shareCurrentView(actionItem!);
+    }
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
     const chooser = target.closest<HTMLElement>('.map-legend-row');
@@ -1457,11 +1464,7 @@ async function main(): Promise<void> {
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
   }
 
-  /**
-   * Sends the address bar's link: the share sheet on a touch screen that has
-   * one, otherwise the clipboard. A pan's debounced write may not have landed
-   * yet, so the address is brought current first.
-   */
+  /** A pan's debounced address write may not have landed yet, so it is brought current first. */
   async function shareCurrentView(item: HTMLElement): Promise<void> {
     syncUrl(false);
     const title = describeLink(parseUrlState(overlayParamSpecs), LINK_NAMES).title;
@@ -1471,12 +1474,14 @@ async function main(): Promise<void> {
       coarsePointer: matchMedia('(pointer: coarse)').matches,
     });
     if (outcome === 'copied' || outcome === 'failed') {
+      const label = outcome === 'copied' ? 'Link copied' : "Couldn't copy";
       item.innerHTML =
-        outcome === 'copied'
-          ? 'Link copied <span class="menu-confirm-mark">✓</span>'
-          : "Couldn't copy";
+        outcome === 'copied' ? `${label} <span class="menu-confirm-mark">✓</span>` : label;
+      shareStatus.textContent = label;
+      // Reopening the menu redraws its items, detaching this one; a stale
+      // timer must not then close whatever menu is open by the time it fires.
       closeAfterConfirming(
-        () => frame.menu,
+        () => frame.menu && item.isConnected,
         () => dispatch({ type: 'menu' }),
         1500,
       );
