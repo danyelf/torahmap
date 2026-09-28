@@ -42,15 +42,9 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import { parseVerseFromUrl, verseToUrlFormat, type UrlState } from '@torahmap/link';
+import { parseVerseFromUrl, verseToUrlFormat, linkNamesAView, type UrlState } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
-import {
-  parseUrlState,
-  updateUrl,
-  subscribeToHistory,
-  applyingExternalState,
-  linkNamesAView,
-} from './urlState.ts';
+import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';

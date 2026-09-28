@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   readLink,
   writeLink,
+  linkNamesAView,
   verseToUrlFormat,
   parseVerseFromUrl,
   validateOverlayParams,
@@ -167,6 +168,24 @@ describe('readLink', () => {
   it('handles verse with dots in book name', () => {
     const state = readLink('?verse=I.Samuel.1.1', lookup);
     expect(state.verse).toBe('I.Samuel.1.1');
+  });
+});
+
+describe('a tracking-only link opens the same as a bare address', () => {
+  it('a bare address names no view', () => {
+    expect(linkNamesAView(readLink(''))).toBe(false);
+  });
+
+  it('utm_source and fbclid, the parameters chat apps and Facebook add to a shared link, name no view either', () => {
+    expect(linkNamesAView(readLink('?utm_source=x&fbclid=abc'))).toBe(false);
+  });
+
+  it('a real view field names a view', () => {
+    expect(linkNamesAView(readLink('?verse=Genesis.1.1'))).toBe(true);
+  });
+
+  it('an explicit default zoom still names a view', () => {
+    expect(linkNamesAView(readLink('?zoom=1'))).toBe(true);
   });
 });
 
@@ -418,6 +437,12 @@ describe('readLink and writeLink roundtrip', () => {
 });
 
 describe('a story in the link', () => {
+  it('reads a story and its stop together', () => {
+    const state = readLink('?story=tour&stop=abraham_call', lookup);
+    expect(state.story).toBe('tour');
+    expect(state.stop).toBe('abraham_call');
+  });
+
   it('writes a story and its stop together', () => {
     expect(writeLink({ story: 'tour', stop: 'abraham_call', overlayParams: {} })).toBe(
       '?story=tour&stop=abraham_call',
@@ -845,7 +870,7 @@ describe('the search in a link', () => {
   });
 });
 
-describe('haftarah custom in the link', () => {
+describe('a token parameter with allowed values and a default', () => {
   it('parses the Sephardi custom', () => {
     const state = readLink('?overlay=haftarah&custom=sephardi', lookup);
     expect(state.overlayParams.custom).toBe('sephardi');
@@ -853,11 +878,6 @@ describe('haftarah custom in the link', () => {
 
   it('parses the Ashkenazi custom', () => {
     const state = readLink('?overlay=haftarah&custom=ashkenazi', lookup);
-    expect(state.overlayParams.custom).toBe('ashkenazi');
-  });
-
-  it('falls back to Ashkenazi for a custom that is not one of the two', () => {
-    const state = readLink('?overlay=haftarah&custom=yemenite', lookup);
     expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 

@@ -11,6 +11,7 @@ export type { UrlState } from './link.ts';
 export {
   MIN_ZOOM,
   MAX_ZOOM,
+  linkNamesAView,
   readLink,
   writeLink,
   verseToUrlFormat,

@@ -29,14 +29,18 @@ fail() {
   exit 1
 }
 
-# Dependencies missing is the single most common cause of confusing failures
-# here: a fresh worktree has no node_modules, and the type checker then reports
-# "Cannot find type definition file for 'vite/client'", which reads like a code
-# error but is not. Catch it up front and say so plainly.
+# Dependencies missing or out of date is the single most common cause of
+# confusing failures here: a fresh worktree has no node_modules, and the type
+# checker then reports "Cannot find type definition file for 'vite/client'",
+# which reads like a code error but is not. An existing worktree can also be
+# missing a workspace package a newer branch added (@torahmap/link), which
+# fails the same way with "Cannot find module '@torahmap/link'". Catch both up
+# front and say so plainly.
 if [ ! -d node_modules ] || [ ! -x node_modules/.bin/vitest ] ||
-  [ ! -x node_modules/.bin/prettier ]; then
-  fail "Dependencies are not installed in this worktree, so the formatter,
-  tests and type checker cannot run. This is not a problem with your code.
+  [ ! -x node_modules/.bin/prettier ] || [ ! -e node_modules/@torahmap/link ]; then
+  fail "Dependencies are missing or out of date in this worktree, so the
+  formatter, tests and type checker cannot run. This is not a problem with
+  your code.
 
       cd $repo_root && npm install
 

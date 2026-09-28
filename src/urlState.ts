@@ -9,25 +9,6 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
   return readLink(window.location.search, lookupOverlayParams);
 }
 
-/**
- * Whether a parsed link names any part of the view, as opposed to a query
- * string that carries only tracking parameters (utm_source, fbclid) neither
- * readLink nor writeLink recognizes. overlayParams is not checked: it is only
- * ever populated alongside an overlay, which is checked directly.
- */
-export function linkNamesAView(state: UrlState): boolean {
-  return (
-    state.story !== undefined ||
-    state.stop !== undefined ||
-    state.overlay !== undefined ||
-    state.verse !== undefined ||
-    state.zoom !== undefined ||
-    state.x !== undefined ||
-    state.y !== undefined ||
-    state.searchParams !== undefined
-  );
-}
-
 // How many nested applyingExternalState() calls are in progress.
 let urlWritesSuspended = 0;
 

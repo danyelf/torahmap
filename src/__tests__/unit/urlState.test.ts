@@ -5,7 +5,6 @@ import {
   subscribeToHistory,
   applyingExternalState,
   isApplyingExternalState,
-  linkNamesAView,
 } from '../../urlState';
 import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink } from '@torahmap/link';
 import { mockHistory } from '../helpers/mocks';
@@ -56,6 +55,12 @@ describe('the address holds the view in its query string', () => {
     expect(window.location.search).toBe('?verse=Genesis.1.1');
   });
 
+  it('keeps the pathname', () => {
+    history.replaceState(null, '', '/index.html?verse=Genesis.1.1');
+    updateUrl({ verse: 'Exodus.2.3', overlayParams: {} });
+    expect(window.location.pathname).toBe('/index.html');
+  });
+
   it('adds no history entry for an unchanged view', () => {
     setLink('?verse=Genesis.1.1');
     const before = history.length;
@@ -71,27 +76,6 @@ describe('the address holds the view in its query string', () => {
   });
 });
 
-describe('a tracking-only link opens the same as a bare address', () => {
-  it('a bare address names no view', () => {
-    expect(linkNamesAView(readLink(''))).toBe(false);
-  });
-
-  it('utm_source and fbclid, the parameters chat apps and Facebook add to a shared link, name no view either', () => {
-    expect(linkNamesAView(readLink('?utm_source=x&fbclid=abc'))).toBe(false);
-  });
-
-  it('a real view field names a view', () => {
-    expect(linkNamesAView(readLink('?verse=Genesis.1.1'))).toBe(true);
-  });
-
-  // writeLink omits a default zoom of 1.0, but the link named it explicitly —
-  // linkNamesAView checks the parsed fields directly, not writeLink's output,
-  // so this still counts as naming a view.
-  it('an explicit default zoom still names a view', () => {
-    expect(linkNamesAView(readLink('?zoom=1'))).toBe(true);
-  });
-});
-
 // A plausible value for each key an overlay declared.
 function plausibleSettings(overlay: Overlay): Record<string, string> {
   const settings: Record<string, string> = {};
@@ -102,8 +86,8 @@ function plausibleSettings(overlay: Overlay): Record<string, string> {
 }
 
 describe('what every overlay must hold to', () => {
-  // The point of the redesign: an overlay that saves settings has to say which
-  // keys it uses, or urlState.ts will never read them back out of a link.
+  // An overlay that saves settings has to say which keys it uses, or
+  // @torahmap/link will never read them back out of a link.
   getAllOverlays().forEach((overlay) => {
     // Declared, not inferred from a value: an overlay whose default settings
     // are undefined still saves settings if it implements settingsToUrl.

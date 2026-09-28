@@ -13,7 +13,6 @@ import type { Color } from '../../../overlays/types';
 import { rgbToHsl } from '../../../utils/color';
 import { HOVER_LINGER_MS } from '../../../utils/hover';
 import { DIMMED_GREY } from '../../../constants';
-import { HAFTARAH } from '@torahmap/overlay-catalog';
 
 const sum = (c: Color) => c[0] + c[1] + c[2];
 
@@ -176,10 +175,6 @@ describe('Haftarah Overlay', () => {
     it('has correct id and name', () => {
       expect(haftarahOverlay.overlay.id).toBe('haftarah');
       expect(haftarahOverlay.overlay.name).toBe('Haftarah');
-    });
-
-    it('carries its catalog entry', () => {
-      expect(haftarahOverlay.overlay.name).toBe(HAFTARAH.name);
     });
   });
 

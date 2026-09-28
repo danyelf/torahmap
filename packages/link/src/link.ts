@@ -39,6 +39,25 @@ function validateBookName(book: string): boolean {
 }
 
 /**
+ * Whether a parsed link names any part of the view, as opposed to a query
+ * string that carries only tracking parameters (utm_source, fbclid) neither
+ * readLink nor writeLink recognizes. overlayParams is not checked: it is only
+ * ever populated alongside an overlay, which is checked directly.
+ */
+export function linkNamesAView(state: UrlState): boolean {
+  return (
+    state.story !== undefined ||
+    state.stop !== undefined ||
+    state.overlay !== undefined ||
+    state.verse !== undefined ||
+    state.zoom !== undefined ||
+    state.x !== undefined ||
+    state.y !== undefined ||
+    state.searchParams !== undefined
+  );
+}
+
+/**
  * The view a link's query string names. Accepts "?a=b", "a=b" or URLSearchParams.
  *
  * Without lookupOverlayParams, overlay parameters are skipped; the core view

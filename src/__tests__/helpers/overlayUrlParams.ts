@@ -1,9 +1,4 @@
-import { getOverlay } from '../../overlays/registry.ts';
-import type { OverlayParamSpecLookup } from '@torahmap/link';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 
-/**
- * The lookup parseUrlState takes, resolved through the registry — exactly what
- * main.ts passes. Requires the registry to be populated first, normally with
- * registerAllOverlays().
- */
-export const overlayUrlParams: OverlayParamSpecLookup = (id) => getOverlay(id)?.urlParams;
+/** The lookup parseUrlState takes — exactly what main.ts passes. */
+export const overlayUrlParams = overlayParamSpecs;

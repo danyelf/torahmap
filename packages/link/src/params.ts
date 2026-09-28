@@ -81,7 +81,7 @@ export type OverlayParams = UrlParamValues;
  */
 export type OverlayParamSpecLookup = (overlayId: string) => readonly UrlParamSpec[] | undefined;
 
-// Keys this module owns; an overlay may not claim one of these.
+// The link's own keys, read in link.ts; an overlay may not claim one of these.
 export const RESERVED_KEYS: ReadonlySet<string> = new Set([
   'story',
   'stop',

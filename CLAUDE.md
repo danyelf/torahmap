@@ -137,10 +137,10 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   a `scrollytelling/` mode, a `talmud/` mode with its own `main-talmud.ts`
   entry point, `styles/`, the `worker/` that serves the deployed site, and the
   `telemetry/` it records through.
-- `packages/` — the code the page and the Worker share, as npm workspace
-  packages: `link` (reading and writing links), `overlay-catalog` (each
-  overlay's name and link keys), `stories` (the stories, compiled from
-  Markdown by `generate.mjs`).
+- `packages/` — shared code, kept free of the page so the Worker can import
+  it, as npm workspace packages: `link` (reading and writing links),
+  `overlay-catalog` (each overlay's name and link keys), `stories` (the
+  stories, compiled from Markdown by `generate.mjs`).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
