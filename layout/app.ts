@@ -68,8 +68,18 @@ export const STATES: State[] = [
     name: 'explore-link-copied',
     link: 'overlay=commentary',
     then: async (page) => {
+      try {
+        await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+      } catch {
+        // Not every project can grant it; the share then falls back to "Couldn't copy".
+      }
       await page.locator('#menu-toggle').click();
       await page.locator('.menu-item[data-action="share"]:visible').click();
+      await page
+        .locator('.menu-item[data-action="share"]:visible', {
+          hasText: /Link copied|Couldn't copy/,
+        })
+        .waitFor();
     },
     shown: ['#menu', '.menu-item[data-action="share"]'],
   },
