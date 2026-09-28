@@ -65,6 +65,12 @@ export const STATES: State[] = [
     shown: ['#overlay-select', '#map-legend'],
   },
   {
+    name: 'explore-haftarah',
+    hash: 'overlay=haftarah',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
     name: 'explore-search',
     hash: `search=${encodeURIComponent('אברהם')}`,
     then: (page) => viaMenu(page, 'search'),

@@ -39,12 +39,14 @@ export const HIGHLIGHT_CONSTANTS = {
   // Brightness multiplier for an overlay-colored item on hover
   BRIGHTNESS_FACTOR: 1.5,
 
-  // Desaturation factor for haftarah non-hover
-  DESATURATE_FACTOR: 0.2,
-
   // Color for rare trop marks with no matches
   RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
 } as const;
+
+const DIMMED = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+
+/** The grey of a verse left out. */
+export const DIMMED_GREY: Color = [DIMMED, DIMMED, DIMMED];
 
 /** How a search shows over an overlay, judged by eye on the map. */
 export const SEARCH_WITH_OVERLAY = {

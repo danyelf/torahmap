@@ -4,7 +4,7 @@ import type { SpatialItem, ItemState } from './types';
 import type { Overlay, Color, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
-import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
+import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
 
 /**
  * Default gray for a verse with no overlay color, brightness-varied by a
@@ -19,9 +19,6 @@ export function getDefaultColor(verseIndex: number): [number, number, number] {
 
 /** A verse's colour, or its stripes. */
 export type VerseColor = Color | Color[];
-
-const ALONE_SHADE = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
-const UNMATCHED_ALONE: Color = [ALONE_SHADE, ALONE_SHADE, ALONE_SHADE];
 
 function dim(color: VerseColor, factor: number): VerseColor {
   const one = (c: Color): Color => [c[0] * factor, c[1] * factor, c[2] * factor];
@@ -53,7 +50,7 @@ export function combineLayers(
     if (!search) {
       colors[i] = under;
     } else if (!overlay) {
-      colors[i] = match ?? UNMATCHED_ALONE;
+      colors[i] = match ?? DIMMED_GREY;
     } else if (match) {
       colors[i] = under;
       rings[i] = match;
