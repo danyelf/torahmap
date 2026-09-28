@@ -197,13 +197,12 @@ function storyWasFolded(): boolean {
  * suppressed by `applyingExternalState` leaves both unchanged.
  */
 function showTitle(): void {
-  document.title = tabTitle(parseUrlState(overlayParamSpecs), __GIT_BRANCH__);
+  const title = tabTitle(parseUrlState(overlayParamSpecs), __GIT_BRANCH__);
+  if (document.title !== title) document.title = title;
 }
 
 async function main(): Promise<void> {
-  // Before any data load, so a tab on a non-main build never sits titled
-  // plainly "Torahmap" — index.html's placeholder — while the 8.8 MB verse
-  // bundle fetches. LINK_NAMES is static package data, so this needs no await.
+  // Before the data loads, so the branch name shows from the start.
   showTitle();
 
   const [torahData, verseTexts] = await Promise.all([
@@ -952,12 +951,7 @@ async function main(): Promise<void> {
     return state;
   }
 
-  /**
-   * Write the URL for what is on screen. `push` asks for a history entry, for
-   * a discrete step rather than a pan or a scroll; leaving a story for the
-   * reader's own view pushes regardless, since that is the one Back step to
-   * the stop, however many further writes the same action makes.
-   */
+  /** Write the URL for what is on screen; `push` asks for a history entry, for a discrete step rather than a pan or a scroll. */
   function syncUrl(push: boolean = false): void {
     const next = linkForScreen({
       mode: frame.mode,

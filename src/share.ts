@@ -9,7 +9,6 @@ export interface ShareEnv {
   coarsePointer: boolean;
 }
 
-/** Send a link: the system share sheet on a touch screen that has one, otherwise the clipboard. */
 export async function shareLink(url: string, title: string, env: ShareEnv): Promise<ShareOutcome> {
   if (env.share && env.coarsePointer) {
     try {

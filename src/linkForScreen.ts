@@ -1,5 +1,3 @@
-// See docs/plans/2026-09-28-sharing-a-view.md, "The link".
-
 import type { UrlState } from '@torahmap/link';
 import type { DriverKind } from './scrollytelling/driver';
 

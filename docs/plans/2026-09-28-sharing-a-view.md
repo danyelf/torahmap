@@ -1,7 +1,7 @@
 # Sharing a view
 
 **Date:** 2026-09-28
-**Status:** Spec, agreed in conversation; not started.
+**Status:** Parts 1 (#278) and 2 built; part 3 (the Worker's previews and telemetry) not started.
 **Issues:** #232 (second half), #245. Step 3 of
 [Where everything lives](2026-09-23-ui-information-hierarchy-design.md).
 The per-view preview image is #273.

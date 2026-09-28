@@ -18,11 +18,7 @@ export interface LinkDescription {
   description: string;
 }
 
-/**
- * What a link is called in a tab and a chat preview. The title names what the
- * link points at, most specific first, because tabs and previews cut from the
- * right.
- */
+/** The title names what the link points at, most specific first, because tabs and previews cut from the right. */
 export function describeLink(state: UrlState, names: LinkNames): LinkDescription {
   if (state.story) {
     const title = names.storyTitle(state.story);
