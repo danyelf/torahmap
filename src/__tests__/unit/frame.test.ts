@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { DRAG_PX, STORY, exploreFrame, isPanel, nextFrame, type Frame } from '../../frame';
+import {
+  DRAG_PX,
+  STORY,
+  exploreFrame,
+  frontToolAfter,
+  isPanel,
+  nextFrame,
+  type Frame,
+} from '../../frame';
 
 const explore = (open: Frame['open'], full = false): Frame => ({
   mode: 'explore',
@@ -41,6 +49,11 @@ describe('returning to the story', () => {
 });
 
 describe('exploring on a desktop', () => {
+  it('lands on the panel a link asks for, on a desktop', () => {
+    expect(exploreFrame(DESKTOP, 'search')).toEqual(explore('search'));
+    expect(exploreFrame(PHONE, 'search')).toEqual(explore(null));
+  });
+
   it('always has a panel open', () => {
     expect(exploreFrame(DESKTOP)).toEqual(explore('overlay'));
     expect(nextFrame(explore('stories'), { type: 'map-touched' }, DESKTOP)).toEqual(
@@ -145,9 +158,22 @@ describe('crossing from phone width to desktop width', () => {
   });
 });
 
+describe('which tool leads', () => {
+  it('switches to the panel that opens', () => {
+    expect(frontToolAfter('overlay', 'search')).toBe('search');
+    expect(frontToolAfter('search', 'overlay')).toBe('overlay');
+  });
+
+  it('keeps the current tool when Stories, About, or nothing opens', () => {
+    expect(frontToolAfter('search', 'stories')).toBe('search');
+    expect(frontToolAfter('overlay', 'about')).toBe('overlay');
+    expect(frontToolAfter('search', null)).toBe('search');
+  });
+});
+
 describe('panel names', () => {
   it('accepts the panels and nothing else', () => {
-    expect(['overlay', 'stories', 'about'].every(isPanel)).toBe(true);
+    expect(['search', 'overlay', 'stories', 'about'].every(isPanel)).toBe(true);
     expect(isPanel('menu')).toBe(false);
     expect(isPanel('story')).toBe(false);
     expect(isPanel('restart')).toBe(false);

@@ -1,18 +1,22 @@
-import type { ResolvedStoryStop } from './types';
+import type { ResolvedStoryStop, StoryStop } from './types';
 import type { TanakhLayout } from '../types';
-import type { Color } from '../overlays/types.ts';
-import type { Overlay } from '../overlays/types.ts';
+import type { Color, Overlay } from '../overlays/types.ts';
+import type { Picture } from '../geometry.ts';
 import { getOverlay } from '../overlays/registry';
-import { getDefaultColor } from '../itemColoring';
+import { getDefaultColor, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
-import { validateOverlayParams, type UrlParamValues } from '../urlState.ts';
+import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '../urlState.ts';
 import { settingsFromLink } from '../overlays/settings.ts';
+import { searchFromLink } from '../overlays/search/index.ts';
+import { toolsShown } from '../tools.ts';
 
-// Memoised per verses array by overlay id and validated link parameters. The key is canonical
-// because validateOverlayParams writes keys in the order urlParams declares them, so stops that
-// ask for the same thing share an entry. Colours that depend on the hover are recomputed while a
-// verse is hovered: caching by hover too would add an entry for every verse the cursor crosses.
-const colorsCache = new WeakMap<TanakhLayout[], Map<string, (Color | Color[])[]>>();
+// Memoised per verses array by the stop's overlay, its search and their
+// validated link parameters. The key is canonical because validateOverlayParams
+// writes keys in the order urlParams declares them, so stops that ask for the
+// same thing share an entry. Colours that depend on the hover are recomputed
+// while a verse is hovered: caching by hover too would add an entry for every
+// verse the cursor crosses.
+const picturesCache = new WeakMap<TanakhLayout[], Map<string, Picture>>();
 
 // UrlParamValues declares every key optional; validateOverlayParams only ever
 // sets present keys to non-empty strings, so this just gives TypeScript proof
@@ -23,44 +27,49 @@ function definedEntries(values: UrlParamValues): [string, string][] {
   );
 }
 
-function cacheKeyFor(overlay: Overlay, params: UrlParamValues): string {
-  const paramsKey = new URLSearchParams(Object.fromEntries(definedEntries(params))).toString();
-  return `${overlay.id}?${paramsKey}`;
+function paramsKey(values: UrlParamValues): string {
+  return new URLSearchParams(Object.fromEntries(definedEntries(values))).toString();
 }
 
-function withDefaults(colors: (Color | Color[] | null)[]): (Color | Color[])[] {
-  return colors.map((c, i) => c ?? getDefaultColor(i));
+function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
+  const overlayKey = overlay
+    ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
+    : 'none';
+  const searchKey = paramsKey(validateOverlayParams(SEARCH_URL_PARAMS, stop.searchParams ?? {}));
+  return `${overlayKey}#${searchKey}`;
 }
 
-export function colorsForStop(
+function withDefaults(picture: Picture<Color | Color[] | null>): Picture {
+  return { ...picture, colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)) };
+}
+
+export function pictureForStop(
   stop: ResolvedStoryStop,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
-): (Color | Color[])[] {
-  const overlay = stop.overlay ? getOverlay(stop.overlay) : undefined;
-  // No overlay, or one that doesn't answer as a function of settings: default
-  // colours, the same as a stop with no overlay at all.
-  if (!overlay || !overlay.colorsFor) {
-    return verses.map((_, i) => getDefaultColor(i));
-  }
+): Picture {
+  const named = stop.overlay ? getOverlay(stop.overlay) : undefined;
+  // One that doesn't answer as a function of settings is drawn as no overlay.
+  const overlay = named?.colorsFor ? named : null;
+  const byHover = !!(overlay?.hoverChangesColors && hovered);
 
-  const raw = stop.overlayParams ?? {};
-  if (overlay.hoverChangesColors && hovered) {
-    return withDefaults(overlay.colorsFor(verses, settingsFromLink(overlay, raw), hovered));
-  }
-
-  let cache = colorsCache.get(verses);
+  let cache = picturesCache.get(verses);
   if (!cache) {
     cache = new Map();
-    colorsCache.set(verses, cache);
+    picturesCache.set(verses, cache);
   }
-  const key = cacheKeyFor(overlay, validateOverlayParams(overlay.urlParams, raw));
-  const cached = cache.get(key);
+  const key = cacheKeyFor(overlay, stop);
+  const cached = byHover ? undefined : cache.get(key);
   if (cached) return cached;
 
-  const resolved = withDefaults(overlay.colorsFor(verses, settingsFromLink(overlay, raw), hovered));
-  cache.set(key, resolved);
-  return resolved;
+  const tools = toolsShown(
+    overlay,
+    overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
+    searchFromLink(stop.searchParams ?? {}),
+  );
+  const picture = withDefaults(toolsPicture(tools, verses, hovered));
+  if (!byHover) cache.set(key, picture);
+  return picture;
 }
 
 // One stop's colours fading into the next's. At rest on a stop it is that
@@ -73,13 +82,11 @@ export function computeBlendedColors(
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
 ): ColorLayer {
-  if (fromStop === toStop || t === 0) {
-    return still({ colors: colorsForStop(fromStop, verses, hovered) });
-  }
-  if (t >= 1) return still({ colors: colorsForStop(toStop, verses, hovered) });
+  if (fromStop === toStop || t === 0) return still(pictureForStop(fromStop, verses, hovered));
+  if (t >= 1) return still(pictureForStop(toStop, verses, hovered));
   return {
-    from: { colors: colorsForStop(fromStop, verses, hovered) },
-    to: { colors: colorsForStop(toStop, verses, hovered) },
+    from: pictureForStop(fromStop, verses, hovered),
+    to: pictureForStop(toStop, verses, hovered),
     t,
   };
 }

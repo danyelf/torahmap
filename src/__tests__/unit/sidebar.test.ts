@@ -5,7 +5,7 @@ import {
   updateSidebar,
   type SidebarElements,
 } from '../../sidebar';
-import type { Overlay } from '../../overlays/types';
+import type { Overlay, ToolOnMap } from '../../overlays/types';
 import type { VerseTexts, VerseText } from '../../verseTexts';
 import { createVerse } from '../helpers';
 
@@ -429,6 +429,108 @@ describe('sidebar', () => {
 
         expect(elements.hebrew?.textContent).toBe('בְּרֵאשִׁית');
         expect(elements.english?.textContent).toBe('In the beginning');
+      });
+
+      describe('with a search on', () => {
+        function searchOn(info: string | null): ToolOnMap {
+          return {
+            tool: {
+              id: 'search',
+              name: 'Search',
+              getVerseColor: () => null,
+              getHoverInfo: () => info,
+              highlightVerseText: vi.fn((text: string) => {
+                const fragment = document.createDocumentFragment();
+                const mark = document.createElement('mark');
+                mark.textContent = text;
+                fragment.appendChild(mark);
+                return fragment;
+              }),
+            },
+            settings: {},
+          };
+        }
+
+        it("shows the overlay's line, then the search's", () => {
+          const overlay: Overlay = {
+            id: 'commentary',
+            name: 'Commentary',
+            getVerseColor: () => null,
+            getHoverInfo: () => '680 references',
+          };
+          const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+          updateSidebar(
+            elements,
+            verse,
+            verseTexts,
+            overlay,
+            undefined,
+            mockGetVerseText,
+            false,
+            searchOn('Matches: אברם'),
+          );
+
+          expect([...elements.overlayInfo!.children].map((c) => c.textContent)).toEqual([
+            '680 references',
+            'Matches: אברם',
+          ]);
+        });
+
+        /** A marker that wraps text[start, end) in a mark of class `cls`. */
+        function marking(cls: string, start: number, end: number) {
+          return vi.fn((text: string) => {
+            const fragment = document.createDocumentFragment();
+            const mark = document.createElement('mark');
+            mark.className = cls;
+            mark.textContent = text.slice(start, end);
+            fragment.append(text.slice(0, start), mark, text.slice(end));
+            return fragment;
+          });
+        }
+
+        function markedEnglish(
+          overlayMarks: [number, number],
+          searchMarks: [number, number],
+        ): string[] {
+          const overlay: Overlay = {
+            id: 'trop',
+            name: 'Trop',
+            getVerseColor: () => null,
+            highlightVerseText: marking('trop-highlight', ...overlayMarks),
+          };
+          const search: ToolOnMap = {
+            tool: {
+              id: 'search',
+              name: 'Search',
+              getVerseColor: () => null,
+              highlightVerseText: marking('term-0', ...searchMarks),
+            },
+            settings: {},
+          };
+          const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+          updateSidebar(
+            elements,
+            verse,
+            verseTexts,
+            overlay,
+            undefined,
+            mockGetVerseText,
+            false,
+            search,
+          );
+          expect(elements.english?.textContent).toBe('In the beginning');
+          return [...elements.english!.querySelectorAll('mark')].map(
+            (m) => `${m.className}:${m.textContent}`,
+          );
+        }
+
+        it("marks the overlay's stretches and the search's together", () => {
+          expect(markedEnglish([0, 2], [7, 16])).toEqual(['trop-highlight:In', 'term-0:beginning']);
+        });
+
+        it("keeps the search's mark where both mark the same word", () => {
+          expect(markedEnglish([7, 9], [7, 16])).toEqual(['term-0:beginning']);
+        });
       });
     });
 

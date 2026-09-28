@@ -6,6 +6,7 @@ import { rgbToHsl, hslToRgb, buildLegendGradient, colorToCss } from '../utils/co
 import { escapeHtml } from '../utils/html.ts';
 import { verseToUrlFormat } from '../urlState.ts';
 import { loadJson } from './loadJson.ts';
+import { CONTROL } from '../panel.ts';
 import { legendCaption } from './legend.ts';
 import '../styles/overlays/haftarah.css';
 
@@ -436,7 +437,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
       wrapper.innerHTML = `
         <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
           <label for="custom-select" style="font-size: 12px; color: #aaa;">Custom:</label>
-          <select id="custom-select" style="flex: 1;">
+          <select id="custom-select" class="${CONTROL.select}" style="flex: 1;">
             <option value="ashkenazi">Ashkenazi</option>
             <option value="sephardi">Sephardi</option>
           </select>

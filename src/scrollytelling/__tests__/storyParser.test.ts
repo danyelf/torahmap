@@ -22,7 +22,7 @@ Text here.`;
 
 Every verse of the Tanakh.
 
-<!-- stop: abraham | camera: initial | overlay: search | q: אברהם -->
+<!-- stop: abraham | camera: initial | search: אברהם -->
 # Abraham's Journey
 
 Abraham first appears in Genesis 12.`;
@@ -36,8 +36,28 @@ Abraham first appears in Genesis 12.`;
     expect(data.stops[0].overlay).toBeNull();
 
     expect(data.stops[1].id).toBe('abraham');
-    expect(data.stops[1].overlay).toBe('search');
-    expect(data.stops[1].overlayParams).toEqual({ q: 'אברהם' });
+    expect(data.stops[1].overlay).toBeNull();
+    expect(data.stops[1].searchParams).toEqual({ search: 'אברהם' });
+  });
+
+  it('sends the search its own keys and the overlay the rest', () => {
+    const md = `<!-- stop: both | camera: initial | search: אברם,אברהם | mode: ,w | overlay: commentary | category: Liturgy -->
+# Both
+
+Text.`;
+    const [stop] = parseStoryMarkdown(md).stops;
+    expect(stop.searchParams).toEqual({ search: 'אברם,אברהם', mode: ',w' });
+    expect(stop.overlay).toBe('commentary');
+    expect(stop.overlayParams).toEqual({ category: 'Liturgy' });
+  });
+
+  it('lets a stop search with no overlay', () => {
+    const [stop] = parseStoryMarkdown(
+      `<!-- stop: s | camera: initial | search: אברם -->\n# S\n\nText.`,
+    ).stops;
+    expect(stop.overlay).toBeNull();
+    expect(stop.overlayParams).toBeUndefined();
+    expect(stop.searchParams).toEqual({ search: 'אברם' });
   });
 
   it('parses camera coordinates', () => {

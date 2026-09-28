@@ -1,9 +1,10 @@
 // Color computation and hover highlighting for spatial items
 
 import type { SpatialItem, ItemState } from './types';
-import type { Overlay, Color } from './overlays/types';
+import type { Overlay, Color, ToolOnMap, Tools } from './overlays/types';
+import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
-import { HIGHLIGHT_CONSTANTS } from './constants';
+import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
 
 /**
  * Default gray for a verse with no overlay color, brightness-varied by a
@@ -14,6 +15,60 @@ export function getDefaultColor(verseIndex: number): [number, number, number] {
     HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
     seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
   return [brightness, brightness, brightness];
+}
+
+/** A verse's colour, or its stripes. */
+export type VerseColor = Color | Color[];
+
+function dim(color: VerseColor, factor: number): VerseColor {
+  const one = (c: Color): Color => [c[0] * factor, c[1] * factor, c[2] * factor];
+  return Array.isArray(color[0]) ? (color as Color[]).map(one) : one(color as Color);
+}
+
+/**
+ * The map's colours from its two layers, search over overlay. `search` is null
+ * with no search on and `overlay` null with no overlay; a null colour is
+ * painted grey by computeItemStates.
+ *
+ * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
+ * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
+ * search leads, 1 while the overlay leads; it does nothing with search alone,
+ * which always dims to its own grey.
+ */
+export function combineLayers(
+  count: number,
+  search: readonly (VerseColor | null)[] | null,
+  overlay: readonly (VerseColor | null)[] | null,
+  nonMatchDim: number = SEARCH_WITH_OVERLAY.NON_MATCH_DIM,
+): Picture<VerseColor | null> {
+  const colors: (VerseColor | null)[] = new Array(count);
+  const rings: (VerseColor | null)[] = new Array(count).fill(null);
+
+  for (let i = 0; i < count; i++) {
+    const under = overlay?.[i] ?? null;
+    const match = search?.[i] ?? null;
+    if (!search) {
+      colors[i] = under;
+    } else if (!overlay) {
+      colors[i] = match ?? DIMMED_GREY;
+    } else if (match) {
+      colors[i] = under;
+      rings[i] = match;
+    } else {
+      colors[i] = dim(under ?? getDefaultColor(i), nonMatchDim);
+    }
+  }
+
+  return search && overlay ? { colors, rings } : { colors };
+}
+
+/**
+ * `picture` with every null colour replaced by its verse's default grey —
+ * what a cross-fade needs so a still-uncoloured verse blends from its own
+ * grey rather than mergePictures's placeholder for "nothing here".
+ */
+export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<VerseColor> {
+  return { ...picture, colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)) };
 }
 
 /**
@@ -71,6 +126,18 @@ export function overlayColorsFor<T, S>(
 ): (Color | Color[] | null)[] {
   if (overlay?.colorsFor) return overlay.colorsFor(items, settings, hovered);
   return items.map((v) => getOverlayColor(overlay, v, settings));
+}
+
+/** The map's colours for the tools a view shows. `nonMatchDim` passes through to combineLayers. */
+export function toolsPicture<T>(
+  tools: Tools<T>,
+  items: SpatialItem<T>[],
+  hovered: SpatialItem<T> | null,
+  nonMatchDim?: number,
+): Picture<VerseColor | null> {
+  const colorsOf = (on: ToolOnMap<T> | null) =>
+    on && overlayColorsFor(on.tool, items, on.settings, hovered);
+  return combineLayers(items.length, colorsOf(tools.search), colorsOf(tools.overlay), nonMatchDim);
 }
 
 /**

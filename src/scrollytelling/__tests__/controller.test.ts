@@ -9,8 +9,8 @@ const stops: ResolvedStoryStop[] = [
     title: 'B',
     text: 'Second',
     camera: { x: 100, y: 50, zoom: 3 },
-    overlay: 'search',
-    overlayParams: { q: 'test' },
+    overlay: null,
+    searchParams: { search: 'test' },
   },
   { id: 'c', title: 'C', text: 'Third', camera: { x: 0, y: 0, zoom: 1 }, overlay: 'haftarah' },
 ];

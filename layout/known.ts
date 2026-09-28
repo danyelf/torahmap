@@ -5,7 +5,6 @@ export interface Known {
 }
 
 const POPUP = "The verse popup's Sefaria link and close button are under 24px; accepted for now.";
-const SEARCH = "Search's controls are rebuilt when search becomes a tool of its own.";
 
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
@@ -15,24 +14,6 @@ const SEARCH = "Search's controls are rebuilt when search becomes a tool of its 
  * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
-  'explore-search/phone/touch-targets': {
-    reason: SEARCH,
-    violations: [
-      '#search-clear is 17×20px, under 24',
-      'button.term-mode-option is 64×17px, under 24',
-      'button.term-mode-option is 42×17px, under 24',
-      'button.term-mode-option.on is 64×17px, under 24',
-    ],
-  },
-  'explore-search/tablet/touch-targets': {
-    reason: SEARCH,
-    violations: [
-      '#search-clear is 17×20px, under 24',
-      'button.term-mode-option is 64×17px, under 24',
-      'button.term-mode-option is 42×17px, under 24',
-      'button.term-mode-option.on is 64×17px, under 24',
-    ],
-  },
   'explore-verse-pinned/phone/touch-targets': {
     reason: POPUP,
     violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
@@ -50,6 +31,14 @@ export const KNOWN: Record<string, Known> = {
     violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
   },
   'story-stop-with-verse/tablet/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  },
+  'explore-search-and-overlay-pinned/phone/touch-targets': {
+    reason: POPUP,
+    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  },
+  'explore-search-and-overlay-pinned/tablet/touch-targets': {
     reason: POPUP,
     violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
   },

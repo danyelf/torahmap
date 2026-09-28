@@ -24,6 +24,7 @@ import {
   type SearchMode,
 } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
+import { CONTROL } from '../../panel.ts';
 
 /** What the rows ask of whoever owns the search. */
 export interface TermRowsHost {
@@ -324,7 +325,7 @@ function buildCollapsedRow(row: HTMLElement, term: SearchTerm): void {
   summary.appendChild(count);
 
   const remove = document.createElement('button');
-  remove.className = 'term-remove';
+  remove.className = `term-remove ${CONTROL.icon}`;
   remove.type = 'button';
   remove.textContent = '×';
   remove.title = 'Remove this word';
@@ -390,7 +391,7 @@ function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   head.appendChild(all);
 
   const remove = document.createElement('button');
-  remove.className = 'term-remove';
+  remove.className = `term-remove ${CONTROL.icon}`;
   remove.type = 'button';
   if (index === 0) remove.id = 'search-clear';
   remove.textContent = '\u00d7';

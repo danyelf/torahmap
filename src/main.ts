@@ -16,15 +16,18 @@ import {
   DRAG_PX,
   STORY,
   exploreFrame,
+  frontToolAfter,
   nextFrame,
   type Frame,
   type FrameEvent,
+  type FrontTool,
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, menuHtml, type StoryPlace } from './menu.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
+import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
   configureAnalytics,
@@ -90,9 +93,9 @@ import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import {
   computeItemStates,
   applyItemColors,
-  overlayColorsFor,
+  toolsPicture,
   layerToRecompute,
-  getDefaultColor,
+  fillDefaultColors,
 } from './itemColoring.ts';
 import {
   createRenderContext,
@@ -113,13 +116,21 @@ import {
   type Overlay,
   type Color,
 } from './overlays/index.ts';
-import { searchOverlay, searchForMeaning, canAddTerm } from './overlays/search/index.ts';
+import {
+  searchTool,
+  searchForMeaning,
+  canAddTerm,
+  type SearchSettings,
+} from './overlays/search/index.ts';
+import { toolsShown, togglesSearch } from './tools.ts';
+import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
   DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
+import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
 import { listedStories, storyToOpen, type Story } from './scrollytelling/storyIndex';
 import { STORIES } from './stories/index.ts';
@@ -150,7 +161,7 @@ import {
   type ReturnHow,
 } from './telemetry/driverChange.ts';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
-import { summaryHtml } from './panelSummary.ts';
+import { showLegend, type LegendRow } from './mapLegend.ts';
 import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
 import './styles/map-title.css';
 import './styles/zoom-buttons.css';
@@ -259,8 +270,10 @@ async function main(): Promise<void> {
     const inputs = [
       from.colors,
       from.growth,
+      from.rings,
       to?.colors,
       to?.growth,
+      to?.rings,
       mouseState.hoveredVerse,
       pinnedVerse,
     ];
@@ -278,6 +291,7 @@ async function main(): Promise<void> {
         ),
       ),
       growth: picture.growth,
+      rings: picture.rings,
     });
     rebuildGeometry(renderContext.gl, renderState, shown(from), to && shown(to));
   }
@@ -287,17 +301,87 @@ async function main(): Promise<void> {
     composite();
   }
 
-  function applyOverlay(): void {
+  /** The overlay and the search as they stand, each null while off. */
+  function toolsNow(): Tools {
+    return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool));
+  }
+
+  /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
+  function dimFor(front: FrontTool): number {
+    return front === 'search' ? SEARCH_WITH_OVERLAY.NON_MATCH_DIM : 1;
+  }
+
+  // Search or the overlay, whichever's panel opened last (src/frame.ts). Only
+  // matters with both tools on, where it decides which one dims for the other.
+  let frontTool: FrontTool = 'overlay';
+  let frontFadeFrame: number | null = null;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function cancelFrontFade(): void {
+    if (frontFadeFrame !== null) {
+      cancelAnimationFrame(frontFadeFrame);
+      frontFadeFrame = null;
+    }
+  }
+
+  function updateLegend(): void {
+    const { overlay, search } = toolsNow();
+    const rows: LegendRow[] = [];
+    for (const [panel, on] of [
+      ['search', search],
+      ['overlay', overlay],
+    ] as const) {
+      if (on) {
+        rows.push({ panel, name: on.tool.name, summary: on.tool.summary?.(on.settings) ?? {} });
+      }
+    }
+    showLegend(mapLegend, rows);
+  }
+
+  function applyTools(): void {
+    cancelFrontFade();
     setColorLayer(
-      still({
-        colors: overlayColorsFor(
-          currentOverlay,
-          verses,
-          currentSettings(),
-          mouseState.hoveredVerse,
-        ),
-      }),
+      still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool))),
     );
+  }
+
+  /**
+   * Move the front tool to `next`, cross-fading the map over
+   * FRONT_FADE.DURATION_MS through the renderer's own picture blend — the one
+   * a story ease uses. Snaps with only one tool on, or under reduced motion.
+   */
+  function setFrontTool(next: FrontTool): void {
+    if (next === frontTool) return;
+    frontTool = next;
+    const tools = toolsNow();
+    if (!tools.search || !tools.overlay || reducedMotion.matches) {
+      applyTools();
+      render();
+      return;
+    }
+    cancelFrontFade();
+    // flatten collapses a fade already in progress to where it is, as a story
+    // ease starting mid-blend does (beginEase).
+    const from = flatten(withDefaults(colorLayer));
+    const to = fillDefaultColors(
+      toolsPicture(tools, verses, mouseState.hoveredVerse, dimFor(next)),
+    );
+    const since = performance.now();
+    const step = (now: number): void => {
+      const raw = Math.min(1, (now - since) / FRONT_FADE.DURATION_MS);
+      frontFadeFrame = null;
+      if (raw >= 1) {
+        // The snap picture, not `to`: fillDefaultColors filled the holes a
+        // real overlay leaves for an uncoloured match, which would hover
+        // wrong (computeItemStates reads null there) until the next repaint.
+        applyTools();
+      } else {
+        setColorLayer({ from, to, t: easingFunctions['ease-in-out'](raw) });
+        frontFadeFrame = requestAnimationFrame(step);
+      }
+      render();
+    };
+    frontFadeFrame = requestAnimationFrame(step);
   }
 
   function blendTransition(): void {
@@ -321,14 +405,14 @@ async function main(): Promise<void> {
       tanakhIdentitiesEqual,
     );
     if (layer === 'blend') blendTransition();
-    else if (layer === 'overlay') applyOverlay();
+    else if (layer === 'overlay') applyTools();
     else composite();
     render();
   }
 
   /**
    * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
-   * Does NOT paint the buffer — caller decides (settled paints via applyOverlay,
+   * Does NOT paint the buffer — caller decides (settled paints via applyTools,
    * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
    * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
    * heading toward, for the sidebar and the hover text.
@@ -348,7 +432,13 @@ async function main(): Promise<void> {
     }
 
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
+    overlaySettings.restore(searchTool, stop.searchParams ?? {});
+    searchChanged(true);
     overlayChanged(true);
+
+    // A stop with a search puts search in front for it, whether or not the
+    // reader has a panel open to see it (stops don't open panels).
+    if (toolsNow().search) frontTool = 'search';
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -390,8 +480,9 @@ async function main(): Promise<void> {
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
+  document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
+  document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
-  const mapLegendSummary = mapLegend.querySelector<HTMLElement>('.map-legend-summary')!;
   const overlayDescription = document.getElementById('overlay-description')!;
   const menuToggle = document.getElementById('menu-toggle')!;
 
@@ -450,9 +541,10 @@ async function main(): Promise<void> {
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(getAllOverlays());
+      aboutPanel.innerHTML = aboutHtml([searchTool, ...getAllOverlays()]);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
     }
+    setFrontTool(frontToolAfter(frontTool, frame.open));
     measureSheet();
     // Hidden, the menu would drop focus to the top of the page.
     if (focusInMenu && !frame.menu) menuToggle.focus();
@@ -531,6 +623,9 @@ async function main(): Promise<void> {
 
   // Every change of driver goes through here, by way of handOver or keepDriving.
   function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
+    // The story taking the map back mid-fade would otherwise still get the
+    // fade's later frames, painting a stale explore picture over its own.
+    if (next.by !== 'reader') cancelFrontFade();
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
     if (!event) return;
@@ -563,7 +658,7 @@ async function main(): Promise<void> {
   function takeOver(how: ExitHow): void {
     if (frame.mode !== 'story' || driver.by === 'reader') return;
     handOver(readerTakesOver(storyPosition()), how);
-    applyOverlay();
+    applyTools();
   }
 
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
@@ -816,6 +911,7 @@ async function main(): Promise<void> {
   function buildCurrentUrlState(): UrlState {
     const state: UrlState = {
       overlayParams: {},
+      searchParams: overlaySettings.toUrl(searchTool),
     };
 
     if (currentOverlay) {
@@ -879,6 +975,7 @@ async function main(): Promise<void> {
       currentSettings(),
       getVerseText,
       isPinned,
+      toolsNow().search,
     );
   }
 
@@ -968,6 +1065,7 @@ async function main(): Promise<void> {
   }
 
   const overlayControlsContainer = document.getElementById('overlay-controls');
+  const searchControls = document.getElementById('search-controls')!;
   const overlayLegendContainer = document.getElementById('overlay-legend');
 
   let currentOverlayId = 'none';
@@ -1020,13 +1118,7 @@ async function main(): Promise<void> {
     renderOverlayControls();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
-    mapLegend.hidden = !currentOverlay;
-    if (currentOverlay) {
-      mapLegendSummary.innerHTML = summaryHtml(
-        currentOverlay.name,
-        currentOverlay.summary?.(currentSettings()) ?? {},
-      );
-    }
+    updateLegend();
     refreshVersePopup();
   }
 
@@ -1039,26 +1131,46 @@ async function main(): Promise<void> {
     overlaySettings.set(overlay, update(overlaySettings.get(overlay)));
     if (overlay !== currentOverlay) return;
 
-    applyOverlay();
+    applyTools();
     overlayChanged(false);
     render();
     syncUrl(false);
+  }
+
+  /**
+   * Redraw what shows the search. `fresh` clears the controls first, for
+   * settings from a link or a story stop; a reader's own edit redraws into
+   * them, keeping their focus.
+   */
+  function searchChanged(fresh: boolean): void {
+    if (fresh) {
+      searchTool.destroy?.();
+      searchControls.innerHTML = '';
+    }
+    searchTool.renderControls?.(searchControls, overlaySettings.get(searchTool), changeSearch);
+    updateLegend();
+    refreshVersePopup();
+  }
+
+  function changeSearch(update: (current: SearchSettings) => SearchSettings): void {
+    const before = overlaySettings.get(searchTool);
+    const after = update(before);
+    overlaySettings.set(searchTool, after);
+    applyTools();
+    searchChanged(false);
+    render();
+    syncUrl(togglesSearch(before, after));
   }
 
   function setOverlay(id: string): void {
     trackOverlaySwitch(id, currentOverlayId);
     activateOverlay(id);
     overlayChanged(true);
-    applyOverlay();
+    applyTools();
     render();
     syncUrl(true);
   }
 
-  // Clicking a word in the verse popup.
-  //
-  // The panel is what makes this safe: switching to search destroys whichever
-  // overlay is showing, and a click on a word is too ordinary a gesture to be
-  // allowed to do that on its own.
   setWordClickHandler((click) => {
     const word = lookupForm(click.text);
     const meanings = meaningsInVerse(
@@ -1068,7 +1180,7 @@ async function main(): Promise<void> {
     );
 
     const ref = `${click.book} ${click.chapter}:${click.verse}`;
-    const paletteFull = !canAddTerm(overlaySettings.get(searchOverlay));
+    const paletteFull = !canAddTerm(overlaySettings.get(searchTool));
     trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
 
     openWordMenu({
@@ -1077,26 +1189,17 @@ async function main(): Promise<void> {
       anchor: click.element,
       paletteFull,
       onChoose: (meaning) => {
-        // Ask before anything is spent. setOverlay() takes the showing overlay
-        // off the map, so a search that is going to be refused must be refused
-        // first - otherwise the reader loses their Haftarah view and gains
-        // nothing. The panel's own count was taken when it opened, and a
-        // keyboard reader can add a word in between.
-        if (!canAddTerm(overlaySettings.get(searchOverlay))) return;
+        // The menu counted the words when it opened; a keyboard reader can add one since.
+        if (!canAddTerm(overlaySettings.get(searchTool))) return;
 
         trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
-
         takeOver('takeover');
-        if (currentOverlayId !== 'search') {
-          setOverlay('search');
-        }
-
-        // Replaces the URL setOverlay just pushed rather than adding a second
-        // history entry.
-        changeSettings(
-          searchOverlay,
+        changeSearch(
           (current) => searchForMeaning(current, word, meaning?.keys ?? null) ?? current,
         );
+        if (frame.mode === 'explore' && frame.open !== 'search') {
+          dispatch({ type: 'choose', panel: 'search' });
+        }
       },
     });
   });
@@ -1129,11 +1232,15 @@ async function main(): Promise<void> {
         const zoom = Math.round(camera.zoom * 100) / 100;
 
         let extraParts = '';
-        if (currentOverlay) {
-          extraParts += ` | overlay: ${currentOverlay.id}`;
-          for (const [key, value] of Object.entries(overlaySettings.toUrl(currentOverlay))) {
+        const { overlay } = toolsNow();
+        if (overlay) {
+          extraParts += ` | overlay: ${overlay.tool.id}`;
+          for (const [key, value] of Object.entries(overlaySettings.toUrl(overlay.tool))) {
             extraParts += ` | ${key}: ${value}`;
           }
+        }
+        for (const [key, value] of Object.entries(overlaySettings.toUrl(searchTool))) {
+          extraParts += ` | ${key}: ${value}`;
         }
         if (pinnedVerse) {
           const book = pinnedVerse.book.replace(/ /g, '.');
@@ -1159,6 +1266,7 @@ async function main(): Promise<void> {
       },
     },
   });
+  searchChanged(true);
 
   applyHebrewChoice();
 
@@ -1329,7 +1437,8 @@ async function main(): Promise<void> {
   function onChromeClick(e: MouseEvent): void {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
-    if (target.closest('.story-leave')) return dispatch({ type: 'choose', panel: 'overlay' });
+    if (target.closest('.story-leave'))
+      return dispatch({ type: 'choose', panel: toolsNow().search ? 'search' : 'overlay' });
     const chosen = storyChosen(target);
     if (chosen) return readStory(chosen.id, chosen.fromStart);
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
@@ -1427,19 +1536,20 @@ async function main(): Promise<void> {
     );
   }
 
+  /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
+  function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
+    return {
+      from: fillDefaultColors(layer.from),
+      to: layer.to && fillDefaultColors(layer.to),
+      t: layer.t,
+    };
+  }
+
   /**
    * The driver that eases the map over `duration` from what is on screen,
    * which may be partway through an earlier ease, to where the story is. The
    * caller hands it over or keeps driving with it.
    */
-  function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
-    const fill = (p: Picture<Color | Color[] | null>): Picture => ({
-      colors: p.colors.map((c, i) => c ?? getDefaultColor(i)),
-      growth: p.growth,
-    });
-    return { from: fill(layer.from), to: layer.to && fill(layer.to), t: layer.t };
-  }
-
   function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
     const state = currentStoryState();
@@ -1532,7 +1642,7 @@ async function main(): Promise<void> {
       // that repaints replaces the layer, so it is painted again next frame.
       keepDriving(STORY_DRIVING);
       if (colorLayer !== restingLayer || state.fromStop !== restingStop) {
-        applyOverlay();
+        applyTools();
         restingLayer = colorLayer;
         restingStop = state.fromStop;
       }
@@ -1574,11 +1684,19 @@ async function main(): Promise<void> {
   function applyViewState(next: ViewState): void {
     if (next.mode === 'explore') {
       handOver(readerTakesOver(storyPosition()), 'fold');
-      setStoryOpen(false);
+      const open = next.searchParams.search ? 'search' : 'overlay';
+      // Only for a story exit: a phone opens with no panel shown, so
+      // applyFrame's own tracking of the open panel can't see it land here.
+      // Any other hash change (Back/Forward while already exploring) must
+      // leave frontTool at whatever the reader last chose from the legend.
+      if (frame.mode === 'story') frontTool = open;
+      setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
     }
 
     activateOverlay(next.overlay);
     if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
+    overlaySettings.restore(searchTool, next.searchParams);
+    searchChanged(true);
     overlayChanged(true);
 
     const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
@@ -1588,7 +1706,7 @@ async function main(): Promise<void> {
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, verse, mapFocus(), mapViewport()));
 
-    applyOverlay();
+    applyTools();
     render();
 
     if (next.mode === 'story') {

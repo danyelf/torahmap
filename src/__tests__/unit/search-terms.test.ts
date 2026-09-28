@@ -400,10 +400,10 @@ describe('the mode in the URL', () => {
   });
 });
 
-// `mode` and `m` are positional across the terms in `q`, so a term holding a
-// character that `q` is later split on comes back as two terms and every later
-// term's settings land one word early. Typing and parsing have to agree on
-// what a separator is.
+// `mode` and `m` are positional across the terms in `search`, so a term holding
+// a character that `search` is later split on comes back as two terms and
+// every later term's settings land one word early. Typing and parsing have to
+// agree on what a separator is.
 describe('typing and parsing agree on what separates two terms', () => {
   const separators = [',', '،', '‎', '״'];
 
