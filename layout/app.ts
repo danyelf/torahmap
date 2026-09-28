@@ -54,7 +54,7 @@ export const STATES: State[] = [
   { name: 'explore-link', link: 'overlay=commentary', shown: ['#map-legend'] },
   {
     name: 'story-closed',
-    hash: 'story=tour&stop=intro',
+    link: 'story=tour&stop=intro',
     then: (page) => page.keyboard.press('Escape'),
     shown: ['#menu-toggle'],
   },
