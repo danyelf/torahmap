@@ -17,7 +17,8 @@ export type AppMode = 'story' | 'explore';
  */
 export interface ViewState {
   mode: AppMode;
-  storyStop: string | null;
+  story: string | null;
+  stop: string | null;
   overlay: string;
   overlayParams: OverlayParams;
   searchParams: UrlParamValues;
@@ -26,7 +27,7 @@ export interface ViewState {
 }
 
 /**
- * A link that names a story stop, or names nothing at all, is the story. Any
+ * A link that names a story, or names nothing at all, is the story. Any
  * other link is Explore, including one that carries only a camera.
  */
 export function resolveViewState(
@@ -45,7 +46,8 @@ export function resolveViewState(
 
   return {
     mode: url.story || namesNothing ? 'story' : 'explore',
-    storyStop: url.story ?? null,
+    story: url.story ?? null,
+    stop: url.stop ?? null,
     overlay,
     overlayParams: overlay === 'none' ? {} : url.overlayParams,
     searchParams: url.searchParams ?? {},

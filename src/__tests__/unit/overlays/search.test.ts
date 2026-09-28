@@ -1359,12 +1359,12 @@ describe('Search Overlay', () => {
     // sending analytics as torahmap.org.
     afterEach(() => {
       vi.useRealTimers();
-      configureAnalytics({ hostname: 'localhost' });
+      configureAnalytics({ enabled: false });
     });
 
     it('answers for a query it is handed without changing the search or firing analytics', async () => {
       const send = vi.fn();
-      configureAnalytics({ hostname: 'torahmap.org', send });
+      configureAnalytics({ enabled: true, send });
       await searchOverlay.overlay.init?.();
       vi.useFakeTimers();
       searchOverlay.restore({ search: 'אור' });
@@ -1474,12 +1474,12 @@ describe('Search Overlay', () => {
     beforeEach(() => {
       vi.useFakeTimers();
       send = vi.fn<(body: string) => void>();
-      configureAnalytics({ hostname: 'torahmap.org', send });
+      configureAnalytics({ enabled: true, send });
     });
 
     afterEach(() => {
       vi.useRealTimers();
-      configureAnalytics({ hostname: 'localhost' });
+      configureAnalytics({ enabled: false });
     });
 
     function sent(): { term: string; result_count: number }[] {

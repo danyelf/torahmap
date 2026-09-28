@@ -8,6 +8,7 @@ import {
   subscribeToHashChange,
   applyingExternalState,
   isApplyingExternalState,
+  RESERVED_KEYS,
   validateOverlayParams,
   SEARCH_KEYS,
   type UrlState,
@@ -521,10 +522,33 @@ describe('updateUrl', () => {
   });
 
   it('leaves an unchanged URL alone, adding no history entry', () => {
-    mockHistory('http://localhost:5173/#story=intro');
-    updateUrl({ story: 'intro', overlayParams: {} }, true);
+    mockHistory('http://localhost:5173/#story=tour&stop=intro');
+    updateUrl({ story: 'tour', stop: 'intro', overlayParams: {} }, true);
     expect(history.pushState).not.toHaveBeenCalled();
     expect(history.replaceState).not.toHaveBeenCalled();
+  });
+});
+
+describe('a story in the URL', () => {
+  beforeEach(() => {
+    mockHistory();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('writes a story and its stop together', () => {
+    expect(buildUrlHash({ story: 'tour', stop: 'abraham_call', overlayParams: {} })).toBe(
+      '#story=tour&stop=abraham_call',
+    );
+  });
+
+  it('reads a story and its stop', () => {
+    mockHistory('http://localhost:5173/#story=tour&stop=abraham_call');
+    const state = parseUrlState();
+    expect(state.story).toBe('tour');
+    expect(state.stop).toBe('abraham_call');
   });
 });
 
@@ -1015,7 +1039,7 @@ describe('what every overlay must hold to', () => {
       const keys = (overlay.urlParams ?? []).map((spec) => spec.key);
       expect(new Set(keys).size).toBe(keys.length);
       for (const key of keys) {
-        expect(['story', 'overlay', 'verse', 'zoom', 'x', 'y']).not.toContain(key);
+        expect(RESERVED_KEYS.has(key)).toBe(false);
         expect(SEARCH_KEYS.has(key)).toBe(false);
       }
     });

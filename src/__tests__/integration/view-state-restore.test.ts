@@ -88,7 +88,8 @@ describe('restoring a link as one complete view', () => {
     it('opens an empty hash as the story, with Explore reset', () => {
       expect(viewFor('')).toEqual({
         mode: 'story',
-        storyStop: null,
+        story: null,
+        stop: null,
         overlay: 'none',
         overlayParams: {},
         searchParams: {},
@@ -97,11 +98,20 @@ describe('restoring a link as one complete view', () => {
       });
     });
 
-    it('opens a hash naming a stop as the story at that stop', () => {
-      const view = viewFor('#story=intro');
+    it('opens a hash naming a story and stop as that story at that stop', () => {
+      const view = viewFor('#story=tour&stop=intro');
 
       expect(view.mode).toBe('story');
-      expect(view.storyStop).toBe('intro');
+      expect(view.story).toBe('tour');
+      expect(view.stop).toBe('intro');
+    });
+
+    it('opens an old single-story link as a story, naming no stop', () => {
+      const view = viewFor('#story=abraham_call');
+
+      expect(view.mode).toBe('story');
+      expect(view.story).toBe('abraham_call');
+      expect(view.stop).toBeNull();
     });
   });
 

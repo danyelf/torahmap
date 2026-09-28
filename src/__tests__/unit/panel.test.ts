@@ -25,7 +25,18 @@ describe('panelHtml', () => {
 describe('every panel is built by panelHtml, with shared controls', () => {
   const panels: [Panel, string][] = [
     ['overlay', overlayPanelHtml()],
-    ['stories', storiesHtml({ number: 1, total: 2, label: 'x' })],
+    [
+      'stories',
+      storiesHtml([
+        {
+          id: 'tour',
+          title: 'x',
+          description: 'x',
+          draft: false,
+          place: { number: 1, total: 2, label: 'x' },
+        },
+      ]),
+    ],
     ['about', aboutHtml([])],
   ];
 

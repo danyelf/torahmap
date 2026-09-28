@@ -1,4 +1,7 @@
 ---
+title: The Guided Tour
+description: Introduces the Torahmap by following how Abraham is remembered across the Tanakh.
+order: 1
 easing: ease-in-out
 ---
 

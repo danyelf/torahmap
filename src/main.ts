@@ -1,6 +1,7 @@
 // Tanakh Map - Main entry point
 
 declare const __GIT_BRANCH__: string;
+declare const __SHOW_DRAFTS__: boolean;
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
@@ -23,8 +24,8 @@ import {
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
-import { menuHtml, type StoryPlace } from './menu.ts';
-import { storiesHtml } from './storiesPanel.ts';
+import { CONTINUE_STORY, menuHtml, type StoryPlace } from './menu.ts';
+import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
@@ -129,12 +130,9 @@ import {
   URL_UPDATE_DEBOUNCE_MS,
 } from './constants/app.ts';
 import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
-import {
-  loadStoryData,
-  renderStoryPanel,
-  resolveStops,
-  stopLabel,
-} from './scrollytelling/storyPanel';
+import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
+import { listedStories, storyToOpen, type Story } from './scrollytelling/storyIndex';
+import { STORIES } from './stories/index.ts';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
@@ -257,7 +255,7 @@ async function main(): Promise<void> {
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
 
-  // A story folded earlier in the session opens folded, unless the link names a stop.
+  // A story folded earlier in the session opens folded, unless the link names a story.
   const opensFolded = !parseUrlState().story && storyWasFolded();
   let driver: Driver = opensFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
@@ -511,8 +509,12 @@ async function main(): Promise<void> {
     applyFrame(previous);
   }
 
+  function placeIn(stops: readonly { id: string }[], index: number): StoryPlace {
+    return { number: stopAt(stops, index).number, total: stops.length };
+  }
+
   function storyPlace(): StoryPlace {
-    return { number: stopAt(resolvedStops, storyStopIndex()).number, total: resolvedStops.length };
+    return placeIn(resolvedStops, storyStopIndex());
   }
 
   /**
@@ -532,14 +534,11 @@ async function main(): Promise<void> {
     storyContent.inert = frame.menu;
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
-    if (frame.menu && !previous?.menu) droppedMenu.innerHTML = menuHtml(storyPlace());
-    const opened = frame.open !== previous?.open;
-    if (opened && frame.open === 'stories') {
-      storiesPanel.innerHTML = storiesHtml({
-        ...storyPlace(),
-        label: stopLabel(resolvedStops[storyStopIndex()]),
-      });
+    if (frame.menu && !previous?.menu) {
+      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title });
     }
+    const opened = frame.open !== previous?.open;
+    if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml([searchTool, ...getAllOverlays()]);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
@@ -945,7 +944,7 @@ async function main(): Promise<void> {
   function syncUrl(push: boolean = false): void {
     const state: UrlState =
       frame.mode === 'story'
-        ? { story: resolvedStops[storyStopIndex()].id, overlayParams: {} }
+        ? { story: story.id, stop: resolvedStops[storyStopIndex()].id, overlayParams: {} }
         : buildCurrentUrlState();
     updateUrl(state, push);
   }
@@ -1270,14 +1269,29 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let storyData = await loadStoryData();
+  let listed = listedStories(STORIES, __SHOW_DRAFTS__);
+  // Where each story other than the current one was left, this visit.
+  const places = new Map<string, number>();
+
+  let story = storyToOpen(listed, parseUrlState().story ?? null);
+  configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
-    resolveStops(storyData.stops, initialCamera, verses, mapFocus(), {
+    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), {
       width: canvas.clientWidth,
       height: canvas.clientHeight,
     });
-  let resolvedStops = resolveStory();
-  let stopElements = renderStoryPanel(storyContent, storyData.stops);
+  let resolvedStops: ResolvedStoryStop[] = [];
+  let stopElements: HTMLElement[] = [];
+
+  /** Puts `next` in the story column, with no stop yet applied to the map. */
+  function loadStory(next: Story): void {
+    story = next;
+    resolvedStops = resolveStory();
+    stopElements = renderStoryPanel(storyContent, story.data.stops);
+    lastSyncedStopId = null;
+  }
+
+  loadStory(story);
   applyFrame();
 
   // Crossing into or out of phone width turns the story from a column into a
@@ -1296,20 +1310,33 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   });
 
-  async function reloadStory(): Promise<void> {
+  /** Makes `next` the current story, remembering where the one it replaces was left. */
+  function switchStory(next: Story): void {
+    if (next.id === story.id) return;
+    places.set(story.id, storyStopIndex());
+    places.delete(next.id);
+    loadStory(next);
+    // A stop held for the old story means nothing in this one.
+    if (heldStop !== null) heldStop = 0;
+  }
+
+  /** The stop `id` was left at this visit; undefined if it has not been opened. */
+  function leftAt(id: string): number | undefined {
+    return id === story.id ? storyStopIndex() : places.get(id);
+  }
+
+  function reloadStory(): void {
     const position = storyPosition();
-    storyData = await loadStoryData();
-    resolvedStops = resolveStory();
-    stopElements = renderStoryPanel(storyContent, storyData.stops);
+    loadStory(storyToOpen(listed, story.id));
     setStoryPosition(position);
-    // Force re-apply: stops may have changed (overlay/params/verse), and stop
-    // object identities are fresh after re-resolving.
-    lastSyncedStopId = null;
     scheduleStoryFrame();
   }
 
+  // An edited story reloads in place on the dev server, keeping the reader's scroll.
   if (import.meta.hot) {
-    import.meta.hot.on('story-update', () => {
+    import.meta.hot.accept('./stories/index.ts', (module) => {
+      if (!module) return;
+      listed = listedStories(module.STORIES as Story[], __SHOW_DRAFTS__);
       reloadStory();
     });
   }
@@ -1363,15 +1390,40 @@ async function main(): Promise<void> {
     syncUrl(true);
   }
 
+  /** Opens a story from the Stories panel: where it was left this visit, or its start. */
+  function readStory(id: string, fromStart: boolean): void {
+    const left = leftAt(id) ?? 0;
+    switchStory(storyToOpen(listed, id));
+    readerOpensStory(fromStart ? 0 : left);
+  }
+
+  function drawStories(): void {
+    const cards = listed.map(({ id, data }): StoryCard => {
+      const at = leftAt(id);
+      return {
+        id,
+        draft: data.draft,
+        title: data.title,
+        description: data.description,
+        place:
+          at === undefined
+            ? null
+            : { ...placeIn(data.stops, at), label: stopLabel(data.stops[at]) },
+      };
+    });
+    storiesPanel.innerHTML = storiesHtml(cards);
+  }
+
   // Delegated: the menus and panels are redrawn as they open.
   function onChromeClick(e: MouseEvent): void {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
     if (target.closest('.story-leave'))
       return dispatch({ type: 'choose', panel: toolsNow().search ? 'search' : 'overlay' });
+    const chosen = storyChosen(target);
+    if (chosen) return readStory(chosen.id, chosen.fromStart);
     const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
-    if (action === 'story') return dispatch({ type: 'story' });
-    if (action === 'restart') return readerOpensStory(0);
+    if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
     const chooser = target.closest<HTMLElement>('.map-legend-row');
@@ -1459,7 +1511,7 @@ async function main(): Promise<void> {
       stopElements.map((el) => el.offsetTop),
       storyContent.scrollHeight,
       storyContent.scrollTop,
-      storyData.defaults?.easing ?? 'ease-in-out',
+      story.data.easing,
       stopElements.map((el) => el.offsetHeight),
       storyContent.clientHeight,
     );
@@ -1639,7 +1691,8 @@ async function main(): Promise<void> {
     render();
 
     if (next.mode === 'story') {
-      const stop = resolvedStops.findIndex((s) => s.id === next.storyStop);
+      switchStory(storyToOpen(listed, next.story));
+      const stop = resolvedStops.findIndex((s) => s.id === next.stop);
       openStory(Math.max(0, stop), 'cut', 'link');
     }
   }
@@ -1656,7 +1709,12 @@ async function main(): Promise<void> {
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
-  trackPageView(parseUrlState().story ?? '', referrer === location.hostname ? '' : referrer);
+  const opened = parseUrlState();
+  trackPageView(
+    opened.story ?? '',
+    opened.stop ?? '',
+    referrer === location.hostname ? '' : referrer,
+  );
   recordingDriver = true;
   markViewSettled();
 

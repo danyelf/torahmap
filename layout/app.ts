@@ -39,15 +39,15 @@ const ABRAHAM = encodeURIComponent('אברם,אברהם');
 const BOTH_ROWS = ['.map-legend-row[data-panel="search"]', '.map-legend-row[data-panel="overlay"]'];
 
 export const STATES: State[] = [
-  { name: 'story-opening', hash: 'story=intro', shown: [stop('intro')] },
+  { name: 'story-opening', hash: 'story=tour&stop=intro', shown: [stop('intro')] },
   {
     name: 'story-stop-with-verse',
-    hash: 'story=abraham_call',
+    hash: 'story=tour&stop=abraham_call',
     shown: ['#map-legend', stop('abraham_call')],
   },
   {
     name: 'story-menu-down',
-    hash: 'story=abraham_call',
+    hash: 'story=tour&stop=abraham_call',
     then: (page) => page.locator('#menu-toggle').click(),
     shown: ['#menu', '#map-legend'],
   },
@@ -98,8 +98,19 @@ export const STATES: State[] = [
     name: 'stories-panel',
     hash: 'overlay=commentary',
     then: (page) => viaMenu(page, 'stories'),
-    shown: ['.story-card'],
+    shown: ['.story-card[data-story="tour"]'],
   },
+  {
+    // On a phone the sheet holds about one card; the rest scroll into it.
+    name: 'stories-panel-scrolled',
+    hash: 'overlay=commentary',
+    then: async (page) => {
+      await viaMenu(page, 'stories');
+      await page.locator('.story-card[data-story="sample"]').scrollIntoViewIfNeeded();
+    },
+    shown: ['.story-card[data-story="sample"]'],
+  },
+  { name: 'story-sample', hash: 'story=sample&stop=book', shown: [stop('book')] },
   {
     name: 'about-panel',
     hash: 'overlay=commentary',

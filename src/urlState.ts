@@ -84,7 +84,15 @@ export type OverlayParams = UrlParamValues;
 export type OverlayParamSpecLookup = (overlayId: string) => readonly UrlParamSpec[] | undefined;
 
 // Keys this module owns; an overlay may not claim one of these.
-const RESERVED_KEYS = new Set(['story', 'overlay', 'verse', 'zoom', 'x', 'y']);
+export const RESERVED_KEYS: ReadonlySet<string> = new Set([
+  'story',
+  'stop',
+  'overlay',
+  'verse',
+  'zoom',
+  'x',
+  'y',
+]);
 
 const MAX_PAN_POSITION = 1000000;
 const MAX_STRING_LENGTH = 50;
@@ -218,6 +226,7 @@ function stripHtmlTags(value: string): string {
 
 export interface UrlState {
   story?: string;
+  stop?: string;
   overlay?: string;
   /** "Book.Chapter.Verse", e.g. "Genesis.1.1" */
   verse?: string;
@@ -246,6 +255,9 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
   const story = params.get('story');
   const validatedStory = validateString(story);
   if (validatedStory) state.story = validatedStory;
+
+  const stop = validateString(params.get('stop'));
+  if (stop) state.stop = stop;
 
   const overlay = params.get('overlay');
   const validatedOverlay = validateString(overlay);
@@ -294,7 +306,9 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
 /** Build a URL hash string from state, omitting default values to keep URLs clean. */
 export function buildUrlHash(state: UrlState): string {
   if (state.story) {
-    return `#story=${encodeURIComponent(state.story)}`;
+    const params = new URLSearchParams({ story: state.story });
+    if (state.stop) params.set('stop', state.stop);
+    return `#${params.toString()}`;
   }
 
   const params = new URLSearchParams();

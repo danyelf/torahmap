@@ -35,9 +35,15 @@ export interface ResolvedStoryStop extends Omit<StoryStop, 'camera'> {
 
 export interface StoryData {
   stops: StoryStop[];
-  defaults?: {
-    easing?: EasingName;
-  };
+  /** Shown in the Stories panel and the menu; empty if the file gives none. */
+  title: string;
+  description: string;
+  /** Where the story sits in the menu; stories without one come after. */
+  order?: number;
+  /** Listed while it is being written, except on the live site. */
+  draft: boolean;
+  /** How the camera moves between stops, unless a stop says otherwise. */
+  easing?: EasingName;
 }
 
 export type EasingName = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';

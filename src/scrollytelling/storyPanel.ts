@@ -1,8 +1,7 @@
-import type { StoryData, StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
+import type { StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
 import type { Book, TanakhLayout } from '../types';
 import { findTanakhItem } from '../types';
 import { parseVerseFromUrl } from '../urlState';
-import { parseStoryMarkdown } from './storyParser';
 import { getBookSection } from '../constants/books';
 import { SECTION_LABEL_REACH } from '../labels';
 import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera';
@@ -13,12 +12,6 @@ function isVerseRef(cam: CameraRef): cam is { kind: 'verse'; ref: string } {
 
 function isRegions(cam: CameraRef): cam is { kind: 'regions'; names: string[] } {
   return typeof cam === 'object' && 'kind' in cam && cam.kind === 'regions';
-}
-
-export async function loadStoryData(): Promise<StoryData> {
-  const response = await fetch('/data/story.md');
-  const markdown = await response.text();
-  return parseStoryMarkdown(markdown);
 }
 
 // Minimal markdown-to-HTML for story text: **bold**, *italic*, [links](url),

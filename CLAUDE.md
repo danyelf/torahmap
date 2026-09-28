@@ -28,10 +28,12 @@ The core design principle is **position stability** - each verse occupies a perm
   come back as a mode of its own rather than a menu entry. Registering it again
   is one line in `src/overlays/index.ts`.
 - **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.
-- **A guided story**, a mode of its own. Scrolling it moves the map from stop to
-  stop; its ☰ menu leads to search, the overlays, the stories and About & settings,
+- **Guided stories**, a mode of their own. Scrolling one moves the map from stop
+  to stop; its ☰ menu leads to search, the overlays, the stories and About & settings,
   and choosing one leaves the story where it is, to be continued later. The
-  text is `public/data/story.md`, which the dev server hot-reloads.
+  stories are the Markdown files in `src/stories/`, built into the page; each
+  one's header sets its title, description, `order` and `draft`. The dev
+  server hot-reloads them.
 
 ## Quick Start
 
@@ -132,10 +134,10 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 ## Project Structure
 
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
-  a `scrollytelling/` mode, a `talmud/` mode with its own `main-talmud.ts`
+  a `scrollytelling/` mode, the `stories/` it tells, a `talmud/` mode with its own `main-talmud.ts`
   entry point, `styles/`, the `worker/` that serves the deployed site, and the
   `telemetry/` it records through.
-- `public/data/` — shipped data: bundled verse texts, structure, the story, and
+- `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
   text.
@@ -229,7 +231,8 @@ in step with the code:
   back, and a drag down folds it
 
 The URL carries the search, the overlay and its settings, the pinned verse, the
-camera and the story stop (`src/urlState.ts`), so any view can be linked to.
+camera and, while reading, the story and its stop (`src/urlState.ts`), so any
+view can be linked to.
 
 ## License
 
