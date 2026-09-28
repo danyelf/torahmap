@@ -31,7 +31,7 @@ The core design principle is **position stability** - each verse occupies a perm
 - **Guided stories**, a mode of their own. Scrolling one moves the map from stop
   to stop; its ☰ menu leads to search, the overlays, the stories and About & settings,
   and choosing one leaves the story where it is, to be continued later. The
-  stories are the Markdown files in `src/stories/`, built into the page; each
+  stories are the Markdown files in `packages/stories/markdown/`, built into the page; each
   one's header sets its title, description, `order` and `draft`. The dev
   server hot-reloads them.
 
@@ -134,9 +134,13 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 ## Project Structure
 
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
-  a `scrollytelling/` mode, the `stories/` it tells, a `talmud/` mode with its own `main-talmud.ts`
+  a `scrollytelling/` mode, a `talmud/` mode with its own `main-talmud.ts`
   entry point, `styles/`, the `worker/` that serves the deployed site, and the
   `telemetry/` it records through.
+- `packages/` — the code the page and the Worker share, as npm workspace
+  packages: `link` (reading and writing links), `overlay-catalog` (each
+  overlay's name and link keys), `stories` (the stories, compiled from
+  Markdown by `generate.mjs`).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
@@ -231,8 +235,8 @@ in step with the code:
   back, and a drag down folds it
 
 The URL carries the search, the overlay and its settings, the pinned verse, the
-camera and, while reading, the story and its stop (`src/urlState.ts`), so any
-view can be linked to.
+camera and, while reading, the story and its stop (`@torahmap/link`, with the
+browser half in `src/urlState.ts`), so any view can be linked to.
 
 ## License
 
