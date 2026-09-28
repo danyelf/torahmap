@@ -1,10 +1,11 @@
-/* The haftarah legend's key: each book's portions as one bar, each category of
-   occasion as a row of swatches. Only on a desktop; the phone's sheet keeps the
-   short legend. */
+/* The haftarah key: each book's portions as one bar, each category of occasion
+   as a row of swatches. Only on a desktop; the phone's sheet keeps the legend
+   alone. */
 .haftarah-key {
   display: grid;
   gap: 4px;
   margin-top: 12px;
+  font-size: 11px;
 }
 
 .haftarah-key-row {
@@ -39,17 +40,17 @@
 
 /* Each hover area reaches halfway across the gaps around it, so the pointer
    passes from one reading straight to the next. */
-.haftarah-key [data-hover-verse] {
+.haftarah-key [data-reading] {
   position: relative;
 }
 
-.haftarah-key [data-hover-verse]::before {
+.haftarah-key [data-reading]::before {
   content: '';
   position: absolute;
   inset: -3px calc(var(--gap) / -2);
 }
 
-.haftarah-key [data-hover-verse]:hover {
+.haftarah-key [data-reading]:hover {
   outline: 1px solid #fff;
   outline-offset: 1px;
 }

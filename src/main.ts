@@ -53,7 +53,6 @@ import {
 } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
-import { legendHover } from './legendHover.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
   createCamera,
@@ -989,14 +988,6 @@ async function main(): Promise<void> {
     else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
   }
 
-  /** Hover `verse`, repainting if that changes the hover. */
-  function hoverVerse(verse: TanakhLayout | null): void {
-    const previousHover = mouseState.hoveredVerse;
-    if (tanakhIdentitiesEqual(previousHover, verse)) return;
-    setHoveredVerse(mouseState, verse);
-    repaint(previousHover);
-  }
-
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
     if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
 
@@ -1004,6 +995,8 @@ async function main(): Promise<void> {
       const p = onMap(e);
       lastPointerPosition = { x: p.x, y: p.y };
       const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
+      const previousHover = mouseState.hoveredVerse;
+      setHoveredVerse(mouseState, verse);
 
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
@@ -1011,7 +1004,7 @@ async function main(): Promise<void> {
         canvas.style.cursor = 'default';
       }
 
-      hoverVerse(verse);
+      if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
 
       if (pinnedVerse) {
         // Keep showing pinned verse
@@ -1077,19 +1070,7 @@ async function main(): Promise<void> {
     currentOverlay = getOverlay(id) ?? null;
   }
 
-  const legendHovers = legendHover<TanakhLayout>({
-    hovered: () => mouseState.hoveredVerse,
-    setHovered: hoverVerse,
-    find: (ref) => {
-      const parsed = parseVerseFromUrl(ref);
-      return parsed ? findTanakhItem(verses, parsed) : null;
-    },
-  });
-  overlayLegendContainer?.addEventListener('pointerover', legendHovers.handle);
-  overlayLegendContainer?.addEventListener('pointerleave', legendHovers.handle);
-
   function renderOverlayLegend(): void {
-    legendHovers.cancel();
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
       currentOverlay?.renderLegend?.(overlayLegendContainer, currentSettings());

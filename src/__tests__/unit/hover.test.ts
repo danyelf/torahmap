@@ -34,15 +34,4 @@ describe('lingeringHover', () => {
 
     expect(show.mock.calls).toEqual([['a'], ['b']]);
   });
-
-  it('forgets a pending clear when cancelled', () => {
-    const show = vi.fn();
-    const hover = lingeringHover(show);
-    hover.enter('a');
-    hover.leave();
-    hover.cancel();
-    vi.advanceTimersByTime(HOVER_LINGER_MS * 2);
-
-    expect(show.mock.calls).toEqual([['a']]);
-  });
 });

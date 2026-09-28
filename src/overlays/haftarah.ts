@@ -4,7 +4,7 @@ import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
 import { rgbToHsl, hslToRgb, buildLegendGradient, colorToCss } from '../utils/color.ts';
 import { escapeHtml } from '../utils/html.ts';
-import { verseToUrlFormat } from '../urlState.ts';
+import { lingeringHover } from '../utils/hover.ts';
 import { loadJson } from './loadJson.ts';
 import { CONTROL } from '../panel.ts';
 import { legendCaption } from './legend.ts';
@@ -102,9 +102,14 @@ const URL_PARAMS = [
   { key: 'custom', kind: 'token', allowed: CUSTOMS, default: 'ashkenazi' },
 ] as const satisfies readonly UrlParamSpec[];
 
-/** Which custom's readings to show. The app holds this; the overlay keeps none. */
+/**
+ * Which custom's readings to show, and the reading the pointer is over in the
+ * key, by its place in the list of readings. Only the custom goes into a link.
+ * The app holds this; the overlay keeps none.
+ */
 export interface HaftarahSettings {
   readonly custom: Custom;
+  readonly preview: number | null;
 }
 
 let data: HaftarahMappings | null = null;
@@ -112,6 +117,8 @@ let structure: TorahData | null = null;
 
 /** Everything about a custom's readings that a verse's color depends on. */
 interface HaftarahDerivation {
+  // Parshiot, then special occasions; a preview is a place in this list.
+  items: HaftarahItem[];
   torahVerseToParsha: Map<string, ParshaData>;
   // Haftarah verses can belong to multiple items (parshiot or special occasions).
   haftarahVerseToItem: Map<string, HaftarahItem[]>;
@@ -158,11 +165,12 @@ function deriveHaftarah(custom: Custom): HaftarahDerivation {
   const isTorahVerse = new Set<string>();
   const isHaftarahVerse = new Set<string>();
   const itemToColor = new Map<HaftarahItem, Color>();
+  let items: HaftarahItem[] = [];
   let totalItems = 0;
 
   if (data) {
     const specialOccasions = data.specialOccasions || [];
-    const items: HaftarahItem[] = [...data.parshiot, ...specialOccasions];
+    items = [...data.parshiot, ...specialOccasions];
     totalItems = items.length;
 
     // Parshiot take color indices 0..parshiot.length-1; special occasions
@@ -196,6 +204,7 @@ function deriveHaftarah(custom: Custom): HaftarahDerivation {
   }
 
   const derivation: HaftarahDerivation = {
+    items,
     torahVerseToParsha,
     haftarahVerseToItem,
     isTorahVerse,
@@ -212,120 +221,82 @@ function isRelevantVerse(verse: TanakhIdentity, derived: HaftarahDerivation): bo
   return derived.torahVerseToParsha.has(key) || derived.haftarahVerseToItem.has(key);
 }
 
-/** What the hovered verse (if any) belongs to, within one custom's derivation. */
-function getHoveredContext(
+/** The readings to light: whatever the hovered verse belongs to, or null when it belongs to none. */
+function litByHover(
   derived: HaftarahDerivation,
   hovered: TanakhIdentity | null,
-): {
-  hoveredParshaTorah: ParshaData | undefined;
-  hoveredItemsHaftarah: HaftarahItem[] | undefined;
-} {
-  if (!hovered) return { hoveredParshaTorah: undefined, hoveredItemsHaftarah: undefined };
-  const hoverKey = tanakhKey(hovered.book, hovered.chapter, hovered.verse);
-  return {
-    hoveredParshaTorah: derived.torahVerseToParsha.get(hoverKey),
-    hoveredItemsHaftarah: derived.haftarahVerseToItem.get(hoverKey),
-  };
+): Set<HaftarahItem> | null {
+  if (!hovered) return null;
+  const key = tanakhKey(hovered.book, hovered.chapter, hovered.verse);
+  const parsha = derived.torahVerseToParsha.get(key);
+  if (parsha) return new Set([parsha]);
+  const items = derived.haftarahVerseToItem.get(key);
+  return items ? new Set(items) : null;
 }
 
-/** True if `item` is (or shares a haftarah verse with) whatever is hovered. */
-function isHoveredItem(
+/** A previewed reading, with every reading that shares any of its haftarah verses. */
+function litByPreview(
+  derived: HaftarahDerivation,
   item: HaftarahItem,
-  hoveredParshaTorah: ParshaData | undefined,
-  hoveredItemsHaftarah: HaftarahItem[] | undefined,
-): boolean {
-  return hoveredParshaTorah === item || (hoveredItemsHaftarah?.includes(item) ?? false);
+  custom: Custom,
+): Set<HaftarahItem> {
+  const lit = new Set([item]);
+  for (const range of item.haftarah[custom]) {
+    forEachVerseInRange(range, (book, ch, v) => {
+      derived.haftarahVerseToItem.get(tanakhKey(book, ch, v))?.forEach((i) => lit.add(i));
+    });
+  }
+  return lit;
+}
+
+// getVerseColor asks once per verse, so a preview's readings are found once per
+// settings value. Settings are never edited in place, so a value is a sound key.
+const previews = new WeakMap<HaftarahSettings, Set<HaftarahItem> | null>();
+
+function litByPreviewOf(settings: HaftarahSettings): Set<HaftarahItem> | null {
+  if (settings.preview === null) return null;
+  if (!previews.has(settings)) {
+    const derived = deriveHaftarah(settings.custom);
+    const item = derived.items[settings.preview];
+    previews.set(settings, item ? litByPreview(derived, item, settings.custom) : null);
+  }
+  return previews.get(settings) ?? null;
+}
+
+/** A preview from the key wins over the map's hover; the pointer is on one or the other. */
+function litFor(
+  settings: HaftarahSettings,
+  hovered: TanakhIdentity | null,
+): Set<HaftarahItem> | null {
+  return litByPreviewOf(settings) ?? litByHover(deriveHaftarah(settings.custom), hovered);
 }
 
 /**
- * Brightens `colors` if any of `items` is the hovered reading, darkens them
- * otherwise; unwraps to a single color when there's only one. Shared by the
- * Torah-verse (single item) and haftarah-verse (possibly multiple items)
- * branches of colorAt.
+ * A verse's colour, one band per reading it belongs to. While readings are
+ * lit, a verse in one is brightened, a verse in another reading keeps a dark
+ * tint of its colour, and a verse in none is grey.
  */
-function resolveHoverColors(
-  colors: Color[],
-  items: HaftarahItem[],
-  hovered: TanakhIdentity | null,
-  derived: HaftarahDerivation,
-): Color | Color[] | null {
-  if (colors.length === 0) return null;
-  if (!hovered) return colors.length === 1 ? colors[0] : colors;
-
-  const { hoveredParshaTorah, hoveredItemsHaftarah } = getHoveredContext(derived, hovered);
-  const isHovered = items.some((item) =>
-    isHoveredItem(item, hoveredParshaTorah, hoveredItemsHaftarah),
-  );
-
-  const resolved = colors.map((c) =>
-    isHovered ? adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR) : darkTint(c),
-  );
-  return resolved.length === 1 ? resolved[0] : resolved;
-}
-
-/** The one rule for a verse's color, shared by getVerseColor and colorsFor. */
 function colorAt(
   verse: TanakhIdentity,
   derived: HaftarahDerivation,
-  hovered: TanakhIdentity | null,
+  lit: Set<HaftarahItem> | null,
 ): Color | Color[] | null {
-  // A hovered verse outside every reading brightens nothing and darkens
-  // nothing — the same as no hover at all. Filtered once, here, so neither
-  // caller has to get this right on its own.
-  const relevantHover = hovered && isRelevantVerse(hovered, derived) ? hovered : null;
-
   const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+  const parsha = derived.torahVerseToParsha.get(key);
+  const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
+  if (items.length === 0) return lit ? DIMMED_GREY : null;
 
-  // Torah verses belong to exactly one parsha.
-  const parshaFromTorah = derived.torahVerseToParsha.get(key);
-  if (parshaFromTorah) {
-    const baseColor = derived.itemToColor.get(parshaFromTorah);
-    if (!baseColor) return null;
-    return resolveHoverColors([baseColor], [parshaFromTorah], relevantHover, derived);
-  }
+  const colors = items
+    .map((item) => derived.itemToColor.get(item))
+    .filter((c): c is Color => c !== undefined);
+  if (colors.length === 0) return null;
 
-  // Haftarah verses can belong to multiple items (parshiot or special occasions).
-  const itemsFromHaftarah = derived.haftarahVerseToItem.get(key);
-  if (itemsFromHaftarah && itemsFromHaftarah.length > 0) {
-    const colors = itemsFromHaftarah
-      .map((item) => derived.itemToColor.get(item))
-      .filter((c): c is Color => c !== undefined);
-    return resolveHoverColors(colors, itemsFromHaftarah, relevantHover, derived);
-  }
-
-  return relevantHover ? DIMMED_GREY : null;
-}
-
-/**
- * The verse that stands for `item` when its legend swatch is hovered, so the
- * map lights up as it would under the cursor: a portion's first Torah verse,
- * or an occasion's haftarah verse shared with the most other readings, which
- * lights up every one of them. Of two overlaps with different readings, the
- * longer wins; a verse can show only one.
- */
-function standInVerse(item: HaftarahItem, custom: Custom, derived: HaftarahDerivation): string {
-  if (isParsha(item)) {
-    const { book, start } = item.torah;
-    return verseToUrlFormat(book, start.chapter, start.verse);
-  }
-
-  const verses: { ref: string; sharers: HaftarahItem[] }[] = [];
-  for (const range of item.haftarah[custom]) {
-    forEachVerseInRange(range, (book, ch, v) => {
-      verses.push({
-        ref: verseToUrlFormat(book, ch, v),
-        sharers: derived.haftarahVerseToItem.get(tanakhKey(book, ch, v))!,
-      });
-    });
-  }
-
-  const overlaps = groupBy(verses, (v) => v.sharers.map((s) => s.name).join('|'));
-  let best: typeof verses | undefined;
-  for (const overlap of overlaps.values()) {
-    const more = overlap[0].sharers.length - (best?.[0].sharers.length ?? 0);
-    if (!best || more > 0 || (more === 0 && overlap.length > best.length)) best = overlap;
-  }
-  return best?.[0].ref ?? '';
+  const shown = !lit
+    ? colors
+    : items.some((item) => lit.has(item))
+      ? colors.map((c) => adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR))
+      : colors.map(darkTint);
+  return shown.length === 1 ? shown[0] : shown;
 }
 
 function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
@@ -339,10 +310,15 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
   return groups;
 }
 
-/** Each book by its portions, then each category of occasion by its readings. */
-function renderKey(custom: Custom): string {
-  if (!data?.parshiot) return '';
-  const derived = deriveHaftarah(custom);
+/**
+ * The key: each book by its portions, then each category of occasion by its
+ * readings. Hovering one previews it. Its colours and names are the same for
+ * both customs, so it is built once.
+ */
+function renderKey(container: HTMLElement, onPreview: (reading: number | null) => void): void {
+  if (!data?.parshiot || container.querySelector('.haftarah-key')) return;
+  const derived = deriveHaftarah('ashkenazi');
+  const indexOf = new Map(derived.items.map((item, i) => [item, i]));
 
   const byBook = groupBy(data.parshiot, (parsha) => parsha.torah.book);
   const byCategory = groupBy(data.specialOccasions ?? [], (occasion) => occasion.category);
@@ -353,7 +329,7 @@ function renderKey(custom: Custom): string {
         const shape = isParsha(item) ? 'haftarah-key-segment' : 'haftarah-key-swatch';
         const color = derived.itemToColor.get(item);
         const background = color ? colorToCss(color) : 'transparent';
-        return `<span class="${shape}" style="background: ${background}" title="${escapeHtml(item.name)}" data-hover-verse="${escapeHtml(standInVerse(item, custom, derived))}"></span>`;
+        return `<span class="${shape}" style="background: ${background}" title="${escapeHtml(item.name)}" data-reading="${indexOf.get(item)}"></span>`;
       })
       .join('');
     return `<div class="haftarah-key-row"><span class="haftarah-key-label">${escapeHtml(label)}</span><span class="haftarah-key-swatches">${swatches}</span></div>`;
@@ -364,7 +340,18 @@ function renderKey(custom: Custom): string {
     .filter((category) => byCategory.has(category))
     .map((category) => row(CATEGORY_LABELS[category], byCategory.get(category)!));
 
-  return `<div class="haftarah-key">${books.join('')}${categories.join('')}</div>`;
+  const key = document.createElement('div');
+  key.className = 'haftarah-key';
+  key.innerHTML = books.join('') + categories.join('');
+  container.appendChild(key);
+
+  const preview = lingeringHover<number>(onPreview);
+  key.addEventListener('pointerover', (e) => {
+    const reading = (e.target as Element).closest<HTMLElement>('[data-reading]')?.dataset.reading;
+    if (reading === undefined) preview.leave();
+    else preview.enter(Number(reading));
+  });
+  key.addEventListener('pointerleave', () => preview.leave());
 }
 
 export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
@@ -404,6 +391,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   },
 
   hoverChangesColors(before, after, settings) {
+    if (settings.preview !== null) return false;
     // A verse outside every reading colours the map the same as no hover.
     const derived = deriveHaftarah(settings.custom);
     const keyIfRelevant = (verse: TanakhIdentity | null) =>
@@ -413,20 +401,21 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     return keyIfRelevant(before) !== keyIfRelevant(after);
   },
 
-  /** The colour with nothing hovered. The map asks colorsFor, which takes the hover. */
+  /** The colour with nothing hovered on the map. The map asks colorsFor, which takes the hover. */
   getVerseColor(verse: TanakhIdentity, settings: HaftarahSettings): Color | Color[] | null {
     if (!data) return null;
-    return colorAt(verse, deriveHaftarah(settings.custom), null);
+    return colorAt(verse, deriveHaftarah(settings.custom), litFor(settings, null));
   },
 
   colorsFor(items, settings, hovered) {
     if (!data) return items.map(() => null);
     const derived = deriveHaftarah(settings.custom);
-    return items.map((item) => colorAt(item, derived, hovered));
+    const lit = litFor(settings, hovered);
+    return items.map((item) => colorAt(item, derived, lit));
   },
 
   defaultSettings(): HaftarahSettings {
-    return { custom: 'ashkenazi' };
+    return { custom: 'ashkenazi', preview: null };
   },
 
   renderControls(container: HTMLElement, settings: HaftarahSettings, onChange) {
@@ -453,6 +442,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     }
 
     select.value = settings.custom;
+    renderKey(container, (preview) => onChange((current) => ({ ...current, preview })));
   },
 
   renderLegend(container: HTMLElement, settings: HaftarahSettings) {
@@ -475,13 +465,11 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
           background: ${gradient};
           border-radius: 2px;
         "></div>
-        <span>${parshaCount} Parshiot + ${occasionCount} Special Occasions</span>
+        <span>${parshaCount} Torah portions and ${occasionCount} special occasions</span>
       </div>
-      ${legendCaption(`Torah portion & haftarah (${customLabel}) use same color`, { marginLeft: 28 })}
-      ${legendCaption('Includes holidays, fast days, special Shabbatot', { marginLeft: 28 })}
-      ${legendCaption('Multi-item verses are split corner to corner, one band per item', { marginLeft: 28 })}
-      ${legendCaption('Hover brightens the reading & its haftarah, darkens the rest', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
-      ${renderKey(settings.custom)}
+      ${legendCaption(`A portion and its haftarah (${customLabel}) share a colour`, { marginLeft: 28 })}
+      ${legendCaption('A verse in more than one reading is split corner to corner, one band each', { marginLeft: 28 })}
+      ${legendCaption('Hover a reading to light it and its haftarah; the rest darkens', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
     `;
   },
 
@@ -523,7 +511,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   urlParams: URL_PARAMS,
 
   settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): HaftarahSettings {
-    return { custom: params.custom ?? 'ashkenazi' };
+    return { custom: params.custom ?? 'ashkenazi', preview: null };
   },
 
   settingsToUrl(settings: HaftarahSettings): Record<string, string> {

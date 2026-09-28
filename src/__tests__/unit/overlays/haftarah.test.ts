@@ -11,6 +11,8 @@ import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import { overlayColorsFor } from '../../../itemColoring';
 import type { Color } from '../../../overlays/types';
 import { rgbToHsl } from '../../../utils/color';
+import { HOVER_LINGER_MS } from '../../../utils/hover';
+import { DIMMED_GREY } from '../../../constants';
 
 const sum = (c: Color) => c[0] + c[1] + c[2];
 
@@ -405,62 +407,46 @@ describe('Haftarah Overlay', () => {
       await haftarahOverlay.overlay.init?.();
     });
 
-    it('renders legend with parsha count', () => {
+    it('counts the portions and the special occasions', () => {
       const container = document.createElement('div');
       haftarahOverlay.renderLegend(container);
 
-      const innerHTML = container.innerHTML;
-      expect(innerHTML).toContain('Parshiot');
+      expect(container.textContent).toContain('2 Torah portions and 2 special occasions');
     });
+  });
 
-    it('renders legend with special occasions count', () => {
-      const container = document.createElement('div');
-      haftarahOverlay.renderLegend(container);
-
-      const innerHTML = container.innerHTML;
-      expect(innerHTML).toContain('Special Occasions');
+  describe('The key', () => {
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      await haftarahOverlay.overlay.init?.();
     });
+    afterEach(() => vi.useRealTimers());
 
-    it('mentions holidays in legend', () => {
-      const container = document.createElement('div');
-      haftarahOverlay.renderLegend(container);
+    const genesis = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+    const bereshitHaftarah = createVerse({ book: 'Isaiah', chapter: 42, verse: 5 });
+    const noach = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
+    const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
-      const innerHTML = container.innerHTML;
-      expect(innerHTML).toContain('holidays');
-    });
+    /** Readings by their place in the sample: parshiot, then special occasions. */
+    const BERESHIT = 0;
+    const ROSH_CHODESH = 2;
 
     function keyRows(container: HTMLElement) {
       return [...container.querySelectorAll('.haftarah-key-row')].map((row) => ({
         label: row.querySelector('.haftarah-key-label')!.textContent,
-        readings: [...row.querySelectorAll<HTMLElement>('[data-hover-verse]')].map((el) => ({
+        readings: [...row.querySelectorAll<HTMLElement>('[data-reading]')].map((el) => ({
           name: el.title,
-          verse: el.dataset.hoverVerse,
+          reading: Number(el.dataset.reading),
         })),
       }));
     }
 
-    it('keys each book by its portions, and occasions by category', () => {
-      const container = document.createElement('div');
-      haftarahOverlay.renderLegend(container);
+    function swatch(container: HTMLElement, reading: number): HTMLElement {
+      return container.querySelector<HTMLElement>(`[data-reading="${reading}"]`)!;
+    }
 
-      expect(keyRows(container)).toEqual([
-        {
-          label: 'Genesis',
-          readings: [
-            { name: 'Bereshit', verse: 'Genesis.1.1' },
-            { name: 'Noach', verse: 'Genesis.6.9' },
-          ],
-        },
-        {
-          label: 'High Holidays',
-          readings: [{ name: 'Rosh Hashanah Day 1', verse: 'I.Samuel.1.1' }],
-        },
-        {
-          label: 'Rosh Chodesh',
-          readings: [{ name: 'Shabbat Rosh Chodesh', verse: 'Isaiah.66.1' }],
-        },
-      ]);
-    });
+    const preview = (reading: number | null) =>
+      haftarahOverlay.change((current) => ({ ...current, preview: reading }));
 
     /** Load the sample data with Rosh Chodesh's haftarah under `custom` replaced by `ranges`. */
     async function loadRoshChodesh(custom: 'ashkenazi' | 'sephardi', ranges: unknown[]) {
@@ -473,44 +459,96 @@ describe('Haftarah Overlay', () => {
       await haftarahOverlay.overlay.init?.();
     }
 
-    /** The verse Rosh Chodesh's swatch hovers. */
-    function roshChodeshVerse(): string | undefined {
-      const container = document.createElement('div');
-      haftarahOverlay.renderLegend(container);
-      return keyRows(container).find((r) => r.label === 'Rosh Chodesh')!.readings[0].verse;
-    }
+    it('keys each book by its portions, and occasions by category', () => {
+      const container = haftarahOverlay.renderControls();
 
-    async function roshChodeshStandIn(ranges: unknown[]): Promise<string | undefined> {
-      await loadRoshChodesh('ashkenazi', ranges);
-      return roshChodeshVerse();
-    }
-
-    it('hovers an occasion by a verse it shares with another reading', async () => {
-      // Bereshit's Ashkenazi haftarah is 42:5-21.
-      const verse = await roshChodeshStandIn([
-        { book: 'Isaiah', start: { chapter: 42, verse: 1 }, end: { chapter: 42, verse: 25 } },
+      expect(keyRows(container)).toEqual([
+        {
+          label: 'Genesis',
+          readings: [
+            { name: 'Bereshit', reading: 0 },
+            { name: 'Noach', reading: 1 },
+          ],
+        },
+        { label: 'High Holidays', readings: [{ name: 'Rosh Hashanah Day 1', reading: 3 }] },
+        { label: 'Rosh Chodesh', readings: [{ name: 'Shabbat Rosh Chodesh', reading: 2 }] },
       ]);
-      expect(verse).toBe('Isaiah.42.5');
     });
 
-    it("keys each custom by that custom's haftarot", async () => {
-      // Noach's Sephardi haftarah.
+    it('is built once, so a redraw keeps the swatch under the pointer', () => {
+      const container = haftarahOverlay.renderControls();
+      const before = swatch(container, BERESHIT);
+      haftarahOverlay.change((current) => ({ ...current, custom: 'sephardi' }));
+
+      expect(swatch(container, BERESHIT)).toBe(before);
+    });
+
+    it('previews a reading while the pointer is over it, and not once it has left', () => {
+      const container = haftarahOverlay.renderControls();
+      swatch(container, BERESHIT).dispatchEvent(new Event('pointerover', { bubbles: true }));
+      expect(haftarahOverlay.settings.preview).toBe(BERESHIT);
+
+      container.querySelector('.haftarah-key')!.dispatchEvent(new Event('pointerleave'));
+      vi.advanceTimersByTime(HOVER_LINGER_MS);
+      expect(haftarahOverlay.settings.preview).toBeNull();
+    });
+
+    it('keeps a preview out of the link', () => {
+      preview(BERESHIT);
+      expect(haftarahOverlay.toUrl()).toEqual({});
+    });
+
+    it('lights a previewed reading, darkens the others, and greys the rest', () => {
+      const cold = [genesis, bereshitHaftarah, noach].map(
+        (v) => haftarahOverlay.getVerseColor(v) as Color,
+      );
+      preview(BERESHIT);
+      const [hotTorah, hotHaftarah, darkNoach] = [genesis, bereshitHaftarah, noach].map(
+        (v) => haftarahOverlay.getVerseColor(v) as Color,
+      );
+
+      expect(sum(hotTorah)).toBeGreaterThan(sum(cold[0]));
+      expect(sum(hotHaftarah)).toBeGreaterThan(sum(cold[1]));
+      expect(sum(darkNoach)).toBeLessThan(sum(cold[2]));
+      expect(haftarahOverlay.getVerseColor(psalms)).toEqual(DIMMED_GREY);
+    });
+
+    it('lights every reading that shares a verse with the previewed one', async () => {
+      // Overlaps Bereshit's Ashkenazi haftarah, 42:5-21.
+      await loadRoshChodesh('ashkenazi', [
+        { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
+      ]);
+      const cold = haftarahOverlay.getVerseColor(genesis) as Color;
+      preview(ROSH_CHODESH);
+
+      expect(sum(haftarahOverlay.getVerseColor(genesis) as Color)).toBeGreaterThan(sum(cold));
+      expect(sum(haftarahOverlay.getVerseColor(noach) as Color)).toBeLessThan(
+        sum(haftarahOverlay.overlay.getVerseColor(noach, haftarahOverlay.fromUrl({})) as Color),
+      );
+    });
+
+    it("finds shared verses in the custom's own haftarot", async () => {
+      // Noach's Sephardi haftarah; under Ashkenazi, Rosh Chodesh shares nothing.
       await loadRoshChodesh('sephardi', [
         { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
       ]);
+      const noachLit = () => {
+        const cold = haftarahOverlay.overlay.getVerseColor(noach, {
+          ...haftarahOverlay.settings,
+          preview: null,
+        }) as Color;
+        return sum(haftarahOverlay.getVerseColor(noach) as Color) > sum(cold);
+      };
 
-      expect(roshChodeshVerse()).toBe('Isaiah.66.1');
-      haftarahOverlay.restore({ custom: 'sephardi' });
-      expect(roshChodeshVerse()).toBe('Isaiah.54.1');
+      preview(ROSH_CHODESH);
+      expect(noachLit()).toBe(false);
+      haftarahOverlay.change((current) => ({ ...current, custom: 'sephardi' }));
+      expect(noachLit()).toBe(true);
     });
 
-    it('prefers the larger of two overlaps with different readings', async () => {
-      // Four verses shared with Bereshit (to 42:21), ten with Noach (from 54:1).
-      const verse = await roshChodeshStandIn([
-        { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
-        { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
-      ]);
-      expect(verse).toBe('Isaiah.54.1');
+    it('leaves the map hover out of the colours while a reading is previewed', () => {
+      preview(BERESHIT);
+      expect(haftarahOverlay.hoverChangesColors(null, noach)).toBe(false);
     });
   });
 
