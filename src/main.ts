@@ -132,7 +132,7 @@ import {
 import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
 import { listedStories, storyToOpen, type Story } from './scrollytelling/storyIndex';
-import { STORIES } from './stories/index.ts';
+import { STORIES } from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
@@ -1334,9 +1334,9 @@ async function main(): Promise<void> {
 
   // An edited story reloads in place on the dev server, keeping the reader's scroll.
   if (import.meta.hot) {
-    import.meta.hot.accept('./stories/index.ts', (module) => {
+    import.meta.hot.accept('@torahmap/stories', (module) => {
       if (!module) return;
-      listed = listedStories(module.STORIES as Story[], __SHOW_DRAFTS__);
+      listed = listedStories(module.STORIES as readonly Story[], __SHOW_DRAFTS__);
       reloadStory();
     });
   }

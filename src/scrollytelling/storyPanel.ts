@@ -1,4 +1,5 @@
-import type { StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
+import type { StoryStop, CameraPosition, CameraRef } from '@torahmap/stories';
+import type { ResolvedStoryStop } from './types';
 import type { Book, TanakhLayout } from '../types';
 import { findTanakhItem } from '../types';
 import { parseVerseFromUrl } from '@torahmap/link';

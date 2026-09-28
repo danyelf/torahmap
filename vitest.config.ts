@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 
 export default defineConfig({
+  plugins: [storiesPlugin()],
   define: {
     __GIT_BRANCH__: JSON.stringify('test'),
     __SHOW_DRAFTS__: 'true',

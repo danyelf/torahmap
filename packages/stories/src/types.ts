@@ -1,0 +1,44 @@
+export interface CameraPosition {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+/**
+ * Camera reference: an explicit position, the app's initial camera, a verse to
+ * center on, or regions to fit in view together. A region is `everything`, a
+ * section (`Torah`, `Neviim`, `Ketuvim`) or a book in URL form (`I.Samuel`).
+ */
+export type CameraRef =
+  | CameraPosition
+  | 'initial'
+  | { kind: 'verse'; ref: string } // ref in URL format, e.g. "Genesis.12.1"
+  | { kind: 'regions'; names: string[] };
+
+export interface StoryStop {
+  id: string;
+  title?: string;
+  text: string;
+  camera: CameraRef;
+  overlay: string | null;
+  overlayParams?: Record<string, string>;
+  searchParams?: Record<string, string>; // the search's own keys: search, mode, m
+  verse?: string; // "Genesis.1.1" format — pins this verse in the sidebar
+  easing?: EasingName;
+  zoom?: number; // zoom for a verse camera, or instead of fitting a region camera
+}
+
+export interface StoryData {
+  stops: StoryStop[];
+  /** Shown in the Stories panel and the menu; empty if the file gives none. */
+  title: string;
+  description: string;
+  /** Where the story sits in the menu; stories without one come after. */
+  order?: number;
+  /** Listed while it is being written, except on the live site. */
+  draft: boolean;
+  /** How the camera moves between stops, unless a stop says otherwise. */
+  easing?: EasingName;
+}
+
+export type EasingName = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';

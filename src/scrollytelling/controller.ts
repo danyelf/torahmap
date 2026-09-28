@@ -1,4 +1,5 @@
-import type { ResolvedStoryStop, InterpolatedState, EasingName } from './types';
+import type { EasingName } from '@torahmap/stories';
+import type { ResolvedStoryStop, InterpolatedState } from './types';
 import { lerpCamera, easingFunctions } from './interpolation';
 
 // Each stop has a "rest zone" in the middle where the view holds steady.

@@ -1,4 +1,5 @@
-import type { ResolvedStoryStop, StoryStop } from './types';
+import type { StoryStop } from '@torahmap/stories';
+import type { ResolvedStoryStop } from './types';
 import type { TanakhLayout } from '../types';
 import type { Color, Overlay } from '../overlays/types.ts';
 import type { Picture } from '../geometry.ts';

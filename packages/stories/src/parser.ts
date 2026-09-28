@@ -8,7 +8,7 @@ type HeaderKey = (typeof STORY_HEADER_KEYS)[number];
 // A story is optional frontmatter (STORY_HEADER_KEYS) followed by stops, each
 // opened by `<!-- stop: id | camera: ... | search: ... | overlay: ... | key: value -->`
 // and a `# Title` heading. The search's keys go to the search; params other
-// than camera/overlay/easing/verse/zoom become the overlay's. See src/stories/
+// than camera/overlay/easing/verse/zoom become the overlay's. See markdown/
 // for examples.
 export function parseStoryMarkdown(markdown: string): StoryData {
   const front = parseFrontmatter(markdown);
