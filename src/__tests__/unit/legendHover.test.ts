@@ -46,12 +46,10 @@ describe('legendHover', () => {
     const { container, entries } = legendWith('Genesis.1.1');
     hover.handle(over(entries[0]));
     expect(map.hovered).toBe('Genesis.1.1');
-    expect(hover.owns()).toBe(true);
 
     hover.handle(leave(container));
     vi.advanceTimersByTime(HOVER_LINGER_MS);
     expect(map.hovered).toBeNull();
-    expect(hover.owns()).toBe(false);
   });
 
   it('leaves alone a hover the map set while the clear was pending', () => {
@@ -63,7 +61,6 @@ describe('legendHover', () => {
     vi.advanceTimersByTime(HOVER_LINGER_MS);
 
     expect(map.hovered).toBe('Genesis.49.24');
-    expect(hover.owns()).toBe(false);
   });
 
   it('cancel clears its own hover at once, and nothing fires after', () => {

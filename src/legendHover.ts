@@ -1,6 +1,6 @@
 // A legend entry marked with `data-hover-verse` hovers that verse, colouring
-// the map as the cursor over it would. The hover is the legend's own: it
-// clears only what it set, and the verse popup does not show it.
+// the map as the cursor over it would. The legend clears only a hover it set,
+// and drops it when the legend is redrawn.
 
 import { lingeringHover } from './utils/hover.ts';
 
@@ -28,17 +28,15 @@ export function legendHover<V>(map: MapHover<V>) {
     /** For `pointerover` and `pointerleave` on the legend. */
     handle(e: LegendPointer): void {
       if (e.pointerType === 'touch') return;
-      const entry =
-        e.type === 'pointerleave' ? null : (e.target as Element).closest('[data-hover-verse]');
-      const ref = entry instanceof HTMLElement ? entry.dataset.hoverVerse : undefined;
+      const ref =
+        e.type === 'pointerleave'
+          ? undefined
+          : (e.target as Element).closest<HTMLElement>('[data-hover-verse]')?.dataset.hoverVerse;
       const verse = ref ? map.find(ref) : null;
 
       if (verse !== null) linger.enter(verse);
       else linger.leave();
     },
-
-    /** True while the map's hover is the one the legend set. */
-    owns,
 
     /** Drop the legend's hover now, as when the legend is redrawn. */
     cancel(): void {

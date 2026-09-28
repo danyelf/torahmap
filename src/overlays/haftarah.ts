@@ -308,47 +308,23 @@ function standInVerse(item: HaftarahItem, custom: Custom, derived: HaftarahDeriv
     return verseToUrlFormat(book, start.chapter, start.verse);
   }
 
-  // Verses grouped by the readings that share them.
-  const overlaps = new Map<string, { sharers: number; verses: string[] }>();
+  const verses: { ref: string; sharers: HaftarahItem[] }[] = [];
   for (const range of item.haftarah[custom]) {
     forEachVerseInRange(range, (book, ch, v) => {
-      const sharers = derived.haftarahVerseToItem.get(tanakhKey(book, ch, v)) ?? [item];
-      const key = sharers.map((s) => s.name).join('|');
-      const overlap = overlaps.get(key) ?? { sharers: sharers.length, verses: [] };
-      overlap.verses.push(verseToUrlFormat(book, ch, v));
-      overlaps.set(key, overlap);
+      verses.push({
+        ref: verseToUrlFormat(book, ch, v),
+        sharers: derived.haftarahVerseToItem.get(tanakhKey(book, ch, v))!,
+      });
     });
   }
 
-  let best: { sharers: number; verses: string[] } | undefined;
+  const overlaps = groupBy(verses, (v) => v.sharers.map((s) => s.name).join('|'));
+  let best: typeof verses | undefined;
   for (const overlap of overlaps.values()) {
-    if (
-      !best ||
-      overlap.sharers > best.sharers ||
-      (overlap.sharers === best.sharers && overlap.verses.length > best.verses.length)
-    ) {
-      best = overlap;
-    }
+    const more = overlap[0].sharers.length - (best?.[0].sharers.length ?? 0);
+    if (!best || more > 0 || (more === 0 && overlap.length > best.length)) best = overlap;
   }
-  return best?.verses[0] ?? '';
-}
-
-/** A row of the legend's key: a label and one hoverable swatch per reading. */
-function keyRow(
-  label: string,
-  items: HaftarahItem[],
-  custom: Custom,
-  derived: HaftarahDerivation,
-  swatchClass: string,
-): string {
-  const swatches = items
-    .map((item) => {
-      const color = derived.itemToColor.get(item);
-      const background = color ? colorToCss(color) : 'transparent';
-      return `<span class="${swatchClass}" style="background: ${background}" title="${escapeHtml(item.name)}" data-hover-verse="${escapeHtml(standInVerse(item, custom, derived))}"></span>`;
-    })
-    .join('');
-  return `<div class="haftarah-key-row"><span class="haftarah-key-label">${escapeHtml(label)}</span><span class="haftarah-key-swatches">${swatches}</span></div>`;
+  return best?.[0].ref ?? '';
 }
 
 function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
@@ -370,20 +346,22 @@ function renderKey(custom: Custom): string {
   const byBook = groupBy(data.parshiot, (parsha) => parsha.torah.book);
   const byCategory = groupBy(data.specialOccasions ?? [], (occasion) => occasion.category);
 
-  const books = [...byBook].map(([book, parshiot]) =>
-    keyRow(book, parshiot, custom, derived, 'haftarah-key-segment'),
-  );
+  const row = (label: string, items: HaftarahItem[]) => {
+    const swatches = items
+      .map((item) => {
+        const shape = isParsha(item) ? 'haftarah-key-segment' : 'haftarah-key-swatch';
+        const color = derived.itemToColor.get(item);
+        const background = color ? colorToCss(color) : 'transparent';
+        return `<span class="${shape}" style="background: ${background}" title="${escapeHtml(item.name)}" data-hover-verse="${escapeHtml(standInVerse(item, custom, derived))}"></span>`;
+      })
+      .join('');
+    return `<div class="haftarah-key-row"><span class="haftarah-key-label">${escapeHtml(label)}</span><span class="haftarah-key-swatches">${swatches}</span></div>`;
+  };
+
+  const books = [...byBook].map(([book, parshiot]) => row(book, parshiot));
   const categories = (Object.keys(CATEGORY_LABELS) as OccasionCategory[])
     .filter((category) => byCategory.has(category))
-    .map((category) =>
-      keyRow(
-        CATEGORY_LABELS[category],
-        byCategory.get(category)!,
-        custom,
-        derived,
-        'haftarah-key-swatch',
-      ),
-    );
+    .map((category) => row(CATEGORY_LABELS[category], byCategory.get(category)!));
 
   return `<div class="haftarah-key">${books.join('')}${categories.join('')}</div>`;
 }

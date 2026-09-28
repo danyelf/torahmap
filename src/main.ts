@@ -889,8 +889,15 @@ async function main(): Promise<void> {
    */
   function refreshVersePopup(): void {
     if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
-    else if (mouseState.hoveredVerse && !legendHovers.owns())
-      updateSidebarWrapper(mouseState.hoveredVerse, false);
+    else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
+  }
+
+  /** Hover `verse`, repainting if that changes the hover. */
+  function hoverVerse(verse: TanakhLayout | null): void {
+    const previousHover = mouseState.hoveredVerse;
+    if (tanakhIdentitiesEqual(previousHover, verse)) return;
+    setHoveredVerse(mouseState, verse);
+    repaint(previousHover);
   }
 
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
@@ -900,8 +907,6 @@ async function main(): Promise<void> {
       const p = onMap(e);
       lastPointerPosition = { x: p.x, y: p.y };
       const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
-      const previousHover = mouseState.hoveredVerse;
-      setHoveredVerse(mouseState, verse);
 
       if (pinnedVerse && verse) {
         canvas.style.cursor = 'pointer';
@@ -909,7 +914,7 @@ async function main(): Promise<void> {
         canvas.style.cursor = 'default';
       }
 
-      if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
+      hoverVerse(verse);
 
       if (pinnedVerse) {
         // Keep showing pinned verse
@@ -976,15 +981,10 @@ async function main(): Promise<void> {
 
   const legendHovers = legendHover<TanakhLayout>({
     hovered: () => mouseState.hoveredVerse,
-    setHovered: (verse) => {
-      const previousHover = mouseState.hoveredVerse;
-      if (tanakhIdentitiesEqual(previousHover, verse)) return;
-      setHoveredVerse(mouseState, verse);
-      repaint(previousHover);
-    },
+    setHovered: hoverVerse,
     find: (ref) => {
       const parsed = parseVerseFromUrl(ref);
-      return parsed ? (findTanakhItem(verses, parsed) ?? null) : null;
+      return parsed ? findTanakhItem(verses, parsed) : null;
     },
   });
   overlayLegendContainer?.addEventListener('pointerover', legendHovers.handle);

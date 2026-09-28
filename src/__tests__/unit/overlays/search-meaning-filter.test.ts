@@ -13,6 +13,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
+import { DIMMED_GREY } from '../../../constants';
 
 registerAllOverlays();
 const searchOverlay = hostOverlay(getOverlay('search')!);
@@ -245,8 +246,7 @@ describe('the Hebrew default', () => {
 });
 
 function dimmed(): [number, number, number] {
-  const b = (0.4 + 0.2) * 0.3;
-  return [b, b, b];
+  return DIMMED_GREY;
 }
 
 function uncheck(container: HTMLElement, gloss: string): void {

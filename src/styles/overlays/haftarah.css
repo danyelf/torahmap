@@ -16,13 +16,14 @@
 }
 
 .haftarah-key-swatches {
+  --gap: 3px;
   display: flex;
-  gap: 3px;
+  gap: var(--gap);
 }
 
 /* Narrower than between swatches, so a book still reads as one bar. */
 .haftarah-key-swatches:has(.haftarah-key-segment) {
-  gap: 2px;
+  --gap: 2px;
 }
 
 .haftarah-key-segment {
@@ -45,11 +46,7 @@
 .haftarah-key [data-hover-verse]::before {
   content: '';
   position: absolute;
-  inset: -3px -1.5px;
-}
-
-.haftarah-key .haftarah-key-segment::before {
-  inset: -3px -1px;
+  inset: -3px calc(var(--gap) / -2);
 }
 
 .haftarah-key [data-hover-verse]:hover {

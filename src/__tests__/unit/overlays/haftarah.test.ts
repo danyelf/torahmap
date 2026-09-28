@@ -462,20 +462,27 @@ describe('Haftarah Overlay', () => {
       ]);
     });
 
-    /** The verse Rosh Chodesh's swatch hovers, with its Ashkenazi haftarah replaced by `ranges`. */
-    async function roshChodeshStandIn(ranges: unknown[]): Promise<string | undefined> {
-      const overlapping = structuredClone(SAMPLE_HAFTARAH_DATA);
-      overlapping.specialOccasions[0].haftarah.ashkenazi = ranges as never;
+    /** Load the sample data with Rosh Chodesh's haftarah under `custom` replaced by `ranges`. */
+    async function loadRoshChodesh(custom: 'ashkenazi' | 'sephardi', ranges: unknown[]) {
+      const changed = structuredClone(SAMPLE_HAFTARAH_DATA);
+      changed.specialOccasions[0].haftarah[custom] = ranges as never;
       installMockFetch({
-        '/data/overlays/haftarah/mappings.json': overlapping,
+        '/data/overlays/haftarah/mappings.json': changed,
         '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
       });
       await haftarahOverlay.overlay.init?.();
+    }
 
+    /** The verse Rosh Chodesh's swatch hovers. */
+    function roshChodeshVerse(): string | undefined {
       const container = document.createElement('div');
       haftarahOverlay.renderLegend(container);
-      const row = keyRows(container).find((r) => r.label === 'Rosh Chodesh')!;
-      return row.readings[0].verse;
+      return keyRows(container).find((r) => r.label === 'Rosh Chodesh')!.readings[0].verse;
+    }
+
+    async function roshChodeshStandIn(ranges: unknown[]): Promise<string | undefined> {
+      await loadRoshChodesh('ashkenazi', ranges);
+      return roshChodeshVerse();
     }
 
     it('hovers an occasion by a verse it shares with another reading', async () => {
@@ -487,26 +494,14 @@ describe('Haftarah Overlay', () => {
     });
 
     it("keys each custom by that custom's haftarot", async () => {
-      const differing = structuredClone(SAMPLE_HAFTARAH_DATA);
       // Noach's Sephardi haftarah.
-      differing.specialOccasions[0].haftarah.sephardi = [
+      await loadRoshChodesh('sephardi', [
         { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
-      ];
-      installMockFetch({
-        '/data/overlays/haftarah/mappings.json': differing,
-        '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
-      });
-      await haftarahOverlay.overlay.init?.();
+      ]);
 
-      const standIn = () => {
-        const container = document.createElement('div');
-        haftarahOverlay.renderLegend(container);
-        return keyRows(container).find((r) => r.label === 'Rosh Chodesh')!.readings[0].verse;
-      };
-
-      expect(standIn()).toBe('Isaiah.66.1');
+      expect(roshChodeshVerse()).toBe('Isaiah.66.1');
       haftarahOverlay.restore({ custom: 'sephardi' });
-      expect(standIn()).toBe('Isaiah.54.1');
+      expect(roshChodeshVerse()).toBe('Isaiah.54.1');
     });
 
     it('prefers the larger of two overlaps with different readings', async () => {
