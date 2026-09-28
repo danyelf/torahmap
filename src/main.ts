@@ -48,6 +48,7 @@ import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } f
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { tabTitle } from './linkNames.ts';
+import { linkForScreen } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
   createCamera,
@@ -665,6 +666,7 @@ async function main(): Promise<void> {
     if (frame.mode !== 'story' || driver.by === 'reader') return;
     handOver(readerTakesOver(storyPosition()), how);
     applyTools();
+    syncUrl(true);
   }
 
   // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
@@ -943,17 +945,19 @@ async function main(): Promise<void> {
   }
 
   /**
-   * Write the URL for what is on screen. While the story is open it names the
-   * stop alone, whoever is driving, so reloading puts a lost reader back on the
-   * story; folded, it describes the reader's view. `push` adds a history entry,
-   * for a discrete step rather than a pan or a scroll.
+   * Write the URL for what is on screen. `push` adds a history entry, for a
+   * discrete step rather than a pan or a scroll.
    */
   function syncUrl(push: boolean = false): void {
-    const state: UrlState =
-      frame.mode === 'story'
-        ? { story: story.id, stop: resolvedStops[storyStopIndex()].id, overlayParams: {} }
-        : buildCurrentUrlState();
-    updateUrl(state, push);
+    updateUrl(
+      linkForScreen({
+        mode: frame.mode,
+        driver: driverKind(driver),
+        story: { id: story.id, stop: resolvedStops[storyStopIndex()].id },
+        explore: buildCurrentUrlState,
+      }),
+      push,
+    );
     showTitle();
   }
 
