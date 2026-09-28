@@ -193,6 +193,11 @@ function showTitle(): void {
 }
 
 async function main(): Promise<void> {
+  // Before any data load, so a tab on a non-main build never sits titled
+  // plainly "Torahmap" — index.html's placeholder — while the 8.8 MB verse
+  // bundle fetches. LINK_NAMES is static package data, so this needs no await.
+  showTitle();
+
   const [torahData, verseTexts] = await Promise.all([
     loadTanakhStructure(),
     loadAllVerseTexts(),
@@ -1709,7 +1714,6 @@ async function main(): Promise<void> {
   if (linkNamesAView(parseUrlState())) {
     restoreFromUrl();
   }
-  showTitle();
 
   // A link to a story stop always opens the story.
   if (frame.mode === 'story' && opensFolded) {
