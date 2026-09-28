@@ -78,6 +78,54 @@ describe('parseScript', () => {
     expect(() => parseScript('<!-- scene: end | story: x -->')).toThrow(/end/);
   });
 
+  it('reads a caption, where it sits, and a fade in from the scene before', () => {
+    const [a] = parseScript(
+      '<!-- scene: a | view: x=1&y=2 | caption: Every row, a chapter. | caption-at: top | fade: 0.8s -->',
+    ).scenes;
+    expect(a).toMatchObject({ caption: 'Every row, a chapter.', captionAt: 'top', fade: 0.8 });
+  });
+
+  it('puts a caption at the bottom, and fades nothing, unless told', () => {
+    const [a] = parseScript('<!-- scene: a | view: x=1&y=2 | caption: Hi -->').scenes;
+    expect(a).toMatchObject({ caption: 'Hi', captionAt: 'bottom', fade: 0 });
+  });
+
+  it('reads the panel a scene wants, defaulting to the script’s', () => {
+    const s = parseScript(`---
+panel: closed
+---
+<!-- scene: a | view: x=1&y=2 -->
+<!-- scene: b | view: x=1&y=2 | panel: search -->`);
+    expect(s.scenes.map((sc) => sc.panel)).toEqual(['closed', 'search']);
+  });
+
+  it('leaves the panel alone when nothing names it', () => {
+    const [a] = parseScript('<!-- scene: a | view: x=1&y=2 -->').scenes;
+    expect(a.panel).toBeUndefined();
+  });
+
+  it('refuses a caption position or panel it does not know', () => {
+    expect(() => parseScript('<!-- scene: a | view: x=1 | caption-at: middle -->')).toThrow(
+      /scene "a".*middle/,
+    );
+    expect(() => parseScript('<!-- scene: a | view: x=1 | panel: sideways -->')).toThrow(
+      /scene "a".*sideways/,
+    );
+  });
+
+  it('reads a pan, in pixels, after a view arrives', () => {
+    const [a] = parseScript('<!-- scene: a | view: verse=Genesis.1.1 | pan: 270,-365 -->').scenes;
+    expect(a).toMatchObject({ kind: 'view', pan: { dx: 270, dy: -365 } });
+  });
+
+  it('names the story a stop belongs to, the tour unless told', () => {
+    const [a, b] = parseScript(
+      '<!-- scene: a | story: intro -->\n<!-- scene: b | story: sample/first -->',
+    ).scenes;
+    expect(a).toMatchObject({ kind: 'story', story: 'tour', stop: 'intro' });
+    expect(b).toMatchObject({ kind: 'story', story: 'sample', stop: 'first' });
+  });
+
   it('refuses a script with no scenes', () => {
     expect(() => parseScript('just words')).toThrow(/no scenes/);
   });

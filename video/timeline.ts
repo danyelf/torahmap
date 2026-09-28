@@ -56,8 +56,37 @@ export function buildTimeline(script: Script, times: Times): Segment[] {
         `scene "${scene.id}" needs ${seconds(needs)}s, but lasts only ${seconds(end - start)}s before what follows`,
       );
     }
+    if (scene.fade > end - start) {
+      throw new Error(
+        `scene "${scene.id}" has a ${seconds(scene.fade)}s fade, but lasts only ${seconds(end - start)}s`,
+      );
+    }
     return segment;
   });
+}
+
+/** How long a caption takes to appear or go. */
+export const CAPTION_EASE_S = 0.3;
+
+/**
+ * How opaque the caption of scene `index` is at `t`, 0 to 1. A caption eases in
+ * as its scene starts and out as it ends, unless the scene beside it carries the
+ * same words, when it holds across the change.
+ */
+export function captionOpacity(timeline: Segment[], index: number, t: number): number {
+  const { scene, start, end } = timeline[index];
+  if (!scene.caption) return 0;
+  const same = (i: number) => timeline[i]?.scene.caption === scene.caption;
+  const easeIn = same(index - 1) ? 1 : (t - start) / CAPTION_EASE_S;
+  const easeOut = same(index + 1) ? 1 : (end - t) / CAPTION_EASE_S;
+  return Math.max(0, Math.min(1, easeIn, easeOut));
+}
+
+/** How much of the picture before a fading scene still shows at `t`: 1 as it starts, 0 once done. */
+export function fadeRemaining(segment: Segment, t: number): number {
+  const { fade } = segment.scene;
+  if (fade <= 0) return 0;
+  return Math.max(0, Math.min(1, 1 - (t - segment.start) / fade));
 }
 
 export function segmentAt(timeline: Segment[], t: number): Segment {

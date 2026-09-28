@@ -28,7 +28,8 @@ export function storyStopLine(name: string, hash: string): string | null {
 export function captureLine(name: string, hash: string): string {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const story = params.get('story');
-  if (story) return `<!-- scene: ${name} | story: ${story} -->`;
+  const stop = params.get('stop');
+  if (story) return `<!-- scene: ${name} | story: ${stop ? `${story}/${stop}` : story} -->`;
   const view = [...params]
     .map(([key, value]) => `${key}=${value.replace(/[&=+%#|]/g, encodeURIComponent)}`)
     .join('&');

@@ -8,12 +8,28 @@ export type Step =
   | { kind: 'press'; key: string }
   | { kind: 'wait'; seconds: number };
 
+/** Which of the app's side panels a scene shows, or `closed` for the whole map. */
+export type PanelState = 'closed' | 'search' | 'overlay';
+const PANEL_STATES: readonly PanelState[] = ['closed', 'search', 'overlay'];
+
 interface SceneBase {
   id: string;
   narration: string;
+  caption?: string;
+  captionAt: 'top' | 'bottom';
+  /** Seconds to dissolve from the picture before this scene; 0 cuts. */
+  fade: number;
+  /** Left as it is when unset. */
+  panel?: PanelState;
 }
-export type StoryScene = SceneBase & { kind: 'story'; stop: string; over: number };
-export type ViewScene = SceneBase & { kind: 'view'; params: Record<string, string>; over: number };
+export type StoryScene = SceneBase & { kind: 'story'; story: string; stop: string; over: number };
+export type ViewScene = SceneBase & {
+  kind: 'view';
+  params: Record<string, string>;
+  over: number;
+  /** Dragged by this many pixels once the view arrives, as a reader would. */
+  pan?: { dx: number; dy: number };
+};
 export type DoScene = SceneBase & { kind: 'do'; steps: Step[] };
 export type Scene = StoryScene | ViewScene | DoScene;
 
@@ -51,7 +67,9 @@ export function parseScript(markdown: string): Script {
       .slice(start, end)
       .replace(/<!--[\s\S]*?-->/g, '')
       .trim();
-    return parseScene(m[1], parseParams(m[2] ?? ''), narration);
+    const params = parseParams(m[2] ?? '');
+    if (params.panel === undefined && settings.panel !== undefined) params.panel = settings.panel;
+    return parseScene(m[1], params, narration);
   });
 
   const seen = new Set<string>();
@@ -89,25 +107,52 @@ function parseScene(id: string, params: Record<string, string>, narration: strin
     throw new Error(`scene "${id}" needs exactly one of story:, view: or do:`);
   }
   const over = params.over === undefined ? DEFAULT_OVER_S : parseSeconds(params.over, id);
+  const base = { id, narration, ...parseLook(params, id) };
   switch (kinds[0]) {
-    case 'story':
-      return { id, narration, kind: 'story', stop: params.story, over };
+    case 'story': {
+      const [story, stop] = params.story.includes('/')
+        ? params.story.split('/', 2)
+        : ['tour', params.story];
+      return { ...base, kind: 'story', story, stop, over };
+    }
     case 'view':
       return {
-        id,
-        narration,
+        ...base,
         kind: 'view',
         params: Object.fromEntries(new URLSearchParams(params.view)),
         over,
+        ...(params.pan === undefined ? {} : { pan: parsePan(params.pan, id) }),
       };
     case 'do':
-      return {
-        id,
-        narration,
-        kind: 'do',
-        steps: splitSteps(params.do).map((s) => parseStep(s, id)),
-      };
+      return { ...base, kind: 'do', steps: splitSteps(params.do).map((s) => parseStep(s, id)) };
   }
+}
+
+/** What every kind of scene shares: its caption, its fade, its panel. */
+function parseLook(
+  params: Record<string, string>,
+  id: string,
+): Pick<SceneBase, 'caption' | 'captionAt' | 'fade' | 'panel'> {
+  const captionAt = params['caption-at'] ?? 'bottom';
+  if (captionAt !== 'top' && captionAt !== 'bottom') {
+    throw new Error(`scene "${id}": caption-at is top or bottom, not "${captionAt}"`);
+  }
+  const panel = params.panel;
+  if (panel !== undefined && !PANEL_STATES.includes(panel as PanelState)) {
+    throw new Error(`scene "${id}": panel is one of ${PANEL_STATES.join(', ')}, not "${panel}"`);
+  }
+  return {
+    ...(params.caption ? { caption: params.caption } : {}),
+    captionAt,
+    fade: params.fade === undefined ? 0 : parseSeconds(params.fade, id),
+    ...(panel === undefined ? {} : { panel: panel as PanelState }),
+  };
+}
+
+function parsePan(value: string, id: string): { dx: number; dy: number } {
+  const m = value.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  if (!m) throw new Error(`scene "${id}": pan is two numbers of pixels, "dx,dy", not "${value}"`);
+  return { dx: Number(m[1]), dy: Number(m[2]) };
 }
 
 function parseSeconds(value: string, id: string): number {

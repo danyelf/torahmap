@@ -1,7 +1,7 @@
 // Opening the map in headless Chromium, and what can only be learned by asking it.
 
 import { chromium, type Browser, type Page } from 'playwright';
-import type { Script } from './script.ts';
+import type { Script, ViewScene } from './script.ts';
 import { cameraOf, type Camera } from './timeline.ts';
 
 /** As layout/playwright.config.ts: headless Chromium has no WebGL2 without software rendering. */
@@ -58,11 +58,18 @@ export async function measureCameras(
 ): Promise<Map<string, Camera>> {
   const cameras = new Map<string, Camera>();
   let page: Page | null = null;
+  // The camera names the middle of the screen, so dragging the map by some
+  // pixels leaves it that many pixels, over the zoom, the other way.
+  const set = (scene: ViewScene, c: Camera) =>
+    cameras.set(
+      scene.id,
+      scene.pan ? { ...c, x: c.x - scene.pan.dx / c.zoom, y: c.y - scene.pan.dy / c.zoom } : c,
+    );
   for (const scene of script.scenes) {
     if (scene.kind !== 'view') continue;
     const given = cameraOf(scene.params);
     if (given) {
-      cameras.set(scene.id, given);
+      set(scene, given);
       continue;
     }
     if (!scene.params.verse) {
@@ -77,7 +84,7 @@ export async function measureCameras(
       Object.fromEntries(new URLSearchParams((await page.evaluate(() => location.hash)).slice(1))),
     );
     if (!measured) throw new Error(`scene "${scene.id}": could not read the camera for its verse`);
-    cameras.set(scene.id, measured);
+    set(scene, measured);
   }
   await page?.close();
   return cameras;

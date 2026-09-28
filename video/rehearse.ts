@@ -92,7 +92,7 @@ function play(scene: Scene, previous: Scene | null): void {
 
   if (scene.kind === 'story') {
     if (previous?.kind !== 'story' || !win.location.hash.startsWith('#story=')) {
-      win.location.hash = `#story=${scene.stop}`;
+      win.location.hash = `#story=${scene.story}&stop=${scene.stop}`;
       return;
     }
     const top = restingScrollTops(doc)?.[scene.stop];

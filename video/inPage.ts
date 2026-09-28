@@ -21,6 +21,70 @@ export function restingScrollTops(doc: Document = document): Record<string, numb
 }
 
 /**
+ * Lays a still of the picture before a scene over the whole page, to dissolve
+ * from; `showOverlays` sets how much of it shows.
+ */
+export function holdStill(src: string): void {
+  let still = document.getElementById('video-still') as HTMLImageElement | null;
+  if (!still) {
+    still = document.createElement('img');
+    still.id = 'video-still';
+    Object.assign(still.style, {
+      position: 'fixed',
+      inset: '0',
+      width: '100vw',
+      height: '100vh',
+      zIndex: '2147483646',
+      pointerEvents: 'none',
+    });
+    document.body.append(still);
+  }
+  still.src = src;
+}
+
+/** The caption, and the still being dissolved from, as they stand this frame. */
+export function showOverlays(o: {
+  caption: string;
+  captionAt: 'top' | 'bottom';
+  captionOpacity: number;
+  fade: number;
+}): void {
+  const still = document.getElementById('video-still');
+  if (still) still.style.opacity = String(o.fade);
+
+  let band = document.getElementById('video-caption');
+  if (!band) {
+    band = document.createElement('div');
+    band.id = 'video-caption';
+    Object.assign(band.style, {
+      position: 'fixed',
+      left: '0',
+      right: '0',
+      textAlign: 'center',
+      zIndex: '2147483647',
+      pointerEvents: 'none',
+    });
+    const text = document.createElement('span');
+    Object.assign(text.style, {
+      display: 'inline-block',
+      maxWidth: '86%',
+      padding: '0.4em 0.8em',
+      borderRadius: '0.45em',
+      background: 'rgba(0, 0, 0, 0.62)',
+      color: '#fff',
+      font: '600 4.4vmin/1.25 system-ui, sans-serif',
+      letterSpacing: '0.01em',
+    });
+    band.append(text);
+    document.body.append(band);
+  }
+  band.style.top = o.captionAt === 'top' ? '7vmin' : '';
+  band.style.bottom = o.captionAt === 'bottom' ? '7vmin' : '';
+  band.style.opacity = String(o.captionOpacity);
+  band.firstElementChild!.textContent = o.caption;
+}
+
+/**
  * Sets every CSS animation and transition to the fake clock's time. They run
  * on the browser's real clock, and a frame takes a third of a second of real
  * time to capture, so a short transition would otherwise finish between two

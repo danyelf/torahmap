@@ -1,0 +1,21 @@
+{
+  "open": 0,
+  "genesis": 2.5,
+  "torah": 4.5,
+  "whole": 6.5,
+  "names": 8,
+  "names_genesis": 10,
+  "names_torah": 13,
+  "names_samuel": 15.5,
+  "isaac": 18,
+  "isaac_named": 21,
+  "commentary": 24,
+  "commentary_whole": 26,
+  "haftarah": 30,
+  "isaiah": 32.5,
+  "lengths": 36,
+  "writings": 39,
+  "lamentations": 42.5,
+  "closing": 46,
+  "end": 50
+}

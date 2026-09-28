@@ -47,14 +47,14 @@ describe('storyStopLine', () => {
   });
 
   it('has nothing to write for a view of the story itself', () => {
-    expect(storyStopLine('s', '#story=abraham_zoom')).toBeNull();
+    expect(storyStopLine('s', '#story=tour&stop=abraham_zoom')).toBeNull();
   });
 });
 
 describe('captureLine', () => {
-  it('captures a story stop', () => {
-    expect(captureLine('s1', '#story=abraham_zoom')).toBe(
-      '<!-- scene: s1 | story: abraham_zoom -->',
+  it('captures a story stop, naming its story', () => {
+    expect(captureLine('s1', '#story=tour&stop=abraham_zoom')).toBe(
+      '<!-- scene: s1 | story: tour/abraham_zoom -->',
     );
   });
 

@@ -22,14 +22,20 @@ import {
   viewHash,
   doEvents,
   actionsDue,
+  captionOpacity,
+  fadeRemaining,
   type Camera,
   type Segment,
   type TimedAction,
 } from './timeline.ts';
 import { launch, measureCameras, openMap } from './browser.ts';
-import { holdCssAnimations, restingScrollTops } from './inPage.ts';
+import { holdCssAnimations, holdStill, restingScrollTops, showOverlays } from './inPage.ts';
+import type { PanelState } from './script.ts';
 
 const PORT = Number(process.env.VIDEO_PORT ?? 5198);
+// Software WebGL on a busy machine can take far longer than Playwright's 30 s
+// default to draw a frame; a render is offline, so a slow frame waits.
+const SCREENSHOT_TIMEOUT_MS = 180_000;
 const BASE = `http://localhost:${PORT}/`;
 
 const { values, positionals } = parseArgs({
@@ -86,12 +92,22 @@ async function render(browser: Browser): Promise<void> {
   try {
     for (let frame = 0; frame / fps <= to; frame++) {
       const t = frame / fps;
-      await scene.show(segmentAt(timeline, t), t);
+      const segment = segmentAt(timeline, t);
+      await scene.show(segment, t);
       await page.clock.runFor(1000 / fps);
+      await page.evaluate(showOverlays, {
+        caption: segment.scene.caption ?? '',
+        captionAt: segment.scene.captionAt,
+        captionOpacity: captionOpacity(timeline, timeline.indexOf(segment), t),
+        fade: fadeRemaining(segment, t),
+      });
       if (t < from) continue;
       await page.evaluate(holdCssAnimations);
       await encoder.write(
-        await page.screenshot(scale < 1 ? { type: 'jpeg', quality: 85 } : { type: 'png' }),
+        await page.screenshot({
+          ...(scale < 1 ? { type: 'jpeg', quality: 85 } : { type: 'png' }),
+          timeout: SCREENSHOT_TIMEOUT_MS,
+        }),
       );
       process.stdout.write(`\r${t.toFixed(1)}s of ${to.toFixed(1)}s`);
     }
@@ -123,6 +139,8 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
   let fromCamera: Camera | null = null;
   let actions: TimedAction[] = [];
   let fired = 0;
+  // Done once a scene's first state is on the page: its panel, then its pan.
+  let settled = false;
 
   const fireDue = async (segment: Segment, t: number) => {
     const due = actionsDue(segment, actions, t);
@@ -139,12 +157,26 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
 
   async function enter(segment: Segment): Promise<void> {
     const { scene } = segment;
+    // The picture as it stands, laid over the page, to dissolve from.
+    if (scene.fade > 0 && segment.previous) {
+      // Without its caption: captions ease in and out on their own, and one
+      // left in the still shows through behind the next.
+      await page.evaluate(() => {
+        const caption = document.getElementById('video-caption');
+        if (caption) caption.style.opacity = '0';
+      });
+      const still = (
+        await page.screenshot({ type: 'png', timeout: SCREENSHOT_TIMEOUT_MS })
+      ).toString('base64');
+      await page.evaluate(holdStill, `data:image/png;base64,${still}`);
+    }
     // The app rewrites the URL itself as it goes, so the last hash written
     // here says nothing about the page once a scene is over.
     hash = '';
+    settled = false;
     if (scene.kind === 'story') {
       if (!glides(segment)) {
-        await setHash(`#story=${scene.stop}`);
+        await setHash(`#story=${scene.story}&stop=${scene.stop}`);
         await page.clock.runFor(50);
       }
       fromTop = await storyTop();
@@ -177,8 +209,46 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
       } else {
         await fireDue(segment, t);
       }
+      if (!settled) {
+        settled = true;
+        await page.clock.runFor(50);
+        if (scene.panel) await setPanel(page, scene.id, scene.panel);
+        if (scene.kind === 'view' && scene.pan) await drag(page, scene.pan);
+      }
     },
   };
+}
+
+/** Opens the panel a scene wants, or closes it, the way a reader does. */
+async function setPanel(page: Page, sceneId: string, want: PanelState): Promise<void> {
+  const open = () => page.evaluate(() => document.body.dataset.open ?? 'closed');
+  if ((await open()) === want) return;
+  await page.evaluate((panel) => {
+    const control =
+      panel === 'closed'
+        ? document.querySelector<HTMLElement>('.panel-close')
+        : document.querySelector<HTMLElement>(`.map-legend-row[data-panel="${panel}"]`);
+    control?.click();
+  }, want);
+  await page.clock.runFor(50);
+  if ((await open()) !== want) {
+    throw new Error(`scene "${sceneId}": could not leave the panel ${want}`);
+  }
+}
+
+/** Drags the map by `pan` from the middle of its canvas. */
+async function drag(page: Page, { dx, dy }: { dx: number; dy: number }): Promise<void> {
+  const box = (await page.locator('#canvas').boundingBox())!;
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + dx, y + dy, { steps: 8 });
+  await page.mouse.up();
+  // Left over the map, the pointer would keep a verse lit as hovered.
+  const view = page.viewportSize()!;
+  await page.mouse.move(view.width - 1, view.height - 1);
+  await page.clock.runFor(50);
 }
 
 async function act(page: Page, sceneId: string, { action }: TimedAction): Promise<void> {

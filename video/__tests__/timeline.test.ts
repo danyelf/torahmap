@@ -10,6 +10,9 @@ import {
   viewHash,
   doEvents,
   actionsDue,
+  captionOpacity,
+  fadeRemaining,
+  CAPTION_EASE_S,
   TYPE_INTERVAL_S,
   CLICK_PAUSE_S,
 } from '../timeline.ts';
@@ -161,5 +164,59 @@ describe('doEvents', () => {
     ]);
     expect(events[0].at).toBe(1);
     expect(events.map((e) => (e.action.kind === 'key' ? e.action.text : '')).join('')).toBe('אַ');
+  });
+});
+
+describe('captionOpacity', () => {
+  const captioned = parseScript(`
+<!-- scene: a | view: x=1&y=2 | caption: One -->
+<!-- scene: b | view: x=1&y=2 | caption: One -->
+<!-- scene: c | view: x=1&y=2 | caption: Two -->
+<!-- scene: d | view: x=1&y=2 -->
+`);
+  const t = buildTimeline(captioned, { a: 0, b: 2, c: 4, d: 6, end: 8 });
+
+  it('eases a caption in at the start of its scene', () => {
+    expect(captionOpacity(t, 0, 0)).toBe(0);
+    expect(captionOpacity(t, 0, CAPTION_EASE_S / 2)).toBeCloseTo(0.5);
+    expect(captionOpacity(t, 0, 1)).toBe(1);
+  });
+
+  it('holds a caption the next scene repeats, across the change', () => {
+    expect(captionOpacity(t, 0, 2 - 0.01)).toBe(1);
+    expect(captionOpacity(t, 1, 2)).toBe(1);
+  });
+
+  it('eases a caption out before a scene with another, or none', () => {
+    expect(captionOpacity(t, 1, 4 - CAPTION_EASE_S / 2)).toBeCloseTo(0.5);
+    expect(captionOpacity(t, 2, 6 - 0.001)).toBeCloseTo(0, 2);
+  });
+
+  it('shows nothing in a scene with no caption', () => {
+    expect(captionOpacity(t, 3, 7)).toBe(0);
+  });
+});
+
+describe('fadeRemaining', () => {
+  const faded = parseScript(`
+<!-- scene: a | view: x=1&y=2 -->
+<!-- scene: b | view: x=5&y=2 | fade: 1s -->
+`);
+  const t = buildTimeline(faded, { a: 0, b: 2, end: 5 });
+
+  it('is all of the old picture as a fade begins, and none once it is over', () => {
+    expect(fadeRemaining(t[1], 2)).toBe(1);
+    expect(fadeRemaining(t[1], 2.5)).toBeCloseTo(0.5);
+    expect(fadeRemaining(t[1], 3)).toBe(0);
+  });
+
+  it('is nothing in a scene that cuts', () => {
+    expect(fadeRemaining(t[0], 0)).toBe(0);
+  });
+
+  it('refuses a fade longer than its scene', () => {
+    expect(() =>
+      buildTimeline(parseScript('<!-- scene: a | view: x=1&y=2 | fade: 3s -->'), { a: 0, end: 2 }),
+    ).toThrow(/"a".*fade/);
   });
 });
