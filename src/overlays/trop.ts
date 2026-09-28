@@ -10,6 +10,7 @@ import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
+import { lingeringHover } from '../utils/hover.ts';
 import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { scaleToGradient, buildLegendGradient, interpolateGradient } from '../utils/color.ts';
 import type { ColorStop } from '../utils/color.ts';
@@ -28,9 +29,6 @@ export interface TropSettings {
   readonly mark: string | null;
   readonly preview: string | null;
 }
-
-/** How long a preview outlasts the pointer, so crossing the gap between buttons does not blink the map. */
-const PREVIEW_LINGER_MS = 150;
 
 function shownMark(settings: TropSettings): string | null {
   return settings.preview ?? settings.mark;
@@ -166,7 +164,9 @@ function renderTropChart(
       </div>
     `;
     chart = container.querySelector('.trop-chart') as HTMLElement;
-    let leaving: ReturnType<typeof setTimeout> | undefined;
+    const preview = lingeringHover<string>((slug) =>
+      onChange((current) => ({ ...current, preview: slug })),
+    );
 
     for (const entry of tropByFrequency) {
       const slug = slugify(entry.name);
@@ -180,17 +180,8 @@ function renderTropChart(
         button.classList.add('rare');
       }
 
-      button.addEventListener('mouseenter', () => {
-        clearTimeout(leaving);
-        onChange((current) => ({ ...current, preview: slug }));
-      });
-
-      button.addEventListener('mouseleave', () => {
-        leaving = setTimeout(
-          () => onChange((current) => ({ ...current, preview: null })),
-          PREVIEW_LINGER_MS,
-        );
-      });
+      button.addEventListener('mouseenter', () => preview.enter(slug));
+      button.addEventListener('mouseleave', () => preview.leave());
 
       button.addEventListener('click', () => {
         onChange((current) => ({ ...current, mark: current.mark === slug ? null : slug }));

@@ -10,6 +10,7 @@ export interface ShaderProgram {
     pan: WebGLUniformLocation | null;
     zoom: WebGLUniformLocation | null;
     fade: WebGLUniformLocation | null;
+    ring: WebGLUniformLocation | null;
   };
 }
 
@@ -26,6 +27,9 @@ const VERTEX_SHADER = `#version 300 es
   // How far each verse has gone from its first picture to its second.
   // Shared with the fragment shader, so its precision is stated in both.
   uniform highp float u_fade;
+  // A ring's width outside the square and inside it, and the smallest square
+  // that keeps a hole, in device pixels. Shared, like u_fade.
+  uniform highp vec3 u_ring;
 
   ${VERSE_INPUTS}
 
@@ -36,57 +40,63 @@ const VERTEX_SHADER = `#version 300 es
     vec2(0, 1), vec2(1, 0), vec2(1, 1)
   );
 
-  out vec3 v_color;
-  out vec3 v_color2;
-  out vec3 v_color3;
-  out vec3 v_color4;
-  flat out int v_colorCount;
-  out vec3 v_nextColor;
-  out vec3 v_nextColor2;
-  out vec3 v_nextColor3;
-  out vec3 v_nextColor4;
-  flat out int v_nextColorCount;
+  flat out highp vec4 v_fill;
+  flat out highp vec4 v_ring;
+  flat out highp vec4 v_nextFill;
+  flat out highp vec4 v_nextRing;
+  // Stripe counts: this picture's fill and ring, then the next's. A ring of
+  // no stripes is no ring.
+  flat out ivec4 v_counts;
+  // The drawn square's side in device pixels, growth included, or 0 when the
+  // square is too small for a hole.
+  flat out float v_side;
   out vec2 v_uv;
   out vec2 v_seed;
+  // This point in device pixels from the drawn square's top-left corner.
+  out vec2 v_px;
+
+  // How far a picture's verse reaches past its square, in world units.
+  float reach(vec3 shape, bool holes) {
+    float grow = shape.y * ${MULTICOLOR_GROWTH.toFixed(4)};
+    return shape.z > 0.0 && holes ? max(grow, u_ring.x / u_zoom) : grow;
+  }
 
   void main() {
     vec2 uv = CORNERS[gl_VertexID];
-    float grow = mix(a_shape.y, a_nextShape.y, u_fade) * ${MULTICOLOR_GROWTH.toFixed(4)};
+    float side = (a_rect.z - a_rect.x) * u_zoom;
+    bool holes = side >= u_ring.z;
+    float grow = mix(reach(a_shape, holes), reach(a_nextShape, holes), u_fade);
     vec4 rect = a_rect + vec4(-grow, -grow, grow, grow);
-    vec2 pos = (mix(rect.xy, rect.zw, uv) + u_pan) * u_zoom;
+    vec2 world = mix(rect.xy, rect.zw, uv);
+    vec2 pos = (world + u_pan) * u_zoom;
     vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-    v_color = a_color;
-    v_color2 = a_color2;
-    v_color3 = a_color3;
-    v_color4 = a_color4;
-    v_colorCount = int(a_shape.x);
-    v_nextColor = a_nextColor;
-    v_nextColor2 = a_nextColor2;
-    v_nextColor3 = a_nextColor3;
-    v_nextColor4 = a_nextColor4;
-    v_nextColorCount = int(a_nextShape.x);
+    v_fill = a_fill;
+    v_ring = a_ring;
+    v_nextFill = a_nextFill;
+    v_nextRing = a_nextRing;
+    v_counts = ivec4(a_shape.x, a_shape.z, a_nextShape.x, a_nextShape.z);
+    v_side = holes ? (rect.z - rect.x) * u_zoom : 0.0;
     v_uv = uv;
-    // The verse's corner seeds its dithering noise
-    v_seed = rect.xy;
+    v_px = (world - rect.xy) * u_zoom;
+    // The square's own corner, which zooming does not move, seeds its dithering noise
+    v_seed = a_rect.xy;
   }
 `;
 
 const FRAGMENT_SHADER = `#version 300 es
   precision mediump float;
   uniform highp float u_fade;
-  in vec3 v_color;
-  in vec3 v_color2;
-  in vec3 v_color3;
-  in vec3 v_color4;
-  flat in int v_colorCount;
-  in vec3 v_nextColor;
-  in vec3 v_nextColor2;
-  in vec3 v_nextColor3;
-  in vec3 v_nextColor4;
-  flat in int v_nextColorCount;
+  uniform highp vec3 u_ring;
+  flat in highp vec4 v_fill;
+  flat in highp vec4 v_ring;
+  flat in highp vec4 v_nextFill;
+  flat in highp vec4 v_nextRing;
+  flat in ivec4 v_counts;
+  flat in float v_side;
   in vec2 v_uv;
   in vec2 v_seed;
+  in vec2 v_px;
   out vec4 fragColor;
 
   // Simple hash for dithering noise
@@ -94,25 +104,46 @@ const FRAGMENT_SHADER = `#version 300 es
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
   }
 
+  vec3 unpack(highp float packed) {
+    highp int c = int(packed);
+    return vec3(float(c >> 16), float((c >> 8) & 255), float(c & 255)) / 255.0;
+  }
+
   // Several colors split the square into bands running corner to corner, one
   // per color. A diagonal cut keeps a two-color verse from reading as two
   // neighbouring verses, as a vertical split does.
-  vec3 stripes(vec3 c1, vec3 c2, vec3 c3, vec3 c4, int count) {
-    if (count <= 1) return c1;
+  vec3 stripes(highp vec4 colors, int count) {
+    if (count <= 1) return unpack(colors.x);
     float d = min((v_uv.x + v_uv.y) * 0.5, 0.999);
     int idx = int(floor(d * float(count)));
-    if (idx == 0) return c1;
-    if (idx == 1) return c2;
-    if (idx == 2) return c3;
-    return c4;
+    if (idx == 0) return unpack(colors.x);
+    if (idx == 1) return unpack(colors.y);
+    if (idx == 2) return unpack(colors.z);
+    return unpack(colors.w);
+  }
+
+  // The ring is measured in from the drawn edge, so a grown verse's ring is
+  // as thick as any other's.
+  bool inHole() {
+    float inset = u_ring.x + u_ring.y;
+    return v_side > 0.0 &&
+      all(greaterThanEqual(v_px, vec2(inset))) &&
+      all(lessThan(v_px, vec2(v_side - inset)));
+  }
+
+  // One picture here: its ring, if it has one and this is not the hole;
+  // otherwise its fill.
+  vec3 picture(highp vec4 fill, highp vec4 ring, int fillCount, int ringCount) {
+    if (ringCount == 0 || inHole()) return stripes(fill, fillCount);
+    return stripes(ring, ringCount);
   }
 
   void main() {
     // Each picture is drawn whole and the two are faded, so neither's stripes
     // have to move to meet the other's.
     vec3 color = mix(
-      stripes(v_color, v_color2, v_color3, v_color4, v_colorCount),
-      stripes(v_nextColor, v_nextColor2, v_nextColor3, v_nextColor4, v_nextColorCount),
+      picture(v_fill, v_ring, v_counts.x, v_counts.y),
+      picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w),
       u_fade
     );
 
@@ -190,6 +221,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
       fade: gl.getUniformLocation(program, 'u_fade'),
+      ring: gl.getUniformLocation(program, 'u_ring'),
     },
   };
 }

@@ -18,7 +18,7 @@ test('the render check sees a map that drew nothing', async ({ page }) => {
 
 test('measuring finds the panel and its controls', async ({ page }) => {
   // The story has a panel on every screen; a phone exploring with nothing open has none.
-  await openMap(page, 'story=intro');
+  await openMap(page, 'story=tour&stop=intro');
   expect(await boxes(page, CHROME.panel)).not.toEqual([]);
   expect(await boxes(page, CHROME.interactive)).not.toEqual([]);
 });
@@ -57,8 +57,17 @@ for (const state of STATES) {
   });
 }
 
+test("the haftarah legend's key shows only in the desktop layout", async ({ page }) => {
+  const state = STATES.find((s) => s.name === 'explore-haftarah')!;
+  await openMap(page, state.hash);
+  await state.then?.(page);
+  // The phone layout starts at max-width 768px (src/styles/frame.css).
+  const desktop = page.viewportSize()!.width > 768;
+  await expect(page.locator('.haftarah-key')).toBeVisible({ visible: desktop });
+});
+
 test('the title face loads', async ({ page }) => {
-  await openMap(page, 'story=intro');
+  await openMap(page, 'story=tour&stop=intro');
   // document.fonts.check() is true for a face that was never declared; load() is not.
   const faces = await page.evaluate(
     async () => (await document.fonts.load('700 32px "David Libre"')).length,

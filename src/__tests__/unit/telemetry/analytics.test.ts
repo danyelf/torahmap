@@ -12,7 +12,13 @@ let send: ReturnType<typeof vi.fn<(body: string) => void>>;
 
 beforeEach(() => {
   send = vi.fn<(body: string) => void>();
-  configureAnalytics({ hostname: 'torahmap.org', send, getMode: () => 'reader', visitId: 'v1' });
+  configureAnalytics({
+    enabled: true,
+    send,
+    getMode: () => 'reader',
+    getStory: () => 'tour',
+    visitId: 'v1',
+  });
 });
 
 const sent = () => send.mock.calls.map(([body]) => JSON.parse(body as string));
@@ -30,17 +36,9 @@ describe('analytics', () => {
     ]);
   });
 
-  it('sends from a workers.dev preview host, not only torahmap.org', () => {
-    configureAnalytics({ hostname: 'telemetry-torahmap.example.workers.dev' });
+  it('sends nothing while switched off, as on the dev server', () => {
+    configureAnalytics({ enabled: false });
     trackSearchExecute('light', 'en', 'word', 12);
-    expect(send).toHaveBeenCalledTimes(1);
-  });
-
-  it('sends nothing from the dev server', () => {
-    for (const hostname of ['localhost', '127.0.0.1', '192.168.1.20', '::1', 'mac.local', '']) {
-      configureAnalytics({ hostname });
-      trackSearchExecute('light', 'en', 'word', 12);
-    }
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -60,6 +58,18 @@ describe('analytics', () => {
     expect(sent().map((e) => e.fields.stop_id)).toEqual(['creation', 'flood']);
   });
 
+  it('sends a stop once per story, though two stories share its id', () => {
+    trackStoryStop('intro', 1, 9);
+    configureAnalytics({ getStory: () => 'job' });
+    trackStoryStop('intro', 1, 4);
+    configureAnalytics({ getStory: () => 'tour' });
+    trackStoryStop('intro', 1, 9);
+    expect(sent().map((e) => `${e.fields.story}/${e.fields.stop_id}`)).toEqual([
+      'tour/intro',
+      'job/intro',
+    ]);
+  });
+
   it('counts stops afresh for a new visit', () => {
     trackStoryStop('creation', 1, 9);
     configureAnalytics({ visitId: 'v2' });
@@ -71,8 +81,8 @@ describe('analytics', () => {
     trackStoryExit('sinai', 4, 'fold');
     trackStoryReturn('flood', 'rejoin');
     expect(sent().map((e) => [e.event, e.fields])).toEqual([
-      ['story_exit', { stop_id: 'sinai', stop_number: 4, how: 'fold' }],
-      ['story_return', { stop_id: 'flood', how: 'rejoin' }],
+      ['story_exit', { stop_id: 'sinai', stop_number: 4, how: 'fold', story: 'tour' }],
+      ['story_return', { stop_id: 'flood', how: 'rejoin', story: 'tour' }],
     ]);
   });
 

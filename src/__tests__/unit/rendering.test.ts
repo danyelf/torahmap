@@ -10,6 +10,7 @@ import {
 } from '../../rendering';
 import type { Camera } from '../../camera';
 import { tanakhIdentitiesEqual } from '../../types';
+import { SEARCH_WITH_OVERLAY } from '../../constants';
 import { createMockCanvas, createVerse, createVerses } from '../helpers';
 
 describe('rendering', () => {
@@ -30,7 +31,7 @@ describe('rendering', () => {
 
       expect(context.programs.main.program).toBeDefined();
       expect(context.programs.main.attribs.a_rect).toBeDefined();
-      expect(context.programs.main.attribs.a_color).toBeDefined();
+      expect(context.programs.main.attribs.a_fill).toBeDefined();
       expect(context.programs.main.attribs.a_nextShape).toBeDefined();
     });
 
@@ -219,6 +220,18 @@ describe('rendering', () => {
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.main.uniforms.zoom,
         1.5 * 2.0, // zoom * dpr
+      );
+    });
+
+    it('hands the shader the ring in device pixels', () => {
+      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+
+      const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
+      expect(context.gl.uniform3f).toHaveBeenCalledWith(
+        context.programs.main.uniforms.ring,
+        RING_OUTSIDE_PX * 2,
+        RING_INSIDE_PX * 2,
+        RING_MIN_SQUARE_PX * 2,
       );
     });
 
@@ -543,5 +556,15 @@ describe('rendering', () => {
         );
       });
     });
+  });
+});
+
+describe('the search ring', () => {
+  it('leaves a hole in the smallest square that has one', () => {
+    // There the square is drawn RING_OUTSIDE_PX larger on every side and the
+    // ring is measured in from that edge, so the hole is the square less the
+    // inside width twice.
+    const { RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
+    expect(RING_MIN_SQUARE_PX - 2 * RING_INSIDE_PX).toBeGreaterThan(0);
   });
 });

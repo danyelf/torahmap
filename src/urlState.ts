@@ -57,6 +57,17 @@ export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParam
     : string;
 };
 
+/** The search's keys, read whatever overlay is on; no overlay may claim them. */
+export const SEARCH_URL_PARAMS = [
+  { key: 'search', kind: 'text' },
+  // Positional across the terms in `search`, one letter each, and an empty
+  // entry for a term still on its default (see MODE_LETTERS in search/terms.ts).
+  { key: 'mode', kind: 'token' },
+  { key: 'm', kind: 'names' },
+] as const satisfies readonly UrlParamSpec[];
+
+export const SEARCH_KEYS: ReadonlySet<string> = new Set(SEARCH_URL_PARAMS.map((p) => p.key));
+
 /**
  * Overlay-specific settings held alongside the view state.
  *
@@ -73,7 +84,15 @@ export type OverlayParams = UrlParamValues;
 export type OverlayParamSpecLookup = (overlayId: string) => readonly UrlParamSpec[] | undefined;
 
 // Keys this module owns; an overlay may not claim one of these.
-const RESERVED_KEYS = new Set(['story', 'overlay', 'verse', 'zoom', 'x', 'y']);
+export const RESERVED_KEYS: ReadonlySet<string> = new Set([
+  'story',
+  'stop',
+  'overlay',
+  'verse',
+  'zoom',
+  'x',
+  'y',
+]);
 
 const MAX_PAN_POSITION = 1000000;
 const MAX_STRING_LENGTH = 50;
@@ -207,6 +226,7 @@ function stripHtmlTags(value: string): string {
 
 export interface UrlState {
   story?: string;
+  stop?: string;
   overlay?: string;
   /** "Book.Chapter.Verse", e.g. "Genesis.1.1" */
   verse?: string;
@@ -215,6 +235,8 @@ export interface UrlState {
   x?: number;
   y?: number;
   overlayParams: OverlayParams;
+  /** The search's own keys, when the link searches. */
+  searchParams?: UrlParamValues;
 }
 
 /**
@@ -233,6 +255,9 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
   const story = params.get('story');
   const validatedStory = validateString(story);
   if (validatedStory) state.story = validatedStory;
+
+  const stop = validateString(params.get('stop'));
+  if (stop) state.stop = stop;
 
   const overlay = params.get('overlay');
   const validatedOverlay = validateString(overlay);
@@ -273,16 +298,24 @@ export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): Url
     state.overlayParams = validateOverlayParams(lookupOverlayParams?.(state.overlay), params);
   }
 
+  const search = validateOverlayParams(SEARCH_URL_PARAMS, params);
+  if (Object.keys(search).length > 0) state.searchParams = search;
   return state;
 }
 
 /** Build a URL hash string from state, omitting default values to keep URLs clean. */
 export function buildUrlHash(state: UrlState): string {
   if (state.story) {
-    return `#story=${encodeURIComponent(state.story)}`;
+    const params = new URLSearchParams({ story: state.story });
+    if (state.stop) params.set('stop', state.stop);
+    return `#${params.toString()}`;
   }
 
   const params = new URLSearchParams();
+  // The search first, then the overlay it sits over.
+  for (const [key, value] of Object.entries(state.searchParams ?? {})) {
+    if (value) params.set(key, value);
+  }
 
   if (state.overlay) {
     params.set('overlay', state.overlay);

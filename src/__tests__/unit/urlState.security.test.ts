@@ -42,11 +42,11 @@ describe('URL Parameter Security Validation', () => {
     it('sanitizes search query with HTML tags by encoding them', () => {
       // Search queries should preserve user input but safely encode it
       // The overlay itself should handle display sanitization
-      mockWindowLocation('http://localhost:5173/#overlay=search&q=<script>alert(1)</script>');
+      mockWindowLocation('http://localhost:5173/#search=<script>alert(1)</script>');
       const state = parseUrlState(overlayUrlParams);
       // We allow the raw value but expect consumers to sanitize when displaying
-      expect(state.overlayParams.q).toBeDefined();
-      expect(state.overlayParams.q).not.toContain('<script>');
+      expect(state.searchParams?.search).toBeDefined();
+      expect(state.searchParams?.search).not.toContain('<script>');
     });
   });
 
@@ -261,37 +261,35 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Search Query Validation', () => {
     it('accepts search query with Hebrew text', () => {
-      mockWindowLocation(
-        'http://localhost:5173/#overlay=search&q=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA',
-      );
+      mockWindowLocation('http://localhost:5173/#search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
       const state = parseUrlState(overlayUrlParams);
-      expect(state.overlayParams.q).toBe('בראשית');
+      expect(state.searchParams?.search).toBe('בראשית');
     });
 
     it('accepts search query with English text', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=search&q=beginning');
+      mockWindowLocation('http://localhost:5173/#search=beginning');
       const state = parseUrlState(overlayUrlParams);
-      expect(state.overlayParams.q).toBe('beginning');
+      expect(state.searchParams?.search).toBe('beginning');
     });
 
     it('limits search query length', () => {
       const longQuery = 'a'.repeat(10000);
-      mockWindowLocation(`http://localhost:5173/#overlay=search&q=${longQuery}`);
+      mockWindowLocation(`http://localhost:5173/#search=${longQuery}`);
       const state = parseUrlState(overlayUrlParams);
       // Should either truncate or reject excessively long queries
-      if (state.overlayParams.q) {
-        expect(state.overlayParams.q.length).toBeLessThanOrEqual(1000);
+      if (state.searchParams?.search) {
+        expect(state.searchParams?.search.length).toBeLessThanOrEqual(1000);
       } else {
-        expect(state.overlayParams.q).toBeUndefined();
+        expect(state.searchParams?.search).toBeUndefined();
       }
     });
 
     it('strips HTML tags from search query', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=search&q=<script>alert(1)</script>test');
+      mockWindowLocation('http://localhost:5173/#search=<script>alert(1)</script>test');
       const state = parseUrlState(overlayUrlParams);
-      if (state.overlayParams.q) {
-        expect(state.overlayParams.q).not.toContain('<script>');
-        expect(state.overlayParams.q).not.toContain('</script>');
+      if (state.searchParams?.search) {
+        expect(state.searchParams?.search).not.toContain('<script>');
+        expect(state.searchParams?.search).not.toContain('</script>');
       }
     });
   });

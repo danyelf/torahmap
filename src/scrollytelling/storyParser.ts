@@ -1,33 +1,41 @@
 import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
-import { parseVerseFromUrl } from '../urlState';
+import { parseVerseFromUrl, SEARCH_KEYS } from '../urlState';
 
-// A story is optional YAML frontmatter (currently just `easing`) followed by
-// stops, each opened by `<!-- stop: id | camera: ... | overlay: ... | key: value -->`
-// and a `# Title` heading; params other than camera/overlay/easing/verse/zoom
-// become that stop's overlay params. See public/data/story.md for an example.
+/** The frontmatter keys a story may set. */
+export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;
+type HeaderKey = (typeof STORY_HEADER_KEYS)[number];
+
+// A story is optional frontmatter (STORY_HEADER_KEYS) followed by stops, each
+// opened by `<!-- stop: id | camera: ... | search: ... | overlay: ... | key: value -->`
+// and a `# Title` heading. The search's keys go to the search; params other
+// than camera/overlay/easing/verse/zoom become the overlay's. See src/stories/
+// for examples.
 export function parseStoryMarkdown(markdown: string): StoryData {
-  const defaults = parseFrontmatter(markdown);
-  const body = stripFrontmatter(markdown);
-  const stops = parseStops(body);
-
-  return { stops, defaults };
+  const front = parseFrontmatter(markdown);
+  const stops = parseStops(stripFrontmatter(markdown));
+  const order = Number(front.order);
+  return {
+    stops,
+    easing: front.easing as EasingName | undefined,
+    title: front.title ?? '',
+    description: front.description ?? '',
+    order: Number.isFinite(order) ? order : undefined,
+    draft: front.draft === 'true',
+  };
 }
 
 // --- Frontmatter ---
 
-function parseFrontmatter(md: string): StoryData['defaults'] {
+function parseFrontmatter(md: string): Partial<Record<HeaderKey, string>> {
   const match = md.match(/^---\s*\n([\s\S]*?)\n---/);
-  if (!match) return undefined;
-
-  const defaults: StoryData['defaults'] = {};
+  const fields: Record<string, string> = {};
+  if (!match) return fields;
   for (const line of match[1].split('\n')) {
     const [key, ...rest] = line.split(':');
     const value = rest.join(':').trim();
-    if (key.trim() === 'easing' && value) {
-      defaults.easing = value as EasingName;
-    }
+    if (key.trim() && value) fields[key.trim()] = value;
   }
-  return Object.keys(defaults).length > 0 ? defaults : undefined;
+  return fields;
 }
 
 function stripFrontmatter(md: string): string {
@@ -120,6 +128,7 @@ function parseStops(body: string): StoryStop[] {
     const camera = parseCamera(meta.params);
 
     const overlayParams: Record<string, string> = {};
+    const searchParams: Record<string, string> = {};
     let overlay: string | null = null;
     let easing: EasingName | undefined;
 
@@ -137,6 +146,8 @@ function parseStops(body: string): StoryStop[] {
       } else if (key === 'zoom') {
         const z = parseFloat(value);
         if (!isNaN(z)) zoom = z;
+      } else if (SEARCH_KEYS.has(key)) {
+        searchParams[key] = value;
       } else {
         overlayParams[key] = value;
       }
@@ -149,6 +160,7 @@ function parseStops(body: string): StoryStop[] {
       camera,
       overlay,
       overlayParams: Object.keys(overlayParams).length > 0 ? overlayParams : undefined,
+      searchParams: Object.keys(searchParams).length > 0 ? searchParams : undefined,
       verse,
       easing,
       zoom,

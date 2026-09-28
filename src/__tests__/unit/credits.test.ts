@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { APP_CREDITS, renderCreditBlock, renderCreditsHtml, type Credit } from '../../credits';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
+import { searchTool } from '../../overlays/search/index';
 
 registerAllOverlays();
 
@@ -119,10 +120,13 @@ describe('renderCreditsHtml', () => {
 });
 
 describe('the credits the app ships', () => {
-  const everyCredit = () => [...APP_CREDITS, ...getAllOverlays().flatMap((o) => o.credits ?? [])];
+  const everyCredit = () => [
+    ...APP_CREDITS,
+    ...[searchTool, ...getAllOverlays()].flatMap((o) => o.credits ?? []),
+  ];
 
   it('credits every overlay that draws on a source of its own', () => {
-    const uncredited = getAllOverlays()
+    const uncredited = [searchTool, ...getAllOverlays()]
       .filter((o) => !OVERLAYS_WITHOUT_OWN_SOURCE.includes(o.id))
       .filter((o) => !o.credits || o.credits.length === 0)
       .map((o) => o.id);

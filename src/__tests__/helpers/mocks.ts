@@ -41,11 +41,12 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
       const locations: Record<string, number> = {
         'a_position': 0,
         'a_rect': 0,
-        'a_color': 1,
-        'a_color2': 2,
-        'a_color3': 3,
-        'a_color4': 4,
-        'a_colorCount': 5,
+        'a_fill': 1,
+        'a_ring': 2,
+        'a_shape': 3,
+        'a_nextFill': 4,
+        'a_nextRing': 5,
+        'a_nextShape': 6,
       };
       return locations[name] ?? -1;
     }),

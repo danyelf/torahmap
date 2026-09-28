@@ -5,7 +5,7 @@
 // result with one; these tests are about the control that splits them.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { searchTool } from '../../../overlays/search/index';
 import { configure } from '../../../overlays/search';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
@@ -14,8 +14,7 @@ import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay'
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
 
-registerAllOverlays();
-const searchOverlay = hostOverlay(getOverlay('search')!);
+const searchOverlay = hostOverlay(searchTool);
 
 // Real Hebrew, so the lexeme index has something to resolve.
 const texts: VerseTexts = {
@@ -47,7 +46,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   configure({ verses });
-  searchOverlay.restore({ q: '', mode: undefined, m: undefined });
+  searchOverlay.restore({ search: '', mode: undefined, m: undefined });
 });
 
 describe('the meaning list', () => {
@@ -112,11 +111,11 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
 
     const figLeaves = verses[0];
-    expect(searchOverlay.getVerseColor(figLeaves)).not.toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(figLeaves)).not.toBeNull();
 
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor(figLeaves)).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(figLeaves)).toBeNull();
   });
 
   it('keeps the verses of the meanings still checked', () => {
@@ -124,7 +123,7 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor(verses[2])).not.toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[2])).not.toBeNull();
   });
 
   it('will not let the reader uncheck the last one', () => {
@@ -140,8 +139,8 @@ describe('narrowing repaints the map', () => {
 });
 
 describe('the URL', () => {
-  it('writes back the q, mode and m it was read from', () => {
-    const link = { q: 'עלה, רוח, light', mode: 'm,w,', m: '<LH/@heb,,' };
+  it('writes back the search, mode and m it was read from', () => {
+    const link = { search: 'עלה, רוח, light', mode: 'm,w,', m: '<LH/@heb,,' };
     const settings = searchOverlay.fromUrl(link);
 
     expect(searchOverlay.overlay.settingsToUrl!(settings)).toEqual(link);
@@ -166,14 +165,14 @@ describe('the URL', () => {
   });
 
   it('restores it', () => {
-    searchOverlay.restore({ q: 'עלה', mode: 'r', m: '<LH/@heb' });
+    searchOverlay.restore({ search: 'עלה', mode: 'r', m: '<LH/@heb' });
     const container = render();
 
     const checked = [...container.querySelectorAll<HTMLInputElement>('.meaning-row input')].filter(
       (b) => b.checked,
     );
     expect(checked).toHaveLength(1);
-    expect(searchOverlay.getVerseColor(verses[0])).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[0])).toBeNull();
   });
 });
 
@@ -244,11 +243,6 @@ describe('the Hebrew default', () => {
   });
 });
 
-function dimmed(): [number, number, number] {
-  const b = (0.4 + 0.2) * 0.3;
-  return [b, b, b];
-}
-
 function uncheck(container: HTMLElement, gloss: string): void {
   const row = [...container.querySelectorAll('.meaning-row')].find(
     (r) => r.querySelector('.meaning-gloss')?.textContent === gloss,
@@ -285,7 +279,7 @@ describe('showing only one meaning', () => {
     only(container, 'burnt-offering');
 
     // Genesis 3:7 is the fig-leaf verse, so it goes.
-    expect(searchOverlay.getVerseColor(verses[0])).toEqual(dimmed());
+    expect(searchOverlay.getVerseColor(verses[0])).toBeNull();
   });
 
   it('offers a way back only once something is narrowed', () => {

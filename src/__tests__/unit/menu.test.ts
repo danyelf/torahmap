@@ -8,25 +8,34 @@ function items(html: string): HTMLButtonElement[] {
 }
 
 describe('menuHtml', () => {
-  it('offers the story first, with where it is', () => {
-    const [first] = items(menuHtml({ number: 7, total: 21 }));
+  it('offers the current story first, by name, with where it is', () => {
+    const [first] = items(menuHtml({ number: 7, total: 21, title: 'The guided tour' }));
     expect(first.dataset.action).toBe('story');
-    expect(first.textContent).toContain('Continue the story');
-    expect(first.textContent).toContain('7 of 21');
+    expect(first.textContent).toContain('Continue The guided tour');
+    expect(first.textContent).toContain('7/21');
   });
 
-  it('then the overlays, the stories, and about', () => {
-    const actions = items(menuHtml({ number: 1, total: 21 })).map((b) => b.dataset.action);
-    expect(actions).toEqual(['story', 'overlay', 'stories', 'about']);
+  it("escapes the story's title", () => {
+    const div = document.createElement('div');
+    div.innerHTML = menuHtml({ number: 1, total: 2, title: '<img src=x>' });
+    expect(div.querySelector('img')).toBeNull();
+  });
+
+  it('then the search, the overlays, the stories, and about', () => {
+    const actions = items(menuHtml({ number: 1, total: 21, title: 'x' })).map(
+      (b) => b.dataset.action,
+    );
+    expect(actions).toEqual(['story', 'search', 'overlay', 'stories', 'about']);
   });
 
   it("is headed with the site's name", () => {
     const div = document.createElement('div');
-    div.innerHTML = menuHtml({ number: 1, total: 2 });
+    div.innerHTML = menuHtml({ number: 1, total: 2, title: 'x' });
     expect(div.firstElementChild?.textContent).toBe('Torahmap');
   });
 
   it('makes every item a real button', () => {
-    for (const b of items(menuHtml({ number: 1, total: 2 }))) expect(b.type).toBe('button');
+    for (const b of items(menuHtml({ number: 1, total: 2, title: 'x' })))
+      expect(b.type).toBe('button');
   });
 });

@@ -91,7 +91,11 @@
     </div>
 
     <div id="map-legend" hidden>
-      <button class="map-legend-row" type="button" data-panel="overlay">
+      <button class="map-legend-row" type="button" data-panel="search" hidden>
+        <span class="map-legend-summary"></span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+      <button class="map-legend-row" type="button" data-panel="overlay" hidden>
         <span class="map-legend-summary"></span>
         <span class="chevron" aria-hidden="true"></span>
       </button>
@@ -119,21 +123,11 @@
       <section id="tools">
         <div class="column-head">
           <h2 id="tools-title" class="column-title"></h2>
+          <button class="panel-close" type="button" aria-label="Close the panel">&times;</button>
         </div>
         <div id="panel-body">
-          <div id="overlay-panel" class="tool">
-            <div class="panel-picker">
-              <label for="overlay-select">Overlay</label>
-              <!-- The overlays themselves are added here at startup, from the
-                 registry. Do not list them: that is what the registry is for. -->
-              <select id="overlay-select">
-                <option value="none">None</option>
-              </select>
-              <p id="overlay-description"></p>
-            </div>
-            <div id="overlay-controls"></div>
-            <div id="overlay-legend"></div>
-          </div>
+          <div id="search-panel" class="tool"></div>
+          <div id="overlay-panel" class="tool"></div>
           <div id="stories-panel" class="tool"></div>
           <div id="about-panel" class="tool"></div>
         </div>

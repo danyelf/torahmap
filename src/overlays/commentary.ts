@@ -4,6 +4,7 @@ import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, renderAxis } from './legend.ts';
 import { loadJson } from './loadJson.ts';
+import { CONTROL } from '../panel.ts';
 
 const HEATMAP_STOPS: ColorStop[] = [
   { t: 0, color: [0.1, 0.13, 0.18] },
@@ -142,7 +143,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
       wrapper.className = 'commentary-controls';
       wrapper.innerHTML = `
         <label for="category-select">Category:</label>
-        <select id="category-select">
+        <select id="category-select" class="${CONTROL.select}">
           <option value="total">All linked texts</option>
           <optgroup label="Verse commentary">
             <option value="Commentary">Commentary</option>

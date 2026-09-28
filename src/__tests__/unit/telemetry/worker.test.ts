@@ -26,7 +26,7 @@ const valid = JSON.stringify({
   event: 'story_exit',
   visit: 'v1',
   mode: 'story',
-  fields: { stop_id: 'sinai', stop_number: 4, how: 'fold' },
+  fields: { stop_id: 'sinai', stop_number: 4, how: 'fold', story: 'tour' },
 });
 
 describe('telemetry worker', () => {
@@ -36,7 +36,7 @@ describe('telemetry worker', () => {
     expect(response.status).toBe(204);
     expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
       indexes: ['v1'],
-      blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai', 'fold'],
+      blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai', 'fold', 'tour'],
       doubles: [4],
     });
   });
@@ -64,6 +64,7 @@ describe('telemetry worker', () => {
         'telemetry-torahmap.example.workers.dev',
         'sinai',
         'fold',
+        'tour',
       ],
       doubles: [4],
     });
@@ -93,13 +94,13 @@ describe('telemetry worker', () => {
       visit: 'v1',
       mode: 'story',
       host: 'evil.example',
-      fields: { stop_id: 'sinai', stop_number: 4, how: 'fold' },
+      fields: { stop_id: 'sinai', stop_number: 4, how: 'fold', story: 'tour' },
     });
     const response = await worker.fetch(post(spoofed), e);
     expect(response.status).toBe(204);
     expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
       indexes: ['v1'],
-      blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai', 'fold'],
+      blobs: ['story_exit', 'story', '', 'mobile', 'torahmap.org', 'sinai', 'fold', 'tour'],
       doubles: [4],
     });
   });

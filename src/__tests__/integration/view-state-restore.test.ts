@@ -13,6 +13,7 @@ import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../he
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams } from '../helpers/overlayUrlParams';
 import { createOverlaySettings } from '../../overlays/settings';
+import { searchTool } from '../../overlays/search/index';
 
 const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };
 
@@ -59,6 +60,24 @@ describe('restoring a link as one complete view', () => {
   });
 
   describe('which mode a link opens in', () => {
+    it('opens an old search link with no search and no overlay', () => {
+      const view = viewFor('#overlay=search&q=light');
+      expect(view.mode).toBe('explore');
+      expect(view.overlay).toBe('none');
+      expect(view.searchParams).toEqual({});
+    });
+
+    it('opens a link that only searches in Explore, with its search', () => {
+      const view = viewFor('#search=light');
+      expect(view.mode).toBe('explore');
+      expect(view.overlay).toBe('none');
+      expect(view.searchParams).toEqual({ search: 'light' });
+    });
+
+    it('keeps the search whatever overlay the link names', () => {
+      expect(viewFor('#search=light&overlay=trop').searchParams).toEqual({ search: 'light' });
+    });
+
     it('opens a camera-only hash in Explore', () => {
       const view = viewFor('#zoom=3&x=0&y=0');
 
@@ -69,19 +88,30 @@ describe('restoring a link as one complete view', () => {
     it('opens an empty hash as the story, with Explore reset', () => {
       expect(viewFor('')).toEqual({
         mode: 'story',
-        storyStop: null,
+        story: null,
+        stop: null,
         overlay: 'none',
         overlayParams: {},
+        searchParams: {},
         verse: null,
         camera: DEFAULT_CAMERA,
       });
     });
 
-    it('opens a hash naming a stop as the story at that stop', () => {
-      const view = viewFor('#story=intro');
+    it('opens a hash naming a story and stop as that story at that stop', () => {
+      const view = viewFor('#story=tour&stop=intro');
 
       expect(view.mode).toBe('story');
-      expect(view.storyStop).toBe('intro');
+      expect(view.story).toBe('tour');
+      expect(view.stop).toBe('intro');
+    });
+
+    it('opens an old single-story link as a story, naming no stop', () => {
+      const view = viewFor('#story=abraham_call');
+
+      expect(view.mode).toBe('story');
+      expect(view.story).toBe('abraham_call');
+      expect(view.stop).toBeNull();
     });
   });
 
@@ -149,12 +179,12 @@ describe('restoring a link as one complete view', () => {
       expect(controls.querySelector('button.selected')).toBeNull();
     });
 
-    it('clears the search query when the link names none', async () => {
-      await controlsAfter('#overlay=search&q=light');
-      expect(settings.toUrl(getOverlay('search')!).q).toBe('light');
+    it('clears the search when the link names none', () => {
+      settings.restore(searchTool, viewFor('#search=light').searchParams);
+      expect(settings.toUrl(searchTool).search).toBe('light');
 
-      await controlsAfter('#overlay=search');
-      expect(settings.toUrl(getOverlay('search')!)).toEqual({});
+      settings.restore(searchTool, viewFor('#overlay=trop').searchParams);
+      expect(settings.toUrl(searchTool)).toEqual({});
     });
   });
 });

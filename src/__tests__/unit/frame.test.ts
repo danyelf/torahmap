@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { DRAG_PX, STORY, exploreFrame, isPanel, nextFrame, type Frame } from '../../frame';
+import {
+  DRAG_PX,
+  STORY,
+  exploreFrame,
+  frontToolAfter,
+  isPanel,
+  nextFrame,
+  type Frame,
+} from '../../frame';
 
 const explore = (open: Frame['open'], full = false): Frame => ({
   mode: 'explore',
@@ -41,11 +49,30 @@ describe('returning to the story', () => {
 });
 
 describe('exploring on a desktop', () => {
-  it('always has a panel open', () => {
+  it('lands on the panel a link asks for, on a desktop', () => {
+    expect(exploreFrame(DESKTOP, 'search')).toEqual(explore('search'));
+    expect(exploreFrame(PHONE, 'search')).toEqual(explore(null));
+  });
+
+  it('opens on the overlay and keeps its panel when the map is touched', () => {
     expect(exploreFrame(DESKTOP)).toEqual(explore('overlay'));
     expect(nextFrame(explore('stories'), { type: 'map-touched' }, DESKTOP)).toEqual(
       explore('stories'),
     );
+  });
+
+  it('closes its panel, and opens one again from the menu', () => {
+    const closed = nextFrame(explore('search'), { type: 'close' }, DESKTOP);
+    expect(closed).toEqual(explore(null));
+    expect(nextFrame(closed, { type: 'map-touched' }, DESKTOP)).toEqual(closed);
+    const down = nextFrame(closed, { type: 'menu' }, DESKTOP);
+    expect(nextFrame(down, { type: 'choose', panel: 'overlay' }, DESKTOP)).toEqual(
+      explore('overlay'),
+    );
+  });
+
+  it('leaves a story alone on close', () => {
+    expect(nextFrame(STORY, { type: 'close' }, DESKTOP)).toEqual(STORY);
   });
 
   it('keeps a panel open when it is chosen again', () => {
@@ -135,19 +162,30 @@ describe('exploring on a phone', () => {
 });
 
 describe('crossing from phone width to desktop width', () => {
-  it('opens the overlay if nothing was open, and drops full height', () => {
-    expect(nextFrame(explore(null), { type: 'layout-changed' }, DESKTOP)).toEqual(
-      explore('overlay'),
-    );
+  it('keeps a closed panel closed, and drops full height', () => {
+    expect(nextFrame(explore(null), { type: 'layout-changed' }, DESKTOP)).toEqual(explore(null));
     expect(nextFrame(explore('about', true), { type: 'layout-changed' }, DESKTOP)).toEqual(
       explore('about'),
     );
   });
 });
 
+describe('which tool leads', () => {
+  it('switches to the panel that opens', () => {
+    expect(frontToolAfter('overlay', 'search')).toBe('search');
+    expect(frontToolAfter('search', 'overlay')).toBe('overlay');
+  });
+
+  it('keeps the current tool when Stories, About, or nothing opens', () => {
+    expect(frontToolAfter('search', 'stories')).toBe('search');
+    expect(frontToolAfter('overlay', 'about')).toBe('overlay');
+    expect(frontToolAfter('search', null)).toBe('search');
+  });
+});
+
 describe('panel names', () => {
   it('accepts the panels and nothing else', () => {
-    expect(['overlay', 'stories', 'about'].every(isPanel)).toBe(true);
+    expect(['search', 'overlay', 'stories', 'about'].every(isPanel)).toBe(true);
     expect(isPanel('menu')).toBe(false);
     expect(isPanel('story')).toBe(false);
     expect(isPanel('restart')).toBe(false);

@@ -39,9 +39,30 @@ export const HIGHLIGHT_CONSTANTS = {
   // Brightness multiplier for an overlay-colored item on hover
   BRIGHTNESS_FACTOR: 1.5,
 
-  // Desaturation factor for haftarah non-hover
-  DESATURATE_FACTOR: 0.2,
-
   // Color for rare trop marks with no matches
   RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
+} as const;
+
+const DIMMED = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+
+/** The grey of a verse left out. */
+export const DIMMED_GREY: Color = [DIMMED, DIMMED, DIMMED];
+
+/** How a search shows over an overlay, judged by eye on the map. */
+export const SEARCH_WITH_OVERLAY = {
+  // What a verse the search does not match keeps of its overlay colour; above
+  // about half, a warm search colour is lost among Haftarah's stripes
+  NON_MATCH_DIM: 0.45,
+  // The ring around a match, in CSS pixels, outside the square and inside it
+  RING_OUTSIDE_PX: 1.5,
+  RING_INSIDE_PX: 1,
+  // A square smaller than this on screen has no room for a hole and is filled
+  // with its search colour. Rings can touch where layout jitter brings squares
+  // close, as the multi-colour growth already can.
+  RING_MIN_SQUARE_PX: 8,
+} as const;
+
+/** How long the map takes to cross-fade when the tool in front switches. */
+export const FRONT_FADE = {
+  DURATION_MS: 250,
 } as const;

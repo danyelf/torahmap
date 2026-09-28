@@ -1,4 +1,9 @@
-import { parseVerseFromUrl, type OverlayParams, type UrlState } from './urlState.ts';
+import {
+  parseVerseFromUrl,
+  type OverlayParams,
+  type UrlParamValues,
+  type UrlState,
+} from './urlState.ts';
 import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './camera.ts';
 import type { TanakhIdentity } from './types.ts';
 
@@ -12,15 +17,17 @@ export type AppMode = 'story' | 'explore';
  */
 export interface ViewState {
   mode: AppMode;
-  storyStop: string | null;
+  story: string | null;
+  stop: string | null;
   overlay: string;
   overlayParams: OverlayParams;
+  searchParams: UrlParamValues;
   verse: TanakhIdentity | null;
   camera: Camera;
 }
 
 /**
- * A link that names a story stop, or names nothing at all, is the story. Any
+ * A link that names a story, or names nothing at all, is the story. Any
  * other link is Explore, including one that carries only a camera.
  */
 export function resolveViewState(
@@ -29,6 +36,7 @@ export function resolveViewState(
   isOverlay: (id: string) => boolean,
 ): ViewState {
   const namesNothing =
+    url.searchParams === undefined &&
     url.overlay === undefined &&
     url.verse === undefined &&
     url.zoom === undefined &&
@@ -38,9 +46,11 @@ export function resolveViewState(
 
   return {
     mode: url.story || namesNothing ? 'story' : 'explore',
-    storyStop: url.story ?? null,
+    story: url.story ?? null,
+    stop: url.stop ?? null,
     overlay,
     overlayParams: overlay === 'none' ? {} : url.overlayParams,
+    searchParams: url.searchParams ?? {},
     verse: url.verse ? parseVerseFromUrl(url.verse) : null,
     camera: {
       zoom: url.zoom ?? defaultCamera.zoom,

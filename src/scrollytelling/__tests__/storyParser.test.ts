@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { parseStoryMarkdown } from '../storyParser';
 
 describe('parseStoryMarkdown', () => {
-  it('parses frontmatter defaults', () => {
+  it('parses the frontmatter easing', () => {
     const md = `---
 easing: ease-in-out
 ---
@@ -13,7 +13,7 @@ easing: ease-in-out
 Text here.`;
 
     const data = parseStoryMarkdown(md);
-    expect(data.defaults?.easing).toBe('ease-in-out');
+    expect(data.easing).toBe('ease-in-out');
   });
 
   it('parses stops from comments', () => {
@@ -22,7 +22,7 @@ Text here.`;
 
 Every verse of the Tanakh.
 
-<!-- stop: abraham | camera: initial | overlay: search | q: אברהם -->
+<!-- stop: abraham | camera: initial | search: אברהם -->
 # Abraham's Journey
 
 Abraham first appears in Genesis 12.`;
@@ -36,8 +36,28 @@ Abraham first appears in Genesis 12.`;
     expect(data.stops[0].overlay).toBeNull();
 
     expect(data.stops[1].id).toBe('abraham');
-    expect(data.stops[1].overlay).toBe('search');
-    expect(data.stops[1].overlayParams).toEqual({ q: 'אברהם' });
+    expect(data.stops[1].overlay).toBeNull();
+    expect(data.stops[1].searchParams).toEqual({ search: 'אברהם' });
+  });
+
+  it('sends the search its own keys and the overlay the rest', () => {
+    const md = `<!-- stop: both | camera: initial | search: אברם,אברהם | mode: ,w | overlay: commentary | category: Liturgy -->
+# Both
+
+Text.`;
+    const [stop] = parseStoryMarkdown(md).stops;
+    expect(stop.searchParams).toEqual({ search: 'אברם,אברהם', mode: ',w' });
+    expect(stop.overlay).toBe('commentary');
+    expect(stop.overlayParams).toEqual({ category: 'Liturgy' });
+  });
+
+  it('lets a stop search with no overlay', () => {
+    const [stop] = parseStoryMarkdown(
+      `<!-- stop: s | camera: initial | search: אברם -->\n# S\n\nText.`,
+    ).stops;
+    expect(stop.overlay).toBeNull();
+    expect(stop.overlayParams).toBeUndefined();
+    expect(stop.searchParams).toEqual({ search: 'אברם' });
   });
 
   it('parses camera coordinates', () => {
@@ -81,7 +101,7 @@ And a second paragraph.`;
 World.`;
 
     const data = parseStoryMarkdown(md);
-    expect(data.defaults).toBeUndefined();
+    expect(data.easing).toBeUndefined();
     expect(data.stops).toHaveLength(1);
   });
 
@@ -169,5 +189,44 @@ Text.`;
     parseStoryMarkdown(md);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('"abram"'));
     error.mockRestore();
+  });
+});
+
+describe('story frontmatter', () => {
+  const md = [
+    '---',
+    'title: Prose and Poetry: Job',
+    'description: The prose frame and the poem look different.',
+    'easing: linear',
+    '---',
+    '',
+    '<!-- stop: a | camera: Job -->',
+    'Text.',
+  ].join('\n');
+
+  it('reads the title and description, colons and all', () => {
+    const story = parseStoryMarkdown(md);
+    expect(story.title).toBe('Prose and Poetry: Job');
+    expect(story.description).toBe('The prose frame and the poem look different.');
+    expect(story.easing).toBe('linear');
+  });
+
+  it('reads the order as a number and a draft as true', () => {
+    const story = parseStoryMarkdown('---\norder: 2.5\ndraft: true\n---\n');
+    expect(story.order).toBe(2.5);
+    expect(story.draft).toBe(true);
+  });
+
+  it('gives no order for a value that is not a number, and is not a draft unless it says so', () => {
+    const story = parseStoryMarkdown('---\norder: first\ndraft: no\n---\n');
+    expect(story.order).toBeUndefined();
+    expect(story.draft).toBe(false);
+  });
+
+  it('leaves them empty when the story has no frontmatter', () => {
+    const story = parseStoryMarkdown('<!-- stop: a | camera: Job -->\nText.');
+    expect(story.title).toBe('');
+    expect(story.description).toBe('');
+    expect(story.draft).toBe(false);
   });
 });
