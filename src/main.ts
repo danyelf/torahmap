@@ -1482,7 +1482,12 @@ async function main(): Promise<void> {
       // timer must not then close whatever menu is open by the time it fires.
       closeAfterConfirming(
         () => frame.menu && item.isConnected,
-        () => dispatch({ type: 'menu' }),
+        () => {
+          // An unchanged live region doesn't reliably re-announce; clearing it
+          // here means the next share, even with the same outcome, starts from empty.
+          shareStatus.textContent = '';
+          dispatch({ type: 'menu' });
+        },
         1500,
       );
     } else if (frame.menu) {
