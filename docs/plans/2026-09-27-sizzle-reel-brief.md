@@ -210,3 +210,40 @@ findings. Two directions are worth choosing between:
 The first is closer to the brief's message, layers answering questions
 together; the second has the stronger hook. Either can borrow the trop
 finding ("three books sing differently") as a middle beat.
+
+## Chosen storyboard
+
+Agreed 2026-09-28, after test frames of main at 1080×1080 with the side panel
+hidden. Seven beats, about 50 seconds. Search first, then the layers, as a
+string of configurations whose order makes the argument; the Abraham/prayer
+book interlock and the chant-mark beat were cut as needing more context than
+they are worth.
+
+| # | Time | Shots | Captions |
+|---|---|---|---|
+| 1 | 0–8 s | Genesis 1:1 pinned, the map dragged so Genesis fills the frame; pull back to Genesis, the Torah, the whole map | *Every square is a verse.* · *Every row, a chapter.* · *Every block, a book.* · *The whole Hebrew Bible.* |
+| 2 | 8–18 s | Search Abraham, Isaac, Jacob, Moses, David (in English); into Genesis, out to the Torah, down to Samuel | *Search five names.* · *Genesis: Abraham, then Isaac, then Jacob.* · *Then Moses, through four books.* · *Then David, in Samuel.* |
+| 3 | 18–24 s | Back to Genesis, sidebar in: יצחק searched twice, one term narrowed to Isaac (101 verses), one to laugh (12, in Genesis 17–21) | *Same letters: "Isaac," or "laughed."* · *The text names him for the laughter.* |
+| 4 | 24–30 s | Commentary on Genesis close, then pull back to the whole map | *How much has been written on each.* · *Half of all commentary: the first five books.* |
+| 5 | 30–36 s | Haftarah, whole map, then in to Isaiah | *Same colour: read aloud together.* · *Isaiah: 15 weekly readings, and 5 special days.* |
+| 6 | 36–46 s | Verse length, whole map; glide into the stacked Writings; close on Lamentations | *Purple: short verses. Orange: long.* · *Story and poetry each have a shape.* · *Chapter 3: the alphabet, three times over.* |
+| 7 | 46–50 s | Pull back while the colour drains, to the plain map and its title card | *torahmap.org* |
+
+Facts checked for the captions: the Torah holds 53% of Sefaria's commentary
+links for 25% of the verses; in Ashkenazi custom 15 of the 54 weekly portions
+take their haftarah from Isaiah, as do Yom Kippur, the last day of Passover,
+the afternoon of Tisha B'Av, the minor fasts and a Sabbath on the new month;
+Lamentations 1, 2 and 4 are 22-verse alphabetic acrostics, chapter 3 has 66
+verses, each letter three times, and chapter 5 has 22 with no acrostic.
+
+What the renderer needs for it:
+
+- A cross-fade between two pictures (`fade:` on a scene) — URL changes cut,
+  and a picture blend covers the legend and the sidebar as well as the map.
+- Captions, with a position per scene: the opening shot's verse popup sits
+  where a bottom caption would.
+- Hiding the side panel, per scene, from outside the app (issue #276 asks for
+  a closed state in the app itself).
+- The branch brought up to date with main: search's own URL keys (`search`,
+  `mode`, `m` — meaning keys carry a language suffix, `YXQ[@heb`), stories in
+  `src/stories/`, and a camera that names the centre of the screen.
