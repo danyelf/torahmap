@@ -872,30 +872,6 @@ describe('haftarah custom in the link', () => {
   });
 });
 
-describe('whole links, parsed against overlay declarations', () => {
-  const links: Array<[string, Record<string, string>]> = [
-    ['?overlay=trop&trop=etnachta', { trop: 'etnachta' }],
-    ['?overlay=commentary&category=Midrash', { category: 'Midrash' }],
-    ['?overlay=commentary&category=Jewish%20Thought', { category: 'Jewish Thought' }],
-  ];
-
-  links.forEach(([query, expected]) => {
-    it(`parses ${query}`, () => {
-      const state = readLink(query, lookup);
-      expect(state.overlayParams).toEqual(expected);
-    });
-  });
-
-  it('keeps a full link intact through a parse and rebuild', () => {
-    const query = '?overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud';
-    const rebuilt = writeLink(readLink(query, lookup));
-    expect(rebuilt).toContain('overlay=commentary');
-    expect(rebuilt).toContain('verse=Exodus.20.1');
-    expect(rebuilt).toContain('zoom=3');
-    expect(rebuilt).toContain('category=Talmud');
-  });
-});
-
 describe('whole links that search', () => {
   const links: Array<[string, Record<string, string>]> = [
     ['?search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', { search: 'בראשית' }],

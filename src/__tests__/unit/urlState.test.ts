@@ -5,9 +5,8 @@ import {
   subscribeToHashChange,
   applyingExternalState,
   isApplyingExternalState,
-  type UrlState,
 } from '../../urlState';
-import { RESERVED_KEYS, SEARCH_KEYS } from '@torahmap/link';
+import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink, type UrlState } from '@torahmap/link';
 import { mockHistory, mockWindowLocation } from '../helpers/mocks';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
 import { overlayUrlParams } from '../helpers/overlayUrlParams';
@@ -215,5 +214,29 @@ describe('the restore guard itself', () => {
       }),
     ).toThrow('boom');
     expect(isApplyingExternalState()).toBe(false);
+  });
+});
+
+describe('whole links, parsed with the real overlay declarations', () => {
+  const links: Array<[string, Record<string, string>]> = [
+    ['?overlay=trop&trop=etnachta', { trop: 'etnachta' }],
+    ['?overlay=commentary&category=Midrash', { category: 'Midrash' }],
+    ['?overlay=commentary&category=Jewish%20Thought', { category: 'Jewish Thought' }],
+  ];
+
+  links.forEach(([query, expected]) => {
+    it(`parses ${query}`, () => {
+      const state = readLink(query, overlayUrlParams);
+      expect(state.overlayParams).toEqual(expected);
+    });
+  });
+
+  it('keeps a full link intact through a parse and rebuild', () => {
+    const query = '?overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud';
+    const rebuilt = writeLink(readLink(query, overlayUrlParams));
+    expect(rebuilt).toContain('overlay=commentary');
+    expect(rebuilt).toContain('verse=Exodus.20.1');
+    expect(rebuilt).toContain('zoom=3');
+    expect(rebuilt).toContain('category=Talmud');
   });
 });

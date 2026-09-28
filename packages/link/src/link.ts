@@ -35,7 +35,7 @@ export interface UrlState {
 // Allows letters (including Hebrew), spaces, and dots, for names like "I.Samuel".
 function validateBookName(book: string): boolean {
   if (!book || book.trim() === '') return false;
-  return /^[a-zA-Z֐-׿\s.]+$/.test(book);
+  return /^[a-zA-Z\u0590-\u05FF\s.]+$/.test(book);
 }
 
 /**
