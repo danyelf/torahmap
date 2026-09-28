@@ -1,11 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  parseUrlState,
-  buildUrlHash,
-  updateUrl,
-  subscribeToHashChange,
-  type UrlState,
-} from '../../urlState';
+import { writeLink, type UrlState } from '@torahmap/link';
+import { parseUrlState, updateUrl, subscribeToHashChange } from '../../urlState';
 import {
   registerAllOverlays,
   getOverlay,
@@ -18,6 +13,12 @@ import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../he
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayUrlParams } from '../helpers/overlayUrlParams';
 import { createOverlaySettings } from '../../overlays/settings';
+
+// The hash format parseUrlState reads; updateUrl makes the same conversion
+// when it writes the address bar.
+function buildUrlHash(state: UrlState): string {
+  return writeLink(state).replace(/^\?/, '#');
+}
 
 describe('URL State Sync Integration', () => {
   let originalLocation: Location;

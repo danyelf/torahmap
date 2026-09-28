@@ -3,7 +3,7 @@ import {
   type OverlayParams,
   type UrlParamValues,
   type UrlState,
-} from './urlState.ts';
+} from '@torahmap/link';
 import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './camera.ts';
 import type { TanakhIdentity } from './types.ts';
 

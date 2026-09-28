@@ -6,7 +6,7 @@ export default defineConfig({
     __SHOW_DRAFTS__: 'true',
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'packages/*/test/**/*.test.ts'],
     environment: 'happy-dom',
     setupFiles: ['./src/__tests__/setup.ts'],
     pool: 'forks',

@@ -12,7 +12,7 @@
 // stripper away from it.
 
 import { describe, it, expect } from 'vitest';
-import { validateOverlayParams } from '../../urlState';
+import { validateOverlayParams } from '@torahmap/link';
 import { searchTool } from '../../overlays/search/index';
 import { addTerm, applyMeanings, encodeMeanings, selectedKeys } from '../../search/terms';
 import type { SearchTerm } from '../../search/terms';

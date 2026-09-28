@@ -1,5 +1,5 @@
 import type { Overlay } from './types.ts';
-import { validateOverlayParams } from '../urlState.ts';
+import { validateOverlayParams } from '@torahmap/link';
 
 export type LinkParams = URLSearchParams | Readonly<Record<string, string | undefined>>;
 

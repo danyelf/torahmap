@@ -42,14 +42,12 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
+import { parseVerseFromUrl, verseToUrlFormat, type UrlState } from '@torahmap/link';
 import {
   parseUrlState,
-  parseVerseFromUrl,
   updateUrl,
   subscribeToHashChange,
   applyingExternalState,
-  verseToUrlFormat,
-  type UrlState,
 } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';

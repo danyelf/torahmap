@@ -5,7 +5,7 @@ import type { Picture } from '../geometry.ts';
 import { getOverlay } from '../overlays/registry';
 import { getDefaultColor, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
-import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '../urlState.ts';
+import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { settingsFromLink } from '../overlays/settings.ts';
 import { searchFromLink } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';

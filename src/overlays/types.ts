@@ -1,8 +1,8 @@
 import type { TanakhIdentity, TextLanguage } from '../types.ts';
-import type { UrlParamSpec, UrlParamValues } from '../urlState.ts';
+import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 
-export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '../urlState.ts';
+export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '@torahmap/link';
 export type { Credit } from '../credits.ts';
 
 export type Color = [number, number, number];

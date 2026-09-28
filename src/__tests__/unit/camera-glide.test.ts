@@ -7,9 +7,9 @@ import {
   animateCameraTo,
   worldToScreen,
   CAMERA_GLIDE_MS,
-  MAX_ZOOM,
   type Camera,
 } from '../../camera';
+import { MAX_ZOOM } from '@torahmap/link';
 
 const VERSE = { x: 400, y: 300, size: 6 };
 const FOCUS = { x: 300, y: 400 };

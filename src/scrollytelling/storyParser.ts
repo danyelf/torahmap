@@ -1,5 +1,5 @@
 import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
-import { parseVerseFromUrl, SEARCH_KEYS } from '../urlState';
+import { parseVerseFromUrl, SEARCH_KEYS } from '@torahmap/link';
 
 /** The frontmatter keys a story may set. */
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;

@@ -2,15 +2,13 @@
 
 import type { Bounds } from './types';
 import { lerpCamera, easingFunctions } from './scrollytelling/interpolation.ts';
+import { MIN_ZOOM, MAX_ZOOM } from '@torahmap/link';
 
 export interface Camera {
   x: number; // pan x position
   y: number; // pan y position
   zoom: number; // zoom level (0.1 - 10.0)
 }
-
-export const MIN_ZOOM = 0.1;
-export const MAX_ZOOM = 10.0;
 
 /** The map's canvas, in CSS pixels. */
 export interface Viewport {

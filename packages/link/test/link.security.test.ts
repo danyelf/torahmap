@@ -1,49 +1,50 @@
 import { describe, it, expect } from 'vitest';
-import { parseUrlState, parseVerseFromUrl } from '../../urlState';
-import { mockWindowLocation } from '../helpers/mocks';
-import { registerAllOverlays } from '../../overlays/index';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { readLink, parseVerseFromUrl, type OverlayParamSpecLookup } from '../src/index.ts';
 
-// The registry is where overlays come from — populate it the way the app does.
-registerAllOverlays();
+// Stand-ins for the real overlays' declarations (commentary, trop), which
+// this package cannot import.
+const lookup: OverlayParamSpecLookup = (id) => {
+  switch (id) {
+    case 'commentary':
+      return [{ key: 'category', kind: 'category', default: 'total' }];
+    case 'trop':
+      return [{ key: 'trop', kind: 'token' }];
+    default:
+      return undefined;
+  }
+};
 
 describe('URL Parameter Security Validation', () => {
   describe('XSS Prevention', () => {
     it('rejects verse parameter with HTML tags', () => {
-      mockWindowLocation('http://localhost:5173/#verse=<script>alert(1)</script>');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?verse=<script>alert(1)</script>');
       expect(state.verse).toBeUndefined();
     });
 
     it('rejects verse parameter with javascript: protocol', () => {
-      mockWindowLocation('http://localhost:5173/#verse=javascript:alert(1)');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?verse=javascript:alert(1)');
       expect(state.verse).toBeUndefined();
     });
 
     it('rejects overlay parameter with HTML tags', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=<img src=x onerror=alert(1)>');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=<img src=x onerror=alert(1)>');
       expect(state.overlay).toBeUndefined();
     });
 
     it('rejects trop parameter with HTML tags', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=trop&trop=<script>alert(1)</script>');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=trop&trop=<script>alert(1)</script>', lookup);
       expect(state.overlayParams.trop).toBeUndefined();
     });
 
     it('rejects category parameter with HTML tags, falling back to the default', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=commentary&category=<img src=x>');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=commentary&category=<img src=x>', lookup);
       expect(state.overlayParams.category).toBe('total');
     });
 
     it('sanitizes search query with HTML tags by encoding them', () => {
       // Search queries should preserve user input but safely encode it
       // The overlay itself should handle display sanitization
-      mockWindowLocation('http://localhost:5173/#search=<script>alert(1)</script>');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?search=<script>alert(1)</script>');
       // We allow the raw value but expect consumers to sanitize when displaying
       expect(state.searchParams?.search).toBeDefined();
       expect(state.searchParams?.search).not.toContain('<script>');
@@ -100,45 +101,39 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Pan Position Bounds', () => {
     it('accepts reasonable pan positions', () => {
-      mockWindowLocation('http://localhost:5173/#x=500&y=300');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?x=500&y=300');
       expect(state.x).toBe(500);
       expect(state.y).toBe(300);
     });
 
     it('rejects excessively large positive pan positions', () => {
       // MAX_PAN_POSITION is 1000000, so test beyond that
-      mockWindowLocation('http://localhost:5173/#x=10000000&y=10000000');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?x=10000000&y=10000000');
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
 
     it('rejects excessively large negative pan positions', () => {
-      mockWindowLocation('http://localhost:5173/#x=-10000000&y=-10000000');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?x=-10000000&y=-10000000');
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
 
     it('accepts pan positions at reasonable bounds', () => {
       // Test that values within MAX_PAN_POSITION work
-      mockWindowLocation('http://localhost:5173/#x=999999&y=-999999');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?x=999999&y=-999999');
       expect(state.x).toBe(999999);
       expect(state.y).toBe(-999999);
     });
 
     it('rejects Infinity as pan position', () => {
-      mockWindowLocation('http://localhost:5173/#x=Infinity&y=-Infinity');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?x=Infinity&y=-Infinity');
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
 
     it('rejects NaN as pan position', () => {
-      mockWindowLocation('http://localhost:5173/#x=NaN&y=NaN');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?x=NaN&y=NaN');
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
@@ -148,15 +143,13 @@ describe('URL Parameter Security Validation', () => {
     it('accepts valid overlay names', () => {
       const validOverlays = ['commentary', 'trop', 'search'];
       validOverlays.forEach((overlay) => {
-        mockWindowLocation(`http://localhost:5173/#overlay=${overlay}`);
-        const state = parseUrlState(overlayUrlParams);
+        const state = readLink(`?overlay=${overlay}`);
         expect(state.overlay).toBe(overlay);
       });
     });
 
     it('accepts unknown overlay names for forward/backward compatibility', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=future-overlay');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=future-overlay');
       expect(state.overlay).toBe('future-overlay');
     });
 
@@ -169,22 +162,19 @@ describe('URL Parameter Security Validation', () => {
         'overlay|pipe',
       ];
       invalidOverlays.forEach((overlay) => {
-        mockWindowLocation(`http://localhost:5173/#overlay=${encodeURIComponent(overlay)}`);
-        const state = parseUrlState(overlayUrlParams);
+        const state = readLink(`?overlay=${encodeURIComponent(overlay)}`);
         expect(state.overlay).toBeUndefined();
       });
     });
 
     it('rejects excessively long overlay names', () => {
       const longOverlay = 'a'.repeat(100);
-      mockWindowLocation(`http://localhost:5173/#overlay=${longOverlay}`);
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink(`?overlay=${longOverlay}`);
       expect(state.overlay).toBeUndefined();
     });
 
     it('accepts overlay name with hyphens', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=text-dating');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=text-dating');
       expect(state.overlay).toBe('text-dating');
     });
   });
@@ -204,24 +194,22 @@ describe('URL Parameter Security Validation', () => {
         'all',
       ];
       validCategories.forEach((category) => {
-        mockWindowLocation(
-          `http://localhost:5173/#overlay=commentary&category=${encodeURIComponent(category)}`,
+        const state = readLink(
+          `?overlay=commentary&category=${encodeURIComponent(category)}`,
+          lookup,
         );
-        const state = parseUrlState(overlayUrlParams);
         expect(state.overlayParams.category).toBe(category);
       });
     });
 
     it('rejects category with special characters, falling back to the default', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=commentary&category=Test<script>');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=commentary&category=Test<script>', lookup);
       expect(state.overlayParams.category).toBe('total');
     });
 
     it('rejects excessively long category names, falling back to the default', () => {
       const longCategory = 'a'.repeat(100);
-      mockWindowLocation(`http://localhost:5173/#overlay=commentary&category=${longCategory}`);
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink(`?overlay=commentary&category=${longCategory}`, lookup);
       expect(state.overlayParams.category).toBe('total');
     });
   });
@@ -239,43 +227,37 @@ describe('URL Parameter Security Validation', () => {
         'pashta',
       ];
       validTrops.forEach((trop) => {
-        mockWindowLocation(`http://localhost:5173/#overlay=trop&trop=${trop}`);
-        const state = parseUrlState(overlayUrlParams);
+        const state = readLink(`?overlay=trop&trop=${trop}`, lookup);
         expect(state.overlayParams.trop).toBe(trop);
       });
     });
 
     it('rejects trop with special characters', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=trop&trop=test<script>');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=trop&trop=test<script>', lookup);
       expect(state.overlayParams.trop).toBeUndefined();
     });
 
     it('rejects excessively long trop names', () => {
       const longTrop = 'a'.repeat(100);
-      mockWindowLocation(`http://localhost:5173/#overlay=trop&trop=${longTrop}`);
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink(`?overlay=trop&trop=${longTrop}`, lookup);
       expect(state.overlayParams.trop).toBeUndefined();
     });
   });
 
   describe('Search Query Validation', () => {
     it('accepts search query with Hebrew text', () => {
-      mockWindowLocation('http://localhost:5173/#search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
       expect(state.searchParams?.search).toBe('בראשית');
     });
 
     it('accepts search query with English text', () => {
-      mockWindowLocation('http://localhost:5173/#search=beginning');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?search=beginning');
       expect(state.searchParams?.search).toBe('beginning');
     });
 
     it('limits search query length', () => {
       const longQuery = 'a'.repeat(10000);
-      mockWindowLocation(`http://localhost:5173/#search=${longQuery}`);
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink(`?search=${longQuery}`);
       // Should either truncate or reject excessively long queries
       if (state.searchParams?.search) {
         expect(state.searchParams?.search.length).toBeLessThanOrEqual(1000);
@@ -285,8 +267,7 @@ describe('URL Parameter Security Validation', () => {
     });
 
     it('strips HTML tags from search query', () => {
-      mockWindowLocation('http://localhost:5173/#search=<script>alert(1)</script>test');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?search=<script>alert(1)</script>test');
       if (state.searchParams?.search) {
         expect(state.searchParams?.search).not.toContain('<script>');
         expect(state.searchParams?.search).not.toContain('</script>');
@@ -296,26 +277,22 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Empty and Whitespace Values', () => {
     it('rejects empty overlay parameter', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=');
       expect(state.overlay).toBeUndefined();
     });
 
     it('rejects whitespace-only overlay parameter', () => {
-      mockWindowLocation('http://localhost:5173/#overlay=%20%20%20');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?overlay=%20%20%20');
       expect(state.overlay).toBeUndefined();
     });
 
     it('rejects empty verse parameter', () => {
-      mockWindowLocation('http://localhost:5173/#verse=');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?verse=');
       expect(state.verse).toBeUndefined();
     });
 
     it('rejects whitespace-only verse parameter', () => {
-      mockWindowLocation('http://localhost:5173/#verse=%20%20%20');
-      const state = parseUrlState(overlayUrlParams);
+      const state = readLink('?verse=%20%20%20');
       expect(state.verse).toBeUndefined();
     });
   });

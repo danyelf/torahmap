@@ -42,7 +42,7 @@ import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
 import { trackSearchExecute } from '../../analytics.ts';
-import { SEARCH_URL_PARAMS, validateOverlayParams } from '../../urlState.ts';
+import { SEARCH_URL_PARAMS, validateOverlayParams } from '@torahmap/link';
 import type { LinkParams } from '../settings.ts';
 
 /**

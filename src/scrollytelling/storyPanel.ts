@@ -1,7 +1,7 @@
 import type { StoryStop, ResolvedStoryStop, CameraPosition, CameraRef } from './types';
 import type { Book, TanakhLayout } from '../types';
 import { findTanakhItem } from '../types';
-import { parseVerseFromUrl } from '../urlState';
+import { parseVerseFromUrl } from '@torahmap/link';
 import { getBookSection } from '../constants/books';
 import { SECTION_LABEL_REACH } from '../labels';
 import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera';

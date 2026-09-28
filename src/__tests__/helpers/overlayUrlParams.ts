@@ -1,5 +1,5 @@
 import { getOverlay } from '../../overlays/registry.ts';
-import type { OverlayParamSpecLookup } from '../../urlState.ts';
+import type { OverlayParamSpecLookup } from '@torahmap/link';
 
 /**
  * The lookup parseUrlState takes, resolved through the registry — exactly what

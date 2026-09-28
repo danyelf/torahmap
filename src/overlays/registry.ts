@@ -1,7 +1,7 @@
 // The registry is where overlays come from. Nothing outside this module should
 // hold its own list: ask for an overlay by id, or ask for all of them.
 import type { Overlay } from './types.ts';
-import { SEARCH_KEYS } from '../urlState.ts';
+import { SEARCH_KEYS } from '@torahmap/link';
 
 const overlays = new Map<string, Overlay>();
 
