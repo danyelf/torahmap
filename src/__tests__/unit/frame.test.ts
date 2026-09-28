@@ -71,8 +71,12 @@ describe('exploring on a desktop', () => {
     );
   });
 
-  it('leaves a story alone on close', () => {
-    expect(nextFrame(STORY, { type: 'close' }, DESKTOP)).toEqual(STORY);
+  it('folds a story on close, giving the map the whole window', () => {
+    expect(nextFrame(STORY, { type: 'close' }, DESKTOP)).toEqual(explore(null));
+  });
+
+  it("leaves a phone's story alone on close", () => {
+    expect(nextFrame(STORY, { type: 'close' }, PHONE)).toEqual(STORY);
   });
 
   it('keeps a panel open when it is chosen again', () => {

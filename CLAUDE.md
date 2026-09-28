@@ -229,8 +229,8 @@ in step with the code:
   its tool
 - **Sheet** (phone) - The open panel; the grabber takes it to full height and
   back, and a drag down folds it
-- **×, or Escape** (desktop) - Close the panel, giving the map the whole
-  window; the ☰ opens a tool again
+- **×, or Escape** (desktop) - Close the panel or fold the story, giving the
+  map the whole window; the ☰ opens a tool, or continues the story, again
 
 The URL carries the search, the overlay and its settings, the pinned verse, the
 camera and, while reading, the story and its stop (`src/urlState.ts`), so any
