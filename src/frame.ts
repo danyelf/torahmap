@@ -85,7 +85,8 @@ function step(frame: Frame, event: FrameEvent, phone: boolean): Frame {
       return explore(again ? null : event.panel);
     }
     case 'close':
-      return frame.mode === 'explore' ? explore(null) : frame;
+      // A phone's story has no header, so nothing there closes it.
+      return phone && frame.mode === 'story' ? frame : explore(null);
     case 'story':
       return STORY;
     case 'map-touched':

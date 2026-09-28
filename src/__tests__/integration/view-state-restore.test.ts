@@ -11,7 +11,7 @@ import {
 } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
 import { searchTool } from '../../overlays/search/index';
 
@@ -23,7 +23,7 @@ let settings = createOverlaySettings();
 function viewFor(link: string): ViewState {
   mockWindowLocation(`http://localhost:5173/${link}`);
   return resolveViewState(
-    parseUrlState(overlayUrlParams),
+    parseUrlState(overlayParamSpecs),
     DEFAULT_CAMERA,
     (id) => getOverlay(id) !== undefined,
   );

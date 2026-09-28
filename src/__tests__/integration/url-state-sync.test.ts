@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { writeLink, type UrlState } from '@torahmap/link';
-import { parseUrlState, updateUrl, subscribeToHistory } from '../../urlState';
+import { parseUrlState, updateUrl } from '../../urlState';
 import {
   registerAllOverlays,
   getOverlay,
@@ -11,7 +11,7 @@ import {
 import { searchTool } from '../../overlays/search/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
 
 describe('URL State Sync Integration', () => {
@@ -89,14 +89,14 @@ describe('URL State Sync Integration', () => {
     it('handles overlay switch in URL', async () => {
       // Start with commentary
       mockWindowLocation('http://localhost:5173/?overlay=commentary&category=midrash');
-      let state = parseUrlState(overlayUrlParams);
+      let state = parseUrlState(overlayParamSpecs);
 
       expect(state.overlay).toBe('commentary');
       expect(state.overlayParams.category).toBe('midrash');
 
       // Switch to trop
       mockWindowLocation('http://localhost:5173/?overlay=trop&trop=etnachta');
-      state = parseUrlState(overlayUrlParams);
+      state = parseUrlState(overlayParamSpecs);
 
       expect(state.overlay).toBe('trop');
       expect(state.overlayParams.trop).toBe('etnachta');
@@ -148,7 +148,7 @@ describe('URL State Sync Integration', () => {
       // Generate a shareable URL and simulate a colleague opening it.
       const query = writeLink(state);
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const restored = parseUrlState(overlayUrlParams);
+      const restored = parseUrlState(overlayParamSpecs);
 
       expect(restored.overlay).toBe('trop');
       expect(restored.overlayParams.trop).toBe(chosen);
@@ -204,33 +204,12 @@ describe('URL State Sync Integration', () => {
       expect(historyStates.length).toBe(1);
       expect(historyStates[0]).toContain('zoom=2');
     });
-
-    it('does not react to a hashchange event', () => {
-      const callback = vi.fn();
-      subscribeToHistory(callback);
-
-      const event = new Event('hashchange');
-      window.dispatchEvent(event);
-
-      expect(callback).not.toHaveBeenCalled();
-    });
-
-    it('subscribes to popstate events, exactly once per navigation', () => {
-      const callback = vi.fn();
-      subscribeToHistory(callback);
-
-      // Simulate popstate event (browser back/forward)
-      const event = new Event('popstate');
-      window.dispatchEvent(event);
-
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
   });
 
   describe('Edge Cases and Error Handling', () => {
     it('handles missing overlay parameter gracefully', () => {
       mockWindowLocation('http://localhost:5173/?category=talmud');
-      const state = parseUrlState(overlayUrlParams);
+      const state = parseUrlState(overlayParamSpecs);
 
       // With no overlay named, there is nobody the setting could belong to,
       // so it is dropped rather than carried around unused.
@@ -241,14 +220,14 @@ describe('URL State Sync Integration', () => {
     it('handles a malformed URL query', () => {
       mockWindowLocation('http://localhost:5173/?invalid&&&format');
 
-      expect(() => parseUrlState(overlayUrlParams)).not.toThrow();
-      const state = parseUrlState(overlayUrlParams);
+      expect(() => parseUrlState(overlayParamSpecs)).not.toThrow();
+      const state = parseUrlState(overlayParamSpecs);
       expect(state).toBeDefined();
     });
 
     it('handles empty parameter values', () => {
       mockWindowLocation('http://localhost:5173/?overlay=&category=');
-      const state = parseUrlState(overlayUrlParams);
+      const state = parseUrlState(overlayParamSpecs);
 
       // Empty string values are treated as falsy and ignored for all params
       expect(state.overlay).toBeUndefined();
@@ -267,7 +246,7 @@ describe('URL State Sync Integration', () => {
 
       // Parse it back
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const parsed = parseUrlState(overlayUrlParams);
+      const parsed = parseUrlState(overlayParamSpecs);
       expect(parsed.searchParams?.search).toBe('שלום עולם');
     });
 
@@ -284,7 +263,7 @@ describe('URL State Sync Integration', () => {
       const query = writeLink(state);
 
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const parsed = parseUrlState(overlayUrlParams);
+      const parsed = parseUrlState(overlayParamSpecs);
 
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('talmud');
@@ -302,7 +281,7 @@ describe('URL State Sync Integration', () => {
 
     it('handles overlay with invalid/unknown ID', () => {
       mockWindowLocation('http://localhost:5173/?overlay=nonexistent');
-      const state = parseUrlState(overlayUrlParams);
+      const state = parseUrlState(overlayParamSpecs);
 
       expect(state.overlay).toBe('nonexistent');
       // Getting the overlay should return undefined
@@ -312,7 +291,7 @@ describe('URL State Sync Integration', () => {
 
     it('handles numeric values at boundary conditions', () => {
       mockWindowLocation('http://localhost:5173/?zoom=0.1&x=0&y=0');
-      const state = parseUrlState(overlayUrlParams);
+      const state = parseUrlState(overlayParamSpecs);
 
       expect(state.zoom).toBe(0.1);
       expect(state.x).toBe(0);
@@ -343,7 +322,7 @@ describe('URL State Sync Integration', () => {
 
       const query = writeLink(originalState);
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const parsedState = parseUrlState(overlayUrlParams);
+      const parsedState = parseUrlState(overlayParamSpecs);
 
       expect(parsedState.overlay).toBe(originalState.overlay);
       expect(parsedState.overlayParams.category).toBe(originalState.overlayParams.category);
@@ -374,7 +353,7 @@ describe('URL State Sync Integration', () => {
 
       // Parse it back
       mockWindowLocation(`http://localhost:5173/${query1}`);
-      const parsed1 = parseUrlState(overlayUrlParams);
+      const parsed1 = parseUrlState(overlayParamSpecs);
 
       expect(parsed1.overlay).toBe('commentary');
       expect(parsed1.overlayParams.category).toBe('talmud');
@@ -390,7 +369,7 @@ describe('URL State Sync Integration', () => {
 
       updateUrl(state, false);
 
-      const parsed = parseUrlState(overlayUrlParams);
+      const parsed = parseUrlState(overlayParamSpecs);
       expect(parsed.zoom).toBe(2.0);
       expect(parsed.x).toBe(150);
       expect(parsed.y).toBe(250);
@@ -405,7 +384,7 @@ describe('URL State Sync Integration', () => {
       };
       updateUrl(state1, true);
 
-      let parsed = parseUrlState(overlayUrlParams);
+      let parsed = parseUrlState(overlayParamSpecs);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('talmud');
 
@@ -417,7 +396,7 @@ describe('URL State Sync Integration', () => {
       };
       updateUrl(state2, true);
 
-      parsed = parseUrlState(overlayUrlParams);
+      parsed = parseUrlState(overlayParamSpecs);
       expect(parsed.overlay).toBe('trop');
       expect(parsed.overlayParams.trop).toBe('etnachta');
       expect(parsed.overlayParams.category).toBeUndefined();
@@ -430,7 +409,7 @@ describe('URL State Sync Integration', () => {
       };
       updateUrl(state3, true);
 
-      parsed = parseUrlState(overlayUrlParams);
+      parsed = parseUrlState(overlayParamSpecs);
       expect(parsed.overlay).toBeUndefined();
       expect(parsed.searchParams?.search).toBe('abraham');
       expect(parsed.overlayParams.trop).toBeUndefined();
@@ -457,7 +436,7 @@ describe('URL State Sync Integration', () => {
       updateUrl(state2, false);
 
       // Parse final state
-      const parsed = parseUrlState(overlayUrlParams);
+      const parsed = parseUrlState(overlayParamSpecs);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('midrash');
       expect(parsed.zoom).toBe(2.0);
@@ -480,7 +459,7 @@ describe('URL State Sync Integration', () => {
       const url = `http://localhost:5173/${query}`;
 
       mockWindowLocation(url);
-      const restored = parseUrlState(overlayUrlParams);
+      const restored = parseUrlState(overlayParamSpecs);
 
       expect(restored.overlay).toBe('commentary');
       expect(restored.overlayParams.category).toBe('chasidut');

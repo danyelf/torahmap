@@ -1,18 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readLink, parseVerseFromUrl, type OverlayParamSpecLookup } from '../src/index.ts';
-
-// Stand-ins for the real overlays' declarations (commentary, trop), which
-// this package cannot import.
-const lookup: OverlayParamSpecLookup = (id) => {
-  switch (id) {
-    case 'commentary':
-      return [{ key: 'category', kind: 'category', default: 'total' }];
-    case 'trop':
-      return [{ key: 'trop', kind: 'token' }];
-    default:
-      return undefined;
-  }
-};
+import { lookup } from './sampleOverlays.ts';
+import { readLink, parseVerseFromUrl } from '../src/index.ts';
 
 describe('URL Parameter Security Validation', () => {
   describe('XSS Prevention', () => {

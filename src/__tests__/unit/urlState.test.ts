@@ -6,11 +6,11 @@ import {
   applyingExternalState,
   isApplyingExternalState,
 } from '../../urlState';
-import { RESERVED_KEYS, SEARCH_KEYS, readLink, writeLink } from '@torahmap/link';
+import { readLink, writeLink } from '@torahmap/link';
 import { mockHistory } from '../helpers/mocks';
 import { setLink } from '../helpers/setLink';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
-import { overlayUrlParams } from '../helpers/overlayUrlParams';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
 import type { Overlay } from '../../overlays/types';
 
@@ -106,20 +106,6 @@ describe('what every overlay must hold to', () => {
       expect(overlay.colorsFor).toBeTypeOf('function');
     });
 
-    it(`${overlay.id}: has a name, which is what the menu shows`, () => {
-      // main.ts builds the overlay menu out of the registry, using this name.
-      expect(overlay.name?.trim()).toBeTruthy();
-    });
-
-    it(`${overlay.id}: uses distinct keys that do not clash with the view state`, () => {
-      const keys = (overlay.urlParams ?? []).map((spec) => spec.key);
-      expect(new Set(keys).size).toBe(keys.length);
-      for (const key of keys) {
-        expect(RESERVED_KEYS.has(key)).toBe(false);
-        expect(SEARCH_KEYS.has(key)).toBe(false);
-      }
-    });
-
     it(`${overlay.id}: only reports settings under keys it declared`, () => {
       const declared = new Set((overlay.urlParams ?? []).map((spec) => spec.key));
       const store = createOverlaySettings();
@@ -173,14 +159,14 @@ describe('whole links, parsed with the real overlay declarations', () => {
 
   links.forEach(([query, expected]) => {
     it(`parses ${query}`, () => {
-      const state = readLink(query, overlayUrlParams);
+      const state = readLink(query, overlayParamSpecs);
       expect(state.overlayParams).toEqual(expected);
     });
   });
 
   it('keeps a full link intact through a parse and rebuild', () => {
     const query = '?overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud';
-    const rebuilt = writeLink(readLink(query, overlayUrlParams));
+    const rebuilt = writeLink(readLink(query, overlayParamSpecs));
     expect(rebuilt).toContain('overlay=commentary');
     expect(rebuilt).toContain('verse=Exodus.20.1');
     expect(rebuilt).toContain('zoom=3');

@@ -53,6 +53,12 @@ export const STATES: State[] = [
   },
   { name: 'explore-link', link: 'overlay=commentary', shown: ['#map-legend'] },
   {
+    name: 'story-closed',
+    link: 'story=tour&stop=intro',
+    then: (page) => page.keyboard.press('Escape'),
+    shown: ['#menu-toggle'],
+  },
+  {
     name: 'explore-panel-closed',
     link: 'overlay=commentary',
     then: (page) => page.keyboard.press('Escape'),

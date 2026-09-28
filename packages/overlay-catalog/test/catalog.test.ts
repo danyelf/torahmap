@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { SEARCH_KEYS, RESERVED_KEYS } from '@torahmap/link';
+import {
+  SEARCH_KEYS,
+  RESERVED_KEYS,
+  readLink,
+  writeLink,
+  type UrlParamKind,
+  type UrlParamSpec,
+} from '@torahmap/link';
 import {
   overlayName,
   overlayParamSpecs,
   COMMENTARY,
-  TROP,
-  HAFTARAH,
-  VERSE_LENGTH,
-  TEXT_DATING,
+  OVERLAYS,
   type OverlayEntry,
 } from '@torahmap/overlay-catalog';
 
-const ALL: readonly OverlayEntry[] = [COMMENTARY, TROP, HAFTARAH, VERSE_LENGTH, TEXT_DATING];
+const ALL: readonly OverlayEntry[] = OVERLAYS;
 
 describe('the overlay catalog', () => {
   it('names each overlay by id', () => {
@@ -24,9 +28,30 @@ describe('the overlay catalog', () => {
     expect(overlayParamSpecs('nope')).toBeUndefined();
   });
 
-  it.each(ALL)('$id claims no key that belongs to the link or the search', (entry) => {
-    for (const { key } of entry.urlParams ?? []) {
+  it.each(ALL)('$id claims distinct keys, none belonging to the link or the search', (entry) => {
+    const keys = (entry.urlParams ?? []).map((spec) => spec.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const key of keys) {
       expect(SEARCH_KEYS.has(key) || RESERVED_KEYS.has(key)).toBe(false);
     }
+  });
+});
+
+const SAMPLE: Record<UrlParamKind, string> = {
+  token: 'sample',
+  category: 'Talmud/Mishnah',
+  text: 'in the beginning',
+  names: 'BR>CJT/',
+};
+
+const sampleValue = (spec: UrlParamSpec): string => spec.allowed?.at(-1) ?? SAMPLE[spec.kind];
+
+describe('each overlay’s settings survive a link', () => {
+  it.each(ALL.filter((entry) => entry.urlParams))('$id', (entry) => {
+    const settings = Object.fromEntries(
+      (entry.urlParams ?? []).map((spec) => [spec.key, sampleValue(spec)]),
+    );
+    const link = writeLink({ overlay: entry.id, overlayParams: settings });
+    expect(readLink(link, overlayParamSpecs).overlayParams).toEqual(settings);
   });
 });

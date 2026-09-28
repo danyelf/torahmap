@@ -4,8 +4,9 @@ import { commentaryOverlay } from './commentary.ts';
 import { tropOverlay } from './trop.ts';
 import { haftarahOverlay } from './haftarah.ts';
 import { verseLengthOverlay } from './verse-length.ts';
+import { OVERLAYS, type OverlayId } from '@torahmap/overlay-catalog';
 
-export type { Overlay, Color, UrlParamSpec, UrlParamKind, UrlParamValues } from './types.ts';
+export type { Overlay, Color } from './types.ts';
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { createOverlaySettings, settingsFromLink } from './settings.ts';
 export { configure as configureCommentary } from './commentary.ts';
@@ -13,17 +14,18 @@ export { configure as configureTrop, highlightTropInText } from './trop.ts';
 export { configure as configureSearch, highlightSearchTerms } from './search/index.ts';
 export { configure as configureVerseLength } from './verse-length.ts';
 
-// Every overlay the app ships, in the order the reader sees them in the menu.
-const ALL_OVERLAYS: readonly Overlay[] = [
-  commentaryOverlay,
-  tropOverlay,
-  haftarahOverlay,
-  verseLengthOverlay,
-];
+// The catalog decides which overlays the menu offers and in what order; this
+// supplies the drawing code for each.
+const IMPLEMENTATIONS: Record<OverlayId, Overlay> = {
+  commentary: commentaryOverlay,
+  trop: tropOverlay,
+  haftarah: haftarahOverlay,
+  'verse-length': verseLengthOverlay,
+};
 
 // Lives here rather than inside main() so a test can put the app's real
 // overlays in the registry the same way the app does.
 export function registerAllOverlays(): void {
   clearOverlays();
-  ALL_OVERLAYS.forEach(registerOverlay);
+  OVERLAYS.forEach(({ id }) => registerOverlay(IMPLEMENTATIONS[id]));
 }
