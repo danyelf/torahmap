@@ -66,11 +66,17 @@ body[data-mode='explore']:not([data-open]) #menu-toggle {
   background: #111;
 }
 
-/* Beside the ☰, where the column's title would start. A phone's legend is at
-   the bottom. */
+/* Beside the ☰, where the column's title would start, and level with it: the
+   card's padding and border (6px) and a row make the ☰'s height. A phone's
+   legend is at the bottom. */
 @media (min-width: 769px) {
   body[data-mode='explore']:not([data-open]) #map-legend {
+    top: var(--column-head-pad);
     left: calc(12px + var(--tap) + 10px);
+  }
+
+  body[data-mode='explore']:not([data-open]) .map-legend-row {
+    min-height: calc(var(--tap) - 6px);
   }
 }
 
