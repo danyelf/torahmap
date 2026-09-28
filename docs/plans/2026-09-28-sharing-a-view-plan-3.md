@@ -251,9 +251,8 @@ export function linkKind(state: UrlState): 'nothing' | 'view' | 'stop'; // used 
 
 - [ ] **Step 2: Run.** Expected: FAIL.
 
-- [ ] **Step 3: Implement.** The table of fetchers in `fetchers.ts`. The
-  `nothing | view | stop` classification: one function, beside
-  `linkNamesAView` in `@torahmap/link` (it is the same question), used here
+- [ ] **Step 3: Implement.** The table of fetchers in `fetchers.ts`. `linkKind`
+  sits beside `linkNamesAView` in `@torahmap/link` (it is the same question), used here
   and in Task 3. `workerDataPoint` fills the common columns with `mode: ''`
   and the index with the event name (Analytics Engine needs one; the Worker
   has no visit). `toDataPoint` refuses `WORKER_EVENTS`. In `linkPage`, write
