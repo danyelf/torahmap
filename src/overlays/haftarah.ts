@@ -1,4 +1,4 @@
-import type { Overlay, Color, UrlParamSpec, UrlParamValues } from './types.ts';
+import type { Overlay, Color, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
@@ -6,7 +6,6 @@ import { rgbToHsl, hslToRgb, buildLegendGradient, colorToCss } from '../utils/co
 import { escapeHtml } from '../utils/html.ts';
 import { lingeringHover } from '../utils/hover.ts';
 import {
-  CUSTOMS,
   deriveHaftarah,
   forEachVerseInRange,
   getItemColor,
@@ -20,6 +19,7 @@ import {
 } from './haftarah/readings.ts';
 import { CONTROL } from '../panel.ts';
 import { legendCaption } from './legend.ts';
+import { HAFTARAH } from '@torahmap/overlay-catalog';
 import '../styles/overlays/haftarah.css';
 
 // In the order the legend lists them.
@@ -49,10 +49,6 @@ function adjustBrightness(color: Color, factor: number): Color {
 function darkTint(color: Color): Color {
   return hslToRgb({ h: rgbToHsl(color).h, s: 0.5, l: 0.2 });
 }
-
-const URL_PARAMS = [
-  { key: 'custom', kind: 'token', allowed: CUSTOMS, default: 'ashkenazi' },
-] as const satisfies readonly UrlParamSpec[];
 
 /**
  * Which custom's readings to show, and the reading the pointer is over in the
@@ -204,12 +200,7 @@ function renderKey(container: HTMLElement, onPreview: (reading: number | null) =
 }
 
 export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
-  id: 'haftarah',
-  name: 'Haftarah',
-  description:
-    'The weekly Torah portion read in synagogue and the passage from the Prophets read ' +
-    'after it, shown in the same colour so the pairing is visible. Ashkenazi and ' +
-    'Sephardi custom differ, and you can switch between them.',
+  ...HAFTARAH,
   credits: [
     {
       source: 'Hebcal leyning tables',
@@ -348,9 +339,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     return null;
   },
 
-  urlParams: URL_PARAMS,
-
-  settingsFromUrl(params: UrlParamValues<typeof URL_PARAMS>): HaftarahSettings {
+  settingsFromUrl(params: UrlParamValues<typeof HAFTARAH.urlParams>): HaftarahSettings {
     return { custom: params.custom ?? 'ashkenazi', preview: null };
   },
 

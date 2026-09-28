@@ -11,6 +11,7 @@ import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { CommentaryData, TanakhLayout } from '../../../types';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { COMMENTARY } from '@torahmap/overlay-catalog';
 
 describe('Commentary Overlay', () => {
   let testData: CommentaryData;
@@ -73,6 +74,10 @@ describe('Commentary Overlay', () => {
     it('has correct id and name', () => {
       expect(commentaryOverlay.overlay.id).toBe('commentary');
       expect(commentaryOverlay.overlay.name).toBe('Commentary');
+    });
+
+    it('carries its catalog entry', () => {
+      expect(commentaryOverlay.overlay.name).toBe(COMMENTARY.name);
     });
   });
 

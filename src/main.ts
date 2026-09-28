@@ -43,6 +43,7 @@ import {
   trackWordSearch,
 } from './analytics.ts';
 import { parseVerseFromUrl, verseToUrlFormat, type UrlState } from '@torahmap/link';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import {
   parseUrlState,
   updateUrl,
@@ -1647,7 +1648,7 @@ async function main(): Promise<void> {
   // the URL — see applyingExternalState in urlState.ts.
   function restoreFromUrl(): void {
     const next = resolveViewState(
-      parseUrlState((id) => getOverlay(id)?.urlParams),
+      parseUrlState(overlayParamSpecs),
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );

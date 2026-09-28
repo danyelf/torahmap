@@ -9,6 +9,7 @@ import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
 
 describe('Verse Length Overlay', () => {
   let testVerseTexts: VerseTexts;
@@ -75,6 +76,10 @@ describe('Verse Length Overlay', () => {
     it('has correct id and name', () => {
       expect(verseLengthOverlay.overlay.id).toBe('verse-length');
       expect(verseLengthOverlay.overlay.name).toBe('Verse Length');
+    });
+
+    it('carries its catalog entry', () => {
+      expect(verseLengthOverlay.overlay.name).toBe(VERSE_LENGTH.name);
     });
 
     it('has required methods', () => {

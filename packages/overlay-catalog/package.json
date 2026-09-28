@@ -1,0 +1,11 @@
+{
+  "name": "@torahmap/overlay-catalog",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@torahmap/link": "*"
+  }
+}

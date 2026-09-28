@@ -8,6 +8,7 @@ import type { Overlay } from '../../../overlays/types';
 import type { TanakhIdentity, TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { getRarityTier, RARITY_THRESHOLDS } from '../../../trop';
+import { TROP } from '@torahmap/overlay-catalog';
 
 registerAllOverlays();
 
@@ -94,6 +95,10 @@ describe('Trop Overlay', () => {
       const overlay = getOverlay('trop')!;
       expect(overlay.id).toBe('trop');
       expect(overlay.name).toBe('Trop');
+    });
+
+    it('carries its catalog entry', () => {
+      expect(getOverlay('trop')!.name).toBe(TROP.name);
     });
   });
 

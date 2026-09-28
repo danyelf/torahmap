@@ -6,6 +6,7 @@ import { assertValidColor } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { Color } from '../../../overlays/types';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { TEXT_DATING } from '@torahmap/overlay-catalog';
 
 // Off the menu for now, so it is not in the registry.
 const textDatingOverlay = hostOverlay(overlay);
@@ -84,6 +85,10 @@ describe('Text Dating Overlay', () => {
     it('has correct id and name', () => {
       expect(textDatingOverlay.overlay.id).toBe('text-dating');
       expect(textDatingOverlay.overlay.name).toBe('Text Dating');
+    });
+
+    it('carries its catalog entry', () => {
+      expect(textDatingOverlay.overlay.name).toBe(TEXT_DATING.name);
     });
 
     it('has required methods', () => {
