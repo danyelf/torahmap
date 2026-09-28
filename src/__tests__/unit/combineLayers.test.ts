@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   combineLayers,
-  frontFadeLevels,
-  frontFadeSchedule,
+  fillDefaultColors,
   getDefaultColor,
   toolsPicture,
 } from '../../itemColoring';
@@ -105,30 +104,16 @@ describe('combineLayers', () => {
   });
 });
 
-describe('frontFadeLevels', () => {
-  it('steps evenly from the start to the end, landing exactly on it', () => {
-    const levels = frontFadeLevels(1, 0.4, 3);
-    expect(levels).toHaveLength(3);
-    expect(levels[0]).toBeCloseTo(0.8);
-    expect(levels[1]).toBeCloseTo(0.6);
-    expect(levels[2]).toBeCloseTo(0.4);
+describe('fillDefaultColors', () => {
+  it('replaces a null colour with the verse default, leaving others untouched', () => {
+    const picture = fillDefaultColors({ colors: [RED, null, BLUE] });
+    expect(picture.colors).toEqual([RED, getDefaultColor(1), BLUE]);
   });
 
-  it('works in either direction', () => {
-    const levels = frontFadeLevels(0.4, 1, 2);
-    expect(levels[0]).toBeCloseTo(0.7);
-    expect(levels[1]).toBeCloseTo(1);
-  });
-});
-
-describe('frontFadeSchedule', () => {
-  it('spends the whole duration reaching the target, including in the first step', () => {
-    const schedule = frontFadeSchedule(1, 0.4, 3, 250);
-    expect(schedule).toHaveLength(3);
-    expect(schedule.every((step) => step.delayMs === schedule[0].delayMs)).toBe(true);
-    const total = schedule.reduce((sum, step) => sum + step.delayMs, 0);
-    expect(total).toBeCloseTo(250);
-    expect(schedule.at(-1)!.level).toBeCloseTo(0.4);
+  it('carries growth and rings through unchanged', () => {
+    const picture = fillDefaultColors({ colors: [null], growth: [0.5], rings: [CYAN] });
+    expect(picture.growth).toEqual([0.5]);
+    expect(picture.rings).toEqual([CYAN]);
   });
 });
 

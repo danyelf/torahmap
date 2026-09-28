@@ -35,9 +35,8 @@ function dim(color: VerseColor, factor: number): VerseColor {
  *
  * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
  * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
- * search leads, 1 while the overlay leads, or anything between while a
- * front-tool switch eases from one to the other; it does nothing with search
- * alone, which always dims to its own grey.
+ * search leads, 1 while the overlay leads; it does nothing with search alone,
+ * which always dims to its own grey.
  */
 export function combineLayers(
   count: number,
@@ -67,32 +66,12 @@ export function combineLayers(
 }
 
 /**
- * The dim levels a front-tool switch eases through on its way from `from` to
- * `to`: `steps` values, evenly spaced, the last exactly `to`.
+ * `picture` with every null colour replaced by its verse's default grey —
+ * what a cross-fade needs so a still-uncoloured verse blends from its own
+ * grey rather than mergePictures's placeholder for "nothing here".
  */
-export function frontFadeLevels(from: number, to: number, steps: number): number[] {
-  return Array.from({ length: steps }, (_, i) => from + ((to - from) * (i + 1)) / steps);
-}
-
-/** One level of a front-tool fade, and how long after the previous one to show it. */
-export interface FrontFadeStep {
-  level: number;
-  delayMs: number;
-}
-
-/**
- * frontFadeLevels timed to reach `to` exactly `durationMs` after the switch
- * starts: `steps` steps, each `durationMs / steps` after the one before,
- * including the first.
- */
-export function frontFadeSchedule(
-  from: number,
-  to: number,
-  steps: number,
-  durationMs: number,
-): FrontFadeStep[] {
-  const delayMs = durationMs / steps;
-  return frontFadeLevels(from, to, steps).map((level) => ({ level, delayMs }));
+export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<VerseColor> {
+  return { ...picture, colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)) };
 }
 
 /**

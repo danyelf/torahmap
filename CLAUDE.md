@@ -193,6 +193,9 @@ The codebase follows a **functional, modular design** with clear separation of c
 - **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors
 - **overlays/** are pluggable and easy to add
+- Any animated change to what the map shows goes through the renderer's
+  picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
+  story stops ease with. Don't add another animation path for it.
 
 ## Data
 

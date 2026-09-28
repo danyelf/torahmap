@@ -93,10 +93,7 @@ import {
   applyItemColors,
   toolsPicture,
   layerToRecompute,
-  getDefaultColor,
-  combineLayers,
-  frontFadeSchedule,
-  overlayColorsFor,
+  fillDefaultColors,
 } from './itemColoring.ts';
 import {
   createRenderContext,
@@ -318,16 +315,13 @@ async function main(): Promise<void> {
   // Search or the overlay, whichever's panel opened last (src/frame.ts). Only
   // matters with both tools on, where it decides which one dims for the other.
   let frontTool: FrontTool = 'overlay';
-  // The non-match dim actually on screen, so an interrupted fade resumes from
-  // where it is rather than jumping back to frontTool's resting value.
-  let frontDim = dimFor(frontTool);
-  let frontFadeTimer: ReturnType<typeof setTimeout> | null = null;
+  let frontFadeFrame: number | null = null;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   function cancelFrontFade(): void {
-    if (frontFadeTimer !== null) {
-      clearTimeout(frontFadeTimer);
-      frontFadeTimer = null;
+    if (frontFadeFrame !== null) {
+      cancelAnimationFrame(frontFadeFrame);
+      frontFadeFrame = null;
     }
   }
 
@@ -347,14 +341,16 @@ async function main(): Promise<void> {
 
   function applyTools(): void {
     cancelFrontFade();
-    frontDim = dimFor(frontTool);
-    setColorLayer(still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, frontDim)));
+    setColorLayer(
+      still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool))),
+    );
   }
 
   /**
-   * Move the front tool to `next`, easing the non-match dim it changes over
-   * FRONT_FADE.DURATION_MS in a few discrete steps rather than every
-   * animation frame. Snaps with only one tool on, or under reduced motion.
+   * Move the front tool to `next`, cross-fading the map over
+   * FRONT_FADE.DURATION_MS through the renderer's own picture blend — the one
+   * a story ease uses — rather than a separate animation path. Snaps with
+   * only one tool on, or under reduced motion.
    */
   function setFrontTool(next: FrontTool): void {
     if (next === frontTool) return;
@@ -366,34 +362,27 @@ async function main(): Promise<void> {
       return;
     }
     cancelFrontFade();
-    // Each tool's colours, once, so a step is just combineLayers at a new dim.
-    const searchColors = overlayColorsFor(
-      tools.search.tool,
-      verses,
-      tools.search.settings,
-      mouseState.hoveredVerse,
+    // Both pictures are built once; the shader blends between them every
+    // frame, so nothing here needs recomputing as the fade runs.
+    // flatten collapses a fade already in progress to where it is, as a story
+    // ease starting mid-blend does (beginEase).
+    const from = flatten(withDefaults(colorLayer));
+    const to = fillDefaultColors(
+      toolsPicture(tools, verses, mouseState.hoveredVerse, dimFor(next)),
     );
-    const overlayColors = overlayColorsFor(
-      tools.overlay.tool,
-      verses,
-      tools.overlay.settings,
-      mouseState.hoveredVerse,
-    );
-    const schedule = frontFadeSchedule(
-      frontDim,
-      dimFor(next),
-      FRONT_FADE.STEPS,
-      FRONT_FADE.DURATION_MS,
-    );
-    let i = 0;
-    const step = (): void => {
-      frontDim = schedule[i].level;
-      setColorLayer(still(combineLayers(verses.length, searchColors, overlayColors, frontDim)));
+    const since = performance.now();
+    const step = (now: number): void => {
+      const raw = Math.min(1, (now - since) / FRONT_FADE.DURATION_MS);
+      frontFadeFrame = null;
+      if (raw >= 1) {
+        setColorLayer(still(to));
+      } else {
+        setColorLayer({ from, to, t: easingFunctions['ease-in-out'](raw) });
+        frontFadeFrame = requestAnimationFrame(step);
+      }
       render();
-      i += 1;
-      frontFadeTimer = i < schedule.length ? setTimeout(step, schedule[i].delayMs) : null;
     };
-    frontFadeTimer = setTimeout(step, schedule[0].delayMs);
+    frontFadeFrame = requestAnimationFrame(step);
   }
 
   function blendTransition(): void {
@@ -1482,11 +1471,11 @@ async function main(): Promise<void> {
    * caller hands it over or keeps driving with it.
    */
   function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
-    const fill = (p: Picture<Color | Color[] | null>): Picture => ({
-      ...p,
-      colors: p.colors.map((c, i) => c ?? getDefaultColor(i)),
-    });
-    return { from: fill(layer.from), to: layer.to && fill(layer.to), t: layer.t };
+    return {
+      from: fillDefaultColors(layer.from),
+      to: layer.to && fillDefaultColors(layer.to),
+      t: layer.t,
+    };
   }
 
   function beginEase(duration: number, now: number): StoryHasMap {
