@@ -1466,6 +1466,9 @@ async function main(): Promise<void> {
 
   /** A pan's debounced address write may not have landed yet, so it is brought current first. */
   async function shareCurrentView(item: HTMLElement): Promise<void> {
+    // An unchanged live region doesn't reliably re-announce; clearing it here,
+    // ahead of the await below, means even a repeated outcome starts from empty.
+    shareStatus.textContent = '';
     syncUrl(false);
     const title = describeLink(parseUrlState(overlayParamSpecs), LINK_NAMES).title;
     const outcome = await shareLink(location.href, title, {
@@ -1482,12 +1485,7 @@ async function main(): Promise<void> {
       // timer must not then close whatever menu is open by the time it fires.
       closeAfterConfirming(
         () => frame.menu && item.isConnected,
-        () => {
-          // An unchanged live region doesn't reliably re-announce; clearing it
-          // here means the next share, even with the same outcome, starts from empty.
-          shareStatus.textContent = '';
-          dispatch({ type: 'menu' });
-        },
+        () => dispatch({ type: 'menu' }),
         1500,
       );
     } else if (frame.menu) {
