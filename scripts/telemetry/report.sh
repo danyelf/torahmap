@@ -17,7 +17,9 @@ for file in "$here"/*.sql; do
     curl -sS --fail-with-body \
       "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/analytics_engine/sql" \
       -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" --data-binary @- |
-    jq -r '(.meta | map(.name)) as $c | ($c | @tsv), (.data[] | [.[$c[]]] | @tsv)' |
+    # column collapses empty cells, shifting the rest of the row; show blanks as –.
+    jq -r '(.meta | map(.name)) as $c | ($c | @tsv),
+      (.data[] | [.[$c[]] | if . == "" then "–" else . end] | @tsv)' |
     column -t -s $'\t'
   echo
 done
