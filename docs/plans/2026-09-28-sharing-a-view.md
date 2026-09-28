@@ -49,7 +49,7 @@ the popup go to it; the search is its context.
 | Verse + overlay | Genesis 12:1 · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
 | Search | Search: אברם · Torahmap | A Visual Concordance of the Hebrew Bible. |
 | Verse + search + overlay | Genesis 12:1 · Search: אברם · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
-| Story stop | The Guided Tour · Torahmap | The stop's first sentence. |
+| Story stop | The Guided Tour · Torahmap | The stop's first sentence. A Visual Concordance of the Hebrew Bible. |
 | Nothing, or only a camera | Torahmap | A Visual Concordance of the Hebrew Bible. |
 
 "A Visual Concordance of the Hebrew Bible" also replaces the description in
