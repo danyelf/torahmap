@@ -24,7 +24,8 @@ import {
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
-import { CONTINUE_STORY, menuHtml, type StoryPlace } from './menu.ts';
+import { CONTINUE_STORY, SHARE, menuHtml, type StoryPlace } from './menu.ts';
+import { shareLink, closeAfterConfirming } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
@@ -42,12 +43,18 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import { parseVerseFromUrl, verseToUrlFormat, linkNamesAView, type UrlState } from '@torahmap/link';
+import {
+  parseVerseFromUrl,
+  verseToUrlFormat,
+  linkNamesAView,
+  describeLink,
+  type UrlState,
+} from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
-import { tabTitle } from './linkNames.ts';
+import { LINK_NAMES, tabTitle } from './linkNames.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
@@ -543,7 +550,8 @@ async function main(): Promise<void> {
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
-      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title });
+      const sharing = frame.mode === 'story' && driverKind(driver) === 'story' ? 'stop' : 'view';
+      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title, sharing });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
@@ -1430,7 +1438,7 @@ async function main(): Promise<void> {
   }
 
   // Delegated: the menus and panels are redrawn as they open.
-  function onChromeClick(e: MouseEvent): void {
+  async function onChromeClick(e: MouseEvent): Promise<void> {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
     if (target.closest('.panel-close')) return dispatch({ type: 'close' });
@@ -1438,13 +1446,43 @@ async function main(): Promise<void> {
       return dispatch({ type: 'choose', panel: toolsNow().search ? 'search' : 'overlay' });
     const chosen = storyChosen(target);
     if (chosen) return readStory(chosen.id, chosen.fromStart);
-    const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
+    const actionItem = target.closest<HTMLElement>('[data-action]');
+    const action = actionItem?.dataset.action;
     if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
+    if (action === SHARE) return shareCurrentView(actionItem!);
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
     const chooser = target.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
+  }
+
+  /**
+   * Sends the address bar's link: the share sheet on a touch screen that has
+   * one, otherwise the clipboard. A pan's debounced write may not have landed
+   * yet, so the address is brought current first.
+   */
+  async function shareCurrentView(item: HTMLElement): Promise<void> {
+    syncUrl(false);
+    const title = describeLink(parseUrlState(overlayParamSpecs), LINK_NAMES).title;
+    const outcome = await shareLink(location.href, title, {
+      share: navigator.share?.bind(navigator),
+      writeText: (t) => navigator.clipboard.writeText(t),
+      coarsePointer: matchMedia('(pointer: coarse)').matches,
+    });
+    if (outcome === 'copied' || outcome === 'failed') {
+      item.innerHTML =
+        outcome === 'copied'
+          ? 'Link copied <span class="menu-confirm-mark">✓</span>'
+          : "Couldn't copy";
+      closeAfterConfirming(
+        () => frame.menu,
+        () => dispatch({ type: 'menu' }),
+        1500,
+      );
+    } else if (frame.menu) {
+      dispatch({ type: 'menu' });
+    }
   }
   for (const id of ['panel', 'menu-toggle', 'menu', 'map-legend']) {
     document.getElementById(id)!.addEventListener('click', onChromeClick);

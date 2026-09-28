@@ -9,7 +9,9 @@ function items(html: string): HTMLButtonElement[] {
 
 describe('menuHtml', () => {
   it('offers the current story first, by name, with where it is', () => {
-    const [first] = items(menuHtml({ number: 7, total: 21, title: 'The guided tour' }));
+    const [first] = items(
+      menuHtml({ number: 7, total: 21, title: 'The guided tour', sharing: 'view' }),
+    );
     expect(first.dataset.action).toBe('story');
     expect(first.textContent).toContain('Continue The guided tour');
     expect(first.textContent).toContain('7/21');
@@ -17,25 +19,41 @@ describe('menuHtml', () => {
 
   it("escapes the story's title", () => {
     const div = document.createElement('div');
-    div.innerHTML = menuHtml({ number: 1, total: 2, title: '<img src=x>' });
+    div.innerHTML = menuHtml({ number: 1, total: 2, title: '<img src=x>', sharing: 'view' });
     expect(div.querySelector('img')).toBeNull();
   });
 
   it('then the search, the overlays, the stories, and about', () => {
-    const actions = items(menuHtml({ number: 1, total: 21, title: 'x' })).map(
+    const actions = items(menuHtml({ number: 1, total: 21, title: 'x', sharing: 'view' })).map(
       (b) => b.dataset.action,
     );
-    expect(actions).toEqual(['story', 'search', 'overlay', 'stories', 'about']);
+    expect(actions).toEqual(['story', 'share', 'search', 'overlay', 'stories', 'about']);
   });
 
   it("is headed with the site's name", () => {
     const div = document.createElement('div');
-    div.innerHTML = menuHtml({ number: 1, total: 2, title: 'x' });
+    div.innerHTML = menuHtml({ number: 1, total: 2, title: 'x', sharing: 'view' });
     expect(div.firstElementChild?.textContent).toBe('Torahmap');
   });
 
   it('makes every item a real button', () => {
-    for (const b of items(menuHtml({ number: 1, total: 2, title: 'x' })))
+    for (const b of items(menuHtml({ number: 1, total: 2, title: 'x', sharing: 'view' })))
       expect(b.type).toBe('button');
+  });
+
+  it('offers to share the view, or the stop while the story has the map', () => {
+    const label = (sharing: 'view' | 'stop') =>
+      items(menuHtml({ number: 1, total: 2, title: 'x', sharing })).find(
+        (b) => b.dataset.action === 'share',
+      )?.textContent;
+    expect(label('view')).toBe('Share this view');
+    expect(label('stop')).toBe('Share this stop');
+  });
+
+  it('sets the two actions apart from the tools', () => {
+    const div = document.createElement('div');
+    div.innerHTML = menuHtml({ number: 1, total: 2, title: 'x', sharing: 'view' });
+    const share = div.querySelector('[data-action="share"]');
+    expect(share?.nextElementSibling?.classList.contains('menu-divider')).toBe(true);
   });
 });
