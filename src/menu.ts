@@ -18,11 +18,11 @@ const item = (action: string, label: string, detail = ''): string =>
   `</button>`;
 
 /** The menu: the site's name, then its items. Each item carries the action it takes; the click handler reads it. */
-export function menuHtml(place: StoryPlace & { title: string; sharing: 'view' | 'stop' }): string {
+export function menuHtml(place: StoryPlace & { title: string }): string {
   return [
     '<h2 class="menu-title">Torahmap</h2>',
     item(CONTINUE_STORY, `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
-    item(SHARE, place.sharing === 'stop' ? 'Share this stop' : 'Share this view'),
+    item(SHARE, 'Share'),
     '<div class="menu-divider" role="separator"></div>',
     item('search', 'Search'),
     item('overlay', 'Overlays'),

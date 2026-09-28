@@ -43,18 +43,12 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import {
-  parseVerseFromUrl,
-  verseToUrlFormat,
-  linkNamesAView,
-  describeLink,
-  type UrlState,
-} from '@torahmap/link';
+import { parseVerseFromUrl, verseToUrlFormat, linkNamesAView, type UrlState } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
-import { LINK_NAMES, tabTitle } from './linkNames.ts';
+import { tabTitle } from './linkNames.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
@@ -550,8 +544,7 @@ async function main(): Promise<void> {
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
-      const sharing = frame.mode === 'story' && driverKind(driver) === 'story' ? 'stop' : 'view';
-      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title, sharing });
+      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
@@ -962,6 +955,10 @@ async function main(): Promise<void> {
     updateUrl(next, pushes(parseUrlState(), next, push));
     showTitle();
   }
+
+  // For a write asked every frame, as a story scroll does. It asks for no history
+  // entry, so a late one loses none, and it reads the screen as it is when it fires.
+  const syncUrlSoon = debounce(() => syncUrl(false), URL_UPDATE_DEBOUNCE_MS);
 
   // The camera when the reader took the map or last sent view_settled. Every
   // pointer up settles, a click included, so only a camera that has left it is sent.
@@ -1449,7 +1446,12 @@ async function main(): Promise<void> {
       // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
       if (actionItem!.dataset.sharePending) return;
       actionItem!.dataset.sharePending = 'true';
-      return shareCurrentView(actionItem!);
+      try {
+        await shareCurrentView(actionItem!);
+      } finally {
+        delete actionItem!.dataset.sharePending;
+      }
+      return;
     }
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
@@ -1464,8 +1466,7 @@ async function main(): Promise<void> {
     // ahead of the await below, means even a repeated outcome starts from empty.
     shareStatus.textContent = '';
     syncUrl(false);
-    const title = describeLink(parseUrlState(overlayParamSpecs), LINK_NAMES).title;
-    const outcome = await shareLink(location.href, title, {
+    const outcome = await shareLink(location.href, document.title, {
       share: navigator.share?.bind(navigator),
       writeText: (t) => navigator.clipboard.writeText(t),
       coarsePointer: matchMedia('(pointer: coarse)').matches,
@@ -1688,7 +1689,7 @@ async function main(): Promise<void> {
       blendTransition();
     }
     render();
-    syncUrl();
+    syncUrlSoon();
   }
 
   // A stop's camera places its verse, or fits its region, against the map's
