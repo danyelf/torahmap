@@ -81,13 +81,20 @@ Only these three. Splitting the rest of the codebase is not part of this.
 - Runs first for `/` alone (`assets.run_worker_first`); every other path is
   served as a static file, as now.
 - Reads the link with `@torahmap/link` and rewrites `<title>`, the
-  description, `og:title`, `og:description` and `og:url` with
-  `HTMLRewriter` as the page streams out. `og:url` becomes the full link,
-  because some apps fold every link to its `og:url`. `canonical` stays
-  `https://torahmap.org/`, so search engines index one page.
+  description, `og:title`, `og:description` and `og:url` in the page's text.
+  `og:url` becomes the full link, because some apps fold every link to its
+  `og:url`. `canonical` stays `https://torahmap.org/`, so search engines index
+  one page.
+- The rewrite edits `index.html` as text rather than parsing it with
+  Cloudflare's `HTMLRewriter`: the page is 5 KB, and `HTMLRewriter` exists only
+  in Cloudflare's runtime, so the test suite, which runs in Node, could not run
+  it without a second test setup. Text matching depends on how `index.html`
+  writes those tags, so a test runs the rewrite on the real file; a reformat
+  that breaks the match fails the suite instead of shipping plain previews.
 - The image stays `og-image.jpg` for every link (#273).
-- The dev server does not run the Worker. Locally the tab title changes; the
-  previews are seen in the Worker's tests and on the PR's preview link.
+- The dev server does not run the Worker, and Cloudflare Access keeps chat
+  apps' fetchers off the PR previews. The Worker's tests cover the rewrite;
+  the real check is pasting a link into a chat app on torahmap.org after merge.
 
 ## Telemetry
 
