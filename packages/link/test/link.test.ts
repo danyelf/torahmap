@@ -9,7 +9,7 @@ import {
   type UrlState,
   type UrlParamSpec,
 } from '../src/index.ts';
-import { overlayParamSpecs as lookup } from '@torahmap/overlay-catalog';
+import { lookup } from './sampleOverlays.ts';
 
 describe('readLink', () => {
   it('parses empty query to minimal state', () => {

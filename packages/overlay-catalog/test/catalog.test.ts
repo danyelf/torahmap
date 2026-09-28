@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { SEARCH_KEYS, RESERVED_KEYS } from '@torahmap/link';
+import {
+  SEARCH_KEYS,
+  RESERVED_KEYS,
+  readLink,
+  writeLink,
+  type UrlParamKind,
+  type UrlParamSpec,
+} from '@torahmap/link';
 import {
   overlayName,
   overlayParamSpecs,
@@ -27,5 +34,24 @@ describe('the overlay catalog', () => {
     for (const key of keys) {
       expect(SEARCH_KEYS.has(key) || RESERVED_KEYS.has(key)).toBe(false);
     }
+  });
+});
+
+const SAMPLE: Record<UrlParamKind, string> = {
+  token: 'sample',
+  category: 'Talmud/Mishnah',
+  text: 'in the beginning',
+  names: 'BR>CJT/',
+};
+
+const sampleValue = (spec: UrlParamSpec): string => spec.allowed?.at(-1) ?? SAMPLE[spec.kind];
+
+describe('each overlay’s settings survive a link', () => {
+  it.each(ALL.filter((entry) => entry.urlParams))('$id', (entry) => {
+    const settings = Object.fromEntries(
+      (entry.urlParams ?? []).map((spec) => [spec.key, sampleValue(spec)]),
+    );
+    const link = writeLink({ overlay: entry.id, overlayParams: settings });
+    expect(readLink(link, overlayParamSpecs).overlayParams).toEqual(settings);
   });
 });

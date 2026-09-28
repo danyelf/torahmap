@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { overlayParamSpecs as lookup } from '@torahmap/overlay-catalog';
+import { lookup } from './sampleOverlays.ts';
 import { readLink, parseVerseFromUrl } from '../src/index.ts';
 
 describe('URL Parameter Security Validation', () => {
