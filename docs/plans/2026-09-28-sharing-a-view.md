@@ -11,16 +11,18 @@ link previews as what it points to.
 
 ## What the reader sees
 
-- The ☰ menu gains **Share this view**. While a story is driving the map it
-  reads **Share this stop**, since that is what will be sent. It is the only
-  Share control.
+- The ☰ menu gains **Share this view**, right under *Continue* and above a
+  divider, so the two actions come before the tools. While a story is driving
+  the map it reads **Share this stop**, since that is what will be sent. It is
+  the only Share control.
 - **On a touch screen with a system share sheet** (`navigator.share` and a
   coarse pointer), it opens the sheet. The sheet is the confirmation.
 - **Otherwise** it copies the link. The item's label becomes *Link copied ✓*
   for about 1.5 seconds, then the menu closes; on failure, *Couldn't copy*.
   This is the one item that does not close the menu at once. No toast.
 - **The tab's title follows the view**, from the same description the Worker
-  writes (below).
+  writes (below). Off the live site it keeps its branch name, as now:
+  "Genesis 12:1 · Torahmap [share-view-2]".
 
 ## The link
 
