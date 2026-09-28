@@ -1,7 +1,7 @@
 # Handoff: the interface's information hierarchy
 
 **Date:** 2026-09-23
-**Status:** Designed and planned; nothing built.
+**Status:** Superseded by `2026-09-27-ui-redesign-handoff.md`.
 
 Read this first, then the design. It records where the work stands and what was
 decided in conversation that the documents below do not say on their own.
