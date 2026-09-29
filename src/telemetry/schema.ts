@@ -12,6 +12,8 @@ const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
 
 export const EVENTS = {
+  // arrived_with is blank on views recorded before the column existed —
+  // "not stated", unlike arrivedWith's own 'nothing' for a reload or Back/Forward.
   page_view: { blobs: ['story_stop', 'referrer', 'story', 'arrived_with'], doubles: [] },
   story_stop: { blobs: ['stop_id', 'story'], doubles: ['stop_number', 'total_stops'] },
   story_exit: { blobs: ['stop_id', 'how', 'story'], doubles: ['stop_number'] },
@@ -24,6 +26,8 @@ export const EVENTS = {
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [] },
+  // overlay is blank whenever the shared link left it out: every story-stop
+  // share, and a view left on the default overlay — not "no overlay" showing.
   share: {
     blobs: ['how', 'what', 'story', 'stop_id', 'overlay'],
     doubles: ['searching', 'pinned'],

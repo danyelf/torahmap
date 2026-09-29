@@ -6,6 +6,11 @@ export const SITE_NAME = 'Torahmap';
 export const TAGLINE = 'A Visual Concordance of the Hebrew Bible.';
 const SEPARATOR = ' · ';
 
+/** Fills index.html's %SITE_NAME%/%TAGLINE% placeholders, as the Vite build does (vite.config.ts). */
+export function fillSiteTags(html: string): string {
+  return html.replace(/%SITE_NAME%/g, SITE_NAME).replace(/%TAGLINE%/g, TAGLINE);
+}
+
 /** The names a link carries only as ids; the page and the Worker pass the same ones. */
 export interface LinkNames {
   overlayName(id: string): string | undefined;

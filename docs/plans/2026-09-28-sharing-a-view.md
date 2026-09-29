@@ -109,10 +109,12 @@ Columns go in `src/telemetry/schema.ts` as usual.
   arrival. This counts shared links opened, whether from Share or a copied
   address bar, and cannot tell them from bookmarks.
 - **`link_preview`**, written by the Worker when a known preview fetcher
-  requests a page: `fetcher` (Slackbot, WhatsApp, Discordbot, TelegramBot,
-  LinkedInBot, Twitterbot, facebookexternalhit — iMessage uses the last two)
-  and `what` (`nothing`, `view`, `stop`). It counts links pasted into a
-  conversation. Some apps fetch twice, so it counts a little high.
+  requests a page: `fetcher` (`imessage`, `telegram`, `slack`, `whatsapp`,
+  `discord`, `linkedin`, `twitter`, `facebook` — iMessage records as its own
+  `imessage`, since its fetcher's User-Agent carries both
+  facebookexternalhit and Twitterbot) and `what` (`nothing`, `view`, `stop`).
+  It counts links pasted into a conversation. Some apps fetch twice, so it
+  counts a little high.
 
 No marker or id is added to shared links: a marker is lost when someone copies
 the address bar instead, and an id per share follows people.

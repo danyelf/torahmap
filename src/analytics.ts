@@ -55,9 +55,9 @@ export function trackPageView(
   story: string,
   storyStop: string,
   referrer: string,
-  arrivedWith: string,
+  arrival: ReturnType<typeof arrivedWith>,
 ): void {
-  track('page_view', { story_stop: storyStop, referrer, story, arrived_with: arrivedWith });
+  track('page_view', { story_stop: storyStop, referrer, story, arrived_with: arrival });
 }
 
 /** What the first page's link named; a reload or Back/Forward is not an arrival. */

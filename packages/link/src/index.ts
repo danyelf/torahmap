@@ -21,4 +21,4 @@ export {
 } from './link.ts';
 
 export type { LinkNames, LinkDescription } from './describe.ts';
-export { SITE_NAME, TAGLINE, describeLink } from './describe.ts';
+export { SITE_NAME, TAGLINE, describeLink, fillSiteTags } from './describe.ts';
