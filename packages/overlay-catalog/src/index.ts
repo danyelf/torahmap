@@ -36,7 +36,7 @@ export const TROP = {
   urlParams: TROP_PARAMS,
 } as const satisfies OverlayEntry;
 
-/** The customs the haftarah overlay offers; also `Custom`'s only source (see `haftarah/readings.ts`). */
+/** The customs the haftarah overlay offers, in the order it offers them. */
 export const HAFTARAH_CUSTOMS = ['ashkenazi', 'sephardi'] as const;
 
 const HAFTARAH_PARAMS = [

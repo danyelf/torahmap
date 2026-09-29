@@ -1,4 +1,4 @@
-// Validating an overlay's URL parameters against its own declaration.
+// Validating a link's parameters: the view's own, and each overlay's against its declaration.
 
 /**
  * The kinds of value an overlay parameter can hold. The overlay picks a kind;
@@ -42,18 +42,25 @@ export interface UrlParamSpec {
 
 /**
  * The record an overlay receives: exactly the keys it declared, already
- * validated, and narrowed to the allowed values where it named a set.
+ * validated, and narrowed to the allowed values where it named a set. A key
+ * with a default is always present.
  *
  * With no specs to go on this widens to "some strings, or nothing", which is
  * what the `Overlay` interface has to promise before it knows the overlay.
  */
-export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> = {
-  readonly [P in S[number] as P['key']]?: P extends {
-    allowed: readonly (infer V extends string)[];
+export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> = OneRecord<
+  {
+    readonly [P in S[number] as P extends { default: string } ? P['key'] : never]: ValueOf<P>;
+  } & {
+    readonly [P in S[number] as P extends { default: string } ? never : P['key']]?: ValueOf<P>;
   }
-    ? V
-    : string;
-};
+>;
+
+type OneRecord<T> = { [K in keyof T]: T[K] };
+
+type ValueOf<P extends UrlParamSpec> = P extends { allowed: readonly (infer V extends string)[] }
+  ? V
+  : string;
 
 /** The search's keys, read whatever overlay is on; no overlay may claim them. */
 export const SEARCH_URL_PARAMS = [
@@ -80,17 +87,6 @@ export type OverlayParams = UrlParamValues;
  * Supplied by the caller so that this module never imports overlays.
  */
 export type OverlayParamSpecLookup = (overlayId: string) => readonly UrlParamSpec[] | undefined;
-
-// The link's own keys, read in link.ts; an overlay may not claim one of these.
-export const RESERVED_KEYS: ReadonlySet<string> = new Set([
-  'story',
-  'stop',
-  'overlay',
-  'verse',
-  'zoom',
-  'x',
-  'y',
-]);
 
 const MAX_STRING_LENGTH = 50;
 const MAX_SEARCH_QUERY_LENGTH = 1000;
@@ -210,6 +206,64 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   // is what makes the claim true, and every caller inherits it from here.
   return values as UrlParamValues<S>;
 }
+
+// The range a link may carry and the range the camera allows are one range;
+// this package owns it because packages cannot import from src/.
+export const MIN_ZOOM = 0.1;
+export const MAX_ZOOM = 10.0;
+// The zoom the map opens at, which a link leaves out.
+export const DEFAULT_ZOOM = 1.0;
+
+const MAX_PAN_POSITION = 1000000;
+
+type TextKey = 'story' | 'stop' | 'overlay' | 'verse';
+type NumberKey = 'zoom' | 'x' | 'y';
+
+/** The parts of a view a link names under its own keys. */
+export type ViewFields = { [K in TextKey]?: string } & { [K in NumberKey]?: number };
+
+/** How one of the link's own keys is read, or null to drop it, and written, or null to leave it out. */
+export interface ViewKey<V> {
+  parse(raw: string): V | null;
+  format(value: V): string | null;
+}
+
+function name(maxLength?: number): ViewKey<string> {
+  return { parse: (raw) => validateString(raw, maxLength), format: (value) => value || null };
+}
+
+function number(decimals: number, inRange: (n: number) => boolean, left?: number): ViewKey<number> {
+  return {
+    parse(raw) {
+      const n = parseFloat(raw);
+      return Number.isFinite(n) && inRange(n) ? n : null;
+    },
+    format: (n) => (n === left ? null : n.toFixed(decimals).replace(/\.?0+$/, '')),
+  };
+}
+
+const pan = number(1, (n) => Math.abs(n) <= MAX_PAN_POSITION);
+
+// The link's own keys, text then numbers, in the order a link writes them.
+export const TEXT_KEYS: Readonly<Record<TextKey, ViewKey<string>>> = {
+  story: name(),
+  stop: name(),
+  overlay: name(),
+  // "Book.Chapter.Verse", e.g. "I.Samuel.1.5"
+  verse: name(100),
+};
+
+export const NUMBER_KEYS: Readonly<Record<NumberKey, ViewKey<number>>> = {
+  zoom: number(2, (n) => n >= MIN_ZOOM && n <= MAX_ZOOM, DEFAULT_ZOOM),
+  x: pan,
+  y: pan,
+};
+
+/** No overlay may claim one of the link's own keys. */
+export const RESERVED_KEYS: ReadonlySet<string> = new Set([
+  ...Object.keys(TEXT_KEYS),
+  ...Object.keys(NUMBER_KEYS),
+]);
 
 function stripHtmlTags(value: string): string {
   return value.replace(/<[^>]*>/g, '');

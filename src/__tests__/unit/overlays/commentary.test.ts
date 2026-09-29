@@ -9,7 +9,8 @@ const commentaryOverlay = hostOverlay(getOverlay('commentary')!);
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';
-import type { CommentaryData, TanakhLayout } from '../../../types';
+import type { TanakhLayout } from '../../../types';
+import type { CommentaryData } from '../../../overlays/commentary';
 import { hostOverlay } from '../../helpers/overlayHost';
 
 describe('Commentary Overlay', () => {

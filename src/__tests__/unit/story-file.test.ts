@@ -4,12 +4,17 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseStoryMarkdown, STORY_HEADER_KEYS, STORY_MARKDOWN } from '@torahmap/stories';
-import { easingFunctions } from '../../scrollytelling/interpolation';
+import {
+  parseStoryMarkdown,
+  STOP_COMMENT_RE,
+  STORY_HEADER_KEYS,
+  STORY_MARKDOWN,
+} from '@torahmap/stories';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { writeLink, parseVerseFromUrl } from '@torahmap/link';
 import { parseUrlState } from '../../urlState';
-import { isSearching, searchFromLink } from '../../overlays/search/index';
+import { isSearching, searchTool } from '../../overlays/search/index';
+import { settingsFromLink } from '../../overlays/settings';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
@@ -19,7 +24,7 @@ registerAllOverlays();
 describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   const story = parseStoryMarkdown(markdown);
   const { stops } = story;
-  const comments = [...markdown.matchAll(/<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g)];
+  const comments = [...markdown.matchAll(STOP_COMMENT_RE)];
   // The header as written, read without the parser, which drops what it does not know.
   const header = Object.fromEntries(
     (markdown.match(/^---\s*\n([\s\S]*?)\n---/)?.[1] ?? '')
@@ -50,10 +55,6 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
 
   it('writes its order, if it has one, as a number', () => {
     if ('order' in header) expect(story.order).toBe(Number(header.order));
-  });
-
-  it('names a real easing, if it names one', () => {
-    if ('easing' in header) expect(Object.keys(easingFunctions)).toContain(header.easing);
   });
 
   it('writes every setting as key: value', () => {
@@ -138,7 +139,7 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
 
   it('searches, where a stop searches, for words long enough to search on', () => {
     const idle = stops
-      .filter((s) => s.searchParams && !isSearching(searchFromLink(s.searchParams)))
+      .filter((s) => s.searchParams && !isSearching(settingsFromLink(searchTool, s.searchParams)))
       .map((s) => s.id);
     expect(idle).toEqual([]);
   });

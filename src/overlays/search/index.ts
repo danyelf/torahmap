@@ -6,7 +6,7 @@
 // modules of their own — termRows.ts, resultsList.ts and highlight.ts — and
 // each is handed what it needs. Which row the reader is working in is
 // presentation, not a setting, so it stays here.
-import '../../styles/overlays/search.css';
+import './search.css';
 import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
@@ -42,8 +42,8 @@ import { isSearchableWord } from '../../hebrew.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
 import { trackSearchExecute } from '../../analytics.ts';
-import { SEARCH_URL_PARAMS, validateOverlayParams } from '@torahmap/link';
-import type { LinkParams } from '../settings.ts';
+import { SEARCH_URL_PARAMS } from '@torahmap/link';
+import { memoBySettings } from '../memo.ts';
 
 /**
  * A list of terms, each with its own text, its own meanings, its own colour and
@@ -72,31 +72,16 @@ interface Search {
   matchingTerms: Map<string, number[]>;
 }
 
-// getVerseColor asks once per verse, 23,000 times a paint, so the search is run
-// once per settings value and kept. Settings are never edited in place — every
-// function in terms.ts returns a new list — so a value's identity is a sound
-// key. The last one asked about is checked first, because a paint asks about
-// the same one every time.
-const searches = new WeakMap<SearchSettings, Search>();
-let lastSearch: { of: SearchSettings; value: Search } | null = null;
-
 /** The terms the search runs: those holding a word, not a single letter. */
 function activeTerms(settings: SearchSettings): SearchTerm[] {
   return settings.terms.filter((t) => isSearchableWord(t.text));
 }
 
-function searchFor(settings: SearchSettings): Search {
-  if (lastSearch?.of === settings) return lastSearch.value;
-
-  let value = searches.get(settings);
-  if (!value) {
-    const active = activeTerms(settings);
-    value = { active, ...matchesForTerms(active) };
-    searches.set(settings, value);
-  }
-  lastSearch = { of: settings, value };
-  return value;
-}
+// Every function in terms.ts returns a new list, so settings are never edited in place.
+const searchFor = memoBySettings((settings: SearchSettings): Search => {
+  const active = activeTerms(settings);
+  return { active, ...matchesForTerms(active) };
+});
 
 /** Terms holding something, including ones too short to search on. */
 function typedTerms(settings: SearchSettings): SearchTerm[] {
@@ -426,11 +411,6 @@ function settingsFromUrl(params: UrlParamValues<typeof SEARCH_URL_PARAMS>): Sear
   return { terms };
 }
 
-/** The search a link or a story stop names. */
-export function searchFromLink(raw: LinkParams): SearchSettings {
-  return settingsFromUrl(validateOverlayParams(SEARCH_URL_PARAMS, raw));
-}
-
 /** Whether the search has a term it searches on. */
 export function isSearching(settings: SearchSettings): boolean {
   return activeTerms(settings).length > 0;
@@ -468,10 +448,6 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
   colorsFor(items, settings, _hovered) {
     const search = searchFor(settings);
     return items.map((item) => searchColorAt(item, search));
-  },
-
-  defaultSettings() {
-    return { terms: addTerm([], '') };
   },
 
   urlParams: SEARCH_URL_PARAMS,
@@ -579,8 +555,6 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     requestChange = null;
     // A search the reader leaves before it settles is not recorded.
     recordSettledSearch.cancel();
-    // verses and onVerseClickCallback are configuration handed in once by
-    // configure(), not per-activation state, so they stay.
   },
 
   highlightVerseText(text, language, settings) {

@@ -4,6 +4,7 @@ import type { Color } from '../overlays/types.ts';
 /** Maps a value onto the 0..1 position it occupies on a scale. */
 export type Transform = (value: number) => number;
 
+export const LINEAR: Transform = (value) => value;
 export const LOG: Transform = (value) => Math.log(value + 1);
 export const SQRT: Transform = Math.sqrt;
 

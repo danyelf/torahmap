@@ -1,3 +1,4 @@
+import './verse-length.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
@@ -6,6 +7,7 @@ import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
+import { NO_DATA } from './colors.ts';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
 const PLASMA_STOPS: ColorStop[] = [
@@ -74,7 +76,7 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
   const wordCount = wordCountCache.get(key);
 
   if (wordCount === undefined || wordCount === 0) {
-    return [0.15, 0.15, 0.2];
+    return NO_DATA;
   }
 
   return wordCountScale().colorOf(wordCount);
@@ -87,8 +89,8 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
     return getVerseColorForWordCount(verse);
   },
 
-  colorsFor(items, settings, _hovered) {
-    return items.map((item) => this.getVerseColor(item, settings));
+  colorsFor(items) {
+    return items.map((item) => getVerseColorForWordCount(item));
   },
 
   renderLegend(container: HTMLElement): void {
@@ -98,7 +100,7 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
 
     container.innerHTML = `
       ${renderAxis(wordCountScale(), [minWordCount, maxWordCount], (n) => `${n} words`)}
-      ${legendCaption(`${lowColor} = shorter verses`, { marginTop: 8 })}
+      ${legendCaption(`${lowColor} = shorter verses`)}
       ${legendCaption(`${highColor} = longer verses`)}
       ${legendCaption(`Square root scale · ${paletteName} palette`)}
     `;
@@ -127,15 +129,14 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
     const plural = wordCount === 1 ? 'word' : 'words';
 
     const div = document.createElement('div');
-    div.style.cssText =
-      'margin-top: 12px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;';
+    div.className = 'verse-length-info';
 
     const label = document.createElement('div');
-    label.style.cssText = 'font-size: 11px; color: #888; margin-bottom: 4px;';
+    label.className = 'verse-length-label';
     label.textContent = 'Verse Length:';
 
     const value = document.createElement('div');
-    value.style.cssText = 'font-size: 13px; color: #ddd;';
+    value.className = 'verse-length-value';
     value.textContent = `${wordCount} ${plural}`;
 
     div.appendChild(label);

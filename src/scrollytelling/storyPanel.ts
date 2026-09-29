@@ -1,8 +1,13 @@
-import type { StoryStop, CameraPosition, CameraRef } from '@torahmap/stories';
+import {
+  firstSentence,
+  type StoryStop,
+  type CameraPosition,
+  type CameraRef,
+} from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
 import type { Book, TanakhLayout } from '../types';
 import { findTanakhItem } from '../types';
-import { parseVerseFromUrl } from '@torahmap/link';
+import { bookFromUrl, parseVerseFromUrl } from '@torahmap/link';
 import { getBookSection } from '../constants/books';
 import { SECTION_LABEL_REACH } from '../labels';
 import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera';
@@ -33,12 +38,7 @@ function renderMarkdown(md: string): string {
 
 /** What stands for a stop when the story is folded: its title, or else its first sentence. */
 export function stopLabel(stop: Pick<StoryStop, 'title' | 'text'>): string {
-  if (stop.title) return stop.title;
-  const div = document.createElement('div');
-  div.innerHTML = renderMarkdown(stop.text);
-  const text = (div.textContent ?? '').replace(/\s+/g, ' ').trim();
-  // A sentence can end inside a closing quote or bracket: Abraham.”
-  return text.match(/^.*?[.!?]["'”’)\]]*(?=\s|$)/)?.[0] ?? text;
+  return stop.title || (firstSentence(stop) ?? '');
 }
 
 export function renderStoryPanel(container: HTMLElement, stops: StoryStop[]): HTMLElement[] {
@@ -94,7 +94,7 @@ function inRegion(verse: TanakhLayout, name: string): boolean {
   if (name === 'everything') return true;
   const section = SECTIONS[name];
   if (section) return getBookSection(verse.book) === section;
-  return verse.book === name.split('.').join(' ');
+  return verse.book === bookFromUrl(name);
 }
 
 /**
@@ -128,32 +128,31 @@ export interface MapSize {
 export function resolveStops(
   stops: StoryStop[],
   initialCamera: CameraPosition,
-  verses?: TanakhLayout[],
-  focus?: ScreenPoint,
-  mapSize?: MapSize,
+  verses: TanakhLayout[],
+  focus: ScreenPoint,
+  mapSize: MapSize,
 ): ResolvedStoryStop[] {
   return stops.map((stop) => {
     const cam = stop.camera;
     let camera: CameraPosition;
 
     if (isRegions(cam)) {
-      const box = verses && mapSize ? regionBox(verses, cam.names) : null;
-      camera =
-        box && mapSize
-          ? cameraToFit(box, mapSize.width, mapSize.height, stop.zoom)
-          : { ...initialCamera };
+      const box = regionBox(verses, cam.names);
+      camera = box
+        ? cameraToFit(box, mapSize.width, mapSize.height, stop.zoom)
+        : { ...initialCamera };
     } else if (isVerseRef(cam)) {
       const zoom = stop.zoom ?? 3;
       const parsed = parseVerseFromUrl(cam.ref);
-      const verseLayout = parsed && verses && focus ? findTanakhItem(verses, parsed) : null;
-      if (verseLayout && focus && mapSize) {
+      const verseLayout = parsed ? findTanakhItem(verses, parsed) : null;
+      if (verseLayout) {
         camera = cameraForVerse(verseLayout, zoom, focus, mapSize);
       } else {
         camera = { ...initialCamera };
       }
     } else if (cam !== 'initial') {
       camera = cam;
-    } else if (stop.verse && verses && focus && mapSize) {
+    } else if (stop.verse) {
       const parsed = parseVerseFromUrl(stop.verse);
       const verseLayout = parsed ? findTanakhItem(verses, parsed) : null;
       if (verseLayout) {

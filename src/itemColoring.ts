@@ -4,6 +4,7 @@ import type { Color, SpatialItem, ItemState, VerseColor } from './types';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
+import { brighten } from './utils/color';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
 
 /**
@@ -17,8 +18,8 @@ export function getDefaultColor(verseIndex: number): Color {
   return [brightness, brightness, brightness];
 }
 
-function dim(color: VerseColor, factor: number): VerseColor {
-  const one = (c: Color): Color => [c[0] * factor, c[1] * factor, c[2] * factor];
+function brightenBands(color: VerseColor, factor: number): VerseColor {
+  const one = (c: Color): Color => brighten(c, factor);
   return Array.isArray(color[0]) ? (color as Color[]).map(one) : one(color as Color);
 }
 
@@ -52,7 +53,7 @@ export function combineLayers(
       colors[i] = under;
       rings[i] = match;
     } else {
-      colors[i] = dim(under ?? getDefaultColor(i), nonMatchDim);
+      colors[i] = brightenBands(under ?? getDefaultColor(i), nonMatchDim);
     }
   }
 
@@ -69,51 +70,18 @@ export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<
 }
 
 /**
- * Get overlay-provided color for a spatial item, or null if overlay doesn't color it.
- */
-export function getOverlayColor<T, S>(
-  overlay: Overlay<T, S> | null,
-  item: T,
-  settings: S,
-): VerseColor | null {
-  return overlay?.getVerseColor(item, settings) ?? null;
-}
-
-/**
  * Apply hover highlighting to a verse color: overlay-colored verses brighten,
  * background verses (no overlay color) are replaced with the highlight color.
  */
-export function applyHoverHighlight(
-  baseColor: [number, number, number] | [number, number, number][],
-  hasOverlayColor: boolean,
-): [number, number, number] | [number, number, number][] {
-  if (hasOverlayColor) {
-    if (Array.isArray(baseColor[0])) {
-      return (baseColor as [number, number, number][]).map(
-        (c) =>
-          [
-            Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-            Math.min(1, c[1] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-            Math.min(1, c[2] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-          ] as [number, number, number],
-      );
-    } else {
-      const c = baseColor as [number, number, number];
-      return [
-        Math.min(1, c[0] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-        Math.min(1, c[1] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-        Math.min(1, c[2] * HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR),
-      ];
-    }
-  } else {
-    return HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR;
-  }
+export function applyHoverHighlight(baseColor: VerseColor, hasOverlayColor: boolean): VerseColor {
+  return hasOverlayColor
+    ? brightenBands(baseColor, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR)
+    : HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR;
 }
 
 /**
  * A settled overlay's colours, one entry per item, as computeItemStates needs
- * them. Asks colorsFor where there is one, as the story's blend does, so the
- * two agree on a hovered verse.
+ * them.
  */
 export function overlayColorsFor<T, S>(
   overlay: Overlay<T, S> | null,
@@ -121,8 +89,7 @@ export function overlayColorsFor<T, S>(
   settings: S,
   hovered: SpatialItem<T> | null,
 ): (VerseColor | null)[] {
-  if (overlay?.colorsFor) return overlay.colorsFor(items, settings, hovered);
-  return items.map((v) => getOverlayColor(overlay, v, settings));
+  return overlay ? overlay.colorsFor(items, settings, hovered) : items.map(() => null);
 }
 
 /** The map's colours for the tools a view shows. `nonMatchDim` passes through to combineLayers. */

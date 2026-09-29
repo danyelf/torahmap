@@ -1,30 +1,37 @@
 import { describe, it, expect } from 'vitest';
 import { toolsShown, togglesSearch } from '../../tools';
-import { searchTool, searchFromLink } from '../../overlays/search/index';
+import { searchTool } from '../../overlays/search/index';
+import { settingsFromLink } from '../../overlays/settings';
 import { commentaryOverlay } from '../../overlays/commentary';
 
 describe('toolsShown', () => {
   it('shows the search once it has a word long enough to search on', () => {
-    expect(toolsShown(null, undefined, searchFromLink({ search: 'אור' })).search?.tool).toBe(
-      searchTool,
-    );
+    expect(
+      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' })).search?.tool,
+    ).toBe(searchTool);
   });
 
   it('leaves the search off for a single letter, or for nothing', () => {
-    expect(toolsShown(null, undefined, searchFromLink({ search: 'א' })).search).toBeNull();
-    expect(toolsShown(null, undefined, searchFromLink({})).search).toBeNull();
+    expect(
+      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'א' })).search,
+    ).toBeNull();
+    expect(toolsShown(null, undefined, settingsFromLink(searchTool, {})).search).toBeNull();
   });
 
   it('shows the overlay with its settings beside the search', () => {
     const settings = { category: 'total' };
-    const tools = toolsShown(commentaryOverlay, settings, searchFromLink({ search: 'אור' }));
+    const tools = toolsShown(
+      commentaryOverlay,
+      settings,
+      settingsFromLink(searchTool, { search: 'אור' }),
+    );
     expect(tools.overlay).toEqual({ tool: commentaryOverlay, settings });
     expect(tools.search).not.toBeNull();
   });
 });
 
 describe('togglesSearch', () => {
-  const at = (words: string) => searchFromLink({ search: words });
+  const at = (words: string) => settingsFromLink(searchTool, { search: words });
 
   it('turns the search on with the first word long enough to search on', () => {
     expect(togglesSearch(at('א'), at('אב'))).toBe(true);

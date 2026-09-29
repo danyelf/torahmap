@@ -6,8 +6,8 @@ import {
   toolsPicture,
 } from '../../itemColoring';
 import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
-import type { Color, Overlay } from '../../overlays/types';
-import { createVerse } from '../helpers/fixtures';
+import type { Color } from '../../overlays/types';
+import { createVerse, testOverlay } from '../helpers/fixtures';
 
 const CYAN: Color = [0.1, 0.7, 0.8];
 const ORANGE: Color = [1, 0.5, 0];
@@ -119,12 +119,12 @@ describe('fillDefaultColors', () => {
 
 describe('toolsPicture', () => {
   it('asks each tool for its colours and combines them, search over overlay', () => {
-    const overlay: Overlay = { id: 'o', name: 'O', getVerseColor: () => RED };
-    const search: Overlay = {
+    const overlay = testOverlay({ id: 'o', name: 'O', getVerseColor: () => RED });
+    const search = testOverlay({
       id: 's',
       name: 'S',
       getVerseColor: (v) => (v.verse === 1 ? CYAN : null),
-    };
+    });
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
     const picture = toolsPicture(
@@ -141,8 +141,8 @@ describe('toolsPicture', () => {
   });
 
   it('passes a non-match dim through to combineLayers', () => {
-    const overlay: Overlay = { id: 'o', name: 'O', getVerseColor: () => RED };
-    const search: Overlay = { id: 's', name: 'S', getVerseColor: () => null };
+    const overlay = testOverlay({ id: 'o', name: 'O', getVerseColor: () => RED });
+    const search = testOverlay({ id: 's', name: 'S', getVerseColor: () => null });
     const items = [createVerse({ verse: 1 })];
 
     const picture = toolsPicture(

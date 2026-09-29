@@ -589,20 +589,6 @@ describe('Text Dating Overlay', () => {
     });
   });
 
-  describe('colorsFor', () => {
-    beforeEach(async () => {
-      await textDatingOverlay.overlay.init?.();
-    });
-
-    it('gives the same answer through colorsFor as through getVerseColor', async () => {
-      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
-
-      expect(
-        textDatingOverlay.overlay.colorsFor!(items, textDatingOverlay.fromUrl({}), null),
-      ).toEqual([textDatingOverlay.getVerseColor(items[0])]);
-    });
-  });
-
   describe('Color Values', () => {
     beforeEach(async () => {
       await textDatingOverlay.overlay.init?.();

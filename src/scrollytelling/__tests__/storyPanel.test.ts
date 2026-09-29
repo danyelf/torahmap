@@ -30,24 +30,9 @@ describe('stopLabel', () => {
     );
   });
 
-  it('is the first sentence, without markup, when the stop has no title', () => {
-    const text =
-      'Five chapters later, God renames him: *no longer Abram, but **Abraham**.*\n\nAdd the new name.';
-    expect(stopLabel(stop({ text }))).toBe(
-      'Five chapters later, God renames him: no longer Abram, but Abraham.',
-    );
-  });
-
-  it('ends a sentence inside a closing quote', () => {
-    const text = 'God gives Abram a new name: “your name shall be Abraham.” We can add it.';
-    expect(stopLabel(stop({ text }))).toBe(
-      'God gives Abram a new name: “your name shall be Abraham.”',
-    );
-  });
-
-  it('is the whole text when it has no sentence end', () => {
-    expect(stopLabel(stop({ text: 'Search for [Abram](https://example.org)' }))).toBe(
-      'Search for Abram',
+  it('is the first sentence when the stop has no title', () => {
+    expect(stopLabel(stop({ text: 'Five chapters later. God renames him.' }))).toBe(
+      'Five chapters later.',
     );
   });
 });

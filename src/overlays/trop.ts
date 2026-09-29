@@ -1,20 +1,26 @@
 // The trop overlay: colours, the mark chart, and marking a mark inside a verse.
 //
 // The presentation half of the trop feature. What the marks are and which
-// verses carry them is in src/trop.ts.
+// verses carry them is in trop/marks.ts.
 
-import '../styles/overlays/trop.css';
+import './trop.css';
 import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts';
-import type { TanakhIdentity, TropIndex, TropIndexEntry, TextLanguage } from '../types.ts';
+import type { TanakhIdentity, TextLanguage } from '../types.ts';
 import { HEBREW, tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
 import type { VerseTexts } from '../verseTexts.ts';
-import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
+import {
+  buildTropIndex,
+  getTropByFrequency,
+  getRarityTier,
+  type TropIndex,
+  type TropIndexEntry,
+} from './trop/marks.ts';
 import { lingeringHover } from '../utils/hover.ts';
-import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
-import { scaleToGradient, buildLegendGradient, interpolateGradient } from '../utils/color.ts';
-import type { ColorStop } from '../utils/color.ts';
-import { legendRow } from './legend.ts';
+import { colorToCss, type ColorStop } from '../utils/color.ts';
+import { scale, LINEAR, LOG, type Scale } from '../utils/scale.ts';
+import { axisGradient, legendCaption, legendRow } from './legend.ts';
+import { memoBySettings } from './memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
 let tropIndex: TropIndex = new Map();
@@ -41,19 +47,33 @@ function entryFor(mark: string | null): TropIndexEntry | null {
 
 /** A rare mark's legend is two swatches, "contains" and "does not"; any other's a gradient. */
 function markColors(entry: TropIndexEntry): string[] {
-  const tier = getRarityTier(entry.totalCount);
-  if (tier === 'rare') return ['rgb(255, 214, 0)', 'rgb(64, 64, 64)'];
-  const stops = tier === 'uncommon' ? UNCOMMON_TROP_GRADIENT : COMMON_TROP_GRADIENT;
-  return [buildLegendGradient(10, (i) => interpolateGradient(i / 9, stops))];
+  const counts = countScale(entry);
+  if (!counts) return [colorToCss(RARE_MATCH_COLOR), colorToCss(RARE_NO_MATCH_COLOR)];
+  return [axisGradient(counts)];
 }
 
 interface TropDerivation {
   verseLookup: Map<string, number>;
-  maxCount: number;
-  tier: 'rare' | 'uncommon' | 'common';
+  /** Null for a rare mark, which is drawn as present or absent. */
+  counts: Scale | null;
+  noMatch: Color;
 }
 
 const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
+const RARE_NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
+
+/**
+ * How many times a verse carries the mark, as a colour. Common marks span a
+ * wide range of counts, so their scale is logarithmic. Null for a rare mark.
+ */
+function countScale(entry: TropIndexEntry): Scale | null {
+  const tier = getRarityTier(entry.totalCount);
+  if (tier === 'rare') return null;
+  const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
+  return tier === 'uncommon'
+    ? scale(0, maxCount, LINEAR, UNCOMMON_TROP_GRADIENT)
+    : scale(0, maxCount, LOG, COMMON_TROP_GRADIENT);
+}
 
 /** The colours and lookup table for one trop mark, named by its URL slug. */
 function deriveTrop(mark: string | null): TropDerivation | null {
@@ -61,36 +81,21 @@ function deriveTrop(mark: string | null): TropDerivation | null {
   if (!entry) return null;
 
   const verseLookup = new Map<string, number>();
-  let maxCount = 1;
   for (const loc of entry.verses) {
-    const key = tanakhKey(loc.book, loc.chapter, loc.verse);
-    verseLookup.set(key, loc.count);
-    if (loc.count > maxCount) maxCount = loc.count;
+    verseLookup.set(tanakhKey(loc.book, loc.chapter, loc.verse), loc.count);
   }
 
-  return { verseLookup, maxCount, tier: getRarityTier(entry.totalCount) };
+  const tier = getRarityTier(entry.totalCount);
+  const noMatch: Color =
+    tier === 'rare'
+      ? RARE_NO_MATCH_COLOR
+      : tier === 'uncommon'
+        ? [0.25, 0.25, 0.28]
+        : [0.25, 0.23, 0.28];
+  return { verseLookup, counts: countScale(entry), noMatch };
 }
 
-// getVerseColor asks once per verse, 23,000 times a paint, so the derivation is
-// built once per settings value and kept. Settings are never edited in place,
-// so a value's identity is a sound key; the last one asked about is checked
-// first, because a paint asks about the same one every time.
-const derivations = new WeakMap<TropSettings, TropDerivation | null>();
-let lastDerivation: { of: TropSettings; value: TropDerivation | null } | null = null;
-
-function derivationFor(settings: TropSettings): TropDerivation | null {
-  if (lastDerivation?.of === settings) return lastDerivation.value;
-
-  let value: TropDerivation | null;
-  if (derivations.has(settings)) {
-    value = derivations.get(settings) ?? null;
-  } else {
-    value = deriveTrop(shownMark(settings));
-    derivations.set(settings, value);
-  }
-  lastDerivation = { of: settings, value };
-  return value;
-}
+const derivationFor = memoBySettings((settings: TropSettings) => deriveTrop(shownMark(settings)));
 
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
@@ -124,24 +129,9 @@ function slugify(name: string): string {
 function tropColorAt(verse: TanakhIdentity, derived: TropDerivation | null): Color | null {
   if (!derived) return null;
 
-  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-  const count = derived.verseLookup.get(key) || 0;
-
-  if (derived.tier === 'rare') {
-    // Binary: gold for a match, dim gray otherwise.
-    return count > 0 ? RARE_MATCH_COLOR : HIGHLIGHT_CONSTANTS.RARE_NO_MATCH_COLOR;
-  } else if (derived.tier === 'uncommon') {
-    if (count === 0) {
-      return [0.25, 0.25, 0.28];
-    }
-    return scaleToGradient(count, derived.maxCount, UNCOMMON_TROP_GRADIENT);
-  } else {
-    // Common trop marks span a wide count range, so scale logarithmically.
-    if (count === 0) {
-      return [0.25, 0.23, 0.28];
-    }
-    return scaleToGradient(count, derived.maxCount, COMMON_TROP_GRADIENT, { useLog: true });
-  }
+  const count = derived.verseLookup.get(tanakhKey(verse.book, verse.chapter, verse.verse)) ?? 0;
+  if (count === 0) return derived.noMatch;
+  return derived.counts ? derived.counts.colorOf(count) : RARE_MATCH_COLOR;
 }
 
 /**
@@ -208,10 +198,6 @@ function renderTropChart(
 export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   ...TROP,
 
-  destroy() {
-    lastDerivation = null;
-  },
-
   getVerseColor(verse, settings) {
     return tropColorAt(verse, derivationFor(settings));
   },
@@ -219,10 +205,6 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   colorsFor(items, settings, _hovered) {
     const derived = derivationFor(settings);
     return items.map((item) => tropColorAt(item, derived));
-  },
-
-  defaultSettings() {
-    return { mark: null, preview: null };
   },
 
   settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {
@@ -240,8 +222,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   renderLegend(container, settings) {
     const entry = entryFor(shownMark(settings));
     if (!entry) {
-      container.innerHTML =
-        '<div style="color: #666; font-size: 11px;">Select a trop mark above</div>';
+      container.innerHTML = legendCaption('Select a trop mark above');
       return;
     }
 
@@ -252,7 +233,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
     } else {
       container.innerHTML = `
         <div class="trop-gradient" style="background: ${colors[0]}"></div>
-        <div style="display: flex; justify-content: space-between; font-size: 10px; color: #888;">
+        <div class="trop-gradient-labels">
           <span>0</span>
           <span>Count</span>
           <span>Max</span>

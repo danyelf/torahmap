@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getDefaultColor,
-  getOverlayColor,
   applyHoverHighlight,
   computeItemStates,
   applyItemColors,
@@ -12,7 +11,7 @@ import type { TanakhLayout, ItemState } from '../../types';
 import { tanakhIdentitiesEqual } from '../../types';
 import type { Overlay, Color } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
-import { createVerse } from '../helpers/fixtures';
+import { createVerse, testOverlay } from '../helpers/fixtures';
 
 describe('itemColoring', () => {
   describe('getDefaultColor', () => {
@@ -60,67 +59,6 @@ describe('itemColoring', () => {
     });
   });
 
-  describe('getOverlayColor', () => {
-    it('returns null when overlay is null', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-
-      const color = getOverlayColor(null, verse, undefined);
-
-      expect(color).toBe(null);
-    });
-
-    it('returns overlay color when overlay provides color', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-
-      const mockOverlay: Overlay = {
-        id: 'test',
-        name: 'Test',
-        init: vi.fn(),
-        getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
-      };
-
-      const settings = { any: 'value' };
-      const color = getOverlayColor(mockOverlay, verse, settings);
-
-      expect(color).toEqual([1, 0, 0]);
-      expect(mockOverlay.getVerseColor).toHaveBeenCalledWith(verse, settings);
-    });
-
-    it('returns null when overlay getVerseColor returns null', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-
-      const mockOverlay: Overlay = {
-        id: 'test',
-        name: 'Test',
-        init: vi.fn(),
-        getVerseColor: vi.fn().mockReturnValue(null),
-      };
-
-      const color = getOverlayColor(mockOverlay, verse, undefined);
-
-      expect(color).toBe(null);
-    });
-
-    it('handles multi-color verses', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-
-      const multiColor: [number, number, number][] = [
-        [1, 0, 0],
-        [0, 1, 0],
-      ];
-      const mockOverlay: Overlay = {
-        id: 'test',
-        name: 'Test',
-        init: vi.fn(),
-        getVerseColor: vi.fn().mockReturnValue(multiColor),
-      };
-
-      const color = getOverlayColor(mockOverlay, verse, undefined);
-
-      expect(color).toEqual(multiColor);
-    });
-  });
-
   describe('overlayColorsFor', () => {
     it('hands colorsFor the hovered verse', () => {
       const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
@@ -133,28 +71,23 @@ describe('itemColoring', () => {
       expect(colorsFor).toHaveBeenCalledWith(verses, 'settings', verses[1]);
     });
 
-    it('asks getVerseColor for each verse when there is no colorsFor', () => {
-      const verses = [createVerse({ verse: 1 })];
-      const overlay: Overlay = {
-        id: 'test',
-        name: 'Test',
-        getVerseColor: vi.fn().mockReturnValue([0, 1, 0]),
-      };
+    it('gives no colour to any item when there is no overlay', () => {
+      const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
-      expect(overlayColorsFor(overlay, verses, undefined, null)).toEqual([[0, 1, 0]]);
+      expect(overlayColorsFor(null, verses, undefined, null)).toEqual([null, null]);
     });
   });
 
   describe('layerToRecompute', () => {
     const a = createVerse({ verse: 1 });
     const b = createVerse({ verse: 2 });
-    const hoverSensitive: Overlay = {
+    const hoverSensitive = testOverlay({
       id: 'hover',
       name: 'Hover',
       getVerseColor: () => null,
       hoverChangesColors: () => true,
-    };
-    const hoverBlind: Overlay = { id: 'plain', name: 'Plain', getVerseColor: () => null };
+    });
+    const hoverBlind = testOverlay({ id: 'plain', name: 'Plain', getVerseColor: () => null });
 
     it('re-blends mid-transition when the hovered verse changes', () => {
       expect(layerToRecompute('blend', hoverBlind, undefined, a, b, tanakhIdentitiesEqual)).toBe(
@@ -262,12 +195,12 @@ describe('itemColoring', () => {
     it('computes hasOverlayColor correctly when overlay provides color', () => {
       const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
-      const mockOverlay: Overlay = {
+      const mockOverlay = testOverlay({
         id: 'test',
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn().mockReturnValue([1, 0, 0]),
-      };
+      });
 
       const states = computeItemStates(
         verses,
@@ -284,12 +217,12 @@ describe('itemColoring', () => {
     it('computes hasOverlayColor as false when overlay returns null', () => {
       const verses: TanakhLayout[] = [createVerse({ x: 0, y: 0, size: 1 })];
 
-      const mockOverlay: Overlay = {
+      const mockOverlay = testOverlay({
         id: 'test',
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn().mockReturnValue(null),
-      };
+      });
 
       const states = computeItemStates(
         verses,
@@ -578,14 +511,14 @@ describe('itemColoring', () => {
         createVerse({ verse: 2, y: 0, size: 1 }),
       ];
 
-      const mockOverlay: Overlay = {
+      const mockOverlay = testOverlay({
         id: 'test',
         name: 'Test',
         init: vi.fn(),
         getVerseColor: vi.fn((v) => {
           return v.verse === 1 ? ([1, 0, 0] as Color) : null;
         }),
-      };
+      });
 
       const hoveredVerse = verses[1];
 

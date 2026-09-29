@@ -5,9 +5,9 @@ import {
   updateSidebar,
   type SidebarElements,
 } from '../../sidebar';
-import type { Overlay, ToolOnMap } from '../../overlays/types';
+import type { ToolOnMap } from '../../overlays/types';
 import type { VerseTexts } from '../../verseTexts';
-import { createVerse } from '../helpers';
+import { createVerse, testOverlay } from '../helpers';
 
 // Mock the overlay modules
 vi.mock('../../overlays/trop.ts', () => ({
@@ -319,12 +319,12 @@ describe('sidebar', () => {
 
     describe('overlay integration', () => {
       it('displays overlay hover info when available', () => {
-        const mockOverlay: Overlay = {
+        const mockOverlay = testOverlay({
           id: 'test',
           name: 'Test Overlay',
           getVerseColor: () => null,
           getHoverInfo: vi.fn(() => 'Test hover info'),
-        };
+        });
 
         const settings = { category: 'x' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -340,11 +340,11 @@ describe('sidebar', () => {
       });
 
       it('clears overlay info when overlay has no getHoverInfo', () => {
-        const mockOverlay: Overlay = {
+        const mockOverlay = testOverlay({
           id: 'test',
           name: 'Test Overlay',
           getVerseColor: () => null,
-        };
+        });
 
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, {
@@ -371,7 +371,7 @@ describe('sidebar', () => {
         // replacing it, so the mock does too - otherwise this test would
         // exercise the wrapWordsInFragment mismatch guard instead of the
         // highlighting path it's named for.
-        const mockOverlay: Overlay = {
+        const mockOverlay = testOverlay({
           id: 'trop',
           name: 'Trop Overlay',
           getVerseColor: () => null,
@@ -386,7 +386,7 @@ describe('sidebar', () => {
             }
             return fragment;
           }),
-        };
+        });
 
         const settings = { any: 'value' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -411,7 +411,7 @@ describe('sidebar', () => {
         const englishFragment = document.createDocumentFragment();
         englishFragment.appendChild(document.createTextNode('highlighted english'));
 
-        const mockOverlay: Overlay = {
+        const mockOverlay = testOverlay({
           id: 'search',
           name: 'Search Overlay',
           getVerseColor: () => null,
@@ -419,7 +419,7 @@ describe('sidebar', () => {
             if (language === 'he') return hebrewFragment;
             return englishFragment;
           }),
-        };
+        });
 
         const settings = { any: 'value' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -453,6 +453,7 @@ describe('sidebar', () => {
               id: 'search',
               name: 'Search',
               getVerseColor: () => null,
+              colorsFor: (items) => items.map(() => null),
               getHoverInfo: () => info,
               highlightVerseText: vi.fn((text: string) => {
                 const fragment = document.createDocumentFragment();
@@ -467,12 +468,12 @@ describe('sidebar', () => {
         }
 
         it("shows the overlay's line, then the search's", () => {
-          const overlay: Overlay = {
+          const overlay = testOverlay({
             id: 'commentary',
             name: 'Commentary',
             getVerseColor: () => null,
             getHoverInfo: () => '680 references',
-          };
+          });
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
           updateSidebar(elements, verse, {
             verseTexts,
@@ -503,17 +504,18 @@ describe('sidebar', () => {
           overlayMarks: [number, number],
           searchMarks: [number, number],
         ): string[] {
-          const overlay: Overlay = {
+          const overlay = testOverlay({
             id: 'trop',
             name: 'Trop',
             getVerseColor: () => null,
             highlightVerseText: marking('trop-highlight', ...overlayMarks),
-          };
+          });
           const search: ToolOnMap = {
             tool: {
               id: 'search',
               name: 'Search',
               getVerseColor: () => null,
+              colorsFor: (items) => items.map(() => null),
               highlightVerseText: marking('term-0', ...searchMarks),
             },
             settings: {},

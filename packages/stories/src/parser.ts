@@ -1,4 +1,11 @@
-import type { StoryData, StoryStop, EasingName, CameraRef } from './types.ts';
+import {
+  EASINGS,
+  type StoryData,
+  type StoryStop,
+  type EasingName,
+  type CameraRef,
+  type CameraPosition,
+} from './types.ts';
 import { parseVerseFromUrl, SEARCH_KEYS } from '@torahmap/link';
 
 /** The frontmatter keys a story may set. */
@@ -16,12 +23,21 @@ export function parseStoryMarkdown(markdown: string): StoryData {
   const order = Number(front.order);
   return {
     stops,
-    easing: front.easing as EasingName | undefined,
+    easing: easingNamed(front.easing),
     title: front.title ?? '',
     description: front.description ?? '',
     order: Number.isFinite(order) ? order : undefined,
     draft: front.draft === 'true',
   };
+}
+
+function easingNamed(name: string | undefined): EasingName | undefined {
+  if (name === undefined) return undefined;
+  const known: readonly string[] = EASINGS;
+  if (!known.includes(name)) {
+    throw new Error(`[story] no easing named "${name}"; use one of ${EASINGS.join(', ')}`);
+  }
+  return name as EasingName;
 }
 
 // --- Frontmatter ---
@@ -44,7 +60,20 @@ function stripFrontmatter(md: string): string {
 
 // --- Stop parsing ---
 
-const STOP_COMMENT_RE = /<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g;
+/** A stop's opening comment: its id, then its `key: value` settings, each after a `|`. */
+export const STOP_COMMENT_RE = /<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g;
+
+/** The comment that opens a stop at `camera`, to two decimals, with `params` after it. */
+export function writeStopComment(
+  id: string,
+  camera: CameraPosition,
+  params: Record<string, string>,
+): string {
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const settings = { camera: [camera.x, camera.y, camera.zoom].map(round).join(','), ...params };
+  const parts = [id, ...Object.entries(settings).map(([key, value]) => `${key}: ${value}`)];
+  return `<!-- stop: ${parts.join(' | ')} -->`;
+}
 
 interface StopMeta {
   id: string;
@@ -140,7 +169,7 @@ function parseStops(body: string): StoryStop[] {
       if (key === 'overlay') {
         overlay = value;
       } else if (key === 'easing') {
-        easing = value as EasingName;
+        easing = easingNamed(value);
       } else if (key === 'verse') {
         verse = value;
       } else if (key === 'zoom') {

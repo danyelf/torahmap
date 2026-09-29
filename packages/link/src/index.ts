@@ -5,18 +5,25 @@ export type {
   OverlayParams,
   OverlayParamSpecLookup,
 } from './params.ts';
-export { SEARCH_URL_PARAMS, SEARCH_KEYS, RESERVED_KEYS, validateOverlayParams } from './params.ts';
-
-export type { UrlState, LinkKind } from './link.ts';
 export {
+  SEARCH_URL_PARAMS,
+  SEARCH_KEYS,
+  RESERVED_KEYS,
   MIN_ZOOM,
   MAX_ZOOM,
   DEFAULT_ZOOM,
+  validateOverlayParams,
+} from './params.ts';
+
+export type { UrlState, LinkKind } from './link.ts';
+export {
   linkNamesAView,
   linkKind,
   readLink,
   writeLink,
   verseToUrlFormat,
+  bookToUrl,
+  bookFromUrl,
   verseRef,
   parseVerseFromUrl,
 } from './link.ts';

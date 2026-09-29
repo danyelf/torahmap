@@ -1,0 +1,17 @@
+.verse-length-info {
+  margin-top: 12px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.verse-length-label {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.verse-length-value {
+  font-size: 13px;
+  color: #ddd;
+}

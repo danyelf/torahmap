@@ -2,7 +2,7 @@ import type { Overlay, Color, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
-import { rgbToHsl, hslToRgb, buildLegendGradient, colorToCss } from '../utils/color.ts';
+import { rgbToHsl, hslToRgb, colorToCss, brighten } from '../utils/color.ts';
 import { escapeHtml } from '../utils/html.ts';
 import { lingeringHover } from '../utils/hover.ts';
 import {
@@ -18,9 +18,10 @@ import {
   type OccasionCategory,
 } from './haftarah/readings.ts';
 import { CONTROL } from '../panel.ts';
-import { legendCaption } from './legend.ts';
-import { HAFTARAH } from '@torahmap/overlay-catalog';
-import '../styles/overlays/haftarah.css';
+import { buildLegendGradient, legendCaption } from './legend.ts';
+import { memoBySettings } from './memo.ts';
+import { HAFTARAH, HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
+import './haftarah.css';
 
 // In the order the legend lists them.
 const CATEGORY_LABELS: Record<OccasionCategory, string> = {
@@ -34,12 +35,8 @@ const CATEGORY_LABELS: Record<OccasionCategory, string> = {
   other: 'Other',
 };
 
-function adjustBrightness(color: Color, factor: number): Color {
-  return [
-    Math.min(1, color[0] * factor),
-    Math.min(1, color[1] * factor),
-    Math.min(1, color[2] * factor),
-  ];
+function customLabel(custom: Custom): string {
+  return custom[0].toUpperCase() + custom.slice(1);
 }
 
 /**
@@ -93,19 +90,12 @@ function litByPreview(
   return lit;
 }
 
-// getVerseColor asks once per verse, so a preview's readings are found once per
-// settings value. Settings are never edited in place, so a value is a sound key.
-const previews = new WeakMap<HaftarahSettings, Set<HaftarahItem> | null>();
-
-function litByPreviewOf(settings: HaftarahSettings): Set<HaftarahItem> | null {
+const litByPreviewOf = memoBySettings((settings: HaftarahSettings): Set<HaftarahItem> | null => {
   if (settings.preview === null) return null;
-  if (!previews.has(settings)) {
-    const derived = deriveHaftarah(settings.custom);
-    const item = derived.items[settings.preview];
-    previews.set(settings, item ? litByPreview(derived, item, settings.custom) : null);
-  }
-  return previews.get(settings) ?? null;
-}
+  const derived = deriveHaftarah(settings.custom);
+  const item = derived.items[settings.preview];
+  return item ? litByPreview(derived, item, settings.custom) : null;
+});
 
 /** A preview from the key wins over the map's hover; the pointer is on one or the other. */
 function litFor(
@@ -138,7 +128,7 @@ function colorAt(
   const shown = !lit
     ? colors
     : items.some((item) => lit.has(item))
-      ? colors.map((c) => adjustBrightness(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR))
+      ? colors.map((c) => brighten(c, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR))
       : colors.map(darkTint);
   return shown.length === 1 ? shown[0] : shown;
 }
@@ -159,10 +149,14 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
  * readings. Hovering one previews it. Its colours and names are the same for
  * both customs, so it is built once.
  */
-function renderKey(container: HTMLElement, onPreview: (reading: number | null) => void): void {
+function renderKey(
+  container: HTMLElement,
+  custom: Custom,
+  onPreview: (reading: number | null) => void,
+): void {
   const data = mappings();
   if (!data?.parshiot || container.querySelector('.haftarah-key')) return;
-  const derived = deriveHaftarah('ashkenazi');
+  const derived = deriveHaftarah(custom);
   const indexOf = new Map(derived.items.map((item, i) => [item, i]));
 
   const byBook = groupBy(data.parshiot, (parsha) => parsha.torah.book);
@@ -213,11 +207,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   ],
 
   async init() {
-    try {
-      await loadReadings();
-    } catch (e) {
-      console.error('Failed to initialize haftarah overlay:', e);
-    }
+    await loadReadings();
   },
 
   hoverChangesColors(before, after, settings) {
@@ -244,23 +234,16 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     return items.map((item) => colorAt(item, derived, lit));
   },
 
-  defaultSettings(): HaftarahSettings {
-    return { custom: 'ashkenazi', preview: null };
-  },
-
   renderControls(container: HTMLElement, settings: HaftarahSettings, onChange) {
     let select = container.querySelector<HTMLSelectElement>('#custom-select');
     if (!select) {
       const wrapper = document.createElement('div');
       wrapper.className = 'haftarah-controls';
       wrapper.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-          <label for="custom-select" style="font-size: 12px; color: #aaa;">Custom:</label>
-          <select id="custom-select" class="${CONTROL.select}" style="flex: 1;">
-            <option value="ashkenazi">Ashkenazi</option>
-            <option value="sephardi">Sephardi</option>
-          </select>
-        </div>
+        <label for="custom-select">Custom:</label>
+        <select id="custom-select" class="${CONTROL.select}">
+          ${HAFTARAH_CUSTOMS.map((c) => `<option value="${c}">${customLabel(c)}</option>`).join('')}
+        </select>
       `;
       container.appendChild(wrapper);
 
@@ -272,11 +255,12 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     }
 
     select.value = settings.custom;
-    renderKey(container, (preview) => onChange((current) => ({ ...current, preview })));
+    renderKey(container, settings.custom, (preview) =>
+      onChange((current) => ({ ...current, preview })),
+    );
   },
 
   renderLegend(container: HTMLElement, settings: HaftarahSettings) {
-    const customLabel = settings.custom === 'ashkenazi' ? 'Ashkenazi' : 'Sephardi';
     // The optional chain has to reach parshiot too: a failed or malformed
     // fetch leaves data as an object without it.
     const data = mappings();
@@ -290,17 +274,14 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
 
     container.innerHTML = `
       <div class="legend-row">
-        <div style="
-          width: 20px;
-          height: 12px;
-          background: ${gradient};
-          border-radius: 2px;
-        "></div>
+        <div class="haftarah-legend-swatch" style="background: ${gradient}"></div>
         <span>${parshaCount} Torah portions and ${occasionCount} special occasions</span>
       </div>
-      ${legendCaption(`A portion and its haftarah (${customLabel}) share a colour`, { marginLeft: 28 })}
-      ${legendCaption('A verse in more than one reading is split corner to corner, one band each', { marginLeft: 28 })}
-      ${legendCaption('Hover a reading to light it and its haftarah; the rest darkens', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
+      <div class="haftarah-legend-notes">
+        ${legendCaption(`A portion and its haftarah (${customLabel(settings.custom)}) share a colour`)}
+        ${legendCaption('A verse in more than one reading is split corner to corner, one band each')}
+      </div>
+      ${legendCaption('Hover a reading to light it and its haftarah; the rest darkens')}
     `;
   },
 
@@ -340,12 +321,10 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   },
 
   settingsFromUrl(params: UrlParamValues<typeof HAFTARAH.urlParams>): HaftarahSettings {
-    return { custom: params.custom ?? 'ashkenazi', preview: null };
+    return { custom: params.custom, preview: null };
   },
 
   settingsToUrl(settings: HaftarahSettings): Record<string, string> {
-    // Ashkenazi is the default, so it stays out of the URL.
-    if (settings.custom === 'ashkenazi') return {};
     return { custom: settings.custom };
   },
 };

@@ -3,6 +3,7 @@
 import type { Bounds } from './types';
 import { lerpCamera, easingFunctions } from './scrollytelling/interpolation.ts';
 import { MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM } from '@torahmap/link';
+import { DEFAULT_EASING } from '@torahmap/stories';
 
 export interface Camera {
   x: number; // pan x position
@@ -175,7 +176,7 @@ export function animateCameraTo(
 
   const step = (now: number): void => {
     const progress = durationMs > 0 ? Math.min(1, (now - started) / durationMs) : 1;
-    Object.assign(camera, lerpCamera(from, target, easingFunctions['ease-in-out'](progress)));
+    Object.assign(camera, lerpCamera(from, target, easingFunctions[DEFAULT_EASING](progress)));
     onFrame();
     if (progress < 1) request = requestAnimationFrame(step);
   };

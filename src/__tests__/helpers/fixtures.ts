@@ -1,5 +1,7 @@
 // Test fixtures for Torah Map tests
-import type { TanakhLayout, CommentaryData } from '../../types';
+import type { TanakhLayout } from '../../types';
+import type { Overlay } from '../../overlays/types';
+import type { CommentaryData } from '../../overlays/commentary';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
@@ -115,3 +117,13 @@ export const SAMPLE_TROP_MARKS = {
   SHALSHELET: '\u0593',
   ZAQEF_QATAN: '\u0594',
 };
+
+/** A test overlay that colours each item by `getVerseColor`. */
+export function testOverlay<T = TanakhLayout, S = unknown>(
+  fields: Omit<Overlay<T, S>, 'colorsFor'>,
+): Overlay<T, S> {
+  return {
+    ...fields,
+    colorsFor: (items, settings) => items.map((item) => fields.getVerseColor(item, settings)),
+  } as Overlay<T, S>;
+}

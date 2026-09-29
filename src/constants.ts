@@ -60,9 +60,6 @@ export const HIGHLIGHT_CONSTANTS = {
 
   // Brightness multiplier for an overlay-colored item on hover
   BRIGHTNESS_FACTOR: 1.5,
-
-  // Color for rare trop marks with no matches
-  RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
 } as const;
 
 /** The grey of a verse left out. */

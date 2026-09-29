@@ -39,6 +39,9 @@ export function createMgBaseOverlay(structure: TalmudStructure): Overlay<TalmudI
       const mishnah = isSegmentMishnah(structure, id.tractate, id.daf, id.amud, id.segment);
       return jitteredColor(mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR, id);
     },
+    colorsFor(items) {
+      return items.map((item) => this.getVerseColor(item));
+    },
   };
 }
 
@@ -58,6 +61,9 @@ export function composeWithMgBase(
       const c = userOverlay.getVerseColor(id);
       if (c !== null) return c;
       return base.getVerseColor(id);
+    },
+    colorsFor(items) {
+      return items.map((item) => this.getVerseColor(item));
     },
   };
 }

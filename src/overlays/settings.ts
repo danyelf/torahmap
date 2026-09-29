@@ -1,4 +1,4 @@
-import type { Overlay } from './types.ts';
+import type { Overlay, UrlParamSpec } from './types.ts';
 import { validateOverlayParams } from '@torahmap/link';
 
 export type LinkParams = URLSearchParams | Readonly<Record<string, string | undefined>>;
@@ -24,7 +24,7 @@ export function createOverlaySettings(): OverlaySettings {
 
   const store: OverlaySettings = {
     get<T, S>(overlay: Overlay<T, S>): S {
-      if (!byId.has(overlay.id)) byId.set(overlay.id, overlay.defaultSettings?.());
+      if (!byId.has(overlay.id)) byId.set(overlay.id, settingsFromLink(overlay, {}));
       // The one assertion: only this overlay's own settings are stored under its id.
       return byId.get(overlay.id) as S;
     },
@@ -38,13 +38,25 @@ export function createOverlaySettings(): OverlaySettings {
     },
 
     toUrl(overlay) {
-      return overlay.settingsToUrl?.(store.get(overlay)) ?? {};
+      return withoutDefaults(overlay.urlParams, overlay.settingsToUrl?.(store.get(overlay)) ?? {});
     },
   };
   return store;
 }
 
-/** The settings a link's parameters name for an overlay, once validated against its urlParams. */
-export function settingsFromLink(overlay: Overlay, raw: LinkParams): unknown {
-  return overlay.settingsFromUrl?.(validateOverlayParams(overlay.urlParams, raw));
+/**
+ * The settings a link's parameters name for an overlay, once validated against
+ * its urlParams. An empty link names its defaults.
+ */
+export function settingsFromLink<T, S>(overlay: Overlay<T, S>, raw: LinkParams): S {
+  // An overlay without settings is handed undefined, as its S says.
+  return overlay.settingsFromUrl?.(validateOverlayParams(overlay.urlParams, raw)) as S;
+}
+
+function withoutDefaults(
+  specs: readonly UrlParamSpec[] | undefined,
+  params: Record<string, string>,
+): Record<string, string> {
+  const defaults = new Map(specs?.map((spec) => [spec.key, spec.default]));
+  return Object.fromEntries(Object.entries(params).filter(([key, v]) => defaults.get(key) !== v));
 }

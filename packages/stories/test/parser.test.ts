@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseStoryMarkdown } from '../src/parser';
+import { parseStoryMarkdown, writeStopComment } from '../src/parser';
 
 describe('parseStoryMarkdown', () => {
   it('parses the frontmatter easing', () => {
@@ -228,5 +228,31 @@ describe('story frontmatter', () => {
     expect(story.title).toBe('');
     expect(story.description).toBe('');
     expect(story.draft).toBe(false);
+  });
+});
+
+describe('easing', () => {
+  it('refuses a name it does not know', () => {
+    expect(() => parseStoryMarkdown('---\neasing: bouncy\n---\n')).toThrow(/bouncy/);
+    expect(() => parseStoryMarkdown('<!-- stop: a | easing: bouncy -->\nText.')).toThrow(/bouncy/);
+  });
+});
+
+describe('writeStopComment', () => {
+  it('writes a stop the parser reads back', () => {
+    const comment = writeStopComment(
+      'abraham',
+      { x: 12.345, y: -6.7, zoom: 2.5 },
+      { overlay: 'haftarah', custom: 'sephardi', search: 'אברהם', verse: 'I.Samuel.1.5' },
+    );
+    const [stop] = parseStoryMarkdown(`${comment}\nText.`).stops;
+    expect(stop).toMatchObject({
+      id: 'abraham',
+      camera: { x: 12.35, y: -6.7, zoom: 2.5 },
+      overlay: 'haftarah',
+      overlayParams: { custom: 'sephardi' },
+      searchParams: { search: 'אברהם' },
+      verse: 'I.Samuel.1.5',
+    });
   });
 });
