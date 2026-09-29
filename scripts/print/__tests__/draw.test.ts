@@ -117,6 +117,21 @@ describe('draw', () => {
     expect(draw(input()).overflows).toEqual([]);
   });
 
+  it('sets every Hebrew run right to left, apart from the English beside it', () => {
+    // Otherwise a trailing geresh, as in יום א׳, lands on the English side of the run.
+    const svg = svgOf(draw(input()));
+    const hebrew = [...svg.querySelectorAll('tspan')].filter((t) =>
+      /[֐-׿]/.test(t.textContent ?? ''),
+    );
+    expect(hebrew.length).toBeGreaterThan(0);
+    // Right-to-left isolate marks in the text: a `direction` attribute on an
+    // SVG tspan would move where the whole line is laid out.
+    for (const t of hebrew) {
+      expect(t.textContent!.startsWith('⁧')).toBe(true);
+      expect(t.textContent!.endsWith('⁩')).toBe(true);
+    }
+  });
+
   it('takes the logo from the site’s artwork, without its shadow', () => {
     const svg = svgOf(draw(input()));
     expect(svg.querySelector('.logo')!.textContent).toContain('Torahmap');

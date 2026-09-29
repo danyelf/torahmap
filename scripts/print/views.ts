@@ -232,7 +232,7 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
     en: 'Five names',
     notes: [
       'Every verse that names each of them is marked in their colour; a verse naming two is split corner to corner, one band each.',
-      'Only the names: יצחק is never “laugh” here, nor דוד “beloved”.',
+      'Only the names: where Isaac’s name is also the word “laugh”, or David’s the word “beloved”, the word is left unmarked.',
     ],
     columns: [
       {

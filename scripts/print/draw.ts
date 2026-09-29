@@ -8,6 +8,10 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
   const NS = 'http://www.w3.org/2000/svg';
   const HEBREW = 'David Libre';
   const LATIN = 'Inter';
+  // Hebrew beside English on one line, wrapped in right-to-left isolate marks
+  // so its punctuation stays with it. A `direction` attribute on an SVG tspan
+  // would move where the whole line is laid out instead.
+  const rtl = (text: string) => `⁧${text}⁩`;
   const { paper, ink, inkSoft } = input.palette;
 
   function el(
@@ -149,7 +153,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
   // The key, drawn with its top at the hairline; returns how tall it is.
   function drawKey(g: Element, key: Key): number {
     const title = el(g, 'text', { y: 56, fill: ink });
-    el(title, 'tspan', { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 23 }, key.he);
+    el(title, 'tspan', { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 23 }, rtl(key.he));
     el(
       title,
       'tspan',
@@ -172,7 +176,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
           h,
           'tspan',
           { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 12.65 },
-          column.heading.he,
+          rtl(column.heading.he),
         );
         el(
           h,
@@ -203,7 +207,12 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
           y += 15;
           el(g, 'rect', { x, y: y - 9, width: 9, height: 9, fill: row.swatch });
           const t = el(g, 'text', { x: x + 14, y, fill: ink });
-          el(t, 'tspan', { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 11.5 }, row.he);
+          el(
+            t,
+            'tspan',
+            { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 11.5 },
+            rtl(row.he),
+          );
           el(t, 'tspan', { 'font-family': LATIN, 'font-size': 10, dx: 4, fill: inkSoft }, row.en);
           if (row.note) {
             el(
@@ -268,7 +277,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       t,
       'tspan',
       { 'font-family': HEBREW, 'font-weight': 700, 'font-size': heSize },
-      b.he,
+      rtl(b.he),
     );
     const en = el(
       t,
@@ -288,7 +297,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       transform: `translate(${s.maxX * scale + 8},${s.minY * scale - 26}) rotate(90)`,
       fill: inkSoft,
     });
-    el(t, 'tspan', { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 25.3 }, s.he);
+    el(t, 'tspan', { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 25.3 }, rtl(s.he));
     el(t, 'tspan', { 'font-family': LATIN, 'font-weight': 700, 'font-size': 22, dx: 8 }, s.en);
   }
 
