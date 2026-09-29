@@ -174,12 +174,17 @@ hand. Every pull request also gets its own public `workers.dev` link, so a UI
 change can be looked at without checking the branch out —
 `scripts/prpreview.sh <pr>` serves one locally instead.
 
-Static files are served before the Worker runs. The only route it owns is
-`/api/event`, which writes one Analytics Engine data point per event
-(`src/worker/index.ts`, with the client half in `src/analytics.ts`). No cookies
-and nothing in browser storage; the dev server sends nothing. What each column
-means is in `src/telemetry/schema.ts`, and `scripts/telemetry/report.sh` prints
-every saved query — it needs a Cloudflare account id and an API token.
+The Worker owns two routes: `/api/event`, which writes one Analytics Engine
+data point per event, and the page at `/`, where it writes the title and
+preview tags a shared link asks for and records which chat app's fetcher
+asked (`src/worker/index.ts` and `src/worker/page.ts`, with the client half in
+`src/analytics.ts`). Everything else is served as a static file first. No
+cookies and nothing in browser storage; the dev server sends nothing. What
+each column means is in `src/telemetry/schema.ts`, and
+`scripts/telemetry/report.sh` prints every saved query — it needs a
+Cloudflare account id and an API token. Cloudflare Access keeps chat apps'
+fetchers off PR preview links, so a preview is checked on torahmap.org after
+merge.
 
 ## Architecture
 
