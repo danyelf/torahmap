@@ -52,7 +52,7 @@ describe('Verse Length Overlay', () => {
       'Isaiah': {
         '1': {
           '1': {
-            he: 'חֲז֧וֹן יְשַֽׁעְיָ֛הוּ בֶּן־אָמ֖וֹץ אֲשֶׁ֣ר חָזָ֑ה עַל־יְהוּדָ֖ה וִירוּשָׁלִָ֑ם בִּימֵ֨י עֻזִּיָּ֧הוּ יוֹתָ֛ם אָחָ֥ז יְחִזְקִיָּ֖הוּ מַלְכֵ֥י יְהוּדָֽה׃', // 14 words (very long)
+            he: 'חֲז֧וֹן יְשַֽׁעְיָ֛הוּ בֶּן־אָמ֖וֹץ אֲשֶׁ֣ר חָזָ֑ה עַל־יְהוּדָ֖ה וִירוּשָׁלִָ֑ם בִּימֵ֨י עֻזִּיָּ֧הוּ יוֹתָ֛ם אָחָ֥ז יְחִזְקִיָּ֖הוּ מַלְכֵ֥י יְהוּדָֽה׃', // 16 words (very long)
             en: 'The vision of Isaiah the son of Amoz...',
           },
         },
@@ -86,7 +86,7 @@ describe('Verse Length Overlay', () => {
   });
 
   describe('Word Counting Logic', () => {
-    it('counts Hebrew words correctly by splitting on whitespace', () => {
+    it('counts the words a reader can click', () => {
       const verse1 = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const info1 = verseLengthOverlay.getHoverInfo(verse1);
       expect(info1).toBe('7 words');
@@ -163,7 +163,7 @@ describe('Verse Length Overlay', () => {
       expect(container.querySelector('.legend-row')).toBeNull();
 
       const labels = Array.from(container.querySelectorAll('.tick')).map((t) => t.textContent);
-      expect(labels).toEqual(['1 words', '14 words']);
+      expect(labels).toEqual(['1 words', '16 words']);
     });
   });
 
@@ -178,12 +178,12 @@ describe('Verse Length Overlay', () => {
     });
 
     it('calculates correct maximum word count', () => {
-      // Max should be 14 (Isaiah 1:1 has 14 words)
+      // Max should be 16 (Isaiah 1:1 has 16 words)
       const container = document.createElement('div');
       verseLengthOverlay.renderLegend(container);
 
       const html = container.innerHTML;
-      expect(html).toContain('14 words'); // Maximum label
+      expect(html).toContain('16 words'); // Maximum label
     });
 
     it('excludes zero-word verses from min calculation', () => {
@@ -426,7 +426,7 @@ describe('Verse Length Overlay', () => {
 
       const html = container.innerHTML;
       expect(html).toContain('1 word'); // Min
-      expect(html).toContain('14 words'); // Max
+      expect(html).toContain('16 words'); // Max
     });
 
     it('includes explanatory text about cool colors', () => {
@@ -678,24 +678,42 @@ describe('Verse Length Overlay', () => {
       assertValidColor(color!);
     });
 
-    it('handles verse with special Unicode characters', () => {
-      const testData: VerseTexts = {
-        'TestBook': {
-          '1': {
-            '1': {
-              he: 'בְּרֵאשִׁ֖ית מַקָּף־חָבוּר', // Includes maqaf (hyphen)
-              en: '',
+    it('counts words joined by a maqaf separately', () => {
+      configure({
+        verseTexts: {
+          'Job': {
+            '7': {
+              '16': {
+                he: 'מָ֭אַסְתִּי לֹא־לְעֹלָ֣ם אֶחְיֶ֑ה חֲדַ֥ל מִ֝מֶּ֗נִּי כִּי־הֶ֥בֶל יָמָֽי׃',
+                en: '',
+              },
             },
           },
         },
-      };
-      configure({ verseTexts: testData });
+      });
+
+      const verse = createVerse({ book: 'Job', chapter: 7, verse: 16 });
+      expect(verseLengthOverlay.getHoverInfo(verse)).toBe('9 words');
+    });
+
+    it('does not count a single letter as a word', () => {
+      configure({
+        verseTexts: { 'TestBook': { '1': { '1': { he: 'בָּרָ֣א ו אֱלֹהִ֑ים', en: '' } } } },
+      });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
-      const info = verseLengthOverlay.getHoverInfo(verse);
+      expect(verseLengthOverlay.getHoverInfo(verse)).toBe('2 words');
+    });
 
-      // Maqaf connects words but is surrounded by spaces, so should count as 2 words
-      expect(info).toBe('2 words');
+    it('does not count paragraph markers as words', () => {
+      configure({
+        verseTexts: {
+          'TestBook': { '1': { '1': { he: 'בָּרָ֣א אֱלֹהִ֑ים׃ {פ}', en: '' } } },
+        },
+      });
+
+      const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
+      expect(verseLengthOverlay.getHoverInfo(verse)).toBe('2 words');
     });
 
     it('handles single book with single verse', () => {

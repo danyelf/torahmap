@@ -3,6 +3,7 @@ import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
+import { verseWords } from '../verseWords.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
@@ -23,17 +24,6 @@ let wordCountCache: Map<string, number> = new Map();
 let minWordCount = 0;
 let maxWordCount = 0;
 
-// A word must contain at least one letter, so punctuation-only tokens
-// (e.g. em dashes) don't count.
-function countHebrewWords(text: string): number {
-  if (!text) return 0;
-  const words = text
-    .trim()
-    .split(/\s+/)
-    .filter((w) => /\p{L}/u.test(w));
-  return words.length;
-}
-
 export function configure(config: { verseTexts: VerseTexts }): void {
   verseTexts = config.verseTexts;
   wordCountCache.clear();
@@ -45,8 +35,7 @@ export function configure(config: { verseTexts: VerseTexts }): void {
     for (const chapter in verseTexts[book]) {
       for (const verse in verseTexts[book][chapter]) {
         const verseText = verseTexts[book][chapter][verse];
-        const hebrewText = verseText.he;
-        const wordCount = countHebrewWords(hebrewText);
+        const wordCount = verseWords(verseText.he).length;
 
         const key = tanakhKey(book, parseInt(chapter), parseInt(verse));
         wordCountCache.set(key, wordCount);
