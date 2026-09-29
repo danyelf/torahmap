@@ -1,7 +1,7 @@
 # A Wall Print of the Map
 
 **Date:** 2026-09-29
-**Status:** Design and spec agreed; not yet built.
+**Status:** Built; see `scripts/print/`.
 
 ## The problem
 
@@ -15,7 +15,7 @@ This is a print run, not a feature of the site. A script produces the files.
 If he makes more prints later, an agent will adapt the script, so it needs to
 be readable, not general.
 
-![The haftarah print, layout agreed](images/2026-09-29-wall-print/haftarah-layout.png)
+![The haftarah print](images/2026-09-29-wall-print/haftarah-sheet.png)
 
 ## Decisions
 
@@ -143,8 +143,8 @@ names ("Passover, Intermediate Sabbath") clear the next column.
 
 ### Type and spacing
 
-In points on the trimmed sheet (2592 × 1728). The code that drew the agreed
-mockup is in `scripts/print/prototype/`, the starting point for the script.
+In points on the trimmed sheet (2592 × 1728). The script that draws it is in
+`scripts/print/`.
 
 | Element | Setting |
 | --- | --- |

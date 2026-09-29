@@ -2,5 +2,5 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": { "types": ["node", "vite/client"] },
   "include": ["."],
-  "exclude": ["prototype", "out"]
+  "exclude": ["out"]
 }

@@ -156,6 +156,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   `npm run capture` turns views of the map into `story.md` stops or script
   scenes as you explore.
   See `docs/plans/2026-09-27-video-harness-design.md`.
+- `scripts/print/` — wall prints of the map: `npm run print` writes
+  print-ready PDFs. See its README.
 
 ## Tech Stack
 
