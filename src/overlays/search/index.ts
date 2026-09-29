@@ -14,7 +14,7 @@ import {
   getMatchingVerseTerms,
   parseSearchTerms,
   resultsForVerseSets,
-  verseSetsForTerms,
+  versesForTerm,
   type SearchResult,
 } from '../../search.ts';
 import { versesFor } from '../../search/dictionary.ts';
@@ -35,10 +35,10 @@ import {
   applyModes,
   MAX_TERMS,
   type SearchTerm,
-  type TermQuery,
 } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
-import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
+import { SEARCH_RECORD_DELAY_MS } from '../../search/constants.ts';
+import { isSearchableWord } from '../../hebrew.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
 import { trackSearchExecute } from '../../analytics.ts';
@@ -72,13 +72,9 @@ interface Search {
   matchingTerms: Map<string, number[]>;
 }
 
-/**
- * The terms the search runs. Short ones are left out for the same reason
- * parseSearchTerms drops them: a single letter matches most of the corpus and
- * is almost never meant.
- */
+/** The terms the search runs: those holding a word, not a single letter. */
 function activeTerms(settings: SearchSettings): SearchTerm[] {
-  return settings.terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+  return settings.terms.filter((t) => isSearchableWord(t.text));
 }
 
 // Every function in terms.ts returns a new list, so settings are never edited in place.
@@ -156,28 +152,21 @@ export function configure(config: {
 /**
  * The verses these terms find, and nothing else: no state, no DOM, no analytics.
  *
- * Two paths, because the modes genuinely differ. In meanings mode over Hebrew each
- * term contributes the verses of the meanings the reader has left checked, so
- * the choice is what drives the result. Every other mode still matches text,
- * and search() does that as it always has.
+ * A Hebrew term in meanings mode finds the verses of the meanings the reader has
+ * left checked; every other term matches its text, in its own language.
  */
 function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
   if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
-  // Every term is matched on its own, in its own language. Matching text scans
-  // the corpus, so it is done only for the terms that need it — a Hebrew term
-  // answered from the dictionary never pays for it.
-  const textVerses = ({ text, mode }: TermQuery): Set<string> =>
-    verseSetsForTerms([text], {
-      wholeWordEnglish: mode === 'word',
-      // A Hebrew term reaches this path in meanings mode only when the
-      // dictionary has nothing for it, and meanings falls back to whole word.
-      hebrewMode: mode === 'meanings' ? 'word' : mode,
-    })[0];
-
   const queries = active.map(termQuery);
   const results = resultsForVerseSets(
-    queries.map((query) => (query.meaningKeys ? versesFor(query.meaningKeys) : textVerses(query))),
+    queries.map(({ text, language, mode, meaningKeys }) =>
+      meaningKeys
+        ? versesFor(meaningKeys)
+        : // Meanings mode matches text only when the dictionary has nothing for
+          // the term, and then it matches the whole word.
+          versesForTerm(text, language, mode === 'meanings' ? 'word' : mode),
+    ),
     queries.map((query) => query.language),
   );
 
@@ -233,13 +222,10 @@ function readerChanged(current: SearchSettings, next: SearchSettings): SearchSet
  * Adds a term rather than replacing the search: the existing words keep their
  * colours, which is what makes two words comparable on one map.
  *
- * Either way the click settles how that word is matched, and only that word. A
- * meaning can only be searched for in meanings mode — "the burnt-offering reading"
- * cannot be expressed as a substring. The written form is the opposite
- * request, for this spelling and no other, so it goes to whole word: substring
- * would match it inside longer words, and meanings would resolve a known spelling
- * to its dictionary entry and find the readings the reader just declined.
- * Neighbouring terms keep whatever they were doing.
+ * The click settles how that word is matched, and only that word: a meaning in
+ * meanings mode, and the written form as a whole word, since substring would
+ * find it inside longer words and meanings would bring back the readings the
+ * reader declined.
  *
  * The meaning arrives as every lexeme its row stands for, not as one key. The
  * reader chose from a list the verse built, and a row the verse built can be

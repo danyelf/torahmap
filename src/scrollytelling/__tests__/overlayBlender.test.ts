@@ -10,7 +10,7 @@ import type { Overlay, UrlParamValues } from '../../overlays/types';
 import { buildSearchIndex } from '../../search';
 import { SAMPLE_VERSE_TEXTS } from '../../__tests__/helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
-import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from '../../constants';
+import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
 
 // The blender memoises per verses array, so a fresh one keeps each test's
 // colours its own.
@@ -354,7 +354,7 @@ describe('pictureForStop', () => {
 });
 
 describe('a stop that searches', () => {
-  const grey = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+  const grey = DIMMED_GREY[0];
   const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
 
   beforeEach(() => {

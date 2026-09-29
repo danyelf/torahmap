@@ -1,7 +1,7 @@
 // Color computation and hover highlighting for spatial items
 
-import type { SpatialItem, ItemState } from './types';
-import type { Overlay, Color, ToolOnMap, Tools } from './overlays/types';
+import type { Color, SpatialItem, ItemState, VerseColor } from './types';
+import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
 import { brighten } from './utils/color';
@@ -11,15 +11,12 @@ import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constan
  * Default gray for a verse with no overlay color, brightness-varied by a
  * seeded random to reduce moiré.
  */
-export function getDefaultColor(verseIndex: number): [number, number, number] {
+export function getDefaultColor(verseIndex: number): Color {
   const brightness =
     HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
     seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
   return [brightness, brightness, brightness];
 }
-
-/** A verse's colour, or its stripes. */
-export type VerseColor = Color | Color[];
 
 function brightenBands(color: VerseColor, factor: number): VerseColor {
   const one = (c: Color): Color => brighten(c, factor);
@@ -91,7 +88,7 @@ export function overlayColorsFor<T, S>(
   items: SpatialItem<T>[],
   settings: S,
   hovered: SpatialItem<T> | null,
-): (Color | Color[] | null)[] {
+): (VerseColor | null)[] {
   return overlay ? overlay.colorsFor(items, settings, hovered) : items.map(() => null);
 }
 
@@ -141,7 +138,7 @@ export function layerToRecompute<T, S>(
  */
 export function computeItemStates<T>(
   items: SpatialItem<T>[],
-  overlayColors: (Color | Color[] | null)[],
+  overlayColors: (VerseColor | null)[],
   hoveredItem: SpatialItem<T> | null,
   pinnedItem: SpatialItem<T> | null,
   itemsEqual: (a: T | null, b: T | null) => boolean,
@@ -167,9 +164,7 @@ export function computeItemStates<T>(
  * Apply colors based on computed states: base color, then hover highlighting.
  * Returns an immutable color array parallel to item states.
  */
-export function applyItemColors(
-  verseStates: ItemState[],
-): ([number, number, number] | [number, number, number][])[] {
+export function applyItemColors(verseStates: ItemState[]): VerseColor[] {
   return verseStates.map((state) => {
     let finalColor = state.resolvedColor;
 

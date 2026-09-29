@@ -13,6 +13,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { openWordMenu, closeWordMenu, type WordMenuOptions } from '../../wordMenu';
 import type { Meaning } from '../../search/dictionary.ts';
+import { MAX_TERMS } from '../../search/terms.ts';
 
 const leaf: Meaning = {
   keys: ['<LH=/@heb'],
@@ -226,7 +227,7 @@ describe('when the palette is full', () => {
   it('says so instead of offering a choice that would do nothing', () => {
     open({ paletteFull: true });
 
-    expect(menuText()).toContain('Five words are already on the map');
+    expect(menuText()).toContain(`All ${MAX_TERMS} words are already on the map`);
     expect(choices()).toHaveLength(0);
   });
 

@@ -1,4 +1,4 @@
-import { fetchData } from '../constants/app.ts';
+import { fetchData } from '../constants.ts';
 
 /**
  * Fetch and parse a JSON data file under public/data/, or log why not and

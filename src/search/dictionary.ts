@@ -18,11 +18,12 @@ import {
   getLexemeVerseCount,
   getVerseLexemes,
   searchByLexemes,
+  type Lexeme,
   type LexemeId,
 } from '../search.ts';
-import { fetchData } from '../constants/app.ts';
-import { mapStrippedToOriginal, splitIntoWords } from '../hebrew.ts';
-import { splitVerseText } from '../verseWords.ts';
+import { fetchData } from '../constants.ts';
+import { isHebrew, mapStrippedToOriginal, splitIntoWords, type TextWord } from '../hebrew.ts';
+import { isSectionMarker, verseWords } from '../verseWords.ts';
 
 /**
  * One dictionary word a written form might be, as a reader sees it.
@@ -33,16 +34,9 @@ import { splitVerseText } from '../verseWords.ts';
  * language. Two identical checkboxes are worse than one, so those become a
  * single row covering every lexeme behind it.
  */
-export interface Meaning {
+export interface Meaning extends Omit<Lexeme, 'id'> {
   /** Stable across regeneration of the index: ETCBC id and language. */
   keys: string[];
-  /** Vocalized dictionary form, for display: עֹלָה */
-  form: string;
-  /** English gloss: "burnt-offering" */
-  gloss: string;
-  /** ETCBC part of speech: subs, verb, nmpr, ... */
-  pos: string;
-  language: 'heb' | 'arc';
   /** Verses this word occurs in, across every spelling of it. */
   verseCount: number;
 }
@@ -154,7 +148,7 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * Which dictionary word is this written form, in this verse?
  *
  * Given `wordIndex` — which of the verse's printed words it is, counting from
- * zero the way `splitVerseText` does — this is a lookup rather than a guess,
+ * zero the way `verseWords` does — this is a lookup rather than a guess,
  * and answers with the one word BHSA parsed there. It needs the verse to be
  * the one `setVerseOnScreen` last named, and its parse to have arrived.
  *
@@ -202,20 +196,9 @@ function rowForStem(stem: LexemeId, writtenForm: string): Meaning[] {
   return row ? [row] : rowsFor([stem]);
 }
 
-/**
- * The verses carrying any of these meanings.
- *
- * Keys that no longer resolve are ignored rather than throwing, because they
- * arrive from URLs written against an older index.
- */
+/** The verses carrying any of these meanings. */
 export function versesFor(keys: string[]): Set<string> {
-  const ids: LexemeId[] = [];
-  for (const key of keys) {
-    const id = lexemeForKey(key);
-    if (id !== null) ids.push(id);
-  }
-  if (ids.length === 0) return new Set();
-  return searchByLexemes(ids);
+  return searchByLexemes([...lexemesForKeys(keys)]);
 }
 
 /**
@@ -352,34 +335,28 @@ export function verseOnScreen(): string | null {
  * Did the parse line up with the verse on screen, so that its words are named
  * rather than guessed at?
  *
- * Here so that the test and the report can ask this function rather than write
- * their own copy of the check. Three separate attempts to reimplement it
- * disagreed with it — by 4,230 verses — which is the argument for asking it
- * directly.
+ * Exported for the tests, which ask it rather than repeat the check.
  */
 export function wordsAreNamed(): boolean {
   return onScreen?.stems != null;
 }
 
-/** BHSA carries no word for these, so they cannot be counted past. */
+/** The ketiv, which BHSA carries no word for, so it cannot be counted past. */
 const KETIV = /\([^)]*\)/g;
-const PARAGRAPH_MARK = /\{[ספ]\}/g;
-const HEBREW_LETTER = /[א-ת]/;
 
 /**
- * Blank out what BHSA has nothing for, leaving every other character where it
- * was: the scribal paragraph marks, and the ketiv — the form Sefaria prints in
- * round brackets beside the qere, the word that is actually read. Replacing
- * them with spaces rather than deleting them keeps offsets into the verse
- * text meaning what they meant.
+ * The printed words BHSA has a word for, where each starts in the verse text.
+ *
+ * Not the section markers, and not the ketiv — the form Sefaria prints in
+ * round brackets beside the qere, the word that is actually read. The ketiv is
+ * blanked rather than deleted, so offsets keep meaning what they meant.
  *
  * Same rule as `displayed_words()` in scripts/search/generate-lexeme-index.py,
  * which is what the file was aligned against.
  */
-function blankWhatBhsaOmits(hebrew: string): string {
-  return hebrew
-    .replace(PARAGRAPH_MARK, (m) => ' '.repeat(m.length))
-    .replace(KETIV, (m) => ' '.repeat(m.length));
+function wordsBhsaParsed(hebrew: string): TextWord[] {
+  const blanked = hebrew.replace(KETIV, (m) => ' '.repeat(m.length));
+  return splitIntoWords(blanked).filter(({ word }) => !isSectionMarker(word) && isHebrew(word));
 }
 
 /**
@@ -396,9 +373,7 @@ function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId> | null
   if (!parsed || misaligned.has(verseKey)) return null;
 
   const [morphemes, lengths] = parsed;
-  const words = splitIntoWords(blankWhatBhsaOmits(hebrew)).filter((w) =>
-    HEBREW_LETTER.test(w.word),
-  );
+  const words = wordsBhsaParsed(hebrew);
   if (words.length !== lengths.length) return null;
 
   const stems = new Map<number, LexemeId>();
@@ -428,8 +403,7 @@ function stemAt(verseText: string, wordStart: number): LexemeId | null {
 function stemOfWord(verseKey: string, wordIndex: number): LexemeId | null {
   if (!onScreen?.stems || onScreen.verseKey !== verseKey) return null;
 
-  const words = splitVerseText(onScreen.hebrew).filter((piece) => piece.kind === 'word');
-  const word = words[wordIndex];
+  const word = verseWords(onScreen.hebrew)[wordIndex];
   return word ? (onScreen.stems.get(word.start) ?? null) : null;
 }
 

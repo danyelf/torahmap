@@ -16,9 +16,7 @@ import {
   type Picture,
 } from './geometry';
 import { buildOutlineGeometry } from './outline';
-import { updateLabelPositions } from './labels';
-import { updateMapTitlePosition } from './mapTitle';
-import type { SpatialItem, TanakhIdentity } from './types';
+import type { Color, SpatialItem, TanakhIdentity } from './types';
 import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
 
@@ -120,6 +118,10 @@ export function rebuildGeometry<T>(
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
 
+/**
+ * Draws the map and returns the pan offset it drew at (see viewOffset), for
+ * anything placed over the map to follow.
+ */
 export function render<T>(
   context: RenderContext,
   state: RenderState<T>,
@@ -127,7 +129,7 @@ export function render<T>(
   hoveredVerse: SpatialItem<T> | null,
   pinnedVerse: SpatialItem<T> | null,
   itemsEqual: (a: T | null, b: T | null) => boolean,
-): void {
+): { x: number; y: number } {
   const { gl, programs, canvas } = context;
   const { vertexArray, verses, dpr } = state;
 
@@ -184,19 +186,14 @@ export function render<T>(
     );
   }
 
-  if (window.bookLabels) {
-    updateLabelPositions(window.bookLabels, offset, camera.zoom);
-  }
-  if (window.mapTitle) {
-    updateMapTitlePosition(window.mapTitle, offset, camera.zoom);
-  }
+  return offset;
 }
 
 export function renderOutline<T>(
   context: RenderContext,
   state: RenderState<T>,
   verse: SpatialItem<T>,
-  color: [number, number, number],
+  color: Color,
   buffer: WebGLBuffer | null,
   camera: Camera,
   thickness?: number,

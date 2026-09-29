@@ -211,6 +211,8 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
 // this package owns it because packages cannot import from src/.
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10.0;
+// The zoom the map opens at, which a link leaves out.
+export const DEFAULT_ZOOM = 1.0;
 
 const MAX_PAN_POSITION = 1000000;
 
@@ -252,7 +254,7 @@ export const TEXT_KEYS: Readonly<Record<TextKey, ViewKey<string>>> = {
 };
 
 export const NUMBER_KEYS: Readonly<Record<NumberKey, ViewKey<number>>> = {
-  zoom: number(2, (n) => n >= MIN_ZOOM && n <= MAX_ZOOM, 1),
+  zoom: number(2, (n) => n >= MIN_ZOOM && n <= MAX_ZOOM, DEFAULT_ZOOM),
   x: pan,
   y: pan,
 };

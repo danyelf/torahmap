@@ -1,11 +1,11 @@
-import type { TanakhIdentity, TextLanguage } from '../types.ts';
+import type { Color, TanakhIdentity, TextLanguage } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 
 export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '@torahmap/link';
 export type { Credit } from '../credits.ts';
 
-export type Color = [number, number, number];
+export type { Color };
 
 // A change to an overlay's settings: the next settings, worked out from the
 // current ones. Typed through a method so that its parameter is checked

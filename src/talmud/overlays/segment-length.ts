@@ -5,10 +5,8 @@
 // length is computed the same way for both.
 
 import type { Overlay } from '../../overlays/types.ts';
-import type { TalmudIdentity } from '../../types.ts';
+import type { Color, TalmudIdentity } from '../../types.ts';
 import type { TalmudStructure, TalmudTractateText } from '../data.ts';
-
-type Color = [number, number, number];
 
 const PALE: Color = [0.95, 0.95, 0.6];
 const DARK: Color = [0.6, 0.15, 0.1];

@@ -1,9 +1,9 @@
-// Where the map's data comes from, and how that is shown in the help modal's
-// Credits tab.
+// Where the map's data comes from, and how that is shown under "Sources and
+// credits" in the About & settings panel.
 //
 // Sources that belong to one feature are declared by the overlay that uses
 // them, through the optional `credits` field on Overlay. Sources the whole map
-// rests on are declared here as APP_CREDITS. The tab renders the second first
+// rests on are declared here as APP_CREDITS. The panel shows the second first
 // and then one block per overlay, so the reader sees what everything stands on
 // before what each feature adds.
 //
@@ -69,7 +69,7 @@ export const APP_CREDITS: readonly Credit[] = [
 
 /**
  * Text in `className`, linked when there is somewhere to link it. One helper so
- * that every outward link in the tab opens the same guarded way.
+ * that every outward link in the credits opens the same guarded way.
  */
 function renderLinked(className: string, text: string, url?: string): string {
   const label = escapeHtml(text);
@@ -114,10 +114,7 @@ export function renderCreditBlock(title: string, credits: readonly Credit[]): st
 }
 
 /**
- * The whole Credits tab: what the map rests on, then what each overlay adds.
- *
- * Takes the smallest shape it needs rather than Overlay, which keeps this
- * module a leaf and lets tests hand it a fabricated list.
+ * All the credits: what the map rests on, then what each overlay adds.
  */
 export function renderCreditsHtml(
   overlays: readonly { name: string; credits?: readonly Credit[] }[],

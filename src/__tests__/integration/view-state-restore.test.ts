@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { parseUrlState } from '../../urlState';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from '../../viewState';
-import { worldToScreen } from '../../camera';
+import { worldToScreen } from '../helpers/worldToScreen';
 import {
   registerAllOverlays,
   getOverlay,

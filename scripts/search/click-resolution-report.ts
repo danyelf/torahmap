@@ -47,7 +47,8 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
 const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
 const { meaningsInVerse, setVerseOnScreen } = await import('../../src/search/dictionary.ts');
-const { splitVerseText, lookupForm } = await import('../../src/verseWords.ts');
+const { verseWords, lookupForm } = await import('../../src/verseWords.ts');
+const { tanakhKey } = await import('../../src/types.ts');
 
 interface Report {
   /** Words whose reading the verse settles to exactly one dictionary word. */
@@ -69,17 +70,13 @@ function buildReport(
   for (const [book, chapters] of Object.entries(texts)) {
     for (const [chapter, verses] of Object.entries(chapters)) {
       for (const [verse, text] of Object.entries(verses)) {
-        const verseKey = `${book}:${chapter}:${verse}`;
+        const verseKey = tanakhKey(book, Number(chapter), Number(verse));
         // What displaying the verse does, which is what makes a click a
         // lookup of the word rather than a guess from its spelling.
         setVerseOnScreen(verseKey, text.he);
 
-        let wordIndex = -1;
-        for (const piece of splitVerseText(text.he)) {
-          if (piece.kind !== 'word') continue;
-          wordIndex++;
-
-          const form = lookupForm(piece.text);
+        for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
+          const form = lookupForm(word);
           const n = meaningsInVerse(form, verseKey, wordIndex).length;
           report.total++;
 

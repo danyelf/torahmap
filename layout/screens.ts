@@ -1,7 +1,7 @@
 import { devices, type PlaywrightTestProject } from '@playwright/test';
 
-// The phone layout starts at max-width 768px (src/styles/frame.css), so
-// the tablet gets the desktop layout.
+// src/styles/phone.css decides which width is a phone; the tablet here gets
+// the desktop layout.
 export const SCREENS: { name: string; use: PlaywrightTestProject['use'] }[] = [
   { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
   { name: 'laptop', use: { viewport: { width: 1280, height: 720 } } },

@@ -2,7 +2,8 @@
 // Outside it one panel is open, or none, leaving only the map; a phone's sheet
 // can be dragged to full height.
 
-const PANELS = ['search', 'overlay', 'stories', 'about'] as const;
+/** Every panel, in the order the menu offers them. */
+export const PANELS = ['search', 'overlay', 'stories', 'about'] as const;
 export type Panel = (typeof PANELS)[number];
 
 /** What each panel is called, in the column's header and at the top of the panel. */
@@ -50,7 +51,7 @@ export type FrameEvent =
 
 export const STORY: Frame = { mode: 'story', open: null, menu: false, full: false };
 
-/** How far a finger must travel to count as a drag rather than a tap. */
+/** How far a pointer must travel to count as a drag rather than a tap, on the map or the sheet. */
 export const DRAG_PX = 10;
 
 const explore = (open: Panel | null): Frame => ({

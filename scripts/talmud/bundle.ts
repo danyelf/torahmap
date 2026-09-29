@@ -17,6 +17,7 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { stripNikkud } from '../../src/hebrew.ts';
 
 // Pure helpers (unit-tested).
 
@@ -52,7 +53,7 @@ function detectMarker(seg: string): 'M' | 'G' | null {
   // (מַתְנִי׳ / גְּמָ׳). The bare wikisource source doesn't, but
   // stripping is a no-op there. Doing this once up front lets the
   // regexes stay simple.
-  const s = stripNikkud(seg);
+  const s = stripNikkudAndSeparators(seg);
 
   // Form 1: marker is wrapped in <big><strong>...</strong></big>.
   const wrapped = s.match(WRAPPED_MARKER_RE);
@@ -165,7 +166,7 @@ export function walkMarkersWithBudget(
       }
 
       if (isMishnah) {
-        const clean = stripNikkud(stripHtml(seg)).replace(/[\s\.,;:׃״׳"׳']/g, '');
+        const clean = stripNikkudAndSeparators(stripHtml(seg)).replace(/[\s\.,;:׃״׳"׳']/g, '');
         charsConsumedInRun += clean.length;
         if (!runForceFlipped && currentBudget > 0 && charsConsumedInRun > currentBudget) {
           // We've consumed more characters than the largest plausible
@@ -189,18 +190,23 @@ export function walkMarkersWithBudget(
  */
 export function perekUnitCharCounts(mishnahText: string[][]): number[][] {
   return mishnahText.map((perek) =>
-    perek.map((unit) => stripNikkud(stripHtml(unit)).replace(/[\s\.,;:׃״׳"׳']/g, '').length),
+    perek.map(
+      (unit) => stripNikkudAndSeparators(stripHtml(unit)).replace(/[\s\.,;:׃״׳"׳']/g, '').length,
+    ),
   );
 }
 
+// Maqaf, paseq, sof pasuq and nun hafukha: stripNikkud keeps them, as word
+// separators, but they are not letters to count.
+const HEBREW_SEPARATORS = /[\u05BE\u05C0\u05C3\u05C6]/g;
+
 /**
- * Strip Hebrew nikkud (combining marks) and other diacritics so that
+ * Hebrew without points, accents or its four separator marks, so that
  * char-count comparisons between Wikisource Bavli (no nikkud) and
  * standalone Mishnah (full nikkud) are apples-to-apples.
  */
-export function stripNikkud(s: string): string {
-  // Hebrew points: U+0591..U+05C7 (cantillation + nikkud + punctuation marks)
-  return s.replace(/[\u0591-\u05C7]/g, '');
+export function stripNikkudAndSeparators(s: string): string {
+  return stripNikkud(s).replace(HEBREW_SEPARATORS, '');
 }
 
 /**

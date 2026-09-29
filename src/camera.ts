@@ -2,7 +2,7 @@
 
 import type { Bounds } from './types';
 import { lerpCamera, easingFunctions } from './scrollytelling/interpolation.ts';
-import { MIN_ZOOM, MAX_ZOOM } from '@torahmap/link';
+import { MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM } from '@torahmap/link';
 import { DEFAULT_EASING } from '@torahmap/stories';
 
 export interface Camera {
@@ -21,8 +21,8 @@ export interface Viewport {
 // in from the right edge of `windowWidth`: the map's own width unless a panel
 // covers part of it.
 const RIGHT_MARGIN = 320;
-// Room for the book labels above the first row.
-const TOP_MARGIN = 40;
+// Screen pixels kept clear above the verses for the book labels.
+const LABEL_MARGIN = 40;
 
 export function createCamera(
   viewport: Viewport,
@@ -31,8 +31,8 @@ export function createCamera(
 ): Camera {
   return {
     x: bounds.width - (windowWidth - RIGHT_MARGIN - viewport.width / 2),
-    y: viewport.height / 2 - TOP_MARGIN,
-    zoom: 1.0,
+    y: viewport.height / 2 - LABEL_MARGIN,
+    zoom: DEFAULT_ZOOM,
   };
 }
 
@@ -44,17 +44,6 @@ export function clampZoom(zoom: number): number {
 export interface ScreenPoint {
   x: number;
   y: number;
-}
-
-export function worldToScreen(
-  p: { x: number; y: number },
-  camera: Camera,
-  viewport: Viewport,
-): ScreenPoint {
-  return {
-    x: (p.x - camera.x) * camera.zoom + viewport.width / 2,
-    y: (p.y - camera.y) * camera.zoom + viewport.height / 2,
-  };
 }
 
 export function screenToWorld(
@@ -120,10 +109,8 @@ export interface WorldBox {
   maxY: number;
 }
 
-// Screen pixels kept clear around a fitted box. The top is larger because the
-// book labels sit above the verses.
+// Screen pixels kept clear around a fitted box, and LABEL_MARGIN above it.
 const FIT_MARGIN = 16;
-const FIT_TOP_MARGIN = 40;
 
 /**
  * The camera that centres `box` on a `width` × `height` canvas, at the largest
@@ -134,10 +121,10 @@ export function cameraToFit(box: WorldBox, width: number, height: number, zoom?:
   const boxHeight = box.maxY - box.minY;
   const fitted = Math.min(
     (width - 2 * FIT_MARGIN) / boxWidth,
-    (height - FIT_MARGIN - FIT_TOP_MARGIN) / boxHeight,
+    (height - FIT_MARGIN - LABEL_MARGIN) / boxHeight,
   );
   const z = clampZoom(zoom ?? fitted);
-  const centreY = FIT_TOP_MARGIN + (height - FIT_MARGIN - FIT_TOP_MARGIN) / 2;
+  const centreY = LABEL_MARGIN + (height - FIT_MARGIN - LABEL_MARGIN) / 2;
   return {
     x: box.minX + boxWidth / 2,
     y: box.minY + boxHeight / 2 - (centreY - height / 2) / z,

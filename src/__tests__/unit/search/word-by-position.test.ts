@@ -19,7 +19,7 @@ import {
   wordsAreNamed,
 } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
-import { splitVerseText } from '../../../verseWords';
+import { verseWords } from '../../../verseWords';
 
 // The spellings of עלה the search box offers, from the two terms in issue #153.
 const ASCEND = ['<LH[@heb'];
@@ -51,9 +51,7 @@ const markedWords = (verseKey: string, keys: string[]): string[] => {
 
 /** Where a word sits among the verse's clickable words, which is what a click reports. */
 const wordIndexOf = (verseKey: string, word: string): number =>
-  splitVerseText(hebrewOf(verseKey))
-    .filter((piece) => piece.kind === 'word')
-    .findIndex((piece) => stripNikkud(piece.text) === word);
+  verseWords(hebrewOf(verseKey)).findIndex((w) => stripNikkud(w.word) === word);
 
 beforeAll(async () => {
   texts = await (await fetch('/data/all-texts.json')).json();

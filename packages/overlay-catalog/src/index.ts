@@ -73,3 +73,6 @@ export const overlayParamSpecs: OverlayParamSpecLookup = (id) => BY_ID.get(id)?.
 
 /** An overlay's display name, by id; undefined for an unknown id. */
 export const overlayName = (id: string): string | undefined => BY_ID.get(id)?.name;
+
+/** The overlay id that stands for none: the picker's first option, and what telemetry records. */
+export const NO_OVERLAY = 'none';

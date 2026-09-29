@@ -11,6 +11,7 @@ export {
   RESERVED_KEYS,
   MIN_ZOOM,
   MAX_ZOOM,
+  DEFAULT_ZOOM,
   validateOverlayParams,
 } from './params.ts';
 

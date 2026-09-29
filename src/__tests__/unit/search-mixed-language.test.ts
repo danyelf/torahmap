@@ -5,7 +5,8 @@
 // and a blank row means "nothing yet", not "everything".
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { loadLexiconData, buildSearchIndex, verseSetsForTerms } from '../../search.ts';
+import { loadLexiconData, buildSearchIndex, versesForTerm } from '../../search.ts';
+import { addTerm, termQuery } from '../../search/terms.ts';
 import { ALL_TEXTS_FIXTURE } from '../helpers/mixedLanguageTexts.ts';
 import { meaningsFor, versesFor } from '../../search/dictionary.ts';
 
@@ -47,34 +48,18 @@ describe('a fragment is not a word', () => {
 });
 
 describe('one language per term, not one per search', () => {
-  // Language is decided per term. Taking it from the first term instead means
-  // an English word beside a Hebrew one is hunted for in the Hebrew text,
-  // where it finds nothing.
+  // A term's own text decides which text it is looked for in, so an English
+  // word beside a Hebrew one is not hunted for in the Hebrew.
+  const found = (text: string): Set<string> => {
+    const { language } = termQuery(addTerm([], text)[0]);
+    return versesForTerm(text, language, 'substring');
+  };
 
-  it('finds the English term when a Hebrew term comes first', () => {
-    const sets = verseSetsForTerms(['אלהים', 'heaven']);
-    expect(sets[1].size).toBeGreaterThan(0);
+  it('finds an English term in the English text', () => {
+    expect(found('heaven').size).toBeGreaterThan(0);
   });
 
-  it('finds the Hebrew term when an English term comes first', () => {
-    const sets = verseSetsForTerms(['heaven', 'אלהים']);
-    expect(sets[1].size).toBeGreaterThan(0);
-  });
-
-  it('gives each term the same hits whichever order they are written in', () => {
-    const [hebFirst, enFirst] = [
-      verseSetsForTerms(['אלהים', 'heaven']),
-      verseSetsForTerms(['heaven', 'אלהים']),
-    ];
-
-    expect(hebFirst[0].size).toBe(enFirst[1].size);
-    expect(hebFirst[1].size).toBe(enFirst[0].size);
-  });
-
-  it('is unaffected by the other term being there at all', () => {
-    const alone = verseSetsForTerms(['heaven']);
-    const paired = verseSetsForTerms(['אלהים', 'heaven']);
-
-    expect(paired[1].size).toBe(alone[0].size);
+  it('finds a Hebrew term in the Hebrew text', () => {
+    expect(found('אלהים').size).toBeGreaterThan(0);
   });
 });

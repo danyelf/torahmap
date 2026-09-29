@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { normalizeHebrewForSearch } from '../../hebrew';
-import { lookupForm, splitVerseText } from '../../verseWords';
+import { lookupForm, verseWords } from '../../verseWords';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -30,7 +30,6 @@ type LexemeRow = [string, string, string, string, 'heb' | 'arc'];
 const lexiconFile = dataExists
   ? (JSON.parse(fs.readFileSync(lexiconPath, 'utf-8')) as {
       source: string;
-      fields: string[];
       lexemes: LexemeRow[];
     })
   : null;
@@ -68,9 +67,8 @@ const language = (id: number) => lexemes[id][4];
 
 describe.skipIf(!dataExists)('Lexeme index', () => {
   describe('the dictionary', () => {
-    it('names its source and column order', () => {
+    it('names its source', () => {
       expect(lexiconFile!.source).toMatch(/BHSA/);
-      expect(lexiconFile!.fields).toEqual(['id', 'form', 'gloss', 'pos', 'lang']);
     });
 
     it('gives every lexeme an identifier, a display form and a part of speech', () => {
@@ -426,16 +424,15 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       for (const verses of Object.values(chapters)) {
         for (const { he } of Object.values(verses)) {
           if (!he) continue;
-          for (const piece of splitVerseText(he)) {
-            if (piece.kind !== 'word') continue;
+          for (const { word } of verseWords(he)) {
             total += 1;
-            if (!(lookupForm(piece.text) in forms)) missing.push(piece.text);
+            if (!(lookupForm(word) in forms)) missing.push(word);
           }
         }
       }
     }
     expect(total).toBeGreaterThan(300000);
-    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(808);
+    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(794);
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {

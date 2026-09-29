@@ -78,7 +78,7 @@ const BOOKS = [
 ];
 
 // Strip HTML tags and footnotes from text
-function cleanText(text: string): string {
+export function cleanText(text: string): string {
   return text
     .replace(/<sup[^>]*>[\s\S]*?<\/sup>/g, '') // Remove footnote markers
     .replace(/<i>([^<]*)<\/i>/g, '$1') // Flatten nested <i> tags (keep content)
@@ -161,4 +161,5 @@ function main() {
   console.log(`Done! ${BOOKS.length} books, ${totalVerses} verses, ${sizeMB} MB`);
 }
 
-main();
+// Imported by its tests for cleanText, when it must do nothing.
+if (process.argv[1] === fileURLToPath(import.meta.url)) main();

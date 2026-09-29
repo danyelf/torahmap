@@ -19,7 +19,7 @@ let urlWritesSuspended = 0;
  * It blocks writes made synchronously inside `apply` and nothing else: a
  * control that calls onChange while being drawn would otherwise have
  * changeSettings write the URL midway through a restore or a story stop.
- * Deferred work, such as debouncedSaveUrlState or a scroll frame, runs after
+ * Deferred work, such as a debounced URL write or a scroll frame, runs after
  * this returns and is not covered.
  */
 export function applyingExternalState<T>(apply: () => T): T {

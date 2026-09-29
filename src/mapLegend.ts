@@ -1,9 +1,10 @@
 // The legend on the map: a row for each tool that is on, each opening its panel.
 import { summaryHtml } from './panelSummary.ts';
 import type { OverlaySummary } from './overlays/types.ts';
+import type { FrontTool } from './frame.ts';
 
 export interface LegendRow {
-  panel: 'search' | 'overlay';
+  panel: FrontTool;
   name: string;
   summary: OverlaySummary;
 }

@@ -1,6 +1,7 @@
 // Build outline geometry for verse highlighting
 
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
+import { SQUARE_GAP } from './geometry.ts';
 
 export interface OutlineBounds {
   x: number;
@@ -21,8 +22,8 @@ export function buildOutlineGeometry(
   // so the outline doesn't cover the verse itself
   const x0 = bounds.x - thickness;
   const y0 = bounds.y - thickness;
-  const x1 = bounds.x + bounds.size - 2 + thickness; // -2 for gap, +thickness for outer edge
-  const y1 = bounds.y + bounds.size - 2 + thickness;
+  const x1 = bounds.x + bounds.size - SQUARE_GAP + thickness;
+  const y1 = bounds.y + bounds.size - SQUARE_GAP + thickness;
 
   let offset = 0;
 

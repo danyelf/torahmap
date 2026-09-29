@@ -7,10 +7,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   buildSearchIndex,
-  search,
   findLexemesForWord,
   getLexeme,
-  getLexemeForm,
   loadLexiconData,
   computeSnippetForMatch,
 } from '../../search';
@@ -109,7 +107,7 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
 
     it('reports a vocalized dictionary form for display', () => {
       const [first] = findLexemesForWord('ברא')!;
-      expect(getLexemeForm(first)).toBe('ברא');
+      expect(getLexeme(first)!.form).toBe('ברא');
       expect(getLexeme(first)!.gloss).toBe('create');
     });
   });
@@ -156,7 +154,7 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
         (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
       );
       expect(result).toBeDefined();
-      const snippet = computeSnippetForMatch(result, 0, 'עלה')!;
+      const snippet = computeSnippetForMatch(result, 'עלה')!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלה');
     });

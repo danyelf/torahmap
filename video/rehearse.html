@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rehearse</title>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        background: #111;
+        color: #eee;
+        font:
+          16px system-ui,
+          sans-serif;
+      }
+      #stage {
+        flex: 2;
+        position: relative;
+        overflow: hidden;
+      }
+      #app {
+        border: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform-origin: 0 0;
+      }
+      #prompter {
+        flex: 1;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow: auto;
+      }
+      #now {
+        font-size: 28px;
+        line-height: 1.4;
+      }
+      #next {
+        color: #888;
+      }
+      #capture-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      #shot-name {
+        flex: 1;
+        min-width: 12em;
+      }
+      #captured {
+        flex: 1;
+        min-height: 12em;
+        background: #1a1a1a;
+        color: #eee;
+        border: 1px solid #333;
+        font:
+          12px ui-monospace,
+          monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage"><iframe id="app" src="/"></iframe></div>
+    <div id="prompter">
+      <div id="status">Space: start · R: restart</div>
+      <div id="now"></div>
+      <div id="next"></div>
+      <div><button id="copy-times">Copy timings</button></div>
+      <div id="capture-controls">
+        <input id="shot-name" placeholder="name (blank: shot1, shot2…)" />
+        <select id="format">
+          <option value="stop">story.md stop</option>
+          <option value="scene">script scene</option>
+        </select>
+        <button id="capture">Capture (C)</button>
+        <button id="copy-all">Copy all</button>
+      </div>
+      <textarea id="captured" spellcheck="false" wrap="off"></textarea>
+    </div>
+    <script type="module" src="./rehearse.ts"></script>
+  </body>
+</html>
