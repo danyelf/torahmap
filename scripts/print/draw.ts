@@ -6,8 +6,8 @@ import type { DrawResult, Key, ProofInput, SheetInput } from './types.ts';
 
 export function draw(input: SheetInput | ProofInput): DrawResult {
   const NS = 'http://www.w3.org/2000/svg';
-  const HEBREW = 'David Libre';
-  const LATIN = 'Inter';
+  const HEBREW = input.fonts.hebrew;
+  const LATIN = input.fonts.latin;
   // Hebrew beside English on one line, wrapped in right-to-left isolate marks
   // so its punctuation stays with it. A `direction` attribute on an SVG tspan
   // would move where the whole line is laid out instead.

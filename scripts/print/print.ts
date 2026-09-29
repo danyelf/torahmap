@@ -33,12 +33,21 @@ async function openPage(): Promise<Page> {
   await page.setContent(`<!doctype html><html><head><meta charset="utf-8">
     ${FONT_HEAD}<style>@page { margin: 0 } body { margin: 0 }</style>
     </head><body></body></html>`);
-  const checks = await page.evaluate(async (faces) => {
-    await Promise.all(faces.map((f) => document.fonts.load(f, 'אבג abc')));
-    return faces.map((f) => document.fonts.check(f, 'אבג abc'));
+  const loaded = await page.evaluate(async (faces) => {
+    await Promise.all(
+      faces.map((f) => document.fonts.load(`${f.weight} 20px "${f.family}"`, 'אבג abc')),
+    );
+    return [...document.fonts].map((f) => ({
+      family: f.family,
+      weight: f.weight,
+      status: f.status,
+    }));
   }, FACES);
-  const missing = unloadedFaces(FACES, (f) => checks[FACES.indexOf(f)]);
-  if (missing.length) throw new Error(`These fonts did not load: ${missing.join(', ')}`);
+  const missing = unloadedFaces(FACES, loaded);
+  if (missing.length) {
+    const names = missing.map((f) => `${f.family} ${f.weight}`).join(', ');
+    throw new Error(`These fonts did not load: ${names}`);
+  }
   return page;
 }
 

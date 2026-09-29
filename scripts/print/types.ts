@@ -54,6 +54,12 @@ export interface Key {
   scale?: number;
 }
 
+/** Font families, as fonts.ts loads and checks them. */
+export interface Fonts {
+  hebrew: string;
+  latin: string;
+}
+
 export interface Palette {
   paper: string;
   ink: string;
@@ -63,6 +69,7 @@ export interface Palette {
 export interface SheetInput {
   kind: 'sheet';
   palette: Palette;
+  fonts: Fonts;
   verses: PrintVerse[];
   books: BookTitle[];
   sections: SectionTitle[];
@@ -92,6 +99,7 @@ export interface ProofPatch {
 export interface ProofInput {
   kind: 'proof';
   palette: Palette;
+  fonts: Fonts;
   /** Points per map unit, as on the finished sheets. */
   scale: number;
   patches: ProofPatch[];

@@ -26,6 +26,7 @@ import {
   readingColours,
   walnut,
 } from './colour.ts';
+import { HEBREW, LATIN } from './fonts.ts';
 import { printLayout } from './layout.ts';
 import type {
   BookTitle,
@@ -38,6 +39,7 @@ import type {
 } from './types.ts';
 
 const PALETTE = { paper: PAPER, ink: INK, inkSoft: INK_SOFT };
+const FONTS = { hebrew: HEBREW, latin: LATIN };
 
 const SECTION_NAMES = {
   torah: { he: 'תורה', en: 'Five Books' },
@@ -99,6 +101,7 @@ function sheet(
   return {
     kind: 'sheet',
     palette: PALETTE,
+    fonts: FONTS,
     verses: layout.map((v, i) => ({
       x: v.x,
       y: v.y,
@@ -263,6 +266,7 @@ export function proofInput(haftarah: SheetInput, search: SheetInput, scale: numb
   return {
     kind: 'proof',
     palette: PALETTE,
+    fonts: FONTS,
     scale,
     patches: [
       { title: 'Haftarah · Isaiah 40–60', verses: haftarah.verses, centre: { x: 1400, y: 880 } },

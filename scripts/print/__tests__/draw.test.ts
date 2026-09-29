@@ -11,6 +11,7 @@ function input(over: Partial<SheetInput> = {}): SheetInput {
   return {
     kind: 'sheet',
     palette: { paper: '#f3ecdc', ink: '#3a2e24', inkSoft: '#7a6a58' },
+    fonts: { hebrew: 'Test Hebrew', latin: 'Test Latin' },
     verses: [
       { x: 0, y: 0, side: 4, fills: ['#111111'] },
       { x: 6, y: 0, side: 4, fills: ['#aa0000', '#00aa00'] },
@@ -168,8 +169,16 @@ describe('draw', () => {
     const tagline = [...svg.querySelectorAll('.logo text')].find(
       (t) => t.textContent === 'tagline',
     )!;
-    expect(tagline.getAttribute('font-family')).toBe('Inter');
+    expect(tagline.getAttribute('font-family')).toBe('Test Latin');
     expect(tagline.getAttribute('font-weight')).toBe('600');
+  });
+
+  it('sets text only in the faces its input names', () => {
+    const svg = svgOf(draw(input()));
+    const families = new Set(
+      [...svg.querySelectorAll('[font-family]')].map((e) => e.getAttribute('font-family')),
+    );
+    expect([...families].sort()).toEqual(['Test Hebrew', 'Test Latin']);
   });
 
   it('takes the logo from the site’s artwork, without its shadow', () => {
@@ -183,6 +192,7 @@ describe('draw, proof', () => {
   const proof: ProofInput = {
     kind: 'proof',
     palette: { paper: '#f3ecdc', ink: '#3a2e24', inkSoft: '#7a6a58' },
+    fonts: { hebrew: 'Test Hebrew', latin: 'Test Latin' },
     scale: 0.7,
     patches: [
       {
