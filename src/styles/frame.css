@@ -144,9 +144,10 @@ body[data-mode='explore'] #tools {
   color: #fff;
 }
 
-/* The story's title is written twice over the bar, light for the track and
-   dark for the fill; the dark copy is clipped to the fill, so every letter
-   reads on whichever part it sits. main.ts sets --progress. */
+/* The story's title is written twice over the bar: light for the track, and a
+   dark copy, clipped to the fill, drawn from data-title. The empty alt text
+   after the slash keeps a screen reader from hearing the title twice. main.ts
+   sets --progress. The phone hides the bar and its title. */
 #story-progress {
   position: relative;
   flex: 1 1 auto;
@@ -164,7 +165,8 @@ body[data-mode='explore'] #tools {
   background: var(--accent);
 }
 
-.story-progress-title {
+#story-progress-title,
+#story-progress-title::after {
   position: absolute;
   inset: 0;
   padding: 0 8px;
@@ -177,7 +179,8 @@ body[data-mode='explore'] #tools {
   text-overflow: ellipsis;
 }
 
-.story-progress-title.on-fill {
+#story-progress-title::after {
+  content: attr(data-title) / '';
   color: #0d1b2a;
   clip-path: inset(0 calc(100% - var(--progress, 0%)) 0 0);
 }

@@ -514,7 +514,7 @@ async function main(): Promise<void> {
   const droppedMenu = document.getElementById('menu')!;
   const shareStatus = document.getElementById('share-status')!;
   const storyProgress = document.getElementById('story-progress')!;
-  const storyProgressTitles = storyProgress.querySelectorAll('.story-progress-title');
+  const storyProgressTitle = document.getElementById('story-progress-title')!;
   const toolsTitle = document.getElementById('tools-title')!;
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
@@ -1279,7 +1279,8 @@ async function main(): Promise<void> {
   /** Puts `next` in the story column, with no stop yet applied to the map. */
   function loadStory(next: Story): void {
     story = next;
-    for (const title of storyProgressTitles) title.textContent = story.data.title;
+    storyProgressTitle.textContent = story.data.title;
+    storyProgressTitle.dataset.title = story.data.title;
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, story.data.stops);
     lastSyncedStopId = null;
