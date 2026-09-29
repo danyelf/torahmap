@@ -6,14 +6,15 @@ export type Color = [number, number, number];
 /** A verse's colour, or its stripes. */
 export type VerseColor = Color | Color[];
 
+export const HEBREW = 'he';
+export const ENGLISH = 'en';
+
 /**
  * Which of a verse's two texts is in hand: the Hebrew or the English.
  *
  * It decides how text is folded for matching and where a word ends, so it
  * travels with the text rather than being guessed from it.
  */
-export const HEBREW = 'he';
-export const ENGLISH = 'en';
 export type TextLanguage = typeof HEBREW | typeof ENGLISH;
 
 export interface Book {
