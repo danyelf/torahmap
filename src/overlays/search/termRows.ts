@@ -5,8 +5,8 @@
 // reader is working in, but they hold none of it. Everything comes through the host
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
-import { isHebrewQuery } from '../../search.ts';
-import { stripNikkud } from '../../hebrew.ts';
+import { isHebrew, stripNikkud } from '../../hebrew.ts';
+import type { LexemeLanguage } from '../../search.ts';
 import {
   removeTerm,
   setTermText,
@@ -115,7 +115,7 @@ const POS_LABELS: Record<string, string> = {
  * isn't Hebrew — otherwise-identical Hebrew and Aramaic readings would look
  * like duplicates (see the dictionary seam in search/dictionary.ts).
  */
-function meaningTag(pos: string, language: 'heb' | 'arc'): string {
+function meaningTag(pos: string, language: LexemeLanguage): string {
   const posLabel = POS_LABELS[pos] ?? pos;
   return language === 'arc' ? `(aram., ${posLabel})` : `(${posLabel})`;
 }
@@ -443,7 +443,7 @@ function updateOpenRow(row: HTMLElement, term: SearchTerm, index: number): void 
   const input = row.querySelector<HTMLInputElement>('.term-input')!;
   // Safe to assign unconditionally: a term holds exactly what its box holds.
   if (input.value !== term.text) input.value = term.text;
-  input.dir = input.value && isHebrewQuery(input.value) ? 'rtl' : 'ltr';
+  input.dir = input.value && isHebrew(input.value) ? 'rtl' : 'ltr';
   input.placeholder = index === 0 ? 'Search Hebrew or English…' : 'another word';
 
   const swatch = row.querySelector<HTMLElement>('.term-swatch')!;
@@ -482,7 +482,7 @@ function onTermInput(id: string, input: HTMLInputElement): void {
 /** Hebrew arrives from a system keyboard or from a paste; drop its nikkud. */
 function onTermPaste(e: ClipboardEvent, input: HTMLInputElement): void {
   const text = e.clipboardData?.getData('text/plain');
-  if (!text || !isHebrewQuery(text)) return;
+  if (!text || !isHebrew(text)) return;
 
   e.preventDefault();
   const stripped = stripNikkud(text);

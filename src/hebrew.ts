@@ -2,10 +2,8 @@
 // accents, which ones separate one word from the next, and how a written form
 // is folded to the spelling the search index and the dictionary are keyed on.
 //
-// Everything that reads Hebrew reads it through here. Search, the clickable
-// words in a verse and the highlighter in the results panel all have to agree
-// about where a word ends; when they each had their own answer, a word could
-// be found and then not highlighted.
+// Everything that reads Hebrew reads it through here, so that search, the
+// clickable words in a verse and the highlighter agree about where a word ends.
 
 // Points and accents share a Unicode range with four characters that are not
 // decoration at all.
@@ -59,11 +57,6 @@ const FINAL_FORM_MAP: Record<string, string> = {
  * Mapping a position back to the text it came from counts exactly what this
  * dropped. The two disagreeing does not fail loudly: it shifts every highlight
  * after the disagreement along by one character, which looks plausible.
- *
- * Exported although only this module calls it. It is the one answer to what
- * counts as a point, and the three bugs that came of two rules drifting apart
- * all began with somewhere else writing its own. Anywhere that needs this test
- * should import it rather than spell it out again.
  */
 export function isNikkud(code: number): boolean {
   if (code === GRAPHEME_JOINER) return true;
@@ -80,6 +73,24 @@ export function isNikkud(code: number): boolean {
  */
 export function isTropMark(code: number): boolean {
   return code >= TROP_START && code <= TROP_END;
+}
+
+const HEBREW_LETTER = /[\u05D0-\u05EA]/;
+
+/** Does this text hold a Hebrew letter? */
+export function isHebrew(text: string): boolean {
+  return HEBREW_LETTER.test(text);
+}
+
+// Letters and digits of any script. Points, accents and punctuation are not.
+const LETTER = /[\p{L}\p{N}]/gu;
+
+/**
+ * Is this a word search deals in? A single letter is not: it is never
+ * searched, returned or clickable.
+ */
+export function isSearchableWord(text: string): boolean {
+  return (text.match(LETTER)?.length ?? 0) >= 2;
 }
 
 /** Whitespace, hyphen, or one of the four Hebrew characters that break words. */
@@ -150,17 +161,4 @@ export function mapStrippedToOriginal(original: string, strippedPos: number): nu
     if (!isNikkud(original.charCodeAt(i))) stripped++;
   }
   return original.length;
-}
-
-/** How many points and accents sit within the next `strippedLen` letters. */
-export function countNikkudInRange(text: string, start: number, strippedLen: number): number {
-  if (start < 0 || start >= text.length || strippedLen < 0) return 0;
-
-  let nikkud = 0;
-  let letters = 0;
-  for (let i = start; i < text.length && letters < strippedLen; i++) {
-    if (isNikkud(text.charCodeAt(i))) nikkud++;
-    else letters++;
-  }
-  return nikkud;
 }

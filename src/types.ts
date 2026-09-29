@@ -6,13 +6,16 @@ export type Color = [number, number, number];
 /** A verse's colour, or its stripes. */
 export type VerseColor = Color | Color[];
 
+export const HEBREW = 'he';
+export const ENGLISH = 'en';
+
 /**
  * Which of a verse's two texts is in hand: the Hebrew or the English.
  *
  * It decides how text is folded for matching and where a word ends, so it
  * travels with the text rather than being guessed from it.
  */
-export type TextLanguage = 'he' | 'en';
+export type TextLanguage = typeof HEBREW | typeof ENGLISH;
 
 export interface Book {
   name: string;
@@ -137,10 +140,13 @@ interface TropVerseLocation {
   count: number; // How many times this trop appears in this verse
 }
 
-export interface TropIndexEntry {
-  unicode: string;
-  name: string;
-  hebrewName: string;
+export interface TropMark {
+  unicode: string; // The Unicode character
+  name: string; // English name
+  hebrewName: string; // Hebrew name
+}
+
+export interface TropIndexEntry extends TropMark {
   totalCount: number;
   verses: TropVerseLocation[];
 }

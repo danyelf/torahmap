@@ -5,7 +5,7 @@
 // is doing, not the search itself (see search-performance.test.ts, which hit
 // this directly). A slow search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { search, buildSearchIndex } from '../../search';
+import { buildSearchIndex, versesForTerm } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
@@ -13,7 +13,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
   beforeAll(() => {
     buildSearchIndex(buildLargeVerseTexts(5000));
     // Warmup: JIT-compile the search path before measuring
-    search('אלהים', false, 'substring');
+    versesForTerm('אלהים', 'he', 'substring');
   });
 
   // Helper to measure execution time
@@ -59,12 +59,12 @@ describe('Hebrew Search Performance Diagnostics', () => {
       const term = 'אלהים';
 
       const { result } = measureTime(() => {
-        return search(term, false, 'substring');
+        return versesForTerm(term, 'he', 'substring');
       }, 'search("אלהים", substring mode)');
 
-      console.log(`  Found ${result.length} results`);
+      console.log(`  Found ${result.size} results`);
 
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.size).toBeGreaterThan(0);
     });
   });
 
@@ -73,12 +73,12 @@ describe('Hebrew Search Performance Diagnostics', () => {
       const term = 'אלהים';
 
       const { result } = measureTime(() => {
-        return search(term, false, 'word');
+        return versesForTerm(term, 'he', 'word');
       }, 'search("אלהים", word mode)');
 
-      console.log(`  Found ${result.length} results`);
+      console.log(`  Found ${result.size} results`);
 
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.size).toBeGreaterThan(0);
     });
   });
 
@@ -86,22 +86,22 @@ describe('Hebrew Search Performance Diagnostics', () => {
     it('compares all three modes for the same term', () => {
       const term = 'אלהים';
 
-      const substring = measureTime(() => search(term, false, 'substring'), 'Substring');
-      const word = measureTime(() => search(term, false, 'word'), 'Word');
+      const substring = measureTime(() => versesForTerm(term, 'he', 'substring'), 'Substring');
+      const word = measureTime(() => versesForTerm(term, 'he', 'word'), 'Word');
       const meanings = measureTime(() => searchInMeaningsMode(term), 'Meanings');
 
       console.log('\nMode comparison:');
       console.log(
-        `  Substring: ${substring.timeMs.toFixed(2)}ms (${substring.result.length} results)`,
+        `  Substring: ${substring.timeMs.toFixed(2)}ms (${substring.result.size} results)`,
       );
-      console.log(`  Word:      ${word.timeMs.toFixed(2)}ms (${word.result.length} results)`);
+      console.log(`  Word:      ${word.timeMs.toFixed(2)}ms (${word.result.size} results)`);
       console.log(
         `  Meanings: ${meanings.timeMs.toFixed(2)}ms (${meanings.result.length} results)`,
       );
 
       // All modes should return results
-      expect(substring.result.length).toBeGreaterThan(0);
-      expect(word.result.length).toBeGreaterThan(0);
+      expect(substring.result.size).toBeGreaterThan(0);
+      expect(word.result.size).toBeGreaterThan(0);
       expect(meanings.result.length).toBeGreaterThan(0);
     });
   });

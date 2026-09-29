@@ -6,7 +6,7 @@ import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
 const searchOverlay = hostOverlay(overlay);
-import { buildSearchIndex, search } from '../../search';
+import { buildSearchIndex, versesForTerm } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -31,16 +31,15 @@ describe('the search and the highlighter agree', () => {
   });
 
   it('on a term typed with a plain letter where the verse has a final form', () => {
-    // הארצ as typed; the verse writes הארץ. Folding makes them one spelling,
-    // and for a while only the search side folded.
-    expect(search('הארצ', false, 'word')).toHaveLength(1);
+    // הארצ as typed; the verse writes הארץ. Folding makes them one spelling.
+    expect(versesForTerm('הארצ', 'he', 'word').size).toBe(1);
 
     searchOverlay.restore({ search: 'הארצ', mode: 'word' });
     expect(marked(GENESIS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['הארץ']);
   });
 
   it('on the last word of a verse, which carries the sof pasuq', () => {
-    expect(search('הארץ', false, 'word')).toHaveLength(1);
+    expect(versesForTerm('הארץ', 'he', 'word').size).toBe(1);
 
     searchOverlay.restore({ search: 'הארץ', mode: 'word' });
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);

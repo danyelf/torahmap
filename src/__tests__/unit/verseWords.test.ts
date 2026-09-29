@@ -1,18 +1,15 @@
 // Splitting a verse into the words a reader can click.
 //
-// Word boundaries here must match the ones normalizeHebrewForSearch() uses,
-// because the dictionary index was built on that rule. If the two drift, a
-// click looks up a word the reader did not click.
+// Word boundaries here are the ones normalizeHebrewForSearch() uses, because
+// the dictionary index was built on that rule. If the two drift, a click looks
+// up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { splitVerseText, lookupForm } from '../../verseWords';
+import { verseWords, lookupForm } from '../../verseWords';
 
-const words = (text: string) =>
-  splitVerseText(text)
-    .filter((p) => p.kind === 'word')
-    .map((p) => p.text);
+const words = (text: string) => verseWords(text).map((w) => w.word);
 
-describe('splitting a verse', () => {
+describe('the words of a verse', () => {
   it('splits on spaces', () => {
     expect(words('בראשית ברא אלהים')).toEqual(['בראשית', 'ברא', 'אלהים']);
   });
@@ -27,31 +24,27 @@ describe('splitting a verse', () => {
     expect(words('בְּרֵאשִׁ֖ית')).toEqual(['בְּרֵאשִׁ֖ית']);
   });
 
-  it('marks {פ} and {ס} as markers rather than words', () => {
-    const pieces = splitVerseText('אֶחָֽד׃ {פ}');
+  it('leaves out {פ} and {ס}', () => {
+    expect(words('אֶחָֽד׃ {פ} שנים {ס}')).toEqual(['אֶחָֽד', 'שנים']);
+  });
 
-    expect(pieces.filter((p) => p.kind === 'word').map((p) => p.text)).toEqual(['אֶחָֽד']);
-    expect(pieces.filter((p) => p.kind === 'marker').map((p) => p.text)).toEqual(['{פ}']);
+  it('leaves out a single letter, and a piece with no letter at all', () => {
+    expect(words('הַ ] — אֶחָֽד')).toEqual(['אֶחָֽד']);
   });
 
   it('keeps a parenthesised alternate as a word', () => {
     expect(words('(לא) אליו')).toEqual(['(לא)', 'אליו']);
   });
 
-  it('reproduces the original text when the pieces are joined', () => {
-    // Every later task rebuilds the verse from these pieces. Losing a
-    // character here would silently corrupt the displayed text.
-    const verse = 'וְהָאָ֗רֶץ הָיְתָ֥ה תֹ֙הוּ֙ וָבֹ֔הוּ עַל־פְּנֵ֣י תְה֑וֹם׃ {פ}';
-
-    expect(
-      splitVerseText(verse)
-        .map((p) => p.text)
-        .join(''),
-    ).toBe(verse);
+  it('says where each word sits in the verse', () => {
+    const verse = 'וְהָאָ֗רֶץ {פ} עַל־פְּנֵ֣י תְה֑וֹם׃';
+    for (const { word, start, end } of verseWords(verse)) {
+      expect(verse.slice(start, end)).toBe(word);
+    }
   });
 
-  it('handles an empty verse without inventing a piece', () => {
-    expect(splitVerseText('')).toEqual([]);
+  it('handles an empty verse without inventing a word', () => {
+    expect(verseWords('')).toEqual([]);
   });
 });
 

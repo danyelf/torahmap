@@ -3,7 +3,7 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import type { TextLanguage } from '../../types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
 import { mapStrippedToOriginal, splitIntoWords } from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
 import { wordMatches } from '../../search/dictionary.ts';
@@ -52,7 +52,7 @@ interface Match {
 /** Handles nikkud stripping and position mapping; respects each term's own search mode. */
 function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
   const matches: Match[] = [];
-  const language = isHebrew ? 'he' : 'en';
+  const language = isHebrew ? HEBREW : ENGLISH;
   const folded = foldForMatching(text, language);
   const toOriginal = (at: number) => (isHebrew ? mapStrippedToOriginal(text, at) : at);
 
@@ -72,7 +72,7 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     // search/dictionary.ts), so a verse that does not line up still marks.
     if (isHebrew && mode === 'meanings') {
       const keys = selectedKeys(term);
-      const needle = foldForMatching(term.text, 'he');
+      const needle = foldForMatching(term.text, HEBREW);
       for (const { word, start, end } of splitIntoWords(folded)) {
         const hit = keys.length > 0 ? wordMatches(keys, word, text, start) : word === needle;
         if (hit) {
@@ -148,7 +148,7 @@ export function highlightTerms(
     return fragment;
   }
 
-  const isHebrew = language === 'he';
+  const isHebrew = language === HEBREW;
 
   const matches = findAllTermMatches(text, terms, isHebrew);
 

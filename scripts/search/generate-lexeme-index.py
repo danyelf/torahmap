@@ -119,6 +119,11 @@ VERSE_REMAP[("Numbers", 25, 19)] = ("Numbers", 26, 1)
 POINT_START = 0x0591
 POINT_END = 0x05C7
 SEPARATORS = {0x05BE, 0x05C0, 0x05C3, 0x05C6}  # maqaf, paseq, sof pasuq, nun hafukha
+# Where one word ends and the next begins: whitespace, a hyphen, or a separator.
+# isWordSeparator() in src/hebrew.ts draws the same line.
+WORD_SEPARATOR = re.compile(
+    r"[\s\-" + "".join(chr(code) for code in sorted(SEPARATORS)) + "]+"
+)
 # Inert here — BHSA has none. Sefaria writes ירושל͏ם with one, and both sides fold both.
 GRAPHEME_JOINER = 0x034F
 
@@ -141,14 +146,11 @@ FINAL_TO_MEDIAL = {
 # Occurrence-level grammar recorded for each word, in this order.
 MORPH_FIELDS = ["vs", "vt", "ps", "nu", "gn", "st"]
 
-# Column order of the rows in lexicon.json.
-LEXEME_FIELDS = ["id", "form", "gloss", "pos", "lang"]
-
 
 def normalize(text):
     """Fold Hebrew to the shape the search box works in.
 
-    Mirrors normalizeHebrewForSearch() in src/search.ts; the two must agree
+    Mirrors normalizeHebrewForSearch() in src/hebrew.ts; the two must agree
     character for character or every lookup misses.
     """
     out = []
@@ -275,6 +277,7 @@ def main():
     lexemes = []
     for node in lex_nodes:
         display = F.voc_lex_utf8.v(node) or F.lex_utf8.v(node) or ""
+        # The row order LexemeRow in src/search.ts reads.
         lexemes.append(
             [
                 F.lex.v(node),
@@ -467,7 +470,7 @@ def main():
         stripped = re.sub(r"\([^)]*\)", " ", stripped)
         return [
             letters
-            for piece in re.split(r"[\s\u05be]+", stripped)
+            for piece in re.split(WORD_SEPARATOR, stripped)
             if (letters := consonants(piece))
         ]
 
@@ -510,7 +513,6 @@ def main():
         "lexicon.json",
         {
             "source": f"ETCBC BHSA {BHSA_VERSION}",
-            "fields": LEXEME_FIELDS,
             "lexemes": lexemes,
         },
     )

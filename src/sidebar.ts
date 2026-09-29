@@ -1,12 +1,12 @@
 // Sidebar management for verse details display
 
 import type { TanakhLayout, TextLanguage } from './types.ts';
-import { tanakhKey } from './types.ts';
+import { ENGLISH, HEBREW, tanakhKey } from './types.ts';
 import type { Overlay, ToolOnMap } from './overlays/types.ts';
 import { getVerseText, type VerseTexts } from './verseTexts.ts';
 import { sefariaUrl } from './sefaria.ts';
 import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
-import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
+import { verseWords, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';
 import { verseRef } from '@torahmap/link';
 
@@ -51,7 +51,7 @@ export function setWordClickHandler(handler: ((click: WordClick) => void) | null
 
 /** One listener on the container, so re-rendering the verse cannot pile them up. */
 function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLayout): void {
-  const words = splitVerseText(text).filter((piece) => piece.kind === 'word');
+  const words = verseWords(text);
 
   container.onclick = (event) => {
     if (!wordClickHandler) return;
@@ -64,7 +64,7 @@ function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLay
     if (!word) return;
 
     wordClickHandler({
-      text: word.text,
+      text: word.word,
       index,
       book: verse.book,
       chapter: verse.chapter,
@@ -178,14 +178,14 @@ export function updateSidebar(
 
     // Whatever the overlay produced, words are wrapped afterwards, so a click
     // finds a word whether or not anything is highlighting the text.
-    const fragment = marked(hebrewText, 'he') ?? textFragment(hebrewText);
+    const fragment = marked(hebrewText, HEBREW) ?? textFragment(hebrewText);
 
     hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
     attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
   }
   if (english) {
     const englishText = text?.en || 'Loading...';
-    const highlighted = marked(englishText, 'en');
+    const highlighted = marked(englishText, ENGLISH);
     if (highlighted) {
       english.replaceChildren(highlighted);
     } else {

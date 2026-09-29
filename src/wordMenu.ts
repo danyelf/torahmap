@@ -8,6 +8,7 @@
 
 import './styles/wordMenu.css';
 import type { Meaning } from './search/dictionary.ts';
+import { MAX_TERMS } from './search/terms.ts';
 
 export interface WordMenuOptions {
   word: string;
@@ -105,11 +106,10 @@ export function openWordMenu(options: WordMenuOptions): void {
   menu.appendChild(title);
 
   if (options.paletteFull) {
-    // MAX_TERMS colours are already in use; say so rather than offering a
-    // button that would decline.
+    // Say so rather than offering a button that would decline.
     const note = document.createElement('div');
     note.className = 'word-menu-note';
-    note.textContent = 'Five words are already on the map. Remove one to add another.';
+    note.textContent = `All ${MAX_TERMS} words are already on the map. Remove one to add another.`;
     menu.appendChild(note);
   } else {
     if (options.meanings.length === 0) {
