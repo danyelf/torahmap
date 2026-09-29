@@ -77,3 +77,28 @@ body:not(.english-only) .book-label.narrow .book-label-en {
     --map-left: 0px;
   }
 }
+
+/* Shown instead of the map in a browser without WebGL 2. */
+body.no-webgl > :not(#no-webgl) {
+  display: none;
+}
+#no-webgl {
+  max-width: 34rem;
+  margin: 15vh auto 0;
+  padding: 0 16px;
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #ddd;
+}
+#no-webgl h1 {
+  margin-bottom: 16px;
+  font-size: 24px;
+  color: #fff;
+}
+#no-webgl p + p {
+  margin-top: 12px;
+}
+#no-webgl a {
+  color: #8ec5f7;
+}
