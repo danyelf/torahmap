@@ -4,7 +4,7 @@
 // index.html as text, because HTMLRewriter exists only in Cloudflare's
 // runtime, not in Node, where these tests run. The Worker serves Vite's
 // built dist/index.html, whose build only fills %SITE_NAME% and %TAGLINE%
-// inside these tags (vite.config.ts) and leaves the tags' shape as the
+// inside these tags (fillSiteTags) and leaves the tags' shape as the
 // source writes them — so the test runs on the real source file, and a
 // reformat that breaks the match fails here instead of every shared link
 // previewing as the home page.
