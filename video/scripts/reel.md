@@ -4,13 +4,19 @@ fps: 60
 panel: closed
 ---
 
-<!-- Timed to Danyel's voiceover, which is not in the repository. Its first
-word is 4.04 s into the recording; the times put it 1.04 s into the reel:
-  npm run mix -- video/out/reel.mp4 video/out/voice.m4a --from 3.85 --to 60.3 --at 0.85 -->
+<!-- Timed to Danyel's voiceover (third recording, first take), which is not
+in the repository. The pauses stretch "the forefathers … through Moses to …
+King David" so each name is said as it appears; the cut drops a sigh:
+  npm run mix -- video/out/reel.mp4 video/out/voice3.m4a --from 10.55 --to 67.3 --at 1.55
+    --pause 37.6:2.1 --pause 39:1.3 --cut 40.3-41.3 -->
 
 <!-- Opening: the map's own title card. -->
 
 <!-- scene: title | view: x=898&y=132&zoom=0.9 | map: hidden -->
+
+<!-- scene: title_map | view: x=898&y=132&zoom=0.9 | over: 0s | fade: 0.7s -->
+
+<!-- scene: title_out | view: x=1076.7&y=166.6&zoom=0.65 | over: 3.7s -->
 
 <!-- Beat 1: square, row, block. -->
 
@@ -26,7 +32,7 @@ word is 4.04 s into the recording; the times put it 1.04 s into the reel:
 
 <!-- scene: names_1 | view: search=Abraham&x=1720&y=875&zoom=0.28 | over: 0s | fade: 0.6s | caption: Visual search. -->
 
-<!-- scene: names_genesis | view: search=Abraham&x=3200&y=236&zoom=1.66 | over: 2.5s | caption: Abraham (blue) appears first in Genesis. -->
+<!-- scene: names_genesis | view: search=Abraham&x=3200&y=236&zoom=1.66 | over: 2s | caption: Abraham (blue) appears first in Genesis. -->
 
 <!-- scene: names_isaac | view: search=Abraham,Isaac&x=3200&y=236&zoom=1.66 | over: 0s | fade: 0.6s | caption: Then his son Isaac (orange), then Jacob (green). -->
 
