@@ -12,6 +12,8 @@ import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { TanakhLayout } from '../../../types';
 import type { CommentaryData } from '../../../overlays/commentary';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { colorToCss } from '../../../utils/color';
+import type { Color } from '../../../overlays/types';
 
 describe('Commentary Overlay', () => {
   let testData: CommentaryData;
@@ -145,12 +147,6 @@ describe('Commentary Overlay', () => {
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
-
-      // Should be the dark color for zero ([0.15, 0.15, 0.2])
-      const colorArray = color as [number, number, number];
-      expect(colorArray[0]).toBeCloseTo(0.15, 1);
-      expect(colorArray[1]).toBeCloseTo(0.15, 1);
-      expect(colorArray[2]).toBeCloseTo(0.2, 1);
     });
 
     it('returns valid color for verses not in data', () => {
@@ -437,7 +433,7 @@ describe('Commentary Overlay', () => {
     }
 
     it('ticks the powers of ten, then the maximum', async () => {
-      expect(tickLabels(await reinitWithMax(900))).toEqual(['0', '1', '10', '100', '900']);
+      expect(tickLabels(await reinitWithMax(900))).toEqual(['1', '10', '100', '900']);
     });
 
     it('drops the last power of ten when the maximum sits on top of it', () => {
@@ -445,7 +441,18 @@ describe('Commentary Overlay', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderLegend(container);
 
-      expect(tickLabels(container)).toEqual(['0', '1', '10', '150']);
+      expect(tickLabels(container)).toEqual(['1', '10', '150']);
+    });
+
+    it('shows zero as its own swatch, in the colour of an unlinked verse', () => {
+      const container = document.createElement('div');
+      commentaryOverlay.renderLegend(container);
+      const unlinked = commentaryOverlay.getVerseColor(
+        createVerse({ book: 'Genesis', chapter: 1, verse: 3 }),
+      ) as Color;
+
+      const swatch = container.querySelector<HTMLElement>('.legend-zero .swatch')!;
+      expect(swatch.getAttribute('style')).toContain(colorToCss(unlinked));
     });
 
     it('writes a thousands separator rather than abbreviating', async () => {
@@ -753,10 +760,12 @@ describe('Commentary Overlay', () => {
       assertColorEquals(partWay as number[], [0.905236, 0.324764, 0.132618]);
     });
 
-    it('gives a verse with no links the no-data grey', () => {
-      const unlinked = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // 0 total
+    it('draws a verse with no links darker than any linked verse', () => {
+      const brightness = (verse: Parameters<typeof createVerse>[0]) =>
+        (commentaryOverlay.getVerseColor(createVerse(verse)) as number[]).reduce((a, b) => a + b);
+      const unlinked = brightness({ book: 'Genesis', chapter: 1, verse: 3 });
 
-      assertColorEquals(commentaryOverlay.getVerseColor(unlinked) as number[], [0.15, 0.15, 0.2]);
+      expect(unlinked).toBeLessThan(brightness({ book: 'Genesis', chapter: 2, verse: 1 }));
     });
   });
 
