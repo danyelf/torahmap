@@ -25,8 +25,8 @@ export function renderAxis(
   const kept = spaceOut(ticks.map((value) => ({ value, at: scale.positionOf(value) })));
 
   const labels = kept
-    .map(({ value, at }, i) => {
-      const edge = i === 0 ? ' tick-start' : i === kept.length - 1 ? ' tick-end' : '';
+    .map(({ value, at }) => {
+      const edge = at <= 0 ? ' tick-start' : at >= 1 ? ' tick-end' : '';
       return `<span class="tick${edge}" style="left: ${at * 100}%">${format(value)}</span>`;
     })
     .join('');
@@ -34,6 +34,19 @@ export function renderAxis(
   return `
       <div class="legend-gradient" style="background: ${axisGradient(scale)}"></div>
       <div class="legend-ticks">${labels}</div>
+    `;
+}
+
+/** `renderAxis` with zero as a swatch of its own, for a scale where none is unlike one. */
+export function renderAxisWithZero(zero: Color, scale: Scale, ticks: number[]): string {
+  return `
+      <div class="legend-with-zero">
+        <div class="legend-zero">
+          <span class="legend-zero-swatch" style="background: ${colorToCss(zero)}"></span>
+          <span class="legend-zero-label">0</span>
+        </div>
+        <div class="legend-axis">${renderAxis(scale, ticks)}</div>
+      </div>
     `;
 }
 

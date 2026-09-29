@@ -2,19 +2,23 @@ import type { Overlay, Color, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
-import { axisGradient, renderAxis } from './legend.ts';
+import { axisGradient, renderAxisWithZero } from './legend.ts';
 import { loadJson } from './loadJson.ts';
-import { NO_DATA } from './colors.ts';
 import { CONTROL } from '../panel.ts';
+import { MAP_BACKGROUND } from '../constants.ts';
 import { COMMENTARY } from '@torahmap/overlay-catalog';
 
 const HEATMAP_STOPS: ColorStop[] = [
-  { t: 0, color: [0.1, 0.13, 0.18] },
+  { t: 0, color: [0.14, 0.21, 0.33] },
   { t: 0.25, color: [0.1, 0.23, 0.38] },
   { t: 0.5, color: [0.2, 0.43, 0.33] },
   { t: 0.75, color: [0.9, 0.33, 0.13] },
   { t: 1.0, color: [1.0, 0.23, 0.18] },
 ];
+
+// A verse no one has linked to sits one shade above the background: a hint of
+// where the verse is, not a count.
+const NEVER_LINKED = MAP_BACKGROUND.map((c) => c + 0.01) as Color;
 
 /** How each category reads after "42 references in …". */
 const WHERE: Record<string, string> = {
@@ -54,9 +58,12 @@ let verses: TanakhLayout[] = [];
 // a category never changes once the data is loaded.
 let cachedMaxValues: Record<string, number> = {};
 
-/** Rebuilt per call: the maximum moves when the category changes. */
+/**
+ * Rebuilt per call: the maximum moves when the category changes. Starts at 1:
+ * zero is drawn apart, as `NEVER_LINKED`.
+ */
 function linkScale(category: string): Scale {
-  return scale(0, getMaxValue(category), LOG, HEATMAP_STOPS);
+  return scale(1, getMaxValue(category), LOG, HEATMAP_STOPS);
 }
 
 function getCount(book: string, chapter: number, verse: number, category: string): number {
@@ -81,7 +88,7 @@ function getMaxValue(category: string): number {
 
 function commentaryColorAt(verse: TanakhIdentity, category: string): Color | null {
   const count = getCount(verse.book, verse.chapter, verse.verse, category);
-  if (count === 0) return NO_DATA;
+  if (count === 0) return NEVER_LINKED;
   return linkScale(category).colorOf(count);
 }
 
@@ -168,7 +175,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
   renderLegend(container, settings) {
     const maxValue = getMaxValue(settings.category);
 
-    const ticks: number[] = [0];
+    const ticks: number[] = [];
     for (let value = 1; value <= maxValue; value *= 10) {
       ticks.push(value);
     }
@@ -176,7 +183,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
       ticks.push(maxValue);
     }
 
-    container.innerHTML = renderAxis(linkScale(settings.category), ticks);
+    container.innerHTML = renderAxisWithZero(NEVER_LINKED, linkScale(settings.category), ticks);
   },
 
   summary(settings) {

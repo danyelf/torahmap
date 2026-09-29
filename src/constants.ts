@@ -62,6 +62,9 @@ export const HIGHLIGHT_CONSTANTS = {
   BRIGHTNESS_FACTOR: 1.5,
 } as const;
 
+/** What the map is cleared to, before any verse is drawn. */
+export const MAP_BACKGROUND: Color = [0.1, 0.1, 0.1];
+
 /** The grey of a verse left out. */
 export const DIMMED_GREY: Color = [0.18, 0.18, 0.18];
 
