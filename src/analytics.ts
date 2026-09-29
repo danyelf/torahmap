@@ -5,6 +5,7 @@ import type { SearchMode } from './search/terms.ts';
 import type { DriverKind } from './scrollytelling/driver.ts';
 import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
 import type { EventFields, EventName, EventPayload } from './telemetry/schema.ts';
+import { linkKind, type UrlState } from '@torahmap/link';
 
 interface Options {
   /** Off on the dev server, which sends nothing. */
@@ -50,8 +51,26 @@ function track<E extends EventName>(event: E, fields: EventFields<E>): void {
 }
 
 /** The story and stop as the link named them, which need not be what opened. */
-export function trackPageView(story: string, storyStop: string, referrer: string): void {
-  track('page_view', { story_stop: storyStop, referrer, story });
+export function trackPageView(
+  story: string,
+  storyStop: string,
+  referrer: string,
+  arrivedWith: string,
+): void {
+  track('page_view', { story_stop: storyStop, referrer, story, arrived_with: arrivedWith });
+}
+
+/** What the first page's link named; a reload or Back/Forward is not an arrival. */
+export function arrivedWith(
+  state: UrlState,
+  navigationType: string | undefined,
+): 'nothing' | 'view' | 'stop' {
+  if (navigationType === 'reload' || navigationType === 'back_forward') return 'nothing';
+  return linkKind(state);
+}
+
+export function trackShare(fields: EventFields<'share'>): void {
+  track('share', fields);
 }
 
 export function trackStoryStop(stopId: string, stopNumber: number, totalStops: number): void {

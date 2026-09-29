@@ -31,10 +31,12 @@ import { aboutHtml } from './aboutPanel.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
+  arrivedWith,
   configureAnalytics,
   trackOverlaySwitch,
   trackPageView,
   trackSefariaClick,
+  trackShare,
   trackStoryExit,
   trackStoryReturn,
   trackStoryStop,
@@ -46,6 +48,7 @@ import {
 import {
   parseVerseFromUrl,
   verseToUrlFormat,
+  linkKind,
   linkNamesAView,
   describeLink,
   type UrlState,
@@ -1464,11 +1467,21 @@ async function main(): Promise<void> {
     // ahead of the await below, means even a repeated outcome starts from empty.
     shareStatus.textContent = '';
     syncUrl(false);
-    const title = describeLink(parseUrlState(overlayParamSpecs), LINK_NAMES).title;
+    const shared = parseUrlState(overlayParamSpecs);
+    const title = describeLink(shared, LINK_NAMES).title;
     const outcome = await shareLink(location.href, title, {
       share: navigator.share?.bind(navigator),
       writeText: (t) => navigator.clipboard.writeText(t),
       coarsePointer: matchMedia('(pointer: coarse)').matches,
+    });
+    trackShare({
+      how: outcome,
+      what: linkKind(shared) === 'stop' ? 'stop' : 'view',
+      story: shared.story ?? '',
+      stop_id: shared.stop ?? '',
+      overlay: shared.overlay ?? '',
+      searching: shared.searchParams ? 1 : 0,
+      pinned: shared.verse ? 1 : 0,
     });
     if (outcome === 'copied' || outcome === 'failed') {
       const label = outcome === 'copied' ? 'Link copied' : "Couldn't copy";
@@ -1772,6 +1785,11 @@ async function main(): Promise<void> {
     opened.story ?? '',
     opened.stop ?? '',
     referrer === location.hostname ? '' : referrer,
+    arrivedWith(
+      opened,
+      (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)
+        ?.type,
+    ),
   );
   recordingDriver = true;
   markViewSettled();

@@ -12,7 +12,7 @@ const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
 
 export const EVENTS = {
-  page_view: { blobs: ['story_stop', 'referrer', 'story'], doubles: [] },
+  page_view: { blobs: ['story_stop', 'referrer', 'story', 'arrived_with'], doubles: [] },
   story_stop: { blobs: ['stop_id', 'story'], doubles: ['stop_number', 'total_stops'] },
   story_exit: { blobs: ['stop_id', 'how', 'story'], doubles: ['stop_number'] },
   story_return: { blobs: ['stop_id', 'how', 'story'], doubles: [] },
@@ -24,6 +24,10 @@ export const EVENTS = {
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [] },
+  share: {
+    blobs: ['how', 'what', 'story', 'stop_id', 'overlay'],
+    doubles: ['searching', 'pinned'],
+  },
 } as const satisfies Record<string, { blobs: readonly string[]; doubles: readonly string[] }>;
 
 export type EventName = keyof typeof EVENTS;
