@@ -12,7 +12,7 @@ import {
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './constants/app.ts';
-import { normalizeHebrewForSearch, splitIntoWords } from './hebrew.ts';
+import { isHebrew, normalizeHebrewForSearch, splitIntoWords } from './hebrew.ts';
 import {
   escapeForRegex,
   foldForMatching,
@@ -42,9 +42,6 @@ interface IndexEntry {
   englishText: string; // lowercased
   englishOriginal: string; // original for display
 }
-
-const HEBREW_RANGE_START = 0x0590;
-const HEBREW_RANGE_END = 0x05ff;
 
 let searchIndex: IndexEntry[] = [];
 // Fast lookup map: verse key -> index entry (avoids O(n) find() calls)
@@ -256,16 +253,6 @@ export function getLexeme(id: LexemeId): Lexeme | null {
   return lexicon?.[id] ?? null;
 }
 
-export function isHebrewQuery(query: string): boolean {
-  for (const char of query) {
-    const code = char.charCodeAt(0);
-    if (code >= HEBREW_RANGE_START && code <= HEBREW_RANGE_END) {
-      return true;
-    }
-  }
-  return false;
-}
-
 export function buildSearchIndex(verseTexts: VerseTexts): void {
   searchIndex = [];
   verseKeyToEntry.clear();
@@ -398,7 +385,7 @@ export function computeSnippetForMatch(
   // An English term reads the English verse; everything below this works on the
   // Hebrew. Falling through to it hands an English result a snippet of a Hebrew
   // verse the reader never searched.
-  if (!isHebrewQuery(searchTerm)) {
+  if (!isHebrew(searchTerm)) {
     const match = findEnglishMatch(entry.englishText, searchTerm.toLowerCase());
     if (match) {
       const snippet = createSnippetAtPosition(entry.englishOriginal, match.idx, match.len);

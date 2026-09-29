@@ -3,6 +3,7 @@
 // No WebGL, no map, no verse layout — just the input pipeline
 
 import { loadAllVerseTexts } from '../src/verseTexts.ts';
+import { isHebrew } from '../src/hebrew.ts';
 import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
 import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
 import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
@@ -12,10 +13,10 @@ import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
 const logEntries = document.getElementById('log-entries')!;
 const clearLogBtn = document.getElementById('clear-log')!;
 
-function logEvent(type: string, detail: string, isHebrew = false): void {
+function logEvent(type: string, detail: string, hebrew = false): void {
   const entry = document.createElement('div');
   entry.className = 'log-entry';
-  entry.innerHTML = `<span class="log-type">${type}</span><span class="log-detail${isHebrew ? ' log-hebrew' : ''}">${detail}</span>`;
+  entry.innerHTML = `<span class="log-type">${type}</span><span class="log-detail${hebrew ? ' log-hebrew' : ''}">${detail}</span>`;
   logEntries.prepend(entry);
 
   // Keep log manageable
@@ -77,14 +78,13 @@ function instrumentInput(): void {
   if (!input) return;
 
   const esc = (s: string) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const isHeb = (s: string) => /[\u0590-\u05FF]/.test(s);
 
   input.addEventListener('input', () => {
     const val = input.value;
     logEvent(
       'input',
       `value="${esc(val)}" dir=${input.dir} cursor=${input.selectionStart}`,
-      isHeb(val),
+      isHebrew(val),
     );
   });
 
@@ -92,7 +92,7 @@ function instrumentInput(): void {
     'paste',
     (e: ClipboardEvent) => {
       const text = e.clipboardData?.getData('text/plain') ?? '';
-      logEvent('paste', `"${esc(text)}"`, isHeb(text));
+      logEvent('paste', `"${esc(text)}"`, isHebrew(text));
     },
     { capture: true },
   ); // capture to log BEFORE the overlay's handler strips nikkud

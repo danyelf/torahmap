@@ -82,6 +82,13 @@ export function isTropMark(code: number): boolean {
   return code >= TROP_START && code <= TROP_END;
 }
 
+const HEBREW_LETTER = /[\u05D0-\u05EA]/;
+
+/** Does this text hold a Hebrew letter? */
+export function isHebrew(text: string): boolean {
+  return HEBREW_LETTER.test(text);
+}
+
 /** Whitespace, hyphen, or one of the four Hebrew characters that break words. */
 export function isWordSeparator(char: string): boolean {
   return /\s/.test(char) || SEPARATOR_CODES.has(char.codePointAt(0)!) || char === '-';

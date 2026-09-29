@@ -7,7 +7,7 @@
 // shifts and the choice lands silently on a different word.
 
 import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
-import { isHebrewQuery } from '../search.ts';
+import { isHebrew } from '../hebrew.ts';
 import { TERM_SEPARATORS } from '../constants/app.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import type { TextLanguage } from '../types.ts';
@@ -266,7 +266,7 @@ export function setMode(terms: SearchTerm[], id: string, mode: SearchMode): Sear
 
 /** Each term's own language, decided by its own text. */
 export function termIsHebrew(term: SearchTerm): boolean {
-  return isHebrewQuery(term.text.trim());
+  return isHebrew(term.text);
 }
 
 /**

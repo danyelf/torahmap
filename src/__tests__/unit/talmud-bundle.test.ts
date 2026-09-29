@@ -4,7 +4,7 @@ import {
   walkMarkersWithBudget,
   perekUnitCharCounts,
   stripHtml,
-  stripNikkud,
+  stripNikkudAndSeparators,
   parseWholeRef,
   dafAmudToIdx,
   processTractate,
@@ -148,13 +148,16 @@ describe('stripHtml', () => {
   });
 });
 
-describe('stripNikkud', () => {
+describe('stripNikkudAndSeparators', () => {
   it('removes Hebrew vowels and cantillation marks', () => {
-    expect(stripNikkud('שָׁלוֹם')).toBe('שלום');
-    expect(stripNikkud('בְּרֵאשִׁית')).toBe('בראשית');
+    expect(stripNikkudAndSeparators('שָׁלוֹם')).toBe('שלום');
+    expect(stripNikkudAndSeparators('בְּרֵאשִׁית')).toBe('בראשית');
+  });
+  it('removes maqaf and sof pasuq', () => {
+    expect(stripNikkudAndSeparators('אֶת־הָאָֽרֶץ׃')).toBe('אתהארץ');
   });
   it('leaves text without nikkud unchanged', () => {
-    expect(stripNikkud('שלום')).toBe('שלום');
+    expect(stripNikkudAndSeparators('שלום')).toBe('שלום');
   });
 });
 

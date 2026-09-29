@@ -21,7 +21,7 @@ import {
   type LexemeId,
 } from '../search.ts';
 import { fetchData } from '../constants/app.ts';
-import { mapStrippedToOriginal, splitIntoWords } from '../hebrew.ts';
+import { isHebrew, mapStrippedToOriginal, splitIntoWords } from '../hebrew.ts';
 import { splitVerseText } from '../verseWords.ts';
 
 /**
@@ -364,7 +364,6 @@ export function wordsAreNamed(): boolean {
 /** BHSA carries no word for these, so they cannot be counted past. */
 const KETIV = /\([^)]*\)/g;
 const PARAGRAPH_MARK = /\{[ספ]\}/g;
-const HEBREW_LETTER = /[א-ת]/;
 
 /**
  * Blank out what BHSA has nothing for, leaving every other character where it
@@ -396,9 +395,7 @@ function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId> | null
   if (!parsed || misaligned.has(verseKey)) return null;
 
   const [morphemes, lengths] = parsed;
-  const words = splitIntoWords(blankWhatBhsaOmits(hebrew)).filter((w) =>
-    HEBREW_LETTER.test(w.word),
-  );
+  const words = splitIntoWords(blankWhatBhsaOmits(hebrew)).filter((w) => isHebrew(w.word));
   if (words.length !== lengths.length) return null;
 
   const stems = new Map<number, LexemeId>();
