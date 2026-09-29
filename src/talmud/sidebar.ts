@@ -7,6 +7,7 @@ import type { TalmudIdentity } from '../types.ts';
 import { talmudFormat } from './format.ts';
 import { getTractateText, type TalmudStructure, isSegmentMishnah } from './data.ts';
 import { promoteTractateToFront } from './prefetch.ts';
+import { sefariaUrl } from '../sefaria.ts';
 
 export interface TalmudSidebarElements {
   sidebar: HTMLElement;
@@ -50,9 +51,7 @@ export async function updateTalmudSidebar(
   elements.overlayInfo.textContent = mishnah ? 'Mishnah' : 'Gemara';
   elements.overlayInfo.className = `overlay-info talmud-tag ${mishnah ? 'mishnah' : 'gemara'}`;
 
-  // Sefaria link: https://www.sefaria.org/Berakhot.17b.11
-  const linkRef = `${id.tractate.replace(/ /g, '_')}.${id.daf}${id.amud}.${id.segment}`;
-  elements.sefariaLink.href = `https://www.sefaria.org/${linkRef}`;
+  elements.sefariaLink.href = sefariaUrl(id.tractate, [`${id.daf}${id.amud}`, id.segment]);
 
   // Hebrew text — lazy load if not available
   elements.hebrewText.textContent = 'Loading…';

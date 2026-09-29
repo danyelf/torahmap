@@ -3,7 +3,7 @@
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
-import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
+import { loadTanakhStructure, loadAllVerseTexts } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
@@ -991,16 +991,7 @@ async function main(): Promise<void> {
   }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    updateSidebar(
-      sidebarElements,
-      verse,
-      verseTexts,
-      currentOverlay,
-      currentSettings(),
-      getVerseText,
-      isPinned,
-      toolsNow().search,
-    );
+    updateSidebar(sidebarElements, verse, { verseTexts, ...toolsNow(), pinned: isPinned });
   }
 
   /**
