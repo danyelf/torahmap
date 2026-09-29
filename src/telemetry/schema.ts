@@ -1,8 +1,10 @@
 // The one definition of which Analytics Engine column holds what; the queries
 // in scripts/telemetry are checked against it by queries.test.ts. Columns are
-// positional: index1 is the visit id, the blobs start with COMMON_COLUMNS,
-// then each event's own strings follow, and its numbers start at double1.
-// Appending a field is safe; reordering one silently changes what old rows mean.
+// positional: index1 is the visit id for an event the page sends, or the
+// event name for one the Worker writes on its own; the blobs start with
+// COMMON_COLUMNS, then each event's own strings follow, and its numbers
+// start at double1. Appending a field is safe; reordering one silently
+// changes what old rows mean.
 
 import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
 

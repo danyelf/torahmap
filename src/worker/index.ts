@@ -82,8 +82,7 @@ async function linkPage(request: Request, env: Env): Promise<Response> {
   const response = await env.ASSETS.fetch(request);
   const url = new URL(request.url);
 
-  // Recorded whatever the static files answered — a chat app's fetcher asked
-  // for the page whether or not it turned out to be one.
+  // Recorded even when the static files return an error.
   recordPreviewFetch(request, url, env);
 
   const contentType = response.headers.get('Content-Type') ?? '';
