@@ -19,7 +19,6 @@ import {
 } from './haftarah/readings.ts';
 import { CONTROL } from '../panel.ts';
 import { buildLegendGradient, legendCaption } from './legend.ts';
-import { memoBySettings } from './memo.ts';
 import { HAFTARAH, HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 import './haftarah.css';
 
@@ -48,13 +47,15 @@ function darkTint(color: Color): Color {
 }
 
 /**
- * Which custom's readings to show, and the reading the pointer is over in the
- * key, by its place in the list of readings. Only the custom goes into a link.
- * The app holds this; the overlay keeps none.
+ * Which custom's readings to show; the reading the pointer is over in the key;
+ * and a reading a story stop lights. Only the custom goes into a link, so
+ * leaving the story drops the reading. The app holds this; the overlay keeps
+ * none.
  */
 export interface HaftarahSettings {
   readonly custom: Custom;
-  readonly preview: number | null;
+  readonly preview: string | null;
+  readonly reading: string | null;
 }
 
 function isRelevantVerse(verse: TanakhIdentity, derived: HaftarahDerivation): boolean {
@@ -90,19 +91,27 @@ function litByPreview(
   return lit;
 }
 
-const litByPreviewOf = memoBySettings((settings: HaftarahSettings): Set<HaftarahItem> | null => {
-  if (settings.preview === null) return null;
-  const derived = deriveHaftarah(settings.custom);
-  const item = derived.items[settings.preview];
-  return item ? litByPreview(derived, item, settings.custom) : null;
-});
+/** The reading called `name` lit as a preview, or null when no reading has that name. */
+function litByName(custom: Custom, name: string | null): Set<HaftarahItem> | null {
+  if (name === null) return null;
+  const derived = deriveHaftarah(custom);
+  const item = derived.itemByName.get(name);
+  return item ? litByPreview(derived, item, custom) : null;
+}
 
-/** A preview from the key wins over the map's hover; the pointer is on one or the other. */
+/**
+ * What the pointer is on wins — a reading in the key, then a verse of a
+ * reading on the map — and otherwise the reading the settings name, if any.
+ */
 function litFor(
   settings: HaftarahSettings,
   hovered: TanakhIdentity | null,
 ): Set<HaftarahItem> | null {
-  return litByPreviewOf(settings) ?? litByHover(deriveHaftarah(settings.custom), hovered);
+  return (
+    litByName(settings.custom, settings.preview) ??
+    litByHover(deriveHaftarah(settings.custom), hovered) ??
+    litByName(settings.custom, settings.reading)
+  );
 }
 
 /**
@@ -152,12 +161,11 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
 function renderKey(
   container: HTMLElement,
   custom: Custom,
-  onPreview: (reading: number | null) => void,
+  onPreview: (reading: string | null) => void,
 ): void {
   const data = mappings();
   if (!data?.parshiot || container.querySelector('.haftarah-key')) return;
   const derived = deriveHaftarah(custom);
-  const indexOf = new Map(derived.items.map((item, i) => [item, i]));
 
   const byBook = groupBy(data.parshiot, (parsha) => parsha.torah.book);
   const byCategory = groupBy(data.specialOccasions ?? [], (occasion) => occasion.category);
@@ -168,7 +176,7 @@ function renderKey(
         const shape = isParsha(item) ? 'haftarah-key-segment' : 'haftarah-key-swatch';
         const color = derived.itemToColor.get(item);
         const background = color ? colorToCss(color) : 'transparent';
-        return `<span class="${shape}" style="background: ${background}" title="${escapeHtml(item.name)}" data-reading="${indexOf.get(item)}"></span>`;
+        return `<span class="${shape}" style="background: ${background}" title="${escapeHtml(item.name)}" data-reading="${escapeHtml(item.name)}"></span>`;
       })
       .join('');
     return `<div class="haftarah-key-row"><span class="haftarah-key-label">${escapeHtml(label)}</span><span class="haftarah-key-swatches">${swatches}</span></div>`;
@@ -184,11 +192,11 @@ function renderKey(
   key.innerHTML = books.join('') + categories.join('');
   container.appendChild(key);
 
-  const preview = lingeringHover<number>(onPreview);
+  const preview = lingeringHover<string>(onPreview);
   key.addEventListener('pointerover', (e) => {
     const reading = (e.target as Element).closest<HTMLElement>('[data-reading]')?.dataset.reading;
     if (reading === undefined) preview.leave();
-    else preview.enter(Number(reading));
+    else preview.enter(reading);
   });
   key.addEventListener('pointerleave', () => preview.leave());
 }
@@ -321,7 +329,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   },
 
   settingsFromUrl(params: UrlParamValues<typeof HAFTARAH.urlParams>): HaftarahSettings {
-    return { custom: params.custom, preview: null };
+    return { custom: params.custom, preview: null, reading: params.reading ?? null };
   },
 
   settingsToUrl(settings: HaftarahSettings): Record<string, string> {

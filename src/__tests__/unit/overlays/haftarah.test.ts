@@ -185,9 +185,10 @@ describe('Haftarah Overlay', () => {
       haftarahOverlay.restore({ custom: 'ashkenazi' });
     });
 
-    it('declares the custom key it owns', () => {
+    it('declares the keys it owns', () => {
       expect(haftarahOverlay.overlay.urlParams).toEqual([
         { key: 'custom', kind: 'token', allowed: ['ashkenazi', 'sephardi'], default: 'ashkenazi' },
+        { key: 'reading', kind: 'token' },
       ]);
     });
 
@@ -427,25 +428,24 @@ describe('Haftarah Overlay', () => {
     const noach = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
     const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
-    /** Readings by their place in the sample: parshiot, then special occasions. */
-    const BERESHIT = 0;
-    const ROSH_CHODESH = 2;
+    const BERESHIT = 'Bereshit';
+    const ROSH_CHODESH = 'Shabbat Rosh Chodesh';
 
     function keyRows(container: HTMLElement) {
       return [...container.querySelectorAll('.haftarah-key-row')].map((row) => ({
         label: row.querySelector('.haftarah-key-label')!.textContent,
         readings: [...row.querySelectorAll<HTMLElement>('[data-reading]')].map((el) => ({
           name: el.title,
-          reading: Number(el.dataset.reading),
+          reading: el.dataset.reading,
         })),
       }));
     }
 
-    function swatch(container: HTMLElement, reading: number): HTMLElement {
+    function swatch(container: HTMLElement, reading: string): HTMLElement {
       return container.querySelector<HTMLElement>(`[data-reading="${reading}"]`)!;
     }
 
-    const preview = (reading: number | null) =>
+    const preview = (reading: string | null) =>
       haftarahOverlay.change((current) => ({ ...current, preview: reading }));
 
     /** Load the sample data with Rosh Chodesh's haftarah under `custom` replaced by `ranges`. */
@@ -466,12 +466,18 @@ describe('Haftarah Overlay', () => {
         {
           label: 'Genesis',
           readings: [
-            { name: 'Bereshit', reading: 0 },
-            { name: 'Noach', reading: 1 },
+            { name: 'Bereshit', reading: 'Bereshit' },
+            { name: 'Noach', reading: 'Noach' },
           ],
         },
-        { label: 'High Holidays', readings: [{ name: 'Rosh Hashanah Day 1', reading: 3 }] },
-        { label: 'Rosh Chodesh', readings: [{ name: 'Shabbat Rosh Chodesh', reading: 2 }] },
+        {
+          label: 'High Holidays',
+          readings: [{ name: 'Rosh Hashanah Day 1', reading: 'Rosh Hashanah Day 1' }],
+        },
+        {
+          label: 'Rosh Chodesh',
+          readings: [{ name: 'Shabbat Rosh Chodesh', reading: 'Shabbat Rosh Chodesh' }],
+        },
       ]);
     });
 
@@ -549,6 +555,78 @@ describe('Haftarah Overlay', () => {
     it('leaves the map hover out of the colours while a reading is previewed', () => {
       preview(BERESHIT);
       expect(haftarahOverlay.hoverChangesColors(null, noach)).toBe(false);
+    });
+  });
+
+  describe('A reading named in a story stop', () => {
+    beforeEach(async () => {
+      vi.useFakeTimers();
+      await haftarahOverlay.overlay.init?.();
+    });
+    afterEach(() => vi.useRealTimers());
+
+    const genesis = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+    const noach = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
+    const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
+    const brightness = (v: typeof genesis) => sum(haftarahOverlay.getVerseColor(v) as Color);
+    const brightnessUnder = (v: typeof genesis, hovered: typeof genesis | null) =>
+      sum(haftarahOverlay.overlay.colorsFor!([v], haftarahOverlay.settings, hovered)[0] as Color);
+
+    it('reads a name with spaces and punctuation, and never writes it into a link', () => {
+      haftarahOverlay.restore({ reading: 'Rosh Hashanah Day 1' });
+      expect(haftarahOverlay.settings.reading).toBe('Rosh Hashanah Day 1');
+      expect(haftarahOverlay.toUrl()).toEqual({});
+
+      haftarahOverlay.restore({ reading: "Tisha B'Av, Morning" });
+      expect(haftarahOverlay.settings.reading).toBe("Tisha B'Av, Morning");
+    });
+
+    it('names no reading when the link names none', () => {
+      expect(haftarahOverlay.settings.reading).toBeNull();
+      expect(haftarahOverlay.toUrl()).toEqual({});
+    });
+
+    it('lights the reading exactly as hovering it in the key does', () => {
+      haftarahOverlay.change((current) => ({ ...current, preview: 'Bereshit' }));
+      const previewed = [genesis, noach, psalms].map((v) => haftarahOverlay.getVerseColor(v));
+
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+
+      expect([genesis, noach, psalms].map((v) => haftarahOverlay.getVerseColor(v))).toEqual(
+        previewed,
+      );
+    });
+
+    it('lights nothing for a name no reading has', () => {
+      const cold = brightness(genesis);
+      haftarahOverlay.restore({ reading: 'Nonesuch' });
+      expect(brightness(genesis)).toBe(cold);
+      expect(haftarahOverlay.getVerseColor(psalms)).toBeNull();
+    });
+
+    it('gives way to a reading hovered in the key, and returns when it is left', () => {
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      const container = haftarahOverlay.renderControls();
+      const noachSwatch = container.querySelector<HTMLElement>('[data-reading="Noach"]')!;
+
+      noachSwatch.dispatchEvent(new Event('pointerover', { bubbles: true }));
+      expect(brightness(noach)).toBeGreaterThan(brightness(genesis));
+
+      container.querySelector('.haftarah-key')!.dispatchEvent(new Event('pointerleave'));
+      vi.advanceTimersByTime(HOVER_LINGER_MS);
+      expect(haftarahOverlay.settings.reading).toBe('Bereshit');
+      expect(brightness(genesis)).toBeGreaterThan(brightness(noach));
+    });
+
+    it('gives way to a hovered verse of another reading on the map', () => {
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      expect(brightnessUnder(noach, noach)).toBeGreaterThan(brightnessUnder(genesis, noach));
+    });
+
+    it('stays lit while the map hover is on a verse outside every reading', () => {
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      expect(brightnessUnder(genesis, psalms)).toBe(brightnessUnder(genesis, null));
+      expect(brightnessUnder(genesis, psalms)).toBeGreaterThan(brightnessUnder(noach, psalms));
     });
   });
 

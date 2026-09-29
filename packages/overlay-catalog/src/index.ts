@@ -41,6 +41,8 @@ export const HAFTARAH_CUSTOMS = ['ashkenazi', 'sephardi'] as const;
 
 const HAFTARAH_PARAMS = [
   { key: 'custom', kind: 'token', allowed: HAFTARAH_CUSTOMS, default: 'ashkenazi' },
+  // A reading's name, e.g. "Lech Lecha" or "Tisha B'Av, Morning".
+  { key: 'reading', kind: 'token' },
 ] as const satisfies readonly UrlParamSpec[];
 
 export const HAFTARAH = {

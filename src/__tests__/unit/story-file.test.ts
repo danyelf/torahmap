@@ -1,7 +1,7 @@
 // Every shipped story reads the way it was written. The parser drops what it
 // cannot read without failing, so a slip such as `zoom 0.5` quietly changes
 // the view instead of stopping the commit.
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -15,11 +15,29 @@ import { writeLink, parseVerseFromUrl } from '@torahmap/link';
 import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
+import { haftarahOverlay } from '../../overlays/haftarah';
+import { deriveHaftarah } from '../../overlays/haftarah/readings';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
 registerAllOverlays();
+
+beforeAll(() => haftarahOverlay.init?.());
+
+/**
+ * Stops whose haftarah reading, once read the way the app does, is no
+ * reading's name. The app lights nothing for such a stop rather than failing.
+ */
+function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']): string[] {
+  return stops
+    .filter((s) => s.overlay === 'haftarah' && s.overlayParams?.reading)
+    .filter((s) => {
+      const { custom, reading } = settingsFromLink(haftarahOverlay, s.overlayParams!);
+      return !reading || !deriveHaftarah(custom).itemByName.has(reading);
+    })
+    .map((s) => `${s.id}: ${s.overlayParams!.reading}`);
+}
 
 describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   const story = parseStoryMarkdown(markdown);
@@ -135,6 +153,10 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
       .filter((s) => !categories.has(s.overlayParams!.category))
       .map((s) => `${s.id}: ${s.overlayParams!.category}`);
     expect(unknown).toEqual([]);
+  });
+
+  it('names only haftarah readings the data has', () => {
+    expect(unknownReadings(stops)).toEqual([]);
   });
 
   it('searches, where a stop searches, for words long enough to search on', () => {
