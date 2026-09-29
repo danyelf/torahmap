@@ -2,11 +2,14 @@
 
 import { linkKind, parseVerseFromUrl, verseRef, type UrlState } from '@torahmap/link';
 import { overlayName } from '@torahmap/overlay-catalog';
-import { STORIES, listedStories, storyToOpen, storyTitle, stopOpening } from '@torahmap/stories';
+import { STORIES, listedStories, storyToOpen, stopOpening, type Story } from '@torahmap/stories';
 
 export const SITE_NAME = 'Torahmap';
 export const TAGLINE = 'A Visual Concordance of the Hebrew Bible.';
 const SEPARATOR = ' · ';
+
+// torahmap.org's list; a preview build that lists drafts can open another story.
+const LISTED = listedStories(STORIES, false);
 
 /** Fills index.html's %SITE_NAME%/%TAGLINE% placeholders; the Vite build runs it on the page. */
 export function fillSiteTags(html: string): string {
@@ -21,10 +24,10 @@ export interface LinkDescription {
 /** The title names what the link points at, most specific first, because tabs and previews cut from the right. */
 export function describeLink(state: UrlState): LinkDescription {
   if (linkKind(state) === 'stop') {
-    // torahmap.org's default; a preview build that lists drafts could open another.
-    const story = state.story ?? storyToOpen(listedStories(STORIES, false), null).id;
-    const title = story ? storyTitle(story) : undefined;
-    const opening = story && state.stop ? stopOpening(story, state.stop) : undefined;
+    // Undefined only when no story is listed.
+    const story: Story | undefined = storyToOpen(LISTED, state.story ?? null);
+    const title = story?.data.title;
+    const opening = story && state.stop ? stopOpening(story.id, state.stop) : undefined;
     return {
       title: title ? [title, SITE_NAME].join(SEPARATOR) : SITE_NAME,
       description: opening ? `${opening} ${TAGLINE}` : TAGLINE,

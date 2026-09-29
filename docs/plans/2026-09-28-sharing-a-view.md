@@ -51,7 +51,7 @@ the popup go to it; the search is its context.
 | Verse + overlay | Genesis 12:1 · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
 | Search | Search: אברם · Torahmap | A Visual Concordance of the Hebrew Bible. |
 | Verse + search + overlay | Genesis 12:1 · Search: אברם · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
-| Story stop, or a stop alone (in the default story) | The Guided Tour · Torahmap | The stop's first sentence. A Visual Concordance of the Hebrew Bible. |
+| Story stop, or a stop alone; named by the story that opens, which for a draft, unknown or missing story is the default | The Guided Tour · Torahmap | The stop's first sentence. A Visual Concordance of the Hebrew Bible. |
 | Nothing, or only a camera | Torahmap | A Visual Concordance of the Hebrew Bible. |
 
 "A Visual Concordance of the Hebrew Bible" also replaces the description in
@@ -111,7 +111,7 @@ Only these four. Splitting the rest of the codebase is not part of this.
 Columns go in `src/telemetry/schema.ts` as usual.
 
 - **`share`** — `how` (`copied`, `share_sheet`, `cancelled`, `failed`),
-  `what` (`nothing`, `view`, `stop`), `story`, `stop_id`, `overlay`, and whether a search
+  `what` (`nothing`, `view`, `stop`), `story`, `stop_id`, `overlay` (`none` when the link names none), and whether a search
   is on and a verse pinned.
 - **`page_view`** gains `arrived_with` (`nothing`, `view`, `stop`): what the
   first page's link named. A reload or Back/Forward

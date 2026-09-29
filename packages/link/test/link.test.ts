@@ -454,6 +454,12 @@ describe('a story in the link', () => {
   it('keeps a stop without a story', () => {
     expect(writeLink(readLink('?stop=abraham_call&fbclid=abc'))).toBe('?stop=abraham_call');
   });
+
+  it('writes a stop link as its stop alone, whatever else it names', () => {
+    expect(writeLink(readLink('?stop=abraham_call&verse=Genesis.1.1&overlay=trop'))).toBe(
+      '?stop=abraham_call',
+    );
+  });
 });
 
 describe('verseToUrlFormat', () => {

@@ -66,7 +66,7 @@ export function arrivedWith(state: UrlState, navigationType: string | undefined)
   return linkKind(state);
 }
 
-export function trackShare(fields: EventFields<'share'> & { what: LinkKind }): void {
+export function trackShare(fields: EventFields<'share'>): void {
   track('share', fields);
 }
 

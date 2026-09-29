@@ -1,4 +1,5 @@
 import {
+  linkKind,
   parseVerseFromUrl,
   type OverlayParams,
   type UrlParamValues,
@@ -27,25 +28,22 @@ export interface ViewState {
 }
 
 /**
- * A link that names a story, or names nothing at all, is the story. Any
- * other link is Explore, including one that carries only a camera.
+ * A stop link, or one that names nothing at all, is the story. Any other link
+ * is Explore, including one that carries only a camera. A stop link is read
+ * as writeLink writes it, by its story and stop alone.
  */
 export function resolveViewState(
-  url: UrlState,
+  link: UrlState,
   defaultCamera: Camera,
   isOverlay: (id: string) => boolean,
 ): ViewState {
-  const namesNothing =
-    url.searchParams === undefined &&
-    url.overlay === undefined &&
-    url.verse === undefined &&
-    url.zoom === undefined &&
-    url.x === undefined &&
-    url.y === undefined;
+  const kind = linkKind(link);
+  const url: UrlState =
+    kind === 'stop' ? { story: link.story, stop: link.stop, overlayParams: {} } : link;
   const overlay = url.overlay !== undefined && isOverlay(url.overlay) ? url.overlay : 'none';
 
   return {
-    mode: url.story || namesNothing ? 'story' : 'explore',
+    mode: kind === 'view' ? 'explore' : 'story',
     story: url.story ?? null,
     stop: url.stop ?? null,
     overlay,
@@ -58,6 +56,11 @@ export function resolveViewState(
       y: url.y ?? defaultCamera.y,
     },
   };
+}
+
+/** A story folded earlier in the session opens folded, unless the link names a stop. */
+export function opensFolded(link: UrlState, storyWasFolded: boolean): boolean {
+  return storyWasFolded && linkKind(link) !== 'stop';
 }
 
 /**

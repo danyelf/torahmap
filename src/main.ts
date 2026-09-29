@@ -55,7 +55,7 @@ import {
 } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
-import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
+import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
@@ -271,9 +271,8 @@ async function main(): Promise<void> {
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
 
-  // A story folded earlier in the session opens folded, unless the link names a story.
-  const opensFolded = !parseUrlState().story && storyWasFolded();
-  let driver: Driver = opensFolded ? readerTakesOver(0) : STORY_DRIVING;
+  const startsFolded = opensFolded(parseUrlState(), storyWasFolded());
+  let driver: Driver = startsFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
 
   function composite(): void {
@@ -1485,7 +1484,7 @@ async function main(): Promise<void> {
       what: linkKind(shared),
       story: shared.story ?? '',
       stop_id: shared.stop ?? '',
-      overlay: shared.overlay ?? '',
+      overlay: shared.overlay ?? 'none',
       searching: shared.searchParams ? 1 : 0,
       pinned: shared.verse ? 1 : 0,
     });
@@ -1776,21 +1775,19 @@ async function main(): Promise<void> {
     restoreFromUrl(link);
   }
 
-  // A link to a story stop always opens the story.
-  if (frame.mode === 'story' && opensFolded) {
+  if (frame.mode === 'story' && startsFolded) {
     // A link that names nothing has opened the story and handed it the map.
     if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
     setStoryOpen(false);
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
-  const opened = parseUrlState();
   trackPageView(
-    opened.story ?? '',
-    opened.stop ?? '',
+    link.story ?? '',
+    link.stop ?? '',
     referrer === location.hostname ? '' : referrer,
     arrivedWith(
-      opened,
+      link,
       (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)
         ?.type,
     ),

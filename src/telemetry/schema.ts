@@ -6,11 +6,12 @@
 // start at double1. Appending a field is safe; reordering one silently
 // changes what old rows mean.
 
+import type { LinkKind } from '@torahmap/link';
 import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
 
 const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
-type RequestContext = Record<Exclude<CommonColumn, 'event' | 'mode'>, string>;
+export type RequestContext = Record<Exclude<CommonColumn, 'event' | 'mode'>, string>;
 
 export const EVENTS = {
   // arrived_with is blank on views recorded before the column existed —
@@ -26,19 +27,26 @@ export const EVENTS = {
   word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
-  link_preview: { blobs: ['fetcher', 'what'], doubles: [] },
-  // overlay is blank whenever the shared link left it out: every story-stop
-  // share, and a view left on the default overlay — not "no overlay" showing.
+  link_preview: { blobs: ['fetcher', 'what'], doubles: [], by: 'worker' },
   share: {
     blobs: ['how', 'what', 'story', 'stop_id', 'overlay'],
     doubles: ['searching', 'pinned'],
   },
-} as const satisfies Record<string, { blobs: readonly string[]; doubles: readonly string[] }>;
+} as const satisfies Record<
+  string,
+  { blobs: readonly string[]; doubles: readonly string[]; by?: 'worker' }
+>;
 
 export type EventName = keyof typeof EVENTS;
 
+type WorkerEvent = {
+  [E in EventName]: (typeof EVENTS)[E] extends { by: 'worker' } ? E : never;
+}[EventName];
+
 /** Events only the Worker writes; toDataPoint refuses them from the page. */
-export const WORKER_EVENTS: ReadonlySet<EventName> = new Set(['link_preview']);
+export const WORKER_EVENTS: ReadonlySet<EventName> = new Set(
+  (Object.keys(EVENTS) as EventName[]).filter((e) => 'by' in EVENTS[e]),
+);
 
 /** An event's columns in order: its strings from blob1, its numbers from double1. */
 export function columns(event: EventName): { blobs: string[]; doubles: string[] } {
@@ -49,7 +57,14 @@ export function columns(event: EventName): { blobs: string[]; doubles: string[] 
 }
 type Blobs<E extends EventName> = (typeof EVENTS)[E]['blobs'][number];
 type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
-export type EventFields<E extends EventName> = { [K in Blobs<E>]: string } & {
+// Columns that hold fewer values than any string.
+interface NarrowBlobs {
+  arrived_with: LinkKind;
+  what: LinkKind;
+}
+export type EventFields<E extends EventName> = {
+  [K in Blobs<E>]: K extends keyof NarrowBlobs ? NarrowBlobs[K] : string;
+} & {
   [K in Doubles<E>]: number;
 };
 
@@ -96,7 +111,7 @@ export function toDataPoint(payload: unknown, context: RequestContext): DataPoin
  * visit to index by — the event name serves as the index instead. There is
  * no mode, since nothing is driving a story.
  */
-export function workerDataPoint<E extends EventName>(
+export function workerDataPoint<E extends WorkerEvent>(
   event: E,
   fields: EventFields<E>,
   context: RequestContext,

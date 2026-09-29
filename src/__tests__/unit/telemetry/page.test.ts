@@ -28,6 +28,10 @@ const content = (html: string, attr: string, name: string) =>
 describe('rewritePage, on the real index.html', () => {
   const page = rewritePage(INDEX, tags);
 
+  it('starts from a page with every placeholder filled', () => {
+    expect(INDEX).not.toMatch(/%[A-Z_]+%/);
+  });
+
   it('titles the page', () => {
     expect(page).toContain('<title>Genesis 12:1 · Torahmap</title>');
   });

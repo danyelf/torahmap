@@ -9,6 +9,7 @@ import {
   toDataPoint,
   workerDataPoint,
   type DataPoint,
+  type RequestContext,
 } from '../telemetry/schema.ts';
 import { readLink, writeLink, linkKind, type UrlState } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
@@ -26,10 +27,7 @@ export interface Env {
 }
 
 // Cloudflare attaches `cf` to incoming requests; the DOM Request type has no such field.
-function requestContext(
-  request: Request,
-  url: URL,
-): { country: string; device: string; host: string } {
+function requestContext(request: Request, url: URL): RequestContext {
   const country = (request as unknown as { cf?: { country?: string } }).cf?.country ?? '';
   const device = /Mobi|Android/i.test(request.headers.get('User-Agent') ?? '')
     ? 'mobile'
@@ -37,9 +35,8 @@ function requestContext(
   return { country, device, host: url.hostname };
 }
 
-async function handleEvent(request: Request, env: Env): Promise<Response> {
+async function handleEvent(request: Request, url: URL, env: Env): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405 });
-  const url = new URL(request.url);
   if (request.headers.get('Origin') !== url.origin) return new Response(null, { status: 403 });
 
   // Reject by the declared size before reading the body, so an oversized
@@ -87,12 +84,11 @@ function recordPreviewFetch(
   }
 }
 
-async function linkPage(request: Request, env: Env): Promise<Response> {
+async function linkPage(request: Request, url: URL, env: Env): Promise<Response> {
   const fetcher = previewFetcher(request.headers.get('User-Agent') ?? '');
   if (!fetcher) return env.ASSETS.fetch(request);
 
   const response = await env.ASSETS.fetch(request);
-  const url = new URL(request.url);
   const link = readLink(url.search, overlayParamSpecs);
 
   // Recorded even when the static files return an error.
@@ -122,8 +118,8 @@ async function linkPage(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname === '/api/event') return handleEvent(request, env);
-    if (url.pathname === '/' && request.method === 'GET') return linkPage(request, env);
+    if (url.pathname === '/api/event') return handleEvent(request, url, env);
+    if (url.pathname === '/' && request.method === 'GET') return linkPage(request, url, env);
     return env.ASSETS.fetch(request);
   },
 };

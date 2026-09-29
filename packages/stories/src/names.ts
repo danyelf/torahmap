@@ -1,10 +1,6 @@
-// A story's and a stop's names, for a tab title and a chat preview.
+// A stop's opening words, for a link's description.
 
 import { STORIES } from './stories.ts';
-
-export function storyTitle(id: string): string | undefined {
-  return STORIES.find((s) => s.id === id)?.data.title || undefined;
-}
 
 /** The first sentence of a stop's text, as plain text. */
 export function stopOpening(storyId: string, stopId: string): string | undefined {

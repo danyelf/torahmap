@@ -11,5 +11,5 @@ export type {
 export { parseStoryMarkdown, STORY_HEADER_KEYS } from './parser.ts';
 export { STORY_MARKDOWN };
 export { STORIES } from './stories.ts';
-export { storyTitle, stopOpening } from './names.ts';
+export { stopOpening } from './names.ts';
 export { listedStories, storyToOpen } from './storyIndex.ts';
