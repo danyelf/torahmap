@@ -1,7 +1,12 @@
-// The site's Worker. Static files are served before this runs; the only route
-// it owns is /api/event, which writes one Analytics Engine data point.
+// The site's Worker. It owns /api/event, which writes one Analytics Engine
+// data point, and the page at /, which it names for the link that was asked
+// for; every other path is served as a static file.
 
 import { MAX_BODY_BYTES, toDataPoint, type DataPoint } from '../telemetry/schema.ts';
+import { readLink, describeLink } from '@torahmap/link';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { LINK_NAMES } from '../linkNames.ts';
+import { rewritePage } from './page.ts';
 
 interface EventsDataset {
   writeDataPoint(point: DataPoint): void;
@@ -47,9 +52,26 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
   return new Response(null, { status: 204 });
 }
 
+async function linkPage(request: Request, env: Env): Promise<Response> {
+  const response = await env.ASSETS.fetch(request);
+  const contentType = response.headers.get('Content-Type') ?? '';
+  if (response.status !== 200 || !contentType.startsWith('text/html')) return response;
+
+  const url = new URL(request.url);
+  const { title, description } = describeLink(readLink(url.search, overlayParamSpecs), LINK_NAMES);
+  const body = rewritePage(await response.text(), { title, description, url: request.url });
+
+  const headers = new Headers(response.headers);
+  headers.delete('Content-Length');
+  headers.delete('ETag');
+  return new Response(body, { status: response.status, headers });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    if (new URL(request.url).pathname === '/api/event') return handleEvent(request, env);
+    const url = new URL(request.url);
+    if (url.pathname === '/api/event') return handleEvent(request, env);
+    if (url.pathname === '/' && request.method === 'GET') return linkPage(request, env);
     return env.ASSETS.fetch(request);
   },
 };

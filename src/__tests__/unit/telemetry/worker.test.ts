@@ -145,3 +145,41 @@ describe('telemetry worker', () => {
     expect(e.ASSETS.fetch).toHaveBeenCalled();
   });
 });
+
+function page(url: string, headers: Record<string, string> = {}) {
+  return new Request(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh)', ...headers } });
+}
+function envWithIndex(
+  html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" />',
+) {
+  const e = env();
+  e.ASSETS.fetch = vi.fn(
+    async () => new Response(html, { headers: { 'Content-Type': 'text/html' } }),
+  );
+  return e;
+}
+
+describe('the page at /', () => {
+  it('names the link it was asked for', async () => {
+    const response = await worker.fetch(
+      page('https://torahmap.org/?verse=Genesis.12.1'),
+      envWithIndex(),
+    );
+    const html = await response.text();
+    expect(html).toContain('<title>Genesis 12:1 · Torahmap</title>');
+    expect(html).toContain('content="Genesis 12:1 · Torahmap"');
+  });
+
+  it('passes through anything but a 200 HTML page', async () => {
+    const e = env();
+    e.ASSETS.fetch = vi.fn(async () => new Response(null, { status: 304 }));
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1'), e);
+    expect(response.status).toBe(304);
+  });
+
+  it('leaves other paths to the static files', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/og-image.jpg'), e);
+    expect(e.ASSETS.fetch).toHaveBeenCalledOnce();
+  });
+});
