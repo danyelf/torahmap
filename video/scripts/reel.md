@@ -4,6 +4,10 @@ fps: 60
 panel: closed
 ---
 
+<!-- Timed to Danyel's voiceover, which is not in the repository. Its first
+word is 4.04 s into the recording; the times put it 1.04 s into the reel:
+  npm run mix -- video/out/reel.mp4 video/out/voice.m4a --from 3.85 --to 60.3 --at 0.85 -->
+
 <!-- Opening: the map's own title card. -->
 
 <!-- scene: title | view: x=898&y=132&zoom=0.9 | map: hidden -->
@@ -28,25 +32,25 @@ panel: closed
 
 <!-- scene: names_jacob | view: search=Abraham,Isaac,Jacob&x=3200&y=236&zoom=1.66 | over: 0s | fade: 0.6s | caption: Then his son Isaac (orange), then Jacob (green). -->
 
-<!-- scene: names_torah | view: search=Abraham,Isaac,Jacob&x=2675&y=290&zoom=0.69 | over: 2s | caption: Moses (pink) appears in Exodus and through the next three books. -->
+<!-- scene: names_torah | view: search=Abraham,Isaac,Jacob&x=2675&y=290&zoom=0.69 | over: 1.5s | caption: Moses (pink) appears in Exodus and through the next three books. -->
 
 <!-- scene: names_moses | view: search=Abraham,Isaac,Jacob,Moses&x=2675&y=290&zoom=0.69 | over: 0s | fade: 0.6s | caption: Moses (pink) appears in Exodus and through the next three books. -->
 
-<!-- scene: names_samuel | view: search=Abraham,Isaac,Jacob,Moses&x=2391.7&y=497&zoom=1 | over: 2s | caption: King David (yellow): his story begins in I Samuel. -->
+<!-- scene: names_samuel | view: search=Abraham,Isaac,Jacob,Moses&x=2391.7&y=497&zoom=1 | over: 1.5s | caption: King David (yellow): his story begins in I Samuel. -->
 
 <!-- scene: names_david | view: search=Abraham,Isaac,Jacob,Moses,David&x=2391.7&y=497&zoom=1 | over: 0s | fade: 0.6s | caption: King David (yellow): his story begins in I Samuel. -->
 
-<!-- scene: names_out | view: search=Abraham,Isaac,Jacob,Moses,David&x=1720&y=875&zoom=0.28 | over: 2s -->
+<!-- scene: names_out | view: search=Abraham,Isaac,Jacob,Moses,David&x=1720&y=875&zoom=0.28 | over: 1.5s -->
 
 <!-- Beat 3: the shape of the writing. -->
 
 <!-- scene: lengths | view: overlay=verse-length&x=1720&y=875&zoom=0.28 | fade: 1s | caption: Text analytics: purple for short verses, orange for long. -->
 
-<!-- scene: writings | view: overlay=verse-length&x=2356.9&y=1300.7&zoom=1.3 | over: 2.5s | caption: Story and poetry each have a shape. -->
+<!-- scene: writings | view: overlay=verse-length&x=2356.9&y=1300.7&zoom=1.3 | over: 2s | caption: Story and poetry each have a shape. -->
 
 <!-- scene: lamentations | view: overlay=verse-length&x=2064.3&y=1296.7&zoom=2.4 | over: 2s | caption: The poem in Chapter 3 of Lamentations stands out. -->
 
-<!-- scene: lengths_whole | view: overlay=verse-length&x=1720&y=875&zoom=0.28 | over: 2.5s | caption: The poem in Chapter 3 of Lamentations stands out. -->
+<!-- scene: lengths_whole | view: overlay=verse-length&x=1720&y=875&zoom=0.28 | over: 2s | caption: The poem in Chapter 3 of Lamentations stands out. -->
 
 <!-- Beat 4: where the writing gathers. -->
 
