@@ -176,6 +176,11 @@ const STORY_FOLDED_KEY = 'torahMap.storyFolded';
 // the verse lands behind the popup that sits just above the sheet.
 const PHONE_STORY_FOCUS = 0.4;
 
+/** The stop a story between two stops counts as at: the one it is more than halfway to. */
+function nearerStop(state: InterpolatedState): ResolvedStoryStop {
+  return state.t > 0.5 ? state.toStop : state.fromStop;
+}
+
 function storyWasFolded(): boolean {
   try {
     return sessionStorage.getItem(STORY_FOLDED_KEY) === 'true';
@@ -248,8 +253,12 @@ async function main(): Promise<void> {
   // Where the canvas starts, read when it resizes rather than per pointer
   // event: reading it then forces a layout on every hover and drag.
   let canvasOrigin = canvas.getBoundingClientRect();
+  // The window resizing is not the only thing that resizes the map: on a phone
+  // it grows as the sheet lowers.
   new ResizeObserver(() => {
     canvasOrigin = canvas.getBoundingClientRect();
+    resizeCanvas();
+    render();
   }).observe(canvas);
 
   /** Where a pointer is on the map: the canvas need not start at the window's corner. */
@@ -517,8 +526,7 @@ async function main(): Promise<void> {
 
   function storyStopIndex(): number {
     if (heldStop !== null) return heldStop;
-    const state = currentStoryState();
-    return resolvedStops.indexOf(state.t > 0.5 ? state.toStop : state.fromStop);
+    return resolvedStops.indexOf(nearerStop(currentStoryState()));
   }
 
   const phoneLayout = window.matchMedia('(max-width: 768px)');
@@ -704,6 +712,11 @@ async function main(): Promise<void> {
     updateMapTitlePosition(mapTitle, offset, camera.zoom);
   }
 
+  /** The cursor over `verse`, or over no verse: a pointer only over one while another is pinned. */
+  function setCursorOver(verse: TanakhLayout | null): void {
+    canvas.style.cursor = pinnedVerse && verse ? 'pointer' : 'default';
+  }
+
   function centerOnVerse(verse: TanakhLayout): void {
     Object.assign(camera, centreForFocus(verse, camera.zoom, mapFocus(), mapViewport()));
   }
@@ -856,19 +869,6 @@ async function main(): Promise<void> {
     pointerDownPos = { x: p.x, y: p.y, time: Date.now() };
   });
 
-  canvas.addEventListener('pointermove', (e: PointerEvent) => {
-    if (mouseState.isDragging && touchState.activeTouches.size < 2) {
-      const p = onMap(e);
-      const dx = p.x - mouseState.dragStart.x;
-      const dy = p.y - mouseState.dragStart.y;
-      if (dx !== 0 || dy !== 0) takeOver('takeover');
-      camera.x -= dx / camera.zoom;
-      camera.y -= dy / camera.zoom;
-      mouseState.dragStart = { x: p.x, y: p.y };
-      render();
-    }
-  });
-
   canvas.addEventListener('pointerup', (e: PointerEvent) => {
     const p = onMap(e);
     const wasDragging = mouseState.isDragging;
@@ -897,14 +897,7 @@ async function main(): Promise<void> {
       pointerDownPos = null;
     }
 
-    if (wasDragging) {
-      const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
-      if (pinnedVerse && verse) {
-        canvas.style.cursor = 'pointer';
-      } else {
-        canvas.style.cursor = 'default';
-      }
-    }
+    if (wasDragging) setCursorOver(findItemAtPoint(verses, camera, mapViewport(), p.x, p.y));
   });
 
   canvas.addEventListener('pointerleave', () => {
@@ -996,32 +989,31 @@ async function main(): Promise<void> {
     else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
   }
 
+  // A drag pans the map, and a mouse moving over it hovers. Two fingers pinch.
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
-    if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
+    if (touchState.activeTouches.size >= 2) return;
+    const p = onMap(e);
 
-    if (!mouseState.isDragging) {
-      const p = onMap(e);
-      lastPointerPosition = { x: p.x, y: p.y };
-      const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
-      const previousHover = mouseState.hoveredVerse;
-      setHoveredVerse(mouseState, verse);
-
-      if (pinnedVerse && verse) {
-        canvas.style.cursor = 'pointer';
-      } else {
-        canvas.style.cursor = 'default';
-      }
-
-      if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
-
-      if (pinnedVerse) {
-        // Keep showing pinned verse
-      } else if (verse) {
-        updateSidebarWrapper(verse, false);
-      } else {
-        updateSidebarWrapper(null);
-      }
+    if (mouseState.isDragging) {
+      const dx = p.x - mouseState.dragStart.x;
+      const dy = p.y - mouseState.dragStart.y;
+      if (dx !== 0 || dy !== 0) takeOver('takeover');
+      camera.x -= dx / camera.zoom;
+      camera.y -= dy / camera.zoom;
+      mouseState.dragStart = { x: p.x, y: p.y };
+      render();
+      return;
     }
+    if (e.pointerType === 'touch') return;
+
+    lastPointerPosition = { x: p.x, y: p.y };
+    const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
+    const previousHover = mouseState.hoveredVerse;
+    setHoveredVerse(mouseState, verse);
+    setCursorOver(verse);
+    if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
+    // A pinned verse keeps the popup.
+    if (!pinnedVerse) updateSidebarWrapper(verse);
   });
 
   sidebarElements.closeBtn?.addEventListener('click', () => {
@@ -1204,13 +1196,6 @@ async function main(): Promise<void> {
     setOverlay(overlaySelect.value);
   });
 
-  // The window resizing is not the only thing that resizes the map: on a phone
-  // it grows as the sheet lowers.
-  new ResizeObserver(() => {
-    resizeCanvas();
-    render();
-  }).observe(canvas);
-
   // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
   if (import.meta.hot) {
     document.addEventListener('keydown', (e) => {
@@ -1284,10 +1269,7 @@ async function main(): Promise<void> {
   let story = storyToOpen(listed, parseUrlState().story ?? null);
   configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
-    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), {
-      width: canvas.clientWidth,
-      height: canvas.clientHeight,
-    });
+    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), mapViewport());
   let resolvedStops: ResolvedStoryStop[] = [];
   let stopElements: HTMLElement[] = [];
 
@@ -1652,13 +1634,10 @@ async function main(): Promise<void> {
     camera.zoom = state.camera.zoom;
 
     const settled = state.fromStop === state.toStop;
-    // Pick the stop whose state should be "current" — settled stop, or the
-    // dominant transitioning stop. Sync explore state to it on every change
-    // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
-    const dominantStop = settled ? state.fromStop : state.t > 0.5 ? state.toStop : state.fromStop;
-    if (lastSyncedStopId !== dominantStop.id) {
-      arriveAtStop(dominantStop);
-    }
+    // Sync explore state to the nearer stop on every change, so hover events
+    // mid-scroll find a consistent currentOverlay/pinnedVerse.
+    const nearer = nearerStop(state);
+    if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
     // A scroll fires no pointer event, so re-run hit detection under the
     // last known cursor position now that the camera has moved.
