@@ -3,7 +3,7 @@
 Danyel Fisher
 January 2026
 
-I love the idea of being able to lay out an entire text as an interactive surface. Brad Paley's ["TextArc"](https://history.siggraph.org/artwork/w-bradford-paley-textarc/) was an early inspiration for me; so was Alexander's ["Serendip"](https://ieeexplore.ieee.org/abstract/document/7042493) and McCurdy's ["Poemage"](https://www.sci.utah.edu/~nmccurdy/Poemage/).
+I love the idea of being able to lay out an entire text as an interactive surface. Brad Paley's ["TextArc"](https://history.siggraph.org/artwork/w-bradford-paley-textarc/) was an early inspiration for me; so were Alexander's ["Serendip"](https://ieeexplore.ieee.org/abstract/document/7042493), McCurdy's ["Poemage"](https://www.sci.utah.edu/~nmccurdy/Poemage/), and Keim and Oelke's ["Literature Fingerprinting"](https://doi.org/10.1109/VAST.2007.4389004) (VAST '07).
 
 The Tanakh -- the Jewish Bible -- is a rich and deep text, with years of study around it. This project visualizes the Tanakh across a number of different dimensions.
 
