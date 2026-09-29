@@ -30,7 +30,6 @@ type LexemeRow = [string, string, string, string, 'heb' | 'arc'];
 const lexiconFile = dataExists
   ? (JSON.parse(fs.readFileSync(lexiconPath, 'utf-8')) as {
       source: string;
-      fields: string[];
       lexemes: LexemeRow[];
     })
   : null;
@@ -68,9 +67,8 @@ const language = (id: number) => lexemes[id][4];
 
 describe.skipIf(!dataExists)('Lexeme index', () => {
   describe('the dictionary', () => {
-    it('names its source and column order', () => {
+    it('names its source', () => {
       expect(lexiconFile!.source).toMatch(/BHSA/);
-      expect(lexiconFile!.fields).toEqual(['id', 'form', 'gloss', 'pos', 'lang']);
     });
 
     it('gives every lexeme an identifier, a display form and a part of speech', () => {

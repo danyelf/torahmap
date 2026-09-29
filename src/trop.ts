@@ -4,15 +4,9 @@
 // src/overlays/trop.ts; which character is a mark is in src/hebrew.ts, with
 // the other character tests.
 
-import type { TropIndex, TropIndexEntry } from './types.ts';
+import type { TropIndex, TropIndexEntry, TropMark } from './types.ts';
 import type { VerseTexts } from './verseTexts.ts';
 import { isTropMark } from './hebrew.ts';
-
-export interface TropMark {
-  unicode: string; // The Unicode character
-  name: string; // English name
-  hebrewName: string; // Hebrew name
-}
 
 // The trop marks, with their names, ordered by traditional grouping.
 export const TROP_MARKS: TropMark[] = [

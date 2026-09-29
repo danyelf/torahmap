@@ -18,6 +18,7 @@ import {
   getLexemeVerseCount,
   getVerseLexemes,
   searchByLexemes,
+  type Lexeme,
   type LexemeId,
 } from '../search.ts';
 import { fetchData } from '../constants/app.ts';
@@ -33,16 +34,9 @@ import { isSectionMarker, verseWords } from '../verseWords.ts';
  * language. Two identical checkboxes are worse than one, so those become a
  * single row covering every lexeme behind it.
  */
-export interface Meaning {
+export interface Meaning extends Omit<Lexeme, 'id'> {
   /** Stable across regeneration of the index: ETCBC id and language. */
   keys: string[];
-  /** Vocalized dictionary form, for display: עֹלָה */
-  form: string;
-  /** English gloss: "burnt-offering" */
-  gloss: string;
-  /** ETCBC part of speech: subs, verb, nmpr, ... */
-  pos: string;
-  language: 'heb' | 'arc';
   /** Verses this word occurs in, across every spelling of it. */
   verseCount: number;
 }

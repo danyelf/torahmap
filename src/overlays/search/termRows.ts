@@ -6,6 +6,7 @@
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { isHebrew, stripNikkud } from '../../hebrew.ts';
+import type { LexemeLanguage } from '../../search.ts';
 import {
   removeTerm,
   setTermText,
@@ -114,7 +115,7 @@ const POS_LABELS: Record<string, string> = {
  * isn't Hebrew — otherwise-identical Hebrew and Aramaic readings would look
  * like duplicates (see the dictionary seam in search/dictionary.ts).
  */
-function meaningTag(pos: string, language: 'heb' | 'arc'): string {
+function meaningTag(pos: string, language: LexemeLanguage): string {
   const posLabel = POS_LABELS[pos] ?? pos;
   return language === 'arc' ? `(aram., ${posLabel})` : `(${posLabel})`;
 }

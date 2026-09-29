@@ -144,10 +144,13 @@ interface TropVerseLocation {
   count: number; // How many times this trop appears in this verse
 }
 
-export interface TropIndexEntry {
-  unicode: string;
-  name: string;
-  hebrewName: string;
+export interface TropMark {
+  unicode: string; // The Unicode character
+  name: string; // English name
+  hebrewName: string; // Hebrew name
+}
+
+export interface TropIndexEntry extends TropMark {
   totalCount: number;
   verses: TropVerseLocation[];
 }

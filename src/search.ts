@@ -55,6 +55,9 @@ let verseKeyToEntry: Map<string, IndexEntry> = new Map();
  */
 export type LexemeId = number;
 
+/** Hebrew or Aramaic, as ETCBC writes them. */
+export type LexemeLanguage = 'heb' | 'arc';
+
 export interface Lexeme {
   /** ETCBC identifier, e.g. "BR>[" for the verb ברא */
   id: string;
@@ -64,7 +67,7 @@ export interface Lexeme {
   gloss: string;
   /** part of speech: verb, subs, nmpr, prep, ... */
   pos: string;
-  language: 'heb' | 'arc';
+  language: LexemeLanguage;
 }
 
 // The dictionary, loaded from lexicon.json.
@@ -94,12 +97,11 @@ export function parseSearchTerms(query: string): string[] {
     .filter(isSearchableWord);
 }
 
-/** Row order of the lexeme records in lexicon.json */
-type LexemeRow = [id: string, form: string, gloss: string, pos: string, language: 'heb' | 'arc'];
+/** A lexeme as lexicon.json writes it, in the order generate-lexeme-index.py writes. */
+type LexemeRow = [id: string, form: string, gloss: string, pos: string, language: LexemeLanguage];
 
 interface LexiconFile {
   source: string;
-  fields: string[];
   lexemes: LexemeRow[];
 }
 
