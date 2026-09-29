@@ -569,8 +569,6 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     requestChange = null;
     // A search the reader leaves before it settles is not recorded.
     recordSettledSearch.cancel();
-    // verses and onVerseClickCallback are configuration handed in once by
-    // configure(), not per-activation state, so they stay.
   },
 
   highlightVerseText(text, language, settings) {
