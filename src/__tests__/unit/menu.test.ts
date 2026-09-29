@@ -21,7 +21,7 @@ describe('menuHtml', () => {
     expect(div.querySelector('img')).toBeNull();
   });
 
-  it('then the search, the overlays, the stories, and about', () => {
+  it('then share, the search, the overlays, the stories, and about', () => {
     const actions = items(menuHtml({ number: 1, total: 21, title: 'x' })).map(
       (b) => b.dataset.action,
     );

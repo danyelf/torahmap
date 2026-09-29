@@ -15,6 +15,7 @@ export {
   readLink,
   writeLink,
   verseToUrlFormat,
+  verseRef,
   parseVerseFromUrl,
 } from './link.ts';
 

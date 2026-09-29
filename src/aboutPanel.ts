@@ -1,6 +1,7 @@
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
 import { CONTROL, panelHtml } from './panel.ts';
+import { SITE_NAME } from '@torahmap/link';
 
 /** About & settings: one scrolling panel, settings first because they are what a returning reader wants. */
 export function aboutHtml(
@@ -13,7 +14,7 @@ export function aboutHtml(
       <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
-      <h3>Torahmap</h3>
+      <h3>${SITE_NAME}</h3>
       <p>An interactive visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position.</p>
       <p>The map is divided into three sections, stacked vertically:</p>
       <ul>

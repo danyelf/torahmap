@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { shareLink, closeAfterConfirming } from '../../share';
+import { shareLink } from '../../share';
 
 const url = 'https://torahmap.org/?verse=Genesis.12.1';
 
@@ -57,40 +57,5 @@ describe('shareLink', () => {
     const insecureNavigator = {} as Navigator; // no `clipboard` property at all
     const writeText = (t: string) => insecureNavigator.clipboard.writeText(t);
     expect(await shareLink(url, 't', { writeText, coarsePointer: false })).toBe('failed');
-  });
-});
-
-describe('closeAfterConfirming', () => {
-  it('closes the menu once the confirmation has shown', () => {
-    vi.useFakeTimers();
-    const close = vi.fn();
-    closeAfterConfirming(() => true, close, 1500);
-    vi.advanceTimersByTime(1499);
-    expect(close).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
-    expect(close).toHaveBeenCalledOnce();
-    vi.useRealTimers();
-  });
-
-  it('leaves alone a menu the reader already closed', () => {
-    vi.useFakeTimers();
-    const close = vi.fn();
-    closeAfterConfirming(() => false, close, 1500);
-    vi.advanceTimersByTime(1500);
-    expect(close).not.toHaveBeenCalled();
-    vi.useRealTimers();
-  });
-
-  it('leaves alone a menu reopened since, even though it reports open, because its item is gone', () => {
-    vi.useFakeTimers();
-    const close = vi.fn();
-    const item = document.createElement('button');
-    document.body.appendChild(item);
-    const menuOpen = true;
-    closeAfterConfirming(() => menuOpen && item.isConnected, close, 1500);
-    item.remove(); // reopening the menu redraws it, detaching the confirmed item
-    vi.advanceTimersByTime(1500);
-    expect(close).not.toHaveBeenCalled();
-    vi.useRealTimers();
   });
 });

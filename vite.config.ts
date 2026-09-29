@@ -1,7 +1,8 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { execSync } from 'child_process';
 import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
+import { SITE_NAME, TAGLINE } from '@torahmap/link';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -16,8 +17,17 @@ function getGitBranch(): string {
   }
 }
 
+// index.html names and describes the site in the words the tab title and link previews use.
+function sitePlugin(): Plugin {
+  return {
+    name: 'site-name',
+    transformIndexHtml: (html) =>
+      html.replaceAll('%SITE_NAME%', SITE_NAME).replaceAll('%TAGLINE%', TAGLINE),
+  };
+}
+
 export default defineConfig(({ command }) => ({
-  plugins: [storiesPlugin()],
+  plugins: [storiesPlugin(), sitePlugin()],
   define: {
     __GIT_BRANCH__: JSON.stringify(getGitBranch()),
     // Draft stories show on the dev server and on every branch's preview; the

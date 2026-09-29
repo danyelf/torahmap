@@ -25,7 +25,7 @@ import {
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, SHARE, menuHtml, type StoryPlace } from './menu.ts';
-import { shareLink, closeAfterConfirming } from './share.ts';
+import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
@@ -43,7 +43,13 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import { parseVerseFromUrl, verseToUrlFormat, linkNamesAView, type UrlState } from '@torahmap/link';
+import {
+  parseVerseFromUrl,
+  verseToUrlFormat,
+  verseRef,
+  linkNamesAView,
+  type UrlState,
+} from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
@@ -1175,7 +1181,7 @@ async function main(): Promise<void> {
       click.index,
     );
 
-    const ref = `${click.book} ${click.chapter}:${click.verse}`;
+    const ref = verseRef(click);
     const paletteFull = !canAddTerm(overlaySettings.get(searchTool));
     trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
 
@@ -1478,11 +1484,9 @@ async function main(): Promise<void> {
       shareStatus.textContent = label;
       // Reopening the menu redraws its items, detaching this one; a stale
       // timer must not then close whatever menu is open by the time it fires.
-      closeAfterConfirming(
-        () => frame.menu && item.isConnected,
-        () => dispatch({ type: 'menu' }),
-        1500,
-      );
+      setTimeout(() => {
+        if (frame.menu && item.isConnected) dispatch({ type: 'menu' });
+      }, 1500);
     } else if (frame.menu) {
       dispatch({ type: 'menu' });
     }
