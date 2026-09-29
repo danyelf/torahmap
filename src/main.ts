@@ -1,8 +1,5 @@
 // Tanakh Map - Main entry point
 
-declare const __GIT_BRANCH__: string;
-declare const __SHOW_DRAFTS__: boolean;
-
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
@@ -201,7 +198,7 @@ function storyWasFolded(): boolean {
  * suppressed by `applyingExternalState` leaves both unchanged.
  */
 function showTitle(): void {
-  const title = tabTitle(parseUrlState(overlayParamSpecs), __GIT_BRANCH__);
+  const title = tabTitle(parseUrlState(overlayParamSpecs), __LIVE__ ? null : __GIT_BRANCH__);
   if (document.title !== title) document.title = title;
 }
 
@@ -1297,7 +1294,7 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let listed = listedStories(STORIES, __SHOW_DRAFTS__);
+  let listed = listedStories(STORIES, !__LIVE__);
   // Where each story other than the current one was left, this visit.
   const places = new Map<string, number>();
 
@@ -1364,7 +1361,7 @@ async function main(): Promise<void> {
   if (import.meta.hot) {
     import.meta.hot.accept('@torahmap/stories', (module) => {
       if (!module) return;
-      listed = listedStories(module.STORIES, __SHOW_DRAFTS__);
+      listed = listedStories(module.STORIES, !__LIVE__);
       reloadStory();
     });
   }

@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [storiesPlugin()],
   define: {
     __GIT_BRANCH__: JSON.stringify('test'),
-    __SHOW_DRAFTS__: 'true',
+    __LIVE__: 'false',
   },
   test: {
     include: ['src/**/*.test.ts', 'packages/*/test/**/*.test.ts'],

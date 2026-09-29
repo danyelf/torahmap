@@ -30,7 +30,7 @@ file name. The first story listed is what a bare `torahmap.org` opens.
 
 **Drafts.** `draft: true` lists a story on the dev server and on every branch's
 preview, but not on the live site, which is the build of `main`. The build
-decides (`__SHOW_DRAFTS__` in `vite.config.ts`); nothing looks at the address.
+decides (`__LIVE__` in `vite.config.ts`); nothing looks at the address.
 Drafts exist so Danyel can see a story while
 writing it; nothing is done to make a draft's link meaningful or shareable on
 the live site, and drafts are in the live site's code even though it does not

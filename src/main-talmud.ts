@@ -4,8 +4,6 @@
 // rendering modules (camera, geometry, rendering, hitDetection) via their
 // generic <T> signatures.
 
-declare const __GIT_BRANCH__: string;
-
 import type { SpatialItem, TalmudIdentity } from './types.ts';
 import { loadTalmudStructure } from './talmud/data.ts';
 import { computeTalmudLayout, type TalmudLayoutItem } from './talmud/layout.ts';
