@@ -73,7 +73,10 @@ they look.
   glossed Abraham, Isaac, Jacob, Moses and David: 159, 101, 319, 705 and 912
   verses.
 - **A verse in two readings, or naming two people, is split corner to corner,**
-  one band each, as on the site.
+  one band each, and the bands slide apart along the cut, as on the site. Each
+  band is its slice of the square, moved along the cut by `BAND_OFFSET` (from
+  `src/geometry.ts`, imported rather than copied) times its distance from the
+  middle band.
 
 ![The search print's palette: whole sheet, then Genesis 22–32 and Samuel at print size](images/2026-09-29-wall-print/search-palette.png)
 
