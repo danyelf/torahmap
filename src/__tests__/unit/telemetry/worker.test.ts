@@ -193,6 +193,16 @@ describe('the page at /', () => {
     );
   });
 
+  it('keeps a stop without a story in og:url', async () => {
+    const response = await worker.fetch(
+      page('https://torahmap.org/?stop=abraham_zoom', slack),
+      envWithIndex(),
+    );
+    expect(await response.text()).toContain(
+      '<meta property="og:url" content="https://torahmap.org/?stop=abraham_zoom" />',
+    );
+  });
+
   it('passes through anything but a 200 HTML page', async () => {
     const e = env();
     e.ASSETS.fetch = vi.fn(async () => new Response(null, { status: 304 }));

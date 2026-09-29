@@ -450,6 +450,10 @@ describe('a story in the link', () => {
       '?story=tour&stop=abraham_call',
     );
   });
+
+  it('keeps a stop without a story', () => {
+    expect(writeLink(readLink('?stop=abraham_call&fbclid=abc'))).toBe('?stop=abraham_call');
+  });
 });
 
 describe('verseToUrlFormat', () => {

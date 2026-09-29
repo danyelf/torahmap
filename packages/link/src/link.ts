@@ -137,8 +137,9 @@ export function readLink(
 
 /** The query string for a view, with its leading "?", or "" for the default view. */
 export function writeLink(state: UrlState): string {
-  if (state.story) {
-    const params = new URLSearchParams({ story: state.story });
+  if (state.story || state.stop) {
+    const params = new URLSearchParams();
+    if (state.story) params.set('story', state.story);
     if (state.stop) params.set('stop', state.stop);
     return `?${params.toString()}`;
   }

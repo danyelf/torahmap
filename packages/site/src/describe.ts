@@ -22,7 +22,7 @@ export interface LinkDescription {
 export function describeLink(state: UrlState): LinkDescription {
   if (linkKind(state) === 'stop') {
     // torahmap.org's default; a preview build that lists drafts could open another.
-    const story = state.story ?? storyToOpen(listedStories(STORIES, false), null)?.id;
+    const story = state.story ?? storyToOpen(listedStories(STORIES, false), null).id;
     const title = story ? storyTitle(story) : undefined;
     const opening = story && state.stop ? stopOpening(story, state.stop) : undefined;
     return {

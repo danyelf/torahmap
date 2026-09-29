@@ -102,9 +102,7 @@ async function linkPage(request: Request, env: Env): Promise<Response> {
   if (response.status !== 200 || !contentType.startsWith('text/html')) return response;
 
   const html = await response.text();
-  // An index.html whose tags the rewrite no longer matches is served unchanged,
-  // not caught here; page.test.ts, run on the real index.html by the pre-commit
-  // hook, is what catches that.
+  // A rewrite that no longer matches index.html serves the page unchanged; page.test.ts guards that.
   try {
     const { title, description } = describeLink(link);
     // The link as the app reads it, so tracking keys such as fbclid are dropped.

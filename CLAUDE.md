@@ -142,7 +142,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `packages/` — shared code, kept free of the page so the Worker can import
   it, as npm workspace packages: `link` (reading and writing links),
   `overlay-catalog` (each overlay's name and link keys), `stories` (the
-  stories, compiled from Markdown by `generate.mjs`), and `site` (what the
+  stories, compiled from Markdown by `generate.mjs`, and which are listed and
+  opened by default), and `site` (what the
   site calls things: the site's name and tagline, and how a link is
   described).
 - `public/data/` — shipped data: bundled verse texts, structure, and

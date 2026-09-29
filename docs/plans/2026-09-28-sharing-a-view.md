@@ -63,18 +63,22 @@ What sharing needs moves into npm workspace packages under `packages/`, each
 with a `package.json` whose `exports` name what others may import. Vite,
 Vitest, TypeScript and Wrangler all resolve them by name; no path aliases.
 
-- **`@torahmap/link`** — read a link into a view, write a view as a link,
-  describe a view as a title and description. No DOM. `src/urlState.ts` keeps
+- **`@torahmap/link`** — read a link into a view, write a view as a link, and
+  name what kind of link it is (`linkKind`). No DOM. `src/urlState.ts` keeps
   what needs the browser: reading `location`, writing history, and
   `applyingExternalState`.
 - **`@torahmap/stories`** — the Markdown files, and a generation step that
   compiles them into one module before `dev`, `build` and `test`, replacing
   the Vite-only `import.meta.glob` in `src/stories/index.ts`. Adding a story is
-  still adding a file.
+  still adding a file. It also decides which stories are listed, in what
+  order, and which opens by default (`listedStories`, `storyToOpen`).
 - **`@torahmap/overlay-catalog`** — each overlay's id, name, description and
   link keys. The drawing code in `src/overlays/` imports its entry from here.
+- **`@torahmap/site`** — what the site calls things: `SITE_NAME`, `TAGLINE`,
+  `fillSiteTags`, and a link's title and description (`describeLink`). It
+  depends on the other three, so no caller passes names in.
 
-Only these three. Splitting the rest of the codebase is not part of this.
+Only these four. Splitting the rest of the codebase is not part of this.
 
 ## The Worker
 
@@ -84,7 +88,8 @@ Only these three. Splitting the rest of the codebase is not part of this.
   (`src/worker/fetchers.ts`); anyone else gets the static page untouched. A
   browser sets its own title from the link, and the untouched page keeps its
   ETag, so browsers can cache it.
-- Reads the link with `@torahmap/link` and rewrites `<title>`, the
+- Reads the link with `@torahmap/link`, describes it with `@torahmap/site`,
+  and rewrites `<title>`, the
   description, `og:title`, `og:description` and `og:url` in the page's text.
   `og:url` becomes the link as the app reads it, because some apps fold every
   link to its `og:url`; keys the app ignores, such as `fbclid` and `utm_*`,

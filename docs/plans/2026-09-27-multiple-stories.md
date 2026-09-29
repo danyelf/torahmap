@@ -80,7 +80,7 @@ Reading mode is otherwise unchanged.
 ## Code
 
 - `src/stories/index.ts` gathers every `.md` beside it at build time.
-- `src/scrollytelling/storyIndex.ts` decides what is listed, and in what order —
+- `packages/stories/src/storyIndex.ts` decides what is listed, and in what order —
   a pure function of the stories and whether drafts are shown.
 - `storyParser.ts` reads the frontmatter keys listed in `STORY_HEADER_KEYS`. A
   test refuses any other key in a story file, a `draft` that is not `true` or
