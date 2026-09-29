@@ -1,7 +1,7 @@
 # Sharing a view
 
 **Date:** 2026-09-28
-**Status:** Spec, agreed in conversation; not started.
+**Status:** Parts 1 (#278) and 2 built; part 3 (the Worker's previews and telemetry) not started.
 **Issues:** #232 (second half), #245. Step 3 of
 [Where everything lives](2026-09-23-ui-information-hierarchy-design.md).
 The per-view preview image is #273.
@@ -11,16 +11,18 @@ link previews as what it points to.
 
 ## What the reader sees
 
-- The ☰ menu gains **Share this view**. While a story is driving the map it
-  reads **Share this stop**, since that is what will be sent. It is the only
-  Share control.
+- The ☰ menu gains **Share**, right under *Continue* and above a divider, so
+  the two actions come before the tools. It is the only Share control. Its
+  label stays the same whether it sends a view or a stop: the map stays live
+  under the open menu, so a label naming one could go stale.
 - **On a touch screen with a system share sheet** (`navigator.share` and a
   coarse pointer), it opens the sheet. The sheet is the confirmation.
 - **Otherwise** it copies the link. The item's label becomes *Link copied ✓*
   for about 1.5 seconds, then the menu closes; on failure, *Couldn't copy*.
   This is the one item that does not close the menu at once. No toast.
 - **The tab's title follows the view**, from the same description the Worker
-  writes (below).
+  writes (below). Off the live site it keeps its branch name, as now:
+  "Genesis 12:1 · Torahmap [share-view-2]".
 
 ## The link
 

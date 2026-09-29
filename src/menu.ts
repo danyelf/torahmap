@@ -1,4 +1,5 @@
 import { escapeHtml } from './utils/html.ts';
+import { SITE_NAME } from '@torahmap/link';
 
 /** Where the story is: its stop, counted from one, and how many it has. */
 export interface StoryPlace {
@@ -9,6 +10,9 @@ export interface StoryPlace {
 /** The menu item that returns to the story being read. */
 export const CONTINUE_STORY = 'story';
 
+/** The menu item that shares the current view or story stop. */
+export const SHARE = 'share';
+
 const item = (action: string, label: string, detail = ''): string =>
   `<button type="button" class="menu-item" data-action="${action}">${label}` +
   (detail ? ` <span class="menu-detail">${detail}</span>` : '') +
@@ -17,8 +21,10 @@ const item = (action: string, label: string, detail = ''): string =>
 /** The menu: the site's name, then its items. Each item carries the action it takes; the click handler reads it. */
 export function menuHtml(place: StoryPlace & { title: string }): string {
   return [
-    '<h2 class="menu-title">Torahmap</h2>',
+    `<h2 class="menu-title">${SITE_NAME}</h2>`,
     item(CONTINUE_STORY, `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
+    item(SHARE, 'Share'),
+    '<div class="menu-divider" role="separator"></div>',
     item('search', 'Search'),
     item('overlay', 'Overlays'),
     item('stories', 'Stories'),

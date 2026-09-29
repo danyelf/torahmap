@@ -47,6 +47,20 @@ canvas {
   line-height: 1.2;
 }
 
+/* Off screen but still read by a screen reader, for text a sighted reader
+   gets some other way — a status update, a label an icon already carries. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 body.english-only .book-label-he,
 body.english-only .section-label-he {
   display: none;

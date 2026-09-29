@@ -7,6 +7,7 @@ import { computeSnippetForMatch } from '../../search.ts';
 import { colorIndexAt, type SearchTerm } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { markRange } from './highlight.ts';
+import { verseRef } from '@torahmap/link';
 
 /** Everything one pass of the list needs to know. */
 export interface ResultsView {
@@ -43,7 +44,7 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
     termIndicators.appendChild(dot);
   }
   refDiv.appendChild(termIndicators);
-  refDiv.appendChild(document.createTextNode(`${result.book} ${result.chapter}:${result.verse}`));
+  refDiv.appendChild(document.createTextNode(verseRef(result)));
 
   // The snippet is drawn for the word the list is answering about, falling back
   // to whichever term claimed the verse first. Without this, a list narrowed to
@@ -71,7 +72,7 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
       matchStart = snippetData.matchStart;
       matchEnd = snippetData.matchEnd;
     } else {
-      snippet = `${result.book} ${result.chapter}:${result.verse}`;
+      snippet = verseRef(result);
       matchStart = 0;
       matchEnd = 0;
     }

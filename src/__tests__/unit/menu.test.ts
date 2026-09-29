@@ -21,11 +21,11 @@ describe('menuHtml', () => {
     expect(div.querySelector('img')).toBeNull();
   });
 
-  it('then the search, the overlays, the stories, and about', () => {
+  it('then share, the search, the overlays, the stories, and about', () => {
     const actions = items(menuHtml({ number: 1, total: 21, title: 'x' })).map(
       (b) => b.dataset.action,
     );
-    expect(actions).toEqual(['story', 'search', 'overlay', 'stories', 'about']);
+    expect(actions).toEqual(['story', 'share', 'search', 'overlay', 'stories', 'about']);
   });
 
   it("is headed with the site's name", () => {
@@ -37,5 +37,12 @@ describe('menuHtml', () => {
   it('makes every item a real button', () => {
     for (const b of items(menuHtml({ number: 1, total: 2, title: 'x' })))
       expect(b.type).toBe('button');
+  });
+
+  it('sets the two actions apart from the tools', () => {
+    const div = document.createElement('div');
+    div.innerHTML = menuHtml({ number: 1, total: 2, title: 'x' });
+    const share = div.querySelector('[data-action="share"]');
+    expect(share?.nextElementSibling?.classList.contains('menu-divider')).toBe(true);
   });
 });

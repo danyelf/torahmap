@@ -3,20 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Torahmap</title>
-    <meta
-      name="description"
-      content="Every verse of the Hebrew Bible laid out as a colored square. Search, commentary and haftarah readings light up patterns across the whole Tanakh at once."
-    />
+    <title>%SITE_NAME%</title>
+    <meta name="description" content="%TAGLINE%" />
     <link rel="canonical" href="https://torahmap.org/" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Torahmap" />
-    <meta property="og:title" content="Torahmap" />
-    <meta
-      property="og:description"
-      content="Every verse of the Hebrew Bible laid out as a colored square. Search, commentary and haftarah readings light up patterns across the whole Tanakh at once."
-    />
+    <meta property="og:site_name" content="%SITE_NAME%" />
+    <meta property="og:title" content="%SITE_NAME%" />
+    <meta property="og:description" content="%TAGLINE%" />
     <meta property="og:url" content="https://torahmap.org/" />
     <meta property="og:image" content="https://torahmap.org/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
@@ -56,6 +50,7 @@
     </button>
 
     <div id="menu" class="menu" hidden></div>
+    <div id="share-status" class="visually-hidden" role="status" aria-live="polite"></div>
 
     <div id="zoom-controls">
       <button id="zoom-in" aria-label="Zoom in">+</button>

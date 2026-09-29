@@ -1,6 +1,7 @@
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
 import { CONTROL, panelHtml } from './panel.ts';
+import { SITE_NAME } from '@torahmap/link';
 
 /** About & settings: one scrolling panel, settings first because they are what a returning reader wants. */
 export function aboutHtml(
@@ -13,7 +14,7 @@ export function aboutHtml(
       <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
-      <h3>Torahmap</h3>
+      <h3>${SITE_NAME}</h3>
       <p>An interactive visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position.</p>
       <p>The map is divided into three sections, stacked vertically:</p>
       <ul>
@@ -37,7 +38,7 @@ export function aboutHtml(
         <tr><td>Click pinned / Tap again</td><td>Unpin verse</td></tr>
         <tr><td>&larr; &rarr; arrow keys</td><td>Navigate verses</td></tr>
         <tr><td>Escape</td><td>Close the menu, unpin the verse, or close the panel or the story</td></tr>
-        <tr><td>☰</td><td>The menu: continue the story, search, overlays, stories, About &amp; settings</td></tr>
+        <tr><td>☰</td><td>The menu: continue the story, share, search, overlays, stories, About &amp; settings</td></tr>
         <tr><td>Legend</td><td>What colours the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>
       </table>

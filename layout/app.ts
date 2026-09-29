@@ -49,12 +49,12 @@ export const STATES: State[] = [
     name: 'story-menu-down',
     link: 'story=tour&stop=abraham_call',
     then: (page) => page.locator('#menu-toggle').click(),
-    shown: ['#menu', '#map-legend'],
+    shown: ['#menu', '.menu-item[data-action="share"]', '#map-legend'],
   },
   { name: 'explore-link', link: 'overlay=commentary', shown: ['#map-legend'] },
   {
     name: 'story-closed',
-    hash: 'story=tour&stop=intro',
+    link: 'story=tour&stop=intro',
     then: (page) => page.keyboard.press('Escape'),
     shown: ['#menu-toggle'],
   },
@@ -68,7 +68,23 @@ export const STATES: State[] = [
     name: 'explore-menu-down',
     link: 'overlay=commentary',
     then: (page) => page.locator('#menu-toggle').click(),
-    shown: ['#menu', '#map-legend'],
+    shown: ['#menu', '.menu-item[data-action="share"]', '#map-legend'],
+  },
+  {
+    name: 'explore-link-copied',
+    link: 'overlay=commentary',
+    then: async (page) => {
+      await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+      // Freezes the menu's 1500ms auto-close so it can never fire mid-screenshot.
+      await page.clock.install();
+      await page.clock.pauseAt(Date.now());
+      await page.locator('#menu-toggle').click();
+      await page.locator('.menu-item[data-action="share"]:visible').click();
+      await page
+        .locator('.menu-item[data-action="share"]:visible', { hasText: 'Link copied' })
+        .waitFor();
+    },
+    shown: ['#menu', '.menu-item[data-action="share"]'],
   },
   {
     name: 'explore-overlay-open',
