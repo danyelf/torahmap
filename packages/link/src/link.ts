@@ -188,6 +188,11 @@ export function verseToUrlFormat(book: string, chapter: number, verse: number): 
   return `${urlBook}.${chapter}.${verse}`;
 }
 
+/** A verse as readers write it: "I Samuel 1:5". */
+export function verseRef(v: { book: string; chapter: number; verse: number }): string {
+  return `${v.book} ${v.chapter}:${v.verse}`;
+}
+
 /**
  * Parse verse reference from URL format
  * "I.Samuel.1.5" -> { book: "I Samuel", chapter: 1, verse: 5 }

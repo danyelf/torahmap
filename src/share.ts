@@ -25,10 +25,3 @@ export async function shareLink(url: string, title: string, env: ShareEnv): Prom
     return 'failed';
   }
 }
-
-/** After `ms`, close the menu if it is still open. */
-export function closeAfterConfirming(isOpen: () => boolean, close: () => void, ms: number): void {
-  setTimeout(() => {
-    if (isOpen()) close();
-  }, ms);
-}

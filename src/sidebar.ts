@@ -7,6 +7,7 @@ import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
 import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';
+import { verseRef } from '@torahmap/link';
 
 /** A click on a word in the verse popup's Hebrew text. */
 export interface WordClick {
@@ -149,7 +150,7 @@ export function updateSidebar(
   const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
 
   if (ref) {
-    ref.textContent = `${verse.book} ${verse.chapter}:${verse.verse}`;
+    ref.textContent = verseRef(verse);
   }
   if (overlayInfo) {
     const lines = [

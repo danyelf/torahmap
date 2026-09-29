@@ -1,6 +1,6 @@
 // What a link is called in a tab and a chat preview.
 
-import { parseVerseFromUrl, type UrlState } from './link.ts';
+import { parseVerseFromUrl, verseRef, type UrlState } from './link.ts';
 
 export const SITE_NAME = 'Torahmap';
 export const TAGLINE = 'A Visual Concordance of the Hebrew Bible.';
@@ -30,11 +30,9 @@ export function describeLink(state: UrlState, names: LinkNames): LinkDescription
   }
   const verse = state.verse ? parseVerseFromUrl(state.verse) : null;
   const search = state.searchParams?.search;
-  const parts = [
-    verse && `${verse.book} ${verse.chapter}:${verse.verse}`,
-    search && `Search: ${search}`,
-    SITE_NAME,
-  ].filter(Boolean);
+  const parts = [verse && verseRef(verse), search && `Search: ${search}`, SITE_NAME].filter(
+    Boolean,
+  );
   const overlay = state.overlay ? names.overlayName(state.overlay) : undefined;
   return {
     title: parts.join(SEPARATOR),

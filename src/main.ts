@@ -25,7 +25,7 @@ import {
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, SHARE, menuHtml, type StoryPlace } from './menu.ts';
-import { shareLink, closeAfterConfirming } from './share.ts';
+import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
@@ -49,15 +49,15 @@ import {
   parseVerseFromUrl,
   verseToUrlFormat,
   linkKind,
+  verseRef,
   linkNamesAView,
-  describeLink,
   type UrlState,
 } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
-import { LINK_NAMES, tabTitle } from './linkNames.ts';
+import { tabTitle } from './linkNames.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
@@ -553,8 +553,7 @@ async function main(): Promise<void> {
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
-      const sharing = frame.mode === 'story' && driverKind(driver) === 'story' ? 'stop' : 'view';
-      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title, sharing });
+      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
@@ -966,6 +965,10 @@ async function main(): Promise<void> {
     showTitle();
   }
 
+  // For a write asked every frame, as a story scroll does. It asks for no history
+  // entry, so a late one loses none, and it reads the screen as it is when it fires.
+  const syncUrlSoon = debounce(() => syncUrl(false), URL_UPDATE_DEBOUNCE_MS);
+
   // The camera when the reader took the map or last sent view_settled. Every
   // pointer up settles, a click included, so only a camera that has left it is sent.
   let settledCamera: Camera = { ...camera };
@@ -1181,7 +1184,7 @@ async function main(): Promise<void> {
       click.index,
     );
 
-    const ref = `${click.book} ${click.chapter}:${click.verse}`;
+    const ref = verseRef(click);
     const paletteFull = !canAddTerm(overlaySettings.get(searchTool));
     trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
 
@@ -1452,7 +1455,12 @@ async function main(): Promise<void> {
       // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
       if (actionItem!.dataset.sharePending) return;
       actionItem!.dataset.sharePending = 'true';
-      return shareCurrentView(actionItem!);
+      try {
+        await shareCurrentView(actionItem!);
+      } finally {
+        delete actionItem!.dataset.sharePending;
+      }
+      return;
     }
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
@@ -1468,8 +1476,7 @@ async function main(): Promise<void> {
     shareStatus.textContent = '';
     syncUrl(false);
     const shared = parseUrlState(overlayParamSpecs);
-    const title = describeLink(shared, LINK_NAMES).title;
-    const outcome = await shareLink(location.href, title, {
+    const outcome = await shareLink(location.href, document.title, {
       share: navigator.share?.bind(navigator),
       writeText: (t) => navigator.clipboard.writeText(t),
       coarsePointer: matchMedia('(pointer: coarse)').matches,
@@ -1490,11 +1497,9 @@ async function main(): Promise<void> {
       shareStatus.textContent = label;
       // Reopening the menu redraws its items, detaching this one; a stale
       // timer must not then close whatever menu is open by the time it fires.
-      closeAfterConfirming(
-        () => frame.menu && item.isConnected,
-        () => dispatch({ type: 'menu' }),
-        1500,
-      );
+      setTimeout(() => {
+        if (frame.menu && item.isConnected) dispatch({ type: 'menu' });
+      }, 1500);
     } else if (frame.menu) {
       dispatch({ type: 'menu' });
     }
@@ -1701,7 +1706,7 @@ async function main(): Promise<void> {
       blendTransition();
     }
     render();
-    syncUrl();
+    syncUrlSoon();
   }
 
   // A stop's camera places its verse, or fits its region, against the map's

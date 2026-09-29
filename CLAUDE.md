@@ -234,7 +234,7 @@ in step with the code:
 - **Arrow keys** - Move from verse to verse
 - **Overlay selector** - Switch between visualization modes
 - **Search box** - Type to search Hebrew/English text with live results
-- **☰** - The menu: continue the story, share this view, search, overlays, stories,
+- **☰** - The menu: continue the story, share, search, overlays, stories,
   About & settings; Escape closes it
 - **Legend** - Names what colours the map, on the map itself; tap a row to open
   its tool
@@ -245,9 +245,9 @@ in step with the code:
 
 The URL carries the search, the overlay and its settings, the pinned verse, the
 camera and, while reading, the story and its stop (`@torahmap/link`, with the
-browser half in `src/urlState.ts`), so any view can be linked to. *Share this
-view* in the menu copies that link, or opens the share sheet on a touch
-screen; the tab's title names the view (`describeLink`).
+browser half in `src/urlState.ts`), so any view can be linked to. *Share* in the menu
+copies that link, or opens the share sheet on a touch screen; the tab's title
+names the view (`describeLink`).
 
 ## License
 
