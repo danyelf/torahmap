@@ -36,3 +36,6 @@ video/out/
 
 # Written from packages/stories/markdown/ by packages/stories/generate.mjs
 packages/stories/src/generated.ts
+
+# Wall print output (npm run print)
+scripts/print/out/
