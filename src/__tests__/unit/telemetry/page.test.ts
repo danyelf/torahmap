@@ -3,10 +3,12 @@
 // og: tags, so the Worker rewrites them for each link (rewritePage). It edits
 // index.html as text rather than parsing it with Cloudflare's HTMLRewriter,
 // which exists only in Cloudflare's runtime, not in Node where these tests
-// run. Text matching depends on how index.html writes those tags, so the
-// rewrite is tested on the real file: if a reformat of index.html breaks the
-// match, this fails, instead of every shared link quietly previewing as the
-// home page.
+// run. The Worker serves Vite's built dist/index.html, but the build leaves
+// these tags exactly as this file's source index.html writes them, so testing
+// the rewrite against the source is testing what ships. Text matching depends
+// on how index.html writes those tags, so the rewrite is tested on the real
+// file: if a reformat of index.html breaks the match, this fails, instead of
+// every shared link quietly previewing as the home page.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { rewritePage } from '../../../worker/page.ts';

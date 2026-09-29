@@ -1,8 +1,5 @@
-// Rewrites the shipped index.html to name one link: the title tab apps show
-// and the title, description and og: tags a chat app builds a link preview
-// from. Cloudflare's HTMLRewriter would parse this properly, but it exists
-// only in Cloudflare's runtime, not in the Node tests that check this rewrite
-// against the real file — so this edits the HTML as text instead.
+// Rewrites the shipped index.html's <title> and its description and og:
+// tags, as text, to name one link.
 
 export interface PageTags {
   title: string;

@@ -57,14 +57,25 @@ async function linkPage(request: Request, env: Env): Promise<Response> {
   const contentType = response.headers.get('Content-Type') ?? '';
   if (response.status !== 200 || !contentType.startsWith('text/html')) return response;
 
-  const url = new URL(request.url);
-  const { title, description } = describeLink(readLink(url.search, overlayParamSpecs), LINK_NAMES);
-  const body = rewritePage(await response.text(), { title, description, url: request.url });
+  const html = await response.text();
+  // A broken link (a malformed query string, an index.html the rewrite can no
+  // longer match) should serve the page as fetched, not fail outright.
+  try {
+    const url = new URL(request.url);
+    const { title, description } = describeLink(
+      readLink(url.search, overlayParamSpecs),
+      LINK_NAMES,
+    );
+    const body = rewritePage(html, { title, description, url: request.url });
 
-  const headers = new Headers(response.headers);
-  headers.delete('Content-Length');
-  headers.delete('ETag');
-  return new Response(body, { status: response.status, headers });
+    const headers = new Headers(response.headers);
+    headers.delete('Content-Length');
+    headers.delete('ETag');
+    return new Response(body, { status: response.status, headers });
+  } catch (error) {
+    console.error('linkPage: falling back to the page as fetched', error);
+    return new Response(html, { status: response.status, headers: response.headers });
+  }
 }
 
 export default {

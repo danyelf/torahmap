@@ -1,6 +1,7 @@
 // @vitest-environment node
 // Node, because happy-dom enforces the browser rule that a page cannot set Origin or User-Agent.
 import { describe, expect, it, vi } from 'vitest';
+import * as pageModule from '../../../worker/page.ts';
 import worker from '../../../worker/index.ts';
 
 function env() {
@@ -181,5 +182,21 @@ describe('the page at /', () => {
     const e = envWithIndex();
     await worker.fetch(page('https://torahmap.org/og-image.jpg'), e);
     expect(e.ASSETS.fetch).toHaveBeenCalledOnce();
+  });
+
+  it('falls back to the page as fetched if naming the link throws', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const rewriteSpy = vi.spyOn(pageModule, 'rewritePage').mockImplementation(() => {
+      throw new Error('boom');
+    });
+    const html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" />';
+    const response = await worker.fetch(
+      page('https://torahmap.org/?verse=Genesis.12.1'),
+      envWithIndex(html),
+    );
+    expect(await response.text()).toBe(html);
+    expect(consoleError).toHaveBeenCalled();
+    rewriteSpy.mockRestore();
+    consoleError.mockRestore();
   });
 });
