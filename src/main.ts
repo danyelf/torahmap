@@ -1351,6 +1351,11 @@ async function main(): Promise<void> {
 
   function leaveStory(exploring?: Frame): void {
     takeOver('fold');
+    // Exploring keeps only what a link carries, so a stop's highlight stays behind.
+    if (currentOverlay) {
+      overlaySettings.restore(currentOverlay, overlaySettings.toUrl(currentOverlay));
+      applyTools();
+    }
     setStoryOpen(false, exploring);
     rememberStoryFolded(true);
     render();

@@ -49,9 +49,9 @@ function darkTint(color: Color): Color {
 
 /**
  * Which custom's readings to show; the reading the pointer is over in the key,
- * by its place in the list of readings; and a reading a link or story stop
- * lights, by name. The preview stays out of the link. The app holds this; the
- * overlay keeps none.
+ * by its place in the list of readings; and a reading a story stop lights, by
+ * name. Only the custom goes into a link, so leaving the story drops the
+ * reading. The app holds this; the overlay keeps none.
  */
 export interface HaftarahSettings {
   readonly custom: Custom;
@@ -347,9 +347,6 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   },
 
   settingsToUrl(settings: HaftarahSettings): Record<string, string> {
-    return {
-      custom: settings.custom,
-      ...(settings.reading !== null && { reading: settings.reading }),
-    };
+    return { custom: settings.custom };
   },
 };

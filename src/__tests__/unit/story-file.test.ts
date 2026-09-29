@@ -15,6 +15,7 @@ import { writeLink, parseVerseFromUrl } from '@torahmap/link';
 import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
+import { haftarahOverlay } from '../../overlays/haftarah';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
@@ -31,16 +32,14 @@ const haftarahReadings: ReadonlySet<string> = (() => {
 })();
 
 /**
- * Stops whose haftarah reading, once read and written back the way the app
- * does, is no reading's name. The app lights nothing for such a stop rather
- * than failing.
+ * Stops whose haftarah reading, once read the way the app does, is no
+ * reading's name. The app lights nothing for such a stop rather than failing.
  */
 function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']): string[] {
-  const haftarah = getOverlay('haftarah')!;
   return stops
     .filter((s) => s.overlay === 'haftarah' && s.overlayParams?.reading)
     .filter((s) => {
-      const { reading } = haftarah.settingsToUrl!(settingsFromLink(haftarah, s.overlayParams!));
+      const { reading } = settingsFromLink(haftarahOverlay, s.overlayParams!);
       return !reading || !haftarahReadings.has(reading);
     })
     .map((s) => `${s.id}: ${s.overlayParams!.reading}`);

@@ -553,7 +553,7 @@ describe('Haftarah Overlay', () => {
     });
   });
 
-  describe('A reading named in a link or story stop', () => {
+  describe('A reading named in a story stop', () => {
     beforeEach(async () => {
       vi.useFakeTimers();
       await haftarahOverlay.overlay.init?.();
@@ -567,10 +567,10 @@ describe('Haftarah Overlay', () => {
     const brightnessUnder = (v: typeof genesis, hovered: typeof genesis | null) =>
       sum(haftarahOverlay.overlay.colorsFor!([v], haftarahOverlay.settings, hovered)[0] as Color);
 
-    it('reads a name with spaces and punctuation, and writes it back', () => {
+    it('reads a name with spaces and punctuation, and never writes it into a link', () => {
       haftarahOverlay.restore({ reading: 'Rosh Hashanah Day 1' });
       expect(haftarahOverlay.settings.reading).toBe('Rosh Hashanah Day 1');
-      expect(haftarahOverlay.toUrl()).toEqual({ reading: 'Rosh Hashanah Day 1' });
+      expect(haftarahOverlay.toUrl()).toEqual({});
 
       haftarahOverlay.restore({ reading: "Tisha B'Av, Morning" });
       expect(haftarahOverlay.settings.reading).toBe("Tisha B'Av, Morning");
