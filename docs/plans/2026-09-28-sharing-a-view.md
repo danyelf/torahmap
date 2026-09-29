@@ -51,7 +51,7 @@ the popup go to it; the search is its context.
 | Verse + overlay | Genesis 12:1 · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
 | Search | Search: אברם · Torahmap | A Visual Concordance of the Hebrew Bible. |
 | Verse + search + overlay | Genesis 12:1 · Search: אברם · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
-| Story stop | The Guided Tour · Torahmap | The stop's first sentence. A Visual Concordance of the Hebrew Bible. |
+| Story stop, or a stop alone; named by the story that opens, which for a draft, unknown or missing story is the default | The Guided Tour · Torahmap | The stop's first sentence. A Visual Concordance of the Hebrew Bible. |
 | Nothing, or only a camera | Torahmap | A Visual Concordance of the Hebrew Bible. |
 
 "A Visual Concordance of the Hebrew Bible" also replaces the description in
@@ -63,38 +63,55 @@ What sharing needs moves into npm workspace packages under `packages/`, each
 with a `package.json` whose `exports` name what others may import. Vite,
 Vitest, TypeScript and Wrangler all resolve them by name; no path aliases.
 
-- **`@torahmap/link`** — read a link into a view, write a view as a link,
-  describe a view as a title and description. No DOM. `src/urlState.ts` keeps
+- **`@torahmap/link`** — read a link into a view, write a view as a link, and
+  name what kind of link it is (`linkKind`). No DOM. `src/urlState.ts` keeps
   what needs the browser: reading `location`, writing history, and
   `applyingExternalState`.
 - **`@torahmap/stories`** — the Markdown files, and a generation step that
   compiles them into one module before `dev`, `build` and `test`, replacing
   the Vite-only `import.meta.glob` in `src/stories/index.ts`. Adding a story is
-  still adding a file.
+  still adding a file. It also decides which stories are listed, in what
+  order, and which opens by default (`listedStories`, `storyToOpen`).
 - **`@torahmap/overlay-catalog`** — each overlay's id, name, description and
   link keys. The drawing code in `src/overlays/` imports its entry from here.
+- **`@torahmap/site`** — what the site calls things: `SITE_NAME`, `TAGLINE`,
+  `fillSiteTags`, and a link's title and description (`describeLink`). It
+  depends on the other three, so no caller passes names in.
 
-Only these three. Splitting the rest of the codebase is not part of this.
+Only these four. Splitting the rest of the codebase is not part of this.
 
 ## The Worker
 
 - Runs first for `/` alone (`assets.run_worker_first`); every other path is
   served as a static file, as now.
-- Reads the link with `@torahmap/link` and rewrites `<title>`, the
-  description, `og:title`, `og:description` and `og:url` with
-  `HTMLRewriter` as the page streams out. `og:url` becomes the full link,
-  because some apps fold every link to its `og:url`. `canonical` stays
-  `https://torahmap.org/`, so search engines index one page.
+- Writes a preview only for a known chat app's fetcher
+  (`src/worker/fetchers.ts`); anyone else gets the static page untouched. A
+  browser sets its own title from the link, and the untouched page keeps its
+  ETag, so browsers can cache it.
+- Reads the link with `@torahmap/link`, describes it with `@torahmap/site`,
+  and rewrites `<title>`, the
+  description, `og:title`, `og:description` and `og:url` in the page's text.
+  `og:url` becomes the link as the app reads it, because some apps fold every
+  link to its `og:url`; keys the app ignores, such as `fbclid` and `utm_*`,
+  are dropped. `canonical` stays `https://torahmap.org/`, so search engines index
+  one page.
+- The rewrite edits `index.html` as text rather than parsing it with
+  Cloudflare's `HTMLRewriter`: the page is 5 KB, and `HTMLRewriter` exists only
+  in Cloudflare's runtime, so the test suite, which runs in Node, could not run
+  it without a second test setup. Text matching depends on how `index.html`
+  writes those tags, so a test runs the rewrite on the real file; a reformat
+  that breaks the match fails the suite instead of shipping plain previews.
 - The image stays `og-image.jpg` for every link (#273).
-- The dev server does not run the Worker. Locally the tab title changes; the
-  previews are seen in the Worker's tests and on the PR's preview link.
+- The dev server does not run the Worker, and Cloudflare Access keeps chat
+  apps' fetchers off the PR previews. The Worker's tests cover the rewrite;
+  the real check is pasting a link into a chat app on torahmap.org after merge.
 
 ## Telemetry
 
 Columns go in `src/telemetry/schema.ts` as usual.
 
 - **`share`** — `how` (`copied`, `share_sheet`, `cancelled`, `failed`),
-  `what` (`stop`, `view`), `story`, `stop_id`, `overlay`, and whether a search
+  `what` (`nothing`, `view`, `stop`), `story`, `stop_id`, `overlay` (`none` when the link names none), and whether a search
   is on and a verse pinned.
 - **`page_view`** gains `arrived_with` (`nothing`, `view`, `stop`): what the
   first page's link named. A reload or Back/Forward
@@ -102,10 +119,12 @@ Columns go in `src/telemetry/schema.ts` as usual.
   arrival. This counts shared links opened, whether from Share or a copied
   address bar, and cannot tell them from bookmarks.
 - **`link_preview`**, written by the Worker when a known preview fetcher
-  requests a page: `fetcher` (Slackbot, WhatsApp, Discordbot, TelegramBot,
-  LinkedInBot, Twitterbot, facebookexternalhit — iMessage uses the last two)
-  and `what` (`nothing`, `view`, `stop`). It counts links pasted into a
-  conversation. Some apps fetch twice, so it counts a little high.
+  requests a page: `fetcher` (`imessage`, `telegram`, `slack`, `whatsapp`,
+  `discord`, `linkedin`, `twitter`, `facebook` — iMessage records as its own
+  `imessage`, since its fetcher's User-Agent carries both
+  facebookexternalhit and Twitterbot) and `what` (`nothing`, `view`, `stop`).
+  It counts links pasted into a conversation. Some apps fetch twice, so it
+  counts a little high.
 
 No marker or id is added to shared links: a marker is lost when someone copies
 the address bar instead, and an id per share follows people.

@@ -1,4 +1,4 @@
-import type { UrlState } from '@torahmap/link';
+import { linkKind, type UrlState } from '@torahmap/link';
 import type { DriverKind } from './scrollytelling/driver';
 
 /**
@@ -25,6 +25,6 @@ export function linkForScreen(screen: {
  * Everywhere else, `asked` decides.
  */
 export function pushes(current: UrlState, next: UrlState, asked: boolean): boolean {
-  const leavesStory = current.story !== undefined && next.story === undefined;
+  const leavesStory = linkKind(current) === 'stop' && linkKind(next) !== 'stop';
   return asked || leavesStory;
 }

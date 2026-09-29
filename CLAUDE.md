@@ -142,7 +142,10 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `packages/` — shared code, kept free of the page so the Worker can import
   it, as npm workspace packages: `link` (reading and writing links),
   `overlay-catalog` (each overlay's name and link keys), `stories` (the
-  stories, compiled from Markdown by `generate.mjs`).
+  stories, compiled from Markdown by `generate.mjs`, and which are listed and
+  opened by default), and `site` (what the
+  site calls things: the site's name and tagline, and how a link is
+  described).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
@@ -174,12 +177,19 @@ hand. Every pull request also gets its own public `workers.dev` link, so a UI
 change can be looked at without checking the branch out —
 `scripts/prpreview.sh <pr>` serves one locally instead.
 
-Static files are served before the Worker runs. The only route it owns is
-`/api/event`, which writes one Analytics Engine data point per event
-(`src/worker/index.ts`, with the client half in `src/analytics.ts`). No cookies
-and nothing in browser storage; the dev server sends nothing. What each column
-means is in `src/telemetry/schema.ts`, and `scripts/telemetry/report.sh` prints
-every saved query — it needs a Cloudflare account id and an API token.
+The Worker owns two routes: `/api/event`, which writes one Analytics Engine
+data point per event, and the page at `/`, where, for a known chat app's
+preview fetcher, it writes the title and preview tags the shared link asks
+for and records which app asked (`src/worker/index.ts` and
+`src/worker/page.ts`, with the client half in `src/analytics.ts`). Anyone else
+gets the static page untouched: a browser sets its own title, and the page
+stays cacheable. Everything else is served as a static file first. No
+cookies and nothing in browser storage; the dev server sends nothing. What
+each column means is in `src/telemetry/schema.ts`, and
+`scripts/telemetry/report.sh` prints every saved query — it needs a
+Cloudflare account id and an API token. Cloudflare Access keeps chat apps'
+fetchers off PR preview links, so a preview is checked on torahmap.org after
+merge.
 
 ## Architecture
 

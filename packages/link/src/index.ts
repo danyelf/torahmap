@@ -7,17 +7,15 @@ export type {
 } from './params.ts';
 export { SEARCH_URL_PARAMS, SEARCH_KEYS, RESERVED_KEYS, validateOverlayParams } from './params.ts';
 
-export type { UrlState } from './link.ts';
+export type { UrlState, LinkKind } from './link.ts';
 export {
   MIN_ZOOM,
   MAX_ZOOM,
   linkNamesAView,
+  linkKind,
   readLink,
   writeLink,
   verseToUrlFormat,
   verseRef,
   parseVerseFromUrl,
 } from './link.ts';
-
-export type { LinkNames, LinkDescription } from './describe.ts';
-export { SITE_NAME, TAGLINE, describeLink } from './describe.ts';

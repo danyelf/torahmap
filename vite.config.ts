@@ -2,7 +2,7 @@ import { defineConfig, type Plugin } from 'vite';
 import { execSync } from 'child_process';
 import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
-import { SITE_NAME, TAGLINE } from '@torahmap/link';
+import { fillSiteTags } from '@torahmap/site';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -21,8 +21,7 @@ function getGitBranch(): string {
 function sitePlugin(): Plugin {
   return {
     name: 'site-name',
-    transformIndexHtml: (html) =>
-      html.replaceAll('%SITE_NAME%', SITE_NAME).replaceAll('%TAGLINE%', TAGLINE),
+    transformIndexHtml: fillSiteTags,
   };
 }
 

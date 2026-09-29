@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readLink } from '@torahmap/link';
-import { tabTitle } from '../../linkNames';
+import { tabTitle } from '../../tabTitle';
 
 describe('tabTitle', () => {
   it('is the view’s title on the live site', () => {

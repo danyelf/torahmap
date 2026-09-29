@@ -57,6 +57,17 @@ export function linkNamesAView(state: UrlState): boolean {
   );
 }
 
+export type LinkKind = 'nothing' | 'view' | 'stop';
+
+/**
+ * What kind of link this is: a story stop, a plain view, or nothing named at
+ * all. A stop without a story is a stop in the story the page opens by default.
+ */
+export function linkKind(state: UrlState): LinkKind {
+  if (state.story !== undefined || state.stop !== undefined) return 'stop';
+  return linkNamesAView(state) ? 'view' : 'nothing';
+}
+
 /**
  * The view a link's query string names. Accepts "?a=b", "a=b" or URLSearchParams.
  *
@@ -126,8 +137,9 @@ export function readLink(
 
 /** The query string for a view, with its leading "?", or "" for the default view. */
 export function writeLink(state: UrlState): string {
-  if (state.story) {
-    const params = new URLSearchParams({ story: state.story });
+  if (linkKind(state) === 'stop') {
+    const params = new URLSearchParams();
+    if (state.story) params.set('story', state.story);
     if (state.stop) params.set('stop', state.stop);
     return `?${params.toString()}`;
   }

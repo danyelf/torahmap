@@ -1,6 +1,7 @@
 // @vitest-environment node
 // Node, because happy-dom enforces the browser rule that a page cannot set Origin or User-Agent.
 import { describe, expect, it, vi } from 'vitest';
+import * as pageModule from '../../../worker/page.ts';
 import worker from '../../../worker/index.ts';
 
 function env() {
@@ -143,5 +144,153 @@ describe('telemetry worker', () => {
     expect((await worker.fetch(new Request('https://torahmap.org/api/event'), e)).status).toBe(405);
     await worker.fetch(new Request('https://torahmap.org/missing'), e);
     expect(e.ASSETS.fetch).toHaveBeenCalled();
+  });
+});
+
+const slack = { 'User-Agent': 'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)' };
+
+function page(url: string, headers: Record<string, string> = {}) {
+  return new Request(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh)', ...headers } });
+}
+function envWithIndex(
+  html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" /><meta property="og:url" content="https://torahmap.org/" />',
+) {
+  const e = env();
+  e.ASSETS.fetch = vi.fn(
+    async () => new Response(html, { headers: { 'Content-Type': 'text/html', ETag: '"static"' } }),
+  );
+  return e;
+}
+
+describe('the page at /', () => {
+  it('names the link a chat app asked for', async () => {
+    const response = await worker.fetch(
+      page('https://torahmap.org/?verse=Genesis.12.1', slack),
+      envWithIndex(),
+    );
+    const html = await response.text();
+    expect(html).toContain('<title>Genesis 12:1 · Torahmap</title>');
+    expect(html).toContain('content="Genesis 12:1 · Torahmap"');
+    expect(response.headers.get('ETag')).toBeNull();
+  });
+
+  it('hands a browser the static page untouched', async () => {
+    const e = envWithIndex();
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1'), e);
+    expect(response).toBe(await e.ASSETS.fetch.mock.results[0].value);
+    expect(response.headers.get('ETag')).toBe('"static"');
+    expect(await response.text()).toContain('<title>Torahmap</title>');
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
+  it('points og:url at the link as the app reads it', async () => {
+    const response = await worker.fetch(
+      page('https://torahmap.org/?verse=Genesis.12.1&fbclid=abc&utm_source=x', slack),
+      envWithIndex(),
+    );
+    expect(await response.text()).toContain(
+      '<meta property="og:url" content="https://torahmap.org/?verse=Genesis.12.1" />',
+    );
+  });
+
+  it('keeps a stop without a story in og:url', async () => {
+    const response = await worker.fetch(
+      page('https://torahmap.org/?stop=abraham_zoom', slack),
+      envWithIndex(),
+    );
+    expect(await response.text()).toContain(
+      '<meta property="og:url" content="https://torahmap.org/?stop=abraham_zoom" />',
+    );
+  });
+
+  it('passes through anything but a 200 HTML page', async () => {
+    const e = env();
+    e.ASSETS.fetch = vi.fn(async () => new Response(null, { status: 304 }));
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
+    expect(response.status).toBe(304);
+  });
+
+  it('leaves other paths to the static files', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/og-image.jpg', slack), e);
+    expect(e.ASSETS.fetch).toHaveBeenCalledOnce();
+  });
+
+  it('falls back to the page as fetched if naming the link throws', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const rewriteSpy = vi.spyOn(pageModule, 'rewritePage').mockImplementation(() => {
+      throw new Error('boom');
+    });
+    const html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" />';
+    const response = await worker.fetch(
+      page('https://torahmap.org/?verse=Genesis.12.1', slack),
+      envWithIndex(html),
+    );
+    expect(await response.text()).toBe(html);
+    expect(consoleError).toHaveBeenCalled();
+    rewriteSpy.mockRestore();
+    consoleError.mockRestore();
+  });
+});
+
+describe('link_preview', () => {
+  it('records a chat app fetching a view', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'view'],
+      doubles: [],
+    });
+  });
+
+  it('records "nothing" for the bare page', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/', slack), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'nothing'],
+      doubles: [],
+    });
+  });
+
+  it('records "stop" for a story link', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/?story=tour&stop=intro', slack), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'stop'],
+      doubles: [],
+    });
+  });
+
+  it('writes nothing for an ordinary browser', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1'), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
+  it('records the fetch whatever the static files answered', async () => {
+    const e = env();
+    e.ASSETS.fetch = vi.fn(async () => new Response(null, { status: 404 }));
+    const response = await worker.fetch(page('https://torahmap.org/', slack), e);
+    expect(response.status).toBe(404);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'nothing'],
+      doubles: [],
+    });
+  });
+
+  it('serves the page even if recording throws', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const e = envWithIndex();
+    e.TORAHMAP_EVENTS.writeDataPoint = vi.fn(() => {
+      throw new Error('boom');
+    });
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
+    expect(response.status).toBe(200);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 });

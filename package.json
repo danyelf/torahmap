@@ -38,6 +38,7 @@
   "dependencies": {
     "@torahmap/link": "*",
     "@torahmap/overlay-catalog": "*",
+    "@torahmap/site": "*",
     "@torahmap/stories": "*"
   }
 }

@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readLink } from '@torahmap/link';
 import {
+  arrivedWith,
   configureAnalytics,
   trackStoryExit,
   trackStoryReturn,
+  trackPageView,
   trackSearchExecute,
+  trackShare,
   trackStoryStop,
   trackViewSettled,
 } from '../../../analytics.ts';
@@ -90,5 +94,69 @@ describe('analytics', () => {
     trackViewSettled('Isaiah', 'neviim', 4);
     trackViewSettled('Isaiah', 'neviim', 0.5);
     expect(sent().map((e) => e.fields.zoom_band)).toEqual(['close', 'far']);
+  });
+
+  it('sends the page view with what the link arrived with', () => {
+    trackPageView('tour', 'intro', 'example.com', 'view');
+    expect(sent()).toEqual([
+      {
+        event: 'page_view',
+        visit: 'v1',
+        mode: 'reader',
+        fields: {
+          story_stop: 'intro',
+          referrer: 'example.com',
+          story: 'tour',
+          arrived_with: 'view',
+        },
+      },
+    ]);
+  });
+
+  it('sends a share with how it went and what was shared', () => {
+    trackShare({
+      how: 'copied',
+      what: 'view',
+      story: '',
+      stop_id: '',
+      overlay: 'commentary',
+      searching: 1,
+      pinned: 0,
+    });
+    expect(sent()).toEqual([
+      {
+        event: 'share',
+        visit: 'v1',
+        mode: 'reader',
+        fields: {
+          how: 'copied',
+          what: 'view',
+          story: '',
+          stop_id: '',
+          overlay: 'commentary',
+          searching: 1,
+          pinned: 0,
+        },
+      },
+    ]);
+  });
+});
+
+describe('arrivedWith', () => {
+  it('names a view for a verse link on an ordinary navigation', () => {
+    expect(arrivedWith(readLink('?verse=Genesis.1.1'), 'navigate')).toBe('view');
+  });
+
+  it('names a stop for a story link', () => {
+    expect(arrivedWith(readLink('?story=tour&stop=intro'), 'navigate')).toBe('stop');
+  });
+
+  it('names nothing for a bare link', () => {
+    expect(arrivedWith(readLink(''), 'navigate')).toBe('nothing');
+  });
+
+  it('names nothing for any link on a reload or Back/Forward', () => {
+    expect(arrivedWith(readLink('?verse=Genesis.1.1'), 'reload')).toBe('nothing');
+    expect(arrivedWith(readLink('?story=tour&stop=intro'), 'back_forward')).toBe('nothing');
   });
 });

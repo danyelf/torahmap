@@ -34,6 +34,7 @@ describe('linkForScreen', () => {
 describe('pushes', () => {
   it('leaving a story for the reader’s own view pushes even if not asked', () => {
     expect(pushes(stop, view, false)).toBe(true);
+    expect(pushes({ stop: 'abraham_call', overlayParams: {} }, view, false)).toBe(true);
   });
 
   it('a story taking the map back does not push unless asked', () => {

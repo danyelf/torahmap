@@ -3,6 +3,7 @@ import {
   readLink,
   writeLink,
   linkNamesAView,
+  linkKind,
   verseToUrlFormat,
   parseVerseFromUrl,
   validateOverlayParams,
@@ -169,6 +170,24 @@ describe('a tracking-only link opens the same as a bare address', () => {
 
   it('an explicit default zoom still names a view', () => {
     expect(linkNamesAView(readLink('?zoom=1'))).toBe(true);
+  });
+});
+
+describe('linkKind', () => {
+  it('a story, or a stop alone, is a stop', () => {
+    expect(linkKind(readLink('?story=tour&stop=intro'))).toBe('stop');
+    expect(linkKind(readLink('?story=tour'))).toBe('stop');
+    expect(linkKind(readLink('?stop=intro'))).toBe('stop');
+  });
+
+  it('any other named field is a view', () => {
+    expect(linkKind(readLink('?verse=Genesis.1.1'))).toBe('view');
+    expect(linkKind(readLink('?zoom=2'))).toBe('view');
+  });
+
+  it('a bare or tracking-only link is nothing', () => {
+    expect(linkKind(readLink(''))).toBe('nothing');
+    expect(linkKind(readLink('?utm_source=x&fbclid=abc'))).toBe('nothing');
   });
 });
 
@@ -429,6 +448,16 @@ describe('a story in the link', () => {
   it('writes a story and its stop together', () => {
     expect(writeLink({ story: 'tour', stop: 'abraham_call', overlayParams: {} })).toBe(
       '?story=tour&stop=abraham_call',
+    );
+  });
+
+  it('keeps a stop without a story', () => {
+    expect(writeLink(readLink('?stop=abraham_call&fbclid=abc'))).toBe('?stop=abraham_call');
+  });
+
+  it('writes a stop link as its stop alone, whatever else it names', () => {
+    expect(writeLink(readLink('?stop=abraham_call&verse=Genesis.1.1&overlay=trop'))).toBe(
+      '?stop=abraham_call',
     );
   });
 });

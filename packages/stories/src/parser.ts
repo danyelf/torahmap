@@ -1,4 +1,4 @@
-import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
+import type { StoryData, StoryStop, EasingName, CameraRef } from './types.ts';
 import { parseVerseFromUrl, SEARCH_KEYS } from '@torahmap/link';
 
 /** The frontmatter keys a story may set. */

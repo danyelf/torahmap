@@ -1,7 +1,7 @@
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
 import { CONTROL, panelHtml } from './panel.ts';
-import { SITE_NAME } from '@torahmap/link';
+import { SITE_NAME } from '@torahmap/site';
 
 /** About & settings: one scrolling panel, settings first because they are what a returning reader wants. */
 export function aboutHtml(

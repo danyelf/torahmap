@@ -33,11 +33,16 @@ fail() {
 # confusing failures here: a fresh worktree has no node_modules, and the type
 # checker then reports "Cannot find type definition file for 'vite/client'",
 # which reads like a code error but is not. An existing worktree can also be
-# missing a workspace package a newer branch added (@torahmap/link), which
-# fails the same way with "Cannot find module '@torahmap/link'". Catch both up
-# front and say so plainly.
+# missing a workspace package a newer branch added under packages/, which
+# fails the same way with "Cannot find module '@torahmap/<name>'". Catch both
+# up front and say so plainly.
+missing_package=
+for manifest in packages/*/package.json; do
+  name=$(basename "$(dirname "$manifest")")
+  [ -e "node_modules/@torahmap/$name" ] || missing_package=1
+done
 if [ ! -d node_modules ] || [ ! -x node_modules/.bin/vitest ] ||
-  [ ! -x node_modules/.bin/prettier ] || [ ! -e node_modules/@torahmap/link ]; then
+  [ ! -x node_modules/.bin/prettier ] || [ -n "$missing_package" ]; then
   fail "Dependencies are missing or out of date in this worktree, so the
   formatter, tests and type checker cannot run. This is not a problem with
   your code.

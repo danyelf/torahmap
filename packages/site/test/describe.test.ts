@@ -1,13 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { describeLink, readLink, TAGLINE, type LinkNames } from '@torahmap/link';
+import { readLink } from '@torahmap/link';
+import { describeLink, TAGLINE } from '@torahmap/site';
 
-const names: LinkNames = {
-  overlayName: (id) => ({ commentary: 'Commentary' })[id],
-  storyTitle: (id) => ({ tour: 'The Guided Tour' })[id],
-  stopOpening: (s, stop) =>
-    s === 'tour' && stop === 'abraham_zoom' ? 'We can overlay the map with data.' : undefined,
-};
-const describeQuery = (q: string) => describeLink(readLink(q), names);
+const describeQuery = (q: string) => describeLink(readLink(q));
 
 describe('describeLink', () => {
   it('names a pinned verse, with the overlay in the description', () => {
@@ -38,6 +33,19 @@ describe('describeLink', () => {
     });
   });
 
+  it('names a stop alone by the story torahmap.org opens by default', () => {
+    expect(describeQuery('?stop=abraham_zoom')).toEqual(
+      describeQuery('?story=tour&stop=abraham_zoom'),
+    );
+    expect(describeQuery('?stop=abraham_zoom&verse=Genesis.1.1')).toEqual(
+      describeQuery('?story=tour&stop=abraham_zoom'),
+    );
+    expect(describeQuery('?stop=no-such-stop')).toEqual({
+      title: 'The Guided Tour · Torahmap',
+      description: TAGLINE,
+    });
+  });
+
   it('names the site alone for the plain map or a camera', () => {
     const plain = { title: 'Torahmap', description: TAGLINE };
     expect(describeQuery('')).toEqual(plain);
@@ -48,12 +56,17 @@ describe('describeLink', () => {
     expect(describeQuery('?verse=I.Samuel.1.5').title).toBe('I Samuel 1:5 · Torahmap');
   });
 
-  it('describes an unknown story or overlay as if it were absent', () => {
-    expect(describeQuery('?story=gone&stop=x')).toEqual({
-      title: 'Torahmap',
-      description: TAGLINE,
-    });
+  it('names a draft or unknown story by the story the page opens instead', () => {
+    const tour = { title: 'The Guided Tour · Torahmap', description: TAGLINE };
+    expect(describeQuery('?story=sample')).toEqual(tour);
+    expect(describeQuery('?story=gone')).toEqual(tour);
+    expect(describeQuery('?story=gone&stop=abraham_zoom')).toEqual(
+      describeQuery('?story=tour&stop=abraham_zoom'),
+    );
+  });
+
+  it('describes an unknown stop or overlay as if it were absent', () => {
     expect(describeQuery('?overlay=text-dating').description).toBe(TAGLINE);
-    expect(describeQuery('?story=tour&stop=gone').description).toBe(TAGLINE);
+    expect(describeQuery('?story=tour&stop=no-such-stop').description).toBe(TAGLINE);
   });
 });
