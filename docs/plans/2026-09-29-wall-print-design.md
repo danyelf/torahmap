@@ -141,7 +141,7 @@ mockup is in `scripts/print/prototype/`, the starting point for the script.
 | Book title | Hebrew 15, English 13, both bold, 5 apart; baseline 9 above the book's first row; the Hebrew shrinks no smaller than 9 |
 | Section title | Hebrew 25.3, English 22, both bold, quieter ink; 8 right of the section, starting 26 above its first row |
 | Hairline | 0.75, quieter ink, 50 below the map, across the map's width |
-| Key title | Hebrew 23 bold, English 20 semibold; 30 below the hairline |
+| Key title | Hebrew 23 bold, English 20 semibold; baseline 56 below the hairline |
 | Key notes | 11, quieter ink, lines 15 apart |
 | Portion columns | 170 wide; heading Hebrew 12.65, English 11; rows 15 apart, swatch 9 square, Hebrew 11.5, English 10 |
 | Occasion columns | 270 wide, starting 20 after the portions; kind headings 10 semibold |
