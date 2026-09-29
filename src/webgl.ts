@@ -180,8 +180,13 @@ const OUTLINE_FRAGMENT_SHADER = `#version 300 es
   }
 `;
 
+/** The canvas's WebGL 2 context, or null in a browser without one. Asking again returns the same context. */
+export function getWebGL2(canvas: HTMLCanvasElement): WebGL2RenderingContext | null {
+  return canvas.getContext('webgl2', { antialias: true });
+}
+
 export function initWebGL(canvas: HTMLCanvasElement): WebGL2RenderingContext {
-  const gl = canvas.getContext('webgl2', { antialias: true });
+  const gl = getWebGL2(canvas);
   if (!gl) throw new Error('WebGL2 not supported');
   return gl;
 }

@@ -27,6 +27,7 @@ export const EVENTS = {
   word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
+  webgl_missing: { blobs: [], doubles: [] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [], by: 'worker' },
   // A stop share records overlay 'none': stop links carry no overlay (the stop
   // picks its own), so group share.overlay by view shares.

@@ -42,6 +42,7 @@ import {
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
+  trackWebGLMissing,
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
@@ -108,6 +109,7 @@ import {
   rebuildGeometry,
   render as renderFrame,
 } from './rendering.ts';
+import { getWebGL2 } from './webgl.ts';
 import type { TanakhIdentity, TanakhLayout } from './types.ts';
 import {
   registerAllOverlays,
@@ -207,6 +209,16 @@ async function main(): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
   showTitle();
 
+  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+  if (!canvas) throw new Error('Canvas not found');
+  // Before any download: without WebGL 2 the map cannot draw at all.
+  if (!getWebGL2(canvas)) {
+    document.body.classList.add('no-webgl');
+    document.getElementById('no-webgl')!.hidden = false;
+    trackWebGLMissing();
+    return;
+  }
+
   const [torahData, verseTexts] = await Promise.all([
     loadTanakhStructure(),
     loadAllVerseTexts(),
@@ -227,8 +239,6 @@ async function main(): Promise<void> {
 
   await Promise.all(getAllOverlays().map((o) => o.init?.()));
 
-  const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-  if (!canvas) throw new Error('Canvas not found');
   const dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas(): void {
