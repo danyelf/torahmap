@@ -1,0 +1,125 @@
+import { describe, expect, it } from 'vitest';
+import { draw } from '../draw.ts';
+import type { SheetInput } from '../types.ts';
+
+const LOGO =
+  '<svg viewBox="0 0 453.19 157.3"><filter id="f"/><g filter="url(#f)" font-family="David Libre, system-ui, sans-serif">' +
+  '<text x="453.19" y="27">מפת התנ״ך</text><text x="0" y="103.81">Torahmap</text>' +
+  '<text x="0" y="151.61" font-family="system-ui, sans-serif">tagline</text></g></svg>';
+
+function input(over: Partial<SheetInput> = {}): SheetInput {
+  return {
+    kind: 'sheet',
+    palette: { paper: '#f3ecdc', ink: '#3a2e24', inkSoft: '#7a6a58' },
+    verses: [
+      { x: 0, y: 0, side: 4, fills: ['#111111'] },
+      { x: 6, y: 0, side: 4, fills: ['#aa0000', '#00aa00'] },
+      { x: 12, y: 0, side: 4, fills: ['#aa0000', '#00aa00', '#0000aa'] },
+      { x: 3000, y: 1400, side: 4, fills: ['#111111'] },
+    ],
+    books: [
+      { he: 'בראשית', en: 'Genesis', minX: 0, maxX: 300, minY: 0 },
+      { he: 'עובדיה', en: 'Obadiah', minX: 400, maxX: 412, minY: 0 },
+    ],
+    sections: [{ he: 'תורה', en: 'Five Books', maxX: 3006, minY: 0 }],
+    torahMinX: 0,
+    torahTopY: 0,
+    logoSvg: LOGO,
+    key: {
+      he: 'מפתח',
+      en: 'Key',
+      notes: ['A note.'],
+      columns: [
+        {
+          width: 170,
+          groups: [{ rows: [{ swatch: '#aa0000', he: 'בראשית', en: 'Bereshit' }] }],
+        },
+      ],
+    },
+    credits: 'credits',
+    bandOffset: 0.08,
+    growth: 0.75,
+    marks: false,
+    ...over,
+  };
+}
+
+const svgOf = (result: ReturnType<typeof draw>) =>
+  new DOMParser().parseFromString(result.svg, 'image/svg+xml').documentElement;
+
+describe('draw', () => {
+  it('makes a 36 × 24 inch page with ⅛ inch of bleed on every side', () => {
+    const result = draw(input());
+    expect(result.width).toBe(2592 + 18);
+    expect(result.height).toBe(1728 + 18);
+  });
+
+  it('adds a slug with eight crop marks only when asked', () => {
+    expect(svgOf(draw(input())).querySelectorAll('.crop-mark')).toHaveLength(0);
+    const marked = draw(input({ marks: true }));
+    expect(marked.width).toBe(2592 + 18 + 72);
+    expect(svgOf(marked).querySelectorAll('.crop-mark')).toHaveLength(8);
+  });
+
+  it('draws one band per colour of a split verse, each slid along the cut', () => {
+    const svg = svgOf(draw(input()));
+    const bands = [...svg.querySelectorAll('.verses polygon')];
+    expect(bands).toHaveLength(5);
+    // The two-colour verse grows 0.75 on every side, to a side of 5.5 from
+    // (5.25, -0.75). Its first band is the triangle above the cut, slid by
+    // -0.5 * 0.08 * 5.5 = -0.22 along (+1, -1).
+    const first = bands[0]
+      .getAttribute('points')!
+      .split(' ')
+      .map((p) => p.split(',').map(Number));
+    expect(first).toEqual(
+      expect.arrayContaining([
+        [expect.closeTo(5.25 - 0.22, 5), expect.closeTo(-0.75 + 0.22, 5)],
+        [expect.closeTo(10.75 - 0.22, 5), expect.closeTo(-0.75 + 0.22, 5)],
+        [expect.closeTo(5.25 - 0.22, 5), expect.closeTo(4.75 + 0.22, 5)],
+      ]),
+    );
+  });
+
+  it('drops the English, then shrinks the Hebrew, of a title too wide for its book', () => {
+    const svg = svgOf(draw(input()));
+    const [wide, narrow] = [...svg.querySelectorAll('.book-title')];
+    expect(wide.textContent).toContain('Genesis');
+    expect(narrow.textContent).not.toContain('Obadiah');
+    const size = Number(narrow.querySelector('tspan')!.getAttribute('font-size'));
+    expect(size).toBeLessThan(15);
+    expect(size).toBeGreaterThanOrEqual(9);
+  });
+
+  it('reports a key entry wider than its column', () => {
+    const long = input({
+      key: {
+        ...input().key,
+        columns: [
+          {
+            width: 60,
+            groups: [
+              {
+                rows: [
+                  {
+                    swatch: '#aa0000',
+                    he: 'שבת חול המועד פסח',
+                    en: 'Passover, Intermediate Sabbath',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(draw(long).overflows).toEqual(['Passover, Intermediate Sabbath']);
+    expect(draw(input()).overflows).toEqual([]);
+  });
+
+  it('takes the logo from the site’s artwork, without its shadow', () => {
+    const svg = svgOf(draw(input()));
+    expect(svg.querySelector('.logo')!.textContent).toContain('Torahmap');
+    expect(svg.querySelector('.logo [filter]')).toBeNull();
+  });
+});
