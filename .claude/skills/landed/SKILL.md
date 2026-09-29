@@ -15,15 +15,17 @@ Two different requests share these words:
 
 1. **Leave the worktree.** A session inside a worktree cannot touch any other one,
    and the worktree you are standing in is locked. Call `ExitWorktree` with
-   `action: "remove"` if it belongs to the merged pull request, otherwise `"keep"`,
-   and delete the branch if it is left behind (`git branch -D`). If you cannot
-   leave, stop and tell Danyel: nothing below works from inside a worktree.
+   `action: "keep"`: `"remove"` compares against the local main, which has not
+   seen the merge yet, and refuses. The sweep removes it. If you cannot leave,
+   stop and tell Danyel: nothing below works from inside a worktree.
 2. **Stop what you started for it**: background dev servers and subagents
    (`TaskStop`). A process you did not start is not yours, whatever port it holds.
 3. **Sweep.** `bash scripts/sweep-worktrees.sh` lists what it would remove and
    why it keeps the rest. Removing every worktree it marks `remove` is what
    Danyel wants — they are merged, clean and unused — so run it again with
-   `--apply` without asking.
+   `--apply` without asking. If it keeps the worktree you just left as "in use
+   by caffeinate", that is Claude Code's own process; remove that one by hand
+   (`git worktree remove <path> && git branch -d <branch>`).
 4. **Update main**, if the primary checkout is on main and clean:
    `git -C <primary> pull --ff-only`. Never switch its branch.
 5. **Memory.** Search the memory folder for the pull request number and branch
