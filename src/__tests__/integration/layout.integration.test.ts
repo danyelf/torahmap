@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { computeLayout, getSection, getLayoutBounds } from '../../layout';
-import { initBookData } from '../../constants/books';
+import { computeLayout, getLayoutBounds } from '../../layout';
+import { getBookSection as getSection, initBookData } from '../../constants/books';
 import type { TorahData, TanakhLayout } from '../../types';
 
 describe('Layout Integration', () => {

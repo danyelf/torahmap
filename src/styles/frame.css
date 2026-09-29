@@ -17,6 +17,8 @@
   /* The legend's height and the gap above it, where the phone's verse popup
      stacks; main.ts measures it. */
   --legend-shown: 0px;
+  /* A legend row, unless it sits level with the ☰. */
+  --legend-row: 36px;
   --story-bg: #16181d;
   --panel-bg: rgba(0, 0, 0, 0.92);
   --line: rgba(255, 255, 255, 0.1);
@@ -68,16 +70,14 @@ body[data-mode='explore']:not([data-open]) #menu-toggle {
 
 /* Beside the ☰, where the column's title would start, and level with it: the
    card's padding and border (6px) and a row make the ☰'s height. A phone's
-   legend is at the bottom. */
-@media (min-width: 769px) {
-  body[data-mode='explore']:not([data-open]) #map-legend {
-    top: var(--column-head-pad);
-    left: calc(12px + var(--tap) + 10px);
-  }
+   legend is at the bottom (phone.css). */
+body[data-mode='explore']:not([data-open]) #map-legend {
+  top: var(--column-head-pad);
+  left: calc(12px + var(--tap) + 10px);
+}
 
-  body[data-mode='explore']:not([data-open]) .map-legend-row {
-    min-height: calc(var(--tap) - 6px);
-  }
+body[data-mode='explore']:not([data-open]) .map-legend-row {
+  min-height: calc(var(--tap) - 6px);
 }
 
 #sheet-grabber {
@@ -483,7 +483,7 @@ body[data-open='about'] #about-panel {
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: 36px;
+  min-height: var(--legend-row);
   padding: 0 12px;
   border: none;
   background: none;
@@ -551,152 +551,4 @@ body[data-open='about'] #about-panel {
 
 .summary-swatch.strip {
   width: 60px;
-}
-
-/* On a phone the panel is a sheet along the bottom.
-
-   In a story it is a constant 30svh, which leaves every stop room for about
-   150px of text on an 844px-tall screen; the camera already moves between
-   stops, and a sheet resizing under it would move the whole screen. svh, not
-   vh: a phone's vh counts the space behind the browser's toolbar.
-
-   Exploring, the sheet is as tall as its open panel, up to half the screen,
-   and gone when nothing is open. Dragged to full, it grows up over the map
-   rather than shrinking it. --sheet-shown is the height the map, the legend
-   and the verse popup make room for; main.ts measures it. */
-@media (max-width: 768px) {
-  :root {
-    --story-sheet: 30svh;
-    --sheet-cap: 50svh;
-    --sheet-full: 85svh;
-    /* How far the ☰ sits in from the screen's corner. */
-    --corner: 10px;
-  }
-
-  /* Set here rather than measured, so the story's stops are resolved against
-     the map's final height from the first frame. main.ts measures it only
-     while exploring; this rule on <body> outranks its value on <html>. */
-  body[data-mode='story'] {
-    --sheet-shown: var(--story-sheet);
-  }
-
-  #canvas {
-    width: 100vw;
-    height: calc(100svh - var(--sheet-shown));
-  }
-
-  #panel,
-  body[data-mode='explore'] #panel {
-    top: auto;
-    left: 0;
-    right: 0;
-    width: 100%;
-    max-height: var(--sheet-cap);
-    border-right: none;
-    border-top: 1px solid var(--edge);
-    border-radius: 16px 16px 0 0;
-  }
-
-  body[data-mode='story'] #panel {
-    height: var(--story-sheet);
-    max-height: none;
-  }
-
-  /* Opaque: at full height the map behind is only a distraction. */
-  body[data-full] #panel {
-    height: var(--sheet-full);
-    max-height: none;
-    background: #000;
-  }
-
-  /* The ☰ lives in the corner in both modes, so the column's header goes: the
-     story's sheet is only its text, and a tool's panel carries its own title. */
-  .column-head {
-    display: none;
-  }
-
-  .panel-title {
-    display: block;
-  }
-
-  #menu-toggle {
-    top: var(--corner);
-    left: var(--corner);
-    background: #111;
-  }
-
-  /* Dropped from the corner ☰, over the map. */
-  #menu {
-    top: calc(2 * var(--corner) + var(--tap));
-    left: var(--corner);
-    width: min(280px, calc(100vw - 20px));
-    border: 1px solid #444;
-    border-radius: 10px;
-  }
-
-  #map-legend {
-    top: auto;
-    left: 10px;
-    right: 10px;
-    bottom: calc(var(--sheet-shown) + 10px);
-  }
-
-  /* At full height the sheet covers the map the legend describes. */
-  body[data-full] #map-legend {
-    display: none;
-  }
-
-  /* The top of an open sheet, with a short pill drawn in it: tap to go full
-     height or back, drag to do the same or to fold. */
-  body[data-mode='explore'][data-open] #sheet-grabber {
-    display: block;
-    flex-shrink: 0;
-    width: 100%;
-    height: var(--tap);
-    padding: 0;
-    border: none;
-    background: none;
-    touch-action: none;
-    cursor: grab;
-  }
-
-  #sheet-grabber::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 4px;
-    margin: 8px auto 0;
-    border-radius: 2px;
-    background: #666;
-  }
-
-  /* The stops sit side by side, a page each, and a swipe moves one. */
-  #story-content {
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .story-stop,
-  .story-stop:first-child,
-  .story-stop:last-child {
-    flex: 0 0 100%;
-    box-sizing: border-box;
-    padding: 4px 24px 8px;
-    overflow-y: auto;
-    scroll-snap-align: center;
-  }
-
-  #story-cue {
-    left: auto;
-    right: 6px;
-    top: calc(50% - 14px);
-    bottom: auto;
-    width: 10px;
-    height: 72px;
-    transform: none;
-  }
 }

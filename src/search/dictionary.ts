@@ -21,7 +21,7 @@ import {
   type Lexeme,
   type LexemeId,
 } from '../search.ts';
-import { fetchData } from '../constants/app.ts';
+import { fetchData } from '../constants.ts';
 import { isHebrew, mapStrippedToOriginal, splitIntoWords, type TextWord } from '../hebrew.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
 

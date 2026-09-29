@@ -1,12 +1,9 @@
 // Tanakh Map - Main entry point
 
-declare const __GIT_BRANCH__: string;
-declare const __SHOW_DRAFTS__: boolean;
-
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
-import { loadTanakhStructure, loadAllVerseTexts, getVerseText } from './verseTexts.ts';
+import { loadTanakhStructure, loadAllVerseTexts } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
@@ -52,9 +49,10 @@ import {
   linkKind,
   verseRef,
   linkNamesAView,
+  DEFAULT_ZOOM,
   type UrlState,
 } from '@torahmap/link';
-import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
@@ -66,7 +64,6 @@ import {
   clampZoom,
   zoomAtPoint,
   centreForFocus,
-  viewOffset,
   viewFocusedOn,
   animateCameraTo,
   type Camera,
@@ -110,7 +107,7 @@ import {
   render as renderFrame,
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
-import type { TanakhIdentity, TanakhLayout } from './types.ts';
+import type { TanakhIdentity, TanakhLayout, VerseColor } from './types.ts';
 import {
   registerAllOverlays,
   createOverlaySettings,
@@ -121,7 +118,6 @@ import {
   configureSearch,
   configureVerseLength,
   type Overlay,
-  type Color,
 } from './overlays/index.ts';
 import {
   searchTool,
@@ -134,10 +130,10 @@ import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
-  DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
-} from './constants/app.ts';
-import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
+  SEARCH_WITH_OVERLAY,
+  FRONT_FADE,
+} from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
 import { STORIES, listedStories, storyToOpen, type Story } from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
@@ -168,24 +164,23 @@ import {
 } from './telemetry/driverChange.ts';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { showLegend, type LegendRow } from './mapLegend.ts';
-import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
+import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
 import './styles/map-title.css';
 import './styles/zoom-buttons.css';
 import './styles/frame.css';
 import './styles/verse-popup.css';
-
-declare global {
-  interface Window {
-    bookLabels?: HTMLDivElement;
-    mapTitle?: MapTitle;
-  }
-}
+import './styles/phone.css';
 
 const STORY_FOLDED_KEY = 'torahMap.storyFolded';
 
 // How far down a phone's map a verse brought into view is put. Halfway down,
 // the verse lands behind the popup that sits just above the sheet.
 const PHONE_STORY_FOCUS = 0.4;
+
+/** The stop a story between two stops counts as at: the one it is more than halfway to. */
+function nearerStop(state: InterpolatedState): ResolvedStoryStop {
+  return state.t > 0.5 ? state.toStop : state.fromStop;
+}
 
 function storyWasFolded(): boolean {
   try {
@@ -201,7 +196,7 @@ function storyWasFolded(): boolean {
  * suppressed by `applyingExternalState` leaves both unchanged.
  */
 function showTitle(): void {
-  const title = tabTitle(parseUrlState(overlayParamSpecs), __GIT_BRANCH__);
+  const title = tabTitle(parseUrlState(overlayParamSpecs), __LIVE__ ? null : __GIT_BRANCH__);
   if (document.title !== title) document.title = title;
 }
 
@@ -230,6 +225,13 @@ async function main(): Promise<void> {
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
+  // Placed over the map; render() moves them with it.
+  const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
+  const bookLabels = createBookLabels(verses, document.body, hebrewNames);
+  const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
+  createSectionLabels(verses, bookLabels, (book) => sections.get(book) ?? 'neviim');
+  const mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
+
   buildSearchIndex(verseTexts);
 
   registerAllOverlays();
@@ -252,8 +254,12 @@ async function main(): Promise<void> {
   // Where the canvas starts, read when it resizes rather than per pointer
   // event: reading it then forces a layout on every hover and drag.
   let canvasOrigin = canvas.getBoundingClientRect();
+  // The window resizing is not the only thing that resizes the map: on a phone
+  // it grows as the sheet lowers.
   new ResizeObserver(() => {
     canvasOrigin = canvas.getBoundingClientRect();
+    resizeCanvas();
+    render();
   }).observe(canvas);
 
   /** Where a pointer is on the map: the canvas need not start at the window's corner. */
@@ -264,6 +270,7 @@ async function main(): Promise<void> {
   const renderState = createRenderState(renderContext, verses, dpr);
 
   let currentOverlay: Overlay | null = null;
+  const currentOverlayId = (): string => currentOverlay?.id ?? NO_OVERLAY;
 
   // Every overlay's settings, kept while another overlay is showing.
   const overlaySettings = createOverlaySettings();
@@ -276,7 +283,7 @@ async function main(): Promise<void> {
   // story transition's blend. composite() paints the hover and pin on top of
   // it. A pin never recomputes it; a hover does only when the colours depend
   // on the hovered verse, which a blend's may.
-  let colorLayer: ColorLayer<Color | Color[] | null> = still({ colors: [] });
+  let colorLayer: ColorLayer<VerseColor | null> = still({ colors: [] });
   // What the verse buffer was last built from. A fade in progress changes only
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
@@ -304,7 +311,7 @@ async function main(): Promise<void> {
     if (inputs.every((input, i) => input === built[i])) return;
     built = inputs;
 
-    const shown = (picture: Picture<Color | Color[] | null>): Picture => ({
+    const shown = (picture: Picture<VerseColor | null>): Picture => ({
       colors: applyItemColors(
         computeItemStates(
           verses,
@@ -320,7 +327,7 @@ async function main(): Promise<void> {
     rebuildGeometry(renderContext.gl, renderState, shown(from), to && shown(to));
   }
 
-  function setColorLayer(next: ColorLayer<Color | Color[] | null>): void {
+  function setColorLayer(next: ColorLayer<VerseColor | null>): void {
     colorLayer = next;
     composite();
   }
@@ -437,9 +444,9 @@ async function main(): Promise<void> {
   /**
    * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
    * Does NOT paint the buffer — caller decides (settled paints via applyTools,
-   * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
-   * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
-   * heading toward, for the sidebar and the hover text.
+   * mid-scroll lets the blender paint), so mid-scroll can keep
+   * `currentOverlay`/`pinnedVerse` in sync with the stop the reader is heading
+   * toward, for the sidebar and the hover text.
    *
    * The stop is external state, like a link, so URL writes are off throughout:
    * in story mode the URL is the stop id, and an explore-mode URL has no
@@ -450,8 +457,8 @@ async function main(): Promise<void> {
   }
 
   function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
-    const wantedOverlay = stop.overlay ?? 'none';
-    if (wantedOverlay !== currentOverlayId) {
+    const wantedOverlay = stop.overlay ?? NO_OVERLAY;
+    if (wantedOverlay !== currentOverlayId()) {
       activateOverlay(wantedOverlay);
     }
 
@@ -520,14 +527,17 @@ async function main(): Promise<void> {
 
   function storyStopIndex(): number {
     if (heldStop !== null) return heldStop;
-    const state = currentStoryState();
-    return resolvedStops.indexOf(state.t > 0.5 ? state.toStop : state.fromStop);
+    return resolvedStops.indexOf(nearerStop(currentStoryState()));
   }
 
-  const phoneLayout = window.matchMedia('(max-width: 768px)');
+  // Read from the stylesheet, like storyIsSideways, so the script cannot
+  // disagree with src/styles/phone.css about which layout is showing.
+  const phoneLayoutShown = (): boolean =>
+    getComputedStyle(document.documentElement).getPropertyValue('--layout').trim() === 'phone';
+  let phone = phoneLayoutShown();
 
   /** Opens or closes the story; closing it lands on `exploring`. */
-  function setStoryOpen(open: boolean, exploring = exploreFrame(phoneLayout.matches)): void {
+  function setStoryOpen(open: boolean, exploring = exploreFrame(phone)): void {
     if (!open && frame.mode === 'story') heldStop = storyStopIndex();
     const previous = frame;
     if (open) frame = STORY;
@@ -579,7 +589,7 @@ async function main(): Promise<void> {
   // open; the map, the legend and the verse popup make room for it. Full
   // height grows over the map instead.
   function measureSheet(): void {
-    if (!phoneLayout.matches || frame.full) return;
+    if (!phone || frame.full) return;
     document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
   }
   new ResizeObserver(measureSheet).observe(panel);
@@ -605,7 +615,7 @@ async function main(): Promise<void> {
 
   /** Every control that changes the panel comes through here. */
   function dispatch(event: FrameEvent): void {
-    const next = nextFrame(frame, event, phoneLayout.matches);
+    const next = nextFrame(frame, event, phone);
     if (frame.mode === 'explore' && next.mode === 'story') {
       readerOpensStory();
       return;
@@ -692,11 +702,10 @@ async function main(): Promise<void> {
   // overlay or pin out from under it.
   let lastSyncedStopId: string | null = null;
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
-  const TAP_THRESHOLD = 10; // max px movement to count as tap
   const TAP_MAX_DURATION = 300; // max ms to count as tap
 
   function render(): void {
-    renderFrame(
+    const offset = renderFrame(
       renderContext,
       renderState,
       camera,
@@ -704,6 +713,13 @@ async function main(): Promise<void> {
       pinnedVerse,
       tanakhIdentitiesEqual,
     );
+    updateLabelPositions(bookLabels, offset, camera.zoom);
+    updateMapTitlePosition(mapTitle, offset, camera.zoom);
+  }
+
+  /** The cursor over `verse`, or over no verse: a pointer only over one while another is pinned. */
+  function setCursorOver(verse: TanakhLayout | null): void {
+    canvas.style.cursor = pinnedVerse && verse ? 'pointer' : 'default';
   }
 
   function centerOnVerse(verse: TanakhLayout): void {
@@ -771,15 +787,6 @@ async function main(): Promise<void> {
   }
 
   render();
-
-  const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
-  window.bookLabels = createBookLabels(verses, document.body, hebrewNames);
-  const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
-  createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
-  const offset = viewOffset(camera, mapViewport());
-  updateLabelPositions(window.bookLabels, offset, camera.zoom);
-  window.mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
-  updateMapTitlePosition(window.mapTitle, offset, camera.zoom);
 
   canvas.addEventListener(
     'wheel',
@@ -867,19 +874,6 @@ async function main(): Promise<void> {
     pointerDownPos = { x: p.x, y: p.y, time: Date.now() };
   });
 
-  canvas.addEventListener('pointermove', (e: PointerEvent) => {
-    if (mouseState.isDragging && touchState.activeTouches.size < 2) {
-      const p = onMap(e);
-      const dx = p.x - mouseState.dragStart.x;
-      const dy = p.y - mouseState.dragStart.y;
-      if (dx !== 0 || dy !== 0) takeOver('takeover');
-      camera.x -= dx / camera.zoom;
-      camera.y -= dy / camera.zoom;
-      mouseState.dragStart = { x: p.x, y: p.y };
-      render();
-    }
-  });
-
   canvas.addEventListener('pointerup', (e: PointerEvent) => {
     const p = onMap(e);
     const wasDragging = mouseState.isDragging;
@@ -893,7 +887,7 @@ async function main(): Promise<void> {
       const dy = Math.abs(p.y - pointerDownPos.y);
       const duration = Date.now() - pointerDownPos.time;
 
-      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
+      if (dx < DRAG_PX && dy < DRAG_PX && duration < TAP_MAX_DURATION) {
         const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
         if (verse) {
           if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
@@ -908,14 +902,7 @@ async function main(): Promise<void> {
       pointerDownPos = null;
     }
 
-    if (wasDragging) {
-      const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
-      if (pinnedVerse && verse) {
-        canvas.style.cursor = 'pointer';
-      } else {
-        canvas.style.cursor = 'default';
-      }
-    }
+    if (wasDragging) setCursorOver(findItemAtPoint(verses, camera, mapViewport(), p.x, p.y));
   });
 
   canvas.addEventListener('pointerleave', () => {
@@ -994,16 +981,7 @@ async function main(): Promise<void> {
   }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    updateSidebar(
-      sidebarElements,
-      verse,
-      verseTexts,
-      currentOverlay,
-      currentSettings(),
-      getVerseText,
-      isPinned,
-      toolsNow().search,
-    );
+    updateSidebar(sidebarElements, verse, { verseTexts, ...toolsNow(), pinned: isPinned });
   }
 
   /**
@@ -1016,32 +994,31 @@ async function main(): Promise<void> {
     else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
   }
 
+  // A drag pans the map, and a mouse moving over it hovers. Two fingers pinch.
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
-    if (e.pointerType === 'touch' || touchState.activeTouches.size >= 2) return;
+    if (touchState.activeTouches.size >= 2) return;
+    const p = onMap(e);
 
-    if (!mouseState.isDragging) {
-      const p = onMap(e);
-      lastPointerPosition = { x: p.x, y: p.y };
-      const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
-      const previousHover = mouseState.hoveredVerse;
-      setHoveredVerse(mouseState, verse);
-
-      if (pinnedVerse && verse) {
-        canvas.style.cursor = 'pointer';
-      } else {
-        canvas.style.cursor = 'default';
-      }
-
-      if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
-
-      if (pinnedVerse) {
-        // Keep showing pinned verse
-      } else if (verse) {
-        updateSidebarWrapper(verse, false);
-      } else {
-        updateSidebarWrapper(null);
-      }
+    if (mouseState.isDragging) {
+      const dx = p.x - mouseState.dragStart.x;
+      const dy = p.y - mouseState.dragStart.y;
+      if (dx !== 0 || dy !== 0) takeOver('takeover');
+      camera.x -= dx / camera.zoom;
+      camera.y -= dy / camera.zoom;
+      mouseState.dragStart = { x: p.x, y: p.y };
+      render();
+      return;
     }
+    if (e.pointerType === 'touch') return;
+
+    lastPointerPosition = { x: p.x, y: p.y };
+    const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
+    const previousHover = mouseState.hoveredVerse;
+    setHoveredVerse(mouseState, verse);
+    setCursorOver(verse);
+    if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
+    // A pinned verse keeps the popup.
+    if (!pinnedVerse) updateSidebarWrapper(verse);
   });
 
   sidebarElements.closeBtn?.addEventListener('click', () => {
@@ -1079,9 +1056,8 @@ async function main(): Promise<void> {
 
   const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
 
-  // Fill the overlay menu from the registry, after the "None" option the page
-  // starts with. The registry is the only list of overlays; the menu follows it,
-  // so adding an overlay to overlays/index.ts is enough to make it choosable.
+  // After the "None" option the picker starts with, in the order
+  // @torahmap/overlay-catalog offers them.
   for (const overlay of getAllOverlays()) {
     const option = document.createElement('option');
     option.value = overlay.id;
@@ -1093,11 +1069,8 @@ async function main(): Promise<void> {
   const searchControls = document.getElementById('search-controls')!;
   const overlayLegendContainer = document.getElementById('overlay-legend');
 
-  let currentOverlayId = 'none';
-
   /** Switch the active overlay without drawing its UI, painting or writing the URL. */
   function activateOverlay(id: string): void {
-    currentOverlayId = id;
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
   }
@@ -1125,7 +1098,7 @@ async function main(): Promise<void> {
    */
   function overlayChanged(fresh: boolean): void {
     if (fresh) {
-      if (overlaySelect) overlaySelect.value = currentOverlayId;
+      if (overlaySelect) overlaySelect.value = currentOverlayId();
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
     }
     renderOverlayControls();
@@ -1176,7 +1149,7 @@ async function main(): Promise<void> {
   }
 
   function setOverlay(id: string): void {
-    trackOverlaySwitch(id, currentOverlayId);
+    trackOverlaySwitch(id, currentOverlayId());
     activateOverlay(id);
     overlayChanged(true);
     applyTools();
@@ -1221,19 +1194,12 @@ async function main(): Promise<void> {
   // Sefaria doesn't lose the event.
   sidebarElements.link?.addEventListener('click', () => {
     const verse = pinnedVerse ?? mouseState.hoveredVerse;
-    if (verse) trackSefariaClick(verse.book, verse.chapter, verse.verse, currentOverlayId);
+    if (verse) trackSefariaClick(verse.book, verse.chapter, verse.verse, currentOverlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
     setOverlay(overlaySelect.value);
   });
-
-  // The window resizing is not the only thing that resizes the map: on a phone
-  // it grows as the sheet lowers.
-  new ResizeObserver(() => {
-    resizeCanvas();
-    render();
-  }).observe(canvas);
 
   // Capture mode: Ctrl+Shift+C copies current camera state as a story stop comment
   if (import.meta.hot) {
@@ -1295,23 +1261,18 @@ async function main(): Promise<void> {
    * popup that sits above the sheet.
    */
   function mapFocus(): ScreenPoint {
-    const height = phoneLayout.matches
-      ? canvas.clientHeight * PHONE_STORY_FOCUS
-      : canvas.clientHeight / 2;
+    const height = phone ? canvas.clientHeight * PHONE_STORY_FOCUS : canvas.clientHeight / 2;
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let listed = listedStories(STORIES, __SHOW_DRAFTS__);
+  let listed = listedStories(STORIES, !__LIVE__);
   // Where each story other than the current one was left, this visit.
   const places = new Map<string, number>();
 
   let story = storyToOpen(listed, parseUrlState().story ?? null);
   configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
-    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), {
-      width: canvas.clientWidth,
-      height: canvas.clientHeight,
-    });
+    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), mapViewport());
   let resolvedStops: ResolvedStoryStop[] = [];
   let stopElements: HTMLElement[] = [];
 
@@ -1330,9 +1291,11 @@ async function main(): Promise<void> {
   // row, or back, and moves where it centres verses; keep the reader's stop.
   // By the time this runs the story is laid out on its new axis, so its scroll
   // no longer says which stop it was at; the last stop synced does.
-  phoneLayout.addEventListener('change', () => {
-    if (!phoneLayout.matches) document.documentElement.style.removeProperty('--sheet-shown');
-    setFrame(nextFrame(frame, { type: 'layout-changed' }, phoneLayout.matches));
+  window.addEventListener('resize', () => {
+    if (phoneLayoutShown() === phone) return;
+    phone = !phone;
+    if (!phone) document.documentElement.style.removeProperty('--sheet-shown');
+    setFrame(nextFrame(frame, { type: 'layout-changed' }, phone));
     resolvedStops = resolveStory();
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
@@ -1368,7 +1331,7 @@ async function main(): Promise<void> {
   if (import.meta.hot) {
     import.meta.hot.accept('@torahmap/stories', (module) => {
       if (!module) return;
-      listed = listedStories(module.STORIES, __SHOW_DRAFTS__);
+      listed = listedStories(module.STORIES, !__LIVE__);
       reloadStory();
     });
   }
@@ -1494,7 +1457,7 @@ async function main(): Promise<void> {
       what: linkKind(shared),
       story: shared.story ?? '',
       stop_id: shared.stop ?? '',
-      overlay: shared.overlay ?? 'none',
+      overlay: shared.overlay ?? NO_OVERLAY,
       searching: shared.searchParams ? 1 : 0,
       pinned: shared.verse ? 1 : 0,
     });
@@ -1600,7 +1563,7 @@ async function main(): Promise<void> {
   }
 
   /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
-  function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
+  function withDefaults(layer: ColorLayer<VerseColor | null>): ColorLayer {
     return {
       from: fillDefaultColors(layer.from),
       to: layer.to && fillDefaultColors(layer.to),
@@ -1676,13 +1639,10 @@ async function main(): Promise<void> {
     camera.zoom = state.camera.zoom;
 
     const settled = state.fromStop === state.toStop;
-    // Pick the stop whose state should be "current" — settled stop, or the
-    // dominant transitioning stop. Sync explore state to it on every change
-    // so hover events mid-scroll find a consistent currentOverlay/pinnedVerse.
-    const dominantStop = settled ? state.fromStop : state.t > 0.5 ? state.toStop : state.fromStop;
-    if (lastSyncedStopId !== dominantStop.id) {
-      arriveAtStop(dominantStop);
-    }
+    // Sync explore state to the nearer stop on every change, so hover events
+    // mid-scroll find a consistent currentOverlay/pinnedVerse.
+    const nearer = nearerStop(state);
+    if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
     // A scroll fires no pointer event, so re-run hit detection under the
     // last known cursor position now that the camera has moved.
@@ -1754,7 +1714,7 @@ async function main(): Promise<void> {
       // Any other link change (Back/Forward while already exploring) must
       // leave frontTool at whatever the reader last chose from the legend.
       if (frame.mode === 'story') frontTool = open;
-      setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
+      setStoryOpen(false, exploreFrame(phone, open));
     }
 
     activateOverlay(next.overlay);

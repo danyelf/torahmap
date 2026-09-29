@@ -1,11 +1,10 @@
 // The panel that opens when a reader clicks a word.
 //
-// Clicking a word never searches by itself. Search is an overlay, and
-// setOverlay() destroys the outgoing one along with its settings, so a stray
-// click on a verse would silently cost a reader their Haftarah view. The panel
-// is where that becomes deliberate - and it doubles as the confirmation that
-// we found the word the reader meant, since Hebrew words run together and a
-// misfire should be visible before it costs anything.
+// Clicking a word never searches by itself, so a stray click on a verse
+// cannot change the reader's search. The panel is where adding the word
+// becomes deliberate, by one of its meanings or as written, and it doubles as
+// the confirmation that we found the word the reader meant, since Hebrew words
+// run together and a misfire should be visible before it costs anything.
 
 import './styles/wordMenu.css';
 import type { Meaning } from './search/dictionary.ts';

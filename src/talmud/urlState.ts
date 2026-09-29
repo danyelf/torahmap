@@ -7,6 +7,7 @@
 
 import type { TalmudIdentity } from '../types.ts';
 import { talmudFormat } from './format.ts';
+import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 
 export interface TalmudUrlState {
   segment: TalmudIdentity | null;
@@ -30,7 +31,7 @@ export function parseTalmudUrlState(): TalmudUrlState {
 
   return {
     segment,
-    overlay: overlay && overlay !== 'none' ? overlay : null,
+    overlay: overlay && overlay !== NO_OVERLAY ? overlay : null,
   };
 }
 

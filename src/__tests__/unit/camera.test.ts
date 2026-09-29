@@ -3,13 +3,13 @@ import {
   createCamera,
   clampZoom,
   cameraToFit,
-  worldToScreen,
   screenToWorld,
   viewOffset,
   zoomAtPoint,
   centreForFocus,
   type Camera,
 } from '../../camera';
+import { worldToScreen } from '../helpers/worldToScreen';
 import type { Bounds } from '../../types';
 
 describe('camera', () => {

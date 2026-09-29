@@ -1,11 +1,10 @@
 // Shared types for Torah Map
-//
-// The codebase separates domain knowledge (book/chapter/verse, commentary,
-// trop, search, display formatting) from spatial rendering (position, size,
-// geometry, hit detection, camera). SpatialItem<T> is the join: any domain
-// identity T paired with x/y/size. The rendering pipeline only ever reads
-// x/y/size, so a new corpus needs just a concrete identity type — see
-// TalmudIdentity below — to reuse the whole pipeline unchanged.
+
+/** Red, green and blue, each 0 to 1. */
+export type Color = [number, number, number];
+
+/** A verse's colour, or its stripes. */
+export type VerseColor = Color | Color[];
 
 /**
  * Which of a verse's two texts is in hand: the Hebrew or the English.
@@ -34,16 +33,10 @@ export interface TorahData {
 }
 
 /**
- * A spatial item is any domain identity paired with 2D coordinates and a size.
- * The rendering pipeline is generic over the identity type — it never reads
- * domain fields, only x/y/size.
- *
- * Usage:
- *   TanakhLayout = SpatialItem<TanakhIdentity>
- *   TalmudLayout = SpatialItem<TalmudIdentity>
- *
- * Any new corpus needs only a concrete identity interface to produce a new
- * SpatialItem<T> flavor; the spatial modules accept it via generics.
+ * Any domain identity (book, chapter and verse; or a Talmud segment) paired
+ * with a position and a size. The rendering pipeline — geometry, hit
+ * detection, camera — reads only x/y/size, so a new corpus needs only an
+ * identity type to reuse it unchanged.
  */
 export type SpatialItem<T> = T & {
   x: number;
@@ -117,7 +110,7 @@ export function prevTanakhItem(
 /** Computed state for a single item: semantic state first, visual state second. */
 export interface ItemState {
   hasOverlayColor: boolean;
-  resolvedColor: [number, number, number] | [number, number, number][];
+  resolvedColor: VerseColor;
   isHovered: boolean;
   isPinned: boolean;
 }

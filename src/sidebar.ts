@@ -3,7 +3,8 @@
 import type { TanakhLayout, TextLanguage } from './types.ts';
 import { tanakhKey } from './types.ts';
 import type { Overlay, ToolOnMap } from './overlays/types.ts';
-import type { VerseTexts, VerseText } from './verseTexts.ts';
+import { getVerseText, type VerseTexts } from './verseTexts.ts';
+import { sefariaUrl } from './sefaria.ts';
 import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
 import { verseWords, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';
@@ -111,33 +112,27 @@ export function getSefariaUrl(
   currentOverlay: Overlay | null = null,
   overlaySettings: unknown = undefined,
 ): string {
-  const sefariaBook = book.replace(/ /g, '_');
-  const baseUrl = `https://www.sefaria.org/${sefariaBook}.${chapter}.${verse}`;
+  const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings) ?? 'all';
+  return `${sefariaUrl(book, [chapter, verse])}?with=${encodeURIComponent(param)}`;
+}
 
-  const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings);
-  if (param) {
-    return `${baseUrl}?with=${encodeURIComponent(param)}`;
-  }
-
-  return `${baseUrl}?with=all`;
+/** What the popup shows beside the verse, and whether the verse is pinned. */
+export interface PopupView {
+  verseTexts: VerseTexts;
+  overlay: ToolOnMap | null;
+  search: ToolOnMap | null;
+  pinned: boolean;
 }
 
 export function updateSidebar(
   elements: SidebarElements,
   verse: TanakhLayout | null,
-  verseTexts: VerseTexts,
-  currentOverlay: Overlay | null,
-  overlaySettings: unknown,
-  getVerseText: (
-    texts: VerseTexts,
-    book: string,
-    chapter: number,
-    verse: number,
-  ) => VerseText | null,
-  isPinned: boolean = false,
-  search: ToolOnMap | null = null,
+  view: PopupView,
 ): void {
   const { sidebar, ref, overlayInfo, hebrew, english, link } = elements;
+  const { verseTexts, search, pinned: isPinned } = view;
+  const currentOverlay = view.overlay?.tool ?? null;
+  const overlaySettings = view.overlay?.settings;
 
   if (!sidebar) return;
 
@@ -178,18 +173,7 @@ export function updateSidebar(
     // again when it arrives.
     const verseKey = tanakhKey(verse.book, verse.chapter, verse.verse);
     setVerseOnScreen(verseKey, hebrewText)?.then(() => {
-      if (verseOnScreen() === verseKey) {
-        updateSidebar(
-          elements,
-          verse,
-          verseTexts,
-          currentOverlay,
-          overlaySettings,
-          getVerseText,
-          isPinned,
-          search,
-        );
-      }
+      if (verseOnScreen() === verseKey) updateSidebar(elements, verse, view);
     });
 
     // Whatever the overlay produced, words are wrapped afterwards, so a click

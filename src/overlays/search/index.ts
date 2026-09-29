@@ -37,7 +37,7 @@ import {
   type SearchTerm,
 } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
-import { SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
+import { SEARCH_RECORD_DELAY_MS } from '../../search/constants.ts';
 import { isSearchableWord } from '../../hebrew.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';

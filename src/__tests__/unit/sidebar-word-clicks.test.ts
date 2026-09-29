@@ -14,9 +14,6 @@ const texts: VerseTexts = {
   Genesis: { 1: { 2: { he: 'וְר֣וּחַ אֱלֹהִ֔ים מְרַחֶ֖פֶת', en: 'a wind from God sweeping' } } },
 };
 
-const getVerseText = (all: VerseTexts, book: string, chapter: number, verse: number) =>
-  all[book]?.[chapter]?.[verse] ?? null;
-
 function mountPopup(): void {
   document.body.innerHTML = `
     <div id="verse-popup">
@@ -36,15 +33,12 @@ beforeEach(() => {
 describe('words in the verse popup', () => {
   it('renders one clickable span per word', () => {
     const elements = getSidebarElements();
-    updateSidebar(
-      elements,
-      createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
-      texts,
-      null,
-      undefined,
-      getVerseText,
-      true,
-    );
+    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+      verseTexts: texts,
+      overlay: null,
+      search: null,
+      pinned: true,
+    });
 
     const spans = [...document.querySelectorAll('.verse-hebrew .verse-word')];
     expect(spans.map((s) => s.textContent)).toEqual(['וְר֣וּחַ', 'אֱלֹהִ֔ים', 'מְרַחֶ֖פֶת']);
@@ -55,15 +49,12 @@ describe('words in the verse popup', () => {
     setWordClickHandler(handler);
 
     const elements = getSidebarElements();
-    updateSidebar(
-      elements,
-      createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
-      texts,
-      null,
-      undefined,
-      getVerseText,
-      true,
-    );
+    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+      verseTexts: texts,
+      overlay: null,
+      search: null,
+      pinned: true,
+    });
 
     document.querySelector<HTMLElement>('[data-word-index="0"]')!.click();
 
@@ -79,30 +70,24 @@ describe('words in the verse popup', () => {
 
   it('leaves the English alone', () => {
     const elements = getSidebarElements();
-    updateSidebar(
-      elements,
-      createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
-      texts,
-      null,
-      undefined,
-      getVerseText,
-      true,
-    );
+    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+      verseTexts: texts,
+      overlay: null,
+      search: null,
+      pinned: true,
+    });
 
     expect(document.querySelectorAll('.verse-english .verse-word')).toHaveLength(0);
   });
 
   it('says nothing when there is no handler', () => {
     const elements = getSidebarElements();
-    updateSidebar(
-      elements,
-      createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
-      texts,
-      null,
-      undefined,
-      getVerseText,
-      true,
-    );
+    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+      verseTexts: texts,
+      overlay: null,
+      search: null,
+      pinned: true,
+    });
 
     expect(() =>
       document.querySelector<HTMLElement>('[data-word-index="0"]')!.click(),
@@ -140,15 +125,12 @@ describe('words in the verse popup', () => {
     };
 
     const elements = getSidebarElements();
-    updateSidebar(
-      elements,
-      createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
-      texts,
-      mockOverlay,
-      undefined,
-      getVerseText,
-      true,
-    );
+    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+      verseTexts: texts,
+      overlay: { tool: mockOverlay, settings: undefined },
+      search: null,
+      pinned: true,
+    });
 
     const hebrew = document.querySelector('.verse-hebrew')!;
     expect(hebrew.querySelector('mark')).not.toBeNull();

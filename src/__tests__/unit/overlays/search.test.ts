@@ -7,7 +7,7 @@ import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
-import { SEARCH_RECORD_DELAY_MS } from '../../../constants/app';
+import { SEARCH_RECORD_DELAY_MS } from '../../../search/constants';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';

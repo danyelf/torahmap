@@ -174,21 +174,28 @@ function positionSectionLabel(
   label.style.transform = 'rotate(90deg) translateY(-100%)';
 }
 
-export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
+/**
+ * A book label's font size at `zoom`, and how far above its book's first row
+ * the label's top sits: its own height, then a gap that scales with the font.
+ */
+export function bookLabelSize(zoom: number): { fontSize: number; rise: number } {
   const fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
-  const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
+  return { fontSize, rise: fontSize + BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE) };
+}
+
+export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
+  const { fontSize, rise } = bookLabelSize(zoom);
 
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement && label.dataset.section) {
-      positionSectionLabel(label, pan, zoom, fontSize + gap);
+      positionSectionLabel(label, pan, zoom, rise);
     } else if (label instanceof HTMLElement) {
       const rightX = parseFloat(label.dataset.rightX || '0');
       const topY = parseFloat(label.dataset.topY || '0');
       const bookWidth = parseFloat(label.dataset.bookWidth || '0');
       // Position at book's right edge, label extends leftward via translateX(-100%)
       const screenX = (rightX + pan.x) * zoom;
-      // Position so the gap from label bottom to verse top scales with font size
-      const screenY = (topY + pan.y) * zoom - fontSize - gap;
+      const screenY = (topY + pan.y) * zoom - rise;
       label.style.left = screenX + 'px';
       label.style.top = screenY + 'px';
       label.style.fontSize = fontSize + 'px';

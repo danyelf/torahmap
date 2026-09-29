@@ -5,7 +5,7 @@ import {
   getDefaultColor,
   toolsPicture,
 } from '../../itemColoring';
-import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from '../../constants';
+import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
 import type { Color, Overlay } from '../../overlays/types';
 import { createVerse } from '../helpers/fixtures';
 
@@ -16,7 +16,7 @@ const BLUE: Color = [0, 0, 1];
 const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
 const scaled = (c: Color, f: number): Color => [c[0] * f, c[1] * f, c[2] * f];
 // What search alone has always drawn a verse it does not match as.
-const ALONE = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+const ALONE = DIMMED_GREY[0];
 
 describe('combineLayers', () => {
   describe('with no search', () => {

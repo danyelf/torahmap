@@ -7,9 +7,8 @@ import {
 } from '@torahmap/link';
 import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './camera.ts';
 import type { TanakhIdentity } from './types.ts';
-
-/** Whether a link opens with the story showing, or with it folded and the controls open. */
-export type AppMode = 'story' | 'explore';
+import type { Frame } from './frame.ts';
+import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 
 /**
  * Everything a link decides, with nothing left out. A field the link does not
@@ -17,7 +16,8 @@ export type AppMode = 'story' | 'explore';
  * rather than layering over it.
  */
 export interface ViewState {
-  mode: AppMode;
+  /** Whether the link opens with the story showing, or with it folded and the controls open. */
+  mode: Frame['mode'];
   story: string | null;
   stop: string | null;
   overlay: string;
@@ -40,14 +40,14 @@ export function resolveViewState(
   const kind = linkKind(link);
   const url: UrlState =
     kind === 'stop' ? { story: link.story, stop: link.stop, overlayParams: {} } : link;
-  const overlay = url.overlay !== undefined && isOverlay(url.overlay) ? url.overlay : 'none';
+  const overlay = url.overlay !== undefined && isOverlay(url.overlay) ? url.overlay : NO_OVERLAY;
 
   return {
     mode: kind === 'view' ? 'explore' : 'story',
     story: url.story ?? null,
     stop: url.stop ?? null,
     overlay,
-    overlayParams: overlay === 'none' ? {} : url.overlayParams,
+    overlayParams: overlay === NO_OVERLAY ? {} : url.overlayParams,
     searchParams: url.searchParams ?? {},
     verse: url.verse ? parseVerseFromUrl(url.verse) : null,
     camera: {

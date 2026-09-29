@@ -76,7 +76,7 @@ await page.goto(url, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(2000);
 
 // Anchor the zoom on the Torah strip near the top of the viewport.
-// Each wheel tick = 1.1x zoom (see src/constants/app.ts ZOOM_IN_FACTOR).
+// Each wheel tick = 1.1x zoom (see src/constants.ts ZOOM_IN_FACTOR).
 const cx = VIEWPORT.width / 2;
 const torahY = Math.round(VIEWPORT.height * 0.18);
 await page.mouse.move(cx, torahY);
