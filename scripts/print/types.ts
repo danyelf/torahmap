@@ -16,6 +16,7 @@ export interface BookTitle {
   minX: number;
   maxX: number;
   minY: number;
+  maxY: number;
 }
 
 export interface SectionTitle {
@@ -68,6 +69,11 @@ export interface SheetInput {
   torahTopY: number;
   logoSvg: string;
   key: Key;
+  /**
+   * The book (by English name) whose bottom-left corner the key sits beneath,
+   * with no rule. Without it, the key sits under a rule below the map.
+   */
+  keyUnder?: string;
   credits: string;
   bandOffset: number;
   growth: number;

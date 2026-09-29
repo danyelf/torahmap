@@ -61,10 +61,12 @@ function titles(verses: TanakhLayout[], books: Book[]) {
       minX: Infinity,
       maxX: -Infinity,
       minY: Infinity,
+      maxY: -Infinity,
     };
     b.minX = Math.min(b.minX, v.x);
     b.maxX = Math.max(b.maxX, v.x + v.size);
     b.minY = Math.min(b.minY, v.y);
+    b.maxY = Math.max(b.maxY, v.y + v.size);
     bookBox.set(v.book, b);
 
     const section = sectionOf.get(v.book)!;
@@ -227,37 +229,29 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
     const named = inks.filter((_, k) => sets[k].has(key));
     return named.length ? named : [paleTaupe(i)];
   };
+  // The names alone: no title, no notes.
   const key: Key = {
-    he: 'אבות ומנהיגים',
-    en: 'Five names',
-    notes: [
-      'Every verse that names each of them is marked in their colour; a verse naming two is split corner to corner, one band each.',
-      'Only the names: where Isaac’s name is also the word “laugh”, or David’s the word “beloved”, the word is left unmarked.',
-    ],
+    he: '',
+    en: '',
+    notes: [],
     columns: [
       {
         width: 300,
-        groups: [
-          {
-            rows: NAMES.map((n, k) => ({
-              swatch: inks[k],
-              he: n.he,
-              en: n.en,
-              note: `${sets[k].size} verses`,
-            })),
-          },
-        ],
+        groups: [{ rows: NAMES.map((n, k) => ({ swatch: inks[k], he: n.he, en: n.en })) }],
       },
     ],
   };
-  return sheet(
-    printLayout(structure),
-    structure,
-    fillsOf,
-    key,
-    'torahmap.org · Text of the Tanakh from Sefaria · Dictionary from the ETCBC BHSA',
-    marks,
-  );
+  return {
+    ...sheet(
+      printLayout(structure),
+      structure,
+      fillsOf,
+      key,
+      'torahmap.org · Text of the Tanakh from Sefaria · Dictionary from the ETCBC BHSA',
+      marks,
+    ),
+    keyUnder: structure.books.filter((b) => b.section === 'ketuvim').at(-1)!.name,
+  };
 }
 
 /** Two patches of the map at print scale, and every colour the prints use. */

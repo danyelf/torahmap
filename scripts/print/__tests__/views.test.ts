@@ -63,4 +63,14 @@ describe('searchSheet', () => {
     expect(rows.map((r) => r.en)).toEqual(['Abraham', 'Isaac', 'Jacob', 'Moses', 'David']);
     expect(new Set(rows.map((r) => r.swatch)).size).toBe(5);
   });
+
+  it('keys the names alone, under the last book of the Writings', async () => {
+    const sheet = await searchSheet(structure, false);
+    expect(sheet.key.notes).toEqual([]);
+    expect(sheet.key.en).toBe('');
+    const rows = sheet.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
+    expect(rows.every((r) => r.note === undefined)).toBe(true);
+    const lastWriting = structure.books.filter((b) => b.section === 'ketuvim').at(-1)!;
+    expect(sheet.keyUnder).toBe(lastWriting.name);
+  });
 });

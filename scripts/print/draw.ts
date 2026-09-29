@@ -152,18 +152,32 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
 
   // The key, drawn with its top at the hairline; returns how tall it is.
   function drawKey(g: Element, key: Key): number {
-    const title = el(g, 'text', { y: 56, fill: ink });
-    el(title, 'tspan', { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 23 }, rtl(key.he));
-    el(
-      title,
-      'tspan',
-      { 'font-family': LATIN, 'font-weight': 600, 'font-size': 20, dx: 10 },
-      key.en,
-    );
-    key.notes.forEach((note, i) =>
-      el(g, 'text', { y: 80 + i * 15, 'font-family': LATIN, 'font-size': 11, fill: inkSoft }, note),
-    );
-    const top = 80 + (key.notes.length - 1) * 15 + 27;
+    // A key with no title is rows alone, starting at the top.
+    let top = 0;
+    if (key.en) {
+      const title = el(g, 'text', { y: 56, fill: ink });
+      el(
+        title,
+        'tspan',
+        { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 23 },
+        rtl(key.he),
+      );
+      el(
+        title,
+        'tspan',
+        { 'font-family': LATIN, 'font-weight': 600, 'font-size': 20, dx: 10 },
+        key.en,
+      );
+      key.notes.forEach((note, i) =>
+        el(
+          g,
+          'text',
+          { y: 80 + i * 15, 'font-family': LATIN, 'font-size': 11, fill: inkSoft },
+          note,
+        ),
+      );
+      top = 80 + (key.notes.length - 1) * 15 + 27;
+    }
     let x = 0;
     let bottom = top;
     key.columns.forEach((column, ci) => {
@@ -247,12 +261,15 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
   const minY = Math.min(...input.verses.map((v) => v.y));
   const mapW = Math.max(...input.verses.map((v) => v.x + v.side + 2)) - minX;
   const mapH = Math.max(...input.verses.map((v) => v.y + v.side + 2)) - minY;
-  const scale = Math.min(
-    (TRIM_W - 2 * M - 50) / mapW,
-    (TRIM_H - 2 * M - 34 - 50 - keyHeight) / mapH,
-  );
+  // A key placed under a book lives in the map's empty ground, so the map needs
+  // no band below it and is centred on the sheet instead.
+  const under = input.keyUnder ? input.books.find((b) => b.en === input.keyUnder) : undefined;
+  if (input.keyUnder && !under)
+    throw new Error(`No book named ${input.keyUnder} to set the key under.`);
+  const band = under ? 0 : 50 + keyHeight;
+  const scale = Math.min((TRIM_W - 2 * M - 50) / mapW, (TRIM_H - 2 * M - 34 - band) / mapH);
   const ox = (TRIM_W - mapW * scale - 50) / 2;
-  const oy = M + 34;
+  const oy = M + 34 + (under ? (TRIM_H - 2 * M - 34 - mapH * scale) / 2 : 0);
   const map = el(sheet, 'g', {
     transform: `translate(${ox - minX * scale},${oy - minY * scale})`,
   });
@@ -327,16 +344,29 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
     }
   });
 
-  const hairlineY = oy + mapH * scale + 50;
-  el(sheet, 'line', {
-    x1: ox,
-    x2: ox + mapW * scale + 50,
-    y1: hairlineY,
-    y2: hairlineY,
-    stroke: inkSoft,
-    'stroke-width': 0.75,
-  });
-  drawKey(el(sheet, 'g', { transform: `translate(${ox},${hairlineY})` }), input.key);
+  if (under) {
+    drawKey(
+      el(map, 'g', {
+        class: 'key',
+        transform: `translate(${under.minX * scale},${under.maxY * scale + 24})`,
+      }),
+      input.key,
+    );
+  } else {
+    const hairlineY = oy + mapH * scale + 50;
+    el(sheet, 'line', {
+      x1: ox,
+      x2: ox + mapW * scale + 50,
+      y1: hairlineY,
+      y2: hairlineY,
+      stroke: inkSoft,
+      'stroke-width': 0.75,
+    });
+    drawKey(
+      el(sheet, 'g', { class: 'key', transform: `translate(${ox},${hairlineY})` }),
+      input.key,
+    );
+  }
 
   el(
     sheet,

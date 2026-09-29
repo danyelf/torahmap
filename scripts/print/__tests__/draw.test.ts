@@ -18,8 +18,8 @@ function input(over: Partial<SheetInput> = {}): SheetInput {
       { x: 3000, y: 1400, side: 4, fills: ['#111111'] },
     ],
     books: [
-      { he: 'בראשית', en: 'Genesis', minX: 0, maxX: 300, minY: 0 },
-      { he: 'עובדיה', en: 'Obadiah', minX: 400, maxX: 412, minY: 0 },
+      { he: 'בראשית', en: 'Genesis', minX: 0, maxX: 300, minY: 0, maxY: 200 },
+      { he: 'עובדיה', en: 'Obadiah', minX: 400, maxX: 412, minY: 0, maxY: 40 },
     ],
     sections: [{ he: 'תורה', en: 'Five Books', maxX: 3006, minY: 0 }],
     torahMinX: 0,
@@ -130,6 +130,25 @@ describe('draw', () => {
       expect(t.textContent!.startsWith('⁧')).toBe(true);
       expect(t.textContent!.endsWith('⁩')).toBe(true);
     }
+  });
+
+  it('sets a key of names alone beneath the book it is placed under, with no rule', () => {
+    const names = input({
+      key: { ...input().key, he: '', en: '', notes: [] },
+      keyUnder: 'Genesis',
+    });
+    const result = draw(names);
+    const svg = svgOf(result);
+    expect(svg.querySelectorAll('line')).toHaveLength(0);
+    expect(svg.textContent).not.toContain('A note.');
+    // Genesis ends at map y 200; the key's first row sits below it.
+    const genesis = [...svg.querySelectorAll('.book-title')].find((t) =>
+      t.textContent!.includes('Genesis'),
+    )!;
+    const key = svg.querySelector('.key')!;
+    const keyY = Number(key.getAttribute('transform')!.match(/,\s*([-\d.]+)\)/)![1]);
+    const titleY = Number(genesis.getAttribute('y'));
+    expect(keyY).toBeGreaterThan(titleY + 200 * result.scale);
   });
 
   it('takes the logo from the site’s artwork, without its shadow', () => {
