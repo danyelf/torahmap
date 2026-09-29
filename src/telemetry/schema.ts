@@ -10,6 +10,7 @@ import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
 
 const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
+type RequestContext = Record<Exclude<CommonColumn, 'event' | 'mode'>, string>;
 
 export const EVENTS = {
   // arrived_with is blank on views recorded before the column existed —
@@ -78,10 +79,7 @@ function isMode(mode: unknown): mode is DriverKind {
 }
 
 /** The data point for a payload from the page, or null if it is not one we accept. */
-export function toDataPoint(
-  payload: unknown,
-  context: Record<Exclude<CommonColumn, 'event' | 'mode'>, string>,
-): DataPoint | null {
+export function toDataPoint(payload: unknown, context: RequestContext): DataPoint | null {
   if (typeof payload !== 'object' || payload === null) return null;
   const { event, visit, mode, fields } = payload as { [K in keyof EventPayload]?: unknown };
   if (!isEventName(event)) return null;
@@ -90,7 +88,29 @@ export function toDataPoint(
   if (!isMode(mode)) return null;
   const given: Record<string, unknown> =
     typeof fields === 'object' && fields !== null ? (fields as Record<string, unknown>) : {};
+  return dataPoint(event, visit, mode, context, given);
+}
 
+/**
+ * A data point for an event the Worker observes on its own, with no page
+ * visit to index by — the event name serves as the index instead. There is
+ * no mode, since nothing is driving a story.
+ */
+export function workerDataPoint<E extends EventName>(
+  event: E,
+  fields: EventFields<E>,
+  context: RequestContext,
+): DataPoint {
+  return dataPoint(event, event, '', context, fields);
+}
+
+function dataPoint(
+  event: EventName,
+  index: string,
+  mode: string,
+  context: RequestContext,
+  given: Record<string, unknown>,
+): DataPoint {
   const blob = (name: string) => {
     const value = given[name];
     return typeof value === 'string' ? value.slice(0, MAX_BLOB_CHARS) : '';
@@ -103,30 +123,8 @@ export function toDataPoint(
   const common: Record<string, string> = { event, mode, ...context };
   const { blobs, doubles } = columns(event);
   return {
-    indexes: [visit],
+    indexes: [index],
     blobs: blobs.map((name, i) => (i < COMMON_COLUMNS.length ? common[name] : blob(name))),
     doubles: doubles.map(double),
-  };
-}
-
-/**
- * A data point for an event the Worker observes on its own, with no page
- * visit to index by — the event name serves as the index instead. There is
- * no mode, since nothing is driving a story.
- */
-export function workerDataPoint<E extends EventName>(
-  event: E,
-  fields: EventFields<E>,
-  context: Record<Exclude<CommonColumn, 'event' | 'mode'>, string>,
-): DataPoint {
-  const common: Record<string, string> = { event, mode: '', ...context };
-  const values = fields as Record<string, string | number>;
-  const { blobs, doubles } = columns(event);
-  return {
-    indexes: [event],
-    blobs: blobs.map((name, i) =>
-      i < COMMON_COLUMNS.length ? common[name] : String(values[name]),
-    ),
-    doubles: doubles.map((name) => values[name] as number),
   };
 }

@@ -57,9 +57,14 @@ export function linkNamesAView(state: UrlState): boolean {
   );
 }
 
-/** What kind of link this is: a story stop, a plain view, or nothing named at all. */
-export function linkKind(state: UrlState): 'nothing' | 'view' | 'stop' {
-  if (state.story !== undefined) return 'stop';
+export type LinkKind = 'nothing' | 'view' | 'stop';
+
+/**
+ * What kind of link this is: a story stop, a plain view, or nothing named at
+ * all. A stop without a story is a stop in the story the page opens by default.
+ */
+export function linkKind(state: UrlState): LinkKind {
+  if (state.story !== undefined || state.stop !== undefined) return 'stop';
   return linkNamesAView(state) ? 'view' : 'nothing';
 }
 

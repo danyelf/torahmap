@@ -1,6 +1,8 @@
 // The site's Worker. It owns /api/event, which writes one Analytics Engine
-// data point, and the page at /, which it names for the link that was asked
-// for; every other path is served as a static file.
+// data point, and the page at /. A known chat app's preview fetcher gets that
+// page with its tags naming the link asked for; anyone else gets the static
+// page untouched, since a browser sets its own title and this keeps the page
+// cacheable. Every other path is served as a static file.
 
 import {
   MAX_BODY_BYTES,
@@ -8,7 +10,7 @@ import {
   workerDataPoint,
   type DataPoint,
 } from '../telemetry/schema.ts';
-import { readLink, linkKind } from '@torahmap/link';
+import { readLink, writeLink, linkKind, type UrlState } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { describeLink } from '@torahmap/site';
 import { rewritePage } from './page.ts';
@@ -65,13 +67,20 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
   return new Response(null, { status: 204 });
 }
 
-/** Writes the link_preview event, if a chat app's fetcher asked for this page. Never throws. */
-function recordPreviewFetch(request: Request, url: URL, env: Env): void {
-  const fetcher = previewFetcher(request.headers.get('User-Agent') ?? '');
-  if (!fetcher) return;
+/** Writes the link_preview event. Never throws. */
+function recordPreviewFetch(
+  fetcher: string,
+  link: UrlState,
+  request: Request,
+  url: URL,
+  env: Env,
+): void {
   try {
-    const what = linkKind(readLink(url.search, overlayParamSpecs));
-    const point = workerDataPoint('link_preview', { fetcher, what }, requestContext(request, url));
+    const point = workerDataPoint(
+      'link_preview',
+      { fetcher, what: linkKind(link) },
+      requestContext(request, url),
+    );
     env.TORAHMAP_EVENTS.writeDataPoint(point);
   } catch (error) {
     console.error('recordPreviewFetch: failed to record the preview fetch', error);
@@ -79,21 +88,28 @@ function recordPreviewFetch(request: Request, url: URL, env: Env): void {
 }
 
 async function linkPage(request: Request, env: Env): Promise<Response> {
+  const fetcher = previewFetcher(request.headers.get('User-Agent') ?? '');
+  if (!fetcher) return env.ASSETS.fetch(request);
+
   const response = await env.ASSETS.fetch(request);
   const url = new URL(request.url);
+  const link = readLink(url.search, overlayParamSpecs);
 
   // Recorded even when the static files return an error.
-  recordPreviewFetch(request, url, env);
+  recordPreviewFetch(fetcher, link, request, url, env);
 
   const contentType = response.headers.get('Content-Type') ?? '';
   if (response.status !== 200 || !contentType.startsWith('text/html')) return response;
 
   const html = await response.text();
-  // A broken link (a malformed query string, an index.html the rewrite can no
-  // longer match) should serve the page as fetched, not fail outright.
+  // An index.html whose tags the rewrite no longer matches is served unchanged,
+  // not caught here; page.test.ts, run on the real index.html by the pre-commit
+  // hook, is what catches that.
   try {
-    const { title, description } = describeLink(readLink(url.search, overlayParamSpecs));
-    const body = rewritePage(html, { title, description, url: request.url });
+    const { title, description } = describeLink(link);
+    // The link as the app reads it, so tracking keys such as fbclid are dropped.
+    const canonical = new URL(writeLink(link), url.origin).href;
+    const body = rewritePage(html, { title, description, url: canonical });
 
     const headers = new Headers(response.headers);
     headers.delete('Content-Length');

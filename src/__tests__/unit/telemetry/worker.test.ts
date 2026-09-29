@@ -147,40 +147,62 @@ describe('telemetry worker', () => {
   });
 });
 
+const slack = { 'User-Agent': 'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)' };
+
 function page(url: string, headers: Record<string, string> = {}) {
   return new Request(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh)', ...headers } });
 }
 function envWithIndex(
-  html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" />',
+  html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" /><meta property="og:url" content="https://torahmap.org/" />',
 ) {
   const e = env();
   e.ASSETS.fetch = vi.fn(
-    async () => new Response(html, { headers: { 'Content-Type': 'text/html' } }),
+    async () => new Response(html, { headers: { 'Content-Type': 'text/html', ETag: '"static"' } }),
   );
   return e;
 }
 
 describe('the page at /', () => {
-  it('names the link it was asked for', async () => {
+  it('names the link a chat app asked for', async () => {
     const response = await worker.fetch(
-      page('https://torahmap.org/?verse=Genesis.12.1'),
+      page('https://torahmap.org/?verse=Genesis.12.1', slack),
       envWithIndex(),
     );
     const html = await response.text();
     expect(html).toContain('<title>Genesis 12:1 · Torahmap</title>');
     expect(html).toContain('content="Genesis 12:1 · Torahmap"');
+    expect(response.headers.get('ETag')).toBeNull();
+  });
+
+  it('hands a browser the static page untouched', async () => {
+    const e = envWithIndex();
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1'), e);
+    expect(response).toBe(await e.ASSETS.fetch.mock.results[0].value);
+    expect(response.headers.get('ETag')).toBe('"static"');
+    expect(await response.text()).toContain('<title>Torahmap</title>');
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
+  it('points og:url at the link as the app reads it', async () => {
+    const response = await worker.fetch(
+      page('https://torahmap.org/?verse=Genesis.12.1&fbclid=abc&utm_source=x', slack),
+      envWithIndex(),
+    );
+    expect(await response.text()).toContain(
+      '<meta property="og:url" content="https://torahmap.org/?verse=Genesis.12.1" />',
+    );
   });
 
   it('passes through anything but a 200 HTML page', async () => {
     const e = env();
     e.ASSETS.fetch = vi.fn(async () => new Response(null, { status: 304 }));
-    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1'), e);
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
     expect(response.status).toBe(304);
   });
 
   it('leaves other paths to the static files', async () => {
     const e = envWithIndex();
-    await worker.fetch(page('https://torahmap.org/og-image.jpg'), e);
+    await worker.fetch(page('https://torahmap.org/og-image.jpg', slack), e);
     expect(e.ASSETS.fetch).toHaveBeenCalledOnce();
   });
 
@@ -191,7 +213,7 @@ describe('the page at /', () => {
     });
     const html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" />';
     const response = await worker.fetch(
-      page('https://torahmap.org/?verse=Genesis.12.1'),
+      page('https://torahmap.org/?verse=Genesis.12.1', slack),
       envWithIndex(html),
     );
     expect(await response.text()).toBe(html);
@@ -202,8 +224,6 @@ describe('the page at /', () => {
 });
 
 describe('link_preview', () => {
-  const slack = { 'User-Agent': 'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)' };
-
   it('records a chat app fetching a view', async () => {
     const e = envWithIndex();
     await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);

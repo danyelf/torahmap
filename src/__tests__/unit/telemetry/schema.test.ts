@@ -100,4 +100,13 @@ describe('workerDataPoint', () => {
       doubles: [],
     });
   });
+
+  it('cuts a long string as a page event does', () => {
+    const point = workerDataPoint(
+      'link_preview',
+      { fetcher: 'x'.repeat(500), what: 'view' },
+      context,
+    );
+    expect(point.blobs[5]).toHaveLength(100);
+  });
 });

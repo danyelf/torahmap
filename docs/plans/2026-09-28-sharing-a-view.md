@@ -51,7 +51,7 @@ the popup go to it; the search is its context.
 | Verse + overlay | Genesis 12:1 · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
 | Search | Search: אברם · Torahmap | A Visual Concordance of the Hebrew Bible. |
 | Verse + search + overlay | Genesis 12:1 · Search: אברם · Torahmap | Commentary overlay. A Visual Concordance of the Hebrew Bible. |
-| Story stop | The Guided Tour · Torahmap | The stop's first sentence. A Visual Concordance of the Hebrew Bible. |
+| Story stop, or a stop alone (in the default story) | The Guided Tour · Torahmap | The stop's first sentence. A Visual Concordance of the Hebrew Bible. |
 | Nothing, or only a camera | Torahmap | A Visual Concordance of the Hebrew Bible. |
 
 "A Visual Concordance of the Hebrew Bible" also replaces the description in
@@ -80,10 +80,15 @@ Only these three. Splitting the rest of the codebase is not part of this.
 
 - Runs first for `/` alone (`assets.run_worker_first`); every other path is
   served as a static file, as now.
+- Writes a preview only for a known chat app's fetcher
+  (`src/worker/fetchers.ts`); anyone else gets the static page untouched. A
+  browser sets its own title from the link, and the untouched page keeps its
+  ETag, so browsers can cache it.
 - Reads the link with `@torahmap/link` and rewrites `<title>`, the
   description, `og:title`, `og:description` and `og:url` in the page's text.
-  `og:url` becomes the full link, because some apps fold every link to its
-  `og:url`. `canonical` stays `https://torahmap.org/`, so search engines index
+  `og:url` becomes the link as the app reads it, because some apps fold every
+  link to its `og:url`; keys the app ignores, such as `fbclid` and `utm_*`,
+  are dropped. `canonical` stays `https://torahmap.org/`, so search engines index
   one page.
 - The rewrite edits `index.html` as text rather than parsing it with
   Cloudflare's `HTMLRewriter`: the page is 5 KB, and `HTMLRewriter` exists only
@@ -101,7 +106,7 @@ Only these three. Splitting the rest of the codebase is not part of this.
 Columns go in `src/telemetry/schema.ts` as usual.
 
 - **`share`** — `how` (`copied`, `share_sheet`, `cancelled`, `failed`),
-  `what` (`stop`, `view`), `story`, `stop_id`, `overlay`, and whether a search
+  `what` (`nothing`, `view`, `stop`), `story`, `stop_id`, `overlay`, and whether a search
   is on and a verse pinned.
 - **`page_view`** gains `arrived_with` (`nothing`, `view`, `stop`): what the
   first page's link named. A reload or Back/Forward

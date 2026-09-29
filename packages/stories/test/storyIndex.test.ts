@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { listedStories, storyToOpen, type Story } from '../../scrollytelling/storyIndex';
+import { listedStories, storyToOpen, type Story } from '@torahmap/stories';
 
 const story = (id: string, over: Partial<Story['data']> = {}): Story => ({
   id,

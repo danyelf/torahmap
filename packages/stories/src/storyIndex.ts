@@ -1,6 +1,4 @@
-import type { Story } from '@torahmap/stories';
-
-export type { Story };
+import type { Story } from './types.ts';
 
 /**
  * The stories to offer, in menu order: by `order`, lowest first, then those

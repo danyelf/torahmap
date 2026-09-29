@@ -137,8 +137,7 @@ import {
 } from './constants/app.ts';
 import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
-import { listedStories, storyToOpen, type Story } from './scrollytelling/storyIndex';
-import { STORIES } from '@torahmap/stories';
+import { STORIES, listedStories, storyToOpen, type Story } from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
@@ -1483,7 +1482,7 @@ async function main(): Promise<void> {
     });
     trackShare({
       how: outcome,
-      what: linkKind(shared) === 'stop' ? 'stop' : 'view',
+      what: linkKind(shared),
       story: shared.story ?? '',
       stop_id: shared.stop ?? '',
       overlay: shared.overlay ?? '',

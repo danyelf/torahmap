@@ -33,6 +33,16 @@ describe('describeLink', () => {
     });
   });
 
+  it('names a stop alone by the story torahmap.org opens by default', () => {
+    expect(describeQuery('?stop=abraham_zoom')).toEqual(
+      describeQuery('?story=tour&stop=abraham_zoom'),
+    );
+    expect(describeQuery('?stop=no-such-stop')).toEqual({
+      title: 'The Guided Tour · Torahmap',
+      description: TAGLINE,
+    });
+  });
+
   it('names the site alone for the plain map or a camera', () => {
     const plain = { title: 'Torahmap', description: TAGLINE };
     expect(describeQuery('')).toEqual(plain);
