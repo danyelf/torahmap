@@ -1,7 +1,7 @@
 # A Wall Print of the Map
 
 **Date:** 2026-09-29
-**Status:** Design agreed; not yet built.
+**Status:** Design and spec agreed; not yet built.
 
 ## The problem
 
@@ -45,6 +45,10 @@ be readable, not general.
   the script, because the originals build page elements. If the site changes
   either rule, the print does not follow. For a print run that is acceptable.
 - **No signature.** Danyel dropped it.
+- **English is set in Inter, Hebrew in David Libre.** The site sets English in
+  `system-ui` (SF Pro on a Mac), which a PDF can embed but an SVG cannot
+  name for Figma. Inter is close to it, and Figma has it built in. Both faces
+  come from Google Fonts; the PDF embeds them.
 
 ## Colour
 
@@ -176,12 +180,6 @@ on the paper.
 
 ## Open questions
 
-- **The English typeface.** The site sets English in `system-ui`, which on a
-  Mac is SF Pro. A PDF can embed it, but the SVG names no face Figma can
-  supply. The alternatives: keep the system face and accept that Figma
-  substitutes one; or name a face both can use, such as Inter, which Figma
-  offers built in and which is close to SF Pro, at the cost of a small
-  difference from the site. Recommendation: Inter.
 - **The search key's design,** above.
 - **The shop.** Nothing in the files depends on it, unless it demands PDF/X-1a
   or supplies a colour profile worth previewing against.
