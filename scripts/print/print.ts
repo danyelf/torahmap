@@ -8,7 +8,7 @@ import { chromium, type Page } from 'playwright';
 import { draw } from './draw.ts';
 import { FACES, FONT_HEAD, unloadedFaces } from './fonts.ts';
 import type { DrawResult, ProofInput, SheetInput } from './types.ts';
-import { haftarahSheet, loadStructure, searchSheet } from './views.ts';
+import { haftarahSheet, loadStructure, proofInput, searchSheet } from './views.ts';
 
 const OUT = 'scripts/print/out';
 
@@ -78,8 +78,11 @@ mkdirSync(OUT, { recursive: true });
 const structure = loadStructure();
 const page = await openPage();
 try {
-  await write(page, 'haftarah', await haftarahSheet(structure, marks));
-  await write(page, 'search', await searchSheet(structure, marks));
+  const haftarah = await haftarahSheet(structure, marks);
+  const search = await searchSheet(structure, marks);
+  const drawn = await write(page, 'haftarah', haftarah);
+  await write(page, 'search', search);
+  await write(page, 'proof', proofInput(haftarah, search, drawn.scale));
 } finally {
   await page.context().browser()?.close();
 }

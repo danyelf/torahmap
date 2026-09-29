@@ -103,7 +103,79 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
   }
 
   if (input.kind === 'proof') {
-    throw new Error('proof: Task 7');
+    const W = 792;
+    const H = 612;
+    const P = 252; // each patch 3½ in square, at print scale
+    const page = newPage(W, H);
+    el(page, 'rect', { width: W, height: H, fill: paper });
+    el(
+      page,
+      'text',
+      { x: 36, y: 30, 'font-family': LATIN, 'font-size': 10, fill: ink },
+      'Torahmap wall print · proof at full scale · colours as sent to the printer',
+    );
+    const defs = el(page, 'defs');
+    input.patches.forEach((patch, i) => {
+      const x = 36 + i * (P + 18);
+      const y = 44;
+      const g = el(page, 'g', { class: 'patch' });
+      el(el(defs, 'clipPath', { id: `patch-${i}` }), 'rect', { x, y, width: P, height: P });
+      const tx = x + P / 2 - patch.centre.x * input.scale;
+      const ty = y + P / 2 - patch.centre.y * input.scale;
+      drawVerses(
+        el(el(g, 'g', { 'clip-path': `url(#patch-${i})` }), 'g', {
+          class: 'verses',
+          transform: `translate(${tx},${ty}) scale(${input.scale})`,
+        }),
+        patch.verses,
+        input.bandOffset,
+        input.growth,
+      );
+      el(g, 'rect', {
+        x,
+        y,
+        width: P,
+        height: P,
+        fill: 'none',
+        stroke: inkSoft,
+        'stroke-width': 0.5,
+      });
+      el(
+        g,
+        'text',
+        { x, y: y + P + 12, 'font-family': LATIN, 'font-size': 8, fill: inkSoft },
+        patch.title,
+      );
+    });
+    const COLS = 16;
+    const CELL_W = (W - 72) / COLS;
+    // A name too long for its cell loses letters to an ellipsis; the value,
+    // which is what a printer is asked about, is always whole.
+    const fit = (text: string, room: number) => {
+      if (measure(text, LATIN, 5, 400) <= room) return text;
+      let cut = text;
+      while (cut.length > 1 && measure(`${cut}…`, LATIN, 5, 400) > room) cut = cut.slice(0, -1);
+      return `${cut.trimEnd()}…`;
+    };
+    input.swatches.forEach((s, i) => {
+      const x = 36 + (i % COLS) * CELL_W;
+      const y = 44 + P + 30 + Math.floor(i / COLS) * 38;
+      // Outlined, so the paper's own swatch shows against the paper.
+      el(page, 'rect', {
+        class: 'swatch',
+        x,
+        y,
+        width: 16,
+        height: 16,
+        fill: s.fill,
+        stroke: inkSoft,
+        'stroke-width': 0.25,
+      });
+      const label = { x, 'font-family': LATIN, 'font-size': 5, fill: ink };
+      el(page, 'text', { ...label, class: 'swatch-name', y: y + 23 }, fit(s.name, CELL_W - 3));
+      el(page, 'text', { ...label, class: 'swatch-value', y: y + 29.5 }, s.value);
+    });
+    return { svg: page.outerHTML, width: W, height: H, scale: input.scale, overflows: [] };
   }
 
   const TRIM_W = 2592;

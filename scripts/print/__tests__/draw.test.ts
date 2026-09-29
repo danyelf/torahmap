@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { draw } from '../draw.ts';
-import type { SheetInput } from '../types.ts';
+import type { ProofInput, SheetInput } from '../types.ts';
 
 const LOGO =
   '<svg viewBox="0 0 453.19 157.3"><filter id="f"/><g filter="url(#f)" font-family="David Libre, system-ui, sans-serif">' +
@@ -176,5 +176,55 @@ describe('draw', () => {
     const svg = svgOf(draw(input()));
     expect(svg.querySelector('.logo')!.textContent).toContain('Torahmap');
     expect(svg.querySelector('.logo [filter]')).toBeNull();
+  });
+});
+
+describe('draw, proof', () => {
+  const proof: ProofInput = {
+    kind: 'proof',
+    palette: { paper: '#f3ecdc', ink: '#3a2e24', inkSoft: '#7a6a58' },
+    scale: 0.7,
+    patches: [
+      {
+        title: 'A',
+        verses: [{ x: 100, y: 100, side: 4, fills: ['#aa0000'] }],
+        centre: { x: 100, y: 100 },
+      },
+      {
+        title: 'B',
+        verses: [{ x: 100, y: 100, side: 4, fills: ['#00aa00'] }],
+        centre: { x: 100, y: 100 },
+      },
+    ],
+    swatches: [
+      { fill: '#aa0000', name: 'red', value: '#aa0000' },
+      { fill: '#00aa00', name: 'Passover, Intermediate Sabbath', value: '#00aa00' },
+    ],
+    bandOffset: 0.08,
+    growth: 0.75,
+  };
+
+  it('makes a letter page, landscape', () => {
+    const result = draw(proof);
+    expect([result.width, result.height]).toEqual([792, 612]);
+  });
+
+  it('draws each patch at the sheets’ scale, and labels every swatch', () => {
+    const svg = svgOf(draw(proof));
+    const patches = [...svg.querySelectorAll('.patch .verses')];
+    expect(patches).toHaveLength(2);
+    for (const p of patches) expect(p.getAttribute('transform')).toContain('scale(0.7)');
+    expect(svg.querySelectorAll('.swatch')).toHaveLength(2);
+    expect(svg.textContent).toContain('#00aa00');
+  });
+
+  it('shortens a swatch name too long for its cell, and keeps its value whole', () => {
+    const svg = svgOf(draw(proof));
+    const names = [...svg.querySelectorAll('.swatch-name')].map((t) => t.textContent);
+    expect(names[0]).toBe('red');
+    expect(names[1]!.endsWith('…')).toBe(true);
+    expect(names[1]!.length).toBeLessThan('Passover, Intermediate Sabbath'.length);
+    const values = [...svg.querySelectorAll('.swatch-value')].map((t) => t.textContent);
+    expect(values).toEqual(['#aa0000', '#00aa00']);
   });
 });

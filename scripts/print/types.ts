@@ -95,7 +95,7 @@ export interface ProofInput {
   /** Points per map unit, as on the finished sheets. */
   scale: number;
   patches: ProofPatch[];
-  swatches: { fill: string; label: string }[];
+  swatches: { fill: string; name: string; value: string }[];
   bandOffset: number;
   growth: number;
 }
