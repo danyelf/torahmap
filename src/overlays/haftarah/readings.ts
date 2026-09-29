@@ -86,8 +86,10 @@ export function getItemColor(itemIndex: number, totalItemCount: number): Color {
 
 /** Everything about a custom's readings that a verse's color depends on. */
 export interface HaftarahDerivation {
-  // Parshiot, then special occasions; a preview is a place in this list.
+  // Parshiot, then special occasions.
   items: HaftarahItem[];
+  // No two readings share a name.
+  itemByName: Map<string, HaftarahItem>;
   torahVerseToParsha: Map<string, ParshaData>;
   // Haftarah verses can belong to multiple items (parshiot or special occasions).
   haftarahVerseToItem: Map<string, HaftarahItem[]>;
@@ -164,6 +166,7 @@ export function deriveHaftarah(custom: Custom): HaftarahDerivation {
 
   const derivation: HaftarahDerivation = {
     items,
+    itemByName: new Map(items.map((item) => [item.name, item])),
     torahVerseToParsha,
     haftarahVerseToItem,
     itemToColor,

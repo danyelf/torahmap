@@ -48,9 +48,9 @@ function darkTint(color: Color): Color {
 
 /**
  * Which custom's readings to show; the reading the pointer is over in the key;
- * and a reading a story stop lights. Readings are named by name. Only the
- * custom goes into a link, so leaving the story drops the reading. The app
- * holds this; the overlay keeps none.
+ * and a reading a story stop lights. Only the custom goes into a link, so
+ * leaving the story drops the reading. The app holds this; the overlay keeps
+ * none.
  */
 export interface HaftarahSettings {
   readonly custom: Custom;
@@ -91,20 +91,12 @@ function litByPreview(
   return lit;
 }
 
-const litByNameCache = new WeakMap<HaftarahDerivation, Map<string, Set<HaftarahItem> | null>>();
-
 /** The reading called `name` lit as a preview, or null when no reading has that name. */
 function litByName(custom: Custom, name: string | null): Set<HaftarahItem> | null {
   if (name === null) return null;
   const derived = deriveHaftarah(custom);
-  let byName = litByNameCache.get(derived);
-  if (!byName) litByNameCache.set(derived, (byName = new Map()));
-  if (!byName.has(name)) {
-    // No two readings share a name, so the first match is the only one.
-    const item = derived.items.find((i) => i.name === name);
-    byName.set(name, item ? litByPreview(derived, item, custom) : null);
-  }
-  return byName.get(name)!;
+  const item = derived.itemByName.get(name);
+  return item ? litByPreview(derived, item, custom) : null;
 }
 
 /**

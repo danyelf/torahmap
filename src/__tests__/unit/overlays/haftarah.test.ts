@@ -428,7 +428,6 @@ describe('Haftarah Overlay', () => {
     const noach = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
     const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
-    /** Readings by name. */
     const BERESHIT = 'Bereshit';
     const ROSH_CHODESH = 'Shabbat Rosh Chodesh';
 

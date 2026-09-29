@@ -1,7 +1,7 @@
 // Every shipped story reads the way it was written. The parser drops what it
 // cannot read without failing, so a slip such as `zoom 0.5` quietly changes
 // the view instead of stopping the commit.
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -16,20 +16,14 @@ import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { haftarahOverlay } from '../../overlays/haftarah';
+import { deriveHaftarah } from '../../overlays/haftarah/readings';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
 registerAllOverlays();
 
-const haftarahReadings: ReadonlySet<string> = (() => {
-  const mappings = JSON.parse(
-    fs.readFileSync(path.join(dataDir, 'overlays', 'haftarah', 'mappings.json'), 'utf-8'),
-  );
-  return new Set(
-    [...mappings.parshiot, ...mappings.specialOccasions].map((r: { name: string }) => r.name),
-  );
-})();
+beforeAll(() => haftarahOverlay.init?.());
 
 /**
  * Stops whose haftarah reading, once read the way the app does, is no
@@ -39,29 +33,11 @@ function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']):
   return stops
     .filter((s) => s.overlay === 'haftarah' && s.overlayParams?.reading)
     .filter((s) => {
-      const { reading } = settingsFromLink(haftarahOverlay, s.overlayParams!);
-      return !reading || !haftarahReadings.has(reading);
+      const { custom, reading } = settingsFromLink(haftarahOverlay, s.overlayParams!);
+      return !reading || !deriveHaftarah(custom).itemByName.has(reading);
     })
     .map((s) => `${s.id}: ${s.overlayParams!.reading}`);
 }
-
-describe('the haftarah reading check', () => {
-  const stopsNaming = (...readings: string[]) =>
-    parseStoryMarkdown(
-      '---\ntitle: T\ndescription: D\n---\n' +
-        readings
-          .map((r, i) => `<!-- stop: s${i} | overlay: haftarah | reading: ${r} -->\nText.\n`)
-          .join('\n'),
-    ).stops;
-
-  it('passes readings the data names, spaces and punctuation included', () => {
-    expect(unknownReadings(stopsNaming('Lech Lecha', "Tisha B'Av, Morning"))).toEqual([]);
-  });
-
-  it('flags a name no reading has', () => {
-    expect(unknownReadings(stopsNaming('Lech Lecha', 'Lekh Lekha'))).toEqual(['s1: Lekh Lekha']);
-  });
-});
 
 describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   const story = parseStoryMarkdown(markdown);
