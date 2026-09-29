@@ -3,6 +3,7 @@
 import { chromium, type Browser, type Page } from 'playwright';
 import type { Script, ViewScene } from './script.ts';
 import { cameraOf, type Camera } from './timeline.ts';
+import { showView } from './inPage.ts';
 
 /** As layout/playwright.config.ts: headless Chromium has no WebGL2 without software rendering. */
 export const LAUNCH_ARGS = [
@@ -76,12 +77,12 @@ export async function measureCameras(
       throw new Error(`scene "${scene.id}" needs x and y, or a verse to centre on`);
     }
     page ??= await openMap(browser, baseUrl, script.width, script.height, false);
-    await page.evaluate((h) => (location.hash = h), `#${new URLSearchParams(scene.params)}`);
+    await page.evaluate(showView, new URLSearchParams(scene.params).toString());
     await page.waitForTimeout(500);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
     const measured = cameraOf(
-      Object.fromEntries(new URLSearchParams((await page.evaluate(() => location.hash)).slice(1))),
+      Object.fromEntries(new URLSearchParams(await page.evaluate(() => location.search))),
     );
     if (!measured) throw new Error(`scene "${scene.id}": could not read the camera for its verse`);
     set(scene, measured);

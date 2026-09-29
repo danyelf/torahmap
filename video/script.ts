@@ -21,6 +21,13 @@ interface SceneBase {
   fade: number;
   /** Left as it is when unset. */
   panel?: PanelState;
+  /** Only the map's title shows: no map, labels or controls. */
+  mapHidden: boolean;
+  /**
+   * Where the pinned verse's card sits, its top-left corner in pixels, and how
+   * much larger it is drawn. Unset, it keeps its corner, clear of a caption.
+   */
+  card?: { x: number; y: number; size: number };
 }
 export type StoryScene = SceneBase & { kind: 'story'; story: string; stop: string; over: number };
 export type ViewScene = SceneBase & {
@@ -128,11 +135,11 @@ function parseScene(id: string, params: Record<string, string>, narration: strin
   }
 }
 
-/** What every kind of scene shares: its caption, its fade, its panel. */
+/** What every kind of scene shares: its caption, its fade, its panel, its map. */
 function parseLook(
   params: Record<string, string>,
   id: string,
-): Pick<SceneBase, 'caption' | 'captionAt' | 'fade' | 'panel'> {
+): Pick<SceneBase, 'caption' | 'captionAt' | 'fade' | 'panel' | 'mapHidden' | 'card'> {
   const captionAt = params['caption-at'] ?? 'bottom';
   if (captionAt !== 'top' && captionAt !== 'bottom') {
     throw new Error(`scene "${id}": caption-at is top or bottom, not "${captionAt}"`);
@@ -141,7 +148,17 @@ function parseLook(
   if (panel !== undefined && !PANEL_STATES.includes(panel as PanelState)) {
     throw new Error(`scene "${id}": panel is one of ${PANEL_STATES.join(', ')}, not "${panel}"`);
   }
+  if (params.map !== undefined && params.map !== 'hidden') {
+    throw new Error(`scene "${id}": map can only be hidden, not "${params.map}"`);
+  }
+  if (params['card-size'] !== undefined && params['card-at'] === undefined) {
+    throw new Error(`scene "${id}": card-size needs a card-at to say where the card goes`);
+  }
   return {
+    mapHidden: params.map === 'hidden',
+    ...(params['card-at'] === undefined
+      ? {}
+      : { card: parseCard(params['card-at'], params['card-size'], id) }),
     ...(params.caption ? { caption: params.caption } : {}),
     captionAt,
     fade: params.fade === undefined ? 0 : parseSeconds(params.fade, id),
@@ -150,9 +167,26 @@ function parseLook(
 }
 
 function parsePan(value: string, id: string): { dx: number; dy: number } {
+  const [dx, dy] = parsePixels(value, 'pan', 'dx,dy', id);
+  return { dx, dy };
+}
+
+function parseCard(
+  at: string,
+  size: string | undefined,
+  id: string,
+): { x: number; y: number; size: number } {
+  const [x, y] = parsePixels(at, 'card-at', 'x,y', id);
+  const scale = size === undefined ? 1 : Number(size);
+  if (!(scale > 0)) throw new Error(`scene "${id}": card-size is a positive number, not "${size}"`);
+  return { x, y, size: scale };
+}
+
+function parsePixels(value: string, name: string, shape: string, id: string): [number, number] {
   const m = value.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-  if (!m) throw new Error(`scene "${id}": pan is two numbers of pixels, "dx,dy", not "${value}"`);
-  return { dx: Number(m[1]), dy: Number(m[2]) };
+  if (!m)
+    throw new Error(`scene "${id}": ${name} is two numbers of pixels, "${shape}", not "${value}"`);
+  return [Number(m[1]), Number(m[2])];
 }
 
 function parseSeconds(value: string, id: string): number {

@@ -7,7 +7,7 @@ import {
   glides,
   transition,
   cameraOf,
-  viewHash,
+  viewQuery,
   doEvents,
   actionsDue,
   captionOpacity,
@@ -107,31 +107,29 @@ describe('cameraOf', () => {
   });
 });
 
-describe('viewHash', () => {
+describe('viewQuery', () => {
   const d = script.scenes[3] as ViewScene;
   const from = { x: 100, y: 200, zoom: 0.5 };
   const to = { x: 300, y: 400, zoom: 2 };
 
   it('holds back the verse until the camera arrives', () => {
-    const mid = new URLSearchParams(viewHash(d, from, to, 0.5).slice(1));
+    const mid = new URLSearchParams(viewQuery(d, from, to, 0.5));
     expect(mid.get('verse')).toBeNull();
     expect(Number(mid.get('x'))).toBe(200);
     expect(Number(mid.get('zoom'))).toBeCloseTo(1); // by ratio: 0.5 → 1 → 2
-    const end = new URLSearchParams(viewHash(d, from, to, 1).slice(1));
+    const end = new URLSearchParams(viewQuery(d, from, to, 1));
     expect(end.get('verse')).toBe('Genesis.12.1');
     expect(Number(end.get('x'))).toBe(300);
   });
 
   it('goes straight to the scene with nothing to glide from', () => {
-    const h = new URLSearchParams(viewHash(d, null, to, 0).slice(1));
+    const h = new URLSearchParams(viewQuery(d, null, to, 0));
     expect(h.get('verse')).toBe('Genesis.12.1');
   });
 
   it('keeps Hebrew intact through the URL', () => {
     const [s] = parseScript('<!-- scene: s | view: overlay=search&q=אַבְרָם&x=1&y=2 -->').scenes;
-    const h = new URLSearchParams(
-      viewHash(s as ViewScene, null, { x: 1, y: 2, zoom: 1 }, 1).slice(1),
-    );
+    const h = new URLSearchParams(viewQuery(s as ViewScene, null, { x: 1, y: 2, zoom: 1 }, 1));
     expect(h.get('q')).toBe('אַבְרָם');
   });
 });

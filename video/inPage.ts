@@ -21,6 +21,15 @@ export function restingScrollTops(doc: Document = document): Record<string, numb
 }
 
 /**
+ * Shows the view `query` names, as following a link through the browser's
+ * history does: the app reads its view from the query string on `popstate`.
+ */
+export function showView(query: string, win: typeof window = window): void {
+  win.history.replaceState(win.history.state, '', `${win.location.pathname}?${query}`);
+  win.dispatchEvent(new win.PopStateEvent('popstate'));
+}
+
+/**
  * Lays a still of the picture before a scene over the whole page, to dissolve
  * from; `showOverlays` sets how much of it shows.
  */
@@ -42,12 +51,31 @@ export function holdStill(src: string): void {
   still.src = src;
 }
 
-/** The caption, and the still being dissolved from, as they stand this frame. */
+/**
+ * Hides everything but the map's title, or shows it all again. A hidden map
+ * takes no input, so this has to happen before a scene drags the map.
+ */
+export function hideMap(hidden: boolean): void {
+  let hide = document.getElementById('video-hide-map') as HTMLStyleElement | null;
+  if (!hide) {
+    hide = document.createElement('style');
+    hide.id = 'video-hide-map';
+    // The title is a child of the body of its own, so hiding every other child
+    // leaves it alone on the page's background.
+    hide.textContent =
+      'body > :not(#map-title, #video-caption, #video-still) { visibility: hidden; }';
+    document.head.append(hide);
+  }
+  hide.disabled = !hidden;
+}
+
+/** The caption, the still being dissolved from, and the verse card, as they stand this frame. */
 export function showOverlays(o: {
   caption: string;
   captionAt: 'top' | 'bottom';
   captionOpacity: number;
   fade: number;
+  card?: { x: number; y: number; size: number };
 }): void {
   const still = document.getElementById('video-still');
   if (still) still.style.opacity = String(o.fade);
@@ -82,6 +110,22 @@ export function showOverlays(o: {
   band.style.bottom = o.captionAt === 'bottom' ? '7vmin' : '';
   band.style.opacity = String(o.captionOpacity);
   band.firstElementChild!.textContent = o.caption;
+
+  // The pinned verse's card goes where the scene puts it. Otherwise it keeps
+  // its bottom corner, where a bottom caption would cover it, so it waits
+  // above the caption instead.
+  const card = document.getElementById('verse-popup');
+  if (card) {
+    const below = o.caption && o.captionAt === 'bottom';
+    const top = band.firstElementChild!.getBoundingClientRect().top;
+    Object.assign(card.style, {
+      top: o.card ? `${o.card.y}px` : '',
+      left: o.card ? `${o.card.x}px` : '',
+      bottom: o.card ? 'auto' : below ? `${window.innerHeight - top + 16}px` : '',
+      transform: o.card ? `scale(${o.card.size})` : '',
+      transformOrigin: o.card ? '0 0' : '',
+    });
+  }
 }
 
 /**

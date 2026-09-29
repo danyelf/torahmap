@@ -113,6 +113,29 @@ panel: closed
     );
   });
 
+  it('hides the map, leaving its title, only when a scene asks', () => {
+    const [a, b] = parseScript(`<!-- scene: a | view: x=1&y=2 | map: hidden -->
+<!-- scene: b | view: x=1&y=2 -->`).scenes;
+    expect([a.mapHidden, b.mapHidden]).toEqual([true, false]);
+    expect(() => parseScript('<!-- scene: a | view: x=1 | map: dim -->')).toThrow(/scene "a".*dim/);
+  });
+
+  it('reads where the verse card goes and how large, only when a scene asks', () => {
+    const [a, b] = parseScript(`<!-- scene: a | view: x=1&y=2 | card-at: 40,90 | card-size: 1.5 -->
+<!-- scene: b | view: x=1&y=2 -->`).scenes;
+    expect(a.card).toEqual({ x: 40, y: 90, size: 1.5 });
+    expect(b.card).toBeUndefined();
+  });
+
+  it('refuses a card size without a place, or a place it cannot read', () => {
+    expect(() => parseScript('<!-- scene: a | view: x=1 | card-size: 2 -->')).toThrow(
+      /scene "a".*card-at/,
+    );
+    expect(() => parseScript('<!-- scene: a | view: x=1 | card-at: left -->')).toThrow(
+      /scene "a".*left/,
+    );
+  });
+
   it('reads a pan, in pixels, after a view arrives', () => {
     const [a] = parseScript('<!-- scene: a | view: verse=Genesis.1.1 | pan: 270,-365 -->').scenes;
     expect(a).toMatchObject({ kind: 'view', pan: { dx: 270, dy: -365 } });

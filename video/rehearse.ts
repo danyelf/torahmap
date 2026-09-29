@@ -7,8 +7,8 @@
 //   npm run capture    (opens /video/rehearse.html)
 
 import { parseScript, type Scene } from './script.ts';
-import { cameraOf, doEvents, viewHash } from './timeline.ts';
-import { restingScrollTops } from './inPage.ts';
+import { cameraOf, doEvents, viewQuery } from './timeline.ts';
+import { restingScrollTops, showView } from './inPage.ts';
 import { captureLine, storyStopLine } from './capture.ts';
 import { easingFunctions } from '../src/scrollytelling/interpolation.ts';
 
@@ -87,12 +87,12 @@ function restart(): void {
 
 function play(scene: Scene, previous: Scene | null): void {
   const run = ++playing;
-  const win = frame.contentWindow!;
+  const win = frame.contentWindow as typeof window;
   const doc = frame.contentDocument!;
 
   if (scene.kind === 'story') {
-    if (previous?.kind !== 'story' || !win.location.hash.startsWith('#story=')) {
-      win.location.hash = `#story=${scene.story}&stop=${scene.stop}`;
+    if (previous?.kind !== 'story' || !new URLSearchParams(win.location.search).has('story')) {
+      showView(`story=${scene.story}&stop=${scene.stop}`, win);
       return;
     }
     const top = restingScrollTops(doc)?.[scene.stop];
@@ -108,14 +108,14 @@ function play(scene: Scene, previous: Scene | null): void {
     // Cut straight to the scene's own URL state when there is nothing to glide
     // from, or no camera to glide to: rehearsal does not measure verse cameras.
     if (!to || !from) {
-      win.location.hash = `#${new URLSearchParams(scene.params)}`;
+      showView(new URLSearchParams(scene.params).toString(), win);
       return;
     }
     const began = performance.now();
     const step = () => {
       if (run !== playing) return;
       const linear = Math.min(1, (performance.now() - began) / 1000 / scene.over);
-      win.location.hash = viewHash(scene, from, to, easingFunctions['ease-in-out'](linear));
+      showView(viewQuery(scene, from, to, easingFunctions['ease-in-out'](linear)), win);
       if (linear < 1) requestAnimationFrame(step);
     };
     step();
@@ -174,9 +174,10 @@ let captures = 0;
 
 /** Adds what the app shows now to the list, as the chosen kind of line. */
 function capture(): void {
-  const hash = frame.contentWindow!.location.hash;
+  const query = frame.contentWindow!.location.search;
   const name = shotName.value.trim() || `shot${++captures}`;
-  const line = format.value === 'stop' ? storyStopLine(name, hash) : `${captureLine(name, hash)}\n`;
+  const line =
+    format.value === 'stop' ? storyStopLine(name, query) : `${captureLine(name, query)}\n`;
   if (line === null) {
     status.textContent = 'This is the story itself: leave it, or capture a scene line instead.';
     return;

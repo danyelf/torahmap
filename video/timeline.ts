@@ -121,11 +121,11 @@ export function cameraOf(params: Record<string, string>): Camera | null {
 }
 
 /**
- * The URL hash for `scene`, its camera `p` of the way from `from` to `to`. A
+ * The URL query for `scene`, its camera `p` of the way from `from` to `to`. A
  * pinned verse centres the camera on itself, so the verse is held back until
  * the camera has arrived.
  */
-export function viewHash(scene: ViewScene, from: Camera | null, to: Camera, p: number): string {
+export function viewQuery(scene: ViewScene, from: Camera | null, to: Camera, p: number): string {
   const arrived = from === null || p >= 1;
   const camera = arrived ? to : lerpCamera(from, to, p);
   const params: Record<string, string> = {
@@ -135,7 +135,7 @@ export function viewHash(scene: ViewScene, from: Camera | null, to: Camera, p: n
     zoom: String(camera.zoom),
   };
   if (!arrived) delete params.verse;
-  return `#${new URLSearchParams(params).toString()}`;
+  return new URLSearchParams(params).toString();
 }
 
 export function doEvents(steps: Step[]): TimedAction[] {

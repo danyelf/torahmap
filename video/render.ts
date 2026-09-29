@@ -19,7 +19,7 @@ import {
   glides,
   segmentAt,
   transition,
-  viewHash,
+  viewQuery,
   doEvents,
   actionsDue,
   captionOpacity,
@@ -29,7 +29,14 @@ import {
   type TimedAction,
 } from './timeline.ts';
 import { launch, measureCameras, openMap } from './browser.ts';
-import { holdCssAnimations, holdStill, restingScrollTops, showOverlays } from './inPage.ts';
+import {
+  hideMap,
+  holdCssAnimations,
+  holdStill,
+  restingScrollTops,
+  showOverlays,
+  showView,
+} from './inPage.ts';
 import type { PanelState } from './script.ts';
 
 const PORT = Number(process.env.VIDEO_PORT ?? 5198);
@@ -100,6 +107,7 @@ async function render(browser: Browser): Promise<void> {
         captionAt: segment.scene.captionAt,
         captionOpacity: captionOpacity(timeline, timeline.indexOf(segment), t),
         fade: fadeRemaining(segment, t),
+        card: segment.scene.card,
       });
       if (t < from) continue;
       await page.evaluate(holdCssAnimations);
@@ -134,7 +142,7 @@ function checkStops(stopTops: Record<string, number> | null): void {
 /** Puts the page into the state `segment` has at `t`. */
 function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<string, number>) {
   let current: Segment | null = null;
-  let hash = '';
+  let query = '';
   let fromTop = 0;
   let fromCamera: Camera | null = null;
   let actions: TimedAction[] = [];
@@ -147,10 +155,10 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
     for (; fired < due.length; fired++) await act(page, segment.scene.id, due[fired]);
   };
 
-  const setHash = async (next: string) => {
-    if (next === hash) return;
-    hash = next;
-    await page.evaluate((h) => (location.hash = h), next);
+  const setView = async (next: string) => {
+    if (next === query) return;
+    query = next;
+    await page.evaluate(showView, next);
   };
   const storyTop = () =>
     page.evaluate(() => document.getElementById('story-content')?.scrollTop ?? 0);
@@ -170,13 +178,14 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
       ).toString('base64');
       await page.evaluate(holdStill, `data:image/png;base64,${still}`);
     }
-    // The app rewrites the URL itself as it goes, so the last hash written
+    await page.evaluate(hideMap, scene.mapHidden);
+    // The app rewrites the URL itself as it goes, so the last query written
     // here says nothing about the page once a scene is over.
-    hash = '';
+    query = '';
     settled = false;
     if (scene.kind === 'story') {
       if (!glides(segment)) {
-        await setHash(`#story=${scene.story}&stop=${scene.stop}`);
+        await setView(`story=${scene.story}&stop=${scene.stop}`);
         await page.clock.runFor(50);
       }
       fromTop = await storyTop();
@@ -205,7 +214,7 @@ function sceneDriver(page: Page, cameras: Map<string, Camera>, stopTops: Record<
           if (content && content.scrollTop !== y) content.scrollTop = y;
         }, top);
       } else if (scene.kind === 'view') {
-        await setHash(viewHash(scene, fromCamera, cameras.get(scene.id)!, p));
+        await setView(viewQuery(scene, fromCamera, cameras.get(scene.id)!, p));
       } else {
         await fireDue(segment, t);
       }
