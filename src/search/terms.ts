@@ -51,10 +51,8 @@ export interface SearchTerm {
 }
 
 /**
- * SEARCH_COLORS is indexed modulo its length, so a sixth term would repeat the
- * first one's colour and the map could no longer say which word is which. The
- * comma box made a sixth term awkward enough to be rare; a button makes it one
- * click, so the limit has to be stated rather than left to friction.
+ * One colour per term. SEARCH_COLORS is indexed modulo its length, so one more
+ * term would repeat the first one's colour.
  */
 export const MAX_TERMS = SEARCH_COLORS.length;
 
@@ -90,10 +88,9 @@ export function removeTerm(terms: SearchTerm[], id: string): SearchTerm[] {
  * Change a term's text, which re-resolves its meanings and checks all of them
  * again. Other terms are untouched — that is the whole point of the identity.
  *
- * A separator still means "another word": the comma box is gone, but readers
- * type commas out of habit and old URLs are full of them. Splitting on the same
- * set `parseSearchTerms` reads keeps the invariant the URL depends on — no
- * term's text holds a character that would later split it in two.
+ * A separator means "another word", as it does to `parseSearchTerms`, which
+ * keeps the invariant the URL depends on: no term's text holds a character
+ * that would later split it in two.
  */
 export function setTermText(terms: SearchTerm[], id: string, text: string): SearchTerm[] {
   // `text` is kept exactly as the box holds it, trailing space and all, so the
@@ -181,10 +178,8 @@ export function encodeMeanings(terms: SearchTerm[]): string {
 /**
  * Apply an `m` parameter to a freshly built term list.
  *
- * A row counts as chosen when the parameter names any of its lexemes, not all
- * of them, so a URL written before two entries were merged still selects the
- * merged row. A term left with nothing selected — every key gone from the
- * dictionary, or an entry naming words this term cannot be — falls back to all
+ * A row counts as chosen when the parameter names one of its lexemes
+ * (`sameMeaning`). A term the parameter leaves with nothing selected keeps all
  * of its meanings rather than matching nothing.
  */
 export function applyMeanings(terms: SearchTerm[], encoded: string): SearchTerm[] {
@@ -250,10 +245,10 @@ export function isNarrowed(term: SearchTerm): boolean {
  * The colour slot occupied by the term at this position among the searched terms.
  *
  * A result, a snippet and a highlight all name a term by its position in the
- * searched list; the swatch and the map ask the term itself. Those were the
- * same number until a term gained a colour that survives its neighbours being
- * edited — delete the first of two terms and the survivor keeps colour 1 while
- * moving to position 0 — so the translation belongs in one place.
+ * searched list; the swatch and the map ask the term itself. A term's colour
+ * survives its neighbours being edited — delete the first of two terms and the
+ * survivor keeps colour 1 at position 0 — so the translation belongs in one
+ * place.
  */
 export function colorIndexAt(terms: SearchTerm[], position: number): number {
   return terms[position]?.colorIndex ?? 0;

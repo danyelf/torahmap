@@ -1,10 +1,5 @@
 // What counts as a match, for both the search that finds verses and the
 // highlighter that marks them.
-//
-// These were two implementations for a while, and they disagreed three times:
-// on the sof pasuq ending a verse, on the joiner inside Jerusalem, and on a
-// term typed with a plain letter where the verse has a final form. Each looked
-// like a bug in the highlighter and was really the two rules drifting apart.
 
 import { normalizeHebrewForSearch, splitIntoWords } from '../hebrew.ts';
 import type { TextLanguage } from '../types.ts';

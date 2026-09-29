@@ -2,10 +2,8 @@
 // accents, which ones separate one word from the next, and how a written form
 // is folded to the spelling the search index and the dictionary are keyed on.
 //
-// Everything that reads Hebrew reads it through here. Search, the clickable
-// words in a verse and the highlighter in the results panel all have to agree
-// about where a word ends; when they each had their own answer, a word could
-// be found and then not highlighted.
+// Everything that reads Hebrew reads it through here, so that search, the
+// clickable words in a verse and the highlighter agree about where a word ends.
 
 // Points and accents share a Unicode range with four characters that are not
 // decoration at all.
@@ -59,11 +57,6 @@ const FINAL_FORM_MAP: Record<string, string> = {
  * Mapping a position back to the text it came from counts exactly what this
  * dropped. The two disagreeing does not fail loudly: it shifts every highlight
  * after the disagreement along by one character, which looks plausible.
- *
- * Exported although only this module calls it. It is the one answer to what
- * counts as a point, and the three bugs that came of two rules drifting apart
- * all began with somewhere else writing its own. Anywhere that needs this test
- * should import it rather than spell it out again.
  */
 export function isNikkud(code: number): boolean {
   if (code === GRAPHEME_JOINER) return true;

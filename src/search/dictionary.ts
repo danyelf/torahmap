@@ -196,20 +196,9 @@ function rowForStem(stem: LexemeId, writtenForm: string): Meaning[] {
   return row ? [row] : rowsFor([stem]);
 }
 
-/**
- * The verses carrying any of these meanings.
- *
- * Keys that no longer resolve are ignored rather than throwing, because they
- * arrive from URLs written against an older index.
- */
+/** The verses carrying any of these meanings. */
 export function versesFor(keys: string[]): Set<string> {
-  const ids: LexemeId[] = [];
-  for (const key of keys) {
-    const id = lexemeForKey(key);
-    if (id !== null) ids.push(id);
-  }
-  if (ids.length === 0) return new Set();
-  return searchByLexemes(ids);
+  return searchByLexemes([...lexemesForKeys(keys)]);
 }
 
 /**
@@ -346,10 +335,7 @@ export function verseOnScreen(): string | null {
  * Did the parse line up with the verse on screen, so that its words are named
  * rather than guessed at?
  *
- * Here so that the test and the report can ask this function rather than write
- * their own copy of the check. Three separate attempts to reimplement it
- * disagreed with it — by 4,230 verses — which is the argument for asking it
- * directly.
+ * Exported for the tests, which ask it rather than repeat the check.
  */
 export function wordsAreNamed(): boolean {
   return onScreen?.stems != null;

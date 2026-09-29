@@ -237,13 +237,10 @@ function readerChanged(current: SearchSettings, next: SearchSettings): SearchSet
  * Adds a term rather than replacing the search: the existing words keep their
  * colours, which is what makes two words comparable on one map.
  *
- * Either way the click settles how that word is matched, and only that word. A
- * meaning can only be searched for in meanings mode — "the burnt-offering reading"
- * cannot be expressed as a substring. The written form is the opposite
- * request, for this spelling and no other, so it goes to whole word: substring
- * would match it inside longer words, and meanings would resolve a known spelling
- * to its dictionary entry and find the readings the reader just declined.
- * Neighbouring terms keep whatever they were doing.
+ * The click settles how that word is matched, and only that word: a meaning in
+ * meanings mode, and the written form as a whole word, since substring would
+ * find it inside longer words and meanings would bring back the readings the
+ * reader declined.
  *
  * The meaning arrives as every lexeme its row stands for, not as one key. The
  * reader chose from a list the verse built, and a row the verse built can be
