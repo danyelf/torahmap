@@ -102,10 +102,6 @@ describe('what every overlay must hold to', () => {
       }
     });
 
-    it(`${overlay.id}: answers colorsFor, or the story's blend shows it grey`, () => {
-      expect(overlay.colorsFor).toBeTypeOf('function');
-    });
-
     it(`${overlay.id}: only reports settings under keys it declared`, () => {
       const declared = new Set((overlay.urlParams ?? []).map((spec) => spec.key));
       const store = createOverlaySettings();

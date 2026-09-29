@@ -42,18 +42,25 @@ export interface UrlParamSpec {
 
 /**
  * The record an overlay receives: exactly the keys it declared, already
- * validated, and narrowed to the allowed values where it named a set.
+ * validated, and narrowed to the allowed values where it named a set. A key
+ * with a default is always present.
  *
  * With no specs to go on this widens to "some strings, or nothing", which is
  * what the `Overlay` interface has to promise before it knows the overlay.
  */
-export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> = {
-  readonly [P in S[number] as P['key']]?: P extends {
-    allowed: readonly (infer V extends string)[];
+export type UrlParamValues<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> = OneRecord<
+  {
+    readonly [P in S[number] as P extends { default: string } ? P['key'] : never]: ValueOf<P>;
+  } & {
+    readonly [P in S[number] as P extends { default: string } ? never : P['key']]?: ValueOf<P>;
   }
-    ? V
-    : string;
-};
+>;
+
+type OneRecord<T> = { [K in keyof T]: T[K] };
+
+type ValueOf<P extends UrlParamSpec> = P extends { allowed: readonly (infer V extends string)[] }
+  ? V
+  : string;
 
 /** The search's keys, read whatever overlay is on; no overlay may claim them. */
 export const SEARCH_URL_PARAMS = [

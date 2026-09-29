@@ -56,7 +56,7 @@ export function hostOverlay<S>(overlay: Overlay<TanakhIdentity, S>): OverlayHost
       if (container) host.renderControls(container);
     },
     fromUrl(raw) {
-      return settingsFromLink(overlay, raw) as S;
+      return settingsFromLink(overlay, raw);
     },
     change(update) {
       store.set(overlay, update(store.get(overlay)));

@@ -26,21 +26,16 @@ export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHac
 // and overlays with different settings can no longer share one list.
 //
 // An overlay either has settings, and implements every member of
-// OverlayWithSettings, or has none and implements none of them. An overlay
-// missing one of those members, with urlParams written inline, gets a tsc error
-// that `kind: string` is not assignable to `UrlParamKind`, not one naming the
-// missing member.
+// OverlayWithSettings, or has none and implements none of them.
 export type Overlay<T = TanakhIdentity, S = unknown> = OverlayMembers<T, S> &
   (OverlayWithSettings<S> | OverlayWithoutSettings);
 
 interface OverlayWithSettings<S> {
-  // The settings an overlay starts with, before the reader or a link says otherwise.
-  defaultSettings(): S;
-
   // Settings to and from a shareable link. @torahmap/link reads and validates
   // the link against urlParams without knowing what the values mean, so
   // settingsFromUrl receives only declared keys, with declared defaults filled
-  // in. settingsToUrl leaves out any value at its default.
+  // in; an empty link gives the settings the overlay starts with. A value
+  // settingsToUrl writes at its declared default stays out of the link.
   urlParams: readonly UrlParamSpec[];
   settingsFromUrl(params: UrlParamValues): S;
   settingsToUrl(settings: S): Record<string, string>;
@@ -48,7 +43,6 @@ interface OverlayWithSettings<S> {
 
 // The app hands an overlay without settings undefined wherever it hands settings.
 interface OverlayWithoutSettings {
-  defaultSettings?: never;
   urlParams?: never;
   settingsFromUrl?: never;
   settingsToUrl?: never;
@@ -58,7 +52,7 @@ interface OverlayMembers<T, S> {
   id: string;
   name: string;
 
-  // Shown in the help modal's Overlays tab (a test enforces one per registered
+  // Shown under the overlay picker (a test enforces one per registered
   // overlay). Optional because internal overlays, such as the ones the Talmud
   // view composes, are never offered to a reader.
   description?: string;
@@ -108,8 +102,8 @@ interface OverlayMembers<T, S> {
   // (e.g. a chosen commentary category). Absent overlays get `with=all`.
   getSefariaConnectionParam?(settings: S): string | null;
 
-  // Outside sources this overlay depends on, shown in the help modal's Credits
-  // tab. Omit when the overlay derives everything from already-credited text;
+  // Outside sources this overlay depends on, credited in the About & settings
+  // panel. Omit when the overlay derives everything from already-credited text;
   // a test enforces this for everything else.
   credits?: readonly Credit[];
 }

@@ -85,16 +85,6 @@ describe('Verse Length Overlay', () => {
     });
   });
 
-  describe('colorsFor', () => {
-    it('gives the same answer through colorsFor as through getVerseColor', () => {
-      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
-
-      expect(
-        verseLengthOverlay.overlay.colorsFor!(items, verseLengthOverlay.fromUrl({}), null),
-      ).toEqual([verseLengthOverlay.getVerseColor(items[0])]);
-    });
-  });
-
   describe('Word Counting Logic', () => {
     it('counts Hebrew words correctly by splitting on whitespace', () => {
       const verse1 = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });

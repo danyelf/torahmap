@@ -9,7 +9,8 @@ import { easingFunctions } from '../../scrollytelling/interpolation';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { writeLink, parseVerseFromUrl } from '@torahmap/link';
 import { parseUrlState } from '../../urlState';
-import { isSearching, searchFromLink } from '../../overlays/search/index';
+import { isSearching, searchTool } from '../../overlays/search/index';
+import { settingsFromLink } from '../../overlays/settings';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
@@ -138,7 +139,7 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
 
   it('searches, where a stop searches, for words long enough to search on', () => {
     const idle = stops
-      .filter((s) => s.searchParams && !isSearching(searchFromLink(s.searchParams)))
+      .filter((s) => s.searchParams && !isSearching(settingsFromLink(searchTool, s.searchParams)))
       .map((s) => s.id);
     expect(idle).toEqual([]);
   });

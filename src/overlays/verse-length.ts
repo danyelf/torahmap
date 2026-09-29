@@ -6,6 +6,7 @@ import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
+import { NO_DATA } from './colors.ts';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
 const PLASMA_STOPS: ColorStop[] = [
@@ -74,7 +75,7 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
   const wordCount = wordCountCache.get(key);
 
   if (wordCount === undefined || wordCount === 0) {
-    return [0.15, 0.15, 0.2];
+    return NO_DATA;
   }
 
   return wordCountScale().colorOf(wordCount);
@@ -85,10 +86,6 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);
-  },
-
-  colorsFor(items, settings, _hovered) {
-    return items.map((item) => this.getVerseColor(item, settings));
   },
 
   renderLegend(container: HTMLElement): void {

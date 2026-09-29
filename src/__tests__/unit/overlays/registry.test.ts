@@ -8,7 +8,6 @@ function claiming(key: string): Overlay {
     name: 'Claims',
     getVerseColor: () => null,
     urlParams: [{ key, kind: 'token' }],
-    defaultSettings: () => ({}),
     settingsFromUrl: (params) => params,
     settingsToUrl: () => ({}),
   };

@@ -15,6 +15,7 @@ import { HIGHLIGHT_CONSTANTS } from '../constants.ts';
 import { scaleToGradient, buildLegendGradient, interpolateGradient } from '../utils/color.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { legendRow } from './legend.ts';
+import { memoBySettings } from './memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
 let tropIndex: TropIndex = new Map();
@@ -71,26 +72,7 @@ function deriveTrop(mark: string | null): TropDerivation | null {
   return { verseLookup, maxCount, tier: getRarityTier(entry.totalCount) };
 }
 
-// getVerseColor asks once per verse, 23,000 times a paint, so the derivation is
-// built once per settings value and kept. Settings are never edited in place,
-// so a value's identity is a sound key; the last one asked about is checked
-// first, because a paint asks about the same one every time.
-const derivations = new WeakMap<TropSettings, TropDerivation | null>();
-let lastDerivation: { of: TropSettings; value: TropDerivation | null } | null = null;
-
-function derivationFor(settings: TropSettings): TropDerivation | null {
-  if (lastDerivation?.of === settings) return lastDerivation.value;
-
-  let value: TropDerivation | null;
-  if (derivations.has(settings)) {
-    value = derivations.get(settings) ?? null;
-  } else {
-    value = deriveTrop(shownMark(settings));
-    derivations.set(settings, value);
-  }
-  lastDerivation = { of: settings, value };
-  return value;
-}
+const derivationFor = memoBySettings((settings: TropSettings) => deriveTrop(shownMark(settings)));
 
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
@@ -208,10 +190,6 @@ function renderTropChart(
 export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   ...TROP,
 
-  destroy() {
-    lastDerivation = null;
-  },
-
   getVerseColor(verse, settings) {
     return tropColorAt(verse, derivationFor(settings));
   },
@@ -219,10 +197,6 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   colorsFor(items, settings, _hovered) {
     const derived = derivationFor(settings);
     return items.map((item) => tropColorAt(item, derived));
-  },
-
-  defaultSettings() {
-    return { mark: null, preview: null };
   },
 
   settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {

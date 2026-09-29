@@ -1,14 +1,14 @@
 import type { StoryStop } from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
 import type { TanakhLayout } from '../types';
-import type { Color, Overlay } from '../overlays/types.ts';
+import type { Overlay } from '../overlays/types.ts';
 import type { Picture } from '../geometry.ts';
 import { getOverlay } from '../overlays/registry';
-import { getDefaultColor, toolsPicture } from '../itemColoring';
+import { fillDefaultColors, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { searchFromLink } from '../overlays/search/index.ts';
+import { searchTool } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';
 
 // Memoised per verses array by the stop's overlay, its search and their
@@ -40,18 +40,12 @@ function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
   return `${overlayKey}#${searchKey}`;
 }
 
-function withDefaults(picture: Picture<Color | Color[] | null>): Picture {
-  return { ...picture, colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)) };
-}
-
 export function pictureForStop(
   stop: ResolvedStoryStop,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
 ): Picture {
-  const named = stop.overlay ? getOverlay(stop.overlay) : undefined;
-  // One that doesn't answer as a function of settings is drawn as no overlay.
-  const overlay = named?.colorsFor ? named : null;
+  const overlay = (stop.overlay && getOverlay(stop.overlay)) || null;
   const byHover = !!(overlay?.hoverChangesColors && hovered);
 
   let cache = picturesCache.get(verses);
@@ -66,9 +60,9 @@ export function pictureForStop(
   const tools = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
-    searchFromLink(stop.searchParams ?? {}),
+    settingsFromLink(searchTool, stop.searchParams ?? {}),
   );
-  const picture = withDefaults(toolsPicture(tools, verses, hovered));
+  const picture = fillDefaultColors(toolsPicture(tools, verses, hovered));
   if (!byHover) cache.set(key, picture);
   return picture;
 }

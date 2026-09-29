@@ -79,6 +79,11 @@ function getVerseColorFromDate(dateBCE: number): Color | null {
   ];
 }
 
+/** The middle of a verse's date range, as a positive BCE year. */
+function midpointBCE([startBCE, endBCE]: [number, number]): number {
+  return Math.abs((startBCE + endBCE) / 2);
+}
+
 /** "~500 BCE" for a single date, "500-400 BCE" for a range. Takes positive BCE numbers. */
 function formatBceRange(startBCE: number, endBCE: number): string {
   return startBCE === endBCE ? `~${startBCE} BCE` : `${startBCE}-${endBCE} BCE`;
@@ -113,26 +118,15 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
   ],
 
   async init() {
-    try {
-      const result = await loadJson<TextDatingData>('text-dating.json');
-      if (result) data = result;
-    } catch (e) {
-      console.error('Failed to parse text-dating.json:', e);
-    }
+    const result = await loadJson<TextDatingData>('text-dating.json');
+    if (result) data = result;
   },
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     const verseData = getVerseData(verse);
     if (!verseData) return null;
 
-    const [startBCE, endBCE] = verseData.d;
-    const midpointBCE = Math.abs((startBCE + endBCE) / 2);
-
-    return getVerseColorFromDate(midpointBCE);
-  },
-
-  colorsFor(items, settings, _hovered) {
-    return items.map((item) => this.getVerseColor(item, settings));
+    return getVerseColorFromDate(midpointBCE(verseData.d));
   },
 
   renderLegend(container: HTMLElement) {
@@ -205,8 +199,7 @@ export function getVerseDatingInfo(
   if (!verseData) return null;
 
   const [startBCE, endBCE] = verseData.d;
-  const midpointBCE = Math.abs((startBCE + endBCE) / 2);
-  const era = getEra(midpointBCE);
+  const era = getEra(midpointBCE(verseData.d));
 
   if (!era) return null;
 

@@ -24,10 +24,7 @@ export interface ParshaData {
   name: string;
   hebrewName: string;
   torah: VerseRange;
-  haftarah: {
-    ashkenazi: VerseRange[];
-    sephardi: VerseRange[];
-  };
+  haftarah: Record<Custom, VerseRange[]>;
 }
 
 export type OccasionCategory =
@@ -44,10 +41,7 @@ export interface SpecialOccasionData {
   name: string;
   hebrewName: string;
   category: OccasionCategory;
-  haftarah: {
-    ashkenazi: VerseRange[];
-    sephardi: VerseRange[];
-  };
+  haftarah: Record<Custom, VerseRange[]>;
 }
 
 export type HaftarahItem = ParshaData | SpecialOccasionData;

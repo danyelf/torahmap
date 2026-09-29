@@ -4,6 +4,7 @@ import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, renderAxis } from './legend.ts';
 import { loadJson } from './loadJson.ts';
+import { NO_DATA } from './colors.ts';
 import { CONTROL } from '../panel.ts';
 import { COMMENTARY } from '@torahmap/overlay-catalog';
 
@@ -14,9 +15,6 @@ const HEATMAP_STOPS: ColorStop[] = [
   { t: 0.75, color: [0.9, 0.33, 0.13] },
   { t: 1.0, color: [1.0, 0.23, 0.18] },
 ];
-
-/** A verse nothing has been written about. */
-const NO_LINKS: Color = [0.15, 0.15, 0.2];
 
 /** How each category reads after "42 references in …". */
 const WHERE: Record<string, string> = {
@@ -74,7 +72,7 @@ function getMaxValue(category: string): number {
 
 function commentaryColorAt(verse: TanakhIdentity, category: string): Color | null {
   const count = getCount(verse.book, verse.chapter, verse.verse, category);
-  if (count === 0) return NO_LINKS;
+  if (count === 0) return NO_DATA;
   return linkScale(category).colorOf(count);
 }
 
@@ -89,15 +87,11 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
   ],
 
   async init() {
-    try {
-      const result = await loadJson<CommentaryData>(
-        'overlays/commentary/counts.json',
-        'the commentary counts',
-      );
-      if (result) data = result;
-    } catch (e) {
-      console.error('Failed to parse the commentary counts:', e);
-    }
+    const result = await loadJson<CommentaryData>(
+      'overlays/commentary/counts.json',
+      'the commentary counts',
+    );
+    if (result) data = result;
   },
 
   destroy() {
@@ -112,17 +106,11 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
     return items.map((item) => commentaryColorAt(item, settings.category));
   },
 
-  defaultSettings() {
-    return { category: 'total' };
-  },
-
   settingsFromUrl(params: UrlParamValues<typeof COMMENTARY.urlParams>): CommentarySettings {
-    return { category: params.category ?? 'total' };
+    return { category: params.category };
   },
 
   settingsToUrl(settings: CommentarySettings): Record<string, string> {
-    // "total" is the default, so it stays out of the URL.
-    if (settings.category === 'total') return {};
     return { category: settings.category };
   },
 

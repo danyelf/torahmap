@@ -14,6 +14,15 @@ export function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
 }
 
+/** Each channel times `factor`, held at 1; a factor below 1 darkens. */
+export function brighten(color: Color, factor: number): Color {
+  return [
+    Math.min(1, color[0] * factor),
+    Math.min(1, color[1] * factor),
+    Math.min(1, color[2] * factor),
+  ];
+}
+
 /** A color stop in a gradient: position in [0, 1] and the color there. */
 export interface ColorStop {
   t: number;
