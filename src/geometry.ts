@@ -26,6 +26,10 @@ export const SQUARE_GAP = 2;
 // a gap between neighbours. The shader applies it.
 export const MULTICOLOR_GROWTH = 0.75;
 
+// How far neighbouring color bands slide apart along their shared cut, as a
+// fraction of the square's side. The shader applies it.
+export const BAND_OFFSET = 0.08;
+
 /**
  * One colouring of the map: a colour, or stripes, per verse, and how far each
  * verse has grown towards the size a multi-colour verse is drawn at, 0 to 1.

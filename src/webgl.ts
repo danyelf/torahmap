@@ -1,6 +1,11 @@
 // WebGL utilities for rendering verse quads
 
-import { MULTICOLOR_GROWTH, VERSE_ATTRIBUTES, type VerseAttributeName } from './geometry.ts';
+import {
+  BAND_OFFSET,
+  MULTICOLOR_GROWTH,
+  VERSE_ATTRIBUTES,
+  type VerseAttributeName,
+} from './geometry.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -52,8 +57,11 @@ const VERTEX_SHADER = `#version 300 es
   flat out float v_side;
   out vec2 v_uv;
   out vec2 v_seed;
-  // This point in device pixels from the drawn square's top-left corner.
-  out vec2 v_px;
+
+  // Bands slide apart along the cut; the quad reaches past the square to hold them.
+  float bandReach(vec3 shape) {
+    return shape.x > 1.0 || shape.z > 1.0 ? (max(shape.x, shape.z) - 1.0) * 0.5 * ${BAND_OFFSET.toFixed(4)} : 0.0;
+  }
 
   // How far a picture's verse reaches past its square, in world units.
   float reach(vec3 shape, bool holes) {
@@ -67,6 +75,8 @@ const VERTEX_SHADER = `#version 300 es
     bool holes = side >= u_ring.z;
     float grow = mix(reach(a_shape, holes), reach(a_nextShape, holes), u_fade);
     vec4 rect = a_rect + vec4(-grow, -grow, grow, grow);
+    float pad = max(bandReach(a_shape), bandReach(a_nextShape));
+    uv = mix(vec2(-pad), vec2(1.0 + pad), uv);
     vec2 world = mix(rect.xy, rect.zw, uv);
     vec2 pos = (world + u_pan) * u_zoom;
     vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
@@ -78,7 +88,6 @@ const VERTEX_SHADER = `#version 300 es
     v_counts = ivec4(a_shape.x, a_shape.z, a_nextShape.x, a_nextShape.z);
     v_side = holes ? (rect.z - rect.x) * u_zoom : 0.0;
     v_uv = uv;
-    v_px = (world - rect.xy) * u_zoom;
     // The square's own corner, which zooming does not move, seeds its dithering noise
     v_seed = a_rect.xy;
   }
@@ -96,7 +105,6 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in float v_side;
   in vec2 v_uv;
   in vec2 v_seed;
-  in vec2 v_px;
   out vec4 fragColor;
 
   // Simple hash for dithering noise
@@ -109,43 +117,56 @@ const FRAGMENT_SHADER = `#version 300 es
     return vec3(float(c >> 16), float((c >> 8) & 255), float(c & 255)) / 255.0;
   }
 
-  // Several colors split the square into bands running corner to corner, one
-  // per color. A diagonal cut keeps a two-color verse from reading as two
-  // neighbouring verses, as a vertical split does.
-  vec3 stripes(highp vec4 colors, int count) {
-    if (count <= 1) return unpack(colors.x);
-    float d = min((v_uv.x + v_uv.y) * 0.5, 0.999);
-    int idx = int(floor(d * float(count)));
-    if (idx == 0) return unpack(colors.x);
-    if (idx == 1) return unpack(colors.y);
-    if (idx == 2) return unpack(colors.z);
-    return unpack(colors.w);
+  bool inSquare(vec2 p) {
+    return all(greaterThanEqual(p, vec2(0))) && all(lessThan(p, vec2(1)));
   }
 
   // The ring is measured in from the drawn edge, so a grown verse's ring is
   // as thick as any other's.
-  bool inHole() {
+  bool inHole(vec2 p) {
     float inset = u_ring.x + u_ring.y;
+    vec2 px = p * v_side;
     return v_side > 0.0 &&
-      all(greaterThanEqual(v_px, vec2(inset))) &&
-      all(lessThan(v_px, vec2(v_side - inset)));
+      all(greaterThanEqual(px, vec2(inset))) &&
+      all(lessThan(px, vec2(v_side - inset)));
   }
 
-  // One picture here: its ring, if it has one and this is not the hole;
-  // otherwise its fill.
-  vec3 picture(highp vec4 fill, highp vec4 ring, int fillCount, int ringCount) {
-    if (ringCount == 0 || inHole()) return stripes(fill, fillCount);
-    return stripes(ring, ringCount);
+  // Several colors split the square into bands running corner to corner, one
+  // per color. A diagonal cut keeps a two-color verse from reading as two
+  // neighbouring verses, as a vertical split does. Each band slides a little
+  // along the cut, centred on the square, so the bands read as separate
+  // pieces. hole: 0 anywhere, 1 outside the hole, 2 inside it. Alpha 0 where
+  // no band covers p.
+  vec4 stripes(highp vec4 colors, int count, vec2 p, int hole) {
+    for (int k = 0; k < 4; k++) {
+      if (k >= count && k > 0) break;
+      float s = (float(k) - float(max(count, 1) - 1) * 0.5) * ${BAND_OFFSET.toFixed(4)};
+      vec2 q = p - s * vec2(1.0, -1.0);
+      if (!inSquare(q)) continue;
+      if (hole == 1 && inHole(q)) continue;
+      if (hole == 2 && !inHole(q)) continue;
+      if (count > 1 && int(floor(min((q.x + q.y) * 0.5, 0.999) * float(count))) != k) continue;
+      highp float c = k == 0 ? colors.x : k == 1 ? colors.y : k == 2 ? colors.z : colors.w;
+      return vec4(unpack(c), 1.0);
+    }
+    return vec4(0.0);
+  }
+
+  // One picture here: its ring, if it has one, and its fill inside the hole.
+  vec4 picture(highp vec4 fill, highp vec4 ring, int fillCount, int ringCount) {
+    if (ringCount == 0) return stripes(fill, fillCount, v_uv, 0);
+    vec4 r = stripes(ring, ringCount, v_uv, 1);
+    return r.a > 0.0 ? r : stripes(fill, fillCount, v_uv, 2);
   }
 
   void main() {
     // Each picture is drawn whole and the two are faded, so neither's stripes
-    // have to move to meet the other's.
-    vec3 color = mix(
-      picture(v_fill, v_ring, v_counts.x, v_counts.y),
-      picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w),
-      u_fade
-    );
+    // have to move to meet the other's. A band that has slid past the square
+    // shows in one picture only, and the map does not blend, so it shows whole.
+    vec4 a = picture(v_fill, v_ring, v_counts.x, v_counts.y);
+    vec4 b = picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w);
+    if (a.a == 0.0 && b.a == 0.0) discard;
+    vec3 color = a.a == 0.0 ? b.rgb : b.a == 0.0 ? a.rgb : mix(a.rgb, b.rgb, u_fade);
 
     // Add subtle dithering noise to break up moiré patterns (UV-based for zoom stability)
     vec2 noiseCoord = floor(v_uv * 12.0);
