@@ -99,6 +99,12 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
+    name: 'explore-trop',
+    link: 'overlay=trop&trop=tipcha',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
     name: 'explore-search',
     link: `search=${encodeURIComponent('אברהם')}`,
     then: (page) => viaMenu(page, 'search'),
