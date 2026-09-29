@@ -428,25 +428,25 @@ describe('Haftarah Overlay', () => {
     const noach = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
     const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
 
-    /** Readings by their place in the sample: parshiot, then special occasions. */
-    const BERESHIT = 0;
-    const ROSH_CHODESH = 2;
+    /** Readings by name. */
+    const BERESHIT = 'Bereshit';
+    const ROSH_CHODESH = 'Shabbat Rosh Chodesh';
 
     function keyRows(container: HTMLElement) {
       return [...container.querySelectorAll('.haftarah-key-row')].map((row) => ({
         label: row.querySelector('.haftarah-key-label')!.textContent,
         readings: [...row.querySelectorAll<HTMLElement>('[data-reading]')].map((el) => ({
           name: el.title,
-          reading: Number(el.dataset.reading),
+          reading: el.dataset.reading,
         })),
       }));
     }
 
-    function swatch(container: HTMLElement, reading: number): HTMLElement {
+    function swatch(container: HTMLElement, reading: string): HTMLElement {
       return container.querySelector<HTMLElement>(`[data-reading="${reading}"]`)!;
     }
 
-    const preview = (reading: number | null) =>
+    const preview = (reading: string | null) =>
       haftarahOverlay.change((current) => ({ ...current, preview: reading }));
 
     /** Load the sample data with Rosh Chodesh's haftarah under `custom` replaced by `ranges`. */
@@ -467,12 +467,18 @@ describe('Haftarah Overlay', () => {
         {
           label: 'Genesis',
           readings: [
-            { name: 'Bereshit', reading: 0 },
-            { name: 'Noach', reading: 1 },
+            { name: 'Bereshit', reading: 'Bereshit' },
+            { name: 'Noach', reading: 'Noach' },
           ],
         },
-        { label: 'High Holidays', readings: [{ name: 'Rosh Hashanah Day 1', reading: 3 }] },
-        { label: 'Rosh Chodesh', readings: [{ name: 'Shabbat Rosh Chodesh', reading: 2 }] },
+        {
+          label: 'High Holidays',
+          readings: [{ name: 'Rosh Hashanah Day 1', reading: 'Rosh Hashanah Day 1' }],
+        },
+        {
+          label: 'Rosh Chodesh',
+          readings: [{ name: 'Shabbat Rosh Chodesh', reading: 'Shabbat Rosh Chodesh' }],
+        },
       ]);
     });
 
@@ -582,7 +588,7 @@ describe('Haftarah Overlay', () => {
     });
 
     it('lights the reading exactly as hovering it in the key does', () => {
-      haftarahOverlay.change((current) => ({ ...current, preview: 0 }));
+      haftarahOverlay.change((current) => ({ ...current, preview: 'Bereshit' }));
       const previewed = [genesis, noach, psalms].map((v) => haftarahOverlay.getVerseColor(v));
 
       haftarahOverlay.restore({ reading: 'Bereshit' });
@@ -602,7 +608,7 @@ describe('Haftarah Overlay', () => {
     it('gives way to a reading hovered in the key, and returns when it is left', () => {
       haftarahOverlay.restore({ reading: 'Bereshit' });
       const container = haftarahOverlay.renderControls();
-      const noachSwatch = container.querySelector<HTMLElement>('[data-reading="1"]')!;
+      const noachSwatch = container.querySelector<HTMLElement>('[data-reading="Noach"]')!;
 
       noachSwatch.dispatchEvent(new Event('pointerover', { bubbles: true }));
       expect(brightness(noach)).toBeGreaterThan(brightness(genesis));
