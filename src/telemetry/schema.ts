@@ -28,6 +28,8 @@ export const EVENTS = {
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [], by: 'worker' },
+  // A stop share records overlay 'none': stop links carry no overlay (the stop
+  // picks its own), so group share.overlay by view shares.
   share: {
     blobs: ['how', 'what', 'story', 'stop_id', 'overlay'],
     doubles: ['searching', 'pinned'],
@@ -57,7 +59,7 @@ export function columns(event: EventName): { blobs: string[]; doubles: string[] 
 }
 type Blobs<E extends EventName> = (typeof EVENTS)[E]['blobs'][number];
 type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
-// Columns that hold fewer values than any string.
+// Columns narrower than a string, matched by column name in every event.
 interface NarrowBlobs {
   arrived_with: LinkKind;
   what: LinkKind;

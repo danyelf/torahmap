@@ -37,8 +37,9 @@ fail() {
 # fails the same way with "Cannot find module '@torahmap/<name>'". Catch both
 # up front and say so plainly.
 missing_package=
-for package in packages/*/; do
-  [ -e "node_modules/@torahmap/$(basename "$package")" ] || missing_package=1
+for manifest in packages/*/package.json; do
+  name=$(basename "$(dirname "$manifest")")
+  [ -e "node_modules/@torahmap/$name" ] || missing_package=1
 done
 if [ ! -d node_modules ] || [ ! -x node_modules/.bin/vitest ] ||
   [ ! -x node_modules/.bin/prettier ] || [ -n "$missing_package" ]; then
