@@ -11,10 +11,10 @@ link previews as what it points to.
 
 ## What the reader sees
 
-- The ☰ menu gains **Share this view**, right under *Continue* and above a
-  divider, so the two actions come before the tools. While a story is driving
-  the map it reads **Share this stop**, since that is what will be sent. It is
-  the only Share control.
+- The ☰ menu gains **Share**, right under *Continue* and above a divider, so
+  the two actions come before the tools. It is the only Share control. Its
+  label stays the same whether it sends a view or a stop: the map stays live
+  under the open menu, so a label naming one could go stale.
 - **On a touch screen with a system share sheet** (`navigator.share` and a
   coarse pointer), it opens the sheet. The sheet is the confirmation.
 - **Otherwise** it copies the link. The item's label becomes *Link copied ✓*
