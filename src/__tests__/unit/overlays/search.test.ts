@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import { configure, type SearchSettings } from '../../../overlays/search';
 import type { Color } from '../../../overlays/types';
-import { getWordBoundaries } from '../../../search';
-import { search, buildSearchIndex, parseSearchTerms } from '../../../search';
+import { buildSearchIndex, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
@@ -1568,110 +1567,8 @@ describe('Search Overlay', () => {
     });
   });
 
-  describe('Hebrew Substring Position Bug Fix', () => {
-    // matchStart/matchEnd were calculated using nikkud-stripped positions but
-    // applied to original text with nikkud, so highlights landed on the wrong substring.
-
-    it('returns correct match positions for Hebrew text with nikkud', () => {
-      // Search for אלהים (Elohim) without nikkud
-      const results = search('אלהים');
-
-      // Find result for Genesis 1:1 which has: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים'
-      const genesis11 = results.find(
-        (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
-      );
-      expect(genesis11).toBeDefined();
-
-      const firstMatch = genesis11!.matchingTerms[0];
-      const snippet = firstMatch.snippet;
-      expect(snippet).toBeDefined();
-
-      // The highlighted portion should contain the Hebrew word אלהים (with nikkud: אֱלֹהִים)
-      const highlighted = snippet!.slice(firstMatch.matchStart!, firstMatch.matchEnd!);
-
-      // Strip nikkud from the highlighted portion and check it matches the search term
-      const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
-      expect(strippedHighlight).toContain('אלהים');
-    });
-
-    it('highlights correct Hebrew word, not wrong substring', () => {
-      // This test verifies the fix for the specific bug:
-      // searching for 'כניהו' should highlight 'כׇּנְיָ֔הוּ', not 'כִּ֣י'
-
-      // Since we don't have Jeremiah in our mock data, test with available data
-      // Search for a Hebrew word that appears in Isaiah
-      const container = render();
-      type(container, 'שמים'); // "shamayim" (heavens)
-
-      // Isaiah 1:2 has 'שִׁמְעוּ שָׁמַיִם' (shim'u shamayim - hear heavens)
-      const results = search('שמים');
-      const isaiah12 = results.find((r) => r.book === 'Isaiah' && r.chapter === 1 && r.verse === 2);
-
-      if (isaiah12) {
-        const firstMatch = isaiah12.matchingTerms[0];
-        const snippet = firstMatch.snippet;
-        expect(snippet).toBeDefined();
-        const highlighted = snippet!.slice(firstMatch.matchStart!, firstMatch.matchEnd!);
-
-        // The highlighted text should contain שמים letters (possibly with nikkud)
-        // Not some other random substring
-        const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
-        expect(strippedHighlight).toContain('שמ'); // At least the beginning should match
-      }
-    });
-
-    it('match positions account for nikkud characters', () => {
-      // Test that positions in original text correctly span the match including nikkud
-      const results = search('אלהים');
-      const genesis11 = results.find(
-        (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
-      );
-
-      if (genesis11) {
-        const firstMatch = genesis11.matchingTerms[0];
-
-        // matchEnd - matchStart should be >= the stripped search term length
-        // because it includes nikkud characters
-        expect(firstMatch.matchEnd).toBeDefined();
-        expect(firstMatch.matchStart).toBeDefined();
-        const highlightLength = firstMatch.matchEnd! - firstMatch.matchStart!;
-        expect(highlightLength).toBeGreaterThanOrEqual(5); // 'אלהים' is 5 chars
-      }
-    });
-
-    it('lexeme-based search also computes correct highlight positions', () => {
-      // This test ensures that when lexeme search is used, the highlight positions
-      // are still computed correctly (not left as 0,0)
-      // Note: This tests the code path even if the lexeme index isn't loaded in tests
-      const results = search('אלהים');
-
-      // Find any Hebrew result
-      const hebrewResult = results.find((r) => r.language === 'he');
-      if (hebrewResult) {
-        const firstMatch = hebrewResult.matchingTerms[0];
-
-        // If the search term was found in the verse, positions should be non-zero
-        // (except for edge case where term is at position 0, which is unlikely)
-        if (firstMatch.matchStart !== 0 || firstMatch.matchEnd !== 0) {
-          // Verify the highlighted portion contains the search term
-          expect(firstMatch.snippet).toBeDefined();
-          const highlighted = firstMatch.snippet!.slice(
-            firstMatch.matchStart!,
-            firstMatch.matchEnd!,
-          );
-          const strippedHighlight = highlighted.replace(/[\u0591-\u05C7]/g, '');
-          expect(strippedHighlight).toContain('אלהים');
-        }
-      }
-    });
-  });
-
   describe('Integration with Search Module', () => {
-    it('uses search results from search.ts', () => {
-      const results = search('God');
-      expect(results.length).toBeGreaterThan(0);
-
-      // Apply those results via the overlay
+    it('colours a verse the search finds', () => {
       const container = render();
       type(container, 'God');
 
@@ -1724,61 +1621,6 @@ describe('Search Overlay', () => {
     it('trims whitespace around all comma variants', () => {
       const terms = parseSearchTerms('  God  ,  earth  ،  light  ‎״  heavens  ');
       expect(terms).toEqual(['God', 'earth', 'light', 'heavens']);
-    });
-  });
-
-  describe('getWordBoundaries', () => {
-    it('returns correct boundaries for first word', () => {
-      const result = getWordBoundaries('hello world', 0);
-      expect(result).toEqual({ start: 0, end: 5 });
-    });
-
-    it('returns correct boundaries for second word', () => {
-      const result = getWordBoundaries('hello world', 1);
-      expect(result).toEqual({ start: 6, end: 11 });
-    });
-
-    it('handles Hebrew text with nikkud', () => {
-      const text = 'בְּרֵאשִׁ֖ית בָּרָ֣א אֱלֹהִ֑ים';
-      const result = getWordBoundaries(text, 2);
-      expect(result).not.toBeNull();
-      // Third word should be אֱלֹהִ֑ים
-      const word = text.slice(result!.start, result!.end);
-      expect(word).toBe('אֱלֹהִ֑ים');
-    });
-
-    it('handles multiple spaces between words', () => {
-      const result = getWordBoundaries('hello   world', 1);
-      expect(result).toEqual({ start: 8, end: 13 });
-    });
-
-    it('returns null for out of bounds index', () => {
-      const result = getWordBoundaries('hello world', 5);
-      expect(result).toBeNull();
-    });
-
-    it('returns null for negative index', () => {
-      const result = getWordBoundaries('hello world', -1);
-      expect(result).toBeNull();
-    });
-
-    it('handles leading whitespace', () => {
-      const result = getWordBoundaries('  hello world', 0);
-      expect(result).toEqual({ start: 2, end: 7 });
-    });
-
-    it('handles single word text', () => {
-      const result = getWordBoundaries('hello', 0);
-      expect(result).toEqual({ start: 0, end: 5 });
-    });
-
-    it('handles Hebrew verse with sof pasuk', () => {
-      const text = 'אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
-      // Get first word
-      const result = getWordBoundaries(text, 0);
-      expect(result).not.toBeNull();
-      const word = text.slice(result!.start, result!.end);
-      expect(word).toBe('אֵ֥ת');
     });
   });
 });

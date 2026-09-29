@@ -151,16 +151,3 @@ export function mapStrippedToOriginal(original: string, strippedPos: number): nu
   }
   return original.length;
 }
-
-/** How many points and accents sit within the next `strippedLen` letters. */
-export function countNikkudInRange(text: string, start: number, strippedLen: number): number {
-  if (start < 0 || start >= text.length || strippedLen < 0) return 0;
-
-  let nikkud = 0;
-  let letters = 0;
-  for (let i = start; i < text.length && letters < strippedLen; i++) {
-    if (isNikkud(text.charCodeAt(i))) nikkud++;
-    else letters++;
-  }
-  return nikkud;
-}

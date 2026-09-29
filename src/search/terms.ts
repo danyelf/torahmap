@@ -11,12 +11,13 @@ import { isHebrewQuery } from '../search.ts';
 import { TERM_SEPARATORS } from '../constants/app.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import type { TextLanguage } from '../types.ts';
+import type { MatchMode } from './matching.ts';
 
 /**
  * How a term is matched. Meanings resolves a written form to the dictionary words
  * it could be, so it is offered only where there is a dictionary — Hebrew.
  */
-export type SearchMode = 'substring' | 'word' | 'meanings';
+export type SearchMode = MatchMode | 'meanings';
 
 export const SEARCH_MODES = [
   'substring',
@@ -283,7 +284,7 @@ export function effectiveMode(term: SearchTerm): SearchMode {
 
 /** The modes this term's own text can be matched by, in the order shown. */
 export function modesOffered(term: SearchTerm): SearchMode[] {
-  return termIsHebrew(term) ? ['substring', 'word', 'meanings'] : ['substring', 'word'];
+  return SEARCH_MODES.filter((mode) => mode !== 'meanings' || termIsHebrew(term));
 }
 
 /** Only a Hebrew term in meanings mode consults the dictionary. */

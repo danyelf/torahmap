@@ -12,20 +12,17 @@ import {
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './constants/app.ts';
+import { normalizeHebrewForSearch, splitIntoWords } from './hebrew.ts';
 import {
-  countNikkudInRange,
-  mapStrippedToOriginal,
-  normalizeHebrewForSearch,
-  splitIntoWords,
-} from './hebrew.ts';
-import { escapeForRegex, foldForMatching, matchRangesInFolded } from './search/matching.ts';
+  escapeForRegex,
+  foldForMatching,
+  matchRangesInFolded,
+  type MatchMode,
+} from './search/matching.ts';
 import type { TextLanguage } from './types.ts';
 
 export interface TermMatch {
   termIndex: number;
-  snippet?: string;
-  matchStart?: number;
-  matchEnd?: number;
 }
 
 export interface SearchResult {
@@ -134,8 +131,9 @@ export async function loadLexiconData(): Promise<void> {
     }
 
     const lexiconFile: LexiconFile = await lexiconRes.json();
+    const verseLexemes: Record<string, LexemeId[]> = await versesRes.json();
     formToLexemes = await formsRes.json();
-    verseToLexemes = await versesRes.json();
+    verseToLexemes = verseLexemes;
 
     lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language]) => ({
       id,
@@ -149,11 +147,11 @@ export async function loadLexiconData(): Promise<void> {
     console.log(
       `✓ Loaded ${lexicon.length} lexemes (${lexiconFile.source}), ` +
         `${Object.keys(formToLexemes || {}).length} written forms, ` +
-        `${Object.keys(verseToLexemes || {}).length} verses`,
+        `${Object.keys(verseLexemes).length} verses`,
     );
 
-    buildVerseIndex();
-    buildSpellingIndex();
+    lexemeToVerses = buildVerseIndex(verseLexemes);
+    spellingToLexemes = buildSpellingIndex(lexemeSpellings);
   } catch (err) {
     console.warn('Error loading lexeme index:', err);
   }
@@ -163,21 +161,16 @@ export async function loadLexiconData(): Promise<void> {
  * Invert verse -> lexemes into lexeme -> verses, so a meanings-mode search costs
  * one lookup per lexeme rather than a pass over all 23,000 verses.
  */
-function buildVerseIndex(): void {
-  if (!verseToLexemes) {
-    lexemeToVerses = null;
-    return;
-  }
-
+function buildVerseIndex(verseLexemes: Record<string, LexemeId[]>): Map<LexemeId, Set<string>> {
   const startTime = performance.now();
-  lexemeToVerses = new Map();
+  const index = new Map<LexemeId, Set<string>>();
 
-  for (const [verseKey, lexemes] of Object.entries(verseToLexemes)) {
+  for (const [verseKey, lexemes] of Object.entries(verseLexemes)) {
     for (const lexeme of lexemes) {
-      let verses = lexemeToVerses.get(lexeme);
+      let verses = index.get(lexeme);
       if (!verses) {
         verses = new Set();
-        lexemeToVerses.set(lexeme, verses);
+        index.set(lexeme, verses);
       }
       verses.add(verseKey);
     }
@@ -185,8 +178,9 @@ function buildVerseIndex(): void {
 
   const endTime = performance.now();
   console.log(
-    `✓ Built verse index: ${lexemeToVerses.size} lexemes in ${(endTime - startTime).toFixed(2)}ms`,
+    `✓ Built verse index: ${index.size} lexemes in ${(endTime - startTime).toFixed(2)}ms`,
   );
+  return index;
 }
 
 /**
@@ -194,24 +188,20 @@ function buildVerseIndex(): void {
  * who types a bare root (בסס) finds it even though that spelling never stands
  * alone in the text.
  */
-function buildSpellingIndex(): void {
-  if (!lexicon) {
-    spellingToLexemes = null;
-    return;
-  }
-
-  spellingToLexemes = new Map();
-  for (let id = 0; id < lexicon.length; id++) {
-    const spelling = lexemeSpellings[id];
+function buildSpellingIndex(spellings: string[]): Map<string, LexemeId[]> {
+  const index = new Map<string, LexemeId[]>();
+  for (let id = 0; id < spellings.length; id++) {
+    const spelling = spellings[id];
     if (!spelling) continue;
-    let list = spellingToLexemes.get(spelling);
+    let list = index.get(spelling);
     if (!list) {
       list = [];
-      spellingToLexemes.set(spelling, list);
+      index.set(spelling, list);
     }
     list.push(id);
   }
-  console.log(`✓ Built spelling index: ${spellingToLexemes.size} distinct dictionary spellings`);
+  console.log(`✓ Built spelling index: ${index.size} distinct dictionary spellings`);
+  return index;
 }
 
 /**
@@ -266,13 +256,6 @@ export function getLexeme(id: LexemeId): Lexeme | null {
   return lexicon?.[id] ?? null;
 }
 
-/**
- * The vocalized Hebrew form of a lexeme, for showing which word was matched.
- */
-export function getLexemeForm(id: LexemeId): string | null {
-  return lexicon?.[id]?.form ?? null;
-}
-
 export function isHebrewQuery(query: string): boolean {
   for (const char of query) {
     const code = char.charCodeAt(0);
@@ -319,9 +302,7 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
           englishOriginal: en,
         };
         searchIndex.push(entry);
-
-        const verseKey = `${book}:${chapter}:${verse}`;
-        verseKeyToEntry.set(verseKey, entry);
+        verseKeyToEntry.set(tanakhKey(book, chapter, verse), entry);
       }
     }
   }
@@ -345,24 +326,8 @@ export function getVerseLexemes(verseKey: string): LexemeId[] | null {
  */
 export function searchByLexemes(lexemes: LexemeId[]): Set<string> {
   const matchingVerses = new Set<string>();
-
-  if (lexemeToVerses) {
-    for (const lexeme of lexemes) {
-      const verses = lexemeToVerses.get(lexeme);
-      if (verses) {
-        for (const verseKey of verses) {
-          matchingVerses.add(verseKey);
-        }
-      }
-    }
-    return matchingVerses;
-  }
-
-  // The inverted index is built at load time, so this only runs if loading
-  // failed partway through.
-  if (!verseToLexemes) return matchingVerses;
-  for (const [verseKey, verseLexemes] of Object.entries(verseToLexemes)) {
-    if (lexemes.some((lexeme) => verseLexemes.includes(lexeme))) {
+  for (const lexeme of lexemes) {
+    for (const verseKey of lexemeToVerses?.get(lexeme) ?? []) {
       matchingVerses.add(verseKey);
     }
   }
@@ -370,10 +335,7 @@ export function searchByLexemes(lexemes: LexemeId[]): Set<string> {
 }
 
 /** Where the word at `wordIndex` starts and ends, or null past the last one. */
-export function getWordBoundaries(
-  text: string,
-  wordIndex: number,
-): { start: number; end: number } | null {
+function getWordBoundaries(text: string, wordIndex: number): { start: number; end: number } | null {
   if (wordIndex < 0) return null;
   const word = splitIntoWords(text)[wordIndex];
   return word ? { start: word.start, end: word.end } : null;
@@ -400,60 +362,9 @@ function snippetAtWord(
   return { snippet: snippet.text, matchStart: snippet.matchStart, matchEnd: snippet.matchEnd };
 }
 
-export function searchHebrewWholeWord(terms: string[]): SearchResult[] {
-  const resultMap = new Map<string, SearchResult>();
-
-  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-    const term = terms[termIndex];
-    const normalizedTerm = normalizeHebrewForSearch(term);
-
-    for (const entry of searchIndex) {
-      const words = indexedWords(entry);
-      const wordIndex = words.findIndex((word) => word === normalizedTerm);
-
-      if (wordIndex !== -1) {
-        const wordBounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
-
-        if (wordBounds) {
-          const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
-
-          let result = resultMap.get(key);
-          if (!result) {
-            result = {
-              book: entry.book,
-              chapter: entry.chapter,
-              verse: entry.verse,
-              language: 'he',
-              matchingTerms: [],
-            };
-            resultMap.set(key, result);
-          }
-
-          if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
-            const wordLen = wordBounds.end - wordBounds.start;
-            const snippet = createSnippetAtPosition(
-              entry.hebrewOriginal,
-              wordBounds.start,
-              wordLen,
-            );
-            result.matchingTerms.push({
-              termIndex,
-              snippet: snippet.text,
-              matchStart: snippet.matchStart,
-              matchEnd: snippet.matchEnd,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return Array.from(resultMap.values());
-}
-
 /** The opening of a verse, for when there is nothing to mark in it. */
 function truncateForSnippet(text: string): string {
-  const limit = 60;
+  const limit = SEARCH_SNIPPET_MAX_LENGTH;
   return text.length > limit ? `${text.slice(0, limit)}...` : text;
 }
 
@@ -479,11 +390,9 @@ function findEnglishMatch(text: string, term: string): { idx: number; len: numbe
 /** Snippet/highlight data for one match, computed lazily — only when the result is shown. */
 export function computeSnippetForMatch(
   result: SearchResult,
-  _termIndex: number,
   searchTerm: string,
 ): { snippet: string; matchStart: number; matchEnd: number } | null {
-  const verseKey = `${result.book}:${result.chapter}:${result.verse}`;
-  const entry = verseKeyToEntry.get(verseKey);
+  const entry = verseKeyToEntry.get(tanakhKey(result.book, result.chapter, result.verse));
   if (!entry) return null;
 
   // An English term reads the English verse; everything below this works on the
@@ -492,7 +401,7 @@ export function computeSnippetForMatch(
   if (!isHebrewQuery(searchTerm)) {
     const match = findEnglishMatch(entry.englishText, searchTerm.toLowerCase());
     if (match) {
-      const snippet = createSnippet(entry.englishOriginal, match.idx, match.len, false);
+      const snippet = createSnippetAtPosition(entry.englishOriginal, match.idx, match.len);
       return {
         snippet: snippet.text,
         matchStart: snippet.matchStart,
@@ -557,31 +466,21 @@ export function computeSnippetForMatch(
 }
 
 /**
- * The verses each term matches, decided term by term.
+ * The verses a term's text matches, in the text of its own language.
  *
- * Language belongs to the term, not to the search: a term's own text decides
- * which text it is looked for in, so a Hebrew word beside an English one
- * searches the Hebrew and the English respectively. Reading one language off
- * the first term instead hunts the English word in the Hebrew text, where it
- * finds nothing. The two language-specific settings — whole-word for English,
- * the matching mode for Hebrew — apply only to the terms they can apply to.
- *
- * Meanings mode is not handled here: it depends on which meanings the reader has
- * left checked, which the overlay knows and this does not.
+ * Meanings mode is not a `mode` here: it depends on which meanings the reader
+ * has left checked, which the overlay knows and this does not.
  */
-export function verseSetsForTerms(
-  termTexts: string[],
-  options: { wholeWordEnglish?: boolean; hebrewMode?: 'substring' | 'word' } = {},
-): Array<Set<string>> {
-  return termTexts.map((text) => {
-    const isHebrew = isHebrewQuery(text);
-    const results = search(
-      text,
-      isHebrew ? false : options.wholeWordEnglish === true,
-      isHebrew ? (options.hebrewMode ?? 'substring') : 'substring',
-    );
-    return new Set(results.map((r) => tanakhKey(r.book, r.chapter, r.verse)));
-  });
+export function versesForTerm(text: string, language: TextLanguage, mode: MatchMode): Set<string> {
+  const needle = foldForMatching(text, language);
+  const verses = new Set<string>();
+  for (const entry of searchIndex) {
+    const haystack = language === 'he' ? entry.hebrewText : entry.englishText;
+    if (matchRangesInFolded(haystack, needle, { mode, language, limit: 1 }).length > 0) {
+      verses.add(tanakhKey(entry.book, entry.chapter, entry.verse));
+    }
+  }
+  return verses;
 }
 
 /**
@@ -620,87 +519,6 @@ export function resultsForVerseSets(
       }
       if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
         result.matchingTerms.push({ termIndex });
-      }
-    }
-  }
-
-  return Array.from(resultMap.values());
-}
-
-/**
- * Verses matching any of the comma-separated terms.
- *
- * Hebrew: substring (nikkud-insensitive, the default) or whole-word. Meanings mode
- * is not a `hebrewMode` value here — it resolves a term to dictionary meanings
- * and looks up their verses directly, in the search overlay.
- * English: substring, optionally whole-word via `wholeWord`.
- */
-export function search(
-  query: string,
-  wholeWord: boolean = false,
-  hebrewMode: 'substring' | 'word' = 'substring',
-): SearchResult[] {
-  const terms = parseSearchTerms(query);
-  if (terms.length === 0) return [];
-
-  // The first term picks the path for the whole query. A query that mixes
-  // scripts searches whichever text its first term points at, so the other
-  // terms simply find nothing.
-  const isHebrew = isHebrewQuery(terms[0]);
-
-  if (isHebrew) {
-    switch (hebrewMode) {
-      case 'word':
-        return searchHebrewWholeWord(terms);
-      case 'substring':
-      default:
-        break;
-    }
-  }
-
-  const resultMap = new Map<string, SearchResult>();
-
-  for (let termIndex = 0; termIndex < terms.length; termIndex++) {
-    const term = terms[termIndex];
-    const language = isHebrew ? 'he' : 'en';
-    const needle = foldForMatching(term, language);
-    const wantWholeWord = !isHebrew && wholeWord;
-
-    for (const entry of searchIndex) {
-      const text = isHebrew ? entry.hebrewText : entry.englishText;
-      const original = isHebrew ? entry.hebrewOriginal : entry.englishOriginal;
-
-      const ranges = matchRangesInFolded(text, needle, {
-        mode: wantWholeWord ? 'word' : 'substring',
-        language,
-        limit: wantWholeWord ? Infinity : 1,
-      });
-
-      for (const { start: idx, end } of ranges) {
-        const len = end - idx;
-        const key = `${entry.book}:${entry.chapter}:${entry.verse}`;
-        const snippet = createSnippet(original, idx, len, isHebrew);
-
-        let result = resultMap.get(key);
-        if (!result) {
-          result = {
-            book: entry.book,
-            chapter: entry.chapter,
-            verse: entry.verse,
-            language: isHebrew ? 'he' : 'en',
-            matchingTerms: [],
-          };
-          resultMap.set(key, result);
-        }
-
-        if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
-          result.matchingTerms.push({
-            termIndex,
-            snippet: snippet.text,
-            matchStart: snippet.matchStart,
-            matchEnd: snippet.matchEnd,
-          });
-        }
       }
     }
   }
@@ -750,23 +568,6 @@ function createSnippetAtPosition(
     matchStart: adjustedMatchStart + prefixLen,
     matchEnd: Math.min(adjustedMatchEnd + prefixLen, snippet.length),
   };
-}
-
-/**
- * A snippet around a match whose position is given in nikkud-stripped text.
- * The positions move because the points sit between the letters.
- */
-function createSnippet(
-  text: string,
-  matchIdx: number,
-  matchLen: number,
-  isHebrew: boolean = false,
-): SnippetResult {
-  if (!isHebrew) return createSnippetAtPosition(text, matchIdx, matchLen);
-
-  const origStart = mapStrippedToOriginal(text, matchIdx);
-  const nikkudInMatch = countNikkudInRange(text, origStart, matchLen);
-  return createSnippetAtPosition(text, origStart, matchLen + nikkudInMatch);
 }
 
 export function getMatchingVerseTerms(results: SearchResult[]): Map<string, number[]> {

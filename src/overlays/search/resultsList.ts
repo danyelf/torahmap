@@ -56,27 +56,10 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
   const snippetDiv = document.createElement('div');
   snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
 
-  // Computed on demand: meanings mode leaves these unset until the result is shown.
-  let snippet = firstMatch.snippet;
-  let matchStart = firstMatch.matchStart;
-  let matchEnd = firstMatch.matchEnd;
-
-  if (snippet === undefined || matchStart === undefined || matchEnd === undefined) {
-    const snippetData = computeSnippetForMatch(
-      result,
-      firstMatch.termIndex,
-      view.terms[firstMatch.termIndex]?.text ?? '',
-    );
-    if (snippetData) {
-      snippet = snippetData.snippet;
-      matchStart = snippetData.matchStart;
-      matchEnd = snippetData.matchEnd;
-    } else {
-      snippet = verseRef(result);
-      matchStart = 0;
-      matchEnd = 0;
-    }
-  }
+  const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
+    result,
+    view.terms[firstMatch.termIndex]?.text ?? '',
+  ) ?? { snippet: verseRef(result), matchStart: 0, matchEnd: 0 };
 
   snippetDiv.appendChild(
     markRange(snippet, matchStart, matchEnd, colorIndexAt(view.terms, firstMatch.termIndex)),

@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildSearchIndex, search } from '../../search';
+import { buildSearchIndex, versesForTerm } from '../../search';
 import { stripNikkud, normalizeHebrewForSearch } from '../../hebrew';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -83,56 +83,32 @@ describe('Hebrew Final Forms Normalization', () => {
     describe('substring mode', () => {
       it('should find אלהים (with final mem ם) when searching with regular mem (אלהימ)', () => {
         // Genesis 1:1 has אֱלֹהִים (Elohim) ending with ם (mem sofit)
-        const results = search('אלהימ', false, 'substring');
-        const genesis11 = results.find(
-          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
-        );
-        expect(genesis11).toBeDefined();
+        expect(versesForTerm('אלהימ', 'he', 'substring').has('Genesis:1:1')).toBe(true);
       });
 
       it('should find אלהים when searching with final mem (אלהים)', () => {
         // Searching with correct final form should also work
-        const results = search('אלהים', false, 'substring');
-        const genesis11 = results.find(
-          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 1,
-        );
-        expect(genesis11).toBeDefined();
+        expect(versesForTerm('אלהים', 'he', 'substring').has('Genesis:1:1')).toBe(true);
       });
 
       it('should find הארץ (with final tzadi ץ) when searching with regular tzadi (הארצ)', () => {
         // Genesis 1:2 has הָאָרֶץ (the earth) ending with ץ (tzadi sofit)
-        const results = search('הארצ', false, 'substring');
-        const genesis12 = results.find(
-          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2,
-        );
-        expect(genesis12).toBeDefined();
+        expect(versesForTerm('הארצ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
       });
 
       it('should find הארץ when searching with final tzadi (הארץ)', () => {
         // Searching with correct final form should also work
-        const results = search('הארץ', false, 'substring');
-        const genesis12 = results.find(
-          (r) => r.book === 'Genesis' && r.chapter === 1 && r.verse === 2,
-        );
-        expect(genesis12).toBeDefined();
+        expect(versesForTerm('הארץ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
       });
 
       it('should find השמים (with final mem) when searching with regular mem (השמימ)', () => {
         // Genesis 2:1 has הַשָּׁמַיִם (the heavens) ending with ם (mem sofit)
-        const results = search('השמימ', false, 'substring');
-        const genesis21 = results.find(
-          (r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 1,
-        );
-        expect(genesis21).toBeDefined();
+        expect(versesForTerm('השמימ', 'he', 'substring').has('Genesis:2:1')).toBe(true);
       });
 
       it('should find שמות (with final tav) when searching either way', () => {
         // Exodus 1:1 has שְׁמוֹת (names) - tav doesn't have a final form, but testing consistency
-        const results = search('שמות', false, 'substring');
-        const exodus11 = results.find(
-          (r) => r.book === 'Exodus' && r.chapter === 1 && r.verse === 1,
-        );
-        expect(exodus11).toBeDefined();
+        expect(versesForTerm('שמות', 'he', 'substring').has('Exodus:1:1')).toBe(true);
       });
     });
 
@@ -140,12 +116,11 @@ describe('Hebrew Final Forms Normalization', () => {
       it('should match whole words regardless of final form used in query', () => {
         // Exodus 1:1 has שְׁמוֹת (names) with final tav
         // Searching with either form should match the same verses
-        const resultsWithRegular = search('אלהימ', false, 'word'); // regular mem
-        const resultsWithFinal = search('אלהים', false, 'word'); // final mem
+        const withRegular = versesForTerm('אלהימ', 'he', 'word'); // regular mem
+        const withFinal = versesForTerm('אלהים', 'he', 'word'); // final mem
 
-        // Both should find the same verses
-        expect(resultsWithRegular.length).toBe(resultsWithFinal.length);
-        expect(resultsWithRegular.length).toBeGreaterThan(0);
+        expect(withRegular).toEqual(withFinal);
+        expect(withRegular.size).toBeGreaterThan(0);
       });
     });
 
@@ -193,18 +168,9 @@ describe('Hebrew Final Forms Normalization', () => {
 
       finalFormsTest.forEach(({ withRegular, withFinal, expectedWord, verse }) => {
         it(`should find ${expectedWord} when searching with regular form (${withRegular}) or final form (${withFinal})`, () => {
-          const resultsRegular = search(withRegular, false, 'substring');
-          const resultsFinal = search(withFinal, false, 'substring');
-
-          const foundWithRegular = resultsRegular.find(
-            (r) => r.book === verse.book && r.chapter === verse.chapter && r.verse === verse.verse,
-          );
-          const foundWithFinal = resultsFinal.find(
-            (r) => r.book === verse.book && r.chapter === verse.chapter && r.verse === verse.verse,
-          );
-
-          expect(foundWithRegular).toBeDefined();
-          expect(foundWithFinal).toBeDefined();
+          const key = `${verse.book}:${verse.chapter}:${verse.verse}`;
+          expect(versesForTerm(withRegular, 'he', 'substring').has(key)).toBe(true);
+          expect(versesForTerm(withFinal, 'he', 'substring').has(key)).toBe(true);
         });
       });
     });
