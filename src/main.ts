@@ -169,6 +169,7 @@ import './styles/map-title.css';
 import './styles/zoom-buttons.css';
 import './styles/frame.css';
 import './styles/verse-popup.css';
+import './styles/phone.css';
 
 const STORY_FOLDED_KEY = 'torahMap.storyFolded';
 
@@ -529,10 +530,14 @@ async function main(): Promise<void> {
     return resolvedStops.indexOf(nearerStop(currentStoryState()));
   }
 
-  const phoneLayout = window.matchMedia('(max-width: 768px)');
+  // Read from the stylesheet, like storyIsSideways, so the script cannot
+  // disagree with src/styles/phone.css about which layout is showing.
+  const phoneLayoutShown = (): boolean =>
+    getComputedStyle(document.documentElement).getPropertyValue('--layout').trim() === 'phone';
+  let phone = phoneLayoutShown();
 
   /** Opens or closes the story; closing it lands on `exploring`. */
-  function setStoryOpen(open: boolean, exploring = exploreFrame(phoneLayout.matches)): void {
+  function setStoryOpen(open: boolean, exploring = exploreFrame(phone)): void {
     if (!open && frame.mode === 'story') heldStop = storyStopIndex();
     const previous = frame;
     if (open) frame = STORY;
@@ -584,7 +589,7 @@ async function main(): Promise<void> {
   // open; the map, the legend and the verse popup make room for it. Full
   // height grows over the map instead.
   function measureSheet(): void {
-    if (!phoneLayout.matches || frame.full) return;
+    if (!phone || frame.full) return;
     document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
   }
   new ResizeObserver(measureSheet).observe(panel);
@@ -610,7 +615,7 @@ async function main(): Promise<void> {
 
   /** Every control that changes the panel comes through here. */
   function dispatch(event: FrameEvent): void {
-    const next = nextFrame(frame, event, phoneLayout.matches);
+    const next = nextFrame(frame, event, phone);
     if (frame.mode === 'explore' && next.mode === 'story') {
       readerOpensStory();
       return;
@@ -1256,9 +1261,7 @@ async function main(): Promise<void> {
    * popup that sits above the sheet.
    */
   function mapFocus(): ScreenPoint {
-    const height = phoneLayout.matches
-      ? canvas.clientHeight * PHONE_STORY_FOCUS
-      : canvas.clientHeight / 2;
+    const height = phone ? canvas.clientHeight * PHONE_STORY_FOCUS : canvas.clientHeight / 2;
     return { x: canvas.clientWidth / 2, y: height };
   }
 
@@ -1288,9 +1291,11 @@ async function main(): Promise<void> {
   // row, or back, and moves where it centres verses; keep the reader's stop.
   // By the time this runs the story is laid out on its new axis, so its scroll
   // no longer says which stop it was at; the last stop synced does.
-  phoneLayout.addEventListener('change', () => {
-    if (!phoneLayout.matches) document.documentElement.style.removeProperty('--sheet-shown');
-    setFrame(nextFrame(frame, { type: 'layout-changed' }, phoneLayout.matches));
+  window.addEventListener('resize', () => {
+    if (phoneLayoutShown() === phone) return;
+    phone = !phone;
+    if (!phone) document.documentElement.style.removeProperty('--sheet-shown');
+    setFrame(nextFrame(frame, { type: 'layout-changed' }, phone));
     resolvedStops = resolveStory();
     if (heldStop === null) {
       showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
@@ -1709,7 +1714,7 @@ async function main(): Promise<void> {
       // Any other link change (Back/Forward while already exploring) must
       // leave frontTool at whatever the reader last chose from the legend.
       if (frame.mode === 'story') frontTool = open;
-      setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
+      setStoryOpen(false, exploreFrame(phone, open));
     }
 
     activateOverlay(next.overlay);

@@ -2,7 +2,7 @@
   --panel-width: 380px;
   /* Where the map starts across the window. The canvas, the book labels and the title all sit here. */
   --map-left: var(--panel-width);
-  /* How much of the phone's bottom sheet is on screen, set by frame.css and main.ts. */
+  /* How much of the phone's bottom sheet is on screen, set by phone.css and main.ts. */
   --sheet-shown: 0px;
 }
 
@@ -67,13 +67,6 @@ body.english-only .section-label-he {
 /* A narrow book keeps only its Hebrew name, unless the Hebrew is hidden. */
 body:not(.english-only) .book-label.narrow .book-label-en {
   display: none;
-}
-
-/* On a phone the panel is a sheet below the map, which starts at the left edge. */
-@media (max-width: 768px) {
-  :root {
-    --map-left: 0px;
-  }
 }
 
 /* Shown instead of the map in a browser without WebGL 2. */

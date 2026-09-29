@@ -61,8 +61,11 @@ test("the haftarah legend's key shows only in the desktop layout", async ({ page
   const state = STATES.find((s) => s.name === 'explore-haftarah')!;
   await openMap(page, state.link);
   await state.then?.(page);
-  // The phone layout starts at max-width 768px (src/styles/frame.css).
-  const desktop = page.viewportSize()!.width > 768;
+  // Which layout the page is in, as src/styles/phone.css decides it.
+  const desktop = await page.evaluate(
+    () =>
+      getComputedStyle(document.documentElement).getPropertyValue('--layout').trim() !== 'phone',
+  );
   await expect(page.locator('.haftarah-key')).toBeVisible({ visible: desktop });
 });
 

@@ -36,10 +36,3 @@
 #zoom-controls button:last-child {
   border-radius: 0 0 4px 4px;
 }
-
-/* Pinch zooms on a phone, and there the buttons would sit on the panel sheet. */
-@media (max-width: 768px) {
-  #zoom-controls {
-    display: none;
-  }
-}
