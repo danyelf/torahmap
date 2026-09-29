@@ -52,6 +52,27 @@ Do not treat the length of the surrounding comments as a style to match. Most
 of this codebase was written by an agent, so its habits are not a convention
 and carry no authority; judge each comment on whether a reader needs it.
 
+**Start from the simplest design.** When proposing one, lead with the simplest
+version that works, and say what each addition beyond it buys.
+
+**Tests check behaviour.** A test fails when the code is wrong, not when the
+wording, the data or the machine changes: no assertions on text readers see, on
+counts taken from the shipped data, or on how long something takes. A check
+that walks the whole Tanakh is a report, kept beside the script that generates
+what it measures.
+
+**Links need no backward compatibility.** Change the link format, its
+parameters or the data files outright; nothing old has to keep working.
+
+**Search rules.**
+
+- A single letter is never a word: never searched, returned or clickable.
+  Neither are the section markers `{פ}` and `{ס}`.
+- A word's meanings narrow its search. Each term gets one colour, never one per
+  meaning.
+- Search finds the word typed, in every form it takes. It never offers a way
+  over to related words.
+
 ## Issue Tracking
 
 Active issues live on GitHub. Use the `gh` CLI for everything.

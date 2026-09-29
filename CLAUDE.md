@@ -14,28 +14,19 @@ The core design principle is **position stability** - each verse occupies a perm
 
 ## Features
 
-- **23,000+ verses** rendered as colored squares using WebGL (Torah → Nevi'im → Ketuvim)
-- **Smooth zoom/pan** with mouse wheel and drag
-- **Verse details** on hover/click with Hebrew text, English translation, and Sefaria link
-- **Full-text search** with Hebrew/English support, nikkud-insensitive;
-  meanings mode resolves a written form to the dictionary words it can be, so
-  every inflected form is found and words that merely share a spelling stay
-  apart. How a word is matched — substring, whole word, or meanings — belongs
-  to that word, so one term can be searched by meaning while another is pinned
-  to an exact spelling.
-- **Pluggable overlays**, in the order the menu offers them: Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length. Each overlay carries its own one-sentence description, shown under the overlay picker.
-  Text Dating is written and tested but off the menu on purpose: it is meant to
+What the map does is in [README.md](README.md). What an agent also needs:
+
+- How a search term is matched — substring, whole word, or meanings — belongs
+  to that term. Meanings mode resolves a written form to the dictionary words
+  it can be.
+- Text Dating is written and tested but off the menu on purpose: it is meant to
   come back as a mode of its own rather than a menu entry. Registering it again
   means moving its id, name and description into `OVERLAYS` in
   `packages/overlay-catalog`, then adding it to the table in
   `src/overlays/index.ts`; the typecheck points at whichever is missing.
-- **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.
-- **Guided stories**, a mode of their own. Scrolling one moves the map from stop
-  to stop; its ☰ menu leads to search, the overlays, the stories and About & settings,
-  and choosing one leaves the story where it is, to be continued later. The
-  stories are the Markdown files in `packages/stories/markdown/`, built into the page; each
-  one's header sets its title, description, `order` and `draft`. The dev
-  server hot-reloads them.
+- The stories are the Markdown files in `packages/stories/markdown/`, built
+  into the page; each one's header sets its title, description, `order` and
+  `draft`. The dev server hot-reloads them.
 
 ## Quick Start
 
@@ -177,15 +168,9 @@ hand. Every pull request also gets its own public `workers.dev` link, so a UI
 change can be looked at without checking the branch out —
 `scripts/prpreview.sh <pr>` serves one locally instead.
 
-The Worker owns two routes: `/api/event`, which writes one Analytics Engine
-data point per event, and the page at `/`, where, for a known chat app's
-preview fetcher, it writes the title and preview tags the shared link asks
-for and records which app asked (`src/worker/index.ts` and
-`src/worker/page.ts`, with the client half in `src/analytics.ts`). Anyone else
-gets the static page untouched: a browser sets its own title, and the page
-stays cacheable. Everything else is served as a static file first. No
-cookies and nothing in browser storage; the dev server sends nothing. What
-each column means is in `src/telemetry/schema.ts`, and
+What the Worker serves is in `src/worker/index.ts`; telemetry's client half is
+`src/analytics.ts`. No cookies and nothing in browser storage; the dev server
+sends nothing. What each column means is in `src/telemetry/schema.ts`, and
 `scripts/telemetry/report.sh` prints every saved query — it needs a
 Cloudflare account id and an API token. Cloudflare Access keeps chat apps'
 fetchers off PR preview links, so a preview is checked on torahmap.org after
@@ -227,26 +212,8 @@ files.
 
 ## Interactions
 
-The About panel's Controls list is the one readers see, and it is the one to keep
-in step with the code:
-
-- **Mouse wheel, or pinch** - Zoom (0.1x - 10x); the buttons in the corner do
-  the same
-- **Drag** - Pan
-- **Hover** - Preview verse details
-- **Click or tap a verse** - Pin it and show the sidebar; again to unpin, or
-  Escape
-- **Arrow keys** - Move from verse to verse
-- **Overlay selector** - Switch between visualization modes
-- **Search box** - Type to search Hebrew/English text with live results
-- **☰** - The menu: continue the story, share, search, overlays, stories,
-  About & settings; Escape closes it
-- **Legend** - Names what colours the map, on the map itself; tap a row to open
-  its tool
-- **Sheet** (phone) - The open panel; the grabber takes it to full height and
-  back, and a drag down folds it
-- **×, or Escape** (desktop) - Close the panel or fold the story, giving the
-  map the whole window; the ☰ opens a tool, or continues the story, again
+The controls are listed once, in the About panel (`src/aboutPanel.ts`); keep
+that list in step with the code.
 
 The URL carries the search, the overlay and its settings, the pinned verse, the
 camera and, while reading, the story and its stop (`@torahmap/link`, with the
