@@ -56,4 +56,7 @@ export const segmentLengthOverlay: Overlay<TalmudIdentity, void> = {
     if (length === undefined) return null;
     return lengthToColor(length, maxLength);
   },
+  colorsFor(items) {
+    return items.map((item) => this.getVerseColor(item));
+  },
 };

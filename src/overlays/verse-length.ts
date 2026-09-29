@@ -89,6 +89,10 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
     return getVerseColorForWordCount(verse);
   },
 
+  colorsFor(items) {
+    return items.map((item) => getVerseColorForWordCount(item));
+  },
+
   renderLegend(container: HTMLElement): void {
     const paletteName = 'Plasma';
     const lowColor = 'Purple';

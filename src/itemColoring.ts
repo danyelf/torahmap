@@ -73,17 +73,6 @@ export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<
 }
 
 /**
- * Get overlay-provided color for a spatial item, or null if overlay doesn't color it.
- */
-export function getOverlayColor<T, S>(
-  overlay: Overlay<T, S> | null,
-  item: T,
-  settings: S,
-): [number, number, number] | [number, number, number][] | null {
-  return overlay?.getVerseColor(item, settings) ?? null;
-}
-
-/**
  * Apply hover highlighting to a verse color: overlay-colored verses brighten,
  * background verses (no overlay color) are replaced with the highlight color.
  */
@@ -95,8 +84,7 @@ export function applyHoverHighlight(baseColor: VerseColor, hasOverlayColor: bool
 
 /**
  * A settled overlay's colours, one entry per item, as computeItemStates needs
- * them. Asks colorsFor where there is one, as the story's blend does, so the
- * two agree on a hovered verse.
+ * them.
  */
 export function overlayColorsFor<T, S>(
   overlay: Overlay<T, S> | null,
@@ -104,8 +92,7 @@ export function overlayColorsFor<T, S>(
   settings: S,
   hovered: SpatialItem<T> | null,
 ): (Color | Color[] | null)[] {
-  if (overlay?.colorsFor) return overlay.colorsFor(items, settings, hovered);
-  return items.map((v) => getOverlayColor(overlay, v, settings));
+  return overlay ? overlay.colorsFor(items, settings, hovered) : items.map(() => null);
 }
 
 /** The map's colours for the tools a view shows. `nonMatchDim` passes through to combineLayers. */

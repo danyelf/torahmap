@@ -6,9 +6,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from '../../sidebar';
-import { createVerse } from '../helpers/fixtures';
+import { createVerse, testOverlay } from '../helpers/fixtures';
 import type { VerseTexts } from '../../verseTexts';
-import type { Overlay } from '../../overlays/types';
 
 const texts: VerseTexts = {
   Genesis: { 1: { 2: { he: 'וְר֣וּחַ אֱלֹהִ֔ים מְרַחֶ֖פֶת', en: 'a wind from God sweeping' } } },
@@ -118,7 +117,7 @@ describe('words in the verse popup', () => {
     const handler = vi.fn();
     setWordClickHandler(handler);
 
-    const mockOverlay: Overlay = {
+    const mockOverlay = testOverlay({
       id: 'test-overlay',
       name: 'Test overlay',
       getVerseColor: () => null,
@@ -137,7 +136,7 @@ describe('words in the verse popup', () => {
         fragment.appendChild(document.createTextNode(text.slice(3)));
         return fragment;
       }),
-    };
+    });
 
     const elements = getSidebarElements();
     updateSidebar(

@@ -7,6 +7,7 @@ function claiming(key: string): Overlay {
     id: `claims-${key}`,
     name: 'Claims',
     getVerseColor: () => null,
+    colorsFor: (items) => items.map(() => null),
     urlParams: [{ key, kind: 'token' }],
     settingsFromUrl: (params) => params,
     settingsToUrl: () => ({}),

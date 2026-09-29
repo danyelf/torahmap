@@ -66,7 +66,7 @@ interface OverlayMembers<T, S> {
   // The same colours for many items at once, as the map and the story's blend
   // ask for them. `hovered` is the item under the cursor; only Haftarah's
   // colours depend on it.
-  colorsFor?(items: T[], settings: S, hovered: T | null): (Color | Color[] | null)[];
+  colorsFor(items: T[], settings: S, hovered: T | null): (Color | Color[] | null)[];
 
   // Draw the controls for `settings`. The app calls this again with the same
   // container after a change, so bring what is there up to date rather than

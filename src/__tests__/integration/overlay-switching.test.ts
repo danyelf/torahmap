@@ -14,6 +14,7 @@ import {
   SAMPLE_VERSES,
   SAMPLE_COMMENTARY_DATA,
   SAMPLE_VERSE_TEXTS,
+  testOverlay,
 } from '../helpers/fixtures';
 import { mockFetch, restoreAllMocks } from '../helpers/mocks';
 import { createOverlaySettings, type OverlaySettings } from '../../overlays/settings';
@@ -349,12 +350,12 @@ describe('Overlay Switching Integration', () => {
 
     it('handles overlay with no init method', async () => {
       // Divine names has init, but we test that missing init is ok
-      const overlayWithoutInit: Overlay = {
+      const overlayWithoutInit = testOverlay({
         id: 'test-overlay',
         name: 'Test Overlay',
         getVerseColor: () => [1, 0, 0],
         // No init method
-      };
+      });
 
       registerOverlay(overlayWithoutInit);
 
@@ -363,12 +364,12 @@ describe('Overlay Switching Integration', () => {
     });
 
     it('handles overlay with no destroy method', async () => {
-      const overlayWithoutDestroy: Overlay = {
+      const overlayWithoutDestroy = testOverlay({
         id: 'test-overlay-2',
         name: 'Test Overlay 2',
         getVerseColor: () => [0, 1, 0],
         // No destroy method
-      };
+      });
 
       registerOverlay(overlayWithoutDestroy);
 
