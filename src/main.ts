@@ -514,7 +514,7 @@ async function main(): Promise<void> {
   const droppedMenu = document.getElementById('menu')!;
   const shareStatus = document.getElementById('share-status')!;
   const storyProgress = document.getElementById('story-progress')!;
-  const storyProgressFill = document.getElementById('story-progress-fill')!;
+  const storyProgressTitle = document.getElementById('story-progress-title')!;
   const toolsTitle = document.getElementById('tools-title')!;
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
@@ -1279,6 +1279,8 @@ async function main(): Promise<void> {
   /** Puts `next` in the story column, with no stop yet applied to the map. */
   function loadStory(next: Story): void {
     story = next;
+    storyProgressTitle.textContent = story.data.title;
+    storyProgressTitle.dataset.title = story.data.title;
     resolvedStops = resolveStory();
     stopElements = renderStoryPanel(storyContent, story.data.stops);
     lastSyncedStopId = null;
@@ -1593,7 +1595,7 @@ async function main(): Promise<void> {
     syncStoryStopState(stop);
     lastSyncedStopId = stop.id;
     const { number } = stopAt(resolvedStops, resolvedStops.indexOf(stop));
-    storyProgressFill.style.width = `${(number / resolvedStops.length) * 100}%`;
+    storyProgress.style.setProperty('--progress', `${(number / resolvedStops.length) * 100}%`);
     storyProgress.setAttribute('aria-valuenow', String(number));
     storyProgress.setAttribute('aria-valuemax', String(resolvedStops.length));
     trackStoryStop(stop.id, number, resolvedStops.length);
