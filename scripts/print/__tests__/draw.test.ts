@@ -151,6 +151,27 @@ describe('draw', () => {
     expect(keyY).toBeGreaterThan(titleY + 200 * result.scale);
   });
 
+  it('sets a key larger by its scale, the English still regular', () => {
+    const big = input({ key: { ...input().key, scale: 2 } });
+    const svg = svgOf(draw(big));
+    const row = [...svg.querySelectorAll('.key text')].find((t) =>
+      t.textContent!.includes('Bereshit'),
+    )!;
+    const [he, en] = [...row.querySelectorAll('tspan')];
+    expect(Number(he.getAttribute('font-size'))).toBe(23);
+    expect(Number(en.getAttribute('font-size'))).toBe(20);
+    expect(en.getAttribute('font-weight') ?? '400').toBe('400');
+  });
+
+  it('sets the logo’s tagline in Inter semibold', () => {
+    const svg = svgOf(draw(input()));
+    const tagline = [...svg.querySelectorAll('.logo text')].find(
+      (t) => t.textContent === 'tagline',
+    )!;
+    expect(tagline.getAttribute('font-family')).toBe('Inter');
+    expect(tagline.getAttribute('font-weight')).toBe('600');
+  });
+
   it('takes the logo from the site’s artwork, without its shadow', () => {
     const svg = svgOf(draw(input()));
     expect(svg.querySelector('.logo')!.textContent).toContain('Torahmap');

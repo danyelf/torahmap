@@ -217,31 +217,38 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
             group.heading,
           );
         }
+        const k = key.scale ?? 1;
         for (const row of group.rows) {
-          y += 15;
-          el(g, 'rect', { x, y: y - 9, width: 9, height: 9, fill: row.swatch });
-          const t = el(g, 'text', { x: x + 14, y, fill: ink });
+          y += 15 * k;
+          el(g, 'rect', { x, y: y - 9 * k, width: 9 * k, height: 9 * k, fill: row.swatch });
+          const t = el(g, 'text', { x: x + 14 * k, y, fill: ink });
           el(
             t,
             'tspan',
-            { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 11.5 },
+            { 'font-family': HEBREW, 'font-weight': 700, 'font-size': 11.5 * k },
             rtl(row.he),
           );
-          el(t, 'tspan', { 'font-family': LATIN, 'font-size': 10, dx: 4, fill: inkSoft }, row.en);
+          el(
+            t,
+            'tspan',
+            { 'font-family': LATIN, 'font-size': 10 * k, dx: 4 * k, fill: inkSoft },
+            row.en,
+          );
           if (row.note) {
             el(
               t,
               'tspan',
-              { 'font-family': LATIN, 'font-size': 10, dx: 6, fill: inkSoft },
+              { 'font-family': LATIN, 'font-size': 10 * k, dx: 6 * k, fill: inkSoft },
               row.note,
             );
           }
           const used =
-            14 +
-            measure(row.he, HEBREW, 11.5, 700) +
-            4 +
-            measure(row.en, LATIN, 10, 400) +
-            (row.note ? 6 + measure(row.note, LATIN, 10, 400) : 0);
+            (14 +
+              measure(row.he, HEBREW, 11.5, 700) +
+              4 +
+              measure(row.en, LATIN, 10, 400) +
+              (row.note ? 6 + measure(row.note, LATIN, 10, 400) : 0)) *
+            k;
           if (used > column.width) overflows.push(row.en);
         }
       });
@@ -340,7 +347,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
     copy.setAttribute('fill', fills[i] ?? ink);
     if (text.getAttribute('font-family')?.startsWith('system-ui')) {
       copy.setAttribute('font-family', LATIN);
-      copy.setAttribute('font-weight', '400');
+      copy.setAttribute('font-weight', '600');
     }
   });
 

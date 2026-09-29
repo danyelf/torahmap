@@ -236,10 +236,12 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
     notes: [],
     columns: [
       {
-        width: 300,
+        width: 400,
         groups: [{ rows: NAMES.map((n, k) => ({ swatch: inks[k], he: n.he, en: n.en })) }],
       },
     ],
+    // Five names are the print's caption, not a table to look things up in.
+    scale: 2,
   };
   return {
     ...sheet(

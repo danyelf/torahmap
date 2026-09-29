@@ -109,7 +109,8 @@ the one agreed.
 - **The logo sits where the site puts it:** centred in the empty corner left
   of the Torah, 929 map units wide, its top 28 units above the Torah's first
   row. The artwork is `src/mapTitle.svg`, recoloured to the title inks, without
-  its drop shadow.
+  its drop shadow, its tagline in Inter semibold: regular Inter was the one
+  light line on the sheet, and looked it.
 - **Book titles** sit right-aligned over each book, the Hebrew in David Libre
   and the English beside it, both bold, in the same ink. The Hebrew is 1.15
   times the size of the English, as `HEBREW_LABEL_SCALE` sets it on the site.
@@ -117,8 +118,9 @@ the one agreed.
   shrinks.
 - **Section titles** (תורה Five Books, נביאים Prophets, כתובים Writings) are
   turned to read downward, just right of each section, as on the site.
-- **A hairline runs under the map, and the key sits beneath it,** aligned to
-  the map's left edge.
+- **On the haftarah print, a hairline runs under the map, and the key sits
+  beneath it,** aligned to the map's left edge. The search print's key needs
+  no band; see below.
 - **A credits line** sits in the bottom margin, at the right: torahmap.org and
   the data sources (Sefaria for the text; hebcal for the haftarah tables; the
   ETCBC BHSA for the search).
@@ -160,10 +162,13 @@ Every Hebrew size is 1.15 times the English beside it.
 
 ### The search key
 
-Not yet drawn. The plan is five rows, one per name: swatch, Hebrew, English,
-and the number of verses. A line says that each verse naming a person is
-marked, and that a verse naming two is split. It will be shown to Danyel before
-the files are final.
+The names alone: five rows of swatch, Hebrew and English, with no title, notes
+or counts, at twice the haftarah key's size (Hebrew 23, English 20 in regular
+weight). It sits with no rule in the empty ground under the lower-left corner
+of II Chronicles, the last book of the Writings. With no band to leave room
+for, the map is centred on the sheet.
+
+![The search print](images/2026-09-29-wall-print/search-sheet.png)
 
 ## Proof sheet
 

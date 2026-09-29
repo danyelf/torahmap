@@ -50,6 +50,8 @@ export interface Key {
   en: string;
   notes: string[];
   columns: KeyColumn[];
+  /** Multiplies the rows' type, swatches and spacing; 1 when absent. */
+  scale?: number;
 }
 
 export interface Palette {
