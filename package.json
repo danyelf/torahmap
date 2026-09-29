@@ -18,6 +18,7 @@
     "test:coverage": "vitest run --coverage",
     "test:layout": "playwright test -c layout",
     "video": "node video/render.ts",
+    "mix": "node video/mix.ts",
     "rehearse": "vite --open '/video/rehearse.html?script=sample'",
     "capture": "vite --open /video/rehearse.html",
     "format": "prettier --write .",

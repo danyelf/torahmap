@@ -157,7 +157,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `test-harness/` — the search-UI test harness (see Testing, below).
 - `layout/` — the layout tests (see Layout tests, above).
 - `video/` — scripted video of the map: `npm run rehearse` to time a script
-  against your narration, `npm run video -- <script.md>` to render it to MP4.
+  against your narration, `npm run video -- <script.md>` to render it to MP4,
+  `npm run mix` to lay a recorded voiceover under it.
   `npm run capture` turns views of the map into `story.md` stops or script
   scenes as you explore.
   See `docs/plans/2026-09-27-video-harness-design.md`.
