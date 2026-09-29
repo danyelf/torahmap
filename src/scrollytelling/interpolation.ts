@@ -1,7 +1,5 @@
-import type { EasingName } from '@torahmap/stories';
+import type { CameraPosition, EasingName } from '@torahmap/stories';
 import type { Color } from '../overlays/types.ts';
-
-type CameraState = { x: number; y: number; zoom: number };
 
 export const easingFunctions: Record<EasingName, (t: number) => number> = {
   linear: (t) => t,
@@ -10,7 +8,7 @@ export const easingFunctions: Record<EasingName, (t: number) => number> = {
   'ease-in-out': (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
 };
 
-export function lerpCamera(from: CameraState, to: CameraState, t: number): CameraState {
+export function lerpCamera(from: CameraPosition, to: CameraPosition, t: number): CameraPosition {
   return {
     x: from.x + (to.x - from.x) * t,
     y: from.y + (to.y - from.y) * t,

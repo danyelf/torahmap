@@ -139,7 +139,14 @@ import {
 } from './constants/app.ts';
 import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
-import { STORIES, listedStories, storyToOpen, type Story } from '@torahmap/stories';
+import {
+  STORIES,
+  DEFAULT_EASING,
+  listedStories,
+  storyToOpen,
+  writeStopComment,
+  type Story,
+} from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
@@ -400,7 +407,7 @@ async function main(): Promise<void> {
         // wrong (computeItemStates reads null there) until the next repaint.
         applyTools();
       } else {
-        setColorLayer({ from, to, t: easingFunctions['ease-in-out'](raw) });
+        setColorLayer({ from, to, t: easingFunctions[DEFAULT_EASING](raw) });
         frontFadeFrame = requestAnimationFrame(step);
       }
       render();
@@ -1240,27 +1247,15 @@ async function main(): Promise<void> {
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'C') {
         e.preventDefault();
-        const x = Math.round(camera.x * 100) / 100;
-        const y = Math.round(camera.y * 100) / 100;
-        const zoom = Math.round(camera.zoom * 100) / 100;
-
-        let extraParts = '';
         const { overlay } = toolsNow();
-        if (overlay) {
-          extraParts += ` | overlay: ${overlay.tool.id}`;
-          for (const [key, value] of Object.entries(overlaySettings.toUrl(overlay.tool))) {
-            extraParts += ` | ${key}: ${value}`;
-          }
-        }
-        for (const [key, value] of Object.entries(overlaySettings.toUrl(searchTool))) {
-          extraParts += ` | ${key}: ${value}`;
-        }
+        const params: Record<string, string> = {
+          ...(overlay && { overlay: overlay.tool.id, ...overlaySettings.toUrl(overlay.tool) }),
+          ...overlaySettings.toUrl(searchTool),
+        };
         if (pinnedVerse) {
-          const book = pinnedVerse.book.replace(/ /g, '.');
-          extraParts += ` | verse: ${book}.${pinnedVerse.chapter}.${pinnedVerse.verse}`;
+          params.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
         }
-
-        const comment = `<!-- stop: STOP_ID | camera: ${x},${y},${zoom}${extraParts} -->`;
+        const comment = writeStopComment('STOP_ID', camera, params);
         navigator.clipboard.writeText(comment);
         console.log(`[capture] Copied to clipboard:\n${comment}`);
       }
@@ -1302,10 +1297,15 @@ async function main(): Promise<void> {
   }
 
   let listed = listedStories(STORIES, __SHOW_DRAFTS__);
+  const storyNamed = (id: string | null): Story => {
+    const found = storyToOpen(listed, id);
+    if (!found) throw new Error('No story is listed');
+    return found;
+  };
   // Where each story other than the current one was left, this visit.
   const places = new Map<string, number>();
 
-  let story = storyToOpen(listed, parseUrlState().story ?? null);
+  let story = storyNamed(parseUrlState().story ?? null);
   configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
     resolveStops(story.data.stops, initialCamera, verses, mapFocus(), {
@@ -1359,7 +1359,7 @@ async function main(): Promise<void> {
 
   function reloadStory(): void {
     const position = storyPosition();
-    loadStory(storyToOpen(listed, story.id));
+    loadStory(storyNamed(story.id));
     setStoryPosition(position);
     scheduleStoryFrame();
   }
@@ -1425,7 +1425,7 @@ async function main(): Promise<void> {
   /** Opens a story from the Stories panel: where it was left this visit, or its start. */
   function readStory(id: string, fromStart: boolean): void {
     const left = leftAt(id) ?? 0;
-    switchStory(storyToOpen(listed, id));
+    switchStory(storyNamed(id));
     readerOpensStory(fromStart ? 0 : left);
   }
 
@@ -1663,7 +1663,7 @@ async function main(): Promise<void> {
     }
 
     if (driver.by === 'rejoining') {
-      const t = easingFunctions['ease-in-out'](rejoinProgress(driver, now));
+      const t = easingFunctions[DEFAULT_EASING](rejoinProgress(driver, now));
       Object.assign(camera, lerpCamera(driver.fromCamera, state.camera, t));
       setColorLayer({ from: driver.fromPicture, to: driver.toPicture, t });
       render();
@@ -1774,7 +1774,7 @@ async function main(): Promise<void> {
     render();
 
     if (next.mode === 'story') {
-      switchStory(storyToOpen(listed, next.story));
+      switchStory(storyNamed(next.story));
       const stop = resolvedStops.findIndex((s) => s.id === next.stop);
       openStory(Math.max(0, stop), 'cut', 'link');
     }

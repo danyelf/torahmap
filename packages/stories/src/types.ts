@@ -41,7 +41,11 @@ export interface StoryData {
   easing?: EasingName;
 }
 
-export type EasingName = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+export const EASINGS = ['linear', 'ease-in', 'ease-out', 'ease-in-out'] as const;
+export type EasingName = (typeof EASINGS)[number];
+
+/** How the camera moves between stops when neither the story nor the stop says. */
+export const DEFAULT_EASING: EasingName = 'ease-in-out';
 
 /** A story and the file name, without `.md`, that the URL calls it by. */
 export interface Story {

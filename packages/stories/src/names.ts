@@ -1,20 +1,19 @@
-// A stop's opening words, for a link's description.
+// A stop's opening words, for a link's description and a folded story's label.
 
-import { STORIES } from './stories.ts';
+import type { StoryStop } from './types.ts';
 
-/** The first sentence of a stop's text, as plain text. */
-export function stopOpening(storyId: string, stopId: string): string | undefined {
-  const stop = STORIES.find((s) => s.id === storyId)?.data.stops.find((s) => s.id === stopId);
-  if (!stop) return undefined;
+/** The first sentence of a stop's text, as plain text; undefined when it has no text. */
+export function firstSentence(stop: Pick<StoryStop, 'text'>): string | undefined {
   const text = plainText(stop.text);
   // A closing quote or bracket can sit between the terminal punctuation and
-  // the word break, as in the curly-quoted "Abraham." in tour.md.
+  // the word break: Abraham.”
   return text.match(/^.*?[.!?]["'”’)\]]*(?=\s|$)/s)?.[0] ?? (text || undefined);
 }
 
-/** Markdown emphasis and links reduced to their words, on one line. */
+/** Markdown emphasis, links and tags reduced to their words, on one line. */
 function plainText(markdown: string): string {
   return markdown
+    .replace(/<[^>]*>/g, '')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/(\*\*|__|\*|_)(.+?)\1/g, '$2')
     .replace(/\s+/g, ' ')

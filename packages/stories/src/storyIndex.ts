@@ -11,7 +11,10 @@ export function listedStories(stories: readonly Story[], showDrafts: boolean): S
     .sort((a, b) => rank(a) - rank(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
-/** The story a link names, or the first listed when it names none or one not listed. */
-export function storyToOpen(listed: Story[], id: string | null): Story {
+/**
+ * The story a link names, or the first listed when it names none or one not
+ * listed; undefined when none is listed.
+ */
+export function storyToOpen(listed: readonly Story[], id: string | null): Story | undefined {
   return listed.find((s) => s.id === id) ?? listed[0];
 }

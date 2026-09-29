@@ -1,4 +1,4 @@
-import type { EasingName } from '@torahmap/stories';
+import { DEFAULT_EASING, type EasingName } from '@torahmap/stories';
 import type { ResolvedStoryStop, InterpolatedState } from './types';
 import { lerpCamera, easingFunctions } from './interpolation';
 
@@ -6,9 +6,6 @@ import { lerpCamera, easingFunctions } from './interpolation';
 // REST_ZONE_FRACTION of each stop's height is the rest zone (centered).
 // Transitions happen in the scroll gap between rest zones.
 const REST_ZONE_FRACTION = 0.4;
-
-// How the camera moves between stops when neither the story nor the stop says.
-const DEFAULT_EASING: EasingName = 'ease-in-out';
 
 // The scrollTop at which each stop's visual center aligns with the viewport center.
 function computeStopScrollCenters(
@@ -28,23 +25,16 @@ export function computeInterpolatedState(
   totalHeight: number,
   scrollTop: number,
   defaultEasing: EasingName = DEFAULT_EASING,
-  stopHeights?: number[],
-  viewportHeight?: number,
+  stopHeights: number[],
+  viewportHeight: number,
 ): InterpolatedState {
-  const maxScroll = Math.max(0, totalHeight - (viewportHeight ?? 0));
+  const maxScroll = Math.max(0, totalHeight - viewportHeight);
   const clampedScroll = Math.max(0, Math.min(scrollTop, maxScroll));
 
-  const heights =
-    stopHeights ??
-    stopOffsets.map(
-      (offset, i) => (i + 1 < stopOffsets.length ? stopOffsets[i + 1] : totalHeight) - offset,
-    );
-  const vpHeight = viewportHeight ?? heights[0] ?? 500;
-
-  const scrollCenters = computeStopScrollCenters(stopOffsets, heights, vpHeight);
+  const scrollCenters = computeStopScrollCenters(stopOffsets, stopHeights, viewportHeight);
 
   const restZones: [number, number][] = scrollCenters.map((center, i) => {
-    const halfZone = (heights[i] * REST_ZONE_FRACTION) / 2;
+    const halfZone = (stopHeights[i] * REST_ZONE_FRACTION) / 2;
     return [Math.max(0, center - halfZone), Math.min(maxScroll, center + halfZone)];
   });
 
@@ -76,8 +66,7 @@ export function computeInterpolatedState(
           ? (clampedScroll - transitionStart) / (transitionEnd - transitionStart)
           : 1;
 
-      const easingName = stops[i].easing ?? defaultEasing;
-      const easeFn = easingFunctions[easingName] ?? easingFunctions[DEFAULT_EASING];
+      const easeFn = easingFunctions[stops[i].easing ?? defaultEasing];
       const t = easeFn(Math.max(0, Math.min(1, rawT)));
 
       return {

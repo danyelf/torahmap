@@ -185,13 +185,19 @@ export function writeLink(state: UrlState): string {
   return query ? `?${query}` : '';
 }
 
-/**
- * Convert verse reference to URL format
- * "I Samuel" 1:5 -> "I.Samuel.1.5"
- */
+/** A book's name as a link writes it: "I Samuel" -> "I.Samuel". */
+export function bookToUrl(book: string): string {
+  return book.replace(/ /g, '.');
+}
+
+/** A book's name as a link wrote it: "I.Samuel" -> "I Samuel". */
+export function bookFromUrl(urlBook: string): string {
+  return urlBook.replace(/\./g, ' ');
+}
+
+/** "I Samuel" 1:5 -> "I.Samuel.1.5" */
 export function verseToUrlFormat(book: string, chapter: number, verse: number): string {
-  const urlBook = book.replace(/ /g, '.');
-  return `${urlBook}.${chapter}.${verse}`;
+  return `${bookToUrl(book)}.${chapter}.${verse}`;
 }
 
 /** A verse as readers write it: "I Samuel 1:5". */
@@ -213,7 +219,7 @@ export function parseVerseFromUrl(
 
   const verseStr_ = parts.pop()!;
   const chapterStr = parts.pop()!;
-  const book = parts.join(' ');
+  const book = bookFromUrl(parts.join('.'));
 
   const verse = parseInt(verseStr_, 10);
   const chapter = parseInt(chapterStr, 10);
