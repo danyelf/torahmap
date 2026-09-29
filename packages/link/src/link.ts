@@ -57,6 +57,12 @@ export function linkNamesAView(state: UrlState): boolean {
   );
 }
 
+/** What kind of link this is: a story stop, a plain view, or nothing named at all. */
+export function linkKind(state: UrlState): 'nothing' | 'view' | 'stop' {
+  if (state.story !== undefined) return 'stop';
+  return linkNamesAView(state) ? 'view' : 'nothing';
+}
+
 /**
  * The view a link's query string names. Accepts "?a=b", "a=b" or URLSearchParams.
  *

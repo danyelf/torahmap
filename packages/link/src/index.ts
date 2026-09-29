@@ -12,6 +12,7 @@ export {
   MIN_ZOOM,
   MAX_ZOOM,
   linkNamesAView,
+  linkKind,
   readLink,
   writeLink,
   verseToUrlFormat,

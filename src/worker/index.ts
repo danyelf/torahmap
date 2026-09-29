@@ -2,11 +2,17 @@
 // data point, and the page at /, which it names for the link that was asked
 // for; every other path is served as a static file.
 
-import { MAX_BODY_BYTES, toDataPoint, type DataPoint } from '../telemetry/schema.ts';
-import { readLink, describeLink } from '@torahmap/link';
+import {
+  MAX_BODY_BYTES,
+  toDataPoint,
+  workerDataPoint,
+  type DataPoint,
+} from '../telemetry/schema.ts';
+import { readLink, describeLink, linkKind } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { LINK_NAMES } from '../linkNames.ts';
 import { rewritePage } from './page.ts';
+import { previewFetcher } from './fetchers.ts';
 
 interface EventsDataset {
   writeDataPoint(point: DataPoint): void;
@@ -15,6 +21,18 @@ interface EventsDataset {
 export interface Env {
   TORAHMAP_EVENTS: EventsDataset;
   ASSETS: { fetch(request: Request): Promise<Response> };
+}
+
+// Cloudflare attaches `cf` to incoming requests; the DOM Request type has no such field.
+function requestContext(
+  request: Request,
+  url: URL,
+): { country: string; device: string; host: string } {
+  const country = (request as unknown as { cf?: { country?: string } }).cf?.country ?? '';
+  const device = /Mobi|Android/i.test(request.headers.get('User-Agent') ?? '')
+    ? 'mobile'
+    : 'desktop';
+  return { country, device, host: url.hostname };
 }
 
 async function handleEvent(request: Request, env: Env): Promise<Response> {
@@ -40,20 +58,34 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
     return new Response(null, { status: 400 });
   }
 
-  // Cloudflare attaches `cf` to incoming requests; the DOM Request type has no such field.
-  const country = (request as unknown as { cf?: { country?: string } }).cf?.country ?? '';
-  const device = /Mobi|Android/i.test(request.headers.get('User-Agent') ?? '')
-    ? 'mobile'
-    : 'desktop';
-  const point = toDataPoint(payload, { country, device, host: url.hostname });
+  const point = toDataPoint(payload, requestContext(request, url));
   if (!point) return new Response(null, { status: 400 });
 
   env.TORAHMAP_EVENTS.writeDataPoint(point);
   return new Response(null, { status: 204 });
 }
 
+/** Writes the link_preview event, if a chat app's fetcher asked for this page. Never throws. */
+function recordPreviewFetch(request: Request, url: URL, env: Env): void {
+  const fetcher = previewFetcher(request.headers.get('User-Agent') ?? '');
+  if (!fetcher) return;
+  try {
+    const what = linkKind(readLink(url.search, overlayParamSpecs));
+    const point = workerDataPoint('link_preview', { fetcher, what }, requestContext(request, url));
+    env.TORAHMAP_EVENTS.writeDataPoint(point);
+  } catch (error) {
+    console.error('recordPreviewFetch: failed to record the preview fetch', error);
+  }
+}
+
 async function linkPage(request: Request, env: Env): Promise<Response> {
   const response = await env.ASSETS.fetch(request);
+  const url = new URL(request.url);
+
+  // Recorded whatever the static files answered — a chat app's fetcher asked
+  // for the page whether or not it turned out to be one.
+  recordPreviewFetch(request, url, env);
+
   const contentType = response.headers.get('Content-Type') ?? '';
   if (response.status !== 200 || !contentType.startsWith('text/html')) return response;
 
@@ -61,7 +93,6 @@ async function linkPage(request: Request, env: Env): Promise<Response> {
   // A broken link (a malformed query string, an index.html the rewrite can no
   // longer match) should serve the page as fetched, not fail outright.
   try {
-    const url = new URL(request.url);
     const { title, description } = describeLink(
       readLink(url.search, overlayParamSpecs),
       LINK_NAMES,

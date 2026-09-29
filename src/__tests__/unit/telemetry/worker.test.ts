@@ -200,3 +200,67 @@ describe('the page at /', () => {
     consoleError.mockRestore();
   });
 });
+
+describe('link_preview', () => {
+  const slack = { 'User-Agent': 'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)' };
+
+  it('records a chat app fetching a view', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'view'],
+      doubles: [],
+    });
+  });
+
+  it('records "nothing" for the bare page', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/', slack), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'nothing'],
+      doubles: [],
+    });
+  });
+
+  it('records "stop" for a story link', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/?story=tour&stop=intro', slack), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'stop'],
+      doubles: [],
+    });
+  });
+
+  it('writes nothing for an ordinary browser', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1'), e);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).not.toHaveBeenCalled();
+  });
+
+  it('records the fetch whatever the static files answered', async () => {
+    const e = env();
+    e.ASSETS.fetch = vi.fn(async () => new Response(null, { status: 404 }));
+    const response = await worker.fetch(page('https://torahmap.org/', slack), e);
+    expect(response.status).toBe(404);
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', '', 'desktop', 'torahmap.org', 'slack', 'nothing'],
+      doubles: [],
+    });
+  });
+
+  it('serves the page even if recording throws', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const e = envWithIndex();
+    e.TORAHMAP_EVENTS.writeDataPoint = vi.fn(() => {
+      throw new Error('boom');
+    });
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
+    expect(response.status).toBe(200);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+});

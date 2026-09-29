@@ -21,9 +21,13 @@ export const EVENTS = {
   word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
+  link_preview: { blobs: ['fetcher', 'what'], doubles: [] },
 } as const satisfies Record<string, { blobs: readonly string[]; doubles: readonly string[] }>;
 
 export type EventName = keyof typeof EVENTS;
+
+/** Events only the Worker writes; toDataPoint refuses them from the page. */
+export const WORKER_EVENTS: ReadonlySet<EventName> = new Set(['link_preview']);
 
 /** An event's columns in order: its strings from blob1, its numbers from double1. */
 export function columns(event: EventName): { blobs: string[]; doubles: string[] } {
@@ -71,6 +75,7 @@ export function toDataPoint(
   if (typeof payload !== 'object' || payload === null) return null;
   const { event, visit, mode, fields } = payload as { [K in keyof EventPayload]?: unknown };
   if (!isEventName(event)) return null;
+  if (WORKER_EVENTS.has(event)) return null;
   if (typeof visit !== 'string' || visit.length === 0 || visit.length > 64) return null;
   if (!isMode(mode)) return null;
   const given: Record<string, unknown> =
@@ -91,5 +96,27 @@ export function toDataPoint(
     indexes: [visit],
     blobs: blobs.map((name, i) => (i < COMMON_COLUMNS.length ? common[name] : blob(name))),
     doubles: doubles.map(double),
+  };
+}
+
+/**
+ * A data point for an event the Worker observes on its own, with no page
+ * visit to index by — the event name serves as the index instead. There is
+ * no mode, since nothing is driving a story.
+ */
+export function workerDataPoint<E extends EventName>(
+  event: E,
+  fields: EventFields<E>,
+  context: Record<Exclude<CommonColumn, 'event' | 'mode'>, string>,
+): DataPoint {
+  const common: Record<string, string> = { event, mode: '', ...context };
+  const values = fields as Record<string, string | number>;
+  const { blobs, doubles } = columns(event);
+  return {
+    indexes: [event],
+    blobs: blobs.map((name, i) =>
+      i < COMMON_COLUMNS.length ? common[name] : String(values[name]),
+    ),
+    doubles: doubles.map((name) => values[name] as number),
   };
 }

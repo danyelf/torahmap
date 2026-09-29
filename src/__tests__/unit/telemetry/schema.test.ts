@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DRIVER_KINDS } from '../../../scrollytelling/driver.ts';
-import { toDataPoint } from '../../../telemetry/schema.ts';
+import { toDataPoint, workerDataPoint } from '../../../telemetry/schema.ts';
 
 const context = { country: 'IL', device: 'mobile', host: 'torahmap.org' };
 
@@ -51,6 +51,12 @@ describe('toDataPoint', () => {
     expect(point?.doubles).toEqual([0]);
   });
 
+  it('refuses a Worker-only event from the page', () => {
+    expect(
+      toDataPoint({ event: 'link_preview', visit: 'v', mode: 'story', fields: {} }, context),
+    ).toBeNull();
+  });
+
   it('rejects an unknown event, a bad mode and a missing visit id', () => {
     expect(
       toDataPoint({ event: 'nope', visit: 'v', mode: 'story', fields: {} }, context),
@@ -82,5 +88,16 @@ describe('toDataPoint', () => {
     expect(point?.blobs[5]).toHaveLength(100);
     expect(point?.blobs[6]).toBe('');
     expect(point?.doubles).toEqual([0]);
+  });
+});
+
+describe('workerDataPoint', () => {
+  it('indexes by the event name, with an empty mode', () => {
+    const point = workerDataPoint('link_preview', { fetcher: 'slack', what: 'view' }, context);
+    expect(point).toEqual({
+      indexes: ['link_preview'],
+      blobs: ['link_preview', '', 'IL', 'mobile', 'torahmap.org', 'slack', 'view'],
+      doubles: [],
+    });
   });
 });
