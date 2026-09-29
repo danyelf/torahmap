@@ -5,10 +5,10 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
-  worldToScreen,
   CAMERA_GLIDE_MS,
   type Camera,
 } from '../../camera';
+import { worldToScreen } from '../helpers/worldToScreen';
 import { MAX_ZOOM } from '@torahmap/link';
 
 const VERSE = { x: 400, y: 300, size: 6 };

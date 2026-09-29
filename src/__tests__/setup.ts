@@ -2,7 +2,7 @@
 // Serve data files from disk instead of over the network.
 //
 // The app fetches its data with a relative URL (`fetchData` in
-// src/constants/app.ts asks for `/data/<file>`). happy-dom resolves relative
+// src/constants.ts asks for `/data/<file>`). happy-dom resolves relative
 // URLs against the test environment's base, http://localhost:3000, so every
 // test that initialises a data-loading overlay was making a real HTTP request
 // to a dev server that is not running. Each one failed with ECONNREFUSED, the

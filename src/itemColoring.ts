@@ -1,7 +1,7 @@
 // Color computation and hover highlighting for spatial items
 
-import type { SpatialItem, ItemState } from './types';
-import type { Overlay, Color, ToolOnMap, Tools } from './overlays/types';
+import type { Color, SpatialItem, ItemState, VerseColor } from './types';
+import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
@@ -10,15 +10,12 @@ import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constan
  * Default gray for a verse with no overlay color, brightness-varied by a
  * seeded random to reduce moiré.
  */
-export function getDefaultColor(verseIndex: number): [number, number, number] {
+export function getDefaultColor(verseIndex: number): Color {
   const brightness =
     HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
     seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
   return [brightness, brightness, brightness];
 }
-
-/** A verse's colour, or its stripes. */
-export type VerseColor = Color | Color[];
 
 function dim(color: VerseColor, factor: number): VerseColor {
   const one = (c: Color): Color => [c[0] * factor, c[1] * factor, c[2] * factor];
@@ -78,7 +75,7 @@ export function getOverlayColor<T, S>(
   overlay: Overlay<T, S> | null,
   item: T,
   settings: S,
-): [number, number, number] | [number, number, number][] | null {
+): VerseColor | null {
   return overlay?.getVerseColor(item, settings) ?? null;
 }
 
@@ -123,7 +120,7 @@ export function overlayColorsFor<T, S>(
   items: SpatialItem<T>[],
   settings: S,
   hovered: SpatialItem<T> | null,
-): (Color | Color[] | null)[] {
+): (VerseColor | null)[] {
   if (overlay?.colorsFor) return overlay.colorsFor(items, settings, hovered);
   return items.map((v) => getOverlayColor(overlay, v, settings));
 }
@@ -174,7 +171,7 @@ export function layerToRecompute<T, S>(
  */
 export function computeItemStates<T>(
   items: SpatialItem<T>[],
-  overlayColors: (Color | Color[] | null)[],
+  overlayColors: (VerseColor | null)[],
   hoveredItem: SpatialItem<T> | null,
   pinnedItem: SpatialItem<T> | null,
   itemsEqual: (a: T | null, b: T | null) => boolean,
@@ -200,9 +197,7 @@ export function computeItemStates<T>(
  * Apply colors based on computed states: base color, then hover highlighting.
  * Returns an immutable color array parallel to item states.
  */
-export function applyItemColors(
-  verseStates: ItemState[],
-): ([number, number, number] | [number, number, number][])[] {
+export function applyItemColors(verseStates: ItemState[]): VerseColor[] {
   return verseStates.map((state) => {
     let finalColor = state.resolvedColor;
 

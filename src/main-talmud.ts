@@ -31,7 +31,7 @@ import {
 import { getTalmudSidebarElements, updateTalmudSidebar } from './talmud/sidebar.ts';
 import { parseTalmudUrlState, updateTalmudUrl } from './talmud/urlState.ts';
 import { debounce } from './utils/debounce.ts';
-import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from './constants/app.ts';
+import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from './constants.ts';
 
 function talmudSegmentsEqual(a: TalmudIdentity | null, b: TalmudIdentity | null): boolean {
   if (a === null && b === null) return true;

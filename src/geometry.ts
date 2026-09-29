@@ -1,12 +1,10 @@
 // Build the per-verse buffer from spatial items (identity-agnostic)
 
-import type { SpatialItem } from './types.ts';
+import type { Color, SpatialItem, VerseColor } from './types.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
-type Color = [number, number, number];
-
 // Helper to check if color is an array of colors (a verse split between them)
-function isColorArray(color: Color | Color[] | null | undefined): color is Color[] {
+function isColorArray(color: VerseColor | null | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
 
@@ -28,7 +26,7 @@ export const MULTICOLOR_GROWTH = 0.75;
  * has several colours. A verse's ring, where `rings` gives one, surrounds its
  * fill in colours of its own.
  */
-export interface Picture<C = Color | Color[]> {
+export interface Picture<C = VerseColor> {
   colors: C[];
   growth?: number[];
   rings?: (C | null)[];
@@ -81,7 +79,7 @@ const SLOTS = {
 } as const;
 
 /** A verse's stripes: at most four, and the base colour for none. */
-function stripesOf(color: Color | Color[] | null | undefined, baseColor: Color): Color[] {
+function stripesOf(color: VerseColor | null | undefined, baseColor: Color): Color[] {
   if (isColorArray(color)) return color.slice(0, 4);
   if (Array.isArray(color) && (color as unknown[]).length === 0) return [baseColor];
   return [(color as Color | null | undefined) || baseColor];

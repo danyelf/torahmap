@@ -2,7 +2,7 @@
 // Loads public/data/talmud/structure.json eagerly at startup and per-tractate
 // text files lazily with in-memory caching.
 
-import { fetchData } from '../constants/app.ts';
+import { fetchData } from '../constants.ts';
 
 export interface TalmudAmud {
   daf: number;

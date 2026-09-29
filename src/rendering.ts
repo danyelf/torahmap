@@ -18,7 +18,7 @@ import {
 import { buildOutlineGeometry } from './outline';
 import { updateLabelPositions } from './labels';
 import { updateMapTitlePosition } from './mapTitle';
-import type { SpatialItem, TanakhIdentity } from './types';
+import type { Color, SpatialItem, TanakhIdentity } from './types';
 import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
 
@@ -196,7 +196,7 @@ export function renderOutline<T>(
   context: RenderContext,
   state: RenderState<T>,
   verse: SpatialItem<T>,
-  color: [number, number, number],
+  color: Color,
   buffer: WebGLBuffer | null,
   camera: Camera,
   thickness?: number,

@@ -52,6 +52,7 @@ import {
   linkKind,
   verseRef,
   linkNamesAView,
+  DEFAULT_ZOOM,
   type UrlState,
 } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
@@ -110,7 +111,7 @@ import {
   render as renderFrame,
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
-import type { TanakhIdentity, TanakhLayout } from './types.ts';
+import type { TanakhIdentity, TanakhLayout, VerseColor } from './types.ts';
 import {
   registerAllOverlays,
   createOverlaySettings,
@@ -121,7 +122,6 @@ import {
   configureSearch,
   configureVerseLength,
   type Overlay,
-  type Color,
 } from './overlays/index.ts';
 import {
   searchTool,
@@ -134,10 +134,10 @@ import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
-  DEFAULT_ZOOM,
   URL_UPDATE_DEBOUNCE_MS,
-} from './constants/app.ts';
-import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
+  SEARCH_WITH_OVERLAY,
+  FRONT_FADE,
+} from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
 import { STORIES, listedStories, storyToOpen, type Story } from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
@@ -276,7 +276,7 @@ async function main(): Promise<void> {
   // story transition's blend. composite() paints the hover and pin on top of
   // it. A pin never recomputes it; a hover does only when the colours depend
   // on the hovered verse, which a blend's may.
-  let colorLayer: ColorLayer<Color | Color[] | null> = still({ colors: [] });
+  let colorLayer: ColorLayer<VerseColor | null> = still({ colors: [] });
   // What the verse buffer was last built from. A fade in progress changes only
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
@@ -304,7 +304,7 @@ async function main(): Promise<void> {
     if (inputs.every((input, i) => input === built[i])) return;
     built = inputs;
 
-    const shown = (picture: Picture<Color | Color[] | null>): Picture => ({
+    const shown = (picture: Picture<VerseColor | null>): Picture => ({
       colors: applyItemColors(
         computeItemStates(
           verses,
@@ -320,7 +320,7 @@ async function main(): Promise<void> {
     rebuildGeometry(renderContext.gl, renderState, shown(from), to && shown(to));
   }
 
-  function setColorLayer(next: ColorLayer<Color | Color[] | null>): void {
+  function setColorLayer(next: ColorLayer<VerseColor | null>): void {
     colorLayer = next;
     composite();
   }
@@ -1600,7 +1600,7 @@ async function main(): Promise<void> {
   }
 
   /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
-  function withDefaults(layer: ColorLayer<Color | Color[] | null>): ColorLayer {
+  function withDefaults(layer: ColorLayer<VerseColor | null>): ColorLayer {
     return {
       from: fillDefaultColors(layer.from),
       to: layer.to && fillDefaultColors(layer.to),
