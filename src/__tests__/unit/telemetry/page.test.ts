@@ -10,7 +10,7 @@
 // previewing as the home page.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { fillSiteTags } from '@torahmap/link';
+import { fillSiteTags } from '@torahmap/site';
 import { rewritePage } from '../../../worker/page.ts';
 
 const INDEX = fillSiteTags(

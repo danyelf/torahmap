@@ -1,13 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { describeLink, readLink, TAGLINE, type LinkNames } from '@torahmap/link';
+import { readLink } from '@torahmap/link';
+import { describeLink, TAGLINE } from '@torahmap/site';
 
-const names: LinkNames = {
-  overlayName: (id) => ({ commentary: 'Commentary' })[id],
-  storyTitle: (id) => ({ tour: 'The Guided Tour' })[id],
-  stopOpening: (s, stop) =>
-    s === 'tour' && stop === 'abraham_zoom' ? 'We can overlay the map with data.' : undefined,
-};
-const describeQuery = (q: string) => describeLink(readLink(q), names);
+const describeQuery = (q: string) => describeLink(readLink(q));
 
 describe('describeLink', () => {
   it('names a pinned verse, with the overlay in the description', () => {
@@ -54,6 +49,6 @@ describe('describeLink', () => {
       description: TAGLINE,
     });
     expect(describeQuery('?overlay=text-dating').description).toBe(TAGLINE);
-    expect(describeQuery('?story=tour&stop=gone').description).toBe(TAGLINE);
+    expect(describeQuery('?story=tour&stop=no-such-stop').description).toBe(TAGLINE);
   });
 });

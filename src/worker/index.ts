@@ -8,9 +8,9 @@ import {
   workerDataPoint,
   type DataPoint,
 } from '../telemetry/schema.ts';
-import { readLink, describeLink, linkKind } from '@torahmap/link';
+import { readLink, linkKind } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
-import { LINK_NAMES } from '../linkNames.ts';
+import { describeLink } from '@torahmap/site';
 import { rewritePage } from './page.ts';
 import { previewFetcher } from './fetchers.ts';
 
@@ -92,10 +92,7 @@ async function linkPage(request: Request, env: Env): Promise<Response> {
   // A broken link (a malformed query string, an index.html the rewrite can no
   // longer match) should serve the page as fetched, not fail outright.
   try {
-    const { title, description } = describeLink(
-      readLink(url.search, overlayParamSpecs),
-      LINK_NAMES,
-    );
+    const { title, description } = describeLink(readLink(url.search, overlayParamSpecs));
     const body = rewritePage(html, { title, description, url: request.url });
 
     const headers = new Headers(response.headers);

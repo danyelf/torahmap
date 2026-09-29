@@ -1,6 +1,6 @@
 // A story's and a stop's names, for a tab title and a chat preview.
 
-import { STORIES } from './stories';
+import { STORIES } from './stories.ts';
 
 export function storyTitle(id: string): string | undefined {
   return STORIES.find((s) => s.id === id)?.data.title || undefined;

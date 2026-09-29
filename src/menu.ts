@@ -1,5 +1,5 @@
 import { escapeHtml } from './utils/html.ts';
-import { SITE_NAME } from '@torahmap/link';
+import { SITE_NAME } from '@torahmap/site';
 
 /** Where the story is: its stop, counted from one, and how many it has. */
 export interface StoryPlace {

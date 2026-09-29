@@ -2,7 +2,7 @@ import { defineConfig, type Plugin } from 'vite';
 import { execSync } from 'child_process';
 import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
-import { fillSiteTags } from '@torahmap/link';
+import { fillSiteTags } from '@torahmap/site';
 
 // Get the current git branch name
 function getGitBranch(): string {
