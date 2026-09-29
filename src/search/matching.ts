@@ -2,7 +2,7 @@
 // highlighter that marks them.
 
 import { normalizeHebrewForSearch, splitIntoWords } from '../hebrew.ts';
-import type { TextLanguage } from '../types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '../types.ts';
 
 export interface TextRange {
   start: number;
@@ -18,7 +18,7 @@ export function escapeForRegex(term: string): string {
 
 /** The spelling text is compared under: folded for Hebrew, lowercased for English. */
 export function foldForMatching(text: string, language: TextLanguage): string {
-  return language === 'he' ? normalizeHebrewForSearch(text) : text.toLowerCase();
+  return language === HEBREW ? normalizeHebrewForSearch(text) : text.toLowerCase();
 }
 
 /**
@@ -43,7 +43,7 @@ export function matchRangesInFolded(
 
   // A whole word in English is bounded by punctuation as well as by space,
   // which is what \b says and what splitting on separators would miss.
-  if (mode === 'word' && language === 'en') {
+  if (mode === 'word' && language === ENGLISH) {
     const pattern = new RegExp(`\\b${escapeForRegex(needle)}\\b`, 'g');
     let match;
     while ((match = pattern.exec(haystack)) !== null) {

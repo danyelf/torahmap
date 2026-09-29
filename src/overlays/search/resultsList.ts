@@ -7,6 +7,7 @@ import { computeSnippetForMatch } from '../../search.ts';
 import { colorIndexAt, type SearchTerm } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { markRange } from './highlight.ts';
+import { HEBREW } from '../../types.ts';
 import { verseRef } from '@torahmap/link';
 
 /** Everything one pass of the list needs to know. */
@@ -54,7 +55,7 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
     result.matchingTerms.find((m) => m.termIndex === view.focus) ?? result.matchingTerms[0];
 
   const snippetDiv = document.createElement('div');
-  snippetDiv.className = `snippet ${result.language === 'he' ? 'rtl' : ''}`;
+  snippetDiv.className = `snippet ${result.language === HEBREW ? 'rtl' : ''}`;
 
   const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
     result,

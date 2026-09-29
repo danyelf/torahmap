@@ -6,7 +6,7 @@
 import '../styles/overlays/trop.css';
 import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts';
 import type { TanakhIdentity, TropIndex, TropIndexEntry, TextLanguage } from '../types.ts';
-import { tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
+import { HEBREW, tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import { buildTropIndex, getTropByFrequency, getRarityTier } from '../trop.ts';
@@ -277,7 +277,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   highlightVerseText(text: string, language: TextLanguage, settings): DocumentFragment {
     const fragment = document.createDocumentFragment();
     const entry = entryFor(shownMark(settings));
-    if (language !== 'he' || !entry) {
+    if (language !== HEBREW || !entry) {
       fragment.appendChild(document.createTextNode(text));
       return fragment;
     }

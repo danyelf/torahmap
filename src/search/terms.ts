@@ -10,7 +10,7 @@ import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
 import { isHebrew } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
-import type { TextLanguage } from '../types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '../types.ts';
 import type { MatchMode } from './matching.ts';
 
 /**
@@ -299,7 +299,7 @@ export interface TermQuery {
 export function termQuery(term: SearchTerm): TermQuery {
   return {
     text: term.text.trim(),
-    language: termIsHebrew(term) ? 'he' : 'en',
+    language: termIsHebrew(term) ? HEBREW : ENGLISH,
     mode: effectiveMode(term),
     // A word the dictionary does not know is matched by its text even in
     // meanings mode, so a lexeme index that failed to load does not leave

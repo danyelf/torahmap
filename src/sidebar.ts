@@ -1,7 +1,7 @@
 // Sidebar management for verse details display
 
 import type { TanakhLayout, TextLanguage } from './types.ts';
-import { tanakhKey } from './types.ts';
+import { ENGLISH, HEBREW, tanakhKey } from './types.ts';
 import type { Overlay, ToolOnMap } from './overlays/types.ts';
 import { getVerseText, type VerseTexts } from './verseTexts.ts';
 import { sefariaUrl } from './sefaria.ts';
@@ -178,14 +178,14 @@ export function updateSidebar(
 
     // Whatever the overlay produced, words are wrapped afterwards, so a click
     // finds a word whether or not anything is highlighting the text.
-    const fragment = marked(hebrewText, 'he') ?? textFragment(hebrewText);
+    const fragment = marked(hebrewText, HEBREW) ?? textFragment(hebrewText);
 
     hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
     attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
   }
   if (english) {
     const englishText = text?.en || 'Loading...';
-    const highlighted = marked(englishText, 'en');
+    const highlighted = marked(englishText, ENGLISH);
     if (highlighted) {
       english.replaceChildren(highlighted);
     } else {

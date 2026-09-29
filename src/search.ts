@@ -3,7 +3,7 @@
 
 import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
-import { tanakhKey } from './types.ts';
+import { HEBREW, tanakhKey } from './types.ts';
 
 import { fetchData } from './constants.ts';
 import {
@@ -463,7 +463,7 @@ export function versesForTerm(text: string, language: TextLanguage, mode: MatchM
   const needle = foldForMatching(text, language);
   const verses = new Set<string>();
   for (const entry of searchIndex) {
-    const haystack = language === 'he' ? entry.hebrewText : entry.englishText;
+    const haystack = language === HEBREW ? entry.hebrewText : entry.englishText;
     if (matchRangesInFolded(haystack, needle, { mode, language, limit: 1 }).length > 0) {
       verses.add(tanakhKey(entry.book, entry.chapter, entry.verse));
     }
@@ -500,7 +500,7 @@ export function resultsForVerseSets(
           verse: entry.verse,
           // The first term to claim a verse decides which text its snippet is
           // drawn from, so an English term shows English.
-          language: termLanguages?.[termIndex] ?? 'he',
+          language: termLanguages?.[termIndex] ?? HEBREW,
           matchingTerms: [],
         };
         resultMap.set(verseKey, result);

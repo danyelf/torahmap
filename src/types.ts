@@ -12,7 +12,9 @@ export type VerseColor = Color | Color[];
  * It decides how text is folded for matching and where a word ends, so it
  * travels with the text rather than being guessed from it.
  */
-export type TextLanguage = 'he' | 'en';
+export const HEBREW = 'he';
+export const ENGLISH = 'en';
+export type TextLanguage = typeof HEBREW | typeof ENGLISH;
 
 export interface Book {
   name: string;
