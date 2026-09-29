@@ -14,6 +14,8 @@ import {
 // this module owns it because packages cannot import from src/.
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 10.0;
+// The zoom the map opens at, which a link leaves out.
+export const DEFAULT_ZOOM = 1.0;
 
 const MAX_PAN_POSITION = 1000000;
 
@@ -158,7 +160,7 @@ export function writeLink(state: UrlState): string {
     params.set('verse', state.verse);
   }
 
-  if (state.zoom !== undefined && state.zoom !== 1.0) {
+  if (state.zoom !== undefined && state.zoom !== DEFAULT_ZOOM) {
     // Round to 2 decimal places
     params.set('zoom', state.zoom.toFixed(2).replace(/\.?0+$/, ''));
   }

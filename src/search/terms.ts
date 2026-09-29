@@ -8,7 +8,7 @@
 
 import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
 import { isHebrewQuery } from '../search.ts';
-import { TERM_SEPARATORS } from '../constants/app.ts';
+import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import type { TextLanguage } from '../types.ts';
 

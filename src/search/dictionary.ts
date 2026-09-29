@@ -20,7 +20,7 @@ import {
   searchByLexemes,
   type LexemeId,
 } from '../search.ts';
-import { fetchData } from '../constants/app.ts';
+import { fetchData } from '../constants.ts';
 import { mapStrippedToOriginal, splitIntoWords } from '../hebrew.ts';
 import { splitVerseText } from '../verseWords.ts';
 

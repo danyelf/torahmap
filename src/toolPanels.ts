@@ -1,8 +1,9 @@
+import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { CONTROL, panelHtml } from './panel.ts';
 
 /**
- * The picker, then whatever the chosen overlay draws. main.ts fills the picker
- * from the registry, after None: the registry is the only list of overlays.
+ * The picker, then whatever the chosen overlay draws. main.ts fills the picker,
+ * after None, with the overlays @torahmap/overlay-catalog offers.
  */
 export function overlayPanelHtml(): string {
   return panelHtml(
@@ -10,7 +11,7 @@ export function overlayPanelHtml(): string {
     `<div class="panel-picker">
       <label for="overlay-select">Overlay</label>
       <select id="overlay-select" class="${CONTROL.select}">
-        <option value="none">None</option>
+        <option value="${NO_OVERLAY}">None</option>
       </select>
       <p id="overlay-description"></p>
     </div>

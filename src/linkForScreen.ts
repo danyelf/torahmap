@@ -1,12 +1,13 @@
 import { linkKind, type UrlState } from '@torahmap/link';
 import type { DriverKind } from './scrollytelling/driver';
+import type { Frame } from './frame.ts';
 
 /**
  * The link for what is on screen: the story's stop while the story has the
  * map, and otherwise the reader's own view.
  */
 export function linkForScreen(screen: {
-  mode: 'story' | 'explore';
+  mode: Frame['mode'];
   driver: DriverKind;
   story: { id: string; stop: string };
   explore: () => UrlState; // built only when needed

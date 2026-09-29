@@ -1,21 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-
-// cleanText strips HTML tags and entities from Sefaria verse text.
-// Copied from scripts/bundle-texts.ts
-function cleanText(text: string): string {
-  return text
-    .replace(/<sup[^>]*>[\s\S]*?<\/sup>/g, '') // Remove footnote markers
-    .replace(/<i>([^<]*)<\/i>/g, '$1') // Flatten nested <i> tags (keep content)
-    .replace(/<i class="footnote">[\s\S]*?<\/i>/g, '') // Remove footnotes (now without nested tags)
-    .replace(/<br\s*\/?>/gi, ' ') // Convert <br> to space (for poetry)
-    .replace(/<[^>]+>/g, '') // Remove remaining HTML tags
-    .replace(/&nbsp;/g, ' ') // Replace &nbsp; with regular space
-    .replace(/&[a-z]+;/g, ' ') // Replace other HTML entities with space
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .trim();
-}
+import { cleanText } from '../../../scripts/bundle-texts';
 
 describe('cleanText', () => {
   describe('HTML entity handling', () => {

@@ -1,6 +1,31 @@
 // Global constants for the application
 
-import type { Color } from './overlays/types.ts';
+import type { Color } from './types.ts';
+
+/**
+ * Fetch a data file from public/data/.
+ * Uses Vite's BASE_URL so the app works when deployed to a subdirectory.
+ *
+ * Only Vite and vitest define import.meta.env, so a plain Node script importing
+ * this module gets undefined and falls back to the site root. The scripts under
+ * scripts/search/ run that way, serving public/ through their own fetch.
+ */
+export function fetchData(filename: string): Promise<Response> {
+  return fetch(`${import.meta.env?.BASE_URL ?? '/'}data/${filename}`);
+}
+
+/**
+ * Position jitter for verse squares: (seededRandom() - JITTER_CENTER) * JITTER_RANGE
+ * gives a ±1px offset that breaks up the regular grid and reduces moiré.
+ */
+export const JITTER_CENTER = 0.5;
+export const JITTER_RANGE = 2.0;
+
+export const ZOOM_OUT_FACTOR = 0.9; // 10% zoom out per wheel tick
+export const ZOOM_IN_FACTOR = 1.1; // 10% zoom in per wheel tick
+
+// Debounced so pan/zoom doesn't flood browser history with replaceState calls
+export const URL_UPDATE_DEBOUNCE_MS = 300;
 
 export const HIGHLIGHT_CONSTANTS = {
   // Fuzzy hit detection radius (world units / pixels at 1x zoom)
@@ -33,9 +58,6 @@ export const HIGHLIGHT_CONSTANTS = {
   // rings a 4-unit verse with three times its own area and reads as a blob.
   PINNED_OUTLINE_THICKNESS: 1,
 
-  // Dimming factor for non-highlighted verses
-  DIM_FACTOR: 0.3,
-
   // Brightness multiplier for an overlay-colored item on hover
   BRIGHTNESS_FACTOR: 1.5,
 
@@ -43,10 +65,8 @@ export const HIGHLIGHT_CONSTANTS = {
   RARE_NO_MATCH_COLOR: [0.25, 0.25, 0.25] as Color,
 } as const;
 
-const DIMMED = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
-
 /** The grey of a verse left out. */
-export const DIMMED_GREY: Color = [DIMMED, DIMMED, DIMMED];
+export const DIMMED_GREY: Color = [0.18, 0.18, 0.18];
 
 /** How a search shows over an overlay, judged by eye on the map. */
 export const SEARCH_WITH_OVERLAY = {

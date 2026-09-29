@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createBookLabels, createSectionLabels, updateLabelPositions } from '../../labels';
+import {
+  bookLabelSize,
+  createBookLabels,
+  createSectionLabels,
+  updateLabelPositions,
+} from '../../labels';
 import { createVerse, SAMPLE_VERSES } from '../helpers';
 import { HEBREW_LABEL_SCALE } from '../../constants/labels';
 
@@ -46,17 +51,8 @@ const HEBREW_NAMES: Record<string, string> = {
   'II Chronicles': 'דברי הימים ב',
 };
 
-// Match constants from labels.ts implementation
-const BASE_LABEL_GAP = 10;
-const BASE_FONT_SIZE = 13;
-const MIN_FONT_SIZE = 5;
-const MAX_FONT_SIZE = 50;
-
-// Helper function to calculate expected Y position matching the implementation
 function calculateExpectedY(topY: number, panY: number, zoom: number): number {
-  const fontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, BASE_FONT_SIZE * zoom));
-  const gap = BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE);
-  return (topY + panY) * zoom - fontSize - gap;
+  return (topY + panY) * zoom - bookLabelSize(zoom).rise;
 }
 
 describe('labels', () => {

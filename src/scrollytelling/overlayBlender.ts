@@ -7,6 +7,7 @@ import { getOverlay } from '../overlays/registry';
 import { getDefaultColor, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
+import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
 import { searchFromLink } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';
@@ -35,7 +36,7 @@ function paramsKey(values: UrlParamValues): string {
 function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
   const overlayKey = overlay
     ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
-    : 'none';
+    : NO_OVERLAY;
   const searchKey = paramsKey(validateOverlayParams(SEARCH_URL_PARAMS, stop.searchParams ?? {}));
   return `${overlayKey}#${searchKey}`;
 }

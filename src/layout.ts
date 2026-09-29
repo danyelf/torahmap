@@ -2,7 +2,7 @@
 
 import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from './types.ts';
 import { seededRandom } from './utils/random.ts';
-import { JITTER_CENTER, JITTER_RANGE } from './constants/app.ts';
+import { JITTER_CENTER, JITTER_RANGE } from './constants.ts';
 
 const VERSE_SIZE = 6; // pixels per verse square
 const CHAPTER_GAP = 2; // gap between chapter rows
@@ -13,10 +13,6 @@ const WRAP_THRESHOLD = 50; // wrap chapters longer than this
 const WRAP_INDENT = 12; // indent for wrapped lines (2 verse widths)
 const MIN_WRAP_VERSES = 3; // minimum verses on a wrapped line (avoid widows)
 const PSALMS_COLUMN_GAP = 15; // gap between Psalms columns
-
-// Re-export for tests
-export { seededRandom } from './utils/random.ts';
-export { getBookSection as getSection } from './constants/books.ts';
 
 // Calculate wrap points for a chapter, avoiding widow lines (< MIN_WRAP_VERSES)
 function calculateWrapPoints(verseCount: number): number[] {
@@ -99,24 +95,25 @@ function layoutChapter(
   };
 }
 
-// Layout a single book and return its dimensions
-function layoutBook(
+// Lay out chapters [from, to) of a book as one column and return its dimensions
+function layoutChapters(
   book: Book,
-  bookX: number,
-  bookY: number,
+  from: number,
+  to: number,
+  x: number,
+  y: number,
   globalVerseIdx: { value: number },
   verses: TanakhLayout[],
 ): { width: number; height: number } {
   let maxWidth = 0;
-  let currentY = bookY;
+  let currentY = y;
 
-  for (let chapterIdx = 0; chapterIdx < book.chapters.length; chapterIdx++) {
-    const verseCount = book.chapters[chapterIdx];
+  for (let chapterIdx = from; chapterIdx < to; chapterIdx++) {
     const { width, height } = layoutChapter(
       book.name,
       chapterIdx,
-      verseCount,
-      bookX,
+      book.chapters[chapterIdx],
+      x,
       currentY,
       globalVerseIdx,
       verses,
@@ -125,7 +122,17 @@ function layoutBook(
     currentY += height;
   }
 
-  return { width: maxWidth, height: currentY - bookY };
+  return { width: maxWidth, height: currentY - y };
+}
+
+function layoutBook(
+  book: Book,
+  bookX: number,
+  bookY: number,
+  globalVerseIdx: { value: number },
+  verses: TanakhLayout[],
+): { width: number; height: number } {
+  return layoutChapters(book, 0, book.chapters.length, bookX, bookY, globalVerseIdx, verses);
 }
 
 // Type for custom book layout functions (e.g., Psalms multi-column)
@@ -236,47 +243,14 @@ function layoutMultiColumn(
   splitAtChapter: number,
 ): { width: number; height: number } {
   const splitPoint = Math.min(splitAtChapter, book.chapters.length);
-
-  let colAY = bookY;
-  let colAWidth = 0;
-  for (let chapterIdx = 0; chapterIdx < splitPoint; chapterIdx++) {
-    const verseCount = book.chapters[chapterIdx];
-    const { width, height } = layoutChapter(
-      book.name,
-      chapterIdx,
-      verseCount,
-      bookX,
-      colAY,
-      globalVerseIdx,
-      verses,
-    );
-    colAWidth = Math.max(colAWidth, width);
-    colAY += height;
-  }
-  const colAHeight = colAY - bookY;
-
-  const colBX = bookX + colAWidth + PSALMS_COLUMN_GAP;
-  let colBY = bookY;
-  let colBWidth = 0;
-  for (let chapterIdx = splitPoint; chapterIdx < book.chapters.length; chapterIdx++) {
-    const verseCount = book.chapters[chapterIdx];
-    const { width, height } = layoutChapter(
-      book.name,
-      chapterIdx,
-      verseCount,
-      colBX,
-      colBY,
-      globalVerseIdx,
-      verses,
-    );
-    colBWidth = Math.max(colBWidth, width);
-    colBY += height;
-  }
-  const colBHeight = colBY - bookY;
+  const end = book.chapters.length;
+  const colA = layoutChapters(book, 0, splitPoint, bookX, bookY, globalVerseIdx, verses);
+  const colBX = bookX + colA.width + PSALMS_COLUMN_GAP;
+  const colB = layoutChapters(book, splitPoint, end, colBX, bookY, globalVerseIdx, verses);
 
   return {
-    width: colAWidth + PSALMS_COLUMN_GAP + colBWidth,
-    height: Math.max(colAHeight, colBHeight),
+    width: colA.width + PSALMS_COLUMN_GAP + colB.width,
+    height: Math.max(colA.height, colB.height),
   };
 }
 
@@ -422,13 +396,7 @@ export function computeLayout(torahData: TorahData): TanakhLayout[] {
  * but everything is horizontally flipped.
  */
 function mirrorX(verses: TanakhLayout[]): void {
-  if (verses.length === 0) return;
-
-  let maxX = 0;
-  for (const v of verses) {
-    maxX = Math.max(maxX, v.x + v.size);
-  }
-
+  const maxX = getLayoutBounds(verses).width;
   for (const v of verses) {
     v.x = maxX - v.x - v.size;
   }

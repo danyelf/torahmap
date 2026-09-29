@@ -5,13 +5,13 @@ import type { VerseTexts } from './verseTexts';
 import { getBookOrder } from './constants/books.ts';
 import { tanakhKey } from './types.ts';
 
+import { fetchData } from './constants.ts';
 import {
-  fetchData,
   MIN_SEARCH_TERM_LENGTH,
   TERM_SEPARATORS,
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
-} from './constants/app.ts';
+} from './search/constants.ts';
 import {
   countNikkudInRange,
   mapStrippedToOriginal,
