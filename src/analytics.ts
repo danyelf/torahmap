@@ -118,3 +118,7 @@ export function trackSefariaClick(
 ): void {
   track('sefaria_click', { book, chapter, verse, overlay });
 }
+
+export function trackWebGLMissing(): void {
+  track('webgl_missing', {});
+}

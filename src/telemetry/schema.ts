@@ -21,6 +21,7 @@ export const EVENTS = {
   word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
+  webgl_missing: { blobs: [], doubles: [] },
 } as const satisfies Record<string, { blobs: readonly string[]; doubles: readonly string[] }>;
 
 export type EventName = keyof typeof EVENTS;
