@@ -204,7 +204,7 @@ describe('restoring a link as one complete view', () => {
   });
 });
 
-describe('a story folded earlier in the session', () => {
+describe('a returning reader', () => {
   it('opens folded for a view or for no link', () => {
     expect(opensFolded(readLink('?verse=Genesis.1.1'), true)).toBe(true);
     expect(opensFolded(readLink(''), true)).toBe(true);

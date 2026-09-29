@@ -58,9 +58,9 @@ export function resolveViewState(
   };
 }
 
-/** A story folded earlier in the session opens folded, unless the link names a stop. */
-export function opensFolded(link: UrlState, storyWasFolded: boolean): boolean {
-  return storyWasFolded && linkKind(link) !== 'stop';
+/** A returning reader opens with the story folded, unless the link names a stop. */
+export function opensFolded(link: UrlState, hasVisited: boolean): boolean {
+  return hasVisited && linkKind(link) !== 'stop';
 }
 
 /**
