@@ -8,7 +8,12 @@ export default defineConfig({
     __LIVE__: 'false',
   },
   test: {
-    include: ['src/**/*.test.ts', 'packages/*/test/**/*.test.ts', 'video/**/*.test.ts'],
+    include: [
+      'src/**/*.test.ts',
+      'packages/*/test/**/*.test.ts',
+      'video/**/*.test.ts',
+      'scripts/print/**/*.test.ts',
+    ],
     environment: 'happy-dom',
     setupFiles: ['./src/__tests__/setup.ts'],
     pool: 'forks',

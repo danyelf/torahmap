@@ -23,7 +23,7 @@
     "capture": "vite --open /video/rehearse.html",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "node packages/stories/generate.mjs && tsc --project tsconfig.build.json --noEmit && tsc --project layout/tsconfig.json --noEmit && tsc --project video/tsconfig.json --noEmit",
+    "typecheck": "node packages/stories/generate.mjs && tsc --project tsconfig.build.json --noEmit && tsc --project layout/tsconfig.json --noEmit && tsc --project video/tsconfig.json --noEmit && tsc --project scripts/print/tsconfig.json --noEmit",
     "test:ci": "npm run typecheck && npm run test",
     "validate:haftarah": "npx tsx scripts/overlays/haftarah/generate.ts",
     "generate:text-dating": "npx tsx scripts/generate-text-dating.ts",
