@@ -111,6 +111,11 @@ describe('the haftarah readings the app ships', () => {
     }
   });
 
+  it('gives every reading its own name, which a story stop can light it by', () => {
+    const names = [...mappings.parshiot, ...mappings.specialOccasions].map((r) => r.name);
+    expect(names.filter((n, i) => names.indexOf(n) !== i)).toEqual([]);
+  });
+
   it('names the portions in Hebrew as Sefaria does, defective spellings and all', () => {
     const hebrew = new Map(mappings.parshiot.map((p) => [p.name, p.hebrewName]));
     expect(hebrew.get('Chukat')).toBe('חקת');

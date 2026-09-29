@@ -21,6 +21,49 @@ const dataDir = path.join(process.cwd(), 'public', 'data');
 
 registerAllOverlays();
 
+const haftarahReadings: ReadonlySet<string> = (() => {
+  const mappings = JSON.parse(
+    fs.readFileSync(path.join(dataDir, 'overlays', 'haftarah', 'mappings.json'), 'utf-8'),
+  );
+  return new Set(
+    [...mappings.parshiot, ...mappings.specialOccasions].map((r: { name: string }) => r.name),
+  );
+})();
+
+/**
+ * Stops whose haftarah reading, once read and written back the way the app
+ * does, is no reading's name. The app lights nothing for such a stop rather
+ * than failing.
+ */
+function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']): string[] {
+  const haftarah = getOverlay('haftarah')!;
+  return stops
+    .filter((s) => s.overlay === 'haftarah' && s.overlayParams?.reading)
+    .filter((s) => {
+      const { reading } = haftarah.settingsToUrl!(settingsFromLink(haftarah, s.overlayParams!));
+      return !reading || !haftarahReadings.has(reading);
+    })
+    .map((s) => `${s.id}: ${s.overlayParams!.reading}`);
+}
+
+describe('the haftarah reading check', () => {
+  const stopsNaming = (...readings: string[]) =>
+    parseStoryMarkdown(
+      '---\ntitle: T\ndescription: D\n---\n' +
+        readings
+          .map((r, i) => `<!-- stop: s${i} | overlay: haftarah | reading: ${r} -->\nText.\n`)
+          .join('\n'),
+    ).stops;
+
+  it('passes readings the data names, spaces and punctuation included', () => {
+    expect(unknownReadings(stopsNaming('Lech Lecha', "Tisha B'Av, Morning"))).toEqual([]);
+  });
+
+  it('flags a name no reading has', () => {
+    expect(unknownReadings(stopsNaming('Lech Lecha', 'Lekh Lekha'))).toEqual(['s1: Lekh Lekha']);
+  });
+});
+
 describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   const story = parseStoryMarkdown(markdown);
   const { stops } = story;
@@ -135,6 +178,10 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
       .filter((s) => !categories.has(s.overlayParams!.category))
       .map((s) => `${s.id}: ${s.overlayParams!.category}`);
     expect(unknown).toEqual([]);
+  });
+
+  it('names only haftarah readings the data has', () => {
+    expect(unknownReadings(stops)).toEqual([]);
   });
 
   it('searches, where a stop searches, for words long enough to search on', () => {

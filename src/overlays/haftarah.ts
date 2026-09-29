@@ -48,13 +48,15 @@ function darkTint(color: Color): Color {
 }
 
 /**
- * Which custom's readings to show, and the reading the pointer is over in the
- * key, by its place in the list of readings. Only the custom goes into a link.
- * The app holds this; the overlay keeps none.
+ * Which custom's readings to show; the reading the pointer is over in the key,
+ * by its place in the list of readings; and a reading a link or story stop
+ * lights, by name. The preview stays out of the link. The app holds this; the
+ * overlay keeps none.
  */
 export interface HaftarahSettings {
   readonly custom: Custom;
   readonly preview: number | null;
+  readonly reading: string | null;
 }
 
 function isRelevantVerse(verse: TanakhIdentity, derived: HaftarahDerivation): boolean {
@@ -90,19 +92,39 @@ function litByPreview(
   return lit;
 }
 
-const litByPreviewOf = memoBySettings((settings: HaftarahSettings): Set<HaftarahItem> | null => {
-  if (settings.preview === null) return null;
+function litByItem(
+  settings: HaftarahSettings,
+  find: (items: HaftarahItem[]) => HaftarahItem | undefined,
+): Set<HaftarahItem> | null {
   const derived = deriveHaftarah(settings.custom);
-  const item = derived.items[settings.preview];
+  const item = find(derived.items);
   return item ? litByPreview(derived, item, settings.custom) : null;
-});
+}
 
-/** A preview from the key wins over the map's hover; the pointer is on one or the other. */
+const litByPreviewOf = memoBySettings((settings: HaftarahSettings) =>
+  settings.preview === null ? null : litByItem(settings, (items) => items[settings.preview!]),
+);
+
+// No two readings share a name, so the first match is the only one.
+const litByReadingOf = memoBySettings((settings: HaftarahSettings) =>
+  settings.reading === null
+    ? null
+    : litByItem(settings, (items) => items.find((item) => item.name === settings.reading)),
+);
+
+/**
+ * What the pointer is on wins — a reading in the key, then a verse of a
+ * reading on the map — and otherwise the reading the settings name, if any.
+ */
 function litFor(
   settings: HaftarahSettings,
   hovered: TanakhIdentity | null,
 ): Set<HaftarahItem> | null {
-  return litByPreviewOf(settings) ?? litByHover(deriveHaftarah(settings.custom), hovered);
+  return (
+    litByPreviewOf(settings) ??
+    litByHover(deriveHaftarah(settings.custom), hovered) ??
+    litByReadingOf(settings)
+  );
 }
 
 /**
@@ -321,10 +343,13 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   },
 
   settingsFromUrl(params: UrlParamValues<typeof HAFTARAH.urlParams>): HaftarahSettings {
-    return { custom: params.custom, preview: null };
+    return { custom: params.custom, preview: null, reading: params.reading ?? null };
   },
 
   settingsToUrl(settings: HaftarahSettings): Record<string, string> {
-    return { custom: settings.custom };
+    return {
+      custom: settings.custom,
+      ...(settings.reading !== null && { reading: settings.reading }),
+    };
   },
 };
