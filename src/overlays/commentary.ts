@@ -5,6 +5,7 @@ import { scale, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, renderAxisWithZero } from './legend.ts';
 import { loadJson } from './loadJson.ts';
 import { CONTROL } from '../panel.ts';
+import { MAP_BACKGROUND } from '../constants.ts';
 import { COMMENTARY } from '@torahmap/overlay-catalog';
 
 const HEATMAP_STOPS: ColorStop[] = [
@@ -15,9 +16,9 @@ const HEATMAP_STOPS: ColorStop[] = [
   { t: 1.0, color: [1.0, 0.23, 0.18] },
 ];
 
-// The map is cleared to 0.1 grey. A verse no one has linked to sits one shade above it:
-// enough to show where the verse is, not enough to read as a count.
-const NEVER_LINKED: Color = [0.11, 0.11, 0.11];
+// A verse no one has linked to sits one shade above the background: a hint of
+// where the verse is, not a count.
+const NEVER_LINKED = MAP_BACKGROUND.map((c) => c + 0.01) as Color;
 
 /** How each category reads after "42 references in …". */
 const WHERE: Record<string, string> = {
@@ -57,9 +58,12 @@ let verses: TanakhLayout[] = [];
 // a category never changes once the data is loaded.
 let cachedMaxValues: Record<string, number> = {};
 
-/** Rebuilt per call: the maximum moves when the category changes. */
+/**
+ * Rebuilt per call: the maximum moves when the category changes. Starts at 1:
+ * zero is drawn apart, as `NEVER_LINKED`.
+ */
 function linkScale(category: string): Scale {
-  return scale(0, getMaxValue(category), LOG, HEATMAP_STOPS);
+  return scale(1, getMaxValue(category), LOG, HEATMAP_STOPS);
 }
 
 function getCount(book: string, chapter: number, verse: number, category: string): number {

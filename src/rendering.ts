@@ -18,7 +18,7 @@ import {
 import { buildOutlineGeometry } from './outline';
 import type { Color, SpatialItem, TanakhIdentity } from './types';
 import { viewOffset, type Camera } from './camera';
-import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
+import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, SEARCH_WITH_OVERLAY } from './constants';
 
 function offsetFor(
   canvas: HTMLCanvasElement,
@@ -134,7 +134,7 @@ export function render<T>(
   const { vertexArray, verses, dpr } = state;
 
   gl.viewport(0, 0, canvas.width, canvas.height);
-  gl.clearColor(0.1, 0.1, 0.1, 1.0);
+  gl.clearColor(...MAP_BACKGROUND, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   gl.useProgram(programs.main.program);

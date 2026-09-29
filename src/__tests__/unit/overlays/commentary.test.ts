@@ -451,7 +451,7 @@ describe('Commentary Overlay', () => {
         createVerse({ book: 'Genesis', chapter: 1, verse: 3 }),
       ) as Color;
 
-      const swatch = container.querySelector<HTMLElement>('.legend-zero .swatch')!;
+      const swatch = container.querySelector<HTMLElement>('.legend-zero-swatch')!;
       expect(swatch.getAttribute('style')).toContain(colorToCss(unlinked));
     });
 
@@ -757,15 +757,30 @@ describe('Commentary Overlay', () => {
       const partWay = commentaryOverlay.getVerseColor(testVerses[1]); // 45 of 150
 
       assertColorEquals(atMax as number[], [1, 0.23, 0.18]);
-      assertColorEquals(partWay as number[], [0.905236, 0.324764, 0.132618]);
+      assertColorEquals(partWay as number[], [0.83031, 0.33996, 0.14991]);
     });
 
-    it('draws a verse with no links darker than any linked verse', () => {
-      const brightness = (verse: Parameters<typeof createVerse>[0]) =>
-        (commentaryOverlay.getVerseColor(createVerse(verse)) as number[]).reduce((a, b) => a + b);
-      const unlinked = brightness({ book: 'Genesis', chapter: 1, verse: 3 });
+    it('draws a verse with no links darker than one linked once', async () => {
+      testData.Genesis['1']['2'] = { total: 1, categories: {} };
+      await commentaryOverlay.overlay.init?.();
+      const brightness = (verse: number) =>
+        (
+          commentaryOverlay.getVerseColor(
+            createVerse({ book: 'Genesis', chapter: 1, verse }),
+          ) as number[]
+        ).reduce((a, b) => a + b);
 
-      expect(unlinked).toBeLessThan(brightness({ book: 'Genesis', chapter: 2, verse: 1 }));
+      expect(brightness(3)).toBeLessThan(brightness(2));
+    });
+
+    it('gives the least linked verse the bottom of the palette', async () => {
+      testData.Genesis['1']['2'] = { total: 1, categories: {} };
+      await commentaryOverlay.overlay.init?.();
+
+      assertColorEquals(
+        commentaryOverlay.getVerseColor(testVerses[1]) as number[],
+        [0.14, 0.21, 0.33],
+      );
     });
   });
 

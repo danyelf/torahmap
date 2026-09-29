@@ -42,7 +42,7 @@ export function renderAxisWithZero(zero: Color, scale: Scale, ticks: number[]): 
   return `
       <div class="legend-with-zero">
         <div class="legend-zero">
-          <span class="swatch" style="background: ${colorToCss(zero)}"></span>
+          <span class="legend-zero-swatch" style="background: ${colorToCss(zero)}"></span>
           <span class="legend-zero-label">0</span>
         </div>
         <div class="legend-axis">${renderAxis(scale, ticks)}</div>
