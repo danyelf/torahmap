@@ -25,9 +25,7 @@ canvas {
   font-size: 11px;
 }
 
-/* Every overlay's legend draws rows the same way. These lived under the text
-   dating legend alone, so the trop legend's swatches had no size and did not
-   appear at all. */
+/* Every overlay's legend draws rows the same way. */
 #overlay-legend .legend-row {
   display: flex;
   align-items: center;

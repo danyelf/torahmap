@@ -14,9 +14,16 @@ function isColorArray(color: VerseColor | null | undefined): color is Color[] {
 // says what it means here.
 const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 
+/**
+ * World units left empty at the right and bottom of every item's cell, so
+ * neighbouring squares stand apart. Hit detection takes the whole cell, gap
+ * included.
+ */
+export const SQUARE_GAP = 2;
+
 // World units a verse with several colors grows on every side, so it stands
-// out from single-color verses when zoomed out. Squares sit 2 units apart, so
-// up to 1 keeps a gap between neighbours. The shader applies it.
+// out from single-color verses when zoomed out. Up to half of SQUARE_GAP keeps
+// a gap between neighbours. The shader applies it.
 export const MULTICOLOR_GROWTH = 0.75;
 
 /**
@@ -113,8 +120,8 @@ export function buildItemGeometry<T>(
     const rect = i * FLOATS_PER_VERSE + VERSE_OFFSETS.a_rect;
     data[rect] = v.x;
     data[rect + 1] = v.y;
-    data[rect + 2] = v.x + v.size - 2; // -2 for gap
-    data[rect + 3] = v.y + v.size - 2;
+    data[rect + 2] = v.x + v.size - SQUARE_GAP;
+    data[rect + 3] = v.y + v.size - SQUARE_GAP;
     writePicture(from, SLOTS.from, i);
     writePicture(to, SLOTS.to, i);
   }

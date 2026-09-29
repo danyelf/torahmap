@@ -31,6 +31,7 @@ import {
 import { getTalmudSidebarElements, updateTalmudSidebar } from './talmud/sidebar.ts';
 import { parseTalmudUrlState, updateTalmudUrl } from './talmud/urlState.ts';
 import { debounce } from './utils/debounce.ts';
+import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from './constants.ts';
 
 function talmudSegmentsEqual(a: TalmudIdentity | null, b: TalmudIdentity | null): boolean {
@@ -40,6 +41,10 @@ function talmudSegmentsEqual(a: TalmudIdentity | null, b: TalmudIdentity | null)
     a.tractate === b.tractate && a.daf === b.daf && a.amud === b.amud && a.segment === b.segment
   );
 }
+
+// A mouse that moves further than this, in pixels across and down together,
+// between press and release dragged the map rather than clicked.
+const CLICK_SLOP_PX = 3;
 
 async function main(): Promise<void> {
   document.title = `Bavli Map [${__GIT_BRANCH__}]`;
@@ -240,7 +245,7 @@ async function main(): Promise<void> {
     stopDrag(mouseState);
     if (wasDragging) {
       const moved = Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY);
-      if (moved > 3) return; // treated as drag, not click
+      if (moved > CLICK_SLOP_PX) return;
     }
     // Click handling
     const hit = findItemAtPoint<TalmudIdentity>(
@@ -278,7 +283,7 @@ async function main(): Promise<void> {
   const select = document.getElementById('overlay-select') as HTMLSelectElement;
   select?.addEventListener('change', () => {
     const id = select.value;
-    currentOverlay = id === 'none' ? null : (overlaysById.get(id) ?? null);
+    currentOverlay = id === NO_OVERLAY ? null : (overlaysById.get(id) ?? null);
     applyOverlay();
     doRender();
     saveUrlState();

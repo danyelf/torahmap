@@ -55,7 +55,7 @@ import {
   DEFAULT_ZOOM,
   type UrlState,
 } from '@torahmap/link';
-import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
@@ -264,6 +264,7 @@ async function main(): Promise<void> {
   const renderState = createRenderState(renderContext, verses, dpr);
 
   let currentOverlay: Overlay | null = null;
+  const currentOverlayId = (): string => currentOverlay?.id ?? NO_OVERLAY;
 
   // Every overlay's settings, kept while another overlay is showing.
   const overlaySettings = createOverlaySettings();
@@ -437,9 +438,9 @@ async function main(): Promise<void> {
   /**
    * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
    * Does NOT paint the buffer — caller decides (settled paints via applyTools,
-   * mid-scroll lets the blender paint). Pulled out of applyStoryStop so mid-scroll
-   * can keep `currentOverlay`/`pinnedVerse` in sync with the stop the user is
-   * heading toward, for the sidebar and the hover text.
+   * mid-scroll lets the blender paint), so mid-scroll can keep
+   * `currentOverlay`/`pinnedVerse` in sync with the stop the reader is heading
+   * toward, for the sidebar and the hover text.
    *
    * The stop is external state, like a link, so URL writes are off throughout:
    * in story mode the URL is the stop id, and an explore-mode URL has no
@@ -450,8 +451,8 @@ async function main(): Promise<void> {
   }
 
   function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
-    const wantedOverlay = stop.overlay ?? 'none';
-    if (wantedOverlay !== currentOverlayId) {
+    const wantedOverlay = stop.overlay ?? NO_OVERLAY;
+    if (wantedOverlay !== currentOverlayId()) {
       activateOverlay(wantedOverlay);
     }
 
@@ -692,7 +693,6 @@ async function main(): Promise<void> {
   // overlay or pin out from under it.
   let lastSyncedStopId: string | null = null;
   let pointerDownPos: { x: number; y: number; time: number } | null = null;
-  const TAP_THRESHOLD = 10; // max px movement to count as tap
   const TAP_MAX_DURATION = 300; // max ms to count as tap
 
   function render(): void {
@@ -893,7 +893,7 @@ async function main(): Promise<void> {
       const dy = Math.abs(p.y - pointerDownPos.y);
       const duration = Date.now() - pointerDownPos.time;
 
-      if (dx < TAP_THRESHOLD && dy < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
+      if (dx < DRAG_PX && dy < DRAG_PX && duration < TAP_MAX_DURATION) {
         const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
         if (verse) {
           if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
@@ -1079,9 +1079,8 @@ async function main(): Promise<void> {
 
   const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
 
-  // Fill the overlay menu from the registry, after the "None" option the page
-  // starts with. The registry is the only list of overlays; the menu follows it,
-  // so adding an overlay to overlays/index.ts is enough to make it choosable.
+  // After the "None" option the picker starts with, in the order
+  // @torahmap/overlay-catalog offers them.
   for (const overlay of getAllOverlays()) {
     const option = document.createElement('option');
     option.value = overlay.id;
@@ -1093,11 +1092,8 @@ async function main(): Promise<void> {
   const searchControls = document.getElementById('search-controls')!;
   const overlayLegendContainer = document.getElementById('overlay-legend');
 
-  let currentOverlayId = 'none';
-
   /** Switch the active overlay without drawing its UI, painting or writing the URL. */
   function activateOverlay(id: string): void {
-    currentOverlayId = id;
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
   }
@@ -1125,7 +1121,7 @@ async function main(): Promise<void> {
    */
   function overlayChanged(fresh: boolean): void {
     if (fresh) {
-      if (overlaySelect) overlaySelect.value = currentOverlayId;
+      if (overlaySelect) overlaySelect.value = currentOverlayId();
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
     }
     renderOverlayControls();
@@ -1176,7 +1172,7 @@ async function main(): Promise<void> {
   }
 
   function setOverlay(id: string): void {
-    trackOverlaySwitch(id, currentOverlayId);
+    trackOverlaySwitch(id, currentOverlayId());
     activateOverlay(id);
     overlayChanged(true);
     applyTools();
@@ -1221,7 +1217,7 @@ async function main(): Promise<void> {
   // Sefaria doesn't lose the event.
   sidebarElements.link?.addEventListener('click', () => {
     const verse = pinnedVerse ?? mouseState.hoveredVerse;
-    if (verse) trackSefariaClick(verse.book, verse.chapter, verse.verse, currentOverlayId);
+    if (verse) trackSefariaClick(verse.book, verse.chapter, verse.verse, currentOverlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -1494,7 +1490,7 @@ async function main(): Promise<void> {
       what: linkKind(shared),
       story: shared.story ?? '',
       stop_id: shared.stop ?? '',
-      overlay: shared.overlay ?? 'none',
+      overlay: shared.overlay ?? NO_OVERLAY,
       searching: shared.searchParams ? 1 : 0,
       pinned: shared.verse ? 1 : 0,
     });
