@@ -66,4 +66,10 @@ describe('rewritePage, on any layout of those tags', () => {
       'Search: &quot;a&quot; &lt;b&gt; &amp; c · Torahmap',
     );
   });
+
+  it('carries a search term that looks like a regex backreference', () => {
+    const page = rewritePage(INDEX, { ...tags, title: 'Search: $& $1 · Torahmap' });
+    expect(page).toContain('<title>Search: $&amp; $1 · Torahmap</title>');
+    expect(content(page, 'property', 'og:title')).toBe('Search: $&amp; $1 · Torahmap');
+  });
 });
