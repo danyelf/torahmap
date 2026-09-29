@@ -1,32 +1,19 @@
 // Reading and writing the view a link names.
 
 import {
-  validateString,
   validateOverlayParams,
   SEARCH_URL_PARAMS,
   RESERVED_KEYS,
+  TEXT_KEYS,
+  NUMBER_KEYS,
+  type ViewKey,
   type OverlayParams,
   type OverlayParamSpecLookup,
   type UrlParamValues,
+  type ViewFields,
 } from './params.ts';
 
-// The range a link may carry and the range the camera allows are one range;
-// this module owns it because packages cannot import from src/.
-export const MIN_ZOOM = 0.1;
-export const MAX_ZOOM = 10.0;
-
-const MAX_PAN_POSITION = 1000000;
-
-export interface UrlState {
-  story?: string;
-  stop?: string;
-  overlay?: string;
-  /** "Book.Chapter.Verse", e.g. "Genesis.1.1" */
-  verse?: string;
-  zoom?: number;
-  /** Pan position; unused if verse is set, since a verse auto-centers */
-  x?: number;
-  y?: number;
+export interface UrlState extends ViewFields {
   overlayParams: OverlayParams;
   /** The search's own keys, when the link searches. */
   searchParams?: UrlParamValues;
@@ -45,16 +32,10 @@ function validateBookName(book: string): boolean {
  * ever populated alongside an overlay, which is checked directly.
  */
 export function linkNamesAView(state: UrlState): boolean {
-  return (
-    state.story !== undefined ||
-    state.stop !== undefined ||
-    state.overlay !== undefined ||
-    state.verse !== undefined ||
-    state.zoom !== undefined ||
-    state.x !== undefined ||
-    state.y !== undefined ||
-    state.searchParams !== undefined
+  const named = [...keysOf(TEXT_KEYS), ...keysOf(NUMBER_KEYS)].some(
+    (key) => state[key] !== undefined,
   );
+  return named || state.searchParams !== undefined;
 }
 
 export type LinkKind = 'nothing' | 'view' | 'stop';
@@ -80,51 +61,9 @@ export function readLink(
 ): UrlState {
   const params = typeof query === 'string' ? new URLSearchParams(query) : query;
 
-  const state: UrlState = {
-    overlayParams: {},
-  };
-
-  const story = params.get('story');
-  const validatedStory = validateString(story);
-  if (validatedStory) state.story = validatedStory;
-
-  const stop = validateString(params.get('stop'));
-  if (stop) state.stop = stop;
-
-  const overlay = params.get('overlay');
-  const validatedOverlay = validateString(overlay);
-  // Any validated ID is accepted; the overlay registry handles unknown ones gracefully.
-  if (validatedOverlay) {
-    state.overlay = validatedOverlay;
-  }
-
-  const verse = params.get('verse');
-  const validatedVerse = validateString(verse, 100); // Allow longer for book names
-  if (validatedVerse) state.verse = validatedVerse;
-
-  const zoom = params.get('zoom');
-  if (zoom) {
-    const parsed = parseFloat(zoom);
-    if (!isNaN(parsed) && parsed >= MIN_ZOOM && parsed <= MAX_ZOOM) {
-      state.zoom = parsed;
-    }
-  }
-
-  const x = params.get('x');
-  if (x) {
-    const parsed = parseFloat(x);
-    if (!isNaN(parsed) && isFinite(parsed) && Math.abs(parsed) <= MAX_PAN_POSITION) {
-      state.x = parsed;
-    }
-  }
-
-  const y = params.get('y');
-  if (y) {
-    const parsed = parseFloat(y);
-    if (!isNaN(parsed) && isFinite(parsed) && Math.abs(parsed) <= MAX_PAN_POSITION) {
-      state.y = parsed;
-    }
-  }
+  const state: UrlState = { overlayParams: {} };
+  readKeys(state, TEXT_KEYS, params);
+  readKeys(state, NUMBER_KEYS, params);
 
   if (state.overlay) {
     state.overlayParams = validateOverlayParams(lookupOverlayParams?.(state.overlay), params);
@@ -135,43 +74,51 @@ export function readLink(
   return state;
 }
 
+function keysOf<K extends string>(keys: Readonly<Record<K, unknown>>): K[] {
+  return Object.keys(keys) as K[];
+}
+
+function readKeys<K extends string, V>(
+  state: NoInfer<{ [key in K]?: V }>,
+  keys: Readonly<Record<K, ViewKey<V>>>,
+  params: URLSearchParams,
+): void {
+  for (const key of keysOf(keys)) {
+    const raw = params.get(key);
+    const value = raw ? keys[key].parse(raw) : null;
+    if (value !== null) state[key] = value;
+  }
+}
+
+function writeKeys<K extends string, V>(
+  params: URLSearchParams,
+  state: NoInfer<{ [key in K]?: V }>,
+  keys: Readonly<Record<K, ViewKey<V>>>,
+): void {
+  for (const key of keysOf(keys)) {
+    const value = state[key];
+    const text = value === undefined ? null : keys[key].format(value);
+    if (text !== null) params.set(key, text);
+  }
+}
+
 /** The query string for a view, with its leading "?", or "" for the default view. */
 export function writeLink(state: UrlState): string {
+  const params = new URLSearchParams();
   if (linkKind(state) === 'stop') {
-    const params = new URLSearchParams();
-    if (state.story) params.set('story', state.story);
-    if (state.stop) params.set('stop', state.stop);
+    writeKeys(params, state, { story: TEXT_KEYS.story, stop: TEXT_KEYS.stop });
     return `?${params.toString()}`;
   }
 
-  const params = new URLSearchParams();
   // The search first, then the overlay it sits over.
   for (const [key, value] of Object.entries(state.searchParams ?? {})) {
     if (value) params.set(key, value);
   }
 
-  if (state.overlay) {
-    params.set('overlay', state.overlay);
-  }
-
-  if (state.verse) {
-    params.set('verse', state.verse);
-  }
-
-  if (state.zoom !== undefined && state.zoom !== 1.0) {
-    // Round to 2 decimal places
-    params.set('zoom', state.zoom.toFixed(2).replace(/\.?0+$/, ''));
-  }
-
-  // Only include pan if no verse (verse auto-centers)
-  if (!state.verse) {
-    if (state.x !== undefined) {
-      params.set('x', state.x.toFixed(1).replace(/\.?0+$/, ''));
-    }
-    if (state.y !== undefined) {
-      params.set('y', state.y.toFixed(1).replace(/\.?0+$/, ''));
-    }
-  }
+  // A verse centres the map, so a link that names one carries no pan.
+  const view = state.verse ? { ...state, x: undefined, y: undefined } : state;
+  writeKeys(params, view, TEXT_KEYS);
+  writeKeys(params, view, NUMBER_KEYS);
 
   // Overlay-specific parameters, written through unchanged. Overlays omit
   // their own defaults, so whatever arrives here belongs in the URL.
