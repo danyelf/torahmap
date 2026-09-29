@@ -2,6 +2,8 @@ import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import type { VerseTexts } from '../verseTexts.ts';
+import { splitVerseText } from '../verseWords.ts';
+import { MIN_SEARCH_TERM_LENGTH } from '../search/constants.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
@@ -21,15 +23,14 @@ let wordCountCache: Map<string, number> = new Map();
 let minWordCount = 0;
 let maxWordCount = 0;
 
-// A word must contain at least one letter, so punctuation-only tokens
-// (e.g. em dashes) don't count.
+// The words a reader can click, less any too short to be one: the text has
+// stray em dashes and brackets standing alone, and a single letter is never a
+// word.
 function countHebrewWords(text: string): number {
-  if (!text) return 0;
-  const words = text
-    .trim()
-    .split(/\s+/)
-    .filter((w) => /\p{L}/u.test(w));
-  return words.length;
+  return splitVerseText(text).filter(
+    (piece) =>
+      piece.kind === 'word' && (piece.text.match(/\p{L}/gu)?.length ?? 0) >= MIN_SEARCH_TERM_LENGTH,
+  ).length;
 }
 
 export function configure(config: { verseTexts: VerseTexts }): void {
