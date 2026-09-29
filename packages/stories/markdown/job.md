@@ -13,13 +13,13 @@ A simple measure that shows interesting effects is counting the number of words 
 
 <!-- stop: book | camera: Job | overlay: verse-length -->
 
-The Book of Job is an interesting example. 
+The Book of Job is a good example. 
 
 The framing story of Job is about a man whose faith is tested when everything is taken from him.
 
 <!-- stop: frame | camera: Job.1.1 | zoom: 2.5 | verse: Job.1.1 | overlay: verse-length -->
 
-The framing verses are in prose, and they're long: descriptive paragraphs setting the stage.
+The framing verses are in prose, and they’re long: descriptive paragraphs setting the stage.
 
 <!-- stop: poem_intro | camera: Job.20.1 | zoom: 1 | overlay: verse-length -->
 
@@ -29,7 +29,7 @@ The heart of the story, from chapter 3 to 41, is a argument between Job and his 
 
 Most verses are under ten Hebrew words, as is common in Biblical poetry.
 
-<!-- stop: trop_intro | camera: Job.3.3 | zoom: 1.5 | verse: Job.3.3 | overlay: trop | trop: pashta -->
+<!-- stop: trop_intro | camera: Job.3.3 | zoom: 1.5 | overlay: trop | trop: pashta -->
 
 The cantillation system also shows a difference between the two. Hebrew cantillation symbols cue both grammar and the way the passage is chanted. 
 
@@ -39,7 +39,7 @@ There are two distinct systems of cantillation symbols. The pashta (<span lang="
 
 <!-- stop: pashta_poetic | camera: Ketuvim | overlay: trop | trop: pashta -->
 
-The poetic books -- Psalms, Proverbs, and the poetic core of Job -- never use the Pashta. 
+The poetic books — Psalms, Proverbs, and the poetic core of Job — never use the Pashta. 
 
 <!-- stop: dehi | camera: Ketuvim | overlay: trop | trop: dehi -->
 

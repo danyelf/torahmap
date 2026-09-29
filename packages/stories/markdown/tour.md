@@ -32,7 +32,7 @@ This is Genesis 1:1, the first verse of the Bible.
 
 <!-- stop: abraham_zoom | camera: Genesis.12.1 | zoom: 1.5 | search: אברם -->
 
-We can overlay the map with data. Let's trace the story of how the forefather Abraham is remembered in the Tanakh.
+We can overlay the map with data. Let’s trace the story of how the forefather Abraham is remembered in the Tanakh.
 
 We can search for his name, **אברם**, Abram.
 
@@ -64,7 +64,7 @@ At the burning bush, God tells Moses to tell the Israelites that he was sent by 
 
 <!-- stop: name_in_list_worldwide_three_names | camera: everything | verse: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב -->
 
-After Genesis, he is usually named alongside Isaac and Jacob. (Jacob's name, in pink, appears more often.)
+After Genesis, he is usually named alongside Isaac and Jacob. (Jacob’s name, in pink, appears more often.)
 
 <!-- stop: liturgy_verse | camera: Exodus.3.15 | zoom: 2.5 | overlay: commentary | category: Liturgy -->
 
@@ -80,15 +80,15 @@ Of all the verses that name Abraham, this is the one the prayer book cites most.
 
 <!-- stop: liturgy_zoom_out | camera: Exodus.3.15 | zoom: 1.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
-The prayer book's Abraham comes from the places that look back at him: the burning bush;
+The prayer book’s Abraham comes from the places that look back at him: the burning bush;
 
 <!-- stop: liturgy_leviticus | camera: Leviticus.26.42 | zoom: 1.5 | verse: Leviticus.26.42 | overlay: commentary | category: Liturgy -->
 
-Leviticus's “I will remember My covenant with Abraham”;
+Leviticus’s “I will remember My covenant with Abraham”;
 
 <!-- stop: liturgy_micah | camera: Micah.7.20 | zoom: 2 | verse: Micah.7.20 | overlay: commentary | category: Liturgy -->
 
-and Micah's “loyalty to Abraham”.
+and Micah’s “loyalty to Abraham”.
 
 <!-- stop: abraham_again | camera: everything | verse: Leviticus.26.42 | search: אברם,אברהם,, -->
 
@@ -96,4 +96,4 @@ Even though the Tanakh allows him to slip into the background, the prayer book i
 
 <!-- stop: conclusion | camera: everything | overlay: commentary | category: total-->
 
-There's a lot to explore in the Torahmap. Try the different overlays and see what you discover!
+There’s a lot to explore in the Torahmap. Try the different overlays and see what you discover!
