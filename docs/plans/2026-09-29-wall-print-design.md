@@ -130,6 +130,25 @@ It follows the key in the site's panel, in more detail:
 The holiday columns are a little wider than in the picture, so the longest
 names ("Passover, Intermediate Sabbath") clear the next column.
 
+### Type and spacing
+
+In points on the trimmed sheet (2592 × 1728). The code that drew the agreed
+mockup is in `scripts/print/prototype/`, the starting point for the script.
+
+| Element | Setting |
+| --- | --- |
+| Map | top 34 below the margin; width the sheet's less the margins and 50 for the section titles; centred |
+| Book title | Hebrew 15, English 13, both bold, 5 apart; baseline 9 above the book's first row; the Hebrew shrinks no smaller than 9 |
+| Section title | Hebrew 25.3, English 22, both bold, quieter ink; 8 right of the section, starting 26 above its first row |
+| Hairline | 0.75, quieter ink, 50 below the map, across the map's width |
+| Key title | Hebrew 23 bold, English 20 semibold; 30 below the hairline |
+| Key notes | 11, quieter ink, lines 15 apart |
+| Portion columns | 170 wide; heading Hebrew 12.65, English 11; rows 15 apart, swatch 9 square, Hebrew 11.5, English 10 |
+| Occasion columns | 270 wide, starting 20 after the portions; kind headings 10 semibold |
+| Credits | 9, quieter ink, right-aligned, baseline 54 above the sheet's bottom edge |
+
+Every Hebrew size is 1.15 times the English beside it.
+
 ### The search key
 
 Not yet drawn. The plan is five rows, one per name: swatch, Hebrew, English,

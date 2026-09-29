@@ -1,0 +1,184 @@
+<h2>Search view: <span dir="rtl">אברהם, יצחק, יעקב, משה, דוד</span></h2>
+<p class="subtitle">
+  Real matches, proper-name meanings only (Abraham 159 verses, Isaac 101, Jacob 319, Moses 705,
+  David 912). Each row: the whole sheet, then two patches at print size, Genesis 22–32 and the David
+  chapters of Samuel. A verse naming two of them is split corner to corner, as on the site. Name
+  colours in order: Abraham teal, Isaac rust, Jacob green, Moses crimson, David plum. (The site
+  gives David yellow; dark yellow turns olive, too close to Jacob, so the print uses plum.)
+</p>
+
+<div class="cards" id="cards" style="grid-template-columns: 1fr"></div>
+
+<script>
+  const DATA = __DATA__;
+
+  function hsl(h, s, l) {
+    const k = (n) => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return `rgb(${Math.round(f(0) * 255)},${Math.round(f(8) * 255)},${Math.round(f(4) * 255)})`;
+  }
+  // OKLCH -> sRGB, lowering chroma until the colour fits.
+  function oklchRaw(L, C, hDeg) {
+    const h = (hDeg * Math.PI) / 180,
+      a = C * Math.cos(h),
+      b = C * Math.sin(h);
+    const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+    const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+    const s_ = L - 0.0894841775 * a - 1.291485548 * b;
+    const l = l_ ** 3,
+      m = m_ ** 3,
+      s = s_ ** 3;
+    const lin = [
+      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+    ];
+    return lin.map((c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055));
+  }
+  function oklch(L, C, h) {
+    let rgb = oklchRaw(L, C, h);
+    while (rgb.some((c) => c < 0 || c > 1) && C > 0) {
+      C -= 0.005;
+      rgb = oklchRaw(L, C, h);
+    }
+    return `rgb(${rgb.map((c) => Math.round(Math.min(1, Math.max(0, c)) * 255)).join(',')})`;
+  }
+  function rand(i) {
+    const x = Math.sin(i * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  const frac = (idx) => idx / DATA.itemCount;
+  const walnut = (i) => hsl(31, 0.28, 0.34 + rand(i) * 0.13);
+
+  // Site order: cyan, orange, lime, pink, yellow, as print hues.
+  const HUES = [215, 50, 135, 355, 320];
+  const pale = (i) => hsl(37, 0.13, 0.66 + rand(i) * 0.07);
+  const tan = (i) => hsl(34, 0.2, 0.5 + rand(i) * 0.09);
+  const SCHEMES = [
+    {
+      id: 'pale-dark',
+      name: 'Pale taupe verses, dark name colours',
+      desc: 'The verses without a name recede toward the paper; the five names in deep, dark inks (teal, rust, green, crimson, plum). Closest to your “dark search colours over cream”.',
+      bg: '#f3ecdc',
+      other: pale,
+      reading: (k) => oklch(0.5, 0.15, HUES[k]),
+    },
+    {
+      id: 'tan-dark',
+      name: 'Tan verses, dark name colours',
+      desc: 'A step darker for the verses, so the text of the whole Tanakh still reads; names in the same dark inks, a touch deeper.',
+      bg: '#f3ecdc',
+      other: tan,
+      reading: (k) => oklch(0.45, 0.15, HUES[k]),
+    },
+    {
+      id: 'walnut-bright',
+      name: 'Walnut verses, bright name colours',
+      desc: 'Matches the haftarah print: the same walnut verses, names in the evened-out stronger colours. The two prints would hang as a pair.',
+      bg: '#f3ecdc',
+      other: walnut,
+      reading: (k) => oklch(0.7, 0.16, HUES[k]),
+    },
+  ];
+
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity;
+  for (const [x, y] of DATA.verses) {
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x + 6);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y + 6);
+  }
+
+  function drawVerses(ctx, s, scale, ox, oy) {
+    const sq = 4 * scale;
+    DATA.verses.forEach(([x, y, idx], i) => {
+      const px = ox + (x - minX) * scale,
+        py = oy + (y - minY) * scale;
+      if (idx.length === 0) {
+        ctx.fillStyle = s.other(i);
+        ctx.fillRect(px, py, sq, sq);
+        return;
+      }
+      if (idx.length === 1) {
+        ctx.fillStyle = s.reading(idx[0]);
+        ctx.fillRect(px, py, sq, sq);
+        return;
+      }
+      const n = idx.length;
+      for (let k = 0; k < n; k++) {
+        const t0 = (2 * k) / n,
+          t1 = (2 * (k + 1)) / n;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(px, py, sq, sq);
+        ctx.clip();
+        ctx.beginPath();
+        ctx.moveTo(px + t0 * sq, py);
+        ctx.lineTo(px + t1 * sq, py);
+        ctx.lineTo(px + t1 * sq - 2 * sq, py + 2 * sq);
+        ctx.lineTo(px + t0 * sq - 2 * sq, py + 2 * sq);
+        ctx.closePath();
+        ctx.fillStyle = s.reading(idx[k]);
+        ctx.fill();
+        ctx.restore();
+      }
+    });
+  }
+
+  function canvas(card, w, h) {
+    const dpr = window.devicePixelRatio || 1;
+    const c = document.createElement('canvas');
+    c.width = w * dpr;
+    c.height = h * dpr;
+    c.style.width = w + 'px';
+    c.style.height = h + 'px';
+    c.style.flex = 'none';
+    card.querySelector('.card-image').appendChild(c);
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return ctx;
+  }
+
+  // Print scale: the map is 33 in wide; ~96 css px per inch.
+  const printScale = (33 / (maxX - minX)) * 96;
+  const PATCHES = [
+    [3200, 220],
+    [2560, 580],
+  ]; // Genesis 22-32, I-II Samuel
+
+  for (const s of SCHEMES) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.choice = s.id;
+    card.setAttribute('onclick', 'toggleSelect(this)');
+    card.innerHTML = `<div class="card-image" style="display:flex;gap:8px;background:#888;padding:8px;justify-content:center;height:auto;aspect-ratio:auto"></div><div class="card-body"><h3>${s.name}</h3><p>${s.desc}</p></div>`;
+    document.getElementById('cards').appendChild(card);
+
+    const W = 480,
+      H = 320;
+    const c1 = canvas(card, W, H);
+    c1.fillStyle = s.bg;
+    c1.fillRect(0, 0, W, H);
+    const margin = 15,
+      scale1 = (W - 2 * margin) / (maxX - minX);
+    drawVerses(c1, s, scale1, margin, (H - (maxY - minY) * scale1) / 2);
+
+    for (const [fx, fy] of PATCHES) {
+      const P = 320,
+        c = canvas(card, P, P);
+      c.fillStyle = s.bg;
+      c.fillRect(0, 0, P, P);
+      drawVerses(
+        c,
+        s,
+        printScale,
+        P / 2 - (fx - minX) * printScale,
+        P / 2 - (fy - minY) * printScale,
+      );
+    }
+  }
+</script>

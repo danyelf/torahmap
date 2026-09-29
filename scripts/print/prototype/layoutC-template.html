@@ -1,0 +1,403 @@
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=David+Libre:wght@700&display=swap"
+/>
+<h2>Layout C, revised</h2>
+<p class="subtitle">
+  Psalms split into three columns of fifty chapters, so the Writings are shorter and the map can be
+  as wide as in A. The key’s holidays now take four columns: High Holy Days with Sukkot, other
+  occasions with the four Sabbaths, Pesach with Shavuot, fast days with the new moon. Zoom in to
+  inspect.
+</p>
+<div class="cards" id="cards" style="grid-template-columns: 1fr"></div>
+
+<script>
+  const DATA = __DATA__;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // ---- colour ----
+  function hsl(h, s, l) {
+    const k = (n) => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return `rgb(${Math.round(f(0) * 255)},${Math.round(f(8) * 255)},${Math.round(f(4) * 255)})`;
+  }
+  function oklchRaw(L, C, hDeg) {
+    const h = (hDeg * Math.PI) / 180,
+      a = C * Math.cos(h),
+      b = C * Math.sin(h);
+    const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+    const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+    const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+    return [
+      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+    ].map((c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055));
+  }
+  function oklch(L, C, h) {
+    let rgb = oklchRaw(L, C, h);
+    while (rgb.some((c) => c < 0 || c > 1) && C > 0) {
+      C -= 0.005;
+      rgb = oklchRaw(L, C, h);
+    }
+    return `rgb(${rgb.map((c) => Math.round(Math.min(1, Math.max(0, c)) * 255)).join(',')})`;
+  }
+  function rand(i) {
+    const x = Math.sin(i * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  const PAPER = '#f3ecdc',
+    INK = '#3a2e24',
+    INK_SOFT = '#7a6a58';
+  const other = (i) => hsl(31, 0.28, 0.34 + rand(i) * 0.13);
+  const reading = (k) => oklch(0.64, 0.16, 29 + (k / DATA.itemCount) * 360);
+
+  // ---- geometry ----
+  const W = 2592,
+    H = 1728,
+    M = 108; // points: 36 x 24 in, 1.5 in margin
+  const SECTION = (b) => (b < 5 ? 0 : b < 26 ? 1 : 2);
+  const SECTION_NAMES = [
+    ['תורה', 'Five Books'],
+    ['נביאים', 'Prophets'],
+    ['כתובים', 'Writings'],
+  ];
+  const books = [],
+    sections = [];
+  let mapMinX = Infinity,
+    mapMaxX = -Infinity,
+    mapMinY = Infinity,
+    mapMaxY = -Infinity;
+  for (const [x, y, , b] of DATA.verses) {
+    const o = (books[b] ??= { minX: Infinity, maxX: -Infinity, minY: Infinity });
+    o.minX = Math.min(o.minX, x);
+    o.maxX = Math.max(o.maxX, x + 6);
+    o.minY = Math.min(o.minY, y);
+    const s = (sections[SECTION(b)] ??= { maxX: -Infinity, minY: Infinity });
+    s.maxX = Math.max(s.maxX, x + 6);
+    s.minY = Math.min(s.minY, y);
+    mapMinX = Math.min(mapMinX, x);
+    mapMaxX = Math.max(mapMaxX, x + 6);
+    mapMinY = Math.min(mapMinY, y);
+    mapMaxY = Math.max(mapMaxY, y + 6);
+  }
+
+  function el(parent, name, attrs = {}, text) {
+    const e = document.createElementNS(NS, name);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text != null) e.textContent = text;
+    parent.appendChild(e);
+    return e;
+  }
+
+  // Clip a polygon to the half-plane where a*x + b*y <= c.
+  function clip(poly, a, b, c) {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const p = poly[i],
+        q = poly[(i + 1) % poly.length];
+      const pi = a * p[0] + b * p[1] <= c,
+        qi = a * q[0] + b * q[1] <= c;
+      if (pi) out.push(p);
+      if (pi !== qi) {
+        const t = (c - a * p[0] - b * p[1]) / (a * (q[0] - p[0]) + b * (q[1] - p[1]));
+        out.push([p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1])]);
+      }
+    }
+    return out;
+  }
+
+  function drawVerses(g) {
+    DATA.verses.forEach(([x, y, idx], i) => {
+      if (idx.length <= 1) {
+        el(g, 'rect', { x, y, width: 4, height: 4, fill: idx.length ? reading(idx[0]) : other(i) });
+        return;
+      }
+      // Split corner to corner: band k holds the points with u+v in [2k/n, 2(k+1)/n].
+      const sq = [
+        [x, y],
+        [x + 4, y],
+        [x + 4, y + 4],
+        [x, y + 4],
+      ];
+      const n = idx.length;
+      idx.forEach((k, j) => {
+        let p = clip(sq, 1, 1, x + y + (8 * (j + 1)) / n);
+        p = clip(p, -1, -1, -(x + y + (8 * j) / n));
+        el(g, 'polygon', { points: p.map((q) => q.join(',')).join(' '), fill: reading(k) });
+      });
+    });
+  }
+
+  // Book titles, right-aligned over each book; the English drops, then the
+  // Hebrew shrinks, when the book is too narrow for them.
+  function drawBookLabels(g, s) {
+    books.forEach((b, i) => {
+      const [en, he] = DATA.books[i];
+      const width = (b.maxX - b.minX) * s;
+      let size = 15;
+      const t = el(g, 'text', {
+        x: b.maxX * s,
+        y: b.minY * s - 9,
+        'text-anchor': 'end',
+        fill: INK,
+      });
+      const heSpan = el(
+        t,
+        'tspan',
+        { 'font-family': 'David Libre', 'font-weight': 700, 'font-size': size },
+        he,
+      );
+      const enSpan = el(
+        t,
+        'tspan',
+        { 'font-family': 'system-ui, sans-serif', 'font-size': 13, 'font-weight': 700, dx: 5 },
+        en,
+      );
+      if (t.getComputedTextLength() > width) {
+        enSpan.remove();
+        while (t.getComputedTextLength() > width && size > 9) {
+          size -= 1;
+          heSpan.setAttribute('font-size', size);
+        }
+      }
+    });
+  }
+
+  // Section titles, turned to read downward, right of each section.
+  function drawSectionLabels(g, s) {
+    sections.forEach((sec, i) => {
+      const x = sec.maxX * s + 8,
+        y = sec.minY * s - 26;
+      const t = el(g, 'text', { transform: `translate(${x},${y}) rotate(90)`, fill: INK_SOFT });
+      el(
+        t,
+        'tspan',
+        { 'font-family': 'David Libre', 'font-weight': 700, 'font-size': 25.3 },
+        SECTION_NAMES[i][0],
+      );
+      el(
+        t,
+        'tspan',
+        { 'font-family': 'system-ui, sans-serif', 'font-size': 22, 'font-weight': 700, dx: 8 },
+        SECTION_NAMES[i][1],
+      );
+    });
+  }
+
+  // The site's title artwork, recoloured for paper (453.19 x 157.3 units).
+  function drawLogo(g, x, y, width) {
+    const k = width / 453.19;
+    const t = el(g, 'g', {
+      transform: `translate(${x},${y}) scale(${k})`,
+      'font-family': 'David Libre, serif',
+      'font-weight': 700,
+    });
+    el(
+      t,
+      'text',
+      { x: 453.19, y: 27, 'text-anchor': 'end', 'font-size': 34, fill: INK_SOFT },
+      'מפת התנ״ך',
+    );
+    el(t, 'text', { x: 0, y: 103.81, 'font-size': 100, fill: INK }, 'Torahmap');
+    el(
+      t,
+      'text',
+      {
+        x: 0,
+        y: 151.61,
+        'font-family': 'system-ui, sans-serif',
+        'font-weight': 400,
+        'font-size': 19,
+        'letter-spacing': 0.19,
+        fill: INK_SOFT,
+      },
+      'A visual concordance to the Hebrew Bible',
+    );
+  }
+
+  const CATEGORY_NAMES = {
+    'rosh-chodesh': 'New moon',
+    'four-shabbatot': 'The four Sabbaths',
+    'high-holidays': 'High Holy Days',
+    sukkot: 'Sukkot',
+    pesach: 'Pesach',
+    shavuot: 'Shavuot',
+    'fast-days': 'Fast days',
+    other: 'Other occasions',
+  };
+
+  // The detailed key: every portion under its book, then the occasions by kind.
+  function drawLegend(g, x, y) {
+    const ROW = 15,
+      COL = 170,
+      SW = 9;
+    el(g, 'text', { x, y: y + 26, fill: INK }, null).innerHTML =
+      `<tspan font-family="David Libre" font-weight="700" font-size="23">הפטרות</tspan><tspan font-family="system-ui, sans-serif" font-size="20" dx="10" font-weight="600">Haftarot · the prophetic readings</tspan>`;
+    const notes = [
+      'Each week’s Torah portion and the passage from the Prophets read after it share a colour; the holidays and special Sabbaths continue around the wheel.',
+      'A verse read on more than one occasion is split corner to corner, one band for each reading. Verses in no reading are brown. Ashkenazi custom.',
+    ];
+    notes.forEach((n, i) =>
+      el(
+        g,
+        'text',
+        {
+          x,
+          y: y + 50 + i * 15,
+          'font-family': 'system-ui, sans-serif',
+          'font-size': 11,
+          fill: INK_SOFT,
+        },
+        n,
+      ),
+    );
+
+    const columns = [];
+    for (let b = 0; b < 5; b++) {
+      columns.push({
+        head: DATA.books[b],
+        rows: DATA.items.map((it, k) => [it, k]).filter(([it]) => it[2] === DATA.books[b][0]),
+      });
+    }
+    // Occasions, grouped by kind, flowed into two columns.
+    const byCat = new Map();
+    DATA.items.forEach((it, k) => {
+      if (it[2] !== null) return;
+      if (!byCat.has(it[3])) byCat.set(it[3], []);
+      byCat.get(it[3]).push({ item: it, k });
+    });
+    let top = y + 92;
+    columns.forEach((c, ci) => {
+      const cx = x + ci * COL;
+      const h = el(g, 'text', { x: cx, y: top, fill: INK });
+      h.innerHTML = `<tspan font-family="David Libre" font-weight="700" font-size="12.65">${c.head[1]}</tspan><tspan font-family="system-ui, sans-serif" font-size="11" dx="5" fill="${INK_SOFT}">${c.head[0]}</tspan>`;
+      c.rows.forEach(([it, k], r) => row(cx, top + 8 + (r + 1) * ROW, it, k));
+    });
+    // Occasions in four columns, two kinds each.
+    const OCC_COLUMNS = [
+      ['high-holidays', 'sukkot'],
+      ['other', 'four-shabbatot'],
+      ['pesach', 'shavuot'],
+      ['fast-days', 'rosh-chodesh'],
+    ];
+    const placed = OCC_COLUMNS.flat();
+    for (const cat of byCat.keys())
+      if (!placed.includes(cat)) throw new Error('no column for ' + cat);
+    const occCols = OCC_COLUMNS.map((cats) =>
+      cats.flatMap((cat) => [{ head: CATEGORY_NAMES[cat] }, ...byCat.get(cat)]),
+    );
+    occCols.forEach((list, ci) => {
+      const cx = x + 5 * COL + 20 + ci * 250;
+      let yy = top;
+      list.forEach((e, i) => {
+        if (e.head) {
+          if (i) yy += ROW + 6;
+          el(
+            g,
+            'text',
+            {
+              x: cx,
+              y: yy,
+              'font-family': 'system-ui, sans-serif',
+              'font-size': 10,
+              'font-weight': 600,
+              fill: INK_SOFT,
+            },
+            e.head,
+          );
+        } else {
+          yy += ROW;
+          row(cx, yy, e.item, e.k);
+        }
+      });
+    });
+    function row(cx, cy, it, k) {
+      el(g, 'rect', { x: cx, y: cy - SW, width: SW, height: SW, fill: reading(k) });
+      const t = el(g, 'text', { x: cx + SW + 5, y: cy, fill: INK });
+      t.innerHTML = `<tspan font-family="David Libre" font-weight="700" font-size="11.5">${it[1]}</tspan><tspan font-family="system-ui, sans-serif" font-size="10" dx="4" fill="${INK_SOFT}">${it[0]}</tspan>`;
+    }
+    return 5 * COL + 20 + 4 * 250;
+  }
+
+  function colophon(g) {
+    el(
+      g,
+      'text',
+      {
+        x: W - M,
+        y: H - 54,
+        'text-anchor': 'end',
+        'font-family': 'system-ui, sans-serif',
+        'font-size': 9,
+        fill: INK_SOFT,
+      },
+      'torahmap.org · Text of the Tanakh from Sefaria · Haftarah tables from hebcal',
+    );
+  }
+
+  function sheet(card) {
+    const svg = el(card.querySelector('.card-image'), 'svg', {
+      viewBox: `0 0 ${W} ${H}`,
+      width: '100%',
+      style: 'display:block;background:' + PAPER,
+    });
+    el(svg, 'rect', { width: W, height: H, fill: PAPER });
+    return svg;
+  }
+
+  function map(svg, s, ox, oy) {
+    const g = el(svg, 'g', { transform: `translate(${ox},${oy})` });
+    drawVerses(el(g, 'g', { transform: `scale(${s})` }));
+    drawBookLabels(g, s);
+    drawSectionLabels(g, s);
+    return g;
+  }
+
+  function card(id, name, desc) {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.dataset.choice = id;
+    c.setAttribute('onclick', 'toggleSelect(this)');
+    c.innerHTML = `<div class="card-image" style="background:#888;padding:10px;height:auto"></div><div class="card-body"><h3>${name}</h3><p>${desc}</p></div>`;
+    document.getElementById('cards').appendChild(c);
+    return c;
+  }
+
+  document.fonts.load('700 20px "David Libre"').then(() => {
+    // C: logo where the site puts it, key in a band under a hairline.
+    {
+      const c = card(
+        'corner-band',
+        'C, revised: Psalms in three columns, occasions in four',
+        'The logo where the site puts it; the key alone in a band beneath the map, under a thin rule. Psalms now runs in three columns (1–50, 51–100, 101–150), which makes the map shorter, so it grows back to 32½ in wide with the band still beneath it.',
+      );
+      const svg = sheet(c);
+      const band = 300;
+      const s = Math.min(
+        (W - 2 * M - 50) / (mapMaxX - mapMinX),
+        (H - 2 * M - 34 - 40 - band) / (mapMaxY - mapMinY),
+      );
+      const mapW = (mapMaxX - mapMinX) * s;
+      const ox = (W - mapW - 50) / 2,
+        oy = M + 34;
+      const g = map(svg, s, ox, oy);
+      console.log('map width in', (mapW / 72).toFixed(1));
+      const torahMinX = books.slice(0, 5).reduce((a, b) => Math.min(a, b.minX), Infinity);
+      const logoW = 929 * s;
+      drawLogo(g, ((mapMinX + torahMinX) / 2) * s - logoW / 2, (-1 - 28) * s - 16, logoW);
+      const bandTop = oy + (mapMaxY - mapMinY) * s + 60;
+      el(svg, 'line', {
+        x1: ox,
+        x2: ox + mapW + 50,
+        y1: bandTop - 10,
+        y2: bandTop - 10,
+        stroke: INK_SOFT,
+        'stroke-width': 0.75,
+      });
+      drawLegend(svg, ox, bandTop + 20);
+      colophon(svg);
+    }
+  });
+</script>
