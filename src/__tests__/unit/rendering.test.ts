@@ -326,16 +326,17 @@ describe('rendering', () => {
       );
     });
 
-    it('updates label positions when window.bookLabels exists', () => {
-      const mockLabels = document.createElement('div') as HTMLDivElement;
-      window.bookLabels = mockLabels;
+    it('returns the pan it drew at, for what is placed over the map', () => {
+      camera.x = 120;
+      camera.zoom = 2.0;
 
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      const offset = render(context, state, camera, null, null, tanakhIdentitiesEqual);
 
-      // Labels should be updated (exact behavior tested in labels.test.ts)
-      expect(window.bookLabels).toBeDefined();
-
-      delete window.bookLabels;
+      expect(context.gl.uniform2f).toHaveBeenCalledWith(
+        context.programs.main.uniforms.pan,
+        offset.x,
+        offset.y,
+      );
     });
   });
 

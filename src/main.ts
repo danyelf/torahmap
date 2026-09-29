@@ -64,7 +64,6 @@ import {
   clampZoom,
   zoomAtPoint,
   centreForFocus,
-  viewOffset,
   viewFocusedOn,
   animateCameraTo,
   type Camera,
@@ -165,18 +164,11 @@ import {
 } from './telemetry/driverChange.ts';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { showLegend, type LegendRow } from './mapLegend.ts';
-import { createMapTitle, updateMapTitlePosition, type MapTitle } from './mapTitle.ts';
+import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
 import './styles/map-title.css';
 import './styles/zoom-buttons.css';
 import './styles/frame.css';
 import './styles/verse-popup.css';
-
-declare global {
-  interface Window {
-    bookLabels?: HTMLDivElement;
-    mapTitle?: MapTitle;
-  }
-}
 
 const STORY_FOLDED_KEY = 'torahMap.storyFolded';
 
@@ -226,6 +218,13 @@ async function main(): Promise<void> {
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
+
+  // Placed over the map; render() moves them with it.
+  const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
+  const bookLabels = createBookLabels(verses, document.body, hebrewNames);
+  const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
+  createSectionLabels(verses, bookLabels, (book) => sections.get(book) ?? 'neviim');
+  const mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
 
   buildSearchIndex(verseTexts);
 
@@ -693,7 +692,7 @@ async function main(): Promise<void> {
   const TAP_MAX_DURATION = 300; // max ms to count as tap
 
   function render(): void {
-    renderFrame(
+    const offset = renderFrame(
       renderContext,
       renderState,
       camera,
@@ -701,6 +700,8 @@ async function main(): Promise<void> {
       pinnedVerse,
       tanakhIdentitiesEqual,
     );
+    updateLabelPositions(bookLabels, offset, camera.zoom);
+    updateMapTitlePosition(mapTitle, offset, camera.zoom);
   }
 
   function centerOnVerse(verse: TanakhLayout): void {
@@ -768,15 +769,6 @@ async function main(): Promise<void> {
   }
 
   render();
-
-  const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
-  window.bookLabels = createBookLabels(verses, document.body, hebrewNames);
-  const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
-  createSectionLabels(verses, window.bookLabels, (book) => sections.get(book) ?? 'neviim');
-  const offset = viewOffset(camera, mapViewport());
-  updateLabelPositions(window.bookLabels, offset, camera.zoom);
-  window.mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
-  updateMapTitlePosition(window.mapTitle, offset, camera.zoom);
 
   canvas.addEventListener(
     'wheel',
