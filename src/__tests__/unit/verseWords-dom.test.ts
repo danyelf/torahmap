@@ -5,7 +5,7 @@
 // overlays produce.
 
 import { describe, it, expect, vi } from 'vitest';
-import { splitVerseText, wrapWordsInFragment } from '../../verseWords';
+import { wrapWordsInFragment } from '../../verseWords';
 
 function fragmentOf(...nodes: Node[]): DocumentFragment {
   const fragment = document.createDocumentFragment();

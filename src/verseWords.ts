@@ -4,37 +4,28 @@
 // dictionary index was built on. A click resolving a different word than
 // search would find is the failure this shares a rule to avoid.
 
-import { isWordSeparator, normalizeHebrewForSearch } from './hebrew.ts';
+import {
+  isSearchableWord,
+  normalizeHebrewForSearch,
+  splitIntoWords,
+  type TextWord,
+} from './hebrew.ts';
 
 /** {פ} and {ס}: paragraph markers Sefaria leaves in the text. Not words. */
-const MARKER = /^\{[פס]\}$/;
+const SECTION_MARKER = /^\{[פס]\}$/;
 
-export interface VersePiece {
-  text: string;
-  start: number;
-  end: number;
-  kind: 'word' | 'separator' | 'marker';
+export function isSectionMarker(word: string): boolean {
+  return SECTION_MARKER.test(word);
 }
 
-export function splitVerseText(text: string): VersePiece[] {
-  const pieces: VersePiece[] = [];
-  let index = 0;
-
-  while (index < text.length) {
-    const start = index;
-    const separator = isWordSeparator(text[index]);
-    while (index < text.length && isWordSeparator(text[index]) === separator) index++;
-
-    const slice = text.slice(start, index);
-    pieces.push({
-      text: slice,
-      start,
-      end: index,
-      kind: separator ? 'separator' : MARKER.test(slice) ? 'marker' : 'word',
-    });
-  }
-
-  return pieces;
+/**
+ * The words of a verse a reader can click, in order. A word's position in
+ * this list is its index: what a click reports and the parse is looked up by.
+ */
+export function verseWords(text: string): TextWord[] {
+  return splitIntoWords(text).filter(
+    ({ word }) => !isSectionMarker(word) && isSearchableWord(word),
+  );
 }
 
 /**
@@ -90,7 +81,7 @@ export function wrapWordsInFragment(fragment: DocumentFragment, text: string): D
     return fragment;
   }
 
-  const words = splitVerseText(text).filter((piece) => piece.kind === 'word');
+  const words = verseWords(text);
 
   // Which word covers a given offset, or null between words. Offsets are
   // visited in increasing order as the walk proceeds, so the search can pick

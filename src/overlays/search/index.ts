@@ -37,7 +37,8 @@ import {
   type SearchTerm,
 } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
-import { MIN_SEARCH_TERM_LENGTH, SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
+import { SEARCH_RECORD_DELAY_MS } from '../../constants/app.ts';
+import { isSearchableWord } from '../../hebrew.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
 import { trackSearchExecute } from '../../analytics.ts';
@@ -79,13 +80,9 @@ interface Search {
 const searches = new WeakMap<SearchSettings, Search>();
 let lastSearch: { of: SearchSettings; value: Search } | null = null;
 
-/**
- * The terms the search runs. Short ones are left out for the same reason
- * parseSearchTerms drops them: a single letter matches most of the corpus and
- * is almost never meant.
- */
+/** The terms the search runs: those holding a word, not a single letter. */
 function activeTerms(settings: SearchSettings): SearchTerm[] {
-  return settings.terms.filter((t) => t.text.trim().length >= MIN_SEARCH_TERM_LENGTH);
+  return settings.terms.filter((t) => isSearchableWord(t.text));
 }
 
 function searchFor(settings: SearchSettings): Search {

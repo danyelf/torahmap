@@ -7,12 +7,11 @@ import { tanakhKey } from './types.ts';
 
 import {
   fetchData,
-  MIN_SEARCH_TERM_LENGTH,
   TERM_SEPARATORS,
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './constants/app.ts';
-import { isHebrew, normalizeHebrewForSearch, splitIntoWords } from './hebrew.ts';
+import { isHebrew, isSearchableWord, normalizeHebrewForSearch, splitIntoWords } from './hebrew.ts';
 import {
   escapeForRegex,
   foldForMatching,
@@ -92,7 +91,7 @@ export function parseSearchTerms(query: string): string[] {
   return query
     .split(TERM_SEPARATORS)
     .map((t) => t.trim())
-    .filter((t) => t.length >= MIN_SEARCH_TERM_LENGTH);
+    .filter(isSearchableWord);
 }
 
 /** Row order of the lexeme records in lexicon.json */

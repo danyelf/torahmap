@@ -5,7 +5,7 @@ import { tanakhKey } from './types.ts';
 import type { Overlay, ToolOnMap } from './overlays/types.ts';
 import type { VerseTexts, VerseText } from './verseTexts.ts';
 import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
-import { splitVerseText, wrapWordsInFragment } from './verseWords.ts';
+import { verseWords, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';
 import { verseRef } from '@torahmap/link';
 
@@ -50,7 +50,7 @@ export function setWordClickHandler(handler: ((click: WordClick) => void) | null
 
 /** One listener on the container, so re-rendering the verse cannot pile them up. */
 function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLayout): void {
-  const words = splitVerseText(text).filter((piece) => piece.kind === 'word');
+  const words = verseWords(text);
 
   container.onclick = (event) => {
     if (!wordClickHandler) return;
@@ -63,7 +63,7 @@ function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLay
     if (!word) return;
 
     wordClickHandler({
-      text: word.text,
+      text: word.word,
       index,
       book: verse.book,
       chapter: verse.chapter,

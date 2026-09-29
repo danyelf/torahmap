@@ -3,6 +3,8 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  isHebrew,
+  isSearchableWord,
   isWordSeparator,
   mapStrippedToOriginal,
   splitIntoWords,
@@ -70,5 +72,34 @@ describe('folding a written form to its indexed spelling', () => {
 
   it('leaves whitespace as written rather than rewriting it as a space', () => {
     expect(normalizeHebrewForSearch('אב\nגד')).toBe('אב\nגד');
+  });
+});
+
+describe('is this Hebrew?', () => {
+  it('is when the text holds a Hebrew letter', () => {
+    expect(isHebrew('אב')).toBe(true);
+    expect(isHebrew('the ארץ')).toBe(true);
+    expect(isHebrew('earth')).toBe(false);
+  });
+
+  it('is not for points or punctuation alone', () => {
+    expect(isHebrew('\u05B0\u05B1')).toBe(false);
+    expect(isHebrew('׃')).toBe(false);
+  });
+});
+
+describe('a word search deals in', () => {
+  it('has at least two letters', () => {
+    expect(isSearchableWord('אב')).toBe(true);
+    expect(isSearchableWord('ab')).toBe(true);
+    expect(isSearchableWord('א')).toBe(false);
+    expect(isSearchableWord('a')).toBe(false);
+  });
+
+  it('does not count points or punctuation as letters', () => {
+    expect(isSearchableWord('הַ')).toBe(false);
+    expect(isSearchableWord(']')).toBe(false);
+    expect(isSearchableWord('—')).toBe(false);
+    expect(isSearchableWord('(לא)')).toBe(true);
   });
 });

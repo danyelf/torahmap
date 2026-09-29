@@ -27,9 +27,6 @@ export const DEFAULT_ZOOM = 1.0;
 // Debounced so pan/zoom doesn't flood browser history with replaceState calls
 export const URL_UPDATE_DEBOUNCE_MS = 300;
 
-// Terms shorter than this are dropped: too many false positives, too little gain
-export const MIN_SEARCH_TERM_LENGTH = 2;
-
 // How long the search must sit unchanged before it is recorded, so typing a
 // word is one event rather than one per letter
 export const SEARCH_RECORD_DELAY_MS = 1000;
