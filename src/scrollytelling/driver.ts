@@ -3,7 +3,8 @@
 // the story is.
 
 import type { Picture } from '../geometry';
-import type { CameraPosition, ResolvedStoryStop } from './types';
+import type { CameraPosition } from '@torahmap/stories';
+import type { ResolvedStoryStop } from './types';
 
 /**
  * How far the reader must scroll the story, while driving, before the story

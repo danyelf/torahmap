@@ -1,0 +1,12 @@
+{
+  "name": "@torahmap/stories",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./vite-plugin": "./vite-plugin.mjs"
+  },
+  "dependencies": {
+    "@torahmap/link": "*"
+  }
+}

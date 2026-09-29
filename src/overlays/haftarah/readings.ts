@@ -7,6 +7,7 @@ import type { TorahData } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
 import { hslToRgb } from '../../utils/color.ts';
 import { loadJson } from '../loadJson.ts';
+import { HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 
 interface VerseRef {
   chapter: number;
@@ -60,8 +61,7 @@ export interface HaftarahMappings {
   specialOccasions: SpecialOccasionData[];
 }
 
-export const CUSTOMS = ['ashkenazi', 'sephardi'] as const;
-export type Custom = (typeof CUSTOMS)[number];
+export type Custom = (typeof HAFTARAH_CUSTOMS)[number];
 
 let data: HaftarahMappings | null = null;
 let structure: TorahData | null = null;

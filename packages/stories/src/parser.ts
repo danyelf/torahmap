@@ -1,5 +1,5 @@
 import type { StoryData, StoryStop, EasingName, CameraRef } from './types';
-import { parseVerseFromUrl, SEARCH_KEYS } from '../urlState';
+import { parseVerseFromUrl, SEARCH_KEYS } from '@torahmap/link';
 
 /** The frontmatter keys a story may set. */
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;
@@ -8,7 +8,7 @@ type HeaderKey = (typeof STORY_HEADER_KEYS)[number];
 // A story is optional frontmatter (STORY_HEADER_KEYS) followed by stops, each
 // opened by `<!-- stop: id | camera: ... | search: ... | overlay: ... | key: value -->`
 // and a `# Title` heading. The search's keys go to the search; params other
-// than camera/overlay/easing/verse/zoom become the overlay's. See src/stories/
+// than camera/overlay/easing/verse/zoom become the overlay's. See markdown/
 // for examples.
 export function parseStoryMarkdown(markdown: string): StoryData {
   const front = parseFrontmatter(markdown);

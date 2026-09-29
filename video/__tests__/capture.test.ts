@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { captureLine, storyStopLine } from '../capture.ts';
 import { parseScript } from '../script.ts';
-import { parseStoryMarkdown } from '../../src/scrollytelling/storyParser.ts';
+import { parseStoryMarkdown } from '@torahmap/stories';
 
 const hashOf = (params: Record<string, string>) => `#${new URLSearchParams(params)}`;
 

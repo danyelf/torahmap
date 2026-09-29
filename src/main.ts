@@ -24,7 +24,8 @@ import {
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
-import { CONTINUE_STORY, menuHtml, type StoryPlace } from './menu.ts';
+import { CONTINUE_STORY, SHARE, menuHtml, type StoryPlace } from './menu.ts';
+import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
@@ -43,16 +44,18 @@ import {
   trackWordSearch,
 } from './analytics.ts';
 import {
-  parseUrlState,
   parseVerseFromUrl,
-  updateUrl,
-  subscribeToHashChange,
-  applyingExternalState,
   verseToUrlFormat,
+  verseRef,
+  linkNamesAView,
   type UrlState,
-} from './urlState.ts';
+} from '@torahmap/link';
+import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
+import { tabTitle } from './linkNames.ts';
+import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
 import {
   createCamera,
@@ -132,7 +135,7 @@ import {
 import { SEARCH_WITH_OVERLAY, FRONT_FADE } from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
 import { listedStories, storyToOpen, type Story } from './scrollytelling/storyIndex';
-import { STORIES } from './stories/index.ts';
+import { STORIES } from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
@@ -188,8 +191,19 @@ function storyWasFolded(): boolean {
   }
 }
 
+/**
+ * Set the tab's title from the address rather than from any state built for
+ * it, so it can never name a view the address does not hold — a write
+ * suppressed by `applyingExternalState` leaves both unchanged.
+ */
+function showTitle(): void {
+  const title = tabTitle(parseUrlState(overlayParamSpecs), __GIT_BRANCH__);
+  if (document.title !== title) document.title = title;
+}
+
 async function main(): Promise<void> {
-  document.title = __GIT_BRANCH__ === 'main' ? 'Torahmap' : `Torahmap [${__GIT_BRANCH__}]`;
+  // Before the data loads, so the branch name shows from the start.
+  showTitle();
 
   const [torahData, verseTexts] = await Promise.all([
     loadTanakhStructure(),
@@ -473,6 +487,7 @@ async function main(): Promise<void> {
 
   const panel = document.getElementById('panel')!;
   const droppedMenu = document.getElementById('menu')!;
+  const shareStatus = document.getElementById('share-status')!;
   const storyProgress = document.getElementById('story-progress')!;
   const storyProgressFill = document.getElementById('story-progress-fill')!;
   const toolsTitle = document.getElementById('tools-title')!;
@@ -935,19 +950,21 @@ async function main(): Promise<void> {
     return state;
   }
 
-  /**
-   * Write the URL for what is on screen. While the story is open it names the
-   * stop alone, whoever is driving, so reloading puts a lost reader back on the
-   * story; folded, it describes the reader's view. `push` adds a history entry,
-   * for a discrete step rather than a pan or a scroll.
-   */
+  /** Write the URL for what is on screen; `push` asks for a history entry, for a discrete step rather than a pan or a scroll. */
   function syncUrl(push: boolean = false): void {
-    const state: UrlState =
-      frame.mode === 'story'
-        ? { story: story.id, stop: resolvedStops[storyStopIndex()].id, overlayParams: {} }
-        : buildCurrentUrlState();
-    updateUrl(state, push);
+    const next = linkForScreen({
+      mode: frame.mode,
+      driver: driverKind(driver),
+      story: { id: story.id, stop: resolvedStops[storyStopIndex()].id },
+      explore: buildCurrentUrlState,
+    });
+    updateUrl(next, pushes(parseUrlState(), next, push));
+    showTitle();
   }
+
+  // For a write asked every frame, as a story scroll does. It asks for no history
+  // entry, so a late one loses none, and it reads the screen as it is when it fires.
+  const syncUrlSoon = debounce(() => syncUrl(false), URL_UPDATE_DEBOUNCE_MS);
 
   // The camera when the reader took the map or last sent view_settled. Every
   // pointer up settles, a click included, so only a camera that has left it is sent.
@@ -1164,7 +1181,7 @@ async function main(): Promise<void> {
       click.index,
     );
 
-    const ref = `${click.book} ${click.chapter}:${click.verse}`;
+    const ref = verseRef(click);
     const paletteFull = !canAddTerm(overlaySettings.get(searchTool));
     trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
 
@@ -1338,9 +1355,9 @@ async function main(): Promise<void> {
 
   // An edited story reloads in place on the dev server, keeping the reader's scroll.
   if (import.meta.hot) {
-    import.meta.hot.accept('./stories/index.ts', (module) => {
+    import.meta.hot.accept('@torahmap/stories', (module) => {
       if (!module) return;
-      listed = listedStories(module.STORIES as Story[], __SHOW_DRAFTS__);
+      listed = listedStories(module.STORIES, __SHOW_DRAFTS__);
       reloadStory();
     });
   }
@@ -1419,7 +1436,7 @@ async function main(): Promise<void> {
   }
 
   // Delegated: the menus and panels are redrawn as they open.
-  function onChromeClick(e: MouseEvent): void {
+  async function onChromeClick(e: MouseEvent): Promise<void> {
     const target = e.target as Element;
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
     if (target.closest('.panel-close')) return dispatch({ type: 'close' });
@@ -1427,13 +1444,52 @@ async function main(): Promise<void> {
       return dispatch({ type: 'choose', panel: toolsNow().search ? 'search' : 'overlay' });
     const chosen = storyChosen(target);
     if (chosen) return readStory(chosen.id, chosen.fromStart);
-    const action = target.closest<HTMLElement>('[data-action]')?.dataset.action;
+    const actionItem = target.closest<HTMLElement>('[data-action]');
+    const action = actionItem?.dataset.action;
     if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
+    if (action === SHARE) {
+      // A share already in flight ignores a second tap: sharing again would
+      // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
+      if (actionItem!.dataset.sharePending) return;
+      actionItem!.dataset.sharePending = 'true';
+      try {
+        await shareCurrentView(actionItem!);
+      } finally {
+        delete actionItem!.dataset.sharePending;
+      }
+      return;
+    }
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
     const chooser = target.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
+  }
+
+  /** A pan's debounced address write may not have landed yet, so it is brought current first. */
+  async function shareCurrentView(item: HTMLElement): Promise<void> {
+    // An unchanged live region doesn't reliably re-announce; clearing it here,
+    // ahead of the await below, means even a repeated outcome starts from empty.
+    shareStatus.textContent = '';
+    syncUrl(false);
+    const outcome = await shareLink(location.href, document.title, {
+      share: navigator.share?.bind(navigator),
+      writeText: (t) => navigator.clipboard.writeText(t),
+      coarsePointer: matchMedia('(pointer: coarse)').matches,
+    });
+    if (outcome === 'copied' || outcome === 'failed') {
+      const label = outcome === 'copied' ? 'Link copied' : "Couldn't copy";
+      item.innerHTML =
+        outcome === 'copied' ? `${label} <span class="menu-confirm-mark">✓</span>` : label;
+      shareStatus.textContent = label;
+      // Reopening the menu redraws its items, detaching this one; a stale
+      // timer must not then close whatever menu is open by the time it fires.
+      setTimeout(() => {
+        if (frame.menu && item.isConnected) dispatch({ type: 'menu' });
+      }, 1500);
+    } else if (frame.menu) {
+      dispatch({ type: 'menu' });
+    }
   }
   for (const id of ['panel', 'menu-toggle', 'menu', 'map-legend']) {
     document.getElementById(id)!.addEventListener('click', onChromeClick);
@@ -1637,7 +1693,7 @@ async function main(): Promise<void> {
       blendTransition();
     }
     render();
-    syncUrl();
+    syncUrlSoon();
   }
 
   // A stop's camera places its verse, or fits its region, against the map's
@@ -1651,15 +1707,16 @@ async function main(): Promise<void> {
 
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
-  function restoreFromUrl(): void {
+  function restoreFromUrl(link: UrlState): void {
     const next = resolveViewState(
-      parseUrlState((id) => getOverlay(id)?.urlParams),
+      link,
       { ...initialCamera, zoom: DEFAULT_ZOOM },
       (id) => getOverlay(id) !== undefined,
     );
     applyingExternalState(() => applyViewState(next));
     // The link moved the camera, not the reader.
     markViewSettled();
+    showTitle();
   }
 
   /**
@@ -1673,7 +1730,7 @@ async function main(): Promise<void> {
       const open = next.searchParams.search ? 'search' : 'overlay';
       // Only for a story exit: a phone opens with no panel shown, so
       // applyFrame's own tracking of the open panel can't see it land here.
-      // Any other hash change (Back/Forward while already exploring) must
+      // Any other link change (Back/Forward while already exploring) must
       // leave frontTool at whatever the reader last chose from the legend.
       if (frame.mode === 'story') frontTool = open;
       setStoryOpen(false, exploreFrame(phoneLayout.matches, open));
@@ -1702,8 +1759,9 @@ async function main(): Promise<void> {
     }
   }
 
-  if (window.location.hash) {
-    restoreFromUrl();
+  const link = parseUrlState(overlayParamSpecs);
+  if (linkNamesAView(link)) {
+    restoreFromUrl(link);
   }
 
   // A link to a story stop always opens the story.
@@ -1723,8 +1781,8 @@ async function main(): Promise<void> {
   recordingDriver = true;
   markViewSettled();
 
-  subscribeToHashChange(() => {
-    restoreFromUrl();
+  subscribeToHistory(() => {
+    restoreFromUrl(parseUrlState(overlayParamSpecs));
   });
 
   scheduleStoryFrame();

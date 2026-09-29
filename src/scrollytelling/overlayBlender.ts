@@ -1,11 +1,12 @@
-import type { ResolvedStoryStop, StoryStop } from './types';
+import type { StoryStop } from '@torahmap/stories';
+import type { ResolvedStoryStop } from './types';
 import type { TanakhLayout } from '../types';
 import type { Color, Overlay } from '../overlays/types.ts';
 import type { Picture } from '../geometry.ts';
 import { getOverlay } from '../overlays/registry';
 import { getDefaultColor, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
-import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '../urlState.ts';
+import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { settingsFromLink } from '../overlays/settings.ts';
 import { searchFromLink } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';

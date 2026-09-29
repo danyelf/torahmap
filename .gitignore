@@ -33,3 +33,6 @@ playwright-report/
 
 # Rendered video (npm run video)
 video/out/
+
+# Written from packages/stories/markdown/ by packages/stories/generate.mjs
+packages/stories/src/generated.ts

@@ -15,3 +15,6 @@ public/data/
 # long. The archived designs under docs/plans/ are also a record of what was
 # decided when, and should not churn.
 *.md
+
+# Written by packages/stories/generate.mjs.
+packages/stories/src/generated.ts

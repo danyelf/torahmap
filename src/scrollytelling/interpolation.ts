@@ -1,4 +1,4 @@
-import type { EasingName } from './types';
+import type { EasingName } from '@torahmap/stories';
 import type { Color } from '../overlays/types.ts';
 
 type CameraState = { x: number; y: number; zoom: number };

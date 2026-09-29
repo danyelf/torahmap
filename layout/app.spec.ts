@@ -11,7 +11,7 @@ test('the render check sees a map that drew nothing', async ({ page }) => {
       if (/^draw(Arrays|Elements|RangeElements)/.test(name)) proto[name] = () => {};
     }
   });
-  await page.goto('/#overlay=commentary');
+  await page.goto('/?overlay=commentary');
   await mapReady(page);
   expect(await drawnPixels(page)).toBeLessThan(DRAWN_FLOOR);
 });
@@ -26,7 +26,7 @@ test('measuring finds the panel and its controls', async ({ page }) => {
 test('the rules report a layout broken on purpose', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'one screen proves the rules can fail');
   const state = STATES.find((s) => s.name === 'explore-verse-pinned')!;
-  await openMap(page, state.hash);
+  await openMap(page, state.link);
   await page.addStyleTag({
     content:
       '#panel { left: -100px !important; } #canvas { left: 0 !important; } ' +
@@ -46,7 +46,7 @@ test('the rules report a layout broken on purpose', async ({ page }, info) => {
 
 for (const state of STATES) {
   test(state.name, async ({ page }, info) => {
-    const errors = await openMap(page, state.hash);
+    const errors = await openMap(page, state.link);
     await state.then?.(page);
     expect(errors, `page errors after opening ${state.name}`).toEqual([]);
     const shot = info.outputPath('screen.png');
@@ -59,7 +59,7 @@ for (const state of STATES) {
 
 test("the haftarah legend's key shows only in the desktop layout", async ({ page }) => {
   const state = STATES.find((s) => s.name === 'explore-haftarah')!;
-  await openMap(page, state.hash);
+  await openMap(page, state.link);
   await state.then?.(page);
   // The phone layout starts at max-width 768px (src/styles/frame.css).
   const desktop = page.viewportSize()!.width > 768;

@@ -1,16 +1,12 @@
-import type { StoryData } from './types';
+import type { Story } from '@torahmap/stories';
 
-/** A story and the file name, without `.md`, that the URL calls it by. */
-export interface Story {
-  id: string;
-  data: StoryData;
-}
+export type { Story };
 
 /**
  * The stories to offer, in menu order: by `order`, lowest first, then those
  * without one; ties by file name. Drafts only when `showDrafts`.
  */
-export function listedStories(stories: Story[], showDrafts: boolean): Story[] {
+export function listedStories(stories: readonly Story[], showDrafts: boolean): Story[] {
   const rank = (s: Story): number => s.data.order ?? Infinity;
   return stories
     .filter((s) => showDrafts || !s.data.draft)

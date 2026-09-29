@@ -233,6 +233,11 @@ body[data-menu] #panel-body {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.menu-divider {
+  margin: 6px 0;
+  border-top: 1px solid #333;
+}
+
 .menu-item[data-action='story'] {
   color: var(--accent);
 }
@@ -240,6 +245,10 @@ body[data-menu] #panel-body {
 .menu-detail {
   color: #999;
   font-size: 13px;
+}
+
+.menu-confirm-mark {
+  color: var(--accent);
 }
 
 #story-content {

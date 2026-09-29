@@ -1,0 +1,59 @@
+import { describe, it, expect } from 'vitest';
+import { describeLink, readLink, TAGLINE, type LinkNames } from '@torahmap/link';
+
+const names: LinkNames = {
+  overlayName: (id) => ({ commentary: 'Commentary' })[id],
+  storyTitle: (id) => ({ tour: 'The Guided Tour' })[id],
+  stopOpening: (s, stop) =>
+    s === 'tour' && stop === 'abraham_zoom' ? 'We can overlay the map with data.' : undefined,
+};
+const describeQuery = (q: string) => describeLink(readLink(q), names);
+
+describe('describeLink', () => {
+  it('names a pinned verse, with the overlay in the description', () => {
+    expect(describeQuery('?verse=Genesis.12.1&overlay=commentary')).toEqual({
+      title: 'Genesis 12:1 · Torahmap',
+      description: `Commentary overlay. ${TAGLINE}`,
+    });
+  });
+
+  it('names a search', () => {
+    expect(describeQuery('?search=אברם')).toEqual({
+      title: 'Search: אברם · Torahmap',
+      description: TAGLINE,
+    });
+  });
+
+  it('puts the verse before the search', () => {
+    expect(describeQuery('?search=אברם&overlay=commentary&verse=Genesis.12.1')).toEqual({
+      title: 'Genesis 12:1 · Search: אברם · Torahmap',
+      description: `Commentary overlay. ${TAGLINE}`,
+    });
+  });
+
+  it('names a story stop by its story, and opens with the stop', () => {
+    expect(describeQuery('?story=tour&stop=abraham_zoom')).toEqual({
+      title: 'The Guided Tour · Torahmap',
+      description: `We can overlay the map with data. ${TAGLINE}`,
+    });
+  });
+
+  it('names the site alone for the plain map or a camera', () => {
+    const plain = { title: 'Torahmap', description: TAGLINE };
+    expect(describeQuery('')).toEqual(plain);
+    expect(describeQuery('?zoom=2&x=10&y=20')).toEqual(plain);
+  });
+
+  it('writes a book with a number the way readers do', () => {
+    expect(describeQuery('?verse=I.Samuel.1.5').title).toBe('I Samuel 1:5 · Torahmap');
+  });
+
+  it('describes an unknown story or overlay as if it were absent', () => {
+    expect(describeQuery('?story=gone&stop=x')).toEqual({
+      title: 'Torahmap',
+      description: TAGLINE,
+    });
+    expect(describeQuery('?overlay=text-dating').description).toBe(TAGLINE);
+    expect(describeQuery('?story=tour&stop=gone').description).toBe(TAGLINE);
+  });
+});
