@@ -178,7 +178,7 @@ import './styles/frame.css';
 import './styles/verse-popup.css';
 import './styles/phone.css';
 
-const STORY_FOLDED_KEY = 'torahMap.storyFolded';
+const VISITED_KEY = 'torahMap.visited';
 
 // How far down a phone's map a verse brought into view is put. Halfway down,
 // the verse lands behind the popup that sits just above the sheet.
@@ -189,11 +189,21 @@ function nearerStop(state: InterpolatedState): ResolvedStoryStop {
   return state.t > 0.5 ? state.toStop : state.fromStop;
 }
 
-function storyWasFolded(): boolean {
+// Set once the reader has left the story or moved past the stop it opened on;
+// until then, a visit to the bare address starts the story again.
+function hasVisited(): boolean {
   try {
-    return sessionStorage.getItem(STORY_FOLDED_KEY) === 'true';
+    return localStorage.getItem(VISITED_KEY) === 'true';
   } catch {
     return false;
+  }
+}
+
+function rememberVisit(): void {
+  try {
+    localStorage.setItem(VISITED_KEY, 'true');
+  } catch {
+    // Storage can be unavailable; the story simply opens next time.
   }
 }
 
@@ -295,7 +305,7 @@ async function main(): Promise<void> {
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
 
-  const startsFolded = opensFolded(parseUrlState(), storyWasFolded());
+  const startsFolded = opensFolded(parseUrlState(), hasVisited());
   let driver: Driver = startsFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
 
@@ -1338,23 +1348,10 @@ async function main(): Promise<void> {
     });
   }
 
-  // Kept for the tab's session: a reload leaves the reader where they were,
-  // but a new visit starts in the story rather than on controls with nothing
-  // chosen. Written only when the reader opens or closes a section, not when
-  // a shared link opens with the story folded.
-  function rememberStoryFolded(folded: boolean): void {
-    try {
-      if (folded) sessionStorage.setItem(STORY_FOLDED_KEY, 'true');
-      else sessionStorage.removeItem(STORY_FOLDED_KEY);
-    } catch {
-      // Storage can be unavailable; the story simply opens next time.
-    }
-  }
-
   function leaveStory(exploring?: Frame): void {
     takeOver('fold');
     setStoryOpen(false, exploring);
-    rememberStoryFolded(true);
+    rememberVisit();
     render();
     syncUrl(true);
   }
@@ -1383,7 +1380,6 @@ async function main(): Promise<void> {
 
   function readerOpensStory(stop = storyStopIndex()): void {
     openStory(stop, 'ease', 'open');
-    rememberStoryFolded(false);
     syncUrl(true);
   }
 
@@ -1590,8 +1586,12 @@ async function main(): Promise<void> {
     );
   }
 
+  let firstStopId: string | null = null;
+
   // Reaching a stop is sent once per visit, however often the reader scrolls past it.
   function arriveAtStop(stop: ResolvedStoryStop): void {
+    firstStopId ??= stop.id;
+    if (stop.id !== firstStopId) rememberVisit();
     syncStoryStopState(stop);
     lastSyncedStopId = stop.id;
     const { number } = stopAt(resolvedStops, resolvedStops.indexOf(stop));
