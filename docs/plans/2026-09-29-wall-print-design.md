@@ -32,9 +32,13 @@ be readable, not general.
   already installed, turns the PDF into a 300 dpi PNG for shops that want an
   image.
 - **The files are print-ready.** Each is 36×24 inches landscape, plus ⅛ inch
-  of bleed on every side and crop marks. The cream is printed as a tint over
-  the whole sheet rather than left to the paper, so the files print the same on
-  any stock. Colours are sRGB and tagged as such: an inkjet shop's own software
+  of bleed on every side. Crop marks are an option (`--marks`), not the
+  default: they must sit outside the bleed, on a larger page, and many
+  large-format shops want bleed alone. The cream is printed as a tint over the
+  whole sheet rather than left to the paper, so the files print the same on any
+  stock. Colours are sRGB values. Neither Chromium's PDF nor `pdftoppm`'s PNG
+  embeds a profile saying so, but sRGB is what a shop assumes of an untagged
+  file. An inkjet shop's own software
   converts them for its printer and paper, and a CMYK file would only narrow
   what that printer can reach. The one exception is a shop that demands
   PDF/X-1a, a CMYK-only standard; the file would be converted with that shop's
@@ -80,7 +84,8 @@ they look.
   one band each, and the bands slide apart along the cut, as on the site. Each
   band is its slice of the square, moved along the cut by `BAND_OFFSET` (from
   `src/geometry.ts`, imported rather than copied) times its distance from the
-  middle band.
+  middle band. A split verse's square also grows by `MULTICOLOR_GROWTH` on
+  every side, as on the site, so it stands out.
 
 ![The search print's palette: whole sheet, then Genesis 22–32 and Samuel at print size](images/2026-09-29-wall-print/search-palette.png)
 
