@@ -91,6 +91,20 @@ describe('cleanText', () => {
       const result = cleanText(input);
       expect(result).toBe('Thus said GOD: For three transgressions');
     });
+
+    it('puts the given separator between lines', () => {
+      expect(cleanText('Line 1<br>Line 2<br/>Line 3', ' / ')).toBe('Line 1 / Line 2 / Line 3');
+    });
+
+    it('drops a line break at either end of the verse', () => {
+      const input = '<br><span class="poetry">Line 1</span><br> <br>Line 2<br>{פ}<br>';
+      expect(cleanText(input, ' / ')).toBe('Line 1 / Line 2 / {פ}');
+    });
+
+    it('sets a tally apart from its name with a dash', () => {
+      const input = 'the king of Jerusalem    1<br>the king of Hebron    1</span>';
+      expect(cleanText(input, ' / ')).toBe('the king of Jerusalem – 1 / the king of Hebron – 1');
+    });
   });
 
   describe('complex real-world examples', () => {

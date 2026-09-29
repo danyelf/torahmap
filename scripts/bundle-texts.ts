@@ -77,18 +77,25 @@ const BOOKS = [
   { name: 'II Chronicles', file: 'ii-chronicles' },
 ];
 
-// Strip HTML tags and footnotes from text
-export function cleanText(text: string): string {
+const LINE_BREAK = '';
+
+// Strip HTML tags and footnotes from text. A line break between two lines
+// becomes `lineBreak`; one at either end of the verse is dropped.
+export function cleanText(text: string, lineBreak = ' '): string {
   return text
     .replace(/<sup[^>]*>[\s\S]*?<\/sup>/g, '') // Remove footnote markers
     .replace(/<i>([^<]*)<\/i>/g, '$1') // Flatten nested <i> tags (keep content)
     .replace(/<i class="footnote">[\s\S]*?<\/i>/g, '') // Remove footnotes (now without nested tags)
-    .replace(/<br\s*\/?>/gi, ' ') // Convert <br> to space (for poetry)
+    .replace(/ {2,}(\d)/g, ' – $1') // The tally column in Joshua 12, the only typed run of spaces before a number
+    .replace(/<br\s*\/?>/gi, LINE_BREAK)
     .replace(/<[^>]+>/g, '') // Remove remaining HTML tags
     .replace(/&nbsp;/g, ' ') // Replace &nbsp; with regular space
     .replace(/&[a-z]+;/g, ' ') // Replace other HTML entities with space
     .replace(/\s+/g, ' ') // Normalize whitespace
-    .trim();
+    .split(LINE_BREAK)
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .join(lineBreak);
 }
 
 function checkVersion(filePath: string, data: SefariaTextFile, expected: string): void {
@@ -123,7 +130,7 @@ function loadBook(dataDir: string, filePrefix: string): BookTexts {
       const verseNum = String(verseIdx + 1);
       bookTexts[chapterNum][verseNum] = {
         he: cleanText(heChapter[verseIdx] || ''),
-        en: cleanText(enChapter[verseIdx] || ''),
+        en: cleanText(enChapter[verseIdx] || '', ' / '),
       };
     }
   }
