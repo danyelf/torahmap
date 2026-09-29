@@ -127,33 +127,6 @@ export interface Bounds {
   height: number;
 }
 
-// Commentary counts from Sefaria
-export interface TanakhCommentary {
-  total: number;
-  categories: Record<string, number>;
-}
-
-export type CommentaryData = Record<string, Record<string, Record<string, TanakhCommentary>>>;
-// Structure: { [book]: { [chapter]: { [verse]: TanakhCommentary } } }
-
-// Trop index: maps trop unicode -> list of verse locations containing it
-interface TropVerseLocation {
-  book: string;
-  chapter: number;
-  verse: number;
-  count: number; // How many times this trop appears in this verse
-}
-
-export interface TropIndexEntry {
-  unicode: string;
-  name: string;
-  hebrewName: string;
-  totalCount: number;
-  verses: TropVerseLocation[];
-}
-
-export type TropIndex = Map<string, TropIndexEntry>;
-
 // Verse key utilities for consistent key generation
 export function tanakhKey(book: string, chapter: number, verse: number): string {
   return `${book}:${chapter}:${verse}`;

@@ -6,7 +6,7 @@
 // modules of their own — termRows.ts, resultsList.ts and highlight.ts — and
 // each is handed what it needs. Which row the reader is working in is
 // presentation, not a setting, so it stays here.
-import '../../styles/overlays/search.css';
+import './search.css';
 import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';

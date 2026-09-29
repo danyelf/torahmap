@@ -1,8 +1,8 @@
-import '../styles/overlays/text-dating.css';
+import './text-dating.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { loadJson } from './loadJson.ts';
-import { legendRow } from './legend.ts';
+import { legendCaption, legendRow } from './legend.ts';
 import { colorToCss } from '../utils/color.ts';
 
 interface TextDatingData {
@@ -141,7 +141,7 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
     container.innerHTML = `
       <div class="text-dating-legend">
         ${rows}
-        <div class="legend-note">Darker shades = later within period</div>
+        ${legendCaption('Darker shades = later within period')}
       </div>
     `;
   },

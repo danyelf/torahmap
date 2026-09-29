@@ -1,5 +1,5 @@
 import type { Overlay, Color, UrlParamValues } from './types.ts';
-import type { TanakhIdentity, TanakhLayout, CommentaryData } from '../types.ts';
+import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, renderAxis } from './legend.ts';
@@ -33,6 +33,15 @@ const WHERE: Record<string, string> = {
   'Liturgy': 'the liturgy',
   'Second Temple': 'Second Temple texts',
 };
+
+// Commentary counts from Sefaria
+interface TanakhCommentary {
+  total: number;
+  categories: Record<string, number>;
+}
+
+/** { [book]: { [chapter]: { [verse]: TanakhCommentary } } } */
+export type CommentaryData = Record<string, Record<string, Record<string, TanakhCommentary>>>;
 
 export interface CommentarySettings {
   readonly category: string;

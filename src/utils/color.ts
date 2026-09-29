@@ -52,41 +52,6 @@ export function interpolateGradient(t: number, stops: ColorStop[]): Color {
   return stops[stops.length - 1].color;
 }
 
-/** Map a value onto a gradient, normalized linearly or (with useLog) logarithmically. */
-export function scaleToGradient(
-  value: number,
-  maxValue: number,
-  stops: ColorStop[],
-  options?: { useLog?: boolean },
-): Color {
-  const useLog = options?.useLog ?? false;
-
-  if (useLog) {
-    const logMax = Math.log(maxValue + 1);
-    const t = Math.log(value + 1) / logMax;
-    return interpolateGradient(t, stops);
-  } else {
-    const t = maxValue > 0 ? value / maxValue : 0;
-    return interpolateGradient(t, stops);
-  }
-}
-
-/**
- * Renders a CSS `linear-gradient(...)` string by sampling `colorAt` at `stops`
- * evenly spaced indices (0..stops-1). Used to build legend gradient bars.
- */
-export function buildLegendGradient(stops: number, colorAt: (index: number) => Color): string {
-  const parts: string[] = [];
-  for (let i = 0; i < stops; i++) {
-    const rgb = colorAt(i)
-      .map((c) => Math.round(c * 255))
-      .join(', ');
-    const percent = (i / (stops - 1)) * 100;
-    parts.push(`rgb(${rgb}) ${percent}%`);
-  }
-  return `linear-gradient(to right, ${parts.join(', ')})`;
-}
-
 interface HSL {
   h: number; // 0-360
   s: number; // 0-1

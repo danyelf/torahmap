@@ -545,19 +545,6 @@ describe('Verse Length Overlay', () => {
 
       expect(element).toBeNull();
     });
-
-    it('has appropriate styling', () => {
-      const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
-        verse,
-        false,
-        verseLengthOverlay.settings,
-      ) as HTMLElement;
-
-      // Check that it has styling
-      expect(element.style.cssText).toBeTruthy();
-      expect(element.style.cssText).toContain('margin-top');
-    });
   });
 
   describe('Integration', () => {

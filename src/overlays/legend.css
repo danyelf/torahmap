@@ -1,6 +1,4 @@
-/* The axis any overlay with a continuous scale draws. It lives here, not in a
-   file named for one overlay, so that a second caller need not import the
-   first. */
+/* The axis an overlay with a continuous scale draws, and a legend's caption. */
 
 #overlay-legend .legend-gradient {
   height: 12px;
@@ -48,4 +46,11 @@
 
 #overlay-legend .tick-end::before {
   left: 100%;
+}
+
+#overlay-legend .legend-caption {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #888;
 }

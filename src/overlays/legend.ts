@@ -1,8 +1,9 @@
-// Small pieces of legend markup shared by overlays that build their own HTML.
+// Small pieces of legend markup for overlays that build their own HTML.
 
 import type { Scale } from '../utils/scale.ts';
-import { buildLegendGradient, interpolateGradient } from '../utils/color.ts';
-import '../styles/legend-axis.css';
+import type { Color } from './types.ts';
+import { colorToCss, interpolateGradient } from '../utils/color.ts';
+import './legend.css';
 
 /** Samples across the strip: enough to read as continuous, few enough to stay short. */
 const GRADIENT_SAMPLES = 10;
@@ -36,6 +37,15 @@ export function renderAxis(
     `;
 }
 
+/** `colorAt` sampled at `samples` evenly spaced indices, as a left-to-right CSS gradient. */
+export function buildLegendGradient(samples: number, colorAt: (index: number) => Color): string {
+  const parts: string[] = [];
+  for (let i = 0; i < samples; i++) {
+    parts.push(`${colorToCss(colorAt(i))} ${(i / (samples - 1)) * 100}%`);
+  }
+  return `linear-gradient(to right, ${parts.join(', ')})`;
+}
+
 /** A continuous scale's colours as a CSS gradient. */
 export function axisGradient(scale: Scale): string {
   return buildLegendGradient(GRADIENT_SAMPLES, (i) =>
@@ -60,25 +70,13 @@ function spaceOut(ticks: PlacedTick[]): PlacedTick[] {
   return kept.reverse();
 }
 
-/**
- * A `.legend-row` holding a color swatch and a label, as trop and text-dating
- * both build it. `labelClass`, when given, is set on the label span (text-dating
- * uses `label` for its line-height).
- */
+/** A `.legend-row`: a colour swatch and its label, with `labelClass` on the label if given. */
 export function legendRow(swatchBackground: string, label: string, labelClass?: string): string {
   const labelAttr = labelClass ? ` class="${labelClass}"` : '';
   return `<div class="legend-row"><span class="swatch" style="background: ${swatchBackground}"></span><span${labelAttr}>${label}</span></div>`;
 }
 
-/** A grey 10px caption line under a legend, as haftarah and verse-length both build it. */
-export function legendCaption(
-  text: string,
-  options?: { marginTop?: number; marginLeft?: number; color?: string; lineHeight?: number },
-): string {
-  const marginTop = options?.marginTop ?? 4;
-  const color = options?.color ?? '#888';
-  const lineHeight = options?.lineHeight ?? 1.3;
-  const marginLeft =
-    options?.marginLeft !== undefined ? ` margin-left: ${options.marginLeft}px;` : '';
-  return `<div style="color: ${color}; font-size: 10px; margin-top: ${marginTop}px;${marginLeft} line-height: ${lineHeight};">${text}</div>`;
+/** A line of small grey text under a legend. */
+export function legendCaption(text: string): string {
+  return `<div class="legend-caption">${text}</div>`;
 }

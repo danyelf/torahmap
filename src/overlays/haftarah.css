@@ -60,3 +60,31 @@
     display: none;
   }
 }
+
+.haftarah-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.haftarah-controls label {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.haftarah-controls select {
+  flex: 1;
+}
+
+.haftarah-legend-swatch {
+  width: 20px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* Under the label, clear of the swatch, and set apart from the hint below. */
+.haftarah-legend-notes {
+  margin-left: 28px;
+  margin-bottom: 4px;
+}

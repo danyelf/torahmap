@@ -7,7 +7,7 @@ import { assertValidColor, assertApproximately } from '../../helpers/assertions'
 import type { Overlay } from '../../../overlays/types';
 import type { TanakhIdentity, TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
-import { getRarityTier, RARITY_THRESHOLDS } from '../../../trop';
+import { getRarityTier, RARITY_THRESHOLDS } from '../../../overlays/trop/marks';
 
 registerAllOverlays();
 

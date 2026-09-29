@@ -1,12 +1,29 @@
 // Trop (cantillation marks): what the marks are, and which verses carry them.
 //
 // The domain half of the trop feature. The overlay that draws it is in
-// src/overlays/trop.ts; which character is a mark is in src/hebrew.ts, with
-// the other character tests.
+// ../trop.ts; which character is a mark is in src/hebrew.ts, with the other
+// character tests.
 
-import type { TropIndex, TropIndexEntry } from './types.ts';
-import type { VerseTexts } from './verseTexts.ts';
-import { isTropMark } from './hebrew.ts';
+import type { VerseTexts } from '../../verseTexts.ts';
+import { isTropMark } from '../../hebrew.ts';
+
+// Trop index: maps trop unicode -> list of verse locations containing it
+interface TropVerseLocation {
+  book: string;
+  chapter: number;
+  verse: number;
+  count: number; // How many times this trop appears in this verse
+}
+
+export interface TropIndexEntry {
+  unicode: string;
+  name: string;
+  hebrewName: string;
+  totalCount: number;
+  verses: TropVerseLocation[];
+}
+
+export type TropIndex = Map<string, TropIndexEntry>;
 
 export interface TropMark {
   unicode: string; // The Unicode character

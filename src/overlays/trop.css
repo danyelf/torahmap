@@ -8,6 +8,13 @@
   margin-bottom: 2px;
 }
 
+.trop-gradient-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #888;
+}
+
 .trop-chart {
   display: grid;
   grid-template-columns: repeat(6, 1fr);

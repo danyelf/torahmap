@@ -2,7 +2,7 @@ import type { Overlay, Color, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
 import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
-import { rgbToHsl, hslToRgb, buildLegendGradient, colorToCss, brighten } from '../utils/color.ts';
+import { rgbToHsl, hslToRgb, colorToCss, brighten } from '../utils/color.ts';
 import { escapeHtml } from '../utils/html.ts';
 import { lingeringHover } from '../utils/hover.ts';
 import {
@@ -18,10 +18,10 @@ import {
   type OccasionCategory,
 } from './haftarah/readings.ts';
 import { CONTROL } from '../panel.ts';
-import { legendCaption } from './legend.ts';
+import { buildLegendGradient, legendCaption } from './legend.ts';
 import { memoBySettings } from './memo.ts';
 import { HAFTARAH, HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
-import '../styles/overlays/haftarah.css';
+import './haftarah.css';
 
 // In the order the legend lists them.
 const CATEGORY_LABELS: Record<OccasionCategory, string> = {
@@ -240,12 +240,10 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
       const wrapper = document.createElement('div');
       wrapper.className = 'haftarah-controls';
       wrapper.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
-          <label for="custom-select" style="font-size: 12px; color: #aaa;">Custom:</label>
-          <select id="custom-select" class="${CONTROL.select}" style="flex: 1;">
-            ${HAFTARAH_CUSTOMS.map((c) => `<option value="${c}">${customLabel(c)}</option>`).join('')}
-          </select>
-        </div>
+        <label for="custom-select">Custom:</label>
+        <select id="custom-select" class="${CONTROL.select}">
+          ${HAFTARAH_CUSTOMS.map((c) => `<option value="${c}">${customLabel(c)}</option>`).join('')}
+        </select>
       `;
       container.appendChild(wrapper);
 
@@ -276,17 +274,14 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
 
     container.innerHTML = `
       <div class="legend-row">
-        <div style="
-          width: 20px;
-          height: 12px;
-          background: ${gradient};
-          border-radius: 2px;
-        "></div>
+        <div class="haftarah-legend-swatch" style="background: ${gradient}"></div>
         <span>${parshaCount} Torah portions and ${occasionCount} special occasions</span>
       </div>
-      ${legendCaption(`A portion and its haftarah (${customLabel(settings.custom)}) share a colour`, { marginLeft: 28 })}
-      ${legendCaption('A verse in more than one reading is split corner to corner, one band each', { marginLeft: 28 })}
-      ${legendCaption('Hover a reading to light it and its haftarah; the rest darkens', { marginTop: 8, color: '#666', lineHeight: 1.4 })}
+      <div class="haftarah-legend-notes">
+        ${legendCaption(`A portion and its haftarah (${customLabel(settings.custom)}) share a colour`)}
+        ${legendCaption('A verse in more than one reading is split corner to corner, one band each')}
+      </div>
+      ${legendCaption('Hover a reading to light it and its haftarah; the rest darkens')}
     `;
   },
 

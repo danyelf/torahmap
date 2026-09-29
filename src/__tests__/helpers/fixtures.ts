@@ -1,5 +1,6 @@
 // Test fixtures for Torah Map tests
-import type { TanakhLayout, CommentaryData } from '../../types';
+import type { TanakhLayout } from '../../types';
+import type { CommentaryData } from '../../overlays/commentary';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
