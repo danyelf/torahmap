@@ -1,7 +1,7 @@
 // What counts as a match, for both the search that finds verses and the
 // highlighter that marks them.
 
-import { normalizeHebrewForSearch, splitIntoWords } from '../hebrew.ts';
+import { isWordSeparator, normalizeHebrewForSearch } from '../hebrew.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '../types.ts';
 
 export interface TextRange {
@@ -53,23 +53,24 @@ export function matchRangesInFolded(
     return ranges;
   }
 
-  if (mode === 'word') {
-    for (const { word, start, end } of splitIntoWords(haystack)) {
-      if (word === needle) {
-        ranges.push({ start, end });
-        if (ranges.length >= limit) break;
-      }
-    }
-    return ranges;
-  }
-
+  // A Hebrew whole word, or phrase, is an occurrence with a separator or the
+  // end of the text on both sides. Splitting every verse into words instead
+  // costs ten times as much, and a search runs this on every verse.
+  const whole = mode === 'word';
   let from = 0;
   for (;;) {
     const at = haystack.indexOf(needle, from);
     if (at === -1) break;
-    ranges.push({ start: at, end: at + needle.length });
-    if (ranges.length >= limit) break;
+    const end = at + needle.length;
+    if (!whole || (endsWord(haystack, at - 1) && endsWord(haystack, end))) {
+      ranges.push({ start: at, end });
+      if (ranges.length >= limit) break;
+    }
     from = at + 1;
   }
   return ranges;
+}
+
+function endsWord(text: string, i: number): boolean {
+  return i < 0 || i >= text.length || isWordSeparator(text[i]);
 }

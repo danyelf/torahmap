@@ -59,6 +59,15 @@ describe('where a term matches', () => {
     ).toHaveLength(2);
   });
 
+  it('finds a Hebrew phrase as whole words', () => {
+    const haystack = folded('וַיְדַבֵּר יְהוָה אֶל־מֹשֶׁה');
+    const find = (term: string) =>
+      matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' });
+    expect(find('וידבר יהוה')).toEqual([{ start: 0, end: 10 }]);
+    expect(find('אל משה')).toHaveLength(1); // written with a maqaf
+    expect(find('דבר יהוה')).toEqual([]); // the phrase starts inside a word
+  });
+
   it('treats English punctuation as a word boundary, which splitting on spaces would not', () => {
     const ranges = matchRangesInFolded('in the beginning, god', 'beginning', {
       mode: 'word',
