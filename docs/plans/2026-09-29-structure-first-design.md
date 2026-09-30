@@ -17,9 +17,9 @@ first frame. That is #311, handled separately.
 ## Decisions
 
 - **A link waits only for what it names.** A link carrying a search waits for
-  the search data; one naming an overlay waits for that overlay; one pinning a
-  verse waits for the texts, which the verse popup shows. A bare address, a
-  place, or a story stop with none of these draws at once.
+  the search data; one naming an overlay waits for that overlay. A bare address, a place, a
+  pinned verse, or a story stop with neither draws at once: a pinned verse shows
+  on the map, and its popup opens when the texts arrive.
   The reader never sees the view they were sent change under them.
 - **The reader's early actions show nothing until their data arrives.** A
   search typed or an overlay picked before its data is in is taken as normal;
@@ -55,8 +55,7 @@ download still stops the map.
 
 1. Fetch `tanakh-structure.json`; lay out the map.
 2. Read the link. If it names an overlay, wait for `ready(overlay)`; if it
-   carries a search, wait for `ready(searchTool)`; if it pins a verse, wait for
-   the texts. The story stop the link opens counts the same way.
+   carries a search, wait for `ready(searchTool)`. The story stop the link opens counts the same way.
 3. Draw the first frame; set `data-map-ready`.
 4. Start every other wait.
 
@@ -82,8 +81,8 @@ every verse as never linked. Its legend row stays off too.
 - **Story.** A stop whose overlay is not ready draws as the plain map. At rest
   the story uses the same colour path as exploring, so it gets the same fade;
   mid-scroll the next frame simply picks up the new colours.
-- **Verse popup.** Shows the reference at once and its text when the texts
-  arrive, if it is still open.
+- **Verse popup.** Stays closed, pinned or hovered, until the texts arrive; then
+  opens for the pinned verse, if there is one.
 
 ## Testing
 

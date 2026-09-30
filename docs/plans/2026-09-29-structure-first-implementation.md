@@ -22,8 +22,7 @@ timing script.
 - Every change to the map's picture goes through the renderer's cross-fade; no
   new animation path.
 - No loading indicator anywhere.
-- A link waits for exactly what it names: its overlay, its search, the texts for
-  a pinned verse, and the same for the story stop it opens. Nothing else.
+- A link waits for exactly what it names: its overlay, its search, and the same for the story stop it opens. Nothing else.
 - Order: structure; what the link names; first frame and `data-map-ready`; then
   every other load at once.
 - Comments describe the code as it is now; no ticket numbers in code (AGENTS.md).
@@ -438,7 +437,7 @@ git commit -m "Look up a search term's meanings again once the dictionary is in"
 **Interfaces:**
 - Consumes: `UrlState` (`@torahmap/link`), `StoryStop` (`@torahmap/stories`).
 - Produces:
-  `linkNeeds(link: UrlState, stop: StoryStop | null): { overlays: string[]; search: boolean; texts: boolean }`.
+  `linkNeeds(link: UrlState, stop: StoryStop | null): { overlays: string[]; search: boolean }`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -451,19 +450,19 @@ const stop = (fields: Partial<StoryStop>): StoryStop => ({
 
 describe('linkNeeds', () => {
   it('needs nothing for a bare address opening a plain stop', () => {
-    expect(linkNeeds({ overlayParams: {} }, stop({}))).toEqual({ overlays: [], search: false, texts: false });
+    expect(linkNeeds({ overlayParams: {} }, stop({}))).toEqual({ overlays: [], search: false });
   });
 
   it('needs the overlay, the search and the texts a link names', () => {
     expect(
       linkNeeds({ overlay: 'haftarah', verse: 'Genesis.12.1', overlayParams: {}, searchParams: { search: 'אור' } }, null),
-    ).toEqual({ overlays: ['haftarah'], search: true, texts: true });
+    ).toEqual({ overlays: ['haftarah'], search: true });
   });
 
   it('needs what the story stop it opens shows', () => {
     expect(
       linkNeeds({ story: 'haftarah', overlayParams: {} }, stop({ overlay: 'haftarah', searchParams: { search: 'אור' }, verse: 'Isaiah.40.1' })),
-    ).toEqual({ overlays: ['haftarah'], search: true, texts: true });
+    ).toEqual({ overlays: ['haftarah'], search: true });
   });
 
   it('does not need the search for search settings with no word', () => {
@@ -484,12 +483,11 @@ and `packages/link/src/link.ts`, and correct the literals if they differ.
 export function linkNeeds(
   link: UrlState,
   stop: StoryStop | null,
-): { overlays: string[]; search: boolean; texts: boolean } {
+): { overlays: string[]; search: boolean } {
   const overlays = [link.overlay, stop?.overlay].filter((id): id is string => !!id);
   return {
     overlays: [...new Set(overlays)],
     search: !!(link.searchParams?.search || stop?.searchParams?.search),
-    texts: !!(link.verse || stop?.verse),
   };
 }
 ```
@@ -526,8 +524,8 @@ Replace the `Promise.all` at `src/main.ts:234` with
 unused imports. After `configureCommentary({ verses });` add:
 
 ```ts
-  // Filled in when the texts arrive; the verse popup shows the reference until then.
-  let verseTexts: VerseTexts = {};
+  // Null until the texts arrive; the verse popup stays closed until then.
+  let verseTexts: VerseTexts | null = null;
 
   // The first frame waits for what the link shows, and nothing else.
   const opening = parseUrlState(overlayParamSpecs);
@@ -539,11 +537,19 @@ unused imports. After `configureCommentary({ verses });` add:
   await Promise.all([
     ...needs.overlays.flatMap((id) => getOverlay(id) ?? []).map(ready),
     needs.search && ready(searchTool),
-    needs.texts &&
-      allVerseTexts().then((texts) => {
-        verseTexts = texts;
-      }),
   ]);
+```
+
+And make `updateSidebarWrapper` close the popup while the texts are missing:
+
+```ts
+  function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
+    updateSidebar(sidebarElements, verseTexts ? verse : null, {
+      verseTexts: verseTexts ?? {},
+      ...toolsNow(),
+      pinned: isPinned,
+    });
+  }
 ```
 
 - [ ] **Step 2: Share the front tool's fade**
@@ -636,7 +642,7 @@ disable the cache, and load each of these on a cold cache:
 2. `/?overlay=commentary`: first frame already coloured; `all-texts.json`
    starts only after it.
 3. `/?search=אור`: first frame shows the results.
-4. `/?verse=Genesis.12.1`: popup shows the verse text in the first frame.
+4. `/?verse=Genesis.12.1`: the verse is pinned in the first frame; the popup opens once `all-texts.json` lands.
 5. `/?overlay=commentary`, then at once pick trop from the menu: the map fades
    to trop when the texts arrive; the trop controls list its marks.
 6. `/`, then at once open search and type `אור`: once the dictionary arrives
@@ -668,7 +674,9 @@ The state `explore-search-overlay-switched` picks commentary after loading, and
 now its legend row appears when the commentary file lands. If it fails on a
 missing row, make its `then` wait for that row, e.g.
 `await page.locator('#map-legend').getByText(...)`, choosing a locator that does
-not assert reader-visible wording (a data attribute or row count). Rerun until
+not assert reader-visible wording (a data attribute or row count). Likewise the
+pinned-verse states expect `#verse-popup`, which now opens when the texts
+arrive: wait for it before checking. Rerun until
 it passes. Read two or three screenshots from `layout-report/shots/` to confirm
 the map actually drew.
 
