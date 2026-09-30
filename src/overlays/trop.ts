@@ -8,7 +8,7 @@ import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts'
 import type { TanakhIdentity, TextLanguage } from '../types.ts';
 import { HEBREW, tanakhKey } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
-import type { VerseTexts } from '../verseTexts.ts';
+import { allVerseTexts, type VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
   getTropByFrequency,
@@ -200,6 +200,10 @@ function renderTropChart(
 
 export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   ...TROP,
+
+  async init() {
+    configure({ verseTexts: await allVerseTexts() });
+  },
 
   getVerseColor(verse, settings) {
     return tropColorAt(verse, derivationFor(settings));

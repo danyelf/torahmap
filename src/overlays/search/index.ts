@@ -11,12 +11,15 @@ import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
 import {
+  buildSearchIndex,
   getMatchingVerseTerms,
+  loadLexiconData,
   parseSearchTerms,
   resultsForVerseSets,
   versesForTerm,
   type SearchResult,
 } from '../../search.ts';
+import { allVerseTexts } from '../../verseTexts.ts';
 import { versesFor } from '../../search/dictionary.ts';
 import { highlightTerms } from './highlight.ts';
 import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
@@ -440,6 +443,11 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
       note: 'Cite 10.17026/dans-z6y-skyh. Available on GitHub at github.com/ETCBC/bhsa.',
     },
   ],
+
+  async init() {
+    const [texts] = await Promise.all([allVerseTexts(), loadLexiconData()]);
+    buildSearchIndex(texts);
+  },
 
   getVerseColor(verse, settings) {
     return searchColorAt(verse, searchFor(settings));

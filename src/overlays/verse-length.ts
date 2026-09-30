@@ -2,7 +2,7 @@ import './verse-length.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
-import type { VerseTexts } from '../verseTexts.ts';
+import { allVerseTexts, type VerseTexts } from '../verseTexts.ts';
 import { verseWords } from '../verseWords.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
@@ -73,6 +73,10 @@ function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
 
 export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
   ...VERSE_LENGTH,
+
+  async init() {
+    configure({ verseTexts: await allVerseTexts() });
+  },
 
   getVerseColor(verse: TanakhIdentity): Color | null {
     return getVerseColorForWordCount(verse);

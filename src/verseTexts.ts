@@ -34,6 +34,13 @@ export async function loadAllVerseTexts(): Promise<VerseTexts> {
   return verseTexts;
 }
 
+let texts: Promise<VerseTexts> | null = null;
+
+/** Every verse's text, downloaded once and shared by every caller. */
+export function allVerseTexts(): Promise<VerseTexts> {
+  return (texts ??= loadAllVerseTexts());
+}
+
 export function getVerseText(
   verseTexts: VerseTexts,
   book: string,

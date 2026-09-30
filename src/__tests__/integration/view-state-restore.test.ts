@@ -48,7 +48,10 @@ async function controlsAfter(link: string): Promise<HTMLElement> {
 describe('restoring a link as one complete view', () => {
   beforeEach(() => {
     mockHistory('http://localhost:5173/');
-    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
+    mockFetch({
+      '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA,
+      '/data/all-texts.json': SAMPLE_VERSE_TEXTS,
+    });
     registerAllOverlays();
     settings = createOverlaySettings();
     configureCommentary({ verses: SAMPLE_VERSES });

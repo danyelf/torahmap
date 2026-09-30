@@ -24,7 +24,10 @@ describe('URL State Sync Integration', () => {
 
     ({ historyStates } = mockHistory('http://localhost:5173/'));
 
-    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
+    mockFetch({
+      '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA,
+      '/data/all-texts.json': SAMPLE_VERSE_TEXTS,
+    });
 
     // Register overlays the way the app does
     registerAllOverlays();
