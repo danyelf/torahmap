@@ -72,7 +72,7 @@ function resolve(text: string): Pick<SearchTerm, 'meanings' | 'selected' | 'chos
  * Look up the meanings of terms that have none, such as ones typed before the
  * dictionary arrived, and apply any a link chose for them.
  */
-export function lookUpMeaningsAgain(terms: SearchTerm[]): SearchTerm[] {
+export function lookUpMissingMeanings(terms: SearchTerm[]): SearchTerm[] {
   return terms.map((t) => {
     if (t.meanings.length > 0) return t;
     const found = { ...t, ...resolve(t.text) };

@@ -6,11 +6,8 @@ import { buildSearchIndex, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import {
-  renderSearchControls,
-  searchLoadedAsBuilt,
-  typeInSearch,
-} from '../../helpers/searchOverlay';
+import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
+import { countAsLoaded } from '../../helpers/loading';
 import { SEARCH_RECORD_DELAY_MS } from '../../../search/constants';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
@@ -19,7 +16,7 @@ import { configureAnalytics } from '../../../analytics.ts';
 
 const searchOverlay = hostOverlay(searchTool);
 
-beforeAll(searchLoadedAsBuilt);
+beforeAll(() => countAsLoaded(searchTool));
 
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
@@ -1370,7 +1367,6 @@ describe('Search Overlay', () => {
     it('answers for a query it is handed without changing the search or firing analytics', async () => {
       const send = vi.fn();
       configureAnalytics({ enabled: true, send });
-      await searchOverlay.overlay.init?.();
       vi.useFakeTimers();
       searchOverlay.restore({ search: 'אור' });
       send.mockClear();

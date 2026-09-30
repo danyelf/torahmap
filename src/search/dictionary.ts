@@ -22,6 +22,7 @@ import {
   type LexemeId,
 } from '../search.ts';
 import { fetchData } from '../constants.ts';
+import { isReady, ready, type Loadable } from '../dataLoading.ts';
 import { isHebrew, mapStrippedToOriginal, splitIntoWords, type TextWord } from '../hebrew.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
 
@@ -252,32 +253,21 @@ interface MorphologyFile {
 
 let morphology: MorphologyFile | null = null;
 let misaligned: Set<string> = new Set();
-let loading: Promise<void> | null = null;
-let settled = false;
 
 /**
- * Fetch the per-word parse, once.
- *
- * A failure is not fatal and is not retried: every caller falls back to the
- * spelling. `settled` says the attempt is over either way, so a caller waiting
- * to redraw is released rather than left asking again.
+ * The per-word parse, loaded once by `ready`. A failure is not fatal and is
+ * not retried: every caller falls back to the spelling.
  */
-function loadMorphology(): Promise<void> {
-  loading ??= fetchData('search/verse-morphology.json')
-    .then(async (res) => {
-      if (!res.ok) throw new Error(`Response status ${res.status}`);
-      const file: MorphologyFile = await res.json();
-      morphology = file;
-      misaligned = new Set(file.misaligned);
-    })
-    .catch((err) => {
-      console.warn('Could not load the per-word parse; falling back to the spelling:', err);
-    })
-    .finally(() => {
-      settled = true;
-    });
-  return loading;
-}
+const morphologyFile: Loadable = {
+  id: 'the per-word parse',
+  async init() {
+    const res = await fetchData('search/verse-morphology.json');
+    if (!res.ok) throw new Error(`Response status ${res.status}`);
+    const file: MorphologyFile = await res.json();
+    morphology = file;
+    misaligned = new Set(file.misaligned);
+  },
+};
 
 /**
  * Ask for the parse once the app has finished starting up, so that the reader
@@ -286,16 +276,16 @@ function loadMorphology(): Promise<void> {
  * Scheduled rather than called, because the point is to stay off the critical
  * path: at the moment this runs the first frame has been drawn but the browser
  * may still be laying out and painting. Safari has no `requestIdleCallback`,
- * hence the timer; either way the fetch is the same memoized one `loading`
- * guards, so a verse opened before this fires still fetches exactly once.
+ * hence the timer; either way `ready` fetches once, so a verse opened before
+ * this fires does not fetch again.
  */
 export function prefetchMorphology(): void {
   if (typeof requestIdleCallback === 'function') {
     // The deadline matters more than the idleness: on a page that never goes
     // idle the callback must still run.
-    requestIdleCallback(() => void loadMorphology(), { timeout: PREFETCH_TIMEOUT_MS });
+    requestIdleCallback(() => void ready(morphologyFile), { timeout: PREFETCH_TIMEOUT_MS });
   } else {
-    setTimeout(() => void loadMorphology(), PREFETCH_TIMEOUT_MS);
+    setTimeout(() => void ready(morphologyFile), PREFETCH_TIMEOUT_MS);
   }
 }
 
@@ -323,7 +313,7 @@ let onScreen: { verseKey: string; hebrew: string; stems: Map<number, LexemeId> |
  */
 export function setVerseOnScreen(verseKey: string, hebrew: string): Promise<void> | null {
   onScreen = { verseKey, hebrew, stems: stemsOf(verseKey, hebrew) };
-  return settled ? null : loadMorphology();
+  return isReady(morphologyFile) ? null : ready(morphologyFile);
 }
 
 /** Which verse the last `setVerseOnScreen` named, for callers checking staleness. */

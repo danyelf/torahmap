@@ -1,6 +1,6 @@
 // The search's data is held back in this file until a test lets it in.
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { searchTool, withMeaningsLookedUp } from '../../../overlays/search/index';
+import { searchTool, adoptLoadedMeanings } from '../../../overlays/search/index';
 import { buildSearchIndex } from '../../../search';
 import { ready } from '../../../dataLoading';
 import { hostOverlay } from '../../helpers/overlayHost';
@@ -43,8 +43,7 @@ describe('the search panel before its data arrives', () => {
     });
     letDataIn();
     await arrived;
-    // As main.ts does when the search's data arrives.
-    search.change(withMeaningsLookedUp);
+    search.change(adoptLoadedMeanings);
     vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
 
     expect(send).toHaveBeenCalledTimes(1);

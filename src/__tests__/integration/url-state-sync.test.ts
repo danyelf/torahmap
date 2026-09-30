@@ -5,7 +5,6 @@ import {
   registerAllOverlays,
   getOverlay,
   configureCommentary,
-  configureTrop,
   configureSearch,
 } from '../../overlays/index';
 import { searchTool } from '../../overlays/search/index';
@@ -34,7 +33,6 @@ describe('URL State Sync Integration', () => {
 
     // Configure overlays with sample data
     configureCommentary({ verses: SAMPLE_VERSES });
-    configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({
       verses: SAMPLE_VERSES,
       callbacks: { onVerseClick: vi.fn() },

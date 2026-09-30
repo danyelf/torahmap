@@ -6,7 +6,6 @@ import {
   registerAllOverlays,
   getOverlay,
   configureCommentary,
-  configureTrop,
   configureSearch,
 } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
@@ -55,7 +54,6 @@ describe('restoring a link as one complete view', () => {
     registerAllOverlays();
     settings = createOverlaySettings();
     configureCommentary({ verses: SAMPLE_VERSES });
-    configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({ verses: SAMPLE_VERSES, callbacks: { onVerseClick: vi.fn() } });
   });
 

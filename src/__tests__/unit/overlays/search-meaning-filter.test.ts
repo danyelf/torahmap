@@ -10,17 +10,14 @@ import { configure } from '../../../overlays/search';
 import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
-import {
-  renderSearchControls,
-  searchLoadedAsBuilt,
-  typeInSearch,
-} from '../../helpers/searchOverlay';
+import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
+import { countAsLoaded } from '../../helpers/loading';
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
 
 const searchOverlay = hostOverlay(searchTool);
 
-beforeAll(searchLoadedAsBuilt);
+beforeAll(() => countAsLoaded(searchTool));
 
 // Real Hebrew, so the lexeme index has something to resolve.
 const texts: VerseTexts = {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { listedStories, storyToOpen, type Story } from '@torahmap/stories';
+import { listedStories, stopToOpen, storyToOpen, type Story } from '@torahmap/stories';
 
 const story = (id: string, over: Partial<Story['data']> = {}): Story => ({
   id,
@@ -42,4 +42,18 @@ describe('storyToOpen', () => {
     expect(storyToOpen(listed, null).id).toBe('tour'));
   it('opens the first story when a link names one not listed', () =>
     expect(storyToOpen(listed, 'abraham_call').id).toBe('tour'));
+});
+
+describe('stopToOpen', () => {
+  const tour = story('tour', {
+    stops: [
+      { id: 'intro', text: '', camera: 'initial', overlay: null },
+      { id: 'abraham', text: '', camera: 'initial', overlay: null },
+    ],
+  });
+  it('opens the stop a link names', () => expect(stopToOpen(tour, 'abraham')).toBe(1));
+  it('opens the first stop when a link names none, or one the story lacks', () => {
+    expect(stopToOpen(tour, undefined)).toBe(0);
+    expect(stopToOpen(tour, 'gone')).toBe(0);
+  });
 });

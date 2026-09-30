@@ -37,7 +37,7 @@ import {
   encodeModes,
   applyModes,
   MAX_TERMS,
-  lookUpMeaningsAgain,
+  lookUpMissingMeanings,
   type SearchTerm,
 } from '../../search/terms.ts';
 import { isReady, ready } from '../../dataLoading.ts';
@@ -200,12 +200,12 @@ const recordSettledSearch = debounce(() => {
 }, SEARCH_RECORD_DELAY_MS);
 
 /**
- * `settings` with the meanings of terms typed before the dictionary arrived
- * looked up. Still the reader's own change if `settings` was, so a word waiting
- * to be recorded is recorded rather than taken for a link's.
+ * Returns `settings` with its terms' missing meanings looked up, for when the
+ * dictionary arrives. If `settings` was the reader's last change, the result
+ * replaces it as that change, so a word typed early is still recorded.
  */
-export function withMeaningsLookedUp(settings: SearchSettings): SearchSettings {
-  const next = { ...settings, terms: lookUpMeaningsAgain(settings.terms) };
+export function adoptLoadedMeanings(settings: SearchSettings): SearchSettings {
+  const next = { ...settings, terms: lookUpMissingMeanings(settings.terms) };
   if (lastChanged === settings) lastChanged = next;
   return next;
 }

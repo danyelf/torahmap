@@ -5,7 +5,7 @@ import {
   addTerm,
   applyMeanings,
   encodeMeanings,
-  lookUpMeaningsAgain,
+  lookUpMissingMeanings,
   setTermText,
 } from '../../search/terms';
 import { loadLexiconData } from '../../search';
@@ -19,7 +19,7 @@ describe('a link’s choice of meaning, before the dictionary arrives', () => {
     expect(encodeMeanings(early)).toBe(BE_LIGHT);
 
     await loadLexiconData();
-    const late = lookUpMeaningsAgain(early);
+    const late = lookUpMissingMeanings(early);
 
     const fromLink = applyMeanings(addTerm([], 'אור'), BE_LIGHT);
     expect(late[0].selected.size).toBe(1);

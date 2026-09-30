@@ -38,12 +38,10 @@ export async function openMap(
   await page.goto(url);
 
   const wait = (ms: number) => (fakeClock ? page.clock.runFor(ms) : page.waitForTimeout(ms));
-  for (let i = 0; !(await page.locator('html[data-map-ready]').count()); i++) {
-    if (i === 300) throw new Error('the map did not start within 30 seconds');
+  for (let i = 0; !(await page.locator('html[data-data-ready]').count()); i++) {
+    if (i === 300) throw new Error('the map and its data did not arrive within 30 seconds');
     await wait(100);
   }
-  // The first frame waits only for what the link shows; the rest follows it.
-  await page.waitForLoadState('networkidle');
   await page.evaluate(() => document.fonts.ready);
   await wait(1000);
   return page;

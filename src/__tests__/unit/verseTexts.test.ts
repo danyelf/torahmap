@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { loadAllVerseTexts, getVerseText } from '../../verseTexts';
+import { allVerseTexts, loadAllVerseTexts, getVerseText } from '../../verseTexts';
 import type { VerseTexts } from '../../verseTexts';
 import { SAMPLE_VERSE_TEXTS } from '../helpers';
 import { mockFetch, mockFetchStatus } from '../helpers/mocks';
@@ -595,6 +595,15 @@ describe('verseTexts', () => {
       expect(gen1_2?.en).toBe('verse2');
       expect(ex1_1?.en).toBe('verse3');
       expect(missing).toBeNull();
+    });
+  });
+
+  describe('allVerseTexts', () => {
+    it('downloads the texts once for every caller', async () => {
+      const fetchSpy = mockFetch({ '/data/all-texts.json': SAMPLE_VERSE_TEXTS });
+      const [a, b] = await Promise.all([allVerseTexts(), allVerseTexts()]);
+      expect(a).toBe(b);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

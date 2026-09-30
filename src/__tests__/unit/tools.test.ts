@@ -1,12 +1,13 @@
 import { beforeAll, describe, it, expect } from 'vitest';
 import { toolsShown, togglesSearch } from '../../tools';
 import { ready } from '../../dataLoading';
+import { countAsLoaded } from '../helpers/loading';
 import { searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { commentaryOverlay } from '../../overlays/commentary';
 
 describe('toolsShown', () => {
-  beforeAll(() => Promise.all([ready(commentaryOverlay), ready(searchTool)]));
+  beforeAll(() => countAsLoaded(commentaryOverlay, searchTool));
 
   it('shows the search once it has a word long enough to search on', () => {
     expect(

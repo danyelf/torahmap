@@ -9,9 +9,8 @@ import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { isSearching, searchTool } from '../overlays/search/index.ts';
-import { toolsShown } from '../tools.ts';
-import { isReady } from '../dataLoading.ts';
+import { searchTool } from '../overlays/search/index.ts';
+import { toolsLoaded, toolsShown } from '../tools.ts';
 
 // Memoised per verses array by the stop's overlay, its search and their
 // validated link parameters. The key is canonical because validateOverlayParams
@@ -67,8 +66,7 @@ export function pictureForStop(
   );
   const picture = fillDefaultColors(toolsPicture(tools, verses, hovered));
   // A picture drawn before its tools' data arrived would outlive the data.
-  const complete = (!overlay || isReady(overlay)) && (!isSearching(search) || isReady(searchTool));
-  if (!byHover && complete) cache.set(key, picture);
+  if (!byHover && toolsLoaded(overlay, search)) cache.set(key, picture);
   return picture;
 }
 

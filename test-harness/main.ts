@@ -2,9 +2,8 @@
 // Loads real data, builds real search index, renders real search overlay controls
 // No WebGL, no map, no verse layout — just the input pipeline
 
-import { loadAllVerseTexts } from '../src/verseTexts.ts';
 import { isHebrew } from '../src/hebrew.ts';
-import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
+import { ready } from '../src/dataLoading.ts';
 import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
 import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
 
@@ -128,14 +127,8 @@ async function main(): Promise<void> {
   document.title = 'Input Test Harness';
   logEvent('init', 'Loading data...');
 
-  // Load data in parallel
-  const [verseTexts] = await Promise.all([loadAllVerseTexts(), loadLexiconData()]);
-
-  logEvent('init', `Loaded verse texts (${Object.keys(verseTexts).length} books)`);
-
-  // Build search index
-  buildSearchIndex(verseTexts);
-  logEvent('init', 'Search index built');
+  await ready(searchOverlay);
+  logEvent('init', 'Search data loaded and indexed');
 
   // Configure search overlay with empty verses (we don't need layout)
   configureSearch({

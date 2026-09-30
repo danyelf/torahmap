@@ -121,7 +121,7 @@ import {
   searchTool,
   searchForMeaning,
   canAddTerm,
-  withMeaningsLookedUp,
+  adoptLoadedMeanings,
   type SearchSettings,
 } from './overlays/search/index.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
@@ -138,6 +138,7 @@ import {
   STORIES,
   DEFAULT_EASING,
   listedStories,
+  stopToOpen,
   storyToOpen,
   writeStopComment,
   type Story,
@@ -240,14 +241,12 @@ async function main(): Promise<void> {
   registerAllOverlays();
   configureCommentary({ verses });
 
-  // The first frame waits for the overlay the link shows, and nothing else.
-  const opening = parseUrlState(overlayParamSpecs);
-  const openingStory = storyToOpen(listedStories(STORIES, !__LIVE__), opening.story ?? null);
+  const link = parseUrlState(overlayParamSpecs);
+  let listed = listedStories(STORIES, !__LIVE__);
+  const openingStory = storyToOpen(listed, link.story ?? null);
   const needs = linkNeeds(
-    opening,
-    openingStory?.data.stops.find((s) => s.id === opening.stop) ??
-      openingStory?.data.stops[0] ??
-      null,
+    link,
+    openingStory ? openingStory.data.stops[stopToOpen(openingStory, link.stop)] : null,
   );
   await Promise.all(needs.flatMap((id) => getOverlay(id) ?? []).map(ready));
 
@@ -1031,7 +1030,7 @@ async function main(): Promise<void> {
   /** Show a tool whose data has just arrived, if it is on the map. */
   function toolArrived(tool: Overlay): void {
     if (tool === searchTool) {
-      overlaySettings.set(searchTool, withMeaningsLookedUp(overlaySettings.get(searchTool)));
+      overlaySettings.set(searchTool, adoptLoadedMeanings(overlaySettings.get(searchTool)));
       searchChanged(false);
     } else if (tool === currentOverlay) {
       overlayChanged(true);
@@ -1132,7 +1131,9 @@ async function main(): Promise<void> {
   function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
-      currentOverlay?.renderLegend?.(overlayLegendContainer, currentSettings());
+      if (currentOverlay && isReady(currentOverlay)) {
+        currentOverlay.renderLegend?.(overlayLegendContainer, currentSettings());
+      }
     }
   }
 
@@ -1307,7 +1308,6 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let listed = listedStories(STORIES, !__LIVE__);
   const storyNamed = (id: string | null): Story => {
     const found = storyToOpen(listed, id);
     if (!found) throw new Error('No story is listed');
@@ -1779,12 +1779,10 @@ async function main(): Promise<void> {
 
     if (next.mode === 'story') {
       switchStory(storyNamed(next.story));
-      const stop = resolvedStops.findIndex((s) => s.id === next.stop);
-      openStory(Math.max(0, stop), 'cut', 'link');
+      openStory(stopToOpen(story, next.stop), 'cut', 'link');
     }
   }
 
-  const link = parseUrlState(overlayParamSpecs);
   if (linkNamesAView(link)) {
     restoreFromUrl(link);
   }
@@ -1815,17 +1813,17 @@ async function main(): Promise<void> {
 
   scheduleStoryFrame();
 
-  // Layout tests wait on this; nothing in the app reads it.
-  document.documentElement.dataset.mapReady = '';
-
-  // Everything the first frame did not wait for.
-  void allVerseTexts().then((texts) => {
+  const texts = allVerseTexts().then((texts) => {
     verseTexts = texts;
     refreshVersePopup();
   });
-  for (const tool of [searchTool, ...getAllOverlays()]) {
-    if (!isReady(tool)) void ready(tool).then(() => toolArrived(tool));
-  }
+  const tools = [searchTool, ...getAllOverlays()].map((tool) =>
+    isReady(tool) ? null : ready(tool).then(() => toolArrived(tool)),
+  );
+  // Layout tests and the video harness wait on this; nothing in the app reads it.
+  void Promise.allSettled([texts, ...tools]).then(() => {
+    document.documentElement.dataset.dataReady = '';
+  });
 
   prefetchMorphology();
 }

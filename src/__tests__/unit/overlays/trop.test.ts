@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure, highlightTropInText, type TropSettings } from '../../../overlays/trop';
+import {
+  configure,
+  highlightTropInText,
+  tropOverlay,
+  type TropSettings,
+} from '../../../overlays/trop';
+import { ready } from '../../../dataLoading';
+import { settingsFromLink } from '../../../overlays/settings';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
 import { assertValidColor, assertApproximately } from '../../helpers/assertions';
@@ -776,5 +783,17 @@ describe('Trop Overlay', () => {
       expect(getRarityTier(100)).toBe('uncommon');
       expect(getRarityTier(1000)).toBe('common');
     });
+  });
+});
+
+describe('trop init', () => {
+  it('builds the trop index from the texts', async () => {
+    await ready(tropOverlay);
+    const colors = tropOverlay.colorsFor!(
+      [{ book: 'Genesis', chapter: 1, verse: 1 }],
+      settingsFromLink(tropOverlay, { trop: 'shalshelet' }),
+      null,
+    );
+    expect(colors[0]).not.toBeNull();
   });
 });

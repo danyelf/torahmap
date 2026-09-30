@@ -4,7 +4,7 @@
 // click the row.
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../overlays/search/index';
-import { searchLoadedAsBuilt } from '../helpers/searchOverlay';
+import { countAsLoaded } from '../helpers/loading';
 import { configure } from '../../overlays/search';
 import { buildSearchIndex } from '../../search';
 import type { TanakhLayout } from '../../types';
@@ -15,7 +15,7 @@ import { SEARCH_COLORS } from '../../utils/color';
 
 const searchOverlay = hostOverlay(searchTool);
 
-beforeAll(searchLoadedAsBuilt);
+beforeAll(() => countAsLoaded(searchTool));
 
 describe('Search Overlay - Hebrew Mode Integration', () => {
   let testVerses: TanakhLayout[];

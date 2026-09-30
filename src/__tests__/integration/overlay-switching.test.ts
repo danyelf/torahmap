@@ -5,7 +5,6 @@ import {
   getOverlay,
   getAllOverlays,
   configureCommentary,
-  configureTrop,
   configureSearch,
   type Overlay,
 } from '../../overlays/index';
@@ -33,14 +32,16 @@ describe('Overlay Switching Integration', () => {
     mockControlsContainer = document.createElement('div');
     mockLegendContainer = document.createElement('div');
 
-    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
+    mockFetch({
+      '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA,
+      '/data/all-texts.json': SAMPLE_VERSE_TEXTS,
+    });
 
     // Register overlays fresh
     registerAllOverlays();
 
     // Configure overlays with sample data
     configureCommentary({ verses: SAMPLE_VERSES });
-    configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({
       verses: SAMPLE_VERSES,
       callbacks: { onVerseClick: vi.fn() },

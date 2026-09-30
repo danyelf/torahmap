@@ -1,5 +1,5 @@
-// Each tool's data is loaded by its own init, run once here. A tool whose init
-// has not finished is left off the map (toolsShown, src/tools.ts).
+// Each tool's data, and any other file loaded once, is loaded by its own init,
+// run once here.
 
 import type { UrlState } from '@torahmap/link';
 import type { StoryStop } from '@torahmap/stories';

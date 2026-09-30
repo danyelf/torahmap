@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { addTerm, lookUpMeaningsAgain } from '../../search/terms';
+import { addTerm, lookUpMissingMeanings } from '../../search/terms';
 import { loadLexiconData } from '../../search';
 
-describe('lookUpMeaningsAgain', () => {
+describe('lookUpMissingMeanings', () => {
   it('gives a term typed before the dictionary arrived its meanings, all checked', async () => {
     const [early] = addTerm([], 'אור');
     expect(early.meanings).toEqual([]);
 
     await loadLexiconData();
-    const [late] = lookUpMeaningsAgain([early]);
+    const [late] = lookUpMissingMeanings([early]);
 
     expect(late.id).toBe(early.id);
     expect(late.meanings.length).toBeGreaterThan(0);
@@ -19,6 +19,6 @@ describe('lookUpMeaningsAgain', () => {
     await loadLexiconData();
     const [term] = addTerm([], 'אור');
     const narrowed = { ...term, selected: new Set([term.meanings[0].keys[0]]) };
-    expect(lookUpMeaningsAgain([narrowed])[0]).toBe(narrowed);
+    expect(lookUpMissingMeanings([narrowed])[0]).toBe(narrowed);
   });
 });

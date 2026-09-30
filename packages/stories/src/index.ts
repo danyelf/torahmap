@@ -18,4 +18,4 @@ export {
 export { STORY_MARKDOWN };
 export { STORIES } from './stories.ts';
 export { firstSentence } from './names.ts';
-export { listedStories, storyToOpen } from './storyIndex.ts';
+export { listedStories, stopToOpen, storyToOpen } from './storyIndex.ts';

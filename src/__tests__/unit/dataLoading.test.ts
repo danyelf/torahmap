@@ -1,9 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { StoryStop } from '@torahmap/stories';
 import { ready, isReady, linkNeeds } from '../../dataLoading';
-import { allVerseTexts } from '../../verseTexts';
-import { tropOverlay } from '../../overlays/trop';
-import { settingsFromLink } from '../../overlays/settings';
 
 const stop = (fields: Partial<StoryStop>): StoryStop => ({
   id: 's',
@@ -62,27 +59,5 @@ describe('ready', () => {
     await ready(tool);
     expect(isReady(tool)).toBe(true);
     warn.mockRestore();
-  });
-});
-
-describe('allVerseTexts', () => {
-  it('downloads the texts once for every caller', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    const [a, b] = await Promise.all([allVerseTexts(), allVerseTexts()]);
-    expect(a).toBe(b);
-    expect(fetchSpy.mock.calls.filter(([url]) => String(url).includes('all-texts')).length).toBe(1);
-    fetchSpy.mockRestore();
-  });
-});
-
-describe('trop init', () => {
-  it('builds the trop index from the texts', async () => {
-    await ready(tropOverlay);
-    const colors = tropOverlay.colorsFor!(
-      [{ book: 'Genesis', chapter: 1, verse: 1 }],
-      settingsFromLink(tropOverlay, { trop: 'shalshelet' }),
-      null,
-    );
-    expect(colors[0]).not.toBeNull();
   });
 });

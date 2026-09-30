@@ -18,3 +18,11 @@ export function listedStories(stories: readonly Story[], showDrafts: boolean): S
 export function storyToOpen(listed: readonly Story[], id: string | null): Story | undefined {
   return listed.find((s) => s.id === id) ?? listed[0];
 }
+
+/** Where in `story` the stop a link names is, or 0 when it names none or one the story lacks. */
+export function stopToOpen(story: Story, id: string | null | undefined): number {
+  return Math.max(
+    0,
+    story.data.stops.findIndex((s) => s.id === id),
+  );
+}

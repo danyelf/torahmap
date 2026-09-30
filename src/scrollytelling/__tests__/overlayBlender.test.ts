@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { pictureForStop, computeBlendedColors } from '../overlayBlender';
 import { ready } from '../../dataLoading';
+import { countAsLoaded } from '../../__tests__/helpers/loading';
 import { searchTool } from '../../overlays/search/index';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
@@ -15,7 +16,7 @@ import { SEARCH_COLORS } from '../../utils/color';
 import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
 
 // A stop's picture is kept only once the search's data is in.
-beforeAll(() => ready(searchTool));
+beforeAll(() => countAsLoaded(searchTool));
 
 // The blender memoises per verses array, so a fresh one keeps each test's
 // colours its own.
