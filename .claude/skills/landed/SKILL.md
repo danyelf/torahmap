@@ -31,10 +31,15 @@ Two different requests share these words:
 5. **Memory.** Search the memory folder for the pull request number and branch
    name. Record the merge in the note that tracks this effort; if the effort is
    finished, delete the note and its line in `MEMORY.md`.
-6. **Report** in a few lines: what was removed, anything the sweep kept that
+6. **Clear the in-progress label.** Remove it from the issues the merged pull
+   request closed (`gh issue edit <N> --remove-label in-progress`). Then list
+   what still carries it (`gh issue list --label in-progress --state all`) and
+   check each against `git worktree list` and its open pull requests.
+7. **Report** in a few lines: what was removed, anything the sweep kept that
    looks abandoned (a closed pull request, an agent worktree with no pull
-   request), and that the site deploys about a minute after the merge. Ask about
-   the abandoned ones; do not remove them.
+   request), any in-progress issue with no worktree or pull request behind it,
+   and that the site deploys about a minute after the merge. Ask about the
+   abandoned ones; do not remove them.
 
 ## Landed, rebase and carry on
 

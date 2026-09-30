@@ -11,6 +11,16 @@ and `git worktree add <path> -b <branch>` works when the path matters. A `PreToo
 this, so a `git checkout -b` in the primary checkout will simply be refused. Once you are in a
 worktree, work there as autonomously as you can on the corresponding issue.
 
+**Mark the issue you take.** Once the worktree exists, label the issue and say where the work lives,
+so Danyel can see what is being worked on and find it:
+
+```bash
+gh issue edit <N> --add-label in-progress
+gh issue comment <N> --body "🤖 Claude: working on this in branch \`$(git branch --show-current)\`."
+```
+
+If you stop without opening a PR, remove the label (`gh issue edit <N> --remove-label in-progress`).
+
 **UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until
 Danyel has looked at it and agreed it's ready to close. Run `npm run test:layout` first, and embed in
 the PR the screenshots it writes to `layout-report/shots/` for the states the change touches: commit
