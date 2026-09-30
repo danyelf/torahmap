@@ -46,7 +46,8 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
 
 const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
-const { meaningsInVerse, setVerseOnScreen } = await import('../../src/search/dictionary.ts');
+const { meaningsInVerse, setVerseOnScreen, wordIsNamed } =
+  await import('../../src/search/dictionary.ts');
 const { verseWords, lookupForm } = await import('../../src/verseWords.ts');
 const { tanakhKey } = await import('../../src/types.ts');
 
@@ -59,13 +60,22 @@ interface Report {
   unknownSpelling: number;
   /** Words whose every candidate reading the verse rules out. */
   ruledOut: number;
+  /** Words a click cannot place in the parse, and so looks up by spelling. */
+  unplaced: number;
   total: number;
 }
 
 function buildReport(
   texts: Record<string, Record<string, Record<string, { he: string }>>>,
 ): Report {
-  const report: Report = { one: 0, several: 0, unknownSpelling: 0, ruledOut: 0, total: 0 };
+  const report: Report = {
+    one: 0,
+    several: 0,
+    unknownSpelling: 0,
+    ruledOut: 0,
+    unplaced: 0,
+    total: 0,
+  };
 
   for (const [book, chapters] of Object.entries(texts)) {
     for (const [chapter, verses] of Object.entries(chapters)) {
@@ -79,6 +89,7 @@ function buildReport(
           const form = lookupForm(word);
           const n = meaningsInVerse(form, verseKey, wordIndex).length;
           report.total++;
+          if (!wordIsNamed(wordIndex)) report.unplaced++;
 
           if (n === 1) report.one++;
           else if (n > 1) report.several++;
@@ -135,6 +146,7 @@ const rows: Array<[string, keyof Report]> = [
   ['several readings the verse allows', 'several'],
   ['spelling is in no index', 'unknownSpelling'],
   ['verse rules every reading out', 'ruledOut'],
+  ['not placed, so looked up by spelling', 'unplaced'],
 ];
 
 console.log(`\n${report.total.toLocaleString()} clickable words\n`);

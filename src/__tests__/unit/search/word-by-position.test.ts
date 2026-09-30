@@ -19,7 +19,7 @@ import {
   wordsAreNamed,
 } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
-import { verseWords } from '../../../verseWords';
+import { lookupForm, verseWords } from '../../../verseWords';
 
 // The spellings of עלה the search box offers, from the two terms in issue #153.
 const ASCEND = ['<LH[@heb'];
@@ -205,5 +205,49 @@ describe('the verses the two sources divide differently', () => {
     }
 
     expect(refused.sort()).toEqual([...misaligned].sort());
+  });
+});
+
+// Sefaria prints a corrected word twice: the ketiv, as written, in round
+// brackets, and the qere, as read, in square ones. BHSA parses the qere, and
+// a click on the ketiv lands on that parse.
+describe('a click on the written form of a corrected word', () => {
+  /** The meanings a click on the word printed as `printed` offers. */
+  const clicked = (verseKey: string, printed: string): string[][] => {
+    const hebrew = hebrewOf(verseKey);
+    setVerseOnScreen(verseKey, hebrew);
+    const words = verseWords(hebrew);
+    const index = words.findIndex((w) => stripNikkud(w.word) === printed);
+    expect(index, `${printed} in ${verseKey}`).toBeGreaterThanOrEqual(0);
+    return meaningsInVerse(lookupForm(words[index].word), verseKey, index).map((m) => m.keys);
+  };
+
+  it('offers what a click on the reading beside it offers', () => {
+    // (אעבוד) [אֶעֱבוֹר]: no printed word is spelled אעבוד.
+    expect(clicked('Jeremiah:2:20', '(אעבוד)')).toEqual(clicked('Jeremiah:2:20', '[אעבור]'));
+  });
+
+  it('when the reading comes first', () => {
+    expect(clicked('Daniel:7:19', '(כלהון)')).toEqual(clicked('Daniel:7:19', '[כלהין]'));
+  });
+
+  it('offers both words when one written word is read as two', () => {
+    // (בגד) [בָּא גָד]
+    const both = [...clicked('Genesis:30:11', '[בא'), ...clicked('Genesis:30:11', 'גד]')];
+    expect(clicked('Genesis:30:11', '(בגד)')).toEqual(both);
+  });
+
+  it('gives each of two written words the one word they are read as', () => {
+    // (כי טוב) [כְּטוֹב]
+    const reading = clicked('Judges:16:25', '[כטוב]');
+    expect(clicked('Judges:16:25', '(כי')).toEqual(reading);
+    expect(clicked('Judges:16:25', 'טוב)')).toEqual(reading);
+  });
+
+  it('falls back to the spelling for a word written but not read', () => {
+    // (נא) in II Kings 5:18 has no reading beside it, and BHSA no word for it.
+    expect(clicked('II Kings:5:18', '(נא)')).toEqual(
+      meaningsInVerse('נא', 'II Kings:5:18').map((m) => m.keys),
+    );
   });
 });
