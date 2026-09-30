@@ -22,7 +22,7 @@ import { axisGradient, legendCaption, legendRow } from './legend.ts';
 import { memoBySettings } from './memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
-let tropByFrequency: TropIndexEntry[] = [];
+/** Every mark the text carries, by URL slug, rarest first. */
 let tropBySlug = new Map<string, TropIndexEntry>();
 
 /**
@@ -52,6 +52,7 @@ function markColors(entry: TropIndexEntry): string[] {
 }
 
 interface TropDerivation {
+  entry: TropIndexEntry;
   verseLookup: Map<string, number>;
   /** Null for a rare mark, which is drawn as present or absent. */
   counts: Scale | null;
@@ -91,7 +92,7 @@ function deriveTrop(mark: string | null): TropDerivation | null {
       : tier === 'uncommon'
         ? [0.25, 0.25, 0.28]
         : [0.25, 0.23, 0.28];
-  return { verseLookup, counts: countScale(entry), noMatch };
+  return { entry, verseLookup, counts: countScale(entry), noMatch };
 }
 
 const derivationFor = memoBySettings((settings: TropSettings) => deriveTrop(shownMark(settings)));
@@ -125,10 +126,14 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '-');
 }
 
+function countAt(verse: TanakhIdentity, derived: TropDerivation): number {
+  return derived.verseLookup.get(tanakhKey(verse.book, verse.chapter, verse.verse)) ?? 0;
+}
+
 function tropColorAt(verse: TanakhIdentity, derived: TropDerivation | null): Color | null {
   if (!derived) return null;
 
-  const count = derived.verseLookup.get(tanakhKey(verse.book, verse.chapter, verse.verse)) ?? 0;
+  const count = countAt(verse, derived);
   if (count === 0) return derived.noMatch;
   return derived.counts ? derived.counts.colorOf(count) : RARE_MATCH_COLOR;
 }
@@ -157,8 +162,7 @@ function renderTropChart(
       onChange((current) => ({ ...current, preview: slug })),
     );
 
-    for (const entry of tropByFrequency) {
-      const slug = slugify(entry.name);
+    for (const [slug, entry] of tropBySlug) {
       const button = document.createElement('button');
       button.textContent = 'ב' + entry.unicode; // Show on a bet for visibility
       button.title = `${entry.name} (${entry.hebrewName})`;
@@ -247,11 +251,10 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
   },
 
   getHoverInfo(verse, settings) {
-    const entry = entryFor(shownMark(settings));
-    const count = derivationFor(settings)?.verseLookup.get(
-      tanakhKey(verse.book, verse.chapter, verse.verse),
-    );
-    return entry && count ? `${entry.name} ×${count}` : null;
+    const derived = derivationFor(settings);
+    if (!derived) return null;
+    const count = countAt(verse, derived);
+    return count ? `${derived.entry.name} ×${count}` : null;
   },
 
   highlightVerseText(text: string, language: TextLanguage, settings): DocumentFragment {
@@ -269,8 +272,12 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
 };
 
 export function configure(config: { verseTexts: VerseTexts }): void {
-  tropByFrequency = getTropByFrequency(buildTropIndex(config.verseTexts));
-  tropBySlug = new Map(tropByFrequency.map((entry) => [slugify(entry.name), entry]));
+  tropBySlug = new Map(
+    getTropByFrequency(buildTropIndex(config.verseTexts)).map((entry) => [
+      slugify(entry.name),
+      entry,
+    ]),
+  );
 }
 
 // Wraps a trop mark together with its base letter and any other combining
