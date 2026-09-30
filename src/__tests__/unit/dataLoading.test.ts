@@ -1,8 +1,46 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ready, isReady } from '../../dataLoading';
+import type { StoryStop } from '@torahmap/stories';
+import { ready, isReady, linkNeeds } from '../../dataLoading';
 import { allVerseTexts } from '../../verseTexts';
 import { tropOverlay } from '../../overlays/trop';
 import { settingsFromLink } from '../../overlays/settings';
+
+const stop = (fields: Partial<StoryStop>): StoryStop => ({
+  id: 's',
+  text: '',
+  camera: 'initial',
+  overlay: null,
+  ...fields,
+});
+
+describe('linkNeeds', () => {
+  it('needs nothing for a bare address opening a plain stop, or a pinned verse', () => {
+    expect(linkNeeds({ overlayParams: {} }, stop({}))).toEqual({ overlays: [], search: false });
+    expect(linkNeeds({ verse: 'Genesis.12.1', overlayParams: {} }, null)).toEqual({
+      overlays: [],
+      search: false,
+    });
+  });
+
+  it('needs the overlay and the search a link names', () => {
+    expect(
+      linkNeeds({ overlay: 'haftarah', overlayParams: {}, searchParams: { search: 'אור' } }, null),
+    ).toEqual({ overlays: ['haftarah'], search: true });
+  });
+
+  it('needs what the story stop it opens shows', () => {
+    expect(
+      linkNeeds(
+        { story: 'haftarah', overlayParams: {} },
+        stop({ overlay: 'haftarah', searchParams: { search: 'אור' } }),
+      ),
+    ).toEqual({ overlays: ['haftarah'], search: true });
+  });
+
+  it('does not need the search for search settings with no word', () => {
+    expect(linkNeeds({ overlayParams: {}, searchParams: { mode: 'w' } }, null).search).toBe(false);
+  });
+});
 
 describe('ready', () => {
   it('runs a tool’s init once however often it is asked for', async () => {
