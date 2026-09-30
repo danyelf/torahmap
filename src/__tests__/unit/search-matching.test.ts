@@ -85,6 +85,21 @@ describe('where a term matches', () => {
     expect(find('דבר יהוה')).toEqual([]); // the phrase starts inside a word
   });
 
+  it('takes the brackets around a written and a read form as word edges', () => {
+    const find = (verse: string, term: string) => {
+      const haystack = folded(verse);
+      return matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' }).map(
+        ({ start, end }) => haystack.slice(start, end),
+      );
+    };
+    // Genesis 30:11 and Numbers 23:13, as Sefaria prints them.
+    const GENESIS_30_11 = 'וַתֹּ֥אמֶר לֵאָ֖ה (בגד) [בָּ֣א גָ֑ד] וַתִּקְרָ֥א אֶת־שְׁמ֖וֹ גָּֽד׃';
+    const NUMBERS_23_13 = 'וַיֹּ֨אמֶר אֵלָ֜יו בָּלָ֗ק (לך) [לְכָה־]נָּ֨א אִתִּ֜י';
+    expect(find(GENESIS_30_11, 'בגד')).toEqual(['בגד']);
+    expect(find(GENESIS_30_11, 'גד')).toEqual(['גד', 'גד']);
+    expect(find(NUMBERS_23_13, 'נא')).toEqual(['נא']);
+  });
+
   it('treats English punctuation as a word boundary, which splitting on spaces would not', () => {
     const ranges = matchRangesInFolded('in the beginning, god', 'beginning', {
       mode: 'word',

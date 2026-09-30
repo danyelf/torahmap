@@ -71,6 +71,14 @@ export function matchRangesInFolded(
   return ranges;
 }
 
+/**
+ * Sefaria prints a corrected word twice, the written form in round brackets
+ * and the read form in square ones: `(בגד) [בָּ֣א גָ֑ד]`. A bracket is not part
+ * of either word. It stays out of isWordSeparator, which also decides where
+ * the clickable words of a verse start and how they line up with BHSA.
+ */
+const BRACKETS = new Set(['(', ')', '[', ']']);
+
 function endsWord(text: string, i: number): boolean {
-  return i < 0 || i >= text.length || isWordSeparator(text[i]);
+  return i < 0 || i >= text.length || isWordSeparator(text[i]) || BRACKETS.has(text[i]);
 }
