@@ -55,7 +55,9 @@ export async function measureLayout(
     'chrome-apart': overlapping(fixed),
     'map-clear-of-panel': apart(map, panel),
     'text-not-clipped': text,
-    'expected-shown': expected.flatMap((selector, i) => notShownInFull(selector, found[i])),
+    'expected-shown': expected.flatMap((selector, i) =>
+      notShownInFull(selector, found[i], { x: 0, y: 0, ...screen }),
+    ),
   };
   if (interactive) out['touch-targets'] = tooSmallToTouch(interactive, TOUCH_MIN);
   return out;

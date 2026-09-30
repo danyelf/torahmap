@@ -135,6 +135,13 @@ export const STATES: State[] = [
     shown: ['#verse-popup', '#map-legend'],
   },
   {
+    // A word read as two, so the menu offers two meanings and is at its tallest.
+    name: 'explore-word-menu',
+    link: 'overlay=commentary&verse=Genesis.30.11',
+    then: (page) => page.locator('#verse-popup .verse-word', { hasText: '(בגד)' }).click(),
+    shown: ['.word-menu'],
+  },
+  {
     name: 'stories-panel',
     link: 'overlay=commentary',
     then: (page) => viaMenu(page, 'stories'),

@@ -61,20 +61,27 @@ test.describe('tooSmallToTouch', () => {
 
 test.describe('notShownInFull', () => {
   const full = box('a', 0, 0, 100, 50);
+  const screen = { x: 0, y: 0, width: 400, height: 300 };
   test('an element shown in full passes', () => {
     expect(
-      notShownInFull('.a', [{ full, visible: { x: 0.3, y: 0, width: 99.5, height: 50 } }]),
+      notShownInFull('.a', [{ full, visible: { x: 0.3, y: 0, width: 99.5, height: 50 } }], screen),
     ).toEqual([]);
   });
   test('a selector that matches nothing is reported', () => {
-    expect(notShownInFull('.a', [])).toEqual(['.a matches nothing']);
+    expect(notShownInFull('.a', [], screen)).toEqual(['.a matches nothing']);
   });
   test('a hidden element is reported', () => {
-    expect(notShownInFull('.a', [{ full, visible: null }])).toEqual(['a is hidden']);
+    expect(notShownInFull('.a', [{ full, visible: null }], screen)).toEqual(['a is hidden']);
   });
   test('names every side the element is cut off at', () => {
     expect(
-      notShownInFull('.a', [{ full, visible: { x: 0, y: 10, width: 100, height: 30 } }]),
+      notShownInFull('.a', [{ full, visible: { x: 0, y: 10, width: 100, height: 30 } }], screen),
     ).toEqual(['a is cut off at the top, bottom edge']);
+  });
+  test('an element running off the screen is cut off there', () => {
+    const low = box('a', 0, 280, 100, 50);
+    expect(notShownInFull('.a', [{ full: low, visible: low }], screen)).toEqual([
+      'a is cut off at the bottom edge',
+    ]);
   });
 });

@@ -75,11 +75,21 @@ export interface Shown {
 }
 
 /** What keeps the elements `selector` matched from showing in full, if anything. */
-export function notShownInFull(selector: string, found: Shown[]): string[] {
+export function notShownInFull(selector: string, found: Shown[], screen: Rect): string[] {
   if (found.length === 0) return [`${selector} matches nothing`];
   return found.flatMap(({ full, visible }) => {
-    if (!visible) return [`${full.name} is hidden`];
-    const sides = edgesPast(full, visible);
+    const seen = visible && within(visible, screen);
+    if (!seen) return [`${full.name} is hidden`];
+    const sides = edgesPast(full, seen);
     return sides ? [`${full.name} is cut off at the ${sides} edge`] : [];
   });
+}
+
+/** The part of `r` inside `frame`, or null when none of it is. */
+function within(r: Rect, frame: Rect): Rect | null {
+  const x = Math.max(r.x, frame.x);
+  const y = Math.max(r.y, frame.y);
+  const width = Math.min(r.x + r.width, frame.x + frame.width) - x;
+  const height = Math.min(r.y + r.height, frame.y + frame.height) - y;
+  return width > SLACK && height > SLACK ? { x, y, width, height } : null;
 }

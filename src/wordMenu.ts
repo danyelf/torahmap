@@ -148,9 +148,15 @@ export function openWordMenu(options: WordMenuOptions): void {
   document.body.appendChild(menu);
   open = menu;
 
-  const width = menu.getBoundingClientRect().width;
+  const { width, height } = menu.getBoundingClientRect();
   if (box.left + width > window.innerWidth - 8) {
     menu.style.left = `${Math.max(8, window.innerWidth - width - 8)}px`;
+  }
+  // Above the word when it does not fit below, and inside the bottom edge
+  // when it fits neither way.
+  if (box.bottom + 6 + height > window.innerHeight - 8) {
+    const above = box.top - 6 - height;
+    menu.style.top = `${above >= 8 ? above : Math.max(8, window.innerHeight - height - 8)}px`;
   }
 
   // A menu that cannot be dismissed is worse than no menu: the reader who did
