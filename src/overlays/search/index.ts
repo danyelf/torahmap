@@ -14,7 +14,6 @@ import {
   getMatchingVerseTerms,
   parseSearchTerms,
   resultsForVerseSets,
-  versesForTerm,
   type SearchResult,
 } from '../../search.ts';
 import { versesFor } from '../../search/dictionary.ts';
@@ -31,7 +30,7 @@ import {
   setMode,
   meaningsApply,
   termQuery,
-  textMatchMode,
+  versesForQuery,
   encodeModes,
   applyModes,
   MAX_TERMS,
@@ -161,11 +160,7 @@ function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
 
   const queries = active.map(termQuery);
   const results = resultsForVerseSets(
-    queries.map(({ text, language, mode, meaningKeys }) =>
-      mode === 'meanings'
-        ? versesFor(meaningKeys ?? [])
-        : versesForTerm(text, language, textMatchMode(mode)),
-    ),
+    queries.map(versesForQuery),
     queries.map((query) => query.language),
   );
 
@@ -538,7 +533,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
       const here = term.meanings
         .filter((m) => term.selected.has(m.keys[0]) && versesFor(m.keys).has(key))
         .map((m) => m.gloss);
-      return here.length > 0 ? `${term.text} (${here.join(', ')})` : term.text;
+      return `${term.text} (${here.join(', ')})`;
     });
 
     return `Matches: ${named.join(', ')}`;

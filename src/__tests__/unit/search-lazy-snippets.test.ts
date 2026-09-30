@@ -1,9 +1,18 @@
 // A result row's snippet is worked out when the row is drawn, from the verse
 // and the term.
-import { describe, it, expect, beforeEach } from 'vitest';
-import { buildSearchIndex, computeSnippetForMatch, type SearchResult } from '../../search';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import {
+  buildSearchIndex,
+  computeSnippetForMatch,
+  loadLexiconData,
+  type SearchResult,
+} from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import type { VerseTexts } from '../../verseTexts';
+
+beforeAll(async () => {
+  await loadLexiconData();
+});
 
 describe('computeSnippetForMatch', () => {
   let mockVerseTexts: VerseTexts;
@@ -18,8 +27,8 @@ describe('computeSnippetForMatch', () => {
             en: 'In the beginning God created the heavens',
           },
           '2': {
-            he: 'וְהָאָרֶץ הָיְתָה תֹהוּ וָבֹהוּ',
-            en: 'And the earth was without form and void',
+            he: 'וְהָאָרֶץ הָיְתָה תֹהוּ וָבֹהוּ וְחֹשֶׁךְ עַל־פְּנֵי תְהוֹם וְרוּחַ אֱלֹהִים מְרַחֶפֶת עַל־פְּנֵי הַמָּיִם',
+            en: 'And the earth was without form and void, and the spirit of God moved upon the waters',
           },
           '3': {
             he: 'וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר',
@@ -61,7 +70,9 @@ describe('computeSnippetForMatch', () => {
   });
 
   it('marks the word in every verse a meanings-mode search finds', () => {
-    for (const result of searchInMeaningsMode('אלהים')) {
+    const results = searchInMeaningsMode('אלהים');
+    expect(results.length).toBeGreaterThan(0);
+    for (const result of results) {
       const snippet = computeSnippetForMatch(result, 'אלהים')!;
       expect(snippet.matchEnd).toBeGreaterThan(snippet.matchStart);
     }

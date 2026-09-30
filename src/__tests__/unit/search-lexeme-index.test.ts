@@ -388,52 +388,24 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     expect(unexpected).toEqual([]);
   });
 
-  it('can look up almost every word printed in the Tanakh', () => {
-    // Printed words the written-form table answers with no fallback under it.
-    // 94.9% before the word rule, and the missing 5% were ואת, ולא, לי, עליו.
-    let total = 0;
-    let missing = 0;
-    for (const chapters of Object.values(texts)) {
-      for (const verses of Object.values(chapters)) {
-        for (const { he } of Object.values(verses)) {
-          for (const word of displayedWords(he ?? '')) {
-            total += 1;
-            if (!(normalizeHebrewForSearch(word) in forms)) missing += 1;
-          }
-        }
-      }
-    }
-    expect(total).toBeGreaterThan(300000);
-    expect(missing / total).toBeLessThan(0.005);
-  });
-
-  it('resolves every word a reader can click, bar a known few', () => {
+  it('resolves every word a reader can click, where the verse lines up', () => {
     // Where the two normalizers actually meet: lookupForm() is what a click
-    // runs, against keys the Python generator wrote. This is the only check
-    // that sees a rule missing from one side, or an index built before one
-    // existed — unlike the test above, whose helper strips the characters the
-    // folding rules are about before it looks anything up.
-    //
-    // An exact count, not a rate: 652 of these words carry a grapheme joiner,
-    // and a rate loose enough to pass today also passes with all 652 broken.
-    // The remainder carry one bracket of a phrase bracketed over two words,
-    // which lookupForm() leaves on, or are halves of a word Sefaria prints as
-    // two and BHSA as one.
-    let total = 0;
+    // runs, against keys the Python generator wrote. The generator files every
+    // printed word of a verse that lines up, so a miss here is a folding rule
+    // missing from one side, or an index built before one existed. Not the
+    // ketiv in round brackets, which BHSA has no word for.
     const missing: string[] = [];
-    for (const chapters of Object.values(texts)) {
-      for (const verses of Object.values(chapters)) {
-        for (const { he } of Object.values(verses)) {
-          if (!he) continue;
-          for (const { word } of verseWords(he)) {
-            total += 1;
-            if (!(lookupForm(word) in forms)) missing.push(word);
+    for (const [book, chapters] of Object.entries(texts)) {
+      for (const [chapter, verses] of Object.entries(chapters)) {
+        for (const [verse, { he }] of Object.entries(verses)) {
+          if (!he || misaligned.has(`${book}:${chapter}:${verse}`)) continue;
+          for (const { word } of verseWords(he.replace(/\([^)]*\)/g, ' '))) {
+            if (!(lookupForm(word) in forms)) missing.push(`${book} ${chapter}:${verse} ${word}`);
           }
         }
       }
     }
-    expect(total).toBeGreaterThan(300000);
-    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(240);
+    expect(missing).toEqual([]);
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {

@@ -78,6 +78,7 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     // search/dictionary.ts), so a verse that does not line up still marks.
     if (isHebrew && mode === 'meanings') {
       const keys = selectedKeys(term);
+      if (keys.length === 0) continue;
       for (const { word, start, end } of splitIntoWords(folded)) {
         if (wordMatches(keys, word, text, start)) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });

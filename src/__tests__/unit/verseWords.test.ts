@@ -65,7 +65,9 @@ describe('the spelling a click looks up', () => {
     expect(lookupForm('[הַיְצֵ֣א]')).toBe('היצא');
   });
 
-  it('does not treat a stray bracket as a wrapper', () => {
-    expect(lookupForm('(הוצא')).toBe('(הוצא');
+  it('drops the one bracket a word carries when the brackets span two words', () => {
+    // [בָּ֣א גָ֑ד] in Genesis 30:11
+    expect(lookupForm('[בָּ֣א')).toBe('בא');
+    expect(lookupForm('גָ֑ד]')).toBe('גד');
   });
 });

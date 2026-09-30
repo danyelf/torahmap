@@ -34,25 +34,16 @@ export function verseWords(text: string): TextWord[] {
  * Sefaria writes a textual variant as a pair of words: the form the scribes
  * wrote, in round brackets, followed by the form that is actually read aloud,
  * in square brackets. Neither kind of bracket is a letter of the word, and no
- * dictionary key contains one, so a wrapped word has to be unwrapped before it
- * is looked up - while the verse and the panel go on showing it exactly as it
- * is written, brackets and all, because that is what the reader clicked.
- *
- * A bracket that does not have its partner at the other end of the word is
- * left alone. Those occur where a bracketed phrase runs over two words, and
- * neither half resolves whatever is done to it.
+ * dictionary key contains one, so every bracket is dropped before the lookup -
+ * including the lone one each end of a phrase bracketed over two words
+ * carries - while the verse and the panel go on showing the word exactly as it
+ * is written, because that is what the reader clicked.
  */
 export function lookupForm(displayed: string): string {
-  for (const [open, close] of [
-    ['(', ')'],
-    ['[', ']'],
-  ]) {
-    if (displayed.length > 1 && displayed.startsWith(open) && displayed.endsWith(close)) {
-      return normalizeHebrewForSearch(displayed.slice(1, -1));
-    }
-  }
-  return normalizeHebrewForSearch(displayed);
+  return normalizeHebrewForSearch(displayed.replace(BRACKETS, ''));
 }
+
+const BRACKETS = /[[\]()]/g;
 
 /**
  * Make every word in an already-built fragment clickable.

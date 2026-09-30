@@ -132,7 +132,7 @@ against the baseline it keeps in `scripts/search/`.
 
 `normalize()` in the generator and `normalizeHebrewForSearch()` in
 `src/search.ts` must fold Hebrew the same way. If they drift apart, every
-lookup misses and search silently falls back to whole-word matching. Change one
+lookup misses and meanings search silently finds nothing. Change one
 and you have to change the other.
 
 The same goes for which characters separate one word from the next — maqaf,

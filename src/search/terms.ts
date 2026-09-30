@@ -6,7 +6,8 @@
 // that choice the moment an earlier term is edited, because every later index
 // shifts and the choice lands silently on a different word.
 
-import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
+import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
+import { versesForTerm } from '../search.ts';
 import { isHebrew } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -293,24 +294,29 @@ export function meaningsApply(term: SearchTerm): boolean {
 }
 
 /** Everything a term is matched on: terms with equal queries find the same verses. */
-export interface TermQuery {
-  text: string;
-  language: TextLanguage;
-  mode: SearchMode;
-  /**
-   * The lexemes of the chosen meanings, or null when the term is matched by its
-   * text. Empty for a word the dictionary does not know, which finds nothing.
-   */
-  meaningKeys: string[] | null;
-}
+export type TermQuery = { text: string; language: TextLanguage } & (
+  | {
+      mode: 'meanings';
+      /** The lexemes of the chosen meanings. Empty for a word the dictionary does not know. */
+      meaningKeys: string[];
+    }
+  | { mode: MatchMode }
+);
 
 export function termQuery(term: SearchTerm): TermQuery {
-  return {
-    text: term.text.trim(),
-    language: termIsHebrew(term) ? HEBREW : ENGLISH,
-    mode: effectiveMode(term),
-    meaningKeys: meaningsApply(term) ? selectedKeys(term) : null,
-  };
+  const text = term.text.trim();
+  const language = termIsHebrew(term) ? HEBREW : ENGLISH;
+  const mode = effectiveMode(term);
+  return mode === 'meanings'
+    ? { text, language, mode, meaningKeys: selectedKeys(term) }
+    : { text, language, mode };
+}
+
+/** The verses a query finds. A word the dictionary does not know finds none in meanings mode. */
+export function versesForQuery(query: TermQuery): Set<string> {
+  return query.mode === 'meanings'
+    ? versesFor(query.meaningKeys)
+    : versesForTerm(query.text, query.language, query.mode);
 }
 
 /**
