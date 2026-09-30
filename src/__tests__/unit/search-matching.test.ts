@@ -12,9 +12,15 @@ import type { VerseTexts } from '../../verseTexts';
 
 const GENESIS_1_1 = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
 
+const LEVITICUS_1_1 =
+  'וַיִּקְרָ֖א אֶל־מֹשֶׁ֑ה וַיְדַבֵּ֤ר יְהֹוָה֙ אֵלָ֔יו מֵאֹ֥הֶל מוֹעֵ֖ד לֵאמֹֽר׃';
+
 const texts: VerseTexts = {
   Genesis: {
     '1': { '1': { he: GENESIS_1_1, en: 'In the beginning God created heaven and earth' } },
+  },
+  Leviticus: {
+    '1': { '1': { he: LEVITICUS_1_1, en: 'The LORD called to Moses and spoke to him' } },
   },
 };
 
@@ -34,15 +40,26 @@ describe('the search and the highlighter agree', () => {
     // הארצ as typed; the verse writes הארץ. Folding makes them one spelling.
     expect(versesForTerm('הארצ', 'he', 'word').size).toBe(1);
 
-    searchOverlay.restore({ search: 'הארצ', mode: 'word' });
+    searchOverlay.restore({ search: 'הארצ', mode: 'w' });
     expect(marked(GENESIS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['הארץ']);
   });
 
   it('on the last word of a verse, which carries the sof pasuq', () => {
     expect(versesForTerm('הארץ', 'he', 'word').size).toBe(1);
 
-    searchOverlay.restore({ search: 'הארץ', mode: 'word' });
+    searchOverlay.restore({ search: 'הארץ', mode: 'w' });
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);
+  });
+
+  it.each(['w', undefined])('on a phrase, in mode %s', (mode) => {
+    // No dictionary is loaded here, so meanings mode (the default, undefined)
+    // matches the phrase by its text.
+    expect(versesForTerm('וידבר יהוה', 'he', 'word').size).toBe(1);
+
+    searchOverlay.restore({ search: 'וידבר יהוה', ...(mode ? { mode } : {}) });
+    expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת ]/g, ''))).toEqual([
+      'וידבר יהוה',
+    ]);
   });
 });
 

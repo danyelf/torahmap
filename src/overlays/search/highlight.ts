@@ -70,12 +70,13 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     // the place in the verse says which this one is. `wordMatches` falls back
     // to the spelling wherever the parse cannot answer (see
     // search/dictionary.ts), so a verse that does not line up still marks.
-    if (isHebrew && mode === 'meanings') {
-      const keys = selectedKeys(term);
-      const needle = foldForMatching(term.text, HEBREW);
+    //
+    // With no meanings, the term marks as a whole word, the same way the search
+    // finds it.
+    const keys = isHebrew && mode === 'meanings' ? selectedKeys(term) : [];
+    if (keys.length > 0) {
       for (const { word, start, end } of splitIntoWords(folded)) {
-        const hit = keys.length > 0 ? wordMatches(keys, word, text, start) : word === needle;
-        if (hit) {
+        if (wordMatches(keys, word, text, start)) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
         }
       }
@@ -83,7 +84,7 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     }
 
     for (const { start, end } of matchRangesInFolded(folded, foldForMatching(term.text, language), {
-      mode: mode === 'word' ? 'word' : 'substring',
+      mode: mode === 'substring' ? 'substring' : 'word',
       language,
     })) {
       matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
