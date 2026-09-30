@@ -395,6 +395,18 @@ describe('Trop Overlay', () => {
     });
   });
 
+  describe('Hover info', () => {
+    it('describes a verse only when it carries the shown mark', () => {
+      const overlay = getOverlay('trop')! as Overlay<TanakhIdentity, TropSettings>;
+      const settings = overlay.settingsFromUrl({ trop: 'tipcha' });
+      const [withTipcha, withoutTipcha] = [testVerses[0], testVerses[1]];
+
+      expect(overlay.getHoverInfo!(withTipcha, settings)).not.toBeNull();
+      expect(overlay.getHoverInfo!(withoutTipcha, settings)).toBeNull();
+      expect(overlay.getHoverInfo!(withTipcha, { mark: null, preview: null })).toBeNull();
+    });
+  });
+
   describe('Verse Filtering', () => {
     it('returns null color when no mark selected', () => {
       const host = makeHost();

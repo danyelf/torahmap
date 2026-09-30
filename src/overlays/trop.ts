@@ -6,14 +6,13 @@
 import './trop.css';
 import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts';
 import type { TanakhIdentity, TextLanguage } from '../types.ts';
-import { HEBREW, tanakhKey, tanakhIdentitiesEqual } from '../types.ts';
+import { HEBREW, tanakhKey } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
 import type { VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
   getTropByFrequency,
   getRarityTier,
-  type TropIndex,
   type TropIndexEntry,
 } from './trop/marks.ts';
 import { lingeringHover } from '../utils/hover.ts';
@@ -23,8 +22,8 @@ import { axisGradient, legendCaption, legendRow } from './legend.ts';
 import { memoBySettings } from './memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
-let tropIndex: TropIndex = new Map();
 let tropByFrequency: TropIndexEntry[] = [];
+let tropBySlug = new Map<string, TropIndexEntry>();
 
 /**
  * The mark clicked, and the mark the pointer is over in the chart, each named
@@ -42,7 +41,7 @@ function shownMark(settings: TropSettings): string | null {
 
 function entryFor(mark: string | null): TropIndexEntry | null {
   if (!mark) return null;
-  return tropByFrequency.find((t) => slugify(t.name) === mark) ?? null;
+  return tropBySlug.get(mark) ?? null;
 }
 
 /** A rare mark's legend is two swatches, "contains" and "does not"; any other's a gradient. */
@@ -249,10 +248,10 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
 
   getHoverInfo(verse, settings) {
     const entry = entryFor(shownMark(settings));
-    if (!entry) return null;
-
-    const loc = entry.verses.find((v) => tanakhIdentitiesEqual(v, verse));
-    return loc ? `${entry.name} ×${loc.count}` : null;
+    const count = derivationFor(settings)?.verseLookup.get(
+      tanakhKey(verse.book, verse.chapter, verse.verse),
+    );
+    return entry && count ? `${entry.name} ×${count}` : null;
   },
 
   highlightVerseText(text: string, language: TextLanguage, settings): DocumentFragment {
@@ -270,8 +269,8 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
 };
 
 export function configure(config: { verseTexts: VerseTexts }): void {
-  tropIndex = buildTropIndex(config.verseTexts);
-  tropByFrequency = getTropByFrequency(tropIndex);
+  tropByFrequency = getTropByFrequency(buildTropIndex(config.verseTexts));
+  tropBySlug = new Map(tropByFrequency.map((entry) => [slugify(entry.name), entry]));
 }
 
 // Wraps a trop mark together with its base letter and any other combining
