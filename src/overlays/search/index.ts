@@ -162,7 +162,9 @@ function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
   const queries = active.map(termQuery);
   const results = resultsForVerseSets(
     queries.map(({ text, language, mode, meaningKeys }) =>
-      meaningKeys ? versesFor(meaningKeys) : versesForTerm(text, language, textMatchMode(mode)),
+      mode === 'meanings'
+        ? versesFor(meaningKeys ?? [])
+        : versesForTerm(text, language, textMatchMode(mode)),
     ),
     queries.map((query) => query.language),
   );

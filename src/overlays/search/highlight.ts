@@ -76,11 +76,8 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     // the place in the verse says which this one is. `wordMatches` falls back
     // to the spelling wherever the parse cannot answer (see
     // search/dictionary.ts), so a verse that does not line up still marks.
-    //
-    // With no meanings, the term marks as a whole word, the same way the search
-    // finds it.
-    const keys = isHebrew && mode === 'meanings' ? selectedKeys(term) : [];
-    if (keys.length > 0) {
+    if (isHebrew && mode === 'meanings') {
+      const keys = selectedKeys(term);
       for (const { word, start, end } of splitIntoWords(folded)) {
         if (wordMatches(keys, word, text, start)) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });

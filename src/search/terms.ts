@@ -297,7 +297,10 @@ export interface TermQuery {
   text: string;
   language: TextLanguage;
   mode: SearchMode;
-  /** The lexemes of the chosen meanings, or null when the term is matched by its text. */
+  /**
+   * The lexemes of the chosen meanings, or null when the term is matched by its
+   * text. Empty for a word the dictionary does not know, which finds nothing.
+   */
   meaningKeys: string[] | null;
 }
 
@@ -306,10 +309,7 @@ export function termQuery(term: SearchTerm): TermQuery {
     text: term.text.trim(),
     language: termIsHebrew(term) ? HEBREW : ENGLISH,
     mode: effectiveMode(term),
-    // A word the dictionary does not know is matched by its text even in
-    // meanings mode, so a lexeme index that failed to load does not leave
-    // Hebrew finding nothing.
-    meaningKeys: meaningsApply(term) && term.meanings.length > 0 ? selectedKeys(term) : null,
+    meaningKeys: meaningsApply(term) ? selectedKeys(term) : null,
   };
 }
 

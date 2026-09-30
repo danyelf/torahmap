@@ -176,31 +176,6 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(color121).not.toBeNull();
       expect(Array.isArray(color121)).toBe(true);
     });
-
-    it('meanings mode falls back to word mode behavior', () => {
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אברהם';
-      input.dispatchEvent(new Event('input'));
-
-      // Test word mode first
-      chooseMode('word');
-
-      const verse = testVerses.find(
-        (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
-      );
-      const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
-
-      // Now test meanings mode
-      chooseMode('meanings');
-
-      const meaningsColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
-
-      // Should behave identically (both should match)
-      expect(meaningsColor).not.toBeNull();
-      expect(wordColor).not.toBeNull();
-    });
   });
 
   describe('URL State Persistence', () => {
@@ -416,24 +391,23 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
     });
   });
 
-  describe('Fallback Behavior', () => {
-    it('meanings mode falls back to whole-word for proper nouns', () => {
+  describe('A word the dictionary does not know', () => {
+    it('finds nothing in meanings mode, and is found in whole-word mode', () => {
       searchOverlay.renderControls?.(container);
 
+      // No dictionary is loaded here, so it knows no word at all.
       const input = container.querySelector('#search-input') as HTMLInputElement;
       input.value = 'אברהם';
       input.dispatchEvent(new Event('input'));
-      chooseMode('meanings');
-
-      // Should find אברהם as whole word (lexeme lookup fails, falls back to whole-word)
       const gen175 = testVerses.find(
         (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
-      );
-      const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
+      )!;
 
-      expect(color).not.toBeNull();
-      // Should be highlighted (matched)
-      expect(Array.isArray(color)).toBe(true);
+      chooseMode('meanings');
+      expect(searchOverlay.getVerseColor(gen175)).toBeNull();
+
+      chooseMode('word');
+      expect(searchOverlay.getVerseColor(gen175)).toEqual(SEARCH_COLORS[0]);
     });
 
     it('meanings mode does NOT fall back to substring', () => {

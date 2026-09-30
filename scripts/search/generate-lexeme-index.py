@@ -485,6 +485,59 @@ def main():
         if len(displayed_words(entry.get("he", ""))) != len(words):
             misaligned.append(key)
 
+    # ---- file every displayed spelling ------------------------------------
+    # Sefaria and BHSA disagree on some spellings -- optional vowel letters
+    # (גרלות, Leviticus 16:8), and names divided differently. Such a word,
+    # typed as the page shows it, would find nothing. Where the verse lines
+    # up, the word BHSA parsed at that position is what it means.
+    # consonants() also drops the stray bracket of a bracketed phrase that
+    # runs over two words.
+    added = collections.Counter()
+    for key, words in verse_words.items():
+        book, chapter, verse = key.rsplit(":", 2)
+        entry = texts.get(book, {}).get(chapter, {}).get(verse)
+        if entry is None or key in misaligned:
+            continue
+        morphemes = [lexeme for lexeme, _ in verse_morph[key]]
+        at, stem = 0, None
+        for form, length in zip(displayed_words(entry.get("he", "")), words):
+            # A word of no morphemes is a further part of the name before it.
+            if length > 0:
+                at += length
+                stem = morphemes[at - 1]
+            if len(form) >= 2 and form not in word_lexemes:
+                added[(form, stem)] += 1
+
+    # Where they do not line up, it is nearly always a name BHSA writes as two
+    # words and Sefaria as one: רב שקה against רבשקה, in 16 verses.
+    solid = {
+        written.replace(" ", ""): lexemes
+        for written, lexemes in word_lexemes.items()
+        if " " in written
+    }
+    for key in misaligned:
+        book, chapter, verse = key.rsplit(":", 2)
+        for form in displayed_words(texts[book][chapter][verse].get("he", "")):
+            if form not in word_lexemes:
+                for lexeme in solid.get(form, []):
+                    added[(form, lexeme)] += 1
+
+    for (form, lexeme), count in sorted(added.items(), key=lambda p: (-p[1], p[0][1])):
+        word_lexemes.setdefault(form, []).append(lexeme)
+
+    unfiled = collections.defaultdict(set)
+    for book, chapters in texts.items():
+        for chapter, verses in chapters.items():
+            for verse, entry in verses.items():
+                for form in displayed_words(entry.get("he", "")):
+                    if len(form) >= 2 and form not in word_lexemes:
+                        unfiled[form].add(f"{book}:{chapter}:{verse}")
+    print(f"  {len({form for form, _ in added})} displayed spellings BHSA does not "
+          f"use, filed under the word parsed there")
+    print(f"  {len(unfiled)} displayed spellings still unfiled, in "
+          f"{len(set().union(*unfiled.values()))} verses"
+          + (": " + ", ".join(sorted(unfiled)) if unfiled else ""))
+
     printed = sum(len(w) for w in verse_words.values())
     joins = sum(len(j) for j in verse_joins.values())
     print(f"  {printed} printed words, {joins} of them joined by a maqaf")

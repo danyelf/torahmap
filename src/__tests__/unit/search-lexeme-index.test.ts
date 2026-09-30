@@ -416,8 +416,9 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     //
     // An exact count, not a rate: 652 of these words carry a grapheme joiner,
     // and a rate loose enough to pass today also passes with all 652 broken.
-    // The remainder are compound proper names the two sources divide
-    // differently.
+    // The remainder carry one bracket of a phrase bracketed over two words,
+    // which lookupForm() leaves on, or are halves of a word Sefaria prints as
+    // two and BHSA as one.
     let total = 0;
     const missing: string[] = [];
     for (const chapters of Object.values(texts)) {
@@ -432,7 +433,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       }
     }
     expect(total).toBeGreaterThan(300000);
-    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(595);
+    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(240);
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {

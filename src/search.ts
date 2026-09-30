@@ -127,9 +127,9 @@ export async function loadLexiconData(): Promise<void> {
     ]);
 
     if (!lexiconRes.ok || !formsRes.ok || !versesRes.ok) {
-      console.warn('Failed to load lexeme index, falling back to whole-word search');
-      console.warn(
-        `Response status: lexicon=${lexiconRes.status}, forms=${formsRes.status}, verses=${versesRes.status}`,
+      console.error(
+        'Failed to load the lexeme index; meanings search will find nothing. ' +
+          `Response status: lexicon=${lexiconRes.status}, forms=${formsRes.status}, verses=${versesRes.status}`,
       );
       return;
     }
@@ -157,7 +157,7 @@ export async function loadLexiconData(): Promise<void> {
     lexemeToVerses = buildVerseIndex(verseLexemes);
     spellingToLexemes = buildSpellingIndex(lexemeSpellings);
   } catch (err) {
-    console.warn('Error loading lexeme index:', err);
+    console.error('Error loading the lexeme index; meanings search will find nothing:', err);
   }
 }
 
@@ -217,8 +217,7 @@ function buildSpellingIndex(spellings: string[]): Map<string, LexemeId[]> {
  * resolves without anything noticing the ב; and completion answered עליו "upon
  * him" with עֶלְיֹון "most high" on four shared letters.
  *
- * Null is an answer, not a failure: the caller falls back to text matching and
- * marks the term unresolved. Exported so the overlay can tell which resolved.
+ * Null is an answer, not a failure: a word the dictionary does not know.
  */
 export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
   if (!formToLexemes) return null;

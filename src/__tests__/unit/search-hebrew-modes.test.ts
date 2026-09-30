@@ -74,8 +74,6 @@ describe('Hebrew Search Modes', () => {
   });
 
   const found = (text: string, mode: MatchMode) => versesForTerm(text, 'he', mode);
-  const keysOf = (results: { book: string; chapter: number; verse: number }[]) =>
-    new Set(results.map((r) => `${r.book}:${r.chapter}:${r.verse}`));
 
   describe('substring mode', () => {
     it('matches inside a longer word', () => {
@@ -117,34 +115,6 @@ describe('Hebrew Search Modes', () => {
 
     it('finds fewer verses than substring mode', () => {
       expect(found('ברא', 'word').size).toBeLessThanOrEqual(found('ברא', 'substring').size);
-    });
-  });
-
-  describe('meanings mode', () => {
-    it('falls back to whole word when the term resolves to no lexeme', () => {
-      // The lexeme index is not loaded here.
-      expect(keysOf(searchInMeaningsMode('אברהם'))).toEqual(found('אברהם', 'word'));
-    });
-
-    it('does not fall back to substring', () => {
-      expect(keysOf(searchInMeaningsMode('אלה')).has('Exodus:1:1')).toBe(false);
-    });
-
-    it('returns Hebrew results', () => {
-      const results = searchInMeaningsMode('אלהים');
-      expect(results.length).toBeGreaterThan(0);
-      for (const result of results) {
-        expect(result.language).toBe('he');
-        expect(result.matchingTerms.length).toBeGreaterThan(0);
-      }
-    });
-
-    it('matches each term of several', () => {
-      // Genesis 2:7 has both אלהים and האדם
-      const gen27 = searchInMeaningsMode('אלהים, האדם').find(
-        (r) => r.book === 'Genesis' && r.chapter === 2 && r.verse === 7,
-      );
-      expect(gen27?.matchingTerms.map((m) => m.termIndex)).toEqual([0, 1]);
     });
   });
 

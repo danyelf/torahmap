@@ -159,9 +159,9 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלה');
     });
 
-    it('falls back to whole-word search for a term with no reading', () => {
-      // A nonsense string finds nothing rather than throwing.
-      expect(searchInMeaningsMode('קקקקקקק')).toEqual([]);
+    it('finds nothing for a word the dictionary does not know', () => {
+      // ויאמר half typed.
+      expect(searchInMeaningsMode('ויאמ')).toEqual([]);
     });
   });
 });

@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import { configure, type SearchSettings } from '../../../overlays/search';
 import type { Color } from '../../../overlays/types';
-import { buildSearchIndex, parseSearchTerms } from '../../../search';
+import { buildSearchIndex, loadLexiconData, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
@@ -22,6 +22,10 @@ function render(): HTMLDivElement {
 function type(container: HTMLElement, text: string): void {
   typeInSearch(container, text);
 }
+
+beforeAll(async () => {
+  await loadLexiconData();
+});
 
 describe('Search Overlay', () => {
   let testVerses: TanakhLayout[];
@@ -1226,7 +1230,7 @@ describe('Search Overlay', () => {
     });
 
     it('marks the last word of a verse, where the sof pasuq trails the word', () => {
-      searchOverlay.restore({ search: 'הארץ', mode: 'word' });
+      searchOverlay.restore({ search: 'הארץ', mode: 'w' });
 
       const html = fragmentToHtml(
         searchOverlay.highlightVerseText(
@@ -1247,7 +1251,7 @@ describe('Search Overlay', () => {
         'אַחְאָ֑ב וּמָחִ֨יתִי אֶת־יְרוּשָׁלַ֜͏ִם כַּאֲשֶׁר־יִמְחֶ֤ה אֶת־הַצַּלַּ֙חַת֙ ' +
         'מָחָ֔ה וְהָפַ֖ךְ עַל־פָּנֶֽיהָ׃';
 
-      searchOverlay.restore({ search: 'ירושלם', mode: 'word' });
+      searchOverlay.restore({ search: 'ירושלם', mode: 'w' });
 
       const html = fragmentToHtml(
         searchOverlay.highlightVerseText(verse, 'he') as DocumentFragment,
