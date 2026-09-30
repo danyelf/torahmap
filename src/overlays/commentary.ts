@@ -108,6 +108,8 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
       'the commentary counts',
     );
     if (result) data = result;
+    // A legend drawn before the counts arrived took every maximum as zero.
+    cachedMaxValues = {};
   },
 
   destroy() {

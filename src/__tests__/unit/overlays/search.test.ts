@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import { configure, type SearchSettings } from '../../../overlays/search';
 import type { Color } from '../../../overlays/types';
@@ -6,7 +6,11 @@ import { buildSearchIndex, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
+import {
+  renderSearchControls,
+  searchLoadedAsBuilt,
+  typeInSearch,
+} from '../../helpers/searchOverlay';
 import { SEARCH_RECORD_DELAY_MS } from '../../../search/constants';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
@@ -14,6 +18,8 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { configureAnalytics } from '../../../analytics.ts';
 
 const searchOverlay = hostOverlay(searchTool);
+
+beforeAll(searchLoadedAsBuilt);
 
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);

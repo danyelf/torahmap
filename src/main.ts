@@ -5,7 +5,6 @@ import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, allVerseTexts, type VerseTexts } from './verseTexts.ts';
 import { ready, isReady, linkNeeds } from './dataLoading.ts';
-import { lookUpMeaningsAgain } from './search/terms.ts';
 import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
@@ -122,7 +121,7 @@ import {
   searchTool,
   searchForMeaning,
   canAddTerm,
-  isSearching,
+  withMeaningsLookedUp,
   type SearchSettings,
 } from './overlays/search/index.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
@@ -1035,16 +1034,21 @@ async function main(): Promise<void> {
   /** Show a tool whose data has just arrived, if it is on the map. */
   function toolArrived(tool: Overlay): void {
     if (tool === searchTool) {
-      const search = overlaySettings.get(searchTool);
-      overlaySettings.set(searchTool, { ...search, terms: lookUpMeaningsAgain(search.terms) });
+      overlaySettings.set(searchTool, withMeaningsLookedUp(overlaySettings.get(searchTool)));
       searchChanged(false);
-      if (!isSearching(overlaySettings.get(searchTool))) return;
     } else if (tool === currentOverlay) {
       overlayChanged(true);
-    } else {
+    }
+    // Between two story stops the blend draws whichever tools its stops show.
+    if (colorSource(driver) === 'blend') {
+      blendTransition();
+      render();
       return;
     }
-    if (colorSource(driver) === 'overlay') fadeToTools();
+    const { search, overlay } = toolsNow();
+    if (colorSource(driver) === 'overlay' && (search?.tool === tool || overlay?.tool === tool)) {
+      fadeToTools();
+    }
   }
 
   // A drag pans the map, and a mouse moving over it hovers. Two fingers pinch.

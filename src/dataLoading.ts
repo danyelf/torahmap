@@ -14,8 +14,8 @@ const finished = new Set<Loadable>();
 
 /**
  * Run `tool`'s init once, however often it is asked for. A failure warns and
- * counts as finished: the tool then shows what it has, as it always has with
- * its data missing, rather than keep everything that waits on it waiting.
+ * counts as finished: the tool then shows what it has, rather than keep
+ * everything that waits on it waiting.
  */
 export function ready(tool: Loadable): Promise<void> {
   let loading = started.get(tool);

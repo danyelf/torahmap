@@ -9,7 +9,7 @@ import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { searchTool } from '../overlays/search/index.ts';
+import { isSearching, searchTool } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';
 import { isReady } from '../dataLoading.ts';
 
@@ -59,14 +59,15 @@ export function pictureForStop(
   const cached = byHover ? undefined : cache.get(key);
   if (cached) return cached;
 
+  const search = settingsFromLink(searchTool, stop.searchParams ?? {});
   const tools = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
-    settingsFromLink(searchTool, stop.searchParams ?? {}),
+    search,
   );
   const picture = fillDefaultColors(toolsPicture(tools, verses, hovered));
   // A picture drawn before its tools' data arrived would outlive the data.
-  const complete = (!overlay || isReady(overlay)) && isReady(searchTool);
+  const complete = (!overlay || isReady(overlay)) && (!isSearching(search) || isReady(searchTool));
   if (!byHover && complete) cache.set(key, picture);
   return picture;
 }

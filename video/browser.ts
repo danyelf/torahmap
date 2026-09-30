@@ -42,6 +42,8 @@ export async function openMap(
     if (i === 300) throw new Error('the map did not start within 30 seconds');
     await wait(100);
   }
+  // The first frame waits only for what the link shows; the rest follows it.
+  await page.waitForLoadState('networkidle');
   await page.evaluate(() => document.fonts.ready);
   await wait(1000);
   return page;

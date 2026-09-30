@@ -37,8 +37,10 @@ import {
   encodeModes,
   applyModes,
   MAX_TERMS,
+  lookUpMeaningsAgain,
   type SearchTerm,
 } from '../../search/terms.ts';
+import { isReady, ready } from '../../dataLoading.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { SEARCH_RECORD_DELAY_MS } from '../../search/constants.ts';
 import { isSearchableWord } from '../../hebrew.ts';
@@ -183,6 +185,11 @@ let lastChanged: SearchSettings | null = null;
 const recordSettledSearch = debounce(() => {
   const settings = lastChanged;
   if (!settings) return;
+  // Counted before the data is in, every word would find nothing.
+  if (!isReady(searchTool)) {
+    void ready(searchTool).then(() => recordSettledSearch());
+    return;
+  }
 
   const { send, recorded: next } = termsToRecord(recorded, searchFor(settings).active);
   recorded = next;
@@ -191,6 +198,17 @@ const recordSettledSearch = debounce(() => {
     trackSearchExecute(term.text, language, mode, termHitCount(settings, term)!);
   }
 }, SEARCH_RECORD_DELAY_MS);
+
+/**
+ * `settings` with the meanings of terms typed before the dictionary arrived
+ * looked up. Still the reader's own change if `settings` was, so a word waiting
+ * to be recorded is recorded rather than taken for a link's.
+ */
+export function withMeaningsLookedUp(settings: SearchSettings): SearchSettings {
+  const next = { ...settings, terms: lookUpMeaningsAgain(settings.terms) };
+  if (lastChanged === settings) lastChanged = next;
+  return next;
+}
 
 /**
  * Take `settings` as the search on the map. One the reader's last change did
@@ -292,6 +310,7 @@ export function canAddTerm(settings: SearchSettings): boolean {
  * soon as an earlier row is emptied.
  */
 function termHitCount(settings: SearchSettings, term: SearchTerm): number | null {
+  if (!isReady(searchTool)) return null;
   const { active, results } = searchFor(settings);
   const index = active.indexOf(term);
   if (index === -1) return null;
@@ -314,7 +333,9 @@ function updateHitCaption(settings: SearchSettings): void {
   const listed = resultsForOpenRow(settings).length;
 
   let message: string;
-  if (active.length > 0 && results.length > 0) {
+  if (!isReady(searchTool)) {
+    message = '';
+  } else if (active.length > 0 && results.length > 0) {
     // The list shows the open row's verses, so the caption above it counts
     // those, and names the union second so the number the rows cannot show
     // between them is still somewhere. With one term the two are the same
