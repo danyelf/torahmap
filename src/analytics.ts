@@ -4,7 +4,12 @@ import type { TextLanguage } from './types.ts';
 import type { SearchMode } from './search/terms.ts';
 import type { DriverKind } from './scrollytelling/driver.ts';
 import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
-import type { EventFields, EventName, EventPayload } from './telemetry/schema.ts';
+import {
+  errorMessage,
+  type EventFields,
+  type EventName,
+  type EventPayload,
+} from './telemetry/schema.ts';
 import { linkKind, type LinkKind, type UrlState } from '@torahmap/link';
 
 interface Options {
@@ -25,9 +30,13 @@ const options: Options = {
   visitId: '',
 };
 let storyStopsSent = new Set<string>();
+let errorsSent = new Set<string>();
 
 export function configureAnalytics(changes: Partial<Options>): void {
-  if (changes.visitId !== undefined) storyStopsSent = new Set();
+  if (changes.visitId !== undefined) {
+    storyStopsSent = new Set();
+    errorsSent = new Set();
+  }
   Object.assign(options, changes);
 }
 
@@ -137,4 +146,28 @@ export function trackSefariaClick(
 
 export function trackWebGLMissing(): void {
   track('webgl_missing', {});
+}
+
+/**
+ * Sends each distinct error once per visit. The message is cut short because
+ * it can hold text the reader typed.
+ */
+function trackError(source: string, error: unknown): void {
+  const message = errorMessage(error);
+  const key = `${source}\n${message}`;
+  if (errorsSent.has(key)) return;
+  errorsSent.add(key);
+  track('error', { source, message });
+}
+
+/** Logs an error the page handled, and reports it. */
+export function reportError(source: string, error: unknown): void {
+  console.error(`${source}:`, error);
+  trackError(source, error);
+}
+
+/** Reports what nothing caught; the browser has already logged it. */
+export function reportUncaughtErrors(target: Window = window): void {
+  target.addEventListener('error', (e) => trackError('uncaught', e.error ?? e.message));
+  target.addEventListener('unhandledrejection', (e) => trackError('unhandled_rejection', e.reason));
 }

@@ -30,6 +30,8 @@ import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
   arrivedWith,
   configureAnalytics,
+  reportError,
+  reportUncaughtErrors,
   trackOverlaySwitch,
   trackPageView,
   trackSefariaClick,
@@ -1784,4 +1786,5 @@ async function main(): Promise<void> {
   prefetchMorphology();
 }
 
-main().catch(console.error);
+reportUncaughtErrors();
+main().catch((error) => reportError('main', error));

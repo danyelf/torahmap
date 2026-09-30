@@ -3,6 +3,7 @@
 import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from './types.ts';
 import { seededRandom } from './utils/random.ts';
 import { JITTER_CENTER, JITTER_RANGE } from './constants.ts';
+import { reportError } from './analytics.ts';
 
 const VERSE_SIZE = 6; // pixels per verse square
 const CHAPTER_GAP = 2; // gap between chapter rows
@@ -186,7 +187,7 @@ function layoutBooksStack(
   for (const bookName of bookNames) {
     const book = bookMap.get(bookName);
     if (!book) {
-      console.error(`Book not found in map: ${bookName}`);
+      reportError('layout', `Book not found in map: ${bookName}`);
       continue;
     }
 

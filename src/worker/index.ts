@@ -5,6 +5,7 @@
 // cacheable. Every other path is served as a static file.
 
 import {
+  errorMessage,
   MAX_BODY_BYTES,
   toDataPoint,
   workerDataPoint,
@@ -64,6 +65,27 @@ async function handleEvent(request: Request, url: URL, env: Env): Promise<Respon
   return new Response(null, { status: 204 });
 }
 
+/** Logs an error and writes the worker_error event. Never throws. */
+function reportWorkerError(
+  source: string,
+  error: unknown,
+  request: Request,
+  url: URL,
+  env: Env,
+): void {
+  console.error(`${source}:`, error);
+  try {
+    const point = workerDataPoint(
+      'worker_error',
+      { source, message: errorMessage(error) },
+      requestContext(request, url),
+    );
+    env.TORAHMAP_EVENTS.writeDataPoint(point);
+  } catch {
+    // Nowhere left to report it; the log above stands.
+  }
+}
+
 /** Writes the link_preview event. Never throws. */
 function recordPreviewFetch(
   fetcher: string,
@@ -80,7 +102,7 @@ function recordPreviewFetch(
     );
     env.TORAHMAP_EVENTS.writeDataPoint(point);
   } catch (error) {
-    console.error('recordPreviewFetch: failed to record the preview fetch', error);
+    reportWorkerError('recordPreviewFetch', error, request, url, env);
   }
 }
 
@@ -110,7 +132,7 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
     headers.delete('ETag');
     return new Response(body, { status: response.status, headers });
   } catch (error) {
-    console.error('linkPage: falling back to the page as fetched', error);
+    reportWorkerError('linkPage', error, request, url, env);
     return new Response(html, { status: response.status, headers: response.headers });
   }
 }

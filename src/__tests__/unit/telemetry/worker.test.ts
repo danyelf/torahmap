@@ -222,12 +222,15 @@ describe('the page at /', () => {
       throw new Error('boom');
     });
     const html = '<title>Torahmap</title><meta property="og:title" content="Torahmap" />';
-    const response = await worker.fetch(
-      page('https://torahmap.org/?verse=Genesis.12.1', slack),
-      envWithIndex(html),
-    );
+    const e = envWithIndex(html);
+    const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
     expect(await response.text()).toBe(html);
     expect(consoleError).toHaveBeenCalled();
+    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
+      indexes: ['worker_error'],
+      blobs: ['worker_error', '', '', 'desktop', 'torahmap.org', 'linkPage', 'Error: boom'],
+      doubles: [],
+    });
     rewriteSpy.mockRestore();
     consoleError.mockRestore();
   });

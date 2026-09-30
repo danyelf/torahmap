@@ -28,7 +28,9 @@ export const EVENTS = {
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
   webgl_missing: { blobs: [], doubles: [] },
+  error: { blobs: ['source', 'message'], doubles: [] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [], by: 'worker' },
+  worker_error: { blobs: ['source', 'message'], doubles: [], by: 'worker' },
   // A stop share records overlay 'none': stop links carry no overlay (the stop
   // picks its own), so group share.overlay by view shares.
   share: {
@@ -87,6 +89,12 @@ export interface DataPoint {
 
 export const MAX_BODY_BYTES = 2048;
 const MAX_BLOB_CHARS = 100;
+
+/** The message column of error and worker_error, cut to fit. */
+export function errorMessage(error: unknown): string {
+  const text = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  return text.slice(0, MAX_BLOB_CHARS);
+}
 
 function isEventName(name: unknown): name is EventName {
   return typeof name === 'string' && Object.prototype.hasOwnProperty.call(EVENTS, name);

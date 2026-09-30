@@ -14,4 +14,12 @@ describe('the stories', () => {
     expect(STORIES.map((s) => s.id).sort()).toEqual(Object.keys(STORY_MARKDOWN).sort());
     expect(STORIES.find((s) => s.id === 'tour')?.data.title).toBe('The Guided Tour');
   });
+
+  // The URL names a stop by id, so a repeat makes a stop unreachable.
+  it.each(STORIES.map((s) => [s.id, s.data.stops.map((stop) => stop.id)] as const))(
+    '%s gives each stop its own id',
+    (_, ids) => {
+      expect(new Set(ids).size).toBe(ids.length);
+    },
+  );
 });

@@ -108,7 +108,10 @@ describe('verseTexts', () => {
         const result = await loadAllVerseTexts();
 
         expect(result).toEqual({});
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load verse texts: 404');
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'loadAllVerseTexts:',
+          'Failed to load verse texts: 404',
+        );
         consoleErrorSpy.mockRestore();
       });
 
@@ -119,7 +122,10 @@ describe('verseTexts', () => {
         const result = await loadAllVerseTexts();
 
         expect(result).toEqual({});
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load verse texts: 500');
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'loadAllVerseTexts:',
+          'Failed to load verse texts: 500',
+        );
         consoleErrorSpy.mockRestore();
       });
 
@@ -130,7 +136,10 @@ describe('verseTexts', () => {
         const result = await loadAllVerseTexts();
 
         expect(result).toEqual({});
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load verse texts: 0');
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'loadAllVerseTexts:',
+          'Failed to load verse texts: 0',
+        );
         consoleErrorSpy.mockRestore();
       });
 
