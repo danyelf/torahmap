@@ -1,7 +1,7 @@
 # Draw the Map From the Structure File Alone
 
 **Date:** 2026-09-29
-**Status:** Design, for review. Issue #313.
+**Status:** Built; see `src/dataLoading.ts`. Issue #313.
 
 ## The problem
 

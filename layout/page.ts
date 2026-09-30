@@ -10,13 +10,15 @@ export const DRAWN_FLOOR = 1000;
 
 /**
  * Waits until the map has started and settled: the story applies a stop on the
- * animation frame after startup, and the title face arrives from Google Fonts
- * with display=swap, changing text widths.
+ * animation frame after startup, the data the first frame did not wait for
+ * arrives after it (a pinned verse's popup opens then), and the title face
+ * arrives from Google Fonts with display=swap, changing text widths.
  */
 export async function mapReady(page: Page): Promise<void> {
   // Everything in the body is position: fixed, so <html> never has the
   // nonzero box waitFor's default 'visible' state requires.
   await page.locator('html[data-map-ready]').waitFor({ state: 'attached', timeout: 30_000 });
+  await page.waitForLoadState('networkidle');
   await page.evaluate(async () => {
     await document.fonts.ready;
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
