@@ -384,16 +384,17 @@ describe('createProgram', () => {
       expect(program.program).toBe(mockProgram);
     });
 
-    it('uniforms contains all 5 uniforms', () => {
+    it('uniforms contains all 6 uniforms', () => {
       const program = createProgram(gl);
 
       const uniformKeys = Object.keys(program.uniforms);
-      expect(uniformKeys).toHaveLength(5);
+      expect(uniformKeys).toHaveLength(6);
       expect(uniformKeys).toContain('resolution');
       expect(uniformKeys).toContain('pan');
       expect(uniformKeys).toContain('zoom');
       expect(uniformKeys).toContain('fade');
       expect(uniformKeys).toContain('ring');
+      expect(uniformKeys).toContain('hovered');
     });
   });
 

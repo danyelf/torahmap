@@ -93,13 +93,7 @@ import {
   tanakhKey,
 } from './types.ts';
 import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
-import {
-  computeItemStates,
-  applyItemColors,
-  toolsPicture,
-  layerToRecompute,
-  fillDefaultColors,
-} from './itemColoring.ts';
+import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import {
   createRenderContext,
   createRenderState,
@@ -146,7 +140,6 @@ import {
 import { computeInterpolatedState } from './scrollytelling/controller';
 import { computeBlendedColors } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
-import type { Picture } from './geometry';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
   REJOIN_EASE_MS,
@@ -297,9 +290,9 @@ async function main(): Promise<void> {
   }
 
   // The one colour layer on the map: either a settled overlay's colours or a
-  // story transition's blend. composite() paints the hover and pin on top of
-  // it. A pin never recomputes it; a hover does only when the colours depend
-  // on the hovered verse, which a blend's may.
+  // story transition's blend. The shader draws the hover on top of it
+  // (render). A pin never recomputes it; a hover does only when the colours
+  // depend on the hovered verse, which a blend's may.
   let colorLayer: ColorLayer<VerseColor | null> = still({ colors: [] });
   // What the verse buffer was last built from. A fade in progress changes only
   // its amount, so a frame that keeps these redraws without rebuilding.
@@ -315,33 +308,16 @@ async function main(): Promise<void> {
 
     // The colour arrays, not the pictures: a story stop's are cached, while
     // the pictures around them are made afresh each frame.
-    const inputs = [
-      from.colors,
-      from.growth,
-      from.rings,
-      to?.colors,
-      to?.growth,
-      to?.rings,
-      mouseState.hoveredVerse,
-      pinnedVerse,
-    ];
+    const inputs = [from.colors, from.growth, from.rings, to?.colors, to?.growth, to?.rings];
     if (inputs.every((input, i) => input === built[i])) return;
     built = inputs;
 
-    const shown = (picture: Picture<VerseColor | null>): Picture => ({
-      colors: applyItemColors(
-        computeItemStates(
-          verses,
-          picture.colors,
-          mouseState.hoveredVerse,
-          pinnedVerse,
-          tanakhIdentitiesEqual,
-        ),
-      ),
-      growth: picture.growth,
-      rings: picture.rings,
-    });
-    rebuildGeometry(renderContext.gl, renderState, shown(from), to && shown(to));
+    rebuildGeometry(
+      renderContext.gl,
+      renderState,
+      fillDefaultColors(from),
+      to && fillDefaultColors(to),
+    );
   }
 
   function setColorLayer(next: ColorLayer<VerseColor | null>): void {
@@ -421,7 +397,8 @@ async function main(): Promise<void> {
       if (raw >= 1) {
         // The snap picture, not `to`: fillDefaultColors filled the holes a
         // real overlay leaves for an uncoloured match, which would hover
-        // wrong (computeItemStates reads null there) until the next repaint.
+        // wrong (fillDefaultColors marks uncoloured only the holes it fills
+        // itself) until the next repaint.
         applyTools();
       } else {
         setColorLayer({ from, to, t: easingFunctions[DEFAULT_EASING](raw) });

@@ -1,6 +1,6 @@
-// Color computation and hover highlighting for spatial items
+// Colour computation for spatial items
 
-import type { Color, SpatialItem, ItemState, VerseColor } from './types';
+import type { Color, SpatialItem, VerseColor } from './types';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import { seededRandom } from './utils/random';
@@ -26,7 +26,7 @@ function brightenBands(color: VerseColor, factor: number): VerseColor {
 /**
  * The map's colours from its two layers, search over overlay. `search` is null
  * with no search on and `overlay` null with no overlay; a null colour is
- * painted grey by computeItemStates.
+ * painted grey by fillDefaultColors.
  *
  * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
  * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
@@ -61,28 +61,20 @@ export function combineLayers(
 }
 
 /**
- * `picture` with every null colour replaced by its verse's default grey —
- * what a cross-fade needs so a still-uncoloured verse blends from its own
- * grey rather than mergePictures's placeholder for "nothing here".
+ * `picture` with every null colour replaced by its verse's default grey, and
+ * marked `uncoloured` for the hover. A cross-fade needs the greys so a
+ * still-uncoloured verse blends from its own grey rather than mergePictures's
+ * placeholder for "nothing here".
  */
 export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<VerseColor> {
-  return { ...picture, colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)) };
+  return {
+    ...picture,
+    colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)),
+    uncoloured: picture.colors.map((c) => c === null),
+  };
 }
 
-/**
- * Apply hover highlighting to a verse color: overlay-colored verses brighten,
- * background verses (no overlay color) are replaced with the highlight color.
- */
-export function applyHoverHighlight(baseColor: VerseColor, hasOverlayColor: boolean): VerseColor {
-  return hasOverlayColor
-    ? brightenBands(baseColor, HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR)
-    : HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR;
-}
-
-/**
- * A settled overlay's colours, one entry per item, as computeItemStates needs
- * them.
- */
+/** A settled overlay's colours, one entry per item. */
 export function overlayColorsFor<T, S>(
   overlay: Overlay<T, S> | null,
   items: SpatialItem<T>[],
@@ -121,57 +113,4 @@ export function layerToRecompute<T, S>(
   if (itemsEqual(before, after) || source === 'ease') return null;
   if (source === 'blend') return 'blend';
   return overlay?.hoverChangesColors?.(before, after, settings) ? 'overlay' : null;
-}
-
-/**
- * Compute semantic state for all items: what is true about each one
- * (hasOverlayColor, resolvedColor, isHovered, isPinned). Returns an array
- * parallel to items.
- *
- * Takes a colour per item rather than an overlay, so a blended colour array
- * composites the same way a settled overlay frame does; overlayColorsFor
- * builds that array from an overlay.
- *
- * Equality is injected as a parameter because each corpus has its own
- * identity shape. Tanakh callers pass tanakhIdentitiesEqual; Talmud callers pass
- * their equivalent.
- */
-export function computeItemStates<T>(
-  items: SpatialItem<T>[],
-  overlayColors: (VerseColor | null)[],
-  hoveredItem: SpatialItem<T> | null,
-  pinnedItem: SpatialItem<T> | null,
-  itemsEqual: (a: T | null, b: T | null) => boolean,
-): ItemState[] {
-  return items.map((v, i) => {
-    const overlayColor = overlayColors[i];
-    const hasOverlayColor = overlayColor !== null;
-    const resolvedColor = hasOverlayColor ? overlayColor : getDefaultColor(i);
-
-    const isHovered = itemsEqual(hoveredItem, v);
-    const isPinned = itemsEqual(pinnedItem, v);
-
-    return {
-      hasOverlayColor,
-      resolvedColor,
-      isHovered,
-      isPinned,
-    };
-  });
-}
-
-/**
- * Apply colors based on computed states: base color, then hover highlighting.
- * Returns an immutable color array parallel to item states.
- */
-export function applyItemColors(verseStates: ItemState[]): VerseColor[] {
-  return verseStates.map((state) => {
-    let finalColor = state.resolvedColor;
-
-    if (state.isHovered) {
-      finalColor = applyHoverHighlight(finalColor, state.hasOverlayColor);
-    }
-
-    return finalColor;
-  });
 }
