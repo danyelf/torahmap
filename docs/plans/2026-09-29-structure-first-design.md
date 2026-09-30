@@ -16,19 +16,20 @@ first frame. That is #311, handled separately.
 
 ## Decisions
 
-- **A link waits only for what it names.** A link carrying a search waits for
-  the search data; one naming an overlay waits for that overlay. A bare address, a place, a
-  pinned verse, or a story stop with neither draws at once: a pinned verse shows
-  on the map, and its popup opens when the texts arrive.
-  The reader never sees the view they were sent change under them.
+- **Only an overlay holds the first frame.** A link naming an overlay waits
+  for that overlay, a second or two. Everything else draws at once: a search
+  fades in when its data arrives (a wait of up to 20 s on a slow phone is too
+  long to show nothing), and a pinned verse shows on the map, its popup opening
+  when the texts arrive. A link's choice of meaning (`m`) is held on its term
+  and applied when the dictionary arrives, so the link keeps it.
 - **The reader's early actions show nothing until their data arrives.** A
   search typed or an overlay picked before its data is in is taken as normal;
   the map stays plain and then fades to the result. No loading indicator: the
   wait is a second or two.
 - **Each piece of data has its own wait,** so a commentary link waits for the
   commentary file, not for the texts.
-- **Download order:** the structure; then whatever the link names; draw; then
-  everything else at once.
+- **Download order:** the structure; then the overlay the link names; draw;
+  then everything else at once.
 
 ## The waits
 
@@ -54,8 +55,8 @@ download still stops the map.
 ## Startup
 
 1. Fetch `tanakh-structure.json`; lay out the map.
-2. Read the link. If it names an overlay, wait for `ready(overlay)`; if it
-   carries a search, wait for `ready(searchTool)`. The story stop the link opens counts the same way.
+2. Read the link. If it, or the story stop it opens, names an overlay, wait
+   for `ready(overlay)`.
 3. Draw the first frame; set `data-map-ready`.
 4. Start every other wait.
 
@@ -87,13 +88,11 @@ every verse as never linked. Its legend row stays off too.
 ## Testing
 
 - Unit tests for `src/dataLoading.ts`: each wait downloads once however many
-  callers ask; a link's needs are the overlay and search it names and nothing
-  else.
+  callers ask; a link waits for the overlay it names and nothing else.
 - A test that a search or overlay set before its data arrives shows its result
   once the data does, rather than staying empty.
-- `npm run test:layout` unchanged: its states open from links, which wait for
-  their data before `data-map-ready`. One state switches to commentary after
-  loading, and must wait for its legend row rather than check at once.
+- `npm run test:layout` waits for the network to go quiet after
+  `data-map-ready`, so it measures each state once its data is in.
 - Before and after, time a cold load to `data-map-ready` in headless
   Playwright on a throttled connection, for a bare address and for a search
   link. The bare address should drop to about the structure's download; the

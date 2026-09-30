@@ -240,7 +240,7 @@ async function main(): Promise<void> {
   registerAllOverlays();
   configureCommentary({ verses });
 
-  // The first frame waits for what the link shows, and nothing else.
+  // The first frame waits for the overlay the link shows, and nothing else.
   const opening = parseUrlState(overlayParamSpecs);
   const openingStory = storyToOpen(listedStories(STORIES, !__LIVE__), opening.story ?? null);
   const needs = linkNeeds(
@@ -249,10 +249,7 @@ async function main(): Promise<void> {
       openingStory?.data.stops[0] ??
       null,
   );
-  await Promise.all([
-    ...needs.overlays.flatMap((id) => getOverlay(id) ?? []).map(ready),
-    needs.search && ready(searchTool),
-  ]);
+  await Promise.all(needs.flatMap((id) => getOverlay(id) ?? []).map(ready));
 
   // Null until the texts arrive; the verse popup stays closed until then.
   let verseTexts: VerseTexts | null = null;

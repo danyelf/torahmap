@@ -48,6 +48,11 @@ export interface SearchTerm {
    * language's default rather than keep the one it was created with.
    */
   mode: SearchMode | null;
+  /**
+   * The meanings a link chose, as its `m` parameter names them, held while
+   * the dictionary has not arrived to say which rows they are.
+   */
+  chosen?: string[];
 }
 
 /**
@@ -58,14 +63,21 @@ export const MAX_TERMS = SEARCH_COLORS.length;
 
 let nextId = 0;
 
-function resolve(text: string): { meanings: Meaning[]; selected: Set<string> } {
+function resolve(text: string): Pick<SearchTerm, 'meanings' | 'selected' | 'chosen'> {
   const meanings = meaningsFor(text.trim());
-  return { meanings, selected: new Set(meanings.map((m) => m.keys[0])) };
+  return { meanings, selected: new Set(meanings.map((m) => m.keys[0])), chosen: undefined };
 }
 
-/** Look up the meanings of terms that have none, such as ones typed before the dictionary arrived. */
+/**
+ * Look up the meanings of terms that have none, such as ones typed before the
+ * dictionary arrived, and apply any a link chose for them.
+ */
 export function lookUpMeaningsAgain(terms: SearchTerm[]): SearchTerm[] {
-  return terms.map((t) => (t.meanings.length > 0 ? t : { ...t, ...resolve(t.text) }));
+  return terms.map((t) => {
+    if (t.meanings.length > 0) return t;
+    const found = { ...t, ...resolve(t.text) };
+    return t.chosen ? choose(found, t.chosen) : found;
+  });
 }
 
 /** The lowest colour no current term is using. */
@@ -175,7 +187,11 @@ export function selectedKeys(term: SearchTerm): string[] {
  */
 export function encodeMeanings(terms: SearchTerm[]): string {
   const narrowed = terms.map((t) =>
-    t.selected.size === t.meanings.length ? '' : selectedKeys(t).join('|'),
+    t.chosen
+      ? t.chosen.join('|')
+      : t.selected.size === t.meanings.length
+        ? ''
+        : selectedKeys(t).join('|'),
   );
   return narrowed.some((entry) => entry !== '') ? narrowed.join(',') : '';
 }
@@ -193,15 +209,17 @@ export function applyMeanings(terms: SearchTerm[], encoded: string): SearchTerm[
   const perTerm = encoded.split(',');
   return terms.map((term, i) => {
     const entry = perTerm[i];
-    if (!entry) return term;
-
-    const named = entry.split('|');
-    const selected = new Set(
-      term.meanings.filter((m) => sameMeaning(m, named)).map((m) => m.keys[0]),
-    );
-
-    return selected.size === 0 ? term : { ...term, selected };
+    return entry ? choose(term, entry.split('|')) : term;
   });
+}
+
+/** Check the rows `named` picks out, or hold the names until the dictionary can place them. */
+function choose(term: SearchTerm, named: string[]): SearchTerm {
+  if (term.meanings.length === 0) return { ...term, chosen: named };
+  const selected = new Set(
+    term.meanings.filter((m) => sameMeaning(m, named)).map((m) => m.keys[0]),
+  );
+  return selected.size === 0 ? term : { ...term, selected };
 }
 
 /**

@@ -35,17 +35,11 @@ export function isReady(tool: Loadable): boolean {
 }
 
 /**
- * What must be in before a link's first frame: the overlays and search its own
- * view and the story stop it opens show. A pinned verse needs nothing: it is
- * drawn on the map, and its popup opens when the texts arrive.
+ * The overlays that must be in before a link's first frame: its own and the
+ * story stop's it opens. Nothing else waits. A search fades in when its data
+ * arrives, and a pinned verse's popup opens when the texts do.
  */
-export function linkNeeds(
-  link: UrlState,
-  stop: StoryStop | null,
-): { overlays: string[]; search: boolean } {
+export function linkNeeds(link: UrlState, stop: StoryStop | null): string[] {
   const overlays = [link.overlay, stop?.overlay].filter((id): id is string => !!id);
-  return {
-    overlays: [...new Set(overlays)],
-    search: !!(link.searchParams?.search || stop?.searchParams?.search),
-  };
+  return [...new Set(overlays)];
 }

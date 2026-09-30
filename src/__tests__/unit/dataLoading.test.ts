@@ -14,31 +14,22 @@ const stop = (fields: Partial<StoryStop>): StoryStop => ({
 });
 
 describe('linkNeeds', () => {
-  it('needs nothing for a bare address opening a plain stop, or a pinned verse', () => {
-    expect(linkNeeds({ overlayParams: {} }, stop({}))).toEqual({ overlays: [], search: false });
-    expect(linkNeeds({ verse: 'Genesis.12.1', overlayParams: {} }, null)).toEqual({
-      overlays: [],
-      search: false,
-    });
+  it('needs nothing for a bare address opening a plain stop, a pinned verse or a search', () => {
+    expect(linkNeeds({ overlayParams: {} }, stop({}))).toEqual([]);
+    expect(linkNeeds({ verse: 'Genesis.12.1', overlayParams: {} }, null)).toEqual([]);
+    expect(linkNeeds({ overlayParams: {}, searchParams: { search: 'אור' } }, null)).toEqual([]);
   });
 
-  it('needs the overlay and the search a link names', () => {
+  it('needs the overlay a link names', () => {
     expect(
       linkNeeds({ overlay: 'haftarah', overlayParams: {}, searchParams: { search: 'אור' } }, null),
-    ).toEqual({ overlays: ['haftarah'], search: true });
+    ).toEqual(['haftarah']);
   });
 
-  it('needs what the story stop it opens shows', () => {
+  it('needs the overlay the story stop it opens shows', () => {
     expect(
-      linkNeeds(
-        { story: 'haftarah', overlayParams: {} },
-        stop({ overlay: 'haftarah', searchParams: { search: 'אור' } }),
-      ),
-    ).toEqual({ overlays: ['haftarah'], search: true });
-  });
-
-  it('does not need the search for search settings with no word', () => {
-    expect(linkNeeds({ overlayParams: {}, searchParams: { mode: 'w' } }, null).search).toBe(false);
+      linkNeeds({ story: 'haftarah', overlayParams: {} }, stop({ overlay: 'haftarah' })),
+    ).toEqual(['haftarah']);
   });
 });
 
