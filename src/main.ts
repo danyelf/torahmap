@@ -3,8 +3,9 @@
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
-import { loadTanakhStructure, loadAllVerseTexts } from './verseTexts.ts';
-import { buildSearchIndex, loadLexiconData } from './search.ts';
+import { loadTanakhStructure, allVerseTexts, type VerseTexts } from './verseTexts.ts';
+import { ready, isReady, linkNeeds } from './dataLoading.ts';
+import { lookUpMeaningsAgain } from './search/terms.ts';
 import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
@@ -114,15 +115,14 @@ import {
   getOverlay,
   getAllOverlays,
   configureCommentary,
-  configureTrop,
   configureSearch,
-  configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
 import {
   searchTool,
   searchForMeaning,
   canAddTerm,
+  isSearching,
   type SearchSettings,
 } from './overlays/search/index.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
@@ -231,16 +231,32 @@ async function main(): Promise<void> {
     return;
   }
 
-  const [torahData, verseTexts] = await Promise.all([
-    loadTanakhStructure(),
-    loadAllVerseTexts(),
-    loadLexiconData(),
-  ]);
+  const torahData = await loadTanakhStructure();
 
   initBookData(torahData);
   const verses = computeLayout(torahData);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
+
+  registerAllOverlays();
+  configureCommentary({ verses });
+
+  // The first frame waits for what the link shows, and nothing else.
+  const opening = parseUrlState(overlayParamSpecs);
+  const openingStory = storyToOpen(listedStories(STORIES, !__LIVE__), opening.story ?? null);
+  const needs = linkNeeds(
+    opening,
+    openingStory?.data.stops.find((s) => s.id === opening.stop) ??
+      openingStory?.data.stops[0] ??
+      null,
+  );
+  await Promise.all([
+    ...needs.overlays.flatMap((id) => getOverlay(id) ?? []).map(ready),
+    needs.search && ready(searchTool),
+  ]);
+
+  // Null until the texts arrive; the verse popup stays closed until then.
+  let verseTexts: VerseTexts | null = null;
 
   // Placed over the map; render() moves them with it.
   const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
@@ -248,15 +264,6 @@ async function main(): Promise<void> {
   const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
   createSectionLabels(verses, bookLabels, (book) => sections.get(book) ?? 'neviim');
   const mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
-
-  buildSearchIndex(verseTexts);
-
-  registerAllOverlays();
-  configureCommentary({ verses });
-  configureTrop({ verseTexts });
-  configureVerseLength({ verseTexts });
-
-  await Promise.all(getAllOverlays().map((o) => o.init?.()));
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -393,16 +400,26 @@ async function main(): Promise<void> {
     );
   }
 
-  /**
-   * Move the front tool to `next`, cross-fading the map over
-   * FRONT_FADE.DURATION_MS through the renderer's own picture blend — the one
-   * a story ease uses. Snaps with only one tool on, or under reduced motion.
-   */
+  /** Move the front tool to `next`, fading when both tools are on. */
   function setFrontTool(next: FrontTool): void {
     if (next === frontTool) return;
     frontTool = next;
     const tools = toolsNow();
-    if (!tools.search || !tools.overlay || reducedMotion.matches) {
+    if (!tools.search || !tools.overlay) {
+      applyTools();
+      render();
+      return;
+    }
+    fadeToTools();
+  }
+
+  /**
+   * Cross-fade the map to what the tools show now, over
+   * FRONT_FADE.DURATION_MS, through the renderer's own picture blend — the one
+   * a story ease uses. Snaps under reduced motion.
+   */
+  function fadeToTools(): void {
+    if (reducedMotion.matches) {
       applyTools();
       render();
       return;
@@ -412,7 +429,7 @@ async function main(): Promise<void> {
     // ease starting mid-blend does (beginEase).
     const from = flatten(withDefaults(colorLayer));
     const to = fillDefaultColors(
-      toolsPicture(tools, verses, mouseState.hoveredVerse, dimFor(next)),
+      toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool)),
     );
     const since = performance.now();
     const step = (now: number): void => {
@@ -998,7 +1015,11 @@ async function main(): Promise<void> {
   }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    updateSidebar(sidebarElements, verse, { verseTexts, ...toolsNow(), pinned: isPinned });
+    updateSidebar(sidebarElements, verseTexts ? verse : null, {
+      verseTexts: verseTexts ?? {},
+      ...toolsNow(),
+      pinned: isPinned,
+    });
   }
 
   /**
@@ -1009,6 +1030,21 @@ async function main(): Promise<void> {
   function refreshVersePopup(): void {
     if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
     else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
+  }
+
+  /** Show a tool whose data has just arrived, if it is on the map. */
+  function toolArrived(tool: Overlay): void {
+    if (tool === searchTool) {
+      const search = overlaySettings.get(searchTool);
+      overlaySettings.set(searchTool, { ...search, terms: lookUpMeaningsAgain(search.terms) });
+      searchChanged(false);
+      if (!isSearching(overlaySettings.get(searchTool))) return;
+    } else if (tool === currentOverlay) {
+      overlayChanged(true);
+    } else {
+      return;
+    }
+    if (colorSource(driver) === 'overlay') fadeToTools();
   }
 
   // A drag pans the map, and a mouse moving over it hovers. Two fingers pinch.
@@ -1780,6 +1816,15 @@ async function main(): Promise<void> {
 
   // Layout tests wait on this; nothing in the app reads it.
   document.documentElement.dataset.mapReady = '';
+
+  // Everything the first frame did not wait for.
+  void allVerseTexts().then((texts) => {
+    verseTexts = texts;
+    refreshVersePopup();
+  });
+  for (const tool of [searchTool, ...getAllOverlays()]) {
+    if (!isReady(tool)) void ready(tool).then(() => toolArrived(tool));
+  }
 
   prefetchMorphology();
 }
