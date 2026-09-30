@@ -7,12 +7,12 @@
 // the words a reader would point at.
 //
 // The verses BHSA and Sefaria divide differently are the danger: a position
-// there names the word next door. They must keep falling back to the spelling,
-// so there is a test for that too.
+// there names the word next door, so they are lined up by letter instead.
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData } from '../../../search';
 import {
+  meaningsFor,
   meaningsInVerse,
   setVerseOnScreen,
   wordMatches,
@@ -26,8 +26,8 @@ const ASCEND = ['<LH[@heb'];
 const OFFERINGS = ['<LH/@heb', '<LH=/@heb', '<LH/@arc'];
 
 let texts: Record<string, Record<string, Record<string, { he: string }>>>;
-/** The verses the file itself names as dividing into words differently. */
-let misaligned: string[];
+/** The verses the file lines up by letter, since the page divides them into words differently. */
+let realigned: string[];
 
 const hebrewOf = (verseKey: string): string => {
   const [book, chapter, verse] = verseKey.split(':');
@@ -55,7 +55,9 @@ const wordIndexOf = (verseKey: string, word: string): number =>
 
 beforeAll(async () => {
   texts = await (await fetch('/data/all-texts.json')).json();
-  misaligned = (await (await fetch('/data/search/verse-morphology.json')).json()).misaligned;
+  realigned = Object.keys(
+    (await (await fetch('/data/search/verse-morphology.json')).json()).realigned,
+  );
   await loadLexiconData();
   await setVerseOnScreen('Genesis:1:1', hebrewOf('Genesis:1:1'));
 });
@@ -70,11 +72,10 @@ describe('marking the words of a verse', () => {
     expect(markedWords('Genesis:8:20', OFFERINGS)).toEqual(['עלת']);
   });
 
-  it('marks nothing for a verse the parse does not line up with', () => {
-    // Numbers 2:12 is one of the 64 verses where BHSA and Sefaria divide a
-    // compound name differently, so counting words from the start of it lands
-    // on the wrong one. Falling back to the spelling is what it must do, and
-    // the spelling of no word here is a form of עלה.
+  it('marks the word in a verse the two sources divide differently', () => {
+    // Numbers 2:12 prints צורישדי solid where BHSA has צורי שדי, so counting
+    // words from the start of the verse would land one word out.
+    expect(markedWords('Numbers:2:12', ['YWRJCDJ/@heb'])).toEqual(['צורישדי']);
     expect(markedWords('Numbers:2:12', ASCEND)).toEqual([]);
   });
 
@@ -92,8 +93,8 @@ describe('marking the words of a verse', () => {
 
   it('ignores a position in text that is not the verse on screen', () => {
     // The overlay hands over a string; nothing says it is the verse whose
-    // parse is loaded. Reading one verse's words off another verse's parse is
-    // exactly the failure the misaligned list exists to prevent.
+    // parse is loaded. Reading one verse's words off another verse's parse
+    // labels every word with a stranger's dictionary entry.
     setVerseOnScreen('Genesis:8:20', hebrewOf('Genesis:8:20'));
     const elsewhere = stripNikkud(hebrewOf('Genesis:3:7'));
 
@@ -148,49 +149,39 @@ describe('naming the word that was clicked', () => {
     ]);
   });
 
-  it('falls back to the spelling in a verse that does not line up', () => {
+  it('names each word of a verse the two sources divide differently', () => {
     // II Samuel 23:24 opens "Asahel the brother of Joab". Sefaria prints
     // עֲשָׂהאֵל solid where BHSA divides it in two, so every position in the verse
     // is one word behind: counting into it would answer אֲחִי, "brother", with
-    // Asahel — confidently, and wrong. 51 of the 64 misaligned verses have at
-    // least one word where a position would lie like this.
+    // Asahel. Lined up by letter, each word is itself.
     const verse = 'II Samuel:23:24';
     setVerseOnScreen(verse, hebrewOf(verse));
 
-    const meanings = meaningsInVerse('אחי', verse, wordIndexOf(verse, 'אחי'));
-    expect(meanings.map((m) => m.gloss)).toEqual(['brother']);
-    expect(meanings).toEqual(meaningsInVerse('אחי', verse));
+    const at = (word: string) =>
+      meaningsInVerse(word, verse, wordIndexOf(verse, word)).map((m) => m.gloss);
+    expect(at('אחי')).toEqual(['brother']);
+    expect(at('עשהאל')).toEqual(['Asahel']);
   });
 
-  it('names a word BHSA and Sefaria spell differently, which is not always a gain', () => {
-    // Sefaria prints יְהֹוָה אֱלֹהִים in II Samuel 7:22 where BHS has אֲדֹנָי יְהוִה,
-    // so each of the two words is parsed as the other one's name. A reader who
-    // clicks the first word is told אֲדֹנָי while looking at the Tetragrammaton.
-    //
-    // Kept rather than worked around. It is three clicks in the Tanakh, it is
-    // the two sources disagreeing about the text rather than anything this
-    // lookup decides, and the same disagreement already sends search for אֲדֹנָי
-    // to this verse. Anything that suppressed it would have to distrust the
-    // parse wherever it names a word outside the spelling's candidates, which
-    // is also what makes בֵּית אֵל read as Bethel — 1,207 words, against these 3.
+  it('names a word where the two sources print different words', () => {
+    // Sefaria prints יְהֹוָה אֱלֹהִים in II Samuel 7:22 where BHS has אֲדֹנָי יְהוִה.
+    // By position each word would be named as the other; by letter the
+    // Tetragrammaton is itself, and אֱלֹהִים, which BHS does not have here, falls
+    // back to its spelling.
     const verse = 'II Samuel:7:22';
     setVerseOnScreen(verse, hebrewOf(verse));
 
-    expect(meaningsInVerse('יהוה', verse, wordIndexOf(verse, 'יהוה')).map((m) => m.form)).toEqual([
-      'אֲדֹנָי',
+    expect(meaningsInVerse('יהוה', verse, wordIndexOf(verse, 'יהוה')).map((m) => m.gloss)).toEqual([
+      'YHWH',
     ]);
   });
 });
 
 describe('the verses the two sources divide differently', () => {
-  it('is exactly the 64 the file names, over the whole Tanakh', () => {
-    // The only thing standing between this feature and a confidently wrong
-    // label. It will never show up in ordinary use — 64 verses in 23,206 — and
-    // the way it breaks is a regenerated index whose word divisions have
-    // drifted, which nothing else would notice.
-    // An empty list would make the comparison below pass without meaning
-    // anything, and the list arrives over the same fetch the data does.
-    expect(misaligned).toHaveLength(64);
+  it('still have their words named, over the whole Tanakh', () => {
+    // A regenerated index whose word divisions have drifted would leave a
+    // verse unnamed here, which nothing else would notice.
+    expect(realigned).not.toHaveLength(0);
 
     const refused: string[] = [];
 
@@ -204,7 +195,7 @@ describe('the verses the two sources divide differently', () => {
       }
     }
 
-    expect(refused.sort()).toEqual([...misaligned].sort());
+    expect(refused).toEqual([]);
   });
 });
 
@@ -244,10 +235,11 @@ describe('a click on the written form of a corrected word', () => {
     expect(clicked('Judges:16:25', 'טוב)')).toEqual(reading);
   });
 
-  it('falls back to the spelling for a word written but not read', () => {
-    // (נא) in II Kings 5:18 has no reading beside it, and BHSA no word for it.
-    expect(clicked('II Kings:5:18', '(נא)')).toEqual(
-      meaningsInVerse('נא', 'II Kings:5:18').map((m) => m.keys),
-    );
+  it('offers what the spelling can be for a word written but not read', () => {
+    // (נא) in II Kings 5:18 has no reading beside it, and BHSA no word for it,
+    // so the verse cannot narrow its spelling either.
+    const offered = clicked('II Kings:5:18', '(נא)');
+    expect(offered).not.toHaveLength(0);
+    expect(offered).toEqual(meaningsFor('נא').map((m) => m.keys));
   });
 });

@@ -30,7 +30,8 @@ def _load_generator():
     return module
 
 
-normalize = _load_generator().normalize
+generator = _load_generator()
+normalize = generator.normalize
 
 with open(os.path.join(HERE, "folding-cases.json"), encoding="utf-8") as handle:
     CASES = json.load(handle)
@@ -44,3 +45,57 @@ def test_folding_case(case):
 def test_none_is_safe():
     # Only Python can be handed None; BHSA returns it for an absent feature.
     assert normalize(None) == ""
+
+
+def test_a_different_spelling_still_divides_alike():
+    printed = ["ויפל", "גורלות"]
+    morphemes = [("ו", "and", 0), ("יפל", "fall", 0), ("גורלות", "lot", 1)]
+    assert generator.line_up(["ויפל", "גרלות"], printed, morphemes) == (True, None)
+
+
+def test_equal_counts_that_join_and_split_do_not_divide_alike():
+    shown = ["אבי", "עד", "כדרלעמר"]
+    printed = ["אביעד", "כדר", "לעמר"]
+    morphemes = [("אבי", "father", 0), ("עד", "eternity", 0), ("כדרלעמר", "Chedorlaomer", 1)]
+    alike, lexemes = generator.line_up(shown, printed, morphemes)
+    assert not alike
+    assert lexemes == [["father"], ["eternity"], ["Chedorlaomer"]]
+
+
+def test_the_page_splitting_one_printed_word_gives_each_part_its_own_word():
+    # הללויה: one printed word of two morphemes, "praise" and "Yah".
+    morphemes = [("הללו", "praise", 0), ("יה", "Yah", 0)]
+    assert generator.line_up(["הללו", "יה"], ["הללויה"], morphemes) == (
+        False,
+        [["praise"], ["Yah"]],
+    )
+
+
+def test_the_page_joining_two_printed_words_names_each():
+    # צורי שדי: two printed words of one name.
+    morphemes = [("צורישדי", "Zurishaddai", 0)]
+    assert generator.line_up(["צורישדי"], ["צורי", "שדי"], morphemes) == (
+        False,
+        [["Zurishaddai"]],
+    )
+
+
+def test_a_word_is_its_stem_not_its_prefix():
+    printed = ["הסופר", "אמר", "גד"]
+    morphemes = [("ה", "the", 0), ("סופר", "scribe", 0), ("אמר", "say", 1), ("גד", "Gad", 2)]
+    assert generator.line_up(["הספר", "אמרגד"], printed, morphemes) == (
+        False,
+        [["scribe"], ["say", "Gad"]],
+    )
+
+
+def test_a_stray_letter_does_not_carry_a_word_into_its_neighbour():
+    # Deuteronomy 22:27: הנער is read הנערה, and the reading's extra ה lines up
+    # with the first letter of the next word unless it is ignored.
+    shown = ["כי", "בשדה", "מצאה", "צעקה", "הנער", "המארשה", "ואינ", "מושיע", "לה"]
+    printed = ["כי", "בשדה", "מצאה", "צעקה", "הנערה", "המארשה", "ואינ", "מושיע", "לה"]
+    letters = ["כי", "ב", "", "שדה", "מצאה", "צעקה", "ה", "נערה", "ה", "מארשה", "ו", "אינ"]
+    letters += ["מושיע", "לה"]
+    words = [0, 1, 1, 1, 2, 3, 4, 4, 5, 5, 6, 6, 7, 8]
+    morphemes = [(text, text, word) for text, word in zip(letters, words)]
+    assert generator.line_up(shown, printed, morphemes) == (True, None)

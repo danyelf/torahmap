@@ -158,9 +158,9 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * contains and the spelling's other candidates usually are not. It can leave
  * two readings standing — see `word-in-verse.test.ts`, לו in Genesis 2:18.
  *
- * An empty result means "cannot say": a spelling the dictionary does not carry,
- * or one of the 64 verses in `misaligned`. Callers offer a literal search
- * rather than treating it as an error.
+ * An empty result means "cannot say": a spelling the dictionary does not carry
+ * at a place the parse has no word for. Callers offer a literal search rather
+ * than treating it as an error.
  */
 export function meaningsInVerse(
   writtenForm: string,
@@ -176,8 +176,11 @@ export function meaningsInVerse(
   const inVerse = getVerseLexemes(verseKey);
   if (!inVerse) return [];
 
+  // A ketiv written but not read has no word in BHSA, so the verse holds none
+  // of its readings; the spelling is all there is to go on.
   const present = new Set(inVerse);
-  return rowsFor(ids.filter((id) => present.has(id)));
+  const here = rowsFor(ids.filter((id) => present.has(id)));
+  return here.length > 0 ? here : rowsFor(ids);
 }
 
 /**
@@ -246,12 +249,12 @@ function lexemesForKeys(keys: readonly string[]): Set<LexemeId> {
 type ParsedVerse = [Array<[LexemeId, number]>, number[], number[]];
 
 interface MorphologyFile {
-  misaligned: string[];
+  /** For the verses the page divides into words differently: each shown word's lexemes. */
+  realigned: Record<string, LexemeId[][]>;
   verses: Record<string, ParsedVerse>;
 }
 
 let morphology: MorphologyFile | null = null;
-let misaligned: Set<string> = new Set();
 let loading: Promise<void> | null = null;
 let settled = false;
 
@@ -268,7 +271,6 @@ function loadMorphology(): Promise<void> {
       if (!res.ok) throw new Error(`Response status ${res.status}`);
       const file: MorphologyFile = await res.json();
       morphology = file;
-      misaligned = new Set(file.misaligned);
     })
     .catch((err) => {
       console.warn('Could not load the per-word parse; falling back to the spelling:', err);
@@ -367,21 +369,33 @@ function wordsBhsaParsed(hebrew: string): TextWord[] {
 /**
  * Where each printed word of a verse starts, and which dictionary word it is.
  *
- * Null rather than a partial answer whenever anything fails to line up. The
- * file names 64 verses where BHSA and Sefaria divide a compound name
- * differently; the word count is checked again here anyway, because a position
- * that is one word out labels every word after it with its neighbour's
- * dictionary entry — wrong, and plausible enough to go unnoticed.
+ * Where the page divides a verse into words as BHSA does, a word is the one
+ * at its position; where it does not, the file says which words each shown
+ * word is, lined up by letter. Null rather than a partial answer when the count
+ * disagrees anyway, because a position one word out labels every word after it
+ * with its neighbour's dictionary entry — wrong, and plausible enough to go
+ * unnoticed.
  */
 function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId[]> | null {
   const parsed = morphology?.verses[verseKey];
-  if (!parsed || misaligned.has(verseKey)) return null;
+  if (!parsed) return null;
+
+  const words = wordsBhsaParsed(hebrew);
+  const stems = new Map<number, LexemeId[]>();
+
+  const realigned = morphology?.realigned[verseKey];
+  if (realigned) {
+    if (words.length !== realigned.length) return null;
+    words.forEach((word, i) => {
+      if (realigned[i].length > 0) stems.set(word.start, realigned[i]);
+    });
+    nameKetiv(hebrew, stems);
+    return stems;
+  }
 
   const [morphemes, lengths] = parsed;
-  const words = wordsBhsaParsed(hebrew);
   if (words.length !== lengths.length) return null;
 
-  const stems = new Map<number, LexemeId[]>();
   let at = 0;
   let stem: LexemeId | null = null;
 

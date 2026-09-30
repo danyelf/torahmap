@@ -53,18 +53,19 @@ keeps "all" and "the earth" apart, which is the point — they are two dictionar
 words. `joined` lists the positions a maqaf rather than a space follows, so
 anything that wants the whole printed word back can rejoin them.
 
-### Verses that do not line up
+### Verses the page divides differently
 
-`misaligned` names 64 verses — 0.28% — where the word count here differs from
-the Hebrew in `all-texts.json`. Almost all are compound proper names the two
-sources divide differently: BHSA writes צוּרִי־שַׁדָּי with a maqaf where Sefaria
-writes צוּרִישַׁדָּי solid. Joshua 21:36 and 21:37 are there because Sefaria ships no
-Hebrew for them.
+In 65 verses the Hebrew in `all-texts.json` divides into words differently
+from BHSA. Almost all are compound proper names: BHSA writes צוּרִי־שַׁדָּי with a
+maqaf where Sefaria writes צוּרִישַׁדָּי solid. In II Samuel 7:22 the two print
+different words (אֲדֹנָי יְהוִה against יְהֹוָה אֱלֹהִים), and Joshua 21:36 and
+21:37 have no Hebrew in Sefaria at all.
 
-Nothing can reconcile these from BHSA alone, so they are named instead. Anything
-matching positions in this file against displayed text should skip those verses
-and fall back to looking the spelling up in `word-lexemes.json`, rather than
-labelling a word confidently wrong.
+A position in `words` is one word out in those verses, so the generator lines
+their words up by letter instead, and `realigned` lists, for each such verse,
+the lexemes of every word the page shows. A word the page shows as one and
+BHSA as two is both; a word BHSA prints as one and the page as two gets the
+morpheme it covers, so the page's הללו יה is "praise" and "Yah".
 
 ### Splitting the displayed text the same way
 
@@ -78,7 +79,7 @@ To line up against the Hebrew in `all-texts.json`, fold it the way
 - split on whitespace and maqaf, and keep only Hebrew letters.
 
 `src/__tests__/unit/search-lexeme-index.test.ts` asserts that every verse not in
-`misaligned` lines up under exactly those rules, so a change to either copy of
+`realigned` lines up under exactly those rules, so a change to either copy of
 them fails the test suite with the offending verses named.
 
 BHSA also records a derivational root for each lexeme, which this index does

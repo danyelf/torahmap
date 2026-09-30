@@ -50,15 +50,16 @@ const morphologyFile = morphologyExists
       fields: string[];
       parsings: string[];
       verseFields: string[];
-      misaligned: string[];
+      realigned: Record<string, number[][]>;
       note: string;
       verses: Record<string, MorphologyVerse>;
     })
   : null;
 const morphology = morphologyFile?.verses ?? {};
 // Verses the two sources divide into words differently, where a position here
-// does not name the same word the reader sees.
-const misaligned = new Set(morphologyFile?.misaligned ?? []);
+// does not name the same word the reader sees, and the lexemes of each word
+// the page shows instead.
+const realigned = morphologyFile?.realigned ?? {};
 
 const lexemes = lexiconFile?.lexemes ?? [];
 const gloss = (id: number) => lexemes[id][2];
@@ -379,7 +380,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     // dictionary entry — wrong, but plausible enough to go unnoticed.
     const unexpected: string[] = [];
     for (const [key, [, words]] of entries) {
-      if (misaligned.has(key)) continue;
+      if (key in realigned) continue;
       const [book, chapter, verse] = key.split(':');
       const hebrew = texts[book]?.[chapter]?.[verse]?.he;
       if (hebrew === undefined) continue;
@@ -388,17 +389,17 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     expect(unexpected).toEqual([]);
   });
 
-  it('resolves every word a reader can click, where the verse lines up', () => {
+  it('resolves every word a reader can click', () => {
     // Where the two normalizers actually meet: lookupForm() is what a click
     // runs, against keys the Python generator wrote. The generator files every
-    // printed word of a verse that lines up, so a miss here is a folding rule
-    // missing from one side, or an index built before one existed. Not the
-    // ketiv in round brackets, which BHSA has no word for.
+    // printed word, so a miss here is a folding rule missing from one side, or
+    // an index built before one existed. Not the ketiv in round brackets,
+    // which BHSA has no word for.
     const missing: string[] = [];
     for (const [book, chapters] of Object.entries(texts)) {
       for (const [chapter, verses] of Object.entries(chapters)) {
         for (const [verse, { he }] of Object.entries(verses)) {
-          if (!he || misaligned.has(`${book}:${chapter}:${verse}`)) continue;
+          if (!he) continue;
           for (const { word } of verseWords(he.replace(/\([^)]*\)/g, ' '))) {
             if (!(lookupForm(word) in forms)) missing.push(`${book} ${chapter}:${verse} ${word}`);
           }
@@ -432,24 +433,18 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     expect(disagree).toEqual([]);
   });
 
-  it('owns up to the handful of verses that do not line up', () => {
-    // BHSA and Sefaria disagree about where a few compound names divide —
-    // צורי־שדי against צורישדי — and two verses of Joshua have no Hebrew here at
-    // all. Those verses are named in the file so that a reader can fall back to
-    // the spelling instead of labelling a word confidently wrong. The list
-    // staying short is the point: if it grows, something has drifted.
-    expect(misaligned.size).toBeGreaterThan(0);
-    expect(misaligned.size).toBeLessThan(100);
-    expect(misaligned.size / entries.length).toBeLessThan(0.01);
-
-    for (const key of misaligned) {
-      expect(morphology[key], `${key} is listed but absent`).toBeTruthy();
+  it('names the words of each verse it lines up by letter', () => {
+    // The page and BHSA divide a few verses into words differently, nearly
+    // always at a compound name: צורישדי against צורי שדי. For those the file
+    // lists the lexemes of every word the page shows.
+    expect(Object.keys(realigned)).not.toHaveLength(0);
+    for (const [key, named] of Object.entries(realigned)) {
+      expect(morphology[key], `${key} is lined up but absent`).toBeTruthy();
       const [book, chapter, verse] = key.split(':');
       const hebrew = texts[book]?.[chapter]?.[verse]?.he;
       if (hebrew === undefined) continue;
-      expect(displayedWords(hebrew).length, `${key} is listed as misaligned but agrees`).not.toBe(
-        morphology[key][1].length,
-      );
+      expect(named, key).toHaveLength(displayedWords(hebrew).length);
+      for (const id of named.flat()) expect(lexemes[id], `${key} names ${id}`).toBeTruthy();
     }
   });
 });
