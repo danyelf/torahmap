@@ -110,6 +110,10 @@ describe('fillDefaultColors', () => {
     expect(picture.colors).toEqual([RED, getDefaultColor(1), BLUE]);
   });
 
+  it('marks the verses it filled as uncoloured', () => {
+    expect(fillDefaultColors({ colors: [RED, null] }).uncoloured).toEqual([false, true]);
+  });
+
   it('carries growth and rings through unchanged', () => {
     const picture = fillDefaultColors({ colors: [null], growth: [0.5], rings: [CYAN] });
     expect(picture.growth).toEqual([0.5]);

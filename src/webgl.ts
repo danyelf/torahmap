@@ -6,6 +6,7 @@ import {
   VERSE_ATTRIBUTES,
   type VerseAttributeName,
 } from './geometry.ts';
+import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -16,10 +17,13 @@ export interface ShaderProgram {
     zoom: WebGLUniformLocation | null;
     fade: WebGLUniformLocation | null;
     ring: WebGLUniformLocation | null;
+    hovered: WebGLUniformLocation | null;
   };
 }
 
 const GLSL_TYPES = { 1: 'float', 2: 'vec2', 3: 'vec3', 4: 'vec4' } as const;
+
+const glslVec3 = (c: readonly number[]): string => `vec3(${c.map((x) => x.toFixed(4)).join(', ')})`;
 
 const VERSE_INPUTS = VERSE_ATTRIBUTES.map((a) => `in ${GLSL_TYPES[a.size]} ${a.name};`).join(
   '\n  ',
@@ -35,6 +39,8 @@ const VERTEX_SHADER = `#version 300 es
   // A ring's width outside the square and inside it, and the smallest square
   // that keeps a hole, in device pixels. Shared, like u_fade.
   uniform highp vec3 u_ring;
+  // The hovered verse's place in the list, or -1 for none.
+  uniform int u_hovered;
 
   ${VERSE_INPUTS}
 
@@ -52,6 +58,8 @@ const VERTEX_SHADER = `#version 300 es
   // Stripe counts: this picture's fill and ring, then the next's. A ring of
   // no stripes is no ring.
   flat out ivec4 v_counts;
+  // How the hover changes each picture's fill (see lit).
+  flat out ivec2 v_hover;
   // The drawn square's side in device pixels, growth included, or 0 when the
   // square is too small for a hole.
   flat out float v_side;
@@ -59,12 +67,12 @@ const VERTEX_SHADER = `#version 300 es
   out vec2 v_seed;
 
   // Bands slide apart along the cut; the quad reaches past the square to hold them.
-  float bandReach(vec3 shape) {
+  float bandReach(vec4 shape) {
     return shape.x > 1.0 || shape.z > 1.0 ? (max(shape.x, shape.z) - 1.0) * 0.5 * ${BAND_OFFSET.toFixed(4)} : 0.0;
   }
 
   // How far a picture's verse reaches past its square, in world units.
-  float reach(vec3 shape, bool holes) {
+  float reach(vec4 shape, bool holes) {
     float grow = shape.y * ${MULTICOLOR_GROWTH.toFixed(4)};
     return shape.z > 0.0 && holes ? max(grow, u_ring.x / u_zoom) : grow;
   }
@@ -86,6 +94,7 @@ const VERTEX_SHADER = `#version 300 es
     v_nextFill = a_nextFill;
     v_nextRing = a_nextRing;
     v_counts = ivec4(a_shape.x, a_shape.z, a_nextShape.x, a_nextShape.z);
+    v_hover = gl_InstanceID == u_hovered ? 1 + ivec2(a_shape.w, a_nextShape.w) : ivec2(0);
     v_side = holes ? (rect.z - rect.x) * u_zoom : 0.0;
     v_uv = uv;
     // The square's own corner, which zooming does not move, seeds its dithering noise
@@ -102,6 +111,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in highp vec4 v_nextFill;
   flat in highp vec4 v_nextRing;
   flat in ivec4 v_counts;
+  flat in ivec2 v_hover;
   flat in float v_side;
   in vec2 v_uv;
   in vec2 v_seed;
@@ -152,19 +162,27 @@ const FRAGMENT_SHADER = `#version 300 es
     return vec4(0.0);
   }
 
+  // A fill under the hover: 1 brightens it, 2 (an uncoloured verse) paints it
+  // the highlight colour, 0 leaves it.
+  vec4 lit(vec4 fill, int hover) {
+    if (hover == 0 || fill.a == 0.0) return fill;
+    if (hover == 2) return vec4(${glslVec3(HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR)}, 1.0);
+    return vec4(min(fill.rgb * ${HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR.toFixed(4)}, 1.0), 1.0);
+  }
+
   // One picture here: its ring, if it has one, and its fill inside the hole.
-  vec4 picture(highp vec4 fill, highp vec4 ring, int fillCount, int ringCount) {
-    if (ringCount == 0) return stripes(fill, fillCount, v_uv, 0);
+  vec4 picture(highp vec4 fill, highp vec4 ring, int fillCount, int ringCount, int hover) {
+    if (ringCount == 0) return lit(stripes(fill, fillCount, v_uv, 0), hover);
     vec4 r = stripes(ring, ringCount, v_uv, 1);
-    return r.a > 0.0 ? r : stripes(fill, fillCount, v_uv, 2);
+    return r.a > 0.0 ? r : lit(stripes(fill, fillCount, v_uv, 2), hover);
   }
 
   void main() {
     // Each picture is drawn whole and the two are faded, so neither's stripes
     // have to move to meet the other's. A band that has slid past the square
     // shows in one picture only, and the map does not blend, so it shows whole.
-    vec4 a = picture(v_fill, v_ring, v_counts.x, v_counts.y);
-    vec4 b = picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w);
+    vec4 a = picture(v_fill, v_ring, v_counts.x, v_counts.y, v_hover.x);
+    vec4 b = picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w, v_hover.y);
     if (a.a == 0.0 && b.a == 0.0) discard;
     vec3 color = a.a == 0.0 ? b.rgb : b.a == 0.0 ? a.rgb : mix(a.rgb, b.rgb, u_fade);
 
@@ -248,6 +266,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       zoom: gl.getUniformLocation(program, 'u_zoom'),
       fade: gl.getUniformLocation(program, 'u_fade'),
       ring: gl.getUniformLocation(program, 'u_ring'),
+      hovered: gl.getUniformLocation(program, 'u_hovered'),
     },
   };
 }

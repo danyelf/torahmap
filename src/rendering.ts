@@ -103,7 +103,8 @@ export function createRenderState<T>(
 }
 
 /**
- * Refills the per-verse buffer with updated colors. Call after overlay changes.
+ * Refills the per-verse buffer with updated colors. Call after overlay
+ * changes; a hover needs none, as render() hands the shader the hovered verse.
  * The buffer object stays the same, so the vertex array still points at it.
  * Given a second picture, `state.fade` then moves between the two.
  */
@@ -152,6 +153,8 @@ export function render<T>(
     RING_INSIDE_PX * dpr,
     RING_MIN_SQUARE_PX * dpr,
   );
+  // Hit detection hands back an item of `verses` itself, so identity finds it.
+  gl.uniform1i(programs.main.uniforms.hovered, hoveredVerse ? verses.indexOf(hoveredVerse) : -1);
 
   gl.bindVertexArray(vertexArray);
   // Six corners (two triangles) for each verse
