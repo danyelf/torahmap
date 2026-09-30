@@ -17,8 +17,7 @@ const finished = new Set<Loadable>();
 export function ready(tool: Loadable): Promise<void> {
   let loading = started.get(tool);
   if (!loading) {
-    loading = Promise.resolve()
-      .then(() => tool.init?.())
+    loading = new Promise<void>((resolve) => resolve(tool.init?.()))
       .catch((err) => console.warn(`Could not load the data for ${tool.id}:`, err))
       .then(() => {
         finished.add(tool);

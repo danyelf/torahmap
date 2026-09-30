@@ -1,6 +1,8 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { pictureForStop, computeBlendedColors } from '../overlayBlender';
+import { ready } from '../../dataLoading';
+import { searchTool } from '../../overlays/search/index';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';
@@ -11,6 +13,9 @@ import { buildSearchIndex } from '../../search';
 import { SAMPLE_VERSE_TEXTS } from '../../__tests__/helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
 import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
+
+// A stop's picture is kept only once the search's data is in.
+beforeAll(() => ready(searchTool));
 
 // The blender memoises per verses array, so a fresh one keeps each test's
 // colours its own.
@@ -392,5 +397,30 @@ describe('a stop that searches', () => {
     const god = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
     const earth = { ...god, id: 'earth', searchParams: { search: 'earth' } };
     expect(pictureForStop(god, verses, null)).not.toEqual(pictureForStop(earth, verses, null));
+  });
+});
+
+describe('a stop drawn before its overlay’s data arrived', () => {
+  it('is drawn again once the data is in, not kept plain', async () => {
+    let finish!: () => void;
+    const loading: Overlay = {
+      ...multiColorOverlay,
+      id: 'test-loading',
+      init: () => new Promise<void>((r) => (finish = r)),
+    };
+    registerOverlay(loading);
+    const stop: ResolvedStoryStop = {
+      id: 'loading',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-loading',
+    };
+    const arrived = ready(loading);
+
+    const before = pictureForStop(stop, verses, null);
+    finish();
+    await arrived;
+
+    expect(pictureForStop(stop, verses, null)).not.toEqual(before);
   });
 });

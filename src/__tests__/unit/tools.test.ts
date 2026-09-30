@@ -1,10 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import { toolsShown, togglesSearch } from '../../tools';
+import { ready } from '../../dataLoading';
 import { searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { commentaryOverlay } from '../../overlays/commentary';
 
 describe('toolsShown', () => {
+  beforeAll(() => Promise.all([ready(commentaryOverlay), ready(searchTool)]));
+
   it('shows the search once it has a word long enough to search on', () => {
     expect(
       toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' })).search?.tool,
@@ -27,6 +30,20 @@ describe('toolsShown', () => {
     );
     expect(tools.overlay).toEqual({ tool: commentaryOverlay, settings });
     expect(tools.search).not.toBeNull();
+  });
+});
+
+describe('toolsShown before the data arrives', () => {
+  it('leaves an overlay off until its init has finished', async () => {
+    let finish!: () => void;
+    const overlay = { ...commentaryOverlay, init: () => new Promise<void>((r) => (finish = r)) };
+    const settings = { category: 'total' };
+    const loading = ready(overlay);
+
+    expect(toolsShown(overlay, settings, settingsFromLink(searchTool, {})).overlay).toBeNull();
+    finish();
+    await loading;
+    expect(toolsShown(overlay, settings, settingsFromLink(searchTool, {})).overlay).not.toBeNull();
   });
 });
 
