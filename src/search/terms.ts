@@ -63,6 +63,11 @@ function resolve(text: string): { meanings: Meaning[]; selected: Set<string> } {
   return { meanings, selected: new Set(meanings.map((m) => m.keys[0])) };
 }
 
+/** Look up the meanings of terms that have none, such as ones typed before the dictionary arrived. */
+export function lookUpMeaningsAgain(terms: SearchTerm[]): SearchTerm[] {
+  return terms.map((t) => (t.meanings.length > 0 ? t : { ...t, ...resolve(t.text) }));
+}
+
 /** The lowest colour no current term is using. */
 function freeColor(terms: SearchTerm[]): number {
   const taken = new Set(terms.map((t) => t.colorIndex));
