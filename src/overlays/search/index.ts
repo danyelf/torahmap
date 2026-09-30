@@ -16,7 +16,7 @@ import {
   resultsForVerseSets,
   type SearchResult,
 } from '../../search.ts';
-import { versesFor } from '../../search/dictionary.ts';
+import { spellingFor, versesFor } from '../../search/dictionary.ts';
 import { highlightTerms } from './highlight.ts';
 import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
@@ -239,14 +239,15 @@ export function searchForMeaning(
   // assuming it lands last, which is wrong whenever the empty row was not the
   // last one (a reader who cleared an earlier box while a later one still
   // held a word).
+  const spelling = meaningKeys && meaningKeys.length > 0 ? spellingFor(meaningKeys, text) : text;
   let terms = settings.terms;
   const empty = terms.find((term) => term.text.trim() === '');
   let id: string;
   if (empty) {
     id = empty.id;
-    terms = setTermText(terms, id, text);
+    terms = setTermText(terms, id, spelling);
   } else {
-    terms = addTerm(terms, text);
+    terms = addTerm(terms, spelling);
     id = terms[terms.length - 1].id;
   }
 

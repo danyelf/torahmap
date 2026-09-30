@@ -14,6 +14,7 @@
 
 import {
   findLexemesForWord,
+  formsOfLexeme,
   getLexeme,
   getLexemeVerseCount,
   getVerseLexemes,
@@ -22,7 +23,13 @@ import {
   type LexemeId,
 } from '../search.ts';
 import { fetchData } from '../constants.ts';
-import { isHebrew, mapStrippedToOriginal, splitIntoWords, type TextWord } from '../hebrew.ts';
+import {
+  isHebrew,
+  mapStrippedToOriginal,
+  splitIntoWords,
+  stripNikkud,
+  type TextWord,
+} from '../hebrew.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
 
 /**
@@ -197,6 +204,27 @@ function rowForStem(stem: LexemeId, writtenForm: string): Meaning[] {
   const candidates = findLexemesForWord(writtenForm) ?? [];
   const row = key === null ? undefined : rowsFor(candidates).find((m) => m.keys.includes(key));
   return row ? [row] : rowsFor([stem]);
+}
+
+/**
+ * A spelling to search a chosen meaning under.
+ *
+ * A term offers the meanings of its text, so a meaning its text cannot be is
+ * lost the moment the term is built: a click on (בגד), read בָּא גָד, can choose
+ * "fortune", which is no reading of בגד. So the clicked spelling when it has
+ * the meaning, then the meaning's dictionary spelling, then any written form
+ * filed under it.
+ */
+export function spellingFor(keys: readonly string[], clicked: string): string {
+  const has = (text: string) => meaningsFor(text).some((m) => sameMeaning(m, keys));
+  if (has(clicked)) return clicked;
+
+  const ids = [...lexemesForKeys(keys)];
+  const candidates = [
+    ...ids.map((id) => stripNikkud(getLexeme(id)?.form ?? '')),
+    ...ids.flatMap(formsOfLexeme),
+  ];
+  return candidates.find((text) => text && has(text)) ?? clicked;
 }
 
 /** The verses carrying any of these meanings. */

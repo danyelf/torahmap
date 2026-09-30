@@ -46,7 +46,7 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
 
 const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
-const { meaningsInVerse, setVerseOnScreen, wordIsNamed } =
+const { meaningsFor, meaningsInVerse, sameMeaning, setVerseOnScreen, spellingFor, wordIsNamed } =
   await import('../../src/search/dictionary.ts');
 const { verseWords, lookupForm } = await import('../../src/verseWords.ts');
 const { tanakhKey } = await import('../../src/types.ts');
@@ -62,6 +62,8 @@ interface Report {
   ruledOut: number;
   /** Words a click cannot place in the parse, and so looks up by spelling. */
   unplaced: number;
+  /** Words offering a meaning that choosing cannot search for. */
+  unsearchable: number;
   total: number;
 }
 
@@ -74,6 +76,7 @@ function buildReport(
     unknownSpelling: 0,
     ruledOut: 0,
     unplaced: 0,
+    unsearchable: 0,
     total: 0,
   };
 
@@ -87,9 +90,16 @@ function buildReport(
 
         for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
           const form = lookupForm(word);
-          const n = meaningsInVerse(form, verseKey, wordIndex).length;
+          const offered = meaningsInVerse(form, verseKey, wordIndex);
+          const n = offered.length;
           report.total++;
           if (!wordIsNamed(wordIndex)) report.unplaced++;
+          // Choosing a meaning searches for it under some spelling; one no
+          // spelling can be is a choice that silently searches for something else.
+          const lost = offered.some(
+            (m) => !meaningsFor(spellingFor(m.keys, form)).some((r) => sameMeaning(r, m.keys)),
+          );
+          if (lost) report.unsearchable++;
 
           if (n === 1) report.one++;
           else if (n > 1) report.several++;
@@ -147,6 +157,7 @@ const rows: Array<[string, keyof Report]> = [
   ['spelling is in no index', 'unknownSpelling'],
   ['verse rules every reading out', 'ruledOut'],
   ['not placed, so looked up by spelling', 'unplaced'],
+  ['offers a meaning it cannot search', 'unsearchable'],
 ];
 
 console.log(`\n${report.total.toLocaleString()} clickable words\n`);

@@ -243,6 +243,24 @@ function lookupFormOrSpelling(term: string): LexemeId[] | null {
   return null;
 }
 
+// Lexeme -> the written forms filed under it, built on first use.
+let lexemeToForms: Map<LexemeId, string[]> | null = null;
+
+/** The written forms that can be this lexeme. */
+export function formsOfLexeme(id: LexemeId): string[] {
+  if (!lexemeToForms && formToLexemes) {
+    lexemeToForms = new Map();
+    for (const [form, ids] of Object.entries(formToLexemes)) {
+      for (const lexeme of ids) {
+        const forms = lexemeToForms.get(lexeme);
+        if (forms) forms.push(form);
+        else lexemeToForms.set(lexeme, [form]);
+      }
+    }
+  }
+  return lexemeToForms?.get(id) ?? [];
+}
+
 /**
  * How many verses a lexeme occurs in. O(1) against the inverted index, so it
  * is cheap enough to show beside every candidate meaning of a search term.
