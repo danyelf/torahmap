@@ -3,30 +3,33 @@ import type { Overlay, Tools } from './overlays/types.ts';
 import { isSearching, searchTool, type SearchSettings } from './overlays/search/index.ts';
 import { isReady } from './dataLoading.ts';
 
-/** The tools a view asks for: the overlay, if one is on, and the search, while it has a word to search on. */
-function toolsAsked(overlay: Overlay | null, search: SearchSettings) {
-  return { overlay, search: isSearching(search) ? searchTool : null };
+/**
+ * The tools a view asks for, the overlay if one is on and the search while it
+ * has a word to search on, and which of them it shows: those whose data is in.
+ */
+export function toolsToShow(
+  overlay: Overlay | null,
+  overlaySettings: unknown,
+  search: SearchSettings,
+): { tools: Tools; allLoaded: boolean } {
+  const searchAsked = isSearching(search);
+  const overlayIn = overlay !== null && isReady(overlay);
+  const searchIn = searchAsked && isReady(searchTool);
+  return {
+    tools: {
+      overlay: overlayIn ? { tool: overlay, settings: overlaySettings } : null,
+      search: searchIn ? { tool: searchTool, settings: search } : null,
+    },
+    allLoaded: (overlay === null || overlayIn) && (!searchAsked || searchIn),
+  };
 }
 
-/** The tools a view shows: those it asks for whose data is in. */
 export function toolsShown(
   overlay: Overlay | null,
   overlaySettings: unknown,
   search: SearchSettings,
 ): Tools {
-  const asked = toolsAsked(overlay, search);
-  return {
-    overlay:
-      asked.overlay && isReady(asked.overlay)
-        ? { tool: asked.overlay, settings: overlaySettings }
-        : null,
-    search: asked.search && isReady(asked.search) ? { tool: asked.search, settings: search } : null,
-  };
-}
-
-/** Whether a view shows every tool it asks for, none left out for want of its data. */
-export function toolsLoaded(overlay: Overlay | null, search: SearchSettings): boolean {
-  return Object.values(toolsAsked(overlay, search)).every((tool) => !tool || isReady(tool));
+  return toolsToShow(overlay, overlaySettings, search).tools;
 }
 
 /** Whether a change turns the search on or off, a step Back can undo, rather than edits it. */

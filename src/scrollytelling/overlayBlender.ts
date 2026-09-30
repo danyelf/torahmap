@@ -10,7 +10,7 @@ import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
 import { searchTool } from '../overlays/search/index.ts';
-import { toolsLoaded, toolsShown } from '../tools.ts';
+import { toolsToShow } from '../tools.ts';
 
 // Memoised per verses array by the stop's overlay, its search and their
 // validated link parameters. The key is canonical because validateOverlayParams
@@ -58,15 +58,14 @@ export function pictureForStop(
   const cached = byHover ? undefined : cache.get(key);
   if (cached) return cached;
 
-  const search = settingsFromLink(searchTool, stop.searchParams ?? {});
-  const tools = toolsShown(
+  const { tools, allLoaded } = toolsToShow(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
-    search,
+    settingsFromLink(searchTool, stop.searchParams ?? {}),
   );
   const picture = fillDefaultColors(toolsPicture(tools, verses, hovered));
   // A picture drawn before its tools' data arrived would outlive the data.
-  if (!byHover && toolsLoaded(overlay, search)) cache.set(key, picture);
+  if (!byHover && allLoaded) cache.set(key, picture);
   return picture;
 }
 

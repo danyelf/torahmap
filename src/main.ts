@@ -4,7 +4,7 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, allVerseTexts, type VerseTexts } from './verseTexts.ts';
-import { ready, isReady, linkNeeds } from './dataLoading.ts';
+import { ready, isReady } from './dataLoading.ts';
 import { lookupForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
@@ -54,7 +54,13 @@ import {
 } from '@torahmap/link';
 import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
-import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
+import {
+  resolveViewState,
+  cameraForView,
+  openingOverlay,
+  opensFolded,
+  type ViewState,
+} from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
@@ -243,12 +249,15 @@ async function main(): Promise<void> {
 
   const link = parseUrlState(overlayParamSpecs);
   let listed = listedStories(STORIES, !__LIVE__);
-  const openingStory = storyToOpen(listed, link.story ?? null);
-  const needs = linkNeeds(
-    link,
-    openingStory ? openingStory.data.stops[stopToOpen(openingStory, link.stop)] : null,
-  );
-  await Promise.all(needs.flatMap((id) => getOverlay(id) ?? []).map(ready));
+  const storyNamed = (id: string | null): Story => {
+    const found = storyToOpen(listed, id);
+    if (!found) throw new Error('No story is listed');
+    return found;
+  };
+  let story = storyNamed(link.story ?? null);
+
+  const opening = getOverlay(openingOverlay(link, story) ?? '');
+  if (opening) await ready(opening);
 
   // Null until the texts arrive; the verse popup stays closed until then.
   let verseTexts: VerseTexts | null = null;
@@ -307,7 +316,7 @@ async function main(): Promise<void> {
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
 
-  const startsFolded = opensFolded(parseUrlState(), hasVisited());
+  const startsFolded = opensFolded(link, hasVisited());
   let driver: Driver = startsFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
 
@@ -1032,17 +1041,15 @@ async function main(): Promise<void> {
     if (tool === searchTool) {
       overlaySettings.set(searchTool, adoptLoadedMeanings(overlaySettings.get(searchTool)));
       searchChanged(false);
-    } else if (tool === currentOverlay) {
-      overlayChanged(true);
     }
+    const { search, overlay } = toolsNow();
+    const onMap = search?.tool === tool || overlay?.tool === tool;
+    if (overlay?.tool === tool) overlayChanged(true);
     // Between two story stops the blend draws whichever tools its stops show.
     if (colorSource(driver) === 'blend') {
       blendTransition();
       render();
-      return;
-    }
-    const { search, overlay } = toolsNow();
-    if (colorSource(driver) === 'overlay' && (search?.tool === tool || overlay?.tool === tool)) {
+    } else if (colorSource(driver) === 'overlay' && onMap) {
       fadeToTools();
     }
   }
@@ -1131,9 +1138,8 @@ async function main(): Promise<void> {
   function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
-      if (currentOverlay && isReady(currentOverlay)) {
-        currentOverlay.renderLegend?.(overlayLegendContainer, currentSettings());
-      }
+      const shown = toolsNow().overlay;
+      shown?.tool.renderLegend?.(overlayLegendContainer, shown.settings);
     }
   }
 
@@ -1308,15 +1314,9 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  const storyNamed = (id: string | null): Story => {
-    const found = storyToOpen(listed, id);
-    if (!found) throw new Error('No story is listed');
-    return found;
-  };
   // Where each story other than the current one was left, this visit.
   const places = new Map<string, number>();
 
-  let story = storyNamed(parseUrlState().story ?? null);
   configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
     resolveStops(story.data.stops, initialCamera, verses, mapFocus(), mapViewport());
@@ -1813,16 +1813,19 @@ async function main(): Promise<void> {
 
   scheduleStoryFrame();
 
-  const texts = allVerseTexts().then((texts) => {
-    verseTexts = texts;
-    refreshVersePopup();
-  });
+  const texts = allVerseTexts().then(
+    (texts) => {
+      verseTexts = texts;
+      refreshVersePopup();
+    },
+    (err) => console.warn('Could not load the verse texts; the verse popup stays closed:', err),
+  );
   const tools = [searchTool, ...getAllOverlays()].map((tool) =>
     isReady(tool) ? null : ready(tool).then(() => toolArrived(tool)),
   );
   // Layout tests and the video harness wait on this; nothing in the app reads it.
   void Promise.allSettled([texts, ...tools]).then(() => {
-    document.documentElement.dataset.dataReady = '';
+    document.documentElement.dataset.loaded = '';
   });
 
   prefetchMorphology();

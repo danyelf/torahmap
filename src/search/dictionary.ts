@@ -21,6 +21,7 @@ import {
   type Lexeme,
   type LexemeId,
 } from '../search.ts';
+export { dictionaryLoaded } from '../search.ts';
 import { fetchData } from '../constants.ts';
 import { isReady, ready, type Loadable } from '../dataLoading.ts';
 import { isHebrew, mapStrippedToOriginal, splitIntoWords, type TextWord } from '../hebrew.ts';
@@ -259,7 +260,7 @@ let misaligned: Set<string> = new Set();
  * not retried: every caller falls back to the spelling.
  */
 const morphologyFile: Loadable = {
-  id: 'the per-word parse',
+  name: 'the per-word parse',
   async init() {
     const res = await fetchData('search/verse-morphology.json');
     if (!res.ok) throw new Error(`Response status ${res.status}`);

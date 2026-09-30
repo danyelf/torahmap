@@ -58,7 +58,7 @@ download still stops the map.
 2. Read the link. If it, or the story stop it opens, names an overlay, wait
    for `ready(overlay)`.
 3. Draw the first frame.
-4. Start every other wait; set `data-data-ready` on `<html>` once they have all
+4. Start every other wait; set `data-loaded` on `<html>` once they have all
    settled. The layout tests and the video harness wait on it.
 
 ## Data that arrives after the first frame
@@ -92,7 +92,7 @@ every verse as never linked. Its legend row stays off too.
   callers ask; a link waits for the overlay it names and nothing else.
 - A test that a search or overlay set before its data arrives shows its result
   once the data does, rather than staying empty.
-- `npm run test:layout` waits for `data-data-ready`, so it measures each state
+- `npm run test:layout` waits for `data-loaded`, so it measures each state
   once its data is in.
 - Before and after, time a cold load to the first frame in headless
   Playwright on a throttled connection, for a bare address and for a search

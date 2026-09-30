@@ -38,7 +38,7 @@ export async function openMap(
   await page.goto(url);
 
   const wait = (ms: number) => (fakeClock ? page.clock.runFor(ms) : page.waitForTimeout(ms));
-  for (let i = 0; !(await page.locator('html[data-data-ready]').count()); i++) {
+  for (let i = 0; !(await page.locator('html[data-loaded]').count()); i++) {
     if (i === 300) throw new Error('the map and its data did not arrive within 30 seconds');
     await wait(100);
   }

@@ -6,7 +6,7 @@
 // that choice the moment an earlier term is edited, because every later index
 // shifts and the choice lands silently on a different word.
 
-import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
+import { dictionaryLoaded, meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
 import { isHebrew } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -52,7 +52,7 @@ export interface SearchTerm {
    * The meanings a link chose, as its `m` parameter names them, held while
    * the dictionary has not arrived to say which rows they are.
    */
-  chosen?: string[];
+  linkMeanings?: string[];
 }
 
 /**
@@ -63,9 +63,9 @@ export const MAX_TERMS = SEARCH_COLORS.length;
 
 let nextId = 0;
 
-function resolve(text: string): Pick<SearchTerm, 'meanings' | 'selected' | 'chosen'> {
+function resolve(text: string): Pick<SearchTerm, 'meanings' | 'selected' | 'linkMeanings'> {
   const meanings = meaningsFor(text.trim());
-  return { meanings, selected: new Set(meanings.map((m) => m.keys[0])), chosen: undefined };
+  return { meanings, selected: new Set(meanings.map((m) => m.keys[0])), linkMeanings: undefined };
 }
 
 /**
@@ -76,7 +76,7 @@ export function lookUpMissingMeanings(terms: SearchTerm[]): SearchTerm[] {
   return terms.map((t) => {
     if (t.meanings.length > 0) return t;
     const found = { ...t, ...resolve(t.text) };
-    return t.chosen ? choose(found, t.chosen) : found;
+    return t.linkMeanings ? choose(found, t.linkMeanings) : found;
   });
 }
 
@@ -187,8 +187,8 @@ export function selectedKeys(term: SearchTerm): string[] {
  */
 export function encodeMeanings(terms: SearchTerm[]): string {
   const narrowed = terms.map((t) =>
-    t.chosen
-      ? t.chosen.join('|')
+    t.linkMeanings
+      ? t.linkMeanings.join('|')
       : t.selected.size === t.meanings.length
         ? ''
         : selectedKeys(t).join('|'),
@@ -215,7 +215,7 @@ export function applyMeanings(terms: SearchTerm[], encoded: string): SearchTerm[
 
 /** Check the rows `named` picks out, or hold the names until the dictionary can place them. */
 function choose(term: SearchTerm, named: string[]): SearchTerm {
-  if (term.meanings.length === 0) return { ...term, chosen: named };
+  if (term.meanings.length === 0 && !dictionaryLoaded()) return { ...term, linkMeanings: named };
   const selected = new Set(
     term.meanings.filter((m) => sameMeaning(m, named)).map((m) => m.keys[0]),
   );

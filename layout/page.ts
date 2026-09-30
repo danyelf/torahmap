@@ -16,7 +16,7 @@ export const DRAWN_FLOOR = 1000;
 export async function mapReady(page: Page): Promise<void> {
   // Everything in the body is position: fixed, so <html> never has the
   // nonzero box waitFor's default 'visible' state requires.
-  await page.locator('html[data-data-ready]').waitFor({ state: 'attached', timeout: 30_000 });
+  await page.locator('html[data-loaded]').waitFor({ state: 'attached', timeout: 30_000 });
   await page.evaluate(async () => {
     await document.fonts.ready;
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));

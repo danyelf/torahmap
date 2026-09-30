@@ -24,14 +24,8 @@ export async function loadTanakhStructure(): Promise<TorahData> {
 
 export async function loadAllVerseTexts(): Promise<VerseTexts> {
   const response = await fetchData('all-texts.json');
-
-  if (!response.ok) {
-    console.error(`Failed to load verse texts: ${response.status}`);
-    return {};
-  }
-
-  const verseTexts: VerseTexts = await response.json();
-  return verseTexts;
+  if (!response.ok) throw new Error(`Failed to load verse texts: ${response.status}`);
+  return await response.json();
 }
 
 let texts: Promise<VerseTexts> | null = null;

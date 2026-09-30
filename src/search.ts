@@ -214,6 +214,10 @@ function buildSpellingIndex(spellings: string[]): Map<string, LexemeId[]> {
  * Null is an answer, not a failure: the caller falls back to text matching and
  * marks the term unresolved. Exported so the overlay can tell which resolved.
  */
+export function dictionaryLoaded(): boolean {
+  return lexicon !== null;
+}
+
 export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
   if (!formToLexemes) return null;
 

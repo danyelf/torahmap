@@ -9,6 +9,7 @@ import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './
 import type { TanakhIdentity } from './types.ts';
 import type { Frame } from './frame.ts';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
+import { stopToOpen, type Story } from '@torahmap/stories';
 
 /**
  * Everything a link decides, with nothing left out. A field the link does not
@@ -56,6 +57,15 @@ export function resolveViewState(
       y: url.y ?? defaultCamera.y,
     },
   };
+}
+
+/**
+ * The overlay a link opens with, which its first frame waits for: the view's
+ * own, or that of the story stop it opens.
+ */
+export function openingOverlay(link: UrlState, story: Story | undefined): string | null {
+  if (linkKind(link) === 'view') return link.overlay ?? null;
+  return story?.data.stops[stopToOpen(story, link.stop)]?.overlay ?? null;
 }
 
 /** A returning reader opens with the story folded, unless the link names a stop. */

@@ -1,46 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { StoryStop } from '@torahmap/stories';
-import { ready, isReady, linkNeeds } from '../../dataLoading';
-
-const stop = (fields: Partial<StoryStop>): StoryStop => ({
-  id: 's',
-  text: '',
-  camera: 'initial',
-  overlay: null,
-  ...fields,
-});
-
-describe('linkNeeds', () => {
-  it('needs nothing for a bare address opening a plain stop, a pinned verse or a search', () => {
-    expect(linkNeeds({ overlayParams: {} }, stop({}))).toEqual([]);
-    expect(linkNeeds({ verse: 'Genesis.12.1', overlayParams: {} }, null)).toEqual([]);
-    expect(linkNeeds({ overlayParams: {}, searchParams: { search: 'אור' } }, null)).toEqual([]);
-  });
-
-  it('needs the overlay a link names', () => {
-    expect(
-      linkNeeds({ overlay: 'haftarah', overlayParams: {}, searchParams: { search: 'אור' } }, null),
-    ).toEqual(['haftarah']);
-  });
-
-  it('needs the overlay the story stop it opens shows', () => {
-    expect(
-      linkNeeds({ story: 'haftarah', overlayParams: {} }, stop({ overlay: 'haftarah' })),
-    ).toEqual(['haftarah']);
-  });
-});
+import { ready, isReady } from '../../dataLoading';
 
 describe('ready', () => {
   it('runs a tool’s init once however often it is asked for', async () => {
     const init = vi.fn(async () => {});
-    const tool = { id: 'fake', init };
+    const tool = { name: 'fake', init };
     await Promise.all([ready(tool), ready(tool), ready(tool)]);
     expect(init).toHaveBeenCalledTimes(1);
   });
 
   it('counts a tool as ready only once its init has finished', async () => {
     let finish!: () => void;
-    const tool = { id: 'slow', init: () => new Promise<void>((r) => (finish = r)) };
+    const tool = { name: 'slow', init: () => new Promise<void>((r) => (finish = r)) };
     const done = ready(tool);
     await Promise.resolve();
     expect(isReady(tool)).toBe(false);
@@ -50,12 +21,12 @@ describe('ready', () => {
   });
 
   it('counts a tool with no init as ready from the start', () => {
-    expect(isReady({ id: 'plain' })).toBe(true);
+    expect(isReady({ name: 'plain' })).toBe(true);
   });
 
   it('counts a failed init as finished, so nothing waits on it for ever', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const tool = { id: 'broken', init: () => Promise.reject(new Error('404')) };
+    const tool = { name: 'broken', init: () => Promise.reject(new Error('404')) };
     await ready(tool);
     expect(isReady(tool)).toBe(true);
     warn.mockRestore();

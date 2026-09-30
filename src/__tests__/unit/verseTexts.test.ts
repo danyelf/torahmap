@@ -101,38 +101,13 @@ describe('verseTexts', () => {
     });
 
     describe('error handling', () => {
-      it('handles 404 response', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        mockFetch({ '/data/all-texts.json': mockFetchStatus(404) });
-
-        const result = await loadAllVerseTexts();
-
-        expect(result).toEqual({});
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load verse texts: 404');
-        consoleErrorSpy.mockRestore();
-      });
-
-      it('handles 500 response', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        mockFetch({ '/data/all-texts.json': mockFetchStatus(500) });
-
-        const result = await loadAllVerseTexts();
-
-        expect(result).toEqual({});
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load verse texts: 500');
-        consoleErrorSpy.mockRestore();
-      });
-
-      it('handles network error', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        mockFetch({ '/data/all-texts.json': mockFetchStatus(0) });
-
-        const result = await loadAllVerseTexts();
-
-        expect(result).toEqual({});
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to load verse texts: 0');
-        consoleErrorSpy.mockRestore();
-      });
+      it.each([404, 500, 0])(
+        'fails on a %i response rather than answer with no texts',
+        async (s) => {
+          mockFetch({ '/data/all-texts.json': mockFetchStatus(s) });
+          await expect(loadAllVerseTexts()).rejects.toThrow();
+        },
+      );
 
       it('handles fetch rejection', async () => {
         globalThis.fetch = vi.fn(() => Promise.reject(new Error('Network error')));
@@ -553,17 +528,6 @@ describe('verseTexts', () => {
       expect(verse).not.toBeNull();
       expect(verse?.he).toBe('בְּרֵאשִׁית');
       expect(verse?.en).toBe('In the beginning');
-    });
-
-    it('handles load failure gracefully', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch({ '/data/all-texts.json': mockFetchStatus(404) });
-
-      const verseTexts = await loadAllVerseTexts();
-      const verse = getVerseText(verseTexts, 'Genesis', 1, 1);
-
-      expect(verse).toBeNull();
-      consoleErrorSpy.mockRestore();
     });
 
     it('works with complete workflow', async () => {
