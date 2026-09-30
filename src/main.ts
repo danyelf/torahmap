@@ -305,7 +305,8 @@ async function main(): Promise<void> {
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
 
-  const startsFolded = opensFolded(parseUrlState(), hasVisited());
+  const visited = hasVisited();
+  const startsFolded = opensFolded(parseUrlState(), visited);
   let driver: Driver = startsFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
 
@@ -1768,6 +1769,7 @@ async function main(): Promise<void> {
       (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)
         ?.type,
     ),
+    visited,
   );
   recordingDriver = true;
   markViewSettled();

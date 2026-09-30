@@ -16,7 +16,13 @@ export type RequestContext = Record<Exclude<CommonColumn, 'event' | 'mode'>, str
 export const EVENTS = {
   // arrived_with is blank on views recorded before the column existed —
   // "not stated", unlike arrivedWith's own 'nothing' for a reload or Back/Forward.
-  page_view: { blobs: ['story_stop', 'referrer', 'story', 'arrived_with'], doubles: [] },
+  // visited is 'yes' once this browser has left the story or gone past its
+  // first stop on an earlier visit (main.ts's rememberVisit), so a return by
+  // someone who bounced off the first stop reads 'no'.
+  page_view: {
+    blobs: ['story_stop', 'referrer', 'story', 'arrived_with', 'visited'],
+    doubles: [],
+  },
   story_stop: { blobs: ['stop_id', 'story'], doubles: ['stop_number', 'total_stops'] },
   story_exit: { blobs: ['stop_id', 'how', 'story'], doubles: ['stop_number'] },
   story_return: { blobs: ['stop_id', 'how', 'story'], doubles: [] },

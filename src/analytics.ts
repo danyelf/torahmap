@@ -56,8 +56,15 @@ export function trackPageView(
   storyStop: string,
   referrer: string,
   arrival: LinkKind,
+  visited: boolean,
 ): void {
-  track('page_view', { story_stop: storyStop, referrer, story, arrived_with: arrival });
+  track('page_view', {
+    story_stop: storyStop,
+    referrer,
+    story,
+    arrived_with: arrival,
+    visited: visited ? 'yes' : 'no',
+  });
 }
 
 /** What the first page's link named; a reload or Back/Forward is not an arrival. */

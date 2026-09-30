@@ -97,7 +97,7 @@ describe('analytics', () => {
   });
 
   it('sends the page view with what the link arrived with', () => {
-    trackPageView('tour', 'intro', 'example.com', 'view');
+    trackPageView('tour', 'intro', 'example.com', 'view', true);
     expect(sent()).toEqual([
       {
         event: 'page_view',
@@ -108,6 +108,7 @@ describe('analytics', () => {
           referrer: 'example.com',
           story: 'tour',
           arrived_with: 'view',
+          visited: 'yes',
         },
       },
     ]);
