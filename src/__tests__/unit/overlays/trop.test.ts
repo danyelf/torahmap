@@ -520,6 +520,14 @@ describe('Trop Overlay', () => {
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
       expect(host.getHoverInfo(verse)).toBeNull();
     });
+
+    it('describes a verse only when it carries the mark a link names', () => {
+      const host = makeHost();
+      host.restore({ trop: 'tipcha' });
+
+      expect(host.getHoverInfo(testVerses[0])).not.toBeNull(); // Genesis 1:1 has a tipcha
+      expect(host.getHoverInfo(testVerses[1])).toBeNull(); // Genesis 1:2 has none
+    });
   });
 
   describe('Settings and the URL', () => {
