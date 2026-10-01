@@ -7,10 +7,22 @@ import type { Overlay } from './overlays/types.ts';
 /** What has arrived, by path. A file that failed is absent. */
 export type Loaded = ReadonlyMap<string, unknown>;
 
-/** Download each path once. A failure is reported and leaves that path missing. */
-export async function loadFiles(paths: Iterable<string>): Promise<Loaded> {
+/**
+ * Download each path once. A failure is reported and leaves that path missing.
+ * `onLoaded` is called for each path as it arrives.
+ */
+export async function loadFiles(
+  paths: Iterable<string>,
+  onLoaded?: (path: string) => void,
+): Promise<Loaded> {
   const unique = [...new Set(paths)];
-  const contents = await Promise.all(unique.map(loadFile));
+  const contents = await Promise.all(
+    unique.map(async (path) => {
+      const content = await loadFile(path);
+      if (content !== undefined) onLoaded?.(path);
+      return content;
+    }),
+  );
   return new Map(
     unique.flatMap((path, i) => (contents[i] === undefined ? [] : [[path, contents[i]] as const])),
   );

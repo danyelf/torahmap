@@ -21,6 +21,22 @@ describe('loadFiles', () => {
     expect(loaded.get('shared.json')).toEqual({ a: 1 });
   });
 
+  it('calls back once for each path as it arrives, not for a failed one, before resolving', async () => {
+    mockFetch({
+      '/data/a.json': { a: 1 },
+      '/data/b.json': { b: 1 },
+      '/data/bad.json': mockFetchStatus(404),
+    });
+    const arrived: string[] = [];
+    let resolved = false;
+    const done = loadFiles(['a.json', 'b.json', 'bad.json', 'a.json'], (path) => {
+      expect(resolved).toBe(false);
+      arrived.push(path);
+    }).then(() => (resolved = true));
+    await done;
+    expect(arrived.sort()).toEqual(['a.json', 'b.json']);
+  });
+
   it('leaves a failed download missing, reports it once with its path, and keeps the others', async () => {
     mockFetch({ '/data/good.json': { ok: true }, '/data/bad.json': mockFetchStatus(404) });
     const loaded = await loadFiles(['good.json', 'bad.json']);

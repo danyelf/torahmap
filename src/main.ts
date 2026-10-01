@@ -230,9 +230,9 @@ async function main(): Promise<void> {
   registerAllOverlays();
   let textsIn = 0;
   const [loaded] = await Promise.all([
-    loadFiles([STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(getAllOverlays())]).finally(
-      () => (textsIn = performance.now()),
-    ),
+    loadFiles([STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(getAllOverlays())], (path) => {
+      if (path === TEXTS_FILE) textsIn = performance.now();
+    }),
     loadLexiconData(),
   ]);
   const torahData = structureFrom(loaded);
