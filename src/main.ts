@@ -7,7 +7,7 @@ import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from './verseTex
 import { stripNikkud } from './hebrew.ts';
 import { meaningsInVerse, wordsOfVerse } from './search/dictionary.ts';
 import { dictionaryOf } from './search/data.ts';
-import { openWordMenu } from './wordMenu.ts';
+import { openWordMenu, wordMenuOpen } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import {
   DRAG_PX,
@@ -1848,7 +1848,9 @@ async function main(): Promise<void> {
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) overlayChanged(false);
     if (stale.searchPanel) searchChanged(false);
-    if (stale.popup) refreshVersePopup();
+    // Redrawing the popup under an open word menu would take away the word it
+    // names; the popup catches up on its next redraw.
+    if (stale.popup && !wordMenuOpen()) refreshVersePopup();
   }
 
   function fileFailed(path: string): void {

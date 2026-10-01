@@ -318,3 +318,8 @@ Decisions made while implementing step 3, newest last.
   `layout/page.ts`'s wait for `data-loaded` is `allLoaded` (it was
   `mapReady`). The plan's task text keeps the old names where it records what
   each task did; its constraints and Task 8 use the new ones.
+- **2026-10-01 (branch review)** A landing does not redraw the popup while a
+  word menu is open on it: the redraw would replace the word the menu names. The
+  popup catches up on its next redraw (a hover, a pin, a search change), rather
+  than as the menu closes: closing on a mousedown over another word and
+  redrawing then would replace that word under the pointer and lose its click.

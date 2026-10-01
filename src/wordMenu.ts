@@ -29,6 +29,10 @@ let open: HTMLElement | null = null;
 let dismiss: ((event: MouseEvent | KeyboardEvent) => void) | null = null;
 let goStale: (() => void) | null = null;
 
+export function wordMenuOpen(): boolean {
+  return open !== null;
+}
+
 export function closeWordMenu(): void {
   open?.remove();
   open = null;
