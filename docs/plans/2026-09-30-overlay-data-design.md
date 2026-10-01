@@ -229,3 +229,6 @@ test used `configureVerseLength`.
   `parshiot` goes with `mappings()`, as the plan says: such a file now throws
   in `deriveHaftarah` instead of drawing no key. The legend keeps its fallback
   counts for a file lacking either list.
+- **2026-10-01 (Task 10)** `prefetchMorphology` keeps its name and its doc comment
+  about the memoised fetch; only the scheduling moves to `whenIdle`, which the
+  prebuild shares.

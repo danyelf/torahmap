@@ -120,6 +120,7 @@ import {
   canAddTerm,
   type SearchSettings,
 } from './overlays/search/index.ts';
+import { prebuildAll } from './overlays/prebuild.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, loadFiles, overlayFiles } from './dataFiles.ts';
 import type { Tools } from './overlays/types.ts';
@@ -1790,6 +1791,7 @@ async function main(): Promise<void> {
   });
 
   prefetchMorphology();
+  prebuildAll(getAllOverlays(), loaded);
 }
 
 reportUncaughtErrors();

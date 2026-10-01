@@ -33,6 +33,7 @@ import {
   stripNikkud,
   type TextWord,
 } from '../hebrew.ts';
+import { whenIdle } from '../utils/idle.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
 
 /**
@@ -315,20 +316,11 @@ function loadMorphology(): Promise<void> {
  * Ask for the parse once the app has finished starting up, so that the reader
  * who opens a verse is not the one who waits for it.
  *
- * Scheduled rather than called, because the point is to stay off the critical
- * path: at the moment this runs the first frame has been drawn but the browser
- * may still be laying out and painting. Safari has no `requestIdleCallback`,
- * hence the timer; either way the fetch is the same memoized one `loading`
- * guards, so a verse opened before this fires still fetches exactly once.
+ * The fetch is the same memoized one `loading` guards, so a verse opened before
+ * this fires still fetches exactly once.
  */
 export function prefetchMorphology(): void {
-  if (typeof requestIdleCallback === 'function') {
-    // The deadline matters more than the idleness: on a page that never goes
-    // idle the callback must still run.
-    requestIdleCallback(() => void loadMorphology(), { timeout: PREFETCH_TIMEOUT_MS });
-  } else {
-    setTimeout(() => void loadMorphology(), PREFETCH_TIMEOUT_MS);
-  }
+  whenIdle(() => void loadMorphology());
 }
 
 /**
@@ -338,9 +330,6 @@ export function prefetchMorphology(): void {
 export function parseArrived(): Promise<void> | null {
   return settled ? null : loadMorphology();
 }
-
-/** Long enough to be clear of first paint, short enough to beat a deliberate click. */
-const PREFETCH_TIMEOUT_MS = 2000;
 
 /** The verse whose Hebrew is on screen. */
 let onScreen: { verseKey: string; hebrew: string } | null = null;
