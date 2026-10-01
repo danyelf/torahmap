@@ -26,10 +26,9 @@ function viewFor(link: string): ViewState {
 }
 
 /** Where a view's settings leave an overlay's controls, drawn the way main.ts draws them. */
-async function controlsAfter(link: string): Promise<HTMLElement> {
+function controlsAfter(link: string): HTMLElement {
   const view = viewFor(link);
   const overlay = getOverlay(view.overlay);
-  await overlay?.init?.();
   const container = document.createElement('div');
   if (overlay) {
     settings.restore(overlay, view.overlayParams);
@@ -156,34 +155,34 @@ describe('restoring a link as one complete view', () => {
   });
 
   describe('controls drawn after the settings arrive', () => {
-    it('shows Midrash in the commentary category dropdown', async () => {
-      const controls = await controlsAfter('?overlay=commentary&category=Midrash');
+    it('shows Midrash in the commentary category dropdown', () => {
+      const controls = controlsAfter('?overlay=commentary&category=Midrash');
 
       expect(controls.querySelector<HTMLSelectElement>('#category-select')?.value).toBe('Midrash');
     });
 
-    it('returns the commentary dropdown to all links when the link names no category', async () => {
-      await controlsAfter('?overlay=commentary&category=Midrash');
-      const controls = await controlsAfter('?overlay=commentary');
+    it('returns the commentary dropdown to all links when the link names no category', () => {
+      controlsAfter('?overlay=commentary&category=Midrash');
+      const controls = controlsAfter('?overlay=commentary');
 
       expect(controls.querySelector<HTMLSelectElement>('#category-select')?.value).toBe('total');
     });
 
-    it('shows Sephardi in the haftarah custom dropdown', async () => {
-      const controls = await controlsAfter('?overlay=haftarah&custom=sephardi');
+    it('shows Sephardi in the haftarah custom dropdown', () => {
+      const controls = controlsAfter('?overlay=haftarah&custom=sephardi');
 
       expect(controls.querySelector<HTMLSelectElement>('#custom-select')?.value).toBe('sephardi');
     });
 
-    it('marks the trop button the link names', async () => {
-      const controls = await controlsAfter('?overlay=trop&trop=tipcha');
+    it('marks the trop button the link names', () => {
+      const controls = controlsAfter('?overlay=trop&trop=tipcha');
 
       expect(controls.querySelector('button.selected')?.getAttribute('title')).toMatch(/^Tipcha/);
     });
 
-    it('clears the trop selection when the link names no mark', async () => {
-      await controlsAfter('?overlay=trop&trop=tipcha');
-      const controls = await controlsAfter('?overlay=trop');
+    it('clears the trop selection when the link names no mark', () => {
+      controlsAfter('?overlay=trop&trop=tipcha');
+      const controls = controlsAfter('?overlay=trop');
 
       expect(settings.toUrl(getOverlay('trop')!)).toEqual({});
       expect(controls.querySelector('button.selected')).toBeNull();

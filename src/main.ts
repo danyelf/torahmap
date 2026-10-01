@@ -254,8 +254,6 @@ async function main(): Promise<void> {
   buildSearchIndex(verseTexts);
   const searchReady = performance.now();
 
-  await Promise.all(getAllOverlays().map((o) => o.init?.()));
-
   const dpr = window.devicePixelRatio || 1;
 
   function resizeCanvas(): void {

@@ -62,7 +62,7 @@ describe('Overlay Switching Integration', () => {
   /**
    * Helper to simulate switching to an overlay
    */
-  async function switchToOverlay(overlayId: string): Promise<Overlay> {
+  function switchToOverlay(overlayId: string): Overlay {
     // Destroy previous overlay
     currentOverlay?.destroy?.();
 
@@ -71,9 +71,6 @@ describe('Overlay Switching Integration', () => {
     if (!overlay) {
       throw new Error(`Overlay ${overlayId} not found`);
     }
-
-    // Initialize if needed
-    await overlay.init?.();
 
     const data = dataFor(overlay, SAMPLE_LOADED);
     if (data === null) throw new Error(`${overlay.id}'s files are not in SAMPLE_LOADED`);
@@ -110,21 +107,21 @@ describe('Overlay Switching Integration', () => {
   }
 
   describe('Basic Overlay Switching', () => {
-    it('switches from no overlay to commentary overlay', async () => {
-      const overlay = await switchToOverlay('commentary');
+    it('switches from no overlay to commentary overlay', () => {
+      const overlay = switchToOverlay('commentary');
 
       expect(overlay.id).toBe('commentary');
       expect(overlay.name).toBe('Commentary');
       expectColorsApplied();
     });
 
-    it('switches from commentary to trop overlay', async () => {
+    it('switches from commentary to trop overlay', () => {
       // Start with commentary
-      await switchToOverlay('commentary');
+      switchToOverlay('commentary');
       const commentaryColors = [...lastColors];
 
       // Switch to trop
-      await switchToOverlay('trop');
+      switchToOverlay('trop');
 
       expect(currentOverlay?.id).toBe('trop');
       expect(currentOverlay?.name).toBe('Trop');
@@ -144,12 +141,12 @@ describe('Overlay Switching Integration', () => {
       expect(changedCount).toBeGreaterThan(0);
     });
 
-    it('switches through all overlays in sequence', async () => {
+    it('switches through all overlays in sequence', () => {
       const overlayIds = ['commentary', 'trop'];
       const results: string[] = [];
 
       for (const id of overlayIds) {
-        await switchToOverlay(id);
+        switchToOverlay(id);
         results.push(currentOverlay!.id);
 
         // Verify colors were calculated for each overlay
@@ -167,54 +164,54 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Cleanup and Resource Management', () => {
-    it('calls destroy() when switching away from overlay', async () => {
+    it('calls destroy() when switching away from overlay', () => {
       const destroy = vi.fn();
       registerOverlay(
         testOverlay({ id: 'test-destroy', name: 'Test', getVerseColor: () => null, destroy }),
       );
-      await switchToOverlay('test-destroy');
+      switchToOverlay('test-destroy');
 
-      await switchToOverlay('trop');
+      switchToOverlay('trop');
 
       expect(destroy).toHaveBeenCalled();
     });
 
-    it('clears controls container when switching overlays', async () => {
+    it('clears controls container when switching overlays', () => {
       // Commentary has controls (category selector)
-      await switchToOverlay('commentary');
+      switchToOverlay('commentary');
       expect(mockControlsContainer.innerHTML).not.toBe('');
 
       // Trop also has controls
-      await switchToOverlay('trop');
+      switchToOverlay('trop');
       expect(mockControlsContainer.innerHTML).not.toBe('');
     });
 
-    it('clears legend container when switching overlays', async () => {
-      await switchToOverlay('commentary');
+    it('clears legend container when switching overlays', () => {
+      switchToOverlay('commentary');
       expect(mockLegendContainer.innerHTML).not.toBe('');
 
       const previousHTML = mockLegendContainer.innerHTML;
 
-      await switchToOverlay('trop');
+      switchToOverlay('trop');
       // Legend should be different
       expect(mockLegendContainer.innerHTML).not.toBe('');
       expect(mockLegendContainer.innerHTML).not.toBe(previousHTML);
     });
 
-    it('does not leak event listeners when switching', async () => {
+    it('does not leak event listeners when switching', () => {
       // Switch to commentary (registers event listener)
-      await switchToOverlay('commentary');
+      switchToOverlay('commentary');
 
       // Check that controls were rendered
       const firstSelect = mockControlsContainer.querySelector('select');
       expect(firstSelect).not.toBeNull();
 
       // Switch away (should clean up)
-      await switchToOverlay('trop');
+      switchToOverlay('trop');
       expect(mockControlsContainer.innerHTML).not.toBe('');
 
       // Switch back to commentary (registers new listener)
-      await switchToOverlay('commentary');
+      switchToOverlay('commentary');
 
       const secondSelect = mockControlsContainer.querySelector('select');
       expect(secondSelect).not.toBeNull();
@@ -225,32 +222,32 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('UI Controls Rendering', () => {
-    it('renders controls for commentary overlay', async () => {
-      await switchToOverlay('commentary');
+    it('renders controls for commentary overlay', () => {
+      switchToOverlay('commentary');
 
       // The markup itself is commentary's own concern; here we only check
       // that overlay switching wires renderControls to the container.
       expect(mockControlsContainer.innerHTML.length).toBeGreaterThan(0);
     });
 
-    it('renders controls for trop overlay', async () => {
-      await switchToOverlay('trop');
+    it('renders controls for trop overlay', () => {
+      switchToOverlay('trop');
 
       expect(mockControlsContainer.innerHTML.length).toBeGreaterThan(0);
     });
   });
 
   describe('Legend Rendering', () => {
-    it('renders legend for commentary overlay', async () => {
-      await switchToOverlay('commentary');
+    it('renders legend for commentary overlay', () => {
+      switchToOverlay('commentary');
 
       expect(mockLegendContainer.innerHTML).toContain('legend');
       // Should have gradient or scale
       expect(mockLegendContainer.innerHTML.length).toBeGreaterThan(0);
     });
 
-    it('updates legend when overlay state changes', async () => {
-      const overlay = await switchToOverlay('commentary');
+    it('updates legend when overlay state changes', () => {
+      const overlay = switchToOverlay('commentary');
       const initialLegend = mockLegendContainer.innerHTML;
 
       // Change the category through the real control, as a reader would.
@@ -273,8 +270,8 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Color Calculation', () => {
-    it('calculates colors for commentary overlay', async () => {
-      await switchToOverlay('commentary');
+    it('calculates colors for commentary overlay', () => {
+      switchToOverlay('commentary');
 
       // Check that verses with commentary get heatmap colors
       const genesisVerse = verses.find(
@@ -292,8 +289,8 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Hover Information', () => {
-    it('provides hover info for commentary overlay', async () => {
-      await switchToOverlay('commentary');
+    it('provides hover info for commentary overlay', () => {
+      switchToOverlay('commentary');
 
       const genesisVerse = verses.find(
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
@@ -311,8 +308,8 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Settings Changes', () => {
-    it('notifies onChange when a control changes settings', async () => {
-      const overlay = await switchToOverlay('commentary');
+    it('notifies onChange when a control changes settings', () => {
+      const overlay = switchToOverlay('commentary');
 
       const onChange = vi.fn();
       mockControlsContainer.innerHTML = '';
@@ -325,43 +322,43 @@ describe('Overlay Switching Integration', () => {
       expect(onChange).toHaveBeenCalled();
     });
 
-    it("keeps an overlay's settings after switching away", async () => {
-      const overlay = await switchToOverlay('commentary');
+    it("keeps an overlay's settings after switching away", () => {
+      const overlay = switchToOverlay('commentary');
       settings.set(overlay, { category: 'Midrash' });
 
       // Switch away (calls destroy)
-      await switchToOverlay('trop');
+      switchToOverlay('trop');
 
       expect(settings.get(overlay)).toEqual({ category: 'Midrash' });
     });
   });
 
   describe('Edge Cases', () => {
-    it('handles switching to same overlay twice', async () => {
-      await switchToOverlay('commentary');
+    it('handles switching to same overlay twice', () => {
+      switchToOverlay('commentary');
       const firstColors = [...lastColors];
 
-      await switchToOverlay('commentary');
+      switchToOverlay('commentary');
       const secondColors = [...lastColors];
 
       // Colors should be identical
       expect(JSON.stringify(firstColors)).toBe(JSON.stringify(secondColors));
     });
 
-    it('handles rapid overlay switching', async () => {
+    it('handles rapid overlay switching', () => {
       // Simulate rapid switching
-      await switchToOverlay('commentary');
-      await switchToOverlay('trop');
-      await switchToOverlay('trop');
-      await switchToOverlay('commentary');
+      switchToOverlay('commentary');
+      switchToOverlay('trop');
+      switchToOverlay('trop');
+      switchToOverlay('commentary');
 
       // Should end up on commentary
       expect(currentOverlay?.id).toBe('commentary');
       expectColorsApplied();
     });
 
-    it('handles switching to invalid overlay gracefully', async () => {
-      await switchToOverlay('commentary');
+    it('handles switching to invalid overlay gracefully', () => {
+      switchToOverlay('commentary');
 
       // Try to get invalid overlay
       const invalidOverlay = getOverlay('nonexistent');
@@ -371,22 +368,7 @@ describe('Overlay Switching Integration', () => {
       expect(currentOverlay?.id).toBe('commentary');
     });
 
-    it('handles overlay with no init method', async () => {
-      // Divine names has init, but we test that missing init is ok
-      const overlayWithoutInit = testOverlay({
-        id: 'test-overlay',
-        name: 'Test Overlay',
-        getVerseColor: () => [1, 0, 0],
-        // No init method
-      });
-
-      registerOverlay(overlayWithoutInit);
-
-      // Should not throw
-      await expect(switchToOverlay('test-overlay')).resolves.toBeDefined();
-    });
-
-    it('handles overlay with no destroy method', async () => {
+    it('handles overlay with no destroy method', () => {
       const overlayWithoutDestroy = testOverlay({
         id: 'test-overlay-2',
         name: 'Test Overlay 2',
@@ -396,10 +378,10 @@ describe('Overlay Switching Integration', () => {
 
       registerOverlay(overlayWithoutDestroy);
 
-      await switchToOverlay('test-overlay-2');
+      switchToOverlay('test-overlay-2');
 
       // Switching away should not throw even without destroy
-      await expect(switchToOverlay('commentary')).resolves.toBeDefined();
+      expect(switchToOverlay('commentary')).toBeDefined();
     });
   });
 
@@ -409,16 +391,16 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('URL State Persistence', () => {
-    it('provides URL params through the settings store', async () => {
-      const overlay = await switchToOverlay('commentary');
+    it('provides URL params through the settings store', () => {
+      const overlay = switchToOverlay('commentary');
 
       const params = settings.toUrl(overlay);
       expect(params).toBeDefined();
       expect(typeof params).toBe('object');
     });
 
-    it('applies URL params when restoring overlay state', async () => {
-      const overlay = await switchToOverlay('trop');
+    it('applies URL params when restoring overlay state', () => {
+      const overlay = switchToOverlay('trop');
 
       // Should not throw
       expect(() => settings.restore(overlay, new URLSearchParams('trop=tipcha'))).not.toThrow();
@@ -426,13 +408,13 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Integration with All Registered Overlays', () => {
-    it('can switch to all registered overlays', async () => {
+    it('can switch to all registered overlays', () => {
       const allOverlays = getAllOverlays();
 
       expect(allOverlays.length).toBeGreaterThan(0);
 
       for (const overlay of allOverlays) {
-        await switchToOverlay(overlay.id);
+        switchToOverlay(overlay.id);
         expect(currentOverlay?.id).toBe(overlay.id);
 
         // Check that colors were calculated (some overlays may return all null for test data)
@@ -453,18 +435,18 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Performance Considerations', () => {
-    it('handles switching with large verse set', async () => {
+    it('handles switching with large verse set', () => {
       // Create a larger verse set
       const largeVerseSet = createVerses(1000);
       verses = largeVerseSet;
 
-      await switchToOverlay('commentary');
+      switchToOverlay('commentary');
 
       expect(lastColors.length).toBe(1000);
     });
 
-    it('does not recalculate colors unnecessarily', async () => {
-      await switchToOverlay('commentary');
+    it('does not recalculate colors unnecessarily', () => {
+      switchToOverlay('commentary');
 
       const verse = verses[0];
       const color1 = currentOverlay!.getVerseColor(

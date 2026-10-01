@@ -1399,10 +1399,9 @@ describe('Search Overlay', () => {
       configureAnalytics({ enabled: false });
     });
 
-    it('answers for a query it is handed without changing the search or firing analytics', async () => {
+    it('answers for a query it is handed without changing the search or firing analytics', () => {
       const send = vi.fn();
       configureAnalytics({ enabled: true, send });
-      await searchOverlay.overlay.init?.();
       vi.useFakeTimers();
       searchOverlay.restore({ search: 'אור' });
       send.mockClear();

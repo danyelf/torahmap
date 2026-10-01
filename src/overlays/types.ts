@@ -84,7 +84,6 @@ interface OverlayMembers<T, S, D> {
   // view composes, are never offered to a reader.
   description?: string;
 
-  init?(): Promise<void>;
   destroy?(): void;
 
   // null renders default gray; Color[] splits the square corner to corner, one band per color.

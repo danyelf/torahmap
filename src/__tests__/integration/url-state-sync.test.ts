@@ -36,9 +36,8 @@ describe('URL State Sync Integration', () => {
   });
 
   describe('Overlay Integration', () => {
-    it('integrates with commentary overlay URL params', async () => {
+    it('integrates with commentary overlay URL params', () => {
       const overlay = getOverlay('commentary');
-      await overlay?.init?.();
 
       // Restore settings from a link
       const params = new URLSearchParams('category=talmud');
@@ -50,9 +49,8 @@ describe('URL State Sync Integration', () => {
       expect(urlParams).toEqual({ category: 'talmud' });
     });
 
-    it('integrates with trop overlay URL params', async () => {
+    it('integrates with trop overlay URL params', () => {
       const overlay = getOverlay('trop');
-      await overlay?.init?.();
 
       // Restore settings from a link
       const params = new URLSearchParams('trop=tipcha');
@@ -64,7 +62,7 @@ describe('URL State Sync Integration', () => {
       expect(urlParams).toEqual({ trop: 'tipcha' });
     });
 
-    it('integrates with search overlay URL params', async () => {
+    it('integrates with search overlay URL params', () => {
       const overlay = searchTool;
 
       // Apply URL params
@@ -77,7 +75,7 @@ describe('URL State Sync Integration', () => {
       expect(urlParams).toEqual({ search: 'moses' });
     });
 
-    it('handles overlay switch in URL', async () => {
+    it('handles overlay switch in URL', () => {
       // Start with commentary
       mockWindowLocation('http://localhost:5173/?overlay=commentary&category=midrash');
       let state = parseUrlState(overlayParamSpecs);
@@ -114,9 +112,8 @@ describe('URL State Sync Integration', () => {
       expect(query2).toContain('trop=tipcha');
     });
 
-    it('round-trips a trop selection made by clicking a real control', async () => {
+    it('round-trips a trop selection made by clicking a real control', () => {
       const overlay = getOverlay('trop');
-      await overlay?.init?.();
 
       const container = document.createElement('div');
       const settings = createOverlaySettings();
@@ -324,10 +321,9 @@ describe('URL State Sync Integration', () => {
       expect(parsedState.zoom).toBe(originalState.zoom);
     });
 
-    it('synchronizes overlay state changes to URL', async () => {
+    it('synchronizes overlay state changes to URL', () => {
       // Start with commentary overlay
       const overlay = getOverlay('commentary');
-      await overlay?.init?.();
 
       // Restore initial state
       const params1 = new URLSearchParams('category=talmud');
@@ -369,7 +365,7 @@ describe('URL State Sync Integration', () => {
       expect(parsed.y).toBe(250);
     });
 
-    it('transitions between different overlay states', async () => {
+    it('transitions between different overlay states', () => {
       // Start with commentary
       const state1: UrlState = {
         overlay: 'commentary',
@@ -461,7 +457,7 @@ describe('URL State Sync Integration', () => {
       expect(restored.zoom).toBe(2.5);
     });
 
-    it('handles search-then-select workflow', async () => {
+    it('handles search-then-select workflow', () => {
       const searchState: UrlState = {
         searchParams: { search: 'covenant' },
         overlayParams: {},
@@ -481,7 +477,7 @@ describe('URL State Sync Integration', () => {
       expect(historyStates[1]).toContain('verse=Genesis.17.2');
     });
 
-    it('handles overlay exploration workflow', async () => {
+    it('handles overlay exploration workflow', () => {
       const overlays = ['commentary', 'trop', 'search'];
 
       for (const overlayId of overlays) {
