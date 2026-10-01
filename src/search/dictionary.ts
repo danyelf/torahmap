@@ -333,6 +333,14 @@ export function prefetchMorphology(): void {
   }
 }
 
+/**
+ * A promise that resolves once the parse has arrived, asking for it now; null
+ * when nothing is waiting on it. A failed load resolves too.
+ */
+export function parseArrived(): Promise<void> | null {
+  return settled ? null : loadMorphology();
+}
+
 /** Long enough to be clear of first paint, short enough to beat a deliberate click. */
 const PREFETCH_TIMEOUT_MS = 2000;
 
@@ -478,10 +486,29 @@ function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>): void {
   });
 }
 
-/** The dictionary words at a position in the text on screen, if that is what this is. */
-function namedAt(verseText: string, wordStart: number): LexemeId[] | null {
-  if (!onScreen?.named || onScreen.hebrew !== verseText) return null;
-  return onScreen.named.get(wordStart) ?? null;
+/**
+ * The dictionary words at a position in a verse's text: the verse on screen,
+ * or the one `verseKey` names.
+ */
+function namedAt(verseText: string, wordStart: number, verseKey?: string): LexemeId[] | null {
+  const named =
+    onScreen?.hebrew === verseText
+      ? onScreen.named
+      : verseKey === undefined
+        ? null
+        : namedIn(verseKey, verseText);
+  return named?.get(wordStart) ?? null;
+}
+
+// The last verse off screen asked about. A results list asks word after word
+// of one verse, and parsing it again for each would be the whole cost.
+let elsewhere: { verseKey: string; hebrew: string; named: Map<number, LexemeId[]> } | null = null;
+
+function namedIn(verseKey: string, hebrew: string): Map<number, LexemeId[]> | null {
+  if (elsewhere?.verseKey === verseKey && elsewhere.hebrew === hebrew) return elsewhere.named;
+  const named = namedWords(verseKey, hebrew);
+  if (named) elsewhere = { verseKey, hebrew, named };
+  return named;
 }
 
 /** The dictionary words of the nth printed word of a verse, as BHSA parsed it. */
@@ -502,15 +529,17 @@ function namedWord(verseKey: string, wordIndex: number): LexemeId[] | null {
  * moments before the parse has loaded.
  *
  * `wordStart` is where the word begins in the nikkud-stripped text, which is
- * what the caller splits into words.
+ * what the caller splits into words. `verseKey` names a verse other than the
+ * one on screen.
  */
 export function wordMatches(
   keys: string[],
   writtenForm: string,
   verseText: string,
   wordStart: number,
+  verseKey?: string,
 ): boolean {
-  const named = namedAt(verseText, mapStrippedToOriginal(verseText, wordStart));
+  const named = namedAt(verseText, mapStrippedToOriginal(verseText, wordStart), verseKey);
   if (named === null) return formMatches(keys, writtenForm);
   const wanted = lexemesForKeys(keys);
   return named.some((id) => wanted.has(id));

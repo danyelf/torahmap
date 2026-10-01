@@ -16,9 +16,13 @@ import {
   resultsForVerseSets,
   type SearchResult,
 } from '../../search.ts';
-import { spellingFor, versesFor } from '../../search/dictionary.ts';
+import { parseArrived, spellingFor, versesFor } from '../../search/dictionary.ts';
 import { highlightTerms } from './highlight.ts';
-import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
+import {
+  renderResults as renderResultsList,
+  detachResults,
+  requoteResults,
+} from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import {
   addTerm,
@@ -336,6 +340,11 @@ function renderResults(settings: SearchSettings): void {
     terms: searchFor(settings).active,
     focus: openTermIndex(settings),
     onSelect: showVerse,
+  });
+
+  // A word is marked by the parse once it is here, and by its spelling until.
+  parseArrived()?.then(() => {
+    if (searchResults) requoteResults(searchResults);
   });
 }
 

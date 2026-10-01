@@ -2,11 +2,12 @@
 // Each case below is one a rule of their own would make them disagree on.
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { excerptOf } from '../helpers/excerpt';
 import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
 const searchOverlay = hostOverlay(overlay);
-import { buildSearchIndex, computeSnippetForMatch, versesForTerm } from '../../search';
+import { buildSearchIndex, versesForTerm } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
 import { setTermText } from '../../search/terms';
@@ -76,7 +77,7 @@ describe('the search and the highlighter agree', () => {
       language: 'he' as const,
       matchingTerms: [],
     };
-    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result, 'וידבר יהוה', 'word')!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהוה', 'word')!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
   });
 
@@ -88,11 +89,7 @@ describe('the search and the highlighter agree', () => {
       language: 'he' as const,
       matchingTerms: [],
     };
-    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
-      result,
-      'וידבר יהו',
-      'substring',
-    )!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהו', 'substring')!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהו');
   });
 });

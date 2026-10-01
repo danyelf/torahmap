@@ -1,12 +1,8 @@
 // A result row's snippet is worked out when the row is drawn, from the verse
 // and the term.
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import {
-  buildSearchIndex,
-  computeSnippetForMatch,
-  loadLexiconData,
-  type SearchResult,
-} from '../../search';
+import { excerptOf } from '../helpers/excerpt';
+import { buildSearchIndex, loadLexiconData, type SearchResult } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -14,7 +10,7 @@ beforeAll(async () => {
   await loadLexiconData();
 });
 
-describe('computeSnippetForMatch', () => {
+describe("a result's excerpt", () => {
   let mockVerseTexts: VerseTexts;
 
   beforeEach(() => {
@@ -62,7 +58,7 @@ describe('computeSnippetForMatch', () => {
   };
 
   it('quotes the verse with the word marked', () => {
-    const snippet = computeSnippetForMatch(genesis11, 'אלהים', 'meanings')!;
+    const snippet = excerptOf(genesis11, 'אלהים', 'meanings')!;
 
     expect(snippet.matchEnd).toBeGreaterThan(snippet.matchStart);
     expect(snippet.matchEnd).toBeLessThanOrEqual(snippet.snippet.length);
@@ -73,21 +69,21 @@ describe('computeSnippetForMatch', () => {
     const results = searchInMeaningsMode('אלהים');
     expect(results.length).toBeGreaterThan(0);
     for (const result of results) {
-      const snippet = computeSnippetForMatch(result, 'אלהים', 'meanings')!;
+      const snippet = excerptOf(result, 'אלהים', 'meanings')!;
       expect(snippet.matchEnd).toBeGreaterThan(snippet.matchStart);
     }
   });
 
   it('returns null for a verse not in the index', () => {
     const missing: SearchResult = { ...genesis11, book: 'NonExistent', chapter: 999, verse: 999 };
-    expect(computeSnippetForMatch(missing, 'אלהים', 'meanings')).toBeNull();
+    expect(excerptOf(missing, 'אלהים', 'meanings')).toBeNull();
   });
 
   it('quotes the verse unmarked when the word is not in it', () => {
     // A Hebrew word the verse does not contain. It has to be Hebrew: the
     // term's own script decides which text is quoted, so a Latin word here
     // would ask for the English verse and rightly get it.
-    const snippet = computeSnippetForMatch(genesis11, '\u05E1\u05D5\u05E1', 'meanings')!;
+    const snippet = excerptOf(genesis11, '\u05E1\u05D5\u05E1', 'meanings')!;
 
     expect(snippet.matchStart).toBe(0);
     expect(snippet.matchEnd).toBe(0);

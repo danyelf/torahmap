@@ -3,10 +3,9 @@
 // Told what to show on every pass, so it holds no opinion about what the search
 // found — only how far down its own list it has drawn.
 import type { SearchResult } from '../../search.ts';
-import { computeSnippetForMatch } from '../../search.ts';
-import { colorIndexAt, effectiveMode, type SearchTerm } from '../../search/terms.ts';
+import { colorIndexAt, type SearchTerm } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
-import { markRange } from './highlight.ts';
+import { excerpt, markRange } from './highlight.ts';
 import { HEBREW } from '../../types.ts';
 import { verseRef } from '@torahmap/link';
 
@@ -58,8 +57,7 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
   snippetDiv.className = `snippet ${result.language === HEBREW ? 'rtl' : ''}`;
 
   const term = view.terms[firstMatch.termIndex];
-  const { snippet, matchStart, matchEnd } = (term &&
-    computeSnippetForMatch(result, term.text, effectiveMode(term))) ?? {
+  const { snippet, matchStart, matchEnd } = (term && excerpt(result, term)) ?? {
     snippet: verseRef(result),
     matchStart: 0,
     matchEnd: 0,
@@ -116,6 +114,18 @@ export function renderResults(container: HTMLDivElement, view: ResultsView): voi
   }
 
   container.classList.add('visible');
+}
+
+/**
+ * Quote the rows already drawn again, in place and without scrolling: what
+ * marks them has learned more, the parse having arrived.
+ */
+export function requoteResults(container: HTMLDivElement): void {
+  if (!shown) return;
+  const view = shown;
+  container.querySelectorAll('.search-result').forEach((row, i) => {
+    row.replaceWith(createResultElement(view.results[i], view));
+  });
 }
 
 /** Stop listening for scrolls, for a container about to be thrown away. */

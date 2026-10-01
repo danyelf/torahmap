@@ -3,14 +3,16 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
-import { mapStrippedToOriginal, splitIntoWords } from '../../hebrew.ts';
+import { ENGLISH, HEBREW, tanakhKey, type TextLanguage } from '../../types.ts';
+import { isWordSeparator, mapStrippedToOriginal, splitIntoWords } from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
 import { wordMatches } from '../../search/dictionary.ts';
+import { displayedVerse, quoteVerse, type SearchResult } from '../../search.ts';
 import {
   colorIndexAt,
   effectiveMode,
   selectedKeys,
+  termIsHebrew,
   textMatchMode,
   type SearchTerm,
 } from '../../search/terms.ts';
@@ -55,8 +57,16 @@ interface Match {
   termIndex: number;
 }
 
-/** Handles nikkud stripping and position mapping; respects each term's own search mode. */
-function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
+/**
+ * Handles nikkud stripping and position mapping; respects each term's own
+ * search mode. `verseKey` names the verse when it is not the one on screen.
+ */
+function findAllTermMatches(
+  text: string,
+  searchTerms: SearchTerm[],
+  isHebrew: boolean,
+  verseKey?: string,
+): Match[] {
   const matches: Match[] = [];
   const language = isHebrew ? HEBREW : ENGLISH;
   const folded = foldForMatching(text, language);
@@ -78,7 +88,7 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
       const keys = selectedKeys(term);
       if (keys.length === 0) continue;
       for (const { word, start, end } of splitIntoWords(folded)) {
-        if (wordMatches(keys, word, text, start)) {
+        if (wordMatches(keys, word, text, start, verseKey)) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
         }
       }
@@ -95,6 +105,30 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
   }
 
   return matches;
+}
+
+/**
+ * A result row's quotation of its verse, marked where the verse on screen would
+ * be: the same matcher, on the verse the row names, in the term's language.
+ */
+export function excerpt(
+  result: SearchResult,
+  term: SearchTerm,
+): { snippet: string; matchStart: number; matchEnd: number } | null {
+  const isHebrew = termIsHebrew(term);
+  const text = displayedVerse(result, isHebrew ? HEBREW : ENGLISH);
+  if (text === null) return null;
+  const verseKey = tanakhKey(result.book, result.chapter, result.verse);
+  const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, verseKey);
+  if (!first) return quoteVerse(text, null);
+
+  // One mark over words marked one after another, as בית and אל of בית אל are.
+  let end = first.end;
+  for (const next of rest) {
+    if (![...text.slice(end, next.start)].every(isWordSeparator)) break;
+    end = next.end;
+  }
+  return quoteVerse(text, { start: first.start, end });
 }
 
 /** Assumes matches are already sorted by position. */

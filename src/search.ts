@@ -11,19 +11,8 @@ import {
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './search/constants.ts';
-import {
-  isHebrew,
-  isSearchableWord,
-  mapStrippedToOriginal,
-  normalizeHebrewForSearch,
-  splitIntoWords,
-} from './hebrew.ts';
-import {
-  escapeForRegex,
-  foldForMatching,
-  matchRangesInFolded,
-  type MatchMode,
-} from './search/matching.ts';
+import { isSearchableWord, normalizeHebrewForSearch } from './hebrew.ts';
+import { foldForMatching, matchRangesInFolded, type MatchMode } from './search/matching.ts';
 import type { TextLanguage } from './types.ts';
 
 export interface TermMatch {
@@ -345,146 +334,31 @@ export function searchByLexemes(lexemes: LexemeId[]): Set<string> {
   return matchingVerses;
 }
 
-/** Where the word at `wordIndex` starts and ends, or null past the last one. */
-function getWordBoundaries(text: string, wordIndex: number): { start: number; end: number } | null {
-  if (wordIndex < 0) return null;
-  const word = splitIntoWords(text)[wordIndex];
-  return word ? { start: word.start, end: word.end } : null;
-}
-
-/** The words of an indexed verse, in the same order `getWordBoundaries` walks. */
-function indexedWords(entry: IndexEntry): string[] {
-  return splitIntoWords(entry.hebrewText).map((w) => w.word);
-}
-
-/** A snippet around the nth word of a verse, as it is written with its points. */
-function snippetAtWord(
-  entry: IndexEntry,
-  wordIndex: number,
-): { snippet: string; matchStart: number; matchEnd: number } | null {
-  const bounds = getWordBoundaries(entry.hebrewOriginal, wordIndex);
-  if (!bounds) return null;
-
-  const snippet = createSnippetAtPosition(
-    entry.hebrewOriginal,
-    bounds.start,
-    bounds.end - bounds.start,
-  );
-  return { snippet: snippet.text, matchStart: snippet.matchStart, matchEnd: snippet.matchEnd };
-}
-
-/** The opening of a verse, for when there is nothing to mark in it. */
-function truncateForSnippet(text: string): string {
-  const limit = SEARCH_SNIPPET_MAX_LENGTH;
-  return text.length > limit ? `${text.slice(0, limit)}...` : text;
-}
-
-/**
- * Where an English term sits in a verse. Both strings are already lowercased.
- *
- * A whole word wins over a substring, so searching "covenant" marks the word
- * itself rather than the opening of an earlier "covenanted". Which of the two
- * the reader asked for is not known here, and preferring the word is right
- * either way: under whole-word matching it is the only legitimate hit, and
- * under substring matching it is the one they meant.
- */
-function findEnglishMatch(text: string, term: string): { idx: number; len: number } | null {
-  if (term.length === 0) return null;
-
-  const wholeWord = new RegExp(`\\b${escapeForRegex(term)}\\b`).exec(text);
-  if (wholeWord) return { idx: wholeWord.index, len: wholeWord[0].length };
-
-  const idx = text.indexOf(term);
-  return idx === -1 ? null : { idx, len: term.length };
-}
-
-/**
- * Snippet/highlight data for one match, computed lazily — only when the result
- * is shown. `mode` is the term's: the snippet marks what the search found.
- */
-export function computeSnippetForMatch(
-  result: SearchResult,
-  searchTerm: string,
-  mode: MatchMode | 'meanings',
-): { snippet: string; matchStart: number; matchEnd: number } | null {
-  const entry = verseKeyToEntry.get(tanakhKey(result.book, result.chapter, result.verse));
+/** A verse's text as the reader sees it, or null for a verse the index lacks. */
+export function displayedVerse(
+  verse: { book: string; chapter: number; verse: number },
+  language: TextLanguage,
+): string | null {
+  const entry = verseKeyToEntry.get(tanakhKey(verse.book, verse.chapter, verse.verse));
   if (!entry) return null;
+  return language === HEBREW ? entry.hebrewOriginal : entry.englishOriginal;
+}
 
-  // An English term reads the English verse; everything below this works on the
-  // Hebrew. Falling through to it hands an English result a snippet of a Hebrew
-  // verse the reader never searched.
-  if (!isHebrew(searchTerm)) {
-    const match = findEnglishMatch(entry.englishText, searchTerm.toLowerCase());
-    if (match) {
-      const snippet = createSnippetAtPosition(entry.englishOriginal, match.idx, match.len);
-      return {
-        snippet: snippet.text,
-        matchStart: snippet.matchStart,
-        matchEnd: snippet.matchEnd,
-      };
-    }
-
+/** A verse quoted around a stretch of it, or its opening when there is nothing to mark. */
+export function quoteVerse(
+  text: string,
+  range: { start: number; end: number } | null,
+): { snippet: string; matchStart: number; matchEnd: number } {
+  if (!range) {
+    const limit = SEARCH_SNIPPET_MAX_LENGTH;
     return {
-      snippet: truncateForSnippet(entry.englishOriginal),
+      snippet: text.length > limit ? `${text.slice(0, limit)}...` : text,
       matchStart: 0,
       matchEnd: 0,
     };
   }
-
-  const lexemes = mode === 'meanings' ? findLexemesForWord(searchTerm) : null;
-  if (lexemes && lexemes.length > 0) {
-    // Find the word in the verse that resolves to one of the same lexemes.
-    //
-    // By spelling, not by position. The parse numbers the printed words, and
-    // the marking inside a verse reads the answer straight off it, but it is
-    // worked out only for the verse on screen — and a result row is some other
-    // verse.
-    const wanted = new Set(lexemes);
-    const words = indexedWords(entry);
-    const normalizedSearch = normalizeHebrewForSearch(searchTerm);
-
-    // Prefer the word the reader actually typed. A verse can hold several
-    // words that share a reading with the term, and highlighting the one
-    // spelled the same is the least surprising choice.
-    let wordIndex = words.indexOf(normalizedSearch);
-
-    if (wordIndex < 0) {
-      wordIndex = words.findIndex((word) => {
-        const wordLexemes = findLexemesForWord(word);
-        return wordLexemes !== null && wordLexemes.some((id) => wanted.has(id));
-      });
-    }
-
-    if (wordIndex < 0) {
-      wordIndex = words.findIndex((w) => w.includes(normalizedSearch));
-    }
-
-    if (wordIndex >= 0) {
-      const found = snippetAtWord(entry, wordIndex);
-      if (found) return found;
-    }
-  }
-
-  // The spelling as typed, a word or a phrase, as the search found it: by its
-  // own mode, and as whole words where meanings found no lexeme to point at.
-  const [spelled] = matchRangesInFolded(
-    entry.hebrewText,
-    normalizeHebrewForSearch(searchTerm).trim(),
-    { mode: mode === 'meanings' ? 'word' : mode, language: HEBREW, limit: 1 },
-  );
-  if (spelled) {
-    const start = mapStrippedToOriginal(entry.hebrewOriginal, spelled.start);
-    const end = mapStrippedToOriginal(entry.hebrewOriginal, spelled.end);
-    const snippet = createSnippetAtPosition(entry.hebrewOriginal, start, end - start);
-    return { snippet: snippet.text, matchStart: snippet.matchStart, matchEnd: snippet.matchEnd };
-  }
-
-  // Nothing to point at: show the opening of the verse unmarked.
-  return {
-    snippet: truncateForSnippet(entry.hebrewOriginal),
-    matchStart: 0,
-    matchEnd: 0,
-  };
+  const snippet = createSnippetAtPosition(text, range.start, range.end - range.start);
+  return { snippet: snippet.text, matchStart: snippet.matchStart, matchEnd: snippet.matchEnd };
 }
 
 /**
@@ -510,7 +384,7 @@ export function versesForTerm(text: string, language: TextLanguage, mode: MatchM
  *
  * The sets arrive already decided. Resolving a term's text to lexemes belongs
  * with the reader's choice of which meanings the term stands for, which the
- * overlay holds and this does not. Snippets are left to computeSnippetForMatch.
+ * overlay holds and this does not. Snippets are left to `excerpt` in overlays/search/highlight.ts.
  *
  * A term with no hits simply contributes nothing; term indices are positions
  * in the caller's list, so the gap keeps every other term's colour in place.
