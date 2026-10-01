@@ -56,20 +56,26 @@ export function createSearchRecorder(options: {
   let settled = false;
   let data: SearchData | null = null;
 
+  /** termsToRecord, leaving the dictionary unbuilt while no word is typed: search's prebuild builds it. */
+  function record(ready: SearchData, previous: Recorded, active: readonly SearchTerm[]) {
+    return active.length === 0
+      ? { send: [], recorded: new Map() }
+      : termsToRecord(dictionaryOf(ready), previous, active);
+  }
+
   function sendIfReady(): void {
     if (!data) return;
-    const dictionary = dictionaryOf(data);
     if (replacement) {
-      recorded = termsToRecord(dictionary, new Map(), activeTerms(replacement)).recorded;
+      recorded = record(data, new Map(), activeTerms(replacement)).recorded;
       replacement = null;
     }
     if (!waiting || !settled) return;
     const settings = waiting;
     waiting = null;
-    const { send, recorded: next } = termsToRecord(dictionary, recorded, activeTerms(settings));
+    const { send, recorded: next } = record(data, recorded, activeTerms(settings));
     recorded = next;
     for (const term of send) {
-      const { language, mode } = termQuery(dictionary, term);
+      const { language, mode } = termQuery(dictionaryOf(data), term);
       options.send(term.text, language, mode, termHitCount(data, settings, term)!);
     }
   }

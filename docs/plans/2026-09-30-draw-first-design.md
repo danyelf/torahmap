@@ -351,3 +351,8 @@ Decisions made while implementing step 3, newest last.
   term's mode and the meanings toggle behave as #315's did before its lexeme
   files arrived; the dictionary's landing redraws the search panel, which
   updates them.
+- **2026-10-01 (rebase onto #315)** Step 2's recorder now needs the dictionary
+  to record a term, and built it whenever search's data changed. It builds it
+  only when there is a typed word to record, so "nothing builds while no word
+  is typed" holds for the recorder too, and the broken-lexicon case still sees
+  only the prebuild's error.
