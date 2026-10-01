@@ -298,3 +298,8 @@ Decisions made while implementing step 3, newest last.
   happen. `downloadFiles` catches it per file. `fileLanded` schedules the
   prebuild and hands search's data to the recorder before it redraws, so a
   redraw that throws holds neither back.
+- **2026-10-01 (branch review)** The search panel builds nothing while no word
+  is typed: its caption, its results and its rows return before the search
+  runs, so search's index and dictionary are built by the idle prebuild, not
+  inside the landing that completes its files. The broken-lexicon case now
+  expects the prebuild's one uncaught error and no `fileLanded` report.

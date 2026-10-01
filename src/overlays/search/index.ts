@@ -257,9 +257,9 @@ export function termHitCount(
   settings: SearchSettings,
   term: SearchTerm,
 ): number | null {
-  const { active, results } = searchFor(data, settings);
-  const index = active.indexOf(term);
+  const index = activeTerms(settings).indexOf(term);
   if (index === -1) return null;
+  const { results } = searchFor(data, settings);
 
   let count = 0;
   for (const result of results) {
@@ -278,6 +278,11 @@ function updateHitCaption(settings: SearchSettings, data: SearchData | null): vo
     searchHitCaption.textContent = '';
     return;
   }
+  // Before searchFor, which builds the text index and the dictionary.
+  if (typedTerms(settings).length === 0) {
+    searchHitCaption.textContent = 'Type to search';
+    return;
+  }
 
   const { active, results } = searchFor(data, settings);
   const listed = resultsForOpenRow(data, settings).length;
@@ -294,10 +299,8 @@ function updateHitCaption(settings: SearchSettings, data: SearchData | null): vo
         : `${listed} of ${results.length} matching verses`;
   } else if (active.length > 0) {
     message = 'No matching verses';
-  } else if (typedTerms(settings).length > 0) {
-    message = 'Type at least 2 characters per term';
   } else {
-    message = 'Type to search';
+    message = 'Type at least 2 characters per term';
   }
 
   searchHitCaption.textContent = message;
@@ -307,7 +310,7 @@ function updateHitCaption(settings: SearchSettings, data: SearchData | null): vo
 function renderResults(settings: SearchSettings, data: SearchData | null): void {
   if (!searchResults) return;
 
-  if (!data) {
+  if (!data || typedTerms(settings).length === 0) {
     renderResultsList(searchResults, {
       results: [],
       terms: [],

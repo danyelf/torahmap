@@ -467,7 +467,7 @@ function updateOpenRow(row: HTMLElement, term: SearchTerm, index: number): void 
   count.textContent = hitCountText(term);
 
   // Offered only once there is something to undo.
-  const dictionary = host?.dictionary() ?? null;
+  const dictionary = term.text.trim() ? (host?.dictionary() ?? null) : null;
   const all = row.querySelector<HTMLElement>('.term-all')!;
   all.hidden = !dictionary || !isNarrowed(dictionary, term);
 

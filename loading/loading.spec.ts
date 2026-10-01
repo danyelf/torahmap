@@ -237,14 +237,14 @@ test('a linked search is never recorded; a word the reader adds is', async ({ pa
   expect(errors).toEqual([]);
 });
 
-test('a file that breaks its redraw is reported, and the rest still load', async ({
+test('a lexicon search cannot build from fails its prebuild alone, and the rest still load', async ({
   page,
 }, info) => {
   test.skip(info.project.name !== 'desktop', 'what loads does not depend on the screen');
   await throttle(page);
   let release!: () => void;
   const released = new Promise<void>((resolve) => (release = resolve));
-  // A lexicon with no lexemes: search's panel throws building its dictionary.
+  // A lexicon with no lexemes: building the dictionary from it throws.
   await page.route(`**/data/${LEXICON}`, async (route) => {
     await released;
     await route.fulfill({ contentType: 'application/json', body: '{}' }).catch(() => {});
@@ -265,12 +265,11 @@ test('a file that breaks its redraw is reported, and the rest still load', async
   expect((await parseLanded).ok()).toBe(true);
   await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
   expect((await sentLoadTiming(page))[0].search_ready).toBe(0);
-  // The one report, from the search panel's redraw as the lexicon lands.
-  const reported = consoleErrors.filter((text) => text.startsWith('fileLanded:'));
-  expect(reported).toHaveLength(1);
-  expect(consoleErrors.filter((text) => !reported.includes(text))).toEqual([]);
-  // Search's idle prebuild throws on the same lexicon, uncaught by design; nothing else may.
-  for (const stack of pageErrors) expect(stack).toContain('buildDictionary');
+  // With no search typed, nothing builds the dictionary as the lexicon lands:
+  // only search's idle prebuild does, and it throws uncaught, by design.
+  await expect.poll(() => pageErrors.length).toBe(1);
+  expect(pageErrors[0]).toContain('buildDictionary');
+  expect(consoleErrors).toEqual([]);
 });
 
 test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }, info) => {
