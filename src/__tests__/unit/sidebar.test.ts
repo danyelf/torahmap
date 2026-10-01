@@ -14,14 +14,6 @@ vi.mock('../../overlays/trop.ts', () => ({
   highlightTropInText: vi.fn((text: string) => text),
 }));
 
-vi.mock('../../overlays/search/index.ts', () => ({
-  highlightSearchTerms: vi.fn((text: string) => {
-    const span = document.createElement('span');
-    span.textContent = text;
-    return span;
-  }),
-}));
-
 describe('sidebar', () => {
   describe('getSidebarElements', () => {
     let sidebar: HTMLElement;
@@ -375,7 +367,7 @@ describe('sidebar', () => {
           id: 'trop',
           name: 'Trop Overlay',
           getVerseColor: () => null,
-          highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
+          highlightVerseText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
             const fragment = document.createDocumentFragment();
             if (language === 'he') {
               const mark = document.createElement('mark');
@@ -398,6 +390,7 @@ describe('sidebar', () => {
         });
 
         expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+          verse,
           'בְּרֵאשִׁית',
           'he',
           settings,
@@ -420,7 +413,7 @@ describe('sidebar', () => {
           id: 'search',
           name: 'Search Overlay',
           getVerseColor: () => null,
-          highlightVerseText: vi.fn((_text: string, language: 'he' | 'en') => {
+          highlightVerseText: vi.fn((_verse: unknown, _text: string, language: 'he' | 'en') => {
             if (language === 'he') return hebrewFragment;
             return englishFragment;
           }),
@@ -436,12 +429,14 @@ describe('sidebar', () => {
         });
 
         expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+          verse,
           'בְּרֵאשִׁית',
           'he',
           settings,
           undefined,
         );
         expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+          verse,
           'In the beginning',
           'en',
           settings,
@@ -466,7 +461,7 @@ describe('sidebar', () => {
               getVerseColor: () => null,
               colorsFor: (items) => items.map(() => null),
               getHoverInfo: () => info,
-              highlightVerseText: vi.fn((text: string) => {
+              highlightVerseText: vi.fn((_verse: unknown, text: string) => {
                 const fragment = document.createDocumentFragment();
                 const mark = document.createElement('mark');
                 mark.textContent = text;
@@ -502,7 +497,7 @@ describe('sidebar', () => {
 
         /** A marker that wraps text[start, end) in a mark of class `cls`. */
         function marking(cls: string, start: number, end: number) {
-          return vi.fn((text: string) => {
+          return vi.fn((_verse: unknown, text: string) => {
             const fragment = document.createDocumentFragment();
             const mark = document.createElement('mark');
             mark.className = cls;

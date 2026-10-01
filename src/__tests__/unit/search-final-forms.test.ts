@@ -12,8 +12,8 @@
  * form matches the final form and vice versa.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import { buildSearchIndex, versesForTerm } from '../../search';
+import { describe, it, expect } from 'vitest';
+import { buildTextIndex, versesForTerm } from '../../search';
 import { stripNikkud, normalizeHebrewForSearch } from '../../hebrew';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -76,39 +76,37 @@ describe('Hebrew Final Forms Normalization', () => {
       },
     };
 
-    beforeAll(() => {
-      buildSearchIndex(mockVerseTexts);
-    });
+    const index = buildTextIndex(mockVerseTexts);
 
     describe('substring mode', () => {
       it('should find אלהים (with final mem ם) when searching with regular mem (אלהימ)', () => {
         // Genesis 1:1 has אֱלֹהִים (Elohim) ending with ם (mem sofit)
-        expect(versesForTerm('אלהימ', 'he', 'substring').has('Genesis:1:1')).toBe(true);
+        expect(versesForTerm(index, 'אלהימ', 'he', 'substring').has('Genesis:1:1')).toBe(true);
       });
 
       it('should find אלהים when searching with final mem (אלהים)', () => {
         // Searching with correct final form should also work
-        expect(versesForTerm('אלהים', 'he', 'substring').has('Genesis:1:1')).toBe(true);
+        expect(versesForTerm(index, 'אלהים', 'he', 'substring').has('Genesis:1:1')).toBe(true);
       });
 
       it('should find הארץ (with final tzadi ץ) when searching with regular tzadi (הארצ)', () => {
         // Genesis 1:2 has הָאָרֶץ (the earth) ending with ץ (tzadi sofit)
-        expect(versesForTerm('הארצ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
+        expect(versesForTerm(index, 'הארצ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
       });
 
       it('should find הארץ when searching with final tzadi (הארץ)', () => {
         // Searching with correct final form should also work
-        expect(versesForTerm('הארץ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
+        expect(versesForTerm(index, 'הארץ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
       });
 
       it('should find השמים (with final mem) when searching with regular mem (השמימ)', () => {
         // Genesis 2:1 has הַשָּׁמַיִם (the heavens) ending with ם (mem sofit)
-        expect(versesForTerm('השמימ', 'he', 'substring').has('Genesis:2:1')).toBe(true);
+        expect(versesForTerm(index, 'השמימ', 'he', 'substring').has('Genesis:2:1')).toBe(true);
       });
 
       it('should find שמות (with final tav) when searching either way', () => {
         // Exodus 1:1 has שְׁמוֹת (names) - tav doesn't have a final form, but testing consistency
-        expect(versesForTerm('שמות', 'he', 'substring').has('Exodus:1:1')).toBe(true);
+        expect(versesForTerm(index, 'שמות', 'he', 'substring').has('Exodus:1:1')).toBe(true);
       });
     });
 
@@ -116,8 +114,8 @@ describe('Hebrew Final Forms Normalization', () => {
       it('should match whole words regardless of final form used in query', () => {
         // Exodus 1:1 has שְׁמוֹת (names) with final tav
         // Searching with either form should match the same verses
-        const withRegular = versesForTerm('אלהימ', 'he', 'word'); // regular mem
-        const withFinal = versesForTerm('אלהים', 'he', 'word'); // final mem
+        const withRegular = versesForTerm(index, 'אלהימ', 'he', 'word'); // regular mem
+        const withFinal = versesForTerm(index, 'אלהים', 'he', 'word'); // final mem
 
         expect(withRegular).toEqual(withFinal);
         expect(withRegular.size).toBeGreaterThan(0);
@@ -169,8 +167,8 @@ describe('Hebrew Final Forms Normalization', () => {
       finalFormsTest.forEach(({ withRegular, withFinal, expectedWord, verse }) => {
         it(`should find ${expectedWord} when searching with regular form (${withRegular}) or final form (${withFinal})`, () => {
           const key = `${verse.book}:${verse.chapter}:${verse.verse}`;
-          expect(versesForTerm(withRegular, 'he', 'substring').has(key)).toBe(true);
-          expect(versesForTerm(withFinal, 'he', 'substring').has(key)).toBe(true);
+          expect(versesForTerm(index, withRegular, 'he', 'substring').has(key)).toBe(true);
+          expect(versesForTerm(index, withFinal, 'he', 'substring').has(key)).toBe(true);
         });
       });
     });

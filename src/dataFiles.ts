@@ -1,4 +1,5 @@
-// The loader for the overlays' data files and main's own two (structure and texts).
+// The loader for the overlays' and search's data files, and main's own two
+// (structure and texts).
 // Paths are under public/data/.
 import { fetchData } from './constants.ts';
 import { reportError } from './analytics.ts';
@@ -45,7 +46,7 @@ async function loadFile(path: string): Promise<unknown> {
 export type { OptionalFile };
 
 /** A file named by its path, or an optional one. */
-export type FileName = string | OptionalFile;
+type FileName = string | OptionalFile;
 
 export function optional(path: string): OptionalFile {
   return { optional: path };
@@ -56,32 +57,33 @@ function pathOf(file: FileName): string {
 }
 
 /** The paths of a set of named files. */
-export function filePaths(files: Readonly<Record<string, FileName>>): string[] {
+function filePaths(files: Readonly<Record<string, FileName>>): string[] {
   return Object.values(files).map(pathOf);
 }
 
-/**
- * Each named file's contents under its name, or null while a file that is not
- * optional is missing. A missing optional file is null.
- */
+/** The paths of the files that are not optional and have not arrived. */
+function missingRequired(files: Readonly<Record<string, FileName>>, loaded: Loaded): string[] {
+  return Object.values(files).filter(
+    (file): file is string => typeof file === 'string' && !loaded.has(file),
+  );
+}
+
+/** Each named file's contents under its name, or null while a required file is missing. */
 export function filesFor<D>(files: Readonly<Record<string, FileName>>, loaded: Loaded): D | null {
-  const named = Object.entries(files);
-  if (!named.every(([, file]) => typeof file !== 'string' || loaded.has(file))) return null;
+  if (missingRequired(files, loaded).length > 0) return null;
   return Object.fromEntries(
-    named.map(([name, file]) => [name, loaded.get(pathOf(file)) ?? null]),
+    Object.entries(files).map(([name, file]) => [name, loaded.get(pathOf(file)) ?? null]),
   ) as D;
 }
 
-/** Load the named files and give them under their names; throw naming any required one that is missing. */
+/**
+ * Load the named files and give them under their names; throw naming any
+ * required one that is missing.
+ */
 export async function loadNamedFiles<D>(files: Readonly<Record<string, FileName>>): Promise<D> {
   const loaded = await loadFiles(filePaths(files));
   const data = filesFor<D>(files, loaded);
-  if (!data) {
-    const missing = Object.values(files).filter(
-      (file): file is string => typeof file === 'string' && !loaded.has(file),
-    );
-    throw new Error(`Could not load ${missing.join(', ')}`);
-  }
+  if (!data) throw new Error(`Could not load ${missingRequired(files, loaded).join(', ')}`);
   return data;
 }
 

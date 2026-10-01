@@ -29,7 +29,7 @@ export interface OverlayHost<S, D> {
   /** Returns false when the overlay declares no hoverChangesColors of its own. */
   hoverChangesColors(before: TanakhIdentity | null, after: TanakhIdentity | null): boolean;
   getHoverInfo(verse: TanakhIdentity): string | null;
-  highlightVerseText(text: string, language: TextLanguage): DocumentFragment;
+  highlightVerseText(verse: TanakhIdentity, text: string, language: TextLanguage): DocumentFragment;
   renderLegend(container: HTMLElement): void;
   summary(): OverlaySummary;
   renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | null;
@@ -95,9 +95,9 @@ export function hostOverlay<S, D>(
     getHoverInfo(verse) {
       return overlay.getHoverInfo?.(verse, store.get(overlay), held) ?? null;
     },
-    highlightVerseText(text, language) {
+    highlightVerseText(verse, text, language) {
       if (!overlay.highlightVerseText) throw new Error(`${overlay.id} does not mark verse text`);
-      return overlay.highlightVerseText(text, language, store.get(overlay), held);
+      return overlay.highlightVerseText(verse, text, language, store.get(overlay), held);
     },
     renderLegend(into) {
       overlay.renderLegend?.(into, store.get(overlay), held);

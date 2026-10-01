@@ -1,12 +1,14 @@
 // Tests for Hebrew search modes (substring, word, meanings)
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildSearchIndex, versesForTerm } from '../../search';
+import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
 import type { MatchMode } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
+import { EMPTY_DICTIONARY } from '../helpers/searchData';
 
 describe('Hebrew Search Modes', () => {
   let mockVerseTexts: VerseTexts;
+  let index: TextIndex;
 
   beforeEach(() => {
     // Setup test verse texts with Hebrew content
@@ -70,10 +72,10 @@ describe('Hebrew Search Modes', () => {
       },
     };
 
-    buildSearchIndex(mockVerseTexts);
+    index = buildTextIndex(mockVerseTexts);
   });
 
-  const found = (text: string, mode: MatchMode) => versesForTerm(text, 'he', mode);
+  const found = (text: string, mode: MatchMode) => versesForTerm(index, text, 'he', mode);
 
   describe('substring mode', () => {
     it('matches inside a longer word', () => {
@@ -123,18 +125,18 @@ describe('Hebrew Search Modes', () => {
       for (const mode of ['substring', 'word'] as const) {
         expect(found('', mode).size).toBe(0);
       }
-      expect(searchInMeaningsMode('')).toEqual([]);
+      expect(searchInMeaningsMode(index, EMPTY_DICTIONARY, '')).toEqual([]);
     });
 
     it('finds nothing for a single letter in meanings mode', () => {
-      expect(searchInMeaningsMode('א')).toEqual([]);
+      expect(searchInMeaningsMode(index, EMPTY_DICTIONARY, 'א')).toEqual([]);
     });
 
     it('finds nothing for a term with no matches', () => {
       for (const mode of ['substring', 'word'] as const) {
         expect(found('xyz123', mode).size).toBe(0);
       }
-      expect(searchInMeaningsMode('xyz123')).toEqual([]);
+      expect(searchInMeaningsMode(index, EMPTY_DICTIONARY, 'xyz123')).toEqual([]);
     });
 
     it('finds nothing for a term of points alone', () => {

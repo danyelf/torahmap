@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import { configure, type SearchSettings } from '../../../overlays/search';
 import type { Color } from '../../../overlays/types';
-import { buildSearchIndex, loadLexiconData, parseSearchTerms } from '../../../search';
+import { parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
@@ -11,9 +11,10 @@ import { SEARCH_RECORD_DELAY_MS } from '../../../search/constants';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { realSearchData, searchDataFor } from '../../helpers/searchData';
 import { configureAnalytics } from '../../../analytics.ts';
 
-const searchOverlay = hostOverlay(searchTool, undefined);
+const searchOverlay = hostOverlay(searchTool, searchDataFor({}));
 
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
@@ -23,9 +24,7 @@ function type(container: HTMLElement, text: string): void {
   typeInSearch(container, text);
 }
 
-beforeAll(async () => {
-  await loadLexiconData();
-});
+const { lexicon, forms, verseLexemes } = realSearchData().files;
 
 describe('Search Overlay', () => {
   let testVerses: TanakhLayout[];
@@ -98,7 +97,7 @@ describe('Search Overlay', () => {
       },
     };
 
-    buildSearchIndex(mockVerseTexts);
+    searchOverlay.setData(searchDataFor(mockVerseTexts, { lexicon, forms, verseLexemes }));
 
     configure({ verses: testVerses });
   });
@@ -1083,7 +1082,7 @@ describe('Search Overlay', () => {
     });
   });
 
-  describe('highlightSearchTerms Function', () => {
+  describe('highlightVerseText', () => {
     // Helper to convert DocumentFragment to HTML string for testing
     function fragmentToHtml(fragment: DocumentFragment): string {
       const div = document.createElement('div');
@@ -1108,13 +1107,17 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, '');
 
-      const result = searchOverlay.highlightVerseText('In the beginning', 'en');
+      const result = searchOverlay.highlightVerseText(createVerse(), 'In the beginning', 'en');
       expect(fragmentToText(result)).toBe('In the beginning');
       expect(fragmentToHtml(result)).not.toContain('<mark');
     });
 
     it('highlights matching terms in English text', () => {
-      const result = searchOverlay.highlightVerseText('And God said let there be light', 'en');
+      const result = searchOverlay.highlightVerseText(
+        createVerse(),
+        'And God said let there be light',
+        'en',
+      );
       const html = fragmentToHtml(result);
 
       expect(html).toContain('<mark');
@@ -1126,12 +1129,20 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, 'אלהים');
 
-      const result = searchOverlay.highlightVerseText('בְּרֵאשִׁית בָּרָא אֱלֹהִים', 'he');
+      const result = searchOverlay.highlightVerseText(
+        createVerse(),
+        'בְּרֵאשִׁית בָּרָא אֱלֹהִים',
+        'he',
+      );
       expect(fragmentToHtml(result)).toContain('<mark');
     });
 
     it('escapes HTML special characters', () => {
-      const result = searchOverlay.highlightVerseText('Test <script>alert("xss")</script>', 'en');
+      const result = searchOverlay.highlightVerseText(
+        createVerse(),
+        'Test <script>alert("xss")</script>',
+        'en',
+      );
       const text = fragmentToText(result);
       const html = fragmentToHtml(result);
 
@@ -1142,7 +1153,11 @@ describe('Search Overlay', () => {
     });
 
     it('assigns term-N class to marks', () => {
-      const result = searchOverlay.highlightVerseText('And God said let there be light', 'en');
+      const result = searchOverlay.highlightVerseText(
+        createVerse(),
+        'And God said let there be light',
+        'en',
+      );
       const html = fragmentToHtml(result);
 
       expect(html).toContain('term-0');
@@ -1153,23 +1168,23 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, 'God, Godly'); // Overlapping terms (hypothetically)
 
-      const result = searchOverlay.highlightVerseText('God is great', 'en');
+      const result = searchOverlay.highlightVerseText(createVerse(), 'God is great', 'en');
       const text = fragmentToText(result);
       expect(text).toContain('God');
     });
 
     it('handles text with no matches', () => {
-      const result = searchOverlay.highlightVerseText('No matches here', 'en');
+      const result = searchOverlay.highlightVerseText(createVerse(), 'No matches here', 'en');
       expect(fragmentToHtml(result)).not.toContain('<mark');
     });
 
     it('handles empty text', () => {
-      const result = searchOverlay.highlightVerseText('', 'en');
+      const result = searchOverlay.highlightVerseText(createVerse(), '', 'en');
       expect(fragmentToText(result)).toBe('');
     });
 
     it('handles case-insensitive English matching', () => {
-      const result = searchOverlay.highlightVerseText('god created', 'en');
+      const result = searchOverlay.highlightVerseText(createVerse(), 'god created', 'en');
       expect(fragmentToHtml(result)).toContain('<mark');
     });
 
@@ -1177,12 +1192,12 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, 'אלהים'); // Without nikkud
 
-      const result = searchOverlay.highlightVerseText('אֱלֹהִים', 'he'); // With nikkud
+      const result = searchOverlay.highlightVerseText(createVerse(), 'אֱלֹהִים', 'he'); // With nikkud
       expect(fragmentToHtml(result)).toContain('<mark');
     });
 
     it('handles multiple occurrences of same term', () => {
-      const result = searchOverlay.highlightVerseText('God said God created', 'en');
+      const result = searchOverlay.highlightVerseText(createVerse(), 'God said God created', 'en');
       const html = fragmentToHtml(result);
       const matches = html.match(/<mark/g);
       expect(matches?.length).toBeGreaterThan(1);
@@ -1201,7 +1216,11 @@ describe('Search Overlay', () => {
 
       // Test verse with the word אֱלֹהִים (with nikkud); should highlight only
       // the full word, not substrings.
-      const result = searchOverlay.highlightVerseText('בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת', 'he');
+      const result = searchOverlay.highlightVerseText(
+        createVerse(),
+        'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת',
+        'he',
+      );
       const html = fragmentToHtml(result);
 
       const matches = html.match(/<mark/g);
@@ -1222,7 +1241,7 @@ describe('Search Overlay', () => {
 
       // Test verse where "God" appears as full word and as substring
       // "God" should match but "Godly" should not
-      const result = searchOverlay.highlightVerseText('God is Godly and good', 'en');
+      const result = searchOverlay.highlightVerseText(createVerse(), 'God is Godly and good', 'en');
       const html = fragmentToHtml(result);
 
       const marks = html.match(/<mark[^>]*>([^<]*)<\/mark>/g);
@@ -1247,7 +1266,7 @@ describe('Search Overlay', () => {
 
       // Test with the actual verse text from Genesis 1:1
       const verseText = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים';
-      const result = searchOverlay.highlightVerseText(verseText, 'he');
+      const result = searchOverlay.highlightVerseText(createVerse(), verseText, 'he');
       const html = fragmentToHtml(result);
 
       const matches = html.match(/<mark[^>]*>([^<]*)<\/mark>/g);
@@ -1268,6 +1287,7 @@ describe('Search Overlay', () => {
 
       const html = fragmentToHtml(
         searchOverlay.highlightVerseText(
+          createVerse(),
           'אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃',
           'he',
         ) as DocumentFragment,
@@ -1288,7 +1308,7 @@ describe('Search Overlay', () => {
       searchOverlay.restore({ search: 'ירושלם', mode: 'w' });
 
       const html = fragmentToHtml(
-        searchOverlay.highlightVerseText(verse, 'he') as DocumentFragment,
+        searchOverlay.highlightVerseText(createVerse(), verse, 'he') as DocumentFragment,
       );
       const marked = [...html.matchAll(/<mark[^>]*>([^<]*)<\/mark>/g)].map((m) =>
         m[1].replace(/[^א-ת]/g, ''),
@@ -1389,7 +1409,12 @@ describe('Search Overlay', () => {
   describe('Colours for settings it is handed', () => {
     /** The colours for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
-      return searchOverlay.overlay.colorsFor!(items, searchOverlay.fromUrl({ search: q }), null);
+      return searchOverlay.overlay.colorsFor!(
+        items,
+        searchOverlay.fromUrl({ search: q }),
+        null,
+        searchOverlay.data,
+      );
     }
 
     // A failing assertion below must not skip this and leave later tests
@@ -1459,7 +1484,7 @@ describe('Search Overlay', () => {
 
       // A second holder of settings — a story stop being blended, say —
       // restoring a different search leaves this one's paint alone.
-      hostOverlay(searchOverlay.overlay, undefined).restore({ search: 'earth' });
+      hostOverlay(searchOverlay.overlay, searchOverlay.data).restore({ search: 'earth' });
       expect(testVerses.map((v) => searchOverlay.getVerseColor(v))).toEqual(held);
     });
 
@@ -1469,7 +1494,12 @@ describe('Search Overlay', () => {
       const requests: unknown[] = [];
 
       // Controls whose requests go nowhere leave the search exactly as it was.
-      searchOverlay.overlay.renderControls!(container, before, (update) => requests.push(update));
+      searchOverlay.overlay.renderControls!(
+        container,
+        before,
+        (update) => requests.push(update),
+        searchOverlay.data,
+      );
       type(container, 'God');
 
       expect(requests).toHaveLength(1);
@@ -1484,9 +1514,14 @@ describe('Search Overlay', () => {
       // still build on the first rather than on the empty row on screen.
       const container = document.createElement('div');
       let held = searchOverlay.settings as SearchSettings;
-      searchOverlay.overlay.renderControls!(container, held, (update) => {
-        held = update(held) as SearchSettings;
-      });
+      searchOverlay.overlay.renderControls!(
+        container,
+        held,
+        (update) => {
+          held = update(held) as SearchSettings;
+        },
+        searchOverlay.data,
+      );
 
       type(container, 'God');
       container
@@ -1500,108 +1535,13 @@ describe('Search Overlay', () => {
 
     /** The colours for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
-      return searchOverlay.overlay.colorsFor!(items, searchOverlay.fromUrl({ search: q }), null);
+      return searchOverlay.overlay.colorsFor!(
+        items,
+        searchOverlay.fromUrl({ search: q }),
+        null,
+        searchOverlay.data,
+      );
     }
-  });
-
-  describe('Recording a search', () => {
-    let send: ReturnType<typeof vi.fn<(body: string) => void>>;
-
-    beforeEach(() => {
-      vi.useFakeTimers();
-      send = vi.fn<(body: string) => void>();
-      configureAnalytics({ enabled: true, send });
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-      configureAnalytics({ enabled: false });
-    });
-
-    function sent(): { term: string; result_count: number }[] {
-      return send.mock.calls.map(([body]) => {
-        const { event, fields } = JSON.parse(body);
-        expect(event).toBe('search_execute');
-        return { term: fields.term, result_count: fields.result_count };
-      });
-    }
-
-    /** Type a word into the open row a letter at a time. */
-    function typeSlowly(container: HTMLElement, word: string): void {
-      for (let i = 1; i <= word.length; i++) {
-        typeInSearch(container, word.slice(0, i));
-        vi.advanceTimersByTime(100);
-      }
-    }
-
-    it('records a word once the reader stops typing it', () => {
-      const container = render();
-      typeSlowly(container, 'heavens');
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS - 101);
-      expect(send).not.toHaveBeenCalled();
-
-      vi.advanceTimersByTime(1);
-      expect(sent()).toEqual([{ term: 'heavens', result_count: 2 }]);
-    });
-
-    it('records only the word added, each with its own count', () => {
-      const container = render();
-      typeSlowly(container, 'heavens');
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-      container.querySelector<HTMLButtonElement>('#add-term')!.click();
-      typeSlowly(container, 'names');
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-
-      expect(sent()).toEqual([
-        { term: 'heavens', result_count: 2 },
-        { term: 'names', result_count: 1 },
-      ]);
-    });
-
-    it('records nothing for a term too short to search on', () => {
-      typeSlowly(render(), 'h');
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-      expect(send).not.toHaveBeenCalled();
-    });
-
-    it('does not record a restored word when the reader adds another', () => {
-      const container = render();
-      searchOverlay.restore({ search: 'heavens' });
-      container.querySelector<HTMLButtonElement>('#add-term')!.click();
-      typeSlowly(container, 'names');
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-
-      expect(sent()).toEqual([{ term: 'names', result_count: 1 }]);
-    });
-
-    it('records a word again when the reader changes how it is matched', () => {
-      const container = render();
-      typeSlowly(container, 'heavens');
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-      container
-        .querySelector<HTMLButtonElement>('.term-row[data-open="true"] [data-mode="word"]')!
-        .click();
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-
-      expect(send.mock.calls.map(([body]) => JSON.parse(body).fields.search_mode)).toEqual([
-        'substring',
-        'word',
-      ]);
-    });
-
-    it('does not record a half-typed word a restore replaces', () => {
-      typeSlowly(render(), 'hea');
-      searchOverlay.restore({ search: 'God' });
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-      expect(send).not.toHaveBeenCalled();
-    });
-
-    it('does not record a word the reader leaves before it settles', () => {
-      typeSlowly(render(), 'hea');
-      searchOverlay.destroy();
-      vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
-      expect(send).not.toHaveBeenCalled();
-    });
   });
 
   describe('Integration with Search Module', () => {

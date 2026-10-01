@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { memoByValueAndKey } from '../overlays/memo';
+import { memoByValueAndKey } from '../../../utils/memo';
 
 describe('memoByValueAndKey', () => {
   it('derives once per value and key', () => {

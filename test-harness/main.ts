@@ -1,11 +1,9 @@
 // Test harness for the search input flow
-// Loads real data, builds real search index, renders real search overlay controls
+// Loads search's real files and renders the real search controls
 // No WebGL, no map, no verse layout — just the input pipeline
 
-import { loadFiles } from '../src/dataFiles.ts';
-import { TEXTS_FILE, textsFrom } from '../src/verseTexts.ts';
+import { dataFor, loadFiles, overlayFiles } from '../src/dataFiles.ts';
 import { isHebrew } from '../src/hebrew.ts';
-import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
 import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
 import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
 
@@ -129,15 +127,9 @@ async function main(): Promise<void> {
   document.title = 'Input Test Harness';
   logEvent('init', 'Loading data...');
 
-  // Load data in parallel
-  const [loaded] = await Promise.all([loadFiles([TEXTS_FILE]), loadLexiconData()]);
-  const verseTexts = textsFrom(loaded);
-
-  logEvent('init', `Loaded verse texts (${Object.keys(verseTexts).length} books)`);
-
-  // Build search index
-  buildSearchIndex(verseTexts);
-  logEvent('init', 'Search index built');
+  const loaded = await loadFiles(overlayFiles([searchOverlay]));
+  const data = dataFor(searchOverlay, loaded);
+  logEvent('init', data ? 'Search data loaded' : 'Search data missing: see the console');
 
   // Configure search overlay with empty verses (we don't need layout)
   configureSearch({
@@ -162,7 +154,7 @@ async function main(): Promise<void> {
         settings.set(searchOverlay, update(settings.get(searchOverlay)));
         draw();
       },
-      undefined,
+      data,
     );
   }
   draw();

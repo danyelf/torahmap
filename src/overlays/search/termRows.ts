@@ -6,7 +6,7 @@
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { isHebrew, stripNikkud } from '../../hebrew.ts';
-import type { LexemeLanguage } from '../../search.ts';
+import type { Dictionary, LexemeLanguage } from '../../search.ts';
 import type { Meaning } from '../../search/dictionary.ts';
 import {
   meaningsOf,
@@ -37,6 +37,8 @@ export interface TermRowsHost {
   openId(): string | null;
   /** Verses this term accounts for on its own, or null when it is not being searched. */
   hitCount(term: SearchTerm): number | null;
+  /** The dictionary the rows' meanings come from, or null while search's data is missing. */
+  dictionary(): Dictionary | null;
   /** Ask for a change to the term list, worked out from the list as it is when applied. */
   edit(change: (terms: SearchTerm[]) => SearchTerm[]): void;
   /** Work in this row from now on. */
@@ -130,7 +132,8 @@ function buildMeaningRow(term: SearchTerm, meaning: Meaning): HTMLLabelElement {
   const box = document.createElement('input');
   box.type = 'checkbox';
   box.addEventListener('change', () => {
-    host?.edit((terms) => toggleMeaning(terms, term.id, meaning.keys));
+    const dictionary = host?.dictionary();
+    if (dictionary) host?.edit((terms) => toggleMeaning(dictionary, terms, term.id, meaning.keys));
   });
   row.appendChild(box);
 
@@ -180,20 +183,21 @@ const MODE_LABELS: Record<SearchMode, string> = {
  * Both are named even when unremarkable. Two rows holding עלה in meanings mode are
  * otherwise identical, and telling those apart is the point of the feature.
  */
-function termSummary(term: SearchTerm): string {
-  const mode = MODE_LABELS[effectiveMode(term)];
+function termSummary(term: SearchTerm, dictionary: Dictionary | null): string {
+  const mode = MODE_LABELS[effectiveMode(dictionary, term)];
 
   // Only a Hebrew term in meanings mode has readings to report, and only a word
   // with at least two of them has anything to report about them. One meaning
   // is not a choice, and a word the dictionary does not know has none at all —
   // both of those are the rows that show no checkboxes either.
-  const rows = meaningsOf(term);
-  if (effectiveMode(term) !== 'meanings' || rows.length < 2) return mode;
+  if (!dictionary || effectiveMode(dictionary, term) !== 'meanings') return mode;
+  const rows = meaningsOf(dictionary, term);
+  if (rows.length < 2) return mode;
 
   // Saying how many there are rather than leaving the mode bare: meanings over
   // a word with four readings is searching for all four, and a row that said
   // only "meanings" gave no sign of it.
-  if (!isNarrowed(term)) return `${mode} · all ${rows.length} meanings`;
+  if (!isNarrowed(dictionary, term)) return `${mode} · all ${rows.length} meanings`;
 
   const chosen = chosenAmong(rows, term)
     .map((m) => m.gloss)
@@ -224,7 +228,11 @@ function buildModeControl(term: SearchTerm): HTMLDivElement {
  * Replace only the control when the choices change, never the row: the choices
  * follow the text's language, and the reader is typing that text.
  */
-function renderModeControl(body: HTMLElement, term: SearchTerm): void {
+function renderModeControl(
+  body: HTMLElement,
+  term: SearchTerm,
+  dictionary: Dictionary | null,
+): void {
   const offered = modesOffered(term).join(',');
   if (body.dataset.modes !== offered) {
     body.dataset.modes = offered;
@@ -232,11 +240,11 @@ function renderModeControl(body: HTMLElement, term: SearchTerm): void {
     body.prepend(buildModeControl(term));
   }
 
-  const current = effectiveMode(term);
+  const current = effectiveMode(dictionary, term);
   for (const option of body.querySelectorAll<HTMLButtonElement>('.term-mode-option')) {
     option.classList.toggle('on', option.dataset.mode === current);
     if (option.dataset.mode !== 'meanings') continue;
-    option.disabled = !meaningsPossible(term);
+    option.disabled = !meaningsPossible(dictionary, term);
     option.title = option.disabled ? "Meanings mode isn't available for phrases" : '';
   }
 }
@@ -246,14 +254,14 @@ function renderModeControl(body: HTMLElement, term: SearchTerm): void {
  * boxes are then synced on every pass, so a refused toggle (unchecking the last
  * one) is put back rather than leaving the page disagreeing with the state.
  */
-function meaningSignature(term: SearchTerm, rows: Meaning[]): string {
-  if (effectiveMode(term) !== 'meanings' || rows.length < 2) return '';
+function meaningSignature(mode: SearchMode, rows: Meaning[]): string {
+  if (mode !== 'meanings' || rows.length < 2) return '';
   return rows.map((m) => m.keys[0]).join(',');
 }
 
-function renderMeanings(row: HTMLElement, term: SearchTerm): void {
-  const rows = meaningsOf(term);
-  const signature = meaningSignature(term, rows);
+function renderMeanings(row: HTMLElement, term: SearchTerm, dictionary: Dictionary | null): void {
+  const rows = dictionary ? meaningsOf(dictionary, term) : [];
+  const signature = meaningSignature(effectiveMode(dictionary, term), rows);
 
   if (row.dataset.meanings !== signature) {
     row.dataset.meanings = signature;
@@ -355,7 +363,7 @@ function updateCollapsedRow(row: HTMLElement, term: SearchTerm): void {
   word.classList.toggle('rtl', termIsHebrew(term));
 
   row.querySelector<HTMLElement>('.term-state')!.textContent = term.text.trim()
-    ? termSummary(term)
+    ? termSummary(term, host?.dictionary() ?? null)
     : '';
 
   const count = row.querySelector<HTMLElement>('.term-count')!;
@@ -459,8 +467,9 @@ function updateOpenRow(row: HTMLElement, term: SearchTerm, index: number): void 
   count.textContent = hitCountText(term);
 
   // Offered only once there is something to undo.
+  const dictionary = host?.dictionary() ?? null;
   const all = row.querySelector<HTMLElement>('.term-all')!;
-  all.hidden = !isNarrowed(term);
+  all.hidden = !dictionary || !isNarrowed(dictionary, term);
 
   // Nothing to clear on the only row while it is empty.
   const remove = row.querySelector<HTMLElement>('.term-remove')!;
@@ -469,8 +478,8 @@ function updateOpenRow(row: HTMLElement, term: SearchTerm, index: number): void 
   remove.title = rowCount > 1 ? 'Remove this word' : 'Clear';
 
   const body = row.querySelector<HTMLElement>('.term-body')!;
-  renderModeControl(body, term);
-  renderMeanings(body, term);
+  renderModeControl(body, term, dictionary);
+  renderMeanings(body, term, dictionary);
 }
 
 function onTermInput(id: string, input: HTMLInputElement): void {

@@ -5,17 +5,15 @@
 // name a term by its position in the searched list. Those are the same number
 // until a term is removed, and then they are not.
 
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import { configure } from '../../../overlays/search';
-import { buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';
 import { SEARCH_COLORS } from '../../../utils/color';
 import type { VerseTexts } from '../../../verseTexts';
-
-const searchOverlay = hostOverlay(searchTool, undefined);
+import { searchDataFor } from '../../helpers/searchData';
 
 const texts: VerseTexts = {
   Genesis: {
@@ -53,9 +51,7 @@ function css(index: number): string {
   return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
 }
 
-beforeAll(() => {
-  buildSearchIndex(texts);
-});
+const searchOverlay = hostOverlay(searchTool, searchDataFor(texts));
 
 beforeEach(() => {
   configure({ verses });
@@ -92,7 +88,11 @@ describe('a surviving term keeps one colour', () => {
     typeIntoInput(rowInput(container, 1), 'spirit');
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
-    const fragment = searchOverlay.highlightVerseText('and the spirit of God hovered', 'en');
+    const fragment = searchOverlay.highlightVerseText(
+      createVerse(),
+      'and the spirit of God hovered',
+      'en',
+    );
     const holder = document.createElement('div');
     holder.appendChild(fragment);
 

@@ -9,7 +9,7 @@ import { scale, SQRT, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
 import { NO_DATA } from './colors.ts';
-import { memoByValue } from './memo.ts';
+import { memoByValue } from '../utils/memo.ts';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
 const PLASMA_STOPS: ColorStop[] = [

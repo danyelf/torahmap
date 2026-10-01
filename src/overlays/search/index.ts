@@ -8,16 +8,19 @@
 // presentation, not a setting, so it stays here.
 import './search.css';
 import type { Overlay, Color, UrlParamValues } from '../types.ts';
-import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
-import { tanakhKey } from '../../types.ts';
-import { getMatchingVerseTerms, parseSearchTerms, type SearchResult } from '../../search.ts';
-import { parseArrived, spellingFor, versesFor } from '../../search/dictionary.ts';
-import { highlightTerms } from './highlight.ts';
+import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
+import { HEBREW, tanakhKey } from '../../types.ts';
 import {
-  renderResults as renderResultsList,
-  detachResults,
-  requoteResults,
-} from './resultsList.ts';
+  getMatchingVerseTerms,
+  parseSearchTerms,
+  type Dictionary,
+  type SearchResult,
+  type TextIndex,
+} from '../../search.ts';
+import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from '../../search/data.ts';
+import { spellingFor, versesFor, wordsOfVerse } from '../../search/dictionary.ts';
+import { excerpt, highlightTerms } from './highlight.ts';
+import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import {
   addTerm,
@@ -28,7 +31,6 @@ import {
   encodeMeanings,
   applyMeanings,
   setMode,
-  termQuery,
   effectiveMode,
   resultsForTerms,
   encodeModes,
@@ -37,13 +39,9 @@ import {
   type SearchTerm,
 } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
-import { SEARCH_RECORD_DELAY_MS } from '../../search/constants.ts';
 import { isSearchableWord } from '../../hebrew.ts';
-import { debounce } from '../../utils/debounce.ts';
-import { termsToRecord, type Recorded } from './recording.ts';
-import { trackSearchExecute } from '../../analytics.ts';
 import { SEARCH_URL_PARAMS } from '@torahmap/link';
-import { memoByValue } from '../memo.ts';
+import { memoByValue } from '../../utils/memo.ts';
 
 /**
  * A list of terms, each with its own text, its own meanings, its own colour and
@@ -73,15 +71,25 @@ interface Search {
 }
 
 /** The terms the search runs: those holding a word, not a single letter. */
-function activeTerms(settings: SearchSettings): SearchTerm[] {
+export function activeTerms(settings: SearchSettings): SearchTerm[] {
   return settings.terms.filter((t) => isSearchableWord(t.text));
 }
 
-// Every function in terms.ts returns a new list, so settings are never edited in place.
-const searchFor = memoByValue((settings: SearchSettings): Search => {
-  const active = activeTerms(settings);
-  return { active, ...matchesForTerms(active) };
-});
+// Per text index and dictionary, then per settings: the same settings with
+// another dictionary are another search. Every function in terms.ts returns a
+// new list, so settings are never edited in place.
+const searches = memoByValue((index: TextIndex) =>
+  memoByValue((dictionary: Dictionary) =>
+    memoByValue((settings: SearchSettings): Search => {
+      const active = activeTerms(settings);
+      return { active, ...matchesForTerms(index, dictionary, active) };
+    }),
+  ),
+);
+
+function searchFor(data: SearchData, settings: SearchSettings): Search {
+  return searches(textIndexOf(data))(dictionaryOf(data))(settings);
+}
 
 /** Terms holding something, including ones too short to search on. */
 function typedTerms(settings: SearchSettings): SearchTerm[] {
@@ -110,7 +118,7 @@ function openTerm(settings: SearchSettings): SearchTerm | undefined {
  */
 function openTermIndex(settings: SearchSettings): number {
   const open = openTerm(settings);
-  return open ? searchFor(settings).active.indexOf(open) : -1;
+  return open ? activeTerms(settings).indexOf(open) : -1;
 }
 
 /**
@@ -119,8 +127,8 @@ function openTermIndex(settings: SearchSettings): number {
  * A row with nothing to search on narrows nothing, or clicking "add a word"
  * would empty the list.
  */
-function resultsForOpenRow(settings: SearchSettings): SearchResult[] {
-  const { results } = searchFor(settings);
+function resultsForOpenRow(data: SearchData, settings: SearchSettings): SearchResult[] {
+  const { results } = searchFor(data, settings);
   const index = openTermIndex(settings);
   if (index === -1) return results;
 
@@ -138,6 +146,7 @@ let searchHitCaption: HTMLDivElement | null = null;
 let searchClear: HTMLButtonElement | null = null;
 let requestChange: SettingsChange | null = null;
 let shown: SearchSettings | null = null;
+let shownData: SearchData | null = null;
 
 export function configure(config: {
   verses: TanakhLayout[];
@@ -155,52 +164,15 @@ export function configure(config: {
  * A Hebrew term in meanings mode finds the verses of the meanings the reader has
  * left checked; every other term matches its text, in its own language.
  */
-function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
+export function matchesForTerms(
+  index: TextIndex,
+  dictionary: Dictionary,
+  active: SearchTerm[],
+): Omit<Search, 'active'> {
   if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
-  const results = resultsForTerms(active);
+  const results = resultsForTerms(index, dictionary, active);
   return { results, matchingTerms: getMatchingVerseTerms(results) };
-}
-
-let recorded: Recorded = new Map();
-/** The search the reader's last change produced. */
-let lastChanged: SearchSettings | null = null;
-
-const recordSettledSearch = debounce(() => {
-  const settings = lastChanged;
-  if (!settings) return;
-
-  const { send, recorded: next } = termsToRecord(recorded, searchFor(settings).active);
-  recorded = next;
-  for (const term of send) {
-    const { language, mode } = termQuery(term);
-    trackSearchExecute(term.text, language, mode, termHitCount(settings, term)!);
-  }
-}, SEARCH_RECORD_DELAY_MS);
-
-/**
- * Take `settings` as the search on the map. One the reader's last change did
- * not produce came from a link: a word still waiting to be recorded is dropped,
- * and the link's terms count as recorded, so a restored word is never sent as
- * though the reader had typed it and the next event names only what they
- * change.
- */
-function searchOnMap(settings: SearchSettings): void {
-  if (settings === lastChanged) return;
-  recordSettledSearch.cancel();
-  recorded = termsToRecord(new Map(), searchFor(settings).active).recorded;
-  lastChanged = settings;
-}
-
-/**
- * Note a change the reader made, from `current` to `next`, and return `next`,
- * to be recorded once the search has sat unchanged for SEARCH_RECORD_DELAY_MS.
- */
-function readerChanged(current: SearchSettings, next: SearchSettings): SearchSettings {
-  searchOnMap(current);
-  lastChanged = next;
-  recordSettledSearch();
-  return next;
 }
 
 /**
@@ -222,6 +194,7 @@ function readerChanged(current: SearchSettings, next: SearchSettings): SearchSet
  * single key would be a key this term does not answer to.
  */
 export function searchForMeaning(
+  dictionary: Dictionary,
   settings: SearchSettings,
   text: string,
   meaningKeys: readonly string[] | null,
@@ -235,7 +208,7 @@ export function searchForMeaning(
   // last one (a reader who cleared an earlier box while a later one still
   // held a word).
   const chosen = meaningKeys && meaningKeys.length > 0 ? meaningKeys : null;
-  const spelling = chosen ? (spellingFor(chosen, text) ?? text) : text;
+  const spelling = chosen ? (spellingFor(dictionary, chosen, text) ?? text) : text;
   let terms = settings.terms;
   const empty = terms.find((term) => term.text.trim() === '');
   let id: string;
@@ -256,7 +229,7 @@ export function searchForMeaning(
 
   // The word the click just added is the one the reader is looking at.
   openTermId = id;
-  return readerChanged(settings, { terms });
+  return { terms };
 }
 
 /**
@@ -279,8 +252,12 @@ export function canAddTerm(settings: SearchSettings): boolean {
  * search slot. Indexing by row instead gives a row its neighbour's count as
  * soon as an earlier row is emptied.
  */
-function termHitCount(settings: SearchSettings, term: SearchTerm): number | null {
-  const { active, results } = searchFor(settings);
+export function termHitCount(
+  data: SearchData,
+  settings: SearchSettings,
+  term: SearchTerm,
+): number | null {
+  const { active, results } = searchFor(data, settings);
   const index = active.indexOf(term);
   if (index === -1) return null;
 
@@ -295,11 +272,15 @@ function termHitCount(settings: SearchSettings, term: SearchTerm): number | null
  * The one number the term rows cannot show: how many verses the search finds
  * altogether. Each row carries its own count; this is their union.
  */
-function updateHitCaption(settings: SearchSettings): void {
+function updateHitCaption(settings: SearchSettings, data: SearchData | null): void {
   if (!searchHitCaption) return;
+  if (!data) {
+    searchHitCaption.textContent = '';
+    return;
+  }
 
-  const { active, results } = searchFor(settings);
-  const listed = resultsForOpenRow(settings).length;
+  const { active, results } = searchFor(data, settings);
+  const listed = resultsForOpenRow(data, settings).length;
 
   let message: string;
   if (active.length > 0 && results.length > 0) {
@@ -323,19 +304,28 @@ function updateHitCaption(settings: SearchSettings): void {
 }
 
 /** Redraw the list of verses for the row the reader is working in. */
-function renderResults(settings: SearchSettings): void {
+function renderResults(settings: SearchSettings, data: SearchData | null): void {
   if (!searchResults) return;
 
+  if (!data) {
+    renderResultsList(searchResults, {
+      results: [],
+      terms: [],
+      focus: -1,
+      onSelect: showVerse,
+      snippet: () => null,
+    });
+    return;
+  }
+
+  const index = textIndexOf(data);
+  const dictionary = dictionaryOf(data);
   renderResultsList(searchResults, {
-    results: resultsForOpenRow(settings),
-    terms: searchFor(settings).active,
+    results: resultsForOpenRow(data, settings),
+    terms: searchFor(data, settings).active,
     focus: openTermIndex(settings),
     onSelect: showVerse,
-  });
-
-  // A word is marked by the parse once it is here, and by its spelling until.
-  parseArrived()?.then(() => {
-    if (searchResults) requoteResults(searchResults);
+    snippet: (result, term) => excerpt(result, term, index, dictionary, data.parse),
   });
 }
 
@@ -349,8 +339,8 @@ function openRow(id: string): void {
   openTermId = id;
   if (!shown) return;
   renderTermRows();
-  renderResults(shown);
-  updateHitCaption(shown);
+  renderResults(shown, shownData);
+  updateHitCaption(shown, shownData);
 }
 
 /**
@@ -362,7 +352,8 @@ function openRow(id: string): void {
 const termRowsHost: TermRowsHost = {
   terms: () => shown?.terms ?? [],
   openId: () => (shown ? (openTerm(shown)?.id ?? null) : null),
-  hitCount: (term) => (shown ? termHitCount(shown, term) : null),
+  dictionary: () => (shownData ? dictionaryOf(shownData) : null),
+  hitCount: (term) => (shown && shownData ? termHitCount(shownData, shown, term) : null),
   edit(change) {
     requestChange?.((current) => ({ terms: change(current.terms) }));
   },
@@ -412,16 +403,7 @@ export function isSearching(settings: SearchSettings): boolean {
   return activeTerms(settings).length > 0;
 }
 
-/** The verse text, with every searched term marked in its own colour. */
-export function highlightSearchTerms(
-  text: string,
-  language: TextLanguage,
-  settings: SearchSettings,
-): DocumentFragment {
-  return highlightTerms(text, language, searchFor(settings).active);
-}
-
-export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
+export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   id: 'search',
   name: 'Search',
   credits: [
@@ -437,12 +419,19 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
     },
   ],
 
-  getVerseColor(verse, settings) {
-    return searchColorAt(verse, searchFor(settings));
+  data: SEARCH_FILES,
+
+  prebuild(data) {
+    textIndexOf(data);
+    dictionaryOf(data);
   },
 
-  colorsFor(items, settings) {
-    const search = searchFor(settings);
+  getVerseColor(verse, settings, data) {
+    return searchColorAt(verse, searchFor(data, settings));
+  },
+
+  colorsFor(items, settings, _hovered, data) {
+    const search = searchFor(data, settings);
     return items.map((item) => searchColorAt(item, search));
   },
 
@@ -452,7 +441,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
 
   summary(settings) {
     return {
-      terms: searchFor(settings).active.map((t) => ({
+      terms: activeTerms(settings).map((t) => ({
         text: t.text.trim(),
         color: colorToCss(SEARCH_COLORS[t.colorIndex]),
       })),
@@ -460,7 +449,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
   },
 
   settingsToUrl(settings) {
-    const { active } = searchFor(settings);
+    const active = activeTerms(settings);
     const params: Record<string, string> = {};
     const query = active.map((t) => t.text).join(', ');
     if (query) {
@@ -477,12 +466,12 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
     return params;
   },
 
-  renderControls(container, settings, onChange) {
+  renderControls(container, settings, onChange, data) {
     const previous = shown;
+    const previousData = shownData;
     shown = settings;
-    searchOnMap(settings);
-    // Every change the panel asks for is the reader's.
-    requestChange = (update) => onChange((current) => readerChanged(current, update(current)));
+    shownData = data;
+    requestChange = onChange;
 
     if (!searchResults || !container.contains(searchResults)) {
       container.innerHTML = `
@@ -509,19 +498,19 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
         },
         termRowsHost,
       );
-    } else if (settings === previous) {
+    } else if (settings === previous && data === previousData) {
       // Nothing has changed, and redrawing the list would scroll it to the top.
       return;
     }
 
     renderTermRows();
-    updateHitCaption(settings);
-    renderResults(settings);
+    updateHitCaption(settings, data);
+    renderResults(settings, data);
     if (searchClear) searchClear.disabled = typedTerms(settings).length === 0;
   },
 
-  getHoverInfo(verse, settings) {
-    const { active, matchingTerms } = searchFor(settings);
+  getHoverInfo(verse, settings, data) {
+    const { active, matchingTerms } = searchFor(data, settings);
     if (active.length === 0) return null;
 
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);
@@ -529,11 +518,12 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
     if (!termIndices) return null;
 
     // Each word as typed, then which of its checked meanings this verse holds.
+    const dictionary = dictionaryOf(data);
     const named = termIndices.map((i) => {
       const term = active[i];
-      if (effectiveMode(term) !== 'meanings') return term.text;
-      const here = chosenMeanings(term)
-        .filter((m) => versesFor(m.keys).has(key))
+      if (effectiveMode(dictionary, term) !== 'meanings') return term.text;
+      const here = chosenMeanings(dictionary, term)
+        .filter((m) => versesFor(dictionary, m.keys).has(key))
         .map((m) => m.gloss);
       return `${term.text} (${here.join(', ')})`;
     });
@@ -548,12 +538,21 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
     searchHitCaption = null;
     searchClear = null;
     shown = null;
+    shownData = null;
     requestChange = null;
-    // A search the reader leaves before it settles is not recorded.
-    recordSettledSearch.cancel();
   },
 
-  highlightVerseText(text, language, settings) {
-    return highlightSearchTerms(text, language, settings);
+  highlightVerseText(verse, text, language, settings, data) {
+    const words =
+      language === HEBREW
+        ? wordsOfVerse(data.parse, tanakhKey(verse.book, verse.chapter, verse.verse), text)
+        : null;
+    return highlightTerms(
+      text,
+      language,
+      searchFor(data, settings).active,
+      dictionaryOf(data),
+      words,
+    );
   },
 };

@@ -67,6 +67,26 @@ describe('words in the verse popup', () => {
     });
   });
 
+  it('hands over the text the word was counted in', () => {
+    const handler = vi.fn();
+    setWordClickHandler(handler);
+
+    const elements = getSidebarElements();
+    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+      verseTexts: texts,
+      overlay: null,
+      search: null,
+      pinned: true,
+    });
+
+    document.querySelector<HTMLElement>('[data-word-index="2"]')!.click();
+
+    expect(handler.mock.calls[0][0]).toMatchObject({
+      index: 2,
+      hebrew: texts.Genesis[1][2].he,
+    });
+  });
+
   it('leaves the English alone', () => {
     const elements = getSidebarElements();
     updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
@@ -106,7 +126,7 @@ describe('words in the verse popup', () => {
       id: 'test-overlay',
       name: 'Test overlay',
       getVerseColor: () => null,
-      highlightVerseText: vi.fn((text: string, language: 'he' | 'en') => {
+      highlightVerseText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
         const fragment = document.createDocumentFragment();
         if (language !== 'he') {
           fragment.appendChild(document.createTextNode(text));

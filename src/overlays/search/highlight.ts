@@ -11,8 +11,15 @@ import {
   stripNikkud,
 } from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
-import { wordMatches } from '../../search/dictionary.ts';
-import { displayedVerse, quoteVerse, type SearchResult } from '../../search.ts';
+import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from '../../search/dictionary.ts';
+import {
+  displayedVerse,
+  quoteVerse,
+  type Dictionary,
+  type SearchResult,
+  type Snippet,
+  type TextIndex,
+} from '../../search.ts';
 import {
   colorIndexAt,
   effectiveMode,
@@ -61,15 +68,13 @@ interface Match {
   termIndex: number;
 }
 
-/**
- * Handles nikkud stripping and position mapping; respects each term's own
- * search mode. `verseKey` names the verse when it is not the one on screen.
- */
+/** Handles nikkud stripping and position mapping; respects each term's own search mode. */
 function findAllTermMatches(
   text: string,
   searchTerms: SearchTerm[],
   isHebrew: boolean,
-  verseKey?: string,
+  dictionary: Dictionary,
+  words: VerseWords | null,
 ): Match[] {
   const matches: Match[] = [];
   const language = isHebrew ? HEBREW : ENGLISH;
@@ -80,7 +85,7 @@ function findAllTermMatches(
     const term = searchTerms[termIndex];
     // The mode belongs to the term. `isHebrew` is the language of the verse
     // text being marked up, which is a different question.
-    const mode = effectiveMode(term);
+    const mode = effectiveMode(dictionary, term);
 
     // Meanings mode asks the dictionary, not the spelling: mark only the words
     // that are one of the meanings this term still stands for.
@@ -90,10 +95,10 @@ function findAllTermMatches(
     // the place in the verse says which this one is. A meaning is Hebrew, so it
     // marks nothing in English.
     if (mode === 'meanings') {
-      const keys = selectedKeys(term);
+      const keys = selectedKeys(dictionary, term);
       if (!isHebrew || keys.length === 0) continue;
       for (const { word, start, end } of splitIntoWords(folded)) {
-        if (wordMatches(keys, word, text, start, verseKey)) {
+        if (wordMatches(dictionary, words, keys, word, text, start)) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
         }
       }
@@ -116,19 +121,25 @@ function findAllTermMatches(
 export function excerpt(
   result: SearchResult,
   term: SearchTerm,
-): { snippet: string; matchStart: number; matchEnd: number } | null {
+  index: TextIndex,
+  dictionary: Dictionary,
+  parse: Parse | null,
+): Snippet | null {
   const isHebrew = termIsHebrew(term);
-  const text = displayedVerse(result, isHebrew ? HEBREW : ENGLISH);
+  const text = displayedVerse(index, result, isHebrew ? HEBREW : ENGLISH);
   if (text === null) return null;
-  const verseKey = tanakhKey(result.book, result.chapter, result.verse);
-  const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, verseKey);
+  const words = isHebrew
+    ? wordsOfVerse(parse, tanakhKey(result.book, result.chapter, result.verse), text)
+    : null;
+  const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, dictionary, words);
   if (!first) return quoteVerse(text, null);
 
   // Meanings mode marks word by word, so a phrase it finds, בית אל, is joined
   // into one mark; a word repeated, קדוש קדוש קדוש, is not. A word's points
   // lie after its mark, so they do not part it from the next.
   let end = first.end;
-  const joinable = effectiveMode(term) === 'meanings' ? splitIntoWords(term.text).length - 1 : 0;
+  const joinable =
+    effectiveMode(dictionary, term) === 'meanings' ? splitIntoWords(term.text).length - 1 : 0;
   for (const next of rest.slice(0, joinable)) {
     const between = stripNikkud(text.slice(end, next.start));
     if (!onlySeparators(between, 0, between.length)) break;
@@ -184,6 +195,8 @@ export function highlightTerms(
   text: string,
   language: TextLanguage,
   terms: SearchTerm[],
+  dictionary: Dictionary,
+  words: VerseWords | null,
 ): DocumentFragment {
   const fragment = document.createDocumentFragment();
 
@@ -194,7 +207,7 @@ export function highlightTerms(
 
   const isHebrew = language === HEBREW;
 
-  const matches = findAllTermMatches(text, terms, isHebrew);
+  const matches = findAllTermMatches(text, terms, isHebrew, dictionary, words);
 
   if (matches.length === 0) {
     fragment.appendChild(document.createTextNode(text));

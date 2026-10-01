@@ -7,7 +7,13 @@
 // shifts and the choice lands silently on a different word.
 
 import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
-import { resultsForVerseSets, versesForTerm, type SearchResult } from '../search.ts';
+import {
+  resultsForVerseSets,
+  versesForTerm,
+  type Dictionary,
+  type SearchResult,
+  type TextIndex,
+} from '../search.ts';
 import { isHebrew, splitIntoWords } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -118,8 +124,8 @@ export function setTermText(terms: SearchTerm[], id: string, text: string): Sear
 }
 
 /** The dictionary words this term's text could be, likeliest reading first. */
-export function meaningsOf(term: SearchTerm): Meaning[] {
-  return meaningsFor(term.text.trim());
+export function meaningsOf(dictionary: Dictionary, term: SearchTerm): Meaning[] {
+  return meaningsFor(dictionary, term.text.trim());
 }
 
 /** Which of `rows`, the term's own meanings, count as chosen. */
@@ -131,8 +137,8 @@ export function chosenAmong(rows: Meaning[], term: SearchTerm): Meaning[] {
 }
 
 /** The term's meanings that count as chosen. */
-export function chosenMeanings(term: SearchTerm): Meaning[] {
-  return chosenAmong(meaningsOf(term), term);
+export function chosenMeanings(dictionary: Dictionary, term: SearchTerm): Meaning[] {
+  return chosenAmong(meaningsOf(dictionary, term), term);
 }
 
 /**
@@ -143,6 +149,7 @@ export function chosenMeanings(term: SearchTerm): Meaning[] {
  * Checking every meaning again leaves nothing narrowed.
  */
 export function toggleMeaning(
+  dictionary: Dictionary,
   terms: SearchTerm[],
   id: string,
   keys: readonly string[],
@@ -150,7 +157,7 @@ export function toggleMeaning(
   return terms.map((t) => {
     if (t.id !== id) return t;
 
-    const rows = meaningsOf(t);
+    const rows = meaningsOf(dictionary, t);
     const row = rows.find((m) => sameMeaning(m, keys));
     if (!row) return t;
 
@@ -169,8 +176,8 @@ export function toggleMeaning(
  * A merged row can cover more than one lexeme (see `rowsFor`), so this expands
  * each chosen row to all of them.
  */
-export function selectedKeys(term: SearchTerm): string[] {
-  return chosenMeanings(term).flatMap((m) => m.keys);
+export function selectedKeys(dictionary: Dictionary, term: SearchTerm): string[] {
+  return chosenMeanings(dictionary, term).flatMap((m) => m.keys);
 }
 
 /**
@@ -235,8 +242,8 @@ export function allMeanings(terms: SearchTerm[], id: string): SearchTerm[] {
  * Has the reader narrowed this term? False for a word with one meaning, where
  * the single meaning is already all of them and there is nothing to restore.
  */
-export function isNarrowed(term: SearchTerm): boolean {
-  const rows = meaningsOf(term);
+export function isNarrowed(dictionary: Dictionary, term: SearchTerm): boolean {
+  const rows = meaningsOf(dictionary, term);
   return rows.length > 1 && chosenAmong(rows, term).length < rows.length;
 }
 
@@ -270,20 +277,21 @@ export function termIsHebrew(term: SearchTerm): boolean {
  * in the field: a term briefly retyped as English, or as a phrase, is back on
  * meanings the moment it is a Hebrew word again.
  */
-export function effectiveMode(term: SearchTerm): SearchMode {
+export function effectiveMode(dictionary: Dictionary | null, term: SearchTerm): SearchMode {
   const chosen = term.mode ?? (termIsHebrew(term) ? 'meanings' : 'substring');
-  return chosen === 'meanings' && !meaningsPossible(term) ? 'word' : chosen;
+  return chosen === 'meanings' && !meaningsPossible(dictionary, term) ? 'word' : chosen;
 }
 
 /**
  * Can this term be matched by meaning? Not in English, and not a Hebrew phrase
  * the dictionary does not have: it has בית אל, a name, but not וידבר יהוה. A
  * single word stays possible while it is being typed, though most of its
- * prefixes are no word at all.
+ * prefixes are no word at all. Without the dictionary, no phrase is.
  */
-export function meaningsPossible(term: SearchTerm): boolean {
+export function meaningsPossible(dictionary: Dictionary | null, term: SearchTerm): boolean {
   if (!termIsHebrew(term)) return false;
-  return meaningsOf(term).length > 0 || splitIntoWords(term.text).length < 2;
+  if (splitIntoWords(term.text).length < 2) return true;
+  return dictionary !== null && meaningsOf(dictionary, term).length > 0;
 }
 
 /** The modes this term's own text can be matched by, in the order shown. */
@@ -301,25 +309,36 @@ export type TermQuery = { text: string; language: TextLanguage } & (
   | { mode: MatchMode }
 );
 
-export function termQuery(term: SearchTerm): TermQuery {
+export function termQuery(dictionary: Dictionary, term: SearchTerm): TermQuery {
   const text = term.text.trim();
   const language = termIsHebrew(term) ? HEBREW : ENGLISH;
-  const mode = effectiveMode(term);
+  const mode = effectiveMode(dictionary, term);
   return mode === 'meanings'
-    ? { text, language, mode, meaningKeys: selectedKeys(term) }
+    ? { text, language, mode, meaningKeys: selectedKeys(dictionary, term) }
     : { text, language, mode };
 }
 
 /** The verses a query finds. A word the dictionary does not know finds none in meanings mode. */
-export function versesForQuery(query: TermQuery): Set<string> {
+export function versesForQuery(
+  index: TextIndex,
+  dictionary: Dictionary,
+  query: TermQuery,
+): Set<string> {
   return query.mode === 'meanings'
-    ? versesFor(query.meaningKeys)
-    : versesForTerm(query.text, query.language, query.mode);
+    ? versesFor(dictionary, query.meaningKeys)
+    : versesForTerm(index, query.text, query.language, query.mode);
 }
 
 /** The verses these terms find, each naming the terms that found it. */
-export function resultsForTerms(terms: SearchTerm[]): SearchResult[] {
-  return resultsForVerseSets(terms.map((term) => versesForQuery(termQuery(term))));
+export function resultsForTerms(
+  index: TextIndex,
+  dictionary: Dictionary,
+  terms: SearchTerm[],
+): SearchResult[] {
+  return resultsForVerseSets(
+    index,
+    terms.map((term) => versesForQuery(index, dictionary, termQuery(dictionary, term))),
+  );
 }
 
 /**

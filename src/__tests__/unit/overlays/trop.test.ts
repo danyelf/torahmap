@@ -656,7 +656,7 @@ describe('Trop Overlay', () => {
       const unicode = button.dataset.unicode!;
       button.click();
 
-      const fragment = host.highlightVerseText(`בְּרֵאשִׁ${unicode}ית`, 'he');
+      const fragment = host.highlightVerseText(createVerse(), `בְּרֵאשִׁ${unicode}ית`, 'he');
       const holder = document.createElement('div');
       holder.append(fragment);
       expect(holder.querySelector('mark')).not.toBeNull();
@@ -664,7 +664,7 @@ describe('Trop Overlay', () => {
 
     it('marks nothing when no trop is selected', () => {
       const host = makeHost();
-      const fragment = host.highlightVerseText('בְּרֵאשִׁ֖ית', 'he');
+      const fragment = host.highlightVerseText(createVerse(), 'בְּרֵאשִׁ֖ית', 'he');
       const holder = document.createElement('div');
       holder.append(fragment);
       expect(holder.querySelector('mark')).toBeNull();
@@ -674,7 +674,7 @@ describe('Trop Overlay', () => {
     it('marks nothing in English text even with a trop selected', () => {
       const host = makeHost();
       selectFirstMark(host);
-      const fragment = host.highlightVerseText('In the beginning', 'en');
+      const fragment = host.highlightVerseText(createVerse(), 'In the beginning', 'en');
       const holder = document.createElement('div');
       holder.append(fragment);
       expect(holder.querySelector('mark')).toBeNull();

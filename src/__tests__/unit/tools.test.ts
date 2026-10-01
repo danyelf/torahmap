@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { toolsShown, togglesSearch } from '../../tools';
 import { searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
-import { testOverlay } from '../helpers/fixtures';
+import { SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 
 const counts = testOverlay({
   id: 'counts',
@@ -14,8 +14,8 @@ const counts = testOverlay({
 describe('toolsShown', () => {
   it('shows the search once it has a word long enough to search on', () => {
     expect(
-      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' }), new Map()).search
-        ?.tool,
+      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' }), SAMPLE_LOADED)
+        .search?.tool,
     ).toBe(searchTool);
   });
 
@@ -30,7 +30,7 @@ describe('toolsShown', () => {
 
   it('shows the overlay with its settings and data beside the search', () => {
     const settings = { category: 'total' };
-    const loaded = new Map([['counts.json', { n: 1 }]]);
+    const loaded = new Map([...SAMPLE_LOADED, ['counts.json', { n: 1 }]]);
     const tools = toolsShown(
       counts,
       settings,
@@ -46,10 +46,17 @@ describe('toolsShown', () => {
       counts,
       undefined,
       settingsFromLink(searchTool, { search: 'אור' }),
-      new Map(),
+      SAMPLE_LOADED,
     );
     expect(tools.overlay).toBeNull();
     expect(tools.search?.tool).toBe(searchTool);
+  });
+
+  it('leaves the search out while its files are missing', () => {
+    expect(
+      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' }), new Map())
+        .search,
+    ).toBeNull();
   });
 });
 

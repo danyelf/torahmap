@@ -4,9 +4,9 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from './verseTexts.ts';
-import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { stripNikkud } from './hebrew.ts';
-import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
+import { meaningsInVerse, wordsOfVerse } from './search/dictionary.ts';
+import { dictionaryOf } from './search/data.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
 import {
@@ -40,6 +40,7 @@ import {
   trackShare,
   trackStoryExit,
   trackStoryReturn,
+  trackSearchExecute,
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
@@ -120,6 +121,8 @@ import {
   canAddTerm,
   type SearchSettings,
 } from './overlays/search/index.ts';
+import { createSearchRecorder } from './overlays/search/recording.ts';
+import { SEARCH_RECORD_DELAY_MS } from './search/constants.ts';
 import { prebuildAll } from './overlays/prebuild.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, loadFiles, overlayFiles } from './dataFiles.ts';
@@ -228,13 +231,14 @@ async function main(): Promise<void> {
   }
 
   registerAllOverlays();
+  const allOverlays = [searchTool, ...getAllOverlays()];
   let textsIn = 0;
-  const [loaded] = await Promise.all([
-    loadFiles([STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(getAllOverlays())], (path) => {
+  const loaded = await loadFiles(
+    [STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(allOverlays)],
+    (path) => {
       if (path === TEXTS_FILE) textsIn = performance.now();
-    }),
-    loadLexiconData(),
-  ]);
+    },
+  );
   const torahData = structureFrom(loaded);
   const verseTexts = textsFrom(loaded);
 
@@ -250,7 +254,8 @@ async function main(): Promise<void> {
   createSectionLabels(verses, bookLabels, (book) => sections.get(book) ?? 'neviim');
   const mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
 
-  buildSearchIndex(verseTexts);
+  const searchData = dataFor(searchTool, loaded);
+  if (searchData) searchTool.prebuild?.(searchData);
   const searchReady = performance.now();
 
   const dpr = window.devicePixelRatio || 1;
@@ -576,7 +581,7 @@ async function main(): Promise<void> {
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml([searchTool, ...getAllOverlays()]);
+      aboutPanel.innerHTML = aboutHtml(allOverlays);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
@@ -1129,6 +1134,11 @@ async function main(): Promise<void> {
     syncUrl(false);
   }
 
+  const searchRecorder = createSearchRecorder({
+    delayMs: SEARCH_RECORD_DELAY_MS,
+    send: trackSearchExecute,
+  });
+
   /**
    * Redraw what shows the search. `fresh` clears the controls first, for
    * settings from a link or a story stop; a reader's own edit redraws into
@@ -1138,12 +1148,13 @@ async function main(): Promise<void> {
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
+      searchRecorder.replaced(overlaySettings.get(searchTool), dataFor(searchTool, loaded));
     }
     searchTool.renderControls?.(
       searchControls,
       overlaySettings.get(searchTool),
       changeSearch,
-      undefined,
+      dataFor(searchTool, loaded),
     );
     updateLegend();
     refreshVersePopup();
@@ -1153,6 +1164,7 @@ async function main(): Promise<void> {
     const before = overlaySettings.get(searchTool);
     const after = update(before);
     overlaySettings.set(searchTool, after);
+    searchRecorder.readerChanged(after, dataFor(searchTool, loaded));
     applyTools();
     searchChanged(false);
     render();
@@ -1169,11 +1181,18 @@ async function main(): Promise<void> {
   }
 
   setWordClickHandler((click) => {
+    const data = dataFor(searchTool, loaded);
+    // Without search's files there is no search to add the word to.
+    if (!data) return;
+    const dictionary = dictionaryOf(data);
     // As a reader would type it: the letters as printed, final forms and all.
     const word = stripNikkud(click.text);
+    const verseKey = tanakhKey(click.book, click.chapter, click.verse);
     const meanings = meaningsInVerse(
+      dictionary,
+      wordsOfVerse(data.parse, verseKey, click.hebrew),
       word,
-      tanakhKey(click.book, click.chapter, click.verse),
+      verseKey,
       click.index,
     );
 
@@ -1193,7 +1212,8 @@ async function main(): Promise<void> {
         trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
         takeOver('takeover');
         changeSearch(
-          (current) => searchForMeaning(current, word, meaning?.keys ?? null) ?? current,
+          (current) =>
+            searchForMeaning(dictionary, current, word, meaning?.keys ?? null) ?? current,
         );
         if (frame.mode === 'explore' && frame.open !== 'search') {
           dispatch({ type: 'choose', panel: 'search' });
@@ -1788,7 +1808,6 @@ async function main(): Promise<void> {
     connection: connection?.effectiveType ?? '',
   });
 
-  prefetchMorphology();
   prebuildAll(getAllOverlays(), loaded);
 }
 

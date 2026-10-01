@@ -1,11 +1,10 @@
 // Sidebar management for verse details display
 
 import type { TanakhLayout, TextLanguage } from './types.ts';
-import { ENGLISH, HEBREW, tanakhKey } from './types.ts';
+import { ENGLISH, HEBREW } from './types.ts';
 import type { Overlay, ToolOnMap } from './overlays/types.ts';
 import { getVerseText, type VerseTexts } from './verseTexts.ts';
 import { sefariaUrl } from './sefaria.ts';
-import { setVerseOnScreen, verseOnScreen } from './search/dictionary.ts';
 import { verseWords, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';
 import { verseRef } from '@torahmap/link';
@@ -16,6 +15,8 @@ export interface WordClick {
   text: string;
   /** Its position among the verse's words. */
   index: number;
+  /** The verse's Hebrew, the text `index` counts in. */
+  hebrew: string;
   book: string;
   chapter: number;
   verse: number;
@@ -66,6 +67,7 @@ function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLay
     wordClickHandler({
       text: word.word,
       index,
+      hebrew: text,
       book: verse.book,
       chapter: verse.chapter,
       verse: verse.verse,
@@ -160,12 +162,14 @@ export function updateSidebar(
   // Both tools mark the text; where they mark the same letters, the search's mark is kept.
   const marked = (text: string, language: TextLanguage): DocumentFragment | null => {
     const overlayMarks = currentOverlay?.highlightVerseText?.(
+      verse,
       text,
       language,
       overlaySettings,
       overlayData,
     );
     const searchMarks = search?.tool.highlightVerseText?.(
+      verse,
       text,
       language,
       search.settings,
@@ -176,16 +180,6 @@ export function updateSidebar(
   };
   if (hebrew) {
     const hebrewText = text?.he || 'Loading...';
-
-    // Naming the verse is what lets a word be looked up rather than guessed
-    // from its spelling, both by the overlay marking the text and by a click
-    // on a word. The parse behind that is big enough to be fetched only once
-    // a verse is on screen, so the first verse is drawn without it and drawn
-    // again when it arrives.
-    const verseKey = tanakhKey(verse.book, verse.chapter, verse.verse);
-    setVerseOnScreen(verseKey, hebrewText)?.then(() => {
-      if (verseOnScreen() === verseKey) updateSidebar(elements, verse, view);
-    });
 
     // Whatever the overlay produced, words are wrapped afterwards, so a click
     // finds a word whether or not anything is highlighting the text.
