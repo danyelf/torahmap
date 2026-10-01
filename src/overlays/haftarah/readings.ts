@@ -6,7 +6,7 @@ import type { Color } from '../types.ts';
 import type { TorahData } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
 import { hslToRgb } from '../../utils/color.ts';
-import { loadJson } from '../loadJson.ts';
+import { loadJson } from '../../loadJson.ts';
 import { HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 
 interface VerseRef {

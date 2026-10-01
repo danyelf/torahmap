@@ -3,6 +3,7 @@
 
 import type { TorahData } from './types.ts';
 import { fetchData } from './constants.ts';
+import { loadJson } from './loadJson.ts';
 
 export interface VerseText {
   he: string;
@@ -23,15 +24,7 @@ export async function loadTanakhStructure(): Promise<TorahData> {
 }
 
 export async function loadAllVerseTexts(): Promise<VerseTexts> {
-  const response = await fetchData('all-texts.json');
-
-  if (!response.ok) {
-    console.error(`Failed to load verse texts: ${response.status}`);
-    return {};
-  }
-
-  const verseTexts: VerseTexts = await response.json();
-  return verseTexts;
+  return (await loadJson<VerseTexts>('all-texts.json', 'verse texts')) ?? {};
 }
 
 export function getVerseText(

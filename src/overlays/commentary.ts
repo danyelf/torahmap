@@ -3,7 +3,7 @@ import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, renderAxisWithZero } from './legend.ts';
-import { loadJson } from './loadJson.ts';
+import { loadJson } from '../loadJson.ts';
 import { CONTROL } from '../panel.ts';
 import { MAP_BACKGROUND } from '../constants.ts';
 import { COMMENTARY } from '@torahmap/overlay-catalog';

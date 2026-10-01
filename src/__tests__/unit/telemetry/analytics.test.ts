@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { readLink } from '@torahmap/link';
 import {
   arrivedWith,
   configureAnalytics,
+  reportError,
+  reportUncaughtErrors,
   trackStoryExit,
   trackStoryReturn,
   trackPageView,
@@ -159,5 +161,68 @@ describe('arrivedWith', () => {
   it('names nothing for any link on a reload or Back/Forward', () => {
     expect(arrivedWith(readLink('?verse=Genesis.1.1'), 'reload')).toBe('nothing');
     expect(arrivedWith(readLink('?story=tour&stop=intro'), 'back_forward')).toBe('nothing');
+  });
+});
+
+describe('errors', () => {
+  let consoleError: MockInstance<typeof console.error>;
+  beforeEach(() => {
+    consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => consoleError.mockRestore());
+
+  it('logs a handled error and sends it with where it came from', () => {
+    reportError('loadJson', new TypeError('Failed to fetch'));
+    expect(consoleError).toHaveBeenCalled();
+    expect(sent()).toEqual([
+      {
+        event: 'error',
+        visit: 'v1',
+        mode: 'reader',
+        fields: { source: 'loadJson', message: 'TypeError: Failed to fetch' },
+      },
+    ]);
+  });
+
+  it('sends each distinct error once per visit', () => {
+    reportError('layout', 'Book not found');
+    reportError('layout', 'Book not found');
+    reportError('layout', 'Another book not found');
+    configureAnalytics({ visitId: 'v2' });
+    reportError('layout', 'Book not found');
+    expect(sent().map((e) => [e.visit, e.fields.message])).toEqual([
+      ['v1', 'Book not found'],
+      ['v1', 'Another book not found'],
+      ['v2', 'Book not found'],
+    ]);
+  });
+
+  it('cuts a long message short', () => {
+    reportError('layout', 'x'.repeat(500));
+    expect(sent()[0].fields.message.length).toBeLessThan(500);
+  });
+
+  it('logs the error itself after its context, and sends both as text', () => {
+    const error = new SyntaxError('Unexpected token');
+    reportError('loadJson', error, 'Failed to load the commentary counts');
+    expect(consoleError).toHaveBeenCalledWith(
+      'loadJson: Failed to load the commentary counts:',
+      error,
+    );
+    expect(sent()[0].fields.message).toBe(
+      'Failed to load the commentary counts: SyntaxError: Unexpected token',
+    );
+  });
+
+  it('reports uncaught errors and rejections without logging them again', () => {
+    const target = new EventTarget() as Window;
+    reportUncaughtErrors(target);
+    target.dispatchEvent(Object.assign(new Event('error'), { error: new Error('thrown') }));
+    target.dispatchEvent(Object.assign(new Event('unhandledrejection'), { reason: 'refused' }));
+    expect(sent().map((e) => e.fields)).toEqual([
+      { source: 'uncaught', message: 'Error: thrown' },
+      { source: 'unhandled_rejection', message: 'refused' },
+    ]);
+    expect(consoleError).not.toHaveBeenCalled();
   });
 });

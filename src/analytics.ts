@@ -4,11 +4,21 @@ import type { TextLanguage } from './types.ts';
 import type { SearchMode } from './search/terms.ts';
 import type { DriverKind } from './scrollytelling/driver.ts';
 import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
-import type { EventFields, EventName, EventPayload } from './telemetry/schema.ts';
+import {
+  errorMessage,
+  MAX_BLOB_CHARS,
+  type ErrorSource,
+  type EventFields,
+  type EventName,
+  type EventPayload,
+} from './telemetry/schema.ts';
 import { linkKind, type LinkKind, type UrlState } from '@torahmap/link';
 
 interface Options {
-  /** Off on the dev server, which sends nothing. */
+  /**
+   * On only in a Vite production build: off on the dev server, and in a plain
+   * Node script (the print scripts), which has no import.meta.env.
+   */
   enabled: boolean;
   send: (body: string) => void;
   getMode: () => DriverKind;
@@ -18,16 +28,20 @@ interface Options {
 }
 
 const options: Options = {
-  enabled: !import.meta.env.DEV,
+  enabled: import.meta.env?.DEV === false,
   send: (body) => navigator.sendBeacon('/api/event', body),
   getMode: () => 'story',
   getStory: () => '',
   visitId: '',
 };
 let storyStopsSent = new Set<string>();
+let errorsSent = new Set<string>();
 
 export function configureAnalytics(changes: Partial<Options>): void {
-  if (changes.visitId !== undefined) storyStopsSent = new Set();
+  if (changes.visitId !== undefined) {
+    storyStopsSent = new Set();
+    errorsSent = new Set();
+  }
   Object.assign(options, changes);
 }
 
@@ -144,4 +158,32 @@ export function trackSefariaClick(
 
 export function trackWebGLMissing(): void {
   track('webgl_missing', {});
+}
+
+/**
+ * Sends each distinct error once per visit, cut to the column's width so a
+ * long message cannot push the body past MAX_BODY_BYTES.
+ */
+function trackError(source: ErrorSource, text: string): void {
+  const message = text.slice(0, MAX_BLOB_CHARS);
+  const key = `${source}\n${message}`;
+  if (errorsSent.has(key)) return;
+  errorsSent.add(key);
+  track('error', { source, message });
+}
+
+/** Logs an error the page handled, and reports it, after `context` if given. */
+export function reportError(source: ErrorSource, error: unknown, context?: string): void {
+  console.error(context ? `${source}: ${context}:` : `${source}:`, error);
+  trackError(source, context ? `${context}: ${errorMessage(error)}` : errorMessage(error));
+}
+
+/** Reports what nothing caught; the browser has already logged it. */
+export function reportUncaughtErrors(target: Window = window): void {
+  target.addEventListener('error', (e) =>
+    trackError('uncaught', errorMessage(e.error ?? e.message)),
+  );
+  target.addEventListener('unhandledrejection', (e) =>
+    trackError('unhandled_rejection', errorMessage(e.reason)),
+  );
 }
