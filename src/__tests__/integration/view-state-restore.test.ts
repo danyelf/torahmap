@@ -2,12 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { parseUrlState } from '../../urlState';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from '../../viewState';
 import { worldToScreen } from '../helpers/worldToScreen';
-import {
-  registerAllOverlays,
-  getOverlay,
-  configureTrop,
-  configureSearch,
-} from '../../overlays/index';
+import { registerAllOverlays, getOverlay, configureSearch } from '../../overlays/index';
 import { SAMPLE_VERSES, SAMPLE_VERSE_TEXTS, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
@@ -53,7 +48,6 @@ describe('restoring a link as one complete view', () => {
     mockHistory('http://localhost:5173/');
     registerAllOverlays();
     settings = createOverlaySettings();
-    configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({ verses: SAMPLE_VERSES, callbacks: { onVerseClick: vi.fn() } });
   });
 

@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure, highlightTropInText, type TropSettings } from '../../../overlays/trop';
+import { tropOverlay, highlightTropInText, type TropSettings } from '../../../overlays/trop';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
 import { assertValidColor, assertApproximately } from '../../helpers/assertions';
-import type { Overlay } from '../../../overlays/types';
-import type { TanakhIdentity, TanakhLayout } from '../../../types';
+import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { getRarityTier, RARITY_THRESHOLDS } from '../../../overlays/trop/marks';
 
@@ -73,12 +72,10 @@ describe('Trop Overlay', () => {
       createVerse({ book: 'Exodus', chapter: 1, verse: 2 }),
       createVerse({ book: 'Psalms', chapter: 1, verse: 1 }),
     ];
-
-    configure({ verseTexts: testVerseTexts });
   });
 
   function makeHost() {
-    return hostOverlay(getOverlay('trop')! as Overlay<TanakhIdentity, TropSettings>, undefined);
+    return hostOverlay(tropOverlay, { texts: testVerseTexts });
   }
 
   /** Click the first button in a freshly drawn set of controls; returns the host and button. */
@@ -424,8 +421,7 @@ describe('Trop Overlay', () => {
       const host = makeHost();
       selectFirstMark(host);
 
-      const overlay = getOverlay('trop')!;
-      const fromColorsFor = overlay.colorsFor!(testVerses, host.settings, null);
+      const fromColorsFor = tropOverlay.colorsFor!(testVerses, host.settings, null, host.data);
       const fromGetVerseColor = testVerses.map((v) => host.getVerseColor(v));
       expect(fromColorsFor).toEqual(fromGetVerseColor);
     });
@@ -436,9 +432,8 @@ describe('Trop Overlay', () => {
       const held = host.settings;
       const urlBefore = host.toUrl();
 
-      const overlay = getOverlay('trop')!;
       const otherSettings: TropSettings = { mark: null, preview: null };
-      overlay.colorsFor!(testVerses, otherSettings, null);
+      tropOverlay.colorsFor!(testVerses, otherSettings, null, host.data);
 
       expect(host.settings).toBe(held);
       expect(host.toUrl()).toEqual(urlBefore);
@@ -477,9 +472,7 @@ describe('Trop Overlay', () => {
       for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
         chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
       }
-      configure({ verseTexts: { 'Genesis': { '1': chapter } } });
-
-      const host = makeHost();
+      const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
       const controls = host.renderControls();
       (controls.querySelector('button') as HTMLButtonElement).click();
 
@@ -576,8 +569,7 @@ describe('Trop Overlay', () => {
 
   describe('Edge Cases', () => {
     it('handles empty verse texts', () => {
-      configure({ verseTexts: {} });
-      const host = makeHost();
+      const host = hostOverlay(tropOverlay, { texts: {} });
       expect(() => host.renderControls()).not.toThrow();
     });
 
@@ -689,20 +681,37 @@ describe('Trop Overlay', () => {
     });
   });
 
-  describe('Configure Function', () => {
-    it('accepts verse texts configuration', () => {
-      expect(() => configure({ verseTexts: testVerseTexts })).not.toThrow();
+  describe('data', () => {
+    it('names the verse texts', () => {
+      expect(tropOverlay.data).toEqual({ texts: 'all-texts.json' });
     });
 
-    it('handles empty verse texts', () => {
-      expect(() => configure({ verseTexts: {} })).not.toThrow();
-    });
-
-    it('builds the trop index from verse texts', () => {
-      configure({ verseTexts: testVerseTexts });
+    it('offers the marks of the texts it is handed now', () => {
       const host = makeHost();
-      const container = host.renderControls();
-      expect(container.querySelectorAll('button').length).toBeGreaterThan(0);
+      const before = host.renderControls().querySelectorAll('button').length;
+      host.setData({ texts: { Genesis: { '1': { '1': { he: 'בָּרָ֣א', en: 'created' } } } } });
+      const after = host.renderControls().querySelectorAll('button').length;
+      expect(after).toBeLessThan(before);
+    });
+
+    it('colours the same whether or not prebuild ran first', () => {
+      const settings = { mark: 'tipcha', preview: null };
+      const onDemand = tropOverlay.colorsFor!(testVerses, settings, null, {
+        texts: structuredClone(testVerseTexts),
+      });
+      const fresh = { texts: structuredClone(testVerseTexts) };
+      tropOverlay.prebuild!(fresh);
+      expect(tropOverlay.colorsFor!(testVerses, settings, null, fresh)).toEqual(onDemand);
+    });
+
+    it('draws the chart once the data arrives, into controls first drawn without it', () => {
+      const container = document.createElement('div');
+      tropOverlay.renderControls!(container, { mark: null, preview: null }, () => {}, null);
+      expect(container.querySelectorAll('.trop-chart button')).toHaveLength(0);
+      tropOverlay.renderControls!(container, { mark: null, preview: null }, () => {}, {
+        texts: testVerseTexts,
+      });
+      expect(container.querySelectorAll('.trop-chart button').length).toBeGreaterThan(0);
     });
   });
 
@@ -738,8 +747,7 @@ describe('Trop Overlay', () => {
       const verse = testVerses[0];
       const before = host.getVerseColor(verse);
 
-      const overlay = getOverlay('trop')!;
-      overlay.destroy?.();
+      tropOverlay.destroy?.();
 
       expect(host.getVerseColor(verse)).toEqual(before);
     });

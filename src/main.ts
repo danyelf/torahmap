@@ -111,7 +111,6 @@ import {
   createOverlaySettings,
   getOverlay,
   getAllOverlays,
-  configureTrop,
   configureSearch,
   type Overlay,
 } from './overlays/index.ts';
@@ -254,8 +253,6 @@ async function main(): Promise<void> {
 
   buildSearchIndex(verseTexts);
   const searchReady = performance.now();
-
-  configureTrop({ verseTexts });
 
   await Promise.all(getAllOverlays().map((o) => o.init?.()));
 

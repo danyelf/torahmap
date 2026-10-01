@@ -4,7 +4,6 @@ import {
   registerOverlay,
   getOverlay,
   getAllOverlays,
-  configureTrop,
   configureSearch,
   type Overlay,
 } from '../../overlays/index';
@@ -45,7 +44,6 @@ describe('Overlay Switching Integration', () => {
     registerAllOverlays();
 
     // Configure overlays with sample data
-    configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({
       verses: SAMPLE_VERSES,
       callbacks: { onVerseClick: vi.fn() },
