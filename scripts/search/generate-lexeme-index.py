@@ -378,6 +378,8 @@ def main():
     # The lexeme of each printed word: its stem, which a further part of a name
     # BHSA holds as one word shares.
     verse_stems = collections.defaultdict(list)
+    # Whether each printed word is one part of a word BHSA prints as two.
+    verse_split = collections.defaultdict(list)
     morph_ids = {}
     morph_table = []
 
@@ -463,6 +465,7 @@ def main():
             close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
             # The stem, once for each word close_word() records.
             verse_stems[key].extend([lexeme] for _ in range(1 + len(word_inner)))
+            verse_split[key].extend([bool(word_inner)] * (1 + len(word_inner)))
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
@@ -596,26 +599,48 @@ def main():
     # ---- file every displayed spelling ------------------------------------
     # Sefaria and BHSA disagree on some spellings -- optional vowel letters
     # (גרלות, Leviticus 16:8), and names divided differently. Such a word,
-    # typed as the page shows it, would find nothing, so it is filed under the
-    # word BHSA parsed there. consonants() also drops the stray bracket of a
-    # bracketed phrase that runs over two words.
+    # typed as the page shows it, would find nothing, or only what BHSA spells
+    # that way elsewhere (הרמתי, Genesis 14:22, is otherwise "Ramathite"), so
+    # it is filed under the word BHSA parsed there. consonants() also drops the
+    # stray bracket of a bracketed phrase that runs over two words.
+    #
+    # A spelling already filed gains a word only where the page prints the same
+    # word BHSA does, whole. Not a half of one -- פת of פתבג, בית of בית אל,
+    # על of עלמות printed על מות -- which would give common words meanings
+    # nobody typing them means; and not a different word in the same place,
+    # Malachi 3:16's אל where BHSA reads את.
+    def same_word(key, i, form):
+        if key in realigned or verse_split[key][i]:
+            return False
+        return difflib.SequenceMatcher(None, form, verse_read_words[key][i]).ratio() > 0.5
+
     added = collections.Counter()
+    unlike = 0
     for key in compared:
-        for form, lexemes_of in zip(displayed[key], lexemes_shown(key)):
-            if is_word(form) and form not in word_lexemes:
-                for lexeme in lexemes_of:
+        for i, (form, lexemes_of) in enumerate(zip(displayed[key], lexemes_shown(key))):
+            if not is_word(form):
+                continue
+            filed = word_lexemes.get(form)
+            for lexeme in lexemes_of:
+                if lexeme in (filed or []):
+                    continue
+                if filed is None or same_word(key, i, form):
                     added[(form, lexeme)] += 1
+                else:
+                    unlike += 1
 
     for form, lexeme in sorted(added, key=lambda p: (-added[p], p[1])):
         word_lexemes.setdefault(form, []).append(lexeme)
+    print(f"  {unlike} displayed words are part of, or other than, the word BHSA "
+          f"parsed there, and their spelling does not offer it")
 
     unfiled = collections.defaultdict(set)
     for key, forms in displayed.items():
         for form in forms:
             if is_word(form) and form not in word_lexemes:
                 unfiled[form].add(key)
-    print(f"  {len({form for form, _ in added})} displayed spellings BHSA does not "
-          f"use, filed under the word parsed there")
+    print(f"  {len({form for form, _ in added})} displayed spellings filed under a word "
+          f"BHSA parsed there and spells another way")
     print(f"  {len(unfiled)} displayed spellings still unfiled, in "
           f"{len(set().union(*unfiled.values()))} verses"
           + (": " + ", ".join(sorted(unfiled)) if unfiled else ""))

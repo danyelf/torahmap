@@ -85,10 +85,11 @@ describe('searching for a clicked word', () => {
   });
 
   it('writes the spelling it searches under with its final letter', () => {
-    // "be cunning" from יַעְרִים in Proverbs 15:5 is searched under a form the
-    // index files as ערומ, which no reader would type.
-    clickWord('יערים', ['<RM=[@heb']);
-    expect(searchOverlay.toUrl().search).toBe('ערום');
+    // This "sleep" is no reading of its dictionary spelling ישן, so it is
+    // searched under a written form the index files as יישנ, which no reader
+    // would type.
+    clickWord('ישן', ['JCN=[@heb']);
+    expect(searchOverlay.toUrl().search).toBe('יישן');
   });
 
   it('adds a second word rather than replacing the first', () => {
