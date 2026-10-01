@@ -3,6 +3,7 @@ import { readLink } from '@torahmap/link';
 import {
   arrivedWith,
   configureAnalytics,
+  downloadKbps,
   reportError,
   reportUncaughtErrors,
   trackStoryExit,
@@ -224,5 +225,20 @@ describe('errors', () => {
       { source: 'unhandled_rejection', message: 'refused' },
     ]);
     expect(consoleError).not.toHaveBeenCalled();
+  });
+});
+
+describe('downloadKbps', () => {
+  it('is the bits transferred over the time the body took, per millisecond', () => {
+    // 250,000 bytes in 500 ms: 2,000,000 bits / 500 ms = 4000 kbps.
+    expect(downloadKbps({ transferSize: 250_000, responseStart: 100, responseEnd: 600 })).toBe(
+      4000,
+    );
+  });
+
+  it('is 0 where the browser reported no download', () => {
+    expect(downloadKbps(undefined)).toBe(0);
+    expect(downloadKbps({ transferSize: 0, responseStart: 100, responseEnd: 600 })).toBe(0);
+    expect(downloadKbps({ transferSize: 250_000, responseStart: 100, responseEnd: 100 })).toBe(0);
   });
 });
