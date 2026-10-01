@@ -1,13 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { termsToRecord, type Recorded } from '../../../overlays/search/recording';
 import { addTerm, setMode, setTermText, type SearchTerm } from '../../../search/terms';
-import type { Meaning } from '../../../search/dictionary';
 
 const none: Recorded = new Map();
-
-function meaning(key: string): Meaning {
-  return { keys: [key], form: key, gloss: key, pos: 'subs', language: 'heb', verseCount: 1 };
-}
 
 describe('termsToRecord', () => {
   it('sends a term it has not recorded', () => {
@@ -43,27 +38,17 @@ describe('termsToRecord', () => {
   });
 
   it('sends a term whose chosen meanings changed', () => {
-    const [plain] = addTerm([], 'עלה');
-    const both: SearchTerm = {
-      ...plain,
-      meanings: [meaning('a'), meaning('b')],
-      selected: new Set(['a', 'b']),
-    };
+    const [both] = addTerm([], 'עלה');
     const { recorded } = termsToRecord(none, [both]);
-    const narrowed = { ...both, selected: new Set(['a']) };
+    const narrowed = { ...both, chosen: ['a'] };
     expect(termsToRecord(recorded, [narrowed]).send).toEqual([narrowed]);
   });
 
-  it('does not send a term whose meanings changed while it is matched by its text', () => {
+  it('does not send a term whose chosen meanings changed while it is matched by its text', () => {
     const [plain] = addTerm([], 'עלה');
-    const both: SearchTerm = {
-      ...plain,
-      mode: 'substring',
-      meanings: [meaning('a'), meaning('b')],
-      selected: new Set(['a', 'b']),
-    };
+    const both: SearchTerm = { ...plain, mode: 'substring' };
     const { recorded } = termsToRecord(none, [both]);
-    const narrowed = { ...both, selected: new Set(['a']) };
+    const narrowed = { ...both, chosen: ['a'] };
     expect(termsToRecord(recorded, [narrowed]).send).toEqual([]);
   });
 

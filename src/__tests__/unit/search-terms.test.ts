@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData, parseSearchTerms } from '../../search.ts';
-import { meaningsInVerse } from '../../search/dictionary.ts';
+import { meaningsInVerse, sameMeaning, versesFor } from '../../search/dictionary.ts';
 import {
   addTerm,
   removeTerm,
@@ -20,6 +20,8 @@ import {
   onlyMeaning,
   allMeanings,
   isNarrowed,
+  meaningsOf,
+  chosenMeanings,
   setMode,
   effectiveMode,
   modesOffered,
@@ -34,17 +36,17 @@ beforeAll(async () => {
 });
 
 describe('adding a term', () => {
-  it('resolves its meanings and starts with all of them selected', () => {
+  it('offers its meanings, all of them chosen', () => {
     const [aleh] = addTerm([], 'עלה');
 
     // Which meanings they are is search-dictionary.test.ts's business.
-    expect(aleh.meanings.length).toBeGreaterThan(1);
-    expect(aleh.selected.size).toBe(aleh.meanings.length);
+    expect(meaningsOf(aleh).length).toBeGreaterThan(1);
+    expect(chosenMeanings(aleh).length).toBe(meaningsOf(aleh).length);
   });
 
   it('paints the union until the reader narrows it', () => {
     const [aleh] = addTerm([], 'עלה');
-    expect(selectedKeys(aleh)).toHaveLength(aleh.meanings.flatMap((m) => m.keys).length);
+    expect(selectedKeys(aleh)).toHaveLength(meaningsOf(aleh).flatMap((m) => m.keys).length);
   });
 
   it('gives each term a colour no other term is using', () => {
@@ -65,23 +67,25 @@ describe('adding a term', () => {
 describe('editing one term', () => {
   it("leaves another term's meaning selection alone", () => {
     let terms = addTerm(addTerm([], 'עלה'), 'שכם');
-    const burntOffering = terms[0].meanings.find((m) => m.gloss === 'burnt-offering')!;
+    const burntOffering = meaningsOf(terms[0]).find((m) => m.gloss === 'burnt-offering')!;
 
     // Narrow the first term, then edit the second.
-    terms = toggleMeaning(terms, terms[0].id, burntOffering.keys[0]);
+    terms = toggleMeaning(terms, terms[0].id, burntOffering.keys);
     const narrowedTo = selectedKeys(terms[0]).length;
     terms = setTermText(terms, terms[1].id, 'מלך');
 
     expect(selectedKeys(terms[0])).toHaveLength(narrowedTo);
-    expect(terms[0].selected.has(burntOffering.keys[0])).toBe(false);
+    expect(chosenMeanings(terms[0]).some((m) => m.keys.includes(burntOffering.keys[0]))).toBe(
+      false,
+    );
   });
 
   it('re-resolves its own meanings and selects all of them again', () => {
     let terms = addTerm([], 'עלה');
     terms = setTermText(terms, terms[0].id, 'שכם');
 
-    expect(terms[0].meanings.map((m) => m.gloss)).toEqual(['Shechem', 'shoulder', 'Shechem']);
-    expect(terms[0].selected.size).toBe(3);
+    expect(meaningsOf(terms[0]).map((m) => m.gloss)).toEqual(['Shechem', 'shoulder', 'Shechem']);
+    expect(chosenMeanings(terms[0]).length).toBe(3);
   });
 });
 
@@ -108,32 +112,32 @@ describe('removing a term', () => {
 describe('choosing meanings', () => {
   it('unchecks one meaning without disturbing the others', () => {
     let terms = addTerm([], 'עלה');
-    const leafage = terms[0].meanings.find((m) => m.gloss === 'leafage')!;
+    const leafage = meaningsOf(terms[0]).find((m) => m.gloss === 'leafage')!;
 
-    terms = toggleMeaning(terms, terms[0].id, leafage.keys[0]);
+    terms = toggleMeaning(terms, terms[0].id, leafage.keys);
 
-    expect(terms[0].selected.has(leafage.keys[0])).toBe(false);
-    expect(terms[0].selected.size).toBe(4);
+    expect(chosenMeanings(terms[0]).some((m) => m.keys.includes(leafage.keys[0]))).toBe(false);
+    expect(chosenMeanings(terms[0]).length).toBe(4);
   });
 
   it('selects every lexeme behind a merged row, not just the first', () => {
     const [shechem] = addTerm([], 'שכם');
-    const merged = shechem.meanings.find((m) => m.keys.length > 1)!;
+    const merged = meaningsOf(shechem).find((m) => m.keys.length > 1)!;
 
     expect(selectedKeys(shechem)).toEqual(expect.arrayContaining(merged.keys));
   });
 
   it('refuses to uncheck the last one, which would match nothing', () => {
     let terms = addTerm([], 'עלה');
-    const [first, ...rest] = terms[0].meanings;
+    const [first, ...rest] = meaningsOf(terms[0]);
     for (const m of rest) {
-      terms = toggleMeaning(terms, terms[0].id, m.keys[0]);
+      terms = toggleMeaning(terms, terms[0].id, m.keys);
     }
-    expect(terms[0].selected.size).toBe(1);
+    expect(chosenMeanings(terms[0]).length).toBe(1);
 
-    terms = toggleMeaning(terms, terms[0].id, first.keys[0]);
+    terms = toggleMeaning(terms, terms[0].id, first.keys);
 
-    expect(terms[0].selected.size).toBe(1);
+    expect(chosenMeanings(terms[0]).length).toBe(1);
   });
 });
 
@@ -145,9 +149,10 @@ describe('carrying a narrowed search in a URL', () => {
 
   it('writes only the narrowed term, leaving the other term empty', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'מלך');
-    const ascend = terms[0].meanings.find((m) => m.gloss === 'ascend')!;
-    const kept = terms[0].meanings.filter((m) => m !== ascend).flatMap((m) => m.keys);
-    terms = toggleMeaning(terms, terms[0].id, ascend.keys[0]);
+    const rows = meaningsOf(terms[0]);
+    const ascend = rows.find((m) => m.gloss === 'ascend')!;
+    const kept = rows.filter((m) => m !== ascend).flatMap((m) => m.keys);
+    terms = toggleMeaning(terms, terms[0].id, ascend.keys);
 
     // Second term untouched, so its slot is empty and the comma still holds
     // its position.
@@ -156,37 +161,37 @@ describe('carrying a narrowed search in a URL', () => {
 
   it('names every lexeme behind a merged row', () => {
     let terms = addTerm([], 'שכם');
-    const shoulder = terms[0].meanings.find((m) => m.gloss === 'shoulder')!;
-    const lastShechem = terms[0].meanings[2];
-    terms = toggleMeaning(terms, terms[0].id, shoulder.keys[0]);
-    terms = toggleMeaning(terms, terms[0].id, lastShechem.keys[0]);
+    const shoulder = meaningsOf(terms[0]).find((m) => m.gloss === 'shoulder')!;
+    const lastShechem = meaningsOf(terms[0])[2];
+    terms = toggleMeaning(terms, terms[0].id, shoulder.keys);
+    terms = toggleMeaning(terms, terms[0].id, lastShechem.keys);
 
     expect(encodeMeanings(terms)).toBe('CKM=/@heb|CKM==/@heb');
   });
 
   it('restores what was narrowed', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'מלך');
-    const ascend = terms[0].meanings.find((m) => m.gloss === 'ascend')!;
-    terms = toggleMeaning(terms, terms[0].id, ascend.keys[0]);
+    const ascend = meaningsOf(terms[0]).find((m) => m.gloss === 'ascend')!;
+    terms = toggleMeaning(terms, terms[0].id, ascend.keys);
 
     const restored = applyMeanings(addTerm(addTerm([], 'עלה'), 'מלך'), encodeMeanings(terms));
 
     expect(selectedKeys(restored[0])).toEqual(selectedKeys(terms[0]));
-    expect(restored[1].selected.size).toBe(terms[1].selected.size);
+    expect(chosenMeanings(restored[1])).toEqual(chosenMeanings(terms[1]));
   });
 
   it('selects a merged row when the URL names any one of its lexemes', () => {
     // A future index could group them differently; naming one should still work.
     const restored = applyMeanings(addTerm([], 'שכם'), 'CKM==/@heb');
 
-    expect(restored[0].selected.size).toBe(1);
+    expect(chosenMeanings(restored[0]).length).toBe(1);
     expect(selectedKeys(restored[0])).toEqual(['CKM=/@heb', 'CKM==/@heb']);
   });
 
   it('falls back to every meaning when a key no longer resolves', () => {
     const restored = applyMeanings(addTerm([], 'עלה'), 'GONE@heb');
 
-    expect(restored[0].selected.size).toBe(5);
+    expect(chosenMeanings(restored[0]).length).toBe(5);
   });
 });
 
@@ -239,18 +244,18 @@ describe('a comma still means another word', () => {
 describe('showing only one meaning', () => {
   it('leaves exactly the one chosen', () => {
     let terms = addTerm([], 'עלה');
-    const burntOffering = terms[0].meanings.find((m) => m.gloss === 'burnt-offering')!;
+    const burntOffering = meaningsOf(terms[0]).find((m) => m.gloss === 'burnt-offering')!;
 
     terms = onlyMeaning(terms, terms[0].id, burntOffering.keys);
 
-    expect(terms[0].selected.size).toBe(1);
+    expect(chosenMeanings(terms[0]).length).toBe(1);
     expect(selectedKeys(terms[0])).toEqual(['<LH/@heb']);
   });
 
   it('keeps every lexeme behind a merged row', () => {
     // Choosing "Shechem" means both of ETCBC's entries for it, not one.
     let terms = addTerm([], 'שכם');
-    const merged = terms[0].meanings.find((m) => m.keys.length > 1)!;
+    const merged = meaningsOf(terms[0]).find((m) => m.keys.length > 1)!;
 
     terms = onlyMeaning(terms, terms[0].id, merged.keys);
 
@@ -274,29 +279,29 @@ describe('showing only one meaning', () => {
 
   it('does not disturb another term', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'מלך');
-    const before = terms[1].selected.size;
+    const before = chosenMeanings(terms[1]).length;
 
-    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[1].keys);
+    terms = onlyMeaning(terms, terms[0].id, meaningsOf(terms[0])[1].keys);
 
-    expect(terms[1].selected.size).toBe(before);
+    expect(chosenMeanings(terms[1]).length).toBe(before);
   });
 });
 
 describe('getting back to all of them', () => {
   it('restores every meaning', () => {
     let terms = addTerm([], 'עלה');
-    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[1].keys);
+    terms = onlyMeaning(terms, terms[0].id, meaningsOf(terms[0])[1].keys);
 
     terms = allMeanings(terms, terms[0].id);
 
-    expect(terms[0].selected.size).toBe(5);
+    expect(chosenMeanings(terms[0]).length).toBe(5);
   });
 
   it('says whether a term is narrowed, so the control can appear', () => {
     let terms = addTerm([], 'עלה');
     expect(isNarrowed(terms[0])).toBe(false);
 
-    terms = onlyMeaning(terms, terms[0].id, terms[0].meanings[0].keys);
+    terms = onlyMeaning(terms, terms[0].id, meaningsOf(terms[0])[0].keys);
 
     expect(isNarrowed(terms[0])).toBe(true);
   });
@@ -442,5 +447,141 @@ describe('typing and parsing agree on what separates two terms', () => {
 
     expect(restored.map((t) => t.text)).toEqual(terms.map((t) => t.text));
     expect(restored.map(effectiveMode)).toEqual(terms.map(effectiveMode));
+  });
+});
+
+describe('the meanings a term has chosen', () => {
+  it('are every meaning until the reader narrows them', () => {
+    const [aleh] = addTerm([], 'עלה');
+    expect(aleh.chosen).toBeNull();
+    expect(chosenMeanings(aleh)).toEqual(meaningsOf(aleh));
+  });
+
+  it('go back to every meaning when the reader checks them all again', () => {
+    let terms = addTerm([], 'עלה');
+    const leafage = meaningsOf(terms[0]).find((m) => m.gloss === 'leafage')!;
+    terms = toggleMeaning(terms, terms[0].id, leafage.keys);
+    terms = toggleMeaning(terms, terms[0].id, leafage.keys);
+    expect(terms[0].chosen).toBeNull();
+  });
+
+  it("keep a link's keys as written, known to the dictionary or not", () => {
+    const restored = applyMeanings(addTerm([], 'עלה'), 'GONE@heb|<LH/@heb');
+    expect(restored[0].chosen).toEqual(['GONE@heb', '<LH/@heb']);
+  });
+
+  it('are forgotten when the text changes', () => {
+    let terms = addTerm([], 'עלה');
+    terms = onlyMeaning(terms, terms[0].id, ['<LH/@heb']);
+    terms = setTermText(terms, terms[0].id, 'שכם');
+    expect(terms[0].chosen).toBeNull();
+  });
+});
+
+describe('a reading picked in the word menu', () => {
+  // Genesis 34:4 holds one of ETCBC's two entries for Shechem the man. The
+  // spelling's own list merges both into one row; the verse's list heads the
+  // same reading with the entry it holds.
+  const VERSE = 'Genesis:34:4';
+  const fromVerse = () => meaningsInVerse('שכם', VERSE).find((m) => m.gloss === 'Shechem')!;
+
+  function pickedInMenu(): SearchTerm[] {
+    const terms = addTerm([], 'שכם');
+    return onlyMeaning(terms, terms[0].id, fromVerse().keys);
+  }
+
+  function pickedInPanel(): SearchTerm[] {
+    const terms = addTerm([], 'שכם');
+    const row = meaningsOf(terms[0]).find((m) => sameMeaning(m, fromVerse().keys))!;
+    return onlyMeaning(terms, terms[0].id, row.keys);
+  }
+
+  const reopened = (terms: SearchTerm[]) =>
+    applyMeanings(addTerm([], 'שכם'), encodeMeanings(terms));
+
+  it('is headed by another key in the verse than in the term', () => {
+    const own = meaningsOf(addTerm([], 'שכם')[0]).find((m) => sameMeaning(m, fromVerse().keys))!;
+    expect(fromVerse().keys[0]).not.toBe(own.keys[0]);
+  });
+
+  it('checks the row picking it in the panel checks, and finds its verses', () => {
+    const [menu] = pickedInMenu();
+    const [panel] = pickedInPanel();
+    expect(chosenMeanings(menu)).toEqual(chosenMeanings(panel));
+    expect(versesFor(selectedKeys(menu))).toEqual(versesFor(selectedKeys(panel)));
+  });
+
+  it('comes back from a link as the same row', () => {
+    const [panel] = pickedInPanel();
+    expect(chosenMeanings(reopened(pickedInMenu())[0])).toEqual(chosenMeanings(panel));
+    expect(chosenMeanings(reopened(pickedInPanel())[0])).toEqual(chosenMeanings(panel));
+  });
+});
+
+// The `m` each kind of choice writes, and that the link reopens to the same
+// search. Where `m` differs from what the code wrote before terms kept their
+// choices as keys, the test says what it wrote then; those are the expected
+// shifts the pull request lists.
+describe('the m a choice writes', () => {
+  /** A choice made on `before`, written into a link and read back onto fresh terms of the same words. */
+  function reopens(before: SearchTerm[]): void {
+    const after = applyMeanings(
+      before.map((t) => addTerm([], t.text)[0]),
+      encodeMeanings(before),
+    );
+    after.forEach((term, i) => {
+      expect(chosenMeanings(term)).toEqual(chosenMeanings(before[i]));
+      expect(versesFor(selectedKeys(term))).toEqual(versesFor(selectedKeys(before[i])));
+    });
+  }
+
+  it('writes the key of a word of one meaning picked from the menu', () => {
+    // Wrote nothing before: the one row was every row.
+    const fromVerse = meaningsInVerse('כוש', 'Genesis:10:7')[0];
+    const terms = addTerm([], 'כוש');
+    const picked = onlyMeaning(terms, terms[0].id, fromVerse.keys);
+    expect(encodeMeanings(picked)).toBe(fromVerse.keys.join('|'));
+    reopens(picked);
+  });
+
+  it('writes the key it was given for part of a merged row picked from the menu', () => {
+    // Wrote the term's whole row before, CKM=/@heb|CKM==/@heb.
+    const fromVerse = meaningsInVerse('שכם', 'Genesis:34:4').find((m) => m.gloss === 'Shechem')!;
+    const terms = addTerm([], 'שכם');
+    const picked = onlyMeaning(terms, terms[0].id, fromVerse.keys);
+    expect(encodeMeanings(picked)).toBe('CKM==/@heb');
+    reopens(picked);
+  });
+
+  it('writes the row picked in the panel, and an empty entry for the term beside it', () => {
+    // Unchanged.
+    const terms = addTerm(addTerm([], 'עלה'), 'שכם');
+    const burntOffering = meaningsOf(terms[0]).find((m) => m.gloss === 'burnt-offering')!;
+    const picked = onlyMeaning(terms, terms[0].id, burntOffering.keys);
+    expect(encodeMeanings(picked)).toBe('<LH/@heb,');
+    reopens(picked);
+  });
+
+  it('writes a narrowed link back as it was written', () => {
+    // Unchanged for a link the app wrote.
+    const link = '<LH/@heb,CKM=/@heb|CKM==/@heb';
+    const opened = applyMeanings(addTerm(addTerm([], 'עלה'), 'שכם'), link);
+    expect(encodeMeanings(opened)).toBe(link);
+    reopens(opened);
+  });
+
+  it("writes a link's key for part of a merged row back as given", () => {
+    // Wrote the whole row before, CKM=/@heb|CKM==/@heb.
+    const opened = applyMeanings(addTerm([], 'שכם'), 'CKM==/@heb');
+    expect(encodeMeanings(opened)).toBe('CKM==/@heb');
+    reopens(opened);
+  });
+
+  it('writes back a link naming no meaning the word has, which still means every meaning', () => {
+    // Wrote nothing before.
+    const opened = applyMeanings(addTerm([], 'עלה'), 'GONE@heb');
+    expect(encodeMeanings(opened)).toBe('GONE@heb');
+    expect(chosenMeanings(opened[0])).toEqual(meaningsOf(opened[0]));
+    reopens(opened);
   });
 });

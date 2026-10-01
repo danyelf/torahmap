@@ -7,7 +7,10 @@
 // direction of the dependency visible.
 import { isHebrew, stripNikkud } from '../../hebrew.ts';
 import type { LexemeLanguage } from '../../search.ts';
+import type { Meaning } from '../../search/dictionary.ts';
 import {
+  meaningsOf,
+  chosenAmong,
   removeTerm,
   setTermText,
   toggleMeaning,
@@ -120,17 +123,14 @@ function meaningTag(pos: string, language: LexemeLanguage): string {
   return language === 'arc' ? `(aram., ${posLabel})` : `(${posLabel})`;
 }
 
-function buildMeaningRow(
-  term: SearchTerm,
-  meaning: SearchTerm['meanings'][number],
-): HTMLLabelElement {
+function buildMeaningRow(term: SearchTerm, meaning: Meaning): HTMLLabelElement {
   const row = document.createElement('label');
   row.className = 'meaning-row';
 
   const box = document.createElement('input');
   box.type = 'checkbox';
   box.addEventListener('change', () => {
-    host?.edit((terms) => toggleMeaning(terms, term.id, meaning.keys[0]));
+    host?.edit((terms) => toggleMeaning(terms, term.id, meaning.keys));
   });
   row.appendChild(box);
 
@@ -187,15 +187,15 @@ function termSummary(term: SearchTerm): string {
   // with at least two of them has anything to report about them. One meaning
   // is not a choice, and a word the dictionary does not know has none at all —
   // both of those are the rows that show no checkboxes either.
-  if (effectiveMode(term) !== 'meanings' || term.meanings.length < 2) return mode;
+  const rows = meaningsOf(term);
+  if (effectiveMode(term) !== 'meanings' || rows.length < 2) return mode;
 
   // Saying how many there are rather than leaving the mode bare: meanings over
   // a word with four readings is searching for all four, and a row that said
   // only "meanings" gave no sign of it.
-  if (!isNarrowed(term)) return `${mode} · all ${term.meanings.length} meanings`;
+  if (!isNarrowed(term)) return `${mode} · all ${rows.length} meanings`;
 
-  const chosen = term.meanings
-    .filter((m) => term.selected.has(m.keys[0]))
+  const chosen = chosenAmong(rows, term)
     .map((m) => m.gloss)
     .join(', ');
   return chosen ? `${mode} · ${chosen}` : mode;
@@ -246,13 +246,14 @@ function renderModeControl(body: HTMLElement, term: SearchTerm): void {
  * boxes are then synced on every pass, so a refused toggle (unchecking the last
  * one) is put back rather than leaving the page disagreeing with the state.
  */
-function meaningSignature(term: SearchTerm): string {
-  if (effectiveMode(term) !== 'meanings' || term.meanings.length < 2) return '';
-  return term.meanings.map((m) => m.keys[0]).join(',');
+function meaningSignature(term: SearchTerm, rows: Meaning[]): string {
+  if (effectiveMode(term) !== 'meanings' || rows.length < 2) return '';
+  return rows.map((m) => m.keys[0]).join(',');
 }
 
 function renderMeanings(row: HTMLElement, term: SearchTerm): void {
-  const signature = meaningSignature(term);
+  const rows = meaningsOf(term);
+  const signature = meaningSignature(term, rows);
 
   if (row.dataset.meanings !== signature) {
     row.dataset.meanings = signature;
@@ -261,7 +262,7 @@ function renderMeanings(row: HTMLElement, term: SearchTerm): void {
     if (signature) {
       const list = document.createElement('div');
       list.className = 'term-meanings';
-      for (const meaning of term.meanings) {
+      for (const meaning of rows) {
         list.appendChild(buildMeaningRow(term, meaning));
       }
       row.appendChild(list);
@@ -270,15 +271,16 @@ function renderMeanings(row: HTMLElement, term: SearchTerm): void {
 
   if (!signature) return;
 
+  const chosen = chosenAmong(rows, term);
   const boxes = row.querySelectorAll<HTMLInputElement>('.meaning-row input');
-  term.meanings.forEach((meaning, i) => {
+  rows.forEach((meaning, i) => {
     const box = boxes[i];
     if (!box) return;
-    box.checked = term.selected.has(meaning.keys[0]);
+    box.checked = chosen.includes(meaning);
     // Locked with a class rather than the disabled attribute: a disabled
     // checkbox is drawn grey, so the one meaning still chosen would look like
     // the least chosen one.
-    const locked = box.checked && term.selected.size === 1;
+    const locked = box.checked && chosen.length === 1;
     box.closest('.meaning-row')?.classList.toggle('locked', locked);
     box.title = locked ? 'The last meaning cannot be unchecked' : '';
   });

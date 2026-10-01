@@ -14,7 +14,7 @@
 import { describe, it, expect } from 'vitest';
 import { validateOverlayParams } from '@torahmap/link';
 import { searchTool } from '../../overlays/search/index';
-import { addTerm, applyMeanings, encodeMeanings, selectedKeys } from '../../search/terms';
+import { addTerm, applyMeanings, encodeMeanings } from '../../search/terms';
 import type { SearchTerm } from '../../search/terms';
 
 // The overlay's own declaration, not a copy of it: declaring `m` as free text
@@ -22,21 +22,10 @@ import type { SearchTerm } from '../../search/terms';
 // would go on passing while the app broke.
 const SPEC = searchTool.urlParams!;
 
-/** A term standing in for a resolved word, narrowed to the keys given. */
-function narrowedTerm(keys: string[], all: string[]): SearchTerm {
+/** A term narrowed to the keys given. */
+function narrowedTerm(keys: string[]): SearchTerm {
   const [term] = addTerm([], 'x');
-  return {
-    ...term,
-    meanings: all.map((key) => ({
-      keys: [key],
-      form: key,
-      gloss: key,
-      pos: 'subs',
-      language: 'heb' as const,
-      verseCount: 1,
-    })),
-    selected: new Set(keys),
-  };
+  return { ...term, chosen: keys };
 }
 
 /** Write, send through the URL layer exactly as the app does, and read back. */
@@ -47,26 +36,23 @@ function roundTrip(terms: SearchTerm[]): SearchTerm[] {
   const readBack = new URLSearchParams(params.toString()).get('m')!;
   const validated = validateOverlayParams(SPEC, { m: readBack }).m;
   return applyMeanings(
-    terms.map((t) => ({ ...t, selected: new Set(t.meanings.map((m) => m.keys[0])) })),
+    terms.map((t) => ({ ...t, chosen: null })),
     validated ?? '',
   );
 }
 
 describe('sharing a narrowed search', () => {
   it('keeps both choices when one key has ayin and the next has aleph', () => {
-    const terms = [
-      narrowedTerm(['<LH/@heb'], ['<LH/@heb', '<LH=/@heb']),
-      narrowedTerm(['>MR[@heb'], ['>MR[@heb', '>MR/@heb']),
-    ];
+    const terms = [narrowedTerm(['<LH/@heb']), narrowedTerm(['>MR[@heb'])];
 
     const restored = roundTrip(terms);
 
-    expect(selectedKeys(restored[0])).toEqual(['<LH/@heb']);
-    expect(selectedKeys(restored[1])).toEqual(['>MR[@heb']);
+    expect(restored[0].chosen).toEqual(['<LH/@heb']);
+    expect(restored[1].chosen).toEqual(['>MR[@heb']);
   });
 
   it('reaches the overlay with its brackets intact', () => {
-    const terms = [narrowedTerm(['<LH/@heb'], ['<LH/@heb', '>MR[@heb'])];
+    const terms = [narrowedTerm(['<LH/@heb'])];
     const written = encodeMeanings(terms);
 
     expect(written).toBe('<LH/@heb');
@@ -77,14 +63,5 @@ describe('sharing a narrowed search', () => {
     // Refused whole rather than edited, so a tampered link cannot half-apply.
     expect(validateOverlayParams(SPEC, { m: '<script>alert(1)</script>' }).m).toBeUndefined();
     expect(validateOverlayParams(SPEC, { m: '<LH/@heb but with spaces' }).m).toBeUndefined();
-  });
-
-  it('falls back to every meaning when the link names nothing it knows', () => {
-    const terms = [narrowedTerm(['<LH/@heb'], ['<LH/@heb', '<LH=/@heb'])];
-    const restored = applyMeanings(
-      terms.map((t) => ({ ...t, selected: new Set(t.meanings.map((m) => m.keys[0])) })),
-      'NOPE/@heb',
-    );
-    expect(selectedKeys(restored[0])).toEqual(['<LH/@heb', '<LH=/@heb']);
   });
 });

@@ -21,6 +21,7 @@ import {
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import {
   addTerm,
+  chosenMeanings,
   colorIndexAt,
   setTermText,
   onlyMeaning,
@@ -531,8 +532,8 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
     const named = termIndices.map((i) => {
       const term = active[i];
       if (effectiveMode(term) !== 'meanings') return term.text;
-      const here = term.meanings
-        .filter((m) => term.selected.has(m.keys[0]) && versesFor(m.keys).has(key))
+      const here = chosenMeanings(term)
+        .filter((m) => versesFor(m.keys).has(key))
         .map((m) => m.gloss);
       return `${term.text} (${here.join(', ')})`;
     });

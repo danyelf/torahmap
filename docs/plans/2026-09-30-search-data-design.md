@@ -320,3 +320,12 @@ Decisions made while implementing step 2, newest last.
 - **2026-10-01 (plan)** `interactive-search.manual.html` is left as it is: it
   imports `BOOK_ORDER`, which `src/constants/books.ts` does not export, so it is
   broken already. Filed as an issue.
+- **2026-10-01 (Task 2)** `search-meaning-url.test.ts` loses "falls back to
+  every meaning when the link names nothing it knows": that file has no
+  dictionary, and the fallback is a rule of a term's rows, pinned in
+  `search-terms.test.ts` ("falls back to every meaning when a key no longer
+  resolves" and "writes back a link naming no meaning the word has").
+- **2026-10-01 (Task 2)** `search-terms.test.ts`'s "writes only the narrowed
+  term" looks the rows up once: it compares rows by identity, and until Task 3
+  memoises `meaningsFor`, two calls return different objects. A setup line; the
+  expected value is unchanged.
