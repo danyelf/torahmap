@@ -32,15 +32,18 @@ export async function mapReady(page: Page): Promise<void> {
 }
 
 /**
- * The page's uncaught errors and console errors from now on. They keep
- * arriving, so check the list again after acting on the page.
+ * The page's uncaught errors and, unless `console` is false, its console
+ * errors from now on. They keep arriving, so check the list again after acting
+ * on the page.
  */
-export function collectErrors(page: Page): string[] {
+export function collectErrors(page: Page, { console = true } = {}): string[] {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(`console: ${m.text()}`);
-  });
+  if (console) {
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(`console: ${m.text()}`);
+    });
+  }
   return errors;
 }
 

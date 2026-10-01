@@ -267,3 +267,7 @@ Decisions made while implementing step 3, newest last.
   CSS; `haftarah.ts` itself does. The commentary path stays written out:
   `commentary.ts` names it inline and imports CSS through `panel.ts` and
   `legend.ts`.
+- **2026-10-01 (Task 1 review)** The overlay-and-search case waits for
+  search to be in, with the overlay row still loading, before it takes the
+  picture to compare against; otherwise search landing alone would change the
+  map and pass the case with commentary never coloured.

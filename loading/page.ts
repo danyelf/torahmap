@@ -62,21 +62,24 @@ export async function open(
 
 /** The map has drawn, and nothing on it is coloured. */
 export async function expectPlainMap(page: Page): Promise<void> {
+  let counts = { drawn: 0, coloured: 0 };
   await expect
-    .poll(async () => (await pixelCounts(page, await canvasShot(page))).drawn)
+    .poll(async () => (counts = await pixelCounts(page, await canvasShot(page))).drawn)
     .toBeGreaterThan(DRAWN_FLOOR);
-  expect((await pixelCounts(page, await canvasShot(page))).coloured).toBeLessThan(COLOURED_FLOOR);
+  expect(counts.coloured).toBeLessThan(COLOURED_FLOOR);
 }
 
 /** The canvas once two shots in a row agree: an ease or a glide in progress has finished. */
-export async function stillShot(page: Page): Promise<Buffer> {
+export async function stillShot(page: Page, timeout = 30_000): Promise<Buffer> {
+  const deadline = Date.now() + timeout;
   let last = await canvasShot(page);
-  for (;;) {
+  while (Date.now() < deadline) {
     await page.waitForTimeout(250);
     const next = await canvasShot(page);
     if (next.equals(last)) return next;
     last = next;
   }
+  throw new Error(`the map never settled: still changing after ${timeout} ms`);
 }
 
 /** Waits until the canvas differs from `before`. */

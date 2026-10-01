@@ -3,7 +3,7 @@
 // the case sets rather than a race it hopes to win.
 import { expect, test } from '@playwright/test';
 import { viaMenu } from '../layout/app.ts';
-import { mapReady } from '../layout/page.ts';
+import { collectErrors, mapReady } from '../layout/page.ts';
 import { COMMENTARY, DICTIONARY, EVERYTHING, TEXTS_FILE } from './files.ts';
 import {
   expectPlainMap,
@@ -68,6 +68,7 @@ test("a search link keeps its word in the box, and finds it once search's files 
   const before = await stillShot(page);
   release();
   await mapChangesFrom(page, before);
+  await expect(page.locator(searchRow)).toBeVisible();
   await expect(page.locator(searchRow)).not.toHaveAttribute('data-loading');
   await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
   await mapReady(page);
@@ -163,6 +164,7 @@ test('a story scrolled to a search before its files land shows the search when t
   release();
   await mapChangesFrom(page, before);
   await expect(page.locator(searchRow)).toBeVisible();
+  await expect(page.locator(searchRow)).not.toHaveAttribute('data-loading');
   await mapReady(page);
   expect(errors).toEqual([]);
 });
@@ -173,11 +175,14 @@ test('an overlay and a search fill in each as its own files land', async ({ page
     `search=${encodeURIComponent(WORD)}&overlay=commentary`,
     [COMMENTARY],
   );
+  // Search in first, so the change after release can only be the overlay's.
   await expect(page.locator(searchRow)).toBeVisible();
+  await expect(page.locator(searchRow)).not.toHaveAttribute('data-loading');
   await expect(page.locator(`${overlayRow}[data-loading]`)).toBeVisible();
   const before = await stillShot(page);
   release();
   await mapChangesFrom(page, before);
+  await expect(page.locator(overlayRow)).toBeVisible();
   await expect(page.locator(overlayRow)).not.toHaveAttribute('data-loading');
   await mapReady(page);
   expect(errors).toEqual([]);
@@ -189,8 +194,7 @@ test('a failed download leaves its overlay plain and says so where it would show
   await throttle(page);
   await fail(page, [COMMENTARY]);
   // The browser and the app both log the failed download; only uncaught errors count here.
-  const pageErrors: string[] = [];
-  page.on('pageerror', (e) => pageErrors.push(e.message));
+  const pageErrors = collectErrors(page, { console: false });
   await page.goto('/?overlay=commentary');
   await mapReady(page);
   await expect(page.locator('html')).toHaveAttribute('data-loaded');
@@ -210,6 +214,9 @@ test('a search typed before its files land is recorded once they do', async ({ p
   await page.locator('#search-input').fill('light');
   release();
   await expect.poll(() => sentSearches(page)).toEqual(['light']);
+  await expect(page.locator('html')).toHaveAttribute('data-loaded');
+  await mapReady(page);
+  expect(await sentSearches(page)).toEqual(['light']);
   expect(errors).toEqual([]);
 });
 
@@ -223,6 +230,9 @@ test('a linked search is never recorded; a word the reader adds is', async ({ pa
   await page.locator('#add-term').click();
   await page.locator('.term-row[data-open="true"] .term-input').fill('dark');
   await expect.poll(() => sentSearches(page)).toEqual(['dark']);
+  await expect(page.locator('html')).toHaveAttribute('data-loaded');
+  await mapReady(page);
+  expect(await sentSearches(page)).toEqual(['dark']);
   expect(errors).toEqual([]);
 });
 
