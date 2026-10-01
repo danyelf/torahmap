@@ -323,3 +323,17 @@ Decisions made while implementing step 3, newest last.
   popup catches up on its next redraw (a hover, a pin, a search change), rather
   than as the menu closes: closing on a mousedown over another word and
   redrawing then would replace that word under the pointer and lose its click.
+- **2026-10-01 (branch review, round 2)** The rule above holds for every
+  landing and every failure, including one that redraws the overlay's or the
+  search's panel: `fileLanded` and `fileFailed` redraw the panels, then the
+  legend once, then the popup once behind the word-menu check. Switching
+  overlay or typing still redraws the popup as before.
+- **2026-10-01 (branch review, round 2)** "Nothing builds while no word is
+  typed" lives in `searchFor`, which returns the empty search without building,
+  and in the term rows' `dictionary()`, which is null then; the caption, the
+  results and the rows no longer check it themselves. The caption's wording is
+  unchanged.
+- **2026-10-01 (branch review, round 2)** The loading suite records page
+  errors with their stacks (`collectErrors`), so the broken-lexicon case uses
+  the shared `open` and still checks that its one error is uncaught and names
+  `buildDictionary`.

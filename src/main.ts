@@ -384,12 +384,12 @@ async function main(): Promise<void> {
 
   function updateLegend(): void {
     const tools = toolsNow();
-    const picked = pickedTools();
+    const picked = { search: searching() ? searchTool : null, overlay: currentOverlay };
     const rows: LegendRow[] = [];
     const warnings: Node[] = [];
     for (const panel of ['search', 'overlay'] as const) {
       const on = tools[panel];
-      const tool = picked.find((t) => (panel === 'search' ? t === searchTool : t !== searchTool));
+      const tool = picked[panel];
       if (on) {
         rows.push({
           panel,
@@ -399,11 +399,11 @@ async function main(): Promise<void> {
       } else if (tool) {
         // A picked tool without its data: its files are on their way, or one failed.
         const files = requiredFiles(tool);
-        const state = waitingOn(files, downloads);
-        if (state === 'loading') {
+        if (waitingOn(files, downloads) === 'loading') {
           rows.push({ panel, name: tool.name, summary: { detail: LOADING }, loading: true });
-        } else if (state === 'failed') {
-          warnings.push(loadNotice('failed', () => closeWarning(files)));
+        } else {
+          const notice = noticeFor(files);
+          if (notice) warnings.push(notice);
         }
       }
     }
@@ -464,6 +464,10 @@ async function main(): Promise<void> {
       render();
       return;
     }
+    fadeToTools();
+  }
+
+  function fadeToTools(): void {
     fadeMap(fillDefaultColors(explorePicture()), applyTools);
   }
 
@@ -1039,10 +1043,9 @@ async function main(): Promise<void> {
   }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    const texts = waitingOn([TEXTS_FILE], downloads);
     updateSidebar(sidebarElements, verse, {
       verseTexts: textsFrom(loaded),
-      textsNotice: texts && loadNotice(texts, () => closeWarning([TEXTS_FILE])),
+      textsNotice: noticeFor([TEXTS_FILE]),
       wordsClickable: dataFor(searchTool, loaded) !== null,
       ...toolsNow(),
       pinned: isPinned,
@@ -1063,10 +1066,15 @@ async function main(): Promise<void> {
   function showSearchNotice(): void {
     const caption = searchControls.querySelector('#search-hit-caption');
     if (!caption) return;
-    const files = requiredFiles(searchTool);
-    const state = waitingOn(files, downloads);
-    if (state) caption.replaceChildren(loadNotice(state, () => closeWarning(files)));
+    const notice = noticeFor(requiredFiles(searchTool));
+    if (notice) caption.replaceChildren(notice);
     else caption.querySelector('.load-notice')?.remove();
+  }
+
+  /** What a place waiting on `paths` shows: a loading notice, a closable warning, or nothing. */
+  function noticeFor(paths: readonly string[]): HTMLElement | null {
+    const state = waitingOn(paths, downloads);
+    return state && loadNotice(state, () => closeWarning(paths));
   }
 
   /** Redraw every place that says a file is loading or failed. */
@@ -1191,6 +1199,12 @@ async function main(): Promise<void> {
    * elsewhere; a reader's own edit redraws into them, keeping their focus.
    */
   function overlayChanged(fresh: boolean): void {
+    drawOverlayPanel(fresh);
+    updateLegend();
+    refreshVersePopup();
+  }
+
+  function drawOverlayPanel(fresh: boolean): void {
     if (fresh) {
       if (overlaySelect) overlaySelect.value = currentOverlayId();
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
@@ -1198,8 +1212,6 @@ async function main(): Promise<void> {
     renderOverlayControls();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
-    updateLegend();
-    refreshVersePopup();
   }
 
   /**
@@ -1228,6 +1240,12 @@ async function main(): Promise<void> {
    * them, keeping their focus.
    */
   function searchChanged(fresh: boolean): void {
+    drawSearchPanel(fresh);
+    updateLegend();
+    refreshVersePopup();
+  }
+
+  function drawSearchPanel(fresh: boolean): void {
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
@@ -1240,8 +1258,6 @@ async function main(): Promise<void> {
       dataFor(searchTool, loaded),
     );
     showSearchNotice();
-    updateLegend();
-    refreshVersePopup();
   }
 
   function changeSearch(update: (current: SearchSettings) => SearchSettings): void {
@@ -1828,7 +1844,7 @@ async function main(): Promise<void> {
       keepDriving(next);
       scheduleStoryFrame();
     } else if (how === 'overlay') {
-      fadeMap(fillDefaultColors(explorePicture()), applyTools);
+      fadeToTools();
     } else if (how === 'blend') {
       const colors = blendColors();
       if (colors) fadeMap(flatten(colors), blendTransition);
@@ -1846,17 +1862,24 @@ async function main(): Promise<void> {
     if (search !== dataFor(searchTool, before)) searchRecorder.dataChanged(search);
     const stale = staleAfterLanding(before, loaded, landingView());
     if (stale.map) redrawMap(stale.map);
-    if (stale.overlayPanel) overlayChanged(false);
-    if (stale.searchPanel) searchChanged(false);
-    // Redrawing the popup under an open word menu would take away the word it
-    // names; the popup catches up on its next redraw.
-    if (stale.popup && !wordMenuOpen()) refreshVersePopup();
+    if (stale.overlayPanel) drawOverlayPanel(false);
+    if (stale.searchPanel) drawSearchPanel(false);
+    if (stale.overlayPanel || stale.searchPanel) updateLegend();
+    if (stale.popup) refreshPopupAfterDownload();
   }
 
   function fileFailed(path: string): void {
     downloads.pending.delete(path);
     downloads.failed.add(path);
-    showLoadState();
+    updateLegend();
+    showSearchNotice();
+    refreshPopupAfterDownload();
+  }
+
+  // Redrawing the popup under an open word menu would take away the word it
+  // names; the popup catches up on its next redraw.
+  function refreshPopupAfterDownload(): void {
+    if (!wordMenuOpen()) refreshVersePopup();
   }
 
   function prebuilt(overlay: Overlay, built: boolean): void {

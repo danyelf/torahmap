@@ -18,10 +18,9 @@ export function toolsShown(
   search: SearchSettings,
   loaded: Loaded,
 ): Tools {
-  const picked = toolsPicked(overlay, search);
   return {
     overlay: overlay && withData(overlay, overlaySettings, loaded),
-    search: picked.includes(searchTool) ? withData(searchTool, search, loaded) : null,
+    search: isSearching(search) ? withData(searchTool, search, loaded) : null,
   };
 }
 

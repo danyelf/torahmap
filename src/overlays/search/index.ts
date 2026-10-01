@@ -87,7 +87,11 @@ const searches = memoByValue((index: TextIndex) =>
   ),
 );
 
+const NO_SEARCH: Search = { active: [], results: [], matchingTerms: new Map() };
+
+/** The search these settings run; with no word typed, the empty one, building nothing. */
 function searchFor(data: SearchData, settings: SearchSettings): Search {
+  if (typedTerms(settings).length === 0) return NO_SEARCH;
   return searches(textIndexOf(data))(dictionaryOf(data))(settings);
 }
 
@@ -257,9 +261,9 @@ export function termHitCount(
   settings: SearchSettings,
   term: SearchTerm,
 ): number | null {
-  const index = activeTerms(settings).indexOf(term);
+  const { active, results } = searchFor(data, settings);
+  const index = active.indexOf(term);
   if (index === -1) return null;
-  const { results } = searchFor(data, settings);
 
   let count = 0;
   for (const result of results) {
@@ -278,12 +282,6 @@ function updateHitCaption(settings: SearchSettings, data: SearchData | null): vo
     searchHitCaption.textContent = '';
     return;
   }
-  // Before searchFor, which builds the text index and the dictionary.
-  if (typedTerms(settings).length === 0) {
-    searchHitCaption.textContent = 'Type to search';
-    return;
-  }
-
   const { active, results } = searchFor(data, settings);
   const listed = resultsForOpenRow(data, settings).length;
 
@@ -299,8 +297,10 @@ function updateHitCaption(settings: SearchSettings, data: SearchData | null): vo
         : `${listed} of ${results.length} matching verses`;
   } else if (active.length > 0) {
     message = 'No matching verses';
-  } else {
+  } else if (typedTerms(settings).length > 0) {
     message = 'Type at least 2 characters per term';
+  } else {
+    message = 'Type to search';
   }
 
   searchHitCaption.textContent = message;
@@ -310,7 +310,7 @@ function updateHitCaption(settings: SearchSettings, data: SearchData | null): vo
 function renderResults(settings: SearchSettings, data: SearchData | null): void {
   if (!searchResults) return;
 
-  if (!data || typedTerms(settings).length === 0) {
+  if (!data) {
     renderResultsList(searchResults, {
       results: [],
       terms: [],
@@ -321,14 +321,13 @@ function renderResults(settings: SearchSettings, data: SearchData | null): void 
     return;
   }
 
-  const index = textIndexOf(data);
-  const dictionary = dictionaryOf(data);
   renderResultsList(searchResults, {
     results: resultsForOpenRow(data, settings),
     terms: searchFor(data, settings).active,
     focus: openTermIndex(settings),
     onSelect: showVerse,
-    snippet: (result, term) => excerpt(result, term, index, dictionary, data.parse),
+    snippet: (result, term) =>
+      excerpt(result, term, textIndexOf(data), dictionaryOf(data), data.parse),
   });
 }
 
@@ -355,7 +354,8 @@ function openRow(id: string): void {
 const termRowsHost: TermRowsHost = {
   terms: () => shown?.terms ?? [],
   openId: () => (shown ? (openTerm(shown)?.id ?? null) : null),
-  dictionary: () => (shownData ? dictionaryOf(shownData) : null),
+  dictionary: () =>
+    shown && shownData && typedTerms(shown).length > 0 ? dictionaryOf(shownData) : null,
   hitCount: (term) => (shown && shownData ? termHitCount(shownData, shown, term) : null),
   edit(change) {
     requestChange?.((current) => ({ terms: change(current.terms) }));
