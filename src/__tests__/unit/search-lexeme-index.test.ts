@@ -112,8 +112,16 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
     it("include each lexeme's commonest printed spelling, filed under it", () => {
       const misfiled = lexemes
         .map((row, id) => [row[5], id] as const)
-        .filter(([printed, id]) => printed !== '' && !forms[printed]?.includes(id));
+        .filter(
+          ([printed, id]) =>
+            printed !== '' && !forms[normalizeHebrewForSearch(printed)]?.includes(id),
+        );
       expect(misfiled).toEqual([]);
+    });
+
+    it('write that spelling as printed, with a final letter ending each word', () => {
+      const medialAtEnd = lexemes.map((row) => row[5]).filter((p) => /[כמנפצ](\s|$)/.test(p));
+      expect(medialAtEnd).toEqual([]);
     });
 
     it('keeps the several words spelled עלה apart instead of merging them', () => {

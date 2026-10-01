@@ -31,7 +31,6 @@ import {
   mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
-  withFinalLetter,
   type TextWord,
 } from '../hebrew.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
@@ -226,9 +225,7 @@ export function spellingFor(keys: readonly string[], clicked: string): string | 
     const spelling = stripNikkud(getLexeme(id)?.form ?? '');
     if (spelling && has(spelling)) return spelling;
   }
-  // The index keeps its spellings folded; the search box shows them as printed.
-  const printed = ids.map(printedSpelling).find(Boolean);
-  return printed ? withFinalLetter(printed) : null;
+  return ids.map(printedSpelling).find(Boolean) ?? null;
 }
 
 /** The verses carrying any of these meanings. */

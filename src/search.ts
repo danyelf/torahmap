@@ -83,7 +83,7 @@ let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
 // Consonantal dictionary spelling -> lexemes, for readers who type a bare root
 // that never appears on its own in the text.
 let spellingToLexemes: Map<string, LexemeId[]> | null = null;
-// Each lexeme's commonest printed spelling, folded. Parallel to `lexicon`.
+// Each lexeme's commonest spelling, as printed. Parallel to `lexicon`.
 let printedSpellings: string[] = [];
 
 /** The terms a query string names, dropping ones too short to search on. */
@@ -240,7 +240,7 @@ function lookupFormOrSpelling(term: string): LexemeId[] | null {
   return null;
 }
 
-/** The spelling a lexeme is most often printed with, folded; empty when it never is. */
+/** The spelling a lexeme is most often printed with; empty when it never is. */
 export function printedSpelling(id: LexemeId): string {
   return printedSpellings[id] ?? '';
 }

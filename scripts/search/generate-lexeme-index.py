@@ -165,6 +165,15 @@ def normalize(text):
     Mirrors normalizeHebrewForSearch() in src/hebrew.ts; the two must agree
     character for character or every lookup misses.
     """
+    return fold_finals(as_printed(text))
+
+
+def fold_finals(text):
+    return "".join(FINAL_TO_MEDIAL.get(ch, ch) for ch in text)
+
+
+def as_printed(text):
+    """Hebrew as a reader would type it: final letters kept, points dropped."""
     out = []
     for ch in text or "":
         ch = PRESENTATION_TO_LETTER.get(ch, ch)
@@ -173,10 +182,7 @@ def normalize(text):
             continue
         if POINT_START <= code <= POINT_END and code not in SEPARATORS:
             continue
-        if code in SEPARATORS or ch == "-":
-            out.append(" ")
-        else:
-            out.append(FINAL_TO_MEDIAL.get(ch, ch))
+        out.append(" " if code in SEPARATORS or ch == "-" else ch)
     return "".join(out)
 
 
@@ -369,6 +375,8 @@ def main():
     # spelling are read as that word, so that ambiguous forms can list their
     # likeliest lexeme first. One per occurrence, whatever the word's shape.
     form_counts = collections.Counter()
+    # The first printed spelling of each (form, lexeme) counted.
+    printed_as = {}
     verse_lexemes = collections.defaultdict(set)
     verse_morph = collections.defaultdict(list)
     # How many morphemes make up each printed word, and which of those words a
@@ -405,7 +413,7 @@ def main():
         for morphemes, trailer in printed_words(F, L, verse_node):
             morpheme_total += len(morphemes)
 
-            word_forms = []   # the written form of each, in order
+            word_forms = []   # the written form of each, in order, as printed
             readings = []     # what is read for each
             for node in morphemes:
                 reading = F.qere_utf8.v(node) or F.g_word_utf8.v(node) or ""
@@ -421,7 +429,7 @@ def main():
                     morph = morph_ids[combo] = len(morph_table)
                     morph_table.append(".".join(combo))
                 verse_morph[key].append([morpheme_lexeme, morph])
-                word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
+                word_forms.append(as_printed(F.g_cons_utf8.v(node) or ""))
                 verse_read_morphemes[key].append((
                     consonants(reading),
                     morpheme_lexeme,
@@ -444,12 +452,14 @@ def main():
             # same string. Counting it twice would weigh a word printed bare
             # against the same word printed with a prefix, and since nouns take
             # the article and verbs mostly do not, that ranks verbs above nouns.
-            written = word_forms[-1]
-            qere = normalize(F.qere_utf8.v(stem) or "")
-            whole_word = "".join(word_forms)
-            for form in dict.fromkeys([written, qere, whole_word]):
+            # Filed folded, and remembered as first printed.
+            spellings = {}
+            for shown in (word_forms[-1], as_printed(F.qere_utf8.v(stem)), "".join(word_forms)):
+                spellings.setdefault(fold_finals(shown), shown)
+            for form, shown in spellings.items():
                 if is_word(form):
                     form_counts[(form, lexeme)] += 1
+                    printed_as.setdefault((form, lexeme), shown)
 
             # Separators printed inside the word, where a name or a corrected
             # reading divides into more words than BHSA holds. Each part is a
@@ -492,11 +502,11 @@ def main():
         for written, pairs in word_lexemes.items()
     }
 
-    # Each lexeme's commonest printed spelling: a chosen meaning is searched
+    # Each lexeme's commonest spelling, as printed: a chosen meaning is searched
     # under it when the dictionary's own spelling does not have that meaning.
     commonest = {}
     for (form, lexeme), _ in sorted(form_counts.items(), key=lambda p: (-p[1], p[0])):
-        commonest.setdefault(lexeme, form)
+        commonest.setdefault(lexeme, printed_as[(form, lexeme)])
     for i, row in enumerate(lexemes):
         row.append(commonest.get(i, ""))
 

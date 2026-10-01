@@ -119,19 +119,6 @@ export function onlySeparators(text: string, from: number, to: number): boolean 
   return [...text.slice(from, to)].every(isWordSeparator);
 }
 
-const MEDIAL_TO_FINAL = Object.fromEntries(
-  Object.entries(FINAL_FORM_MAP).map(([final, medial]) => [medial, final]),
-);
-
-/**
- * Give a word folded for search its final letter back, as it is printed: the
- * index keeps ערום as ערומ.
- */
-export function withFinalLetter(word: string): string {
-  const last = word.slice(-1);
-  return last in MEDIAL_TO_FINAL ? word.slice(0, -1) + MEDIAL_TO_FINAL[last] : word;
-}
-
 /** Drop the points and accents, keeping final forms and separators as written. */
 export function stripNikkud(text: string): string {
   let result = '';
