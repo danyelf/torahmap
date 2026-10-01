@@ -33,7 +33,7 @@ describe('the words of a verse', () => {
   });
 
   it('keeps a parenthesised alternate as a word', () => {
-    expect(words('(לא) אליו')).toEqual(['(לא)', 'אליו']);
+    expect(words('(לא) אליו')).toEqual(['לא', 'אליו']);
   });
 
   it('says where each word sits in the verse', () => {

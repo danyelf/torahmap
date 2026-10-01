@@ -1,7 +1,7 @@
 // What counts as a match, for both the search that finds verses and the
 // highlighter that marks them.
 
-import { normalizeHebrewForSearch, splitIntoWords } from '../hebrew.ts';
+import { isWordSeparator, normalizeHebrewForSearch, splitIntoWords } from '../hebrew.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '../types.ts';
 
 export interface TextRange {
@@ -41,8 +41,7 @@ export function matchRangesInFolded(
 
   const ranges: TextRange[] = [];
 
-  // A whole word in English is bounded by punctuation as well as by space,
-  // which is what \b says and what splitting on separators would miss.
+  // A whole English word is bounded by punctuation as well as by space.
   if (mode === 'word' && language === ENGLISH) {
     const pattern = new RegExp(`\\b${escapeForRegex(needle)}\\b`, 'g');
     let match;
@@ -53,15 +52,7 @@ export function matchRangesInFolded(
     return ranges;
   }
 
-  if (mode === 'word') {
-    for (const { word, start, end } of splitIntoWords(haystack)) {
-      if (word === needle) {
-        ranges.push({ start, end });
-        if (ranges.length >= limit) break;
-      }
-    }
-    return ranges;
-  }
+  if (mode === 'word') return wholeWords(haystack, needle, limit);
 
   let from = 0;
   for (;;) {
@@ -70,6 +61,53 @@ export function matchRangesInFolded(
     ranges.push({ start: at, end: at + needle.length });
     if (ranges.length >= limit) break;
     from = at + 1;
+  }
+  return ranges;
+}
+
+// A search asks with the same term for every verse; splitting it each time
+// doubles the cost of the search.
+let split: { needle: string; words: string[] } = { needle: '', words: [] };
+
+function wordsOf(needle: string): string[] {
+  if (split.needle !== needle) {
+    split = { needle, words: splitIntoWords(needle).map(({ word }) => word) };
+  }
+  return split.words;
+}
+
+/**
+ * A Hebrew word, or phrase, with a separator or the end of the text on both
+ * sides. Between a phrase's words any run of separators will do: the text
+ * writes `[לְכָה־]נָּא` and the reader types לכה נא.
+ *
+ * Checked at each occurrence of the first word rather than by splitting the
+ * verse into words, which costs ten times as much on every verse searched.
+ */
+function wholeWords(haystack: string, needle: string, limit: number): TextRange[] {
+  const words = wordsOf(needle);
+  if (words.length === 0) return [];
+
+  const ranges: TextRange[] = [];
+  const edge = (i: number) => i < 0 || i >= haystack.length || isWordSeparator(haystack[i]);
+  let from = 0;
+  for (;;) {
+    const at = haystack.indexOf(words[0], from);
+    if (at === -1) break;
+    from = at + 1;
+    if (!edge(at - 1)) continue;
+
+    let end = at + words[0].length;
+    for (const word of words.slice(1)) {
+      let next = end;
+      while (next < haystack.length && isWordSeparator(haystack[next])) next++;
+      end = next > end && haystack.startsWith(word, next) ? next + word.length : -1;
+      if (end === -1) break;
+    }
+    if (end !== -1 && edge(end)) {
+      ranges.push({ start: at, end });
+      if (ranges.length >= limit) break;
+    }
   }
   return ranges;
 }

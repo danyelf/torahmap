@@ -6,15 +6,22 @@ import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
 const searchOverlay = hostOverlay(overlay);
-import { buildSearchIndex, versesForTerm } from '../../search';
+import { buildSearchIndex, computeSnippetForMatch, versesForTerm } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
+import { setTermText } from '../../search/terms';
 
 const GENESIS_1_1 = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
+
+const LEVITICUS_1_1 =
+  'וַיִּקְרָ֖א אֶל־מֹשֶׁ֑ה וַיְדַבֵּ֤ר יְהֹוָה֙ אֵלָ֔יו מֵאֹ֥הֶל מוֹעֵ֖ד לֵאמֹֽר׃';
 
 const texts: VerseTexts = {
   Genesis: {
     '1': { '1': { he: GENESIS_1_1, en: 'In the beginning God created heaven and earth' } },
+  },
+  Leviticus: {
+    '1': { '1': { he: LEVITICUS_1_1, en: 'The LORD called to Moses and spoke to him' } },
   },
 };
 
@@ -34,15 +41,45 @@ describe('the search and the highlighter agree', () => {
     // הארצ as typed; the verse writes הארץ. Folding makes them one spelling.
     expect(versesForTerm('הארצ', 'he', 'word').size).toBe(1);
 
-    searchOverlay.restore({ search: 'הארצ', mode: 'word' });
+    searchOverlay.restore({ search: 'הארצ', mode: 'w' });
     expect(marked(GENESIS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['הארץ']);
   });
 
   it('on the last word of a verse, which carries the sof pasuq', () => {
     expect(versesForTerm('הארץ', 'he', 'word').size).toBe(1);
 
-    searchOverlay.restore({ search: 'הארץ', mode: 'word' });
+    searchOverlay.restore({ search: 'הארץ', mode: 'w' });
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);
+  });
+
+  it.each(['w', undefined])('on a phrase, in mode %s', (mode) => {
+    // No dictionary is loaded here, so meanings mode (the default, undefined)
+    // matches the phrase by its text.
+    expect(versesForTerm('וידבר יהוה', 'he', 'word').size).toBe(1);
+
+    searchOverlay.restore({ search: 'וידבר יהוה', mode });
+    expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת ]/g, ''))).toEqual([
+      'וידבר יהוה',
+    ]);
+  });
+
+  it('on a term typed with a space after it', () => {
+    // The search trims the term, so ויקר finds ויקרא as a substring.
+    searchOverlay.restore({ search: 'ויקר', mode: 's' });
+    searchOverlay.change((s) => ({ ...s, terms: setTermText(s.terms, s.terms[0].id, 'ויקר ') }));
+    expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['ויקר']);
+  });
+
+  it('on where the result row centres a phrase', () => {
+    const result = {
+      book: 'Leviticus',
+      chapter: 1,
+      verse: 1,
+      language: 'he' as const,
+      matchingTerms: [],
+    };
+    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result, 'וידבר יהוה')!;
+    expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
   });
 });
 
@@ -57,6 +94,41 @@ describe('where a term matches', () => {
     expect(
       matchRangesInFolded(haystack, folded('אלהים'), { mode: 'substring', language: 'he' }),
     ).toHaveLength(2);
+  });
+
+  it('finds a Hebrew phrase as whole words', () => {
+    const haystack = folded('וַיְדַבֵּר יְהוָה אֶל־מֹשֶׁה');
+    const find = (term: string) =>
+      matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' });
+    expect(find('וידבר יהוה')).toEqual([{ start: 0, end: 10 }]);
+    expect(find('אל משה')).toHaveLength(1); // written with a maqaf
+    expect(find('דבר יהוה')).toEqual([]); // the phrase starts inside a word
+  });
+
+  it('finds a phrase across any run of separators', () => {
+    const haystack = folded('וַיֹּ֨אמֶר אֵלָ֜יו בָּלָ֗ק (לך) [לְכָה־]נָּ֨א אִתִּ֜י');
+    const find = (term: string) =>
+      matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' }).map(
+        ({ start, end }) => haystack.slice(start, end),
+      );
+    expect(find('לכה נא')).toEqual(['לכה ]נא']);
+    expect(find('לכה  נא')).toEqual(['לכה ]נא']); // typed with two spaces
+    expect(find('כה נא')).toEqual([]);
+  });
+
+  it('takes the brackets around a written and a read form as word edges', () => {
+    const find = (verse: string, term: string) => {
+      const haystack = folded(verse);
+      return matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' }).map(
+        ({ start, end }) => haystack.slice(start, end),
+      );
+    };
+    // Genesis 30:11 and Numbers 23:13, as Sefaria prints them.
+    const GENESIS_30_11 = 'וַתֹּ֥אמֶר לֵאָ֖ה (בגד) [בָּ֣א גָ֑ד] וַתִּקְרָ֥א אֶת־שְׁמ֖וֹ גָּֽד׃';
+    const NUMBERS_23_13 = 'וַיֹּ֨אמֶר אֵלָ֜יו בָּלָ֗ק (לך) [לְכָה־]נָּ֨א אִתִּ֜י';
+    expect(find(GENESIS_30_11, 'בגד')).toEqual(['בגד']);
+    expect(find(GENESIS_30_11, 'גד')).toEqual(['גד', 'גד']);
+    expect(find(NUMBERS_23_13, 'נא')).toEqual(['נא']);
   });
 
   it('treats English punctuation as a word boundary, which splitting on spaces would not', () => {

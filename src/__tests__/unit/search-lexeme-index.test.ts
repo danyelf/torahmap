@@ -432,7 +432,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       }
     }
     expect(total).toBeGreaterThan(300000);
-    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(794);
+    expect(missing, `first five: ${missing.slice(0, 5).join(', ')}`).toHaveLength(595);
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {

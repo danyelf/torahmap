@@ -11,7 +11,13 @@ import {
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './search/constants.ts';
-import { isHebrew, isSearchableWord, normalizeHebrewForSearch, splitIntoWords } from './hebrew.ts';
+import {
+  isHebrew,
+  isSearchableWord,
+  mapStrippedToOriginal,
+  normalizeHebrewForSearch,
+  splitIntoWords,
+} from './hebrew.ts';
 import {
   escapeForRegex,
   foldForMatching,
@@ -438,11 +444,18 @@ export function computeSnippetForMatch(
     }
   }
 
-  // The term resolved to no lexeme. Fall back to the spelling as typed.
-  const spelled = indexedWords(entry).indexOf(normalizeHebrewForSearch(searchTerm));
-  if (spelled >= 0) {
-    const found = snippetAtWord(entry, spelled);
-    if (found) return found;
+  // The term resolved to no lexeme. Fall back to the spelling as typed, a
+  // word or a phrase, as the search found it.
+  const [spelled] = matchRangesInFolded(
+    entry.hebrewText,
+    normalizeHebrewForSearch(searchTerm).trim(),
+    { mode: 'word', language: HEBREW, limit: 1 },
+  );
+  if (spelled) {
+    const start = mapStrippedToOriginal(entry.hebrewOriginal, spelled.start);
+    const end = mapStrippedToOriginal(entry.hebrewOriginal, spelled.end);
+    const snippet = createSnippetAtPosition(entry.hebrewOriginal, start, end - start);
+    return { snippet: snippet.text, matchStart: snippet.matchStart, matchEnd: snippet.matchEnd };
   }
 
   // Nothing to point at: show the opening of the verse unmarked.
