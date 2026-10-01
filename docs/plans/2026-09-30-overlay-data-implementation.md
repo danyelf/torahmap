@@ -18,7 +18,7 @@
 - The Talmud page's overlays name no files and take no data.
 - Startup waits for everything, as today.
 - An overlay names its files as `data: { <its own name>: '<path under public/data>' }`; it never fetches.
-- Members that draw the map and members that read a verse take `data: D`; `renderControls` and `renderLegend` take `data: D | null`.
+- Data is always a member's last argument. Members that draw the map and members that read a verse take `data: D`; `renderControls` and `renderLegend` take `data: D | null`.
 - An overlay that names no files is handed `undefined` wherever data is handed, as an overlay without settings is handed `undefined` settings.
 - Tests check behaviour: no assertions on wording readers see, on counts taken from shipped data, or on timings. No download mocks in overlay unit tests.
 - Comments describe the code as it is now; no ticket numbers, dates, step numbers or "used to" in code, test names or comments (AGENTS.md).
@@ -26,7 +26,7 @@
 
 ## Review Focus
 
-1. **A caller the type checker cannot see.** `colorsFor` and `renderControls` gain a parameter in the middle. `test-harness/main.ts` is outside every `tsconfig`, so its `renderControls` call would silently hand its change callback in the data slot. Expected: the harness still types and searches. Fixed in Task 2, Step 9; checked in a browser in Task 2, Step 13.
+1. **A caller the type checker cannot see.** Most tests are not typechecked (#329). Data is always the last argument, so no existing argument moves: a call not yet updated passes no data rather than a value in the wrong slot. `test-harness/main.ts` is typechecked by `npm run typecheck`. Expected: the harness still types and searches; checked in a browser in Task 2, Step 13.
 2. **The same `loaded` must give the same data object.** Overlays keep what they derive per data value; if `dataFor` built a fresh object per call, trop would rebuild its index on every paint (a frozen map) and `prebuild` would warm nothing. Expected: `dataFor(o, loaded) === dataFor(o, loaded)`. Pinned in Task 2, Step 1.
 3. **New data, stale derivation.** When an overlay is handed a different data value, its colours, legend and key follow the new value, not what was derived from the old. Pinned in each overlay task (commentary's maximum, verse length's range, trop's marks, haftarah's readings).
 4. **Missing data in the panel.** `renderControls`/`renderLegend` with `null` must not throw, and controls drawn first with `null` must fill in when drawn again with data (trop's chart and haftarah's key are built once per container). Pinned in Tasks 4–8.
@@ -63,7 +63,7 @@ The plan changes each of these; the list is here so a task can be checked agains
 | `highlightVerseText` | `src/sidebar.ts` (overlay and search); tests: `overlayHost.ts:83`, `sidebar.test.ts:400,433` |
 | `summary` | `src/main.ts:360` `updateLegend` |
 | `renderLegend` | `src/main.ts:1076`; tests: `overlayHost.ts:86`, `overlay-switching.test.ts:82,254` |
-| `renderControls` | `src/main.ts:1084` (overlay), `src/main.ts:1131` (search); `test-harness/main.ts:156` (**not type-checked**); tests: `overlayHost.ts:40`, `overlay-switching.test.ts:77,246,296`, `integration/url-state-sync.test.ts:133`, `integration/view-state-restore.test.ts:41` |
+| `renderControls` | `src/main.ts:1084` (overlay), `src/main.ts:1131` (search); `test-harness/main.ts:156`; tests: `overlayHost.ts:40`, `overlay-switching.test.ts:77,246,296`, `integration/url-state-sync.test.ts:133`, `integration/view-state-restore.test.ts:41` |
 | `hoverChangesColors` | `src/itemColoring.ts:115` `layerToRecompute`; `src/scrollytelling/overlayBlender.ts:50` (presence only); tests: `overlayHost.ts:76`, `overlay-switching.test.ts:384` (presence), `unit/verseColoring.test.ts:80,116-121` |
 | `getSefariaConnectionParam` | `src/sidebar.ts:115` (unchanged: takes no data) |
 | `init` | `src/main.ts:252`; tests: `url-state-sync.test.ts:50,64,128,336`, `view-state-restore.test.ts:37`, `overlay-switching.test.ts:73`, `unit/story-file.test.ts:26`, `unit/overlays/text-dating.test.ts` (many), `unit/overlays/haftarah.test.ts` (many) |
@@ -115,17 +115,17 @@ export const SAMPLE_LOADED: Loaded;   // fixture files under their real paths
 export function hostOverlay<S, D>(overlay: Overlay<TanakhIdentity, S, D>, data: D): OverlayHost<S, D>;
 ```
 
-Member signatures after Task 2 (spec order):
+Member signatures after Task 2 (spec order: data is always the last argument):
 
 ```ts
 getVerseColor(verse: T, settings: S, data: D): Color | Color[] | null;
-colorsFor(items: T[], settings: S, data: D, hovered: T | null): (Color | Color[] | null)[];
+colorsFor(items: T[], settings: S, hovered: T | null, data: D): (Color | Color[] | null)[];
 hoverChangesColors?(before: T | null, after: T | null, settings: S, data: D): boolean;
 getHoverInfo?(verse: T, settings: S, data: D): string | null;
 renderSidebarInfo?(verse: T, isPinned: boolean, settings: S, data: D): HTMLElement | null;
 highlightVerseText?(text: string, language: TextLanguage, settings: S, data: D): DocumentFragment;
 summary?(settings: S, data: D): OverlaySummary;
-renderControls?(container: HTMLElement, settings: S, data: D | null, onChange: (update: SettingsUpdate<S>) => void): void;
+renderControls?(container: HTMLElement, settings: S, onChange: (update: SettingsUpdate<S>) => void, data: D | null): void;
 renderLegend?(container: HTMLElement, settings: S, data: D | null): void;
 getSefariaConnectionParam?(settings: S): string | null;
 ```
@@ -150,6 +150,8 @@ Expected: both pass. Record the test count in the task report (not in any file).
 
 Run: `npm run test:layout`
 Expected: PASS. Then copy the shots to your session scratchpad (the directory named in your system prompt), e.g. `cp -R layout-report/shots <scratchpad>/baseline-shots`. Read two or three of the PNGs (the `explore-trop`, `explore-haftarah` and `explore-link` states) to confirm the map actually drew.
+
+Run `npm run test:layout` a second time on the untouched branch and `cmp` each new shot against the first copy. If every pair is byte-identical, later tasks compare shots with `cmp`. If any differ, the baseline is not stable on this machine: later tasks instead require the layout tests to pass and Read each differing pair, stopping (rule 2) only for a difference a reader would see. Log which applies, per rule 1.
 
 - [ ] **Step 4: Mark the issues**
 
@@ -371,7 +373,7 @@ The type gains `D`; every caller hands data. The overlays themselves still read 
 
 **Interfaces:**
 - Consumes: `Loaded`, `loadFiles`, `filesFor` (Task 1).
-- Produces: `Overlay<T, S, D>`; `dataFor`; `overlayFiles`; `ToolOnMap.data`; `toolsShown(overlay, overlaySettings, search, loaded)`; `overlayColorsFor(overlay, items, settings, data, hovered)`; `layerToRecompute(source, overlay: ToolOnMap<T> | null, before, after, itemsEqual)`; `pictureForStop(stop, verses, hovered, loaded)`; `computeBlendedColors(from, to, t, verses, hovered, loaded)`; `hostOverlay(overlay, data)` with `setData`, `summary`, `renderSidebarInfo`; `SAMPLE_LOADED`.
+- Produces: `Overlay<T, S, D>`; `dataFor`; `overlayFiles`; `ToolOnMap.data`; `toolsShown(overlay, overlaySettings, search, loaded)`; `overlayColorsFor(overlay, items, settings, hovered, data)`; `layerToRecompute(source, overlay: ToolOnMap<T> | null, before, after, itemsEqual)`; `pictureForStop(stop, verses, hovered, loaded)`; `computeBlendedColors(from, to, t, verses, hovered, loaded)`; `hostOverlay(overlay, data)` with `setData`, `summary`, `renderSidebarInfo`; `SAMPLE_LOADED`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -499,7 +501,7 @@ interface OverlayWithoutData {
 }
 ```
 
-In `OverlayMembers<T, S, D>` change the members to the signatures under "Shared names" (spec order: `data` after `settings`; `hovered` moves after `data` in `colorsFor`; `renderControls` takes `data: D | null` before `onChange`; `renderLegend` takes `data: D | null` last). Add one comment line above `renderControls`: `// The panel may be drawn before the overlay's data is in; then data is null.` Leave `init` and `destroy` in place for now (Task 9 removes `init`).
+In `OverlayMembers<T, S, D>` change the members to the signatures under "Shared names" (spec order: `data` is always the last argument; `renderControls` and `renderLegend` take `data: D | null`). Add one comment line above `renderControls`: `// The panel may be drawn before the overlay's data is in; then data is null.` Leave `init` and `destroy` in place for now (Task 9 removes `init`).
 
 Change `ToolOnMap`:
 
@@ -585,11 +587,11 @@ export function overlayColorsFor<T, S, D>(
   data: D,
   hovered: SpatialItem<T> | null,
 ): (VerseColor | null)[] {
-  return overlay ? overlay.colorsFor(items, settings, data, hovered) : items.map(() => null);
+  return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
 }
 ```
 
-In `toolsPicture`: `on && overlayColorsFor(on.tool, items, on.settings, on.data, hovered)`.
+In `toolsPicture`: `on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data)`.
 
 `layerToRecompute` takes the overlay's entry from `toolsShown` instead of an overlay and its settings:
 
@@ -609,7 +611,7 @@ export function layerToRecompute<T>(
 }
 ```
 
-Update `src/__tests__/unit/verseColoring.test.ts`: `overlayColorsFor(overlay, verses, 'settings', 'data', verses[1])` and `overlayColorsFor(null, verses, undefined, undefined, null)`; every `layerToRecompute(src, overlay, settings, a, b, eq)` becomes `layerToRecompute(src, overlay && { tool: overlay, settings, data: undefined }, a, b, eq)`; the spy test hands `{ tool: overlay, settings: 'settings', data: 'data' }` and expects `toHaveBeenCalledWith(a, b, 'settings', 'data')`. In `combineLayers.test.ts` add `data: undefined` to each `{ tool, settings }` literal.
+Update `src/__tests__/unit/verseColoring.test.ts`: `overlayColorsFor(overlay, verses, 'settings', verses[1], 'data')` and `overlayColorsFor(null, verses, undefined, null, undefined)`; every `layerToRecompute(src, overlay, settings, a, b, eq)` becomes `layerToRecompute(src, overlay && { tool: overlay, settings, data: undefined }, a, b, eq)`; the spy test hands `{ tool: overlay, settings: 'settings', data: 'data' }` and expects `toHaveBeenCalledWith(a, b, 'settings', 'data')`. In `combineLayers.test.ts` add `data: undefined` to each `{ tool, settings }` literal.
 
 - [ ] **Step 7: The verse popup** (`src/sidebar.ts`)
 
@@ -635,12 +637,12 @@ In `updateSidebar` add `const overlayData = view.overlay?.data;` and hand it on:
 - [ ] **Step 9: The overlays, search, Talmud and the test harness**
 
 Each overlay's members take the new parameters but ignore `data` for now (Tasks 4–8 use it):
-- `commentary.ts`, `trop.ts`, `verse-length.ts`: `colorsFor(items, settings, _data, _hovered)`; `renderControls(container, settings, _data, onChange)`.
-- `haftarah.ts`: `colorsFor(items, settings, _data, hovered)`; `renderControls(container, settings, _data, onChange)`.
-- `search/index.ts`: type it `Overlay<TanakhIdentity, SearchSettings, void>`; `colorsFor(items, settings, _data, _hovered)`; `renderControls(container, settings, _data, onChange)`.
+- `commentary.ts`, `trop.ts`, `verse-length.ts`: `colorsFor(items, settings, _hovered, _data)`; `renderControls(container, settings, onChange, _data)`.
+- `haftarah.ts`: `colorsFor(items, settings, hovered, _data)`; `renderControls(container, settings, onChange, _data)`.
+- `search/index.ts`: type it `Overlay<TanakhIdentity, SearchSettings, void>`; `colorsFor(items, settings, _hovered, _data)`; `renderControls(container, settings, onChange, _data)`.
 - `talmud/overlays/mg-base.ts`, `segment-length.ts`: every `Overlay<TalmudIdentity, void>` becomes `Overlay<TalmudIdentity, void, void>` (members stay as they are; trailing `void` parameters may be omitted).
-- `src/main-talmud.ts:100`: `overlayColorsFor(composeWithMgBase(mgBaseOverlay, currentOverlay), items, undefined, undefined, hoveredItem)`; `Overlay<TalmudIdentity, void>` → `Overlay<TalmudIdentity, void, void>` at lines 92 and 94.
-- `test-harness/main.ts:156` (**outside the type checker**): `searchOverlay.renderControls?.(controlsContainer, settings.get(searchOverlay), undefined, (update) => {`.
+- `src/main-talmud.ts:100`: `overlayColorsFor(composeWithMgBase(mgBaseOverlay, currentOverlay), items, undefined, hoveredItem, undefined)`; `Overlay<TalmudIdentity, void>` → `Overlay<TalmudIdentity, void, void>` at lines 92 and 94.
+- `test-harness/main.ts:156` (typechecked by `npm run typecheck`): `searchOverlay.renderControls?.(controlsContainer, settings.get(searchOverlay), (update) => {…}, undefined)` (data last).
 
 Then search the tree for any other untyped caller:
 
@@ -679,8 +681,8 @@ Expected: only the line just fixed in `test-harness/main.ts` (and nothing under 
 ```
 
 7. `renderOverlayLegend()`: `if (currentOverlay) currentOverlay.renderLegend?.(overlayLegendContainer, currentSettings(), dataFor(currentOverlay, loaded));`
-8. `renderOverlayControls()`: `overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), dataFor(overlay, loaded), (update) => changeSettings(overlay, update));`
-9. `searchChanged()`: `searchTool.renderControls?.(searchControls, overlaySettings.get(searchTool), undefined, changeSearch);`
+8. `renderOverlayControls()`: `overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), (update) => changeSettings(overlay, update), dataFor(overlay, loaded));`
+9. `searchChanged()`: `searchTool.renderControls?.(searchControls, overlaySettings.get(searchTool), changeSearch, undefined);`
 
 `npm run typecheck` will name any call this list missed; fix each the same way.
 
@@ -704,7 +706,7 @@ export interface OverlayHost<S, D> {
 export function hostOverlay<S, D>(overlay: Overlay<TanakhIdentity, S, D>, data: D): OverlayHost<S, D> {
   let held = data;
   // ...
-  // draw(): overlay.renderControls?.(container, store.get(overlay), held, host.change);
+  // draw(): overlay.renderControls?.(container, store.get(overlay), host.change, held);
   // getVerseColor: overlay.getVerseColor(verse, store.get(overlay), held)
   // hoverChangesColors: overlay.hoverChangesColors?.(before, after, store.get(overlay), held) ?? false
   // getHoverInfo: overlay.getHoverInfo?.(verse, store.get(overlay), held) ?? null
@@ -727,7 +729,7 @@ export function testOverlay<T = TanakhLayout, S = unknown, D = unknown>(
 ): Overlay<T, S, D> {
   return {
     ...fields,
-    colorsFor: (items, settings, data) => items.map((item) => fields.getVerseColor(item, settings, data)),
+    colorsFor: (items, settings, _hovered, data) => items.map((item) => fields.getVerseColor(item, settings, data)),
   } as Overlay<T, S, D>;
 }
 ```
@@ -745,7 +747,7 @@ export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
 ]);
 ```
 
-(declare it after both samples). The integration tests (`overlay-switching`, `url-state-sync`, `view-state-restore`) hand `dataFor(overlay, SAMPLE_LOADED)` wherever they call a member directly: `renderControls(container, settings.get(overlay), dataFor(overlay, SAMPLE_LOADED), onChange)`, `renderLegend(container, settings.get(overlay), dataFor(overlay, SAMPLE_LOADED))`, `getVerseColor(v, settings.get(overlay), data)`, `getHoverInfo(v, settings.get(overlay), data)`. In `overlay-switching.test.ts`'s `switchToOverlay`, take `const data = dataFor(overlay, SAMPLE_LOADED);` once, throw `new Error(\`${overlay.id}'s files are not in SAMPLE_LOADED\`)` if it is `null`, and use it for every member call; keep `currentData` beside `currentOverlay` for the later calls at lines 269, 283, 447–448, 491. In `overlayBlender.test.ts` the stub `multiColorOverlay.colorsFor(items, settings, data)` forwards `data`, and the commentary test hands `undefined` as data for now.
+(declare it after both samples). The integration tests (`overlay-switching`, `url-state-sync`, `view-state-restore`) hand `dataFor(overlay, SAMPLE_LOADED)` wherever they call a member directly: `renderControls(container, settings.get(overlay), onChange, dataFor(overlay, SAMPLE_LOADED))`, `renderLegend(container, settings.get(overlay), dataFor(overlay, SAMPLE_LOADED))`, `getVerseColor(v, settings.get(overlay), data)`, `getHoverInfo(v, settings.get(overlay), data)`. In `overlay-switching.test.ts`'s `switchToOverlay`, take `const data = dataFor(overlay, SAMPLE_LOADED);` once, throw `new Error(\`${overlay.id}'s files are not in SAMPLE_LOADED\`)` if it is `null`, and use it for every member call; keep `currentData` beside `currentOverlay` for the later calls at lines 269, 283, 447–448, 491. In `overlayBlender.test.ts` the stub `multiColorOverlay.colorsFor(items, settings, _hovered, data)` forwards `data`, and the commentary test hands `undefined` as data for now.
 
 - [ ] **Step 12: Run everything**
 
@@ -880,7 +882,7 @@ describe('data', () => {
 
   it('draws its picker but no legend before the data is in', () => {
     const controls = document.createElement('div');
-    overlay.renderControls!(controls, commentaryOverlay.settings, null, () => {});
+    overlay.renderControls!(controls, commentaryOverlay.settings, () => {}, null);
     expect(controls.querySelector('select')).not.toBeNull();
     const legend = document.createElement('div');
     legend.innerHTML = 'stale';
@@ -941,7 +943,7 @@ function commentaryColorAt(data: CommentaryData, verse: TanakhIdentity, category
 }
 ```
 
-- The overlay: type `Overlay<TanakhIdentity, CommentarySettings, CommentaryData>`; `data: { counts: 'overlays/commentary/counts.json' },`; `getVerseColor(verse, settings, data)`; `colorsFor(items, settings, data, _hovered)`; `renderControls(container, settings, _data, onChange)` (body unchanged); `renderLegend(container, settings, data)` starts `if (!data) { container.innerHTML = ''; return; }` and uses `getMaxValue(data, …)`/`linkScale(data, …)`; `summary(settings, data)` uses `linkScale(data, settings.category)`; `getHoverInfo(verse, settings, data)` reads `data.counts[…]` and `getCount(data, verse, settings.category)`.
+- The overlay: type `Overlay<TanakhIdentity, CommentarySettings, CommentaryData>`; `data: { counts: 'overlays/commentary/counts.json' },`; `getVerseColor(verse, settings, data)`; `colorsFor(items, settings, _hovered, data)`; `renderControls(container, settings, onChange, _data)` (body unchanged); `renderLegend(container, settings, data)` starts `if (!data) { container.innerHTML = ''; return; }` and uses `getMaxValue(data, …)`/`linkScale(data, …)`; `summary(settings, data)` uses `linkScale(data, settings.category)`; `getHoverInfo(verse, settings, data)` reads `data.counts[…]` and `getCount(data, verse, settings.category)`.
 - Import `memoByValue` from `./memo.ts`.
 
 Remove `configure as configureCommentary` from `src/overlays/index.ts`, and `configureCommentary` from `src/main.ts` (import and the `configureCommentary({ verses })` call).
@@ -1000,9 +1002,9 @@ describe('data', () => {
   it('colours the same whether or not prebuild ran first', () => {
     const fresh = { texts: structuredClone(testVerseTexts) };
     const verses = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 }), createVerse({ book: 'Exodus', chapter: 1, verse: 2 })];
-    const onDemand = overlay.colorsFor(verses, undefined, { texts: structuredClone(testVerseTexts) }, null);
+    const onDemand = overlay.colorsFor(verses, undefined, null, { texts: structuredClone(testVerseTexts) });
     overlay.prebuild!(fresh);
-    expect(overlay.colorsFor(verses, undefined, fresh, null)).toEqual(onDemand);
+    expect(overlay.colorsFor(verses, undefined, null, fresh)).toEqual(onDemand);
   });
 
   it('draws no legend before the data is in', () => {
@@ -1063,7 +1065,7 @@ function wordCountAt(data: VerseLengthData, verse: TanakhIdentity): number | und
 }
 ```
 
-Keep `wordCountScale`'s existing doc comment. The overlay: type `Overlay<TanakhIdentity, void, VerseLengthData>`; `data: { texts: TEXTS_FILE }`; `prebuild(data) { wordCountsOf(data); }`; `getVerseColor(verse, _settings, data)` and `colorsFor(items, _settings, data)` colour from `wordCountAt(data, verse)` (zero or missing → `NO_DATA`, else `wordCountScale(wordCountsOf(data)).colorOf(n)`); `renderLegend(container, _settings, data)` returns an empty container for `null` and otherwise uses `wordCountsOf(data)` for the scale and `[min, max]`; `summary(_settings, data)`; `getHoverInfo(verse, _settings, data)` and `renderSidebarInfo(verse, _isPinned, _settings, data)` read `wordCountAt(data, verse)`. Imports: `memoByValue` from `./memo.ts`, `TEXTS_FILE` from `../verseTexts.ts`.
+Keep `wordCountScale`'s existing doc comment. The overlay: type `Overlay<TanakhIdentity, void, VerseLengthData>`; `data: { texts: TEXTS_FILE }`; `prebuild(data) { wordCountsOf(data); }`; `getVerseColor(verse, _settings, data)` and `colorsFor(items, _settings, _hovered, data)` colour from `wordCountAt(data, verse)` (zero or missing → `NO_DATA`, else `wordCountScale(wordCountsOf(data)).colorOf(n)`); `renderLegend(container, _settings, data)` returns an empty container for `null` and otherwise uses `wordCountsOf(data)` for the scale and `[min, max]`; `summary(_settings, data)`; `getHoverInfo(verse, _settings, data)` and `renderSidebarInfo(verse, _isPinned, _settings, data)` read `wordCountAt(data, verse)`. Imports: `memoByValue` from `./memo.ts`, `TEXTS_FILE` from `../verseTexts.ts`.
 
 Remove `configure as configureVerseLength` from `src/overlays/index.ts` and `configureVerseLength` from `src/main.ts`.
 
@@ -1109,17 +1111,17 @@ describe('data', () => {
 
   it('colours the same whether or not prebuild ran first', () => {
     const settings = { mark: 'tipcha', preview: null };
-    const onDemand = tropOverlay.colorsFor(testVerses, settings, { texts: structuredClone(testVerseTexts) }, null);
+    const onDemand = tropOverlay.colorsFor(testVerses, settings, null, { texts: structuredClone(testVerseTexts) });
     const fresh = { texts: structuredClone(testVerseTexts) };
     tropOverlay.prebuild!(fresh);
-    expect(tropOverlay.colorsFor(testVerses, settings, fresh, null)).toEqual(onDemand);
+    expect(tropOverlay.colorsFor(testVerses, settings, null, fresh)).toEqual(onDemand);
   });
 
   it('draws the chart once the data arrives, into controls first drawn without it', () => {
     const container = document.createElement('div');
-    tropOverlay.renderControls!(container, { mark: null, preview: null }, null, () => {});
+    tropOverlay.renderControls!(container, { mark: null, preview: null }, () => {}, null);
     expect(container.querySelectorAll('.trop-chart button')).toHaveLength(0);
-    tropOverlay.renderControls!(container, { mark: null, preview: null }, { texts: testVerseTexts }, () => {});
+    tropOverlay.renderControls!(container, { mark: null, preview: null }, () => {}, { texts: testVerseTexts });
     expect(container.querySelectorAll('.trop-chart button').length).toBeGreaterThan(0);
   });
 });
@@ -1163,7 +1165,7 @@ function derivationFor(data: TropData, settings: TropSettings): TropDerivation |
 }
 ```
 
-`deriveTrop(data, mark)` calls `entryFor(data, mark)`. `renderTropChart(container, settings, data: TropData | null, onChange)` starts with `if (!data) return;` (comment: `// The chart lists the marks the texts carry, so it waits for them.`), builds buttons from `marksOf(data)`, and uses `entryFor(data, …)` for the info line. The overlay: type `Overlay<TanakhIdentity, TropSettings, TropData>`; `data: { texts: TEXTS_FILE }`; `prebuild(data) { marksOf(data); }`; every member takes `data` in spec position and passes it to `derivationFor`/`entryFor`; `renderLegend(container, settings, data)` empties the container for `null`; `summary(settings, data)`; `highlightVerseText(text, language, settings, data)`.
+`deriveTrop(data, mark)` calls `entryFor(data, mark)`. `renderTropChart(container, settings, onChange, data: TropData | null)` starts with `if (!data) return;` (comment: `// The chart lists the marks the texts carry, so it waits for them.`), builds buttons from `marksOf(data)`, and uses `entryFor(data, …)` for the info line. The overlay: type `Overlay<TanakhIdentity, TropSettings, TropData>`; `data: { texts: TEXTS_FILE }`; `prebuild(data) { marksOf(data); }`; every member takes `data` in spec position and passes it to `derivationFor`/`entryFor`; `renderLegend(container, settings, data)` empties the container for `null`; `summary(settings, data)`; `highlightVerseText(text, language, settings, data)`.
 
 Remove `configure as configureTrop` from `src/overlays/index.ts` (keep `highlightTropInText`), `configureTrop` from `src/main.ts`, and every `configureTrop` import/call from the three integration tests.
 
@@ -1207,10 +1209,10 @@ describe('data', () => {
   it('draws the custom picker, and the key once the readings arrive', () => {
     const container = document.createElement('div');
     const settings = { custom: 'ashkenazi' as const, preview: null, reading: null };
-    overlay.renderControls!(container, settings, null, () => {});
+    overlay.renderControls!(container, settings, () => {}, null);
     expect(container.querySelector('#custom-select')).not.toBeNull();
     expect(container.querySelector('.haftarah-key')).toBeNull();
-    overlay.renderControls!(container, settings, { mappings: SAMPLE_HAFTARAH_DATA, structure: SAMPLE_STRUCTURE }, () => {});
+    overlay.renderControls!(container, settings, () => {}, { mappings: SAMPLE_HAFTARAH_DATA, structure: SAMPLE_STRUCTURE });
     expect(container.querySelector('.haftarah-key')).not.toBeNull();
   });
 
@@ -1269,7 +1271,7 @@ const derivationsOf = memoByValue((_data: HaftarahData) => new Map<Custom, Hafta
 
 - [ ] **Step 4: Convert `haftarah.ts`**
 
-Type `Overlay<TanakhIdentity, HaftarahSettings, HaftarahData>`; `data: HAFTARAH_FILES`; delete `init` and the `mappings`/`loadReadings` imports. Thread `data: HaftarahData` through `litByPreview(data, derived, item, custom)` (its `forEachVerseInRange(data.structure, range, …)`), `litByName(data, custom, name)`, `litFor(data, settings, hovered)`, `renderKey(container, data, custom, onPreview)` (reads `data.mappings` where it read `mappings()`, and keeps `if (container.querySelector('.haftarah-key')) return;`), and every `deriveHaftarah(custom)` → `deriveHaftarah(data, custom)`. Members: `hoverChangesColors(before, after, settings, data)`; `getVerseColor(verse, settings, data)` and `colorsFor(items, settings, data, hovered)` lose their `if (!mappings())` guards; `renderControls(container, settings, data, onChange)` draws the select as now and then `if (data) renderKey(container, data, settings.custom, …)`; `renderLegend(container, settings, data)` empties the container for `null`, otherwise counts from `data.mappings.parshiot?.length || 54` and `data.mappings.specialOccasions?.length || 0` exactly as now (replace the comment with `// A malformed file can lack either list.`); `getHoverInfo(verse, settings, data)` loses its `if (!mappings())` guard.
+Type `Overlay<TanakhIdentity, HaftarahSettings, HaftarahData>`; `data: HAFTARAH_FILES`; delete `init` and the `mappings`/`loadReadings` imports. Thread `data: HaftarahData` through `litByPreview(data, derived, item, custom)` (its `forEachVerseInRange(data.structure, range, …)`), `litByName(data, custom, name)`, `litFor(data, settings, hovered)`, `renderKey(container, data, custom, onPreview)` (reads `data.mappings` where it read `mappings()`, and keeps `if (container.querySelector('.haftarah-key')) return;`), and every `deriveHaftarah(custom)` → `deriveHaftarah(data, custom)`. Members: `hoverChangesColors(before, after, settings, data)`; `getVerseColor(verse, settings, data)` and `colorsFor(items, settings, hovered, data)` lose their `if (!mappings())` guards; `renderControls(container, settings, onChange, data)` draws the select as now and then `if (data) renderKey(container, data, settings.custom, …)`; `renderLegend(container, settings, data)` empties the container for `null`, otherwise counts from `data.mappings.parshiot?.length || 54` and `data.mappings.specialOccasions?.length || 0` exactly as now (replace the comment with `// A malformed file can lack either list.`); `getHoverInfo(verse, settings, data)` loses its `if (!mappings())` guard.
 
 - [ ] **Step 5: The print script** (`scripts/print/views.ts`)
 
@@ -1337,7 +1339,7 @@ it('names its dates file', () => {
 
 - [ ] **Step 3: Convert the overlay**
 
-Rename the file interface to `TextDatingFile`; add `export interface TextDatingData { dates: TextDatingFile }`; delete `let data`, `init` and the `loadJson` import. `getVerseData(data: TextDatingData, verse)` reads `data.dates.books`; `getVerseDatingInfo(data, book, chapter, verse)` reads `data.dates.notes`. The overlay: `data: { dates: 'text-dating.json' }`; `getVerseColor(verse, _settings, data)`; `colorsFor(items, settings, data) { return items.map((item) => this.getVerseColor(item, settings, data)); }`; `getHoverInfo(verse, _settings, data)`; `renderSidebarInfo(verse, isPinned, _settings, data)`; `renderLegend` and `summary` need no data and keep their bodies. Update the comment above `getVerseDatingInfo` (`// Used by the sidebar.` is wrong: it is used by the overlay's own hover and pinned-verse text) to say so, or delete it.
+Rename the file interface to `TextDatingFile`; add `export interface TextDatingData { dates: TextDatingFile }`; delete `let data`, `init` and the `loadJson` import. `getVerseData(data: TextDatingData, verse)` reads `data.dates.books`; `getVerseDatingInfo(data, book, chapter, verse)` reads `data.dates.notes`. The overlay: `data: { dates: 'text-dating.json' }`; `getVerseColor(verse, _settings, data)`; `colorsFor(items, settings, _hovered, data) { return items.map((item) => this.getVerseColor(item, settings, data)); }`; `getHoverInfo(verse, _settings, data)`; `renderSidebarInfo(verse, isPinned, _settings, data)`; `renderLegend` and `summary` need no data and keep their bodies. Update the comment above `getVerseDatingInfo` (`// Used by the sidebar.` is wrong: it is used by the overlay's own hover and pinned-verse text) to say so, or delete it.
 
 - [ ] **Step 4: Run everything** — the test (PASS), prettier, typecheck, full suite.
 
