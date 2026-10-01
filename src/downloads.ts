@@ -4,6 +4,7 @@ import { TEXTS_FILE } from './verseTexts.ts';
 import { dataFor, optionalFiles, requiredFiles, type Loaded } from './dataFiles.ts';
 import { searchTool } from './overlays/search/index.ts';
 import type { Overlay } from './overlays/types.ts';
+import type { ColorSource } from './scrollytelling/driver.ts';
 
 /** What the first view shows: the tools it names, and whether it pins a verse. */
 export interface OpeningView {
@@ -45,14 +46,14 @@ export interface Downloads {
   closed: ReadonlySet<string>;
 }
 
+/** What a place waiting on a file says. */
+export type LoadState = 'loading' | 'failed';
+
 /**
  * What a place waiting on `paths` says: 'failed' once one has failed, until
  * the reader closes the warning; 'loading' while one is on its way.
  */
-export function waitingOn(
-  paths: readonly string[],
-  downloads: Downloads,
-): 'loading' | 'failed' | null {
+export function waitingOn(paths: readonly string[], downloads: Downloads): LoadState | null {
   const failed = paths.filter((path) => downloads.failed.has(path));
   if (failed.length > 0)
     return failed.every((path) => downloads.closed.has(path)) ? null : 'failed';
@@ -62,7 +63,7 @@ export function waitingOn(
 /** What the map, the panels and the popup are drawn from as a file lands. */
 export interface LandingView {
   /** Where the map's colours come from: colorSource(driver). */
-  source: 'overlay' | 'blend' | 'ease';
+  source: ColorSource;
   /**
    * The tools the map shows once their data is in: the picked overlay and the
    * search while it has a word, or the tools of the stops a story blend or
@@ -76,13 +77,11 @@ export interface LandingView {
 }
 
 export interface Stale {
-  map: 'fade' | 'blend' | 'ease' | null;
+  map: ColorSource | null;
   overlayPanel: boolean;
   searchPanel: boolean;
   popup: boolean;
 }
-
-const MAP_REDRAW = { overlay: 'fade', blend: 'blend', ease: 'ease' } as const;
 
 /**
  * What a file landing put out of date: whatever is drawn from a tool whose
@@ -93,7 +92,7 @@ export function staleAfterLanding(before: Loaded, after: Loaded, view: LandingVi
   const drawn = (tool: Overlay): boolean => changed(tool, before, after, requiredFiles(tool));
   const read = (tool: Overlay): boolean => changed(tool, before, after, null);
   return {
-    map: view.map.some(drawn) ? MAP_REDRAW[view.source] : null,
+    map: view.map.some(drawn) ? view.source : null,
     overlayPanel: view.panel !== null && drawn(view.panel),
     searchPanel: drawn(searchTool),
     popup:

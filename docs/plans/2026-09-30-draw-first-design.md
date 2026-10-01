@@ -72,14 +72,14 @@ One function in main, `fileLanded(path, value)`:
      panel: Overlay | null;     // the overlay whose controls are drawn
      popup: boolean;            // whether the popup shows a verse
      source: 'overlay' | 'blend' | 'ease';   // colorSource(driver)
-   }): { map: 'fade' | 'blend' | 'ease' | null; overlayPanel: boolean; searchPanel: boolean; popup: boolean }
+   }): { map: 'overlay' | 'blend' | 'ease' | null; overlayPanel: boolean; searchPanel: boolean; popup: boolean }
    ```
 
    A tool is out of date when `dataFor(tool, before) !== dataFor(tool, after)`.
    The map is, when a tool it shows is; the panels, when their tool is; the
    popup, when the texts, search's data or a shown tool's data changed.
 3. Main does what it says, with code it already has:
-   - **`fade`** (exploring, or the story at rest on a stop): cross-fade from the
+   - **`overlay`** (exploring, or the story at rest on a stop): cross-fade from the
      map as it is to `toolsPicture` of the tools now. This is `setFrontTool`'s
      fade, taken out into `fadeMap(to)` so both use it.
    - **`blend`** (the story resting between two stops, partway through a
@@ -87,9 +87,10 @@ One function in main, `fileLanded(path, value)`:
      new data, then hand back to the blend. Any story frame cancels the fade, as
      it cancels the front tool's today (`setDriver`), so a reader who scrolls
      during it gets the scroll.
-   - **`ease`** (the story easing between stops on a timer): start the ease
-     again from where it is, for the time left (`beginEase`), so it ends on the
-     picture with the data rather than snapping to it at the end.
+   - **`ease`** (the story easing between stops on a timer): re-aim the ease at
+     the picture with the data (`driverAfterLanding`), so it ends on that picture
+     rather than snapping to it at the end. Only the picture changes; the camera
+     keeps its motion, start and length.
    - The panels redraw into what is there (`overlayChanged(false)`,
      `searchChanged(false)`), so a box being typed in keeps its focus and its
      text. The legend redraws with them.
@@ -303,3 +304,7 @@ Decisions made while implementing step 3, newest last.
   runs, so search's index and dictionary are built by the idle prebuild, not
   inside the landing that completes its files. The broken-lexicon case now
   expects the prebuild's one uncaught error and no `fileLanded` report.
+- **2026-10-01 (branch review)** `staleAfterLanding` says how to redraw the map
+  in `colorSource`'s own words (`'overlay'`, `'blend'`, `'ease'`, the one
+  `ColorSource` type), rather than renaming `'overlay'` to `'fade'`. Only the
+  name changed.

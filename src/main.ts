@@ -170,6 +170,7 @@ import {
   STORY_DRIVING,
   SWIPE_EASE_MS,
   colorSource,
+  type ColorSource,
   driverAfterLanding,
   driverKind,
   readerTakesOver,
@@ -1820,7 +1821,7 @@ async function main(): Promise<void> {
   }
 
   /** Bring the map up to date with data that just landed, the way it is being drawn. */
-  function redrawMap(how: 'fade' | 'blend' | 'ease'): void {
+  function redrawMap(how: ColorSource): void {
     const next = driverAfterLanding(driver, how, () => {
       const state = currentStoryState();
       return flatten(
@@ -1830,7 +1831,7 @@ async function main(): Promise<void> {
     if (next !== driver) {
       keepDriving(next);
       scheduleStoryFrame();
-    } else if (how === 'fade') {
+    } else if (how === 'overlay') {
       fadeMap(
         fillDefaultColors(
           toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool)),

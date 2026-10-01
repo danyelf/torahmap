@@ -114,8 +114,8 @@ describe('a file landing', () => {
       throw new Error('no picture is needed');
     };
 
-    expect(driverAfterLanding(STORY_DRIVING, 'fade', unused)).toBe(STORY_DRIVING);
-    expect(driverAfterLanding(reader, 'fade', unused)).toBe(reader);
+    expect(driverAfterLanding(STORY_DRIVING, 'overlay', unused)).toBe(STORY_DRIVING);
+    expect(driverAfterLanding(reader, 'overlay', unused)).toBe(reader);
     expect(driverAfterLanding(blending, 'blend', unused)).toBe(blending);
   });
 });

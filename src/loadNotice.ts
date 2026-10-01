@@ -1,11 +1,12 @@
 // What a place shows while the reader waits on a file: that it is loading, or
 // that it failed, with a × that closes the warning.
 import './styles/load-notice.css';
+import type { LoadState } from './downloads.ts';
 
 export const LOADING = 'Loading…';
 const FAILED = "Couldn't load — please reload and try again";
 
-export function loadNotice(state: 'loading' | 'failed', onClose: () => void): HTMLElement {
+export function loadNotice(state: LoadState, onClose: () => void): HTMLElement {
   const notice = document.createElement('span');
   notice.className = 'load-notice';
   notice.dataset.state = state;
@@ -15,7 +16,7 @@ export function loadNotice(state: 'loading' | 'failed', onClose: () => void): HT
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'load-notice-close';
-    close.setAttribute('aria-label', 'Close');
+    close.setAttribute('aria-label', 'Close the warning');
     close.textContent = '×';
     close.addEventListener('click', onClose);
     notice.append(close);

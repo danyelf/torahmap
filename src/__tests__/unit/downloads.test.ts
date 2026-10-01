@@ -103,6 +103,12 @@ describe('waitingOn', () => {
     ).toBeNull();
   });
 
+  it('still says failed while one failed file has its warning open', () => {
+    expect(
+      waitingOn(['a', 'b'], downloads({ failed: new Set(['a', 'b']), closed: new Set(['a']) })),
+    ).toBe('failed');
+  });
+
   it('says nothing once every file has landed', () => {
     expect(waitingOn(['a'], downloads({}))).toBeNull();
   });
@@ -126,7 +132,7 @@ describe('staleAfterLanding', () => {
         SAMPLE_LOADED,
         explore([tropOverlay], tropOverlay, true),
       ),
-    ).toMatchObject({ map: 'fade', overlayPanel: true, popup: true });
+    ).toMatchObject({ map: 'overlay', overlayPanel: true, popup: true });
   });
 
   it('redraws only the popup when the per-word parse lands with search on', () => {
@@ -147,7 +153,7 @@ describe('staleAfterLanding', () => {
     expect(staleAfterLanding(without(COUNTS), SAMPLE_LOADED, view).map).toBe('blend');
   });
 
-  it('starts the ease again when the overlay of the stop it eases to lands', () => {
+  it('re-aims the ease when the overlay of the stop it eases to lands', () => {
     const view: LandingView = {
       source: 'ease',
       map: [commentaryOverlay],
@@ -174,7 +180,7 @@ describe('staleAfterLanding', () => {
         SAMPLE_LOADED,
         explore([commentaryOverlay], commentaryOverlay, false),
       ),
-    ).toEqual({ ...NOTHING, map: 'fade', overlayPanel: true });
+    ).toEqual({ ...NOTHING, map: 'overlay', overlayPanel: true });
   });
 
   it('redraws the search panel and the open popup when the dictionary lands, with no search on', () => {
