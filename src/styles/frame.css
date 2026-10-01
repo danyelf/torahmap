@@ -539,11 +539,8 @@ body[data-open='about'] #about-panel {
   display: none;
 }
 
+.map-legend-row:not([hidden]) ~ .map-legend-row:not([hidden]),
 .map-legend-row:not([hidden]) ~ .map-legend-warning {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.map-legend-row:not([hidden]) ~ .map-legend-row:not([hidden]) {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 

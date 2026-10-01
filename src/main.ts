@@ -125,15 +125,8 @@ import {
 import { createSearchRecorder } from './overlays/search/recording.ts';
 import { SEARCH_RECORD_DELAY_MS } from './search/constants.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
-import { toolsShown, togglesSearch } from './tools.ts';
-import {
-  dataFor,
-  downloadFiles,
-  loadFiles,
-  overlayFiles,
-  requiredFiles,
-  type Loaded,
-} from './dataFiles.ts';
+import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
+import { dataFor, downloadFiles, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';
 import {
   downloadStages,
   filesFirst,
@@ -254,14 +247,15 @@ async function main(): Promise<void> {
   const allOverlays = [searchTool, ...getAllOverlays()];
   // Everything but the structure loads behind the first frame (fileLanded).
   let loaded: Loaded = await loadFiles([STRUCTURE_FILE]);
+  // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
-    pending: new Set(overlayFiles(allOverlays).filter((path) => !loaded.has(path))),
+    pending: new Set<string>(),
     failed: new Set<string>(),
     closed: new Set<string>(),
   };
   const torahData = structureFrom(loaded);
 
-  // Load timing, sent once every download has settled (sendLoadTiming).
+  // For load_timing (sendLoadTiming).
   let firstFrame = 0;
   let textsIn = 0;
   let searchReady = 0;
@@ -361,6 +355,15 @@ async function main(): Promise<void> {
     return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool), loaded);
   }
 
+  /** The overlay and the search as picked, whether or not their data is in. */
+  function pickedTools(): Overlay[] {
+    return toolsPicked(currentOverlay, overlaySettings.get(searchTool));
+  }
+
+  function searching(): boolean {
+    return isSearching(overlaySettings.get(searchTool));
+  }
+
   /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
   function dimFor(front: FrontTool): number {
     return front === 'search' ? SEARCH_WITH_OVERLAY.NON_MATCH_DIM : 1;
@@ -381,15 +384,12 @@ async function main(): Promise<void> {
 
   function updateLegend(): void {
     const tools = toolsNow();
-    const picked = {
-      search: isSearching(overlaySettings.get(searchTool)) ? searchTool : null,
-      overlay: currentOverlay,
-    };
+    const picked = pickedTools();
     const rows: LegendRow[] = [];
     const warnings: Node[] = [];
     for (const panel of ['search', 'overlay'] as const) {
       const on = tools[panel];
-      const tool = picked[panel];
+      const tool = picked.find((t) => (panel === 'search' ? t === searchTool : t !== searchTool));
       if (on) {
         rows.push({
           panel,
@@ -410,11 +410,14 @@ async function main(): Promise<void> {
     showLegend(mapLegend, rows, warnings);
   }
 
+  /** The map exploring shows: the tools as they stand, the front one in front. */
+  function explorePicture(): Picture<VerseColor | null> {
+    return toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool));
+  }
+
   function applyTools(): void {
     cancelFade();
-    setColorLayer(
-      still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool))),
-    );
+    setColorLayer(still(explorePicture()));
   }
 
   /**
@@ -461,17 +464,20 @@ async function main(): Promise<void> {
       render();
       return;
     }
-    fadeMap(
-      fillDefaultColors(toolsPicture(tools, verses, mouseState.hoveredVerse, dimFor(next))),
-      applyTools,
-    );
+    fadeMap(fillDefaultColors(explorePicture()), applyTools);
+  }
+
+  /** The story's blend between two stops, or null while it is not between them. */
+  function blendColors(): ColorLayer | null {
+    if (driver.by !== 'story' || !driver.blend) return null;
+    const { from, to, t } = driver.blend;
+    return computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded);
   }
 
   function blendTransition(): void {
     cancelFade();
-    if (driver.by !== 'story' || !driver.blend) return;
-    const { from, to, t } = driver.blend;
-    setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded));
+    const colors = blendColors();
+    if (colors) setColorLayer(colors);
   }
 
   /**
@@ -521,7 +527,7 @@ async function main(): Promise<void> {
 
     // A stop with a search puts search in front for it, whether or not the
     // reader has a panel open to see it (stops don't open panels).
-    if (isSearching(overlaySettings.get(searchTool))) frontTool = 'search';
+    if (searching()) frontTool = 'search';
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -1515,7 +1521,7 @@ async function main(): Promise<void> {
     if (target.closest('.story-leave'))
       return dispatch({
         type: 'choose',
-        panel: isSearching(overlaySettings.get(searchTool)) ? 'search' : 'overlay',
+        panel: searching() ? 'search' : 'overlay',
       });
     const chosen = storyChosen(target);
     if (chosen) return readStory(chosen.id, chosen.fromStart);
@@ -1679,13 +1685,14 @@ async function main(): Promise<void> {
    */
   function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
+    return rejoin(now, duration, camera, flatten(withDefaults(colorLayer)), storyPicture());
+  }
+
+  /** The story's picture where it is now. */
+  function storyPicture(): Picture {
     const state = currentStoryState();
-    return rejoin(
-      now,
-      duration,
-      camera,
-      flatten(withDefaults(colorLayer)),
-      flatten(computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded)),
+    return flatten(
+      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded),
     );
   }
 
@@ -1791,12 +1798,6 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   });
 
-  /** The picked overlay, and search while it has a word. */
-  function pickedTools(): Overlay[] {
-    const tools: Overlay[] = currentOverlay ? [currentOverlay] : [];
-    return isSearching(overlaySettings.get(searchTool)) ? [...tools, searchTool] : tools;
-  }
-
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView {
     if (frame.mode !== 'story') return { tools: pickedTools(), verse: pinnedVerse !== null };
@@ -1822,28 +1823,15 @@ async function main(): Promise<void> {
 
   /** Bring the map up to date with data that just landed, the way it is being drawn. */
   function redrawMap(how: ColorSource): void {
-    const next = driverAfterLanding(driver, how, () => {
-      const state = currentStoryState();
-      return flatten(
-        computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded),
-      );
-    });
+    const next = driverAfterLanding(driver, how, storyPicture);
     if (next !== driver) {
       keepDriving(next);
       scheduleStoryFrame();
     } else if (how === 'overlay') {
-      fadeMap(
-        fillDefaultColors(
-          toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool)),
-        ),
-        applyTools,
-      );
-    } else if (how === 'blend' && driver.by === 'story' && driver.blend) {
-      const { from, to, t } = driver.blend;
-      fadeMap(
-        flatten(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded)),
-        blendTransition,
-      );
+      fadeMap(fillDefaultColors(explorePicture()), applyTools);
+    } else if (how === 'blend') {
+      const colors = blendColors();
+      if (colors) fadeMap(flatten(colors), blendTransition);
     }
   }
 
@@ -1876,10 +1864,7 @@ async function main(): Promise<void> {
     sendLoadTiming();
   }
 
-  /**
-   * Once every download has settled and search's prebuild has run.
-   * search_ready stays 0 when search's files never arrived or it failed to build.
-   */
+  /** Sends load_timing once its fields are known; src/telemetry/schema.ts says what each marks. */
   function sendLoadTiming(): void {
     if (timingSent || !downloadsSettled) return;
     if (dataFor(searchTool, loaded) && !searchPrebuilt) return;
@@ -1983,12 +1968,15 @@ async function main(): Promise<void> {
 
   scheduleStoryFrame();
 
+  const stages = downloadStages(filesFirst(openingView()), allOverlays, loaded);
+  for (const path of stages.flat()) downloads.pending.add(path);
+
   // The loading tests wait on this; nothing in the app reads it.
   document.documentElement.dataset.mapReady = '';
   firstFrame = performance.now();
   showLoadState();
 
-  for (const stage of downloadStages(filesFirst(openingView()), allOverlays, loaded)) {
+  for (const stage of stages) {
     await downloadFiles(stage, { landed: fileLanded, failed: fileFailed });
   }
   // The layout tests and the video harness wait on this; nothing in the app reads it.

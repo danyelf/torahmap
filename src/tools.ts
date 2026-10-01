@@ -3,10 +3,14 @@ import type { Overlay, ToolOnMap, Tools } from './overlays/types.ts';
 import { isSearching, searchTool, type SearchSettings } from './overlays/search/index.ts';
 import { dataFor, type Loaded } from './dataFiles.ts';
 
+/** The tools a view picks: the overlay, if one is on, and the search, while it has a word to search on. */
+export function toolsPicked(overlay: Overlay | null, search: SearchSettings): Overlay[] {
+  return [...(overlay ? [overlay] : []), ...(isSearching(search) ? [searchTool] : [])];
+}
+
 /**
- * The tools a view shows: the overlay, if one is on, and the search, while it
- * has a word to search on — each with its data, and left out while a file it
- * reads is missing.
+ * The tools a view shows: those it picks, each with its data, and left out
+ * while a file it reads is missing.
  */
 export function toolsShown(
   overlay: Overlay | null,
@@ -14,9 +18,10 @@ export function toolsShown(
   search: SearchSettings,
   loaded: Loaded,
 ): Tools {
+  const picked = toolsPicked(overlay, search);
   return {
     overlay: overlay && withData(overlay, overlaySettings, loaded),
-    search: isSearching(search) ? withData(searchTool, search, loaded) : null,
+    search: picked.includes(searchTool) ? withData(searchTool, search, loaded) : null,
   };
 }
 

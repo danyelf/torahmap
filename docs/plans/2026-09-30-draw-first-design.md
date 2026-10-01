@@ -308,3 +308,8 @@ Decisions made while implementing step 3, newest last.
   in `colorSource`'s own words (`'overlay'`, `'blend'`, `'ease'`, the one
   `ColorSource` type), rather than renaming `'overlay'` to `'fade'`. Only the
   name changed.
+- **2026-10-01 (branch review)** Main counts as pending exactly the files its
+  download stages hold, computed once the link or the story has set the opening
+  view, just before the first frame. Nothing is painted between the structure
+  landing and that point, so every place that says "Loading…" is drawn after it
+  (`showLoadState`).

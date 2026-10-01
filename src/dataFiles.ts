@@ -73,11 +73,23 @@ function filePaths(files: Readonly<Record<string, FileName>>): string[] {
   return Object.values(files).map(pathOf);
 }
 
+/** A set of named files' paths: the required, each named by a plain path, and the optional. */
+function byNeed(files: Readonly<Record<string, FileName>>): {
+  required: string[];
+  optional: string[];
+} {
+  const required: string[] = [];
+  const optional: string[] = [];
+  for (const file of Object.values(files)) {
+    if (typeof file === 'string') required.push(file);
+    else optional.push(file.optional);
+  }
+  return { required, optional };
+}
+
 /** The paths of the files that are not optional and have not arrived. */
 function missingRequired(files: Readonly<Record<string, FileName>>, loaded: Loaded): string[] {
-  return Object.values(files).filter(
-    (file): file is string => typeof file === 'string' && !loaded.has(file),
-  );
+  return byNeed(files).required.filter((path) => !loaded.has(path));
 }
 
 /** Each named file's contents under its name, or null while a required file is missing. */
@@ -99,19 +111,17 @@ export async function loadNamedFiles<D>(files: Readonly<Record<string, FileName>
   return data;
 }
 
-const namesOf = (overlay: Overlay): Readonly<Record<string, FileName>> =>
+const namesOf = (overlay: Pick<Overlay, 'data'>): Readonly<Record<string, FileName>> =>
   (overlay.data ?? {}) as Readonly<Record<string, FileName>>;
 
 /** The paths an overlay cannot work without. */
 export function requiredFiles(overlay: Overlay): string[] {
-  return Object.values(namesOf(overlay)).filter((file): file is string => typeof file === 'string');
+  return byNeed(namesOf(overlay)).required;
 }
 
 /** The paths an overlay is handed as null until they are in. */
 export function optionalFiles(overlay: Overlay): string[] {
-  return Object.values(namesOf(overlay)).flatMap((file) =>
-    typeof file === 'string' ? [] : [file.optional],
-  );
+  return byNeed(namesOf(overlay)).optional;
 }
 
 // Per overlay, each set of its files' contents handed out so far, with the
@@ -126,7 +136,7 @@ const given = new WeakMap<object, { contents: unknown[]; data: unknown }[]>();
  */
 export function dataFor<T, S, D>(overlay: Overlay<T, S, D>, loaded: Loaded): D | null {
   if (!overlay.data) return undefined as D;
-  const files = overlay.data as Readonly<Record<string, FileName>>;
+  const files = namesOf(overlay);
   const contents = filePaths(files).map((path) => loaded.get(path));
   let known = given.get(overlay);
   if (!known) {

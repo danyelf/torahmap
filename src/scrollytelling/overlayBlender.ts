@@ -9,8 +9,8 @@ import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { isSearching, searchTool } from '../overlays/search/index.ts';
-import { toolsShown } from '../tools.ts';
+import { searchTool } from '../overlays/search/index.ts';
+import { toolsPicked, toolsShown } from '../tools.ts';
 import type { Loaded } from '../dataFiles.ts';
 
 // Memoised per verses array and loaded files by the stop's overlay, its search and their
@@ -46,11 +46,9 @@ function overlayOf(stop: StoryStop): Overlay | null {
   return (stop.overlay && getOverlay(stop.overlay)) || null;
 }
 
-/** The tools a stop shows: its overlay, and search when the stop has a word to search. */
+/** The tools a stop picks. */
 export function stopTools(stop: StoryStop): Overlay[] {
-  const overlay = overlayOf(stop);
-  const searches = isSearching(settingsFromLink(searchTool, stop.searchParams ?? {}));
-  return [...(overlay ? [overlay] : []), ...(searches ? [searchTool] : [])];
+  return toolsPicked(overlayOf(stop), settingsFromLink(searchTool, stop.searchParams ?? {}));
 }
 
 export function pictureForStop(
