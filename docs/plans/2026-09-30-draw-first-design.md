@@ -1,7 +1,7 @@
 # Draw First
 
 **Date:** 2026-09-30
-**Status:** Design, decided 2026-10-01. Not yet planned.
+**Status:** Design, decided 2026-10-01. Planned: docs/plans/2026-09-30-draw-first-implementation.md.
 
 Step 3 of three toward #313, after step 1 (`2026-09-30-overlay-data-design.md`)
 and step 2 (`2026-09-30-search-data-design.md`). It is the only step a reader
@@ -13,7 +13,7 @@ Main draws from the structure file alone and loads everything else behind the
 first frame, the per-word parse last. Nothing waits, overlay links included. As
 each file lands, main updates `loaded` and cross-fades whatever newly has its
 data, through the renderer's picture cross-fade, the one the front tool and the
-story's ease use. The verse popup stays closed until the texts arrive. The
+story's ease use. The verse popup says "Loading…" until the texts arrive. The
 definition of done is a committed Playwright suite on a throttled connection,
 written first.
 
@@ -118,7 +118,7 @@ and at rest through the cases above.
 
 Warned once in the console, and the file stays missing. Whatever named it stays
 off the map: picking that overlay shows its controls with `null` data and a
-plain map; a failed texts file keeps the popup closed. Every other file loads as
+plain map; a failed texts file leaves the popup with the warning in place of the text. Every other file loads as
 usual, and `data-loaded` is still set. No retry; the reader is told where they were waiting (below). Search follows the rule for any
 tool: a failed dictionary turns it off (step 2).
 
@@ -172,7 +172,7 @@ focus, the address keeps a parameter, no page errors.
 | Overlay link | commentary | map drawn and plain; picker shows commentary; legend row says it is loading | map changed; legend row shows the overlay; address unchanged |
 | Search link | texts, dictionary | map drawn and plain; search box holds the word | map changed; results listed; address unchanged |
 | Narrowed search link | dictionary | address still has `m` | exactly the linked meaning checked; address unchanged |
-| Pinned verse | texts | popup closed; map centred on the verse | popup open for the verse |
+| Pinned verse | texts | popup says it is loading; map centred on the verse | popup open for the verse |
 | Overlay picked early | commentary | pick it in the panel; map stays plain | map changed; picker unchanged; address has the overlay |
 | Search typed early | texts, dictionary | type a word; it keeps focus | results listed; box keeps value and focus; address has the search |
 | Story scrolled early | texts, dictionary | scroll to a stop with a search | map changed; search legend row shown |
@@ -193,3 +193,72 @@ focus, the address keeps a parameter, no page errors.
   treats search as any tool.
 - **It was checked by hand in a browser.** Here a committed suite, written
   first, is the definition of done.
+
+## Open questions, assumptions and rulings
+
+Decisions made while implementing step 3, newest last.
+
+- **2026-10-01 (plan)** The verse popup opens before the texts, as it does
+  today, and says "Loading…" where the text goes; a failed texts file shows the
+  warning there. The design's later "While data loads" section decides this;
+  the three lines that said the popup stays closed are changed to match.
+- **2026-10-01 (plan)** The map and the panels are drawn from the files a tool
+  requires; the popup also from its optional ones. So the per-word parse
+  landing redraws only the popup, as the design's example says, and a reader
+  scrolled down the search results keeps their place.
+- **2026-10-01 (plan)** `staleAfterLanding` is handed the tools the map shows
+  as a list rather than an overlay and a search: in a story blend or ease the
+  map shows the tools of the stops it is between, which need not be the picked
+  overlay.
+- **2026-10-01 (plan)** The optional files are the last stage (that is, the
+  per-word parse); `filesFirst` names only required files.
+- **2026-10-01 (plan)** "Loading…" shows for a file queued for a later stage as
+  well as one downloading: main counts every file it will download as pending
+  from the moment the structure lands.
+- **2026-10-01 (plan, Danyel)** A tool's legend row — the overlay's or
+  search's alike — reads "<name> · Loading…" while its files are on their way.
+  On failure the row goes and a warning line with its × shows below the rows in
+  the legend card: a × cannot sit inside the row, which is a button. Search's
+  row joins its caption because on a phone with the panel closed the legend is
+  the only place a search link's reader sees.
+- **2026-10-01 (plan)** Main writes the search caption's notice into the
+  search panel's `#search-hit-caption`, which search leaves empty without data.
+- **2026-10-01 (plan)** Search names the structure file, and `buildTextIndex`
+  takes the book order from it, so the index can never be built in another
+  order. `getBookOrder` had no other reader and goes.
+- **2026-10-01 (plan)** `dataFor` keeps, per overlay, one data object per set
+  of its files' contents, so an overlay's data stays the same object while none
+  of its own files changes.
+- **2026-10-01 (plan)** The popup's Hebrew words are clickable only once
+  search has its data (`PopupView.wordsClickable`).
+- **2026-10-01 (plan)** A story stop with a search puts search in front, and
+  the story's last "explore" button opens the search panel, by whether the
+  search has a word, not by whether its data is in: before the data they would
+  otherwise decide differently than after.
+- **2026-10-01 (plan)** `load_timing` is sent once, when every download has
+  settled and search's index and dictionary have been built. `first_frame`:
+  the first frame, now drawn from the structure alone. `texts_in`: when the
+  texts file landed, as before. `search_ready`: when search's idle prebuild
+  built its index and dictionary after its files landed; 0 if they never
+  arrived. `texts_kbps` and `connection`: as before. The event waited for
+  every file before as well, so the visits it misses are the same kind.
+- **2026-10-01 (plan)** The suite throttles to 150 ms latency and 16 Mbit/s.
+  The dev server sends files uncompressed, about four times the bytes the site
+  sends, so each file takes about as long as it does on a 4 Mbit/s phone.
+- **2026-10-01 (plan)** Main's wiring of search recording is tested by turning
+  the dev server's analytics on from the test (a module script importing the
+  app's own `/src/analytics.ts`) and collecting what is sent. No app change.
+- **2026-10-01 (plan)** The capture shortcut names the picked overlay whether
+  or not its data is in; the suite checks it with a stubbed clipboard.
+- **2026-10-01 (plan)** `fadeMap(to, settle)` is the front tool's cross-fade
+  taken out: `settle` paints the picture the map rests on at the end
+  (`applyTools`, or `blendTransition` in a story blend). Landing fades take its
+  250 ms; `FRONT_FADE` becomes `MAP_FADE`, and `cancelFrontFade` `cancelFade`.
+- **2026-10-01 (plan)** An ease is restarted only while it has time left; at
+  its last frame the story paints the stop with the new data anyway.
+- **2026-10-01 (plan)** "Plain" in the suite means fewer coloured (non-grey)
+  canvas pixels than a small floor; the plain map is grey.
+- **2026-10-01 (plan)** `loadFiles` loses its per-file callback;
+  `downloadFiles(paths, { landed, failed })` reports each file as it settles.
+- **2026-10-01 (plan)** The layout and loading suites share the software-WebGL
+  launch arguments from `layout/screens.ts`.
