@@ -28,9 +28,14 @@ interface WordCounts {
   byVerse: Map<string, number>;
   min: number;
   max: number;
+  scale: Scale;
 }
 
-/** Every verse's word count, and the range of the non-empty ones, once per data value. */
+/**
+ * Every verse's word count, the range of the non-empty ones and their colour
+ * scale, once per data value. The scale is square root, so that a few very long
+ * verses don't compress everything else toward one end of the palette.
+ */
 const wordCountsOf = memoByValue(({ texts }: VerseLengthData): WordCounts => {
   const byVerse = new Map<string, number>();
   let min = Infinity;
@@ -47,16 +52,9 @@ const wordCountsOf = memoByValue(({ texts }: VerseLengthData): WordCounts => {
       }
     }
   }
-  return { byVerse, min: min === Infinity ? 0 : min, max };
+  min = min === Infinity ? 0 : min;
+  return { byVerse, min, max, scale: scale(min, max, SQRT, PLASMA_STOPS) };
 });
-
-/**
- * Square root, so that a few very long verses don't compress everything else
- * toward one end of the palette. The range follows the text.
- */
-function wordCountScale(counts: WordCounts): Scale {
-  return scale(counts.min, counts.max, SQRT, PLASMA_STOPS);
-}
 
 function wordCountAt(data: VerseLengthData, verse: TanakhIdentity): number | undefined {
   return wordCountsOf(data).byVerse.get(tanakhKey(verse.book, verse.chapter, verse.verse));
@@ -65,7 +63,7 @@ function wordCountAt(data: VerseLengthData, verse: TanakhIdentity): number | und
 function verseColorAt(data: VerseLengthData, verse: TanakhIdentity): Color | null {
   const wordCount = wordCountAt(data, verse);
   if (wordCount === undefined || wordCount === 0) return NO_DATA;
-  return wordCountScale(wordCountsOf(data)).colorOf(wordCount);
+  return wordCountsOf(data).scale.colorOf(wordCount);
 }
 
 export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> = {
@@ -95,7 +93,7 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> 
     const highColor = 'Orange/yellow';
 
     container.innerHTML = `
-      ${renderAxis(wordCountScale(counts), [counts.min, counts.max], (n) => `${n} words`)}
+      ${renderAxis(counts.scale, [counts.min, counts.max], (n) => `${n} words`)}
       ${legendCaption(`${lowColor} = shorter verses`)}
       ${legendCaption(`${highColor} = longer verses`)}
       ${legendCaption(`Square root scale · ${paletteName} palette`)}
@@ -103,7 +101,7 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> 
   },
 
   summary(_settings, data) {
-    return { colors: [axisGradient(wordCountScale(wordCountsOf(data)))] };
+    return { colors: [axisGradient(wordCountsOf(data).scale)] };
   },
 
   getHoverInfo(verse, _settings, data) {

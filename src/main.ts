@@ -235,7 +235,6 @@ async function main(): Promise<void> {
     ),
     loadLexiconData(),
   ]);
-  // Main reads these two itself; every other file is an overlay's.
   const torahData = structureFrom(loaded);
   const verseTexts = textsFrom(loaded);
 

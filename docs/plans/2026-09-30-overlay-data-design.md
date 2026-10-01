@@ -232,5 +232,6 @@ test used `configureVerseLength`.
   about the memoised fetch; only the scheduling moves to `whenIdle`, which the
   prebuild shares.
 - **2026-10-01 (fix wave 1)** `loadNamedFiles` is added to `src/dataFiles.ts` and used by the print script (the haftarah sheet loads only the mappings file, and takes the structure it is handed) and by `story-file.test.ts`. `loadHaftarahData` in the print script now takes the structure. Neither list has a fallback: the type requires both. `renderLegend`/`renderControls` keep their `if (!data)` guards.
-- **2026-10-01 (fix wave 2)** The story blender's picture cache is keyed on the `loaded` value inside the verses array, so a new `loaded` always gets fresh pictures and a stop drawn without its overlay's data is never served once the data arrives. Main hands one `loaded` value for the life of the page.
+- **2026-10-01 (fix wave 2)** The story blender's picture cache is keyed on the `loaded` value inside the verses array, so a new `loaded` value gets fresh pictures. Main hands one `loaded` value for the life of the page.
 - **2026-10-01 (fix wave 2)** Main's two files are read through `structureFrom` and `textsFrom` in `src/verseTexts.ts`, two functions because the test harness needs only the texts.
+- **2026-10-01 (fix wave 3)** `memoByValueAndKey` in `src/overlays/memo.ts` serves commentary's per-category maximum and haftarah's per-custom derivation; trop's nested `memoByValue` stays, because its second key is a settings object. Verse length keeps its colour scale in `WordCounts`.

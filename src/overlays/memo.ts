@@ -20,3 +20,17 @@ export function memoByValue<K extends object, V>(derive: (key: K) => V): (key: K
     return value;
   };
 }
+
+/** `memoByValue` with a second key: `derive` runs once per value and key. */
+export function memoByValueAndKey<K extends object, Q, V>(
+  derive: (value: K, key: Q) => V,
+): (value: K, key: Q) => V {
+  const keyed = memoByValue((value: K) => {
+    const byKey = new Map<Q, V>();
+    return (key: Q): V => {
+      if (!byKey.has(key)) byKey.set(key, derive(value, key));
+      return byKey.get(key) as V;
+    };
+  });
+  return (value, key) => keyed(value)(key);
+}

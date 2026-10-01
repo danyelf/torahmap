@@ -1,10 +1,10 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { computeLayout } from '../../../src/layout.ts';
-import type { TanakhLayout, TorahData } from '../../../src/types.ts';
+import type { TanakhLayout } from '../../../src/types.ts';
 import { PSALMS_COLUMNS, printLayout } from '../layout.ts';
+import { loadStructure } from '../views.ts';
 
-const structure: TorahData = JSON.parse(readFileSync('public/data/tanakh-structure.json', 'utf8'));
+const structure = loadStructure();
 const key = (v: TanakhLayout) => `${v.book}:${v.chapter}:${v.verse}`;
 
 function box(vs: TanakhLayout[]) {

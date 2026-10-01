@@ -4,7 +4,7 @@ import type { TanakhIdentity } from '../types.ts';
 import { legendCaption, legendRow } from './legend.ts';
 import { colorToCss } from '../utils/color.ts';
 
-export interface TextDatingFile {
+interface TextDatingFile {
   notes: string[];
   books: {
     [book: string]: Array<Array<{ d: [number, number]; n: number } | null>>;
@@ -94,7 +94,7 @@ function getVerseData(
   data: TextDatingData,
   verse: TanakhIdentity,
 ): { d: [number, number]; n: number } | null {
-  const bookData = data.dates.books?.[verse.book];
+  const bookData = data.dates.books[verse.book];
   if (!bookData) return null;
 
   const chapterData = bookData[verse.chapter - 1];
@@ -194,7 +194,6 @@ export interface VerseDatingInfo {
   note: string;
 }
 
-// Behind the overlay's hover and pinned-verse text.
 export function getVerseDatingInfo(
   data: TextDatingData,
   book: string,
@@ -213,6 +212,6 @@ export function getVerseDatingInfo(
     era: era.name,
     eraDateRange: era.dateRange,
     dateRange: [Math.abs(startBCE), Math.abs(endBCE)],
-    note: data.dates.notes?.[verseData.n],
+    note: data.dates.notes[verseData.n],
   };
 }

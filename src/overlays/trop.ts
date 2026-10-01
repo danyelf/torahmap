@@ -165,7 +165,6 @@ function renderTropChart(
   onChange: (update: SettingsUpdate<TropSettings>) => void,
   data: TropData | null,
 ): void {
-  // The chart lists the marks the texts carry, so it needs them.
   if (!data) return;
   let chart = container.querySelector<HTMLElement>('.trop-chart');
   if (!chart) {

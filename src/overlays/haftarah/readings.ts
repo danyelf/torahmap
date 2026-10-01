@@ -7,7 +7,7 @@ import type { TorahData } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
 import { hslToRgb } from '../../utils/color.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
-import { memoByValue } from '../memo.ts';
+import { memoByValueAndKey } from '../memo.ts';
 import { HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 
 interface VerseRef {
@@ -85,9 +85,6 @@ export interface HaftarahDerivation {
   itemToColor: Map<HaftarahItem, Color>;
 }
 
-// There are only two customs, so each one's derivation is kept, per data value.
-const derivationsOf = memoByValue((_data: HaftarahData) => new Map<Custom, HaftarahDerivation>());
-
 function getVerseCount(structure: TorahData, book: string, chapter: number): number {
   const bookData = structure.books.find((b) => b.name === book);
   if (!bookData || chapter < 1 || chapter > bookData.chapters.length) {
@@ -111,51 +108,46 @@ export function forEachVerseInRange(
   }
 }
 
-/** The lookup indexes for one custom, from the readings handed in. */
-export function deriveHaftarah(data: HaftarahData, custom: Custom): HaftarahDerivation {
-  const derivations = derivationsOf(data);
-  const cached = derivations.get(custom);
-  if (cached) return cached;
+/** The lookup indexes for one custom, from the readings handed in; worked out once per data value. */
+export const deriveHaftarah = memoByValueAndKey(
+  (data: HaftarahData, custom: Custom): HaftarahDerivation => {
+    const torahVerseToParsha = new Map<string, ParshaData>();
+    const haftarahVerseToItem = new Map<string, HaftarahItem[]>();
+    const itemToColor = new Map<HaftarahItem, Color>();
+    const items: HaftarahItem[] = [...data.mappings.parshiot, ...data.mappings.specialOccasions];
 
-  const torahVerseToParsha = new Map<string, ParshaData>();
-  const haftarahVerseToItem = new Map<string, HaftarahItem[]>();
-  const itemToColor = new Map<HaftarahItem, Color>();
-  const specialOccasions = data.mappings.specialOccasions;
-  const items: HaftarahItem[] = [...data.mappings.parshiot, ...specialOccasions];
+    // Parshiot take color indices 0..parshiot.length-1; special occasions
+    // continue from there, so the rainbow runs across both without repeats.
+    items.forEach((item, i) => {
+      itemToColor.set(item, getItemColor(i, items.length));
 
-  // Parshiot take color indices 0..parshiot.length-1; special occasions
-  // continue from there, so the rainbow runs across both without repeats.
-  items.forEach((item, i) => {
-    itemToColor.set(item, getItemColor(i, items.length));
+      if (isParsha(item)) {
+        forEachVerseInRange(data.structure, item.torah, (book, ch, v) => {
+          torahVerseToParsha.set(tanakhKey(book, ch, v), item);
+        });
+      }
 
-    if (isParsha(item)) {
-      forEachVerseInRange(data.structure, item.torah, (book, ch, v) => {
-        torahVerseToParsha.set(tanakhKey(book, ch, v), item);
-      });
-    }
+      // A haftarah verse can belong to multiple items, so accumulate into an array.
+      const haftarahRanges = item.haftarah[custom];
+      for (const range of haftarahRanges) {
+        forEachVerseInRange(data.structure, range, (book, ch, v) => {
+          const key = tanakhKey(book, ch, v);
+          const existing = haftarahVerseToItem.get(key);
+          if (existing) {
+            existing.push(item);
+          } else {
+            haftarahVerseToItem.set(key, [item]);
+          }
+        });
+      }
+    });
 
-    // A haftarah verse can belong to multiple items, so accumulate into an array.
-    const haftarahRanges = item.haftarah[custom];
-    for (const range of haftarahRanges) {
-      forEachVerseInRange(data.structure, range, (book, ch, v) => {
-        const key = tanakhKey(book, ch, v);
-        const existing = haftarahVerseToItem.get(key);
-        if (existing) {
-          existing.push(item);
-        } else {
-          haftarahVerseToItem.set(key, [item]);
-        }
-      });
-    }
-  });
-
-  const derivation: HaftarahDerivation = {
-    items,
-    itemByName: new Map(items.map((item) => [item.name, item])),
-    torahVerseToParsha,
-    haftarahVerseToItem,
-    itemToColor,
-  };
-  derivations.set(custom, derivation);
-  return derivation;
-}
+    return {
+      items,
+      itemByName: new Map(items.map((item) => [item.name, item])),
+      torahVerseToParsha,
+      haftarahVerseToItem,
+      itemToColor,
+    };
+  },
+);

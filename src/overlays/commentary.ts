@@ -3,7 +3,7 @@ import type { TanakhIdentity } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, renderAxisWithZero } from './legend.ts';
-import { memoByValue } from './memo.ts';
+import { memoByValueAndKey } from './memo.ts';
 import { CONTROL } from '../panel.ts';
 import { MAP_BACKGROUND } from '../constants.ts';
 import { COMMENTARY } from '@torahmap/overlay-catalog';
@@ -55,9 +55,6 @@ export interface CommentarySettings {
   readonly category: string;
 }
 
-// Each category's highest count, worked out once per data value.
-const maximaOf = memoByValue((_data: CommentaryData) => new Map<string, number>());
-
 /**
  * Rebuilt per call: the maximum moves when the category changes. Starts at 1:
  * zero is drawn apart, as `NEVER_LINKED`.
@@ -76,30 +73,23 @@ function entryAt(data: CommentaryData, verse: TanakhIdentity): TanakhCommentary 
   return data.counts[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
 }
 
-function getCount(data: CommentaryData, verse: TanakhIdentity, category: string): number {
-  return countIn(entryAt(data, verse), category);
-}
-
-function getMaxValue(data: CommentaryData, category: string): number {
-  const maxima = maximaOf(data);
-  const known = maxima.get(category);
-  if (known !== undefined) return known;
+// Each category's highest count, worked out once per data value.
+const getMaxValue = memoByValueAndKey((data: CommentaryData, category: string): number => {
   let max = 0;
   for (const chapters of Object.values(data.counts)) {
     for (const verses of Object.values(chapters)) {
       for (const entry of Object.values(verses)) max = Math.max(max, countIn(entry, category));
     }
   }
-  maxima.set(category, max);
   return max;
-}
+});
 
 function commentaryColorAt(
   data: CommentaryData,
   verse: TanakhIdentity,
   category: string,
 ): Color | null {
-  const count = getCount(data, verse, category);
+  const count = countIn(entryAt(data, verse), category);
   if (count === 0) return NEVER_LINKED;
   return linkScale(data, category).colorOf(count);
 }
