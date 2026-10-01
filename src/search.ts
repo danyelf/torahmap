@@ -94,6 +94,9 @@ let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
 // Consonantal dictionary spelling -> lexemes, for readers who type a bare root
 // that never appears on its own in the text.
 let spellingToLexemes: Map<string, LexemeId[]> | null = null;
+// Lexeme -> the written forms filed under it, for searching a meaning under a
+// spelling that has it.
+let lexemeToForms: Map<LexemeId, string[]> | null = null;
 
 /** The terms a query string names, dropping ones too short to search on. */
 export function parseSearchTerms(query: string): string[] {
@@ -136,7 +139,8 @@ export async function loadLexiconData(): Promise<void> {
 
     const lexiconFile: LexiconFile = await lexiconRes.json();
     const verseLexemes: Record<string, LexemeId[]> = await versesRes.json();
-    formToLexemes = await formsRes.json();
+    const forms: Record<string, LexemeId[]> = await formsRes.json();
+    formToLexemes = forms;
     verseToLexemes = verseLexemes;
 
     lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language]) => ({
@@ -156,6 +160,7 @@ export async function loadLexiconData(): Promise<void> {
 
     lexemeToVerses = buildVerseIndex(verseLexemes);
     spellingToLexemes = buildSpellingIndex(lexemeSpellings);
+    lexemeToForms = buildFormIndex(forms);
   } catch (err) {
     console.error('Error loading the lexeme index; meanings search will find nothing:', err);
   }
@@ -243,22 +248,21 @@ function lookupFormOrSpelling(term: string): LexemeId[] | null {
   return null;
 }
 
-// Lexeme -> the written forms filed under it, built on first use.
-let lexemeToForms: Map<LexemeId, string[]> | null = null;
-
 /** The written forms that can be this lexeme. */
 export function formsOfLexeme(id: LexemeId): string[] {
-  if (!lexemeToForms && formToLexemes) {
-    lexemeToForms = new Map();
-    for (const [form, ids] of Object.entries(formToLexemes)) {
-      for (const lexeme of ids) {
-        const forms = lexemeToForms.get(lexeme);
-        if (forms) forms.push(form);
-        else lexemeToForms.set(lexeme, [form]);
-      }
+  return lexemeToForms?.get(id) ?? [];
+}
+
+function buildFormIndex(forms: Record<string, LexemeId[]>): Map<LexemeId, string[]> {
+  const index = new Map<LexemeId, string[]>();
+  for (const [form, ids] of Object.entries(forms)) {
+    for (const lexeme of ids) {
+      const list = index.get(lexeme);
+      if (list) list.push(form);
+      else index.set(lexeme, [form]);
     }
   }
-  return lexemeToForms?.get(id) ?? [];
+  return index;
 }
 
 /**

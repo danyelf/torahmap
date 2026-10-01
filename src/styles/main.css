@@ -77,7 +77,6 @@ body.no-webgl > :not(#no-webgl) {
   max-width: 34rem;
   margin: 15vh auto 0;
   padding: 0 16px;
-  font-family: system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: #ddd;

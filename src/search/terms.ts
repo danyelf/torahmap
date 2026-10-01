@@ -288,9 +288,9 @@ export function modesOffered(term: SearchTerm): SearchMode[] {
   return SEARCH_MODES.filter((mode) => mode !== 'meanings' || termIsHebrew(term));
 }
 
-/** Only a Hebrew term in meanings mode consults the dictionary. */
+/** Only a term in meanings mode consults the dictionary, and only Hebrew can be in it. */
 export function meaningsApply(term: SearchTerm): boolean {
-  return termIsHebrew(term) && effectiveMode(term) === 'meanings';
+  return effectiveMode(term) === 'meanings';
 }
 
 /** Everything a term is matched on: terms with equal queries find the same verses. */

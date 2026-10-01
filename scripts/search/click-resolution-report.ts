@@ -46,7 +46,7 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
 
 const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
-const { meaningsFor, meaningsInVerse, sameMeaning, setVerseOnScreen, spellingFor, wordIsNamed } =
+const { meaningsInVerse, setVerseOnScreen, spellingFor, wordIsNamed } =
   await import('../../src/search/dictionary.ts');
 const { verseWords, lookupForm } = await import('../../src/verseWords.ts');
 const { tanakhKey } = await import('../../src/types.ts');
@@ -96,10 +96,7 @@ function buildReport(
           if (!wordIsNamed(wordIndex)) report.unplaced++;
           // Choosing a meaning searches for it under some spelling; one no
           // spelling can be is a choice that silently searches for something else.
-          const lost = offered.some(
-            (m) => !meaningsFor(spellingFor(m.keys, form)).some((r) => sameMeaning(r, m.keys)),
-          );
-          if (lost) report.unsearchable++;
+          if (offered.some((m) => spellingFor(m.keys, form) === null)) report.unsearchable++;
 
           if (n === 1) report.one++;
           else if (n > 1) report.several++;

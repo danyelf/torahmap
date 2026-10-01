@@ -20,6 +20,11 @@ export interface WordMenuOptions {
   onChoose: (meaning: Meaning | null) => void;
 }
 
+/** Between the menu and its word. */
+const GAP = 6;
+/** Between the menu and the edge of the screen. */
+const MARGIN = 8;
+
 let open: HTMLElement | null = null;
 let dismiss: ((event: MouseEvent | KeyboardEvent) => void) | null = null;
 let goStale: (() => void) | null = null;
@@ -140,24 +145,25 @@ export function openWordMenu(options: WordMenuOptions): void {
     menu.appendChild(exactChoice(options));
   }
 
-  // Anchored to the word, then nudged back inside the viewport.
+  // Anchored below the word, or above it when it does not fit below, and
+  // inside the screen when it fits neither way. Never taller than the screen:
+  // a short one scrolls the menu instead.
   const box = options.anchor.getBoundingClientRect();
-  menu.style.top = `${box.bottom + 6}px`;
-  menu.style.left = `${box.left}px`;
-
+  menu.style.maxHeight = `${window.innerHeight - 2 * MARGIN}px`;
   document.body.appendChild(menu);
   open = menu;
 
   const { width, height } = menu.getBoundingClientRect();
-  if (box.left + width > window.innerWidth - 8) {
-    menu.style.left = `${Math.max(8, window.innerWidth - width - 8)}px`;
-  }
-  // Above the word when it does not fit below, and inside the bottom edge
-  // when it fits neither way.
-  if (box.bottom + 6 + height > window.innerHeight - 8) {
-    const above = box.top - 6 - height;
-    menu.style.top = `${above >= 8 ? above : Math.max(8, window.innerHeight - height - 8)}px`;
-  }
+  const below = box.bottom + GAP;
+  const above = box.top - GAP - height;
+  const top =
+    below + height <= window.innerHeight - MARGIN
+      ? below
+      : above >= MARGIN
+        ? above
+        : window.innerHeight - MARGIN - height;
+  menu.style.top = `${top}px`;
+  menu.style.left = `${Math.max(MARGIN, Math.min(box.left, window.innerWidth - MARGIN - width))}px`;
 
   // A menu that cannot be dismissed is worse than no menu: the reader who did
   // not mean to click has to be able to get back to exactly where they were.

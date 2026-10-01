@@ -125,6 +125,11 @@ SEPARATORS = {0x05BE, 0x05C0, 0x05C3, 0x05C6}  # maqaf, paseq, sof pasuq, nun ha
 WORD_SEPARATOR = re.compile(
     r"[\s\-" + "".join(chr(code) for code in sorted(SEPARATORS)) + "]+"
 )
+# What divides the parts of a word BHSA holds as one but prints as two.
+INNER_SEPARATOR = re.compile(r"[\s־]+")
+# The ketiv, which Sefaria prints in round brackets beside the qere. KETIV in
+# src/hebrew.ts is the same pattern.
+KETIV = re.compile(r"\([^)]*\)")
 # Inert here — BHSA has none. Sefaria writes ירושל͏ם with one, and both sides fold both.
 GRAPHEME_JOINER = 0x034F
 
@@ -181,7 +186,7 @@ def consonants(text):
 def is_word(form):
     """A single letter is never a word. isSearchableWord() in src/hebrew.ts
     draws the same line."""
-    return len(form) >= 2
+    return len(consonants(form)) >= 2
 
 
 def line_up(shown, printed, morphemes):
@@ -190,14 +195,10 @@ def line_up(shown, printed, morphemes):
     `printed` is the letters of each word BHSA prints, as close_word() counts
     them; `morphemes` is (letters, lexeme, printed word) for each morpheme.
 
-    Returns whether the two divide the verse alike -- each shown word falls on
-    the printed word at its own position, whatever the spelling, as גרלות does
-    on גורלות -- and, when they do not, the dictionary words each shown word is.
-    A shown word is every printed word whose letters it covers, each counted as
-    the last of its morphemes the shown word reaches: הללויה is one printed word
-    of two morphemes, so the page's הללו is "praise" and its יה is "Yah", while
-    כדרלעמר, one word on the page and two in BHSA, is the one name. A shown word
-    none of whose letters match anything is empty.
+    Returns whether each shown word falls on the printed word at its own
+    position, whatever the spelling, and when not, the lexemes of each shown
+    word: the last morpheme it reaches of every printed word it covers, so the
+    page's הללו in הללויה is "praise".
     """
     if shown == printed:
         return True, None
@@ -262,7 +263,7 @@ def internal_separators(word_text):
     maqaf between its halves sits inside the word's own text rather than in the
     trailer that follows it. The printed page still shows two words there.
     """
-    return [ch for ch in (word_text or "") if ch.isspace() or ch == "־"]
+    return [ch for ch in (word_text or "") if INNER_SEPARATOR.fullmatch(ch)]
 
 
 def is_maqaf_break(trailer):
@@ -427,7 +428,7 @@ def main():
             # One entry per printed word close_word() records: a two-part name
             # held in one BHSA word gives each part its own.
             read = "".join(F.qere_utf8.v(n) or F.g_word_utf8.v(n) or "" for n in morphemes)
-            parts = [c for p in re.split(r"[\s־]+", read) if (c := consonants(p))]
+            parts = [c for p in INNER_SEPARATOR.split(read) if (c := consonants(p))]
             if len(parts) != 1 + len(word_inner):
                 parts = [consonants(read)] + [""] * len(word_inner)
             verse_read_words[key].extend(parts)
@@ -552,7 +553,7 @@ def main():
         square ones; BHSA carries the one word that is read.
         """
         stripped = re.sub(r"\{[ספ]\}", " ", hebrew or "")
-        stripped = re.sub(r"\([^)]*\)", " ", stripped)
+        stripped = KETIV.sub(" ", stripped)
         return [
             letters
             for piece in re.split(WORD_SEPARATOR, stripped)
@@ -577,6 +578,10 @@ def main():
         )
         if not alike:
             realigned[key] = lexemes_of
+            # A shown word can be a morpheme other than a printed word's stem --
+            # the הללו of הללויה is "praise" -- and search must find the verse
+            # by every word a click there can name.
+            verse_lexemes[key].update(lexeme for named in lexemes_of for lexeme in named)
 
     def lexemes_shown(key):
         """The dictionary words of each word the page shows in this verse."""
@@ -586,6 +591,7 @@ def main():
         out, at, stem = [], 0, None
         for length in verse_words[key]:
             # A word of no morphemes is a further part of the name before it.
+            # stemsOf() in src/search/dictionary.ts reads the file the same way.
             if length > 0:
                 at += length
                 stem = morphemes[at - 1]

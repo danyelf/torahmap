@@ -14,10 +14,18 @@ const SLACK = 0.5;
 
 const px = (n: number): string => `${Math.round(n)}`;
 
+/** The part of `a` inside `b`, or null when they share less than SLACK either way. */
+function intersection(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const width = Math.min(a.x + a.width, b.x + b.width) - x;
+  const height = Math.min(a.y + a.height, b.y + b.height) - y;
+  return width > SLACK && height > SLACK ? { x, y, width, height } : null;
+}
+
 function overlap(a: Rect, b: Rect): { w: number; h: number } | null {
-  const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
-  const h = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
-  return w > SLACK && h > SLACK ? { w, h } : null;
+  const shared = intersection(a, b);
+  return shared && { w: shared.width, h: shared.height };
 }
 
 const describeOverlap = (a: Box, b: Box, o: { w: number; h: number }): string =>
@@ -78,18 +86,9 @@ export interface Shown {
 export function notShownInFull(selector: string, found: Shown[], screen: Rect): string[] {
   if (found.length === 0) return [`${selector} matches nothing`];
   return found.flatMap(({ full, visible }) => {
-    const seen = visible && within(visible, screen);
+    const seen = visible && intersection(visible, screen);
     if (!seen) return [`${full.name} is hidden`];
     const sides = edgesPast(full, seen);
     return sides ? [`${full.name} is cut off at the ${sides} edge`] : [];
   });
-}
-
-/** The part of `r` inside `frame`, or null when none of it is. */
-function within(r: Rect, frame: Rect): Rect | null {
-  const x = Math.max(r.x, frame.x);
-  const y = Math.max(r.y, frame.y);
-  const width = Math.min(r.x + r.width, frame.x + frame.width) - x;
-  const height = Math.min(r.y + r.height, frame.y + frame.height) - y;
-  return width > SLACK && height > SLACK ? { x, y, width, height } : null;
 }

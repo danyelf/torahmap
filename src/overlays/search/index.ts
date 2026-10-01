@@ -239,7 +239,8 @@ export function searchForMeaning(
   // assuming it lands last, which is wrong whenever the empty row was not the
   // last one (a reader who cleared an earlier box while a later one still
   // held a word).
-  const spelling = meaningKeys && meaningKeys.length > 0 ? spellingFor(meaningKeys, text) : text;
+  const spelling =
+    meaningKeys && meaningKeys.length > 0 ? (spellingFor(meaningKeys, text) ?? text) : text;
   let terms = settings.terms;
   const empty = terms.find((term) => term.text.trim() === '');
   let id: string;

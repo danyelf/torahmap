@@ -24,7 +24,11 @@ import {
 } from '../search.ts';
 import { fetchData } from '../constants.ts';
 import {
+  HEBREW_LETTER,
+  KETIV,
+  QERE,
   isHebrew,
+  isWordSeparator,
   mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
@@ -213,18 +217,25 @@ function rowForStem(stem: LexemeId, writtenForm: string): Meaning[] {
  * lost the moment the term is built: a click on (בגד), read בָּא גָד, can choose
  * "fortune", which is no reading of בגד. So the clicked spelling when it has
  * the meaning, then the meaning's dictionary spelling, then any written form
- * filed under it.
+ * filed under it, or null when none has it.
+ *
+ * The dictionary spelling keeps its final letters, unlike the folded form the
+ * index files it under, because it becomes the text of the search box.
  */
-export function spellingFor(keys: readonly string[], clicked: string): string {
+export function spellingFor(keys: readonly string[], clicked: string): string | null {
   const has = (text: string) => meaningsFor(text).some((m) => sameMeaning(m, keys));
   if (has(clicked)) return clicked;
 
   const ids = [...lexemesForKeys(keys)];
-  const candidates = [
-    ...ids.map((id) => stripNikkud(getLexeme(id)?.form ?? '')),
-    ...ids.flatMap(formsOfLexeme),
-  ];
-  return candidates.find((text) => text && has(text)) ?? clicked;
+  for (const id of ids) {
+    const spelling = stripNikkud(getLexeme(id)?.form ?? '');
+    if (spelling && has(spelling)) return spelling;
+  }
+  for (const id of ids) {
+    const form = formsOfLexeme(id).find(has);
+    if (form) return form;
+  }
+  return null;
 }
 
 /** The verses carrying any of these meanings. */
@@ -334,8 +345,8 @@ const PREFETCH_TIMEOUT_MS = 2000;
 
 /**
  * The verse whose Hebrew is on screen, and its printed words' stems by where
- * each word starts in that text. Null stems mean the two sources divide this
- * verse differently, or the parse is not here yet.
+ * each word starts in that text. Null stems mean the parse is not here yet, or
+ * its words do not line up with this text.
  */
 let onScreen: { verseKey: string; hebrew: string; stems: Map<number, LexemeId[]> | null } | null =
   null;
@@ -371,13 +382,15 @@ export function wordsAreNamed(): boolean {
   return onScreen?.stems != null;
 }
 
-/** Does a click on this word of the verse on screen land on a word BHSA parsed? */
+/**
+ * Does a click on this word of the verse on screen land on a word BHSA parsed?
+ *
+ * Exported for scripts/search/click-resolution-report.ts, which counts the
+ * clicks that do not.
+ */
 export function wordIsNamed(wordIndex: number): boolean {
   return onScreen !== null && stemOfWord(onScreen.verseKey, wordIndex) !== null;
 }
-
-/** The ketiv, which BHSA carries no word for, so it cannot be counted past. */
-const KETIV = /\([^)]*\)/g;
 
 /**
  * The printed words BHSA has a word for, where each starts in the verse text.
@@ -430,6 +443,8 @@ function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId[]> | nu
   for (let i = 0; i < lengths.length; i++) {
     // A word of no morphemes is a further part of the dictionary word before
     // it — the קַיִן of תּוּבַל קַיִן — so it carries that word's stem.
+    // lexemes_shown() in scripts/search/generate-lexeme-index.py reads the
+    // file the same way.
     if (lengths[i] > 0) {
       stem = morphemes[at + lengths[i] - 1][0];
       at += lengths[i];
@@ -441,10 +456,7 @@ function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId[]> | nu
   return stems;
 }
 
-/** A ketiv in round brackets or a qere in square ones. */
-const CORRECTION = /\(([^)]*)\)|\[[^\]]*\]/g;
-/** What may stand between a ketiv and its qere: space, maqaf, paseq. */
-const BESIDE = /^[\s־׀]*$/;
+const CORRECTION = new RegExp(`${KETIV.source}|${QERE.source}`, 'g');
 
 /**
  * Give each ketiv the words BHSA parsed for the qere printed beside it, which
@@ -458,24 +470,26 @@ function nameKetiv(hebrew: string, stems: Map<number, LexemeId[]>): void {
   const groups = [...hebrew.matchAll(CORRECTION)].map((m) => ({
     start: m.index,
     end: m.index + m[0].length,
-    ketiv: m[1] !== undefined,
+    ketiv: m[0].startsWith('('),
   }));
   const words = verseWords(hebrew);
   // By first letter: in [לְכָה־]נָּא the closing bracket leads the next word.
   const within = (group: { start: number; end: number }) =>
     words.filter((w) => {
-      const letter = w.start + w.word.search(/[א-ת]/);
+      const letter = w.start + w.word.search(HEBREW_LETTER);
       return letter >= group.start && letter < group.end;
     });
+  // Nothing but word breaks stands between a ketiv and its qere.
+  const beside = (from: number, to: number) => [...hebrew.slice(from, to)].every(isWordSeparator);
 
   groups.forEach((group, i) => {
     if (!group.ketiv) return;
     const next = groups[i + 1];
     const previous = groups[i - 1];
     const qere =
-      next && !next.ketiv && BESIDE.test(hebrew.slice(group.end, next.start))
+      next && !next.ketiv && beside(group.end, next.start)
         ? next
-        : previous && !previous.ketiv && BESIDE.test(hebrew.slice(previous.end, group.start))
+        : previous && !previous.ketiv && beside(previous.end, group.start)
           ? previous
           : null;
     if (!qere) return;

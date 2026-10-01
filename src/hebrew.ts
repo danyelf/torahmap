@@ -75,7 +75,15 @@ export function isTropMark(code: number): boolean {
   return code >= TROP_START && code <= TROP_END;
 }
 
-const HEBREW_LETTER = /[\u05D0-\u05EA]/;
+export const HEBREW_LETTER = /[\u05D0-\u05EA]/;
+
+// Sefaria prints a corrected word twice: the ketiv, as written, in round
+// brackets, and the qere, as read, in square ones. KETIV in
+// scripts/search/generate-lexeme-index.py is the same pattern.
+export const KETIV = /\([^)]*\)/g;
+export const QERE = /\[[^\]]*\]/g;
+/** Either bracket of either, which no dictionary key contains. */
+export const BRACKETS = /[[\]()]/g;
 
 /** Does this text hold a Hebrew letter? */
 export function isHebrew(text: string): boolean {

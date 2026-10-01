@@ -8,7 +8,7 @@
 //   .venv/bin/python scripts/search/generate-lexeme-index.py
 
 import { describe, it, expect } from 'vitest';
-import { normalizeHebrewForSearch } from '../../hebrew';
+import { KETIV, normalizeHebrewForSearch } from '../../hebrew';
 import { lookupForm, verseWords } from '../../verseWords';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -285,7 +285,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
   const displayedWords = (hebrew: string): string[] =>
     hebrew
       .replace(/\{[ספ]\}/g, ' ')
-      .replace(/\([^)]*\)/g, ' ')
+      .replace(KETIV, ' ')
       .split(/[\s־]+/)
       .map((word) => word.replace(/[^א-ת]/g, ''))
       .filter((word) => word.length > 0);
@@ -400,7 +400,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       for (const [chapter, verses] of Object.entries(chapters)) {
         for (const [verse, { he }] of Object.entries(verses)) {
           if (!he) continue;
-          for (const { word } of verseWords(he.replace(/\([^)]*\)/g, ' '))) {
+          for (const { word } of verseWords(he.replace(KETIV, ' '))) {
             if (!(lookupForm(word) in forms)) missing.push(`${book} ${chapter}:${verse} ${word}`);
           }
         }
@@ -410,12 +410,13 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {
-    // verse-lexemes.json holds the stem of each printed word; this file holds
+    // verse-lexemes.json holds the stem of each printed word, and in a verse
+    // lined up by letter the lexemes its shown words name; this file holds
     // every morpheme plus the word lengths, so the same set is recoverable.
     // Nothing else checks that the two agree, and they must.
     const disagree: string[] = [];
     for (const [key, [morphemes, words]] of entries) {
-      const stems = new Set<number>();
+      const stems = new Set<number>(realigned[key]?.flat());
       let at = 0;
       for (const length of words) {
         // A length of 0 is a printed word that is a further part of the
@@ -444,7 +445,11 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       const hebrew = texts[book]?.[chapter]?.[verse]?.he;
       if (hebrew === undefined) continue;
       expect(named, key).toHaveLength(displayedWords(hebrew).length);
-      for (const id of named.flat()) expect(lexemes[id], `${key} names ${id}`).toBeTruthy();
+      for (const id of named.flat()) {
+        expect(lexemes[id], `${key} names ${id}`).toBeTruthy();
+        // A click there can search for it, and the search must find this verse.
+        expect(verses[key], `${key} names ${id} but does not carry it`).toContain(id);
+      }
     }
   });
 });

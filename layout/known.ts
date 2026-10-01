@@ -5,6 +5,10 @@ export interface Known {
 }
 
 const POPUP = "The verse popup's Sefaria link and close button are under 24px; accepted for now.";
+const POPUP_TARGETS = [
+  'a.sefaria-link is 103×15px, under 24',
+  'button.close-btn is 20×20px, under 24',
+];
 
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
@@ -16,39 +20,39 @@ const POPUP = "The verse popup's Sefaria link and close button are under 24px; a
 export const KNOWN: Record<string, Known> = {
   'explore-verse-pinned/phone/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'explore-verse-pinned/tablet/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'explore-word-menu/phone/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'explore-word-menu/tablet/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'story-menu-down/tablet/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'story-stop-with-verse/phone/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'story-stop-with-verse/tablet/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'explore-search-and-overlay-pinned/phone/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'explore-search-and-overlay-pinned/tablet/touch-targets': {
     reason: POPUP,
-    violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+    violations: POPUP_TARGETS,
   },
   'explore-trop/phone/touch-targets': {
     reason:

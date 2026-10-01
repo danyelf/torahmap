@@ -5,6 +5,7 @@
 // search would find is the failure this shares a rule to avoid.
 
 import {
+  BRACKETS,
   isSearchableWord,
   normalizeHebrewForSearch,
   splitIntoWords,
@@ -42,8 +43,6 @@ export function verseWords(text: string): TextWord[] {
 export function lookupForm(displayed: string): string {
   return normalizeHebrewForSearch(displayed.replace(BRACKETS, ''));
 }
-
-const BRACKETS = /[[\]()]/g;
 
 /**
  * Make every word in an already-built fragment clickable.

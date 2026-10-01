@@ -158,9 +158,9 @@ describe('naming the word that was clicked', () => {
     setVerseOnScreen(verse, hebrewOf(verse));
 
     const at = (word: string) =>
-      meaningsInVerse(word, verse, wordIndexOf(verse, word)).map((m) => m.gloss);
-    expect(at('אחי')).toEqual(['brother']);
-    expect(at('עשהאל')).toEqual(['Asahel']);
+      meaningsInVerse(word, verse, wordIndexOf(verse, word)).map((m) => m.keys);
+    expect(at('אחי')).toEqual([['>X/@heb']]);
+    expect(at('עשהאל')).toEqual([['<FH>L/@heb']]);
   });
 
   it('names a word where the two sources print different words', () => {
@@ -171,8 +171,8 @@ describe('naming the word that was clicked', () => {
     const verse = 'II Samuel:7:22';
     setVerseOnScreen(verse, hebrewOf(verse));
 
-    expect(meaningsInVerse('יהוה', verse, wordIndexOf(verse, 'יהוה')).map((m) => m.gloss)).toEqual([
-      'YHWH',
+    expect(meaningsInVerse('יהוה', verse, wordIndexOf(verse, 'יהוה')).map((m) => m.keys)).toEqual([
+      ['JHWH/@heb'],
     ]);
   });
 });
