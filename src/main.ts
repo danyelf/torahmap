@@ -30,6 +30,8 @@ import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
   arrivedWith,
   configureAnalytics,
+  downloadKbps,
+  trackLoadTiming,
   reportError,
   reportUncaughtErrors,
   trackOverlaySwitch,
@@ -226,9 +228,10 @@ async function main(): Promise<void> {
     return;
   }
 
+  let textsIn = 0;
   const [torahData, verseTexts] = await Promise.all([
     loadTanakhStructure(),
-    loadAllVerseTexts(),
+    loadAllVerseTexts().finally(() => (textsIn = performance.now())),
     loadLexiconData(),
   ]);
 
@@ -245,6 +248,7 @@ async function main(): Promise<void> {
   const mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
 
   buildSearchIndex(verseTexts);
+  const searchReady = performance.now();
 
   registerAllOverlays();
   configureCommentary({ verses });
@@ -1761,6 +1765,17 @@ async function main(): Promise<void> {
 
   // Layout tests wait on this; nothing in the app reads it.
   document.documentElement.dataset.mapReady = '';
+  const textsEntry = performance
+    .getEntriesByType('resource')
+    .find((e) => e.name.endsWith('/all-texts.json')) as PerformanceResourceTiming | undefined;
+  const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
+  trackLoadTiming({
+    first_frame: Math.round(performance.now()),
+    texts_in: Math.round(textsIn),
+    search_ready: Math.round(searchReady),
+    texts_kbps: downloadKbps(textsEntry),
+    connection: connection?.effectiveType ?? '',
+  });
 
   prefetchMorphology();
 }

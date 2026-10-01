@@ -187,3 +187,18 @@ export function reportUncaughtErrors(target: Window = window): void {
     trackError('unhandled_rejection', errorMessage(e.reason)),
   );
 }
+
+export function trackLoadTiming(fields: EventFields<'load_timing'>): void {
+  track('load_timing', fields);
+}
+
+/** Kilobits per second over a download's body, or 0 where the browser did not report one. */
+export function downloadKbps(
+  entry:
+    Pick<PerformanceResourceTiming, 'transferSize' | 'responseStart' | 'responseEnd'> | undefined,
+): number {
+  if (!entry) return 0;
+  const ms = entry.responseEnd - entry.responseStart;
+  if (entry.transferSize <= 0 || ms <= 0) return 0;
+  return Math.round((entry.transferSize * 8) / ms);
+}

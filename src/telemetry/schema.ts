@@ -43,6 +43,12 @@ export const EVENTS = {
     blobs: ['how', 'what', 'story', 'stop_id', 'overlay'],
     doubles: ['searching', 'pinned'],
   },
+  // Milliseconds since navigation start; texts_kbps is 0 where the browser did not
+  // report the download (a cached copy, or no Resource Timing entry).
+  load_timing: {
+    blobs: ['connection'],
+    doubles: ['first_frame', 'texts_in', 'search_ready', 'texts_kbps'],
+  },
 } as const satisfies Record<
   string,
   { blobs: readonly string[]; doubles: readonly string[]; by?: 'worker' }
