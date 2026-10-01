@@ -8,7 +8,7 @@
 
 import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
 import { versesForTerm } from '../search.ts';
-import { isHebrew } from '../hebrew.ts';
+import { isHebrew, splitIntoWords } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '../types.ts';
@@ -273,14 +273,24 @@ export function termIsHebrew(term: SearchTerm): boolean {
 /**
  * What the reader chose, or the default for the language the text is in.
  *
- * English has no dictionary, so meanings is clamped to whole word here rather
- * than in the field: a term briefly retyped in English is back on meanings the
- * moment it is Hebrew again.
+ * Where meanings is not possible it is clamped to whole word here rather than
+ * in the field: a term briefly retyped as English, or as a phrase, is back on
+ * meanings the moment it is a Hebrew word again.
  */
 export function effectiveMode(term: SearchTerm): SearchMode {
-  const hebrew = termIsHebrew(term);
-  const chosen = term.mode ?? (hebrew ? 'meanings' : 'substring');
-  return !hebrew && chosen === 'meanings' ? 'word' : chosen;
+  const chosen = term.mode ?? (termIsHebrew(term) ? 'meanings' : 'substring');
+  return chosen === 'meanings' && !meaningsPossible(term) ? 'word' : chosen;
+}
+
+/**
+ * Can this term be matched by meaning? Not in English, and not a Hebrew phrase
+ * the dictionary does not have: it has בית אל, a name, but not וידבר יהוה. A
+ * single word stays possible while it is being typed, though most of its
+ * prefixes are no word at all.
+ */
+export function meaningsPossible(term: SearchTerm): boolean {
+  if (!termIsHebrew(term)) return false;
+  return term.meanings.length > 0 || splitIntoWords(term.text).length < 2;
 }
 
 /** The modes this term's own text can be matched by, in the order shown. */

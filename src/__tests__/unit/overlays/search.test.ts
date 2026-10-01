@@ -616,6 +616,27 @@ describe('Search Overlay', () => {
       expect(offered.map((o) => o.dataset.mode)).toEqual(['substring', 'word', 'meanings']);
       expect(input.dir).toBe('rtl');
     });
+
+    it('dims meanings for a phrase the dictionary does not have, and says why', () => {
+      const container = render();
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const option = (mode: string) =>
+        container.querySelector<HTMLButtonElement>(
+          `.term-row[data-open="true"] .term-mode-option[data-mode="${mode}"]`,
+        )!;
+
+      input.value = 'וידבר יהוה';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(option('meanings').disabled).toBe(true);
+      expect(option('meanings').title).not.toBe('');
+      expect(option('word').classList.contains('on')).toBe(true);
+
+      input.value = 'וידבר';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(option('meanings').disabled).toBe(false);
+      expect(option('meanings').title).toBe('');
+      expect(option('meanings').classList.contains('on')).toBe(true);
+    });
   });
 
   describe('Render Legend', () => {

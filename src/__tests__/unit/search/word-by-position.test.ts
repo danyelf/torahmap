@@ -195,9 +195,12 @@ const nothingToName = (verseKey: string, hebrew: string): Set<number> => {
     for (const w of verseWords(hebrew))
       if (w.start >= m.index && w.start < end) starts.add(w.start);
   }
-  wordsBhsaParsed(hebrew).forEach((w, i) => {
-    if (realigned[verseKey]?.[i]?.length === 0) starts.add(w.start);
-  });
+  const lined = realigned[verseKey];
+  if (lined) {
+    wordsBhsaParsed(hebrew).forEach((w, i) => {
+      if (lined[i]?.length === 0) starts.add(w.start);
+    });
+  }
   return starts;
 };
 

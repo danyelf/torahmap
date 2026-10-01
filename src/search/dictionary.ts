@@ -337,12 +337,16 @@ export function prefetchMorphology(): void {
 const PREFETCH_TIMEOUT_MS = 2000;
 
 /**
- * The verse whose Hebrew is on screen, and the dictionary words of its printed
- * words by where each starts in that text. Null `named` means the parse is not
- * here yet, or its words do not line up with this text.
+ * The verse whose Hebrew is on screen, its clickable words, and the dictionary
+ * words of its printed words by where each starts in that text. Null `named`
+ * means the parse is not here yet, or its words do not line up with this text.
  */
-let onScreen: { verseKey: string; hebrew: string; named: Map<number, LexemeId[]> | null } | null =
-  null;
+let onScreen: {
+  verseKey: string;
+  hebrew: string;
+  words: TextWord[];
+  named: Map<number, LexemeId[]> | null;
+} | null = null;
 
 /**
  * Name the verse whose Hebrew is about to be displayed.
@@ -356,7 +360,12 @@ let onScreen: { verseKey: string; hebrew: string; named: Map<number, LexemeId[]>
  * failed load too; there is simply nothing more to wait for.
  */
 export function setVerseOnScreen(verseKey: string, hebrew: string): Promise<void> | null {
-  onScreen = { verseKey, hebrew, named: namedWords(verseKey, hebrew) };
+  onScreen = {
+    verseKey,
+    hebrew,
+    words: verseWords(hebrew),
+    named: namedWords(verseKey, hebrew),
+  };
   return settled ? null : loadMorphology();
 }
 
@@ -479,7 +488,7 @@ function namedAt(verseText: string, wordStart: number): LexemeId[] | null {
 function namedWord(verseKey: string, wordIndex: number): LexemeId[] | null {
   if (!onScreen?.named || onScreen.verseKey !== verseKey) return null;
 
-  const word = verseWords(onScreen.hebrew)[wordIndex];
+  const word = onScreen.words[wordIndex];
   return word ? (onScreen.named.get(word.start) ?? null) : null;
 }
 

@@ -158,8 +158,13 @@
   border-right: none;
 }
 
-.term-mode-option:hover {
+.term-mode-option:hover:not(:disabled) {
   color: #fff;
+}
+
+.term-mode-option:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .term-mode-option.on {

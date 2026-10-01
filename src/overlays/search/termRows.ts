@@ -17,6 +17,7 @@ import {
   setMode,
   effectiveMode,
   modesOffered,
+  meaningsPossible,
   meaningsApply,
   termIsHebrew,
   MAX_TERMS,
@@ -233,8 +234,11 @@ function renderModeControl(body: HTMLElement, term: SearchTerm): void {
   }
 
   const current = effectiveMode(term);
-  for (const option of body.querySelectorAll<HTMLElement>('.term-mode-option')) {
+  for (const option of body.querySelectorAll<HTMLButtonElement>('.term-mode-option')) {
     option.classList.toggle('on', option.dataset.mode === current);
+    if (option.dataset.mode !== 'meanings') continue;
+    option.disabled = !meaningsPossible(term);
+    option.title = option.disabled ? 'The dictionary has no entry for this phrase' : '';
   }
 }
 
