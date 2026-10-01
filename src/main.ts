@@ -120,6 +120,7 @@ import {
   searchForMeaning,
   canAddTerm,
   isSearching,
+  requoteSearchResults,
   type SearchSettings,
 } from './overlays/search/index.ts';
 import { createSearchRecorder } from './overlays/search/recording.ts';
@@ -1864,6 +1865,7 @@ async function main(): Promise<void> {
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) drawOverlayPanel(false);
     if (stale.searchPanel) drawSearchPanel(false);
+    if (stale.searchResults && search) requoteSearchResults(search);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
     if (stale.popup) refreshPopupAfterDownload();
   }

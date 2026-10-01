@@ -20,7 +20,12 @@ import {
 import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from '../../search/data.ts';
 import { spellingFor, versesFor, wordsOfVerse } from '../../search/dictionary.ts';
 import { excerpt, highlightTerms } from './highlight.ts';
-import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
+import {
+  renderResults as renderResultsList,
+  requoteResults,
+  detachResults,
+  type ResultsView,
+} from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import {
   addTerm,
@@ -326,9 +331,22 @@ function renderResults(settings: SearchSettings, data: SearchData | null): void 
     terms: searchFor(data, settings).active,
     focus: openTermIndex(settings),
     onSelect: showVerse,
-    snippet: (result, term) =>
-      excerpt(result, term, textIndexOf(data), dictionaryOf(data), data.parse),
+    snippet: snippetFor(data),
   });
+}
+
+function snippetFor(data: SearchData): ResultsView['snippet'] {
+  return (result, term) => excerpt(result, term, textIndexOf(data), dictionaryOf(data), data.parse);
+}
+
+/**
+ * Quote the results already listed again from `data`, which differs from the
+ * panel's only in the per-word parse: it marks a word better than its spelling.
+ */
+export function requoteSearchResults(data: SearchData): void {
+  if (!searchResults) return;
+  shownData = data;
+  requoteResults(searchResults, snippetFor(data));
 }
 
 /**

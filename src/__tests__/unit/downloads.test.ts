@@ -30,7 +30,13 @@ const explore = (map: Overlay[], panel: Overlay | null, popup: boolean): Landing
   panel,
   popup,
 });
-const NOTHING = { map: null, overlayPanel: false, searchPanel: false, popup: false };
+const NOTHING = {
+  map: null,
+  overlayPanel: false,
+  searchPanel: false,
+  searchResults: false,
+  popup: false,
+};
 
 describe('filesFirst', () => {
   it('names the files of the tools the opening view shows', () => {
@@ -135,12 +141,19 @@ describe('staleAfterLanding', () => {
     ).toMatchObject({ map: 'overlay', overlayPanel: true, popup: true });
   });
 
-  it('redraws only the popup when the per-word parse lands with search on', () => {
-    const withParse = new Map(SAMPLE_LOADED).set(PARSE, { misaligned: [], verses: {} });
+  it('requotes the search results and redraws the popup when the per-word parse lands, and no panel', () => {
+    const withParse = new Map(SAMPLE_LOADED).set(PARSE, { realigned: {}, verses: {} });
     expect(staleAfterLanding(SAMPLE_LOADED, withParse, explore([searchTool], null, true))).toEqual({
       ...NOTHING,
+      searchResults: true,
       popup: true,
     });
+  });
+
+  it('requotes nothing when the per-word parse lands before the rest of search', () => {
+    const before = without(LEXICON);
+    const after = new Map(before).set(PARSE, { realigned: {}, verses: {} });
+    expect(staleAfterLanding(before, after, explore([searchTool], null, true))).toEqual(NOTHING);
   });
 
   it('fades the blend when the overlay of a stop the story is between lands', () => {

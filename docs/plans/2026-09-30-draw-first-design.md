@@ -104,7 +104,7 @@ Under reduced motion each fade is a snap, as the front tool's is today.
 `filesFirst` are plain and unit-tested, the way `layerToRecompute` is today: a
 landing file nobody shown reads changes nothing; the texts landing with trop on
 redraw the map and the popup; the parse landing with search on redraws the popup
-and not the panels; commentary landing while the story is between stops gives
+and quotes the search results again, but redraws no panel; commentary landing while the story is between stops gives
 `blend`. What remains in `fileLanded` is a short sequence of calls to code the
 Playwright suite drives.
 
@@ -205,8 +205,9 @@ Decisions made while implementing step 3, newest last.
   the three lines that said the popup stays closed are changed to match.
 - **2026-10-01 (plan)** The map and the panels are drawn from the files a tool
   requires; the popup also from its optional ones. So the per-word parse
-  landing redraws only the popup, as the design's example says, and a reader
-  scrolled down the search results keeps their place.
+  landing redraws no panel, as the design's example says, and a reader
+  scrolled down the search results keeps their place. (The results' quotes
+  read the parse too; see the rebase entry below.)
 - **2026-10-01 (plan)** `staleAfterLanding` is handed the tools the map shows
   as a list rather than an overlay and a search: in a story blend or ease the
   map shows the tools of the stops it is between, which need not be the picked
@@ -337,3 +338,16 @@ Decisions made while implementing step 3, newest last.
   errors with their stacks (`collectErrors`), so the broken-lexicon case uses
   the shared `open` and still checks that its one error is uncaught and names
   `buildDictionary`.
+- **2026-10-01 (rebase onto #315)** The search results quote each verse with
+  the popup's matcher, which reads the per-word parse (#315), and the parse
+  lands last. So when search's optional file lands and nothing it requires
+  changed, `staleAfterLanding` says the search results are stale
+  (`searchResults`), and main quotes the rows already listed again from the new
+  data (`requoteSearchResults`): in place, keeping the list's scroll and the
+  rows' boxes, and later batches quote from the new data too. Only the results,
+  not the panel: redrawing the panel would scroll the list to the top. It is
+  stale whether or not a word is typed; with none, no rows are listed and
+  nothing is quoted. Before the dictionary lands, search's data is null, so a
+  term's mode and the meanings toggle behave as #315's did before its lexeme
+  files arrived; the dictionary's landing redraws the search panel, which
+  updates them.

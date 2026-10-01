@@ -82,6 +82,23 @@ test("a search link keeps its word in the box, and finds it once search's files 
   expect(errors).toEqual([]);
 });
 
+test('the search results are quoted again when the per-word parse lands, keeping their place', async ({
+  page,
+}) => {
+  // Genesis 19:28 has both עַל and עָלָה; only the parse tells them apart.
+  const { release, errors } = await open(page, `search=${encodeURIComponent('עלה')}`, [PARSE]);
+  await viaMenu(page, 'search');
+  const list = page.locator('#search-results');
+  const mark = list.locator('.search-result', { hasText: '19:28' }).locator('mark');
+  await expect(mark).toHaveText('עַל');
+  await list.evaluate((el) => (el.scrollTop = 60));
+  release();
+  await expect(mark).toHaveText('עָלָה');
+  expect(await list.evaluate((el) => el.scrollTop)).toBe(60);
+  await allLoaded(page);
+  expect(errors).toEqual([]);
+});
+
 test('a narrowed search link keeps its meaning while the dictionary is on its way', async ({
   page,
 }) => {
