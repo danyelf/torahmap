@@ -11,6 +11,7 @@ import {
   storyScrolled,
   rejoin,
   rejoinProgress,
+  retarget,
   settle,
   type StoryHasMap,
 } from '../driver';
@@ -87,6 +88,18 @@ describe('easing back', () => {
     moving.x = 99;
 
     expect(driver.by === 'rejoining' && driver.fromCamera).toEqual(camera);
+  });
+
+  it('aims at a new picture without moving its camera or its clock', () => {
+    const driver = easeBack(1000, SWIPE_EASE_MS);
+    const coloured = { colors: [] };
+    const aimed = retarget(driver, coloured);
+    if (driver.by !== 'rejoining' || aimed.by !== 'rejoining') throw new Error('not easing');
+
+    expect(aimed.toPicture).toBe(coloured);
+    expect(aimed.fromPicture).toBe(driver.fromPicture);
+    expect(aimed.fromCamera).toEqual(driver.fromCamera);
+    expect([aimed.since, aimed.duration]).toEqual([driver.since, driver.duration]);
   });
 });
 

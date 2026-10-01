@@ -77,6 +77,7 @@ export async function canvasShot(page: Page): Promise<Buffer> {
   } finally {
     await hide.evaluate((el: Element) => el.remove());
     await focused.evaluate((el) => (el as HTMLElement | null)?.focus({ preventScroll: true }));
+    await focused.dispose();
   }
 }
 

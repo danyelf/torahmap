@@ -80,6 +80,14 @@ export function rejoin(
 }
 
 /**
+ * The ease aimed at `toPicture` instead, as when data lands mid-ease. Its
+ * camera and clock stay as they are: restarting them would stall the camera.
+ */
+export function retarget(driver: StoryHasMap, toPicture: Picture): StoryHasMap {
+  return driver.by === 'rejoining' ? { ...driver, toPicture } : driver;
+}
+
+/**
  * A scroll while the reader drives only counts towards handing the map back,
  * and returns 'rejoin' once it has. Counts distance, not events: a trackpad
  * fires many small scroll events where a wheel fires few large ones.

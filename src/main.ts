@@ -174,6 +174,7 @@ import {
   readerTakesOver,
   rejoin,
   rejoinProgress,
+  retarget,
   settle,
   storyScrolled,
   type Driver,
@@ -263,6 +264,7 @@ async function main(): Promise<void> {
   let firstFrame = 0;
   let textsIn = 0;
   let searchReady = 0;
+  let searchPrebuilt = false;
   let downloadsSettled = false;
   let timingSent = false;
 
@@ -465,6 +467,7 @@ async function main(): Promise<void> {
   }
 
   function blendTransition(): void {
+    cancelFade();
     if (driver.by !== 'story' || !driver.blend) return;
     const { from, to, t } = driver.blend;
     setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded));
@@ -1832,10 +1835,16 @@ async function main(): Promise<void> {
         blendTransition,
       );
     } else if (how === 'ease' && driver.by === 'rejoining') {
-      // From where it is, for the time it has left, so it ends on the picture with the data.
-      const now = performance.now();
-      const left = driver.since + driver.duration - now;
-      if (left > 0) keepDriving(beginEase(left, now));
+      // So it ends on the picture with the data.
+      const state = currentStoryState();
+      keepDriving(
+        retarget(
+          driver,
+          flatten(
+            computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded),
+          ),
+        ),
+      );
       scheduleStoryFrame();
     }
   }
@@ -1861,19 +1870,20 @@ async function main(): Promise<void> {
     showLoadState();
   }
 
-  function prebuilt(overlay: Overlay): void {
+  function prebuilt(overlay: Overlay, built: boolean): void {
     if (overlay !== searchTool) return;
-    searchReady = performance.now();
+    searchPrebuilt = true;
+    if (built) searchReady = performance.now();
     sendLoadTiming();
   }
 
   /**
-   * Once every download has settled and search's index and dictionary are
-   * built. search_ready stays 0 when search's files never arrived.
+   * Once every download has settled and search's prebuild has run.
+   * search_ready stays 0 when search's files never arrived or it failed to build.
    */
   function sendLoadTiming(): void {
     if (timingSent || !downloadsSettled) return;
-    if (dataFor(searchTool, loaded) && !searchReady) return;
+    if (dataFor(searchTool, loaded) && !searchPrebuilt) return;
     timingSent = true;
     const textsEntry = performance
       .getEntriesByType('resource')
