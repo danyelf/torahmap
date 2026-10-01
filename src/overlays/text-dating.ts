@@ -118,8 +118,7 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
   ],
 
   async init() {
-    const result = await loadJson<TextDatingData>('text-dating.json');
-    if (result) data = result;
+    data = await loadJson<TextDatingData>('text-dating.json');
   },
 
   getVerseColor(verse: TanakhIdentity): Color | null {

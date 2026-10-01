@@ -17,6 +17,7 @@ import {
 } from '../helpers/fixtures';
 import { mockFetch, restoreAllMocks } from '../helpers/mocks';
 import { createOverlaySettings, type OverlaySettings } from '../../overlays/settings';
+import { isReady, ready } from '../../dataLoading';
 
 describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
@@ -454,9 +455,8 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('handles fetch failure gracefully during init', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      // Mock fetch to fail
+    it('warns once and still colours the map when its data does not download', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
       globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           ok: false,
@@ -464,15 +464,16 @@ describe('Overlay Switching Integration', () => {
           json: () => Promise.reject(new Error('Not found')),
         } as Response),
       );
+      const overlay = getOverlay('commentary')!;
 
-      // Should not throw
-      await expect(switchToOverlay('commentary')).resolves.toBeDefined();
+      await ready(overlay);
 
-      // Overlay should still work (just with no data)
-      expect(lastColors.length).toBe(verses.length);
-      // Overlay should provide default colors even if data fails to load
-      expect(lastColors).toBeDefined();
-      consoleSpy.mockRestore();
+      expect(isReady(overlay)).toBe(true);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(verses.map((v) => overlay.getVerseColor(v, settings.get(overlay)))).toHaveLength(
+        verses.length,
+      );
+      warn.mockRestore();
     });
 
     it('handles malformed data gracefully', async () => {

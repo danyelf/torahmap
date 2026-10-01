@@ -66,14 +66,10 @@ export function mappings(): HaftarahMappings | null {
 }
 
 export async function loadReadings(): Promise<void> {
-  const [haftarahData, structureData] = await Promise.all([
+  [data, structure] = await Promise.all([
     loadJson<HaftarahMappings>('overlays/haftarah/mappings.json'),
     loadJson<TorahData>('tanakh-structure.json'),
   ]);
-  if (!haftarahData || !structureData) return;
-
-  data = haftarahData;
-  structure = structureData;
   // Both customs' derivations were built (if at all) from data that no
   // longer applies.
   derivationCache.clear();

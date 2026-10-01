@@ -180,7 +180,6 @@ export function haftarahKey(derived: HaftarahDerivation, colours: string[], tora
 export async function haftarahSheet(structure: TorahData, marks: boolean): Promise<SheetInput> {
   await loadReadings();
   const derived = deriveHaftarah('ashkenazi');
-  if (derived.items.length === 0) throw new Error('The haftarah readings did not load.');
   const colours = readingColours(derived.items.length);
   const colourOf = (item: HaftarahItem) => colours[derived.items.indexOf(item)];
   // As colorAt in src/overlays/haftarah.ts: a Torah verse shows its portion,

@@ -258,15 +258,10 @@ describe('Haftarah Overlay', () => {
       expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('data/tanakh-structure.json'));
     });
 
-    it('handles fetch errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-      } as Response);
+    it('rejects when its data does not download', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 404 } as Response);
 
-      await expect(haftarahOverlay.overlay.init?.()).resolves.not.toThrow();
-      consoleSpy.mockRestore();
+      await expect(haftarahOverlay.overlay.init?.()).rejects.toThrow();
     });
   });
 

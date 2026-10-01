@@ -88,29 +88,20 @@ describe('Commentary Overlay', () => {
       );
     });
 
-    it('handles fetch errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-      } as Response);
+    it('rejects when its data does not download', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false, status: 404 } as Response);
 
-      // Should not throw
-      await expect(commentaryOverlay.overlay.init?.()).resolves.not.toThrow();
-      consoleSpy.mockRestore();
+      await expect(commentaryOverlay.overlay.init?.()).rejects.toThrow();
     });
 
-    it('handles JSON parse errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('rejects when its data does not parse', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
         json: () => Promise.reject(new Error('Parse error')),
       } as Response);
 
-      // Should not throw
-      await expect(commentaryOverlay.overlay.init?.()).resolves.not.toThrow();
-      consoleSpy.mockRestore();
+      await expect(commentaryOverlay.overlay.init?.()).rejects.toThrow();
     });
   });
 

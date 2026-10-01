@@ -103,11 +103,10 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
   ],
 
   async init() {
-    const result = await loadJson<CommentaryData>(
+    data = await loadJson<CommentaryData>(
       'overlays/commentary/counts.json',
       'the commentary counts',
     );
-    if (result) data = result;
   },
 
   destroy() {

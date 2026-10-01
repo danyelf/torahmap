@@ -205,6 +205,7 @@ export function mockFetch(responses: Record<string, unknown> = {}) {
     '/data/tanakh-structure.json': { books: [] },
     '/data/all-texts.json': {},
     '/data/overlays/commentary/counts.json': {},
+    '/data/overlays/haftarah/mappings.json': { parshiot: [], specialOccasions: [] },
     ...responses,
   };
 
