@@ -4,11 +4,10 @@ export interface Known {
   violations: string[];
 }
 
-const POPUP = "The verse popup's Sefaria link and close button are under 24px; accepted for now.";
-const POPUP_TARGETS = [
-  'a.sefaria-link is 103×15px, under 24',
-  'button.close-btn is 20×20px, under 24',
-];
+const POPUP_KNOWN: Known = {
+  reason: "The verse popup's Sefaria link and close button are under 24px; accepted for now.",
+  violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+};
 
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
@@ -18,42 +17,15 @@ const POPUP_TARGETS = [
  * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
-  'explore-verse-pinned/phone/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'explore-verse-pinned/tablet/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'explore-word-menu/phone/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'explore-word-menu/tablet/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'story-menu-down/tablet/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'story-stop-with-verse/phone/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'story-stop-with-verse/tablet/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'explore-search-and-overlay-pinned/phone/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
-  'explore-search-and-overlay-pinned/tablet/touch-targets': {
-    reason: POPUP,
-    violations: POPUP_TARGETS,
-  },
+  'explore-verse-pinned/phone/touch-targets': POPUP_KNOWN,
+  'explore-verse-pinned/tablet/touch-targets': POPUP_KNOWN,
+  'explore-word-menu/phone/touch-targets': POPUP_KNOWN,
+  'explore-word-menu/tablet/touch-targets': POPUP_KNOWN,
+  'story-menu-down/tablet/touch-targets': POPUP_KNOWN,
+  'story-stop-with-verse/phone/touch-targets': POPUP_KNOWN,
+  'story-stop-with-verse/tablet/touch-targets': POPUP_KNOWN,
+  'explore-search-and-overlay-pinned/phone/touch-targets': POPUP_KNOWN,
+  'explore-search-and-overlay-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-trop/phone/touch-targets': {
     reason:
       "The sheet's fold cuts through the trop chart's second row, and the check measures the sliver above it; the buttons are full size.",

@@ -218,12 +218,9 @@ function rowForStem(stem: LexemeId, writtenForm: string): Meaning[] {
  * "fortune", which is no reading of בגד. So the clicked spelling when it has
  * the meaning, then the meaning's dictionary spelling, then any written form
  * filed under it, or null when none has it.
- *
- * The dictionary spelling keeps its final letters, unlike the folded form the
- * index files it under, because it becomes the text of the search box.
  */
 export function spellingFor(keys: readonly string[], clicked: string): string | null {
-  const has = (text: string) => meaningsFor(text).some((m) => sameMeaning(m, keys));
+  const has = (text: string) => formMatches(keys, text);
   if (has(clicked)) return clicked;
 
   const ids = [...lexemesForKeys(keys)];
@@ -252,7 +249,7 @@ export function versesFor(keys: string[]): Set<string> {
  *
  * Kept here rather than in the caller so that `LexemeId` stays behind the seam.
  */
-export function formMatches(keys: string[], writtenForm: string): boolean {
+export function formMatches(keys: readonly string[], writtenForm: string): boolean {
   const ids = findLexemesForWord(writtenForm);
   if (!ids || ids.length === 0) return false;
 
@@ -373,20 +370,10 @@ export function verseOnScreen(): string | null {
 }
 
 /**
- * Did the parse line up with the verse on screen, so that its words are named
- * rather than guessed at?
- *
- * Exported for the tests, which ask it rather than repeat the check.
- */
-export function wordsAreNamed(): boolean {
-  return onScreen?.stems != null;
-}
-
-/**
  * Does a click on this word of the verse on screen land on a word BHSA parsed?
  *
- * Exported for scripts/search/click-resolution-report.ts, which counts the
- * clicks that do not.
+ * Exported for the tests and scripts/search/click-resolution-report.ts, which
+ * ask it rather than repeat the check.
  */
 export function wordIsNamed(wordIndex: number): boolean {
   return onScreen !== null && stemOfWord(onScreen.verseKey, wordIndex) !== null;
@@ -402,7 +389,7 @@ export function wordIsNamed(wordIndex: number): boolean {
  * Same rule as `displayed_words()` in scripts/search/generate-lexeme-index.py,
  * which is what the file was aligned against.
  */
-function wordsBhsaParsed(hebrew: string): TextWord[] {
+export function wordsBhsaParsed(hebrew: string): TextWord[] {
   const blanked = hebrew.replace(KETIV, (m) => ' '.repeat(m.length));
   return splitIntoWords(blanked).filter(({ word }) => !isSectionMarker(word) && isHebrew(word));
 }
@@ -443,8 +430,6 @@ function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId[]> | nu
   for (let i = 0; i < lengths.length; i++) {
     // A word of no morphemes is a further part of the dictionary word before
     // it — the קַיִן of תּוּבַל קַיִן — so it carries that word's stem.
-    // lexemes_shown() in scripts/search/generate-lexeme-index.py reads the
-    // file the same way.
     if (lengths[i] > 0) {
       stem = morphemes[at + lengths[i] - 1][0];
       at += lengths[i];

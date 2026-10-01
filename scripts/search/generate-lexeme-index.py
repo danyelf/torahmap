@@ -120,13 +120,14 @@ VERSE_REMAP[("Numbers", 25, 19)] = ("Numbers", 26, 1)
 POINT_START = 0x0591
 POINT_END = 0x05C7
 SEPARATORS = {0x05BE, 0x05C0, 0x05C3, 0x05C6}  # maqaf, paseq, sof pasuq, nun hafukha
+MAQAF = chr(0x05BE)
 # Where one word ends and the next begins: whitespace, a hyphen, or a separator.
 # isWordSeparator() in src/hebrew.ts draws the same line.
 WORD_SEPARATOR = re.compile(
     r"[\s\-" + "".join(chr(code) for code in sorted(SEPARATORS)) + "]+"
 )
 # What divides the parts of a word BHSA holds as one but prints as two.
-INNER_SEPARATOR = re.compile(r"[\s־]+")
+INNER_SEPARATOR = re.compile(rf"[\s{MAQAF}]+")
 # The ketiv, which Sefaria prints in round brackets beside the qere. KETIV in
 # src/hebrew.ts is the same pattern.
 KETIV = re.compile(r"\([^)]*\)")
@@ -252,7 +253,7 @@ def ends_printed_word(trailer):
     printed as a single word, and the first of them is part of a word rather
     than a word.
     """
-    return any(ch.isspace() or ch in "־׃" for ch in trailer or "")
+    return any(ch.isspace() or ch in (MAQAF, "\u05C3") for ch in trailer or "")
 
 
 def internal_separators(word_text):
@@ -272,7 +273,7 @@ def is_maqaf_break(trailer):
     כל־הארץ is one word on the page and two in the dictionary. Recording which
     breaks are maqafs lets a reader of the file have it either way.
     """
-    return "־" in (trailer or "")
+    return MAQAF in (trailer or "")
 
 
 def printed_trailer(F, node):
@@ -316,7 +317,7 @@ def close_word(word_lengths, maqaf_joins, morpheme_count, inner, trailer):
     """
     word_lengths.append(morpheme_count)
     for separator in inner:
-        if separator == "־":
+        if separator == MAQAF:
             maqaf_joins.append(len(word_lengths) - 1)
         word_lengths.append(0)
     if is_maqaf_break(trailer):
@@ -374,6 +375,9 @@ def main():
     # words the page shows.
     verse_read_words = collections.defaultdict(list)
     verse_read_morphemes = collections.defaultdict(list)
+    # The lexeme of each printed word: its stem, which a further part of a name
+    # BHSA holds as one word shares.
+    verse_stems = collections.defaultdict(list)
     morph_ids = {}
     morph_table = []
 
@@ -420,7 +424,7 @@ def main():
                     internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
                 )
                 verse_read_morphemes[key].append((
-                    consonants(F.qere_utf8.v(node) or F.g_cons_utf8.v(node)),
+                    consonants(F.qere_utf8.v(node) or F.g_word_utf8.v(node)),
                     morpheme_lexeme,
                     len(verse_words[key]) + len(word_lengths),
                 ))
@@ -457,6 +461,8 @@ def main():
                     form_counts[(form, lexeme)] += 1
 
             close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
+            # The stem, once for each word close_word() records.
+            verse_stems[key].extend([lexeme] for _ in range(1 + len(word_inner)))
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
@@ -539,8 +545,8 @@ def main():
     # A verse one word out would give every word after the discrepancy its
     # neighbour's dictionary entry -- wrong, and plausible enough to go
     # unnoticed. So the words counted here are checked against the Hebrew the
-    # app actually displays, and the verses that disagree are named in the file
-    # rather than left for a reader to trip over.
+    # app actually displays, and the verses that disagree are lined up by
+    # letter instead.
     texts = json.load(open(os.path.join(DATA_DIR, "all-texts.json")))
 
     def displayed_words(hebrew):
@@ -585,18 +591,7 @@ def main():
 
     def lexemes_shown(key):
         """The dictionary words of each word the page shows in this verse."""
-        if key in realigned:
-            return realigned[key]
-        morphemes = [lexeme for lexeme, _ in verse_morph[key]]
-        out, at, stem = [], 0, None
-        for length in verse_words[key]:
-            # A word of no morphemes is a further part of the name before it.
-            # stemsOf() in src/search/dictionary.ts reads the file the same way.
-            if length > 0:
-                at += length
-                stem = morphemes[at - 1]
-            out.append([stem])
-        return out
+        return realigned.get(key, verse_stems[key])
 
     # ---- file every displayed spelling ------------------------------------
     # Sefaria and BHSA disagree on some spellings -- optional vowel letters

@@ -16,7 +16,7 @@ import {
   meaningsInVerse,
   setVerseOnScreen,
   wordMatches,
-  wordsAreNamed,
+  wordIsNamed,
 } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
 import { lookupForm, verseWords } from '../../../verseWords';
@@ -190,7 +190,8 @@ describe('the verses the two sources divide differently', () => {
         for (const [verse, text] of Object.entries(verses)) {
           const verseKey = `${book}:${chapter}:${verse}`;
           setVerseOnScreen(verseKey, text.he ?? '');
-          if (!wordsAreNamed()) refused.push(verseKey);
+          const words = verseWords(text.he ?? '');
+          if (words.length > 0 && !words.some((_, i) => wordIsNamed(i))) refused.push(verseKey);
         }
       }
     }

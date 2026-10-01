@@ -8,8 +8,9 @@
 //   .venv/bin/python scripts/search/generate-lexeme-index.py
 
 import { describe, it, expect } from 'vitest';
-import { KETIV, normalizeHebrewForSearch } from '../../hebrew';
-import { lookupForm, verseWords } from '../../verseWords';
+import { isSearchableWord, normalizeHebrewForSearch } from '../../hebrew';
+import { wordsBhsaParsed } from '../../search/dictionary';
+import { lookupForm } from '../../verseWords';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -272,23 +273,11 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     fs.readFileSync(textsPath, 'utf-8'),
   );
 
-  // A printed word ends at a space or at a maqaf, the little hyphen that joins
-  // כָּל־הָאָרֶץ into one written unit while keeping two dictionary words inside it.
-  // Two further things in Sefaria's text are not words: the scribal paragraph
-  // marks {ס} and {פ}, which BHSA has nothing for; and, where the received
-  // text is corrected, the ketiv, which Sefaria prints in round brackets beside
-  // the qere it prints in square ones. BHSA carries the one word that is read.
-  //
-  // This has to fold the text exactly as displayed_words() in
-  // scripts/search/generate-lexeme-index.py does. When the two drift apart the
-  // alignment test below fails and names the verses.
-  const displayedWords = (hebrew: string): string[] =>
-    hebrew
-      .replace(/\{[ספ]\}/g, ' ')
-      .replace(KETIV, ' ')
-      .split(/[\s־]+/)
-      .map((word) => word.replace(/[^א-ת]/g, ''))
-      .filter((word) => word.length > 0);
+  // The words the app lines up against the file, which must divide the text
+  // exactly as displayed_words() in scripts/search/generate-lexeme-index.py
+  // does. When the two drift apart the alignment test below fails and names
+  // the verses.
+  const displayedWords = wordsBhsaParsed;
 
   const entries = Object.entries(morphology) as Array<[string, MorphologyVerse]>;
 
@@ -400,7 +389,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       for (const [chapter, verses] of Object.entries(chapters)) {
         for (const [verse, { he }] of Object.entries(verses)) {
           if (!he) continue;
-          for (const { word } of verseWords(he.replace(KETIV, ' '))) {
+          for (const { word } of wordsBhsaParsed(he).filter((w) => isSearchableWord(w.word))) {
             if (!(lookupForm(word) in forms)) missing.push(`${book} ${chapter}:${verse} ${word}`);
           }
         }

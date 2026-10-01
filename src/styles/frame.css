@@ -127,8 +127,6 @@ body[data-mode='explore'] #tools {
   top: var(--column-head-pad);
   left: 12px;
   z-index: 16;
-  /* A button does not take the page's face. */
-  font-family: inherit;
 }
 
 .menu-button {

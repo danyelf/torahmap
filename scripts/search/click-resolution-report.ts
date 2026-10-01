@@ -125,9 +125,9 @@ function movement(now: Report, before: Report | null, key: keyof Report): string
 const texts = await (await fetch('/data/all-texts.json')).json();
 await loadLexiconData();
 
-// loadLexiconData catches its own failures so the app degrades to whole-word
-// search. A report that degrades the same way prints a confident 100% unknown,
-// which is why this checks rather than trusts.
+// loadLexiconData catches its own failures so the rest of the app keeps
+// working. A report that carried on the same way would print a confident 100%
+// unknown, which is why this checks rather than trusts.
 if (!getVerseLexemes('Genesis:1:1')) {
   console.error('The lexeme index did not load. The numbers below would be meaningless.');
   process.exit(1);

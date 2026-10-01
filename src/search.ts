@@ -139,8 +139,7 @@ export async function loadLexiconData(): Promise<void> {
 
     const lexiconFile: LexiconFile = await lexiconRes.json();
     const verseLexemes: Record<string, LexemeId[]> = await versesRes.json();
-    const forms: Record<string, LexemeId[]> = await formsRes.json();
-    formToLexemes = forms;
+    formToLexemes = await formsRes.json();
     verseToLexemes = verseLexemes;
 
     lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language]) => ({
@@ -160,7 +159,8 @@ export async function loadLexiconData(): Promise<void> {
 
     lexemeToVerses = buildVerseIndex(verseLexemes);
     spellingToLexemes = buildSpellingIndex(lexemeSpellings);
-    lexemeToForms = buildFormIndex(forms);
+    // Rebuilt from these forms when next asked.
+    lexemeToForms = null;
   } catch (err) {
     console.error('Error loading the lexeme index; meanings search will find nothing:', err);
   }
@@ -198,18 +198,21 @@ function buildVerseIndex(verseLexemes: Record<string, LexemeId[]>): Map<LexemeId
  * alone in the text.
  */
 function buildSpellingIndex(spellings: string[]): Map<string, LexemeId[]> {
-  const index = new Map<string, LexemeId[]>();
-  for (let id = 0; id < spellings.length; id++) {
-    const spelling = spellings[id];
-    if (!spelling) continue;
-    let list = index.get(spelling);
-    if (!list) {
-      list = [];
-      index.set(spelling, list);
-    }
-    list.push(id);
-  }
+  const index = invert(spellings.map((spelling, id) => [id, spelling ? [spelling] : []]));
   console.log(`✓ Built spelling index: ${index.size} distinct dictionary spellings`);
+  return index;
+}
+
+/** Turn "each key has these values" into "each value has these keys", keys in order. */
+function invert<K, V>(entries: Iterable<[K, readonly V[]]>): Map<V, K[]> {
+  const index = new Map<V, K[]>();
+  for (const [key, values] of entries) {
+    for (const value of values) {
+      const keys = index.get(value);
+      if (keys) keys.push(key);
+      else index.set(value, [key]);
+    }
+  }
   return index;
 }
 
@@ -248,21 +251,13 @@ function lookupFormOrSpelling(term: string): LexemeId[] | null {
   return null;
 }
 
-/** The written forms that can be this lexeme. */
+/**
+ * The written forms that can be this lexeme. Built on first use: only a click
+ * on a meaning no nearer spelling has ever asks.
+ */
 export function formsOfLexeme(id: LexemeId): string[] {
+  if (!lexemeToForms && formToLexemes) lexemeToForms = invert(Object.entries(formToLexemes));
   return lexemeToForms?.get(id) ?? [];
-}
-
-function buildFormIndex(forms: Record<string, LexemeId[]>): Map<LexemeId, string[]> {
-  const index = new Map<LexemeId, string[]>();
-  for (const [form, ids] of Object.entries(forms)) {
-    for (const lexeme of ids) {
-      const list = index.get(lexeme);
-      if (list) list.push(form);
-      else index.set(lexeme, [form]);
-    }
-  }
-  return index;
 }
 
 /**
