@@ -584,8 +584,8 @@ export function overlayColorsFor<T, S, D>(
   overlay: Overlay<T, S, D> | null,
   items: SpatialItem<T>[],
   settings: S,
-  data: D,
   hovered: SpatialItem<T> | null,
+  data: D,
 ): (VerseColor | null)[] {
   return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
 }
