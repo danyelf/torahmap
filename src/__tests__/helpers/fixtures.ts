@@ -1,9 +1,10 @@
 // Test fixtures for Torah Map tests
-import type { TanakhLayout } from '../../types';
+import type { TanakhLayout, TorahData } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import type { CommentaryCounts } from '../../overlays/commentary';
+import type { HaftarahMappings } from '../../overlays/haftarah/readings';
 import type { Loaded } from '../../dataFiles';
-import { TEXTS_FILE } from '../../verseTexts';
+import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
@@ -101,10 +102,145 @@ export const SAMPLE_VERSE_TEXTS = {
   },
 };
 
+export const SAMPLE_HAFTARAH_DATA: HaftarahMappings = {
+  parshiot: [
+    {
+      name: 'Bereshit',
+      hebrewName: 'בראשית',
+      torah: {
+        book: 'Genesis',
+        start: { chapter: 1, verse: 1 },
+        end: { chapter: 6, verse: 8 },
+      },
+      haftarah: {
+        ashkenazi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 42, verse: 5 },
+            end: { chapter: 42, verse: 21 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 42, verse: 5 },
+            end: { chapter: 43, verse: 10 },
+          },
+        ],
+      },
+    },
+    {
+      name: 'Noach',
+      hebrewName: 'נח',
+      torah: {
+        book: 'Genesis',
+        start: { chapter: 6, verse: 9 },
+        end: { chapter: 11, verse: 32 },
+      },
+      haftarah: {
+        ashkenazi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 54, verse: 1 },
+            end: { chapter: 55, verse: 5 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 54, verse: 1 },
+            end: { chapter: 54, verse: 10 },
+          },
+        ],
+      },
+    },
+  ],
+  specialOccasions: [
+    {
+      name: 'Shabbat Rosh Chodesh',
+      hebrewName: 'שבת ראש חודש',
+      category: 'rosh-chodesh',
+      haftarah: {
+        ashkenazi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 66, verse: 1 },
+            end: { chapter: 66, verse: 24 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'Isaiah',
+            start: { chapter: 66, verse: 1 },
+            end: { chapter: 66, verse: 24 },
+          },
+        ],
+      },
+    },
+    {
+      name: 'Rosh Hashanah Day 1',
+      hebrewName: 'ראש השנה יום א׳',
+      category: 'high-holidays',
+      haftarah: {
+        ashkenazi: [
+          {
+            book: 'I Samuel',
+            start: { chapter: 1, verse: 1 },
+            end: { chapter: 2, verse: 10 },
+          },
+        ],
+        sephardi: [
+          {
+            book: 'I Samuel',
+            start: { chapter: 1, verse: 1 },
+            end: { chapter: 2, verse: 10 },
+          },
+        ],
+      },
+    },
+  ],
+};
+
+export const SAMPLE_STRUCTURE = {
+  books: [
+    {
+      name: 'Genesis',
+      hebrewName: 'בראשית',
+      section: 'torah',
+      chapters: [
+        31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20,
+        67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34,
+        31, 22, 33, 26,
+      ],
+    },
+    {
+      name: 'Isaiah',
+      hebrewName: 'ישעיהו',
+      section: 'neviim',
+      chapters: [
+        31, 22, 26, 6, 30, 13, 25, 23, 20, 34, 16, 6, 22, 32, 9, 14, 14, 7, 25, 6, 17, 25, 18, 23,
+        12, 21, 13, 29, 24, 33, 9, 20, 24, 17, 10, 22, 38, 22, 8, 31, 29, 25, 28, 28, 25, 13, 15,
+        22, 26, 11, 23, 15, 12, 17, 13, 12, 21, 14, 21, 22, 11, 12, 19, 12, 25, 24,
+      ],
+    },
+    {
+      name: 'I Samuel',
+      hebrewName: 'שמואל א',
+      section: 'neviim',
+      chapters: [
+        28, 36, 21, 22, 12, 21, 17, 22, 27, 27, 15, 25, 23, 52, 35, 23, 58, 30, 24, 43, 15, 23, 28,
+        23, 44, 25, 12, 25, 11, 31, 13,
+      ],
+    },
+  ],
+} as TorahData;
+
 /** The sample files, under the paths the overlays name. */
 export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
   ['overlays/commentary/counts.json', SAMPLE_COMMENTARY_DATA],
   [TEXTS_FILE, SAMPLE_VERSE_TEXTS],
+  ['overlays/haftarah/mappings.json', SAMPLE_HAFTARAH_DATA],
+  [STRUCTURE_FILE, SAMPLE_STRUCTURE],
 ]);
 
 export const TEST_COLORS = {

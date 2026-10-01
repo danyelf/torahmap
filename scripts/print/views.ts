@@ -3,9 +3,11 @@
 
 import { readFileSync } from 'node:fs';
 import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '../../src/geometry.ts';
+import { filesFor, loadFiles } from '../../src/dataFiles.ts';
 import {
   deriveHaftarah,
-  loadReadings,
+  HAFTARAH_FILES,
+  type HaftarahData,
   type HaftarahDerivation,
   type HaftarahItem,
 } from '../../src/overlays/haftarah/readings.ts';
@@ -177,10 +179,17 @@ export function haftarahKey(derived: HaftarahDerivation, colours: string[], tora
   };
 }
 
+/** The haftarah overlay's files, loaded as the site loads them. */
+export async function loadHaftarahData(): Promise<HaftarahData> {
+  const paths = Object.values(HAFTARAH_FILES);
+  const loaded = await loadFiles(paths);
+  const data = filesFor<HaftarahData>(HAFTARAH_FILES, loaded);
+  if (!data) throw new Error(`Could not load ${paths.filter((p) => !loaded.has(p)).join(', ')}`);
+  return data;
+}
+
 export async function haftarahSheet(structure: TorahData, marks: boolean): Promise<SheetInput> {
-  await loadReadings();
-  const derived = deriveHaftarah('ashkenazi');
-  if (derived.items.length === 0) throw new Error('The haftarah readings did not load.');
+  const derived = deriveHaftarah(await loadHaftarahData(), 'ashkenazi');
   const colours = readingColours(derived.items.length);
   const colourOf = (item: HaftarahItem) => colours[derived.items.indexOf(item)];
   // As colorAt in src/overlays/haftarah.ts: a Torah verse shows its portion,

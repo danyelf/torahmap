@@ -217,3 +217,15 @@ structure), and the layout tests show no change. The unit tests for `init`,
 exports and hosts it per test with `hostOverlay`, instead of fetching it from the
 registry, so the test hands it each text set through `setData`. No integration
 test used `configureVerseLength`.
+- **2026-10-01 (Task 7)** With `?overlay=haftarah`, `tanakh-structure.json`,
+  `all-texts.json` and `overlays/haftarah/mappings.json` now download once
+  each: haftarah names its files and no longer fetches the structure itself.
+- **2026-10-01 (Task 7)** `haftarah.test.ts` imports the overlay from its
+  module, as `verse-length.test.ts` does, and resets the host's data in its
+  `beforeEach`, because the Rosh Chodesh tests hand the shared host changed
+  readings. `SAMPLE_STRUCTURE` is cast to `TorahData` in the fixtures: it has
+  no `layout`, which nothing that reads it needs.
+- **2026-10-01 (Task 7)** The key's guard against a mappings file without
+  `parshiot` goes with `mappings()`, as the plan says: such a file now throws
+  in `deriveHaftarah` instead of drawing no key. The legend keeps its fallback
+  counts for a file lacking either list.

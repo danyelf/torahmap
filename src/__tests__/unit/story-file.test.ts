@@ -16,14 +16,25 @@ import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { haftarahOverlay } from '../../overlays/haftarah';
-import { deriveHaftarah } from '../../overlays/haftarah/readings';
+import {
+  deriveHaftarah,
+  HAFTARAH_FILES,
+  type HaftarahData,
+} from '../../overlays/haftarah/readings';
+import { filesFor, loadFiles } from '../../dataFiles';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
 registerAllOverlays();
 
-beforeAll(() => haftarahOverlay.init?.());
+let readings: HaftarahData;
+beforeAll(async () => {
+  readings = filesFor<HaftarahData>(
+    HAFTARAH_FILES,
+    await loadFiles(Object.values(HAFTARAH_FILES)),
+  )!;
+});
 
 /**
  * Stops whose haftarah reading, once read the way the app does, is no
@@ -34,7 +45,7 @@ function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']):
     .filter((s) => s.overlay === 'haftarah' && s.overlayParams?.reading)
     .filter((s) => {
       const { custom, reading } = settingsFromLink(haftarahOverlay, s.overlayParams!);
-      return !reading || !deriveHaftarah(custom).itemByName.has(reading);
+      return !reading || !deriveHaftarah(readings, custom).itemByName.has(reading);
     })
     .map((s) => `${s.id}: ${s.overlayParams!.reading}`);
 }
