@@ -174,7 +174,7 @@ function renderKey(
   const derived = deriveHaftarah(data, custom);
 
   const byBook = groupBy(data.mappings.parshiot, (parsha) => parsha.torah.book);
-  const byCategory = groupBy(data.mappings.specialOccasions ?? [], (occasion) => occasion.category);
+  const byCategory = groupBy(data.mappings.specialOccasions, (occasion) => occasion.category);
 
   const row = (label: string, items: HaftarahItem[]) => {
     const swatches = items
@@ -285,7 +285,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
 
     const totalItems = deriveHaftarah(data, settings.custom).items.length;
     const gradient = buildLegendGradient(10, (i) =>
-      getItemColor(i * (totalItems / 10), totalItems || 81),
+      getItemColor(i * (totalItems / 10), totalItems),
     );
 
     container.innerHTML = `

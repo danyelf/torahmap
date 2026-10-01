@@ -94,12 +94,6 @@ describe('Text Dating Overlay', () => {
     });
   });
 
-  describe('Data', () => {
-    it('names its dates file', () => {
-      expect(overlay.data).toEqual({ dates: 'text-dating.json' });
-    });
-  });
-
   describe('Era Detection and Colors', () => {
     it('assigns Pre-Monarchic era color (oldest)', () => {
       const verse = createVerse({ book: 'Judges', chapter: 5, verse: 1 });

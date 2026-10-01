@@ -3,7 +3,7 @@
 // No WebGL, no map, no verse layout — just the input pipeline
 
 import { loadFiles } from '../src/dataFiles.ts';
-import { TEXTS_FILE, type VerseTexts } from '../src/verseTexts.ts';
+import { TEXTS_FILE, textsFrom } from '../src/verseTexts.ts';
 import { isHebrew } from '../src/hebrew.ts';
 import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
 import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
@@ -131,7 +131,7 @@ async function main(): Promise<void> {
 
   // Load data in parallel
   const [loaded] = await Promise.all([loadFiles([TEXTS_FILE]), loadLexiconData()]);
-  const verseTexts = (loaded.get(TEXTS_FILE) ?? {}) as VerseTexts;
+  const verseTexts = textsFrom(loaded);
 
   logEvent('init', `Loaded verse texts (${Object.keys(verseTexts).length} books)`);
 

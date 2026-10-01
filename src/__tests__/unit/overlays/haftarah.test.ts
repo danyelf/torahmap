@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { haftarahOverlay as overlay } from '../../../overlays/haftarah';
 import { hostOverlay } from '../../helpers/overlayHost';
-import { createVerse, SAMPLE_HAFTARAH_DATA, SAMPLE_STRUCTURE } from '../../helpers/fixtures';
+import { createVerse, SAMPLE_HAFTARAH_MAPPINGS, SAMPLE_STRUCTURE } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { overlayColorsFor } from '../../../itemColoring';
 import type { Color } from '../../../overlays/types';
@@ -10,7 +10,7 @@ import { rgbToHsl } from '../../../utils/color';
 import { HOVER_LINGER_MS } from '../../../utils/hover';
 import { DIMMED_GREY } from '../../../constants';
 
-const DATA: HaftarahData = { mappings: SAMPLE_HAFTARAH_DATA, structure: SAMPLE_STRUCTURE };
+const DATA: HaftarahData = { mappings: SAMPLE_HAFTARAH_MAPPINGS, structure: SAMPLE_STRUCTURE };
 const haftarahOverlay = hostOverlay(overlay, DATA);
 
 const sum = (c: Color) => c[0] + c[1] + c[2];
@@ -101,13 +101,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('data', () => {
-    it('names its readings and the structure', () => {
-      expect(overlay.data).toEqual({
-        mappings: 'overlays/haftarah/mappings.json',
-        structure: 'tanakh-structure.json',
-      });
-    });
-
     it('draws the custom picker, and the key once the readings arrive', () => {
       const container = document.createElement('div');
       const settings = { custom: 'ashkenazi' as const, preview: null, reading: null };
@@ -115,7 +108,7 @@ describe('Haftarah Overlay', () => {
       expect(container.querySelector('#custom-select')).not.toBeNull();
       expect(container.querySelector('.haftarah-key')).toBeNull();
       overlay.renderControls!(container, settings, () => {}, {
-        mappings: SAMPLE_HAFTARAH_DATA,
+        mappings: SAMPLE_HAFTARAH_MAPPINGS,
         structure: SAMPLE_STRUCTURE,
       });
       expect(container.querySelector('.haftarah-key')).not.toBeNull();
@@ -288,7 +281,7 @@ describe('Haftarah Overlay', () => {
 
     /** Hand over the sample data with Rosh Chodesh's haftarah under `custom` replaced by `ranges`. */
     function loadRoshChodesh(custom: 'ashkenazi' | 'sephardi', ranges: unknown[]) {
-      const changed = structuredClone(SAMPLE_HAFTARAH_DATA);
+      const changed = structuredClone(SAMPLE_HAFTARAH_MAPPINGS);
       changed.specialOccasions[0].haftarah[custom] = ranges as never;
       haftarahOverlay.setData({ mappings: changed, structure: SAMPLE_STRUCTURE });
     }

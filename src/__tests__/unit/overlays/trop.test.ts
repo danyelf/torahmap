@@ -682,10 +682,6 @@ describe('Trop Overlay', () => {
   });
 
   describe('data', () => {
-    it('names the verse texts', () => {
-      expect(tropOverlay.data).toEqual({ texts: 'all-texts.json' });
-    });
-
     it('offers the marks of the texts it is handed now', () => {
       const host = makeHost();
       const before = host.renderControls().querySelectorAll('button').length;

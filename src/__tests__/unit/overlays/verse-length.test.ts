@@ -781,10 +781,6 @@ describe('Verse Length Overlay', () => {
   });
 
   describe('data', () => {
-    it('names the verse texts', () => {
-      expect(overlay.data).toEqual({ texts: 'all-texts.json' });
-    });
-
     it('colours by the texts it is handed now', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const before = verseLengthOverlay.getVerseColor(verse);

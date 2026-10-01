@@ -3,7 +3,7 @@
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
-import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from './verseTexts.ts';
+import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { stripNikkud } from './hebrew.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
@@ -105,7 +105,7 @@ import {
   render as renderFrame,
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
-import type { TanakhIdentity, TanakhLayout, TorahData, VerseColor } from './types.ts';
+import type { TanakhIdentity, TanakhLayout, VerseColor } from './types.ts';
 import {
   registerAllOverlays,
   createOverlaySettings,
@@ -236,9 +236,8 @@ async function main(): Promise<void> {
     loadLexiconData(),
   ]);
   // Main reads these two itself; every other file is an overlay's.
-  const torahData = loaded.get(STRUCTURE_FILE) as TorahData | undefined;
-  if (!torahData) throw new Error(`Could not load ${STRUCTURE_FILE}`);
-  const verseTexts = (loaded.get(TEXTS_FILE) ?? {}) as VerseTexts;
+  const torahData = structureFrom(loaded);
+  const verseTexts = textsFrom(loaded);
 
   initBookData(torahData);
   const verses = computeLayout(torahData, (message) => reportError('layout', message));

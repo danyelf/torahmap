@@ -1,5 +1,4 @@
-// The loader for the overlays' data files and main's own two (structure and
-// texts). Search and the Talmud page still load theirs themselves.
+// The loader for the overlays' data files and main's own two (structure and texts).
 // Paths are under public/data/; what a file means belongs to whoever names it.
 import { fetchData } from './constants.ts';
 import { reportError } from './analytics.ts';

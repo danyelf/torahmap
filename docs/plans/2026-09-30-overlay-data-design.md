@@ -227,9 +227,10 @@ test used `configureVerseLength`.
   no `layout`, which nothing that reads it needs.
 - **2026-10-01 (Task 7)** The key's guard against a mappings file without
   `parshiot` goes with `mappings()`, as the plan says: such a file now throws
-  in `deriveHaftarah` instead of drawing no key. The legend keeps its fallback
-  counts for a file lacking either list.
+  in `deriveHaftarah` instead of drawing no key.
 - **2026-10-01 (Task 10)** `prefetchMorphology` keeps its name and its doc comment
   about the memoised fetch; only the scheduling moves to `whenIdle`, which the
   prebuild shares.
-- **2026-10-01 (fix wave 1)** `loadNamedFiles` is added to `src/dataFiles.ts` and used by the print script (the haftarah sheet loads only the mappings file, and takes the structure it is handed) and by `story-file.test.ts`. `loadHaftarahData` in the print script now takes the structure. The legend no longer falls back for a mappings file lacking a list: both lists are required by the type, and the earlier entry saying the legend keeps its fallback no longer holds. `renderLegend`/`renderControls` keep their `if (!data)` guards.
+- **2026-10-01 (fix wave 1)** `loadNamedFiles` is added to `src/dataFiles.ts` and used by the print script (the haftarah sheet loads only the mappings file, and takes the structure it is handed) and by `story-file.test.ts`. `loadHaftarahData` in the print script now takes the structure. Neither list has a fallback: the type requires both. `renderLegend`/`renderControls` keep their `if (!data)` guards.
+- **2026-10-01 (fix wave 2)** The story blender's picture cache is keyed on the `loaded` value inside the verses array, so a new `loaded` always gets fresh pictures and a stop drawn without its overlay's data is never served once the data arrives. Main hands one `loaded` value for the life of the page.
+- **2026-10-01 (fix wave 2)** Main's two files are read through `structureFrom` and `textsFrom` in `src/verseTexts.ts`, two functions because the test harness needs only the texts.

@@ -53,7 +53,7 @@ export const SAMPLE_VERSES: TanakhLayout[] = [
   createVerse({ book: 'Psalms', chapter: 119, verse: 1, x: 10, y: 1100 }),
 ];
 
-export const SAMPLE_COMMENTARY_DATA: CommentaryCounts = {
+export const SAMPLE_COMMENTARY_COUNTS: CommentaryCounts = {
   'Genesis': {
     '1': {
       '1': {
@@ -103,7 +103,7 @@ export const SAMPLE_VERSE_TEXTS = {
   },
 };
 
-export const SAMPLE_HAFTARAH_DATA: HaftarahMappings = {
+export const SAMPLE_HAFTARAH_MAPPINGS: HaftarahMappings = {
   parshiot: [
     {
       name: 'Bereshit',
@@ -238,9 +238,9 @@ export const SAMPLE_STRUCTURE = {
 
 /** The sample files, under the paths the overlays name. */
 export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
-  [commentaryOverlay.data.counts, SAMPLE_COMMENTARY_DATA],
+  [commentaryOverlay.data.counts, SAMPLE_COMMENTARY_COUNTS],
   [TEXTS_FILE, SAMPLE_VERSE_TEXTS],
-  [HAFTARAH_FILES.mappings, SAMPLE_HAFTARAH_DATA],
+  [HAFTARAH_FILES.mappings, SAMPLE_HAFTARAH_MAPPINGS],
   [STRUCTURE_FILE, SAMPLE_STRUCTURE],
 ]);
 

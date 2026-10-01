@@ -9,7 +9,7 @@ import type { TanakhLayout } from '../../types';
 import type { Color, Overlay, UrlParamValues } from '../../overlays/types';
 import { buildSearchIndex } from '../../search';
 import {
-  SAMPLE_COMMENTARY_DATA,
+  SAMPLE_COMMENTARY_COUNTS,
   SAMPLE_LOADED,
   SAMPLE_VERSE_TEXTS,
   testOverlay,
@@ -220,7 +220,9 @@ describe('the blender evaluates without disturbing the overlay', () => {
     settings.restore(commentaryOverlay, { category: 'Midrash' });
     const held = settings.get(commentaryOverlay);
     const verse = verses[0];
-    const before = commentaryOverlay.getVerseColor(verse, held, { counts: SAMPLE_COMMENTARY_DATA });
+    const before = commentaryOverlay.getVerseColor(verse, held, {
+      counts: SAMPLE_COMMENTARY_COUNTS,
+    });
 
     const fromStop: ResolvedStoryStop = {
       id: 'a',
@@ -242,7 +244,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
 
     expect(
       commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay), {
-        counts: SAMPLE_COMMENTARY_DATA,
+        counts: SAMPLE_COMMENTARY_COUNTS,
       }),
     ).toEqual(before);
   });
@@ -281,8 +283,9 @@ describe('the blender memoises colours by settings', () => {
       overlayParams: { state: 'b' },
     };
 
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null, new Map());
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null, new Map());
+    const loaded = new Map();
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null, loaded);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null, loaded);
 
     // Two distinct settings (state 'a' and 'b') across two blends: once each,
     // not once per call — the second blend shares both cache entries.
@@ -332,10 +335,11 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
 
     const [verseA, verseB] = verses;
 
-    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseA, new Map());
-    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseB, new Map());
-    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseA, new Map());
-    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseB, new Map());
+    const loaded = new Map();
+    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseA, loaded);
+    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseB, loaded);
+    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseA, loaded);
+    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseB, loaded);
 
     // Declares hoverChangesColors: its colours could depend on which verse is
     // hovered, so every call with a hovered verse is evaluated fresh.
@@ -387,6 +391,13 @@ describe('a stop whose overlay data is missing', () => {
     );
     const arrived = pictureForStop(stop, verses, null, new Map([['late.json', {}]]));
     expect(arrived.colors).toEqual([RED, RED]);
+  });
+
+  it('serves the same picture for the same loaded value, and a fresh one for a new value', () => {
+    const loaded = new Map([['late.json', {}]]);
+    const first = pictureForStop(stop, verses, null, loaded);
+    expect(pictureForStop(stop, verses, null, loaded)).toBe(first);
+    expect(pictureForStop(stop, verses, null, new Map([['late.json', {}]]))).not.toBe(first);
   });
 });
 

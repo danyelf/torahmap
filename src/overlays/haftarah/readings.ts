@@ -120,7 +120,7 @@ export function deriveHaftarah(data: HaftarahData, custom: Custom): HaftarahDeri
   const torahVerseToParsha = new Map<string, ParshaData>();
   const haftarahVerseToItem = new Map<string, HaftarahItem[]>();
   const itemToColor = new Map<HaftarahItem, Color>();
-  const specialOccasions = data.mappings.specialOccasions || [];
+  const specialOccasions = data.mappings.specialOccasions;
   const items: HaftarahItem[] = [...data.mappings.parshiot, ...specialOccasions];
 
   // Parshiot take color indices 0..parshiot.length-1; special occasions

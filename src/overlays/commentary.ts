@@ -72,8 +72,12 @@ function countIn(entry: TanakhCommentary | undefined, category: string): number 
   return entry.categories[category] || 0;
 }
 
+function entryAt(data: CommentaryData, verse: TanakhIdentity): TanakhCommentary | undefined {
+  return data.counts[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
+}
+
 function getCount(data: CommentaryData, verse: TanakhIdentity, category: string): number {
-  return countIn(data.counts[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)], category);
+  return countIn(entryAt(data, verse), category);
 }
 
 function getMaxValue(data: CommentaryData, category: string): number {
@@ -199,9 +203,9 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
   },
 
   getHoverInfo(verse, settings, data) {
-    const verseData = data.counts[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
-    if (!verseData) return null;
-    const count = getCount(data, verse, settings.category);
+    const entry = entryAt(data, verse);
+    if (!entry) return null;
+    const count = countIn(entry, settings.category);
     const counted =
       count === 0
         ? 'no references'

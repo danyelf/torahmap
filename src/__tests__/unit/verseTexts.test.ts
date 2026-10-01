@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { getVerseText } from '../../verseTexts';
+import {
+  getVerseText,
+  STRUCTURE_FILE,
+  TEXTS_FILE,
+  structureFrom,
+  textsFrom,
+} from '../../verseTexts';
 import type { VerseTexts } from '../../verseTexts';
 import { SAMPLE_VERSE_TEXTS } from '../helpers';
 
@@ -286,5 +292,21 @@ describe('verseTexts', () => {
         expect(result?.en).toBe('en-150-50');
       });
     });
+  });
+});
+
+describe('the files main reads itself', () => {
+  it('hands back the structure it was loaded with', () => {
+    const structure = { Genesis: {} };
+    expect(structureFrom(new Map([[STRUCTURE_FILE, structure]]))).toBe(structure);
+  });
+
+  it('throws, naming the file, when the structure is missing', () => {
+    expect(() => structureFrom(new Map())).toThrow(STRUCTURE_FILE);
+  });
+
+  it('hands back the texts it was loaded with, or an empty set', () => {
+    expect(textsFrom(new Map([[TEXTS_FILE, SAMPLE_VERSE_TEXTS]]))).toBe(SAMPLE_VERSE_TEXTS);
+    expect(textsFrom(new Map())).toEqual({});
   });
 });

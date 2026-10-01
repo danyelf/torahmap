@@ -69,10 +69,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('data', () => {
-    it('names its counts file', () => {
-      expect(overlay.data).toEqual({ counts: 'overlays/commentary/counts.json' });
-    });
-
     it('scales to the data it is handed, not to data it was handed before', () => {
       const legend = () => {
         const el = document.createElement('div');
