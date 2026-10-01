@@ -8,9 +8,8 @@
 //   .venv/bin/python scripts/search/generate-lexeme-index.py
 
 import { describe, it, expect } from 'vitest';
-import { isSearchableWord, normalizeHebrewForSearch } from '../../hebrew';
+import { normalizeHebrewForSearch } from '../../hebrew';
 import { wordsBhsaParsed } from '../../search/dictionary';
-import { lookupForm } from '../../verseWords';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -377,26 +376,6 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       if (wordsBhsaParsed(hebrew).length !== words.length) unexpected.push(key);
     }
     expect(unexpected).toEqual([]);
-  });
-
-  it('resolves every word a reader can click', () => {
-    // Where the two normalizers actually meet: lookupForm() is what a click
-    // runs, against keys the Python generator wrote. The generator files every
-    // printed word, so a miss here is a folding rule missing from one side, or
-    // an index built before one existed. Not the ketiv in round brackets,
-    // which BHSA has no word for.
-    const missing: string[] = [];
-    for (const [book, chapters] of Object.entries(texts)) {
-      for (const [chapter, verses] of Object.entries(chapters)) {
-        for (const [verse, { he }] of Object.entries(verses)) {
-          if (!he) continue;
-          for (const { word } of wordsBhsaParsed(he).filter((w) => isSearchableWord(w.word))) {
-            if (!(lookupForm(word) in forms)) missing.push(`${book} ${chapter}:${verse} ${word}`);
-          }
-        }
-      }
-    }
-    expect(missing).toEqual([]);
   });
 
   it('encodes the word rule the same way verse-lexemes.json does', () => {

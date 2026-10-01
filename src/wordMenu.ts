@@ -145,9 +145,7 @@ export function openWordMenu(options: WordMenuOptions): void {
     menu.appendChild(exactChoice(options));
   }
 
-  // Below the word, or above it when it does not fit below. Where it fits
-  // neither way it takes the side with more room and scrolls, so it never
-  // covers the word it is about.
+  // Never over the word it is about.
   const box = options.anchor.getBoundingClientRect();
   const roomBelow = window.innerHeight - MARGIN - (box.bottom + GAP);
   const roomAbove = box.top - GAP - MARGIN;

@@ -114,6 +114,11 @@ export function isWordSeparator(char: string): boolean {
   );
 }
 
+/** Is there nothing but word breaks between these two positions of the text? */
+export function onlySeparators(text: string, from: number, to: number): boolean {
+  return [...text.slice(from, to)].every(isWordSeparator);
+}
+
 const MEDIAL_TO_FINAL = Object.fromEntries(
   Object.entries(FINAL_FORM_MAP).map(([final, medial]) => [medial, final]),
 );

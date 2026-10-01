@@ -48,7 +48,7 @@ const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
 const { meaningsInVerse, setVerseOnScreen, spellingFor, wordIsNamed } =
   await import('../../src/search/dictionary.ts');
-const { verseWords, lookupForm, printedForm } = await import('../../src/verseWords.ts');
+const { verseWords, printedForm } = await import('../../src/verseWords.ts');
 const { tanakhKey } = await import('../../src/types.ts');
 
 interface Report {
@@ -89,15 +89,14 @@ function buildReport(
         setVerseOnScreen(verseKey, text.he);
 
         for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
-          const form = lookupForm(word);
+          const form = printedForm(word);
           const offered = meaningsInVerse(form, verseKey, wordIndex);
           const n = offered.length;
           report.total++;
           if (!wordIsNamed(wordIndex)) report.unplaced++;
           // Choosing a meaning searches for it under some spelling; one no
           // spelling can be is a choice that silently searches for something else.
-          if (offered.some((m) => spellingFor(m.keys, printedForm(word)) === null))
-            report.unsearchable++;
+          if (offered.some((m) => spellingFor(m.keys, form) === null)) report.unsearchable++;
 
           if (n === 1) report.one++;
           else if (n > 1) report.several++;

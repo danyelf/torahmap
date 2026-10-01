@@ -5,7 +5,7 @@ import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
-import { lookupForm, printedForm } from './verseWords.ts';
+import { printedForm } from './verseWords.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
@@ -1159,7 +1159,7 @@ async function main(): Promise<void> {
   }
 
   setWordClickHandler((click) => {
-    const word = lookupForm(click.text);
+    const word = printedForm(click.text);
     const meanings = meaningsInVerse(
       word,
       tanakhKey(click.book, click.chapter, click.verse),
@@ -1182,8 +1182,7 @@ async function main(): Promise<void> {
         trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
         takeOver('takeover');
         changeSearch(
-          (current) =>
-            searchForMeaning(current, printedForm(click.text), meaning?.keys ?? null) ?? current,
+          (current) => searchForMeaning(current, word, meaning?.keys ?? null) ?? current,
         );
         if (frame.mode === 'explore' && frame.open !== 'search') {
           dispatch({ type: 'choose', panel: 'search' });

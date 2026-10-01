@@ -27,7 +27,7 @@ import {
   KETIV,
   QERE,
   isHebrew,
-  isWordSeparator,
+  onlySeparators,
   mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
@@ -344,17 +344,37 @@ export function parseArrived(): Promise<void> | null {
 /** Long enough to be clear of first paint, short enough to beat a deliberate click. */
 const PREFETCH_TIMEOUT_MS = 2000;
 
+/** The verse whose Hebrew is on screen. */
+let onScreen: { verseKey: string; hebrew: string } | null = null;
+
 /**
- * The verse whose Hebrew is on screen, its clickable words, and the dictionary
- * words of its printed words by where each starts in that text. Null `named`
- * means the parse is not here yet, or its words do not line up with this text.
+ * A verse's clickable words, and the dictionary words of its printed words by
+ * where each starts in its text. Null `named` means the parse is not here yet,
+ * or its words do not line up with this text.
  */
-let onScreen: {
-  verseKey: string;
-  hebrew: string;
+interface VerseNames {
   words: TextWord[];
   named: Map<number, LexemeId[]> | null;
-} | null = null;
+}
+
+// Verses parsed since the parse arrived, by key and text: the one on screen and
+// those a results list quotes, which ask word after word of one verse.
+const namedVerses = new Map<string, VerseNames>();
+const NAMED_VERSES_KEPT = 100;
+
+function verseNames(verseKey: string, hebrew: string): VerseNames {
+  const id = `${verseKey}\n${hebrew}`;
+  const known = namedVerses.get(id);
+  if (known) return known;
+
+  const words = verseWords(hebrew);
+  const parsed = { words, named: namedWords(verseKey, hebrew, words) };
+  if (settled) {
+    if (namedVerses.size >= NAMED_VERSES_KEPT) namedVerses.clear();
+    namedVerses.set(id, parsed);
+  }
+  return parsed;
+}
 
 /**
  * Name the verse whose Hebrew is about to be displayed.
@@ -368,13 +388,8 @@ let onScreen: {
  * failed load too; there is simply nothing more to wait for.
  */
 export function setVerseOnScreen(verseKey: string, hebrew: string): Promise<void> | null {
-  onScreen = {
-    verseKey,
-    hebrew,
-    words: verseWords(hebrew),
-    named: namedWords(verseKey, hebrew),
-  };
-  return settled ? null : loadMorphology();
+  onScreen = { verseKey, hebrew };
+  return parseArrived();
 }
 
 /** Which verse the last `setVerseOnScreen` named, for callers checking staleness. */
@@ -408,19 +423,23 @@ export function wordsBhsaParsed(hebrew: string): TextWord[] {
  * with its neighbour's dictionary entry — wrong, and plausible enough to go
  * unnoticed.
  */
-function namedWords(verseKey: string, hebrew: string): Map<number, LexemeId[]> | null {
+function namedWords(
+  verseKey: string,
+  hebrew: string,
+  words: TextWord[],
+): Map<number, LexemeId[]> | null {
   const parsed = morphology?.verses[verseKey];
   if (!parsed) return null;
 
   const perWord = morphology?.realigned[verseKey] ?? stemsByPosition(parsed);
-  const words = wordsBhsaParsed(hebrew);
-  if (words.length !== perWord.length) return null;
+  const bhsaWords = wordsBhsaParsed(hebrew);
+  if (bhsaWords.length !== perWord.length) return null;
 
   const named = new Map<number, LexemeId[]>();
-  words.forEach((word, i) => {
+  bhsaWords.forEach((word, i) => {
     if (perWord[i].length > 0) named.set(word.start, perWord[i]);
   });
-  nameKetiv(hebrew, named);
+  nameKetiv(hebrew, named, words);
   return named;
 }
 
@@ -448,28 +467,26 @@ const CORRECTION = new RegExp(`${KETIV.source}|${QERE.source}`, 'g');
  * read בָּא גָד, "Gad has come". A ketiv with no qere beside it is written and
  * not read, and BHSA has no word for it.
  */
-function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>): void {
+function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>, words: TextWord[]): void {
   if (!hebrew.includes('(')) return;
   const groups = [...hebrew.matchAll(CORRECTION)].map((m) => ({
     start: m.index,
     end: m.index + m[0].length,
     ketiv: m[0].startsWith('('),
   }));
-  const words = verseWords(hebrew);
   const within = (group: { start: number; end: number }) =>
     words.filter((w) => w.start >= group.start && w.start < group.end);
-  // Nothing but word breaks stands between a ketiv and its qere.
-  const beside = (from: number, to: number) => [...hebrew.slice(from, to)].every(isWordSeparator);
-  // A qere belongs to one ketiv. In (K1) [Q1] (K2) [Q2], Q1 is beside K2 too.
+  // A qere belongs to one ketiv, with nothing but word breaks between them. In
+  // (K1) [Q1] (K2) [Q2], Q1 is beside K2 too.
   const claimed = new Set<number>();
   const free = (i: number) => groups[i] && !groups[i].ketiv && !claimed.has(i);
 
   groups.forEach((group, i) => {
     if (!group.ketiv) return;
     const at =
-      free(i + 1) && beside(group.end, groups[i + 1].start)
+      free(i + 1) && onlySeparators(hebrew, group.end, groups[i + 1].start)
         ? i + 1
-        : free(i - 1) && beside(groups[i - 1].end, group.start)
+        : free(i - 1) && onlySeparators(hebrew, groups[i - 1].end, group.start)
           ? i - 1
           : null;
     if (at === null) return;
@@ -491,32 +508,18 @@ function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>): void {
  * or the one `verseKey` names.
  */
 function namedAt(verseText: string, wordStart: number, verseKey?: string): LexemeId[] | null {
-  const named =
-    onScreen?.hebrew === verseText
-      ? onScreen.named
-      : verseKey === undefined
-        ? null
-        : namedIn(verseKey, verseText);
-  return named?.get(wordStart) ?? null;
+  const key = verseKey ?? (onScreen?.hebrew === verseText ? onScreen.verseKey : undefined);
+  if (key === undefined) return null;
+  return verseNames(key, verseText).named?.get(wordStart) ?? null;
 }
 
-// The last verse off screen asked about. A results list asks word after word
-// of one verse, and parsing it again for each would be the whole cost.
-let elsewhere: { verseKey: string; hebrew: string; named: Map<number, LexemeId[]> } | null = null;
-
-function namedIn(verseKey: string, hebrew: string): Map<number, LexemeId[]> | null {
-  if (elsewhere?.verseKey === verseKey && elsewhere.hebrew === hebrew) return elsewhere.named;
-  const named = namedWords(verseKey, hebrew);
-  if (named) elsewhere = { verseKey, hebrew, named };
-  return named;
-}
-
-/** The dictionary words of the nth printed word of a verse, as BHSA parsed it. */
+/** The dictionary words of the nth printed word of the verse on screen, as BHSA parsed it. */
 function namedWord(verseKey: string, wordIndex: number): LexemeId[] | null {
-  if (!onScreen?.named || onScreen.verseKey !== verseKey) return null;
+  if (onScreen?.verseKey !== verseKey) return null;
 
-  const word = onScreen.words[wordIndex];
-  return word ? (onScreen.named.get(word.start) ?? null) : null;
+  const { words, named } = verseNames(verseKey, onScreen.hebrew);
+  const word = words[wordIndex];
+  return word ? (named?.get(word.start) ?? null) : null;
 }
 
 /**

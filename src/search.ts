@@ -137,15 +137,13 @@ export async function loadLexiconData(): Promise<void> {
     formToLexemes = await formsRes.json();
     verseToLexemes = verseLexemes;
 
-    lexicon = lexiconFile.lexemes.map(([id, form, gloss, pos, language]) => ({
-      id,
-      form,
-      gloss,
-      pos,
-      language,
-    }));
+    lexicon = [];
+    printedSpellings = [];
+    for (const [id, form, gloss, pos, language, printed] of lexiconFile.lexemes) {
+      lexicon.push({ id, form, gloss, pos, language });
+      printedSpellings.push(printed);
+    }
     lexemeSpellings = lexicon.map((entry) => normalizeHebrewForSearch(entry.form));
-    printedSpellings = lexiconFile.lexemes.map((row) => row[5]);
 
     console.log(
       `✓ Loaded ${lexicon.length} lexemes (${lexiconFile.source}), ` +
@@ -192,21 +190,18 @@ function buildVerseIndex(verseLexemes: Record<string, LexemeId[]>): Map<LexemeId
  * alone in the text.
  */
 function buildSpellingIndex(spellings: string[]): Map<string, LexemeId[]> {
-  const index = invert(spellings.map((spelling, id) => [id, spelling ? [spelling] : []]));
-  console.log(`✓ Built spelling index: ${index.size} distinct dictionary spellings`);
-  return index;
-}
-
-/** Turn "each key has these values" into "each value has these keys", keys in order. */
-function invert<K, V>(entries: Iterable<[K, readonly V[]]>): Map<V, K[]> {
-  const index = new Map<V, K[]>();
-  for (const [key, values] of entries) {
-    for (const value of values) {
-      const keys = index.get(value);
-      if (keys) keys.push(key);
-      else index.set(value, [key]);
+  const index = new Map<string, LexemeId[]>();
+  for (let id = 0; id < spellings.length; id++) {
+    const spelling = spellings[id];
+    if (!spelling) continue;
+    let list = index.get(spelling);
+    if (!list) {
+      list = [];
+      index.set(spelling, list);
     }
+    list.push(id);
   }
+  console.log(`✓ Built spelling index: ${index.size} distinct dictionary spellings`);
   return index;
 }
 
@@ -384,7 +379,7 @@ export function versesForTerm(text: string, language: TextLanguage, mode: MatchM
  *
  * The sets arrive already decided. Resolving a term's text to lexemes belongs
  * with the reader's choice of which meanings the term stands for, which the
- * overlay holds and this does not. Snippets are left to `excerpt` in overlays/search/highlight.ts.
+ * overlay holds and this does not.
  *
  * A term with no hits simply contributes nothing; term indices are positions
  * in the caller's list, so the gap keeps every other term's colour in place.

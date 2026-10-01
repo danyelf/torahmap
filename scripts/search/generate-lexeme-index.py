@@ -269,7 +269,7 @@ def internal_separators(word_text):
     maqaf between its halves sits inside the word's own text rather than in the
     trailer that follows it. The printed page still shows two words there.
     """
-    return [ch for ch in (word_text or "") if INNER_SEPARATOR.fullmatch(ch)]
+    return INNER_SEPARATOR.findall(word_text or "")
 
 
 def is_maqaf_break(trailer):
@@ -322,7 +322,7 @@ def close_word(word_lengths, maqaf_joins, morpheme_count, inner, trailer):
     """
     word_lengths.append(morpheme_count)
     for separator in inner:
-        if separator == MAQAF:
+        if MAQAF in separator:
             maqaf_joins.append(len(word_lengths) - 1)
         word_lengths.append(0)
     if is_maqaf_break(trailer):
@@ -406,7 +406,6 @@ def main():
             morpheme_total += len(morphemes)
 
             word_forms = []   # the written form of each, in order
-            word_inner = []   # separators printed inside them
             readings = []     # what is read for each
             for node in morphemes:
                 reading = F.qere_utf8.v(node) or F.g_word_utf8.v(node) or ""
@@ -423,9 +422,6 @@ def main():
                     morph_table.append(".".join(combo))
                 verse_morph[key].append([morpheme_lexeme, morph])
                 word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
-                # Separators printed inside a morpheme, where a corrected reading
-                # divides into more words than the writing does.
-                word_inner.extend(internal_separators(reading))
                 verse_read_morphemes[key].append((
                     consonants(reading),
                     morpheme_lexeme,
@@ -455,15 +451,15 @@ def main():
                 if is_word(form):
                     form_counts[(form, lexeme)] += 1
 
-            close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
-            # One for each word close_word() records: the parts of a two-part
-            # name held in one BHSA word share its stem.
+            # Separators printed inside the word, where a name or a corrected
+            # reading divides into more words than BHSA holds. Each part is a
+            # printed word close_word() records, and shares the word's stem.
             read = "".join(readings)
-            parts = [c for p in INNER_SEPARATOR.split(read) if (c := consonants(p))]
-            if len(parts) != 1 + len(word_inner):
-                parts = [consonants(read)] + [""] * len(word_inner)
+            word_inner = internal_separators(read)
+            close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
             verse_printed[key].extend(
-                PrintedWord(letters, [lexeme], bool(word_inner)) for letters in parts
+                PrintedWord(consonants(part), [lexeme], bool(word_inner))
+                for part in INNER_SEPARATOR.split(read)
             )
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of

@@ -172,6 +172,14 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלת');
     });
 
+    it('highlights one word of a word repeated', () => {
+      // Isaiah 6:3: קָדוֹשׁ ׀ קָדוֹשׁ ׀ קָדוֹשׁ
+      const verse = { book: 'Isaiah', chapter: 6, verse: 3 };
+      const snippet = excerptOf(verse, 'קדוש', 'meanings')!;
+      const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
+      expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('קדוש');
+    });
+
     it('highlights both words of a name printed as two', () => {
       const [result] = searchInMeaningsMode('בית אל').filter(
         (r) => r.book === 'Genesis' && r.chapter === 28 && r.verse === 19,

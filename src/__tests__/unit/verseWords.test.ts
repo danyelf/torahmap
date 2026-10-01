@@ -5,7 +5,7 @@
 // up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { verseWords, lookupForm, printedForm } from '../../verseWords';
+import { verseWords, printedForm } from '../../verseWords';
 
 const words = (text: string) => verseWords(text).map((w) => w.word);
 
@@ -48,24 +48,13 @@ describe('the words of a verse', () => {
   });
 });
 
-describe('the spelling a click puts in the search box', () => {
+describe('the spelling a click looks up and puts in the search box', () => {
   it('is the word as printed, final letters and all, without points or brackets', () => {
-    expect(verseWords('[בָּא הָאָרֶץ]').map((w) => printedForm(w.word))).toEqual(['בא', 'הארץ']);
-  });
-});
-
-describe('the spelling a click looks up', () => {
-  it('leaves an ordinary word alone, apart from its points', () => {
-    expect(lookupForm('בְּרֵאשִׁית')).toBe('בראשית');
-  });
-
-  it('is the letters of either form of a variant, without its brackets', () => {
-    // [בָּא גָד] in Genesis 30:11 brackets a reading over two words.
-    expect(verseWords('(הוצא) [הַיְצֵא] [בָּא גָד]').map((w) => lookupForm(w.word))).toEqual([
+    expect(verseWords('(הוצא) [הַיְצֵא] [בָּא הָאָרֶץ]').map((w) => printedForm(w.word))).toEqual([
       'הוצא',
       'היצא',
       'בא',
-      'גד',
+      'הארץ',
     ]);
   });
 });

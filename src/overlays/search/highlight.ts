@@ -4,7 +4,7 @@
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
 import { ENGLISH, HEBREW, tanakhKey, type TextLanguage } from '../../types.ts';
-import { isWordSeparator, mapStrippedToOriginal, splitIntoWords } from '../../hebrew.ts';
+import { mapStrippedToOriginal, onlySeparators, splitIntoWords } from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
 import { wordMatches } from '../../search/dictionary.ts';
 import { displayedVerse, quoteVerse, type SearchResult } from '../../search.ts';
@@ -13,7 +13,6 @@ import {
   effectiveMode,
   selectedKeys,
   termIsHebrew,
-  textMatchMode,
   type SearchTerm,
 } from '../../search/terms.ts';
 
@@ -83,10 +82,11 @@ function findAllTermMatches(
     //
     // By position rather than by spelling, which is what separates the two
     // words spelled עלה in Genesis 8:20 — a spelling could be either, and only
-    // the place in the verse says which this one is.
-    if (isHebrew && mode === 'meanings') {
+    // the place in the verse says which this one is. A meaning is Hebrew, so it
+    // marks nothing in English.
+    if (mode === 'meanings') {
       const keys = selectedKeys(term);
-      if (keys.length === 0) continue;
+      if (!isHebrew || keys.length === 0) continue;
       for (const { word, start, end } of splitIntoWords(folded)) {
         if (wordMatches(keys, word, text, start, verseKey)) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
@@ -96,10 +96,7 @@ function findAllTermMatches(
     }
 
     const needle = foldForMatching(term.text.trim(), language);
-    for (const { start, end } of matchRangesInFolded(folded, needle, {
-      mode: textMatchMode(mode),
-      language,
-    })) {
+    for (const { start, end } of matchRangesInFolded(folded, needle, { mode, language })) {
       matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
     }
   }
@@ -122,10 +119,11 @@ export function excerpt(
   const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, verseKey);
   if (!first) return quoteVerse(text, null);
 
-  // One mark over words marked one after another, as בית and אל of בית אל are.
+  // A phrase matched word by word, as בית אל is in meanings mode, is one mark;
+  // a word repeated, קדוש קדוש קדוש, is not.
   let end = first.end;
-  for (const next of rest) {
-    if (![...text.slice(end, next.start)].every(isWordSeparator)) break;
+  for (const next of rest.slice(0, splitIntoWords(term.text).length - 1)) {
+    if (!onlySeparators(text, end, next.start)) break;
     end = next.end;
   }
   return quoteVerse(text, { start: first.start, end });
