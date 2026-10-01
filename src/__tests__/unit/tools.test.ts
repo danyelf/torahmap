@@ -2,31 +2,54 @@ import { describe, it, expect } from 'vitest';
 import { toolsShown, togglesSearch } from '../../tools';
 import { searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
-import { commentaryOverlay } from '../../overlays/commentary';
+import { testOverlay } from '../helpers/fixtures';
+
+const counts = testOverlay({
+  id: 'counts',
+  name: 'Counts',
+  getVerseColor: () => null,
+  data: { counts: 'counts.json' },
+});
 
 describe('toolsShown', () => {
   it('shows the search once it has a word long enough to search on', () => {
     expect(
-      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' })).search?.tool,
+      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' }), new Map()).search
+        ?.tool,
     ).toBe(searchTool);
   });
 
   it('leaves the search off for a single letter, or for nothing', () => {
     expect(
-      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'א' })).search,
+      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'א' }), new Map()).search,
     ).toBeNull();
-    expect(toolsShown(null, undefined, settingsFromLink(searchTool, {})).search).toBeNull();
+    expect(
+      toolsShown(null, undefined, settingsFromLink(searchTool, {}), new Map()).search,
+    ).toBeNull();
   });
 
-  it('shows the overlay with its settings beside the search', () => {
+  it('shows the overlay with its settings and data beside the search', () => {
     const settings = { category: 'total' };
+    const loaded = new Map([['counts.json', { n: 1 }]]);
     const tools = toolsShown(
-      commentaryOverlay,
+      counts,
       settings,
       settingsFromLink(searchTool, { search: 'אור' }),
+      loaded,
     );
-    expect(tools.overlay).toEqual({ tool: commentaryOverlay, settings });
+    expect(tools.overlay).toEqual({ tool: counts, settings, data: { counts: { n: 1 } } });
     expect(tools.search).not.toBeNull();
+  });
+
+  it('leaves out an overlay whose data is missing, and keeps the search', () => {
+    const tools = toolsShown(
+      counts,
+      undefined,
+      settingsFromLink(searchTool, { search: 'אור' }),
+      new Map(),
+    );
+    expect(tools.overlay).toBeNull();
+    expect(tools.search?.tool).toBe(searchTool);
   });
 });
 

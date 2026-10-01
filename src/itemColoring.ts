@@ -75,13 +75,14 @@ export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<
 }
 
 /** A settled overlay's colours, one entry per item. */
-export function overlayColorsFor<T, S>(
-  overlay: Overlay<T, S> | null,
+export function overlayColorsFor<T, S, D>(
+  overlay: Overlay<T, S, D> | null,
   items: SpatialItem<T>[],
   settings: S,
   hovered: SpatialItem<T> | null,
+  data: D,
 ): (VerseColor | null)[] {
-  return overlay ? overlay.colorsFor(items, settings, hovered) : items.map(() => null);
+  return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
 }
 
 /** The map's colours for the tools a view shows. `nonMatchDim` passes through to combineLayers. */
@@ -92,7 +93,7 @@ export function toolsPicture<T>(
   nonMatchDim?: number,
 ): Picture<VerseColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
-    on && overlayColorsFor(on.tool, items, on.settings, hovered);
+    on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
   return combineLayers(items.length, colorsOf(tools.search), colorsOf(tools.overlay), nonMatchDim);
 }
 
@@ -102,15 +103,16 @@ export function toolsPicture<T>(
  * hover, or neither. A timed ease blends colours captured when it began,
  * and a pin leaves the hover where it was, so neither recomputes anything.
  */
-export function layerToRecompute<T, S>(
+export function layerToRecompute<T>(
   source: 'overlay' | 'blend' | 'ease',
-  overlay: Overlay<T, S> | null,
-  settings: S,
+  overlay: ToolOnMap<T> | null,
   before: T | null,
   after: T | null,
   itemsEqual: (a: T | null, b: T | null) => boolean,
 ): 'blend' | 'overlay' | null {
   if (itemsEqual(before, after) || source === 'ease') return null;
   if (source === 'blend') return 'blend';
-  return overlay?.hoverChangesColors?.(before, after, settings) ? 'overlay' : null;
+  return overlay?.tool.hoverChangesColors?.(before, after, overlay.settings, overlay.data)
+    ? 'overlay'
+    : null;
 }

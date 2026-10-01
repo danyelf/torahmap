@@ -13,7 +13,7 @@ import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { configureAnalytics } from '../../../analytics.ts';
 
-const searchOverlay = hostOverlay(searchTool);
+const searchOverlay = hostOverlay(searchTool, undefined);
 
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
@@ -1460,7 +1460,7 @@ describe('Search Overlay', () => {
 
       // A second holder of settings — a story stop being blended, say —
       // restoring a different search leaves this one's paint alone.
-      hostOverlay(searchOverlay.overlay).restore({ search: 'earth' });
+      hostOverlay(searchOverlay.overlay, undefined).restore({ search: 'earth' });
       expect(testVerses.map((v) => searchOverlay.getVerseColor(v))).toEqual(held);
     });
 

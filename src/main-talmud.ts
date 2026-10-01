@@ -89,9 +89,9 @@ async function main(): Promise<void> {
   let lastMouseY = 0;
   let hoveredItem: TalmudLayoutItem | null = null;
   let pinnedItem: TalmudLayoutItem | null = null;
-  let currentOverlay: Overlay<TalmudIdentity, void> | null = null;
+  let currentOverlay: Overlay<TalmudIdentity, void, void> | null = null;
 
-  const overlaysById = new Map<string, Overlay<TalmudIdentity, void>>();
+  const overlaysById = new Map<string, Overlay<TalmudIdentity, void, void>>();
   overlaysById.set(segmentLengthOverlay.id, segmentLengthOverlay);
 
   const mgBaseOverlay = createMgBaseOverlay(structure);
@@ -102,6 +102,7 @@ async function main(): Promise<void> {
       items,
       undefined,
       hoveredItem,
+      undefined,
     );
     rebuildGeometry(renderContext.gl, renderState, fillDefaultColors({ colors }));
   }

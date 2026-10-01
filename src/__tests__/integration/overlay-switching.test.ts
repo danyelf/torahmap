@@ -14,8 +14,10 @@ import {
   SAMPLE_VERSES,
   SAMPLE_COMMENTARY_DATA,
   SAMPLE_VERSE_TEXTS,
+  SAMPLE_LOADED,
   testOverlay,
 } from '../helpers/fixtures';
+import { dataFor } from '../../dataFiles';
 import { mockFetch, restoreAllMocks } from '../helpers/mocks';
 import { createOverlaySettings, type OverlaySettings } from '../../overlays/settings';
 
@@ -24,6 +26,7 @@ describe('Overlay Switching Integration', () => {
   let mockLegendContainer: HTMLElement;
   let verses = SAMPLE_VERSES;
   let currentOverlay: Overlay | null = null;
+  let currentData: unknown;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
   // The settings the app holds for each overlay, as main.ts holds them.
   let settings: OverlaySettings;
@@ -72,19 +75,26 @@ describe('Overlay Switching Integration', () => {
     // Initialize if needed
     await overlay.init?.();
 
+    const data = dataFor(overlay, SAMPLE_LOADED);
+    if (data === null) throw new Error(`${overlay.id}'s files are not in SAMPLE_LOADED`);
+
     // Render controls and legend
     mockControlsContainer.innerHTML = '';
-    overlay.renderControls?.(mockControlsContainer, settings.get(overlay), (update) =>
-      settings.set(overlay, update(settings.get(overlay))),
+    overlay.renderControls?.(
+      mockControlsContainer,
+      settings.get(overlay),
+      (update) => settings.set(overlay, update(settings.get(overlay))),
+      data,
     );
 
     mockLegendContainer.innerHTML = '';
-    overlay.renderLegend?.(mockLegendContainer, settings.get(overlay));
+    overlay.renderLegend?.(mockLegendContainer, settings.get(overlay), data);
 
     // Apply colors
-    lastColors = verses.map((v) => overlay.getVerseColor(v, settings.get(overlay)));
+    lastColors = verses.map((v) => overlay.getVerseColor(v, settings.get(overlay), data));
 
     currentOverlay = overlay;
+    currentData = data;
     return overlay;
   }
 
@@ -243,15 +253,18 @@ describe('Overlay Switching Integration', () => {
 
       // Change the category through the real control, as a reader would.
       mockControlsContainer.innerHTML = '';
-      overlay.renderControls?.(mockControlsContainer, settings.get(overlay), (update) =>
-        settings.set(overlay, update(settings.get(overlay))),
+      overlay.renderControls?.(
+        mockControlsContainer,
+        settings.get(overlay),
+        (update) => settings.set(overlay, update(settings.get(overlay))),
+        currentData,
       );
       const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
       mockLegendContainer.innerHTML = '';
-      overlay.renderLegend?.(mockLegendContainer, settings.get(overlay));
+      overlay.renderLegend?.(mockLegendContainer, settings.get(overlay), currentData);
 
       expect(mockLegendContainer.innerHTML).not.toBe(initialLegend);
     });
@@ -266,7 +279,11 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse) {
-        const color = currentOverlay!.getVerseColor(genesisVerse, settings.get(currentOverlay!));
+        const color = currentOverlay!.getVerseColor(
+          genesisVerse,
+          settings.get(currentOverlay!),
+          currentData,
+        );
         expect(color).not.toBeNull();
       }
     });
@@ -280,7 +297,11 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse && currentOverlay?.getHoverInfo) {
-        const info = currentOverlay.getHoverInfo!(genesisVerse, settings.get(currentOverlay));
+        const info = currentOverlay.getHoverInfo!(
+          genesisVerse,
+          settings.get(currentOverlay),
+          currentData,
+        );
         expect(info).toBeTruthy();
         expect(typeof info).toBe('string');
       }
@@ -293,7 +314,7 @@ describe('Overlay Switching Integration', () => {
 
       const onChange = vi.fn();
       mockControlsContainer.innerHTML = '';
-      overlay.renderControls?.(mockControlsContainer, settings.get(overlay), onChange);
+      overlay.renderControls?.(mockControlsContainer, settings.get(overlay), onChange, currentData);
 
       const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
@@ -444,8 +465,16 @@ describe('Overlay Switching Integration', () => {
       await switchToOverlay('commentary');
 
       const verse = verses[0];
-      const color1 = currentOverlay!.getVerseColor(verse, settings.get(currentOverlay!));
-      const color2 = currentOverlay!.getVerseColor(verse, settings.get(currentOverlay!));
+      const color1 = currentOverlay!.getVerseColor(
+        verse,
+        settings.get(currentOverlay!),
+        currentData,
+      );
+      const color2 = currentOverlay!.getVerseColor(
+        verse,
+        settings.get(currentOverlay!),
+        currentData,
+      );
 
       // Same verse should return same color (reference equality not guaranteed, but values should match)
       expect(JSON.stringify(color1)).toBe(JSON.stringify(color2));
@@ -488,7 +517,9 @@ describe('Overlay Switching Integration', () => {
 
       // Should not throw when trying to get colors
       expect(() => {
-        verses.forEach((v) => currentOverlay!.getVerseColor(v, settings.get(currentOverlay!)));
+        verses.forEach((v) =>
+          currentOverlay!.getVerseColor(v, settings.get(currentOverlay!), currentData),
+        );
       }).not.toThrow();
 
       // Should provide valid colors even with malformed data

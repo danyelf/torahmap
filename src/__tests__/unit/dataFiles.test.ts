@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { filesFor, loadFiles } from '../../dataFiles';
+import { dataFor, filesFor, loadFiles, overlayFiles } from '../../dataFiles';
 import { mockFetch, mockFetchStatus } from '../helpers/mocks';
+import { testOverlay } from '../helpers/fixtures';
 
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -49,5 +50,54 @@ describe('filesFor', () => {
 
   it('gives null until every file named is in', () => {
     expect(filesFor({ first: 'a.json', third: 'c.json' }, loaded)).toBeNull();
+  });
+});
+
+describe('dataFor', () => {
+  const texts = { Genesis: {} };
+  const reader = testOverlay({
+    id: 'r',
+    name: 'R',
+    getVerseColor: () => null,
+    data: { texts: 'all-texts.json' },
+  });
+  const counter = testOverlay({
+    id: 'c',
+    name: 'C',
+    getVerseColor: () => null,
+    data: { words: 'all-texts.json' },
+  });
+
+  it('hands two overlays naming one path a single download, each under its own name', async () => {
+    const fetchSpy = mockFetch({ '/data/all-texts.json': texts });
+    const loaded = await loadFiles(overlayFiles([reader, counter]));
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(dataFor(reader, loaded)).toEqual({ texts });
+    expect(dataFor(counter, loaded)).toEqual({ words: texts });
+  });
+
+  it('gives null while a file is missing, without holding back another overlay', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const other = testOverlay({
+      id: 'o',
+      name: 'O',
+      getVerseColor: () => null,
+      data: { counts: 'counts.json' },
+    });
+    mockFetch({ '/data/counts.json': { n: 1 }, '/data/all-texts.json': mockFetchStatus(500) });
+    const loaded = await loadFiles(overlayFiles([reader, other]));
+    expect(dataFor(reader, loaded)).toBeNull();
+    expect(dataFor(other, loaded)).toEqual({ counts: { n: 1 } });
+  });
+
+  it('gives the same object for the same loaded value, and a new one for a new value', () => {
+    const loaded = new Map([['all-texts.json', texts]]);
+    expect(dataFor(reader, loaded)).toBe(dataFor(reader, loaded));
+    expect(dataFor(reader, new Map(loaded))).not.toBe(dataFor(reader, loaded));
+  });
+
+  it('hands an overlay that names no files undefined, never null', () => {
+    const plain = testOverlay({ id: 'p', name: 'P', getVerseColor: () => null });
+    expect(dataFor(plain, new Map())).toBeUndefined();
   });
 });

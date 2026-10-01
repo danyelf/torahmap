@@ -9,7 +9,13 @@ import {
   configureSearch,
 } from '../../overlays/index';
 import { searchTool } from '../../overlays/search/index';
-import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
+import {
+  SAMPLE_VERSES,
+  SAMPLE_COMMENTARY_DATA,
+  SAMPLE_VERSE_TEXTS,
+  SAMPLE_LOADED,
+} from '../helpers/fixtures';
+import { dataFor } from '../../dataFiles';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
@@ -130,8 +136,11 @@ describe('URL State Sync Integration', () => {
       const container = document.createElement('div');
       const settings = createOverlaySettings();
       const draw = () =>
-        overlay?.renderControls?.(container, settings.get(overlay), (update) =>
-          settings.set(overlay, update(settings.get(overlay))),
+        overlay?.renderControls?.(
+          container,
+          settings.get(overlay),
+          (update) => settings.set(overlay, update(settings.get(overlay))),
+          dataFor(overlay, SAMPLE_LOADED),
         );
       draw();
       (container.querySelector('button') as HTMLButtonElement).click();

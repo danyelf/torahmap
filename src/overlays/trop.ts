@@ -205,7 +205,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
     return tropColorAt(verse, derivationFor(settings));
   },
 
-  colorsFor(items, settings, _hovered) {
+  colorsFor(items, settings, _hovered, _data) {
     const derived = derivationFor(settings);
     return items.map((item) => tropColorAt(item, derived));
   },
@@ -218,7 +218,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
     return settings.mark ? { trop: settings.mark } : {};
   },
 
-  renderControls(container, settings, onChange) {
+  renderControls(container, settings, onChange, _data) {
     renderTropChart(container, settings, onChange);
   },
 

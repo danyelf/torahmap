@@ -8,7 +8,7 @@ import type { Color } from '../../../overlays/types';
 import { hostOverlay } from '../../helpers/overlayHost';
 
 // Off the menu for now, so it is not in the registry.
-const textDatingOverlay = hostOverlay(overlay);
+const textDatingOverlay = hostOverlay(overlay, undefined);
 
 describe('Text Dating Overlay', () => {
   let mockFetch: ReturnType<typeof vi.fn>;

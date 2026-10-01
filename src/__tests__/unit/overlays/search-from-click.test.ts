@@ -18,7 +18,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 
-const searchOverlay = hostOverlay(searchTool);
+const searchOverlay = hostOverlay(searchTool, undefined);
 
 const texts: VerseTexts = {
   Genesis: {

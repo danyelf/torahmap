@@ -153,10 +153,15 @@ async function main(): Promise<void> {
   const settings = createOverlaySettings();
 
   function draw(): void {
-    searchOverlay.renderControls?.(controlsContainer, settings.get(searchOverlay), (update) => {
-      settings.set(searchOverlay, update(settings.get(searchOverlay)));
-      draw();
-    });
+    searchOverlay.renderControls?.(
+      controlsContainer,
+      settings.get(searchOverlay),
+      (update) => {
+        settings.set(searchOverlay, update(settings.get(searchOverlay)));
+        draw();
+      },
+      undefined,
+    );
   }
   draw();
 

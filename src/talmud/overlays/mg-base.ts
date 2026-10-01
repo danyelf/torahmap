@@ -31,7 +31,9 @@ function jitteredColor(
   ];
 }
 
-export function createMgBaseOverlay(structure: TalmudStructure): Overlay<TalmudIdentity, void> {
+export function createMgBaseOverlay(
+  structure: TalmudStructure,
+): Overlay<TalmudIdentity, void, void> {
   return {
     id: '_mg-base',
     name: '__internal',
@@ -50,9 +52,9 @@ export function createMgBaseOverlay(structure: TalmudStructure): Overlay<TalmudI
  * paint. `userOverlay` of null collapses to just the base.
  */
 export function composeWithMgBase(
-  base: Overlay<TalmudIdentity, void>,
-  userOverlay: Overlay<TalmudIdentity, void> | null,
-): Overlay<TalmudIdentity, void> {
+  base: Overlay<TalmudIdentity, void, void>,
+  userOverlay: Overlay<TalmudIdentity, void, void> | null,
+): Overlay<TalmudIdentity, void, void> {
   if (userOverlay === null) return base;
   return {
     id: 'composed',

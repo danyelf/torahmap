@@ -4,7 +4,7 @@ import { configure } from '../../../overlays/verse-length';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
-const verseLengthOverlay = hostOverlay(getOverlay('verse-length')!);
+const verseLengthOverlay = hostOverlay(getOverlay('verse-length')!, undefined);
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { VerseTexts } from '../../../verseTexts';

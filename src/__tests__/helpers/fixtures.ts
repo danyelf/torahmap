@@ -2,6 +2,8 @@
 import type { TanakhLayout } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import type { CommentaryData } from '../../overlays/commentary';
+import type { Loaded } from '../../dataFiles';
+import { TEXTS_FILE } from '../../verseTexts';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
@@ -99,6 +101,12 @@ export const SAMPLE_VERSE_TEXTS = {
   },
 };
 
+/** The sample files, under the paths the overlays name. */
+export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
+  ['overlays/commentary/counts.json', SAMPLE_COMMENTARY_DATA],
+  [TEXTS_FILE, SAMPLE_VERSE_TEXTS],
+]);
+
 export const TEST_COLORS = {
   RED: [1, 0, 0] as [number, number, number],
   GREEN: [0, 1, 0] as [number, number, number],
@@ -119,11 +127,12 @@ export const SAMPLE_TROP_MARKS = {
 };
 
 /** A test overlay that colours each item by `getVerseColor`. */
-export function testOverlay<T = TanakhLayout, S = unknown>(
-  fields: Omit<Overlay<T, S>, 'colorsFor'>,
-): Overlay<T, S> {
+export function testOverlay<T = TanakhLayout, S = unknown, D = unknown>(
+  fields: Omit<Overlay<T, S, D>, 'colorsFor'>,
+): Overlay<T, S, D> {
   return {
     ...fields,
-    colorsFor: (items, settings) => items.map((item) => fields.getVerseColor(item, settings)),
-  } as Overlay<T, S>;
+    colorsFor: (items, settings, _hovered, data) =>
+      items.map((item) => fields.getVerseColor(item, settings, data)),
+  } as Overlay<T, S, D>;
 }

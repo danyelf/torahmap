@@ -118,7 +118,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
     return commentaryColorAt(verse, settings.category);
   },
 
-  colorsFor(items, settings, _hovered) {
+  colorsFor(items, settings, _hovered, _data) {
     return items.map((item) => commentaryColorAt(item, settings.category));
   },
 
@@ -130,7 +130,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
     return { category: settings.category };
   },
 
-  renderControls(container, settings, onChange) {
+  renderControls(container, settings, onChange, _data) {
     let select = container.querySelector<HTMLSelectElement>('#category-select');
     if (!select) {
       const wrapper = document.createElement('div');

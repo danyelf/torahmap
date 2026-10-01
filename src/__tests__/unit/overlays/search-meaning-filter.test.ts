@@ -14,7 +14,7 @@ import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay'
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
 
-const searchOverlay = hostOverlay(searchTool);
+const searchOverlay = hostOverlay(searchTool, undefined);
 
 // Real Hebrew, so the lexeme index has something to resolve.
 const texts: VerseTexts = {

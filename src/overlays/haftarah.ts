@@ -235,14 +235,14 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     return colorAt(verse, deriveHaftarah(settings.custom), litFor(settings, null));
   },
 
-  colorsFor(items, settings, hovered) {
+  colorsFor(items, settings, hovered, _data) {
     if (!mappings()) return items.map(() => null);
     const derived = deriveHaftarah(settings.custom);
     const lit = litFor(settings, hovered);
     return items.map((item) => colorAt(item, derived, lit));
   },
 
-  renderControls(container: HTMLElement, settings: HaftarahSettings, onChange) {
+  renderControls(container: HTMLElement, settings: HaftarahSettings, onChange, _data) {
     let select = container.querySelector<HTMLSelectElement>('#custom-select');
     if (!select) {
       const wrapper = document.createElement('div');

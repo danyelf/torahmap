@@ -129,8 +129,8 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
     return getVerseColorFromDate(midpointBCE(verseData.d));
   },
 
-  colorsFor(items) {
-    return items.map((item) => this.getVerseColor(item));
+  colorsFor(items, settings, _hovered, data) {
+    return items.map((item) => this.getVerseColor(item, settings, data));
   },
 
   renderLegend(container: HTMLElement) {

@@ -126,7 +126,7 @@ describe('words in the verse popup', () => {
     const elements = getSidebarElements();
     updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
-      overlay: { tool: mockOverlay, settings: undefined },
+      overlay: { tool: mockOverlay, settings: undefined, data: undefined },
       search: null,
       pinned: true,
     });

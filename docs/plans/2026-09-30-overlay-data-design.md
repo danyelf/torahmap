@@ -183,3 +183,18 @@ Decisions made while implementing step 1, newest last.
   loader in the same task that removes `loadReadings`, since that task cannot
   compile otherwise.
 - **2026-10-01 (Task 0)** The layout screenshots are not byte-identical between two runs on unchanged code: eight phone shots differ, six by at most 2 colour levels on about 1,200 pixels, and the overlay panel's two by up to 21 levels on about 9,000. Tasks compare against that measured noise rather than byte for byte.
+- **2026-10-01 (Task 2)** An overlay's file names are typed
+  `{ readonly [K in keyof D & string]: string }`, not `[K in keyof D]`. A
+  mapped type over `keyof D` alone maps a primitive to itself, so for search's
+  `D = void` it made `data` of type `void`, and search stopped being an
+  `Overlay`. The `& string` keeps the names checked for a real `D`.
+- **2026-10-01 (Task 2)** Text Dating's `colorsFor` called
+  `this.getVerseColor(item)`, which no longer typechecks with `D = unknown`;
+  it now forwards its settings and data. Verse length's `colorsFor` calls a
+  plain function and needs nothing.
+- **2026-10-01 (Task 2)** `getSefariaConnectionParam` takes no data: it is not
+  among the members the spec lists, and nothing it reads comes from a file.
+- **2026-10-01 (Task 2)** In the story blender's new test the stop without an
+  overlay says `overlay: null`, since `ResolvedStoryStop.overlay` is
+  `string | null`. In `sidebar.test.ts` all four `toHaveBeenCalledWith` checks
+  on overlay members gain the trailing data argument, not the two the plan named.

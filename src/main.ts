@@ -124,6 +124,7 @@ import {
   type SearchSettings,
 } from './overlays/search/index.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
+import { dataFor, loadFiles, overlayFiles } from './dataFiles.ts';
 import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -229,10 +230,12 @@ async function main(): Promise<void> {
   }
 
   let textsIn = 0;
-  const [torahData, verseTexts] = await Promise.all([
+  registerAllOverlays();
+  const [torahData, verseTexts, , loaded] = await Promise.all([
     loadTanakhStructure(),
     loadAllVerseTexts().finally(() => (textsIn = performance.now())),
     loadLexiconData(),
+    loadFiles(overlayFiles(getAllOverlays())),
   ]);
 
   initBookData(torahData);
@@ -250,7 +253,6 @@ async function main(): Promise<void> {
   buildSearchIndex(verseTexts);
   const searchReady = performance.now();
 
-  registerAllOverlays();
   configureCommentary({ verses });
   configureTrop({ verseTexts });
   configureVerseLength({ verseTexts });
@@ -334,7 +336,7 @@ async function main(): Promise<void> {
 
   /** The overlay and the search as they stand, each null while off. */
   function toolsNow(): Tools {
-    return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool));
+    return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool), loaded);
   }
 
   /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
@@ -363,7 +365,11 @@ async function main(): Promise<void> {
       ['overlay', overlay],
     ] as const) {
       if (on) {
-        rows.push({ panel, name: on.tool.name, summary: on.tool.summary?.(on.settings) ?? {} });
+        rows.push({
+          panel,
+          name: on.tool.name,
+          summary: on.tool.summary?.(on.settings, on.data) ?? {},
+        });
       }
     }
     showLegend(mapLegend, rows);
@@ -419,7 +425,7 @@ async function main(): Promise<void> {
   function blendTransition(): void {
     if (driver.by !== 'story' || !driver.blend) return;
     const { from, to, t } = driver.blend;
-    setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse));
+    setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded));
   }
 
   /**
@@ -430,8 +436,7 @@ async function main(): Promise<void> {
   function repaint(hoveredBefore: TanakhLayout | null = mouseState.hoveredVerse): void {
     const layer = layerToRecompute(
       colorSource(driver),
-      currentOverlay,
-      currentSettings(),
+      toolsNow().overlay,
       hoveredBefore,
       mouseState.hoveredVerse,
       tanakhIdentitiesEqual,
@@ -1079,7 +1084,10 @@ async function main(): Promise<void> {
   function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
-      currentOverlay?.renderLegend?.(overlayLegendContainer, currentSettings());
+      const overlay = currentOverlay;
+      if (overlay) {
+        overlay.renderLegend?.(overlayLegendContainer, currentSettings(), dataFor(overlay, loaded));
+      }
     }
   }
 
@@ -1087,8 +1095,11 @@ async function main(): Promise<void> {
   function renderOverlayControls(): void {
     const overlay = currentOverlay;
     if (!overlay || !overlayControlsContainer) return;
-    overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), (update) =>
-      changeSettings(overlay, update),
+    overlay.renderControls?.(
+      overlayControlsContainer,
+      overlaySettings.get(overlay),
+      (update) => changeSettings(overlay, update),
+      dataFor(overlay, loaded),
     );
   }
 
@@ -1134,7 +1145,12 @@ async function main(): Promise<void> {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
     }
-    searchTool.renderControls?.(searchControls, overlaySettings.get(searchTool), changeSearch);
+    searchTool.renderControls?.(
+      searchControls,
+      overlaySettings.get(searchTool),
+      changeSearch,
+      undefined,
+    );
     updateLegend();
     refreshVersePopup();
   }
@@ -1572,7 +1588,7 @@ async function main(): Promise<void> {
       duration,
       camera,
       flatten(withDefaults(colorLayer)),
-      flatten(computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null)),
+      flatten(computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded)),
     );
   }
 

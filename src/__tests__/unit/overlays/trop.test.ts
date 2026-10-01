@@ -78,7 +78,7 @@ describe('Trop Overlay', () => {
   });
 
   function makeHost() {
-    return hostOverlay(getOverlay('trop')! as Overlay<TanakhIdentity, TropSettings>);
+    return hostOverlay(getOverlay('trop')! as Overlay<TanakhIdentity, TropSettings>, undefined);
   }
 
   /** Click the first button in a freshly drawn set of controls; returns the host and button. */

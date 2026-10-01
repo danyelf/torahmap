@@ -4,7 +4,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
-const haftarahOverlay = hostOverlay(getOverlay('haftarah')!);
+const haftarahOverlay = hostOverlay(getOverlay('haftarah')!, undefined);
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { mockFetch as installMockFetch } from '../../helpers/mocks';

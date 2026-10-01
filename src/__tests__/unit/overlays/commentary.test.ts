@@ -4,7 +4,7 @@ import { configure } from '../../../overlays/commentary';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
-const commentaryOverlay = hostOverlay(getOverlay('commentary')!);
+const commentaryOverlay = hostOverlay(getOverlay('commentary')!, undefined);
 
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';

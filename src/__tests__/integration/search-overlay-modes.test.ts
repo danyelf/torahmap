@@ -12,7 +12,7 @@ import { hostOverlay } from '../helpers/overlayHost';
 import { createVerse } from '../helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
 
-const searchOverlay = hostOverlay(searchTool);
+const searchOverlay = hostOverlay(searchTool, undefined);
 
 beforeAll(async () => {
   await loadLexiconData();

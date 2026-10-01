@@ -9,7 +9,13 @@ import {
   configureTrop,
   configureSearch,
 } from '../../overlays/index';
-import { SAMPLE_VERSES, SAMPLE_COMMENTARY_DATA, SAMPLE_VERSE_TEXTS } from '../helpers/fixtures';
+import {
+  SAMPLE_VERSES,
+  SAMPLE_COMMENTARY_DATA,
+  SAMPLE_VERSE_TEXTS,
+  SAMPLE_LOADED,
+} from '../helpers/fixtures';
+import { dataFor } from '../../dataFiles';
 import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { readLink } from '@torahmap/link';
@@ -38,8 +44,11 @@ async function controlsAfter(link: string): Promise<HTMLElement> {
   const container = document.createElement('div');
   if (overlay) {
     settings.restore(overlay, view.overlayParams);
-    overlay.renderControls?.(container, settings.get(overlay), (update) =>
-      settings.set(overlay, update(settings.get(overlay))),
+    overlay.renderControls?.(
+      container,
+      settings.get(overlay),
+      (update) => settings.set(overlay, update(settings.get(overlay))),
+      dataFor(overlay, SAMPLE_LOADED),
     );
   }
   return container;

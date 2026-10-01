@@ -420,7 +420,7 @@ export function highlightSearchTerms(
   return highlightTerms(text, language, searchFor(settings).active);
 }
 
-export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
+export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
   id: 'search',
   name: 'Search',
   credits: [
@@ -440,7 +440,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     return searchColorAt(verse, searchFor(settings));
   },
 
-  colorsFor(items, settings, _hovered) {
+  colorsFor(items, settings, _hovered, _data) {
     const search = searchFor(settings);
     return items.map((item) => searchColorAt(item, search));
   },
@@ -476,7 +476,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     return params;
   },
 
-  renderControls(container, settings, onChange) {
+  renderControls(container, settings, onChange, _data) {
     const previous = shown;
     shown = settings;
     searchOnMap(settings);
