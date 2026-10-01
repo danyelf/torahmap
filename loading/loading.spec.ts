@@ -1,7 +1,7 @@
 // The map draws before its data and fills in as each file lands. Each case
 // holds files back on a throttled connection, so "before the data" is a state
 // the case sets rather than a race it hopes to win.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { viaMenu } from '../layout/app.ts';
 import { allLoaded } from '../layout/page.ts';
 import {
@@ -139,6 +139,56 @@ test('a pinned verse is centred at once, and its popup fills in when the texts l
   release();
   await allLoaded(page);
   await expect(page.locator('#verse-popup.visible .verse-word').first()).toBeVisible();
+  await expect(page.locator('#verse-popup .load-notice')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+/**
+ * The popup's notice on a story stop that pins a verse. On a desktop it is a
+ * strip along the popup's bottom, apart from where the text goes; on a phone it
+ * stands where the Hebrew goes, above the English.
+ */
+async function expectPopupNotice(
+  page: Page,
+  state: 'loading' | 'failed',
+  screen: string,
+): Promise<void> {
+  const notice = page.locator(`#verse-popup.visible .load-notice[data-state="${state}"]`);
+  await expect(notice).toBeVisible();
+  await expect(page.locator('#verse-popup .verse-hebrew .load-notice')).toHaveCount(0);
+  const strip = (await page.locator('#verse-popup .verse-notice').boundingBox())!;
+  const popup = (await page.locator('#verse-popup').boundingBox())!;
+  if (screen === 'phone') {
+    const english = (await page.locator('#verse-popup .verse-english').boundingBox())!;
+    expect(strip.y + strip.height).toBeLessThanOrEqual(english.y);
+  } else {
+    // The popup's border is 1px.
+    expect(Math.abs(strip.y + strip.height - (popup.y + popup.height - 1))).toBeLessThanOrEqual(1);
+    await expect(page.locator('#verse-popup .verse-hebrew')).toBeHidden();
+    await expect(page.locator('#verse-popup .verse-english')).toBeHidden();
+  }
+}
+
+test("a story stop's verse says its text is loading apart from the text", async ({
+  page,
+}, info) => {
+  const { release, errors } = await open(page, 'story=tour&stop=verses', [TEXTS_FILE]);
+  await expectPopupNotice(page, 'loading', info.project.name);
+  release();
+  await allLoaded(page);
+  await expect(page.locator('#verse-popup.visible .verse-word').first()).toBeVisible();
+  await expect(page.locator('#verse-popup .verse-notice')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test("a story stop's verse says its text failed apart from the text", async ({ page }, info) => {
+  await fail(page, [TEXTS_FILE]);
+  const { errors } = await open(page, 'story=tour&stop=verses', [], {
+    console: false,
+    until: 'loaded',
+  });
+  await expectPopupNotice(page, 'failed', info.project.name);
+  await page.locator('#verse-popup .load-notice-close').click();
   await expect(page.locator('#verse-popup .load-notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });

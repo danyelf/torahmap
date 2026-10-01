@@ -81,6 +81,8 @@ export interface SidebarElements {
   ref: Element | null;
   overlayInfo: Element | null;
   hebrew: Element | null;
+  /** Where the popup says the texts are loading or failed, apart from the text. */
+  notice: Element | null;
   english: Element | null;
   link: HTMLAnchorElement | null;
   closeBtn: Element | null;
@@ -94,6 +96,7 @@ export function getSidebarElements(): SidebarElements {
     ref: sidebar?.querySelector('.ref-text') ?? null,
     overlayInfo: sidebar?.querySelector('.overlay-info') ?? null,
     hebrew: sidebar?.querySelector('.verse-hebrew') ?? null,
+    notice: sidebar?.querySelector('.verse-notice') ?? null,
     english: sidebar?.querySelector('.verse-english') ?? null,
     link: (sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement) ?? null,
     closeBtn: sidebar?.querySelector('.close-btn') ?? null,
@@ -122,7 +125,7 @@ export function getSefariaUrl(
 export interface PopupView {
   /** Null until the texts file is in. */
   verseTexts: VerseTexts | null;
-  /** Shown where the text goes while the texts are not in. */
+  /** Shown while the texts are not in. */
   textsNotice: Node | null;
   /** Whether a Hebrew word opens its menu when clicked: only once search has its data. */
   wordsClickable: boolean;
@@ -136,7 +139,7 @@ export function updateSidebar(
   verse: TanakhLayout | null,
   view: PopupView,
 ): void {
-  const { sidebar, ref, overlayInfo, hebrew, english, link } = elements;
+  const { sidebar, ref, overlayInfo, hebrew, notice, english, link } = elements;
   const { verseTexts, textsNotice, wordsClickable, search, pinned: isPinned } = view;
   const currentOverlay = view.overlay?.tool ?? null;
   const overlaySettings = view.overlay?.settings;
@@ -187,7 +190,7 @@ export function updateSidebar(
     const container = hebrew as HTMLElement;
     container.onclick = null;
     if (!text) {
-      container.replaceChildren(...(textsNotice ? [textsNotice] : []));
+      container.replaceChildren();
     } else {
       const fragment = marked(text.he, HEBREW) ?? textFragment(text.he);
       if (wordsClickable) {
@@ -200,6 +203,7 @@ export function updateSidebar(
       }
     }
   }
+  notice?.replaceChildren(...(textsNotice ? [textsNotice] : []));
   if (english) {
     const highlighted = text && marked(text.en, ENGLISH);
     if (highlighted) english.replaceChildren(highlighted);

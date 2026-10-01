@@ -98,6 +98,21 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* While the texts are not in, a strip under the reference says so, and the
+   empty text rows are left out. A phone keeps it where the Hebrew goes
+   (phone.css). */
+#verse-popup .verse-notice {
+  padding: 10px 14px;
+}
+
+#verse-popup .verse-notice:empty {
+  display: none;
+}
+
+#verse-popup:has(.verse-notice:not(:empty)) :is(.verse-hebrew, .verse-english) {
+  display: none;
+}
+
 #verse-popup .sefaria-link {
   float: right;
   display: inline-flex;

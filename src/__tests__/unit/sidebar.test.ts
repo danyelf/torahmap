@@ -45,12 +45,14 @@ describe('sidebar', () => {
       hebrew.className = 'verse-hebrew';
       const english = document.createElement('div');
       english.className = 'verse-english';
+      const notice = document.createElement('div');
+      notice.className = 'verse-notice';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, english, link, closeBtn);
+      sidebar.append(ref, overlayInfo, hebrew, notice, english, link, closeBtn);
 
       const elements = getSidebarElements();
       expect(elements.sidebar).toBe(sidebar);
@@ -58,6 +60,7 @@ describe('sidebar', () => {
       expect(elements.overlayInfo).toBe(overlayInfo);
       expect(elements.hebrew).toBe(hebrew);
       expect(elements.english).toBe(english);
+      expect(elements.notice).toBe(notice);
       expect(elements.link).toBeInstanceOf(HTMLAnchorElement);
       expect(elements.link).toBe(link);
       expect(elements.closeBtn).toBe(closeBtn);
@@ -169,12 +172,14 @@ describe('sidebar', () => {
       hebrew.className = 'verse-hebrew';
       const english = document.createElement('div');
       english.className = 'verse-english';
+      const notice = document.createElement('div');
+      notice.className = 'verse-notice';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, english, link, closeBtn);
+      sidebar.append(ref, overlayInfo, hebrew, notice, english, link, closeBtn);
       document.body.appendChild(sidebar);
 
       elements = {
@@ -182,6 +187,7 @@ describe('sidebar', () => {
         ref,
         overlayInfo,
         hebrew,
+        notice,
         english,
         link,
         closeBtn,
@@ -288,19 +294,20 @@ describe('sidebar', () => {
         expect(elements.english?.textContent).toBe('');
       });
 
-      it('shows the notice in place of the text while the texts are not in', () => {
+      it('shows the notice apart from the text while the texts are not in', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        const notice = document.createElement('span');
+        const loading = document.createElement('span');
         updateSidebar(elements, verse, {
           verseTexts: null,
           overlay: null,
           search: null,
           pinned: true,
-          textsNotice: notice,
+          textsNotice: loading,
           wordsClickable: true,
         });
 
-        expect(elements.hebrew?.contains(notice)).toBe(true);
+        expect(elements.notice?.contains(loading)).toBe(true);
+        expect(elements.hebrew?.textContent).toBe('');
         expect(elements.english?.textContent).toBe('');
         expect(elements.sidebar?.classList.contains('visible')).toBe(true);
       });

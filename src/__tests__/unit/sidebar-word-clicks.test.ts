@@ -19,6 +19,7 @@ function mountPopup(): void {
       <div class="verse-ref"><span class="ref-text"></span><button class="close-btn"></button></div>
       <div class="overlay-info"></div>
       <div class="verse-hebrew"></div>
+      <div class="verse-notice"></div>
       <div class="verse-english"></div>
       <a class="sefaria-link">View on Sefaria</a>
     </div>`;
