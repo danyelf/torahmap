@@ -238,7 +238,7 @@ function renderModeControl(body: HTMLElement, term: SearchTerm): void {
     option.classList.toggle('on', option.dataset.mode === current);
     if (option.dataset.mode !== 'meanings') continue;
     option.disabled = !meaningsPossible(term);
-    option.title = option.disabled ? 'The dictionary has no entry for this phrase' : '';
+    option.title = option.disabled ? "Meanings mode isn't available for phrases" : '';
   }
 }
 
