@@ -15,7 +15,7 @@ const COLOURED_SPREAD = 24;
 export async function firstFrame(page: Page, timeout = 30_000): Promise<void> {
   // Everything in the body is position: fixed, so <html> never has the
   // nonzero box waitFor's default 'visible' state requires.
-  await page.locator('html[data-map-ready]').waitFor({ state: 'attached', timeout });
+  await page.locator('html[data-first-frame]').waitFor({ state: 'attached', timeout });
 }
 
 /**
@@ -24,7 +24,7 @@ export async function firstFrame(page: Page, timeout = 30_000): Promise<void> {
  * the title face arrives from Google Fonts with display=swap, changing text
  * widths.
  */
-export async function mapReady(page: Page): Promise<void> {
+export async function allLoaded(page: Page): Promise<void> {
   await page.locator('html[data-loaded]').waitFor({ state: 'attached', timeout: 60_000 });
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -52,7 +52,7 @@ export function collectErrors(page: Page, { console = true } = {}): string[] {
 export async function openMap(page: Page, link: string): Promise<string[]> {
   const errors = collectErrors(page);
   await page.goto(link ? `/?${link}` : '/');
-  await mapReady(page);
+  await allLoaded(page);
   await expect
     .poll(async () => drawnPixels(page), { timeout: 15_000 })
     .toBeGreaterThan(DRAWN_FLOOR);

@@ -1972,14 +1972,15 @@ async function main(): Promise<void> {
   for (const path of stages.flat()) downloads.pending.add(path);
 
   // The loading tests wait on this; nothing in the app reads it.
-  document.documentElement.dataset.mapReady = '';
+  document.documentElement.dataset.firstFrame = '';
   firstFrame = performance.now();
   showLoadState();
 
   for (const stage of stages) {
     await downloadFiles(stage, { landed: fileLanded, failed: fileFailed });
   }
-  // The layout tests and the video harness wait on this; nothing in the app reads it.
+  // The layout tests, the video harness and the loading tests wait on this;
+  // nothing in the app reads it.
   document.documentElement.dataset.loaded = '';
   downloadsSettled = true;
   sendLoadTiming();

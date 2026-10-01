@@ -22,7 +22,7 @@ written first.
 1. Fetch `tanakh-structure.json` (17 KB) and lay out the map. Its failure stops
    the map, as today.
 2. Read the link, set up the overlay, the search, the pin and the story from it,
-   draw the first frame, and set `data-map-ready` on `<html>`.
+   draw the first frame, and set `data-first-frame` on `<html>`.
 3. Start the downloads, in the order below.
 4. When every download has landed or failed, set `data-loaded` on `<html>`.
 
@@ -138,10 +138,10 @@ Closed, it stays closed for that file; the overlay stays plain, as above.
 
 ## How the layout tests and the video harness know
 
-`data-map-ready` keeps its meaning, the first frame, and the throttled suite
-uses it. `data-loaded` is new: every download has landed or failed and its
-redraw has been asked for. `layout/page.ts`'s `mapReady` and
-`video/browser.ts` wait on `data-loaded` instead, so every layout state is
+`data-first-frame` marks the first frame, and the throttled suite uses it
+(`firstFrame` in `layout/page.ts`). `data-loaded` is new: every download has
+landed or failed and its redraw has been asked for. `layout/page.ts`'s
+`allLoaded` and `video/browser.ts` wait on `data-loaded`, so every layout state is
 measured with its data in, as today. The video harness's existing one-second
 wait after that covers the last fade.
 
@@ -169,7 +169,7 @@ focus, the address keeps a parameter, no page errors.
 
 | Case | Held | Before release | After release |
 |---|---|---|---|
-| Bare address | everything | `data-map-ready` set; map drawn; story open | `data-loaded` set |
+| Bare address | everything | `data-first-frame` set; map drawn; story open | `data-loaded` set |
 | Overlay link | commentary | map drawn and plain; picker shows commentary; legend row says it is loading | map changed; legend row shows the overlay; address unchanged |
 | Search link | texts, dictionary | map drawn and plain; search box holds the word | map changed; results listed; address unchanged |
 | Narrowed search link | dictionary | address still has `m` | exactly the linked meaning checked; address unchanged |
@@ -313,3 +313,8 @@ Decisions made while implementing step 3, newest last.
   view, just before the first frame. Nothing is painted between the structure
   landing and that point, so every place that says "Loading…" is drawn after it
   (`showLoadState`).
+- **2026-10-01 (branch review)** The first frame's attribute is
+  `data-first-frame` (it was `data-map-ready`, which read as "loaded"), and
+  `layout/page.ts`'s wait for `data-loaded` is `allLoaded` (it was
+  `mapReady`). The plan's task text keeps the old names where it records what
+  each task did; its constraints and Task 8 use the new ones.

@@ -2,7 +2,14 @@
 // files back until the case lets them through, and what the map and the app's
 // analytics show meanwhile.
 import { expect, type Page } from '@playwright/test';
-import { canvasShot, collectErrors, DRAWN_FLOOR, firstFrame, pixelCounts } from '../layout/page.ts';
+import {
+  allLoaded,
+  canvasShot,
+  collectErrors,
+  DRAWN_FLOOR,
+  firstFrame,
+  pixelCounts,
+} from '../layout/page.ts';
 
 /** The plain map is grey; a few coloured pixels still count as plain. */
 const COLOURED_FLOOR = 100;
@@ -45,18 +52,24 @@ export async function fail(page: Page, paths: readonly string[]): Promise<void> 
 
 /**
  * Opens `link` on the throttled connection with the files in `held` kept back,
- * and waits for the first frame.
+ * and waits for the first frame, or with `until: 'loaded'` for every file.
+ * `errors` is collectErrors's list, with console errors unless `console` is false.
  */
 export async function open(
   page: Page,
   link: string,
   held: readonly string[],
+  {
+    console = true,
+    until = 'firstFrame',
+  }: { console?: boolean; until?: 'firstFrame' | 'loaded' } = {},
 ): Promise<{ release: () => void; errors: string[] }> {
   await throttle(page);
   const release = await hold(page, held);
-  const errors = collectErrors(page);
+  const errors = collectErrors(page, { console });
   await page.goto(link ? `/?${link}` : '/');
-  await firstFrame(page, 90_000);
+  if (until === 'loaded') await allLoaded(page);
+  else await firstFrame(page, 90_000);
   return { release, errors };
 }
 

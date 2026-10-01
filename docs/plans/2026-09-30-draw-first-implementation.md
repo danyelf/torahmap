@@ -4,7 +4,7 @@
 
 **Goal:** The map draws from the structure file alone and loads every other file behind the first frame, in four stages; each landing file cross-fades whatever newly has its data, and the reader is told, in the three places they wait, that a file is loading or failed.
 
-**Architecture:** Main loads the structure, draws the first frame and sets `data-map-ready`, then downloads in stages (the opening view's files, every other required file, the optional ones), each starting when the one before has settled, and sets `data-loaded` at the end. Each landing goes through `fileLanded`: `loaded` becomes a new value, the plain function `staleAfterLanding` says what is out of date, and main redraws it with code it has — the map through `fadeMap` (the front tool's cross-fade, taken out), a story blend through the same fade, a story ease by re-aiming it at the picture with the data, its camera keeping its motion. An overlay's data object stays the same while none of its own files changes, so an unrelated landing redraws nothing. A Playwright suite in `loading/`, written first, holds files back under a throttled connection and is the definition of done.
+**Architecture:** Main loads the structure, draws the first frame and sets `data-first-frame`, then downloads in stages (the opening view's files, every other required file, the optional ones), each starting when the one before has settled, and sets `data-loaded` at the end. Each landing goes through `fileLanded`: `loaded` becomes a new value, the plain function `staleAfterLanding` says what is out of date, and main redraws it with code it has — the map through `fadeMap` (the front tool's cross-fade, taken out), a story blend through the same fade, a story ease by re-aiming it at the picture with the data, its camera keeping its motion. An overlay's data object stays the same while none of its own files changes, so an unrelated landing redraws nothing. A Playwright suite in `loading/`, written first, holds files back under a throttled connection and is the definition of done.
 
 **Tech Stack:** TypeScript, Vite, Vitest (happy-dom), Playwright with the Chrome DevTools Protocol (CDP), Node 24 type stripping for `scripts/`.
 
@@ -16,7 +16,7 @@
 - Downloads run in four stages, each starting when the one before has settled: the structure; the opening view's required files; every other required file; the optional files (the per-word parse).
 - Every animated change to the map goes through the renderer's picture cross-fade (`fadeMap`, or a story ease re-aimed at the picture with the data by `driverAfterLanding`: only the picture changes; the camera keeps its motion). No new animation path. Under reduced motion each fade snaps.
 - "Loading…" shows only where the reader waits on a file: the overlay's legend row, the search caption, the verse popup. On failure the same place shows "Couldn't load — please reload and try again" with a × that closes it; closed, it stays closed for that file.
-- `data-map-ready` means the first frame. `data-loaded` means every download has landed or failed and its redraw has been asked for; `layout/page.ts` and `video/browser.ts` wait on it.
+- `data-first-frame` means the first frame. `data-loaded` means every download has landed or failed and its redraw has been asked for; `layout/page.ts` and `video/browser.ts` wait on it.
 - `npm run test:layout` passes with `layout/known.ts` untouched, and its shots match Task 0's baseline within the noise in `layout-check.md`.
 - No data file under `public/data/` changes. The link format does not change, and every link opens the view it opens today.
 - `staleAfterLanding`, `filesFirst`, `downloadStages` and `waitingOn` are plain functions with unit tests; `staleAfterLanding` treats search as any tool.
@@ -2420,10 +2420,10 @@ Run each; Expected: no output.
 ```bash
 git grep -nE "prebuildAll|getBookOrder|FRONT_FADE|cancelFrontFade|frontFadeFrame" -- src scripts test-harness layout video loading
 git grep -n "Loading\.\.\." -- src/sidebar.ts
-git grep -n "data-map-ready" -- video
+git grep -n "data-map-ready\|data-first-frame" -- video
 ```
 
-`git grep -n "data-map-ready" -- layout/page.ts` must show only `firstFrame`.
+`git grep -n "data-first-frame" -- layout/page.ts` must show only `firstFrame`.
 
 - [ ] **Step 2: Full gates**
 
@@ -2471,7 +2471,7 @@ for (const [screen, options] of Object.entries(SCREENS)) {
     for (const path of c.hold ?? []) await page.route(`**/data/${path}`, () => new Promise(() => {}));
     for (const path of c.fail ?? []) await page.route(`**/data/${path}`, (route) => route.abort());
     await page.goto(`http://localhost:${port}/?${c.link}`);
-    const ready = c.fail ? 'html[data-loaded]' : 'html[data-map-ready]';
+    const ready = c.fail ? 'html[data-loaded]' : 'html[data-first-frame]';
     await page.locator(ready).waitFor({ state: 'attached', timeout: 90_000 });
     if (c.panel && screen === 'phone') {
       await page.locator('#menu-toggle').click();
