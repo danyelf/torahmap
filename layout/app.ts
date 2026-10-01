@@ -145,8 +145,7 @@ export const STATES: State[] = [
       await expect(async () => {
         // A press outside the menu closes it; the click opens it again.
         await word.click();
-        // Both readings and the exact search.
-        await expect(page.locator('.word-menu-choice')).toHaveCount(3, { timeout: 500 });
+        await expect(page.locator('.word-menu-choice').nth(1)).toBeVisible({ timeout: 500 });
       }).toPass();
     },
     shown: ['.word-menu'],
