@@ -170,11 +170,11 @@ import {
   STORY_DRIVING,
   SWIPE_EASE_MS,
   colorSource,
+  driverAfterLanding,
   driverKind,
   readerTakesOver,
   rejoin,
   rejoinProgress,
-  retarget,
   settle,
   storyScrolled,
   type Driver,
@@ -1821,7 +1821,16 @@ async function main(): Promise<void> {
 
   /** Bring the map up to date with data that just landed, the way it is being drawn. */
   function redrawMap(how: 'fade' | 'blend' | 'ease'): void {
-    if (how === 'fade') {
+    const next = driverAfterLanding(driver, how, () => {
+      const state = currentStoryState();
+      return flatten(
+        computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded),
+      );
+    });
+    if (next !== driver) {
+      keepDriving(next);
+      scheduleStoryFrame();
+    } else if (how === 'fade') {
       fadeMap(
         fillDefaultColors(
           toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool)),
@@ -1834,18 +1843,6 @@ async function main(): Promise<void> {
         flatten(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded)),
         blendTransition,
       );
-    } else if (how === 'ease' && driver.by === 'rejoining') {
-      // So it ends on the picture with the data.
-      const state = currentStoryState();
-      keepDriving(
-        retarget(
-          driver,
-          flatten(
-            computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded),
-          ),
-        ),
-      );
-      scheduleStoryFrame();
     }
   }
 

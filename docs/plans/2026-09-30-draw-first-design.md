@@ -286,7 +286,7 @@ Decisions made while implementing step 3, newest last.
   `COLOURED_FLOOR` needed no change: every case passes at 100.
 - **2026-10-01 (Task 7 review, Danyel's intent)** A file landing during a
   timed story ease re-aims the ease at the picture with the data
-  (`retarget`), keeping its camera, start and length. Starting the ease again
+  (`driverAfterLanding`), keeping its camera, start and length. Starting the ease again
   (`beginEase`), as "When a file lands" and the plan said, restarts the
   camera's ease-in from rest mid-motion, a visible stall on each landing.
 - **2026-10-01 (Task 7 review)** `load_timing` is sent with `search_ready` 0

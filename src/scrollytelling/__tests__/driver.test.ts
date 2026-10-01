@@ -11,7 +11,7 @@ import {
   storyScrolled,
   rejoin,
   rejoinProgress,
-  retarget,
+  driverAfterLanding,
   settle,
   type StoryHasMap,
 } from '../driver';
@@ -89,17 +89,34 @@ describe('easing back', () => {
 
     expect(driver.by === 'rejoining' && driver.fromCamera).toEqual(camera);
   });
+});
 
-  it('aims at a new picture without moving its camera or its clock', () => {
+describe('a file landing', () => {
+  it('re-aims an ease at the picture with the data, keeping its camera and its clock', () => {
     const driver = easeBack(1000, SWIPE_EASE_MS);
     const coloured = { colors: [] };
-    const aimed = retarget(driver, coloured);
-    if (driver.by !== 'rejoining' || aimed.by !== 'rejoining') throw new Error('not easing');
+    const next = driverAfterLanding(driver, 'ease', () => coloured);
+    if (driver.by !== 'rejoining' || next.by !== 'rejoining') throw new Error('not easing');
 
-    expect(aimed.toPicture).toBe(coloured);
-    expect(aimed.fromPicture).toBe(driver.fromPicture);
-    expect(aimed.fromCamera).toEqual(driver.fromCamera);
-    expect([aimed.since, aimed.duration]).toEqual([driver.since, driver.duration]);
+    expect(next.toPicture).toBe(coloured);
+    expect(next.fromPicture).toBe(driver.fromPicture);
+    expect(next.fromCamera).toEqual(driver.fromCamera);
+    expect([next.since, next.duration]).toEqual([driver.since, driver.duration]);
+  });
+
+  it('leaves the driver alone when the map fades or blends to the data', () => {
+    const blending: StoryHasMap = {
+      by: 'story',
+      blend: { from: {} as ResolvedStoryStop, to: {} as ResolvedStoryStop, t: 0.5 },
+    };
+    const reader = readerTakesOver(0);
+    const unused = () => {
+      throw new Error('no picture is needed');
+    };
+
+    expect(driverAfterLanding(STORY_DRIVING, 'fade', unused)).toBe(STORY_DRIVING);
+    expect(driverAfterLanding(reader, 'fade', unused)).toBe(reader);
+    expect(driverAfterLanding(blending, 'blend', unused)).toBe(blending);
   });
 });
 

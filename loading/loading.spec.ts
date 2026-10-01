@@ -249,10 +249,11 @@ test('a file that breaks its redraw is reported, and the rest still load', async
     await released;
     await route.fulfill({ contentType: 'application/json', body: '{}' }).catch(() => {});
   });
-  const pageErrors = collectErrors(page, { console: false });
-  const reported: string[] = [];
+  const pageErrors: string[] = [];
+  page.on('pageerror', (e) => pageErrors.push(e.stack ?? e.message));
+  const consoleErrors: string[] = [];
   page.on('console', (m) => {
-    if (m.type() === 'error' && m.text().startsWith('fileLanded:')) reported.push(m.text());
+    if (m.type() === 'error') consoleErrors.push(m.text());
   });
   const parseLanded = page.waitForResponse(`**/data/${PARSE}`, { timeout: 120_000 });
   await page.goto('/?overlay=haftarah');
@@ -262,11 +263,14 @@ test('a file that breaks its redraw is reported, and the rest still load', async
   await expect(page.locator('html')).toHaveAttribute('data-loaded');
   // The per-word parse is the last stage.
   expect((await parseLanded).ok()).toBe(true);
-  expect(reported).toHaveLength(1);
   await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
   expect((await sentLoadTiming(page))[0].search_ready).toBe(0);
-  // Search's idle prebuild throws on the same lexicon, uncaught by design.
-  expect(pageErrors.length).toBeLessThanOrEqual(1);
+  // The one report, from the search panel's redraw as the lexicon lands.
+  const reported = consoleErrors.filter((text) => text.startsWith('fileLanded:'));
+  expect(reported).toHaveLength(1);
+  expect(consoleErrors.filter((text) => !reported.includes(text))).toEqual([]);
+  // Search's idle prebuild throws on the same lexicon, uncaught by design; nothing else may.
+  for (const stack of pageErrors) expect(stack).toContain('buildDictionary');
 });
 
 test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }, info) => {

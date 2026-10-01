@@ -80,11 +80,18 @@ export function rejoin(
 }
 
 /**
- * The ease aimed at `toPicture` instead, as when data lands mid-ease. Its
- * camera and clock stay as they are: restarting them would stall the camera.
+ * The driver once a file lands and the map is redrawn `how`
+ * (staleAfterLanding). An ease is aimed at `picture`, the story's picture with
+ * the data, keeping its camera and clock: restarting them would stall the
+ * camera mid-motion. A fade or a blend leaves the driver as it is.
  */
-export function retarget(driver: StoryHasMap, toPicture: Picture): StoryHasMap {
-  return driver.by === 'rejoining' ? { ...driver, toPicture } : driver;
+export function driverAfterLanding<D extends Driver>(
+  driver: D,
+  how: 'fade' | 'blend' | 'ease',
+  picture: () => Picture,
+): D {
+  if (how !== 'ease' || driver.by !== 'rejoining') return driver;
+  return { ...driver, toPicture: picture() };
 }
 
 /**
