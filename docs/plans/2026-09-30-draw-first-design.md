@@ -262,3 +262,8 @@ Decisions made while implementing step 3, newest last.
   `downloadFiles(paths, { landed, failed })` reports each file as it settles.
 - **2026-10-01 (plan)** The layout and loading suites share the software-WebGL
   launch arguments from `layout/screens.ts`.
+- **2026-10-01 (Task 1)** `loading/files.ts` takes the haftarah path from
+  `HAFTARAH_FILES` in `src/overlays/haftarah/readings.ts`, which imports no
+  CSS; `haftarah.ts` itself does. The commentary path stays written out:
+  `commentary.ts` names it inline and imports CSS through `panel.ts` and
+  `legend.ts`.

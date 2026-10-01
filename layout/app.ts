@@ -28,7 +28,7 @@ export const CHROME: Chrome = {
 };
 
 /** Opens a menu item through the ☰. */
-async function viaMenu(page: Page, action: string): Promise<void> {
+export async function viaMenu(page: Page, action: string): Promise<void> {
   await page.locator('#menu-toggle').click();
   await page.locator(`.menu-item[data-action="${action}"]:visible`).click();
 }

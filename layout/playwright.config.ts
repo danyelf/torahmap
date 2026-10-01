@@ -1,5 +1,5 @@
 import { defineConfig } from '@playwright/test';
-import { SCREENS } from './screens.ts';
+import { LAUNCH_ARGS, SCREENS } from './screens.ts';
 
 const PORT = Number(process.env.LAYOUT_PORT ?? 5199);
 
@@ -13,15 +13,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}/`,
     // Transitions finish at once, so nothing is measured mid-animation.
     contextOptions: { reducedMotion: 'reduce' },
-    launchOptions: {
-      // Headless Chromium has no WebGL2 without software rendering.
-      args: [
-        '--use-gl=angle',
-        '--use-angle=swiftshader',
-        '--enable-unsafe-swiftshader',
-        '--ignore-gpu-blocklist',
-      ],
-    },
+    launchOptions: { args: LAUNCH_ARGS },
   },
   projects: [
     // Pure checks, no page. The web server still starts: it is shared by every project.

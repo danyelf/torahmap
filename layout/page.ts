@@ -8,15 +8,23 @@ const DRAWN_DELTA = 12;
 /** Fewer drawn pixels than this is a map that did not draw. */
 export const DRAWN_FLOOR = 1000;
 
+/** A pixel whose channels spread this far apart is coloured rather than grey. */
+const COLOURED_SPREAD = 24;
+
+/** Waits for the first frame: the map drawn before any file but the structure. */
+export async function firstFrame(page: Page, timeout = 30_000): Promise<void> {
+  // Everything in the body is position: fixed, so <html> never has the
+  // nonzero box waitFor's default 'visible' state requires.
+  await page.locator('html[data-map-ready]').waitFor({ state: 'attached', timeout });
+}
+
 /**
  * Waits until the map has started and settled: the story applies a stop on the
  * animation frame after startup, and the title face arrives from Google Fonts
  * with display=swap, changing text widths.
  */
 export async function mapReady(page: Page): Promise<void> {
-  // Everything in the body is position: fixed, so <html> never has the
-  // nonzero box waitFor's default 'visible' state requires.
-  await page.locator('html[data-map-ready]').waitFor({ state: 'attached', timeout: 30_000 });
+  await firstFrame(page);
   await page.evaluate(async () => {
     await document.fonts.ready;
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -24,15 +32,21 @@ export async function mapReady(page: Page): Promise<void> {
 }
 
 /**
- * Loads the map at `link` and waits until it has settled and drawn. Returns the page's uncaught errors and console errors, which keep arriving,
- * so check them again after acting on the page.
+ * The page's uncaught errors and console errors from now on. They keep
+ * arriving, so check the list again after acting on the page.
  */
-export async function openMap(page: Page, link: string): Promise<string[]> {
+export function collectErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(`console: ${m.text()}`);
   });
+  return errors;
+}
+
+/** Loads the map at `link` and waits until it has settled and drawn. Returns `collectErrors`'s list. */
+export async function openMap(page: Page, link: string): Promise<string[]> {
+  const errors = collectErrors(page);
   await page.goto(link ? `/?${link}` : '/');
   await mapReady(page);
   await expect
@@ -43,23 +57,29 @@ export async function openMap(page: Page, link: string): Promise<string[]> {
 }
 
 /**
- * Counts the map's drawn pixels, from a screenshot of the canvas with
- * everything over it hidden: the labels, the title and the controls carry
- * enough text to pass for a map on their own. A screenshot is what the reader
- * sees; reading the WebGL buffer would depend on preserveDrawingBuffer.
+ * The map as the reader sees it, with everything over it hidden: the labels,
+ * the title and the controls carry enough text to pass for a map on their own.
+ * A screenshot rather than the WebGL buffer, which would depend on
+ * preserveDrawingBuffer.
  */
-export async function drawnPixels(page: Page): Promise<number> {
+export async function canvasShot(page: Page): Promise<Buffer> {
   const hide = await page.addStyleTag({
     content: 'body *:not(#canvas) { visibility: hidden !important; }',
   });
-  let png: Buffer;
   try {
-    png = await page.locator('#canvas').screenshot();
+    return await page.locator('#canvas').screenshot();
   } finally {
     await hide.evaluate((el: Element) => el.remove());
   }
+}
+
+/** How many of `png`'s pixels are drawn, and how many of those are coloured rather than grey. */
+export async function pixelCounts(
+  page: Page,
+  png: Buffer,
+): Promise<{ drawn: number; coloured: number }> {
   return page.evaluate(
-    async ({ b64, bg, delta }) => {
+    async ({ b64, bg, delta, spread }) => {
       const img = new Image();
       img.src = `data:image/png;base64,${b64}`;
       await img.decode();
@@ -70,14 +90,21 @@ export async function drawnPixels(page: Page): Promise<number> {
       ctx.drawImage(img, 0, 0);
       const { data } = ctx.getImageData(0, 0, c.width, c.height);
       let drawn = 0;
+      let coloured = 0;
       for (let i = 0; i < data.length; i += 4) {
         const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
         if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta) drawn++;
+        if (Math.max(r, g, b) - Math.min(r, g, b) > spread) coloured++;
       }
-      return drawn;
+      return { drawn, coloured };
     },
-    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
+    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA, spread: COLOURED_SPREAD },
   );
+}
+
+/** Counts the map's drawn pixels. */
+export async function drawnPixels(page: Page): Promise<number> {
+  return (await pixelCounts(page, await canvasShot(page))).drawn;
 }
 
 /**
