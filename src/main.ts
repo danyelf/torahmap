@@ -1778,7 +1778,7 @@ async function main(): Promise<void> {
   document.documentElement.dataset.mapReady = '';
   const textsEntry = performance
     .getEntriesByType('resource')
-    .find((e) => e.name.endsWith('/all-texts.json')) as PerformanceResourceTiming | undefined;
+    .find((e) => e.name.endsWith(`/${TEXTS_FILE}`)) as PerformanceResourceTiming | undefined;
   const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
   trackLoadTiming({
     first_frame: Math.round(performance.now()),
