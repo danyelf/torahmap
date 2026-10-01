@@ -1,7 +1,7 @@
 # Search Receives Its Data
 
 **Date:** 2026-09-30
-**Status:** Design, decided 2026-10-01. Not yet planned.
+**Status:** Design, decided 2026-10-01. Planned: docs/plans/2026-09-30-search-data-implementation.md.
 
 Step 2 of three toward #313. It follows step 1
 (`2026-09-30-overlay-data-design.md`) and uses its interface as written: search
@@ -271,3 +271,52 @@ data, not rules. In particular:
 - **Before and after, `scripts/search/click-resolution-report.ts` over the whole
   text gives identical output**, and the print script's search sheet the same
   verses. The report walks every word, which the unit tests do not.
+
+## Open questions, assumptions and rulings
+
+Decisions made while implementing step 2, newest last.
+
+- **2026-10-01 (plan)** Startup waits for the per-word parse too: main loads
+  every file the tools name, and the idle prefetch goes. It adds about 1 MB
+  compressed to the startup wait until step 3 loads it last.
+- **2026-10-01 (plan, Danyel)** Writing `m` copies `chosen` and reading it
+  splits it, as the design says, so writing a link never needs the dictionary.
+  The address may shift slightly — a word of one meaning picked from the menu
+  now writes `m`; a merged row picked from the menu writes the key it was given;
+  a link's `m` is written back as read — but every link opens the view it opens
+  today. Tests pin each case and its round trip; the browser check compares the
+  view each address opens, and the PR lists every address that differs.
+- **2026-10-01 (plan)** `toggleMeaning` takes the row's keys, as `onlyMeaning`
+  does, rather than its first key.
+- **2026-10-01 (plan)** `chosenAmong(rows, term)` and
+  `chosenMeanings(dictionary, term)` say which rows count as chosen; the panel,
+  the hover text and the row summary read them.
+- **2026-10-01 (plan)** A term's record for telemetry holds `chosen` only while
+  the term is matched by its meanings, as `termQuery`'s meaning keys did.
+- **2026-10-01 (plan)** `getLexemeVerseCount` moves into `dictionary.ts`,
+  unexported: only `rowsFor` reads it.
+- **2026-10-01 (plan)** The lexeme key format has one home, `lexemeKey` in
+  `search.ts`, used by the dictionary's key → lexeme map and by `dictionary.ts`.
+- **2026-10-01 (plan)** Search's file names, `SearchData` and the functions that
+  build from it live in `src/search/data.ts`, which imports no CSS, so the print
+  and the click report can use them under plain `node`.
+- **2026-10-01 (plan)** The results list is handed a snippet function rather
+  than the index and dictionary, so it draws an empty list without data.
+- **2026-10-01 (plan)** Building the index and the dictionary logs nothing; the
+  loader warns about a failed download. The click report is compared on its
+  table.
+- **2026-10-01 (plan)** Without search's data the caption is empty, including
+  "Type to search": the design says no caption.
+- **2026-10-01 (plan)** A word clicked while search's data is missing opens no
+  menu: search is off then, and nothing the menu offers could be searched.
+- **2026-10-01 (plan)** `highlightSearchTerms`, exported but called by nothing,
+  goes with its re-export and the sidebar test's mock of it.
+- **2026-10-01 (plan)** The recorder's `dataChanged` is built and tested now;
+  main first calls it in step 3, since search's data never changes after
+  startup in step 2.
+- **2026-10-01 (plan)** The story blender keys its picture cache on `loaded`;
+  keyed so, a picture drawn before a file arrived is never found once it has,
+  and the separate not-kept check goes.
+- **2026-10-01 (plan)** `interactive-search.manual.html` is left as it is: it
+  imports `BOOK_ORDER`, which `src/constants/books.ts` does not export, so it is
+  broken already. Filed as an issue.
