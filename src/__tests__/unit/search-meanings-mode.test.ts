@@ -154,7 +154,7 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
         (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
       );
       expect(result).toBeDefined();
-      const snippet = computeSnippetForMatch(result, 'עלה')!;
+      const snippet = computeSnippetForMatch(result, 'עלה', 'meanings')!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלה');
     });
@@ -163,7 +163,7 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
       const [result] = searchInMeaningsMode('בית אל').filter(
         (r) => r.book === 'Genesis' && r.chapter === 28 && r.verse === 19,
       );
-      const snippet = computeSnippetForMatch(result, 'בית אל')!;
+      const snippet = computeSnippetForMatch(result, 'בית אל', 'meanings')!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(
         stripNikkud(matched)

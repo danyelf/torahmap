@@ -76,8 +76,24 @@ describe('the search and the highlighter agree', () => {
       language: 'he' as const,
       matchingTerms: [],
     };
-    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result, 'וידבר יהוה')!;
+    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result, 'וידבר יהוה', 'word')!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
+  });
+
+  it('on where the result row centres a phrase cut off mid-word, in substring mode', () => {
+    const result = {
+      book: 'Leviticus',
+      chapter: 1,
+      verse: 1,
+      language: 'he' as const,
+      matchingTerms: [],
+    };
+    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
+      result,
+      'וידבר יהו',
+      'substring',
+    )!;
+    expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהו');
   });
 });
 

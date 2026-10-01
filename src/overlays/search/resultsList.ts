@@ -4,7 +4,7 @@
 // found — only how far down its own list it has drawn.
 import type { SearchResult } from '../../search.ts';
 import { computeSnippetForMatch } from '../../search.ts';
-import { colorIndexAt, type SearchTerm } from '../../search/terms.ts';
+import { colorIndexAt, effectiveMode, type SearchTerm } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { markRange } from './highlight.ts';
 import { HEBREW } from '../../types.ts';
@@ -57,10 +57,13 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
   const snippetDiv = document.createElement('div');
   snippetDiv.className = `snippet ${result.language === HEBREW ? 'rtl' : ''}`;
 
-  const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
-    result,
-    view.terms[firstMatch.termIndex]?.text ?? '',
-  ) ?? { snippet: verseRef(result), matchStart: 0, matchEnd: 0 };
+  const term = view.terms[firstMatch.termIndex];
+  const { snippet, matchStart, matchEnd } = (term &&
+    computeSnippetForMatch(result, term.text, effectiveMode(term))) ?? {
+    snippet: verseRef(result),
+    matchStart: 0,
+    matchEnd: 0,
+  };
 
   snippetDiv.appendChild(
     markRange(snippet, matchStart, matchEnd, colorIndexAt(view.terms, firstMatch.termIndex)),

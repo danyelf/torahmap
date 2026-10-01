@@ -398,10 +398,14 @@ function findEnglishMatch(text: string, term: string): { idx: number; len: numbe
   return idx === -1 ? null : { idx, len: term.length };
 }
 
-/** Snippet/highlight data for one match, computed lazily — only when the result is shown. */
+/**
+ * Snippet/highlight data for one match, computed lazily — only when the result
+ * is shown. `mode` is the term's: the snippet marks what the search found.
+ */
 export function computeSnippetForMatch(
   result: SearchResult,
   searchTerm: string,
+  mode: MatchMode | 'meanings',
 ): { snippet: string; matchStart: number; matchEnd: number } | null {
   const entry = verseKeyToEntry.get(tanakhKey(result.book, result.chapter, result.verse));
   if (!entry) return null;
@@ -427,7 +431,7 @@ export function computeSnippetForMatch(
     };
   }
 
-  const lexemes = findLexemesForWord(searchTerm);
+  const lexemes = mode === 'meanings' ? findLexemesForWord(searchTerm) : null;
   if (lexemes && lexemes.length > 0) {
     // Find the word in the verse that resolves to one of the same lexemes.
     //
@@ -461,12 +465,12 @@ export function computeSnippetForMatch(
     }
   }
 
-  // The term resolved to no lexeme. Fall back to the spelling as typed, a
-  // word or a phrase, as the search found it.
+  // The spelling as typed, a word or a phrase, as the search found it: by its
+  // own mode, and as whole words where meanings found no lexeme to point at.
   const [spelled] = matchRangesInFolded(
     entry.hebrewText,
     normalizeHebrewForSearch(searchTerm).trim(),
-    { mode: 'word', language: HEBREW, limit: 1 },
+    { mode: mode === 'meanings' ? 'word' : mode, language: HEBREW, limit: 1 },
   );
   if (spelled) {
     const start = mapStrippedToOriginal(entry.hebrewOriginal, spelled.start);

@@ -38,7 +38,7 @@ function genesis99(language: 'he' | 'en'): SearchResult {
 
 describe('snippets for an English term', () => {
   it('quotes the English verse, not the Hebrew one', () => {
-    const snippet = computeSnippetForMatch(genesis99('en'), 'covenant');
+    const snippet = computeSnippetForMatch(genesis99('en'), 'covenant', 'substring');
 
     expect(snippet).not.toBeNull();
     expect(snippet!.snippet).toContain('covenant');
@@ -46,14 +46,14 @@ describe('snippets for an English term', () => {
   });
 
   it('marks the word that was searched for', () => {
-    const snippet = computeSnippetForMatch(genesis99('en'), 'covenant')!;
+    const snippet = computeSnippetForMatch(genesis99('en'), 'covenant', 'substring')!;
     const marked = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
 
     expect(marked).toBe('covenant');
   });
 
   it('matches without regard to case', () => {
-    const snippet = computeSnippetForMatch(genesis99('en'), 'Covenant')!;
+    const snippet = computeSnippetForMatch(genesis99('en'), 'Covenant', 'substring')!;
     const marked = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
 
     // The verse prints it lowercase; the reader typed it capitalised.
@@ -61,13 +61,13 @@ describe('snippets for an English term', () => {
   });
 
   it('still quotes Hebrew for a Hebrew term', () => {
-    const snippet = computeSnippetForMatch(genesis99('he'), 'בריתי')!;
+    const snippet = computeSnippetForMatch(genesis99('he'), 'בריתי', 'meanings')!;
 
     expect(snippet.snippet).toMatch(HEBREW);
   });
 
   it('falls back to the English verse when the word is not in it', () => {
-    const snippet = computeSnippetForMatch(genesis99('en'), 'chariot')!;
+    const snippet = computeSnippetForMatch(genesis99('en'), 'chariot', 'substring')!;
 
     // Nothing to mark, but the reader should still be reading the right verse.
     expect(snippet.snippet).not.toMatch(HEBREW);
@@ -94,7 +94,7 @@ describe('a Hebrew term beside an English one', () => {
 
     expect(only.matchingTerms.map((m) => m.termIndex)).toEqual([1]);
 
-    const snippet = computeSnippetForMatch(only, englishTerm)!;
+    const snippet = computeSnippetForMatch(only, englishTerm, 'substring')!;
     expect(snippet.snippet).not.toMatch(HEBREW);
     expect(snippet.snippet.slice(snippet.matchStart, snippet.matchEnd)).toBe('behold');
   });
@@ -103,6 +103,6 @@ describe('a Hebrew term beside an English one', () => {
     const both = mixedResults().find((r) => r.verse === 7)!;
 
     expect(both.matchingTerms[0].termIndex).toBe(0);
-    expect(computeSnippetForMatch(both, hebrewTerm)!.snippet).toMatch(HEBREW);
+    expect(computeSnippetForMatch(both, hebrewTerm, 'meanings')!.snippet).toMatch(HEBREW);
   });
 });

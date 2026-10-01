@@ -32,6 +32,7 @@ describe('Snippet bounds', () => {
     const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
       result(verse, language),
       term,
+      language === 'he' ? 'meanings' : 'substring',
     )!;
 
     expect(matchStart).toBeGreaterThanOrEqual(0);
@@ -40,7 +41,11 @@ describe('Snippet bounds', () => {
   });
 
   it('marks the whole of a pointed word that ends the verse', () => {
-    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result(1, 'he'), 'אלהים')!;
+    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
+      result(1, 'he'),
+      'אלהים',
+      'meanings',
+    )!;
     expect(snippet.slice(matchStart, matchEnd)).toBe('אֱלֹהִים');
   });
 });
