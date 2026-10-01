@@ -19,6 +19,11 @@ import type { MatchMode } from './matching.ts';
  */
 export type SearchMode = MatchMode | 'meanings';
 
+/** How a term's text is matched where it is not matched by meaning: meanings falls back to whole word. */
+export function textMatchMode(mode: SearchMode): MatchMode {
+  return mode === 'substring' ? 'substring' : 'word';
+}
+
 export const SEARCH_MODES = [
   'substring',
   'word',

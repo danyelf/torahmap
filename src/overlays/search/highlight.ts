@@ -7,7 +7,13 @@ import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
 import { mapStrippedToOriginal, splitIntoWords } from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
 import { wordMatches } from '../../search/dictionary.ts';
-import { colorIndexAt, effectiveMode, selectedKeys, type SearchTerm } from '../../search/terms.ts';
+import {
+  colorIndexAt,
+  effectiveMode,
+  selectedKeys,
+  textMatchMode,
+  type SearchTerm,
+} from '../../search/terms.ts';
 
 /**
  * A term's colour is carried on the mark's class, and the stylesheet holds one
@@ -83,8 +89,9 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
       continue;
     }
 
-    for (const { start, end } of matchRangesInFolded(folded, foldForMatching(term.text, language), {
-      mode: mode === 'substring' ? 'substring' : 'word',
+    const needle = foldForMatching(term.text.trim(), language);
+    for (const { start, end } of matchRangesInFolded(folded, needle, {
+      mode: textMatchMode(mode),
       language,
     })) {
       matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });

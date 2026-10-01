@@ -93,9 +93,20 @@ export function isSearchableWord(text: string): boolean {
   return (text.match(LETTER)?.length ?? 0) >= 2;
 }
 
-/** Whitespace, hyphen, or one of the four Hebrew characters that break words. */
+// Sefaria prints a corrected word twice, the written form in round brackets and
+// the read form in square ones: (בגד) [בָּ֣א גָ֑ד]. No bracket sits between two
+// letters, so counting them as separators leaves every verse's words, and
+// their line-up with BHSA, unchanged.
+const BRACKETS = new Set(['(', ')', '[', ']']);
+
+/** Whitespace, hyphen, a bracket, or one of the four Hebrew characters that break words. */
 export function isWordSeparator(char: string): boolean {
-  return /\s/.test(char) || SEPARATOR_CODES.has(char.codePointAt(0)!) || char === '-';
+  return (
+    /\s/.test(char) ||
+    SEPARATOR_CODES.has(char.codePointAt(0)!) ||
+    char === '-' ||
+    BRACKETS.has(char)
+  );
 }
 
 /** Drop the points and accents, keeping final forms and separators as written. */

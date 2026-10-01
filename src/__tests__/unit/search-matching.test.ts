@@ -6,9 +6,10 @@ import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
 const searchOverlay = hostOverlay(overlay);
-import { buildSearchIndex, versesForTerm } from '../../search';
+import { buildSearchIndex, computeSnippetForMatch, versesForTerm } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
+import { setTermText } from '../../search/terms';
 
 const GENESIS_1_1 = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
 
@@ -56,10 +57,29 @@ describe('the search and the highlighter agree', () => {
     // matches the phrase by its text.
     expect(versesForTerm('וידבר יהוה', 'he', 'word').size).toBe(1);
 
-    searchOverlay.restore({ search: 'וידבר יהוה', ...(mode ? { mode } : {}) });
+    searchOverlay.restore({ search: 'וידבר יהוה', mode });
     expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת ]/g, ''))).toEqual([
       'וידבר יהוה',
     ]);
+  });
+
+  it('on a term typed with a space after it', () => {
+    // The search trims the term, so ויקר finds ויקרא as a substring.
+    searchOverlay.restore({ search: 'ויקר', mode: 's' });
+    searchOverlay.change((s) => ({ ...s, terms: setTermText(s.terms, s.terms[0].id, 'ויקר ') }));
+    expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['ויקר']);
+  });
+
+  it('on where the result row centres a phrase', () => {
+    const result = {
+      book: 'Leviticus',
+      chapter: 1,
+      verse: 1,
+      language: 'he' as const,
+      matchingTerms: [],
+    };
+    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result, 'וידבר יהוה')!;
+    expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
   });
 });
 
@@ -83,6 +103,17 @@ describe('where a term matches', () => {
     expect(find('וידבר יהוה')).toEqual([{ start: 0, end: 10 }]);
     expect(find('אל משה')).toHaveLength(1); // written with a maqaf
     expect(find('דבר יהוה')).toEqual([]); // the phrase starts inside a word
+  });
+
+  it('finds a phrase across any run of separators', () => {
+    const haystack = folded('וַיֹּ֨אמֶר אֵלָ֜יו בָּלָ֗ק (לך) [לְכָה־]נָּ֨א אִתִּ֜י');
+    const find = (term: string) =>
+      matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' }).map(
+        ({ start, end }) => haystack.slice(start, end),
+      );
+    expect(find('לכה נא')).toEqual(['לכה ]נא']);
+    expect(find('לכה  נא')).toEqual(['לכה ]נא']); // typed with two spaces
+    expect(find('כה נא')).toEqual([]);
   });
 
   it('takes the brackets around a written and a read form as word edges', () => {

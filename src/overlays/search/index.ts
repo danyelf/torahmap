@@ -31,6 +31,7 @@ import {
   setMode,
   meaningsApply,
   termQuery,
+  textMatchMode,
   encodeModes,
   applyModes,
   MAX_TERMS,
@@ -161,11 +162,7 @@ function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
   const queries = active.map(termQuery);
   const results = resultsForVerseSets(
     queries.map(({ text, language, mode, meaningKeys }) =>
-      meaningKeys
-        ? versesFor(meaningKeys)
-        : // Meanings mode matches text only when the dictionary has nothing for
-          // the term, and then it matches the whole word.
-          versesForTerm(text, language, mode === 'meanings' ? 'word' : mode),
+      meaningKeys ? versesFor(meaningKeys) : versesForTerm(text, language, textMatchMode(mode)),
     ),
     queries.map((query) => query.language),
   );
