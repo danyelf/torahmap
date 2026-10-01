@@ -374,7 +374,7 @@ async function main(): Promise<void> {
         });
       }
     }
-    showLegend(mapLegend, rows);
+    showLegend(mapLegend, rows, []);
   }
 
   function applyTools(): void {
@@ -989,7 +989,13 @@ async function main(): Promise<void> {
   }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    updateSidebar(sidebarElements, verse, { verseTexts, ...toolsNow(), pinned: isPinned });
+    updateSidebar(sidebarElements, verse, {
+      verseTexts,
+      textsNotice: null,
+      wordsClickable: dataFor(searchTool, loaded) !== null,
+      ...toolsNow(),
+      pinned: isPinned,
+    });
   }
 
   /**

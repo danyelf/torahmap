@@ -37,10 +37,30 @@ describe('words in the verse popup', () => {
       overlay: null,
       search: null,
       pinned: true,
+      textsNotice: null,
+      wordsClickable: true,
     });
 
     const spans = [...document.querySelectorAll('.verse-hebrew .verse-word')];
     expect(spans.map((s) => s.textContent)).toEqual(['וְר֣וּחַ', 'אֱלֹהִ֔ים', 'מְרַחֶ֖פֶת']);
+  });
+
+  it('leaves the words plain and unclickable while search has no data', () => {
+    const handler = vi.fn();
+    setWordClickHandler(handler);
+    const elements = getSidebarElements();
+    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+      verseTexts: texts,
+      overlay: null,
+      search: null,
+      pinned: true,
+      textsNotice: null,
+      wordsClickable: false,
+    });
+
+    expect(document.querySelectorAll('.verse-hebrew .verse-word')).toHaveLength(0);
+    document.querySelector<HTMLElement>('.verse-hebrew')!.click();
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('reports the word that was clicked, and its verse', () => {
@@ -53,6 +73,8 @@ describe('words in the verse popup', () => {
       overlay: null,
       search: null,
       pinned: true,
+      textsNotice: null,
+      wordsClickable: true,
     });
 
     document.querySelector<HTMLElement>('[data-word-index="0"]')!.click();
@@ -77,6 +99,8 @@ describe('words in the verse popup', () => {
       overlay: null,
       search: null,
       pinned: true,
+      textsNotice: null,
+      wordsClickable: true,
     });
 
     document.querySelector<HTMLElement>('[data-word-index="2"]')!.click();
@@ -94,6 +118,8 @@ describe('words in the verse popup', () => {
       overlay: null,
       search: null,
       pinned: true,
+      textsNotice: null,
+      wordsClickable: true,
     });
 
     expect(document.querySelectorAll('.verse-english .verse-word')).toHaveLength(0);
@@ -106,6 +132,8 @@ describe('words in the verse popup', () => {
       overlay: null,
       search: null,
       pinned: true,
+      textsNotice: null,
+      wordsClickable: true,
     });
 
     expect(() =>
@@ -149,6 +177,8 @@ describe('words in the verse popup', () => {
       overlay: { tool: mockOverlay, settings: undefined, data: undefined },
       search: null,
       pinned: true,
+      textsNotice: null,
+      wordsClickable: true,
     });
 
     const hebrew = document.querySelector('.verse-hebrew')!;

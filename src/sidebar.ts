@@ -120,7 +120,12 @@ export function getSefariaUrl(
 
 /** What the popup shows beside the verse, and whether the verse is pinned. */
 export interface PopupView {
-  verseTexts: VerseTexts;
+  /** Null until the texts file is in. */
+  verseTexts: VerseTexts | null;
+  /** Shown where the text goes while the texts are not in. */
+  textsNotice: Node | null;
+  /** Whether a Hebrew word opens its menu when clicked: only once search has its data. */
+  wordsClickable: boolean;
   overlay: ToolOnMap | null;
   search: ToolOnMap | null;
   pinned: boolean;
@@ -132,7 +137,7 @@ export function updateSidebar(
   view: PopupView,
 ): void {
   const { sidebar, ref, overlayInfo, hebrew, english, link } = elements;
-  const { verseTexts, search, pinned: isPinned } = view;
+  const { verseTexts, textsNotice, wordsClickable, search, pinned: isPinned } = view;
   const currentOverlay = view.overlay?.tool ?? null;
   const overlaySettings = view.overlay?.settings;
   const overlayData = view.overlay?.data;
@@ -145,7 +150,7 @@ export function updateSidebar(
     return;
   }
 
-  const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
+  const text = verseTexts && getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
 
   if (ref) {
     ref.textContent = verseRef(verse);
@@ -179,23 +184,26 @@ export function updateSidebar(
     return searchMarks ?? overlayMarks ?? null;
   };
   if (hebrew) {
-    const hebrewText = text?.he || 'Loading...';
-
-    // Whatever the overlay produced, words are wrapped afterwards, so a click
-    // finds a word whether or not anything is highlighting the text.
-    const fragment = marked(hebrewText, HEBREW) ?? textFragment(hebrewText);
-
-    hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
-    attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
+    const container = hebrew as HTMLElement;
+    container.onclick = null;
+    if (!text) {
+      container.replaceChildren(...(textsNotice ? [textsNotice] : []));
+    } else {
+      const fragment = marked(text.he, HEBREW) ?? textFragment(text.he);
+      if (wordsClickable) {
+        // Whatever the overlay produced, words are wrapped afterwards, so a click
+        // finds a word whether or not anything is highlighting the text.
+        container.replaceChildren(wrapWordsInFragment(fragment, text.he));
+        attachWordClicks(container, text.he, verse);
+      } else {
+        container.replaceChildren(fragment);
+      }
+    }
   }
   if (english) {
-    const englishText = text?.en || 'Loading...';
-    const highlighted = marked(englishText, ENGLISH);
-    if (highlighted) {
-      english.replaceChildren(highlighted);
-    } else {
-      english.textContent = englishText;
-    }
+    const highlighted = text && marked(text.en, ENGLISH);
+    if (highlighted) english.replaceChildren(highlighted);
+    else english.textContent = text?.en ?? '';
   }
   if (link) {
     link.href = getSefariaUrl(

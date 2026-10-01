@@ -525,6 +525,24 @@ body[data-open='about'] #about-panel {
   display: none;
 }
 
+/* A file a tool on the map needs failed; each warning's × closes it. */
+.map-legend-warning {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: var(--legend-row);
+  padding: 0 4px 0 12px;
+}
+
+.map-legend-warning[hidden] {
+  display: none;
+}
+
+.map-legend-row:not([hidden]) ~ .map-legend-warning {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .map-legend-row:not([hidden]) ~ .map-legend-row:not([hidden]) {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
