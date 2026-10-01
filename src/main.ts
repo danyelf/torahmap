@@ -123,7 +123,7 @@ import {
 } from './overlays/search/index.ts';
 import { createSearchRecorder } from './overlays/search/recording.ts';
 import { SEARCH_RECORD_DELAY_MS } from './search/constants.ts';
-import { prebuildAll } from './overlays/prebuild.ts';
+import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, downloadFiles, overlayFiles, type Loaded } from './dataFiles.ts';
 import type { Tools } from './overlays/types.ts';
@@ -1811,7 +1811,7 @@ async function main(): Promise<void> {
     connection: connection?.effectiveType ?? '',
   });
 
-  prebuildAll(getAllOverlays(), loaded);
+  prebuildCompleted(getAllOverlays(), new Map(), loaded, () => {});
 }
 
 reportUncaughtErrors();
