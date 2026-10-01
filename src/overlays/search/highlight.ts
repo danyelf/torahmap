@@ -73,9 +73,7 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     //
     // By position rather than by spelling, which is what separates the two
     // words spelled עלה in Genesis 8:20 — a spelling could be either, and only
-    // the place in the verse says which this one is. `wordMatches` falls back
-    // to the spelling wherever the parse cannot answer (see
-    // search/dictionary.ts), so a verse that does not line up still marks.
+    // the place in the verse says which this one is.
     if (isHebrew && mode === 'meanings') {
       const keys = selectedKeys(term);
       if (keys.length === 0) continue;

@@ -145,24 +145,20 @@ export function openWordMenu(options: WordMenuOptions): void {
     menu.appendChild(exactChoice(options));
   }
 
-  // Anchored below the word, or above it when it does not fit below, and
-  // inside the screen when it fits neither way. Never taller than the screen:
-  // a short one scrolls the menu instead.
+  // Below the word, or above it when it does not fit below. Where it fits
+  // neither way it takes the side with more room and scrolls, so it never
+  // covers the word it is about.
   const box = options.anchor.getBoundingClientRect();
-  menu.style.maxHeight = `${window.innerHeight - 2 * MARGIN}px`;
+  const roomBelow = window.innerHeight - MARGIN - (box.bottom + GAP);
+  const roomAbove = box.top - GAP - MARGIN;
   document.body.appendChild(menu);
   open = menu;
 
   const { width, height } = menu.getBoundingClientRect();
-  const below = box.bottom + GAP;
-  const above = box.top - GAP - height;
-  const top =
-    below + height <= window.innerHeight - MARGIN
-      ? below
-      : above >= MARGIN
-        ? above
-        : window.innerHeight - MARGIN - height;
-  menu.style.top = `${top}px`;
+  const goesBelow = height <= roomBelow || (height > roomAbove && roomBelow >= roomAbove);
+  const room = goesBelow ? roomBelow : roomAbove;
+  menu.style.maxHeight = `${room}px`;
+  menu.style.top = `${goesBelow ? box.bottom + GAP : box.top - GAP - Math.min(height, room)}px`;
   menu.style.left = `${Math.max(MARGIN, Math.min(box.left, window.innerWidth - MARGIN - width))}px`;
 
   // A menu that cannot be dismissed is worse than no menu: the reader who did

@@ -11,7 +11,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData } from '../../../search';
 import { meaningsInVerse, meaningsFor } from '../../../search/dictionary';
-import { lookupForm } from '../../../verseWords';
 
 beforeAll(async () => {
   await loadLexiconData();
@@ -70,15 +69,6 @@ describe('resolving a word against its verse', () => {
     for (const meaning of narrowed) {
       expect(fromSpelling.has(meaning.keys[0])).toBe(true);
     }
-  });
-
-  it('reads the bracketed form of a variant, which is the one said aloud', () => {
-    // Genesis 8:17 offers both spellings of the same word: (הוצא) as written and
-    // [הַיְצֵ֣א] as read. The lexeme index carries the one that is read, so a
-    // click on it resolves only if the brackets come off first.
-    const meanings = meaningsInVerse(lookupForm('[הַיְצֵ֣א]'), 'Genesis:8:17');
-
-    expect(meanings.length).toBeGreaterThan(0);
   });
 
   it('returns nothing for a verse it has no data for', () => {

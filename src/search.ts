@@ -94,9 +94,8 @@ let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
 // Consonantal dictionary spelling -> lexemes, for readers who type a bare root
 // that never appears on its own in the text.
 let spellingToLexemes: Map<string, LexemeId[]> | null = null;
-// Lexeme -> the written forms filed under it, for searching a meaning under a
-// spelling that has it.
-let lexemeToForms: Map<LexemeId, string[]> | null = null;
+// Each lexeme's commonest printed spelling, folded. Parallel to `lexicon`.
+let printedSpellings: string[] = [];
 
 /** The terms a query string names, dropping ones too short to search on. */
 export function parseSearchTerms(query: string): string[] {
@@ -107,7 +106,14 @@ export function parseSearchTerms(query: string): string[] {
 }
 
 /** A lexeme as lexicon.json writes it, in the order generate-lexeme-index.py writes. */
-type LexemeRow = [id: string, form: string, gloss: string, pos: string, language: LexemeLanguage];
+type LexemeRow = [
+  id: string,
+  form: string,
+  gloss: string,
+  pos: string,
+  language: LexemeLanguage,
+  printed: string,
+];
 
 interface LexiconFile {
   source: string;
@@ -150,6 +156,7 @@ export async function loadLexiconData(): Promise<void> {
       language,
     }));
     lexemeSpellings = lexicon.map((entry) => normalizeHebrewForSearch(entry.form));
+    printedSpellings = lexiconFile.lexemes.map((row) => row[5]);
 
     console.log(
       `✓ Loaded ${lexicon.length} lexemes (${lexiconFile.source}), ` +
@@ -159,8 +166,6 @@ export async function loadLexiconData(): Promise<void> {
 
     lexemeToVerses = buildVerseIndex(verseLexemes);
     spellingToLexemes = buildSpellingIndex(lexemeSpellings);
-    // Rebuilt from these forms when next asked.
-    lexemeToForms = null;
   } catch (err) {
     console.error('Error loading the lexeme index; meanings search will find nothing:', err);
   }
@@ -251,13 +256,9 @@ function lookupFormOrSpelling(term: string): LexemeId[] | null {
   return null;
 }
 
-/**
- * The written forms that can be this lexeme. Built on first use: only a click
- * on a meaning no nearer spelling has ever asks.
- */
-export function formsOfLexeme(id: LexemeId): string[] {
-  if (!lexemeToForms && formToLexemes) lexemeToForms = invert(Object.entries(formToLexemes));
-  return lexemeToForms?.get(id) ?? [];
+/** The spelling a lexeme is most often printed with, folded; empty when it never is. */
+export function printedSpelling(id: LexemeId): string {
+  return printedSpellings[id] ?? '';
 }
 
 /**

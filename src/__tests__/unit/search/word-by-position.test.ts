@@ -16,6 +16,7 @@ import {
   setVerseOnScreen,
   wordMatches,
   wordIsNamed,
+  wordsBhsaParsed,
 } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
 import { lookupForm, verseWords } from '../../../verseWords';
@@ -25,8 +26,8 @@ const ASCEND = ['<LH[@heb'];
 const OFFERINGS = ['<LH/@heb', '<LH=/@heb', '<LH/@arc'];
 
 let texts: Record<string, Record<string, Record<string, { he: string }>>>;
-/** The verses the file lines up by letter, since the page divides them into words differently. */
-let realigned: string[];
+/** The verses the file lines up by letter, and the lexemes of each word the page shows there. */
+let realigned: Record<string, number[][]>;
 
 const hebrewOf = (verseKey: string): string => {
   const [book, chapter, verse] = verseKey.split(':');
@@ -48,15 +49,20 @@ const markedWords = (verseKey: string, keys: string[]): string[] => {
     .map(({ word }) => word);
 };
 
+/** A word as the verse prints it, with any bracket beside it, without points. */
+const withBrackets = (hebrew: string, { start, end }: { start: number; end: number }): string => {
+  while ('(['.includes(hebrew[start - 1] ?? 'x')) start--;
+  while (')]'.includes(hebrew[end] ?? 'x')) end++;
+  return stripNikkud(hebrew.slice(start, end));
+};
+
 /** Where a word sits among the verse's clickable words, which is what a click reports. */
 const wordIndexOf = (verseKey: string, word: string): number =>
   verseWords(hebrewOf(verseKey)).findIndex((w) => stripNikkud(w.word) === word);
 
 beforeAll(async () => {
   texts = await (await fetch('/data/all-texts.json')).json();
-  realigned = Object.keys(
-    (await (await fetch('/data/search/verse-morphology.json')).json()).realigned,
-  );
+  realigned = (await (await fetch('/data/search/verse-morphology.json')).json()).realigned;
   await loadLexiconData();
   await setVerseOnScreen('Genesis:1:1', hebrewOf('Genesis:1:1'));
 });
@@ -176,39 +182,59 @@ describe('naming the word that was clicked', () => {
   });
 });
 
-describe('the verses the two sources divide differently', () => {
-  it('still have their words named, over the whole Tanakh', () => {
-    // A regenerated index whose word divisions have drifted would leave a
-    // verse unnamed here, which nothing else would notice.
-    expect(realigned).not.toHaveLength(0);
+/**
+ * Where the words that name nothing start: a ketiv with no qere beside it,
+ * written and not read, and a word the file lines up with no BHSA word.
+ */
+const nothingToName = (verseKey: string, hebrew: string): Set<number> => {
+  const starts = new Set<number>();
+  for (const m of hebrew.matchAll(/\([^)]*\)/g)) {
+    const end = m.index + m[0].length;
+    const read = /^[\s־]*\[/.test(hebrew.slice(end)) || /\][\s־]*$/.test(hebrew.slice(0, m.index));
+    if (read) continue;
+    for (const w of verseWords(hebrew))
+      if (w.start >= m.index && w.start < end) starts.add(w.start);
+  }
+  wordsBhsaParsed(hebrew).forEach((w, i) => {
+    if (realigned[verseKey]?.[i]?.length === 0) starts.add(w.start);
+  });
+  return starts;
+};
 
-    const refused: string[] = [];
+describe('every word of the Tanakh', () => {
+  it('is named by the parse, unless there is nothing to name it', () => {
+    // A regenerated index whose word divisions have drifted would leave words
+    // unnamed here, which nothing else would notice.
+    expect(Object.keys(realigned)).not.toHaveLength(0);
+
+    const unnamed: string[] = [];
 
     for (const [book, chapters] of Object.entries(texts)) {
       for (const [chapter, verses] of Object.entries(chapters)) {
         for (const [verse, text] of Object.entries(verses)) {
           const verseKey = `${book}:${chapter}:${verse}`;
-          setVerseOnScreen(verseKey, text.he ?? '');
-          const words = verseWords(text.he ?? '');
-          if (words.length > 0 && !words.some((_, i) => wordIsNamed(i))) refused.push(verseKey);
+          const hebrew = text.he ?? '';
+          setVerseOnScreen(verseKey, hebrew);
+          const excused = nothingToName(verseKey, hebrew);
+          verseWords(hebrew).forEach((w, i) => {
+            if (!wordIsNamed(i) && !excused.has(w.start)) unnamed.push(`${verseKey} ${w.word}`);
+          });
         }
       }
     }
 
-    expect(refused).toEqual([]);
+    expect(unnamed).toEqual([]);
   });
 });
 
-// Sefaria prints a corrected word twice: the ketiv, as written, in round
-// brackets, and the qere, as read, in square ones. BHSA parses the qere, and
-// a click on the ketiv lands on that parse.
+// BHSA parses the qere, and a click on the ketiv lands on that parse.
 describe('a click on the written form of a corrected word', () => {
   /** The meanings a click on the word printed as `printed` offers. */
   const clicked = (verseKey: string, printed: string): string[][] => {
     const hebrew = hebrewOf(verseKey);
     setVerseOnScreen(verseKey, hebrew);
     const words = verseWords(hebrew);
-    const index = words.findIndex((w) => stripNikkud(w.word) === printed);
+    const index = words.findIndex((w) => withBrackets(hebrew, w) === printed);
     expect(index, `${printed} in ${verseKey}`).toBeGreaterThanOrEqual(0);
     return meaningsInVerse(lookupForm(words[index].word), verseKey, index).map((m) => m.keys);
   };
@@ -239,5 +265,13 @@ describe('a click on the written form of a corrected word', () => {
     // (נא) in II Kings 5:18 has no reading beside it, and BHSA no word for it,
     // so nothing says which of the spelling's meanings it is.
     expect(clicked('II Kings:5:18', '(נא)')).toEqual([]);
+  });
+
+  it('does not lend a reading to a word written but not read right after its pair', () => {
+    const verseKey = 'Jeremiah:2:20';
+    const hebrew = hebrewOf(verseKey).replace(/(\[[^\]]*\])/, '$1 (נא)');
+    setVerseOnScreen(verseKey, hebrew);
+    const index = verseWords(hebrew).findIndex((w) => withBrackets(hebrew, w) === '(נא)');
+    expect(meaningsInVerse('נא', verseKey, index)).toEqual([]);
   });
 });

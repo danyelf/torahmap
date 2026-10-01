@@ -121,6 +121,7 @@ POINT_START = 0x0591
 POINT_END = 0x05C7
 SEPARATORS = {0x05BE, 0x05C0, 0x05C3, 0x05C6}  # maqaf, paseq, sof pasuq, nun hafukha
 MAQAF = chr(0x05BE)
+SOF_PASUQ = chr(0x05C3)
 # Where one word ends and the next begins: whitespace, a hyphen, or a separator.
 # isWordSeparator() in src/hebrew.ts draws the same line.
 WORD_SEPARATOR = re.compile(
@@ -152,6 +153,10 @@ FINAL_TO_MEDIAL = {
 
 # Occurrence-level grammar recorded for each word, in this order.
 MORPH_FIELDS = ["vs", "vt", "ps", "nu", "gn", "st"]
+
+# A word BHSA prints: its letters as read, its lexemes, and whether it is one
+# part of a word BHSA holds as one but prints as two.
+PrintedWord = collections.namedtuple("PrintedWord", "letters lexemes split")
 
 
 def normalize(text):
@@ -253,7 +258,7 @@ def ends_printed_word(trailer):
     printed as a single word, and the first of them is part of a word rather
     than a word.
     """
-    return any(ch.isspace() or ch in (MAQAF, "\u05C3") for ch in trailer or "")
+    return any(ch.isspace() or ch in (MAQAF, SOF_PASUQ) for ch in trailer or "")
 
 
 def internal_separators(word_text):
@@ -370,16 +375,11 @@ def main():
     # maqaf rather than a space follows.
     verse_words = collections.defaultdict(list)
     verse_joins = collections.defaultdict(list)
-    # The letters of each printed word as read, and of each morpheme with its
-    # lexeme and the printed word it is part of: what is lined up against the
-    # words the page shows.
-    verse_read_words = collections.defaultdict(list)
+    # Each printed word, and the letters of each morpheme with its lexeme and
+    # the printed word it is part of: what is lined up against the words the
+    # page shows.
+    verse_printed = collections.defaultdict(list)
     verse_read_morphemes = collections.defaultdict(list)
-    # The lexeme of each printed word: its stem, which a further part of a name
-    # BHSA holds as one word shares.
-    verse_stems = collections.defaultdict(list)
-    # Whether each printed word is one part of a word BHSA prints as two.
-    verse_split = collections.defaultdict(list)
     morph_ids = {}
     morph_table = []
 
@@ -407,7 +407,10 @@ def main():
 
             word_forms = []   # the written form of each, in order
             word_inner = []   # separators printed inside them
+            readings = []     # what is read for each
             for node in morphemes:
+                reading = F.qere_utf8.v(node) or F.g_word_utf8.v(node) or ""
+                readings.append(reading)
                 morpheme_lexeme = lex_index[L.u(node, "lex")[0]]
                 combo = tuple(
                     "" if (v := getattr(F, field).v(node)) in (None, "NA", "n/a")
@@ -422,22 +425,12 @@ def main():
                 word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
                 # Separators printed inside a morpheme, where a corrected reading
                 # divides into more words than the writing does.
-                word_inner.extend(
-                    internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
-                )
+                word_inner.extend(internal_separators(reading))
                 verse_read_morphemes[key].append((
-                    consonants(F.qere_utf8.v(node) or F.g_word_utf8.v(node)),
+                    consonants(reading),
                     morpheme_lexeme,
                     len(verse_words[key]) + len(word_lengths),
                 ))
-
-            # One entry per printed word close_word() records: a two-part name
-            # held in one BHSA word gives each part its own.
-            read = "".join(F.qere_utf8.v(n) or F.g_word_utf8.v(n) or "" for n in morphemes)
-            parts = [c for p in INNER_SEPARATOR.split(read) if (c := consonants(p))]
-            if len(parts) != 1 + len(word_inner):
-                parts = [consonants(read)] + [""] * len(word_inner)
-            verse_read_words[key].extend(parts)
 
             *bound, stem = morphemes
 
@@ -463,9 +456,15 @@ def main():
                     form_counts[(form, lexeme)] += 1
 
             close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
-            # The stem, once for each word close_word() records.
-            verse_stems[key].extend([lexeme] for _ in range(1 + len(word_inner)))
-            verse_split[key].extend([bool(word_inner)] * (1 + len(word_inner)))
+            # One for each word close_word() records: the parts of a two-part
+            # name held in one BHSA word share its stem.
+            read = "".join(readings)
+            parts = [c for p in INNER_SEPARATOR.split(read) if (c := consonants(p))]
+            if len(parts) != 1 + len(word_inner):
+                parts = [consonants(read)] + [""] * len(word_inner)
+            verse_printed[key].extend(
+                PrintedWord(letters, [lexeme], bool(word_inner)) for letters in parts
+            )
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
@@ -496,6 +495,14 @@ def main():
         written: [lexeme for _, lexeme in sorted(pairs, key=lambda p: (-p[0], p[1]))]
         for written, pairs in word_lexemes.items()
     }
+
+    # Each lexeme's commonest printed spelling: a chosen meaning is searched
+    # under it when the dictionary's own spelling does not have that meaning.
+    commonest = {}
+    for (form, lexeme), _ in sorted(form_counts.items(), key=lambda p: (-p[1], p[0])):
+        commonest.setdefault(lexeme, form)
+    for i, row in enumerate(lexemes):
+        row.append(commonest.get(i, ""))
 
     print(f"  {morpheme_total} morphemes across {len(verse_lexemes)} verses")
     print(f"  {bound_total} of them bound to the next "
@@ -553,13 +560,10 @@ def main():
     texts = json.load(open(os.path.join(DATA_DIR, "all-texts.json")))
 
     def displayed_words(hebrew):
-        """Split the Hebrew that Sefaria shows into the words a reader sees.
+        """Split the Hebrew that Sefaria shows into the words BHSA parsed.
 
-        Two things in that text are not words. Sefaria punctuates with the
-        scribal paragraph marks {ס} and {פ}, of which there are 3,552 and which
-        BHSA has nothing behind. And where the received text is corrected it
-        prints both readings, the ketiv in round brackets and the qere in
-        square ones; BHSA carries the one word that is read.
+        Not the paragraph marks {ס} and {פ}, which BHSA has nothing behind, and
+        not the ketiv: BHSA carries the qere, the word that is read.
         """
         stripped = re.sub(r"\{[ספ]\}", " ", hebrew or "")
         stripped = KETIV.sub(" ", stripped)
@@ -583,7 +587,7 @@ def main():
     realigned = {}
     for key in compared:
         alike, lexemes_of = line_up(
-            displayed[key], verse_read_words[key], verse_read_morphemes[key]
+            displayed[key], [w.letters for w in verse_printed[key]], verse_read_morphemes[key]
         )
         if not alike:
             realigned[key] = lexemes_of
@@ -594,7 +598,7 @@ def main():
 
     def lexemes_shown(key):
         """The dictionary words of each word the page shows in this verse."""
-        return realigned.get(key, verse_stems[key])
+        return realigned.get(key, [w.lexemes for w in verse_printed[key]])
 
     # ---- file every displayed spelling ------------------------------------
     # Sefaria and BHSA disagree on some spellings -- optional vowel letters
@@ -610,9 +614,12 @@ def main():
     # nobody typing them means; and not a different word in the same place,
     # Malachi 3:16's אל where BHSA reads את.
     def same_word(key, i, form):
-        if key in realigned or verse_split[key][i]:
+        if key in realigned:
             return False
-        return difflib.SequenceMatcher(None, form, verse_read_words[key][i]).ratio() > 0.5
+        printed = verse_printed[key][i]
+        return not printed.split and (
+            difflib.SequenceMatcher(None, form, printed.letters).ratio() > 0.5
+        )
 
     added = collections.Counter()
     unlike = 0

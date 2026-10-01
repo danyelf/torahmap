@@ -52,12 +52,10 @@ describe('the search and the highlighter agree', () => {
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);
   });
 
-  it.each(['w', undefined])('on a phrase, in mode %s', (mode) => {
-    // No dictionary is loaded here, so meanings mode (the default, undefined)
-    // matches the phrase by its text.
+  it('on a phrase', () => {
     expect(versesForTerm('וידבר יהוה', 'he', 'word').size).toBe(1);
 
-    searchOverlay.restore({ search: 'וידבר יהוה', mode });
+    searchOverlay.restore({ search: 'וידבר יהוה', mode: 'w' });
     expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת ]/g, ''))).toEqual([
       'וידבר יהוה',
     ]);

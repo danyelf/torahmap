@@ -50,31 +50,22 @@ describe('the words of a verse', () => {
 
 describe('the spelling a click puts in the search box', () => {
   it('is the word as printed, final letters and all, without points or brackets', () => {
-    expect(printedForm('הָאָֽרֶץ')).toBe('הארץ');
-    expect(printedForm('[בָּ֣א')).toBe('בא');
+    expect(verseWords('[בָּא הָאָרֶץ]').map((w) => printedForm(w.word))).toEqual(['בא', 'הארץ']);
   });
 });
 
 describe('the spelling a click looks up', () => {
   it('leaves an ordinary word alone, apart from its points', () => {
-    expect(lookupForm('בְּרֵאשִׁ֖ית')).toBe('בראשית');
+    expect(lookupForm('בְּרֵאשִׁית')).toBe('בראשית');
   });
 
-  it('drops the parentheses around the written form of a variant', () => {
-    expect(lookupForm('(הוצא)')).toBe('הוצא');
-  });
-
-  it('drops the square brackets around the form that is actually read', () => {
-    // Sefaria writes a textual variant as a pair, the written form in
-    // parentheses and the spoken one in square brackets. Both kinds of bracket
-    // are punctuation the verse displays, not letters of the word, and no
-    // dictionary key carries either.
-    expect(lookupForm('[הַיְצֵ֣א]')).toBe('היצא');
-  });
-
-  it('drops the one bracket a word carries when the brackets span two words', () => {
-    // [בָּ֣א גָ֑ד] in Genesis 30:11
-    expect(lookupForm('[בָּ֣א')).toBe('בא');
-    expect(lookupForm('גָ֑ד]')).toBe('גד');
+  it('is the letters of either form of a variant, without its brackets', () => {
+    // [בָּא גָד] in Genesis 30:11 brackets a reading over two words.
+    expect(verseWords('(הוצא) [הַיְצֵא] [בָּא גָד]').map((w) => lookupForm(w.word))).toEqual([
+      'הוצא',
+      'היצא',
+      'בא',
+      'גד',
+    ]);
   });
 });

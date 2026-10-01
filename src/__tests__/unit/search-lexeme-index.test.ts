@@ -26,7 +26,7 @@ const generatorPath = path.join(process.cwd(), 'scripts', 'search', 'generate-le
 const dataExists =
   fs.existsSync(lexiconPath) && fs.existsSync(formsPath) && fs.existsSync(versesPath);
 
-type LexemeRow = [string, string, string, string, 'heb' | 'arc'];
+type LexemeRow = [string, string, string, string, 'heb' | 'arc', string];
 
 const lexiconFile = dataExists
   ? (JSON.parse(fs.readFileSync(lexiconPath, 'utf-8')) as {
@@ -108,6 +108,13 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
           expect(lexemes[id]).toBeTruthy();
         }
       }
+    });
+
+    it("include each lexeme's commonest printed spelling, filed under it", () => {
+      const misfiled = lexemes
+        .map((row, id) => [row[5], id] as const)
+        .filter(([printed, id]) => printed !== '' && !forms[printed]?.includes(id));
+      expect(misfiled).toEqual([]);
     });
 
     it('keeps the several words spelled עלה apart instead of merging them', () => {
@@ -273,12 +280,6 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     fs.readFileSync(textsPath, 'utf-8'),
   );
 
-  // The words the app lines up against the file, which must divide the text
-  // exactly as displayed_words() in scripts/search/generate-lexeme-index.py
-  // does. When the two drift apart the alignment test below fails and names
-  // the verses.
-  const displayedWords = wordsBhsaParsed;
-
   const entries = Object.entries(morphology) as Array<[string, MorphologyVerse]>;
 
   it('declares the layout of each verse entry', () => {
@@ -373,7 +374,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       const [book, chapter, verse] = key.split(':');
       const hebrew = texts[book]?.[chapter]?.[verse]?.he;
       if (hebrew === undefined) continue;
-      if (displayedWords(hebrew).length !== words.length) unexpected.push(key);
+      if (wordsBhsaParsed(hebrew).length !== words.length) unexpected.push(key);
     }
     expect(unexpected).toEqual([]);
   });
@@ -433,7 +434,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
       const [book, chapter, verse] = key.split(':');
       const hebrew = texts[book]?.[chapter]?.[verse]?.he;
       if (hebrew === undefined) continue;
-      expect(named, key).toHaveLength(displayedWords(hebrew).length);
+      expect(named, key).toHaveLength(wordsBhsaParsed(hebrew).length);
       for (const id of named.flat()) {
         expect(lexemes[id], `${key} names ${id}`).toBeTruthy();
         // A click there can search for it, and the search must find this verse.
