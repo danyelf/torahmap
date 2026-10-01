@@ -9,24 +9,31 @@ import type { Overlay, OptionalFile } from './overlays/types.ts';
 export type Loaded = ReadonlyMap<string, unknown>;
 
 /**
- * Download each path once. A failure is reported and leaves that path missing.
- * `onLoaded` is called for each path as it arrives.
+ * Download each path once, handing each to `landed` as it arrives, or to
+ * `failed` once its failure is reported. Resolves when every path has done one
+ * or the other.
  */
-export async function loadFiles(
+export async function downloadFiles(
   paths: Iterable<string>,
-  onLoaded?: (path: string) => void,
-): Promise<Loaded> {
-  const unique = [...new Set(paths)];
-  const contents = await Promise.all(
-    unique.map(async (path) => {
+  on: { landed(path: string, content: unknown): void; failed(path: string): void },
+): Promise<void> {
+  await Promise.all(
+    [...new Set(paths)].map(async (path) => {
       const content = await loadFile(path);
-      if (content !== undefined) onLoaded?.(path);
-      return content;
+      if (content === undefined) on.failed(path);
+      else on.landed(path, content);
     }),
   );
-  return new Map(
-    unique.flatMap((path, i) => (contents[i] === undefined ? [] : [[path, contents[i]] as const])),
-  );
+}
+
+/** Download each path once. A failure is reported and leaves that path missing. */
+export async function loadFiles(paths: Iterable<string>): Promise<Loaded> {
+  const loaded = new Map<string, unknown>();
+  await downloadFiles(paths, {
+    landed: (path, content) => loaded.set(path, content),
+    failed: () => {},
+  });
+  return loaded;
 }
 
 async function loadFile(path: string): Promise<unknown> {
@@ -87,28 +94,48 @@ export async function loadNamedFiles<D>(files: Readonly<Record<string, FileName>
   return data;
 }
 
-// Per loaded value, so that the same files give each overlay the same object.
-const given = new WeakMap<Loaded, Map<object, unknown>>();
+const namesOf = (overlay: Overlay): Readonly<Record<string, FileName>> =>
+  (overlay.data ?? {}) as Readonly<Record<string, FileName>>;
+
+/** The paths an overlay cannot work without. */
+export function requiredFiles(overlay: Overlay): string[] {
+  return Object.values(namesOf(overlay)).filter((file): file is string => typeof file === 'string');
+}
+
+/** The paths an overlay is handed as null until they are in. */
+export function optionalFiles(overlay: Overlay): string[] {
+  return Object.values(namesOf(overlay)).flatMap((file) =>
+    typeof file === 'string' ? [] : [file.optional],
+  );
+}
+
+// Per overlay, each set of its files' contents handed out so far, with the
+// data made from it.
+const given = new WeakMap<object, { contents: unknown[]; data: unknown }[]>();
 
 /**
- * An overlay's files under its own names, or null while any is missing. The
- * same loaded value gives the same object, so what an overlay keeps per data
+ * An overlay's files under its own names, or null while any it requires is
+ * missing. The data stays the same object while none of the overlay's own
+ * files changes, however many others land, so what the overlay keeps per data
  * value is found again. An overlay that names no files gets undefined.
  */
 export function dataFor<T, S, D>(overlay: Overlay<T, S, D>, loaded: Loaded): D | null {
   if (!overlay.data) return undefined as D;
-  let byOverlay = given.get(loaded);
-  if (!byOverlay) {
-    byOverlay = new Map();
-    given.set(loaded, byOverlay);
+  const files = overlay.data as Readonly<Record<string, FileName>>;
+  const contents = filePaths(files).map((path) => loaded.get(path));
+  let known = given.get(overlay);
+  if (!known) {
+    known = [];
+    given.set(overlay, known);
   }
-  if (!byOverlay.has(overlay)) {
-    byOverlay.set(overlay, filesFor<D>(overlay.data as Record<string, FileName>, loaded));
-  }
-  return byOverlay.get(overlay) as D | null;
+  const found = known.find((entry) => entry.contents.every((c, i) => c === contents[i]));
+  if (found) return found.data as D | null;
+  const data = filesFor<D>(files, loaded);
+  known.push({ contents, data });
+  return data;
 }
 
 /** Every path the overlays name. */
 export function overlayFiles(overlays: readonly Overlay[]): string[] {
-  return overlays.flatMap((overlay) => filePaths((overlay.data ?? {}) as Record<string, FileName>));
+  return overlays.flatMap((overlay) => filePaths(namesOf(overlay)));
 }

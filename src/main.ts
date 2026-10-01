@@ -125,7 +125,7 @@ import { createSearchRecorder } from './overlays/search/recording.ts';
 import { SEARCH_RECORD_DELAY_MS } from './search/constants.ts';
 import { prebuildAll } from './overlays/prebuild.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
-import { dataFor, loadFiles, overlayFiles } from './dataFiles.ts';
+import { dataFor, downloadFiles, overlayFiles, type Loaded } from './dataFiles.ts';
 import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -233,12 +233,15 @@ async function main(): Promise<void> {
   registerAllOverlays();
   const allOverlays = [searchTool, ...getAllOverlays()];
   let textsIn = 0;
-  const loaded = await loadFiles(
-    [STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(allOverlays)],
-    (path) => {
+  const arrived = new Map<string, unknown>();
+  await downloadFiles([STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(allOverlays)], {
+    landed: (path, content) => {
       if (path === TEXTS_FILE) textsIn = performance.now();
+      arrived.set(path, content);
     },
-  );
+    failed: () => {},
+  });
+  const loaded: Loaded = arrived;
   const torahData = structureFrom(loaded);
   const verseTexts = textsFrom(loaded);
 
