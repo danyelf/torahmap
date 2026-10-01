@@ -201,3 +201,9 @@ Decisions made while implementing step 1, newest last.
   overlay says `overlay: null`, since `ResolvedStoryStop.overlay` is
   `string | null`. In `sidebar.test.ts` all four `toHaveBeenCalledWith` checks
   on overlay members gain the trailing data argument, not the two the plan named.
+- **2026-10-01 (Task 3)** With `?overlay=trop`, `all-texts.json` downloads once
+  and `tanakh-structure.json` twice: haftarah's own `init` still fetches the
+  structure through `loadJson`. The second request goes when haftarah names its
+  files and `init` is removed; main's side shares the loader already.
+- **2026-10-01 (Task 3)** `loadTanakhStructure` had no user but main, so it is
+  deleted; `loadAllVerseTexts` stays for the test harness.
