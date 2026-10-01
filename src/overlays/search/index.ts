@@ -10,12 +10,7 @@ import './search.css';
 import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
-import {
-  getMatchingVerseTerms,
-  parseSearchTerms,
-  resultsForVerseSets,
-  type SearchResult,
-} from '../../search.ts';
+import { getMatchingVerseTerms, parseSearchTerms, type SearchResult } from '../../search.ts';
 import { parseArrived, spellingFor, versesFor } from '../../search/dictionary.ts';
 import { highlightTerms } from './highlight.ts';
 import {
@@ -32,9 +27,9 @@ import {
   encodeMeanings,
   applyMeanings,
   setMode,
-  meaningsApply,
   termQuery,
-  versesForQuery,
+  effectiveMode,
+  resultsForTerms,
   encodeModes,
   applyModes,
   MAX_TERMS,
@@ -162,12 +157,7 @@ export function configure(config: {
 function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
   if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
-  const queries = active.map(termQuery);
-  const results = resultsForVerseSets(
-    queries.map(versesForQuery),
-    queries.map((query) => query.language),
-  );
-
+  const results = resultsForTerms(active);
   return { results, matchingTerms: getMatchingVerseTerms(results) };
 }
 
@@ -540,7 +530,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     // Each word as typed, then which of its checked meanings this verse holds.
     const named = termIndices.map((i) => {
       const term = active[i];
-      if (!meaningsApply(term)) return term.text;
+      if (effectiveMode(term) !== 'meanings') return term.text;
       const here = term.meanings
         .filter((m) => term.selected.has(m.keys[0]) && versesFor(m.keys).has(key))
         .map((m) => m.gloss);

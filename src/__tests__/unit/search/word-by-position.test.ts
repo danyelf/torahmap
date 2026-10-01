@@ -13,7 +13,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData } from '../../../search';
 import { meaningsInVerse, setVerseOnScreen, wordMatches } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
-import { printedForm, verseWords } from '../../../verseWords';
+import { verseWords } from '../../../verseWords';
 
 // The spellings of עלה the search box offers, from the two terms in issue #153.
 const ASCEND = ['<LH[@heb'];
@@ -182,7 +182,7 @@ describe('a click on the written form of a corrected word', () => {
     const words = verseWords(hebrew);
     const index = words.findIndex((w) => withBrackets(hebrew, w) === printed);
     expect(index, `${printed} in ${verseKey}`).toBeGreaterThanOrEqual(0);
-    return meaningsInVerse(printedForm(words[index].word), verseKey, index).map((m) => m.keys);
+    return meaningsInVerse(stripNikkud(words[index].word), verseKey, index).map((m) => m.keys);
   };
 
   it('offers what a click on the reading beside it offers', () => {

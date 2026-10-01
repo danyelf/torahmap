@@ -166,7 +166,7 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
       // Genesis 8:20: וַיַּעַל עֹלֹת — "and he offered burnt offerings".
       const [added] = addTerm([], 'עלה');
       const [term] = onlyMeaning([added], added.id, ['<LH/@heb']);
-      const verse = { book: 'Genesis', chapter: 8, verse: 20, language: 'he' as const };
+      const verse = { book: 'Genesis', chapter: 8, verse: 20 };
       const snippet = excerpt({ ...verse, matchingTerms: [] }, term)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלת');

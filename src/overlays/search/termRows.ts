@@ -18,7 +18,6 @@ import {
   effectiveMode,
   modesOffered,
   meaningsPossible,
-  meaningsApply,
   termIsHebrew,
   MAX_TERMS,
   type SearchTerm,
@@ -188,7 +187,7 @@ function termSummary(term: SearchTerm): string {
   // with at least two of them has anything to report about them. One meaning
   // is not a choice, and a word the dictionary does not know has none at all —
   // both of those are the rows that show no checkboxes either.
-  if (!meaningsApply(term) || term.meanings.length < 2) return mode;
+  if (effectiveMode(term) !== 'meanings' || term.meanings.length < 2) return mode;
 
   // Saying how many there are rather than leaving the mode bare: meanings over
   // a word with four readings is searching for all four, and a row that said
@@ -248,7 +247,7 @@ function renderModeControl(body: HTMLElement, term: SearchTerm): void {
  * one) is put back rather than leaving the page disagreeing with the state.
  */
 function meaningSignature(term: SearchTerm): string {
-  if (!meaningsApply(term) || term.meanings.length < 2) return '';
+  if (effectiveMode(term) !== 'meanings' || term.meanings.length < 2) return '';
   return term.meanings.map((m) => m.keys[0]).join(',');
 }
 

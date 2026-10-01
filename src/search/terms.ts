@@ -7,7 +7,7 @@
 // shifts and the choice lands silently on a different word.
 
 import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
-import { versesForTerm } from '../search.ts';
+import { resultsForVerseSets, versesForTerm, type SearchResult } from '../search.ts';
 import { isHebrew, splitIntoWords } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -293,11 +293,6 @@ export function modesOffered(term: SearchTerm): SearchMode[] {
   return SEARCH_MODES.filter((mode) => mode !== 'meanings' || termIsHebrew(term));
 }
 
-/** Only a term in meanings mode consults the dictionary, and only Hebrew can be in it. */
-export function meaningsApply(term: SearchTerm): boolean {
-  return effectiveMode(term) === 'meanings';
-}
-
 /** Everything a term is matched on: terms with equal queries find the same verses. */
 export type TermQuery = { text: string; language: TextLanguage } & (
   | {
@@ -322,6 +317,11 @@ export function versesForQuery(query: TermQuery): Set<string> {
   return query.mode === 'meanings'
     ? versesFor(query.meaningKeys)
     : versesForTerm(query.text, query.language, query.mode);
+}
+
+/** The verses these terms find, each naming the terms that found it. */
+export function resultsForTerms(terms: SearchTerm[]): SearchResult[] {
+  return resultsForVerseSets(terms.map((term) => versesForQuery(termQuery(term))));
 }
 
 /**

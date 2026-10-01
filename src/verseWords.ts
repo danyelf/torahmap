@@ -4,7 +4,7 @@
 // dictionary index was built on. A click resolving a different word than
 // search would find is the failure this shares a rule to avoid.
 
-import { isSearchableWord, splitIntoWords, stripNikkud, type TextWord } from './hebrew.ts';
+import { isSearchableWord, splitIntoWords, type TextWord } from './hebrew.ts';
 
 /** {פ} and {ס}: paragraph markers Sefaria leaves in the text. Not words. */
 const SECTION_MARKER = /^\{[פס]\}$/;
@@ -21,15 +21,6 @@ export function verseWords(text: string): TextWord[] {
   return splitIntoWords(text).filter(
     ({ word }) => !isSectionMarker(word) && isSearchableWord(word),
   );
-}
-
-/**
- * A clicked word as a reader would type it: the letters as printed, final
- * forms and all, without points. What a click looks up and puts in the search
- * box.
- */
-export function printedForm(displayed: string): string {
-  return stripNikkud(displayed);
 }
 
 /**

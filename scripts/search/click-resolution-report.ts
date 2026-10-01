@@ -48,7 +48,8 @@ const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
 const { meaningsInVerse, setVerseOnScreen, spellingFor, wordIsNamed } =
   await import('../../src/search/dictionary.ts');
-const { verseWords, printedForm } = await import('../../src/verseWords.ts');
+const { verseWords } = await import('../../src/verseWords.ts');
+const { stripNikkud } = await import('../../src/hebrew.ts');
 const { tanakhKey } = await import('../../src/types.ts');
 
 interface Report {
@@ -89,7 +90,7 @@ function buildReport(
         setVerseOnScreen(verseKey, text.he);
 
         for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
-          const form = printedForm(word);
+          const form = stripNikkud(word);
           const offered = meaningsInVerse(form, verseKey, wordIndex);
           const n = offered.length;
           report.total++;

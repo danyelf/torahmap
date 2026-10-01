@@ -74,7 +74,6 @@ describe('the search and the highlighter agree', () => {
       book: 'Leviticus',
       chapter: 1,
       verse: 1,
-      language: 'he' as const,
       matchingTerms: [],
     };
     const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהוה', 'word')!;
@@ -86,7 +85,6 @@ describe('the search and the highlighter agree', () => {
       book: 'Leviticus',
       chapter: 1,
       verse: 1,
-      language: 'he' as const,
       matchingTerms: [],
     };
     const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהו', 'substring')!;

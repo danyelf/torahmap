@@ -160,8 +160,9 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * Given `wordIndex` — which of the verse's printed words it is, counting from
  * zero the way `verseWords` does — this is a lookup rather than a guess, and
  * answers with the words BHSA parsed there: one, or two for a ketiv read as
- * two (בגד, read בָּא גָד) or a word the page prints solid (הללויה). It needs the verse to be
- * the one `setVerseOnScreen` last named, and its parse to have arrived.
+ * two (בגד, read בָּא גָד) or a word the page prints solid (הללויה). It needs
+ * the verse to be the one `setVerseOnScreen` last named, and its parse to
+ * have arrived.
  *
  * Without that, the verse narrows the spelling instead of settling it. Hebrew
  * does not write most vowels, so half the words in the text could be several
@@ -354,8 +355,8 @@ interface VerseNames {
   named: Map<number, LexemeId[]> | null;
 }
 
-// Verses parsed since the parse arrived, by key and text: the one on screen and
-// those a results list quotes, which ask word after word of one verse.
+// Verses named, by key and text: the one on screen and those a results list
+// quotes, which ask word after word of one verse. Only once the parse is here.
 const namedVerses = new Map<string, VerseNames>();
 const NAMED_VERSES_KEPT = 100;
 
@@ -366,10 +367,8 @@ function verseNames(verseKey: string, hebrew: string): VerseNames {
 
   const words = verseWords(hebrew);
   const parsed = { words, named: namedWords(verseKey, hebrew, words) };
-  if (settled) {
-    if (namedVerses.size >= NAMED_VERSES_KEPT) namedVerses.clear();
-    namedVerses.set(id, parsed);
-  }
+  if (namedVerses.size >= NAMED_VERSES_KEPT) namedVerses.clear();
+  namedVerses.set(id, parsed);
   return parsed;
 }
 
@@ -506,13 +505,13 @@ function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>, words: TextWo
  */
 function namedAt(verseText: string, wordStart: number, verseKey?: string): LexemeId[] | null {
   const key = verseKey ?? (onScreen?.hebrew === verseText ? onScreen.verseKey : undefined);
-  if (key === undefined) return null;
+  if (key === undefined || !morphology) return null;
   return verseNames(key, verseText).named?.get(wordStart) ?? null;
 }
 
 /** The dictionary words of the nth printed word of the verse on screen, as BHSA parsed it. */
 function namedWord(verseKey: string, wordIndex: number): LexemeId[] | null {
-  if (onScreen?.verseKey !== verseKey) return null;
+  if (onScreen?.verseKey !== verseKey || !morphology) return null;
 
   const { words, named } = verseNames(verseKey, onScreen.hebrew);
   const word = words[wordIndex];

@@ -56,8 +56,9 @@ anything that wants the whole printed word back can rejoin them.
 ### Verses the page divides differently
 
 In a few dozen verses the Hebrew in `all-texts.json` divides into words
-differently from BHSA; the generator prints how many. Almost all are compound proper names: BHSA writes צוּרִי־שַׁדָּי with a
-maqaf where Sefaria writes צוּרִישַׁדָּי solid. In II Samuel 7:22 the two print
+differently from BHSA; the generator prints how many. Almost all are
+compound proper names: BHSA writes צוּרִי־שַׁדָּי with a maqaf where Sefaria
+writes צוּרִישַׁדָּי solid. In II Samuel 7:22 the two print
 different words (אֲדֹנָי יְהוִה against יְהֹוָה אֱלֹהִים), and Joshua 21:36 and
 21:37 have no Hebrew in Sefaria at all.
 

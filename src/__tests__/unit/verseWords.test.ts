@@ -5,7 +5,8 @@
 // up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { verseWords, printedForm } from '../../verseWords';
+import { verseWords } from '../../verseWords';
+import { stripNikkud } from '../../hebrew';
 
 const words = (text: string) => verseWords(text).map((w) => w.word);
 
@@ -50,7 +51,7 @@ describe('the words of a verse', () => {
 
 describe('the spelling a click looks up and puts in the search box', () => {
   it('is the word as printed, final letters and all, without points or brackets', () => {
-    expect(verseWords('(הוצא) [הַיְצֵא] [בָּא הָאָרֶץ]').map((w) => printedForm(w.word))).toEqual([
+    expect(verseWords('(הוצא) [הַיְצֵא] [בָּא הָאָרֶץ]').map((w) => stripNikkud(w.word))).toEqual([
       'הוצא',
       'היצא',
       'בא',

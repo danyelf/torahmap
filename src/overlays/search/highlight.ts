@@ -4,7 +4,12 @@
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
 import { ENGLISH, HEBREW, tanakhKey, type TextLanguage } from '../../types.ts';
-import { mapStrippedToOriginal, onlySeparators, splitIntoWords } from '../../hebrew.ts';
+import {
+  mapStrippedToOriginal,
+  onlySeparators,
+  splitIntoWords,
+  stripNikkud,
+} from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
 import { wordMatches } from '../../search/dictionary.ts';
 import { displayedVerse, quoteVerse, type SearchResult } from '../../search.ts';
@@ -119,11 +124,14 @@ export function excerpt(
   const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, verseKey);
   if (!first) return quoteVerse(text, null);
 
-  // A phrase matched word by word, as בית אל is in meanings mode, is one mark;
-  // a word repeated, קדוש קדוש קדוש, is not.
+  // Meanings mode marks word by word, so a phrase it finds, בית אל, is joined
+  // into one mark; a word repeated, קדוש קדוש קדוש, is not. A word's points
+  // lie after its mark, so they do not part it from the next.
   let end = first.end;
-  for (const next of rest.slice(0, splitIntoWords(term.text).length - 1)) {
-    if (!onlySeparators(text, end, next.start)) break;
+  const joinable = effectiveMode(term) === 'meanings' ? splitIntoWords(term.text).length - 1 : 0;
+  for (const next of rest.slice(0, joinable)) {
+    const between = stripNikkud(text.slice(end, next.start));
+    if (!onlySeparators(between, 0, between.length)) break;
     end = next.end;
   }
   return quoteVerse(text, { start: first.start, end });

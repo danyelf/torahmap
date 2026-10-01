@@ -5,7 +5,7 @@ import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
 import { loadTanakhStructure, loadAllVerseTexts } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
-import { printedForm } from './verseWords.ts';
+import { stripNikkud } from './hebrew.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { initBookData } from './constants/books.ts';
@@ -1159,7 +1159,8 @@ async function main(): Promise<void> {
   }
 
   setWordClickHandler((click) => {
-    const word = printedForm(click.text);
+    // As a reader would type it: the letters as printed, final forms and all.
+    const word = stripNikkud(click.text);
     const meanings = meaningsInVerse(
       word,
       tanakhKey(click.book, click.chapter, click.verse),

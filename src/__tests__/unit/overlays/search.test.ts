@@ -832,6 +832,19 @@ describe('Search Overlay', () => {
       expect(results.length).toBeLessThanOrEqual(10);
     });
 
+    it('quotes a Hebrew row right to left in a verse an English term found first', () => {
+      const container = render();
+      type(container, 'God, אלהים');
+      container
+        .querySelectorAll<HTMLElement>('.term-row')[1]
+        .querySelector<HTMLElement>('.term-summary')!
+        .click();
+
+      const snippet = container.querySelector('.search-result .snippet')!;
+      expect(snippet.textContent).toMatch(/[א-ת]/);
+      expect(snippet.classList.contains('rtl')).toBe(true);
+    });
+
     it('clears previous results on new search', () => {
       const container = render();
 

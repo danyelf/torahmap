@@ -53,7 +53,6 @@ describe("a result's excerpt", () => {
     book: 'Genesis',
     chapter: 1,
     verse: 1,
-    language: 'he',
     matchingTerms: [{ termIndex: 0 }],
   };
 

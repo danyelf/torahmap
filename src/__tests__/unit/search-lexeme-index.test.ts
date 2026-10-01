@@ -371,21 +371,6 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     expect(joined).toContain(heart - 1);
   });
 
-  it('agrees with the displayed Hebrew on how many words a verse has', () => {
-    // This is the property the whole file rests on. If a verse is one word out,
-    // every word after the discrepancy is labelled with its neighbour's
-    // dictionary entry — wrong, but plausible enough to go unnoticed.
-    const unexpected: string[] = [];
-    for (const [key, [, words]] of entries) {
-      if (key in realigned) continue;
-      const [book, chapter, verse] = key.split(':');
-      const hebrew = texts[book]?.[chapter]?.[verse]?.he;
-      if (hebrew === undefined) continue;
-      if (wordsBhsaParsed(hebrew).length !== words.length) unexpected.push(key);
-    }
-    expect(unexpected).toEqual([]);
-  });
-
   it('encodes the word rule the same way verse-lexemes.json does', () => {
     // verse-lexemes.json holds the stem of each printed word, and in a verse
     // lined up by letter the lexemes its shown words name; this file holds

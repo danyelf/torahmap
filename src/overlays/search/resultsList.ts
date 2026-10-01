@@ -3,10 +3,9 @@
 // Told what to show on every pass, so it holds no opinion about what the search
 // found — only how far down its own list it has drawn.
 import type { SearchResult } from '../../search.ts';
-import { colorIndexAt, type SearchTerm } from '../../search/terms.ts';
+import { colorIndexAt, termIsHebrew, type SearchTerm } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { excerpt, markRange } from './highlight.ts';
-import { HEBREW } from '../../types.ts';
 import { verseRef } from '@torahmap/link';
 
 /** Everything one pass of the list needs to know. */
@@ -53,10 +52,10 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
   const firstMatch =
     result.matchingTerms.find((m) => m.termIndex === view.focus) ?? result.matchingTerms[0];
 
-  const snippetDiv = document.createElement('div');
-  snippetDiv.className = `snippet ${result.language === HEBREW ? 'rtl' : ''}`;
-
   const term = view.terms[firstMatch.termIndex];
+  const snippetDiv = document.createElement('div');
+  snippetDiv.className = `snippet ${term && termIsHebrew(term) ? 'rtl' : ''}`;
+
   const { snippet, matchStart, matchEnd } = (term && excerpt(result, term)) ?? {
     snippet: verseRef(result),
     matchStart: 0,

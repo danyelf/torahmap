@@ -10,5 +10,5 @@ export function excerptOf(
 ): ReturnType<typeof excerpt> {
   const [added] = addTerm([], text);
   const [term] = setMode([added], added.id, mode);
-  return excerpt({ language: 'he', matchingTerms: [], ...result }, term);
+  return excerpt({ matchingTerms: [], ...result }, term);
 }

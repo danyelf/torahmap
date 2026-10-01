@@ -23,7 +23,6 @@ export interface SearchResult {
   book: string;
   chapter: number;
   verse: number;
-  language: TextLanguage;
   matchingTerms: TermMatch[];
 }
 
@@ -384,10 +383,7 @@ export function versesForTerm(text: string, language: TextLanguage, mode: MatchM
  * A term with no hits simply contributes nothing; term indices are positions
  * in the caller's list, so the gap keeps every other term's colour in place.
  */
-export function resultsForVerseSets(
-  termVerseKeys: Array<Set<string>>,
-  termLanguages?: TextLanguage[],
-): SearchResult[] {
+export function resultsForVerseSets(termVerseKeys: Array<Set<string>>): SearchResult[] {
   const resultMap = new Map<string, SearchResult>();
 
   for (let termIndex = 0; termIndex < termVerseKeys.length; termIndex++) {
@@ -401,9 +397,6 @@ export function resultsForVerseSets(
           book: entry.book,
           chapter: entry.chapter,
           verse: entry.verse,
-          // The first term to claim a verse decides which text its snippet is
-          // drawn from, so an English term shows English.
-          language: termLanguages?.[termIndex] ?? HEBREW,
           matchingTerms: [],
         };
         resultMap.set(verseKey, result);
