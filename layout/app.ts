@@ -141,7 +141,7 @@ export const STATES: State[] = [
     name: 'explore-word-menu',
     link: 'overlay=commentary&verse=Genesis.30.11',
     then: async (page) => {
-      const word = page.locator('#verse-popup .verse-word', { hasText: '(בגד)' });
+      const word = page.locator('#verse-popup .verse-word', { hasText: 'בגד' });
       await expect(async () => {
         // A press outside the menu closes it; the click opens it again.
         await word.click();
