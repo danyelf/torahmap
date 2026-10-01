@@ -67,7 +67,7 @@ export function pictureForStop(
     loaded,
   );
   const picture = fillDefaultColors(toolsPicture(tools, verses, hovered));
-  // A stop drawn while its overlay's data is missing is drawn again once it arrives.
+  // A stop drawn without its overlay's data is not kept.
   if (!byHover && (!overlay || tools.overlay)) cache.set(key, picture);
   return picture;
 }

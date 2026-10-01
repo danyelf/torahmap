@@ -1,9 +1,13 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dataFor, filesFor, loadFiles, overlayFiles } from '../../dataFiles';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { dataFor, filesFor, loadFiles, loadNamedFiles, overlayFiles } from '../../dataFiles';
+import { reportError } from '../../analytics';
 import { mockFetch, mockFetchStatus } from '../helpers/mocks';
 import { testOverlay } from '../helpers/fixtures';
 
+vi.mock('../../analytics', () => ({ reportError: vi.fn() }));
+
 const realFetch = globalThis.fetch;
+beforeEach(() => vi.mocked(reportError).mockClear());
 afterEach(() => {
   globalThis.fetch = realFetch;
   vi.restoreAllMocks();
@@ -17,21 +21,42 @@ describe('loadFiles', () => {
     expect(loaded.get('shared.json')).toEqual({ a: 1 });
   });
 
-  it('leaves a failed download missing, warns once, and keeps the others', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('leaves a failed download missing, reports it once with its path, and keeps the others', async () => {
     mockFetch({ '/data/good.json': { ok: true }, '/data/bad.json': mockFetchStatus(404) });
     const loaded = await loadFiles(['good.json', 'bad.json']);
     expect(loaded.has('good.json')).toBe(true);
     expect(loaded.has('bad.json')).toBe(false);
-    expect(warn).toHaveBeenCalledTimes(1);
-    expect(String(warn.mock.calls[0][0])).toContain('bad.json');
+    expect(reportError).toHaveBeenCalledTimes(1);
+    expect(reportError).toHaveBeenCalledWith('loadFiles', 404, expect.stringContaining('bad.json'));
   });
 
-  it('treats a download that cannot be read as missing', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    globalThis.fetch = vi.fn(() => Promise.reject(new Error('offline'))) as typeof fetch;
-    const loaded = await loadFiles(['x.json']);
-    expect(loaded.has('x.json')).toBe(false);
+  it('reports a download that is refused or cannot be read, and leaves it missing', async () => {
+    const offline = new Error('offline');
+    globalThis.fetch = vi.fn(() => Promise.reject(offline)) as typeof fetch;
+    expect((await loadFiles(['x.json'])).has('x.json')).toBe(false);
+    expect(reportError).toHaveBeenCalledWith(
+      'loadFiles',
+      offline,
+      expect.stringContaining('x.json'),
+    );
+
+    const garbled = new SyntaxError('Unexpected token');
+    globalThis.fetch = vi.fn(() =>
+      Promise.resolve({ ok: true, status: 200, json: () => Promise.reject(garbled) } as Response),
+    ) as typeof fetch;
+    expect((await loadFiles(['y.json'])).has('y.json')).toBe(false);
+    expect(reportError).toHaveBeenCalledWith(
+      'loadFiles',
+      garbled,
+      expect.stringContaining('y.json'),
+    );
+  });
+});
+
+describe('loadNamedFiles', () => {
+  it('rejects, naming the path, when a file fails', async () => {
+    mockFetch({ '/data/good.json': { ok: true }, '/data/bad.json': mockFetchStatus(404) });
+    await expect(loadNamedFiles({ a: 'good.json', b: 'bad.json' })).rejects.toThrow('bad.json');
   });
 });
 
@@ -77,7 +102,6 @@ describe('dataFor', () => {
   });
 
   it('gives null while a file is missing, without holding back another overlay', async () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const other = testOverlay({
       id: 'o',
       name: 'O',

@@ -94,7 +94,7 @@ interface OverlayMembers<T, S, D> {
   // colours depend on it.
   colorsFor(items: T[], settings: S, hovered: T | null, data: D): (Color | Color[] | null)[];
 
-  // The panel may be drawn before the overlay's data is in; then data is null.
+  // The panel may be drawn without the overlay's data; then data is null.
   //
   // Draw the controls for `settings`. The app calls this again with the same
   // container after a change, so bring what is there up to date rather than

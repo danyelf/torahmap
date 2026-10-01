@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { registerAllOverlays } from '../../../overlays/index';
 import {
   verseLengthOverlay as overlay,
   type VerseLengthData,

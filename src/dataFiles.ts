@@ -1,12 +1,14 @@
-// The one place a data file is downloaded, parsed and its failure handled.
+// The loader for the overlays' data files and main's own two (structure and
+// texts). Search and the Talmud page still load theirs themselves.
 // Paths are under public/data/; what a file means belongs to whoever names it.
 import { fetchData } from './constants.ts';
+import { reportError } from './analytics.ts';
 import type { Overlay } from './overlays/types.ts';
 
 /** What has arrived, by path. A file that failed is absent. */
 export type Loaded = ReadonlyMap<string, unknown>;
 
-/** Download each path once. A failure is warned about and leaves that path missing. */
+/** Download each path once. A failure is reported and leaves that path missing. */
 export async function loadFiles(paths: Iterable<string>): Promise<Loaded> {
   const unique = [...new Set(paths)];
   const contents = await Promise.all(unique.map(loadFile));
@@ -19,28 +21,37 @@ async function loadFile(path: string): Promise<unknown> {
   try {
     const response = await fetchData(path);
     if (!response.ok) {
-      console.warn(`Could not load ${path}: ${response.status}`);
+      reportError('loadFiles', response.status, `Failed to load ${path}`);
       return undefined;
     }
     return await response.json();
   } catch (e) {
-    console.warn(`Could not load ${path}:`, e);
+    reportError('loadFiles', e, `Failed to load ${path}`);
     return undefined;
   }
 }
 
-/** Each named file's contents under its name, or null until every one is in. */
+/** Each named file's contents under its name, or null while any is missing. */
 export function filesFor<D>(files: Readonly<Record<string, string>>, loaded: Loaded): D | null {
   const named = Object.entries(files);
   if (!named.every(([, path]) => loaded.has(path))) return null;
   return Object.fromEntries(named.map(([name, path]) => [name, loaded.get(path)])) as D;
 }
 
+/** Load the named files and give them under their names; throw naming any that is missing. */
+export async function loadNamedFiles<D>(files: Readonly<Record<string, string>>): Promise<D> {
+  const paths = Object.values(files);
+  const loaded = await loadFiles(paths);
+  const data = filesFor<D>(files, loaded);
+  if (!data) throw new Error(`Could not load ${paths.filter((p) => !loaded.has(p)).join(', ')}`);
+  return data;
+}
+
 // Per loaded value, so that the same files give each overlay the same object.
 const given = new WeakMap<Loaded, Map<object, unknown>>();
 
 /**
- * An overlay's files under its own names, or null until every one is in. The
+ * An overlay's files under its own names, or null while any is missing. The
  * same loaded value gives the same object, so what an overlay keeps per data
  * value is found again. An overlay that names no files gets undefined.
  */

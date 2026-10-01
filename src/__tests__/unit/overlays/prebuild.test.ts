@@ -41,4 +41,27 @@ describe('prebuildAll', () => {
     idle.next();
     expect(missing.prebuild).not.toHaveBeenCalled();
   });
+
+  it('goes on to the next overlay when one prebuild throws', () => {
+    const broken = withPrebuild(
+      'x',
+      'x.json',
+      vi.fn(() => {
+        throw new Error('broken');
+      }),
+    );
+    const after = withPrebuild('y', 'y.json');
+    const idle = turns();
+    prebuildAll(
+      [broken, after],
+      new Map([
+        ['x.json', 1],
+        ['y.json', 2],
+      ]),
+      idle.schedule,
+    );
+    expect(() => idle.next()).toThrow('broken');
+    idle.next();
+    expect(after.prebuild).toHaveBeenCalledWith({ file: 2 });
+  });
 });

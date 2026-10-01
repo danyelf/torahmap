@@ -232,3 +232,4 @@ test used `configureVerseLength`.
 - **2026-10-01 (Task 10)** `prefetchMorphology` keeps its name and its doc comment
   about the memoised fetch; only the scheduling moves to `whenIdle`, which the
   prebuild shares.
+- **2026-10-01 (fix wave 1)** `loadNamedFiles` is added to `src/dataFiles.ts` and used by the print script (the haftarah sheet loads only the mappings file, and takes the structure it is handed) and by `story-file.test.ts`. `loadHaftarahData` in the print script now takes the structure. The legend no longer falls back for a mappings file lacking a list: both lists are required by the type, and the earlier entry saying the legend keeps its fallback no longer holds. `renderLegend`/`renderControls` keep their `if (!data)` guards.

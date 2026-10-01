@@ -440,7 +440,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
     return searchColorAt(verse, searchFor(settings));
   },
 
-  colorsFor(items, settings, _hovered, _data) {
+  colorsFor(items, settings) {
     const search = searchFor(settings);
     return items.map((item) => searchColorAt(item, search));
   },
@@ -476,7 +476,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
     return params;
   },
 
-  renderControls(container, settings, onChange, _data) {
+  renderControls(container, settings, onChange) {
     const previous = shown;
     shown = settings;
     searchOnMap(settings);

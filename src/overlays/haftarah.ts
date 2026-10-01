@@ -280,9 +280,8 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
       container.innerHTML = '';
       return;
     }
-    // A malformed file can lack either list.
-    const parshaCount = data.mappings.parshiot?.length || 54;
-    const occasionCount = data.mappings.specialOccasions?.length || 0;
+    const parshaCount = data.mappings.parshiot.length;
+    const occasionCount = data.mappings.specialOccasions.length;
 
     const totalItems = deriveHaftarah(data, settings.custom).items.length;
     const gradient = buildLegendGradient(10, (i) =>

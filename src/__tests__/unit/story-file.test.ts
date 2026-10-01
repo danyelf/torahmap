@@ -21,7 +21,7 @@ import {
   HAFTARAH_FILES,
   type HaftarahData,
 } from '../../overlays/haftarah/readings';
-import { filesFor, loadFiles } from '../../dataFiles';
+import { loadNamedFiles } from '../../dataFiles';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
@@ -30,10 +30,7 @@ registerAllOverlays();
 
 let readings: HaftarahData;
 beforeAll(async () => {
-  readings = filesFor<HaftarahData>(
-    HAFTARAH_FILES,
-    await loadFiles(Object.values(HAFTARAH_FILES)),
-  )!;
+  readings = await loadNamedFiles<HaftarahData>(HAFTARAH_FILES);
 });
 
 /**

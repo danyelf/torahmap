@@ -12,9 +12,12 @@ export function prebuildAll(
   const next = (): void => {
     const overlay = waiting.shift();
     if (!overlay) return;
-    const data = dataFor(overlay, loaded);
-    if (overlay.prebuild && data !== null) overlay.prebuild(data);
-    schedule(next);
+    try {
+      const data = dataFor(overlay, loaded);
+      if (overlay.prebuild && data !== null) overlay.prebuild(data);
+    } finally {
+      schedule(next);
+    }
   };
   schedule(next);
 }

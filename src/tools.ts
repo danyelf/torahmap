@@ -6,7 +6,7 @@ import { dataFor, type Loaded } from './dataFiles.ts';
 /**
  * The tools a view shows: the overlay, if one is on, and the search, while it
  * has a word to search on — each with its data, and left out while a file it
- * reads has not arrived.
+ * reads is missing.
  */
 export function toolsShown(
   overlay: Overlay | null,

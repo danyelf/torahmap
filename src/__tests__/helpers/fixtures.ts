@@ -2,7 +2,8 @@
 import type { TanakhLayout, TorahData } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import type { CommentaryCounts } from '../../overlays/commentary';
-import type { HaftarahMappings } from '../../overlays/haftarah/readings';
+import { HAFTARAH_FILES, type HaftarahMappings } from '../../overlays/haftarah/readings';
+import { commentaryOverlay } from '../../overlays/commentary';
 import type { Loaded } from '../../dataFiles';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 
@@ -237,9 +238,9 @@ export const SAMPLE_STRUCTURE = {
 
 /** The sample files, under the paths the overlays name. */
 export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
-  ['overlays/commentary/counts.json', SAMPLE_COMMENTARY_DATA],
+  [commentaryOverlay.data.counts, SAMPLE_COMMENTARY_DATA],
   [TEXTS_FILE, SAMPLE_VERSE_TEXTS],
-  ['overlays/haftarah/mappings.json', SAMPLE_HAFTARAH_DATA],
+  [HAFTARAH_FILES.mappings, SAMPLE_HAFTARAH_DATA],
   [STRUCTURE_FILE, SAMPLE_STRUCTURE],
 ]);
 

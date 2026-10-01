@@ -173,14 +173,14 @@ describe('errors', () => {
   afterEach(() => consoleError.mockRestore());
 
   it('logs a handled error and sends it with where it came from', () => {
-    reportError('loadJson', new TypeError('Failed to fetch'));
+    reportError('loadFiles', new TypeError('Failed to fetch'));
     expect(consoleError).toHaveBeenCalled();
     expect(sent()).toEqual([
       {
         event: 'error',
         visit: 'v1',
         mode: 'reader',
-        fields: { source: 'loadJson', message: 'TypeError: Failed to fetch' },
+        fields: { source: 'loadFiles', message: 'TypeError: Failed to fetch' },
       },
     ]);
   });
@@ -205,9 +205,9 @@ describe('errors', () => {
 
   it('logs the error itself after its context, and sends both as text', () => {
     const error = new SyntaxError('Unexpected token');
-    reportError('loadJson', error, 'Failed to load the commentary counts');
+    reportError('loadFiles', error, 'Failed to load the commentary counts');
     expect(consoleError).toHaveBeenCalledWith(
-      'loadJson: Failed to load the commentary counts:',
+      'loadFiles: Failed to load the commentary counts:',
       error,
     );
     expect(sent()[0].fields.message).toBe(

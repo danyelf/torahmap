@@ -127,7 +127,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
     return { category: settings.category };
   },
 
-  renderControls(container, settings, onChange, _data) {
+  renderControls(container, settings, onChange) {
     let select = container.querySelector<HTMLSelectElement>('#category-select');
     if (!select) {
       const wrapper = document.createElement('div');

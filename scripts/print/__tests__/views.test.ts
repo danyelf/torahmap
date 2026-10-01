@@ -27,14 +27,14 @@ describe('haftarahSheet', () => {
 
   it('lists every reading in the key exactly once, in the colour it has on the map', async () => {
     const rows = sheet.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
-    const derived = deriveHaftarah(await loadHaftarahData(), 'ashkenazi');
+    const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
     expect(rows.map((r) => r.en).sort()).toEqual(derived.items.map((i) => i.name).sort());
     const onMap = new Set(sheet.verses.flatMap((v) => v.fills));
     for (const row of rows) expect(onMap.has(row.swatch)).toBe(true);
   });
 
   it('refuses a kind of occasion the key has no column for', async () => {
-    const derived = deriveHaftarah(await loadHaftarahData(), 'ashkenazi');
+    const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
     const stray = { ...derived.items.at(-1)!, name: 'Stray', category: 'unheard-of' };
     const items = [...derived.items, stray];
     expect(() =>

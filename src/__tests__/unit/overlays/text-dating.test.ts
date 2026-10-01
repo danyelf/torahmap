@@ -1,13 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { textDatingOverlay as overlay, getVerseDatingInfo } from '../../../overlays/text-dating';
 
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { Color } from '../../../overlays/types';
 import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
-import type { TextDatingData } from '../../../overlays/text-dating';
-
 // Off the menu for now, so it is not in the registry.
+import {
+  textDatingOverlay as overlay,
+  getVerseDatingInfo,
+  type TextDatingData,
+} from '../../../overlays/text-dating';
 
 describe('Text Dating Overlay', () => {
   let testData: any;

@@ -3,7 +3,8 @@
 
 import { readFileSync } from 'node:fs';
 import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '../../src/geometry.ts';
-import { filesFor, loadFiles } from '../../src/dataFiles.ts';
+import { loadNamedFiles } from '../../src/dataFiles.ts';
+import { STRUCTURE_FILE } from '../../src/verseTexts.ts';
 import {
   deriveHaftarah,
   HAFTARAH_FILES,
@@ -50,7 +51,7 @@ const SECTION_NAMES = {
 } as const;
 
 export function loadStructure(): TorahData {
-  return JSON.parse(readFileSync('public/data/tanakh-structure.json', 'utf8'));
+  return JSON.parse(readFileSync(`public/data/${STRUCTURE_FILE}`, 'utf8'));
 }
 
 function titles(verses: TanakhLayout[], books: Book[]) {
@@ -179,17 +180,16 @@ export function haftarahKey(derived: HaftarahDerivation, colours: string[], tora
   };
 }
 
-/** The haftarah overlay's files, loaded as the site loads them. */
-export async function loadHaftarahData(): Promise<HaftarahData> {
-  const paths = Object.values(HAFTARAH_FILES);
-  const loaded = await loadFiles(paths);
-  const data = filesFor<HaftarahData>(HAFTARAH_FILES, loaded);
-  if (!data) throw new Error(`Could not load ${paths.filter((p) => !loaded.has(p)).join(', ')}`);
-  return data;
+/** The haftarah overlay's data: its mappings file, loaded as the site loads it, and the structure. */
+export async function loadHaftarahData(structure: TorahData): Promise<HaftarahData> {
+  const { mappings } = await loadNamedFiles<{ mappings: HaftarahData['mappings'] }>({
+    mappings: HAFTARAH_FILES.mappings,
+  });
+  return { mappings, structure };
 }
 
 export async function haftarahSheet(structure: TorahData, marks: boolean): Promise<SheetInput> {
-  const derived = deriveHaftarah(await loadHaftarahData(), 'ashkenazi');
+  const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
   const colours = readingColours(derived.items.length);
   const colourOf = (item: HaftarahItem) => colours[derived.items.indexOf(item)];
   // As colorAt in src/overlays/haftarah.ts: a Torah verse shows its portion,
