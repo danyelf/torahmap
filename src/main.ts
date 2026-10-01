@@ -1854,14 +1854,15 @@ async function main(): Promise<void> {
     downloads.pending.delete(path);
     const before = loaded;
     loaded = new Map(before).set(path, content);
+    // Before the redraws, so one that throws cannot hold back load timing.
+    prebuildCompleted(allOverlays, before, loaded, prebuilt);
+    const search = dataFor(searchTool, loaded);
+    if (search !== dataFor(searchTool, before)) searchRecorder.dataChanged(search);
     const stale = staleAfterLanding(before, loaded, landingView());
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) overlayChanged(false);
     if (stale.searchPanel) searchChanged(false);
     if (stale.popup) refreshVersePopup();
-    const search = dataFor(searchTool, loaded);
-    if (search !== dataFor(searchTool, before)) searchRecorder.dataChanged(search);
-    prebuildCompleted(allOverlays, before, loaded, prebuilt);
   }
 
   function fileFailed(path: string): void {

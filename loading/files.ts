@@ -5,6 +5,7 @@ import { HAFTARAH_FILES } from '../src/overlays/haftarah/readings.ts';
 
 export { TEXTS_FILE };
 export const DICTIONARY = Object.values(DICTIONARY_FILES);
+export const LEXICON = DICTIONARY_FILES.lexicon;
 export const PARSE = SEARCH_FILES.parse.optional;
 // As src/overlays/commentary.ts names it; that module imports CSS, which
 // Playwright cannot load.

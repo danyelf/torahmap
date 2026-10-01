@@ -292,3 +292,9 @@ Decisions made while implementing step 3, newest last.
 - **2026-10-01 (Task 7 review)** `load_timing` is sent with `search_ready` 0
   when search's prebuild throws, rather than held back for good:
   `prebuildCompleted` tells its caller whether each overlay built.
+- **2026-10-01 (Task 7 review)** A throw while handling one landed or failed
+  file is reported (`reportError('fileLanded', …)`, with the path) and the
+  downloads go on: later stages, `data-loaded` and `load_timing` all still
+  happen. `downloadFiles` catches it per file. `fileLanded` schedules the
+  prebuild and hands search's data to the recorder before it redraws, so a
+  redraw that throws holds neither back.

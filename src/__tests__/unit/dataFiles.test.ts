@@ -82,6 +82,36 @@ describe('downloadFiles', () => {
     expect(landed).toEqual([['a.json', { a: 1 }]]);
     expect(failed).toEqual(['bad.json']);
   });
+
+  it('reports a throw while handling one file, with its path, and hands over the rest', async () => {
+    mockFetch({
+      '/data/a.json': 1,
+      '/data/b.json': 2,
+      '/data/bad.json': mockFetchStatus(404),
+    });
+    const broken = new Error('redraw');
+    const landed: string[] = [];
+    await downloadFiles(['a.json', 'b.json', 'bad.json'], {
+      landed: (path) => {
+        if (path === 'a.json') throw broken;
+        landed.push(path);
+      },
+      failed: () => {
+        throw broken;
+      },
+    });
+    expect(landed).toEqual(['b.json']);
+    expect(reportError).toHaveBeenCalledWith(
+      'fileLanded',
+      broken,
+      expect.stringContaining('a.json'),
+    );
+    expect(reportError).toHaveBeenCalledWith(
+      'fileLanded',
+      broken,
+      expect.stringContaining('bad.json'),
+    );
+  });
 });
 
 describe('loadNamedFiles', () => {

@@ -11,7 +11,8 @@ export type Loaded = ReadonlyMap<string, unknown>;
 /**
  * Download each path once, handing each to `landed` as it arrives, or to
  * `failed` once its failure is reported. Resolves when every path has done one
- * or the other.
+ * or the other. A throw while handling one file is reported, and the others
+ * are still handed over.
  */
 export async function downloadFiles(
   paths: Iterable<string>,
@@ -20,8 +21,12 @@ export async function downloadFiles(
   await Promise.all(
     [...new Set(paths)].map(async (path) => {
       const content = await loadFile(path);
-      if (content === undefined) on.failed(path);
-      else on.landed(path, content);
+      try {
+        if (content === undefined) on.failed(path);
+        else on.landed(path, content);
+      } catch (e) {
+        reportError('fileLanded', e, `Handling ${path}`);
+      }
     }),
   );
 }

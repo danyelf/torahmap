@@ -113,6 +113,15 @@ interface Sent {
   fields: Record<string, unknown>;
 }
 
+/** The fields of every load_timing event sent so far. */
+export async function sentLoadTiming(page: Page): Promise<Record<string, unknown>[]> {
+  return page.evaluate(() =>
+    ((window as unknown as { sent?: Sent[] }).sent ?? [])
+      .filter((e) => e.event === 'load_timing')
+      .map((e) => e.fields),
+  );
+}
+
 /** The term of every search recorded so far, in order. */
 export async function sentSearches(page: Page): Promise<unknown[]> {
   return page.evaluate(() =>

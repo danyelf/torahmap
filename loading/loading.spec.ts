@@ -3,8 +3,8 @@
 // the case sets rather than a race it hopes to win.
 import { expect, test } from '@playwright/test';
 import { viaMenu } from '../layout/app.ts';
-import { collectErrors, mapReady } from '../layout/page.ts';
-import { COMMENTARY, DICTIONARY, EVERYTHING, TEXTS_FILE } from './files.ts';
+import { collectErrors, firstFrame, mapReady } from '../layout/page.ts';
+import { COMMENTARY, DICTIONARY, EVERYTHING, LEXICON, PARSE, TEXTS_FILE } from './files.ts';
 import {
   expectPlainMap,
   fail,
@@ -12,6 +12,7 @@ import {
   open,
   param,
   recordEvents,
+  sentLoadTiming,
   sentSearches,
   stillShot,
   throttle,
@@ -234,6 +235,38 @@ test('a linked search is never recorded; a word the reader adds is', async ({ pa
   await mapReady(page);
   expect(await sentSearches(page)).toEqual(['dark']);
   expect(errors).toEqual([]);
+});
+
+test('a file that breaks its redraw is reported, and the rest still load', async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== 'desktop', 'what loads does not depend on the screen');
+  await throttle(page);
+  let release!: () => void;
+  const released = new Promise<void>((resolve) => (release = resolve));
+  // A lexicon with no lexemes: search's panel throws building its dictionary.
+  await page.route(`**/data/${LEXICON}`, async (route) => {
+    await released;
+    await route.fulfill({ contentType: 'application/json', body: '{}' }).catch(() => {});
+  });
+  const pageErrors = collectErrors(page, { console: false });
+  const reported: string[] = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error' && m.text().startsWith('fileLanded:')) reported.push(m.text());
+  });
+  const parseLanded = page.waitForResponse(`**/data/${PARSE}`, { timeout: 120_000 });
+  await page.goto('/?overlay=haftarah');
+  await firstFrame(page, 90_000);
+  await recordEvents(page);
+  release();
+  await expect(page.locator('html')).toHaveAttribute('data-loaded');
+  // The per-word parse is the last stage.
+  expect((await parseLanded).ok()).toBe(true);
+  expect(reported).toHaveLength(1);
+  await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
+  expect((await sentLoadTiming(page))[0].search_ready).toBe(0);
+  // Search's idle prebuild throws on the same lexicon, uncaught by design.
+  expect(pageErrors.length).toBeLessThanOrEqual(1);
 });
 
 test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }, info) => {

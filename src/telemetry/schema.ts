@@ -108,7 +108,7 @@ export const MAX_BLOB_CHARS = 100;
 
 /** The source column of error and worker_error; errors.sql groups by it. */
 export type ErrorSource =
-  'main' | 'layout' | 'loadFiles' | 'uncaught' | 'unhandled_rejection' | 'linkPage';
+  'main' | 'layout' | 'loadFiles' | 'fileLanded' | 'uncaught' | 'unhandled_rejection' | 'linkPage';
 
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
