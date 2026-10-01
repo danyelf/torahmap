@@ -9,7 +9,7 @@ import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { searchTool } from '../overlays/search/index.ts';
+import { isSearching, searchTool } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';
 import type { Loaded } from '../dataFiles.ts';
 
@@ -42,13 +42,24 @@ function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
   return `${overlayKey}#${searchKey}`;
 }
 
+function overlayOf(stop: StoryStop): Overlay | null {
+  return (stop.overlay && getOverlay(stop.overlay)) || null;
+}
+
+/** The tools a stop shows: its overlay, and search when the stop has a word to search. */
+export function stopTools(stop: StoryStop): Overlay[] {
+  const overlay = overlayOf(stop);
+  const searches = isSearching(settingsFromLink(searchTool, stop.searchParams ?? {}));
+  return [...(overlay ? [overlay] : []), ...(searches ? [searchTool] : [])];
+}
+
 export function pictureForStop(
   stop: ResolvedStoryStop,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
   loaded: Loaded,
 ): Picture {
-  const overlay = (stop.overlay && getOverlay(stop.overlay)) || null;
+  const overlay = overlayOf(stop);
   const byHover = !!(overlay?.hoverChangesColors && hovered);
 
   let byLoaded = picturesCache.get(verses);

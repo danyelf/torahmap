@@ -271,3 +271,8 @@ Decisions made while implementing step 3, newest last.
   search to be in, with the overlay row still loading, before it takes the
   picture to compare against; otherwise search landing alone would change the
   map and pass the case with commentary never coloured.
+- **2026-10-01 (Task 4)** The downloads test takes `HAFTARAH_FILES` from
+  `src/overlays/haftarah/readings.ts`, where it lives; `haftarah.ts` imports
+  it without exporting it. The `stopTools` test helper defaults `overlay` to
+  `null`, since `ResolvedStoryStop` requires it and that test folder is
+  typechecked.
