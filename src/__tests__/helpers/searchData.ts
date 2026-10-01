@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildDictionary, type Dictionary, type TextIndex } from '../../search';
+import { buildDictionary, type BookOrder, type Dictionary, type TextIndex } from '../../search';
 import {
   DICTIONARY_FILES,
   dictionaryOf,
@@ -13,6 +13,7 @@ import {
   type SearchData,
 } from '../../search/data';
 import type { Parse } from '../../search/dictionary';
+import { memoByValue } from '../../utils/memo';
 import type { VerseTexts } from '../../verseTexts';
 import { EMPTY_DICTIONARY_FILES } from './fixtures';
 
@@ -23,9 +24,20 @@ const read = <T>(path: string): T => JSON.parse(readFileSync(join(dataDir, path)
 
 export const EMPTY_DICTIONARY: Dictionary = buildDictionary(EMPTY_DICTIONARY_FILES);
 
-/** Search's files: these texts, with the files given or a dictionary that knows no word. */
+/** The books in the order the texts hold them, as a structure file would list them. */
+export const inTextsOrder = memoByValue((texts: VerseTexts): BookOrder => ({
+  books: Object.keys(texts).map((name) => ({ name })),
+}));
+
+/** Search's files: these texts in their own order, with the files given or a dictionary that knows no word. */
 export function searchDataFor(texts: VerseTexts, files: Partial<SearchData> = {}): SearchData {
-  return { texts, ...EMPTY_DICTIONARY_FILES, parse: null, ...files };
+  return {
+    structure: inTextsOrder(texts),
+    texts,
+    ...EMPTY_DICTIONARY_FILES,
+    parse: null,
+    ...files,
+  };
 }
 
 interface RealSearchData {
@@ -41,6 +53,7 @@ let real: RealSearchData | null = null;
 export function realSearchData(): RealSearchData {
   if (!real) {
     const files: SearchData = {
+      structure: read(SEARCH_FILES.structure),
       texts: read(SEARCH_FILES.texts),
       ...(Object.fromEntries(
         Object.entries(DICTIONARY_FILES).map(([name, path]) => [name, read(path)]),

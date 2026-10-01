@@ -7,14 +7,15 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
-import { realSearchData } from '../helpers/searchData';
+import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
 describe('Hebrew Search Performance Diagnostics', () => {
   let index: TextIndex;
   const { dictionary } = realSearchData();
   beforeAll(() => {
-    index = buildTextIndex(buildLargeVerseTexts(5000));
+    const texts = buildLargeVerseTexts(5000);
+    index = buildTextIndex(texts, inTextsOrder(texts));
     // Warmup: JIT-compile the search path before measuring
     versesForTerm(index, 'אלהים', 'he', 'substring');
   });

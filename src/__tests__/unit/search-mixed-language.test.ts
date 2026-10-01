@@ -9,9 +9,9 @@ import { buildTextIndex, versesForTerm } from '../../search.ts';
 import { addTerm, termQuery } from '../../search/terms.ts';
 import { ALL_TEXTS_FIXTURE } from '../helpers/mixedLanguageTexts.ts';
 import { meaningsFor, versesFor } from '../../search/dictionary.ts';
-import { realSearchData } from '../helpers/searchData';
+import { inTextsOrder, realSearchData } from '../helpers/searchData';
 
-const index = buildTextIndex(ALL_TEXTS_FIXTURE);
+const index = buildTextIndex(ALL_TEXTS_FIXTURE, inTextsOrder(ALL_TEXTS_FIXTURE));
 const { dictionary } = realSearchData();
 
 // Both lookups are exact, so nothing here turns on how long a term is. A

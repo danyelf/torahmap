@@ -4,7 +4,7 @@ import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
 import type { MatchMode } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
-import { EMPTY_DICTIONARY } from '../helpers/searchData';
+import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
 describe('Hebrew Search Modes', () => {
   let mockVerseTexts: VerseTexts;
@@ -72,7 +72,7 @@ describe('Hebrew Search Modes', () => {
       },
     };
 
-    index = buildTextIndex(mockVerseTexts);
+    index = buildTextIndex(mockVerseTexts, inTextsOrder(mockVerseTexts));
   });
 
   const found = (text: string, mode: MatchMode) => versesForTerm(index, text, 'he', mode);

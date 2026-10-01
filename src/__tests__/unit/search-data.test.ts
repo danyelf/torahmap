@@ -3,9 +3,10 @@ import { buildDictionary, buildTextIndex, type LexiconFile } from '../../search'
 import { searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { SEARCH_COLORS } from '../../utils/color';
-import { createVerse } from '../helpers/fixtures';
-import { searchDataFor } from '../helpers/searchData';
-import type { VerseTexts } from '../../verseTexts';
+import { dataFor } from '../../dataFiles';
+import { createVerse, SAMPLE_LOADED } from '../helpers/fixtures';
+import { inTextsOrder, searchDataFor } from '../helpers/searchData';
+import { STRUCTURE_FILE, type VerseTexts } from '../../verseTexts';
 
 const texts: VerseTexts = {
   Genesis: {
@@ -26,8 +27,24 @@ const verseLexemes = { 'Genesis:1:2': [0] };
 
 describe('what search builds from its files', () => {
   it('builds one text index per texts value', () => {
-    expect(buildTextIndex(texts)).toBe(buildTextIndex(texts));
-    expect(buildTextIndex({ ...texts })).not.toBe(buildTextIndex(texts));
+    const order = inTextsOrder(texts);
+    expect(buildTextIndex(texts, order)).toBe(buildTextIndex(texts, order));
+    expect(buildTextIndex({ ...texts }, order)).not.toBe(buildTextIndex(texts, order));
+  });
+
+  it("lists the verses in the structure's book order, whatever order the texts hold them in", () => {
+    const shuffled: VerseTexts = {
+      Exodus: { 1: { 1: { he: 'ב', en: 'b' } } },
+      Genesis: { 1: { 1: { he: 'א', en: 'a' } } },
+    };
+    const index = buildTextIndex(shuffled, { books: [{ name: 'Genesis' }, { name: 'Exodus' }] });
+    expect(index.entries.map((entry) => entry.book)).toEqual(['Genesis', 'Exodus']);
+  });
+
+  it('has no data for search until the structure is in', () => {
+    const noStructure = new Map([...SAMPLE_LOADED].filter(([path]) => path !== STRUCTURE_FILE));
+    expect(dataFor(searchTool, noStructure)).toBeNull();
+    expect(dataFor(searchTool, SAMPLE_LOADED)).not.toBeNull();
   });
 
   it('builds one dictionary per set of files, whatever holds them', () => {

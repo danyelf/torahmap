@@ -3,7 +3,6 @@
 
 import type { VerseTexts } from './verseTexts';
 import { memoByValue } from './utils/memo.ts';
-import { getBookOrder } from './constants/books.ts';
 import { HEBREW, tanakhKey } from './types.ts';
 
 import {
@@ -247,20 +246,29 @@ export function getLexeme(dictionary: Dictionary, id: LexemeId): Lexeme | null {
   return dictionary.lexemes[id] ?? null;
 }
 
-/** The verses folded for matching, in book order. The same texts give the same object. */
-export const buildTextIndex: (texts: VerseTexts) => TextIndex = memoByValue(textIndexFrom);
+/** The books in order, as the structure file lists them. */
+export interface BookOrder {
+  readonly books: readonly { readonly name: string }[];
+}
 
-function textIndexFrom(verseTexts: VerseTexts): TextIndex {
+// Per structure, then per texts.
+const textIndexes = memoByValue((structure: BookOrder) =>
+  memoByValue((texts: VerseTexts) =>
+    textIndexFrom(
+      texts,
+      structure.books.map((book) => book.name),
+    ),
+  ),
+);
+
+/** The verses folded for matching, in the structure's book order. The same files give the same object. */
+export function buildTextIndex(texts: VerseTexts, structure: BookOrder): TextIndex {
+  return textIndexes(structure)(texts);
+}
+
+function textIndexFrom(verseTexts: VerseTexts, books: readonly string[]): TextIndex {
   const entries: IndexEntry[] = [];
   const byKey = new Map<string, IndexEntry>();
-
-  // Fallback to verseTexts keys for tests that build an index without loading full app data
-  let books: readonly string[];
-  try {
-    books = getBookOrder();
-  } catch {
-    books = Object.keys(verseTexts);
-  }
   for (const book of books) {
     const chapters = verseTexts[book];
     if (!chapters) continue;

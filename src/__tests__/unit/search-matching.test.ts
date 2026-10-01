@@ -6,7 +6,7 @@ import { excerptOf } from '../helpers/excerpt';
 import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 import { createVerse } from '../helpers/fixtures';
-import { EMPTY_DICTIONARY, searchDataFor } from '../helpers/searchData';
+import { EMPTY_DICTIONARY, inTextsOrder, searchDataFor } from '../helpers/searchData';
 
 const searchOverlay = hostOverlay(overlay, searchDataFor({}));
 import { buildTextIndex, versesForTerm } from '../../search';
@@ -28,7 +28,7 @@ const texts: VerseTexts = {
   },
 };
 
-const index = buildTextIndex(texts);
+const index = buildTextIndex(texts, inTextsOrder(texts));
 
 function marked(text: string, language: 'he' | 'en'): string[] {
   const fragment = searchOverlay.highlightVerseText(createVerse(), text, language);

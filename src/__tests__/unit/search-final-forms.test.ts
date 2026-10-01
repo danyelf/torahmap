@@ -14,6 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildTextIndex, versesForTerm } from '../../search';
+import { inTextsOrder } from '../helpers/searchData';
 import { stripNikkud, normalizeHebrewForSearch } from '../../hebrew';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -76,7 +77,7 @@ describe('Hebrew Final Forms Normalization', () => {
       },
     };
 
-    const index = buildTextIndex(mockVerseTexts);
+    const index = buildTextIndex(mockVerseTexts, inTextsOrder(mockVerseTexts));
 
     describe('substring mode', () => {
       it('should find אלהים (with final mem ם) when searching with regular mem (אלהימ)', () => {

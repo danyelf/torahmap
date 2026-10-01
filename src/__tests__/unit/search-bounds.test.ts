@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
 import { buildTextIndex, type SearchResult, type TextIndex } from '../../search';
-import { EMPTY_DICTIONARY } from '../helpers/searchData';
+import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
 const result = (verse: number, language: 'he' | 'en'): SearchResult => ({
   book: 'Genesis',
@@ -16,14 +16,15 @@ const result = (verse: number, language: 'he' | 'en'): SearchResult => ({
 describe('Snippet bounds', () => {
   let index: TextIndex;
   beforeEach(() => {
-    index = buildTextIndex({
+    const texts = {
       Genesis: {
         '1': {
           '1': { he: 'אֱלֹהִים', en: 'God' },
           '2': { he: 'בְּרֵאשִׁית', en: 'In the beginning' },
         },
       },
-    });
+    };
+    index = buildTextIndex(texts, inTextsOrder(texts));
   });
 
   it.each([
