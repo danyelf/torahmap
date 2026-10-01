@@ -93,17 +93,15 @@ Run it before opening any pull request that changes the interface.
 
 ### Loading tests
 
+The map draws before its data and fills in as each file lands, which is tested
+in a real browser at one desktop and one phone size:
+
 ```bash
 npm run test:loading
 ```
 
-The map draws before its data and fills in as each file lands; this checks
-that it does, at one desktop and one phone size. Each case throttles the
-connection through the Chrome DevTools Protocol and holds the files it needs
-back until it lets them through, so "before the data" is a state the case sets,
-not a race. It starts its own dev server on port 5198 (`LOADING_PORT` to change
-it). Run it before opening any pull request that changes startup or what loads
-when.
+It starts its own dev server on port 5198 (`LOADING_PORT` to change it). Run it
+before opening any pull request that changes startup or what loads when.
 
 ### Test Harness
 

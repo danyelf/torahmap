@@ -3,8 +3,16 @@
 // the case sets rather than a race it hopes to win.
 import { expect, test } from '@playwright/test';
 import { viaMenu } from '../layout/app.ts';
-import { allLoaded, firstFrame } from '../layout/page.ts';
-import { COMMENTARY, DICTIONARY, EVERYTHING, LEXICON, PARSE, TEXTS_FILE } from './files.ts';
+import { allLoaded } from '../layout/page.ts';
+import {
+  COMMENTARY,
+  DICTIONARY,
+  EVERYTHING,
+  LEXICON,
+  PARSE,
+  SEARCH_REQUIRED,
+  TEXTS_FILE,
+} from './files.ts';
 import {
   expectPlainMap,
   fail,
@@ -15,11 +23,9 @@ import {
   sentLoadTiming,
   sentSearches,
   stillShot,
-  throttle,
 } from './page.ts';
 
 const WORD = 'אלהים';
-const SEARCH_FILES_HELD = [TEXTS_FILE, ...DICTIONARY];
 const overlayRow = '.map-legend-row[data-panel="overlay"]';
 const searchRow = '.map-legend-row[data-panel="search"]';
 
@@ -56,7 +62,7 @@ test("a search link keeps its word in the box, and finds it once search's files 
   const { release, errors } = await open(
     page,
     `search=${encodeURIComponent(WORD)}`,
-    SEARCH_FILES_HELD,
+    SEARCH_REQUIRED,
   );
   await expectPlainMap(page);
   await expect(page.locator('#search-input')).toHaveValue(WORD);
@@ -138,7 +144,7 @@ test('an overlay picked before its file lands colours in when it does', async ({
 test('a search typed before its files land keeps the box and finds the word when they do', async ({
   page,
 }) => {
-  const { release, errors } = await open(page, 'story=tour&stop=intro', SEARCH_FILES_HELD);
+  const { release, errors } = await open(page, 'story=tour&stop=intro', SEARCH_REQUIRED);
   await page.keyboard.press('Escape');
   await viaMenu(page, 'search');
   const box = page.locator('#search-input');
@@ -157,7 +163,7 @@ test('a search typed before its files land keeps the box and finds the word when
 test('a story scrolled to a search before its files land shows the search when they do', async ({
   page,
 }) => {
-  const { release, errors } = await open(page, 'story=tour&stop=intro', SEARCH_FILES_HELD);
+  const { release, errors } = await open(page, 'story=tour&stop=intro', SEARCH_REQUIRED);
   await page.locator('.story-stop[data-stop-id="abraham_zoom"]').scrollIntoViewIfNeeded();
   await expect.poll(() => param(page, 'stop')).toBe('abraham_zoom');
   const before = await stillShot(page);
@@ -207,7 +213,7 @@ test('a failed download leaves its overlay plain and says so where it would show
 
 test('a search typed before its files land is recorded once they do', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'what is recorded does not depend on the screen');
-  const { release, errors } = await open(page, 'overlay=haftarah', SEARCH_FILES_HELD);
+  const { release, errors } = await open(page, 'overlay=haftarah', SEARCH_REQUIRED);
   await recordEvents(page);
   await viaMenu(page, 'search');
   await page.locator('#search-input').fill('light');
@@ -220,7 +226,7 @@ test('a search typed before its files land is recorded once they do', async ({ p
 
 test('a linked search is never recorded; a word the reader adds is', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'what is recorded does not depend on the screen');
-  const { release, errors } = await open(page, 'search=light', SEARCH_FILES_HELD);
+  const { release, errors } = await open(page, 'search=light', SEARCH_REQUIRED);
   await recordEvents(page);
   release();
   await allLoaded(page);
@@ -237,23 +243,9 @@ test('a lexicon search cannot build from fails its prebuild alone, and the rest 
   page,
 }, info) => {
   test.skip(info.project.name !== 'desktop', 'what loads does not depend on the screen');
-  await throttle(page);
-  let release!: () => void;
-  const released = new Promise<void>((resolve) => (release = resolve));
-  // A lexicon with no lexemes: building the dictionary from it throws.
-  await page.route(`**/data/${LEXICON}`, async (route) => {
-    await released;
-    await route.fulfill({ contentType: 'application/json', body: '{}' }).catch(() => {});
-  });
-  const pageErrors: string[] = [];
-  page.on('pageerror', (e) => pageErrors.push(e.stack ?? e.message));
-  const consoleErrors: string[] = [];
-  page.on('console', (m) => {
-    if (m.type() === 'error') consoleErrors.push(m.text());
-  });
   const parseLanded = page.waitForResponse(`**/data/${PARSE}`, { timeout: 120_000 });
-  await page.goto('/?overlay=haftarah');
-  await firstFrame(page, 90_000);
+  // A lexicon with no lexemes: building the dictionary from it throws.
+  const { release, errors } = await open(page, 'overlay=haftarah', [LEXICON], { body: '{}' });
   await recordEvents(page);
   release();
   await allLoaded(page);
@@ -263,9 +255,9 @@ test('a lexicon search cannot build from fails its prebuild alone, and the rest 
   expect((await sentLoadTiming(page))[0].search_ready).toBe(0);
   // With no search typed, nothing builds the dictionary as the lexicon lands:
   // only search's idle prebuild does, and it throws uncaught, by design.
-  await expect.poll(() => pageErrors.length).toBe(1);
-  expect(pageErrors[0]).toContain('buildDictionary');
-  expect(consoleErrors).toEqual([]);
+  await expect.poll(() => errors.length).toBe(1);
+  expect(errors[0]).not.toMatch(/^console:/);
+  expect(errors[0]).toContain('buildDictionary');
 });
 
 test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }, info) => {

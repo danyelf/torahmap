@@ -33,13 +33,13 @@ export async function allLoaded(page: Page): Promise<void> {
 }
 
 /**
- * The page's uncaught errors and, unless `console` is false, its console
- * errors from now on. They keep arriving, so check the list again after acting
- * on the page.
+ * The page's uncaught errors, each with its stack, and, unless `console` is
+ * false, its console errors (prefixed `console:`) from now on. They keep
+ * arriving, so check the list again after acting on the page.
  */
 export function collectErrors(page: Page, { console = true } = {}): string[] {
   const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('pageerror', (e) => errors.push(e.stack ?? e.message));
   if (console) {
     page.on('console', (m) => {
       if (m.type() === 'error') errors.push(`console: ${m.text()}`);

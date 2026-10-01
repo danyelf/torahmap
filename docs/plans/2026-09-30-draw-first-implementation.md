@@ -164,6 +164,8 @@ export async function viaMenu(page: Page, action: string): Promise<void>;
 
 DOM hooks the suite relies on (made in Tasks 6 and 7): `html[data-map-ready]`, `html[data-loaded]`, `.map-legend-row[data-panel="overlay"][data-loading]`, `.map-legend-row[data-panel="search"][data-loading]`, `#map-legend .map-legend-warning`, `.load-notice[data-state="loading"|"failed"]`, `.load-notice-close`, `#search-hit-caption .load-notice`, `#verse-popup .load-notice`.
 
+Since the branch review, `mapReady` is `allLoaded` and `html[data-map-ready]` is `html[data-first-frame]`.
+
 ---
 
 ### Task 0: Worktree, baseline, and the decision log

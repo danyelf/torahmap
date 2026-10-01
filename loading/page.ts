@@ -1,6 +1,5 @@
-// What the loading cases share beyond layout/page.ts: a connection that holds
-// files back until the case lets them through, and what the map and the app's
-// analytics show meanwhile.
+// What the loading cases share beyond layout/page.ts: opening the map with
+// files held back, and reading the map and the app's analytics.
 import { expect, type Page } from '@playwright/test';
 import {
   allLoaded,
@@ -31,15 +30,26 @@ export async function throttle(page: Page): Promise<void> {
   await cdp.send('Network.emulateNetworkConditions', SLOW_MOBILE);
 }
 
-/** Keeps each data file in `paths` from arriving until the returned function is called. */
-export async function hold(page: Page, paths: readonly string[]): Promise<() => void> {
+/**
+ * Keeps each data file in `paths` from arriving until the returned function is
+ * called, then sends it, or `body` in its place if given.
+ */
+export async function hold(
+  page: Page,
+  paths: readonly string[],
+  body?: string,
+): Promise<() => void> {
   let release!: () => void;
   const released = new Promise<void>((resolve) => (release = resolve));
   for (const path of paths) {
     await page.route(`**/data/${path}`, async (route) => {
       await released;
       // The page may have closed while the file was held.
-      await route.continue().catch(() => {});
+      await (
+        body === undefined
+          ? route.continue()
+          : route.fulfill({ contentType: 'application/json', body })
+      ).catch(() => {});
     });
   }
   return release;
@@ -51,9 +61,10 @@ export async function fail(page: Page, paths: readonly string[]): Promise<void> 
 }
 
 /**
- * Opens `link` on the throttled connection with the files in `held` kept back,
- * and waits for the first frame, or with `until: 'loaded'` for every file.
- * `errors` is collectErrors's list, with console errors unless `console` is false.
+ * Opens `link` on the throttled connection with the files in `held` kept back
+ * (and sent as `body`, if given), and waits for the first frame, or with
+ * `until: 'loaded'` for every file. `errors` is collectErrors's list, with
+ * console errors unless `console` is false.
  */
 export async function open(
   page: Page,
@@ -62,10 +73,11 @@ export async function open(
   {
     console = true,
     until = 'firstFrame',
-  }: { console?: boolean; until?: 'firstFrame' | 'loaded' } = {},
+    body,
+  }: { console?: boolean; until?: 'firstFrame' | 'loaded'; body?: string } = {},
 ): Promise<{ release: () => void; errors: string[] }> {
   await throttle(page);
-  const release = await hold(page, held);
+  const release = await hold(page, held, body);
   const errors = collectErrors(page, { console });
   await page.goto(link ? `/?${link}` : '/');
   if (until === 'loaded') await allLoaded(page);
