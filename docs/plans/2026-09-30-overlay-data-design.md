@@ -149,3 +149,37 @@ time, which moves trop's and verse length's index building out of startup.
   #327 stays open until step 1 lands, since step 1 is what fixes it.
 - **#322** (load-timing telemetry) is reworked onto main now, before step 1, so
   it records how today's startup performs and gives a before and after.
+
+## Open questions, assumptions and rulings
+
+Decisions made while implementing step 1, newest last.
+
+- **2026-09-30 (plan)** Main loads its own two files, the structure and the
+  verse texts, through the same loader as the overlays' files. Trop and verse
+  length name `all-texts.json` and haftarah names `tanakh-structure.json`; had
+  main kept its own loading beside the loader, the 8.9 MB texts would download
+  twice. Main reads only those two paths' contents; it still never reads an
+  overlay's.
+- **2026-09-30 (plan)** An overlay that names no files is handed `undefined`
+  as its data, as an overlay without settings is handed `undefined` settings;
+  `dataFor` never returns `null` for it, so search is never left out.
+- **2026-09-30 (plan)** `dataFor` returns the same object for the same
+  `loaded` value, so what an overlay derives per data value — and what
+  `prebuild` warmed — is found again on the next paint.
+- **2026-09-30 (plan)** Handed `null`, `renderLegend` draws nothing and
+  `renderControls` draws only what needs no data (haftarah's custom picker,
+  commentary's category picker); trop's chart and haftarah's key are drawn
+  when data first arrives. Step 1 never hands `null` at runtime, since startup
+  waits; this only has to be safe.
+- **2026-09-30 (plan)** Commentary's highest count per category is taken over
+  the counts file rather than over the laid-out verses. Measured on today's
+  data: every verse in the file is laid out, and every category's maximum is
+  the same either way.
+- **2026-09-30 (plan)** `memoBySettings` is renamed `memoByValue`, since
+  overlays now key derived values on data as well as settings.
+- **2026-09-30 (plan)** The idle scheduling the morphology prefetch uses
+  moves to `src/utils/idle.ts` and `prebuild` uses the same one.
+- **2026-09-30 (plan)** The print script loads haftarah's files through the
+  loader in the same task that removes `loadReadings`, since that task cannot
+  compile otherwise.
+- **2026-10-01 (Task 0)** The layout screenshots are not byte-identical between two runs on unchanged code: eight phone shots differ, six by at most 2 colour levels on about 1,200 pixels, and the overlay panel's two by up to 21 levels on about 9,000. Tasks compare against that measured noise rather than byte for byte.

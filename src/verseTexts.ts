@@ -13,8 +13,11 @@ export interface VerseText {
 export type VerseTexts = Record<string, Record<string, Record<string, VerseText>>>;
 // Structure: { [book]: { [chapter]: { [verse]: { he, en } } } }
 
+export const STRUCTURE_FILE = 'tanakh-structure.json';
+export const TEXTS_FILE = 'all-texts.json';
+
 export async function loadTanakhStructure(): Promise<TorahData> {
-  const response = await fetchData('tanakh-structure.json');
+  const response = await fetchData(STRUCTURE_FILE);
 
   if (!response.ok) {
     throw new Error(`Failed to load tanakh-structure.json: ${response.status}`);
@@ -24,7 +27,7 @@ export async function loadTanakhStructure(): Promise<TorahData> {
 }
 
 export async function loadAllVerseTexts(): Promise<VerseTexts> {
-  return (await loadJson<VerseTexts>('all-texts.json', 'verse texts')) ?? {};
+  return (await loadJson<VerseTexts>(TEXTS_FILE, 'verse texts')) ?? {};
 }
 
 export function getVerseText(

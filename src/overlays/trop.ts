@@ -19,7 +19,7 @@ import { lingeringHover } from '../utils/hover.ts';
 import { colorToCss, type ColorStop } from '../utils/color.ts';
 import { scale, LINEAR, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, legendRow } from './legend.ts';
-import { memoBySettings } from './memo.ts';
+import { memoByValue } from './memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
 /** Every mark the text carries, by URL slug, rarest first. */
@@ -95,7 +95,7 @@ function deriveTrop(mark: string | null): TropDerivation | null {
   return { entry, verseLookup, counts: countScale(entry), noMatch };
 }
 
-const derivationFor = memoBySettings((settings: TropSettings) => deriveTrop(shownMark(settings)));
+const derivationFor = memoByValue((settings: TropSettings) => deriveTrop(shownMark(settings)));
 
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
