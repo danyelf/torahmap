@@ -19,12 +19,13 @@ export async function firstFrame(page: Page, timeout = 30_000): Promise<void> {
 }
 
 /**
- * Waits until the map has started and settled: the story applies a stop on the
- * animation frame after startup, and the title face arrives from Google Fonts
- * with display=swap, changing text widths.
+ * Waits until every file has landed or failed and been drawn, and the map has
+ * settled: the story applies a stop on the animation frame after startup, and
+ * the title face arrives from Google Fonts with display=swap, changing text
+ * widths.
  */
 export async function mapReady(page: Page): Promise<void> {
-  await firstFrame(page);
+  await page.locator('html[data-loaded]').waitFor({ state: 'attached', timeout: 60_000 });
   await page.evaluate(async () => {
     await document.fonts.ready;
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -66,6 +67,8 @@ export async function openMap(page: Page, link: string): Promise<string[]> {
  * preserveDrawingBuffer.
  */
 export async function canvasShot(page: Page): Promise<Buffer> {
+  // Hiding the focused element blurs it, so focus is handed back after.
+  const focused = await page.evaluateHandle(() => document.activeElement);
   const hide = await page.addStyleTag({
     content: 'body *:not(#canvas) { visibility: hidden !important; }',
   });
@@ -73,6 +76,7 @@ export async function canvasShot(page: Page): Promise<Buffer> {
     return await page.locator('#canvas').screenshot();
   } finally {
     await hide.evaluate((el: Element) => el.remove());
+    await focused.evaluate((el) => (el as HTMLElement | null)?.focus({ preventScroll: true }));
   }
 }
 

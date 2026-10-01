@@ -119,20 +119,38 @@ import {
   searchTool,
   searchForMeaning,
   canAddTerm,
+  isSearching,
   type SearchSettings,
 } from './overlays/search/index.ts';
 import { createSearchRecorder } from './overlays/search/recording.ts';
 import { SEARCH_RECORD_DELAY_MS } from './search/constants.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
-import { dataFor, downloadFiles, overlayFiles, type Loaded } from './dataFiles.ts';
+import {
+  dataFor,
+  downloadFiles,
+  loadFiles,
+  overlayFiles,
+  requiredFiles,
+  type Loaded,
+} from './dataFiles.ts';
+import {
+  downloadStages,
+  filesFirst,
+  staleAfterLanding,
+  waitingOn,
+  type LandingView,
+  type OpeningView,
+} from './downloads.ts';
+import { LOADING, loadNotice } from './loadNotice.ts';
+import type { Picture } from './geometry.ts';
 import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
   URL_UPDATE_DEBOUNCE_MS,
   SEARCH_WITH_OVERLAY,
-  FRONT_FADE,
+  MAP_FADE,
 } from './constants.ts';
 import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
 import {
@@ -144,7 +162,7 @@ import {
   type Story,
 } from '@torahmap/stories';
 import { computeInterpolatedState } from './scrollytelling/controller';
-import { computeBlendedColors } from './scrollytelling/overlayBlender';
+import { computeBlendedColors, stopTools } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
@@ -232,18 +250,21 @@ async function main(): Promise<void> {
 
   registerAllOverlays();
   const allOverlays = [searchTool, ...getAllOverlays()];
-  let textsIn = 0;
-  const arrived = new Map<string, unknown>();
-  await downloadFiles([STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(allOverlays)], {
-    landed: (path, content) => {
-      if (path === TEXTS_FILE) textsIn = performance.now();
-      arrived.set(path, content);
-    },
-    failed: () => {},
-  });
-  const loaded: Loaded = arrived;
+  // Everything but the structure loads behind the first frame (fileLanded).
+  let loaded: Loaded = await loadFiles([STRUCTURE_FILE]);
+  const downloads = {
+    pending: new Set(overlayFiles(allOverlays).filter((path) => !loaded.has(path))),
+    failed: new Set<string>(),
+    closed: new Set<string>(),
+  };
   const torahData = structureFrom(loaded);
-  const verseTexts = textsFrom(loaded);
+
+  // Load timing, sent once every download has settled (sendLoadTiming).
+  let firstFrame = 0;
+  let textsIn = 0;
+  let searchReady = 0;
+  let downloadsSettled = false;
+  let timingSent = false;
 
   initBookData(torahData);
   const verses = computeLayout(torahData, (message) => reportError('layout', message));
@@ -256,10 +277,6 @@ async function main(): Promise<void> {
   const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
   createSectionLabels(verses, bookLabels, (book) => sections.get(book) ?? 'neviim');
   const mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
-
-  const searchData = dataFor(searchTool, loaded);
-  if (searchData) searchTool.prebuild?.(searchData);
-  const searchReady = performance.now();
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -349,79 +366,102 @@ async function main(): Promise<void> {
   // Search or the overlay, whichever's panel opened last (src/frame.ts). Only
   // matters with both tools on, where it decides which one dims for the other.
   let frontTool: FrontTool = 'overlay';
-  let frontFadeFrame: number | null = null;
+  let fadeFrame: number | null = null;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  function cancelFrontFade(): void {
-    if (frontFadeFrame !== null) {
-      cancelAnimationFrame(frontFadeFrame);
-      frontFadeFrame = null;
+  function cancelFade(): void {
+    if (fadeFrame !== null) {
+      cancelAnimationFrame(fadeFrame);
+      fadeFrame = null;
     }
   }
 
   function updateLegend(): void {
-    const { overlay, search } = toolsNow();
+    const tools = toolsNow();
+    const picked = {
+      search: isSearching(overlaySettings.get(searchTool)) ? searchTool : null,
+      overlay: currentOverlay,
+    };
     const rows: LegendRow[] = [];
-    for (const [panel, on] of [
-      ['search', search],
-      ['overlay', overlay],
-    ] as const) {
+    const warnings: Node[] = [];
+    for (const panel of ['search', 'overlay'] as const) {
+      const on = tools[panel];
+      const tool = picked[panel];
       if (on) {
         rows.push({
           panel,
           name: on.tool.name,
           summary: on.tool.summary?.(on.settings, on.data) ?? {},
         });
+      } else if (tool) {
+        // A picked tool without its data: its files are on their way, or one failed.
+        const files = requiredFiles(tool);
+        const state = waitingOn(files, downloads);
+        if (state === 'loading') {
+          rows.push({ panel, name: tool.name, summary: { detail: LOADING }, loading: true });
+        } else if (state === 'failed') {
+          warnings.push(loadNotice('failed', () => closeWarning(files)));
+        }
       }
     }
-    showLegend(mapLegend, rows, []);
+    showLegend(mapLegend, rows, warnings);
   }
 
   function applyTools(): void {
-    cancelFrontFade();
+    cancelFade();
     setColorLayer(
       still(toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool))),
     );
   }
 
   /**
-   * Move the front tool to `next`, cross-fading the map over
-   * FRONT_FADE.DURATION_MS through the renderer's own picture blend — the one
-   * a story ease uses. Snaps with only one tool on, or under reduced motion.
+   * Cross-fade the map from what it shows to `to` over MAP_FADE.DURATION_MS
+   * through the renderer's own picture blend — the one a story ease uses —
+   * then `settle` paints the picture it rests on. Snaps under reduced motion.
    */
+  function fadeMap(to: Picture, settle: () => void): void {
+    cancelFade();
+    if (reducedMotion.matches) {
+      settle();
+      render();
+      return;
+    }
+    // flatten collapses a fade already in progress to where it is, as a story
+    // ease starting mid-blend does (beginEase).
+    const from = flatten(withDefaults(colorLayer));
+    const since = performance.now();
+    const step = (now: number): void => {
+      const raw = Math.min(1, (now - since) / MAP_FADE.DURATION_MS);
+      fadeFrame = null;
+      if (raw >= 1) {
+        // The settled picture, not `to`: fillDefaultColors filled the holes a
+        // real overlay leaves for an uncoloured match, which would hover
+        // wrong (fillDefaultColors marks uncoloured only the holes it fills
+        // itself) until the next repaint.
+        settle();
+      } else {
+        setColorLayer({ from, to, t: easingFunctions[DEFAULT_EASING](raw) });
+        fadeFrame = requestAnimationFrame(step);
+      }
+      render();
+    };
+    fadeFrame = requestAnimationFrame(step);
+  }
+
+  /** Move the front tool to `next`, fading the map; with only one tool on there is nothing to fade. */
   function setFrontTool(next: FrontTool): void {
     if (next === frontTool) return;
     frontTool = next;
     const tools = toolsNow();
-    if (!tools.search || !tools.overlay || reducedMotion.matches) {
+    if (!tools.search || !tools.overlay) {
       applyTools();
       render();
       return;
     }
-    cancelFrontFade();
-    // flatten collapses a fade already in progress to where it is, as a story
-    // ease starting mid-blend does (beginEase).
-    const from = flatten(withDefaults(colorLayer));
-    const to = fillDefaultColors(
-      toolsPicture(tools, verses, mouseState.hoveredVerse, dimFor(next)),
+    fadeMap(
+      fillDefaultColors(toolsPicture(tools, verses, mouseState.hoveredVerse, dimFor(next))),
+      applyTools,
     );
-    const since = performance.now();
-    const step = (now: number): void => {
-      const raw = Math.min(1, (now - since) / FRONT_FADE.DURATION_MS);
-      frontFadeFrame = null;
-      if (raw >= 1) {
-        // The snap picture, not `to`: fillDefaultColors filled the holes a
-        // real overlay leaves for an uncoloured match, which would hover
-        // wrong (fillDefaultColors marks uncoloured only the holes it fills
-        // itself) until the next repaint.
-        applyTools();
-      } else {
-        setColorLayer({ from, to, t: easingFunctions[DEFAULT_EASING](raw) });
-        frontFadeFrame = requestAnimationFrame(step);
-      }
-      render();
-    };
-    frontFadeFrame = requestAnimationFrame(step);
   }
 
   function blendTransition(): void {
@@ -477,7 +517,7 @@ async function main(): Promise<void> {
 
     // A stop with a search puts search in front for it, whether or not the
     // reader has a panel open to see it (stops don't open panels).
-    if (toolsNow().search) frontTool = 'search';
+    if (isSearching(overlaySettings.get(searchTool))) frontTool = 'search';
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
@@ -668,7 +708,7 @@ async function main(): Promise<void> {
   function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
     // The story taking the map back mid-fade would otherwise still get the
     // fade's later frames, painting a stale explore picture over its own.
-    if (next.by !== 'reader') cancelFrontFade();
+    if (next.by !== 'reader') cancelFade();
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
     if (!event) return;
@@ -989,9 +1029,10 @@ async function main(): Promise<void> {
   }, URL_UPDATE_DEBOUNCE_MS);
 
   function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
+    const texts = waitingOn([TEXTS_FILE], downloads);
     updateSidebar(sidebarElements, verse, {
-      verseTexts,
-      textsNotice: null,
+      verseTexts: textsFrom(loaded),
+      textsNotice: texts && loadNotice(texts, () => closeWarning([TEXTS_FILE])),
       wordsClickable: dataFor(searchTool, loaded) !== null,
       ...toolsNow(),
       pinned: isPinned,
@@ -1006,6 +1047,29 @@ async function main(): Promise<void> {
   function refreshVersePopup(): void {
     if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
     else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
+  }
+
+  /** Say in the search caption that search's files are loading or failed; search fills it once they are in. */
+  function showSearchNotice(): void {
+    const caption = searchControls.querySelector('#search-hit-caption');
+    if (!caption) return;
+    const files = requiredFiles(searchTool);
+    const state = waitingOn(files, downloads);
+    if (state) caption.replaceChildren(loadNotice(state, () => closeWarning(files)));
+    else caption.querySelector('.load-notice')?.remove();
+  }
+
+  /** Redraw every place that says a file is loading or failed. */
+  function showLoadState(): void {
+    updateLegend();
+    showSearchNotice();
+    refreshVersePopup();
+  }
+
+  /** The reader closed a warning: it stays closed for those files. */
+  function closeWarning(paths: readonly string[]): void {
+    for (const path of paths) if (downloads.failed.has(path)) downloads.closed.add(path);
+    showLoadState();
   }
 
   // A drag pans the map, and a mouse moving over it hovers. Two fingers pinch.
@@ -1165,6 +1229,7 @@ async function main(): Promise<void> {
       changeSearch,
       dataFor(searchTool, loaded),
     );
+    showSearchNotice();
     updateLegend();
     refreshVersePopup();
   }
@@ -1247,9 +1312,11 @@ async function main(): Promise<void> {
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'C') {
         e.preventDefault();
-        const { overlay } = toolsNow();
         const params: Record<string, string> = {
-          ...(overlay && { overlay: overlay.tool.id, ...overlaySettings.toUrl(overlay.tool) }),
+          ...(currentOverlay && {
+            overlay: currentOverlay.id,
+            ...overlaySettings.toUrl(currentOverlay),
+          }),
           ...overlaySettings.toUrl(searchTool),
         };
         if (pinnedVerse) {
@@ -1442,7 +1509,10 @@ async function main(): Promise<void> {
     if (target.closest('.menu-button')) return dispatch({ type: 'menu' });
     if (target.closest('.panel-close')) return dispatch({ type: 'close' });
     if (target.closest('.story-leave'))
-      return dispatch({ type: 'choose', panel: toolsNow().search ? 'search' : 'overlay' });
+      return dispatch({
+        type: 'choose',
+        panel: isSearching(overlaySettings.get(searchTool)) ? 'search' : 'overlay',
+      });
     const chosen = storyChosen(target);
     if (chosen) return readStory(chosen.id, chosen.fromStart);
     const actionItem = target.closest<HTMLElement>('[data-action]');
@@ -1717,6 +1787,107 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   });
 
+  /** The picked overlay, and search while it has a word. */
+  function pickedTools(): Overlay[] {
+    const tools: Overlay[] = currentOverlay ? [currentOverlay] : [];
+    return isSearching(overlaySettings.get(searchTool)) ? [...tools, searchTool] : tools;
+  }
+
+  /** What the link or the story stop shows first. */
+  function openingView(): OpeningView {
+    if (frame.mode !== 'story') return { tools: pickedTools(), verse: pinnedVerse !== null };
+    const stop = resolvedStops[storyStopIndex()];
+    return { tools: stopTools(stop), verse: Boolean(stop.verse) };
+  }
+
+  function landingView(): LandingView {
+    let map = pickedTools();
+    if (driver.by === 'story' && driver.blend) {
+      map = [...stopTools(driver.blend.from), ...stopTools(driver.blend.to)];
+    } else if (driver.by === 'rejoining') {
+      const state = currentStoryState();
+      map = [...stopTools(state.fromStop), ...stopTools(state.toStop)];
+    }
+    return {
+      source: colorSource(driver),
+      map,
+      panel: currentOverlay,
+      popup: pinnedVerse !== null || mouseState.hoveredVerse !== null,
+    };
+  }
+
+  /** Bring the map up to date with data that just landed, the way it is being drawn. */
+  function redrawMap(how: 'fade' | 'blend' | 'ease'): void {
+    if (how === 'fade') {
+      fadeMap(
+        fillDefaultColors(
+          toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool)),
+        ),
+        applyTools,
+      );
+    } else if (how === 'blend' && driver.by === 'story' && driver.blend) {
+      const { from, to, t } = driver.blend;
+      fadeMap(
+        flatten(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded)),
+        blendTransition,
+      );
+    } else if (how === 'ease' && driver.by === 'rejoining') {
+      // From where it is, for the time it has left, so it ends on the picture with the data.
+      const now = performance.now();
+      const left = driver.since + driver.duration - now;
+      if (left > 0) keepDriving(beginEase(left, now));
+      scheduleStoryFrame();
+    }
+  }
+
+  function fileLanded(path: string, content: unknown): void {
+    if (path === TEXTS_FILE) textsIn = performance.now();
+    downloads.pending.delete(path);
+    const before = loaded;
+    loaded = new Map(before).set(path, content);
+    const stale = staleAfterLanding(before, loaded, landingView());
+    if (stale.map) redrawMap(stale.map);
+    if (stale.overlayPanel) overlayChanged(false);
+    if (stale.searchPanel) searchChanged(false);
+    if (stale.popup) refreshVersePopup();
+    const search = dataFor(searchTool, loaded);
+    if (search !== dataFor(searchTool, before)) searchRecorder.dataChanged(search);
+    prebuildCompleted(allOverlays, before, loaded, prebuilt);
+  }
+
+  function fileFailed(path: string): void {
+    downloads.pending.delete(path);
+    downloads.failed.add(path);
+    showLoadState();
+  }
+
+  function prebuilt(overlay: Overlay): void {
+    if (overlay !== searchTool) return;
+    searchReady = performance.now();
+    sendLoadTiming();
+  }
+
+  /**
+   * Once every download has settled and search's index and dictionary are
+   * built. search_ready stays 0 when search's files never arrived.
+   */
+  function sendLoadTiming(): void {
+    if (timingSent || !downloadsSettled) return;
+    if (dataFor(searchTool, loaded) && !searchReady) return;
+    timingSent = true;
+    const textsEntry = performance
+      .getEntriesByType('resource')
+      .find((e) => e.name.endsWith(`/${TEXTS_FILE}`)) as PerformanceResourceTiming | undefined;
+    const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
+    trackLoadTiming({
+      first_frame: Math.round(firstFrame),
+      texts_in: Math.round(textsIn),
+      search_ready: Math.round(searchReady),
+      texts_kbps: downloadKbps(textsEntry),
+      connection: connection?.effectiveType ?? '',
+    });
+  }
+
   // Everything this does came out of the URL, so nothing it does may write to
   // the URL — see applyingExternalState in urlState.ts.
   function restoreFromUrl(link: UrlState): void {
@@ -1803,21 +1974,18 @@ async function main(): Promise<void> {
 
   scheduleStoryFrame();
 
-  // Layout tests wait on this; nothing in the app reads it.
+  // The loading tests wait on this; nothing in the app reads it.
   document.documentElement.dataset.mapReady = '';
-  const textsEntry = performance
-    .getEntriesByType('resource')
-    .find((e) => e.name.endsWith(`/${TEXTS_FILE}`)) as PerformanceResourceTiming | undefined;
-  const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
-  trackLoadTiming({
-    first_frame: Math.round(performance.now()),
-    texts_in: Math.round(textsIn),
-    search_ready: Math.round(searchReady),
-    texts_kbps: downloadKbps(textsEntry),
-    connection: connection?.effectiveType ?? '',
-  });
+  firstFrame = performance.now();
+  showLoadState();
 
-  prebuildCompleted(getAllOverlays(), new Map(), loaded, () => {});
+  for (const stage of downloadStages(filesFirst(openingView()), allOverlays, loaded)) {
+    await downloadFiles(stage, { landed: fileLanded, failed: fileFailed });
+  }
+  // The layout tests and the video harness wait on this; nothing in the app reads it.
+  document.documentElement.dataset.loaded = '';
+  downloadsSettled = true;
+  sendLoadTiming();
 }
 
 reportUncaughtErrors();

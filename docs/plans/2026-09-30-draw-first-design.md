@@ -276,3 +276,11 @@ Decisions made while implementing step 3, newest last.
   it without exporting it. The `stopTools` test helper defaults `overlay` to
   `null`, since `ResolvedStoryStop` requires it and that test folder is
   typechecked.
+- **2026-10-01 (Task 7)** `canvasShot` (`layout/page.ts`) hands focus back to
+  the element that had it. It hides everything but the canvas, and Chrome
+  blurs a focused element when it is hidden, so "a search typed before its
+  files land" lost the box's focus to its own `expectPlainMap`, not to the
+  landing: measured with the box focused before the shot and not after, and
+  focus kept across the landing when no shot was taken. The app's only focus
+  listener asks for the typing frame the box already put it in.
+  `COLOURED_FLOOR` needed no change: every case passes at 100.

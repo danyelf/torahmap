@@ -38,8 +38,8 @@ export async function openMap(
   await page.goto(url);
 
   const wait = (ms: number) => (fakeClock ? page.clock.runFor(ms) : page.waitForTimeout(ms));
-  for (let i = 0; !(await page.locator('html[data-map-ready]').count()); i++) {
-    if (i === 300) throw new Error('the map did not start within 30 seconds');
+  for (let i = 0; !(await page.locator('html[data-loaded]').count()); i++) {
+    if (i === 300) throw new Error('the map did not load within 30 seconds');
     await wait(100);
   }
   await page.evaluate(() => document.fonts.ready);

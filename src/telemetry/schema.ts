@@ -43,8 +43,11 @@ export const EVENTS = {
     blobs: ['how', 'what', 'story', 'stop_id', 'overlay'],
     doubles: ['searching', 'pinned'],
   },
-  // Milliseconds since navigation start; texts_kbps is 0 where the browser did not
-  // report the download (a cached copy, or no Resource Timing entry).
+  // Milliseconds since navigation start, sent once every download has settled:
+  // first_frame when the map first draws, from the structure alone; texts_in
+  // when the texts land; search_ready when search's index and dictionary are
+  // built, 0 if its files never arrived. texts_kbps is 0 where the browser did
+  // not report the download (a cached copy, or no Resource Timing entry).
   load_timing: {
     blobs: ['connection'],
     doubles: ['first_frame', 'texts_in', 'search_ready', 'texts_kbps'],
