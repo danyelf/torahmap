@@ -9,6 +9,7 @@ import {
   isSearchableWord,
   normalizeHebrewForSearch,
   splitIntoWords,
+  stripNikkud,
   type TextWord,
 } from './hebrew.ts';
 
@@ -41,7 +42,16 @@ export function verseWords(text: string): TextWord[] {
  * is written, because that is what the reader clicked.
  */
 export function lookupForm(displayed: string): string {
-  return normalizeHebrewForSearch(displayed.replace(BRACKETS, ''));
+  return normalizeHebrewForSearch(printedForm(displayed));
+}
+
+/**
+ * A clicked word as a reader would type it: the letters as printed, final
+ * forms and all, without points or brackets. What a click puts in the search
+ * box; `lookupForm` folds it further for the lookup.
+ */
+export function printedForm(displayed: string): string {
+  return stripNikkud(displayed.replace(BRACKETS, ''));
 }
 
 /**

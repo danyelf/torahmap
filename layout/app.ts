@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
 
 export interface State {
@@ -136,9 +136,19 @@ export const STATES: State[] = [
   },
   {
     // A word read as two, so the menu offers two meanings and is at its tallest.
+    // Which word a click is on arrives after the map does; clicked before it,
+    // the menu offers only the exact search, so it is clicked until it is not.
     name: 'explore-word-menu',
     link: 'overlay=commentary&verse=Genesis.30.11',
-    then: (page) => page.locator('#verse-popup .verse-word', { hasText: '(בגד)' }).click(),
+    then: async (page) => {
+      const word = page.locator('#verse-popup .verse-word', { hasText: '(בגד)' });
+      await expect(async () => {
+        // A press outside the menu closes it; the click opens it again.
+        await word.click();
+        // Both readings and the exact search.
+        await expect(page.locator('.word-menu-choice')).toHaveCount(3, { timeout: 500 });
+      }).toPass();
+    },
     shown: ['.word-menu'],
   },
   {

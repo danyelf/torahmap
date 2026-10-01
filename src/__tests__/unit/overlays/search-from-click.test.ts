@@ -84,6 +84,13 @@ describe('searching for a clicked word', () => {
     expect(params.m).toBe('GD=/@heb');
   });
 
+  it('writes the spelling it searches under with its final letter', () => {
+    // "be cunning" from יַעְרִים in Proverbs 15:5 is searched under a form the
+    // index files as ערומ, which no reader would type.
+    clickWord('יערים', ['<RM=[@heb']);
+    expect(searchOverlay.toUrl().search).toBe('ערום');
+  });
+
   it('adds a second word rather than replacing the first', () => {
     const container = render();
     clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);

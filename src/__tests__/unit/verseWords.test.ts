@@ -5,7 +5,7 @@
 // up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { verseWords, lookupForm } from '../../verseWords';
+import { verseWords, lookupForm, printedForm } from '../../verseWords';
 
 const words = (text: string) => verseWords(text).map((w) => w.word);
 
@@ -45,6 +45,13 @@ describe('the words of a verse', () => {
 
   it('handles an empty verse without inventing a word', () => {
     expect(verseWords('')).toEqual([]);
+  });
+});
+
+describe('the spelling a click puts in the search box', () => {
+  it('is the word as printed, final letters and all, without points or brackets', () => {
+    expect(printedForm('הָאָֽרֶץ')).toBe('הארץ');
+    expect(printedForm('[בָּ֣א')).toBe('בא');
   });
 });
 

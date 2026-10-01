@@ -12,7 +12,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { loadLexiconData } from '../../../search';
 import {
-  meaningsFor,
   meaningsInVerse,
   setVerseOnScreen,
   wordMatches,
@@ -236,11 +235,9 @@ describe('a click on the written form of a corrected word', () => {
     expect(clicked('Judges:16:25', 'טוב)')).toEqual(reading);
   });
 
-  it('offers what the spelling can be for a word written but not read', () => {
+  it('offers no meaning for a word written but not read', () => {
     // (נא) in II Kings 5:18 has no reading beside it, and BHSA no word for it,
-    // so the verse cannot narrow its spelling either.
-    const offered = clicked('II Kings:5:18', '(נא)');
-    expect(offered).not.toHaveLength(0);
-    expect(offered).toEqual(meaningsFor('נא').map((m) => m.keys));
+    // so nothing says which of the spelling's meanings it is.
+    expect(clicked('II Kings:5:18', '(נא)')).toEqual([]);
   });
 });

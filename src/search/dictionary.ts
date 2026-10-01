@@ -32,6 +32,7 @@ import {
   mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
+  withFinalLetter,
   type TextWord,
 } from '../hebrew.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
@@ -187,11 +188,8 @@ export function meaningsInVerse(
   const inVerse = getVerseLexemes(verseKey);
   if (!inVerse) return [];
 
-  // A ketiv written but not read has no word in BHSA, so the verse holds none
-  // of its readings; the spelling is all there is to go on.
   const present = new Set(inVerse);
-  const here = rowsFor(ids.filter((id) => present.has(id)));
-  return here.length > 0 ? here : rowsFor(ids);
+  return rowsFor(ids.filter((id) => present.has(id)));
 }
 
 /**
@@ -229,8 +227,9 @@ export function spellingFor(keys: readonly string[], clicked: string): string | 
     if (spelling && has(spelling)) return spelling;
   }
   for (const id of ids) {
+    // The index keeps its forms folded; the search box shows them as printed.
     const form = formsOfLexeme(id).find(has);
-    if (form) return form;
+    if (form) return withFinalLetter(form);
   }
   return null;
 }
