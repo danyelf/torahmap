@@ -4,7 +4,6 @@ import {
   registerOverlay,
   getOverlay,
   getAllOverlays,
-  configureCommentary,
   configureTrop,
   configureSearch,
   type Overlay,
@@ -12,14 +11,20 @@ import {
 import {
   createVerses,
   SAMPLE_VERSES,
-  SAMPLE_COMMENTARY_DATA,
   SAMPLE_VERSE_TEXTS,
   SAMPLE_LOADED,
   testOverlay,
 } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
-import { mockFetch, restoreAllMocks } from '../helpers/mocks';
-import { createOverlaySettings, type OverlaySettings } from '../../overlays/settings';
+import { toolsShown } from '../../tools';
+import { searchTool } from '../../overlays/search/index';
+import { commentaryOverlay, type CommentaryCounts } from '../../overlays/commentary';
+import { restoreAllMocks } from '../helpers/mocks';
+import {
+  createOverlaySettings,
+  settingsFromLink,
+  type OverlaySettings,
+} from '../../overlays/settings';
 
 describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
@@ -36,13 +41,10 @@ describe('Overlay Switching Integration', () => {
     mockControlsContainer = document.createElement('div');
     mockLegendContainer = document.createElement('div');
 
-    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
-
     // Register overlays fresh
     registerAllOverlays();
 
     // Configure overlays with sample data
-    configureCommentary({ verses: SAMPLE_VERSES });
     configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({
       verses: SAMPLE_VERSES,
@@ -168,13 +170,15 @@ describe('Overlay Switching Integration', () => {
 
   describe('Cleanup and Resource Management', () => {
     it('calls destroy() when switching away from overlay', async () => {
-      const overlay = await switchToOverlay('commentary');
-      const destroySpy = vi.spyOn(overlay, 'destroy' as any);
+      const destroy = vi.fn();
+      registerOverlay(
+        testOverlay({ id: 'test-destroy', name: 'Test', getVerseColor: () => null, destroy }),
+      );
+      await switchToOverlay('test-destroy');
 
-      // Switch to different overlay
       await switchToOverlay('trop');
 
-      expect(destroySpy).toHaveBeenCalled();
+      expect(destroy).toHaveBeenCalled();
     });
 
     it('clears controls container when switching overlays', async () => {
@@ -482,48 +486,26 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('handles fetch failure gracefully during init', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      // Mock fetch to fail
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: false,
-          status: 404,
-          json: () => Promise.reject(new Error('Not found')),
-        } as Response),
-      );
-
-      // Should not throw
-      await expect(switchToOverlay('commentary')).resolves.toBeDefined();
-
-      // Overlay should still work (just with no data)
-      expect(lastColors.length).toBe(verses.length);
-      // Overlay should provide default colors even if data fails to load
-      expect(lastColors).toBeDefined();
-      consoleSpy.mockRestore();
+    it('leaves out an overlay whose files did not load', () => {
+      expect(
+        toolsShown(
+          getOverlay('commentary')!,
+          undefined,
+          settingsFromLink(searchTool, {}),
+          new Map(),
+        ).overlay,
+      ).toBeNull();
     });
 
-    it('handles malformed data gracefully', async () => {
-      // Mock fetch to return invalid data
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve({ invalidKey: 'invalid data' }),
-        } as Response),
-      );
+    it('handles malformed data gracefully', () => {
+      const overlay = commentaryOverlay;
+      const malformed = {
+        counts: { invalidKey: 'invalid data' } as unknown as CommentaryCounts,
+      };
 
-      await switchToOverlay('commentary');
-
-      // Should not throw when trying to get colors
       expect(() => {
-        verses.forEach((v) =>
-          currentOverlay!.getVerseColor(v, settings.get(currentOverlay!), currentData),
-        );
+        verses.forEach((v) => overlay.getVerseColor(v, settings.get(overlay), malformed));
       }).not.toThrow();
-
-      // Should provide valid colors even with malformed data
-      expect(lastColors.length).toBe(verses.length);
     });
   });
 });

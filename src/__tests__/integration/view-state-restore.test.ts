@@ -5,18 +5,12 @@ import { worldToScreen } from '../helpers/worldToScreen';
 import {
   registerAllOverlays,
   getOverlay,
-  configureCommentary,
   configureTrop,
   configureSearch,
 } from '../../overlays/index';
-import {
-  SAMPLE_VERSES,
-  SAMPLE_COMMENTARY_DATA,
-  SAMPLE_VERSE_TEXTS,
-  SAMPLE_LOADED,
-} from '../helpers/fixtures';
+import { SAMPLE_VERSES, SAMPLE_VERSE_TEXTS, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
-import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
+import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { readLink } from '@torahmap/link';
 import { createOverlaySettings } from '../../overlays/settings';
@@ -57,10 +51,8 @@ async function controlsAfter(link: string): Promise<HTMLElement> {
 describe('restoring a link as one complete view', () => {
   beforeEach(() => {
     mockHistory('http://localhost:5173/');
-    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
     registerAllOverlays();
     settings = createOverlaySettings();
-    configureCommentary({ verses: SAMPLE_VERSES });
     configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({ verses: SAMPLE_VERSES, callbacks: { onVerseClick: vi.fn() } });
   });

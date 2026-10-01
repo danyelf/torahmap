@@ -111,7 +111,6 @@ import {
   createOverlaySettings,
   getOverlay,
   getAllOverlays,
-  configureCommentary,
   configureTrop,
   configureSearch,
   configureVerseLength,
@@ -257,7 +256,6 @@ async function main(): Promise<void> {
   buildSearchIndex(verseTexts);
   const searchReady = performance.now();
 
-  configureCommentary({ verses });
   configureTrop({ verseTexts });
   configureVerseLength({ verseTexts });
 

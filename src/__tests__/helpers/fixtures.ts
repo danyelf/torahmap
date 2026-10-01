@@ -1,7 +1,7 @@
 // Test fixtures for Torah Map tests
 import type { TanakhLayout } from '../../types';
 import type { Overlay } from '../../overlays/types';
-import type { CommentaryData } from '../../overlays/commentary';
+import type { CommentaryCounts } from '../../overlays/commentary';
 import type { Loaded } from '../../dataFiles';
 import { TEXTS_FILE } from '../../verseTexts';
 
@@ -51,7 +51,7 @@ export const SAMPLE_VERSES: TanakhLayout[] = [
   createVerse({ book: 'Psalms', chapter: 119, verse: 1, x: 10, y: 1100 }),
 ];
 
-export const SAMPLE_COMMENTARY_DATA: CommentaryData = {
+export const SAMPLE_COMMENTARY_DATA: CommentaryCounts = {
   'Genesis': {
     '1': {
       '1': {

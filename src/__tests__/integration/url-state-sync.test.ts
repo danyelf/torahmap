@@ -4,19 +4,13 @@ import { parseUrlState, updateUrl } from '../../urlState';
 import {
   registerAllOverlays,
   getOverlay,
-  configureCommentary,
   configureTrop,
   configureSearch,
 } from '../../overlays/index';
 import { searchTool } from '../../overlays/search/index';
-import {
-  SAMPLE_VERSES,
-  SAMPLE_COMMENTARY_DATA,
-  SAMPLE_VERSE_TEXTS,
-  SAMPLE_LOADED,
-} from '../helpers/fixtures';
+import { SAMPLE_VERSES, SAMPLE_VERSE_TEXTS, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
-import { mockFetch, mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
+import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
 
@@ -30,13 +24,10 @@ describe('URL State Sync Integration', () => {
 
     ({ historyStates } = mockHistory('http://localhost:5173/'));
 
-    mockFetch({ '/data/overlays/commentary/counts.json': SAMPLE_COMMENTARY_DATA });
-
     // Register overlays the way the app does
     registerAllOverlays();
 
     // Configure overlays with sample data
-    configureCommentary({ verses: SAMPLE_VERSES });
     configureTrop({ verseTexts: SAMPLE_VERSE_TEXTS });
     configureSearch({
       verses: SAMPLE_VERSES,

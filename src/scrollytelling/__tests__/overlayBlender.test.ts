@@ -8,7 +8,12 @@ import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Color, Overlay, UrlParamValues } from '../../overlays/types';
 import { buildSearchIndex } from '../../search';
-import { SAMPLE_VERSE_TEXTS, testOverlay } from '../../__tests__/helpers/fixtures';
+import {
+  SAMPLE_COMMENTARY_DATA,
+  SAMPLE_LOADED,
+  SAMPLE_VERSE_TEXTS,
+  testOverlay,
+} from '../../__tests__/helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
 import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
 
@@ -215,7 +220,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
     settings.restore(commentaryOverlay, { category: 'Midrash' });
     const held = settings.get(commentaryOverlay);
     const verse = verses[0];
-    const before = commentaryOverlay.getVerseColor(verse, held, undefined);
+    const before = commentaryOverlay.getVerseColor(verse, held, { counts: SAMPLE_COMMENTARY_DATA });
 
     const fromStop: ResolvedStoryStop = {
       id: 'a',
@@ -233,10 +238,12 @@ describe('the blender evaluates without disturbing the overlay', () => {
       overlay: 'commentary',
       overlayParams: { category: 'Mishnah' },
     };
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null, new Map());
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null, SAMPLE_LOADED);
 
     expect(
-      commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay), undefined),
+      commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay), {
+        counts: SAMPLE_COMMENTARY_DATA,
+      }),
     ).toEqual(before);
   });
 });

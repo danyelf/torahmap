@@ -207,3 +207,9 @@ Decisions made while implementing step 1, newest last.
   files and `init` is removed; main's side shares the loader already.
 - **2026-10-01 (Task 3)** `loadTanakhStructure` had no user but main, so it is
   deleted; `loadAllVerseTexts` stays for the test harness.
+- **2026-10-01 (Task 4)** Commentary's highest count is taken over every entry in
+the counts file instead of over the layout's verses, since the overlay is no
+longer handed the layout. A counts entry with no verse in the layout would
+now raise the maximum; the shipped file has none (23,206 entries, all in the
+structure), and the layout tests show no change. The unit tests for `init`,
+`configure` and `destroy` are deleted with those members.

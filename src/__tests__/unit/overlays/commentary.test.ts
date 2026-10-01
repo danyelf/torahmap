@@ -1,29 +1,24 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure } from '../../../overlays/commentary';
-
-// The registry is where overlays come from — populate it the way the app does.
-registerAllOverlays();
-const commentaryOverlay = hostOverlay(getOverlay('commentary')!, undefined);
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+  commentaryOverlay as overlay,
+  type CommentaryCounts,
+  type CommentaryData,
+  type CommentarySettings,
+} from '../../../overlays/commentary';
 
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
-import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import type { TanakhLayout } from '../../../types';
-import type { CommentaryData } from '../../../overlays/commentary';
-import { hostOverlay } from '../../helpers/overlayHost';
+import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
 import { colorToCss } from '../../../utils/color';
 import type { Color } from '../../../overlays/types';
 
 describe('Commentary Overlay', () => {
-  let testData: CommentaryData;
+  let testData: CommentaryCounts;
   let testVerses: TanakhLayout[];
-  let mockFetch: ReturnType<typeof vi.fn>;
+  let commentaryOverlay: OverlayHost<CommentarySettings, CommentaryData>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    commentaryOverlay.restore({});
-
     testData = {
       'Genesis': {
         '1': {
@@ -63,13 +58,7 @@ describe('Commentary Overlay', () => {
       createVerse({ book: 'Isaiah', chapter: 1, verse: 2 }),
     ];
 
-    mockFetch = installMockFetch({ '/data/overlays/commentary/counts.json': testData });
-
-    configure({ verses: testVerses });
-  });
-
-  afterEach(() => {
-    commentaryOverlay.destroy();
+    commentaryOverlay = hostOverlay(overlay, { counts: testData });
   });
 
   describe('Overlay Interface', () => {
@@ -79,46 +68,36 @@ describe('Commentary Overlay', () => {
     });
   });
 
-  describe('Initialization', () => {
-    it('loads commentary data on init', async () => {
-      await commentaryOverlay.overlay.init?.();
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/overlays/commentary/counts.json'),
-      );
+  describe('data', () => {
+    it('names its counts file', () => {
+      expect(overlay.data).toEqual({ counts: 'overlays/commentary/counts.json' });
     });
 
-    it('handles fetch errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-      } as Response);
-
-      // Should not throw
-      await expect(commentaryOverlay.overlay.init?.()).resolves.not.toThrow();
-      consoleSpy.mockRestore();
+    it('scales to the data it is handed, not to data it was handed before', () => {
+      const legend = () => {
+        const el = document.createElement('div');
+        commentaryOverlay.renderLegend(el);
+        return el.innerHTML;
+      };
+      const before = legend();
+      const doubled = structuredClone(testData);
+      doubled.Genesis['1']['1'].total = 300;
+      commentaryOverlay.setData({ counts: doubled });
+      expect(legend()).not.toBe(before);
     });
 
-    it('handles JSON parse errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.reject(new Error('Parse error')),
-      } as Response);
-
-      // Should not throw
-      await expect(commentaryOverlay.overlay.init?.()).resolves.not.toThrow();
-      consoleSpy.mockRestore();
+    it('draws its picker but no legend before the data is in', () => {
+      const controls = document.createElement('div');
+      overlay.renderControls!(controls, commentaryOverlay.settings, () => {}, null);
+      expect(controls.querySelector('select')).not.toBeNull();
+      const legend = document.createElement('div');
+      legend.innerHTML = 'stale';
+      overlay.renderLegend!(legend, commentaryOverlay.settings, null);
+      expect(legend.innerHTML).toBe('');
     });
   });
 
   describe('Color Computation - Total Category', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('returns valid colors for verses with data', () => {
       const verse = testVerses[0]; // Genesis 1:1, total: 150
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -178,10 +157,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('Category Filtering', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('filters by Midrash category', () => {
       const container = commentaryOverlay.renderControls();
 
@@ -272,10 +247,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('Max Value Caching', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('produces consistent colors for same verses', () => {
       const verse = testVerses[0];
 
@@ -307,10 +278,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('Render Controls', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('renders category selector', () => {
       const container = commentaryOverlay.renderControls();
 
@@ -392,10 +359,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('Render Legend', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('renders gradient element', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderLegend(container);
@@ -417,23 +380,17 @@ describe('Commentary Overlay', () => {
     const tickLabels = (container: HTMLElement) =>
       Array.from(container.querySelectorAll('.tick')).map((tick) => tick.textContent);
 
-    async function reinitWithMax(total: number) {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({ 'Genesis': { '1': { '1': { total, categories: {} } } } }),
-      } as Response);
-
-      configure({ verses: [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })] });
-      await commentaryOverlay.overlay.init?.();
-
+    function legendWithMax(total: number) {
+      commentaryOverlay.setData({
+        counts: { 'Genesis': { '1': { '1': { total, categories: {} } } } },
+      });
       const container = document.createElement('div');
       commentaryOverlay.renderLegend(container);
       return container;
     }
 
-    it('ticks the powers of ten, then the maximum', async () => {
-      expect(tickLabels(await reinitWithMax(900))).toEqual(['1', '10', '100', '900']);
+    it('ticks the powers of ten, then the maximum', () => {
+      expect(tickLabels(legendWithMax(900))).toEqual(['1', '10', '100', '900']);
     });
 
     it('drops the last power of ten when the maximum sits on top of it', () => {
@@ -455,16 +412,12 @@ describe('Commentary Overlay', () => {
       expect(swatch.getAttribute('style')).toContain(colorToCss(unlinked));
     });
 
-    it('writes a thousands separator rather than abbreviating', async () => {
-      expect(tickLabels(await reinitWithMax(5000))).toContain('5,000');
+    it('writes a thousands separator rather than abbreviating', () => {
+      expect(tickLabels(legendWithMax(5000))).toContain('5,000');
     });
   });
 
   describe('Hover Info', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('returns link count for total category', () => {
       const verse = testVerses[0]; // Genesis 1:1, total: 150
       const info = commentaryOverlay.getHoverInfo(verse);
@@ -485,10 +438,10 @@ describe('Commentary Overlay', () => {
       expect(info).toBe('50 references in midrash');
     });
 
-    it('writes one reference in the singular and large counts with a separator', async () => {
+    it('writes one reference in the singular and large counts with a separator', () => {
       testData.Genesis['1']['2'] = { total: 1, categories: {} };
       testData.Genesis['1']['3'] = { total: 1734, categories: {} };
-      await commentaryOverlay.overlay.init?.();
+      commentaryOverlay.setData({ counts: testData });
 
       expect(commentaryOverlay.getHoverInfo(testVerses[1])).toBe('1 reference');
       expect(commentaryOverlay.getHoverInfo(testVerses[2])).toBe('1,734 references');
@@ -516,10 +469,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('URL State Management', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('returns empty params for total category', () => {
       const params = commentaryOverlay.toUrl();
       expect(params).toEqual({});
@@ -579,10 +528,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('Edge Cases', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     it('handles missing book data', () => {
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -627,25 +572,16 @@ describe('Commentary Overlay', () => {
       expect(color).not.toBeNull();
     });
 
-    it('handles very high commentary counts', async () => {
-      const highCountData: CommentaryData = {
+    it('handles very high commentary counts', () => {
+      const highCountData: CommentaryCounts = {
         'Genesis': {
           '1': {
             '1': { total: 999999, categories: { 'Midrash': 999999 } },
           },
         },
       };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(highCountData),
-      } as Response);
-
+      commentaryOverlay.setData({ counts: highCountData });
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      configure({ verses: [verse] });
-
-      await commentaryOverlay.overlay.init?.();
 
       const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
@@ -653,64 +589,7 @@ describe('Commentary Overlay', () => {
     });
   });
 
-  describe('Configure Function', () => {
-    it('accepts verses configuration', () => {
-      const verses = [
-        createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
-        createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
-      ];
-
-      expect(() => configure({ verses })).not.toThrow();
-    });
-
-    it('handles empty verse array', () => {
-      expect(() => configure({ verses: [] })).not.toThrow();
-    });
-  });
-
-  describe('Destroy', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
-    it('preserves category selection across destroy/recreate cycles', () => {
-      const container1 = commentaryOverlay.renderControls();
-
-      const select1 = container1.querySelector('select') as HTMLSelectElement;
-      select1.value = 'Midrash';
-      select1.dispatchEvent(new Event('change'));
-
-      // Verify category is set
-      let params = commentaryOverlay.toUrl();
-      expect(params).toEqual({ category: 'Midrash' });
-
-      // Destroy (simulating overlay switch)
-      commentaryOverlay.destroy();
-
-      // Category should still be preserved — it lives in the app's settings
-      // store, not the overlay, so destroy does not touch it.
-      params = commentaryOverlay.toUrl();
-      expect(params).toEqual({ category: 'Midrash' });
-
-      // Re-render controls (simulating switching back to commentary)
-      const container2 = commentaryOverlay.renderControls();
-
-      // Verify category is restored in the select element
-      const select2 = container2.querySelector('select') as HTMLSelectElement;
-      expect(select2.value).toBe('Midrash');
-    });
-
-    it('can be called again without throwing', () => {
-      commentaryOverlay.destroy();
-      expect(() => commentaryOverlay.destroy()).not.toThrow();
-    });
-  });
-
   describe('All Categories', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     const categories = [
       'Midrash',
       'Talmud',
@@ -746,10 +625,6 @@ describe('Commentary Overlay', () => {
   });
 
   describe('Logarithmic Heatmap', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
     // The colours themselves, not "whatever the colour function returns" — an
     // assertion of the latter shape holds however the scale is wired up.
     it('colours a verse by where its count falls on the log scale', () => {
@@ -760,9 +635,9 @@ describe('Commentary Overlay', () => {
       assertColorEquals(partWay as number[], [0.83031, 0.33996, 0.14991]);
     });
 
-    it('draws a verse with no links darker than one linked once', async () => {
+    it('draws a verse with no links darker than one linked once', () => {
       testData.Genesis['1']['2'] = { total: 1, categories: {} };
-      await commentaryOverlay.overlay.init?.();
+      commentaryOverlay.setData({ counts: testData });
       const brightness = (verse: number) =>
         (
           commentaryOverlay.getVerseColor(
@@ -773,9 +648,9 @@ describe('Commentary Overlay', () => {
       expect(brightness(3)).toBeLessThan(brightness(2));
     });
 
-    it('gives the least linked verse the bottom of the palette', async () => {
+    it('gives the least linked verse the bottom of the palette', () => {
       testData.Genesis['1']['2'] = { total: 1, categories: {} };
-      await commentaryOverlay.overlay.init?.();
+      commentaryOverlay.setData({ counts: testData });
 
       assertColorEquals(
         commentaryOverlay.getVerseColor(testVerses[1]) as number[],
@@ -785,12 +660,7 @@ describe('Commentary Overlay', () => {
   });
 
   describe('colorsFor', () => {
-    beforeEach(async () => {
-      await commentaryOverlay.overlay.init?.();
-    });
-
-    it('answers for settings it is handed without changing what it is showing', async () => {
-      await commentaryOverlay.overlay.init?.();
+    it('answers for settings it is handed without changing what it is showing', () => {
       commentaryOverlay.restore({ category: 'Midrash' });
 
       const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
@@ -800,6 +670,7 @@ describe('Commentary Overlay', () => {
         items,
         commentaryOverlay.fromUrl({ category: 'total' }),
         null,
+        commentaryOverlay.data,
       );
       expect(commentaryOverlay.toUrl()).toEqual({ category: 'Midrash' });
 
@@ -809,6 +680,7 @@ describe('Commentary Overlay', () => {
           items,
           commentaryOverlay.fromUrl({ category: 'Midrash' }),
           null,
+          commentaryOverlay.data,
         ),
       ).toEqual([commentaryOverlay.getVerseColor(items[0])]);
     });
