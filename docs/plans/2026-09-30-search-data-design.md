@@ -1,7 +1,7 @@
 # Search Receives Its Data
 
 **Date:** 2026-09-30
-**Status:** Draft, for Danyel's design round.
+**Status:** Design, decided 2026-10-01. Not yet planned.
 
 Step 2 of three toward #313. It follows step 1
 (`2026-09-30-overlay-data-design.md`) and uses its interface as written: search
@@ -44,8 +44,7 @@ data: {
 it (it only tells which of a spelling's readings a word in the popup is), and in
 step 3 it loads last. Step 1 has no optional files; this adds them. In `D` an
 optional file is `T | null`, and `dataFor` does not wait for it. This is the one
-change to step 1's interface besides the `verse` argument below; see the open
-questions.
+change to step 1's interface besides the `verse` argument below.
 
 Three values are built from the files, each a plain function of them:
 
@@ -68,7 +67,7 @@ the old answer.
 
 ## Partial data
 
-**Proposal: search is all or nothing.** Its data is `null` until the texts and
+**Search is all or nothing.** Its data is `null` until the texts and
 all three dictionary files are in.
 
 Meanings mode could colour the map from the dictionary alone: the verse sets
@@ -78,12 +77,14 @@ dictionary does not know, needs the texts, so some terms would colour and
 others follow a second or two later, each with its own fade. What this buys is
 that a Hebrew-only search link colours about one texts download sooner (2.7 MB
 compressed, the largest file). Not worth a second way for search to be half
-there; see the open questions.
+there. Revisit if step 3's throttled tests show Hebrew search links waiting
+noticeably on the texts.
 
 **A failed dictionary download turns search off**, where today search falls back
 to matching words by their spelling. Main does not know what a file means, so
 it cannot tell search "the dictionary failed" apart from "the dictionary has not
-come". See the open questions.
+come". Keeping the fallback would need `loaded` to record failures and search a
+third state, for a rare failure of a download from our own site.
 
 ## A search term
 
@@ -143,7 +144,7 @@ Main hands each reader of search what it reads; none reaches for it.
 **Highlighting needs the verse, not only its text.** It marks a word by its place
 in the verse, through the parse, and the parse is looked up by verse. Today the
 popup names the verse in module state (`setVerseOnScreen`) because
-`highlightVerseText` is handed only the text. Proposal: `highlightVerseText`
+`highlightVerseText` is handed only the text. So `highlightVerseText`
 takes the verse as its first argument, like `getHoverInfo`. That removes
 `setVerseOnScreen`, `verseOnScreen`, the morphology loading flags and the
 popup's redraw-when-the-parse-arrives promise from `sidebar.ts`: main redraws the
@@ -159,7 +160,7 @@ is redrawn with clickable words when it lands (step 3).
 Today the search overlay records a search one second after the reader stops
 changing it, and decides in module state which changes were the reader's.
 
-Proposal: a recorder made once by main, in `src/overlays/search/recording.ts`
+A recorder made once by main, in `src/overlays/search/recording.ts`
 beside `termsToRecord`:
 
 ```ts
@@ -270,26 +271,3 @@ data, not rules. In particular:
 - **Before and after, `scripts/search/click-resolution-report.ts` over the whole
   text gives identical output**, and the print script's search sheet the same
   verses. The report walks every word, which the unit tests do not.
-
-## Open questions for Danyel
-
-1. **Optional files in step 1's interface** (`optional('…')`, `T | null` in
-   `D`). The alternative is for main to load the parse for the popup and hand it
-   to `highlightVerseText` as an extra argument, which puts a search-only
-   argument on every overlay. *Recommend optional files.*
-2. **`highlightVerseText` takes the verse.** Needed to drop `setVerseOnScreen`.
-   *Recommend yes.*
-3. **Search all or nothing**, rather than meanings mode colouring from the
-   dictionary before the texts. *Recommend all or nothing; revisit if step 3's
-   throttled timings show Hebrew search links waiting noticeably on the texts.*
-4. **A failed dictionary download turns search off** rather than falling back to
-   spelling. *Recommend accepting it*: a failed download from our own site is
-   rare, and the fallback is a second way for search to behave that nothing
-   exercises. The other way is for `loaded` to record failures and for the
-   dictionary to be optional with a separate "failed" state, which brings back
-   the meanings changing under a reader when it lands.
-5. **`m` format unchanged.** It could shrink to one key per chosen row, since a
-   row is matched by any key it shares. *Recommend leaving it*: no gain worth a
-   change here.
-6. **Recorder owned by main** rather than the overlay. *Recommend main*: main is
-   what knows a change came from the reader rather than a link.
