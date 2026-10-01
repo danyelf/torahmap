@@ -3,7 +3,6 @@
 import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from './types.ts';
 import { seededRandom } from './utils/random.ts';
 import { JITTER_CENTER, JITTER_RANGE } from './constants.ts';
-import { reportError } from './analytics.ts';
 
 const VERSE_SIZE = 6; // pixels per verse square
 const CHAPTER_GAP = 2; // gap between chapter rows
@@ -180,6 +179,7 @@ function layoutBooksStack(
   gap: number,
   globalVerseIdx: { value: number },
   verses: TanakhLayout[],
+  report: Report,
 ): { width: number; height: number } {
   let currentY = startY;
   let maxWidth = 0;
@@ -187,7 +187,7 @@ function layoutBooksStack(
   for (const bookName of bookNames) {
     const book = bookMap.get(bookName);
     if (!book) {
-      reportError('layout', `Book not found in map: ${bookName}`);
+      report(`Book not found in map: ${bookName}`);
       continue;
     }
 
@@ -210,6 +210,7 @@ function layoutStacksRow(
   columnGap: number,
   globalVerseIdx: { value: number },
   verses: TanakhLayout[],
+  report: Report,
 ): { width: number; height: number } {
   let currentX = startX;
   let maxHeight = 0;
@@ -223,6 +224,7 @@ function layoutStacksRow(
       stackGap,
       globalVerseIdx,
       verses,
+      report,
     );
     maxHeight = Math.max(maxHeight, height);
     currentX += width + columnGap;
@@ -262,6 +264,7 @@ function layoutNeviim(
   globalVerseIdx: { value: number },
   verses: TanakhLayout[],
   minorProphetStacks: string[][],
+  report: Report,
 ): number {
   const minorProphets = new Set(minorProphetStacks.flat());
 
@@ -287,6 +290,7 @@ function layoutNeviim(
     BOOK_GAP,
     globalVerseIdx,
     verses,
+    report,
   );
 
   return Math.max(majorHeight, minorHeight);
@@ -299,6 +303,7 @@ function layoutKetuvim(
   globalVerseIdx: { value: number },
   verses: TanakhLayout[],
   layoutConfig: LayoutConfig,
+  report: Report,
 ): number {
   const stackedBooks = new Set(layoutConfig.ketuvimStacks.flatMap((c) => c.books));
   const bookMap = new Map(books.map((b) => [b.name, b]));
@@ -327,6 +332,7 @@ function layoutKetuvim(
           STACKED_BOOK_GAP,
           globalVerseIdx,
           verses,
+          report,
         );
         maxHeight = Math.max(maxHeight, stackHeight);
         bookX += stackWidth + BOOK_GAP;
@@ -348,7 +354,12 @@ function layoutTorah(
   return height;
 }
 
-export function computeLayout(torahData: TorahData): TanakhLayout[] {
+type Report = (message: string) => void;
+
+export function computeLayout(
+  torahData: TorahData,
+  report: Report = console.error,
+): TanakhLayout[] {
   if (torahData.books.length === 0) {
     console.warn('Empty books array in torahData');
     return [];
@@ -379,10 +390,11 @@ export function computeLayout(torahData: TorahData): TanakhLayout[] {
     globalVerseIdx,
     verses,
     torahData.layout.minorProphetStacks,
+    report,
   );
   sectionY += neviimHeight + SECTION_GAP;
 
-  layoutKetuvim(ketuvim, sectionY, globalVerseIdx, verses, torahData.layout);
+  layoutKetuvim(ketuvim, sectionY, globalVerseIdx, verses, torahData.layout, report);
 
   // Mirror x-coordinates for RTL layout: Genesis rightmost, verse 1 at right
   // edge of each row, ragged chapter endings on the left.

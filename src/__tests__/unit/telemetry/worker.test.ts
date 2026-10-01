@@ -3,6 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as pageModule from '../../../worker/page.ts';
 import worker from '../../../worker/index.ts';
+import { columns, type DataPoint } from '../../../telemetry/schema.ts';
 
 function env() {
   return {
@@ -226,11 +227,12 @@ describe('the page at /', () => {
     const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
     expect(await response.text()).toBe(html);
     expect(consoleError).toHaveBeenCalled();
-    expect(e.TORAHMAP_EVENTS.writeDataPoint).toHaveBeenCalledWith({
-      indexes: ['worker_error'],
-      blobs: ['worker_error', '', '', 'desktop', 'torahmap.org', 'linkPage', 'Error: boom'],
-      doubles: [],
-    });
+    const { blobs } = e.TORAHMAP_EVENTS.writeDataPoint.mock.calls
+      .map(([point]) => point as DataPoint)
+      .find((p) => p.indexes[0] === 'worker_error')!;
+    const column = (name: string) => blobs[columns('worker_error').blobs.indexOf(name)];
+    expect(column('source')).toBe('linkPage');
+    expect(column('message')).toBe('Error: boom');
     rewriteSpy.mockRestore();
     consoleError.mockRestore();
   });

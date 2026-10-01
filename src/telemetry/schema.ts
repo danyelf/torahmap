@@ -44,7 +44,7 @@ export const EVENTS = {
 
 export type EventName = keyof typeof EVENTS;
 
-type WorkerEvent = {
+export type WorkerEvent = {
   [E in EventName]: (typeof EVENTS)[E] extends { by: 'worker' } ? E : never;
 }[EventName];
 
@@ -66,6 +66,7 @@ type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
 interface NarrowBlobs {
   arrived_with: LinkKind;
   what: LinkKind;
+  source: ErrorSource;
 }
 export type EventFields<E extends EventName> = {
   [K in Blobs<E>]: K extends keyof NarrowBlobs ? NarrowBlobs[K] : string;
@@ -88,12 +89,14 @@ export interface DataPoint {
 }
 
 export const MAX_BODY_BYTES = 2048;
-const MAX_BLOB_CHARS = 100;
+export const MAX_BLOB_CHARS = 100;
 
-/** The message column of error and worker_error, cut to fit. */
+/** The source column of error and worker_error; errors.sql groups by it. */
+export type ErrorSource =
+  'main' | 'layout' | 'loadJson' | 'uncaught' | 'unhandled_rejection' | 'linkPage';
+
 export function errorMessage(error: unknown): string {
-  const text = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-  return text.slice(0, MAX_BLOB_CHARS);
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
 }
 
 function isEventName(name: unknown): name is EventName {

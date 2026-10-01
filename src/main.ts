@@ -240,7 +240,7 @@ async function main(): Promise<void> {
   ]);
 
   initBookData(torahData);
-  const verses = computeLayout(torahData);
+  const verses = computeLayout(torahData, (message) => reportError('layout', message));
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 

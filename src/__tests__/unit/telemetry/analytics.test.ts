@@ -197,8 +197,20 @@ describe('errors', () => {
   });
 
   it('cuts a long message short', () => {
-    reportError('search', 'x'.repeat(500));
+    reportError('layout', 'x'.repeat(500));
     expect(sent()[0].fields.message.length).toBeLessThan(500);
+  });
+
+  it('logs the error itself after its context, and sends both as text', () => {
+    const error = new SyntaxError('Unexpected token');
+    reportError('loadJson', error, 'Failed to load the commentary counts');
+    expect(consoleError).toHaveBeenCalledWith(
+      'loadJson: Failed to load the commentary counts:',
+      error,
+    );
+    expect(sent()[0].fields.message).toBe(
+      'Failed to load the commentary counts: SyntaxError: Unexpected token',
+    );
   });
 
   it('reports uncaught errors and rejections without logging them again', () => {

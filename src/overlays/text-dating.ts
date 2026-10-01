@@ -1,7 +1,7 @@
 import './text-dating.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
-import { loadJson } from './loadJson.ts';
+import { loadJson } from '../loadJson.ts';
 import { legendCaption, legendRow } from './legend.ts';
 import { colorToCss } from '../utils/color.ts';
 

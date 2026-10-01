@@ -10,9 +10,11 @@ import {
   toDataPoint,
   workerDataPoint,
   type DataPoint,
+  type EventFields,
   type RequestContext,
+  type WorkerEvent,
 } from '../telemetry/schema.ts';
-import { readLink, writeLink, linkKind, type UrlState } from '@torahmap/link';
+import { readLink, writeLink, linkKind } from '@torahmap/link';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { describeLink } from '@torahmap/site';
 import { rewritePage } from './page.ts';
@@ -65,44 +67,20 @@ async function handleEvent(request: Request, url: URL, env: Env): Promise<Respon
   return new Response(null, { status: 204 });
 }
 
-/** Logs an error and writes the worker_error event. Never throws. */
-function reportWorkerError(
-  source: string,
-  error: unknown,
-  request: Request,
-  url: URL,
-  env: Env,
-): void {
-  console.error(`${source}:`, error);
-  try {
-    const point = workerDataPoint(
-      'worker_error',
-      { source, message: errorMessage(error) },
-      requestContext(request, url),
-    );
-    env.TORAHMAP_EVENTS.writeDataPoint(point);
-  } catch {
-    // Nowhere left to report it; the log above stands.
-  }
-}
-
-/** Writes the link_preview event. Never throws. */
-function recordPreviewFetch(
-  fetcher: string,
-  link: UrlState,
+/** Writes an event the Worker observes. Never throws: a failed write is only logged. */
+function writeWorkerEvent<E extends WorkerEvent>(
+  event: E,
+  fields: EventFields<E>,
   request: Request,
   url: URL,
   env: Env,
 ): void {
   try {
-    const point = workerDataPoint(
-      'link_preview',
-      { fetcher, what: linkKind(link) },
-      requestContext(request, url),
+    env.TORAHMAP_EVENTS.writeDataPoint(
+      workerDataPoint(event, fields, requestContext(request, url)),
     );
-    env.TORAHMAP_EVENTS.writeDataPoint(point);
   } catch (error) {
-    reportWorkerError('recordPreviewFetch', error, request, url, env);
+    console.error(`writing ${event}:`, error);
   }
 }
 
@@ -114,7 +92,7 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
   const link = readLink(url.search, overlayParamSpecs);
 
   // Recorded even when the static files return an error.
-  recordPreviewFetch(fetcher, link, request, url, env);
+  writeWorkerEvent('link_preview', { fetcher, what: linkKind(link) }, request, url, env);
 
   const contentType = response.headers.get('Content-Type') ?? '';
   if (response.status !== 200 || !contentType.startsWith('text/html')) return response;
@@ -132,7 +110,9 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
     headers.delete('ETag');
     return new Response(body, { status: response.status, headers });
   } catch (error) {
-    reportWorkerError('linkPage', error, request, url, env);
+    console.error('linkPage: falling back to the page as fetched', error);
+    const message = errorMessage(error);
+    writeWorkerEvent('worker_error', { source: 'linkPage', message }, request, url, env);
     return new Response(html, { status: response.status, headers: response.headers });
   }
 }
