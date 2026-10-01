@@ -11,7 +11,6 @@ export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { createOverlaySettings, settingsFromLink } from './settings.ts';
 export { configure as configureTrop, highlightTropInText } from './trop.ts';
 export { configure as configureSearch, highlightSearchTerms } from './search/index.ts';
-export { configure as configureVerseLength } from './verse-length.ts';
 
 // The catalog decides which overlays the menu offers and in what order; this
 // supplies the drawing code for each.

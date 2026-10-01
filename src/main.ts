@@ -113,7 +113,6 @@ import {
   getAllOverlays,
   configureTrop,
   configureSearch,
-  configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
 import {
@@ -257,7 +256,6 @@ async function main(): Promise<void> {
   const searchReady = performance.now();
 
   configureTrop({ verseTexts });
-  configureVerseLength({ verseTexts });
 
   await Promise.all(getAllOverlays().map((o) => o.init?.()));
 

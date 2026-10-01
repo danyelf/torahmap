@@ -213,3 +213,7 @@ longer handed the layout. A counts entry with no verse in the layout would
 now raise the maximum; the shipped file has none (23,206 entries, all in the
 structure), and the layout tests show no change. The unit tests for `init`,
 `configure` and `destroy` are deleted with those members.
+- **2026-10-01 (Task 5)** `verse-length.test.ts` imports the overlay from its module's
+exports and hosts it per test with `hostOverlay`, instead of fetching it from the
+registry, so the test hands it each text set through `setData`. No integration
+test used `configureVerseLength`.
