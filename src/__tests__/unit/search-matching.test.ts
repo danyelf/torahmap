@@ -6,7 +6,7 @@ import { excerptOf } from '../helpers/excerpt';
 import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
-const searchOverlay = hostOverlay(overlay);
+const searchOverlay = hostOverlay(overlay, undefined);
 import { buildSearchIndex, versesForTerm } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';

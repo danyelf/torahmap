@@ -2,13 +2,14 @@ import './verse-length.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { tanakhKey } from '../types.ts';
-import type { VerseTexts } from '../verseTexts.ts';
+import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { verseWords } from '../verseWords.ts';
 import type { ColorStop } from '../utils/color.ts';
 import { scale, SQRT, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
 import { NO_DATA } from './colors.ts';
+import { memoByValue } from './memo.ts';
 
 // Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
 const PLASMA_STOPS: ColorStop[] = [
@@ -19,27 +20,31 @@ const PLASMA_STOPS: ColorStop[] = [
   { t: 1.0, color: [240 / 255, 249 / 255, 33 / 255] }, // yellow
 ];
 
-let verseTexts: VerseTexts | null = null;
-let wordCountCache: Map<string, number> = new Map();
-let minWordCount = 0;
-let maxWordCount = 0;
+export interface VerseLengthData {
+  texts: VerseTexts;
+}
 
-export function configure(config: { verseTexts: VerseTexts }): void {
-  verseTexts = config.verseTexts;
-  wordCountCache.clear();
+interface WordCounts {
+  byVerse: Map<string, number>;
+  min: number;
+  max: number;
+  scale: Scale;
+}
 
+/**
+ * Every verse's word count, the range of the non-empty ones and their colour
+ * scale, once per data value. The scale is square root, so that a few very long
+ * verses don't compress everything else toward one end of the palette.
+ */
+const wordCountsOf = memoByValue(({ texts }: VerseLengthData): WordCounts => {
+  const byVerse = new Map<string, number>();
   let min = Infinity;
   let max = 0;
-
-  for (const book in verseTexts) {
-    for (const chapter in verseTexts[book]) {
-      for (const verse in verseTexts[book][chapter]) {
-        const verseText = verseTexts[book][chapter][verse];
-        const wordCount = verseWords(verseText.he).length;
-
-        const key = tanakhKey(book, parseInt(chapter), parseInt(verse));
-        wordCountCache.set(key, wordCount);
-
+  for (const book in texts) {
+    for (const chapter in texts[book]) {
+      for (const verse in texts[book][chapter]) {
+        const wordCount = verseWords(texts[book][chapter][verse].he).length;
+        byVerse.set(tanakhKey(book, parseInt(chapter), parseInt(verse)), wordCount);
         if (wordCount > 0) {
           min = Math.min(min, wordCount);
           max = Math.max(max, wordCount);
@@ -47,61 +52,60 @@ export function configure(config: { verseTexts: VerseTexts }): void {
       }
     }
   }
+  min = min === Infinity ? 0 : min;
+  return { byVerse, min, max, scale: scale(min, max, SQRT, PLASMA_STOPS) };
+});
 
-  minWordCount = min === Infinity ? 0 : min;
-  maxWordCount = max;
+function wordCountAt(data: VerseLengthData, verse: TanakhIdentity): number | undefined {
+  return wordCountsOf(data).byVerse.get(tanakhKey(verse.book, verse.chapter, verse.verse));
 }
 
-/**
- * Square root, so that a few very long verses don't compress everything else
- * toward one end of the palette. Rebuilt per call: the range follows the text.
- */
-function wordCountScale(): Scale {
-  return scale(minWordCount, maxWordCount, SQRT, PLASMA_STOPS);
+function verseColorAt(data: VerseLengthData, verse: TanakhIdentity): Color | null {
+  const wordCount = wordCountAt(data, verse);
+  if (wordCount === undefined || wordCount === 0) return NO_DATA;
+  return wordCountsOf(data).scale.colorOf(wordCount);
 }
 
-function getVerseColorForWordCount(verse: TanakhIdentity): Color | null {
-  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-  const wordCount = wordCountCache.get(key);
-
-  if (wordCount === undefined || wordCount === 0) {
-    return NO_DATA;
-  }
-
-  return wordCountScale().colorOf(wordCount);
-}
-
-export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
+export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> = {
   ...VERSE_LENGTH,
+  data: { texts: TEXTS_FILE },
 
-  getVerseColor(verse: TanakhIdentity): Color | null {
-    return getVerseColorForWordCount(verse);
+  prebuild(data) {
+    wordCountsOf(data);
   },
 
-  colorsFor(items) {
-    return items.map((item) => getVerseColorForWordCount(item));
+  getVerseColor(verse, _settings, data) {
+    return verseColorAt(data, verse);
   },
 
-  renderLegend(container: HTMLElement): void {
+  colorsFor(items, _settings, _hovered, data) {
+    return items.map((item) => verseColorAt(data, item));
+  },
+
+  renderLegend(container, _settings, data) {
+    if (!data) {
+      container.innerHTML = '';
+      return;
+    }
+    const counts = wordCountsOf(data);
     const paletteName = 'Plasma';
     const lowColor = 'Purple';
     const highColor = 'Orange/yellow';
 
     container.innerHTML = `
-      ${renderAxis(wordCountScale(), [minWordCount, maxWordCount], (n) => `${n} words`)}
+      ${renderAxis(counts.scale, [counts.min, counts.max], (n) => `${n} words`)}
       ${legendCaption(`${lowColor} = shorter verses`)}
       ${legendCaption(`${highColor} = longer verses`)}
       ${legendCaption(`Square root scale · ${paletteName} palette`)}
     `;
   },
 
-  summary() {
-    return { colors: [axisGradient(wordCountScale())] };
+  summary(_settings, data) {
+    return { colors: [axisGradient(wordCountsOf(data).scale)] };
   },
 
-  getHoverInfo(verse: TanakhIdentity): string | null {
-    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-    const wordCount = wordCountCache.get(key);
+  getHoverInfo(verse, _settings, data) {
+    const wordCount = wordCountAt(data, verse);
 
     if (wordCount === undefined) return null;
 
@@ -109,9 +113,8 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void> = {
     return `${wordCount} ${plural}`;
   },
 
-  renderSidebarInfo(verse: TanakhIdentity): HTMLElement | null {
-    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-    const wordCount = wordCountCache.get(key);
+  renderSidebarInfo(verse, _isPinned, _settings, data) {
+    const wordCount = wordCountAt(data, verse);
 
     if (wordCount === undefined) return null;
 

@@ -1,15 +1,19 @@
 // Playing the app's part for one overlay: holding its settings in the same
-// store main.ts uses, handing them to every member that takes them, and
+// store main.ts uses, handing them and its data to every member, and
 // drawing the controls again after each change, into the container they were
 // last drawn in.
-import type { Overlay, SettingsUpdate } from '../../overlays/types';
+import type { Overlay, OverlaySummary, SettingsUpdate } from '../../overlays/types';
 import type { TanakhIdentity, TextLanguage } from '../../types';
 import { createOverlaySettings, settingsFromLink, type LinkParams } from '../../overlays/settings';
 
-export interface OverlayHost<S> {
-  readonly overlay: Overlay<TanakhIdentity, S>;
+export interface OverlayHost<S, D> {
+  readonly overlay: Overlay<TanakhIdentity, S, D>;
   /** The settings the app holds for this overlay. */
   readonly settings: S;
+  /** The data the overlay is handed. */
+  readonly data: D;
+  /** Hand the overlay different data, and redraw the controls with it. */
+  setData(next: D): void;
   /** Draw the controls from scratch, into `container` or a new element, as switching to the overlay does. */
   renderControls(container?: HTMLElement): HTMLElement;
   /** Replace the settings with a link's, as restoring a link does, and redraw the controls. */
@@ -27,23 +31,36 @@ export interface OverlayHost<S> {
   getHoverInfo(verse: TanakhIdentity): string | null;
   highlightVerseText(text: string, language: TextLanguage): DocumentFragment;
   renderLegend(container: HTMLElement): void;
+  summary(): OverlaySummary;
+  renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | null;
   destroy(): void;
 }
 
-export function hostOverlay<S>(overlay: Overlay<TanakhIdentity, S>): OverlayHost<S> {
+export function hostOverlay<S, D>(
+  overlay: Overlay<TanakhIdentity, S, D>,
+  data: D,
+): OverlayHost<S, D> {
+  let held = data;
   const store = createOverlaySettings();
   let container: HTMLElement | null = null;
   const listeners: (() => void)[] = [];
 
   function draw(): void {
     if (!container) return;
-    overlay.renderControls?.(container, store.get(overlay), host.change);
+    overlay.renderControls?.(container, store.get(overlay), host.change, held);
   }
 
-  const host: OverlayHost<S> = {
+  const host: OverlayHost<S, D> = {
     overlay,
     get settings() {
       return store.get(overlay);
+    },
+    get data() {
+      return held;
+    },
+    setData(next) {
+      held = next;
+      draw();
     },
     renderControls(into = document.createElement('div')) {
       container = into;
@@ -70,20 +87,26 @@ export function hostOverlay<S>(overlay: Overlay<TanakhIdentity, S>): OverlayHost
       return store.toUrl(overlay);
     },
     getVerseColor(verse) {
-      return overlay.getVerseColor(verse, store.get(overlay));
+      return overlay.getVerseColor(verse, store.get(overlay), held);
     },
     hoverChangesColors(before, after) {
-      return overlay.hoverChangesColors?.(before, after, store.get(overlay)) ?? false;
+      return overlay.hoverChangesColors?.(before, after, store.get(overlay), held) ?? false;
     },
     getHoverInfo(verse) {
-      return overlay.getHoverInfo?.(verse, store.get(overlay)) ?? null;
+      return overlay.getHoverInfo?.(verse, store.get(overlay), held) ?? null;
     },
     highlightVerseText(text, language) {
       if (!overlay.highlightVerseText) throw new Error(`${overlay.id} does not mark verse text`);
-      return overlay.highlightVerseText(text, language, store.get(overlay));
+      return overlay.highlightVerseText(text, language, store.get(overlay), held);
     },
     renderLegend(into) {
-      overlay.renderLegend?.(into, store.get(overlay));
+      overlay.renderLegend?.(into, store.get(overlay), held);
+    },
+    summary() {
+      return overlay.summary?.(store.get(overlay), held) ?? {};
+    },
+    renderSidebarInfo(verse, isPinned) {
+      return overlay.renderSidebarInfo?.(verse, isPinned, store.get(overlay), held) ?? null;
     },
     destroy() {
       overlay.destroy?.();

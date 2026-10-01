@@ -1,8 +1,15 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { deriveHaftarah, loadReadings } from '../../../src/overlays/haftarah/readings.ts';
+import { deriveHaftarah } from '../../../src/overlays/haftarah/readings.ts';
 import { loadLexiconData } from '../../../src/search.ts';
 import type { SheetInput } from '../types.ts';
-import { haftarahKey, haftarahSheet, loadStructure, nameVerses, searchSheet } from '../views.ts';
+import {
+  haftarahKey,
+  haftarahSheet,
+  loadHaftarahData,
+  loadStructure,
+  nameVerses,
+  searchSheet,
+} from '../views.ts';
 
 const structure = loadStructure();
 
@@ -18,17 +25,16 @@ describe('haftarahSheet', () => {
     expect(sheet.verses.some((v) => v.fills.length > 1)).toBe(true);
   });
 
-  it('lists every reading in the key exactly once, in the colour it has on the map', () => {
+  it('lists every reading in the key exactly once, in the colour it has on the map', async () => {
     const rows = sheet.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
-    const derived = deriveHaftarah('ashkenazi');
+    const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
     expect(rows.map((r) => r.en).sort()).toEqual(derived.items.map((i) => i.name).sort());
     const onMap = new Set(sheet.verses.flatMap((v) => v.fills));
     for (const row of rows) expect(onMap.has(row.swatch)).toBe(true);
   });
 
   it('refuses a kind of occasion the key has no column for', async () => {
-    await loadReadings();
-    const derived = deriveHaftarah('ashkenazi');
+    const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
     const stray = { ...derived.items.at(-1)!, name: 'Stray', category: 'unheard-of' };
     const items = [...derived.items, stray];
     expect(() =>

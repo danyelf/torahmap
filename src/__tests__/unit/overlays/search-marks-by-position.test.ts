@@ -20,7 +20,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse } from '../../helpers/fixtures';
 import type { VerseTexts } from '../../../verseTexts';
 
-const searchOverlay = hostOverlay(searchTool);
+const searchOverlay = hostOverlay(searchTool, undefined);
 
 const VERSE = 'Genesis:8:20';
 /** The two readings, as the URL names them: the verb, then the three nouns. */

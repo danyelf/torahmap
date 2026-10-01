@@ -15,7 +15,7 @@ import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay
 import { SEARCH_COLORS } from '../../../utils/color';
 import type { VerseTexts } from '../../../verseTexts';
 
-const searchOverlay = hostOverlay(searchTool);
+const searchOverlay = hostOverlay(searchTool, undefined);
 
 const texts: VerseTexts = {
   Genesis: {

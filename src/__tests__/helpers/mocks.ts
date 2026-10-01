@@ -1,5 +1,6 @@
 // Mock implementations for testing
 import { vi } from 'vitest';
+import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts.ts';
 
 // Lets tests run without a real GPU/browser environment.
 export function createMockWebGL2Context(): WebGL2RenderingContext {
@@ -202,9 +203,8 @@ export function mockFetchStatus(status: number, body: unknown = null): MockRespo
 // rejected fetch, a response whose .json() itself rejects).
 export function mockFetch(responses: Record<string, unknown> = {}) {
   const defaultResponses: Record<string, unknown> = {
-    '/data/tanakh-structure.json': { books: [] },
-    '/data/all-texts.json': {},
-    '/data/overlays/commentary/counts.json': {},
+    [`/data/${STRUCTURE_FILE}`]: { books: [] },
+    [`/data/${TEXTS_FILE}`]: {},
     ...responses,
   };
 

@@ -16,14 +16,23 @@ import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { haftarahOverlay } from '../../overlays/haftarah';
-import { deriveHaftarah } from '../../overlays/haftarah/readings';
+import { commentaryOverlay } from '../../overlays/commentary';
+import {
+  deriveHaftarah,
+  HAFTARAH_FILES,
+  type HaftarahData,
+} from '../../overlays/haftarah/readings';
+import { loadNamedFiles } from '../../dataFiles';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
 registerAllOverlays();
 
-beforeAll(() => haftarahOverlay.init?.());
+let readings: HaftarahData;
+beforeAll(async () => {
+  readings = await loadNamedFiles<HaftarahData>(HAFTARAH_FILES);
+});
 
 /**
  * Stops whose haftarah reading, once read the way the app does, is no
@@ -34,7 +43,7 @@ function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']):
     .filter((s) => s.overlay === 'haftarah' && s.overlayParams?.reading)
     .filter((s) => {
       const { custom, reading } = settingsFromLink(haftarahOverlay, s.overlayParams!);
-      return !reading || !deriveHaftarah(custom).itemByName.has(reading);
+      return !reading || !deriveHaftarah(readings, custom).itemByName.has(reading);
     })
     .map((s) => `${s.id}: ${s.overlayParams!.reading}`);
 }
@@ -138,7 +147,7 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   it('names only commentary categories the data has', () => {
     // A category is checked for its spelling when read, not for existing.
     const counts = JSON.parse(
-      fs.readFileSync(path.join(dataDir, 'overlays', 'commentary', 'counts.json'), 'utf-8'),
+      fs.readFileSync(path.join(dataDir, commentaryOverlay.data.counts), 'utf-8'),
     );
     const categories = new Set(['total']);
     for (const chapters of Object.values<Record<string, Record<string, { categories?: object }>>>(

@@ -12,6 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { HAFTARAH_FILES } from '../../../overlays/haftarah/readings';
 
 interface VerseRef {
   chapter: number;
@@ -37,7 +38,7 @@ interface Parsha extends Reading {
 const dataDir = path.join(process.cwd(), 'public', 'data');
 
 const mappings = JSON.parse(
-  fs.readFileSync(path.join(dataDir, 'overlays', 'haftarah', 'mappings.json'), 'utf-8'),
+  fs.readFileSync(path.join(dataDir, HAFTARAH_FILES.mappings), 'utf-8'),
 ) as { parshiot: Parsha[]; specialOccasions: Reading[] };
 
 const structure = JSON.parse(

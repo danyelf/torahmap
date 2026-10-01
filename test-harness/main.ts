@@ -2,7 +2,8 @@
 // Loads real data, builds real search index, renders real search overlay controls
 // No WebGL, no map, no verse layout — just the input pipeline
 
-import { loadAllVerseTexts } from '../src/verseTexts.ts';
+import { loadFiles } from '../src/dataFiles.ts';
+import { TEXTS_FILE, textsFrom } from '../src/verseTexts.ts';
 import { isHebrew } from '../src/hebrew.ts';
 import { buildSearchIndex, loadLexiconData } from '../src/search.ts';
 import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
@@ -129,7 +130,8 @@ async function main(): Promise<void> {
   logEvent('init', 'Loading data...');
 
   // Load data in parallel
-  const [verseTexts] = await Promise.all([loadAllVerseTexts(), loadLexiconData()]);
+  const [loaded] = await Promise.all([loadFiles([TEXTS_FILE]), loadLexiconData()]);
+  const verseTexts = textsFrom(loaded);
 
   logEvent('init', `Loaded verse texts (${Object.keys(verseTexts).length} books)`);
 
@@ -153,10 +155,15 @@ async function main(): Promise<void> {
   const settings = createOverlaySettings();
 
   function draw(): void {
-    searchOverlay.renderControls?.(controlsContainer, settings.get(searchOverlay), (update) => {
-      settings.set(searchOverlay, update(settings.get(searchOverlay)));
-      draw();
-    });
+    searchOverlay.renderControls?.(
+      controlsContainer,
+      settings.get(searchOverlay),
+      (update) => {
+        settings.set(searchOverlay, update(settings.get(searchOverlay)));
+        draw();
+      },
+      undefined,
+    );
   }
   draw();
 

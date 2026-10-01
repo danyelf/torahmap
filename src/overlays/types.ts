@@ -14,10 +14,10 @@ export type { Color };
 export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHack'];
 
 // Generic over the identity type T, so that Talmud overlays can declare
-// Overlay<TalmudIdentity, void> (they have no settings), and over the settings
-// type S, which each overlay defines for itself. The app holds an overlay's
-// settings and hands them to every member that depends on them; the overlay
-// keeps none of its own.
+// Overlay<TalmudIdentity, void, void> (they have no settings and no data); over
+// the settings type S, which each overlay defines for itself; and over the data
+// type D, the files it reads. The app holds an overlay's settings and data and
+// hands them to every member that depends on them; the overlay keeps neither.
 //
 // Code that handles any overlay sees S as unknown, and only ever hands an
 // overlay settings that the same overlay produced. An Overlay<T, SearchSettings>
@@ -27,8 +27,35 @@ export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHac
 //
 // An overlay either has settings, and implements every member of
 // OverlayWithSettings, or has none and implements none of them.
-export type Overlay<T = TanakhIdentity, S = unknown> = OverlayMembers<T, S> &
-  (OverlayWithSettings<S> | OverlayWithoutSettings);
+export type Overlay<T = TanakhIdentity, S = unknown, D = unknown> = OverlayMembers<T, S, D> &
+  (OverlayWithSettings<S> | OverlayWithoutSettings) &
+  DataPart<D>;
+
+// An overlay names its files exactly when it takes data. Code that handles any
+// overlay sees D as unknown, and either kind.
+type DataPart<D> = unknown extends D
+  ? OverlayWithData<D> | OverlayWithoutData
+  : [D] extends [void]
+    ? OverlayWithoutData
+    : OverlayWithData<D>;
+
+// An overlay that reads files names each by its own short name, as a path under
+// public/data/. The app loads every path once and hands the overlay D: each
+// file's contents under its name. Whatever the overlay derives from them it
+// keeps per data value, so it goes with the data.
+interface OverlayWithData<D> {
+  data: { readonly [K in keyof D]: string };
+  // Work out ahead of first use what the overlay derives from its data. The
+  // app calls it when the browser is idle; a member called first works out the
+  // same thing on demand, so this changes when the work happens, never the result.
+  prebuild?(data: D): void;
+}
+
+// The app hands an overlay that names no files undefined wherever it hands data.
+interface OverlayWithoutData {
+  data?: never;
+  prebuild?: never;
+}
 
 interface OverlayWithSettings<S> {
   // Settings to and from a shareable link. @torahmap/link reads and validates
@@ -48,7 +75,7 @@ interface OverlayWithoutSettings {
   settingsToUrl?: never;
 }
 
-interface OverlayMembers<T, S> {
+interface OverlayMembers<T, S, D> {
   id: string;
   name: string;
 
@@ -57,17 +84,18 @@ interface OverlayMembers<T, S> {
   // view composes, are never offered to a reader.
   description?: string;
 
-  init?(): Promise<void>;
   destroy?(): void;
 
   // null renders default gray; Color[] splits the square corner to corner, one band per color.
-  getVerseColor(verse: T, settings: S): Color | Color[] | null;
+  getVerseColor(verse: T, settings: S, data: D): Color | Color[] | null;
 
   // The same colours for many items at once, as the map and the story's blend
   // ask for them. `hovered` is the item under the cursor; only Haftarah's
   // colours depend on it.
-  colorsFor(items: T[], settings: S, hovered: T | null): (Color | Color[] | null)[];
+  colorsFor(items: T[], settings: S, hovered: T | null, data: D): (Color | Color[] | null)[];
 
+  // The panel may be drawn without the overlay's data; then data is null.
+  //
   // Draw the controls for `settings`. The app calls this again with the same
   // container after a change, so bring what is there up to date rather than
   // rebuilding it: a box being typed in must keep its focus.
@@ -80,23 +108,24 @@ interface OverlayMembers<T, S> {
     container: HTMLElement,
     settings: S,
     onChange: (update: SettingsUpdate<S>) => void,
+    data: D | null,
   ): void;
-  renderLegend?(container: HTMLElement, settings: S): void;
+  renderLegend?(container: HTMLElement, settings: S, data: D | null): void;
 
   // What the panel's one-line summary shows after the overlay's name; colours
   // are CSS values. Absent, the line is the name alone.
-  summary?(settings: S): OverlaySummary;
+  summary?(settings: S, data: D): OverlaySummary;
 
-  getHoverInfo?(verse: T, settings: S): string | null;
+  getHoverInfo?(verse: T, settings: S, data: D): string | null;
 
   // Declaring this marks an overlay's colours as depending on the hovered verse:
   // the map recomputes them when it says so, and the story's blend does not
   // memoise them. True when moving the hover from `before` to `after` changes them.
-  hoverChangesColors?(before: T | null, after: T | null, settings: S): boolean;
+  hoverChangesColors?(before: T | null, after: T | null, settings: S, data: D): boolean;
 
-  renderSidebarInfo?(verse: T, isPinned: boolean, settings: S): HTMLElement | null;
+  renderSidebarInfo?(verse: T, isPinned: boolean, settings: S, data: D): HTMLElement | null;
 
-  highlightVerseText?(text: string, language: TextLanguage, settings: S): DocumentFragment;
+  highlightVerseText?(text: string, language: TextLanguage, settings: S, data: D): DocumentFragment;
 
   // The Sefaria `?with=` value this overlay wants a verse's link to open to
   // (e.g. a chosen commentary category). Absent overlays get `with=all`.
@@ -115,10 +144,11 @@ export interface OverlaySummary {
   colors?: string[];
 }
 
-/** A tool on the map, with the settings the app holds for it. */
+/** A tool on the map, with the settings the app holds for it and its data. */
 export interface ToolOnMap<T = TanakhIdentity> {
   tool: Overlay<T>;
   settings: unknown;
+  data: unknown;
 }
 
 /** What colours the map: the overlay and the search, each null while off. */

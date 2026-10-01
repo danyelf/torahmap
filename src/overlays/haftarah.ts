@@ -9,10 +9,10 @@ import {
   deriveHaftarah,
   forEachVerseInRange,
   getItemColor,
+  HAFTARAH_FILES,
   isParsha,
-  loadReadings,
-  mappings,
   type Custom,
+  type HaftarahData,
   type HaftarahDerivation,
   type HaftarahItem,
   type OccasionCategory,
@@ -78,13 +78,14 @@ function litByHover(
 
 /** A previewed reading, with every reading that shares any of its haftarah verses. */
 function litByPreview(
+  data: HaftarahData,
   derived: HaftarahDerivation,
   item: HaftarahItem,
   custom: Custom,
 ): Set<HaftarahItem> {
   const lit = new Set([item]);
   for (const range of item.haftarah[custom]) {
-    forEachVerseInRange(range, (book, ch, v) => {
+    forEachVerseInRange(data.structure, range, (book, ch, v) => {
       derived.haftarahVerseToItem.get(tanakhKey(book, ch, v))?.forEach((i) => lit.add(i));
     });
   }
@@ -92,11 +93,15 @@ function litByPreview(
 }
 
 /** The reading called `name` lit as a preview, or null when no reading has that name. */
-function litByName(custom: Custom, name: string | null): Set<HaftarahItem> | null {
+function litByName(
+  data: HaftarahData,
+  custom: Custom,
+  name: string | null,
+): Set<HaftarahItem> | null {
   if (name === null) return null;
-  const derived = deriveHaftarah(custom);
+  const derived = deriveHaftarah(data, custom);
   const item = derived.itemByName.get(name);
-  return item ? litByPreview(derived, item, custom) : null;
+  return item ? litByPreview(data, derived, item, custom) : null;
 }
 
 /**
@@ -104,13 +109,14 @@ function litByName(custom: Custom, name: string | null): Set<HaftarahItem> | nul
  * reading on the map — and otherwise the reading the settings name, if any.
  */
 function litFor(
+  data: HaftarahData,
   settings: HaftarahSettings,
   hovered: TanakhIdentity | null,
 ): Set<HaftarahItem> | null {
   return (
-    litByName(settings.custom, settings.preview) ??
-    litByHover(deriveHaftarah(settings.custom), hovered) ??
-    litByName(settings.custom, settings.reading)
+    litByName(data, settings.custom, settings.preview) ??
+    litByHover(deriveHaftarah(data, settings.custom), hovered) ??
+    litByName(data, settings.custom, settings.reading)
   );
 }
 
@@ -160,15 +166,15 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
  */
 function renderKey(
   container: HTMLElement,
+  data: HaftarahData,
   custom: Custom,
   onPreview: (reading: string | null) => void,
 ): void {
-  const data = mappings();
-  if (!data?.parshiot || container.querySelector('.haftarah-key')) return;
-  const derived = deriveHaftarah(custom);
+  if (container.querySelector('.haftarah-key')) return;
+  const derived = deriveHaftarah(data, custom);
 
-  const byBook = groupBy(data.parshiot, (parsha) => parsha.torah.book);
-  const byCategory = groupBy(data.specialOccasions ?? [], (occasion) => occasion.category);
+  const byBook = groupBy(data.mappings.parshiot, (parsha) => parsha.torah.book);
+  const byCategory = groupBy(data.mappings.specialOccasions, (occasion) => occasion.category);
 
   const row = (label: string, items: HaftarahItem[]) => {
     const swatches = items
@@ -201,8 +207,9 @@ function renderKey(
   key.addEventListener('pointerleave', () => preview.leave());
 }
 
-export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
+export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, HaftarahData> = {
   ...HAFTARAH,
+  data: HAFTARAH_FILES,
   credits: [
     {
       source: 'Hebcal leyning tables',
@@ -214,14 +221,10 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     },
   ],
 
-  async init() {
-    await loadReadings();
-  },
-
-  hoverChangesColors(before, after, settings) {
+  hoverChangesColors(before, after, settings, data) {
     if (settings.preview !== null) return false;
     // A verse outside every reading colours the map the same as no hover.
-    const derived = deriveHaftarah(settings.custom);
+    const derived = deriveHaftarah(data, settings.custom);
     const keyIfRelevant = (verse: TanakhIdentity | null) =>
       verse && isRelevantVerse(verse, derived)
         ? tanakhKey(verse.book, verse.chapter, verse.verse)
@@ -230,19 +233,21 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
   },
 
   /** The colour with nothing hovered on the map. The map asks colorsFor, which takes the hover. */
-  getVerseColor(verse: TanakhIdentity, settings: HaftarahSettings): Color | Color[] | null {
-    if (!mappings()) return null;
-    return colorAt(verse, deriveHaftarah(settings.custom), litFor(settings, null));
+  getVerseColor(
+    verse: TanakhIdentity,
+    settings: HaftarahSettings,
+    data: HaftarahData,
+  ): Color | Color[] | null {
+    return colorAt(verse, deriveHaftarah(data, settings.custom), litFor(data, settings, null));
   },
 
-  colorsFor(items, settings, hovered) {
-    if (!mappings()) return items.map(() => null);
-    const derived = deriveHaftarah(settings.custom);
-    const lit = litFor(settings, hovered);
+  colorsFor(items, settings, hovered, data) {
+    const derived = deriveHaftarah(data, settings.custom);
+    const lit = litFor(data, settings, hovered);
     return items.map((item) => colorAt(item, derived, lit));
   },
 
-  renderControls(container: HTMLElement, settings: HaftarahSettings, onChange) {
+  renderControls(container: HTMLElement, settings: HaftarahSettings, onChange, data) {
     let select = container.querySelector<HTMLSelectElement>('#custom-select');
     if (!select) {
       const wrapper = document.createElement('div');
@@ -263,21 +268,24 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     }
 
     select.value = settings.custom;
-    renderKey(container, settings.custom, (preview) =>
-      onChange((current) => ({ ...current, preview })),
-    );
+    if (data) {
+      renderKey(container, data, settings.custom, (preview) =>
+        onChange((current) => ({ ...current, preview })),
+      );
+    }
   },
 
-  renderLegend(container: HTMLElement, settings: HaftarahSettings) {
-    // The optional chain has to reach parshiot too: a failed or malformed
-    // fetch leaves data as an object without it.
-    const data = mappings();
-    const parshaCount = data?.parshiot?.length || 54;
-    const occasionCount = data?.specialOccasions?.length || 0;
+  renderLegend(container: HTMLElement, settings: HaftarahSettings, data) {
+    if (!data) {
+      container.innerHTML = '';
+      return;
+    }
+    const parshaCount = data.mappings.parshiot.length;
+    const occasionCount = data.mappings.specialOccasions.length;
 
-    const totalItems = deriveHaftarah(settings.custom).items.length;
+    const totalItems = deriveHaftarah(data, settings.custom).items.length;
     const gradient = buildLegendGradient(10, (i) =>
-      getItemColor(i * (totalItems / 10), totalItems || 81),
+      getItemColor(i * (totalItems / 10), totalItems),
     );
 
     container.innerHTML = `
@@ -293,11 +301,9 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings> = {
     `;
   },
 
-  getHoverInfo(verse: TanakhIdentity, settings: HaftarahSettings): string | null {
-    if (!mappings()) return null;
-
+  getHoverInfo(verse: TanakhIdentity, settings: HaftarahSettings, data): string | null {
     const key = tanakhKey(verse.book, verse.chapter, verse.verse);
-    const derived = deriveHaftarah(settings.custom);
+    const derived = deriveHaftarah(data, settings.custom);
 
     const parshaFromTorah = derived.torahVerseToParsha.get(key);
     if (parshaFromTorah) {

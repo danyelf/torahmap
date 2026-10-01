@@ -42,7 +42,7 @@ import { debounce } from '../../utils/debounce.ts';
 import { termsToRecord, type Recorded } from './recording.ts';
 import { trackSearchExecute } from '../../analytics.ts';
 import { SEARCH_URL_PARAMS } from '@torahmap/link';
-import { memoBySettings } from '../memo.ts';
+import { memoByValue } from '../memo.ts';
 
 /**
  * A list of terms, each with its own text, its own meanings, its own colour and
@@ -77,7 +77,7 @@ function activeTerms(settings: SearchSettings): SearchTerm[] {
 }
 
 // Every function in terms.ts returns a new list, so settings are never edited in place.
-const searchFor = memoBySettings((settings: SearchSettings): Search => {
+const searchFor = memoByValue((settings: SearchSettings): Search => {
   const active = activeTerms(settings);
   return { active, ...matchesForTerms(active) };
 });
@@ -420,7 +420,7 @@ export function highlightSearchTerms(
   return highlightTerms(text, language, searchFor(settings).active);
 }
 
-export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
+export const searchTool: Overlay<TanakhIdentity, SearchSettings, void> = {
   id: 'search',
   name: 'Search',
   credits: [
@@ -440,7 +440,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     return searchColorAt(verse, searchFor(settings));
   },
 
-  colorsFor(items, settings, _hovered) {
+  colorsFor(items, settings) {
     const search = searchFor(settings);
     return items.map((item) => searchColorAt(item, search));
   },

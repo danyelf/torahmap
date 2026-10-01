@@ -11,14 +11,15 @@ import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
 import { searchTool } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';
+import type { Loaded } from '../dataFiles.ts';
 
-// Memoised per verses array by the stop's overlay, its search and their
+// Memoised per verses array and loaded files by the stop's overlay, its search and their
 // validated link parameters. The key is canonical because validateOverlayParams
 // writes keys in the order urlParams declares them, so stops that ask for the
 // same thing share an entry. Colours that depend on the hover are recomputed
 // while a verse is hovered: caching by hover too would add an entry for every
 // verse the cursor crosses.
-const picturesCache = new WeakMap<TanakhLayout[], Map<string, Picture>>();
+const picturesCache = new WeakMap<TanakhLayout[], WeakMap<Loaded, Map<string, Picture>>>();
 
 // UrlParamValues declares every key optional; validateOverlayParams only ever
 // sets present keys to non-empty strings, so this just gives TypeScript proof
@@ -45,14 +46,20 @@ export function pictureForStop(
   stop: ResolvedStoryStop,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
+  loaded: Loaded,
 ): Picture {
   const overlay = (stop.overlay && getOverlay(stop.overlay)) || null;
   const byHover = !!(overlay?.hoverChangesColors && hovered);
 
-  let cache = picturesCache.get(verses);
+  let byLoaded = picturesCache.get(verses);
+  if (!byLoaded) {
+    byLoaded = new WeakMap();
+    picturesCache.set(verses, byLoaded);
+  }
+  let cache = byLoaded.get(loaded);
   if (!cache) {
     cache = new Map();
-    picturesCache.set(verses, cache);
+    byLoaded.set(loaded, cache);
   }
   const key = cacheKeyFor(overlay, stop);
   const cached = byHover ? undefined : cache.get(key);
@@ -62,6 +69,7 @@ export function pictureForStop(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
     settingsFromLink(searchTool, stop.searchParams ?? {}),
+    loaded,
   );
   const picture = fillDefaultColors(toolsPicture(tools, verses, hovered));
   if (!byHover) cache.set(key, picture);
@@ -77,12 +85,14 @@ export function computeBlendedColors(
   t: number,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
+  loaded: Loaded,
 ): ColorLayer {
-  if (fromStop === toStop || t === 0) return still(pictureForStop(fromStop, verses, hovered));
-  if (t >= 1) return still(pictureForStop(toStop, verses, hovered));
+  if (fromStop === toStop || t === 0)
+    return still(pictureForStop(fromStop, verses, hovered, loaded));
+  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded));
   return {
-    from: pictureForStop(fromStop, verses, hovered),
-    to: pictureForStop(toStop, verses, hovered),
+    from: pictureForStop(fromStop, verses, hovered, loaded),
+    to: pictureForStop(toStop, verses, hovered, loaded),
     t,
   };
 }

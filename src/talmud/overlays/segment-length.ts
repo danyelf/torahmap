@@ -46,7 +46,7 @@ export function ingestTractateLengths(structure: TalmudStructure, text: TalmudTr
   });
 }
 
-export const segmentLengthOverlay: Overlay<TalmudIdentity, void> = {
+export const segmentLengthOverlay: Overlay<TalmudIdentity, void, void> = {
   id: 'segment-length',
   name: 'Segment Length',
   getVerseColor(id: TalmudIdentity): Color | null {

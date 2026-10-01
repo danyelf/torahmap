@@ -133,8 +133,8 @@ describe('toolsPicture', () => {
 
     const picture = toolsPicture(
       {
-        overlay: { tool: overlay, settings: undefined },
-        search: { tool: search, settings: undefined },
+        overlay: { tool: overlay, settings: undefined, data: undefined },
+        search: { tool: search, settings: undefined, data: undefined },
       },
       items,
       null,
@@ -151,8 +151,8 @@ describe('toolsPicture', () => {
 
     const picture = toolsPicture(
       {
-        overlay: { tool: overlay, settings: undefined },
-        search: { tool: search, settings: undefined },
+        overlay: { tool: overlay, settings: undefined, data: undefined },
+        search: { tool: search, settings: undefined, data: undefined },
       },
       items,
       null,

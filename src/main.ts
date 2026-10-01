@@ -3,7 +3,7 @@
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { mapPoint } from './mapPoint.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
-import { loadTanakhStructure, loadAllVerseTexts } from './verseTexts.ts';
+import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from './verseTexts.ts';
 import { buildSearchIndex, loadLexiconData } from './search.ts';
 import { stripNikkud } from './hebrew.ts';
 import { meaningsInVerse, prefetchMorphology } from './search/dictionary.ts';
@@ -111,10 +111,7 @@ import {
   createOverlaySettings,
   getOverlay,
   getAllOverlays,
-  configureCommentary,
-  configureTrop,
   configureSearch,
-  configureVerseLength,
   type Overlay,
 } from './overlays/index.ts';
 import {
@@ -123,7 +120,9 @@ import {
   canAddTerm,
   type SearchSettings,
 } from './overlays/search/index.ts';
+import { prebuildAll } from './overlays/prebuild.ts';
 import { toolsShown, togglesSearch } from './tools.ts';
+import { dataFor, loadFiles, overlayFiles } from './dataFiles.ts';
 import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -228,12 +227,16 @@ async function main(): Promise<void> {
     return;
   }
 
+  registerAllOverlays();
   let textsIn = 0;
-  const [torahData, verseTexts] = await Promise.all([
-    loadTanakhStructure(),
-    loadAllVerseTexts().finally(() => (textsIn = performance.now())),
+  const [loaded] = await Promise.all([
+    loadFiles([STRUCTURE_FILE, TEXTS_FILE, ...overlayFiles(getAllOverlays())], (path) => {
+      if (path === TEXTS_FILE) textsIn = performance.now();
+    }),
     loadLexiconData(),
   ]);
+  const torahData = structureFrom(loaded);
+  const verseTexts = textsFrom(loaded);
 
   initBookData(torahData);
   const verses = computeLayout(torahData, (message) => reportError('layout', message));
@@ -249,13 +252,6 @@ async function main(): Promise<void> {
 
   buildSearchIndex(verseTexts);
   const searchReady = performance.now();
-
-  registerAllOverlays();
-  configureCommentary({ verses });
-  configureTrop({ verseTexts });
-  configureVerseLength({ verseTexts });
-
-  await Promise.all(getAllOverlays().map((o) => o.init?.()));
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -334,7 +330,7 @@ async function main(): Promise<void> {
 
   /** The overlay and the search as they stand, each null while off. */
   function toolsNow(): Tools {
-    return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool));
+    return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool), loaded);
   }
 
   /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
@@ -363,7 +359,11 @@ async function main(): Promise<void> {
       ['overlay', overlay],
     ] as const) {
       if (on) {
-        rows.push({ panel, name: on.tool.name, summary: on.tool.summary?.(on.settings) ?? {} });
+        rows.push({
+          panel,
+          name: on.tool.name,
+          summary: on.tool.summary?.(on.settings, on.data) ?? {},
+        });
       }
     }
     showLegend(mapLegend, rows);
@@ -419,7 +419,7 @@ async function main(): Promise<void> {
   function blendTransition(): void {
     if (driver.by !== 'story' || !driver.blend) return;
     const { from, to, t } = driver.blend;
-    setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse));
+    setColorLayer(computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded));
   }
 
   /**
@@ -430,8 +430,7 @@ async function main(): Promise<void> {
   function repaint(hoveredBefore: TanakhLayout | null = mouseState.hoveredVerse): void {
     const layer = layerToRecompute(
       colorSource(driver),
-      currentOverlay,
-      currentSettings(),
+      toolsNow().overlay,
       hoveredBefore,
       mouseState.hoveredVerse,
       tanakhIdentitiesEqual,
@@ -1079,7 +1078,10 @@ async function main(): Promise<void> {
   function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
-      currentOverlay?.renderLegend?.(overlayLegendContainer, currentSettings());
+      const overlay = currentOverlay;
+      if (overlay) {
+        overlay.renderLegend?.(overlayLegendContainer, currentSettings(), dataFor(overlay, loaded));
+      }
     }
   }
 
@@ -1087,8 +1089,11 @@ async function main(): Promise<void> {
   function renderOverlayControls(): void {
     const overlay = currentOverlay;
     if (!overlay || !overlayControlsContainer) return;
-    overlay.renderControls?.(overlayControlsContainer, overlaySettings.get(overlay), (update) =>
-      changeSettings(overlay, update),
+    overlay.renderControls?.(
+      overlayControlsContainer,
+      overlaySettings.get(overlay),
+      (update) => changeSettings(overlay, update),
+      dataFor(overlay, loaded),
     );
   }
 
@@ -1134,7 +1139,12 @@ async function main(): Promise<void> {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
     }
-    searchTool.renderControls?.(searchControls, overlaySettings.get(searchTool), changeSearch);
+    searchTool.renderControls?.(
+      searchControls,
+      overlaySettings.get(searchTool),
+      changeSearch,
+      undefined,
+    );
     updateLegend();
     refreshVersePopup();
   }
@@ -1572,7 +1582,7 @@ async function main(): Promise<void> {
       duration,
       camera,
       flatten(withDefaults(colorLayer)),
-      flatten(computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null)),
+      flatten(computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded)),
     );
   }
 
@@ -1768,7 +1778,7 @@ async function main(): Promise<void> {
   document.documentElement.dataset.mapReady = '';
   const textsEntry = performance
     .getEntriesByType('resource')
-    .find((e) => e.name.endsWith('/all-texts.json')) as PerformanceResourceTiming | undefined;
+    .find((e) => e.name.endsWith(`/${TEXTS_FILE}`)) as PerformanceResourceTiming | undefined;
   const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
   trackLoadTiming({
     first_frame: Math.round(performance.now()),
@@ -1779,6 +1789,7 @@ async function main(): Promise<void> {
   });
 
   prefetchMorphology();
+  prebuildAll(getAllOverlays(), loaded);
 }
 
 reportUncaughtErrors();

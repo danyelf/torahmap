@@ -330,12 +330,12 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, {
           verseTexts,
-          overlay: { tool: mockOverlay, settings },
+          overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
         });
 
-        expect(mockOverlay.getHoverInfo).toHaveBeenCalledWith(verse, settings);
+        expect(mockOverlay.getHoverInfo).toHaveBeenCalledWith(verse, settings, undefined);
         expect(elements.overlayInfo?.textContent).toBe('Test hover info');
       });
 
@@ -349,7 +349,7 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, {
           verseTexts,
-          overlay: { tool: mockOverlay, settings: undefined },
+          overlay: { tool: mockOverlay, settings: undefined, data: undefined },
           search: null,
           pinned: false,
         });
@@ -392,12 +392,17 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, {
           verseTexts,
-          overlay: { tool: mockOverlay, settings },
+          overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
         });
 
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he', settings);
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+          'בְּרֵאשִׁית',
+          'he',
+          settings,
+          undefined,
+        );
         // The mark reaches the popup, and the text inside it is still wrapped
         // into a clickable word rather than the guard refusing to touch it.
         expect(elements.hebrew?.querySelector('mark')).not.toBeNull();
@@ -425,16 +430,22 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         updateSidebar(elements, verse, {
           verseTexts,
-          overlay: { tool: mockOverlay, settings },
+          overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
         });
 
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith('בְּרֵאשִׁית', 'he', settings);
+        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+          'בְּרֵאשִׁית',
+          'he',
+          settings,
+          undefined,
+        );
         expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
           'In the beginning',
           'en',
           settings,
+          undefined,
         );
       });
 
@@ -464,6 +475,7 @@ describe('sidebar', () => {
               }),
             },
             settings: {},
+            data: undefined,
           };
         }
 
@@ -477,7 +489,7 @@ describe('sidebar', () => {
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
           updateSidebar(elements, verse, {
             verseTexts,
-            overlay: { tool: overlay, settings: undefined },
+            overlay: { tool: overlay, settings: undefined, data: undefined },
             search: searchOn('Matches: אברם'),
             pinned: false,
           });
@@ -519,11 +531,12 @@ describe('sidebar', () => {
               highlightVerseText: marking('term-0', ...searchMarks),
             },
             settings: {},
+            data: undefined,
           };
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
           updateSidebar(elements, verse, {
             verseTexts,
-            overlay: { tool: overlay, settings: undefined },
+            overlay: { tool: overlay, settings: undefined, data: undefined },
             search: search,
             pinned: false,
           });

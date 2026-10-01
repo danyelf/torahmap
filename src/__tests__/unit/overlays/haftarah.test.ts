@@ -1,166 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
+import { haftarahOverlay as overlay } from '../../../overlays/haftarah';
 import { hostOverlay } from '../../helpers/overlayHost';
-
-// The registry is where overlays come from — populate it the way the app does.
-registerAllOverlays();
-const haftarahOverlay = hostOverlay(getOverlay('haftarah')!);
-import { createVerse } from '../../helpers/fixtures';
+import { createVerse, SAMPLE_HAFTARAH_MAPPINGS, SAMPLE_STRUCTURE } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import { mockFetch as installMockFetch } from '../../helpers/mocks';
 import { overlayColorsFor } from '../../../itemColoring';
 import type { Color } from '../../../overlays/types';
+import type { HaftarahData } from '../../../overlays/haftarah/readings';
 import { rgbToHsl } from '../../../utils/color';
 import { HOVER_LINGER_MS } from '../../../utils/hover';
 import { DIMMED_GREY } from '../../../constants';
 
+const DATA: HaftarahData = { mappings: SAMPLE_HAFTARAH_MAPPINGS, structure: SAMPLE_STRUCTURE };
+const haftarahOverlay = hostOverlay(overlay, DATA);
+
 const sum = (c: Color) => c[0] + c[1] + c[2];
 
-// Sample data matching the real structure
-const SAMPLE_HAFTARAH_DATA = {
-  parshiot: [
-    {
-      name: 'Bereshit',
-      hebrewName: 'בראשית',
-      torah: {
-        book: 'Genesis',
-        start: { chapter: 1, verse: 1 },
-        end: { chapter: 6, verse: 8 },
-      },
-      haftarah: {
-        ashkenazi: [
-          {
-            book: 'Isaiah',
-            start: { chapter: 42, verse: 5 },
-            end: { chapter: 42, verse: 21 },
-          },
-        ],
-        sephardi: [
-          {
-            book: 'Isaiah',
-            start: { chapter: 42, verse: 5 },
-            end: { chapter: 43, verse: 10 },
-          },
-        ],
-      },
-    },
-    {
-      name: 'Noach',
-      hebrewName: 'נח',
-      torah: {
-        book: 'Genesis',
-        start: { chapter: 6, verse: 9 },
-        end: { chapter: 11, verse: 32 },
-      },
-      haftarah: {
-        ashkenazi: [
-          {
-            book: 'Isaiah',
-            start: { chapter: 54, verse: 1 },
-            end: { chapter: 55, verse: 5 },
-          },
-        ],
-        sephardi: [
-          {
-            book: 'Isaiah',
-            start: { chapter: 54, verse: 1 },
-            end: { chapter: 54, verse: 10 },
-          },
-        ],
-      },
-    },
-  ],
-  specialOccasions: [
-    {
-      name: 'Shabbat Rosh Chodesh',
-      hebrewName: 'שבת ראש חודש',
-      category: 'rosh-chodesh',
-      haftarah: {
-        ashkenazi: [
-          {
-            book: 'Isaiah',
-            start: { chapter: 66, verse: 1 },
-            end: { chapter: 66, verse: 24 },
-          },
-        ],
-        sephardi: [
-          {
-            book: 'Isaiah',
-            start: { chapter: 66, verse: 1 },
-            end: { chapter: 66, verse: 24 },
-          },
-        ],
-      },
-    },
-    {
-      name: 'Rosh Hashanah Day 1',
-      hebrewName: 'ראש השנה יום א׳',
-      category: 'high-holidays',
-      haftarah: {
-        ashkenazi: [
-          {
-            book: 'I Samuel',
-            start: { chapter: 1, verse: 1 },
-            end: { chapter: 2, verse: 10 },
-          },
-        ],
-        sephardi: [
-          {
-            book: 'I Samuel',
-            start: { chapter: 1, verse: 1 },
-            end: { chapter: 2, verse: 10 },
-          },
-        ],
-      },
-    },
-  ],
-};
-
-const SAMPLE_STRUCTURE = {
-  books: [
-    {
-      name: 'Genesis',
-      hebrewName: 'בראשית',
-      section: 'torah',
-      chapters: [
-        31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20,
-        67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34,
-        31, 22, 33, 26,
-      ],
-    },
-    {
-      name: 'Isaiah',
-      hebrewName: 'ישעיהו',
-      section: 'neviim',
-      chapters: [
-        31, 22, 26, 6, 30, 13, 25, 23, 20, 34, 16, 6, 22, 32, 9, 14, 14, 7, 25, 6, 17, 25, 18, 23,
-        12, 21, 13, 29, 24, 33, 9, 20, 24, 17, 10, 22, 38, 22, 8, 31, 29, 25, 28, 28, 25, 13, 15,
-        22, 26, 11, 23, 15, 12, 17, 13, 12, 21, 14, 21, 22, 11, 12, 19, 12, 25, 24,
-      ],
-    },
-    {
-      name: 'I Samuel',
-      hebrewName: 'שמואל א',
-      section: 'neviim',
-      chapters: [
-        28, 36, 21, 22, 12, 21, 17, 22, 27, 27, 15, 25, 23, 52, 35, 23, 58, 30, 24, 43, 15, 23, 28,
-        23, 44, 25, 12, 25, 11, 31, 13,
-      ],
-    },
-  ],
-};
-
 describe('Haftarah Overlay', () => {
-  let mockFetch: ReturnType<typeof vi.fn>;
-
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mockFetch = installMockFetch({
-      '/data/overlays/haftarah/mappings.json': SAMPLE_HAFTARAH_DATA,
-      '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
-    });
-
+    haftarahOverlay.setData(DATA);
     // The custom is held by the same host across tests, so start each one on
     // the default the way switching to the overlay fresh would.
     haftarahOverlay.restore({});
@@ -180,8 +38,7 @@ describe('Haftarah Overlay', () => {
 
   describe('Custom setting in the URL', () => {
     // The URL carries the Ashkenazi/Sephardi choice, so a reload keeps it.
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
+    beforeEach(() => {
       haftarahOverlay.restore({ custom: 'ashkenazi' });
     });
 
@@ -243,38 +100,29 @@ describe('Haftarah Overlay', () => {
     });
   });
 
-  describe('Initialization', () => {
-    it('loads haftarah mappings data on init', async () => {
-      await haftarahOverlay.overlay.init?.();
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('data/overlays/haftarah/mappings.json'),
-      );
+  describe('data', () => {
+    it('draws the custom picker, and the key once the readings arrive', () => {
+      const container = document.createElement('div');
+      const settings = { custom: 'ashkenazi' as const, preview: null, reading: null };
+      overlay.renderControls!(container, settings, () => {}, null);
+      expect(container.querySelector('#custom-select')).not.toBeNull();
+      expect(container.querySelector('.haftarah-key')).toBeNull();
+      overlay.renderControls!(container, settings, () => {}, {
+        mappings: SAMPLE_HAFTARAH_MAPPINGS,
+        structure: SAMPLE_STRUCTURE,
+      });
+      expect(container.querySelector('.haftarah-key')).not.toBeNull();
     });
 
-    it('loads tanakh structure data on init', async () => {
-      await haftarahOverlay.overlay.init?.();
-
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('data/tanakh-structure.json'));
-    });
-
-    it('handles fetch errors gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-      } as Response);
-
-      await expect(haftarahOverlay.overlay.init?.()).resolves.not.toThrow();
-      consoleSpy.mockRestore();
+    it('draws no legend before the readings are in', () => {
+      const legend = document.createElement('div');
+      legend.innerHTML = 'stale';
+      overlay.renderLegend!(legend, { custom: 'ashkenazi', preview: null, reading: null }, null);
+      expect(legend.innerHTML).toBe('');
     });
   });
 
   describe('Torah Verses (Parshiot)', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('returns color for Torah verses in a parsha', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -305,10 +153,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Haftarah Verses (Parshiot)', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('returns color for haftarah verses', () => {
       // Isaiah 42:5-21 is haftarah for Bereshit (Ashkenazi)
       const verse = createVerse({ book: 'Isaiah', chapter: 42, verse: 10 });
@@ -332,10 +176,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Special Occasions', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('returns color for special occasion haftarah verses', () => {
       // Isaiah 66 is haftarah for Shabbat Rosh Chodesh
       const verse = createVerse({ book: 'Isaiah', chapter: 66, verse: 10 });
@@ -368,10 +208,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Hover Info', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('returns hover info for Torah verses', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const info = haftarahOverlay.getHoverInfo(verse);
@@ -404,10 +240,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Render Legend', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('counts the portions and the special occasions', () => {
       const container = document.createElement('div');
       haftarahOverlay.renderLegend(container);
@@ -417,9 +249,8 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('The key', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.useFakeTimers();
-      await haftarahOverlay.overlay.init?.();
     });
     afterEach(() => vi.useRealTimers());
 
@@ -448,15 +279,11 @@ describe('Haftarah Overlay', () => {
     const preview = (reading: string | null) =>
       haftarahOverlay.change((current) => ({ ...current, preview: reading }));
 
-    /** Load the sample data with Rosh Chodesh's haftarah under `custom` replaced by `ranges`. */
-    async function loadRoshChodesh(custom: 'ashkenazi' | 'sephardi', ranges: unknown[]) {
-      const changed = structuredClone(SAMPLE_HAFTARAH_DATA);
+    /** Hand over the sample data with Rosh Chodesh's haftarah under `custom` replaced by `ranges`. */
+    function loadRoshChodesh(custom: 'ashkenazi' | 'sephardi', ranges: unknown[]) {
+      const changed = structuredClone(SAMPLE_HAFTARAH_MAPPINGS);
       changed.specialOccasions[0].haftarah[custom] = ranges as never;
-      installMockFetch({
-        '/data/overlays/haftarah/mappings.json': changed,
-        '/data/tanakh-structure.json': SAMPLE_STRUCTURE,
-      });
-      await haftarahOverlay.overlay.init?.();
+      haftarahOverlay.setData({ mappings: changed, structure: SAMPLE_STRUCTURE });
     }
 
     it('keys each book by its portions, and occasions by category', () => {
@@ -519,9 +346,9 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.getVerseColor(psalms)).toEqual(DIMMED_GREY);
     });
 
-    it('lights every reading that shares a verse with the previewed one', async () => {
+    it('lights every reading that shares a verse with the previewed one', () => {
       // Overlaps Bereshit's Ashkenazi haftarah, 42:5-21.
-      await loadRoshChodesh('ashkenazi', [
+      loadRoshChodesh('ashkenazi', [
         { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
       ]);
       const cold = haftarahOverlay.getVerseColor(genesis) as Color;
@@ -529,20 +356,30 @@ describe('Haftarah Overlay', () => {
 
       expect(sum(haftarahOverlay.getVerseColor(genesis) as Color)).toBeGreaterThan(sum(cold));
       expect(sum(haftarahOverlay.getVerseColor(noach) as Color)).toBeLessThan(
-        sum(haftarahOverlay.overlay.getVerseColor(noach, haftarahOverlay.fromUrl({})) as Color),
+        sum(
+          haftarahOverlay.overlay.getVerseColor(
+            noach,
+            haftarahOverlay.fromUrl({}),
+            haftarahOverlay.data,
+          ) as Color,
+        ),
       );
     });
 
-    it("finds shared verses in the custom's own haftarot", async () => {
+    it("finds shared verses in the custom's own haftarot", () => {
       // Noach's Sephardi haftarah; under Ashkenazi, Rosh Chodesh shares nothing.
-      await loadRoshChodesh('sephardi', [
+      loadRoshChodesh('sephardi', [
         { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
       ]);
       const noachLit = () => {
-        const cold = haftarahOverlay.overlay.getVerseColor(noach, {
-          ...haftarahOverlay.settings,
-          preview: null,
-        }) as Color;
+        const cold = haftarahOverlay.overlay.getVerseColor(
+          noach,
+          {
+            ...haftarahOverlay.settings,
+            preview: null,
+          },
+          haftarahOverlay.data,
+        ) as Color;
         return sum(haftarahOverlay.getVerseColor(noach) as Color) > sum(cold);
       };
 
@@ -559,9 +396,8 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('A reading named in a story stop', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       vi.useFakeTimers();
-      await haftarahOverlay.overlay.init?.();
     });
     afterEach(() => vi.useRealTimers());
 
@@ -570,7 +406,14 @@ describe('Haftarah Overlay', () => {
     const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
     const brightness = (v: typeof genesis) => sum(haftarahOverlay.getVerseColor(v) as Color);
     const brightnessUnder = (v: typeof genesis, hovered: typeof genesis | null) =>
-      sum(haftarahOverlay.overlay.colorsFor!([v], haftarahOverlay.settings, hovered)[0] as Color);
+      sum(
+        haftarahOverlay.overlay.colorsFor!(
+          [v],
+          haftarahOverlay.settings,
+          hovered,
+          DATA,
+        )[0] as Color,
+      );
 
     it('reads a name with spaces and punctuation, and never writes it into a link', () => {
       haftarahOverlay.restore({ reading: 'Rosh Hashanah Day 1' });
@@ -631,10 +474,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Multi-Item Verses', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('returns color for haftarah verse (single item)', () => {
       // Isaiah 54:1-10 is Noach haftarah in our sample
       // This verse is only in Noach haftarah in our sample
@@ -658,10 +497,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Color Distribution', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('distributes colors across rainbow spectrum', () => {
       const verse1 = createVerse({ book: 'Genesis', chapter: 1, verse: 1 }); // First parsha
       const verse2 = createVerse({ book: 'Isaiah', chapter: 66, verse: 10 }); // First special occasion
@@ -690,10 +525,6 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('Non-Relevant Verses', () => {
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
-
     it('returns null for non-Torah non-haftarah verses', () => {
       const verse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
       const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -713,10 +544,6 @@ describe('Haftarah Overlay', () => {
     const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
     const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
     const ruthVerse = createVerse({ book: 'Ruth', chapter: 1, verse: 1 });
-
-    beforeEach(async () => {
-      await haftarahOverlay.overlay.init?.();
-    });
 
     it('is true from no hover onto a verse of a reading, and back', () => {
       expect(haftarahOverlay.hoverChangesColors(null, torahVerse)).toBe(true);
@@ -750,8 +577,7 @@ describe('Haftarah Overlay', () => {
   });
 
   describe('colorsFor', () => {
-    it('answers for a custom it is handed without changing its own', async () => {
-      await haftarahOverlay.overlay.init?.();
+    it('answers for a custom it is handed without changing its own', () => {
       haftarahOverlay.restore({ custom: 'sephardi' });
 
       const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
@@ -759,13 +585,13 @@ describe('Haftarah Overlay', () => {
         items,
         haftarahOverlay.fromUrl({ custom: 'ashkenazi' }),
         null,
+        DATA,
       );
 
       expect(haftarahOverlay.toUrl()).toEqual({ custom: 'sephardi' });
     });
 
-    it('brightens the hovered pairing, darkens other readings to a tint, and greys the rest', async () => {
-      await haftarahOverlay.overlay.init?.();
+    it('brightens the hovered pairing, darkens other readings to a tint, and greys the rest', () => {
       const torah = { book: 'Genesis', chapter: 1, verse: 1 };
       const itsHaftarah = { book: 'Isaiah', chapter: 42, verse: 5 };
       const otherParsha = { book: 'Genesis', chapter: 7, verse: 1 };
@@ -773,8 +599,13 @@ describe('Haftarah Overlay', () => {
       const items = [torah, itsHaftarah, otherParsha, noReading];
       const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
-      const cold = haftarahOverlay.overlay.colorsFor!(items, settings, null) as (Color | null)[];
-      const hot = haftarahOverlay.overlay.colorsFor!(items, settings, torah) as Color[];
+      const cold = haftarahOverlay.overlay.colorsFor!(
+        items,
+        settings,
+        null,
+        DATA,
+      ) as (Color | null)[];
+      const hot = haftarahOverlay.overlay.colorsFor!(items, settings, torah, DATA) as Color[];
 
       for (const i of [0, 1]) {
         hot[i].forEach((channel, c) => expect(channel).toBeGreaterThanOrEqual(cold[i]![c]));
@@ -792,8 +623,7 @@ describe('Haftarah Overlay', () => {
       expect(r).toBeLessThan(0.25);
     });
 
-    it('is what the settled map shows for a hovered verse', async () => {
-      await haftarahOverlay.overlay.init?.();
+    it('is what the settled map shows for a hovered verse', () => {
       const verses = [
         createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
         createVerse({ book: 'Isaiah', chapter: 42, verse: 5 }),
@@ -801,25 +631,27 @@ describe('Haftarah Overlay', () => {
       ];
       const settings = haftarahOverlay.settings;
 
-      const settled = overlayColorsFor(haftarahOverlay.overlay, verses, settings, verses[0]);
+      const settled = overlayColorsFor(haftarahOverlay.overlay, verses, settings, verses[0], DATA);
 
-      expect(settled).toEqual(haftarahOverlay.overlay.colorsFor!(verses, settings, verses[0]));
+      expect(settled).toEqual(
+        haftarahOverlay.overlay.colorsFor!(verses, settings, verses[0], DATA),
+      );
       expect(settled).not.toEqual(
-        overlayColorsFor(haftarahOverlay.overlay, verses, settings, null),
+        overlayColorsFor(haftarahOverlay.overlay, verses, settings, null, DATA),
       );
     });
 
-    it('treats a hovered verse outside every reading the same as no hover', async () => {
-      await haftarahOverlay.overlay.init?.();
+    it('treats a hovered verse outside every reading the same as no hover', () => {
       const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
       const outsideEveryReading = { book: 'Psalms', chapter: 1, verse: 1 };
       const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
-      const noHover = haftarahOverlay.overlay.colorsFor!(items, settings, null);
+      const noHover = haftarahOverlay.overlay.colorsFor!(items, settings, null, DATA);
       const irrelevantHover = haftarahOverlay.overlay.colorsFor!(
         items,
         settings,
         outsideEveryReading,
+        DATA,
       );
 
       expect(irrelevantHover).toEqual(noHover);

@@ -1,17 +1,20 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { registerAllOverlays, getOverlay } from '../../../overlays/index';
-import { configure } from '../../../overlays/verse-length';
+import { registerAllOverlays } from '../../../overlays/index';
+import {
+  verseLengthOverlay as overlay,
+  type VerseLengthData,
+} from '../../../overlays/verse-length';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
-const verseLengthOverlay = hostOverlay(getOverlay('verse-length')!);
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import type { VerseTexts } from '../../../verseTexts';
-import { hostOverlay } from '../../helpers/overlayHost';
+import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
 
 describe('Verse Length Overlay', () => {
   let testVerseTexts: VerseTexts;
+  let verseLengthOverlay: OverlayHost<void, VerseLengthData>;
 
   beforeEach(() => {
     testVerseTexts = {
@@ -67,21 +70,20 @@ describe('Verse Length Overlay', () => {
       },
     };
 
-    // Configure overlay with test data
-    configure({ verseTexts: testVerseTexts });
+    verseLengthOverlay = hostOverlay(overlay, { texts: testVerseTexts });
   });
 
   describe('Overlay Interface', () => {
     it('has correct id and name', () => {
-      expect(verseLengthOverlay.overlay.id).toBe('verse-length');
-      expect(verseLengthOverlay.overlay.name).toBe('Verse Length');
+      expect(overlay.id).toBe('verse-length');
+      expect(overlay.name).toBe('Verse Length');
     });
 
     it('has required methods', () => {
-      expect(verseLengthOverlay.overlay.getVerseColor).toBeDefined();
-      expect(verseLengthOverlay.overlay.renderLegend).toBeDefined();
-      expect(verseLengthOverlay.overlay.getHoverInfo).toBeDefined();
-      expect(verseLengthOverlay.overlay.renderSidebarInfo).toBeDefined();
+      expect(overlay.getVerseColor).toBeDefined();
+      expect(overlay.renderLegend).toBeDefined();
+      expect(overlay.getHoverInfo).toBeDefined();
+      expect(overlay.renderSidebarInfo).toBeDefined();
     });
   });
 
@@ -126,7 +128,7 @@ describe('Verse Length Overlay', () => {
           },
         },
       };
-      configure({ verseTexts: testData });
+      verseLengthOverlay.setData({ texts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
       const info = verseLengthOverlay.getHoverInfo(verse);
@@ -145,7 +147,7 @@ describe('Verse Length Overlay', () => {
           },
         },
       };
-      configure({ verseTexts: testData });
+      verseLengthOverlay.setData({ texts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
       const info = verseLengthOverlay.getHoverInfo(verse);
@@ -204,7 +206,7 @@ describe('Verse Length Overlay', () => {
           },
         },
       };
-      configure({ verseTexts: emptyData });
+      verseLengthOverlay.setData({ texts: emptyData });
 
       const container = document.createElement('div');
       verseLengthOverlay.renderLegend(container);
@@ -499,11 +501,7 @@ describe('Verse Length Overlay', () => {
   describe('Sidebar Info Rendering', () => {
     it('returns HTMLElement with word count', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
-        verse,
-        false,
-        verseLengthOverlay.settings,
-      );
+      const element = verseLengthOverlay.renderSidebarInfo(verse, false);
 
       expect(element).not.toBeNull();
       expect(element).toBeInstanceOf(HTMLElement);
@@ -514,22 +512,14 @@ describe('Verse Length Overlay', () => {
 
     it('includes "Verse Length:" label', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
-        verse,
-        false,
-        verseLengthOverlay.settings,
-      ) as HTMLElement;
+      const element = verseLengthOverlay.renderSidebarInfo(verse, false) as HTMLElement;
 
       expect(element.textContent).toContain('Verse Length:');
     });
 
     it('uses singular form for one word', () => {
       const verse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 });
-      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
-        verse,
-        false,
-        verseLengthOverlay.settings,
-      ) as HTMLElement;
+      const element = verseLengthOverlay.renderSidebarInfo(verse, false) as HTMLElement;
 
       expect(element.textContent).toContain('1 word');
       expect(element.textContent).not.toContain('1 words');
@@ -537,11 +527,7 @@ describe('Verse Length Overlay', () => {
 
     it('returns null for verses not in dataset', () => {
       const verse = createVerse({ book: 'UnknownBook', chapter: 1, verse: 1 });
-      const element = verseLengthOverlay.overlay.renderSidebarInfo!(
-        verse,
-        false,
-        verseLengthOverlay.settings,
-      );
+      const element = verseLengthOverlay.renderSidebarInfo(verse, false);
 
       expect(element).toBeNull();
     });
@@ -549,22 +535,17 @@ describe('Verse Length Overlay', () => {
 
   describe('Integration', () => {
     it('overlay is exported from module', () => {
-      expect(verseLengthOverlay).toBeDefined();
-      expect(verseLengthOverlay.overlay.id).toBe('verse-length');
-    });
-
-    it('configure function is exported', () => {
-      expect(configure).toBeDefined();
-      expect(typeof configure).toBe('function');
+      expect(overlay).toBeDefined();
+      expect(overlay.id).toBe('verse-length');
     });
 
     it('can be registered and retrieved from registry', async () => {
       const { registerOverlay, getOverlay } = await import('../../../overlays/registry');
 
-      registerOverlay(verseLengthOverlay.overlay);
+      registerOverlay(overlay);
       const retrieved = getOverlay('verse-length');
 
-      expect(retrieved).toBe(verseLengthOverlay.overlay);
+      expect(retrieved).toBe(overlay);
     });
 
     it('appears in getAllOverlays after registration', async () => {
@@ -572,7 +553,7 @@ describe('Verse Length Overlay', () => {
 
       // Clear and re-register
       const before = getAllOverlays().length;
-      registerOverlay(verseLengthOverlay.overlay);
+      registerOverlay(overlay);
       const after = getAllOverlays();
 
       expect(after.length).toBeGreaterThanOrEqual(before);
@@ -592,7 +573,7 @@ describe('Verse Length Overlay', () => {
           },
         },
       };
-      configure({ verseTexts: testData });
+      verseLengthOverlay.setData({ texts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
       const info = verseLengthOverlay.getHoverInfo(verse);
@@ -613,7 +594,7 @@ describe('Verse Length Overlay', () => {
           },
         },
       };
-      configure({ verseTexts: testData });
+      verseLengthOverlay.setData({ texts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -623,7 +604,7 @@ describe('Verse Length Overlay', () => {
       expect(info).toBe('100 words');
     });
 
-    it('handles reconfiguration with new data', () => {
+    it('handles being handed new data', () => {
       const newData: VerseTexts = {
         'NewBook': {
           '1': {
@@ -635,7 +616,7 @@ describe('Verse Length Overlay', () => {
         },
       };
 
-      configure({ verseTexts: newData });
+      verseLengthOverlay.setData({ texts: newData });
 
       const verse = createVerse({ book: 'NewBook', chapter: 1, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -667,8 +648,8 @@ describe('Verse Length Overlay', () => {
       expect(info).toBeNull();
     });
 
-    it('handles empty verseTexts object', () => {
-      configure({ verseTexts: {} });
+    it('handles empty texts object', () => {
+      verseLengthOverlay.setData({ texts: {} });
 
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -679,8 +660,8 @@ describe('Verse Length Overlay', () => {
     });
 
     it('counts words joined by a maqaf separately', () => {
-      configure({
-        verseTexts: {
+      verseLengthOverlay.setData({
+        texts: {
           'Job': {
             '7': {
               '16': {
@@ -697,8 +678,8 @@ describe('Verse Length Overlay', () => {
     });
 
     it('does not count a single letter as a word', () => {
-      configure({
-        verseTexts: { 'TestBook': { '1': { '1': { he: 'בָּרָ֣א ו אֱלֹהִ֑ים', en: '' } } } },
+      verseLengthOverlay.setData({
+        texts: { 'TestBook': { '1': { '1': { he: 'בָּרָ֣א ו אֱלֹהִ֑ים', en: '' } } } },
       });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
@@ -706,8 +687,8 @@ describe('Verse Length Overlay', () => {
     });
 
     it('does not count paragraph markers as words', () => {
-      configure({
-        verseTexts: {
+      verseLengthOverlay.setData({
+        texts: {
           'TestBook': { '1': { '1': { he: 'בָּרָ֣א אֱלֹהִ֑ים׃ {פ}', en: '' } } },
         },
       });
@@ -727,7 +708,7 @@ describe('Verse Length Overlay', () => {
           },
         },
       };
-      configure({ verseTexts: minimalData });
+      verseLengthOverlay.setData({ texts: minimalData });
 
       const verse = createVerse({ book: 'SingleBook', chapter: 1, verse: 1 });
       const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
@@ -796,6 +777,37 @@ describe('Verse Length Overlay', () => {
       expect(distance(color1, color7)).toBeGreaterThan(0.2);
       expect(distance(color7, color14)).toBeGreaterThan(0.1);
       expect(distance(color1, color14)).toBeGreaterThan(0.3);
+    });
+  });
+
+  describe('data', () => {
+    it('colours by the texts it is handed now', () => {
+      const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      const before = verseLengthOverlay.getVerseColor(verse);
+      const shorter = structuredClone(testVerseTexts);
+      shorter.Genesis['1']['1'].he = 'בְּרֵאשִׁ֖ית';
+      verseLengthOverlay.setData({ texts: shorter });
+      expect(verseLengthOverlay.getVerseColor(verse)).not.toEqual(before);
+    });
+
+    it('colours the same whether or not prebuild ran first', () => {
+      const fresh = { texts: structuredClone(testVerseTexts) };
+      const verses = [
+        createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
+        createVerse({ book: 'Exodus', chapter: 1, verse: 2 }),
+      ];
+      const onDemand = overlay.colorsFor(verses, undefined, null, {
+        texts: structuredClone(testVerseTexts),
+      });
+      overlay.prebuild!(fresh);
+      expect(overlay.colorsFor(verses, undefined, null, fresh)).toEqual(onDemand);
+    });
+
+    it('draws no legend before the data is in', () => {
+      const legend = document.createElement('div');
+      legend.innerHTML = 'stale';
+      overlay.renderLegend!(legend, undefined, null);
+      expect(legend.innerHTML).toBe('');
     });
   });
 });

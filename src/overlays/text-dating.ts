@@ -1,15 +1,18 @@
 import './text-dating.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
-import { loadJson } from '../loadJson.ts';
 import { legendCaption, legendRow } from './legend.ts';
 import { colorToCss } from '../utils/color.ts';
 
-interface TextDatingData {
+interface TextDatingFile {
   notes: string[];
   books: {
     [book: string]: Array<Array<{ d: [number, number]; n: number } | null>>;
   };
+}
+
+export interface TextDatingData {
+  dates: TextDatingFile;
 }
 
 interface EraInfo {
@@ -51,8 +54,6 @@ const ERAS: EraInfo[] = [
   },
 ];
 
-let data: TextDatingData = { notes: [], books: {} };
-
 function getEra(dateBCE: number): EraInfo | null {
   for (const era of ERAS) {
     if (dateBCE >= era.dateRange[1] && dateBCE <= era.dateRange[0]) {
@@ -89,8 +90,11 @@ function formatBceRange(startBCE: number, endBCE: number): string {
   return startBCE === endBCE ? `~${startBCE} BCE` : `${startBCE}-${endBCE} BCE`;
 }
 
-function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number } | null {
-  const bookData = data.books?.[verse.book];
+function getVerseData(
+  data: TextDatingData,
+  verse: TanakhIdentity,
+): { d: [number, number]; n: number } | null {
+  const bookData = data.dates.books[verse.book];
   if (!bookData) return null;
 
   const chapterData = bookData[verse.chapter - 1];
@@ -100,7 +104,7 @@ function getVerseData(verse: TanakhIdentity): { d: [number, number]; n: number }
   return verseData || null;
 }
 
-export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
+export const textDatingOverlay: Overlay<TanakhIdentity, void, TextDatingData> = {
   id: 'text-dating',
   name: 'Text Dating',
   description:
@@ -117,20 +121,17 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
     },
   ],
 
-  async init() {
-    const result = await loadJson<TextDatingData>('text-dating.json');
-    if (result) data = result;
-  },
+  data: { dates: 'text-dating.json' },
 
-  getVerseColor(verse: TanakhIdentity): Color | null {
-    const verseData = getVerseData(verse);
+  getVerseColor(verse: TanakhIdentity, _settings, data): Color | null {
+    const verseData = getVerseData(data, verse);
     if (!verseData) return null;
 
     return getVerseColorFromDate(midpointBCE(verseData.d));
   },
 
-  colorsFor(items) {
-    return items.map((item) => this.getVerseColor(item));
+  colorsFor(items, settings, _hovered, data) {
+    return items.map((item) => this.getVerseColor(item, settings, data));
   },
 
   renderLegend(container: HTMLElement) {
@@ -154,8 +155,8 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
     return { colors: ERAS.map((era) => colorToCss(era.baseColor)) };
   },
 
-  getHoverInfo(verse: TanakhIdentity): string | null {
-    const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
+  getHoverInfo(verse: TanakhIdentity, _settings, data): string | null {
+    const datingInfo = getVerseDatingInfo(data, verse.book, verse.chapter, verse.verse);
     if (!datingInfo) return null;
 
     const dateStr = formatBceRange(datingInfo.dateRange[0], datingInfo.dateRange[1]);
@@ -163,10 +164,10 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void> = {
     return `${datingInfo.era} (${dateStr})\n${datingInfo.note}`;
   },
 
-  renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | null {
+  renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean, _settings, data): HTMLElement | null {
     if (!isPinned) return null;
 
-    const datingInfo = getVerseDatingInfo(verse.book, verse.chapter, verse.verse);
+    const datingInfo = getVerseDatingInfo(data, verse.book, verse.chapter, verse.verse);
     if (!datingInfo) return null;
 
     const dateStr = formatBceRange(datingInfo.dateRange[0], datingInfo.dateRange[1]);
@@ -193,13 +194,13 @@ export interface VerseDatingInfo {
   note: string;
 }
 
-// Used by the sidebar.
 export function getVerseDatingInfo(
+  data: TextDatingData,
   book: string,
   chapter: number,
   verse: number,
 ): VerseDatingInfo | null {
-  const verseData = getVerseData({ book, chapter, verse });
+  const verseData = getVerseData(data, { book, chapter, verse });
   if (!verseData) return null;
 
   const [startBCE, endBCE] = verseData.d;
@@ -211,6 +212,6 @@ export function getVerseDatingInfo(
     era: era.name,
     eraDateRange: era.dateRange,
     dateRange: [Math.abs(startBCE), Math.abs(endBCE)],
-    note: data.notes?.[verseData.n],
+    note: data.dates.notes[verseData.n],
   };
 }

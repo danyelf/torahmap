@@ -57,16 +57,16 @@ describe('itemColoring', () => {
       const colorsFor = vi.fn().mockReturnValue([[1, 0, 0], null]);
       const overlay: Overlay = { id: 'test', name: 'Test', getVerseColor: vi.fn(), colorsFor };
 
-      const colors = overlayColorsFor(overlay, verses, 'settings', verses[1]);
+      const colors = overlayColorsFor(overlay, verses, 'settings', verses[1], 'data');
 
       expect(colors).toEqual([[1, 0, 0], null]);
-      expect(colorsFor).toHaveBeenCalledWith(verses, 'settings', verses[1]);
+      expect(colorsFor).toHaveBeenCalledWith(verses, 'settings', verses[1], 'data');
     });
 
     it('gives no colour to any item when there is no overlay', () => {
       const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
-      expect(overlayColorsFor(null, verses, undefined, null)).toEqual([null, null]);
+      expect(overlayColorsFor(null, verses, undefined, null, undefined)).toEqual([null, null]);
     });
   });
 
@@ -82,43 +82,85 @@ describe('itemColoring', () => {
     const hoverBlind = testOverlay({ id: 'plain', name: 'Plain', getVerseColor: () => null });
 
     it('re-blends mid-transition when the hovered verse changes', () => {
-      expect(layerToRecompute('blend', hoverBlind, undefined, a, b, tanakhIdentitiesEqual)).toBe(
-        'blend',
-      );
+      expect(
+        layerToRecompute(
+          'blend',
+          { tool: hoverBlind, settings: undefined, data: undefined },
+          a,
+          b,
+          tanakhIdentitiesEqual,
+        ),
+      ).toBe('blend');
     });
 
     it('recomputes nothing during a timed ease, whose colours were captured when it began', () => {
-      expect(layerToRecompute('ease', hoverSensitive, undefined, a, b, tanakhIdentitiesEqual)).toBe(
-        null,
-      );
+      expect(
+        layerToRecompute(
+          'ease',
+          { tool: hoverSensitive, settings: undefined, data: undefined },
+          a,
+          b,
+          tanakhIdentitiesEqual,
+        ),
+      ).toBe(null);
     });
 
     it('recomputes nothing when the hovered verse is unchanged, as on a pin', () => {
       expect(
-        layerToRecompute('blend', hoverSensitive, undefined, a, a, tanakhIdentitiesEqual),
+        layerToRecompute(
+          'blend',
+          { tool: hoverSensitive, settings: undefined, data: undefined },
+          a,
+          a,
+          tanakhIdentitiesEqual,
+        ),
       ).toBe(null);
       expect(
-        layerToRecompute('overlay', hoverSensitive, undefined, a, a, tanakhIdentitiesEqual),
+        layerToRecompute(
+          'overlay',
+          { tool: hoverSensitive, settings: undefined, data: undefined },
+          a,
+          a,
+          tanakhIdentitiesEqual,
+        ),
       ).toBe(null);
     });
 
     it('recomputes a settled overlay only when its colours depend on the hover', () => {
       expect(
-        layerToRecompute('overlay', hoverSensitive, undefined, a, b, tanakhIdentitiesEqual),
+        layerToRecompute(
+          'overlay',
+          { tool: hoverSensitive, settings: undefined, data: undefined },
+          a,
+          b,
+          tanakhIdentitiesEqual,
+        ),
       ).toBe('overlay');
-      expect(layerToRecompute('overlay', hoverBlind, undefined, a, b, tanakhIdentitiesEqual)).toBe(
-        null,
-      );
-      expect(layerToRecompute('overlay', null, undefined, a, b, tanakhIdentitiesEqual)).toBe(null);
+      expect(
+        layerToRecompute(
+          'overlay',
+          { tool: hoverBlind, settings: undefined, data: undefined },
+          a,
+          b,
+          tanakhIdentitiesEqual,
+        ),
+      ).toBe(null);
+      expect(layerToRecompute('overlay', null, a, b, tanakhIdentitiesEqual)).toBe(null);
     });
 
-    it('hands the overlay the settings to judge the hover by', () => {
+    it('hands the overlay the settings and data to judge the hover by', () => {
       const hoverChangesColors = vi.fn().mockReturnValue(false);
       const overlay: Overlay = { ...hoverBlind, hoverChangesColors };
 
-      layerToRecompute('overlay', overlay, 'settings', a, b, tanakhIdentitiesEqual);
+      layerToRecompute(
+        'overlay',
+        { tool: overlay, settings: 'settings', data: 'data' },
+        a,
+        b,
+        tanakhIdentitiesEqual,
+      );
 
-      expect(hoverChangesColors).toHaveBeenCalledWith(a, b, 'settings');
+      expect(hoverChangesColors).toHaveBeenCalledWith(a, b, 'settings', 'data');
     });
   });
 });

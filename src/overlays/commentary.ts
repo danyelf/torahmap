@@ -1,9 +1,9 @@
 import type { Overlay, Color, UrlParamValues } from './types.ts';
-import type { TanakhIdentity, TanakhLayout } from '../types.ts';
+import type { TanakhIdentity } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
-import { scale, LOG, type Scale } from '../utils/scale.ts';
+import { scale, LOG } from '../utils/scale.ts';
 import { axisGradient, renderAxisWithZero } from './legend.ts';
-import { loadJson } from '../loadJson.ts';
+import { memoByValueAndKey } from './memo.ts';
 import { CONTROL } from '../panel.ts';
 import { MAP_BACKGROUND } from '../constants.ts';
 import { COMMENTARY } from '@torahmap/overlay-catalog';
@@ -45,54 +45,49 @@ interface TanakhCommentary {
 }
 
 /** { [book]: { [chapter]: { [verse]: TanakhCommentary } } } */
-export type CommentaryData = Record<string, Record<string, Record<string, TanakhCommentary>>>;
+export type CommentaryCounts = Record<string, Record<string, Record<string, TanakhCommentary>>>;
+
+export interface CommentaryData {
+  counts: CommentaryCounts;
+}
 
 export interface CommentarySettings {
   readonly category: string;
 }
 
-let data: CommentaryData = {};
-let verses: TanakhLayout[] = [];
-
-// Keyed on the category name, not the settings value, since the count behind
-// a category never changes once the data is loaded.
-let cachedMaxValues: Record<string, number> = {};
-
-/**
- * Rebuilt per call: the maximum moves when the category changes. Starts at 1:
- * zero is drawn apart, as `NEVER_LINKED`.
- */
-function linkScale(category: string): Scale {
-  return scale(1, getMaxValue(category), LOG, HEATMAP_STOPS);
+function countIn(entry: TanakhCommentary | undefined, category: string): number {
+  if (!entry) return 0;
+  if (category === 'total') return entry.total;
+  return entry.categories[category] || 0;
 }
 
-function getCount(book: string, chapter: number, verse: number, category: string): number {
-  const verseData = data[book]?.[String(chapter)]?.[String(verse)];
-  if (!verseData) return 0;
-  if (category === 'total') return verseData.total;
-  return verseData.categories[category] || 0;
+function entryAt(data: CommentaryData, verse: TanakhIdentity): TanakhCommentary | undefined {
+  return data.counts[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
 }
 
-function getMaxValue(category: string): number {
-  if (cachedMaxValues[category] !== undefined) {
-    return cachedMaxValues[category];
-  }
+// Each category's highest count and colour scale, worked out once per data value. The scale
+// starts at 1: zero is drawn apart, as `NEVER_LINKED`.
+const scaleFor = memoByValueAndKey((data: CommentaryData, category: string) => {
   let max = 0;
-  for (const v of verses) {
-    const count = getCount(v.book, v.chapter, v.verse, category);
-    if (count > max) max = count;
+  for (const chapters of Object.values(data.counts)) {
+    for (const verses of Object.values(chapters)) {
+      for (const entry of Object.values(verses)) max = Math.max(max, countIn(entry, category));
+    }
   }
-  cachedMaxValues[category] = max;
-  return max;
-}
+  return { max, scale: scale(1, max, LOG, HEATMAP_STOPS) };
+});
 
-function commentaryColorAt(verse: TanakhIdentity, category: string): Color | null {
-  const count = getCount(verse.book, verse.chapter, verse.verse, category);
+function commentaryColorAt(
+  data: CommentaryData,
+  verse: TanakhIdentity,
+  category: string,
+): Color | null {
+  const count = countIn(entryAt(data, verse), category);
   if (count === 0) return NEVER_LINKED;
-  return linkScale(category).colorOf(count);
+  return scaleFor(data, category).scale.colorOf(count);
 }
 
-export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
+export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, CommentaryData> = {
   ...COMMENTARY,
   credits: [
     {
@@ -101,25 +96,14 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
       collected: 'September 2026',
     },
   ],
+  data: { counts: 'overlays/commentary/counts.json' },
 
-  async init() {
-    const result = await loadJson<CommentaryData>(
-      'overlays/commentary/counts.json',
-      'the commentary counts',
-    );
-    if (result) data = result;
+  getVerseColor(verse, settings, data) {
+    return commentaryColorAt(data, verse, settings.category);
   },
 
-  destroy() {
-    cachedMaxValues = {};
-  },
-
-  getVerseColor(verse, settings) {
-    return commentaryColorAt(verse, settings.category);
-  },
-
-  colorsFor(items, settings, _hovered) {
-    return items.map((item) => commentaryColorAt(item, settings.category));
+  colorsFor(items, settings, _hovered, data) {
+    return items.map((item) => commentaryColorAt(data, item, settings.category));
   },
 
   settingsFromUrl(params: UrlParamValues<typeof COMMENTARY.urlParams>): CommentarySettings {
@@ -172,8 +156,12 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
     select.value = settings.category;
   },
 
-  renderLegend(container, settings) {
-    const maxValue = getMaxValue(settings.category);
+  renderLegend(container, settings, data) {
+    if (!data) {
+      container.innerHTML = '';
+      return;
+    }
+    const { max: maxValue, scale: linkScale } = scaleFor(data, settings.category);
 
     const ticks: number[] = [];
     for (let value = 1; value <= maxValue; value *= 10) {
@@ -183,20 +171,20 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
       ticks.push(maxValue);
     }
 
-    container.innerHTML = renderAxisWithZero(NEVER_LINKED, linkScale(settings.category), ticks);
+    container.innerHTML = renderAxisWithZero(NEVER_LINKED, linkScale, ticks);
   },
 
-  summary(settings) {
+  summary(settings, data) {
     return {
       detail: settings.category === 'total' ? undefined : settings.category,
-      colors: [axisGradient(linkScale(settings.category))],
+      colors: [axisGradient(scaleFor(data, settings.category).scale)],
     };
   },
 
-  getHoverInfo(verse, settings) {
-    const verseData = data[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
-    if (!verseData) return null;
-    const count = getCount(verse.book, verse.chapter, verse.verse, settings.category);
+  getHoverInfo(verse, settings, data) {
+    const entry = entryAt(data, verse);
+    if (!entry) return null;
+    const count = countIn(entry, settings.category);
     const counted =
       count === 0
         ? 'no references'
@@ -209,8 +197,3 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings> = {
     return settings.category === 'total' ? null : settings.category;
   },
 };
-
-export function configure(config: { verses: TanakhLayout[] }): void {
-  verses = config.verses;
-  cachedMaxValues = {};
-}

@@ -133,6 +133,7 @@ export function updateSidebar(
   const { verseTexts, search, pinned: isPinned } = view;
   const currentOverlay = view.overlay?.tool ?? null;
   const overlaySettings = view.overlay?.settings;
+  const overlayData = view.overlay?.data;
 
   if (!sidebar) return;
 
@@ -149,17 +150,27 @@ export function updateSidebar(
   }
   if (overlayInfo) {
     const lines = [
-      currentOverlay?.renderSidebarInfo?.(verse, isPinned, overlaySettings) ??
-        currentOverlay?.getHoverInfo?.(verse, overlaySettings),
-      search?.tool.getHoverInfo?.(verse, search.settings),
+      currentOverlay?.renderSidebarInfo?.(verse, isPinned, overlaySettings, overlayData) ??
+        currentOverlay?.getHoverInfo?.(verse, overlaySettings, overlayData),
+      search?.tool.getHoverInfo?.(verse, search.settings, search.data),
     ].filter((line): line is HTMLElement | string => !!line);
     overlayInfo.replaceChildren(...lines.map(infoLine));
   }
 
   // Both tools mark the text; where they mark the same letters, the search's mark is kept.
   const marked = (text: string, language: TextLanguage): DocumentFragment | null => {
-    const overlayMarks = currentOverlay?.highlightVerseText?.(text, language, overlaySettings);
-    const searchMarks = search?.tool.highlightVerseText?.(text, language, search.settings);
+    const overlayMarks = currentOverlay?.highlightVerseText?.(
+      text,
+      language,
+      overlaySettings,
+      overlayData,
+    );
+    const searchMarks = search?.tool.highlightVerseText?.(
+      text,
+      language,
+      search.settings,
+      search.data,
+    );
     if (overlayMarks && searchMarks) return combineMarks(text, overlayMarks, searchMarks);
     return searchMarks ?? overlayMarks ?? null;
   };

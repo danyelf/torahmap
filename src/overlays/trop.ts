@@ -8,7 +8,7 @@ import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts'
 import type { TanakhIdentity, TextLanguage } from '../types.ts';
 import { HEBREW, tanakhKey } from '../types.ts';
 import { isNikkud } from '../hebrew.ts';
-import type { VerseTexts } from '../verseTexts.ts';
+import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
   getTropByFrequency,
@@ -19,11 +19,8 @@ import { lingeringHover } from '../utils/hover.ts';
 import { colorToCss, type ColorStop } from '../utils/color.ts';
 import { scale, LINEAR, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, legendRow } from './legend.ts';
-import { memoBySettings } from './memo.ts';
+import { memoByValue } from './memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
-
-/** Every mark the text carries, by URL slug, rarest first. */
-let tropBySlug = new Map<string, TropIndexEntry>();
 
 /**
  * The mark clicked, and the mark the pointer is over in the chart, each named
@@ -39,9 +36,25 @@ function shownMark(settings: TropSettings): string | null {
   return settings.preview ?? settings.mark;
 }
 
-function entryFor(mark: string | null): TropIndexEntry | null {
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, '-');
+}
+
+export interface TropData {
+  texts: VerseTexts;
+}
+
+/** Every mark the text carries, by URL slug, rarest first; once per data value. */
+const marksOf = memoByValue(
+  (data: TropData): Map<string, TropIndexEntry> =>
+    new Map(
+      getTropByFrequency(buildTropIndex(data.texts)).map((entry) => [slugify(entry.name), entry]),
+    ),
+);
+
+function entryFor(data: TropData, mark: string | null): TropIndexEntry | null {
   if (!mark) return null;
-  return tropBySlug.get(mark) ?? null;
+  return marksOf(data).get(mark) ?? null;
 }
 
 /** A rare mark's legend is two swatches, "contains" and "does not"; any other's a gradient. */
@@ -76,8 +89,8 @@ function countScale(entry: TropIndexEntry): Scale | null {
 }
 
 /** The colours and lookup table for one trop mark, named by its URL slug. */
-function deriveTrop(mark: string | null): TropDerivation | null {
-  const entry = entryFor(mark);
+function deriveTrop(data: TropData, mark: string | null): TropDerivation | null {
+  const entry = entryFor(data, mark);
   if (!entry) return null;
 
   const verseLookup = new Map<string, number>();
@@ -95,7 +108,14 @@ function deriveTrop(mark: string | null): TropDerivation | null {
   return { entry, verseLookup, counts: countScale(entry), noMatch };
 }
 
-const derivationFor = memoBySettings((settings: TropSettings) => deriveTrop(shownMark(settings)));
+// Per data value, then per settings value.
+const derivationsOf = memoByValue((data: TropData) =>
+  memoByValue((settings: TropSettings) => deriveTrop(data, shownMark(settings))),
+);
+
+function derivationFor(data: TropData, settings: TropSettings): TropDerivation | null {
+  return derivationsOf(data)(settings);
+}
 
 const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
@@ -122,10 +142,6 @@ function tropInfoLine(entry: TropIndexEntry, options?: { withOccurrencesWord?: b
   return `${entry.name} (${entry.hebrewName}) · ${count} · ${tierLabel(tier)}`;
 }
 
-function slugify(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, '-');
-}
-
 function countAt(verse: TanakhIdentity, derived: TropDerivation): number {
   return derived.verseLookup.get(tanakhKey(verse.book, verse.chapter, verse.verse)) ?? 0;
 }
@@ -147,7 +163,9 @@ function renderTropChart(
   container: HTMLElement,
   settings: TropSettings,
   onChange: (update: SettingsUpdate<TropSettings>) => void,
+  data: TropData | null,
 ): void {
+  if (!data) return;
   let chart = container.querySelector<HTMLElement>('.trop-chart');
   if (!chart) {
     container.innerHTML = `
@@ -162,7 +180,7 @@ function renderTropChart(
       onChange((current) => ({ ...current, preview: slug })),
     );
 
-    for (const [slug, entry] of tropBySlug) {
+    for (const [slug, entry] of marksOf(data)) {
       const button = document.createElement('button');
       button.textContent = 'ב' + entry.unicode; // Show on a bet for visibility
       button.title = `${entry.name} (${entry.hebrewName})`;
@@ -189,8 +207,8 @@ function renderTropChart(
   });
 
   const info = container.querySelector('.trop-info') as HTMLElement;
-  const previewed = entryFor(settings.preview);
-  const selected = entryFor(settings.mark);
+  const previewed = entryFor(data, settings.preview);
+  const selected = entryFor(data, settings.mark);
   info.textContent = previewed
     ? tropInfoLine(previewed, { withOccurrencesWord: true })
     : selected
@@ -198,15 +216,20 @@ function renderTropChart(
       : '';
 }
 
-export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
+export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
   ...TROP,
+  data: { texts: TEXTS_FILE },
 
-  getVerseColor(verse, settings) {
-    return tropColorAt(verse, derivationFor(settings));
+  prebuild(data) {
+    marksOf(data);
   },
 
-  colorsFor(items, settings, _hovered) {
-    const derived = derivationFor(settings);
+  getVerseColor(verse, settings, data) {
+    return tropColorAt(verse, derivationFor(data, settings));
+  },
+
+  colorsFor(items, settings, _hovered, data) {
+    const derived = derivationFor(data, settings);
     return items.map((item) => tropColorAt(item, derived));
   },
 
@@ -218,12 +241,16 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
     return settings.mark ? { trop: settings.mark } : {};
   },
 
-  renderControls(container, settings, onChange) {
-    renderTropChart(container, settings, onChange);
+  renderControls(container, settings, onChange, data) {
+    renderTropChart(container, settings, onChange, data);
   },
 
-  renderLegend(container, settings) {
-    const entry = entryFor(shownMark(settings));
+  renderLegend(container, settings, data) {
+    if (!data) {
+      container.innerHTML = '';
+      return;
+    }
+    const entry = entryFor(data, shownMark(settings));
     if (!entry) {
       container.innerHTML = legendCaption('Select a trop mark above');
       return;
@@ -245,21 +272,21 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
     }
   },
 
-  summary(settings) {
-    const entry = entryFor(settings.mark);
+  summary(settings, data) {
+    const entry = entryFor(data, settings.mark);
     return entry ? { detail: settings.mark ?? undefined, colors: markColors(entry) } : {};
   },
 
-  getHoverInfo(verse, settings) {
-    const derived = derivationFor(settings);
+  getHoverInfo(verse, settings, data) {
+    const derived = derivationFor(data, settings);
     if (!derived) return null;
     const count = countAt(verse, derived);
     return count ? `${derived.entry.name} ×${count}` : null;
   },
 
-  highlightVerseText(text: string, language: TextLanguage, settings): DocumentFragment {
+  highlightVerseText(text: string, language: TextLanguage, settings, data): DocumentFragment {
     const fragment = document.createDocumentFragment();
-    const entry = entryFor(shownMark(settings));
+    const entry = entryFor(data, shownMark(settings));
     if (language !== HEBREW || !entry) {
       fragment.appendChild(document.createTextNode(text));
       return fragment;
@@ -270,15 +297,6 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings> = {
     return fragment;
   },
 };
-
-export function configure(config: { verseTexts: VerseTexts }): void {
-  tropBySlug = new Map(
-    getTropByFrequency(buildTropIndex(config.verseTexts)).map((entry) => [
-      slugify(entry.name),
-      entry,
-    ]),
-  );
-}
 
 // Wraps a trop mark together with its base letter and any other combining
 // marks between them (Hebrew points/accents, U+0591-U+05C7), so the <mark>
