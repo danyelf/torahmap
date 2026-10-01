@@ -1,7 +1,7 @@
 # Draw First
 
 **Date:** 2026-09-30
-**Status:** Draft, for Danyel's design round.
+**Status:** Design, decided 2026-10-01. Not yet planned.
 
 Step 3 of three toward #313, after step 1 (`2026-09-30-overlay-data-design.md`)
 and step 2 (`2026-09-30-search-data-design.md`). It is the only step a reader
@@ -36,17 +36,19 @@ first frame.
 The sizes, compressed: the texts 2.7 MB, the three dictionary files 0.84 MB
 together, the per-word parse 0.98 MB, commentary 0.32 MB, haftarah 4 KB.
 
-**The simplest order**: everything but the parse at once, then the parse once
-those have settled. The browser shares the connection between them, so on a
-slow one a 0.32 MB commentary link waits about as long as the 2.7 MB texts.
+Everything at once would share the connection, so on a slow one a 0.32 MB
+commentary link would wait about as long as the 2.7 MB texts. Instead, four
+stages, each starting when the one before has settled:
 
-**Proposed**: the files the opening view needs first and alone, then the rest
-together, then the parse.
+1. The structure, always.
+2. The files the opening view needs.
+3. Every other file.
+4. The per-word parse.
 
 - The opening view is what the link shows, or the story stop it opens: the files
   of its overlay, search's files if it searches, and the texts if it pins a
   verse. The bare address opens the tour's first stop, which needs nothing, so
-  it goes straight to the second group.
+  it goes straight to stage 3.
 - What this buys: on a bandwidth-bound connection a commentary link colours in
   the time of its own 0.32 MB rather than of 3.9 MB. For a search link it buys
   little, since search needs the texts.
@@ -117,9 +119,21 @@ and at rest through the cases above.
 Warned once in the console, and the file stays missing. Whatever named it stays
 off the map: picking that overlay shows its controls with `null` data and a
 plain map; a failed texts file keeps the popup closed. Every other file loads as
-usual, and `data-loaded` is still set. No retry, and nothing said to the reader;
-see the open questions. Search follows the rule for any tool: a failed
-dictionary turns it off (step 2, open question 4).
+usual, and `data-loaded` is still set. No retry; the reader is told where they were waiting (below). Search follows the rule for any
+tool: a failed dictionary turns it off (step 2).
+
+## While data loads
+
+A small "Loading…" shows wherever the reader is waiting on a file: in the
+overlay's legend row while the picked overlay's files are on their way, in the
+search caption while search's are, and in the verse popup while the texts are.
+It goes when the file lands. Files nobody shown is waiting on say nothing. Main
+knows which downloads it has started and not yet heard back from; `loaded`
+still holds only what arrived.
+
+If a download fails, the same place shows a small closable warning instead:
+"Couldn't load — please reload and try again", with a × that dismisses it.
+Closed, it stays closed for that file; the overlay stays plain, as above.
 
 ## How the layout tests and the video harness know
 
@@ -155,14 +169,14 @@ focus, the address keeps a parameter, no page errors.
 | Case | Held | Before release | After release |
 |---|---|---|---|
 | Bare address | everything | `data-map-ready` set; map drawn; story open | `data-loaded` set |
-| Overlay link | commentary | map drawn and plain; picker shows commentary; no overlay legend row | map changed; legend row shown; address unchanged |
+| Overlay link | commentary | map drawn and plain; picker shows commentary; legend row says it is loading | map changed; legend row shows the overlay; address unchanged |
 | Search link | texts, dictionary | map drawn and plain; search box holds the word | map changed; results listed; address unchanged |
 | Narrowed search link | dictionary | address still has `m` | exactly the linked meaning checked; address unchanged |
 | Pinned verse | texts | popup closed; map centred on the verse | popup open for the verse |
 | Overlay picked early | commentary | pick it in the panel; map stays plain | map changed; picker unchanged; address has the overlay |
 | Search typed early | texts, dictionary | type a word; it keeps focus | results listed; box keeps value and focus; address has the search |
 | Story scrolled early | texts, dictionary | scroll to a stop with a search | map changed; search legend row shown |
-| Failed download | commentary aborted | overlay link | `data-loaded` set; map plain; no page errors |
+| Failed download | commentary aborted | overlay link | `data-loaded` set; map plain; legend row warns, and its × closes the warning; no page errors |
 
 ## What #320 got wrong here, and how this avoids it
 
@@ -179,23 +193,3 @@ focus, the address keeps a parameter, no page errors.
   treats search as any tool.
 - **It was checked by hand in a browser.** Here a committed suite, written
   first, is the definition of done.
-
-## Open questions for Danyel
-
-1. **The opening view's files first**, rather than everything at once. *Recommend
-   yes*: it is one tested function, and it is what makes an overlay link quick
-   on a slow connection.
-2. **Holding files with `page.route` under the throttle**, rather than throttling
-   alone. *Recommend holding*: without it the "before the data" cases depend on
-   the machine's speed.
-3. **The suite outside `test:layout`**, in `loading/` with its own command.
-   *Recommend its own*: its throttled cases are slow, and run for the same pull
-   requests that run layout tests.
-4. **Nothing shown to the reader while data loads**, and nothing on a failed
-   download. *Recommend nothing for now*: the wait is seconds, and #322's
-   load-timing telemetry will say whether failures happen.
-5. **Easing story transitions restart on a landing** rather than snapping at
-   their end. *Recommend restarting*: one call to code that exists.
-6. **The per-word parse after everything else settles**, rather than at idle as
-   today. *Recommend after settling*: idle is a guess at when the network is
-   free, and settling is the fact.
