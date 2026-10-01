@@ -1,7 +1,9 @@
 {
-  "one": 306321,
-  "several": 68,
-  "unknownSpelling": 94,
-  "ruledOut": 39,
+  "one": 306493,
+  "several": 26,
+  "unknownSpelling": 0,
+  "ruledOut": 3,
+  "unplaced": 9,
+  "unsearchable": 0,
   "total": 306522
 }

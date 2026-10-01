@@ -5,12 +5,13 @@
 // is doing, not the search itself (see search-performance.test.ts, which hit
 // this directly). A slow search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildSearchIndex, versesForTerm } from '../../search';
+import { buildSearchIndex, loadLexiconData, versesForTerm } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
 describe('Hebrew Search Performance Diagnostics', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
+    await loadLexiconData();
     buildSearchIndex(buildLargeVerseTexts(5000));
     // Warmup: JIT-compile the search path before measuring
     versesForTerm('אלהים', 'he', 'substring');

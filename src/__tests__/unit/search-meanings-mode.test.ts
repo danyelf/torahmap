@@ -5,13 +5,11 @@
 // "leafage", and more. A meanings-mode search looks for all of them.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  buildSearchIndex,
-  findLexemesForWord,
-  getLexeme,
-  loadLexiconData,
-  computeSnippetForMatch,
-} from '../../search';
+import { excerptOf } from '../helpers/excerpt';
+import { buildSearchIndex, findLexemesForWord, getLexeme, loadLexiconData } from '../../search';
+import { parseArrived } from '../../search/dictionary';
+import { addTerm, onlyMeaning } from '../../search/terms';
+import { excerpt } from '../../overlays/search/highlight';
 import { stripNikkud } from '../../hebrew';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -24,6 +22,7 @@ const searchDataDir = path.join(dataDir, 'search');
 const lexiconPath = path.join(searchDataDir, 'lexicon.json');
 const formsPath = path.join(searchDataDir, 'word-lexemes.json');
 const versesPath = path.join(searchDataDir, 'verse-lexemes.json');
+const morphologyPath = path.join(searchDataDir, 'verse-morphology.json');
 const allTextsPath = path.join(dataDir, 'all-texts.json');
 
 const dataExists =
@@ -36,6 +35,7 @@ function mockFetchForLexiconData() {
   const lexicon = JSON.parse(fs.readFileSync(lexiconPath, 'utf-8'));
   const forms = JSON.parse(fs.readFileSync(formsPath, 'utf-8'));
   const verses = JSON.parse(fs.readFileSync(versesPath, 'utf-8'));
+  const morphology = JSON.parse(fs.readFileSync(morphologyPath, 'utf-8'));
 
   global.fetch = vi.fn((input: RequestInfo | URL): Promise<Response> => {
     const url = String(input);
@@ -43,6 +43,7 @@ function mockFetchForLexiconData() {
     if (url.includes('lexicon.json')) data = lexicon;
     else if (url.includes('word-lexemes')) data = forms;
     else if (url.includes('verse-lexemes')) data = verses;
+    else if (url.includes('verse-morphology')) data = morphology;
     else return Promise.resolve({ ok: false, status: 404 } as Response);
 
     return Promise.resolve({
@@ -61,6 +62,8 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
     buildSearchIndex(JSON.parse(fs.readFileSync(allTextsPath, 'utf-8')) as VerseTexts);
     mockFetchForLexiconData();
     await loadLexiconData();
+    // The results list marks a word by the parse once it has arrived.
+    await parseArrived();
   });
 
   afterEach(() => {
@@ -154,14 +157,46 @@ describe.skipIf(!dataExists)('Meanings-mode search over the lexeme index', () =>
         (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
       );
       expect(result).toBeDefined();
-      const snippet = computeSnippetForMatch(result, 'עלה')!;
+      const snippet = excerptOf(result, 'עלה', 'meanings')!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלה');
     });
 
-    it('falls back to whole-word search for a term with no reading', () => {
-      // A nonsense string finds nothing rather than throwing.
-      expect(searchInMeaningsMode('קקקקקקק')).toEqual([]);
+    it('highlights the word of the meaning chosen, not another reading of the spelling', () => {
+      // Genesis 8:20: וַיַּעַל עֹלֹת — "and he offered burnt offerings".
+      const [added] = addTerm([], 'עלה');
+      const [term] = onlyMeaning([added], added.id, ['<LH/@heb']);
+      const verse = { book: 'Genesis', chapter: 8, verse: 20 };
+      const snippet = excerpt({ ...verse, matchingTerms: [] }, term)!;
+      const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
+      expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלת');
+    });
+
+    it('highlights one word of a word repeated', () => {
+      // Isaiah 6:3: קָדוֹשׁ ׀ קָדוֹשׁ ׀ קָדוֹשׁ
+      const verse = { book: 'Isaiah', chapter: 6, verse: 3 };
+      const snippet = excerptOf(verse, 'קדוש', 'meanings')!;
+      const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
+      expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('קדוש');
+    });
+
+    it('highlights both words of a name printed as two', () => {
+      const [result] = searchInMeaningsMode('בית אל').filter(
+        (r) => r.book === 'Genesis' && r.chapter === 28 && r.verse === 19,
+      );
+      const snippet = excerptOf(result, 'בית אל', 'meanings')!;
+      const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
+      expect(
+        stripNikkud(matched)
+          .replace(/[^א-ת ]/g, ' ')
+          .trim()
+          .split(/\s+/),
+      ).toEqual(['בית', 'אל']);
+    });
+
+    it('finds nothing for a word the dictionary does not know', () => {
+      // ויאמר half typed.
+      expect(searchInMeaningsMode('ויאמ')).toEqual([]);
     });
   });
 });

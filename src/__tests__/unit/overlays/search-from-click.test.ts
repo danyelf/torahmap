@@ -74,6 +74,24 @@ describe('searching for a clicked word', () => {
     expect(params.m).toContain(leaf.keys[0]);
   });
 
+  it('searches a meaning the clicked spelling does not have under one that does', () => {
+    // (בגד) in Genesis 30:11 is read בָּא גָד; "fortune" is not a reading of בגד,
+    // so a term spelled בגד would search for garments and betrayal instead.
+    clickWord('בגד', ['GD=/@heb']);
+
+    const params = searchOverlay.toUrl();
+    expect(params.search).toBe('גד');
+    expect(params.m).toBe('GD=/@heb');
+  });
+
+  it('writes the spelling it searches under with its final letter', () => {
+    // This "sleep" is no reading of its dictionary spelling ישן, so it is
+    // searched under a written form the index files as יישנ, which no reader
+    // would type.
+    clickWord('ישן', ['JCN=[@heb']);
+    expect(searchOverlay.toUrl().search).toBe('יישן');
+  });
+
   it('adds a second word rather than replacing the first', () => {
     const container = render();
     clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);

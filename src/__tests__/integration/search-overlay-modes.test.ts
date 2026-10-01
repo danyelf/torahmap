@@ -2,10 +2,10 @@
 //
 // The mode belongs to a term and is set on that term's row, so these tests
 // click the row.
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../overlays/search/index';
 import { configure } from '../../overlays/search';
-import { buildSearchIndex } from '../../search';
+import { buildSearchIndex, loadLexiconData } from '../../search';
 import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
 import { hostOverlay } from '../helpers/overlayHost';
@@ -13,6 +13,10 @@ import { createVerse } from '../helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
 
 const searchOverlay = hostOverlay(searchTool);
+
+beforeAll(async () => {
+  await loadLexiconData();
+});
 
 describe('Search Overlay - Hebrew Mode Integration', () => {
   let testVerses: TanakhLayout[];
@@ -175,31 +179,6 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Should match (Genesis 12:1 has אברם)
       expect(color121).not.toBeNull();
       expect(Array.isArray(color121)).toBe(true);
-    });
-
-    it('meanings mode falls back to word mode behavior', () => {
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אברהם';
-      input.dispatchEvent(new Event('input'));
-
-      // Test word mode first
-      chooseMode('word');
-
-      const verse = testVerses.find(
-        (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
-      );
-      const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
-
-      // Now test meanings mode
-      chooseMode('meanings');
-
-      const meaningsColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
-
-      // Should behave identically (both should match)
-      expect(meaningsColor).not.toBeNull();
-      expect(wordColor).not.toBeNull();
     });
   });
 
@@ -416,59 +395,23 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
     });
   });
 
-  describe('Fallback Behavior', () => {
-    it('meanings mode falls back to whole-word for proper nouns', () => {
+  describe('A word the dictionary does not know', () => {
+    it('finds nothing in meanings mode, and is found as a substring', () => {
       searchOverlay.renderControls?.(container);
 
+      // Part of אברהם, and no word of its own. Most fragments are one: אברה is.
       const input = container.querySelector('#search-input') as HTMLInputElement;
-      input.value = 'אברהם';
+      input.value = 'ברהם';
       input.dispatchEvent(new Event('input'));
-      chooseMode('meanings');
-
-      // Should find אברהם as whole word (lexeme lookup fails, falls back to whole-word)
       const gen175 = testVerses.find(
         (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
-      );
-      const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
+      )!;
 
-      expect(color).not.toBeNull();
-      // Should be highlighted (matched)
-      expect(Array.isArray(color)).toBe(true);
-    });
-
-    it('meanings mode does NOT fall back to substring', () => {
-      searchOverlay.renderControls?.(container);
-
-      const input = container.querySelector('#search-input') as HTMLInputElement;
-
-      // Search for "אלה" which appears as substring in "ואלה"
-      input.value = 'אלה';
-      input.dispatchEvent(new Event('input'));
       chooseMode('meanings');
+      expect(searchOverlay.getVerseColor(gen175)).toBeNull();
 
-      // Exodus 1:1 has "ואלה" - should NOT match in meanings mode
-      const ex11 = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
-      const meaningsColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
-
-      // Switch to substring mode
       chooseMode('substring');
-
-      const substringColor = searchOverlay.getVerseColor(ex11!) as [number, number, number] | null;
-
-      // Substring should match, meanings should not (dimmed)
-      if (
-        Array.isArray(meaningsColor) &&
-        typeof meaningsColor[0] === 'number' &&
-        Array.isArray(substringColor) &&
-        typeof substringColor[0] === 'number'
-      ) {
-        // Meanings mode should be dimmed (not matched)
-        expect(meaningsColor[0]).toBeLessThan(1);
-
-        // Substring should be highlighted (matched)
-        // Note: This assumes SEARCH_COLORS values are > dimmed values
-        // If substring matched, it won't be dimmed
-      }
+      expect(searchOverlay.getVerseColor(gen175)).toEqual(SEARCH_COLORS[0]);
     });
   });
 

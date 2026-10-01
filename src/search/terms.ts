@@ -6,8 +6,9 @@
 // that choice the moment an earlier term is edited, because every later index
 // shifts and the choice lands silently on a different word.
 
-import { meaningsFor, sameMeaning, type Meaning } from './dictionary.ts';
-import { isHebrew } from '../hebrew.ts';
+import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
+import { resultsForVerseSets, versesForTerm, type SearchResult } from '../search.ts';
+import { isHebrew, splitIntoWords } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '../types.ts';
@@ -18,11 +19,6 @@ import type { MatchMode } from './matching.ts';
  * it could be, so it is offered only where there is a dictionary — Hebrew.
  */
 export type SearchMode = MatchMode | 'meanings';
-
-/** How a term's text is matched where it is not matched by meaning: meanings falls back to whole word. */
-export function textMatchMode(mode: SearchMode): MatchMode {
-  return mode === 'substring' ? 'substring' : 'word';
-}
 
 export const SEARCH_MODES = [
   'substring',
@@ -272,14 +268,24 @@ export function termIsHebrew(term: SearchTerm): boolean {
 /**
  * What the reader chose, or the default for the language the text is in.
  *
- * English has no dictionary, so meanings is clamped to whole word here rather
- * than in the field: a term briefly retyped in English is back on meanings the
- * moment it is Hebrew again.
+ * Where meanings is not possible it is clamped to whole word here rather than
+ * in the field: a term briefly retyped as English, or as a phrase, is back on
+ * meanings the moment it is a Hebrew word again.
  */
 export function effectiveMode(term: SearchTerm): SearchMode {
-  const hebrew = termIsHebrew(term);
-  const chosen = term.mode ?? (hebrew ? 'meanings' : 'substring');
-  return !hebrew && chosen === 'meanings' ? 'word' : chosen;
+  const chosen = term.mode ?? (termIsHebrew(term) ? 'meanings' : 'substring');
+  return chosen === 'meanings' && !meaningsPossible(term) ? 'word' : chosen;
+}
+
+/**
+ * Can this term be matched by meaning? Not in English, and not a Hebrew phrase
+ * the dictionary does not have: it has בית אל, a name, but not וידבר יהוה. A
+ * single word stays possible while it is being typed, though most of its
+ * prefixes are no word at all.
+ */
+export function meaningsPossible(term: SearchTerm): boolean {
+  if (!termIsHebrew(term)) return false;
+  return term.meanings.length > 0 || splitIntoWords(term.text).length < 2;
 }
 
 /** The modes this term's own text can be matched by, in the order shown. */
@@ -287,30 +293,35 @@ export function modesOffered(term: SearchTerm): SearchMode[] {
   return SEARCH_MODES.filter((mode) => mode !== 'meanings' || termIsHebrew(term));
 }
 
-/** Only a Hebrew term in meanings mode consults the dictionary. */
-export function meaningsApply(term: SearchTerm): boolean {
-  return termIsHebrew(term) && effectiveMode(term) === 'meanings';
-}
-
 /** Everything a term is matched on: terms with equal queries find the same verses. */
-export interface TermQuery {
-  text: string;
-  language: TextLanguage;
-  mode: SearchMode;
-  /** The lexemes of the chosen meanings, or null when the term is matched by its text. */
-  meaningKeys: string[] | null;
-}
+export type TermQuery = { text: string; language: TextLanguage } & (
+  | {
+      mode: 'meanings';
+      /** The lexemes of the chosen meanings. Empty for a word the dictionary does not know. */
+      meaningKeys: string[];
+    }
+  | { mode: MatchMode }
+);
 
 export function termQuery(term: SearchTerm): TermQuery {
-  return {
-    text: term.text.trim(),
-    language: termIsHebrew(term) ? HEBREW : ENGLISH,
-    mode: effectiveMode(term),
-    // A word the dictionary does not know is matched by its text even in
-    // meanings mode, so a lexeme index that failed to load does not leave
-    // Hebrew finding nothing.
-    meaningKeys: meaningsApply(term) && term.meanings.length > 0 ? selectedKeys(term) : null,
-  };
+  const text = term.text.trim();
+  const language = termIsHebrew(term) ? HEBREW : ENGLISH;
+  const mode = effectiveMode(term);
+  return mode === 'meanings'
+    ? { text, language, mode, meaningKeys: selectedKeys(term) }
+    : { text, language, mode };
+}
+
+/** The verses a query finds. A word the dictionary does not know finds none in meanings mode. */
+export function versesForQuery(query: TermQuery): Set<string> {
+  return query.mode === 'meanings'
+    ? versesFor(query.meaningKeys)
+    : versesForTerm(query.text, query.language, query.mode);
+}
+
+/** The verses these terms find, each naming the terms that found it. */
+export function resultsForTerms(terms: SearchTerm[]): SearchResult[] {
+  return resultsForVerseSets(terms.map((term) => versesForQuery(termQuery(term))));
 }
 
 /**

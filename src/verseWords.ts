@@ -4,12 +4,7 @@
 // dictionary index was built on. A click resolving a different word than
 // search would find is the failure this shares a rule to avoid.
 
-import {
-  isSearchableWord,
-  normalizeHebrewForSearch,
-  splitIntoWords,
-  type TextWord,
-} from './hebrew.ts';
+import { isSearchableWord, splitIntoWords, type TextWord } from './hebrew.ts';
 
 /** {פ} and {ס}: paragraph markers Sefaria leaves in the text. Not words. */
 const SECTION_MARKER = /^\{[פס]\}$/;
@@ -26,32 +21,6 @@ export function verseWords(text: string): TextWord[] {
   return splitIntoWords(text).filter(
     ({ word }) => !isSectionMarker(word) && isSearchableWord(word),
   );
-}
-
-/**
- * The spelling to look a clicked word up under.
- *
- * Sefaria writes a textual variant as a pair of words: the form the scribes
- * wrote, in round brackets, followed by the form that is actually read aloud,
- * in square brackets. Neither kind of bracket is a letter of the word, and no
- * dictionary key contains one, so a wrapped word has to be unwrapped before it
- * is looked up - while the verse and the panel go on showing it exactly as it
- * is written, brackets and all, because that is what the reader clicked.
- *
- * A bracket that does not have its partner at the other end of the word is
- * left alone. Those occur where a bracketed phrase runs over two words, and
- * neither half resolves whatever is done to it.
- */
-export function lookupForm(displayed: string): string {
-  for (const [open, close] of [
-    ['(', ')'],
-    ['[', ']'],
-  ]) {
-    if (displayed.length > 1 && displayed.startsWith(open) && displayed.endsWith(close)) {
-      return normalizeHebrewForSearch(displayed.slice(1, -1));
-    }
-  }
-  return normalizeHebrewForSearch(displayed);
 }
 
 /**

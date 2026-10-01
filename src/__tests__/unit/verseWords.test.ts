@@ -5,7 +5,8 @@
 // up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { verseWords, lookupForm } from '../../verseWords';
+import { verseWords } from '../../verseWords';
+import { stripNikkud } from '../../hebrew';
 
 const words = (text: string) => verseWords(text).map((w) => w.word);
 
@@ -48,24 +49,13 @@ describe('the words of a verse', () => {
   });
 });
 
-describe('the spelling a click looks up', () => {
-  it('leaves an ordinary word alone, apart from its points', () => {
-    expect(lookupForm('בְּרֵאשִׁ֖ית')).toBe('בראשית');
-  });
-
-  it('drops the parentheses around the written form of a variant', () => {
-    expect(lookupForm('(הוצא)')).toBe('הוצא');
-  });
-
-  it('drops the square brackets around the form that is actually read', () => {
-    // Sefaria writes a textual variant as a pair, the written form in
-    // parentheses and the spoken one in square brackets. Both kinds of bracket
-    // are punctuation the verse displays, not letters of the word, and no
-    // dictionary key carries either.
-    expect(lookupForm('[הַיְצֵ֣א]')).toBe('היצא');
-  });
-
-  it('does not treat a stray bracket as a wrapper', () => {
-    expect(lookupForm('(הוצא')).toBe('(הוצא');
+describe('the spelling a click looks up and puts in the search box', () => {
+  it('is the word as printed, final letters and all, without points or brackets', () => {
+    expect(verseWords('(הוצא) [הַיְצֵא] [בָּא הָאָרֶץ]').map((w) => stripNikkud(w.word))).toEqual([
+      'הוצא',
+      'היצא',
+      'בא',
+      'הארץ',
+    ]);
   });
 });

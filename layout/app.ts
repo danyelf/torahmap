@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
 
 export interface State {
@@ -133,6 +133,22 @@ export const STATES: State[] = [
     name: 'explore-verse-pinned',
     link: 'overlay=commentary&verse=Genesis.12.1',
     shown: ['#verse-popup', '#map-legend'],
+  },
+  {
+    // A word read as two, so the menu offers two meanings and is at its tallest.
+    // Which word a click is on arrives after the map does; clicked before it,
+    // the menu offers only the exact search, so it is clicked until it is not.
+    name: 'explore-word-menu',
+    link: 'overlay=commentary&verse=Genesis.30.11',
+    then: async (page) => {
+      const word = page.locator('#verse-popup .verse-word', { hasText: 'בגד' });
+      await expect(async () => {
+        // A press outside the menu closes it; the click opens it again.
+        await word.click();
+        await expect(page.locator('.word-menu-choice').nth(1)).toBeVisible({ timeout: 500 });
+      }).toPass();
+    },
+    shown: ['.word-menu'],
   },
   {
     name: 'stories-panel',

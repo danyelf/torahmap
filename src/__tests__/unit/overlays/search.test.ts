@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import { configure, type SearchSettings } from '../../../overlays/search';
 import type { Color } from '../../../overlays/types';
-import { buildSearchIndex, parseSearchTerms } from '../../../search';
+import { buildSearchIndex, loadLexiconData, parseSearchTerms } from '../../../search';
 import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
@@ -22,6 +22,10 @@ function render(): HTMLDivElement {
 function type(container: HTMLElement, text: string): void {
   typeInSearch(container, text);
 }
+
+beforeAll(async () => {
+  await loadLexiconData();
+});
 
 describe('Search Overlay', () => {
   let testVerses: TanakhLayout[];
@@ -612,6 +616,27 @@ describe('Search Overlay', () => {
       expect(offered.map((o) => o.dataset.mode)).toEqual(['substring', 'word', 'meanings']);
       expect(input.dir).toBe('rtl');
     });
+
+    it('dims meanings for a phrase the dictionary does not have, and says why', () => {
+      const container = render();
+      const input = container.querySelector('#search-input') as HTMLInputElement;
+      const option = (mode: string) =>
+        container.querySelector<HTMLButtonElement>(
+          `.term-row[data-open="true"] .term-mode-option[data-mode="${mode}"]`,
+        )!;
+
+      input.value = 'וידבר יהוה';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(option('meanings').disabled).toBe(true);
+      expect(option('meanings').title).not.toBe('');
+      expect(option('word').classList.contains('on')).toBe(true);
+
+      input.value = 'וידבר';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(option('meanings').disabled).toBe(false);
+      expect(option('meanings').title).toBe('');
+      expect(option('meanings').classList.contains('on')).toBe(true);
+    });
   });
 
   describe('Render Legend', () => {
@@ -805,6 +830,19 @@ describe('Search Overlay', () => {
 
       const results = container.querySelectorAll('.search-result');
       expect(results.length).toBeLessThanOrEqual(10);
+    });
+
+    it('quotes a Hebrew row right to left in a verse an English term found first', () => {
+      const container = render();
+      type(container, 'God, אלהים');
+      container
+        .querySelectorAll<HTMLElement>('.term-row')[1]
+        .querySelector<HTMLElement>('.term-summary')!
+        .click();
+
+      const snippet = container.querySelector('.search-result .snippet')!;
+      expect(snippet.textContent).toMatch(/[א-ת]/);
+      expect(snippet.classList.contains('rtl')).toBe(true);
     });
 
     it('clears previous results on new search', () => {
@@ -1226,7 +1264,7 @@ describe('Search Overlay', () => {
     });
 
     it('marks the last word of a verse, where the sof pasuq trails the word', () => {
-      searchOverlay.restore({ search: 'הארץ', mode: 'word' });
+      searchOverlay.restore({ search: 'הארץ', mode: 'w' });
 
       const html = fragmentToHtml(
         searchOverlay.highlightVerseText(
@@ -1247,7 +1285,7 @@ describe('Search Overlay', () => {
         'אַחְאָ֑ב וּמָחִ֨יתִי אֶת־יְרוּשָׁלַ֜͏ִם כַּאֲשֶׁר־יִמְחֶ֤ה אֶת־הַצַּלַּ֙חַת֙ ' +
         'מָחָ֔ה וְהָפַ֖ךְ עַל־פָּנֶֽיהָ׃';
 
-      searchOverlay.restore({ search: 'ירושלם', mode: 'word' });
+      searchOverlay.restore({ search: 'ירושלם', mode: 'w' });
 
       const html = fragmentToHtml(
         searchOverlay.highlightVerseText(verse, 'he') as DocumentFragment,

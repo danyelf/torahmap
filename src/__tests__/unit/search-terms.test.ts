@@ -23,6 +23,7 @@ import {
   setMode,
   effectiveMode,
   modesOffered,
+  meaningsPossible,
   encodeModes,
   applyModes,
   type SearchTerm,
@@ -353,6 +354,20 @@ describe('a term matched its own way', () => {
     const terms = addTerm(addTerm([], 'עלה'), 'light');
     expect(modesOffered(terms[0])).toEqual(['substring', 'word', 'meanings']);
     expect(modesOffered(terms[1])).toEqual(['substring', 'word']);
+  });
+
+  it('matches a phrase the dictionary does not have as whole words', () => {
+    let terms = addTerm([], 'וידבר יהוה');
+    expect(meaningsPossible(terms[0])).toBe(false);
+    expect(effectiveMode(terms[0])).toBe('word');
+    terms = setMode(terms, terms[0].id, 'meanings');
+    expect(effectiveMode(terms[0])).toBe('word');
+  });
+
+  it('keeps meanings for a phrase the dictionary has, and for any single word', () => {
+    const terms = addTerm(addTerm([], 'בית אל'), 'ויאמ');
+    expect(effectiveMode(terms[0])).toBe('meanings');
+    expect(effectiveMode(terms[1])).toBe('meanings');
   });
 });
 

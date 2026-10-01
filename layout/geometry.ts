@@ -14,10 +14,18 @@ const SLACK = 0.5;
 
 const px = (n: number): string => `${Math.round(n)}`;
 
+/** The part of `a` inside `b`, or null when they share less than SLACK either way. */
+function intersection(a: Rect, b: Rect): Rect | null {
+  const x = Math.max(a.x, b.x);
+  const y = Math.max(a.y, b.y);
+  const width = Math.min(a.x + a.width, b.x + b.width) - x;
+  const height = Math.min(a.y + a.height, b.y + b.height) - y;
+  return width > SLACK && height > SLACK ? { x, y, width, height } : null;
+}
+
 function overlap(a: Rect, b: Rect): { w: number; h: number } | null {
-  const w = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
-  const h = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
-  return w > SLACK && h > SLACK ? { w, h } : null;
+  const shared = intersection(a, b);
+  return shared && { w: shared.width, h: shared.height };
 }
 
 const describeOverlap = (a: Box, b: Box, o: { w: number; h: number }): string =>
@@ -75,11 +83,12 @@ export interface Shown {
 }
 
 /** What keeps the elements `selector` matched from showing in full, if anything. */
-export function notShownInFull(selector: string, found: Shown[]): string[] {
+export function notShownInFull(selector: string, found: Shown[], screen: Rect): string[] {
   if (found.length === 0) return [`${selector} matches nothing`];
   return found.flatMap(({ full, visible }) => {
-    if (!visible) return [`${full.name} is hidden`];
-    const sides = edgesPast(full, visible);
+    const seen = visible && intersection(visible, screen);
+    if (!seen) return [`${full.name} is hidden`];
+    const sides = edgesPast(full, seen);
     return sides ? [`${full.name} is cut off at the ${sides} edge`] : [];
   });
 }

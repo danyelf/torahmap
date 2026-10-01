@@ -7,14 +7,15 @@
 // machine. Meanings-mode search is about 1ms once warm, so a genuinely slow
 // search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildSearchIndex, versesForTerm } from '../../search';
+import { buildSearchIndex, loadLexiconData, versesForTerm } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
 describe('Search Performance', () => {
   // Use beforeAll — building a 23k-verse index once is enough,
   // and avoids re-indexing overhead contaminating each test's timing.
-  beforeAll(() => {
+  beforeAll(async () => {
+    await loadLexiconData();
     buildSearchIndex(buildLargeVerseTexts(23000));
 
     // Warmup: JIT-compile the search path before measuring

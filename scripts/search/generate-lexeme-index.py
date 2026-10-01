@@ -12,6 +12,7 @@ Usage:
 """
 
 import collections
+import difflib
 import json
 import os
 import re
@@ -119,11 +120,18 @@ VERSE_REMAP[("Numbers", 25, 19)] = ("Numbers", 26, 1)
 POINT_START = 0x0591
 POINT_END = 0x05C7
 SEPARATORS = {0x05BE, 0x05C0, 0x05C3, 0x05C6}  # maqaf, paseq, sof pasuq, nun hafukha
+MAQAF = chr(0x05BE)
+SOF_PASUQ = chr(0x05C3)
 # Where one word ends and the next begins: whitespace, a hyphen, or a separator.
 # isWordSeparator() in src/hebrew.ts draws the same line.
 WORD_SEPARATOR = re.compile(
     r"[\s\-" + "".join(chr(code) for code in sorted(SEPARATORS)) + "]+"
 )
+# What divides the parts of a word BHSA holds as one but prints as two.
+INNER_SEPARATOR = re.compile(rf"[\s{MAQAF}]+")
+# The ketiv, which Sefaria prints in round brackets beside the qere. KETIV in
+# src/hebrew.ts is the same pattern.
+KETIV = re.compile(r"\([^)]*\)")
 # Inert here — BHSA has none. Sefaria writes ירושל͏ם with one, and both sides fold both.
 GRAPHEME_JOINER = 0x034F
 
@@ -146,6 +154,10 @@ FINAL_TO_MEDIAL = {
 # Occurrence-level grammar recorded for each word, in this order.
 MORPH_FIELDS = ["vs", "vt", "ps", "nu", "gn", "st"]
 
+# A word BHSA prints: its letters as read, its lexemes, and whether it is one
+# part of a word BHSA holds as one but prints as two.
+PrintedWord = collections.namedtuple("PrintedWord", "letters lexemes split")
+
 
 def normalize(text):
     """Fold Hebrew to the shape the search box works in.
@@ -153,6 +165,15 @@ def normalize(text):
     Mirrors normalizeHebrewForSearch() in src/hebrew.ts; the two must agree
     character for character or every lookup misses.
     """
+    return fold_finals(as_printed(text))
+
+
+def fold_finals(text):
+    return "".join(FINAL_TO_MEDIAL.get(ch, ch) for ch in text)
+
+
+def as_printed(text):
+    """Hebrew as a reader would type it: final letters kept, points dropped."""
     out = []
     for ch in text or "":
         ch = PRESENTATION_TO_LETTER.get(ch, ch)
@@ -161,10 +182,7 @@ def normalize(text):
             continue
         if POINT_START <= code <= POINT_END and code not in SEPARATORS:
             continue
-        if code in SEPARATORS or ch == "-":
-            out.append(" ")
-        else:
-            out.append(FINAL_TO_MEDIAL.get(ch, ch))
+        out.append(" " if code in SEPARATORS or ch == "-" else ch)
     return "".join(out)
 
 
@@ -177,6 +195,68 @@ def consonants(text):
     )
 
 
+def is_word(form):
+    """A single letter is never a word. isSearchableWord() in src/hebrew.ts
+    draws the same line."""
+    return len(consonants(form)) >= 2
+
+
+def line_up(shown, printed, morphemes):
+    """Line the words the page shows up with BHSA's, by their letters.
+
+    `printed` is the letters of each word BHSA prints, as close_word() counts
+    them; `morphemes` is (letters, lexeme, printed word) for each morpheme.
+
+    Returns whether each shown word falls on the printed word at its own
+    position, whatever the spelling, and when not, the lexemes of each shown
+    word: the last morpheme it reaches of every printed word it covers, so the
+    page's הללו in הללויה is "praise".
+    """
+    if shown == printed:
+        return True, None
+    theirs = "".join(printed)
+    owner_printed = [j for j, word in enumerate(printed) for _ in word]
+    owner_morpheme = [k for k, (letters, _, _) in enumerate(morphemes) for _ in letters]
+    if len(owner_morpheme) != len(theirs):
+        raise ValueError(f"morpheme letters {len(owner_morpheme)} != printed {len(theirs)}")
+    owner_shown = [i for i, word in enumerate(shown) for _ in word]
+
+    # Letters matched between each shown word and each printed word, and each
+    # morpheme.
+    to_printed = collections.Counter()
+    to_morpheme = collections.Counter()
+    matcher = difflib.SequenceMatcher(None, "".join(shown), theirs, autojunk=False)
+    for a, b, size in matcher.get_matching_blocks():
+        for t in range(size):
+            i = owner_shown[a + t]
+            to_printed[(i, owner_printed[b + t])] += 1
+            to_morpheme[(i, owner_morpheme[b + t])] += 1
+
+    # Two words share a word's worth of letters only when those letters are
+    # more than half of one of them. Anything less is a stray match: הנער is
+    # read הנערה, and the reading's last ה lines up with the ה of the word
+    # after it.
+    def shares(i, n, other_length):
+        return 2 * n > len(shown[i]) or 2 * n > other_length
+
+    covered = [set() for _ in shown]
+    for (i, j), n in to_printed.items():
+        if shares(i, n, len(printed[j])):
+            covered[i].add(j)
+    if len(shown) == len(printed) and all(c <= {i} for i, c in enumerate(covered)):
+        return True, None
+
+    reached = [{} for _ in shown]
+    for (i, k), n in sorted(to_morpheme.items()):
+        if shares(i, n, len(morphemes[k][0])):
+            word = morphemes[k][2]
+            reached[i][word] = max(reached[i].get(word, k), k)
+    return False, [
+        list(dict.fromkeys(morphemes[k][1] for _, k in sorted(last.items())))
+        for last in reached
+    ]
+
+
 def ends_printed_word(trailer):
     """True when something is printed after this morpheme, so it ends a word.
 
@@ -184,7 +264,7 @@ def ends_printed_word(trailer):
     printed as a single word, and the first of them is part of a word rather
     than a word.
     """
-    return any(ch.isspace() or ch in "־׃" for ch in trailer or "")
+    return any(ch.isspace() or ch in (MAQAF, SOF_PASUQ) for ch in trailer or "")
 
 
 def internal_separators(word_text):
@@ -195,7 +275,7 @@ def internal_separators(word_text):
     maqaf between its halves sits inside the word's own text rather than in the
     trailer that follows it. The printed page still shows two words there.
     """
-    return [ch for ch in (word_text or "") if ch.isspace() or ch == "־"]
+    return INNER_SEPARATOR.findall(word_text or "")
 
 
 def is_maqaf_break(trailer):
@@ -204,7 +284,7 @@ def is_maqaf_break(trailer):
     כל־הארץ is one word on the page and two in the dictionary. Recording which
     breaks are maqafs lets a reader of the file have it either way.
     """
-    return "־" in (trailer or "")
+    return MAQAF in (trailer or "")
 
 
 def printed_trailer(F, node):
@@ -248,7 +328,7 @@ def close_word(word_lengths, maqaf_joins, morpheme_count, inner, trailer):
     """
     word_lengths.append(morpheme_count)
     for separator in inner:
-        if separator == "־":
+        if MAQAF in separator:
             maqaf_joins.append(len(word_lengths) - 1)
         word_lengths.append(0)
     if is_maqaf_break(trailer):
@@ -295,12 +375,19 @@ def main():
     # spelling are read as that word, so that ambiguous forms can list their
     # likeliest lexeme first. One per occurrence, whatever the word's shape.
     form_counts = collections.Counter()
+    # The first printed spelling of each (form, lexeme) counted.
+    printed_as = {}
     verse_lexemes = collections.defaultdict(set)
     verse_morph = collections.defaultdict(list)
     # How many morphemes make up each printed word, and which of those words a
     # maqaf rather than a space follows.
     verse_words = collections.defaultdict(list)
     verse_joins = collections.defaultdict(list)
+    # Each printed word, and the letters of each morpheme with its lexeme and
+    # the printed word it is part of: what is lined up against the words the
+    # page shows.
+    verse_printed = collections.defaultdict(list)
+    verse_read_morphemes = collections.defaultdict(list)
     morph_ids = {}
     morph_table = []
 
@@ -326,9 +413,11 @@ def main():
         for morphemes, trailer in printed_words(F, L, verse_node):
             morpheme_total += len(morphemes)
 
-            word_forms = []   # the written form of each, in order
-            word_inner = []   # separators printed inside them
+            word_forms = []   # the written form of each, in order, as printed
+            readings = []     # what is read for each
             for node in morphemes:
+                reading = F.qere_utf8.v(node) or F.g_word_utf8.v(node) or ""
+                readings.append(reading)
                 morpheme_lexeme = lex_index[L.u(node, "lex")[0]]
                 combo = tuple(
                     "" if (v := getattr(F, field).v(node)) in (None, "NA", "n/a")
@@ -340,12 +429,12 @@ def main():
                     morph = morph_ids[combo] = len(morph_table)
                     morph_table.append(".".join(combo))
                 verse_morph[key].append([morpheme_lexeme, morph])
-                word_forms.append(normalize(F.g_cons_utf8.v(node) or ""))
-                # Separators printed inside a morpheme, where a corrected reading
-                # divides into more words than the writing does.
-                word_inner.extend(
-                    internal_separators(F.qere_utf8.v(node) or F.g_word_utf8.v(node))
-                )
+                word_forms.append(as_printed(F.g_cons_utf8.v(node) or ""))
+                verse_read_morphemes[key].append((
+                    consonants(reading),
+                    morpheme_lexeme,
+                    len(verse_words[key]) + len(word_lengths),
+                ))
 
             *bound, stem = morphemes
 
@@ -363,14 +452,25 @@ def main():
             # same string. Counting it twice would weigh a word printed bare
             # against the same word printed with a prefix, and since nouns take
             # the article and verbs mostly do not, that ranks verbs above nouns.
-            written = word_forms[-1]
-            qere = normalize(F.qere_utf8.v(stem) or "")
-            whole_word = "".join(word_forms)
-            for form in dict.fromkeys([written, qere, whole_word]):
-                if len(form) >= 2:
+            # Filed folded, and remembered as first printed.
+            spellings = {}
+            for shown in (word_forms[-1], as_printed(F.qere_utf8.v(stem)), "".join(word_forms)):
+                spellings.setdefault(fold_finals(shown), shown)
+            for form, shown in spellings.items():
+                if is_word(form):
                     form_counts[(form, lexeme)] += 1
+                    printed_as.setdefault((form, lexeme), shown)
 
+            # Separators printed inside the word, where a name or a corrected
+            # reading divides into more words than BHSA holds. Each part is a
+            # printed word close_word() records, and shares the word's stem.
+            read = "".join(readings)
+            word_inner = internal_separators(read)
             close_word(word_lengths, maqaf_joins, len(morphemes), word_inner, trailer)
+            verse_printed[key].extend(
+                PrintedWord(consonants(part), [lexeme], bool(word_inner))
+                for part in INNER_SEPARATOR.split(read)
+            )
 
         # Four BHSA verses of Exodus 20 become one Sefaria verse, and four of
         # Deuteronomy 5 likewise, so a key can be written more than once. The
@@ -401,6 +501,14 @@ def main():
         written: [lexeme for _, lexeme in sorted(pairs, key=lambda p: (-p[0], p[1]))]
         for written, pairs in word_lexemes.items()
     }
+
+    # Each lexeme's commonest spelling, as printed: a chosen meaning is searched
+    # under it when the dictionary's own spelling does not have that meaning.
+    commonest = {}
+    for (form, lexeme), _ in sorted(form_counts.items(), key=lambda p: (-p[1], p[0])):
+        commonest.setdefault(lexeme, printed_as[(form, lexeme)])
+    for i, row in enumerate(lexemes):
+        row.append(commonest.get(i, ""))
 
     print(f"  {morpheme_total} morphemes across {len(verse_lexemes)} verses")
     print(f"  {bound_total} of them bound to the next "
@@ -453,52 +561,118 @@ def main():
     # A verse one word out would give every word after the discrepancy its
     # neighbour's dictionary entry -- wrong, and plausible enough to go
     # unnoticed. So the words counted here are checked against the Hebrew the
-    # app actually displays, and the verses that disagree are named in the file
-    # rather than left for a reader to trip over.
+    # app actually displays, and the verses that disagree are lined up by
+    # letter instead.
     texts = json.load(open(os.path.join(DATA_DIR, "all-texts.json")))
 
     def displayed_words(hebrew):
-        """Split the Hebrew that Sefaria shows into the words a reader sees.
+        """Split the Hebrew that Sefaria shows into the words BHSA parsed.
 
-        Two things in that text are not words. Sefaria punctuates with the
-        scribal paragraph marks {ס} and {פ}, of which there are 3,552 and which
-        BHSA has nothing behind. And where the received text is corrected it
-        prints both readings, the ketiv in round brackets and the qere in
-        square ones; BHSA carries the one word that is read.
+        Not the paragraph marks {ס} and {פ}, which BHSA has nothing behind, and
+        not the ketiv: BHSA carries the qere, the word that is read.
         """
         stripped = re.sub(r"\{[ספ]\}", " ", hebrew or "")
-        stripped = re.sub(r"\([^)]*\)", " ", stripped)
+        stripped = KETIV.sub(" ", stripped)
         return [
             letters
             for piece in re.split(WORD_SEPARATOR, stripped)
             if (letters := consonants(piece))
         ]
 
-    misaligned = []
-    compared = 0
-    for key, words in verse_words.items():
-        book, chapter, verse = key.rsplit(":", 2)
-        entry = texts.get(book, {}).get(chapter, {}).get(verse)
-        if entry is None:
-            continue
-        compared += 1
-        if len(displayed_words(entry.get("he", ""))) != len(words):
-            misaligned.append(key)
+    displayed = {
+        f"{book}:{chapter}:{verse}": displayed_words(entry.get("he", ""))
+        for book, chapters in texts.items()
+        for chapter, verses in chapters.items()
+        for verse, entry in verses.items()
+    }
+
+    compared = [key for key in verse_words if key in displayed]
+    # The verses the page divides into words differently from BHSA -- nearly
+    # always a name one writes solid and the other in two, צורישדי against
+    # צורי שדי -- with the dictionary words of each word the page shows.
+    realigned = {}
+    for key in compared:
+        alike, lexemes_of = line_up(
+            displayed[key], [w.letters for w in verse_printed[key]], verse_read_morphemes[key]
+        )
+        if not alike:
+            realigned[key] = lexemes_of
+            # A shown word can be a morpheme other than a printed word's stem --
+            # the הללו of הללויה is "praise" -- and search must find the verse
+            # by every word a click there can name.
+            verse_lexemes[key].update(lexeme for named in lexemes_of for lexeme in named)
+
+    def lexemes_shown(key):
+        """The dictionary words of each word the page shows in this verse."""
+        return realigned.get(key, [w.lexemes for w in verse_printed[key]])
+
+    # ---- file every displayed spelling ------------------------------------
+    # Sefaria and BHSA disagree on some spellings -- optional vowel letters
+    # (גרלות, Leviticus 16:8), and names divided differently. Such a word,
+    # typed as the page shows it, would find nothing, or only what BHSA spells
+    # that way elsewhere (הרמתי, Genesis 14:22, is otherwise "Ramathite"), so
+    # it is filed under the word BHSA parsed there. consonants() also drops the
+    # stray bracket of a bracketed phrase that runs over two words.
+    #
+    # A spelling already filed gains a word only where the page prints the same
+    # word BHSA does, whole. Not a half of one -- פת of פתבג, בית of בית אל,
+    # על of עלמות printed על מות -- which would give common words meanings
+    # nobody typing them means; and not a different word in the same place,
+    # Malachi 3:16's אל where BHSA reads את.
+    def same_word(key, i, form):
+        if key in realigned:
+            return False
+        printed = verse_printed[key][i]
+        return not printed.split and (
+            difflib.SequenceMatcher(None, form, printed.letters).ratio() > 0.5
+        )
+
+    added = collections.Counter()
+    unlike = 0
+    for key in compared:
+        for i, (form, lexemes_of) in enumerate(zip(displayed[key], lexemes_shown(key))):
+            if not is_word(form):
+                continue
+            filed = word_lexemes.get(form)
+            for lexeme in lexemes_of:
+                if lexeme in (filed or []):
+                    continue
+                if filed is None or same_word(key, i, form):
+                    added[(form, lexeme)] += 1
+                else:
+                    unlike += 1
+
+    for form, lexeme in sorted(added, key=lambda p: (-added[p], p[1])):
+        word_lexemes.setdefault(form, []).append(lexeme)
+    print(f"  {unlike} displayed words are part of, or other than, the word BHSA "
+          f"parsed there, and their spelling does not offer it")
+
+    unfiled = collections.defaultdict(set)
+    for key, forms in displayed.items():
+        for form in forms:
+            if is_word(form) and form not in word_lexemes:
+                unfiled[form].add(key)
+    print(f"  {len({form for form, _ in added})} displayed spellings filed under a word "
+          f"BHSA parsed there and spells another way")
+    print(f"  {len(unfiled)} displayed spellings still unfiled, in "
+          f"{len(set().union(*unfiled.values()))} verses"
+          + (": " + ", ".join(sorted(unfiled)) if unfiled else ""))
 
     printed = sum(len(w) for w in verse_words.values())
     joins = sum(len(j) for j in verse_joins.values())
     print(f"  {printed} printed words, {joins} of them joined by a maqaf")
     print(
-        f"  {compared - len(misaligned)} of {compared} verses divide into words "
-        f"the same way the displayed text does"
+        f"  {len(compared) - len(realigned)} of {len(compared)} verses divide into words "
+        f"the same way the displayed text does; the rest are lined up by letter"
     )
-    if misaligned:
-        # Nearly all of these are compound proper names that BHSA writes with a
-        # maqaf and Sefaria writes solid, or the reverse: צורי־שדי against
-        # צורישדי. They cannot be reconciled from BHSA alone.
-        print(f"  {len(misaligned)} do not, and are listed in the file: "
-              + ", ".join(misaligned[:5])
-              + (", ..." if len(misaligned) > 5 else ""))
+    unnamed = [
+        f"{key} {form}"
+        for key, lexemes_of in realigned.items()
+        for form, named in zip(displayed[key], lexemes_of)
+        if not named
+    ]
+    print(f"  {len(unnamed)} displayed words name no BHSA word"
+          + (": " + ", ".join(unnamed) if unnamed else ""))
 
     # ---- write ----------------------------------------------------------
     def write(name, payload):
@@ -527,14 +701,15 @@ def main():
             "fields": MORPH_FIELDS,
             "parsings": morph_table,
             "verseFields": ["morphemes", "words", "joined"],
-            "misaligned": misaligned,
+            "realigned": realigned,
             "note": (
                 "verses[key] is [morphemes, words, joined]: every ETCBC morpheme in "
                 "text order as [lexeme index, parsing index], the number of "
                 "morphemes in each printed word, and the word positions a maqaf "
-                "follows. Morphemes are not printed words. misaligned "
-                "names verses whose words do not line up with all-texts.json; "
-                "positions in those must not be used to label a word. "
+                "follows. Morphemes are not printed words. realigned[key], for "
+                "the verses all-texts.json divides into words differently, "
+                "lists the lexeme indices of each word that file shows; "
+                "positions in words must not be used to label a word there. "
                 "See README.md in this folder."
             ),
             "verses": {

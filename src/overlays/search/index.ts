@@ -10,16 +10,14 @@ import './search.css';
 import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types.ts';
 import { tanakhKey } from '../../types.ts';
-import {
-  getMatchingVerseTerms,
-  parseSearchTerms,
-  resultsForVerseSets,
-  versesForTerm,
-  type SearchResult,
-} from '../../search.ts';
-import { versesFor } from '../../search/dictionary.ts';
+import { getMatchingVerseTerms, parseSearchTerms, type SearchResult } from '../../search.ts';
+import { parseArrived, spellingFor, versesFor } from '../../search/dictionary.ts';
 import { highlightTerms } from './highlight.ts';
-import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
+import {
+  renderResults as renderResultsList,
+  detachResults,
+  requoteResults,
+} from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import {
   addTerm,
@@ -29,9 +27,9 @@ import {
   encodeMeanings,
   applyMeanings,
   setMode,
-  meaningsApply,
   termQuery,
-  textMatchMode,
+  effectiveMode,
+  resultsForTerms,
   encodeModes,
   applyModes,
   MAX_TERMS,
@@ -159,14 +157,7 @@ export function configure(config: {
 function matchesForTerms(active: SearchTerm[]): Omit<Search, 'active'> {
   if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
-  const queries = active.map(termQuery);
-  const results = resultsForVerseSets(
-    queries.map(({ text, language, mode, meaningKeys }) =>
-      meaningKeys ? versesFor(meaningKeys) : versesForTerm(text, language, textMatchMode(mode)),
-    ),
-    queries.map((query) => query.language),
-  );
-
+  const results = resultsForTerms(active);
   return { results, matchingTerms: getMatchingVerseTerms(results) };
 }
 
@@ -242,20 +233,22 @@ export function searchForMeaning(
   // assuming it lands last, which is wrong whenever the empty row was not the
   // last one (a reader who cleared an earlier box while a later one still
   // held a word).
+  const chosen = meaningKeys && meaningKeys.length > 0 ? meaningKeys : null;
+  const spelling = chosen ? (spellingFor(chosen, text) ?? text) : text;
   let terms = settings.terms;
   const empty = terms.find((term) => term.text.trim() === '');
   let id: string;
   if (empty) {
     id = empty.id;
-    terms = setTermText(terms, id, text);
+    terms = setTermText(terms, id, spelling);
   } else {
-    terms = addTerm(terms, text);
+    terms = addTerm(terms, spelling);
     id = terms[terms.length - 1].id;
   }
 
-  if (meaningKeys && meaningKeys.length > 0) {
+  if (chosen) {
     terms = setMode(terms, id, 'meanings');
-    terms = onlyMeaning(terms, id, meaningKeys);
+    terms = onlyMeaning(terms, id, chosen);
   } else {
     terms = setMode(terms, id, 'word');
   }
@@ -337,6 +330,11 @@ function renderResults(settings: SearchSettings): void {
     terms: searchFor(settings).active,
     focus: openTermIndex(settings),
     onSelect: showVerse,
+  });
+
+  // A word is marked by the parse once it is here, and by its spelling until.
+  parseArrived()?.then(() => {
+    if (searchResults) requoteResults(searchResults);
   });
 }
 
@@ -532,11 +530,11 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings> = {
     // Each word as typed, then which of its checked meanings this verse holds.
     const named = termIndices.map((i) => {
       const term = active[i];
-      if (!meaningsApply(term)) return term.text;
+      if (effectiveMode(term) !== 'meanings') return term.text;
       const here = term.meanings
         .filter((m) => term.selected.has(m.keys[0]) && versesFor(m.keys).has(key))
         .map((m) => m.gloss);
-      return here.length > 0 ? `${term.text} (${here.join(', ')})` : term.text;
+      return `${term.text} (${here.join(', ')})`;
     });
 
     return `Matches: ${named.join(', ')}`;

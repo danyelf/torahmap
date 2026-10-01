@@ -14,6 +14,7 @@
 
 import {
   findLexemesForWord,
+  printedSpelling,
   getLexeme,
   getLexemeVerseCount,
   getVerseLexemes,
@@ -22,7 +23,16 @@ import {
   type LexemeId,
 } from '../search.ts';
 import { fetchData } from '../constants.ts';
-import { isHebrew, mapStrippedToOriginal, splitIntoWords, type TextWord } from '../hebrew.ts';
+import {
+  KETIV,
+  QERE,
+  isHebrew,
+  onlySeparators,
+  mapStrippedToOriginal,
+  splitIntoWords,
+  stripNikkud,
+  type TextWord,
+} from '../hebrew.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
 
 /**
@@ -148,9 +158,11 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * Which dictionary word is this written form, in this verse?
  *
  * Given `wordIndex` — which of the verse's printed words it is, counting from
- * zero the way `verseWords` does — this is a lookup rather than a guess,
- * and answers with the one word BHSA parsed there. It needs the verse to be
- * the one `setVerseOnScreen` last named, and its parse to have arrived.
+ * zero the way `verseWords` does — this is a lookup rather than a guess, and
+ * answers with the words BHSA parsed there: one, or two for a ketiv read as
+ * two (בגד, read בָּא גָד) or a word the page prints solid (הללויה). It needs
+ * the verse to be the one `setVerseOnScreen` last named, and its parse to
+ * have arrived.
  *
  * Without that, the verse narrows the spelling instead of settling it. Hebrew
  * does not write most vowels, so half the words in the text could be several
@@ -158,17 +170,17 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * contains and the spelling's other candidates usually are not. It can leave
  * two readings standing — see `word-in-verse.test.ts`, לו in Genesis 2:18.
  *
- * An empty result means "cannot say": a spelling the dictionary does not carry,
- * or one of the 64 verses in `misaligned`. Callers offer a literal search
- * rather than treating it as an error.
+ * An empty result means "cannot say": a spelling the dictionary does not carry
+ * at a place the parse has no word for. Callers offer a literal search rather
+ * than treating it as an error.
  */
 export function meaningsInVerse(
   writtenForm: string,
   verseKey: string,
   wordIndex?: number,
 ): Meaning[] {
-  const parsed = wordIndex === undefined ? null : stemOfWord(verseKey, wordIndex);
-  if (parsed !== null) return rowForStem(parsed, writtenForm);
+  const parsed = wordIndex === undefined ? null : namedWord(verseKey, wordIndex);
+  if (parsed !== null) return parsed.flatMap((id) => rowForLexeme(id, writtenForm));
 
   const ids = findLexemesForWord(writtenForm);
   if (!ids) return [];
@@ -189,11 +201,32 @@ export function meaningsInVerse(
  * בֵּית אֵל is filed under Bethel while its halves are spellings of "house" and
  * "god", so the lexeme stands alone and gets a row of its own.
  */
-function rowForStem(stem: LexemeId, writtenForm: string): Meaning[] {
-  const key = keyOf(stem);
+function rowForLexeme(id: LexemeId, writtenForm: string): Meaning[] {
+  const key = keyOf(id);
   const candidates = findLexemesForWord(writtenForm) ?? [];
   const row = key === null ? undefined : rowsFor(candidates).find((m) => m.keys.includes(key));
-  return row ? [row] : rowsFor([stem]);
+  return row ? [row] : rowsFor([id]);
+}
+
+/**
+ * A spelling to search a chosen meaning under.
+ *
+ * A term offers the meanings of its text, so a meaning its text cannot be is
+ * lost the moment the term is built: a click on (בגד), read בָּא גָד, can choose
+ * "fortune", which is no reading of בגד. So the clicked spelling when it has
+ * the meaning, then the meaning's dictionary spelling, then the spelling it
+ * is most often printed with, or null when it is never printed.
+ */
+export function spellingFor(keys: readonly string[], clicked: string): string | null {
+  const has = (text: string) => formMatches(keys, text);
+  if (has(clicked)) return clicked;
+
+  const ids = [...lexemesForKeys(keys)];
+  for (const id of ids) {
+    const spelling = stripNikkud(getLexeme(id)?.form ?? '');
+    if (spelling && has(spelling)) return spelling;
+  }
+  return ids.map(printedSpelling).find(Boolean) ?? null;
 }
 
 /** The verses carrying any of these meanings. */
@@ -210,7 +243,7 @@ export function versesFor(keys: string[]): Set<string> {
  *
  * Kept here rather than in the caller so that `LexemeId` stays behind the seam.
  */
-export function formMatches(keys: string[], writtenForm: string): boolean {
+export function formMatches(keys: readonly string[], writtenForm: string): boolean {
   const ids = findLexemesForWord(writtenForm);
   if (!ids || ids.length === 0) return false;
 
@@ -246,12 +279,12 @@ function lexemesForKeys(keys: readonly string[]): Set<LexemeId> {
 type ParsedVerse = [Array<[LexemeId, number]>, number[], number[]];
 
 interface MorphologyFile {
-  misaligned: string[];
+  /** For the verses the page divides into words differently: each shown word's lexemes. */
+  realigned: Record<string, LexemeId[][]>;
   verses: Record<string, ParsedVerse>;
 }
 
 let morphology: MorphologyFile | null = null;
-let misaligned: Set<string> = new Set();
 let loading: Promise<void> | null = null;
 let settled = false;
 
@@ -268,7 +301,6 @@ function loadMorphology(): Promise<void> {
       if (!res.ok) throw new Error(`Response status ${res.status}`);
       const file: MorphologyFile = await res.json();
       morphology = file;
-      misaligned = new Set(file.misaligned);
     })
     .catch((err) => {
       console.warn('Could not load the per-word parse; falling back to the spelling:', err);
@@ -299,16 +331,46 @@ export function prefetchMorphology(): void {
   }
 }
 
+/**
+ * A promise that resolves once the parse has arrived, asking for it now; null
+ * when nothing is waiting on it. A failed load resolves too.
+ */
+export function parseArrived(): Promise<void> | null {
+  return settled ? null : loadMorphology();
+}
+
 /** Long enough to be clear of first paint, short enough to beat a deliberate click. */
 const PREFETCH_TIMEOUT_MS = 2000;
 
+/** The verse whose Hebrew is on screen. */
+let onScreen: { verseKey: string; hebrew: string } | null = null;
+
 /**
- * The verse whose Hebrew is on screen, and its printed words' stems by where
- * each word starts in that text. Null stems mean the two sources divide this
- * verse differently, or the parse is not here yet.
+ * A verse's clickable words, and the dictionary words of its printed words by
+ * where each starts in its text. Null `named` means the parse is not here yet,
+ * or its words do not line up with this text.
  */
-let onScreen: { verseKey: string; hebrew: string; stems: Map<number, LexemeId> | null } | null =
-  null;
+interface VerseNames {
+  words: TextWord[];
+  named: Map<number, LexemeId[]> | null;
+}
+
+// Verses named, by key and text: the one on screen and those a results list
+// quotes, which ask word after word of one verse. Only once the parse is here.
+const namedVerses = new Map<string, VerseNames>();
+const NAMED_VERSES_KEPT = 100;
+
+function verseNames(verseKey: string, hebrew: string): VerseNames {
+  const id = `${verseKey}\n${hebrew}`;
+  const known = namedVerses.get(id);
+  if (known) return known;
+
+  const words = verseWords(hebrew);
+  const parsed = { words, named: namedWords(verseKey, hebrew, words) };
+  if (namedVerses.size >= NAMED_VERSES_KEPT) namedVerses.clear();
+  namedVerses.set(id, parsed);
+  return parsed;
+}
 
 /**
  * Name the verse whose Hebrew is about to be displayed.
@@ -322,8 +384,8 @@ let onScreen: { verseKey: string; hebrew: string; stems: Map<number, LexemeId> |
  * failed load too; there is simply nothing more to wait for.
  */
 export function setVerseOnScreen(verseKey: string, hebrew: string): Promise<void> | null {
-  onScreen = { verseKey, hebrew, stems: stemsOf(verseKey, hebrew) };
-  return settled ? null : loadMorphology();
+  onScreen = { verseKey, hebrew };
+  return parseArrived();
 }
 
 /** Which verse the last `setVerseOnScreen` named, for callers checking staleness. */
@@ -331,30 +393,18 @@ export function verseOnScreen(): string | null {
   return onScreen?.verseKey ?? null;
 }
 
-/**
- * Did the parse line up with the verse on screen, so that its words are named
- * rather than guessed at?
- *
- * Exported for the tests, which ask it rather than repeat the check.
- */
-export function wordsAreNamed(): boolean {
-  return onScreen?.stems != null;
+/** Does a click on this word of the verse on screen land on a word BHSA parsed? */
+export function wordIsNamed(wordIndex: number): boolean {
+  return onScreen !== null && namedWord(onScreen.verseKey, wordIndex) !== null;
 }
 
-/** The ketiv, which BHSA carries no word for, so it cannot be counted past. */
-const KETIV = /\([^)]*\)/g;
-
 /**
- * The printed words BHSA has a word for, where each starts in the verse text.
- *
- * Not the section markers, and not the ketiv — the form Sefaria prints in
- * round brackets beside the qere, the word that is actually read. The ketiv is
- * blanked rather than deleted, so offsets keep meaning what they meant.
- *
- * Same rule as `displayed_words()` in scripts/search/generate-lexeme-index.py,
- * which is what the file was aligned against.
+ * The printed words BHSA has a word for, where each starts in the verse text:
+ * not the section markers, and not the ketiv, which is blanked so offsets keep
+ * their meaning. Same rule as `displayed_words()` in
+ * scripts/search/generate-lexeme-index.py, which the file was aligned against.
  */
-function wordsBhsaParsed(hebrew: string): TextWord[] {
+export function wordsBhsaParsed(hebrew: string): TextWord[] {
   const blanked = hebrew.replace(KETIV, (m) => ' '.repeat(m.length));
   return splitIntoWords(blanked).filter(({ word }) => !isSectionMarker(word) && isHebrew(word));
 }
@@ -362,49 +412,110 @@ function wordsBhsaParsed(hebrew: string): TextWord[] {
 /**
  * Where each printed word of a verse starts, and which dictionary word it is.
  *
- * Null rather than a partial answer whenever anything fails to line up. The
- * file names 64 verses where BHSA and Sefaria divide a compound name
- * differently; the word count is checked again here anyway, because a position
- * that is one word out labels every word after it with its neighbour's
- * dictionary entry — wrong, and plausible enough to go unnoticed.
+ * Where the page divides a verse into words as BHSA does, a word is the one
+ * at its position; where it does not, the file says which words each shown
+ * word is, lined up by letter. Null rather than a partial answer when the count
+ * disagrees anyway, because a position one word out labels every word after it
+ * with its neighbour's dictionary entry — wrong, and plausible enough to go
+ * unnoticed.
  */
-function stemsOf(verseKey: string, hebrew: string): Map<number, LexemeId> | null {
+function namedWords(
+  verseKey: string,
+  hebrew: string,
+  words: TextWord[],
+): Map<number, LexemeId[]> | null {
   const parsed = morphology?.verses[verseKey];
-  if (!parsed || misaligned.has(verseKey)) return null;
+  if (!parsed) return null;
 
-  const [morphemes, lengths] = parsed;
-  const words = wordsBhsaParsed(hebrew);
-  if (words.length !== lengths.length) return null;
+  const perWord = morphology?.realigned[verseKey] ?? stemsByPosition(parsed);
+  const bhsaWords = wordsBhsaParsed(hebrew);
+  if (bhsaWords.length !== perWord.length) return null;
 
-  const stems = new Map<number, LexemeId>();
+  const named = new Map<number, LexemeId[]>();
+  bhsaWords.forEach((word, i) => {
+    if (perWord[i].length > 0) named.set(word.start, perWord[i]);
+  });
+  nameKetiv(hebrew, named, words);
+  return named;
+}
+
+/** The stem of each printed word: the last of its morphemes. */
+function stemsByPosition([morphemes, lengths]: ParsedVerse): LexemeId[][] {
   let at = 0;
   let stem: LexemeId | null = null;
-
-  for (let i = 0; i < lengths.length; i++) {
+  return lengths.map((length) => {
     // A word of no morphemes is a further part of the dictionary word before
     // it — the קַיִן of תּוּבַל קַיִן — so it carries that word's stem.
-    if (lengths[i] > 0) {
-      stem = morphemes[at + lengths[i] - 1][0];
-      at += lengths[i];
+    if (length > 0) {
+      stem = morphemes[at + length - 1][0];
+      at += length;
     }
-    if (stem !== null) stems.set(words[i].start, stem);
-  }
-
-  return stems;
+    return stem === null ? [] : [stem];
+  });
 }
 
-/** The dictionary word at a position in the text on screen, if that is what this is. */
-function stemAt(verseText: string, wordStart: number): LexemeId | null {
-  if (!onScreen?.stems || onScreen.hebrew !== verseText) return null;
-  return onScreen.stems.get(wordStart) ?? null;
+const CORRECTION = new RegExp(`${KETIV.source}|${QERE.source}`, 'g');
+
+/**
+ * Give each ketiv the words BHSA parsed for the qere printed beside it, which
+ * is the same word written differently. Word for word where the two have as
+ * many words; otherwise each written word is every word it is read as — בגד is
+ * read בָּא גָד, "Gad has come". A ketiv with no qere beside it is written and
+ * not read, and BHSA has no word for it.
+ */
+function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>, words: TextWord[]): void {
+  if (!hebrew.includes('(')) return;
+  const groups = [...hebrew.matchAll(CORRECTION)].map((m) => ({
+    start: m.index,
+    end: m.index + m[0].length,
+    ketiv: m[0].startsWith('('),
+  }));
+  const within = (group: { start: number; end: number }) =>
+    words.filter((w) => w.start >= group.start && w.start < group.end);
+  // A qere belongs to one ketiv, with nothing but word breaks between them. In
+  // (K1) [Q1] (K2) [Q2], Q1 is beside K2 too.
+  const claimed = new Set<number>();
+  const free = (i: number) => groups[i] && !groups[i].ketiv && !claimed.has(i);
+
+  groups.forEach((group, i) => {
+    if (!group.ketiv) return;
+    const at =
+      free(i + 1) && onlySeparators(hebrew, group.end, groups[i + 1].start)
+        ? i + 1
+        : free(i - 1) && onlySeparators(hebrew, groups[i - 1].end, group.start)
+          ? i - 1
+          : null;
+    if (at === null) return;
+    claimed.add(at);
+    const qere = groups[at];
+
+    const written = within(group);
+    const read = within(qere).map((w) => named.get(w.start) ?? []);
+    const all = [...new Set(read.flat())];
+    written.forEach((w, j) => {
+      const words = written.length === read.length ? read[j] : all;
+      if (words.length > 0) named.set(w.start, words);
+    });
+  });
 }
 
-/** The nth printed word of a verse, as BHSA parsed it. */
-function stemOfWord(verseKey: string, wordIndex: number): LexemeId | null {
-  if (!onScreen?.stems || onScreen.verseKey !== verseKey) return null;
+/**
+ * The dictionary words at a position in a verse's text: the verse on screen,
+ * or the one `verseKey` names.
+ */
+function namedAt(verseText: string, wordStart: number, verseKey?: string): LexemeId[] | null {
+  const key = verseKey ?? (onScreen?.hebrew === verseText ? onScreen.verseKey : undefined);
+  if (key === undefined || !morphology) return null;
+  return verseNames(key, verseText).named?.get(wordStart) ?? null;
+}
 
-  const word = verseWords(onScreen.hebrew)[wordIndex];
-  return word ? (onScreen.stems.get(word.start) ?? null) : null;
+/** The dictionary words of the nth printed word of the verse on screen, as BHSA parsed it. */
+function namedWord(verseKey: string, wordIndex: number): LexemeId[] | null {
+  if (onScreen?.verseKey !== verseKey || !morphology) return null;
+
+  const { words, named } = verseNames(verseKey, onScreen.hebrew);
+  const word = words[wordIndex];
+  return word ? (named?.get(word.start) ?? null) : null;
 }
 
 /**
@@ -413,19 +524,22 @@ function stemOfWord(verseKey: string, wordIndex: number): LexemeId | null {
  * The question `formMatches` answers is whether a spelling *could* be one of
  * them, which cannot separate the two words spelled עלה in Genesis 8:20. This
  * one names the word instead, and falls back to the spelling wherever the
- * parse cannot: a ketiv, a verse that does not line up, or the moments before
- * the parse has loaded.
+ * parse cannot: a ketiv with no qere, a verse that does not line up, or the
+ * moments before the parse has loaded.
  *
  * `wordStart` is where the word begins in the nikkud-stripped text, which is
- * what the caller splits into words.
+ * what the caller splits into words. `verseKey` names a verse other than the
+ * one on screen.
  */
 export function wordMatches(
   keys: string[],
   writtenForm: string,
   verseText: string,
   wordStart: number,
+  verseKey?: string,
 ): boolean {
-  const stem = stemAt(verseText, mapStrippedToOriginal(verseText, wordStart));
-  if (stem === null) return formMatches(keys, writtenForm);
-  return lexemesForKeys(keys).has(stem);
+  const named = namedAt(verseText, mapStrippedToOriginal(verseText, wordStart), verseKey);
+  if (named === null) return formMatches(keys, writtenForm);
+  const wanted = lexemesForKeys(keys);
+  return named.some((id) => wanted.has(id));
 }

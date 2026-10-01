@@ -77,6 +77,12 @@ export function isTropMark(code: number): boolean {
 
 const HEBREW_LETTER = /[\u05D0-\u05EA]/;
 
+// Sefaria prints a corrected word twice: the ketiv, as written, in round
+// brackets, and the qere, as read, in square ones. KETIV in
+// scripts/search/generate-lexeme-index.py is the same pattern.
+export const KETIV = /\([^)]*\)/g;
+export const QERE = /\[[^\]]*\]/g;
+
 /** Does this text hold a Hebrew letter? */
 export function isHebrew(text: string): boolean {
   return HEBREW_LETTER.test(text);
@@ -93,10 +99,9 @@ export function isSearchableWord(text: string): boolean {
   return (text.match(LETTER)?.length ?? 0) >= 2;
 }
 
-// Sefaria prints a corrected word twice, the written form in round brackets and
-// the read form in square ones: (בגד) [בָּ֣א גָ֑ד]. No bracket sits between two
-// letters, so counting them as separators leaves every verse's words, and
-// their line-up with BHSA, unchanged.
+// The brackets of KETIV and QERE. No bracket sits between two letters, so
+// counting them as separators leaves every verse's words, and their line-up
+// with BHSA, unchanged.
 const BRACKETS = new Set(['(', ')', '[', ']']);
 
 /** Whitespace, hyphen, a bracket, or one of the four Hebrew characters that break words. */
@@ -107,6 +112,11 @@ export function isWordSeparator(char: string): boolean {
     char === '-' ||
     BRACKETS.has(char)
   );
+}
+
+/** Is there nothing but word breaks between these two positions of the text? */
+export function onlySeparators(text: string, from: number, to: number): boolean {
+  return [...text.slice(from, to)].every(isWordSeparator);
 }
 
 /** Drop the points and accents, keeping final forms and separators as written. */

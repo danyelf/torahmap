@@ -37,6 +37,10 @@
   height: 100%;
 }
 
+body {
+  font-family: system-ui, sans-serif;
+}
+
 #panel {
   position: fixed;
   /* Pinned to both edges rather than given a height. On an iPad 100vh counts
@@ -51,7 +55,6 @@
   border-right: 1px solid var(--edge);
   box-sizing: border-box;
   z-index: 10;
-  font-family: system-ui, sans-serif;
   color: #fff;
 }
 
@@ -124,7 +127,6 @@ body[data-mode='explore'] #tools {
   top: var(--column-head-pad);
   left: 12px;
   z-index: 16;
-  font-family: system-ui, sans-serif;
 }
 
 .menu-button {
@@ -193,7 +195,6 @@ body[data-mode='explore'] #tools {
   box-sizing: border-box;
   z-index: 16;
   padding: 6px 0;
-  font-family: system-ui, sans-serif;
   background: #111;
   border-bottom: 1px solid #444;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
@@ -498,7 +499,6 @@ body[data-open='about'] #about-panel {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-  font-family: system-ui, sans-serif;
 }
 
 #map-legend[hidden] {

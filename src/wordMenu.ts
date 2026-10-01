@@ -20,6 +20,11 @@ export interface WordMenuOptions {
   onChoose: (meaning: Meaning | null) => void;
 }
 
+/** Between the menu and its word. */
+const GAP = 6;
+/** Between the menu and the edge of the screen. */
+const MARGIN = 8;
+
 let open: HTMLElement | null = null;
 let dismiss: ((event: MouseEvent | KeyboardEvent) => void) | null = null;
 let goStale: (() => void) | null = null;
@@ -140,18 +145,19 @@ export function openWordMenu(options: WordMenuOptions): void {
     menu.appendChild(exactChoice(options));
   }
 
-  // Anchored to the word, then nudged back inside the viewport.
+  // Never over the word it is about.
   const box = options.anchor.getBoundingClientRect();
-  menu.style.top = `${box.bottom + 6}px`;
-  menu.style.left = `${box.left}px`;
-
+  const roomBelow = window.innerHeight - MARGIN - (box.bottom + GAP);
+  const roomAbove = box.top - GAP - MARGIN;
   document.body.appendChild(menu);
   open = menu;
 
-  const width = menu.getBoundingClientRect().width;
-  if (box.left + width > window.innerWidth - 8) {
-    menu.style.left = `${Math.max(8, window.innerWidth - width - 8)}px`;
-  }
+  const { width, height } = menu.getBoundingClientRect();
+  const goesBelow = height <= roomBelow || (height > roomAbove && roomBelow >= roomAbove);
+  const room = goesBelow ? roomBelow : roomAbove;
+  menu.style.maxHeight = `${room}px`;
+  menu.style.top = `${goesBelow ? box.bottom + GAP : box.top - GAP - Math.min(height, room)}px`;
+  menu.style.left = `${Math.max(MARGIN, Math.min(box.left, window.innerWidth - MARGIN - width))}px`;
 
   // A menu that cannot be dismissed is worse than no menu: the reader who did
   // not mean to click has to be able to get back to exactly where they were.

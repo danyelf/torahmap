@@ -2,11 +2,12 @@
 // Each case below is one a rule of their own would make them disagree on.
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { excerptOf } from '../helpers/excerpt';
 import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
 
 const searchOverlay = hostOverlay(overlay);
-import { buildSearchIndex, computeSnippetForMatch, versesForTerm } from '../../search';
+import { buildSearchIndex, versesForTerm } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
 import { setTermText } from '../../search/terms';
@@ -52,12 +53,10 @@ describe('the search and the highlighter agree', () => {
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);
   });
 
-  it.each(['w', undefined])('on a phrase, in mode %s', (mode) => {
-    // No dictionary is loaded here, so meanings mode (the default, undefined)
-    // matches the phrase by its text.
+  it('on a phrase', () => {
     expect(versesForTerm('וידבר יהוה', 'he', 'word').size).toBe(1);
 
-    searchOverlay.restore({ search: 'וידבר יהוה', mode });
+    searchOverlay.restore({ search: 'וידבר יהוה', mode: 'w' });
     expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת ]/g, ''))).toEqual([
       'וידבר יהוה',
     ]);
@@ -75,11 +74,21 @@ describe('the search and the highlighter agree', () => {
       book: 'Leviticus',
       chapter: 1,
       verse: 1,
-      language: 'he' as const,
       matchingTerms: [],
     };
-    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result, 'וידבר יהוה')!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהוה', 'word')!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
+  });
+
+  it('on where the result row centres a phrase cut off mid-word, in substring mode', () => {
+    const result = {
+      book: 'Leviticus',
+      chapter: 1,
+      verse: 1,
+      matchingTerms: [],
+    };
+    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהו', 'substring')!;
+    expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהו');
   });
 });
 

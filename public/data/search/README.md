@@ -19,8 +19,8 @@ occurrence. Nothing else we looked at has all three.
 
 | File | Contents |
 | --- | --- |
-| `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech and language. |
-| `word-lexemes.json` | Written form → the lexemes it could be, most frequent reading first. Keys have their points stripped and their final letters folded to the medial shape, matching what the search box does to what you type. |
+| `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech, language, and the spelling it is most often printed with. |
+| `word-lexemes.json` | Written form → the lexemes it could be, most frequent reading first. Keys have their points stripped and their final letters folded to the medial shape, matching what the search box does to what you type. Includes the spellings Sefaria prints where BHSA spells a word differently, each filed under the word BHSA parsed at that place in the verse. |
 | `verse-lexemes.json` | Verse key → the distinct dictionary words the verse uses, one per printed word. This is what search actually queries. |
 | `verse-morphology.json` | Every word of every verse in text order with its lexeme and its grammatical parsing, and where each printed word begins and ends. This is what names the word a reader clicks or a search marks, rather than guessing from its spelling. 4.5 MB, more than the other three together, so it is fetched when the first verse is displayed rather than at startup. See below — its morphemes are not the words you see on the page. |
 
@@ -53,18 +53,20 @@ keeps "all" and "the earth" apart, which is the point — they are two dictionar
 words. `joined` lists the positions a maqaf rather than a space follows, so
 anything that wants the whole printed word back can rejoin them.
 
-### Verses that do not line up
+### Verses the page divides differently
 
-`misaligned` names 64 verses — 0.28% — where the word count here differs from
-the Hebrew in `all-texts.json`. Almost all are compound proper names the two
-sources divide differently: BHSA writes צוּרִי־שַׁדָּי with a maqaf where Sefaria
-writes צוּרִישַׁדָּי solid. Joshua 21:36 and 21:37 are there because Sefaria ships no
-Hebrew for them.
+In a few dozen verses the Hebrew in `all-texts.json` divides into words
+differently from BHSA; the generator prints how many. Almost all are
+compound proper names: BHSA writes צוּרִי־שַׁדָּי with a maqaf where Sefaria
+writes צוּרִישַׁדָּי solid. In II Samuel 7:22 the two print
+different words (אֲדֹנָי יְהוִה against יְהֹוָה אֱלֹהִים), and Joshua 21:36 and
+21:37 have no Hebrew in Sefaria at all.
 
-Nothing can reconcile these from BHSA alone, so they are named instead. Anything
-matching positions in this file against displayed text should skip those verses
-and fall back to looking the spelling up in `word-lexemes.json`, rather than
-labelling a word confidently wrong.
+A position in `words` is one word out in those verses, so the generator lines
+their words up by letter instead, and `realigned` lists, for each such verse,
+the lexemes of every word the page shows. A word the page shows as one and
+BHSA as two is both; a word BHSA prints as one and the page as two gets the
+morpheme it covers, so the page's הללו יה is "praise" and "Yah".
 
 ### Splitting the displayed text the same way
 
@@ -78,7 +80,7 @@ To line up against the Hebrew in `all-texts.json`, fold it the way
 - split on whitespace and maqaf, and keep only Hebrew letters.
 
 `src/__tests__/unit/search-lexeme-index.test.ts` asserts that every verse not in
-`misaligned` lines up under exactly those rules, so a change to either copy of
+`realigned` lines up under exactly those rules, so a change to either copy of
 them fails the test suite with the offending verses named.
 
 BHSA also records a derivational root for each lexeme, which this index does
@@ -132,7 +134,7 @@ against the baseline it keeps in `scripts/search/`.
 
 `normalize()` in the generator and `normalizeHebrewForSearch()` in
 `src/search.ts` must fold Hebrew the same way. If they drift apart, every
-lookup misses and search silently falls back to whole-word matching. Change one
+lookup misses and meanings search silently finds nothing. Change one
 and you have to change the other.
 
 The same goes for which characters separate one word from the next — maqaf,

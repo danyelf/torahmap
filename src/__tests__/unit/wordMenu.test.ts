@@ -272,3 +272,40 @@ describe('dismissing', () => {
     expect(document.querySelectorAll('.word-menu')).toHaveLength(1);
   });
 });
+
+describe('placement', () => {
+  /** Opens the menu for a word at `wordTop`, the menu `menuHeight` tall, on a screen 600 high. */
+  function place(wordTop: number, menuHeight: number): { top: number; bottom: number } {
+    vi.stubGlobal('innerHeight', 600);
+    const word = anchor();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this === word ? new DOMRect(100, wordTop, 40, 20) : new DOMRect(0, 0, 200, menuHeight);
+    });
+    open({ anchor: word });
+    const menu = document.querySelector<HTMLElement>('.word-menu')!;
+    const top = parseFloat(menu.style.top);
+    const shown = Math.min(menuHeight, parseFloat(menu.style.maxHeight));
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    return { top, bottom: top + shown };
+  }
+
+  it('opens below the word when it fits there', () => {
+    expect(place(100, 200).top).toBeGreaterThanOrEqual(120);
+  });
+
+  it('opens above the word when it fits only there', () => {
+    expect(place(450, 200).bottom).toBeLessThanOrEqual(450);
+  });
+
+  it('never covers the word, even when it fits neither way', () => {
+    for (const wordTop of [150, 290, 420]) {
+      const { top, bottom } = place(wordTop, 500);
+      expect(bottom <= wordTop || top >= wordTop + 20).toBe(true);
+      expect(top).toBeGreaterThanOrEqual(0);
+      expect(bottom).toBeLessThanOrEqual(600);
+    }
+  });
+});

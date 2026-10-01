@@ -38,7 +38,7 @@ export async function measureLayout(
   chrome: Chrome,
   expected: string[] = [],
 ): Promise<Partial<Record<Rule, string[]>>> {
-  const screen = page.viewportSize()!;
+  const screen = { x: 0, y: 0, ...page.viewportSize()! };
   const onScreen = [chrome.fixed, chrome.interactive, chrome.modal].filter(Boolean).join(', ');
   const touch = test.info().project.use.hasTouch;
   const [inViewport, fixed, map, panel, text, interactive, found] = await Promise.all([
@@ -51,11 +51,11 @@ export async function measureLayout(
     Promise.all(expected.map((selector) => shown(page, selector))),
   ]);
   const out: Partial<Record<Rule, string[]>> = {
-    'chrome-in-viewport': outsideOf(inViewport, { x: 0, y: 0, ...screen }),
+    'chrome-in-viewport': outsideOf(inViewport, screen),
     'chrome-apart': overlapping(fixed),
     'map-clear-of-panel': apart(map, panel),
     'text-not-clipped': text,
-    'expected-shown': expected.flatMap((selector, i) => notShownInFull(selector, found[i])),
+    'expected-shown': expected.flatMap((selector, i) => notShownInFull(selector, found[i], screen)),
   };
   if (interactive) out['touch-targets'] = tooSmallToTouch(interactive, TOUCH_MIN);
   return out;

@@ -46,8 +46,10 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
 
 const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
   await import('../../src/search.ts');
-const { meaningsInVerse, setVerseOnScreen } = await import('../../src/search/dictionary.ts');
-const { verseWords, lookupForm } = await import('../../src/verseWords.ts');
+const { meaningsInVerse, setVerseOnScreen, spellingFor, wordIsNamed } =
+  await import('../../src/search/dictionary.ts');
+const { verseWords } = await import('../../src/verseWords.ts');
+const { stripNikkud } = await import('../../src/hebrew.ts');
 const { tanakhKey } = await import('../../src/types.ts');
 
 interface Report {
@@ -59,13 +61,25 @@ interface Report {
   unknownSpelling: number;
   /** Words whose every candidate reading the verse rules out. */
   ruledOut: number;
+  /** Words a click cannot place in the parse, and so looks up by spelling. */
+  unplaced: number;
+  /** Words offering a meaning that choosing cannot search for. */
+  unsearchable: number;
   total: number;
 }
 
 function buildReport(
   texts: Record<string, Record<string, Record<string, { he: string }>>>,
 ): Report {
-  const report: Report = { one: 0, several: 0, unknownSpelling: 0, ruledOut: 0, total: 0 };
+  const report: Report = {
+    one: 0,
+    several: 0,
+    unknownSpelling: 0,
+    ruledOut: 0,
+    unplaced: 0,
+    unsearchable: 0,
+    total: 0,
+  };
 
   for (const [book, chapters] of Object.entries(texts)) {
     for (const [chapter, verses] of Object.entries(chapters)) {
@@ -76,9 +90,14 @@ function buildReport(
         setVerseOnScreen(verseKey, text.he);
 
         for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
-          const form = lookupForm(word);
-          const n = meaningsInVerse(form, verseKey, wordIndex).length;
+          const form = stripNikkud(word);
+          const offered = meaningsInVerse(form, verseKey, wordIndex);
+          const n = offered.length;
           report.total++;
+          if (!wordIsNamed(wordIndex)) report.unplaced++;
+          // Choosing a meaning searches for it under some spelling; one no
+          // spelling can be is a choice that silently searches for something else.
+          if (offered.some((m) => spellingFor(m.keys, form) === null)) report.unsearchable++;
 
           if (n === 1) report.one++;
           else if (n > 1) report.several++;
@@ -107,9 +126,9 @@ function movement(now: Report, before: Report | null, key: keyof Report): string
 const texts = await (await fetch('/data/all-texts.json')).json();
 await loadLexiconData();
 
-// loadLexiconData catches its own failures so the app degrades to whole-word
-// search. A report that degrades the same way prints a confident 100% unknown,
-// which is why this checks rather than trusts.
+// loadLexiconData catches its own failures so the rest of the app keeps
+// working. A report that carried on the same way would print a confident 100%
+// unknown, which is why this checks rather than trusts.
 if (!getVerseLexemes('Genesis:1:1')) {
   console.error('The lexeme index did not load. The numbers below would be meaningless.');
   process.exit(1);
@@ -135,6 +154,8 @@ const rows: Array<[string, keyof Report]> = [
   ['several readings the verse allows', 'several'],
   ['spelling is in no index', 'unknownSpelling'],
   ['verse rules every reading out', 'ruledOut'],
+  ['not placed, so looked up by spelling', 'unplaced'],
+  ['offers a meaning it cannot search', 'unsearchable'],
 ];
 
 console.log(`\n${report.total.toLocaleString()} clickable words\n`);

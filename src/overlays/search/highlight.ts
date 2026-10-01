@@ -3,15 +3,21 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
-import { mapStrippedToOriginal, splitIntoWords } from '../../hebrew.ts';
+import { ENGLISH, HEBREW, tanakhKey, type TextLanguage } from '../../types.ts';
+import {
+  mapStrippedToOriginal,
+  onlySeparators,
+  splitIntoWords,
+  stripNikkud,
+} from '../../hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
 import { wordMatches } from '../../search/dictionary.ts';
+import { displayedVerse, quoteVerse, type SearchResult } from '../../search.ts';
 import {
   colorIndexAt,
   effectiveMode,
   selectedKeys,
-  textMatchMode,
+  termIsHebrew,
   type SearchTerm,
 } from '../../search/terms.ts';
 
@@ -55,8 +61,16 @@ interface Match {
   termIndex: number;
 }
 
-/** Handles nikkud stripping and position mapping; respects each term's own search mode. */
-function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: boolean): Match[] {
+/**
+ * Handles nikkud stripping and position mapping; respects each term's own
+ * search mode. `verseKey` names the verse when it is not the one on screen.
+ */
+function findAllTermMatches(
+  text: string,
+  searchTerms: SearchTerm[],
+  isHebrew: boolean,
+  verseKey?: string,
+): Match[] {
   const matches: Match[] = [];
   const language = isHebrew ? HEBREW : ENGLISH;
   const folded = foldForMatching(text, language);
@@ -73,16 +87,13 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     //
     // By position rather than by spelling, which is what separates the two
     // words spelled עלה in Genesis 8:20 — a spelling could be either, and only
-    // the place in the verse says which this one is. `wordMatches` falls back
-    // to the spelling wherever the parse cannot answer (see
-    // search/dictionary.ts), so a verse that does not line up still marks.
-    //
-    // With no meanings, the term marks as a whole word, the same way the search
-    // finds it.
-    const keys = isHebrew && mode === 'meanings' ? selectedKeys(term) : [];
-    if (keys.length > 0) {
+    // the place in the verse says which this one is. A meaning is Hebrew, so it
+    // marks nothing in English.
+    if (mode === 'meanings') {
+      const keys = selectedKeys(term);
+      if (!isHebrew || keys.length === 0) continue;
       for (const { word, start, end } of splitIntoWords(folded)) {
-        if (wordMatches(keys, word, text, start)) {
+        if (wordMatches(keys, word, text, start, verseKey)) {
           matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
         }
       }
@@ -90,15 +101,40 @@ function findAllTermMatches(text: string, searchTerms: SearchTerm[], isHebrew: b
     }
 
     const needle = foldForMatching(term.text.trim(), language);
-    for (const { start, end } of matchRangesInFolded(folded, needle, {
-      mode: textMatchMode(mode),
-      language,
-    })) {
+    for (const { start, end } of matchRangesInFolded(folded, needle, { mode, language })) {
       matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
     }
   }
 
   return matches;
+}
+
+/**
+ * A result row's quotation of its verse, marked where the verse on screen would
+ * be: the same matcher, on the verse the row names, in the term's language.
+ */
+export function excerpt(
+  result: SearchResult,
+  term: SearchTerm,
+): { snippet: string; matchStart: number; matchEnd: number } | null {
+  const isHebrew = termIsHebrew(term);
+  const text = displayedVerse(result, isHebrew ? HEBREW : ENGLISH);
+  if (text === null) return null;
+  const verseKey = tanakhKey(result.book, result.chapter, result.verse);
+  const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, verseKey);
+  if (!first) return quoteVerse(text, null);
+
+  // Meanings mode marks word by word, so a phrase it finds, בית אל, is joined
+  // into one mark; a word repeated, קדוש קדוש קדוש, is not. A word's points
+  // lie after its mark, so they do not part it from the next.
+  let end = first.end;
+  const joinable = effectiveMode(term) === 'meanings' ? splitIntoWords(term.text).length - 1 : 0;
+  for (const next of rest.slice(0, joinable)) {
+    const between = stripNikkud(text.slice(end, next.start));
+    if (!onlySeparators(between, 0, between.length)) break;
+    end = next.end;
+  }
+  return quoteVerse(text, { start: first.start, end });
 }
 
 /** Assumes matches are already sorted by position. */

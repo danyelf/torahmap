@@ -1,7 +1,8 @@
 // A snippet's marked range stays inside the snippet, even where the word ends
 // the verse and carries points.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildSearchIndex, computeSnippetForMatch, type SearchResult } from '../../search';
+import { excerptOf } from '../helpers/excerpt';
+import { buildSearchIndex, type SearchResult } from '../../search';
 
 const result = (verse: number, language: 'he' | 'en'): SearchResult => ({
   book: 'Genesis',
@@ -29,10 +30,7 @@ describe('Snippet bounds', () => {
     [1, 'en', 'God'],
     [2, 'en', 'beginning'],
   ] as const)('keeps the mark inside the snippet (verse %i, %s)', (verse, language, term) => {
-    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(
-      result(verse, language),
-      term,
-    )!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result(verse, language), term, 'word')!;
 
     expect(matchStart).toBeGreaterThanOrEqual(0);
     expect(matchEnd).toBeGreaterThan(matchStart);
@@ -40,7 +38,7 @@ describe('Snippet bounds', () => {
   });
 
   it('marks the whole of a pointed word that ends the verse', () => {
-    const { snippet, matchStart, matchEnd } = computeSnippetForMatch(result(1, 'he'), 'אלהים')!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result(1, 'he'), 'אלהים', 'word')!;
     expect(snippet.slice(matchStart, matchEnd)).toBe('אֱלֹהִים');
   });
 });
