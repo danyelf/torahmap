@@ -1,7 +1,7 @@
 import type { Overlay, Color, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import type { ColorStop } from '../utils/color.ts';
-import { scale, LOG, type Scale } from '../utils/scale.ts';
+import { scale, LOG } from '../utils/scale.ts';
 import { axisGradient, renderAxisWithZero } from './legend.ts';
 import { memoByValueAndKey } from './memo.ts';
 import { CONTROL } from '../panel.ts';
@@ -55,14 +55,6 @@ export interface CommentarySettings {
   readonly category: string;
 }
 
-/**
- * Rebuilt per call: the maximum moves when the category changes. Starts at 1:
- * zero is drawn apart, as `NEVER_LINKED`.
- */
-function linkScale(data: CommentaryData, category: string): Scale {
-  return scale(1, getMaxValue(data, category), LOG, HEATMAP_STOPS);
-}
-
 function countIn(entry: TanakhCommentary | undefined, category: string): number {
   if (!entry) return 0;
   if (category === 'total') return entry.total;
@@ -73,15 +65,16 @@ function entryAt(data: CommentaryData, verse: TanakhIdentity): TanakhCommentary 
   return data.counts[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
 }
 
-// Each category's highest count, worked out once per data value.
-const getMaxValue = memoByValueAndKey((data: CommentaryData, category: string): number => {
+// Each category's highest count and colour scale, worked out once per data value. The scale
+// starts at 1: zero is drawn apart, as `NEVER_LINKED`.
+const scaleFor = memoByValueAndKey((data: CommentaryData, category: string) => {
   let max = 0;
   for (const chapters of Object.values(data.counts)) {
     for (const verses of Object.values(chapters)) {
       for (const entry of Object.values(verses)) max = Math.max(max, countIn(entry, category));
     }
   }
-  return max;
+  return { max, scale: scale(1, max, LOG, HEATMAP_STOPS) };
 });
 
 function commentaryColorAt(
@@ -91,7 +84,7 @@ function commentaryColorAt(
 ): Color | null {
   const count = countIn(entryAt(data, verse), category);
   if (count === 0) return NEVER_LINKED;
-  return linkScale(data, category).colorOf(count);
+  return scaleFor(data, category).scale.colorOf(count);
 }
 
 export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, CommentaryData> = {
@@ -168,7 +161,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
       container.innerHTML = '';
       return;
     }
-    const maxValue = getMaxValue(data, settings.category);
+    const { max: maxValue, scale: linkScale } = scaleFor(data, settings.category);
 
     const ticks: number[] = [];
     for (let value = 1; value <= maxValue; value *= 10) {
@@ -178,17 +171,13 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
       ticks.push(maxValue);
     }
 
-    container.innerHTML = renderAxisWithZero(
-      NEVER_LINKED,
-      linkScale(data, settings.category),
-      ticks,
-    );
+    container.innerHTML = renderAxisWithZero(NEVER_LINKED, linkScale, ticks);
   },
 
   summary(settings, data) {
     return {
       detail: settings.category === 'total' ? undefined : settings.category,
-      colors: [axisGradient(linkScale(data, settings.category))],
+      colors: [axisGradient(scaleFor(data, settings.category).scale)],
     };
   },
 

@@ -1,5 +1,5 @@
 // The loader for the overlays' data files and main's own two (structure and texts).
-// Paths are under public/data/; what a file means belongs to whoever names it.
+// Paths are under public/data/.
 import { fetchData } from './constants.ts';
 import { reportError } from './analytics.ts';
 import type { Overlay } from './overlays/types.ts';

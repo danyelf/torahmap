@@ -16,6 +16,7 @@ import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { haftarahOverlay } from '../../overlays/haftarah';
+import { commentaryOverlay } from '../../overlays/commentary';
 import {
   deriveHaftarah,
   HAFTARAH_FILES,
@@ -146,7 +147,7 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   it('names only commentary categories the data has', () => {
     // A category is checked for its spelling when read, not for existing.
     const counts = JSON.parse(
-      fs.readFileSync(path.join(dataDir, 'overlays', 'commentary', 'counts.json'), 'utf-8'),
+      fs.readFileSync(path.join(dataDir, commentaryOverlay.data.counts), 'utf-8'),
     );
     const categories = new Set(['total']);
     for (const chapters of Object.values<Record<string, Record<string, { categories?: object }>>>(
