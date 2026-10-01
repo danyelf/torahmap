@@ -8,6 +8,11 @@ describe('loadNotice', () => {
     expect(notice.querySelector('button')).toBeNull();
   });
 
+  it('reads left to right whatever text it sits in', () => {
+    expect(loadNotice('loading', () => {}).dir).toBe('ltr');
+    expect(loadNotice('failed', () => {}).dir).toBe('ltr');
+  });
+
   it('warns that a file failed, and closes when its × is pressed', () => {
     const onClose = vi.fn();
     const notice = loadNotice('failed', onClose);

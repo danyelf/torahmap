@@ -9,6 +9,7 @@ const FAILED = "Couldn't load — please reload and try again";
 export function loadNotice(state: LoadState, onClose: () => void): HTMLElement {
   const notice = document.createElement('span');
   notice.className = 'load-notice';
+  notice.dir = 'ltr';
   notice.dataset.state = state;
   notice.textContent = state === 'loading' ? LOADING : FAILED;
   if (state === 'failed') {
