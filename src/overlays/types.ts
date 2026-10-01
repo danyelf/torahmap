@@ -41,15 +41,24 @@ type DataPart<D> = unknown extends D
 
 // An overlay that reads files names each by its own short name, as a path under
 // public/data/. The app loads every path once and hands the overlay D: each
-// file's contents under its name. Whatever the overlay derives from them it
-// keeps per data value, so it goes with the data.
+// file's contents under its name. A file the overlay can work without is typed
+// `T | null` in D and named with optional(); it is null until it arrives, and
+// the overlay is not kept waiting for it. Whatever the overlay derives from its
+// files it keeps per data value, so it goes with the data.
 interface OverlayWithData<D> {
-  data: { readonly [K in keyof D]: string };
+  data: FileNames<D>;
   // Work out ahead of first use what the overlay derives from its data. The
   // app calls it when the browser is idle; a member called first works out the
   // same thing on demand, so this changes when the work happens, never the result.
   prebuild?(data: D): void;
 }
+
+/** A file its reader can work without: handed over as null until it is in, and never waited for. */
+export interface OptionalFile {
+  readonly optional: string;
+}
+
+type FileNames<D> = { readonly [K in keyof D]: null extends D[K] ? OptionalFile : string };
 
 // The app hands an overlay that names no files undefined wherever it hands data.
 interface OverlayWithoutData {
