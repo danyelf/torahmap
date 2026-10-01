@@ -35,12 +35,15 @@ export const BAND_OFFSET = 0.08;
  * verse has grown towards the size a multi-colour verse is drawn at, 0 to 1.
  * Without `growth`, a verse is fully grown exactly when its fill or its ring
  * has several colours. A verse's ring, where `rings` gives one, surrounds its
- * fill in colours of its own.
+ * fill in colours of its own. `uncoloured` marks the verses whose fill is
+ * their default grey, which a hover paints in the highlight colour instead of
+ * brightening.
  */
 export interface Picture<C = VerseColor> {
   colors: C[];
   growth?: number[];
   rings?: (C | null)[];
+  uncoloured?: boolean[];
 }
 
 const NO_COLORS: Picture = { colors: [] };
@@ -61,10 +64,10 @@ export const VERSE_ATTRIBUTES = [
   { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units, before growing
   { name: 'a_fill', size: 4 },
   { name: 'a_ring', size: 4 },
-  { name: 'a_shape', size: 3 }, // fill stripe count, growth, ring stripe count (0 for none)
+  { name: 'a_shape', size: 4 }, // fill stripe count, growth, ring stripe count (0 for none), 1 if uncoloured
   { name: 'a_nextFill', size: 4 },
   { name: 'a_nextRing', size: 4 },
-  { name: 'a_nextShape', size: 3 },
+  { name: 'a_nextShape', size: 4 },
 ] as const;
 
 export type VerseAttributeName = (typeof VERSE_ATTRIBUTES)[number]['name'];
@@ -117,6 +120,7 @@ export function buildItemGeometry<T>(
     data[shape] = fill.length;
     data[shape + 1] = picture.growth?.[i] ?? (Math.max(fill.length, ring.length) > 1 ? 1 : 0);
     data[shape + 2] = ring.length;
+    data[shape + 3] = picture.uncoloured?.[i] ? 1 : 0;
   };
 
   for (let i = 0; i < verses.length; i++) {

@@ -146,7 +146,7 @@ describe('buildItemGeometry', () => {
       });
       expect(field(buffer, 0, 'a_fill')).toEqual(packed(GREEN));
       expect(field(buffer, 0, 'a_ring')).toEqual(packed(RED, BLUE));
-      expect(field(buffer, 0, 'a_shape')).toEqual([1, 1, 2]);
+      expect(field(buffer, 0, 'a_shape')).toEqual([1, 1, 2, 0]);
     });
 
     it('keeps at most four ring stripes', () => {
@@ -177,10 +177,20 @@ describe('buildItemGeometry', () => {
         { colors: [[RED, BLUE, GREEN]], growth: [0.25], rings: [RED] },
       );
       expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED, BLUE));
-      expect(field(buffer, 0, 'a_shape')).toEqual([2, 1, 0]);
+      expect(field(buffer, 0, 'a_shape')).toEqual([2, 1, 0, 0]);
       expect(field(buffer, 0, 'a_nextFill')).toEqual(packed(RED, BLUE, GREEN));
       expect(field(buffer, 0, 'a_nextRing')).toEqual(packed(RED));
-      expect(field(buffer, 0, 'a_nextShape')).toEqual([3, 0.25, 1]);
+      expect(field(buffer, 0, 'a_nextShape')).toEqual([3, 0.25, 1, 0]);
+    });
+
+    it('marks each picture uncoloured on its own, for the shader to hover', () => {
+      const buffer = buildItemGeometry(
+        [createVerse()],
+        { colors: [WHITE], uncoloured: [true] },
+        { colors: [RED] },
+      );
+      expect(field(buffer, 0, 'a_shape')[3]).toBe(1);
+      expect(field(buffer, 0, 'a_nextShape')[3]).toBe(0);
     });
   });
 });

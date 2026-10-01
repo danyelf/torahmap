@@ -110,14 +110,6 @@ export function prevTanakhItem(
   return verses[currentIndex - 1];
 }
 
-/** Computed state for a single item: semantic state first, visual state second. */
-export interface ItemState {
-  hasOverlayColor: boolean;
-  resolvedColor: VerseColor;
-  isHovered: boolean;
-  isPinned: boolean;
-}
-
 export interface Bounds {
   width: number;
   height: number;
