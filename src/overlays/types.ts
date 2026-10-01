@@ -29,16 +29,22 @@ export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHac
 // OverlayWithSettings, or has none and implements none of them.
 export type Overlay<T = TanakhIdentity, S = unknown, D = unknown> = OverlayMembers<T, S, D> &
   (OverlayWithSettings<S> | OverlayWithoutSettings) &
-  (OverlayWithData<D> | OverlayWithoutData);
+  DataPart<D>;
+
+// An overlay names its files exactly when it takes data. Code that handles any
+// overlay sees D as unknown, and either kind.
+type DataPart<D> = unknown extends D
+  ? OverlayWithData<D> | OverlayWithoutData
+  : [D] extends [void]
+    ? OverlayWithoutData
+    : OverlayWithData<D>;
 
 // An overlay that reads files names each by its own short name, as a path under
 // public/data/. The app loads every path once and hands the overlay D: each
 // file's contents under its name. Whatever the overlay derives from them it
 // keeps per data value, so it goes with the data.
 interface OverlayWithData<D> {
-  // Not `keyof D` alone: mapped that way, a D of void maps to void itself, and an
-  // overlay that takes no data is no longer an Overlay.
-  data: { readonly [K in keyof D & string]: string };
+  data: { readonly [K in keyof D]: string };
   // Work out ahead of first use what the overlay derives from its data. The
   // app calls it when the browser is idle; a member called first works out the
   // same thing on demand, so this changes when the work happens, never the result.

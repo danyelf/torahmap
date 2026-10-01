@@ -183,11 +183,14 @@ Decisions made while implementing step 1, newest last.
   loader in the same task that removes `loadReadings`, since that task cannot
   compile otherwise.
 - **2026-10-01 (Task 0)** The layout screenshots are not byte-identical between two runs on unchanged code: eight phone shots differ, six by at most 2 colour levels on about 1,200 pixels, and the overlay panel's two by up to 21 levels on about 9,000. Tasks compare against that measured noise rather than byte for byte.
-- **2026-10-01 (Task 2)** An overlay's file names are typed
-  `{ readonly [K in keyof D & string]: string }`, not `[K in keyof D]`. A
-  mapped type over `keyof D` alone maps a primitive to itself, so for search's
-  `D = void` it made `data` of type `void`, and search stopped being an
-  `Overlay`. The `& string` keeps the names checked for a real `D`.
+- **2026-10-01 (Task 2)** Whether an overlay declares `data` follows from `D`:
+  `D = void` forbids it, an object `D` requires it, and `D = unknown` (code
+  handling any overlay) allows either. With a plain union of the two shapes,
+  an overlay taking data could omit its file names and crash when handed
+  `undefined`, and a `void` one could name files; and a mapped `keyof D` over
+  `void` made `data` itself `void`, so search was no longer an `Overlay`.
+  `src/overlays/types.check.ts` holds the cases as `@ts-expect-error` lines,
+  checked by `npm run typecheck`; it is not run.
 - **2026-10-01 (Task 2)** Text Dating's `colorsFor` called
   `this.getVerseColor(item)`, which no longer typechecks with `D = unknown`;
   it now forwards its settings and data. Verse length's `colorsFor` calls a
