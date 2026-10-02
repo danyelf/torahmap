@@ -7,11 +7,9 @@ import { createOverlaySettings } from '../../overlays/settings';
 import type { ResolvedStoryStop } from '../types';
 import type { TanakhLayout } from '../../types';
 import type { Color, Overlay, UrlParamValues } from '../../overlays/types';
-import { buildSearchIndex } from '../../search';
 import {
   SAMPLE_COMMENTARY_COUNTS,
   SAMPLE_LOADED,
-  SAMPLE_VERSE_TEXTS,
   testOverlay,
 } from '../../__tests__/helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
@@ -406,7 +404,6 @@ describe('a stop that searches', () => {
   const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
 
   beforeEach(() => {
-    buildSearchIndex(SAMPLE_VERSE_TEXTS);
     registerOverlay(multiColorOverlay);
   });
 
@@ -420,7 +417,7 @@ describe('a stop that searches', () => {
       stopWith({ searchParams: { search: 'God' } }),
       verses,
       null,
-      new Map(),
+      SAMPLE_LOADED,
     );
 
     expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
@@ -430,7 +427,7 @@ describe('a stop that searches', () => {
 
   it('rings its matches over its overlay and dims the rest', () => {
     const stop = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
-    const picture = pictureForStop(stop, verses, null, new Map());
+    const picture = pictureForStop(stop, verses, null, SAMPLE_LOADED);
 
     expect(picture.colors[0]).toEqual([
       [1, 0, 0],
@@ -444,8 +441,16 @@ describe('a stop that searches', () => {
   it('keeps apart stops that differ only in their search', () => {
     const god = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
     const earth = { ...god, id: 'earth', searchParams: { search: 'earth' } };
-    expect(pictureForStop(god, verses, null, new Map())).not.toEqual(
-      pictureForStop(earth, verses, null, new Map()),
+    expect(pictureForStop(god, verses, null, SAMPLE_LOADED)).not.toEqual(
+      pictureForStop(earth, verses, null, SAMPLE_LOADED),
     );
+  });
+
+  it('is drawn without the search before search has its files, and with it once they arrive', () => {
+    const stop = stopWith({ searchParams: { search: 'God' } });
+    expect(pictureForStop(stop, verses, null, new Map())).toEqual(
+      pictureForStop(stopWith({ id: 'bare' }), verses, null, new Map()),
+    );
+    expect(pictureForStop(stop, verses, null, SAMPLE_LOADED).colors[0]).toEqual(SEARCH_COLORS[0]);
   });
 });

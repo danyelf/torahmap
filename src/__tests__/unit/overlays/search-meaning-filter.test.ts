@@ -4,17 +4,15 @@
 // five of them. The search has always painted all of them and labelled the
 // result with one; these tests are about the control that splits them.
 
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import { configure } from '../../../overlays/search';
-import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
 import { meaningsFor } from '../../../search/dictionary';
-
-const searchOverlay = hostOverlay(searchTool, undefined);
+import { realSearchData } from '../../helpers/searchData';
 
 // Real Hebrew, so the lexeme index has something to resolve.
 const texts: VerseTexts = {
@@ -39,10 +37,8 @@ function type(container: HTMLElement, text: string): void {
   typeInSearch(container, text);
 }
 
-beforeAll(async () => {
-  await loadLexiconData();
-  buildSearchIndex(texts);
-});
+const { dictionary } = realSearchData();
+const searchOverlay = hostOverlay(searchTool, { ...realSearchData().files, texts });
 
 beforeEach(() => {
   configure({ verses });
@@ -55,7 +51,7 @@ describe('the meaning list', () => {
     type(container, 'עלה');
 
     // This test owns the DOM shape; search-dictionary.test.ts owns the list.
-    const expected = meaningsFor('עלה');
+    const expected = meaningsFor(dictionary, 'עלה');
     expect(expected.length).toBeGreaterThan(1);
 
     const rows = [...container.querySelectorAll('.meaning-row')];
@@ -79,7 +75,7 @@ describe('the meaning list', () => {
     const container = render();
     type(container, 'עלה');
 
-    const expected = meaningsFor('עלה');
+    const expected = meaningsFor(dictionary, 'עלה');
     const tags = [...container.querySelectorAll('.meaning-tag')].map((t) => t.textContent);
 
     expect(tags).toHaveLength(expected.length);
@@ -156,7 +152,7 @@ describe('the URL', () => {
   it('carries the narrowing', () => {
     const container = render();
     type(container, 'עלה');
-    const kept = meaningsFor('עלה')
+    const kept = meaningsFor(dictionary, 'עלה')
       .filter((m) => m.gloss !== 'ascend')
       .flatMap((m) => m.keys);
     uncheck(container, 'ascend');
@@ -321,7 +317,9 @@ describe('highlighting a verse when the terms are not all one language', () => {
     const container = render();
     type(container, 'עלה, leaves');
 
-    const marks = [...searchOverlay.highlightVerseText('ויתפרו עלה תאנה', 'he').childNodes]
+    const marks = [
+      ...searchOverlay.highlightVerseText(createVerse(), 'ויתפרו עלה תאנה', 'he').childNodes,
+    ]
       .filter((n) => (n as Element).tagName === 'MARK')
       .map((n) => n.textContent);
 
@@ -332,7 +330,9 @@ describe('highlighting a verse when the terms are not all one language', () => {
     const container = render();
     type(container, 'עלה, leaves');
 
-    const marks = [...searchOverlay.highlightVerseText('they sewed fig leaves', 'en').childNodes]
+    const marks = [
+      ...searchOverlay.highlightVerseText(createVerse(), 'they sewed fig leaves', 'en').childNodes,
+    ]
       .filter((n) => (n as Element).tagName === 'MARK')
       .map((n) => n.textContent);
 

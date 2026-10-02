@@ -2,10 +2,10 @@
 // Meanings mode resolves a written form to the ETCBC BHSA lexemes it can be.
 
 import type { VerseTexts } from './verseTexts';
+import { memoByValue } from './utils/memo.ts';
 import { getBookOrder } from './constants/books.ts';
 import { HEBREW, tanakhKey } from './types.ts';
 
-import { fetchData } from './constants.ts';
 import {
   TERM_SEPARATORS,
   SEARCH_SNIPPET_MAX_LENGTH,
@@ -36,10 +36,6 @@ interface IndexEntry {
   englishOriginal: string; // original for display
 }
 
-let searchIndex: IndexEntry[] = [];
-// Fast lookup map: verse key -> index entry (avoids O(n) find() calls)
-let verseKeyToEntry: Map<string, IndexEntry> = new Map();
-
 /**
  * A lexeme is a dictionary entry: one word of Hebrew or Aramaic, with its own
  * meaning. Words that happen to be spelled alike are separate lexemes, so the
@@ -64,26 +60,41 @@ export interface Lexeme {
   language: LexemeLanguage;
 }
 
-// The dictionary, loaded from lexicon.json.
-let lexicon: Lexeme[] | null = null;
-// Consonantal spelling of each lexeme's dictionary form, in the same shape the
-// search box produces. Parallel to `lexicon`.
-let lexemeSpellings: string[] = [];
+/** Every verse folded for matching, in book order, and each by its key. */
+export interface TextIndex {
+  entries: IndexEntry[];
+  byKey: Map<string, IndexEntry>;
+}
 
-// Written form (nikkud stripped, finals folded) -> the lexemes it can be,
-// likeliest reading first.
-let formToLexemes: Record<string, LexemeId[]> | null = null;
-// Verse key -> the lexemes occurring in that verse.
-let verseToLexemes: Record<string, LexemeId[]> | null = null;
+/** Written form (nikkud stripped, finals folded) -> the lexemes it can be, likeliest reading first. */
+export type FormsFile = Record<string, LexemeId[]>;
 
-// Inverted index: lexeme -> the verses it occurs in. Turns a meanings-mode search
-// into one lookup per lexeme instead of a scan over every verse.
-let lexemeToVerses: Map<LexemeId, Set<string>> | null = null;
-// Consonantal dictionary spelling -> lexemes, for readers who type a bare root
-// that never appears on its own in the text.
-let spellingToLexemes: Map<string, LexemeId[]> | null = null;
-// Each lexeme's commonest spelling, as printed. Parallel to `lexicon`.
-let printedSpellings: string[] = [];
+/** Verse key -> the lexemes occurring in that verse. */
+export type VerseLexemesFile = Record<string, LexemeId[]>;
+
+/** The three lexeme files, and what is worked out from them. */
+export interface Dictionary {
+  /** Parallel to lexicon.json's rows: a LexemeId is a position here. */
+  lexemes: Lexeme[];
+  /** Each lexeme's commonest spelling, as printed. Parallel to `lexemes`. */
+  printedSpellings: string[];
+  formToLexemes: FormsFile;
+  verseToLexemes: VerseLexemesFile;
+  /** Lexeme -> the verses it occurs in: a meanings search is one lookup per lexeme. */
+  lexemeToVerses: Map<LexemeId, Set<string>>;
+  /** Consonantal dictionary spelling -> lexemes, for a reader who types a bare root. */
+  spellingToLexemes: Map<string, LexemeId[]>;
+  /** A lexeme's key (lexemeKey) -> the lexeme. */
+  keyToLexeme: Map<string, LexemeId>;
+}
+
+/**
+ * How a lexeme is named outside the dictionary: ETCBC's identifier and its
+ * language. See search/dictionary.ts for why the language is part of it.
+ */
+export function lexemeKey(lexeme: Lexeme): string {
+  return `${lexeme.id}@${lexeme.language}`;
+}
 
 /** The terms a query string names, dropping ones too short to search on. */
 export function parseSearchTerms(query: string): string[] {
@@ -103,58 +114,51 @@ type LexemeRow = [
   printed: string,
 ];
 
-interface LexiconFile {
+export interface LexiconFile {
   source: string;
   lexemes: LexemeRow[];
 }
 
-/**
- * Load the lexeme index (called during initialization).
- *
- * Three files: the dictionary itself, written form -> lexeme, and
- * verse -> lexeme. Everything else is derived from those here.
- */
-export async function loadLexiconData(): Promise<void> {
-  try {
-    console.log('Loading lexeme index...');
-    const [lexiconRes, formsRes, versesRes] = await Promise.all([
-      fetchData('search/lexicon.json'),
-      fetchData('search/word-lexemes.json'),
-      fetchData('search/verse-lexemes.json'),
-    ]);
+/** The three lexeme files the dictionary is built from. */
+export interface DictionaryFiles {
+  lexicon: LexiconFile;
+  forms: FormsFile;
+  verseLexemes: VerseLexemesFile;
+}
 
-    if (!lexiconRes.ok || !formsRes.ok || !versesRes.ok) {
-      console.error(
-        'Failed to load the lexeme index; meanings search will find nothing. ' +
-          `Response status: lexicon=${lexiconRes.status}, forms=${formsRes.status}, verses=${versesRes.status}`,
-      );
-      return;
-    }
+// Per file value, not per object holding them: each arrival of a file hands
+// search a new object holding the same three files.
+const dictionaries = memoByValue((lexicon: LexiconFile) =>
+  memoByValue((forms: FormsFile) =>
+    memoByValue((verseLexemes: VerseLexemesFile) => dictionaryFrom(lexicon, forms, verseLexemes)),
+  ),
+);
 
-    const lexiconFile: LexiconFile = await lexiconRes.json();
-    const verseLexemes: Record<string, LexemeId[]> = await versesRes.json();
-    formToLexemes = await formsRes.json();
-    verseToLexemes = verseLexemes;
+/** The dictionary these files describe. The same files give the same object. */
+export function buildDictionary({ lexicon, forms, verseLexemes }: DictionaryFiles): Dictionary {
+  return dictionaries(lexicon)(forms)(verseLexemes);
+}
 
-    lexicon = [];
-    printedSpellings = [];
-    for (const [id, form, gloss, pos, language, printed] of lexiconFile.lexemes) {
-      lexicon.push({ id, form, gloss, pos, language });
-      printedSpellings.push(printed);
-    }
-    lexemeSpellings = lexicon.map((entry) => normalizeHebrewForSearch(entry.form));
-
-    console.log(
-      `✓ Loaded ${lexicon.length} lexemes (${lexiconFile.source}), ` +
-        `${Object.keys(formToLexemes || {}).length} written forms, ` +
-        `${Object.keys(verseLexemes).length} verses`,
-    );
-
-    lexemeToVerses = buildVerseIndex(verseLexemes);
-    spellingToLexemes = buildSpellingIndex(lexemeSpellings);
-  } catch (err) {
-    console.error('Error loading the lexeme index; meanings search will find nothing:', err);
+function dictionaryFrom(
+  lexicon: LexiconFile,
+  forms: FormsFile,
+  verseLexemes: VerseLexemesFile,
+): Dictionary {
+  const lexemes: Lexeme[] = [];
+  const printedSpellings: string[] = [];
+  for (const [id, form, gloss, pos, language, printed] of lexicon.lexemes) {
+    lexemes.push({ id, form, gloss, pos, language });
+    printedSpellings.push(printed);
   }
+  return {
+    lexemes,
+    printedSpellings,
+    formToLexemes: forms,
+    verseToLexemes: verseLexemes,
+    lexemeToVerses: buildVerseIndex(verseLexemes),
+    spellingToLexemes: buildSpellingIndex(lexemes.map((l) => normalizeHebrewForSearch(l.form))),
+    keyToLexeme: new Map(lexemes.map((lexeme, id) => [lexemeKey(lexeme), id])),
+  };
 }
 
 /**
@@ -162,7 +166,6 @@ export async function loadLexiconData(): Promise<void> {
  * one lookup per lexeme rather than a pass over all 23,000 verses.
  */
 function buildVerseIndex(verseLexemes: Record<string, LexemeId[]>): Map<LexemeId, Set<string>> {
-  const startTime = performance.now();
   const index = new Map<LexemeId, Set<string>>();
 
   for (const [verseKey, lexemes] of Object.entries(verseLexemes)) {
@@ -175,11 +178,6 @@ function buildVerseIndex(verseLexemes: Record<string, LexemeId[]>): Map<LexemeId
       verses.add(verseKey);
     }
   }
-
-  const endTime = performance.now();
-  console.log(
-    `✓ Built verse index: ${index.size} lexemes in ${(endTime - startTime).toFixed(2)}ms`,
-  );
   return index;
 }
 
@@ -200,7 +198,6 @@ function buildSpellingIndex(spellings: string[]): Map<string, LexemeId[]> {
     }
     list.push(id);
   }
-  console.log(`✓ Built spelling index: ${index.size} distinct dictionary spellings`);
   return index;
 }
 
@@ -215,54 +212,47 @@ function buildSpellingIndex(spellings: string[]): Map<string, LexemeId[]> {
  *
  * Null is an answer, not a failure: a word the dictionary does not know.
  */
-export function findLexemesForWord(hebrewWord: string): LexemeId[] | null {
-  if (!formToLexemes) return null;
-
+export function findLexemesForWord(dictionary: Dictionary, hebrewWord: string): LexemeId[] | null {
   // word-lexemes keys fold final letters to their medial shape, so the query
   // has to be folded the same way. Trimmed because a separator folds to a
   // space: a word pasted with its sof pasuq would otherwise be looked up as
   // "הארצ " and miss, and no key carries an outer space.
-  return lookupFormOrSpelling(normalizeHebrewForSearch(hebrewWord).trim());
+  return lookupFormOrSpelling(dictionary, normalizeHebrewForSearch(hebrewWord).trim());
 }
 
 /** The written form first, then the bare dictionary spelling. Both exact. */
-function lookupFormOrSpelling(term: string): LexemeId[] | null {
+function lookupFormOrSpelling(dictionary: Dictionary, term: string): LexemeId[] | null {
   if (term.length === 0) return null;
 
-  if (formToLexemes && formToLexemes[term]) {
-    return formToLexemes[term];
+  if (dictionary.formToLexemes[term]) {
+    return dictionary.formToLexemes[term];
   }
 
-  const exact = spellingToLexemes?.get(term);
+  const exact = dictionary.spellingToLexemes.get(term);
   if (exact && exact.length > 0) return exact;
 
   return null;
 }
 
 /** The spelling a lexeme is most often printed with; empty when it never is. */
-export function printedSpelling(id: LexemeId): string {
-  return printedSpellings[id] ?? '';
-}
-
-/**
- * How many verses a lexeme occurs in. O(1) against the inverted index, so it
- * is cheap enough to show beside every candidate meaning of a search term.
- */
-export function getLexemeVerseCount(id: LexemeId): number {
-  return lexemeToVerses?.get(id)?.size ?? 0;
+export function printedSpelling(dictionary: Dictionary, id: LexemeId): string {
+  return dictionary.printedSpellings[id] ?? '';
 }
 
 /**
  * Look up a lexeme's dictionary record: display form, English gloss, part of
  * speech and language.
  */
-export function getLexeme(id: LexemeId): Lexeme | null {
-  return lexicon?.[id] ?? null;
+export function getLexeme(dictionary: Dictionary, id: LexemeId): Lexeme | null {
+  return dictionary.lexemes[id] ?? null;
 }
 
-export function buildSearchIndex(verseTexts: VerseTexts): void {
-  searchIndex = [];
-  verseKeyToEntry.clear();
+/** The verses folded for matching, in book order. The same texts give the same object. */
+export const buildTextIndex: (texts: VerseTexts) => TextIndex = memoByValue(textIndexFrom);
+
+function textIndexFrom(verseTexts: VerseTexts): TextIndex {
+  const entries: IndexEntry[] = [];
+  const byKey = new Map<string, IndexEntry>();
 
   // Fallback to verseTexts keys for tests that build an index without loading full app data
   let books: readonly string[];
@@ -295,33 +285,34 @@ export function buildSearchIndex(verseTexts: VerseTexts): void {
           englishText: en.toLowerCase(),
           englishOriginal: en,
         };
-        searchIndex.push(entry);
-        verseKeyToEntry.set(tanakhKey(book, chapter, verse), entry);
+        entries.push(entry);
+        byKey.set(tanakhKey(book, chapter, verse), entry);
       }
     }
   }
+  return { entries, byKey };
 }
 
 /**
  * The dictionary words a verse contains.
  *
  * Exposed for the dictionary seam, which uses it to decide which of a
- * spelling's readings is the one in front of the reader. Returns null when the
- * index has not loaded, which callers must treat as "cannot say" rather than
- * as "none".
+ * spelling's readings is the one in front of the reader. Null when the
+ * dictionary has no entry for the verse, which callers treat as "cannot say"
+ * rather than as "none".
  */
-export function getVerseLexemes(verseKey: string): LexemeId[] | null {
-  return verseToLexemes?.[verseKey] ?? null;
+export function getVerseLexemes(dictionary: Dictionary, verseKey: string): LexemeId[] | null {
+  return dictionary.verseToLexemes[verseKey] ?? null;
 }
 
 /**
  * Verse keys containing any of the given lexemes.
  * Uses the inverted index, so one lookup per lexeme rather than a full scan.
  */
-export function searchByLexemes(lexemes: LexemeId[]): Set<string> {
+export function searchByLexemes(dictionary: Dictionary, lexemes: LexemeId[]): Set<string> {
   const matchingVerses = new Set<string>();
   for (const lexeme of lexemes) {
-    for (const verseKey of lexemeToVerses?.get(lexeme) ?? []) {
+    for (const verseKey of dictionary.lexemeToVerses.get(lexeme) ?? []) {
       matchingVerses.add(verseKey);
     }
   }
@@ -330,19 +321,24 @@ export function searchByLexemes(lexemes: LexemeId[]): Set<string> {
 
 /** A verse's text as the reader sees it, or null for a verse the index lacks. */
 export function displayedVerse(
+  index: TextIndex,
   verse: { book: string; chapter: number; verse: number },
   language: TextLanguage,
 ): string | null {
-  const entry = verseKeyToEntry.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+  const entry = index.byKey.get(tanakhKey(verse.book, verse.chapter, verse.verse));
   if (!entry) return null;
   return language === HEBREW ? entry.hebrewOriginal : entry.englishOriginal;
 }
 
+/** The text around a match, and where the match sits in it. */
+export interface Snippet {
+  snippet: string;
+  matchStart: number;
+  matchEnd: number;
+}
+
 /** A verse quoted around a stretch of it, or its opening when there is nothing to mark. */
-export function quoteVerse(
-  text: string,
-  range: { start: number; end: number } | null,
-): { snippet: string; matchStart: number; matchEnd: number } {
+export function quoteVerse(text: string, range: { start: number; end: number } | null): Snippet {
   if (!range) {
     const limit = SEARCH_SNIPPET_MAX_LENGTH;
     return {
@@ -361,10 +357,15 @@ export function quoteVerse(
  * Meanings mode is not a `mode` here: it depends on which meanings the reader
  * has left checked, which the overlay knows and this does not.
  */
-export function versesForTerm(text: string, language: TextLanguage, mode: MatchMode): Set<string> {
+export function versesForTerm(
+  index: TextIndex,
+  text: string,
+  language: TextLanguage,
+  mode: MatchMode,
+): Set<string> {
   const needle = foldForMatching(text, language);
   const verses = new Set<string>();
-  for (const entry of searchIndex) {
+  for (const entry of index.entries) {
     const haystack = language === HEBREW ? entry.hebrewText : entry.englishText;
     if (matchRangesInFolded(haystack, needle, { mode, language, limit: 1 }).length > 0) {
       verses.add(tanakhKey(entry.book, entry.chapter, entry.verse));
@@ -383,12 +384,15 @@ export function versesForTerm(text: string, language: TextLanguage, mode: MatchM
  * A term with no hits simply contributes nothing; term indices are positions
  * in the caller's list, so the gap keeps every other term's colour in place.
  */
-export function resultsForVerseSets(termVerseKeys: Array<Set<string>>): SearchResult[] {
+export function resultsForVerseSets(
+  index: TextIndex,
+  termVerseKeys: Array<Set<string>>,
+): SearchResult[] {
   const resultMap = new Map<string, SearchResult>();
 
   for (let termIndex = 0; termIndex < termVerseKeys.length; termIndex++) {
     for (const verseKey of termVerseKeys[termIndex]) {
-      const entry = verseKeyToEntry.get(verseKey);
+      const entry = index.byKey.get(verseKey);
       if (!entry) continue;
 
       let result = resultMap.get(verseKey);

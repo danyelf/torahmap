@@ -1,10 +1,11 @@
 // Tests for whole-word search functionality
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildSearchIndex, versesForTerm } from '../../search';
+import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Whole Word Search', () => {
   let mockVerseTexts: VerseTexts;
+  let index: TextIndex;
 
   beforeEach(() => {
     // Setup test verse texts with specific words that can test substring vs whole-word
@@ -45,12 +46,12 @@ describe('Whole Word Search', () => {
       },
     };
 
-    buildSearchIndex(mockVerseTexts);
+    index = buildTextIndex(mockVerseTexts);
   });
 
   const english = (text: string, mode: 'substring' | 'word') =>
-    [...versesForTerm(text, 'en', mode)].sort();
-  const hebrew = (text: string) => [...versesForTerm(text, 'he', 'word')].sort();
+    [...versesForTerm(index, text, 'en', mode)].sort();
+  const hebrew = (text: string) => [...versesForTerm(index, text, 'he', 'word')].sort();
 
   describe('English substring vs whole word', () => {
     it('substring finds "heaven" in "heavens"', () => {
@@ -72,7 +73,7 @@ describe('Whole Word Search', () => {
     });
 
     it('whole word is bounded by punctuation', () => {
-      buildSearchIndex({ Genesis: { '1': { '1': { he: 'א', en: 'said God, let' } } } });
+      index = buildTextIndex({ Genesis: { '1': { '1': { he: 'א', en: 'said God, let' } } } });
       expect(english('god', 'word')).toEqual(['Genesis:1:1']);
     });
 

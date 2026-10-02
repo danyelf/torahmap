@@ -16,13 +16,13 @@ import {
   findLexemesForWord,
   printedSpelling,
   getLexeme,
-  getLexemeVerseCount,
   getVerseLexemes,
+  lexemeKey,
   searchByLexemes,
+  type Dictionary,
   type Lexeme,
   type LexemeId,
 } from '../search.ts';
-import { fetchData } from '../constants.ts';
 import {
   KETIV,
   QERE,
@@ -33,8 +33,8 @@ import {
   stripNikkud,
   type TextWord,
 } from '../hebrew.ts';
-import { whenIdle } from '../utils/idle.ts';
 import { isSectionMarker, verseWords } from '../verseWords.ts';
+import { memoByValue, memoByValueAndKey } from '../utils/memo.ts';
 
 /**
  * One dictionary word a written form might be, as a reader sees it.
@@ -57,38 +57,28 @@ function renderedAs(m: { form: string; gloss: string; pos: string; language: str
   return `${m.form}\u0000${m.gloss}\u0000${m.pos}\u0000${m.language}`;
 }
 
-function keyOf(id: LexemeId): string | null {
-  const lexeme = getLexeme(id);
-  return lexeme ? `${lexeme.id}@${lexeme.language}` : null;
+function keyOf(dictionary: Dictionary, id: LexemeId): string | null {
+  const lexeme = getLexeme(dictionary, id);
+  return lexeme ? lexemeKey(lexeme) : null;
 }
 
-// key -> lexeme, built on first use because the dictionary loads asynchronously.
-let keyToLexeme: Map<string, LexemeId> | null = null;
-
-function lexemeForKey(key: string): LexemeId | null {
-  if (!keyToLexeme) {
-    keyToLexeme = new Map();
-    for (let id = 0; ; id++) {
-      const k = keyOf(id);
-      if (k === null) break;
-      keyToLexeme.set(k, id);
-    }
-  }
-  return keyToLexeme.get(key) ?? null;
+/** How many verses a lexeme occurs in: one lookup, cheap enough beside every candidate meaning. */
+function verseCountOf(dictionary: Dictionary, id: LexemeId): number {
+  return dictionary.lexemeToVerses.get(id)?.size ?? 0;
 }
 
 /**
  * Merge a list of lexeme ids into the rows a reader sees, so that both
  * questions about a word share one answer shape.
  */
-function rowsFor(ids: LexemeId[]): Meaning[] {
+function rowsFor(dictionary: Dictionary, ids: LexemeId[]): Meaning[] {
   // Merge as we go, so a merged row keeps the position of its likeliest member
   // and the order stays the order the data gave us.
   const rows = new Map<string, { meaning: Meaning; group: LexemeId[] }>();
 
   for (const id of ids) {
-    const lexeme = getLexeme(id);
-    const key = keyOf(id);
+    const lexeme = getLexeme(dictionary, id);
+    const key = keyOf(dictionary, id);
     if (!lexeme || key === null) continue;
 
     const rendered = renderedAs(lexeme);
@@ -120,7 +110,10 @@ function rowsFor(ids: LexemeId[]): Meaning[] {
   return [...rows.values()]
     .map(({ meaning, group }) => ({
       ...meaning,
-      verseCount: group.length === 1 ? getLexemeVerseCount(group[0]) : searchByLexemes(group).size,
+      verseCount:
+        group.length === 1
+          ? verseCountOf(dictionary, group[0])
+          : searchByLexemes(dictionary, group).size,
     }))
     .filter((meaning) => meaning.verseCount > 0);
 }
@@ -148,12 +141,15 @@ export function sameMeaning(meaning: Meaning, keys: readonly string[]): boolean 
  * the same as `verseCount` — that counts the word across all of its spellings.
  * The two disagree for about a third of ambiguous forms, so a list ordered one
  * way and labelled the other can look mis-sorted. It is not.
+ *
+ * Kept per dictionary and form, so a panel drawing a term's rows is handed the
+ * same objects every time. Callers must not change them.
  */
-export function meaningsFor(writtenForm: string): Meaning[] {
-  const ids = findLexemesForWord(writtenForm);
-  if (!ids) return [];
-  return rowsFor(ids);
-}
+export const meaningsFor: (dictionary: Dictionary, writtenForm: string) => Meaning[] =
+  memoByValueAndKey((dictionary: Dictionary, writtenForm: string) => {
+    const ids = findLexemesForWord(dictionary, writtenForm);
+    return ids ? rowsFor(dictionary, ids) : [];
+  });
 
 /**
  * Which dictionary word is this written form, in this verse?
@@ -162,8 +158,7 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * zero the way `verseWords` does — this is a lookup rather than a guess, and
  * answers with the words BHSA parsed there: one, or two for a ketiv read as
  * two (בגד, read בָּא גָד) or a word the page prints solid (הללויה). It needs
- * the verse to be the one `setVerseOnScreen` last named, and its parse to
- * have arrived.
+ * the verse's words (wordsOfVerse).
  *
  * Without that, the verse narrows the spelling instead of settling it. Hebrew
  * does not write most vowels, so half the words in the text could be several
@@ -176,21 +171,26 @@ export function meaningsFor(writtenForm: string): Meaning[] {
  * than treating it as an error.
  */
 export function meaningsInVerse(
+  dictionary: Dictionary,
+  words: VerseWords | null,
   writtenForm: string,
   verseKey: string,
   wordIndex?: number,
 ): Meaning[] {
-  const parsed = wordIndex === undefined ? null : namedWord(verseKey, wordIndex);
-  if (parsed !== null) return parsed.flatMap((id) => rowForLexeme(id, writtenForm));
+  const parsed = wordIndex === undefined ? null : namedWord(words, verseKey, wordIndex);
+  if (parsed !== null) return parsed.flatMap((id) => rowForLexeme(dictionary, id, writtenForm));
 
-  const ids = findLexemesForWord(writtenForm);
+  const ids = findLexemesForWord(dictionary, writtenForm);
   if (!ids) return [];
 
-  const inVerse = getVerseLexemes(verseKey);
+  const inVerse = getVerseLexemes(dictionary, verseKey);
   if (!inVerse) return [];
 
   const present = new Set(inVerse);
-  return rowsFor(ids.filter((id) => present.has(id)));
+  return rowsFor(
+    dictionary,
+    ids.filter((id) => present.has(id)),
+  );
 }
 
 /**
@@ -202,11 +202,13 @@ export function meaningsInVerse(
  * בֵּית אֵל is filed under Bethel while its halves are spellings of "house" and
  * "god", so the lexeme stands alone and gets a row of its own.
  */
-function rowForLexeme(id: LexemeId, writtenForm: string): Meaning[] {
-  const key = keyOf(id);
-  const candidates = findLexemesForWord(writtenForm) ?? [];
-  const row = key === null ? undefined : rowsFor(candidates).find((m) => m.keys.includes(key));
-  return row ? [row] : rowsFor([id]);
+function rowForLexeme(dictionary: Dictionary, id: LexemeId, writtenForm: string): Meaning[] {
+  const key = keyOf(dictionary, id);
+  const row =
+    key === null
+      ? undefined
+      : meaningsFor(dictionary, writtenForm).find((m) => m.keys.includes(key));
+  return row ? [row] : rowsFor(dictionary, [id]);
 }
 
 /**
@@ -218,21 +220,25 @@ function rowForLexeme(id: LexemeId, writtenForm: string): Meaning[] {
  * the meaning, then the meaning's dictionary spelling, then the spelling it
  * is most often printed with, or null when it is never printed.
  */
-export function spellingFor(keys: readonly string[], clicked: string): string | null {
-  const has = (text: string) => formMatches(keys, text);
+export function spellingFor(
+  dictionary: Dictionary,
+  keys: readonly string[],
+  clicked: string,
+): string | null {
+  const has = (text: string) => formMatches(dictionary, keys, text);
   if (has(clicked)) return clicked;
 
-  const ids = [...lexemesForKeys(keys)];
+  const ids = [...lexemesForKeys(dictionary, keys)];
   for (const id of ids) {
-    const spelling = stripNikkud(getLexeme(id)?.form ?? '');
+    const spelling = stripNikkud(getLexeme(dictionary, id)?.form ?? '');
     if (spelling && has(spelling)) return spelling;
   }
-  return ids.map(printedSpelling).find(Boolean) ?? null;
+  return ids.map((id) => printedSpelling(dictionary, id)).find(Boolean) ?? null;
 }
 
 /** The verses carrying any of these meanings. */
-export function versesFor(keys: string[]): Set<string> {
-  return searchByLexemes([...lexemesForKeys(keys)]);
+export function versesFor(dictionary: Dictionary, keys: string[]): Set<string> {
+  return searchByLexemes(dictionary, [...lexemesForKeys(dictionary, keys)]);
 }
 
 /**
@@ -244,19 +250,23 @@ export function versesFor(keys: string[]): Set<string> {
  *
  * Kept here rather than in the caller so that `LexemeId` stays behind the seam.
  */
-export function formMatches(keys: readonly string[], writtenForm: string): boolean {
-  const ids = findLexemesForWord(writtenForm);
+export function formMatches(
+  dictionary: Dictionary,
+  keys: readonly string[],
+  writtenForm: string,
+): boolean {
+  const ids = findLexemesForWord(dictionary, writtenForm);
   if (!ids || ids.length === 0) return false;
 
-  const wanted = lexemesForKeys(keys);
+  const wanted = lexemesForKeys(dictionary, keys);
   return ids.some((id) => wanted.has(id));
 }
 
-function lexemesForKeys(keys: readonly string[]): Set<LexemeId> {
+function lexemesForKeys(dictionary: Dictionary, keys: readonly string[]): Set<LexemeId> {
   const wanted = new Set<LexemeId>();
   for (const key of keys) {
-    const id = lexemeForKey(key);
-    if (id !== null) wanted.add(id);
+    const id = dictionary.keyToLexeme.get(key);
+    if (id !== undefined) wanted.add(id);
   }
   return wanted;
 }
@@ -270,121 +280,59 @@ function lexemesForKeys(keys: readonly string[]): Set<LexemeId> {
 // last morpheme of a printed word is its stem, and the stem's lexeme is the
 // dictionary word the reader is looking at: no inference involved.
 //
-// It costs 4.5 MB, which is more than the other three files together, and no
-// reader needs it until a verse is on screen. So it is not part of startup:
-// `prefetchMorphology` asks for it once the app has gone idle, and opening a
-// verse asks for it outright. Until it lands every answer here is the one the
-// spelling gives.
+// It costs 4.5 MB, more than the other three files together, so search works
+// without it: it is an optional file, and until it is in every answer here is
+// the one the spelling gives.
 
 /** morphemes as [lexeme, parsing], morphemes per printed word, maqaf positions. */
 type ParsedVerse = [Array<[LexemeId, number]>, number[], number[]];
 
-interface MorphologyFile {
+/** The per-word parse: verse-morphology.json. */
+export interface Parse {
   /** For the verses the page divides into words differently: each shown word's lexemes. */
   realigned: Record<string, LexemeId[][]>;
   verses: Record<string, ParsedVerse>;
 }
 
-let morphology: MorphologyFile | null = null;
-let loading: Promise<void> | null = null;
-let settled = false;
+/**
+ * A verse's Hebrew, its clickable words, and the dictionary words of its
+ * printed words by where each starts in the text.
+ */
+export interface VerseWords {
+  verseKey: string;
+  hebrew: string;
+  clickable: TextWord[];
+  named: Map<number, LexemeId[]>;
+}
+
+const linedUpByParse = memoByValue(
+  (_parse: Parse) => new Map<string, { hebrew: string; words: VerseWords | null }>(),
+);
 
 /**
- * Fetch the per-word parse, once.
- *
- * A failure is not fatal and is not retried: every caller falls back to the
- * spelling. `settled` says the attempt is over either way, so a caller waiting
- * to redraw is released rather than left asking again.
+ * The dictionary words of each printed word of this verse, or null when the
+ * parse is not in or its words do not line up with this text. Kept per parse
+ * and verse.
  */
-function loadMorphology(): Promise<void> {
-  loading ??= fetchData('search/verse-morphology.json')
-    .then(async (res) => {
-      if (!res.ok) throw new Error(`Response status ${res.status}`);
-      const file: MorphologyFile = await res.json();
-      morphology = file;
-    })
-    .catch((err) => {
-      console.warn('Could not load the per-word parse; falling back to the spelling:', err);
-    })
-    .finally(() => {
-      settled = true;
-    });
-  return loading;
+export function wordsOfVerse(
+  parse: Parse | null,
+  verseKey: string,
+  hebrew: string,
+): VerseWords | null {
+  if (!parse) return null;
+  const kept = linedUpByParse(parse);
+  const known = kept.get(verseKey);
+  if (known?.hebrew === hebrew) return known.words;
+  const clickable = verseWords(hebrew);
+  const named = namedWords(parse, verseKey, hebrew, clickable);
+  const words = named && { verseKey, hebrew, clickable, named };
+  kept.set(verseKey, { hebrew, words });
+  return words;
 }
 
-/**
- * Ask for the parse once the app has finished starting up, so that the reader
- * who opens a verse is not the one who waits for it.
- *
- * The fetch is the same memoized one `loading` guards, so a verse opened before
- * this fires still fetches exactly once.
- */
-export function prefetchMorphology(): void {
-  whenIdle(() => void loadMorphology());
-}
-
-/**
- * A promise that resolves once the parse has arrived, asking for it now; null
- * when nothing is waiting on it. A failed load resolves too.
- */
-export function parseArrived(): Promise<void> | null {
-  return settled ? null : loadMorphology();
-}
-
-/** The verse whose Hebrew is on screen. */
-let onScreen: { verseKey: string; hebrew: string } | null = null;
-
-/**
- * A verse's clickable words, and the dictionary words of its printed words by
- * where each starts in its text. Null `named` means the parse is not here yet,
- * or its words do not line up with this text.
- */
-interface VerseNames {
-  words: TextWord[];
-  named: Map<number, LexemeId[]> | null;
-}
-
-// Verses named, by key and text: the one on screen and those a results list
-// quotes, which ask word after word of one verse. Only once the parse is here.
-const namedVerses = new Map<string, VerseNames>();
-const NAMED_VERSES_KEPT = 100;
-
-function verseNames(verseKey: string, hebrew: string): VerseNames {
-  const id = `${verseKey}\n${hebrew}`;
-  const known = namedVerses.get(id);
-  if (known) return known;
-
-  const words = verseWords(hebrew);
-  const parsed = { words, named: namedWords(verseKey, hebrew, words) };
-  if (namedVerses.size >= NAMED_VERSES_KEPT) namedVerses.clear();
-  namedVerses.set(id, parsed);
-  return parsed;
-}
-
-/**
- * Name the verse whose Hebrew is about to be displayed.
- *
- * The overlay that marks words inside a verse is handed the text without its
- * reference, so the verse has to be named separately by whoever is drawing it.
- *
- * Returns null when the parse is already in hand and nothing is waiting on it,
- * and otherwise a promise that resolves once it arrives, so the caller can
- * draw the verse again, this time with the words named. It resolves after a
- * failed load too; there is simply nothing more to wait for.
- */
-export function setVerseOnScreen(verseKey: string, hebrew: string): Promise<void> | null {
-  onScreen = { verseKey, hebrew };
-  return parseArrived();
-}
-
-/** Which verse the last `setVerseOnScreen` named, for callers checking staleness. */
-export function verseOnScreen(): string | null {
-  return onScreen?.verseKey ?? null;
-}
-
-/** Does a click on this word of the verse on screen land on a word BHSA parsed? */
-export function wordIsNamed(wordIndex: number): boolean {
-  return onScreen !== null && namedWord(onScreen.verseKey, wordIndex) !== null;
+/** Does a click on this word of the verse land on a word BHSA parsed? */
+export function wordIsNamed(words: VerseWords | null, wordIndex: number): boolean {
+  return words !== null && namedWord(words, words.verseKey, wordIndex) !== null;
 }
 
 /**
@@ -409,14 +357,15 @@ export function wordsBhsaParsed(hebrew: string): TextWord[] {
  * unnoticed.
  */
 function namedWords(
+  parse: Parse,
   verseKey: string,
   hebrew: string,
   words: TextWord[],
 ): Map<number, LexemeId[]> | null {
-  const parsed = morphology?.verses[verseKey];
+  const parsed = parse.verses[verseKey];
   if (!parsed) return null;
 
-  const perWord = morphology?.realigned[verseKey] ?? stemsByPosition(parsed);
+  const perWord = parse.realigned[verseKey] ?? stemsByPosition(parsed);
   const bhsaWords = wordsBhsaParsed(hebrew);
   if (bhsaWords.length !== perWord.length) return null;
 
@@ -488,23 +437,25 @@ function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>, words: TextWo
   });
 }
 
-/**
- * The dictionary words at a position in a verse's text: the verse on screen,
- * or the one `verseKey` names.
- */
-function namedAt(verseText: string, wordStart: number, verseKey?: string): LexemeId[] | null {
-  const key = verseKey ?? (onScreen?.hebrew === verseText ? onScreen.verseKey : undefined);
-  if (key === undefined || !morphology) return null;
-  return verseNames(key, verseText).named?.get(wordStart) ?? null;
+/** The dictionary words at a position in this text, if these are its words. */
+function namedAt(
+  words: VerseWords | null,
+  verseText: string,
+  wordStart: number,
+): LexemeId[] | null {
+  if (!words || words.hebrew !== verseText) return null;
+  return words.named.get(wordStart) ?? null;
 }
 
-/** The dictionary words of the nth printed word of the verse on screen, as BHSA parsed it. */
-function namedWord(verseKey: string, wordIndex: number): LexemeId[] | null {
-  if (onScreen?.verseKey !== verseKey || !morphology) return null;
-
-  const { words, named } = verseNames(verseKey, onScreen.hebrew);
-  const word = words[wordIndex];
-  return word ? (named?.get(word.start) ?? null) : null;
+/** The dictionary words of the nth printed word of a verse, as BHSA parsed it. */
+function namedWord(
+  words: VerseWords | null,
+  verseKey: string,
+  wordIndex: number,
+): LexemeId[] | null {
+  if (!words || words.verseKey !== verseKey) return null;
+  const word = words.clickable[wordIndex];
+  return word ? (words.named.get(word.start) ?? null) : null;
 }
 
 /**
@@ -513,22 +464,22 @@ function namedWord(verseKey: string, wordIndex: number): LexemeId[] | null {
  * The question `formMatches` answers is whether a spelling *could* be one of
  * them, which cannot separate the two words spelled עלה in Genesis 8:20. This
  * one names the word instead, and falls back to the spelling wherever the
- * parse cannot: a ketiv with no qere, a verse that does not line up, or the
- * moments before the parse has loaded.
+ * parse cannot: a ketiv with no qere, a verse that does not line up, or a verse
+ * drawn without the parse.
  *
  * `wordStart` is where the word begins in the nikkud-stripped text, which is
- * what the caller splits into words. `verseKey` names a verse other than the
- * one on screen.
+ * what the caller splits into words.
  */
 export function wordMatches(
-  keys: string[],
+  dictionary: Dictionary,
+  words: VerseWords | null,
+  keys: readonly string[],
   writtenForm: string,
   verseText: string,
   wordStart: number,
-  verseKey?: string,
 ): boolean {
-  const named = namedAt(verseText, mapStrippedToOriginal(verseText, wordStart), verseKey);
-  if (named === null) return formMatches(keys, writtenForm);
-  const wanted = lexemesForKeys(keys);
+  const named = namedAt(words, verseText, mapStrippedToOriginal(verseText, wordStart));
+  if (named === null) return formMatches(dictionary, keys, writtenForm);
+  const wanted = lexemesForKeys(dictionary, keys);
   return named.some((id) => wanted.has(id));
 }

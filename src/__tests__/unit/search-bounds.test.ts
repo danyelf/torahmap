@@ -2,7 +2,8 @@
 // the verse and carries points.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildSearchIndex, type SearchResult } from '../../search';
+import { buildTextIndex, type SearchResult, type TextIndex } from '../../search';
+import { EMPTY_DICTIONARY } from '../helpers/searchData';
 
 const result = (verse: number, language: 'he' | 'en'): SearchResult => ({
   book: 'Genesis',
@@ -13,8 +14,9 @@ const result = (verse: number, language: 'he' | 'en'): SearchResult => ({
 });
 
 describe('Snippet bounds', () => {
+  let index: TextIndex;
   beforeEach(() => {
-    buildSearchIndex({
+    index = buildTextIndex({
       Genesis: {
         '1': {
           '1': { he: 'אֱלֹהִים', en: 'God' },
@@ -30,7 +32,13 @@ describe('Snippet bounds', () => {
     [1, 'en', 'God'],
     [2, 'en', 'beginning'],
   ] as const)('keeps the mark inside the snippet (verse %i, %s)', (verse, language, term) => {
-    const { snippet, matchStart, matchEnd } = excerptOf(result(verse, language), term, 'word')!;
+    const { snippet, matchStart, matchEnd } = excerptOf(
+      result(verse, language),
+      term,
+      'word',
+      index,
+      EMPTY_DICTIONARY,
+    )!;
 
     expect(matchStart).toBeGreaterThanOrEqual(0);
     expect(matchEnd).toBeGreaterThan(matchStart);
@@ -38,7 +46,13 @@ describe('Snippet bounds', () => {
   });
 
   it('marks the whole of a pointed word that ends the verse', () => {
-    const { snippet, matchStart, matchEnd } = excerptOf(result(1, 'he'), 'אלהים', 'word')!;
+    const { snippet, matchStart, matchEnd } = excerptOf(
+      result(1, 'he'),
+      'אלהים',
+      'word',
+      index,
+      EMPTY_DICTIONARY,
+    )!;
     expect(snippet.slice(matchStart, matchEnd)).toBe('אֱלֹהִים');
   });
 });

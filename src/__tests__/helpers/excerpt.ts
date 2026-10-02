@@ -1,4 +1,5 @@
-import type { SearchResult } from '../../search';
+import type { Dictionary, SearchResult, TextIndex } from '../../search';
+import type { Parse } from '../../search/dictionary';
 import { addTerm, setMode, type SearchMode } from '../../search/terms';
 import { excerpt } from '../../overlays/search/highlight';
 
@@ -7,8 +8,11 @@ export function excerptOf(
   result: Pick<SearchResult, 'book' | 'chapter' | 'verse'>,
   text: string,
   mode: SearchMode,
+  index: TextIndex,
+  dictionary: Dictionary,
+  parse: Parse | null = null,
 ): ReturnType<typeof excerpt> {
   const [added] = addTerm([], text);
   const [term] = setMode([added], added.id, mode);
-  return excerpt({ matchingTerms: [], ...result }, term);
+  return excerpt({ matchingTerms: [], ...result }, term, index, dictionary, parse);
 }

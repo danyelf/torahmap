@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dataFor, filesFor, loadFiles, loadNamedFiles, overlayFiles } from '../../dataFiles';
+import {
+  dataFor,
+  filesFor,
+  loadFiles,
+  loadNamedFiles,
+  optional,
+  overlayFiles,
+} from '../../dataFiles';
 import { reportError } from '../../analytics';
 import { mockFetch, mockFetchStatus } from '../helpers/mocks';
 import { testOverlay } from '../helpers/fixtures';
@@ -139,5 +146,44 @@ describe('dataFor', () => {
   it('hands an overlay that names no files undefined, never null', () => {
     const plain = testOverlay({ id: 'p', name: 'P', getVerseColor: () => null });
     expect(dataFor(plain, new Map())).toBeUndefined();
+  });
+});
+
+describe('an optional file', () => {
+  const texts = { Genesis: {} };
+  const parse = { verses: {} };
+  const reader = testOverlay({
+    id: 'opt',
+    name: 'Opt',
+    getVerseColor: () => null,
+    data: { texts: 'all-texts.json', parse: optional('parse.json') },
+  });
+
+  it('is not waited for: the data comes without it, holding null', () => {
+    expect(dataFor(reader, new Map([['all-texts.json', texts]]))).toEqual({ texts, parse: null });
+  });
+
+  it('is handed over once it is in', () => {
+    const loaded = new Map<string, unknown>([
+      ['all-texts.json', texts],
+      ['parse.json', parse],
+    ]);
+    expect(dataFor(reader, loaded)).toEqual({ texts, parse });
+  });
+
+  it('does not stand in for a file that is not optional', () => {
+    expect(dataFor(reader, new Map([['parse.json', parse]]))).toBeNull();
+  });
+
+  it('is downloaded with the rest', () => {
+    expect(overlayFiles([reader])).toEqual(['all-texts.json', 'parse.json']);
+  });
+
+  it('is not named as missing when the files are loaded by name', async () => {
+    mockFetch({ '/data/all-texts.json': texts });
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await expect(
+      loadNamedFiles({ texts: 'all-texts.json', parse: optional('parse.json') }),
+    ).resolves.toEqual({ texts, parse: null });
   });
 });

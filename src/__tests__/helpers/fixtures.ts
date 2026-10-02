@@ -6,6 +6,7 @@ import { HAFTARAH_FILES, type HaftarahMappings } from '../../overlays/haftarah/r
 import { commentaryOverlay } from '../../overlays/commentary';
 import type { Loaded } from '../../dataFiles';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
+import { DICTIONARY_FILES, type DictionaryFiles } from '../../search/data';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   return {
@@ -236,12 +237,26 @@ export const SAMPLE_STRUCTURE = {
   ],
 } as TorahData;
 
+/**
+ * The three lexeme files, holding no word: every term is matched by its text.
+ * Here rather than in searchData.ts, which reads from disk, because typechecked
+ * code outside src/__tests__ imports this file.
+ */
+export const EMPTY_DICTIONARY_FILES: DictionaryFiles = {
+  lexicon: { source: 'none', lexemes: [] },
+  forms: {},
+  verseLexemes: {},
+};
+
 /** The sample files, under the paths the overlays name. */
 export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
   [commentaryOverlay.data.counts, SAMPLE_COMMENTARY_COUNTS],
   [TEXTS_FILE, SAMPLE_VERSE_TEXTS],
   [HAFTARAH_FILES.mappings, SAMPLE_HAFTARAH_MAPPINGS],
   [STRUCTURE_FILE, SAMPLE_STRUCTURE],
+  ...(Object.keys(DICTIONARY_FILES) as (keyof DictionaryFiles)[]).map(
+    (name) => [DICTIONARY_FILES[name], EMPTY_DICTIONARY_FILES[name]] as const,
+  ),
 ]);
 
 export const TEST_COLORS = {

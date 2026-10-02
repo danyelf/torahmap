@@ -5,9 +5,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
 import { searchTool as overlay } from '../../overlays/search';
 import { hostOverlay } from '../helpers/overlayHost';
+import { createVerse } from '../helpers/fixtures';
+import { EMPTY_DICTIONARY, searchDataFor } from '../helpers/searchData';
 
-const searchOverlay = hostOverlay(overlay, undefined);
-import { buildSearchIndex, versesForTerm } from '../../search';
+const searchOverlay = hostOverlay(overlay, searchDataFor({}));
+import { buildTextIndex, versesForTerm } from '../../search';
 import { matchRangesInFolded, foldForMatching } from '../../search/matching';
 import type { VerseTexts } from '../../verseTexts';
 import { setTermText } from '../../search/terms';
@@ -26,8 +28,10 @@ const texts: VerseTexts = {
   },
 };
 
+const index = buildTextIndex(texts);
+
 function marked(text: string, language: 'he' | 'en'): string[] {
-  const fragment = searchOverlay.highlightVerseText(text, language);
+  const fragment = searchOverlay.highlightVerseText(createVerse(), text, language);
   const host = document.createElement('div');
   host.appendChild(typeof fragment === 'string' ? document.createTextNode(fragment) : fragment);
   return [...host.innerHTML.matchAll(/<mark[^>]*>([^<]*)<\/mark>/g)].map((m) => m[1]);
@@ -35,26 +39,26 @@ function marked(text: string, language: 'he' | 'en'): string[] {
 
 describe('the search and the highlighter agree', () => {
   beforeEach(() => {
-    buildSearchIndex(texts);
+    searchOverlay.setData(searchDataFor(texts));
   });
 
   it('on a term typed with a plain letter where the verse has a final form', () => {
     // הארצ as typed; the verse writes הארץ. Folding makes them one spelling.
-    expect(versesForTerm('הארצ', 'he', 'word').size).toBe(1);
+    expect(versesForTerm(index, 'הארצ', 'he', 'word').size).toBe(1);
 
     searchOverlay.restore({ search: 'הארצ', mode: 'w' });
     expect(marked(GENESIS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['הארץ']);
   });
 
   it('on the last word of a verse, which carries the sof pasuq', () => {
-    expect(versesForTerm('הארץ', 'he', 'word').size).toBe(1);
+    expect(versesForTerm(index, 'הארץ', 'he', 'word').size).toBe(1);
 
     searchOverlay.restore({ search: 'הארץ', mode: 'w' });
     expect(marked(GENESIS_1_1, 'he')).toHaveLength(1);
   });
 
   it('on a phrase', () => {
-    expect(versesForTerm('וידבר יהוה', 'he', 'word').size).toBe(1);
+    expect(versesForTerm(index, 'וידבר יהוה', 'he', 'word').size).toBe(1);
 
     searchOverlay.restore({ search: 'וידבר יהוה', mode: 'w' });
     expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת ]/g, ''))).toEqual([
@@ -76,7 +80,13 @@ describe('the search and the highlighter agree', () => {
       verse: 1,
       matchingTerms: [],
     };
-    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהוה', 'word')!;
+    const { snippet, matchStart, matchEnd } = excerptOf(
+      result,
+      'וידבר יהוה',
+      'word',
+      index,
+      EMPTY_DICTIONARY,
+    )!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
   });
 
@@ -87,7 +97,13 @@ describe('the search and the highlighter agree', () => {
       verse: 1,
       matchingTerms: [],
     };
-    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהו', 'substring')!;
+    const { snippet, matchStart, matchEnd } = excerptOf(
+      result,
+      'וידבר יהו',
+      'substring',
+      index,
+      EMPTY_DICTIONARY,
+    )!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהו');
   });
 });

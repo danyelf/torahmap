@@ -2,21 +2,18 @@
 //
 // The mode belongs to a term and is set on that term's row, so these tests
 // click the row.
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../overlays/search/index';
 import { configure } from '../../overlays/search';
-import { buildSearchIndex, loadLexiconData } from '../../search';
 import type { TanakhLayout } from '../../types';
 import type { VerseTexts } from '../../verseTexts';
 import { hostOverlay } from '../helpers/overlayHost';
+import { realSearchData, searchDataFor } from '../helpers/searchData';
 import { createVerse } from '../helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
 
-const searchOverlay = hostOverlay(searchTool, undefined);
-
-beforeAll(async () => {
-  await loadLexiconData();
-});
+const searchOverlay = hostOverlay(searchTool, searchDataFor({}));
+const { lexicon, forms, verseLexemes } = realSearchData().files;
 
 describe('Search Overlay - Hebrew Mode Integration', () => {
   let testVerses: TanakhLayout[];
@@ -71,7 +68,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       },
     };
 
-    buildSearchIndex(mockVerseTexts);
+    searchOverlay.setData(searchDataFor(mockVerseTexts, { lexicon, forms, verseLexemes }));
     configure({ verses: testVerses });
 
     // Create container for controls

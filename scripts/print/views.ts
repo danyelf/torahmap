@@ -13,11 +13,13 @@ import {
   type HaftarahItem,
 } from '../../src/overlays/haftarah/readings.ts';
 import {
+  buildDictionary,
   findLexemesForWord,
   getLexeme,
-  loadLexiconData,
   searchByLexemes,
+  type Dictionary,
 } from '../../src/search.ts';
+import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/search/data.ts';
 import { tanakhKey, type Book, type TanakhLayout, type TorahData } from '../../src/types.ts';
 import {
   INK,
@@ -222,19 +224,26 @@ const NAMES = [
   { he: 'דוד', en: 'David' },
 ];
 
+/** Search's dictionary, from its three files loaded as the site loads them. */
+export async function loadDictionary(): Promise<Dictionary> {
+  return buildDictionary(await loadNamedFiles<DictionaryFiles>(DICTIONARY_FILES));
+}
+
 /**
  * The verses naming a person: only the dictionary entries for the written
  * form glossed as the name, so יצחק marks Isaac and never "laugh".
  */
-export function nameVerses(he: string, gloss: string): Set<string> {
-  const ids = (findLexemesForWord(he) ?? []).filter((id) => getLexeme(id)?.gloss === gloss);
+export function nameVerses(dictionary: Dictionary, he: string, gloss: string): Set<string> {
+  const ids = (findLexemesForWord(dictionary, he) ?? []).filter(
+    (id) => getLexeme(dictionary, id)?.gloss === gloss,
+  );
   if (ids.length === 0) throw new Error(`No dictionary entry for ${he} glossed "${gloss}".`);
-  return searchByLexemes(ids);
+  return searchByLexemes(dictionary, ids);
 }
 
 export async function searchSheet(structure: TorahData, marks: boolean): Promise<SheetInput> {
-  await loadLexiconData();
-  const sets = NAMES.map((n) => nameVerses(n.he, n.en));
+  const dictionary = await loadDictionary();
+  const sets = NAMES.map((n) => nameVerses(dictionary, n.he, n.en));
   const inks = NAME_HUES.map((_, i) => nameInk(i));
   const fillsOf = (v: TanakhLayout, i: number) => {
     const key = tanakhKey(v.book, v.chapter, v.verse);

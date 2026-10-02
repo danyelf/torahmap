@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { deriveHaftarah } from '../../../src/overlays/haftarah/readings.ts';
-import { loadLexiconData } from '../../../src/search.ts';
+import type { Dictionary } from '../../../src/search.ts';
 import type { SheetInput } from '../types.ts';
 import {
   haftarahKey,
   haftarahSheet,
+  loadDictionary,
   loadHaftarahData,
   loadStructure,
   nameVerses,
@@ -48,19 +49,20 @@ describe('haftarahSheet', () => {
 });
 
 describe('searchSheet', () => {
+  let dictionary: Dictionary;
   beforeAll(async () => {
-    await loadLexiconData();
+    dictionary = await loadDictionary();
   });
 
   it('marks only the proper names', () => {
-    const isaac = nameVerses('יצחק', 'Isaac');
+    const isaac = nameVerses(dictionary, 'יצחק', 'Isaac');
     expect(isaac.size).toBeGreaterThan(0);
     // Genesis 21:6, "everyone who hears will laugh with me", has the verb and not the name.
     expect(isaac.has('Genesis:21:6')).toBe(false);
   });
 
   it('refuses a name with no dictionary entry', () => {
-    expect(() => nameVerses('אברהם', 'Abram the Unknown')).toThrow(/Abram the Unknown/);
+    expect(() => nameVerses(dictionary, 'אברהם', 'Abram the Unknown')).toThrow(/Abram the Unknown/);
   });
 
   it('gives each name one colour and a key row', async () => {

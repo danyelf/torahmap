@@ -24,6 +24,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { Dictionary } from '../../src/search.ts';
+import type { SearchData } from '../../src/search/data.ts';
+import type { Parse } from '../../src/search/dictionary.ts';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, '..', '..');
@@ -44,9 +47,10 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
   return new Response(readFileSync(resolved, 'utf8'), { status: 200 });
 }) as typeof fetch;
 
-const { loadLexiconData, findLexemesForWord, getVerseLexemes } =
-  await import('../../src/search.ts');
-const { meaningsInVerse, setVerseOnScreen, spellingFor, wordIsNamed } =
+const { loadNamedFiles } = await import('../../src/dataFiles.ts');
+const { SEARCH_FILES, dictionaryOf } = await import('../../src/search/data.ts');
+const { findLexemesForWord } = await import('../../src/search.ts');
+const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
   await import('../../src/search/dictionary.ts');
 const { verseWords } = await import('../../src/verseWords.ts');
 const { stripNikkud } = await import('../../src/hebrew.ts');
@@ -70,6 +74,8 @@ interface Report {
 
 function buildReport(
   texts: Record<string, Record<string, Record<string, { he: string }>>>,
+  dictionary: Dictionary,
+  parse: Parse,
 ): Report {
   const report: Report = {
     one: 0,
@@ -85,23 +91,23 @@ function buildReport(
     for (const [chapter, verses] of Object.entries(chapters)) {
       for (const [verse, text] of Object.entries(verses)) {
         const verseKey = tanakhKey(book, Number(chapter), Number(verse));
-        // What displaying the verse does, which is what makes a click a
-        // lookup of the word rather than a guess from its spelling.
-        setVerseOnScreen(verseKey, text.he);
+        const words = wordsOfVerse(parse, verseKey, text.he);
 
         for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
           const form = stripNikkud(word);
-          const offered = meaningsInVerse(form, verseKey, wordIndex);
+          const offered = meaningsInVerse(dictionary, words, form, verseKey, wordIndex);
           const n = offered.length;
           report.total++;
-          if (!wordIsNamed(wordIndex)) report.unplaced++;
+          if (!wordIsNamed(words, wordIndex)) report.unplaced++;
           // Choosing a meaning searches for it under some spelling; one no
           // spelling can be is a choice that silently searches for something else.
-          if (offered.some((m) => spellingFor(m.keys, form) === null)) report.unsearchable++;
+          if (offered.some((m) => spellingFor(dictionary, m.keys, form) === null)) {
+            report.unsearchable++;
+          }
 
           if (n === 1) report.one++;
           else if (n > 1) report.several++;
-          else if (!findLexemesForWord(form)?.length) report.unknownSpelling++;
+          else if (!findLexemesForWord(dictionary, form)?.length) report.unknownSpelling++;
           else report.ruledOut++;
         }
       }
@@ -123,28 +129,21 @@ function movement(now: Report, before: Report | null, key: keyof Report): string
   return `  ${delta > 0 ? '+' : ''}${delta.toFixed(2)} points`;
 }
 
-const texts = await (await fetch('/data/all-texts.json')).json();
-await loadLexiconData();
+// Throws, naming the file, when one does not load: a report on a missing
+// dictionary would print a confident 100% unknown.
+const data = await loadNamedFiles<SearchData>(SEARCH_FILES);
+const dictionary = dictionaryOf(data);
+const texts = data.texts;
 
-// loadLexiconData catches its own failures so the rest of the app keeps
-// working. A report that carried on the same way would print a confident 100%
-// unknown, which is why this checks rather than trusts.
-if (!getVerseLexemes('Genesis:1:1')) {
-  console.error('The lexeme index did not load. The numbers below would be meaningless.');
-  process.exit(1);
-}
-
-// The per-word parse is fetched when a verse is first displayed, and every
-// number below is about what a click finds once it is here. Waiting for it is
-// the difference between measuring this report's subject and measuring the
-// fallback under it.
-await setVerseOnScreen('Genesis:1:1', texts.Genesis['1']['1'].he);
-if (meaningsInVerse('בראשית', 'Genesis:1:1', 0).length !== 1) {
+// Every number below is about what a click finds once the per-word parse is
+// here; without it the report would measure the fallback under it.
+const { parse } = data;
+if (!parse) {
   console.error('The per-word parse did not load. The numbers below would be meaningless.');
   process.exit(1);
 }
 
-const report = buildReport(texts);
+const report = buildReport(texts, dictionary, parse);
 const baseline: Report | null = existsSync(baselinePath)
   ? JSON.parse(readFileSync(baselinePath, 'utf8'))
   : null;

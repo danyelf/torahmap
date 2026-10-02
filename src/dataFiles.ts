@@ -1,8 +1,9 @@
-// The loader for the overlays' data files and main's own two (structure and texts).
+// The loader for the overlays' and search's data files, and main's own two
+// (structure and texts).
 // Paths are under public/data/.
 import { fetchData } from './constants.ts';
 import { reportError } from './analytics.ts';
-import type { Overlay } from './overlays/types.ts';
+import type { Overlay, OptionalFile } from './overlays/types.ts';
 
 /** What has arrived, by path. A file that failed is absent. */
 export type Loaded = ReadonlyMap<string, unknown>;
@@ -42,19 +43,47 @@ async function loadFile(path: string): Promise<unknown> {
   }
 }
 
-/** Each named file's contents under its name, or null while any is missing. */
-export function filesFor<D>(files: Readonly<Record<string, string>>, loaded: Loaded): D | null {
-  const named = Object.entries(files);
-  if (!named.every(([, path]) => loaded.has(path))) return null;
-  return Object.fromEntries(named.map(([name, path]) => [name, loaded.get(path)])) as D;
+export type { OptionalFile };
+
+/** A file named by its path, or an optional one. */
+type FileName = string | OptionalFile;
+
+export function optional(path: string): OptionalFile {
+  return { optional: path };
 }
 
-/** Load the named files and give them under their names; throw naming any that is missing. */
-export async function loadNamedFiles<D>(files: Readonly<Record<string, string>>): Promise<D> {
-  const paths = Object.values(files);
-  const loaded = await loadFiles(paths);
+function pathOf(file: FileName): string {
+  return typeof file === 'string' ? file : file.optional;
+}
+
+/** The paths of a set of named files. */
+function filePaths(files: Readonly<Record<string, FileName>>): string[] {
+  return Object.values(files).map(pathOf);
+}
+
+/** The paths of the files that are not optional and have not arrived. */
+function missingRequired(files: Readonly<Record<string, FileName>>, loaded: Loaded): string[] {
+  return Object.values(files).filter(
+    (file): file is string => typeof file === 'string' && !loaded.has(file),
+  );
+}
+
+/** Each named file's contents under its name, or null while a required file is missing. */
+export function filesFor<D>(files: Readonly<Record<string, FileName>>, loaded: Loaded): D | null {
+  if (missingRequired(files, loaded).length > 0) return null;
+  return Object.fromEntries(
+    Object.entries(files).map(([name, file]) => [name, loaded.get(pathOf(file)) ?? null]),
+  ) as D;
+}
+
+/**
+ * Load the named files and give them under their names; throw naming any
+ * required one that is missing.
+ */
+export async function loadNamedFiles<D>(files: Readonly<Record<string, FileName>>): Promise<D> {
+  const loaded = await loadFiles(filePaths(files));
   const data = filesFor<D>(files, loaded);
-  if (!data) throw new Error(`Could not load ${paths.filter((p) => !loaded.has(p)).join(', ')}`);
+  if (!data) throw new Error(`Could not load ${missingRequired(files, loaded).join(', ')}`);
   return data;
 }
 
@@ -74,14 +103,12 @@ export function dataFor<T, S, D>(overlay: Overlay<T, S, D>, loaded: Loaded): D |
     given.set(loaded, byOverlay);
   }
   if (!byOverlay.has(overlay)) {
-    byOverlay.set(overlay, filesFor<D>(overlay.data as Record<string, string>, loaded));
+    byOverlay.set(overlay, filesFor<D>(overlay.data as Record<string, FileName>, loaded));
   }
   return byOverlay.get(overlay) as D | null;
 }
 
 /** Every path the overlays name. */
 export function overlayFiles(overlays: readonly Overlay[]): string[] {
-  return overlays.flatMap((overlay) =>
-    Object.values((overlay.data ?? {}) as Record<string, string>),
-  );
+  return overlays.flatMap((overlay) => filePaths((overlay.data ?? {}) as Record<string, FileName>));
 }

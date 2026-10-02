@@ -3,7 +3,7 @@
 // Clicking adds to the search rather than replacing it: the map is for
 // comparing, and two words in two colours is the comparison.
 
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../overlays/search/index';
 import {
   configure,
@@ -12,13 +12,11 @@ import {
   type SearchSettings,
 } from '../../../overlays/search';
 import { meaningsInVerse } from '../../../search/dictionary';
-import { loadLexiconData, buildSearchIndex } from '../../../search';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
-
-const searchOverlay = hostOverlay(searchTool, undefined);
+import { realSearchData } from '../../helpers/searchData';
 
 const texts: VerseTexts = {
   Genesis: {
@@ -43,15 +41,14 @@ function render(): HTMLDivElement {
 function clickWord(text: string, meaningKeys: readonly string[] | null): boolean {
   if (!canAddTerm(searchOverlay.settings as SearchSettings)) return false;
   searchOverlay.change(
-    (current) => searchForMeaning(current as SearchSettings, text, meaningKeys) ?? current,
+    (current) =>
+      searchForMeaning(dictionary, current as SearchSettings, text, meaningKeys) ?? current,
   );
   return true;
 }
 
-beforeAll(async () => {
-  await loadLexiconData();
-  buildSearchIndex(texts);
-});
+const { dictionary } = realSearchData();
+const searchOverlay = hostOverlay(searchTool, { ...realSearchData().files, texts });
 
 beforeEach(() => {
   configure({ verses });
@@ -61,7 +58,7 @@ beforeEach(() => {
 describe('searching for a clicked word', () => {
   it('creates a term narrowed to the chosen meaning', () => {
     const container = render();
-    const leaf = meaningsInVerse('עלה', 'Genesis:3:7')[0];
+    const leaf = meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7')[0];
 
     expect(clickWord('עלה', leaf.keys)).toBe(true);
 
@@ -94,7 +91,7 @@ describe('searching for a clicked word', () => {
 
   it('adds a second word rather than replacing the first', () => {
     const container = render();
-    clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
+    clickWord('עלה', meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7')[0].keys);
     clickWord('רוח', null);
 
     expect(container.querySelectorAll('.term-row')).toHaveLength(2);
@@ -104,7 +101,7 @@ describe('searching for a clicked word', () => {
     render();
     searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
-    clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
+    clickWord('עלה', meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7')[0].keys);
 
     // The click chose meanings for this word, and a choice is written even when it
     // matches the default — the reader made it, so the link carries it.
@@ -115,7 +112,7 @@ describe('searching for a clicked word', () => {
     const container = render();
     searchOverlay.restore({ search: '', mode: 's', m: undefined });
 
-    clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
+    clickWord('עלה', meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7')[0].keys);
 
     const marked = container.querySelector<HTMLElement>(
       '.term-row[data-open="true"] .term-mode-option.on',
@@ -131,7 +128,7 @@ describe('searching for a clicked word', () => {
     const container = render();
     document.body.appendChild(container);
 
-    clickWord('עלה', meaningsInVerse('עלה', 'Genesis:3:7')[0].keys);
+    clickWord('עלה', meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7')[0].keys);
     const results = container.querySelector('#search-results')!;
     expect(results.classList.contains('visible')).toBe(true);
 
@@ -183,7 +180,7 @@ describe('searching for a clicked word', () => {
     // Build two terms, then clear the first one so the empty row to fill is
     // no longer the last row. A reader gets here by clearing an earlier box
     // while a later one still holds a word.
-    const firstMeaning = meaningsInVerse('עלה', 'Genesis:3:7')[0];
+    const firstMeaning = meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7')[0];
     clickWord('עלה', firstMeaning.keys);
     clickWord('רוח', null);
 
@@ -200,7 +197,7 @@ describe('searching for a clicked word', () => {
     // Click a different meaning of the same written form. If the code tracks
     // "the last term" instead of the term it actually filled, this narrowing
     // lands on the second term (still holding 'רוח') instead of the first.
-    const secondMeaning = meaningsInVerse('עלה', 'Genesis:8:20')[0];
+    const secondMeaning = meaningsInVerse(dictionary, null, 'עלה', 'Genesis:8:20')[0];
     clickWord('עלה', secondMeaning.keys);
 
     const shown = [...container.querySelectorAll<HTMLElement>('.term-row')].map(
@@ -223,7 +220,7 @@ describe('searching for a clicked word', () => {
     // mode: that widens the first word back to all of its readings, leaving
     // its meaning ticked with nothing filtering by it.
     render();
-    const leaf = meaningsInVerse('עלה', 'Genesis:3:7')[0];
+    const leaf = meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7')[0];
 
     clickWord('עלה', leaf.keys);
     const afterFirst = searchOverlay.toUrl();

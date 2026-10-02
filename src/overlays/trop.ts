@@ -19,7 +19,7 @@ import { lingeringHover } from '../utils/hover.ts';
 import { colorToCss, type ColorStop } from '../utils/color.ts';
 import { scale, LINEAR, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, legendRow } from './legend.ts';
-import { memoByValue } from './memo.ts';
+import { memoByValue } from '../utils/memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
 /**
@@ -284,7 +284,13 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     return count ? `${derived.entry.name} ×${count}` : null;
   },
 
-  highlightVerseText(text: string, language: TextLanguage, settings, data): DocumentFragment {
+  highlightVerseText(
+    _verse,
+    text: string,
+    language: TextLanguage,
+    settings,
+    data,
+  ): DocumentFragment {
     const fragment = document.createDocumentFragment();
     const entry = entryFor(data, shownMark(settings));
     if (language !== HEBREW || !entry) {

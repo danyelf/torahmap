@@ -1,7 +1,7 @@
 # Search Receives Its Data
 
 **Date:** 2026-09-30
-**Status:** Design, decided 2026-10-01. Not yet planned.
+**Status:** Design, decided 2026-10-01. Planned: docs/plans/2026-09-30-search-data-implementation.md.
 
 Step 2 of three toward #313. It follows step 1
 (`2026-09-30-overlay-data-design.md`) and uses its interface as written: search
@@ -271,3 +271,149 @@ data, not rules. In particular:
 - **Before and after, `scripts/search/click-resolution-report.ts` over the whole
   text gives identical output**, and the print script's search sheet the same
   verses. The report walks every word, which the unit tests do not.
+
+## Open questions, assumptions and rulings
+
+Decisions made while implementing step 2, newest last.
+
+- **2026-10-01 (plan)** Startup waits for the per-word parse too: main loads
+  every file the tools name, and the idle prefetch goes. It adds about 1 MB
+  compressed to the startup wait until step 3 loads it last.
+- **2026-10-01 (plan, Danyel)** Writing `m` copies `chosen` and reading it
+  splits it, as the design says, so writing a link never needs the dictionary.
+  The address may shift slightly — a word of one meaning picked from the menu
+  now writes `m`; a merged row picked from the menu writes the key it was given;
+  a link's `m` is written back as read — but every link opens the view it opens
+  today. Tests pin each case and its round trip; the browser check compares the
+  view each address opens, and the PR lists every address that differs.
+- **2026-10-01 (plan)** `toggleMeaning` takes the row's keys, as `onlyMeaning`
+  does, rather than its first key.
+- **2026-10-01 (plan)** `chosenAmong(rows, term)` and
+  `chosenMeanings(dictionary, term)` say which rows count as chosen; the panel,
+  the hover text and the row summary read them.
+- **2026-10-01 (plan)** A term's record for telemetry holds `chosen` only while
+  the term is matched by its meanings, as `termQuery`'s meaning keys did.
+- **2026-10-01 (plan)** `getLexemeVerseCount` moves into `dictionary.ts`,
+  unexported: only `rowsFor` reads it.
+- **2026-10-01 (plan)** The lexeme key format has one home, `lexemeKey` in
+  `search.ts`, used by the dictionary's key → lexeme map and by `dictionary.ts`.
+- **2026-10-01 (plan)** Search's file names, `SearchData` and the functions that
+  build from it live in `src/search/data.ts`, which imports no CSS, so the print
+  and the click report can use them under plain `node`.
+- **2026-10-01 (plan)** The results list is handed a snippet function rather
+  than the index and dictionary, so it draws an empty list without data.
+- **2026-10-01 (plan)** Building the index and the dictionary logs nothing; the
+  loader warns about a failed download. The click report is compared on its
+  table.
+- **2026-10-01 (plan)** Without search's data the caption is empty, including
+  "Type to search": the design says no caption.
+- **2026-10-01 (plan)** A word clicked while search's data is missing opens no
+  menu: search is off then, and nothing the menu offers could be searched.
+- **2026-10-01 (plan)** `highlightSearchTerms`, exported but called by nothing,
+  goes with its re-export and the sidebar test's mock of it.
+- **2026-10-01 (plan)** The recorder's `dataChanged` is built and tested now;
+  main first calls it in step 3, since search's data never changes after
+  startup in step 2.
+- **2026-10-01 (plan)** The story blender keys its picture cache on `loaded`;
+  keyed so, a picture drawn before a file arrived is never found once it has,
+  and the separate not-kept check goes.
+- **2026-10-01 (plan)** `interactive-search.manual.html` is left as it is: it
+  imports `BOOK_ORDER`, which `src/constants/books.ts` does not export, so it is
+  broken already. Filed as an issue.
+- **2026-10-01 (Task 2)** `search-meaning-url.test.ts` loses "falls back to
+  every meaning when the link names nothing it knows": that file has no
+  dictionary, and the fallback is a rule of a term's rows, pinned in
+  `search-terms.test.ts` ("falls back to every meaning when a key no longer
+  resolves" and "writes back a link naming no meaning the word has").
+- **2026-10-01 (Task 2)** `search-terms.test.ts`'s "writes only the narrowed
+  term" looks the rows up once: it compares rows by identity, and until Task 3
+  memoises `meaningsFor`, two calls return different objects. A setup line; the
+  expected value is unchanged.
+- **2026-10-01 (Task 3)** `EMPTY_DICTIONARY_FILES` is defined in
+  `src/__tests__/helpers/fixtures.ts` and re-exported by `searchData.ts`.
+  `SAMPLE_LOADED` needs it, and `src/scrollytelling/__tests__` imports
+  the fixtures and is typechecked without Node's types, so the fixtures cannot
+  import `searchData.ts`, which reads the shipped files with `node:fs`.
+- **2026-10-01 (Task 3)** `tools.test.ts`'s "shows the overlay with its
+  settings and data beside the search" adds `SAMPLE_LOADED`'s files to its
+  `loaded`: the search is now left out while its files are missing. An
+  argument; the expected values are unchanged.
+- **2026-10-01 (Task 3)** `search-matching.test.ts` calls
+  `computeSnippetForMatch`, which now takes a dictionary; it is handed
+  `EMPTY_DICTIONARY`, the dictionary its host's data already has.
+- **2026-10-01 (Task 3)** `termQuery`'s comment no longer says the text
+  fallback covers a lexeme index that failed to load: a failed download turns
+  search off. It still covers a word the dictionary does not know.
+- **2026-10-01 (Task 3)** The `overlays/search.test.ts` describe named
+  `highlightSearchTerms Function`, a function that no longer exists, is
+  renamed `highlightVerseText`, the member its tests call.
+- **2026-10-01 (Task 3, controller)** Startup keeps its order: main builds
+  search's text index and dictionary where it built them before, just before
+  stamping `search_ready`, so that field keeps its meaning. Step 3 is where
+  that work moves.
+- **2026-10-01 (Task 5)** `sidebar-word-clicks.test.ts` also mocks
+  `highlightVerseText`; its mock takes the verse first like the others. A
+  setup line; the expected values are unchanged.
+- **2026-10-01 (Task 5)** Startup does not build the parse beside the index
+  and dictionary before `search_ready`: `buildParse` only wraps the file and a
+  verse's words are worked out when it is drawn or clicked.
+- **2026-10-01 (Task 6)** Main tells the recorder about every `changeSearch`,
+  including a word-menu click that `searchForMeaning` turns down as the palette
+  is full, which the overlay did not count as the reader's. Such a click restarts
+  the wait for a search still pending; it sends nothing new, as the search is
+  unchanged. Main already returns before `changeSearch` when the palette is
+  full, so the case is not reached.
+- **2026-10-01 (Task 6)** The overlay dropped a search that settled while its
+  data was missing; the recorder keeps it until the data arrives. Startup waits
+  for every file, so in step 2 the data is never missing once the reader can
+  type, and what is recorded is unchanged.
+- **2026-10-01 (Task 6)** Closing the controls no longer cancels a search
+  waiting to be recorded. The controls close only when a link or a story stop
+  replaces the search, which `replaced` handles the same way.
+- **2026-10-01 (fix wave 1)** `DictionaryFiles` is declared in `src/search.ts`
+  beside the file types and `buildDictionary`, and re-exported from
+  `src/search/data.ts` beside `DICTIONARY_FILES`: `data.ts` imports
+  `search.ts`, so declaring it in `data.ts` would make the two import each
+  other.
+- **2026-10-01 (fix wave 1)** `memo.test.ts` moves with `memo.ts`, to
+  `src/__tests__/unit/utils/` beside the other utils' tests.
+- **2026-10-01 (fix wave 1)** The meanings-search test helper takes each
+  term's language from `termQuery` rather than always Hebrew; every term its
+  callers search is Hebrew, and the expected values are unchanged.
+- **2026-10-01 (fix wave 2)** `wordsOfVerse` keeps one entry per verse key in
+  a per-parse map, and works the verse out again when the text asked about is
+  not the one stored; it does not use `memoByValueAndKey`, whose one key cannot
+  hold both.
+- **2026-10-01 (fix wave 2)** `matchesForTerms` is exported from the search
+  overlay and the meanings-search test helper calls it, so the tests run the
+  shipped code.
+- **2026-10-01 (fix wave 2)** Startup prebuilds search once, before
+  `search_ready`; the idle `prebuildAll` takes only the other overlays.
+- **2026-10-01 (rebase onto #315)** Step 2 now sits on main after #315, which
+  dropped meanings mode's whole-word fallback, filed every printed spelling and
+  named a ketiv by its qere. #315's rules are kept as they are; what read
+  module state takes its value instead:
+  - `effectiveMode` and `meaningsPossible` take the dictionary, which may be
+    null: a phrase can be matched by meaning only when the dictionary has it,
+    so whether a term is in meanings mode is a dictionary question. Without the
+    dictionary, a single word is and a phrase is not, as #315 had it before the
+    lexeme files loaded.
+  - The recorder records a term by its query, so it needs the dictionary too. A
+    link or a story stop that replaces the search before search's data is in is
+    counted as sent once the data arrives, before anything the reader changed
+    since.
+  - `spellingFor`, `printedSpelling`, `excerpt` and `displayedVerse` take the
+    dictionary, the text index and the parse; `printedSpellings` is part of the
+    `Dictionary`. `searchForMeaning` takes the dictionary, for `spellingFor`.
+  - `excerpt` replaces `computeSnippetForMatch`: a result row is quoted by the
+    popup's matcher, with the words of the row's own verse from `wordsOfVerse`.
+    `wordMatches` loses #315's `verseKey` argument, because the words it is
+    handed name their verse.
+  - `verse-morphology.json` no longer lists misaligned verses; it lines them up
+    by letter in `realigned`. So the parse is the file as it is: `Parse` is its
+    type, and `buildParse` and `parseOf` are gone. `VerseWords` holds the
+    verse's clickable words and the dictionary words of each, which may be two
+    (a ketiv read as two words).
+  - #315 quoted the results list again when the parse arrived. Startup loads
+    the parse with every other file, so search never draws without it, and
+    `requoteResults` is dropped.

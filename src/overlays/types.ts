@@ -41,15 +41,23 @@ type DataPart<D> = unknown extends D
 
 // An overlay that reads files names each by its own short name, as a path under
 // public/data/. The app loads every path once and hands the overlay D: each
-// file's contents under its name. Whatever the overlay derives from them it
-// keeps per data value, so it goes with the data.
+// file's contents under its name. A file the overlay can work without is typed
+// `T | null` in D and named with optional(). Whatever the overlay derives from
+// its files it keeps per value of the file it is derived from.
 interface OverlayWithData<D> {
-  data: { readonly [K in keyof D]: string };
+  data: FileNames<D>;
   // Work out ahead of first use what the overlay derives from its data. The
   // app calls it when the browser is idle; a member called first works out the
   // same thing on demand, so this changes when the work happens, never the result.
   prebuild?(data: D): void;
 }
+
+/** A file its reader can work without: handed over as null until it is in, and never waited for. */
+export interface OptionalFile {
+  readonly optional: string;
+}
+
+type FileNames<D> = { readonly [K in keyof D]: null extends D[K] ? OptionalFile : string };
 
 // The app hands an overlay that names no files undefined wherever it hands data.
 interface OverlayWithoutData {
@@ -125,7 +133,14 @@ interface OverlayMembers<T, S, D> {
 
   renderSidebarInfo?(verse: T, isPinned: boolean, settings: S, data: D): HTMLElement | null;
 
-  highlightVerseText?(text: string, language: TextLanguage, settings: S, data: D): DocumentFragment;
+  // Marks words by their place in the verse, so it is handed the verse as well as its text.
+  highlightVerseText?(
+    verse: T,
+    text: string,
+    language: TextLanguage,
+    settings: S,
+    data: D,
+  ): DocumentFragment;
 
   // The Sefaria `?with=` value this overlay wants a verse's link to open to
   // (e.g. a chosen commentary category). Absent overlays get `with=all`.

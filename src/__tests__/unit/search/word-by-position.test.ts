@@ -9,17 +9,19 @@
 // The verses BHSA and Sefaria divide differently are the danger: a position
 // there names the word next door, so they are lined up by letter instead.
 
-import { describe, it, expect, beforeAll } from 'vitest';
-import { loadLexiconData } from '../../../search';
-import { meaningsInVerse, setVerseOnScreen, wordMatches } from '../../../search/dictionary';
+import { describe, it, expect } from 'vitest';
+import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
 import { verseWords } from '../../../verseWords';
+import { realSearchData } from '../../helpers/searchData';
+
+const { files, dictionary, parse } = realSearchData();
 
 // The spellings of עלה the search box offers, from the two terms in issue #153.
 const ASCEND = ['<LH[@heb'];
 const OFFERINGS = ['<LH/@heb', '<LH=/@heb', '<LH/@arc'];
 
-let texts: Record<string, Record<string, Record<string, { he: string }>>>;
+const texts = files.texts;
 
 const hebrewOf = (verseKey: string): string => {
   const [book, chapter, verse] = verseKey.split(':');
@@ -35,9 +37,9 @@ const hebrewOf = (verseKey: string): string => {
  */
 const markedWords = (verseKey: string, keys: string[]): string[] => {
   const hebrew = hebrewOf(verseKey);
-  setVerseOnScreen(verseKey, hebrew);
+  const words = wordsOfVerse(parse, verseKey, hebrew);
   return splitIntoWords(stripNikkud(hebrew))
-    .filter(({ word, start }) => wordMatches(keys, word, hebrew, start))
+    .filter(({ word, start }) => wordMatches(dictionary, words, keys, word, hebrew, start))
     .map(({ word }) => word);
 };
 
@@ -51,12 +53,6 @@ const withBrackets = (hebrew: string, { start, end }: { start: number; end: numb
 /** Where a word sits among the verse's clickable words, which is what a click reports. */
 const wordIndexOf = (verseKey: string, word: string): number =>
   verseWords(hebrewOf(verseKey)).findIndex((w) => stripNikkud(w.word) === word);
-
-beforeAll(async () => {
-  texts = await (await fetch('/data/all-texts.json')).json();
-  await loadLexiconData();
-  await setVerseOnScreen('Genesis:1:1', hebrewOf('Genesis:1:1'));
-});
 
 describe('marking the words of a verse', () => {
   it('gives each עלה in Genesis 8:20 to the term that means it', () => {
@@ -77,13 +73,15 @@ describe('marking the words of a verse', () => {
 
   it('leaves a verse it has no parse for to the spelling', () => {
     const hebrew = hebrewOf('Genesis:8:20');
-    setVerseOnScreen('Nowhere:1:1', hebrew);
+    const words = wordsOfVerse(parse, 'Nowhere:1:1', hebrew);
 
     // The spelling alone cannot tell the two apart, so both words answer to
     // both terms. That is the behaviour this replaces, kept for where the
     // parse cannot speak.
     const offsets = splitIntoWords(stripNikkud(hebrew));
-    const ascend = offsets.filter(({ word, start }) => wordMatches(ASCEND, word, hebrew, start));
+    const ascend = offsets.filter(({ word, start }) =>
+      wordMatches(dictionary, words, ASCEND, word, hebrew, start),
+    );
     expect(ascend.map(({ word }) => word)).toEqual(['ויעל', 'עלת']);
   });
 
@@ -91,11 +89,13 @@ describe('marking the words of a verse', () => {
     // The overlay hands over a string; nothing says it is the verse whose
     // parse is loaded. Reading one verse's words off another verse's parse
     // labels every word with a stranger's dictionary entry.
-    setVerseOnScreen('Genesis:8:20', hebrewOf('Genesis:8:20'));
+    const words = wordsOfVerse(parse, 'Genesis:8:20', hebrewOf('Genesis:8:20'));
     const elsewhere = stripNikkud(hebrewOf('Genesis:3:7'));
 
     const marked = splitIntoWords(elsewhere)
-      .filter(({ word, start }) => wordMatches(OFFERINGS, word, elsewhere, start))
+      .filter(({ word, start }) =>
+        wordMatches(dictionary, words, OFFERINGS, word, elsewhere, start),
+      )
       .map(({ word }) => word);
 
     // עלה in Genesis 3:7 is a fig leaf, a third reading of the spelling, and
@@ -110,12 +110,23 @@ describe('naming the word that was clicked', () => {
     // Without a position both words answer "either", which is what
     // word-in-verse.test.ts pins. With one, each word answers for itself.
     const verse = 'Genesis:8:20';
-    setVerseOnScreen(verse, hebrewOf(verse));
 
-    const offering = meaningsInVerse('עלת', verse, wordIndexOf(verse, 'עלת'));
+    const offering = meaningsInVerse(
+      dictionary,
+      wordsOfVerse(parse, verse, hebrewOf(verse)),
+      'עלת',
+      verse,
+      wordIndexOf(verse, 'עלת'),
+    );
     expect(offering.map((m) => m.gloss)).toEqual(['burnt-offering']);
 
-    const ascend = meaningsInVerse('ויעל', verse, wordIndexOf(verse, 'ויעל'));
+    const ascend = meaningsInVerse(
+      dictionary,
+      wordsOfVerse(parse, verse, hebrewOf(verse)),
+      'ויעל',
+      verse,
+      wordIndexOf(verse, 'ויעל'),
+    );
     expect(ascend.map((m) => m.gloss)).toEqual(['ascend']);
   });
 
@@ -124,9 +135,14 @@ describe('naming the word that was clicked', () => {
     // interchanged where the text is corrected, and this verse has לֹא־טוֹב. The
     // verse cannot choose; the word's own position can.
     const verse = 'Genesis:2:18';
-    setVerseOnScreen(verse, hebrewOf(verse));
 
-    const meanings = meaningsInVerse('לו', verse, wordIndexOf(verse, 'לו'));
+    const meanings = meaningsInVerse(
+      dictionary,
+      wordsOfVerse(parse, verse, hebrewOf(verse)),
+      'לו',
+      verse,
+      wordIndexOf(verse, 'לו'),
+    );
     expect(meanings.map((m) => m.gloss)).toEqual(['to']);
   });
 
@@ -135,14 +151,25 @@ describe('naming the word that was clicked', () => {
     // separately gives "house" and "god", which is etymology rather than what
     // the verse says.
     const verse = 'Genesis:13:3';
-    setVerseOnScreen(verse, hebrewOf(verse));
 
-    expect(meaningsInVerse('בית', verse, wordIndexOf(verse, 'בית')).map((m) => m.gloss)).toEqual([
-      'Bethel',
-    ]);
-    expect(meaningsInVerse('אל', verse, wordIndexOf(verse, 'אל')).map((m) => m.gloss)).toEqual([
-      'Bethel',
-    ]);
+    expect(
+      meaningsInVerse(
+        dictionary,
+        wordsOfVerse(parse, verse, hebrewOf(verse)),
+        'בית',
+        verse,
+        wordIndexOf(verse, 'בית'),
+      ).map((m) => m.gloss),
+    ).toEqual(['Bethel']);
+    expect(
+      meaningsInVerse(
+        dictionary,
+        wordsOfVerse(parse, verse, hebrewOf(verse)),
+        'אל',
+        verse,
+        wordIndexOf(verse, 'אל'),
+      ).map((m) => m.gloss),
+    ).toEqual(['Bethel']);
   });
 
   it('names each word of a verse the two sources divide differently', () => {
@@ -151,10 +178,10 @@ describe('naming the word that was clicked', () => {
     // is one word behind: counting into it would answer אֲחִי, "brother", with
     // Asahel. Lined up by letter, each word is itself.
     const verse = 'II Samuel:23:24';
-    setVerseOnScreen(verse, hebrewOf(verse));
 
+    const words = wordsOfVerse(parse, verse, hebrewOf(verse));
     const at = (word: string) =>
-      meaningsInVerse(word, verse, wordIndexOf(verse, word)).map((m) => m.keys);
+      meaningsInVerse(dictionary, words, word, verse, wordIndexOf(verse, word)).map((m) => m.keys);
     expect(at('אחי')).toEqual([['>X/@heb']]);
     expect(at('עשהאל')).toEqual([['<FH>L/@heb']]);
   });
@@ -165,11 +192,16 @@ describe('naming the word that was clicked', () => {
     // Tetragrammaton is itself, and אֱלֹהִים, which BHS does not have here, falls
     // back to its spelling.
     const verse = 'II Samuel:7:22';
-    setVerseOnScreen(verse, hebrewOf(verse));
 
-    expect(meaningsInVerse('יהוה', verse, wordIndexOf(verse, 'יהוה')).map((m) => m.keys)).toEqual([
-      ['JHWH/@heb'],
-    ]);
+    expect(
+      meaningsInVerse(
+        dictionary,
+        wordsOfVerse(parse, verse, hebrewOf(verse)),
+        'יהוה',
+        verse,
+        wordIndexOf(verse, 'יהוה'),
+      ).map((m) => m.keys),
+    ).toEqual([['JHWH/@heb']]);
   });
 });
 
@@ -178,11 +210,16 @@ describe('a click on the written form of a corrected word', () => {
   /** The meanings a click on the word printed as `printed` offers. */
   const clicked = (verseKey: string, printed: string): string[][] => {
     const hebrew = hebrewOf(verseKey);
-    setVerseOnScreen(verseKey, hebrew);
     const words = verseWords(hebrew);
     const index = words.findIndex((w) => withBrackets(hebrew, w) === printed);
     expect(index, `${printed} in ${verseKey}`).toBeGreaterThanOrEqual(0);
-    return meaningsInVerse(stripNikkud(words[index].word), verseKey, index).map((m) => m.keys);
+    return meaningsInVerse(
+      dictionary,
+      wordsOfVerse(parse, verseKey, hebrew),
+      stripNikkud(words[index].word),
+      verseKey,
+      index,
+    ).map((m) => m.keys);
   };
 
   it('offers what a click on the reading beside it offers', () => {
@@ -216,8 +253,21 @@ describe('a click on the written form of a corrected word', () => {
   it('does not lend a reading to a word written but not read right after its pair', () => {
     const verseKey = 'Jeremiah:2:20';
     const hebrew = hebrewOf(verseKey).replace(/(\[[^\]]*\])/, '$1 (נא)');
-    setVerseOnScreen(verseKey, hebrew);
+    const words = wordsOfVerse(parse, verseKey, hebrew);
     const index = verseWords(hebrew).findIndex((w) => withBrackets(hebrew, w) === '(נא)');
-    expect(meaningsInVerse('נא', verseKey, index)).toEqual([]);
+    expect(meaningsInVerse(dictionary, words, 'נא', verseKey, index)).toEqual([]);
+  });
+});
+
+describe('the words of a verse', () => {
+  it('are not named without the parse', () => {
+    expect(wordsOfVerse(null, 'Genesis:8:20', hebrewOf('Genesis:8:20'))).toBeNull();
+  });
+
+  it('are the same object for the same parse and verse', () => {
+    const hebrew = hebrewOf('Genesis:8:20');
+    expect(wordsOfVerse(parse, 'Genesis:8:20', hebrew)).toBe(
+      wordsOfVerse(parse, 'Genesis:8:20', hebrew),
+    );
   });
 });

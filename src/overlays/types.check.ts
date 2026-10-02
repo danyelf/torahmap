@@ -1,5 +1,6 @@
 // Checked by `npm run typecheck`, never run: an overlay names its files exactly
 // when it takes data.
+import { optional } from '../dataFiles.ts';
 import type { Overlay } from './types.ts';
 
 const colour = { getVerseColor: () => null, colorsFor: () => [] };
@@ -28,5 +29,33 @@ export const takesNoDataNamesOne: Overlay<unknown, void, void> = {
   ...colour,
 };
 
+interface WithParse {
+  texts: string[];
+  parse: { words: string[] } | null;
+}
+
+export const namesAnOptionalFile: Overlay<unknown, void, WithParse> = {
+  id: 'e',
+  name: 'E',
+  data: { texts: 'a.json', parse: optional('b.json') },
+  ...colour,
+};
+
+export const waitsForAFileItCanDoWithout: Overlay<unknown, void, WithParse> = {
+  id: 'f',
+  name: 'F',
+  // @ts-expect-error A file the overlay takes as T | null is named with optional().
+  data: { texts: 'a.json', parse: 'b.json' },
+  ...colour,
+};
+
+export const doesWithoutAFileItNeeds: Overlay<unknown, void, WithParse> = {
+  id: 'g',
+  name: 'G',
+  // @ts-expect-error A file the overlay cannot do without is named by its path.
+  data: { texts: optional('a.json'), parse: optional('b.json') },
+  ...colour,
+};
+
 // Any overlay, with or without data, is an Overlay.
-export const anyOverlay: Overlay[] = [takesDataNamesThem, takesNoData];
+export const anyOverlay: Overlay[] = [takesDataNamesThem, takesNoData, namesAnOptionalFile];

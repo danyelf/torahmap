@@ -7,7 +7,13 @@
 // shifts and the choice lands silently on a different word.
 
 import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
-import { resultsForVerseSets, versesForTerm, type SearchResult } from '../search.ts';
+import {
+  resultsForVerseSets,
+  versesForTerm,
+  type Dictionary,
+  type SearchResult,
+  type TextIndex,
+} from '../search.ts';
 import { isHebrew, splitIntoWords } from '../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
 import { SEARCH_COLORS } from '../utils/color.ts';
@@ -31,14 +37,6 @@ export interface SearchTerm {
   id: string;
   /** What the reader typed. */
   text: string;
-  /** The dictionary words this text could be, likeliest reading first. */
-  meanings: Meaning[];
-  /**
-   * Which meanings are checked, held as the first key of each chosen row.
-   * Always explicit, so "all of them" is a full set rather than an empty one
-   * that would read as "none".
-   */
-  selected: Set<string>;
   /** Position in SEARCH_COLORS, held for the term's life. */
   colorIndex: number;
   /**
@@ -49,6 +47,15 @@ export interface SearchTerm {
    * language's default rather than keep the one it was created with.
    */
   mode: SearchMode | null;
+  /**
+   * The meanings chosen, as dictionary keys; null when every meaning is.
+   *
+   * Kept as the reader or the link gave them and never looked up, so a term
+   * made before the dictionary is in loses nothing. A row counts as chosen when
+   * it shares a key with this list (sameMeaning); a list naming no row the term
+   * has counts every row as chosen.
+   */
+  chosen: string[] | null;
 }
 
 /**
@@ -58,11 +65,6 @@ export interface SearchTerm {
 export const MAX_TERMS = SEARCH_COLORS.length;
 
 let nextId = 0;
-
-function resolve(text: string): { meanings: Meaning[]; selected: Set<string> } {
-  const meanings = meaningsFor(text.trim());
-  return { meanings, selected: new Set(meanings.map((m) => m.keys[0])) };
-}
 
 /** The lowest colour no current term is using. */
 function freeColor(terms: SearchTerm[]): number {
@@ -77,7 +79,7 @@ export function addTerm(terms: SearchTerm[], text: string): SearchTerm[] {
   if (terms.length >= MAX_TERMS) return terms;
   return [
     ...terms,
-    { id: `t${nextId++}`, text, ...resolve(text), colorIndex: freeColor(terms), mode: null },
+    { id: `t${nextId++}`, text, colorIndex: freeColor(terms), mode: null, chosen: null },
   ];
 }
 
@@ -86,8 +88,8 @@ export function removeTerm(terms: SearchTerm[], id: string): SearchTerm[] {
 }
 
 /**
- * Change a term's text, which re-resolves its meanings and checks all of them
- * again. Other terms are untouched — that is the whole point of the identity.
+ * Change a term's text, which chooses every meaning of the new text. Other
+ * terms are untouched — that is the whole point of the identity.
  *
  * A separator means "another word", as it does to `parseSearchTerms`, which
  * keeps the invariant the URL depends on: no term's text holds a character
@@ -96,7 +98,7 @@ export function removeTerm(terms: SearchTerm[], id: string): SearchTerm[] {
 export function setTermText(terms: SearchTerm[], id: string, text: string): SearchTerm[] {
   // `text` is kept exactly as the box holds it, trailing space and all, so the
   // input element and the term never disagree about what is written. Trimming
-  // happens where it matters: resolving meanings, and building the query.
+  // happens where it matters: looking up meanings, and building the query.
   const parts = TERM_SEPARATORS.test(text)
     ? text
         .split(TERM_SEPARATORS)
@@ -109,7 +111,7 @@ export function setTermText(terms: SearchTerm[], id: string, text: string): Sear
   if (index === -1) return terms;
 
   // The first part stays this term, so its id and colour survive the edit.
-  const edited = { ...terms[index], text: replacement[0], ...resolve(replacement[0]) };
+  const edited = { ...terms[index], text: replacement[0], chosen: null };
   let out = [...terms.slice(0, index), edited, ...terms.slice(index + 1)];
 
   // Any further parts become terms of their own, until the colours run out.
@@ -121,24 +123,50 @@ export function setTermText(terms: SearchTerm[], id: string, text: string): Sear
   return out;
 }
 
+/** The dictionary words this term's text could be, likeliest reading first. */
+export function meaningsOf(dictionary: Dictionary, term: SearchTerm): Meaning[] {
+  return meaningsFor(dictionary, term.text.trim());
+}
+
+/** Which of `rows`, the term's own meanings, count as chosen. */
+export function chosenAmong(rows: Meaning[], term: SearchTerm): Meaning[] {
+  const { chosen } = term;
+  if (chosen === null) return rows;
+  const named = rows.filter((m) => sameMeaning(m, chosen));
+  return named.length > 0 ? named : rows;
+}
+
+/** The term's meanings that count as chosen. */
+export function chosenMeanings(dictionary: Dictionary, term: SearchTerm): Meaning[] {
+  return chosenAmong(meaningsOf(dictionary, term), term);
+}
+
 /**
- * Check or uncheck one meaning of one term.
+ * Check or uncheck one meaning of one term, named by any of its keys.
  *
  * Unchecking the last checked meaning does nothing. A term matching nothing by
  * construction is a dead state with no reading, so the last checkbox holds.
+ * Checking every meaning again leaves nothing narrowed.
  */
-export function toggleMeaning(terms: SearchTerm[], id: string, key: string): SearchTerm[] {
+export function toggleMeaning(
+  dictionary: Dictionary,
+  terms: SearchTerm[],
+  id: string,
+  keys: readonly string[],
+): SearchTerm[] {
   return terms.map((t) => {
     if (t.id !== id) return t;
 
-    const selected = new Set(t.selected);
-    if (selected.has(key)) {
-      if (selected.size === 1) return t;
-      selected.delete(key);
-    } else {
-      selected.add(key);
-    }
-    return { ...t, selected };
+    const rows = meaningsOf(dictionary, t);
+    const row = rows.find((m) => sameMeaning(m, keys));
+    if (!row) return t;
+
+    const current = chosenAmong(rows, t);
+    const checked = current.includes(row);
+    if (checked && current.length === 1) return t;
+
+    const next = rows.filter((m) => (m === row ? !checked : current.includes(m)));
+    return { ...t, chosen: next.length === rows.length ? null : next.flatMap((m) => m.keys) };
   });
 }
 
@@ -148,8 +176,8 @@ export function toggleMeaning(terms: SearchTerm[], id: string, key: string): Sea
  * A merged row can cover more than one lexeme (see `rowsFor`), so this expands
  * each chosen row to all of them.
  */
-export function selectedKeys(term: SearchTerm): string[] {
-  return term.meanings.filter((m) => term.selected.has(m.keys[0])).flatMap((m) => m.keys);
+export function selectedKeys(dictionary: Dictionary, term: SearchTerm): string[] {
+  return chosenMeanings(dictionary, term).flatMap((m) => m.keys);
 }
 
 /**
@@ -164,82 +192,59 @@ export function selectedKeys(term: SearchTerm): string[] {
  * and `m` are written and read as one snapshot. It is editing that needs
  * identity.
  *
- * The keys go in as they are. `m` is declared a `names` parameter rather than
- * free text, which is what keeps the URL layer from stripping them: ETCBC
- * writes ayin as `<` and aleph as `>`, so two keys side by side read as an
- * HTML tag.
+ * The keys go in as `chosen` holds them, so writing a link needs no dictionary.
+ * `m` is declared a `names` parameter rather than free text, which is what
+ * keeps the URL layer from stripping them: ETCBC writes ayin as `<` and aleph
+ * as `>`, so two keys side by side read as an HTML tag.
  */
 export function encodeMeanings(terms: SearchTerm[]): string {
-  const narrowed = terms.map((t) =>
-    t.selected.size === t.meanings.length ? '' : selectedKeys(t).join('|'),
-  );
+  const narrowed = terms.map((t) => t.chosen?.join('|') ?? '');
   return narrowed.some((entry) => entry !== '') ? narrowed.join(',') : '';
 }
 
 /**
- * Apply an `m` parameter to a freshly built term list.
- *
- * A row counts as chosen when the parameter names one of its lexemes
- * (`sameMeaning`). A term the parameter leaves with nothing selected keeps all
- * of its meanings rather than matching nothing.
+ * Apply an `m` parameter to a freshly built term list: each entry becomes that
+ * term's `chosen`, as written. An empty entry leaves the term on every meaning.
  */
 export function applyMeanings(terms: SearchTerm[], encoded: string): SearchTerm[] {
   if (!encoded) return terms;
 
   const perTerm = encoded.split(',');
-  return terms.map((term, i) => {
-    const entry = perTerm[i];
-    if (!entry) return term;
-
-    const named = entry.split('|');
-    const selected = new Set(
-      term.meanings.filter((m) => sameMeaning(m, named)).map((m) => m.keys[0]),
-    );
-
-    return selected.size === 0 ? term : { ...term, selected };
-  });
+  return terms.map((term, i) => (perTerm[i] ? { ...term, chosen: perTerm[i].split('|') } : term));
 }
 
 /**
- * Narrow a term to a single meaning, named by any of the lexemes it stands for.
+ * Narrow a term to a single meaning, named by every lexeme its row stands for.
  *
  * Unchecking the others one at a time is fine for the 91% of ambiguous forms
  * that offer two or three, and tedious for the rest — אלה offers ten.
  *
- * The keys can come from a row this term does not hold. A reader choosing from
+ * The keys can come from a row this term does not hold: a reader choosing from
  * the word panel picks a row the verse built, and the verse's list can head a
- * reading with a different lexeme than the term's own list does. So the row is
- * found by any shared lexeme, and what goes into `selected` is that row's own
- * first key rather than whichever key was handed in: `selectedKeys`, the
- * checkboxes and the URL all read `selected` as first keys of this term's rows,
- * and a key belonging to some other list would be silently absent from all of
- * them.
+ * reading with another lexeme, or hold fewer of a merged row's lexemes, than
+ * the term's own list. They are kept as given; wherever the choice is read,
+ * sameMeaning finds the term's row by any lexeme the two share.
  */
 export function onlyMeaning(
   terms: SearchTerm[],
   id: string,
   keys: readonly string[],
 ): SearchTerm[] {
-  return terms.map((t) => {
-    if (t.id !== id) return t;
-    const row = t.meanings.find((m) => sameMeaning(m, keys));
-    return row ? { ...t, selected: new Set([row.keys[0]]) } : t;
-  });
+  return terms.map((t) => (t.id === id ? { ...t, chosen: [...keys] } : t));
 }
 
 /** Put every meaning back, undoing a narrowing. */
 export function allMeanings(terms: SearchTerm[], id: string): SearchTerm[] {
-  return terms.map((t) =>
-    t.id === id ? { ...t, selected: new Set(t.meanings.map((m) => m.keys[0])) } : t,
-  );
+  return terms.map((t) => (t.id === id ? { ...t, chosen: null } : t));
 }
 
 /**
  * Has the reader narrowed this term? False for a word with one meaning, where
  * the single meaning is already all of them and there is nothing to restore.
  */
-export function isNarrowed(term: SearchTerm): boolean {
-  return term.meanings.length > 1 && term.selected.size < term.meanings.length;
+export function isNarrowed(dictionary: Dictionary, term: SearchTerm): boolean {
+  const rows = meaningsOf(dictionary, term);
+  return rows.length > 1 && chosenAmong(rows, term).length < rows.length;
 }
 
 /**
@@ -272,20 +277,21 @@ export function termIsHebrew(term: SearchTerm): boolean {
  * in the field: a term briefly retyped as English, or as a phrase, is back on
  * meanings the moment it is a Hebrew word again.
  */
-export function effectiveMode(term: SearchTerm): SearchMode {
+export function effectiveMode(dictionary: Dictionary | null, term: SearchTerm): SearchMode {
   const chosen = term.mode ?? (termIsHebrew(term) ? 'meanings' : 'substring');
-  return chosen === 'meanings' && !meaningsPossible(term) ? 'word' : chosen;
+  return chosen === 'meanings' && !meaningsPossible(dictionary, term) ? 'word' : chosen;
 }
 
 /**
  * Can this term be matched by meaning? Not in English, and not a Hebrew phrase
  * the dictionary does not have: it has בית אל, a name, but not וידבר יהוה. A
  * single word stays possible while it is being typed, though most of its
- * prefixes are no word at all.
+ * prefixes are no word at all. Without the dictionary, no phrase is.
  */
-export function meaningsPossible(term: SearchTerm): boolean {
+export function meaningsPossible(dictionary: Dictionary | null, term: SearchTerm): boolean {
   if (!termIsHebrew(term)) return false;
-  return term.meanings.length > 0 || splitIntoWords(term.text).length < 2;
+  if (splitIntoWords(term.text).length < 2) return true;
+  return dictionary !== null && meaningsOf(dictionary, term).length > 0;
 }
 
 /** The modes this term's own text can be matched by, in the order shown. */
@@ -303,25 +309,36 @@ export type TermQuery = { text: string; language: TextLanguage } & (
   | { mode: MatchMode }
 );
 
-export function termQuery(term: SearchTerm): TermQuery {
+export function termQuery(dictionary: Dictionary, term: SearchTerm): TermQuery {
   const text = term.text.trim();
   const language = termIsHebrew(term) ? HEBREW : ENGLISH;
-  const mode = effectiveMode(term);
+  const mode = effectiveMode(dictionary, term);
   return mode === 'meanings'
-    ? { text, language, mode, meaningKeys: selectedKeys(term) }
+    ? { text, language, mode, meaningKeys: selectedKeys(dictionary, term) }
     : { text, language, mode };
 }
 
 /** The verses a query finds. A word the dictionary does not know finds none in meanings mode. */
-export function versesForQuery(query: TermQuery): Set<string> {
+export function versesForQuery(
+  index: TextIndex,
+  dictionary: Dictionary,
+  query: TermQuery,
+): Set<string> {
   return query.mode === 'meanings'
-    ? versesFor(query.meaningKeys)
-    : versesForTerm(query.text, query.language, query.mode);
+    ? versesFor(dictionary, query.meaningKeys)
+    : versesForTerm(index, query.text, query.language, query.mode);
 }
 
 /** The verses these terms find, each naming the terms that found it. */
-export function resultsForTerms(terms: SearchTerm[]): SearchResult[] {
-  return resultsForVerseSets(terms.map((term) => versesForQuery(termQuery(term))));
+export function resultsForTerms(
+  index: TextIndex,
+  dictionary: Dictionary,
+  terms: SearchTerm[],
+): SearchResult[] {
+  return resultsForVerseSets(
+    index,
+    terms.map((term) => versesForQuery(index, dictionary, termQuery(dictionary, term))),
+  );
 }
 
 /**
