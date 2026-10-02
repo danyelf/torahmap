@@ -117,6 +117,15 @@ export function renderResults(container: HTMLDivElement, view: ResultsView): voi
   container.classList.add('visible');
 }
 
+/** Quote the rows already drawn again with `snippet`, in place and without scrolling. */
+export function requoteResults(container: HTMLDivElement, snippet: ResultsView['snippet']): void {
+  if (!shown) return;
+  const view = (shown = { ...shown, snippet });
+  container.querySelectorAll('.search-result').forEach((row, i) => {
+    row.replaceWith(createResultElement(view.results[i], view));
+  });
+}
+
 /** Stop listening for scrolls, for a container about to be thrown away. */
 export function detachResults(container: HTMLDivElement | null): void {
   if (scrollHandler && container) {

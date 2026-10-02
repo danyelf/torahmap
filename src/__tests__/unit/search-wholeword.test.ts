@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
+import { inTextsOrder } from '../helpers/searchData';
 
 describe('Whole Word Search', () => {
   let mockVerseTexts: VerseTexts;
@@ -46,7 +47,7 @@ describe('Whole Word Search', () => {
       },
     };
 
-    index = buildTextIndex(mockVerseTexts);
+    index = buildTextIndex(mockVerseTexts, inTextsOrder(mockVerseTexts));
   });
 
   const english = (text: string, mode: 'substring' | 'word') =>
@@ -73,7 +74,8 @@ describe('Whole Word Search', () => {
     });
 
     it('whole word is bounded by punctuation', () => {
-      index = buildTextIndex({ Genesis: { '1': { '1': { he: 'א', en: 'said God, let' } } } });
+      const texts = { Genesis: { '1': { '1': { he: 'א', en: 'said God, let' } } } };
+      index = buildTextIndex(texts, inTextsOrder(texts));
       expect(english('god', 'word')).toEqual(['Genesis:1:1']);
     });
 

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CHROME, STATES } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
-import { boxes, DRAWN_FLOOR, drawnPixels, mapReady, openMap } from './page.ts';
+import { boxes, DRAWN_FLOOR, drawnPixels, allLoaded, openMap } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
   // No draw call runs; the clear still does.
@@ -12,7 +12,7 @@ test('the render check sees a map that drew nothing', async ({ page }) => {
     }
   });
   await page.goto('/?overlay=commentary');
-  await mapReady(page);
+  await allLoaded(page);
   expect(await drawnPixels(page)).toBeLessThan(DRAWN_FLOOR);
 });
 

@@ -10,7 +10,7 @@ import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
 import { searchTool } from '../overlays/search/index.ts';
-import { toolsShown } from '../tools.ts';
+import { toolsPicked, toolsShown } from '../tools.ts';
 import type { Loaded } from '../dataFiles.ts';
 
 // Memoised per verses array and loaded files by the stop's overlay, its search and their
@@ -42,13 +42,22 @@ function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
   return `${overlayKey}#${searchKey}`;
 }
 
+function overlayOf(stop: StoryStop): Overlay | null {
+  return (stop.overlay && getOverlay(stop.overlay)) || null;
+}
+
+/** The tools a stop picks. */
+export function stopTools(stop: StoryStop): Overlay[] {
+  return toolsPicked(overlayOf(stop), settingsFromLink(searchTool, stop.searchParams ?? {}));
+}
+
 export function pictureForStop(
   stop: ResolvedStoryStop,
   verses: TanakhLayout[],
   hovered: TanakhLayout | null,
   loaded: Loaded,
 ): Picture {
-  const overlay = (stop.overlay && getOverlay(stop.overlay)) || null;
+  const overlay = overlayOf(stop);
   const byHover = !!(overlay?.hoverChangesColors && hovered);
 
   let byLoaded = picturesCache.get(verses);

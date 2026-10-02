@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   dataFor,
+  downloadFiles,
   filesFor,
   loadFiles,
   loadNamedFiles,
   optional,
+  optionalFiles,
   overlayFiles,
+  requiredFiles,
 } from '../../dataFiles';
 import { reportError } from '../../analytics';
 import { mockFetch, mockFetchStatus } from '../helpers/mocks';
@@ -26,22 +29,6 @@ describe('loadFiles', () => {
     const loaded = await loadFiles(['shared.json', 'shared.json']);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(loaded.get('shared.json')).toEqual({ a: 1 });
-  });
-
-  it('calls back once for each path as it arrives, not for a failed one, before resolving', async () => {
-    mockFetch({
-      '/data/a.json': { a: 1 },
-      '/data/b.json': { b: 1 },
-      '/data/bad.json': mockFetchStatus(404),
-    });
-    const arrived: string[] = [];
-    let resolved = false;
-    const done = loadFiles(['a.json', 'b.json', 'bad.json', 'a.json'], (path) => {
-      expect(resolved).toBe(false);
-      arrived.push(path);
-    }).then(() => (resolved = true));
-    await done;
-    expect(arrived.sort()).toEqual(['a.json', 'b.json']);
   });
 
   it('leaves a failed download missing, reports it once with its path, and keeps the others', async () => {
@@ -72,6 +59,57 @@ describe('loadFiles', () => {
       'loadFiles',
       garbled,
       expect.stringContaining('y.json'),
+    );
+  });
+});
+
+describe('downloadFiles', () => {
+  it('hands each path over as it lands or as it fails, once, before resolving', async () => {
+    mockFetch({ '/data/a.json': { a: 1 }, '/data/bad.json': mockFetchStatus(404) });
+    const landed: [string, unknown][] = [];
+    const failed: string[] = [];
+    let resolved = false;
+    await downloadFiles(['a.json', 'bad.json', 'a.json'], {
+      landed: (path, content) => {
+        expect(resolved).toBe(false);
+        landed.push([path, content]);
+      },
+      failed: (path) => {
+        expect(resolved).toBe(false);
+        failed.push(path);
+      },
+    }).then(() => (resolved = true));
+    expect(landed).toEqual([['a.json', { a: 1 }]]);
+    expect(failed).toEqual(['bad.json']);
+  });
+
+  it('reports a throw while handling one file, with its path, and hands over the rest', async () => {
+    mockFetch({
+      '/data/a.json': 1,
+      '/data/b.json': 2,
+      '/data/bad.json': mockFetchStatus(404),
+    });
+    const broken = new Error('redraw');
+    const landed: string[] = [];
+    await downloadFiles(['a.json', 'b.json', 'bad.json'], {
+      landed: (path) => {
+        if (path === 'a.json') throw broken;
+        landed.push(path);
+      },
+      failed: () => {
+        throw broken;
+      },
+    });
+    expect(landed).toEqual(['b.json']);
+    expect(reportError).toHaveBeenCalledWith(
+      'fileLanded',
+      broken,
+      expect.stringContaining('a.json'),
+    );
+    expect(reportError).toHaveBeenCalledWith(
+      'fileLanded',
+      broken,
+      expect.stringContaining('bad.json'),
     );
   });
 });
@@ -137,10 +175,16 @@ describe('dataFor', () => {
     expect(dataFor(other, loaded)).toEqual({ counts: { n: 1 } });
   });
 
-  it('gives the same object for the same loaded value, and a new one for a new value', () => {
-    const loaded = new Map([['all-texts.json', texts]]);
-    expect(dataFor(reader, loaded)).toBe(dataFor(reader, loaded));
-    expect(dataFor(reader, new Map(loaded))).not.toBe(dataFor(reader, loaded));
+  it('gives the same object while none of its own files changes, whatever else lands', () => {
+    const loaded = new Map<string, unknown>([['all-texts.json', texts]]);
+    const later = new Map(loaded).set('counts.json', { n: 1 });
+    expect(dataFor(reader, later)).toBe(dataFor(reader, loaded));
+  });
+
+  it('gives a new object once one of its own files changes', () => {
+    const loaded = new Map<string, unknown>([['all-texts.json', texts]]);
+    const other = new Map<string, unknown>([['all-texts.json', { ...texts }]]);
+    expect(dataFor(reader, other)).not.toBe(dataFor(reader, loaded));
   });
 
   it('hands an overlay that names no files undefined, never null', () => {
@@ -173,6 +217,17 @@ describe('an optional file', () => {
 
   it('does not stand in for a file that is not optional', () => {
     expect(dataFor(reader, new Map([['parse.json', parse]]))).toBeNull();
+  });
+
+  it('gives a new object once it lands', () => {
+    const without = new Map<string, unknown>([['all-texts.json', texts]]);
+    const withIt = new Map(without).set('parse.json', parse);
+    expect(dataFor(reader, withIt)).not.toBe(dataFor(reader, without));
+  });
+
+  it('is named apart from the files the overlay requires', () => {
+    expect(requiredFiles(reader)).toEqual(['all-texts.json']);
+    expect(optionalFiles(reader)).toEqual(['parse.json']);
   });
 
   it('is downloaded with the rest', () => {

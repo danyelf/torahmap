@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
 import { buildTextIndex, type SearchResult, type TextIndex } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
-import { realSearchData } from '../helpers/searchData';
+import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import type { VerseTexts } from '../../verseTexts';
 
 const { dictionary } = realSearchData();
@@ -46,7 +46,7 @@ describe("a result's excerpt", () => {
       },
     };
 
-    index = buildTextIndex(mockVerseTexts);
+    index = buildTextIndex(mockVerseTexts, inTextsOrder(mockVerseTexts));
   });
 
   const genesis11: SearchResult = {

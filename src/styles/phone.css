@@ -168,6 +168,20 @@
     max-height: 200px;
   }
 
+  /* In the Hebrew's place and set as the Hebrew is, above the empty English. */
+  #verse-popup .verse-notice {
+    padding: 14px;
+    font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
+    font-size: 18px;
+    line-height: 1.6;
+    text-align: right;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  #verse-popup:has(.verse-notice:not(:empty)) .verse-english {
+    display: block;
+  }
+
   /* A full-height sheet covers the map the popup belongs to, and the menu,
      dropping from the top, reaches down over it; it is back when either goes. */
   body[data-full] #verse-popup,

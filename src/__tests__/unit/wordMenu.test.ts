@@ -11,7 +11,7 @@
 // decided not to build.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { openWordMenu, closeWordMenu, type WordMenuOptions } from '../../wordMenu';
+import { openWordMenu, closeWordMenu, wordMenuOpen, type WordMenuOptions } from '../../wordMenu';
 import type { Meaning } from '../../search/dictionary.ts';
 import { MAX_TERMS } from '../../search/terms.ts';
 
@@ -307,5 +307,15 @@ describe('placement', () => {
       expect(top).toBeGreaterThanOrEqual(0);
       expect(bottom).toBeLessThanOrEqual(600);
     }
+  });
+});
+
+describe('whether a menu is open', () => {
+  it('says so from opening until it is dismissed', () => {
+    expect(wordMenuOpen()).toBe(false);
+    open();
+    expect(wordMenuOpen()).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(wordMenuOpen()).toBe(false);
   });
 });

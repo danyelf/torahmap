@@ -1,6 +1,7 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { pictureForStop, computeBlendedColors } from '../overlayBlender';
+import { pictureForStop, computeBlendedColors, stopTools } from '../overlayBlender';
+import { searchTool } from '../../overlays/search/index';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';
@@ -452,5 +453,28 @@ describe('a stop that searches', () => {
       pictureForStop(stopWith({ id: 'bare' }), verses, null, new Map()),
     );
     expect(pictureForStop(stop, verses, null, SAMPLE_LOADED).colors[0]).toEqual(SEARCH_COLORS[0]);
+  });
+});
+
+describe('stopTools', () => {
+  const stop = (fields: Partial<ResolvedStoryStop>): ResolvedStoryStop => ({
+    id: 's',
+    title: 'S',
+    text: '',
+    camera: { x: 0, y: 0, zoom: 1 },
+    overlay: null,
+    ...fields,
+  });
+
+  it("names the stop's overlay, and search when the stop searches", () => {
+    registerOverlay(commentaryOverlay);
+    expect(stopTools(stop({ overlay: 'commentary', searchParams: { search: 'אור' } }))).toEqual([
+      commentaryOverlay,
+      searchTool,
+    ]);
+  });
+
+  it('names nothing for a stop with no overlay and no word to search', () => {
+    expect(stopTools(stop({ searchParams: { search: 'א' } }))).toEqual([]);
   });
 });

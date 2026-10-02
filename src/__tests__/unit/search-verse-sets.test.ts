@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildTextIndex, resultsForVerseSets } from '../../search.ts';
 import type { VerseTexts } from '../../verseTexts.ts';
+import { inTextsOrder } from '../helpers/searchData';
 
 const texts: VerseTexts = {
   Genesis: {
@@ -15,7 +16,7 @@ const texts: VerseTexts = {
   },
 };
 
-const index = buildTextIndex(texts);
+const index = buildTextIndex(texts, inTextsOrder(texts));
 
 describe('resultsForVerseSets', () => {
   it("turns one term's verse set into results for those verses", () => {

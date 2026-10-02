@@ -91,6 +91,18 @@ the failures accepted for now, what each measures and why. It ends by writing
 It takes about 20 seconds on four workers, too long for the pre-commit hook.
 Run it before opening any pull request that changes the interface.
 
+### Loading tests
+
+The map draws before its data and fills in as each file lands, which is tested
+in a real browser at one desktop and one phone size:
+
+```bash
+npm run test:loading
+```
+
+It starts its own dev server on port 5198 (`LOADING_PORT` to change it). Run it
+before opening any pull request that changes startup or what loads when.
+
 ### Test Harness
 
 A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow on its own, without the map. Source lives in `test-harness/`.

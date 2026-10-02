@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
-import { realSearchData } from '../helpers/searchData';
+import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
 describe('Search Performance', () => {
@@ -18,7 +18,8 @@ describe('Search Performance', () => {
   // Use beforeAll — building a 23k-verse index once is enough,
   // and avoids re-indexing overhead contaminating each test's timing.
   beforeAll(() => {
-    index = buildTextIndex(buildLargeVerseTexts(23000));
+    const texts = buildLargeVerseTexts(23000);
+    index = buildTextIndex(texts, inTextsOrder(texts));
 
     // Warmup: JIT-compile the search path before measuring
     versesForTerm(index, 'אלהים', 'he', 'substring');

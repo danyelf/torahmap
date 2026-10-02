@@ -1,5 +1,13 @@
 import { devices, type PlaywrightTestProject } from '@playwright/test';
 
+/** Headless Chromium has no WebGL2 without software rendering. */
+export const LAUNCH_ARGS = [
+  '--use-gl=angle',
+  '--use-angle=swiftshader',
+  '--enable-unsafe-swiftshader',
+  '--ignore-gpu-blocklist',
+];
+
 // src/styles/phone.css decides which width is a phone; the tablet here gets
 // the desktop layout.
 export const SCREENS: { name: string; use: PlaywrightTestProject['use'] }[] = [

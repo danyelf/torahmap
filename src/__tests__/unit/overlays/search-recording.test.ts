@@ -167,6 +167,17 @@ describe('createSearchRecorder', () => {
     expect(sent).toEqual([['names', 1]]);
   });
 
+  it('builds no dictionary while no word is typed', () => {
+    const unbuildable = { ...data, lexicon: {} as typeof data.lexicon };
+    const empty = { terms: addTerm([], '') };
+    expect(() => {
+      recorder.replaced(empty, unbuildable);
+      recorder.dataChanged(unbuildable);
+      recorder.readerChanged(empty, unbuildable);
+      vi.advanceTimersByTime(DELAY);
+    }).not.toThrow();
+  });
+
   it("counts a link's terms as sent when the reader adds one before the data arrives", () => {
     const link = search('heavens');
     recorder.replaced(link, null);

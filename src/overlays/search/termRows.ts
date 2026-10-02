@@ -37,7 +37,10 @@ export interface TermRowsHost {
   openId(): string | null;
   /** Verses this term accounts for on its own, or null when it is not being searched. */
   hitCount(term: SearchTerm): number | null;
-  /** The dictionary the rows' meanings come from, or null while search's data is missing. */
+  /**
+   * The dictionary the rows' meanings come from, or null while search's data
+   * is missing or no word is typed.
+   */
   dictionary(): Dictionary | null;
   /** Ask for a change to the term list, worked out from the list as it is when applied. */
   edit(change: (terms: SearchTerm[]) => SearchTerm[]): void;

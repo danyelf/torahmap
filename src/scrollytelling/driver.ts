@@ -80,6 +80,21 @@ export function rejoin(
 }
 
 /**
+ * The driver once a file lands and the map is redrawn `how`
+ * (staleAfterLanding). An ease is aimed at `picture`, the story's picture with
+ * the data, keeping its camera and clock: restarting them would stall the
+ * camera mid-motion. Any other redraw leaves the driver as it is.
+ */
+export function driverAfterLanding<D extends Driver>(
+  driver: D,
+  how: ColorSource,
+  picture: () => Picture,
+): D {
+  if (how !== 'ease' || driver.by !== 'rejoining') return driver;
+  return { ...driver, toPicture: picture() };
+}
+
+/**
  * A scroll while the reader drives only counts towards handing the map back,
  * and returns 'rejoin' once it has. Counts distance, not events: a trackpad
  * fires many small scroll events where a wheel fires few large ones.
@@ -100,8 +115,11 @@ export function settle(driver: StoryHasMap, now: number): StoryHasMap {
   return driver.by === 'rejoining' && rejoinProgress(driver, now) >= 1 ? STORY_DRIVING : driver;
 }
 
-/** What the colour layer is drawn from, for deciding what a hover makes stale. */
-export function colorSource(driver: Driver): 'overlay' | 'blend' | 'ease' {
+/** What the colour layer is drawn from: the tools, a story blend, or a timed ease. */
+export type ColorSource = 'overlay' | 'blend' | 'ease';
+
+/** What the colour layer is drawn from, for deciding what a hover or a landing makes stale. */
+export function colorSource(driver: Driver): ColorSource {
   if (driver.by === 'rejoining') return 'ease';
   return driver.by === 'story' && driver.blend ? 'blend' : 'overlay';
 }

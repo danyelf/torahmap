@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
 import { buildTextIndex, resultsForVerseSets, type SearchResult } from '../../search';
 import type { VerseTexts } from '../../verseTexts';
-import { EMPTY_DICTIONARY } from '../helpers/searchData';
+import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
 const HEBREW = /[֐-׿]/;
 
@@ -25,7 +25,7 @@ const texts: VerseTexts = {
   },
 };
 
-const index = buildTextIndex(texts);
+const index = buildTextIndex(texts, inTextsOrder(texts));
 
 function genesis99(): SearchResult {
   return resultsForVerseSets(index, [new Set(['Genesis:9:9'])])[0];

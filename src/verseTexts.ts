@@ -21,8 +21,8 @@ export function structureFrom(loaded: Loaded): TorahData {
   return structure;
 }
 
-export function textsFrom(loaded: Loaded): VerseTexts {
-  return (loaded.get(TEXTS_FILE) ?? {}) as VerseTexts;
+export function textsFrom(loaded: Loaded): VerseTexts | null {
+  return (loaded.get(TEXTS_FILE) as VerseTexts | undefined) ?? null;
 }
 
 export function getVerseText(

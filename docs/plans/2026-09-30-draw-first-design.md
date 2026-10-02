@@ -1,7 +1,7 @@
 # Draw First
 
 **Date:** 2026-09-30
-**Status:** Design, decided 2026-10-01. Not yet planned.
+**Status:** Design, decided 2026-10-01. Planned: docs/plans/2026-09-30-draw-first-implementation.md.
 
 Step 3 of three toward #313, after step 1 (`2026-09-30-overlay-data-design.md`)
 and step 2 (`2026-09-30-search-data-design.md`). It is the only step a reader
@@ -13,7 +13,7 @@ Main draws from the structure file alone and loads everything else behind the
 first frame, the per-word parse last. Nothing waits, overlay links included. As
 each file lands, main updates `loaded` and cross-fades whatever newly has its
 data, through the renderer's picture cross-fade, the one the front tool and the
-story's ease use. The verse popup stays closed until the texts arrive. The
+story's ease use. The verse popup says "Loading…" until the texts arrive. The
 definition of done is a committed Playwright suite on a throttled connection,
 written first.
 
@@ -22,7 +22,7 @@ written first.
 1. Fetch `tanakh-structure.json` (17 KB) and lay out the map. Its failure stops
    the map, as today.
 2. Read the link, set up the overlay, the search, the pin and the story from it,
-   draw the first frame, and set `data-map-ready` on `<html>`.
+   draw the first frame, and set `data-first-frame` on `<html>`.
 3. Start the downloads, in the order below.
 4. When every download has landed or failed, set `data-loaded` on `<html>`.
 
@@ -72,14 +72,14 @@ One function in main, `fileLanded(path, value)`:
      panel: Overlay | null;     // the overlay whose controls are drawn
      popup: boolean;            // whether the popup shows a verse
      source: 'overlay' | 'blend' | 'ease';   // colorSource(driver)
-   }): { map: 'fade' | 'blend' | 'ease' | null; overlayPanel: boolean; searchPanel: boolean; popup: boolean }
+   }): { map: 'overlay' | 'blend' | 'ease' | null; overlayPanel: boolean; searchPanel: boolean; popup: boolean }
    ```
 
    A tool is out of date when `dataFor(tool, before) !== dataFor(tool, after)`.
    The map is, when a tool it shows is; the panels, when their tool is; the
    popup, when the texts, search's data or a shown tool's data changed.
 3. Main does what it says, with code it already has:
-   - **`fade`** (exploring, or the story at rest on a stop): cross-fade from the
+   - **`overlay`** (exploring, or the story at rest on a stop): cross-fade from the
      map as it is to `toolsPicture` of the tools now. This is `setFrontTool`'s
      fade, taken out into `fadeMap(to)` so both use it.
    - **`blend`** (the story resting between two stops, partway through a
@@ -87,9 +87,10 @@ One function in main, `fileLanded(path, value)`:
      new data, then hand back to the blend. Any story frame cancels the fade, as
      it cancels the front tool's today (`setDriver`), so a reader who scrolls
      during it gets the scroll.
-   - **`ease`** (the story easing between stops on a timer): start the ease
-     again from where it is, for the time left (`beginEase`), so it ends on the
-     picture with the data rather than snapping to it at the end.
+   - **`ease`** (the story easing between stops on a timer): re-aim the ease at
+     the picture with the data (`driverAfterLanding`), so it ends on that picture
+     rather than snapping to it at the end. Only the picture changes; the camera
+     keeps its motion, start and length.
    - The panels redraw into what is there (`overlayChanged(false)`,
      `searchChanged(false)`), so a box being typed in keeps its focus and its
      text. The legend redraws with them.
@@ -103,7 +104,7 @@ Under reduced motion each fade is a snap, as the front tool's is today.
 `filesFirst` are plain and unit-tested, the way `layerToRecompute` is today: a
 landing file nobody shown reads changes nothing; the texts landing with trop on
 redraw the map and the popup; the parse landing with search on redraws the popup
-and not the panels; commentary landing while the story is between stops gives
+and quotes the search results again, but redraws no panel; commentary landing while the story is between stops gives
 `blend`. What remains in `fileLanded` is a short sequence of calls to code the
 Playwright suite drives.
 
@@ -118,7 +119,7 @@ and at rest through the cases above.
 
 Warned once in the console, and the file stays missing. Whatever named it stays
 off the map: picking that overlay shows its controls with `null` data and a
-plain map; a failed texts file keeps the popup closed. Every other file loads as
+plain map; a failed texts file leaves the popup with the warning in place of the text. Every other file loads as
 usual, and `data-loaded` is still set. No retry; the reader is told where they were waiting (below). Search follows the rule for any
 tool: a failed dictionary turns it off (step 2).
 
@@ -137,10 +138,10 @@ Closed, it stays closed for that file; the overlay stays plain, as above.
 
 ## How the layout tests and the video harness know
 
-`data-map-ready` keeps its meaning, the first frame, and the throttled suite
-uses it. `data-loaded` is new: every download has landed or failed and its
-redraw has been asked for. `layout/page.ts`'s `mapReady` and
-`video/browser.ts` wait on `data-loaded` instead, so every layout state is
+`data-first-frame` marks the first frame, and the throttled suite uses it
+(`firstFrame` in `layout/page.ts`). `data-loaded` is new: every download has
+landed or failed and its redraw has been asked for. `layout/page.ts`'s
+`allLoaded` and `video/browser.ts` wait on `data-loaded`, so every layout state is
 measured with its data in, as today. The video harness's existing one-second
 wait after that covers the last fade.
 
@@ -168,11 +169,11 @@ focus, the address keeps a parameter, no page errors.
 
 | Case | Held | Before release | After release |
 |---|---|---|---|
-| Bare address | everything | `data-map-ready` set; map drawn; story open | `data-loaded` set |
+| Bare address | everything | `data-first-frame` set; map drawn; story open | `data-loaded` set |
 | Overlay link | commentary | map drawn and plain; picker shows commentary; legend row says it is loading | map changed; legend row shows the overlay; address unchanged |
 | Search link | texts, dictionary | map drawn and plain; search box holds the word | map changed; results listed; address unchanged |
 | Narrowed search link | dictionary | address still has `m` | exactly the linked meaning checked; address unchanged |
-| Pinned verse | texts | popup closed; map centred on the verse | popup open for the verse |
+| Pinned verse | texts | popup says it is loading; map centred on the verse | popup open for the verse |
 | Overlay picked early | commentary | pick it in the panel; map stays plain | map changed; picker unchanged; address has the overlay |
 | Search typed early | texts, dictionary | type a word; it keeps focus | results listed; box keeps value and focus; address has the search |
 | Story scrolled early | texts, dictionary | scroll to a stop with a search | map changed; search legend row shown |
@@ -193,3 +194,165 @@ focus, the address keeps a parameter, no page errors.
   treats search as any tool.
 - **It was checked by hand in a browser.** Here a committed suite, written
   first, is the definition of done.
+
+## Open questions, assumptions and rulings
+
+Decisions made while implementing step 3, newest last.
+
+- **2026-10-01 (plan)** The verse popup opens before the texts, as it does
+  today, and says "Loading…" where the text goes; a failed texts file shows the
+  warning there. The design's later "While data loads" section decides this;
+  the three lines that said the popup stays closed are changed to match.
+- **2026-10-01 (plan)** The map and the panels are drawn from the files a tool
+  requires; the popup also from its optional ones. So the per-word parse
+  landing redraws no panel, as the design's example says, and a reader
+  scrolled down the search results keeps their place. (The results' quotes
+  read the parse too; see the rebase entry below.)
+- **2026-10-01 (plan)** `staleAfterLanding` is handed the tools the map shows
+  as a list rather than an overlay and a search: in a story blend or ease the
+  map shows the tools of the stops it is between, which need not be the picked
+  overlay.
+- **2026-10-01 (plan)** The optional files are the last stage (that is, the
+  per-word parse); `filesFirst` names only required files.
+- **2026-10-01 (plan)** "Loading…" shows for a file queued for a later stage as
+  well as one downloading: main counts every file it will download as pending
+  from the moment the structure lands.
+- **2026-10-01 (plan, Danyel)** A tool's legend row — the overlay's or
+  search's alike — reads "<name> · Loading…" while its files are on their way.
+  On failure the row goes and a warning line with its × shows below the rows in
+  the legend card: a × cannot sit inside the row, which is a button. Search's
+  row joins its caption because on a phone with the panel closed the legend is
+  the only place a search link's reader sees.
+- **2026-10-01 (plan)** Main writes the search caption's notice into the
+  search panel's `#search-hit-caption`, which search leaves empty without data.
+- **2026-10-01 (plan)** Search names the structure file, and `buildTextIndex`
+  takes the book order from it, so the index can never be built in another
+  order. `getBookOrder` had no other reader and goes.
+- **2026-10-01 (plan)** `dataFor` keeps, per overlay, one data object per set
+  of its files' contents, so an overlay's data stays the same object while none
+  of its own files changes.
+- **2026-10-01 (plan)** The popup's Hebrew words are clickable only once
+  search has its data (`PopupView.wordsClickable`).
+- **2026-10-01 (plan)** A story stop with a search puts search in front, and
+  the story's last "explore" button opens the search panel, by whether the
+  search has a word, not by whether its data is in: before the data they would
+  otherwise decide differently than after.
+- **2026-10-01 (plan)** `load_timing` is sent once, when every download has
+  settled and search's index and dictionary have been built. `first_frame`:
+  the first frame, now drawn from the structure alone. `texts_in`: when the
+  texts file landed, as before. `search_ready`: when search's idle prebuild
+  built its index and dictionary after its files landed; 0 if they never
+  arrived. `texts_kbps` and `connection`: as before. The event waited for
+  every file before as well, so the visits it misses are the same kind.
+- **2026-10-01 (plan)** The suite throttles to 150 ms latency and 16 Mbit/s.
+  The dev server sends files uncompressed, about four times the bytes the site
+  sends, so each file takes about as long as it does on a 4 Mbit/s phone.
+- **2026-10-01 (plan)** Main's wiring of search recording is tested by turning
+  the dev server's analytics on from the test (a module script importing the
+  app's own `/src/analytics.ts`) and collecting what is sent. No app change.
+- **2026-10-01 (plan)** The capture shortcut names the picked overlay whether
+  or not its data is in; the suite checks it with a stubbed clipboard.
+- **2026-10-01 (plan)** `fadeMap(to, settle)` is the front tool's cross-fade
+  taken out: `settle` paints the picture the map rests on at the end
+  (`applyTools`, or `blendTransition` in a story blend). Landing fades take its
+  250 ms; `FRONT_FADE` becomes `MAP_FADE`, and `cancelFrontFade` `cancelFade`.
+- **2026-10-01 (plan)** An ease is restarted only while it has time left; at
+  its last frame the story paints the stop with the new data anyway.
+- **2026-10-01 (plan)** "Plain" in the suite means fewer coloured (non-grey)
+  canvas pixels than a small floor; the plain map is grey.
+- **2026-10-01 (plan)** `loadFiles` loses its per-file callback;
+  `downloadFiles(paths, { landed, failed })` reports each file as it settles.
+- **2026-10-01 (plan)** The layout and loading suites share the software-WebGL
+  launch arguments from `layout/screens.ts`.
+- **2026-10-01 (Task 1)** `loading/files.ts` takes the haftarah path from
+  `HAFTARAH_FILES` in `src/overlays/haftarah/readings.ts`, which imports no
+  CSS; `haftarah.ts` itself does. The commentary path stays written out:
+  `commentary.ts` names it inline and imports CSS through `panel.ts` and
+  `legend.ts`.
+- **2026-10-01 (Task 1 review)** The overlay-and-search case waits for
+  search to be in, with the overlay row still loading, before it takes the
+  picture to compare against; otherwise search landing alone would change the
+  map and pass the case with commentary never coloured.
+- **2026-10-01 (Task 4)** The downloads test takes `HAFTARAH_FILES` from
+  `src/overlays/haftarah/readings.ts`, where it lives; `haftarah.ts` imports
+  it without exporting it. The `stopTools` test helper defaults `overlay` to
+  `null`, since `ResolvedStoryStop` requires it and that test folder is
+  typechecked.
+- **2026-10-01 (Task 7)** `canvasShot` (`layout/page.ts`) hands focus back to
+  the element that had it. It hides everything but the canvas, and Chrome
+  blurs a focused element when it is hidden, so "a search typed before its
+  files land" lost the box's focus to its own `expectPlainMap`, not to the
+  landing: measured with the box focused before the shot and not after, and
+  focus kept across the landing when no shot was taken. The app's only focus
+  listener asks for the typing frame the box already put it in.
+  `COLOURED_FLOOR` needed no change: every case passes at 100.
+- **2026-10-01 (Task 7 review, Danyel's intent)** A file landing during a
+  timed story ease re-aims the ease at the picture with the data
+  (`driverAfterLanding`), keeping its camera, start and length. Starting the ease again
+  (`beginEase`), as "When a file lands" and the plan said, restarts the
+  camera's ease-in from rest mid-motion, a visible stall on each landing.
+- **2026-10-01 (Task 7 review)** `load_timing` is sent with `search_ready` 0
+  when search's prebuild throws, rather than held back for good:
+  `prebuildCompleted` tells its caller whether each overlay built.
+- **2026-10-01 (Task 7 review)** A throw while handling one landed or failed
+  file is reported (`reportError('fileLanded', …)`, with the path) and the
+  downloads go on: later stages, `data-loaded` and `load_timing` all still
+  happen. `downloadFiles` catches it per file. `fileLanded` schedules the
+  prebuild and hands search's data to the recorder before it redraws, so a
+  redraw that throws holds neither back.
+- **2026-10-01 (branch review)** The search panel builds nothing while no word
+  is typed: its caption, its results and its rows return before the search
+  runs, so search's index and dictionary are built by the idle prebuild, not
+  inside the landing that completes its files. The broken-lexicon case now
+  expects the prebuild's one uncaught error and no `fileLanded` report.
+- **2026-10-01 (branch review)** `staleAfterLanding` says how to redraw the map
+  in `colorSource`'s own words (`'overlay'`, `'blend'`, `'ease'`, the one
+  `ColorSource` type), rather than renaming `'overlay'` to `'fade'`. Only the
+  name changed.
+- **2026-10-01 (branch review)** Main counts as pending exactly the files its
+  download stages hold, computed once the link or the story has set the opening
+  view, just before the first frame. Nothing is painted between the structure
+  landing and that point, so every place that says "Loading…" is drawn after it
+  (`showLoadState`).
+- **2026-10-01 (branch review)** The first frame's attribute is
+  `data-first-frame` (it was `data-map-ready`, which read as "loaded"), and
+  `layout/page.ts`'s wait for `data-loaded` is `allLoaded` (it was
+  `mapReady`). The plan's task text keeps the old names where it records what
+  each task did; its constraints and Task 8 use the new ones.
+- **2026-10-01 (branch review)** A landing does not redraw the popup while a
+  word menu is open on it: the redraw would replace the word the menu names. The
+  popup catches up on its next redraw (a hover, a pin, a search change), rather
+  than as the menu closes: closing on a mousedown over another word and
+  redrawing then would replace that word under the pointer and lose its click.
+- **2026-10-01 (branch review, round 2)** The rule above holds for every
+  landing and every failure, including one that redraws the overlay's or the
+  search's panel: `fileLanded` and `fileFailed` redraw the panels, then the
+  legend once, then the popup once behind the word-menu check. Switching
+  overlay or typing still redraws the popup as before.
+- **2026-10-01 (branch review, round 2)** "Nothing builds while no word is
+  typed" lives in `searchFor`, which returns the empty search without building,
+  and in the term rows' `dictionary()`, which is null then; the caption, the
+  results and the rows no longer check it themselves. The caption's wording is
+  unchanged.
+- **2026-10-01 (branch review, round 2)** The loading suite records page
+  errors with their stacks (`collectErrors`), so the broken-lexicon case uses
+  the shared `open` and still checks that its one error is uncaught and names
+  `buildDictionary`.
+- **2026-10-01 (rebase onto #315)** The search results quote each verse with
+  the popup's matcher, which reads the per-word parse (#315), and the parse
+  lands last. So when search's optional file lands and nothing it requires
+  changed, `staleAfterLanding` says the search results are stale
+  (`searchResults`), and main quotes the rows already listed again from the new
+  data (`requoteSearchResults`): in place, keeping the list's scroll and the
+  rows' boxes, and later batches quote from the new data too. Only the results,
+  not the panel: redrawing the panel would scroll the list to the top. It is
+  stale whether or not a word is typed; with none, no rows are listed and
+  nothing is quoted. Before the dictionary lands, search's data is null, so a
+  term's mode and the meanings toggle behave as #315's did before its lexeme
+  files arrived; the dictionary's landing redraws the search panel, which
+  updates them.
+- **2026-10-01 (rebase onto #315)** Step 2's recorder now needs the dictionary
+  to record a term, and built it whenever search's data changed. It builds it
+  only when there is a typed word to record, so "nothing builds while no word
+  is typed" holds for the recorder too, and the broken-lexicon case still sees
+  only the prebuild's error.

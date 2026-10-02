@@ -82,7 +82,7 @@ export const SEARCH_WITH_OVERLAY = {
   RING_MIN_SQUARE_PX: 8,
 } as const;
 
-/** How long the map takes to cross-fade when the tool in front switches. */
-export const FRONT_FADE = {
+/** How long the map takes to cross-fade to a new picture: the front tool switching, or data landing. */
+export const MAP_FADE = {
   DURATION_MS: 250,
 } as const;

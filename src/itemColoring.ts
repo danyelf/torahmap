@@ -3,6 +3,7 @@
 import type { Color, SpatialItem, VerseColor } from './types';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
+import type { ColorSource } from './scrollytelling/driver';
 import { seededRandom } from './utils/random';
 import { brighten } from './utils/color';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
@@ -104,7 +105,7 @@ export function toolsPicture<T>(
  * and a pin leaves the hover where it was, so neither recomputes anything.
  */
 export function layerToRecompute<T>(
-  source: 'overlay' | 'blend' | 'ease',
+  source: ColorSource,
   overlay: ToolOnMap<T> | null,
   before: T | null,
   after: T | null,

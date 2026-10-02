@@ -81,6 +81,8 @@ export interface SidebarElements {
   ref: Element | null;
   overlayInfo: Element | null;
   hebrew: Element | null;
+  /** Where the popup says the texts are loading or failed, apart from the text. */
+  notice: Element | null;
   english: Element | null;
   link: HTMLAnchorElement | null;
   closeBtn: Element | null;
@@ -94,6 +96,7 @@ export function getSidebarElements(): SidebarElements {
     ref: sidebar?.querySelector('.ref-text') ?? null,
     overlayInfo: sidebar?.querySelector('.overlay-info') ?? null,
     hebrew: sidebar?.querySelector('.verse-hebrew') ?? null,
+    notice: sidebar?.querySelector('.verse-notice') ?? null,
     english: sidebar?.querySelector('.verse-english') ?? null,
     link: (sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement) ?? null,
     closeBtn: sidebar?.querySelector('.close-btn') ?? null,
@@ -120,7 +123,12 @@ export function getSefariaUrl(
 
 /** What the popup shows beside the verse, and whether the verse is pinned. */
 export interface PopupView {
-  verseTexts: VerseTexts;
+  /** Null until the texts file is in. */
+  verseTexts: VerseTexts | null;
+  /** Shown while the texts are not in. */
+  textsNotice: Node | null;
+  /** Whether a Hebrew word opens its menu when clicked: only once search has its data. */
+  wordsClickable: boolean;
   overlay: ToolOnMap | null;
   search: ToolOnMap | null;
   pinned: boolean;
@@ -131,8 +139,8 @@ export function updateSidebar(
   verse: TanakhLayout | null,
   view: PopupView,
 ): void {
-  const { sidebar, ref, overlayInfo, hebrew, english, link } = elements;
-  const { verseTexts, search, pinned: isPinned } = view;
+  const { sidebar, ref, overlayInfo, hebrew, notice, english, link } = elements;
+  const { verseTexts, textsNotice, wordsClickable, search, pinned: isPinned } = view;
   const currentOverlay = view.overlay?.tool ?? null;
   const overlaySettings = view.overlay?.settings;
   const overlayData = view.overlay?.data;
@@ -145,7 +153,7 @@ export function updateSidebar(
     return;
   }
 
-  const text = getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
+  const text = verseTexts && getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
 
   if (ref) {
     ref.textContent = verseRef(verse);
@@ -179,23 +187,27 @@ export function updateSidebar(
     return searchMarks ?? overlayMarks ?? null;
   };
   if (hebrew) {
-    const hebrewText = text?.he || 'Loading...';
-
-    // Whatever the overlay produced, words are wrapped afterwards, so a click
-    // finds a word whether or not anything is highlighting the text.
-    const fragment = marked(hebrewText, HEBREW) ?? textFragment(hebrewText);
-
-    hebrew.replaceChildren(wrapWordsInFragment(fragment, hebrewText));
-    attachWordClicks(hebrew as HTMLElement, hebrewText, verse);
-  }
-  if (english) {
-    const englishText = text?.en || 'Loading...';
-    const highlighted = marked(englishText, ENGLISH);
-    if (highlighted) {
-      english.replaceChildren(highlighted);
+    const container = hebrew as HTMLElement;
+    container.onclick = null;
+    if (!text) {
+      container.replaceChildren();
     } else {
-      english.textContent = englishText;
+      const fragment = marked(text.he, HEBREW) ?? textFragment(text.he);
+      if (wordsClickable) {
+        // Whatever the overlay produced, words are wrapped afterwards, so a click
+        // finds a word whether or not anything is highlighting the text.
+        container.replaceChildren(wrapWordsInFragment(fragment, text.he));
+        attachWordClicks(container, text.he, verse);
+      } else {
+        container.replaceChildren(fragment);
+      }
     }
+  }
+  notice?.replaceChildren(...(textsNotice ? [textsNotice] : []));
+  if (english) {
+    const highlighted = text && marked(text.en, ENGLISH);
+    if (highlighted) english.replaceChildren(highlighted);
+    else english.textContent = text?.en ?? '';
   }
   if (link) {
     link.href = getSefariaUrl(

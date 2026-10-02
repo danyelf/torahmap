@@ -45,12 +45,14 @@ describe('sidebar', () => {
       hebrew.className = 'verse-hebrew';
       const english = document.createElement('div');
       english.className = 'verse-english';
+      const notice = document.createElement('div');
+      notice.className = 'verse-notice';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, english, link, closeBtn);
+      sidebar.append(ref, overlayInfo, hebrew, notice, english, link, closeBtn);
 
       const elements = getSidebarElements();
       expect(elements.sidebar).toBe(sidebar);
@@ -58,6 +60,7 @@ describe('sidebar', () => {
       expect(elements.overlayInfo).toBe(overlayInfo);
       expect(elements.hebrew).toBe(hebrew);
       expect(elements.english).toBe(english);
+      expect(elements.notice).toBe(notice);
       expect(elements.link).toBeInstanceOf(HTMLAnchorElement);
       expect(elements.link).toBe(link);
       expect(elements.closeBtn).toBe(closeBtn);
@@ -169,12 +172,14 @@ describe('sidebar', () => {
       hebrew.className = 'verse-hebrew';
       const english = document.createElement('div');
       english.className = 'verse-english';
+      const notice = document.createElement('div');
+      notice.className = 'verse-notice';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, english, link, closeBtn);
+      sidebar.append(ref, overlayInfo, hebrew, notice, english, link, closeBtn);
       document.body.appendChild(sidebar);
 
       elements = {
@@ -182,6 +187,7 @@ describe('sidebar', () => {
         ref,
         overlayInfo,
         hebrew,
+        notice,
         english,
         link,
         closeBtn,
@@ -205,59 +211,133 @@ describe('sidebar', () => {
     describe('showing verse info', () => {
       it('displays verse reference', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.ref?.textContent).toBe('Genesis 1:1');
       });
 
       it('displays Hebrew text', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.hebrew?.textContent).toBe('בְּרֵאשִׁית');
       });
 
       it('displays English text', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.english?.textContent).toBe('In the beginning');
       });
 
       it('sets Sefaria link href', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.link?.href).toBe('https://www.sefaria.org/Genesis.1.1?with=all');
       });
 
       it('makes sidebar visible', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.sidebar?.classList.contains('visible')).toBe(true);
       });
 
-      it('handles verse with no text data', () => {
+      it('shows nothing for a verse the texts do not hold', () => {
         const verse = createVerse({ book: 'Exodus', chapter: 20, verse: 2 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
-        expect(elements.hebrew?.textContent).toBe('Loading...');
-        expect(elements.english?.textContent).toBe('Loading...');
+        expect(elements.hebrew?.textContent).toBe('');
+        expect(elements.english?.textContent).toBe('');
+      });
+
+      it('shows the notice apart from the text while the texts are not in', () => {
+        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+        const loading = document.createElement('span');
+        updateSidebar(elements, verse, {
+          verseTexts: null,
+          overlay: null,
+          search: null,
+          pinned: true,
+          textsNotice: loading,
+          wordsClickable: true,
+        });
+
+        expect(elements.notice?.contains(loading)).toBe(true);
+        expect(elements.hebrew?.textContent).toBe('');
+        expect(elements.english?.textContent).toBe('');
+        expect(elements.sidebar?.classList.contains('visible')).toBe(true);
       });
     });
 
     describe('pinned state', () => {
       it('adds pinned class when isPinned is true', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: true });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: true,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(true);
       });
 
       it('does not add pinned class when isPinned is false', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(false);
       });
@@ -266,7 +346,14 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         elements.sidebar?.classList.add('pinned');
 
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(false);
       });
@@ -275,14 +362,28 @@ describe('sidebar', () => {
     describe('hiding sidebar', () => {
       it('removes visible class when verse is null', () => {
         elements.sidebar?.classList.add('visible');
-        updateSidebar(elements, null, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, null, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.sidebar?.classList.contains('visible')).toBe(false);
       });
 
       it('removes pinned class when verse is null', () => {
         elements.sidebar?.classList.add('pinned');
-        updateSidebar(elements, null, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, null, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.sidebar?.classList.contains('pinned')).toBe(false);
       });
@@ -304,6 +405,8 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
+            textsNotice: null,
+            wordsClickable: true,
           });
         }).not.toThrow();
       });
@@ -325,6 +428,8 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
         });
 
         expect(mockOverlay.getHoverInfo).toHaveBeenCalledWith(verse, settings, undefined);
@@ -344,6 +449,8 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings: undefined, data: undefined },
           search: null,
           pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
         });
 
         expect(elements.overlayInfo?.textContent).toBe('');
@@ -351,7 +458,14 @@ describe('sidebar', () => {
 
       it('clears overlay info when overlay is null', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.overlayInfo?.textContent).toBe('');
       });
@@ -387,6 +501,8 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
         });
 
         expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
@@ -426,6 +542,8 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
         });
 
         expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
@@ -446,7 +564,14 @@ describe('sidebar', () => {
 
       it('uses plain text when no special overlay is active', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.hebrew?.textContent).toBe('בְּרֵאשִׁית');
         expect(elements.english?.textContent).toBe('In the beginning');
@@ -487,6 +612,8 @@ describe('sidebar', () => {
             overlay: { tool: overlay, settings: undefined, data: undefined },
             search: searchOn('Matches: אברם'),
             pinned: false,
+            textsNotice: null,
+            wordsClickable: true,
           });
 
           expect([...elements.overlayInfo!.children].map((c) => c.textContent)).toEqual([
@@ -534,6 +661,8 @@ describe('sidebar', () => {
             overlay: { tool: overlay, settings: undefined, data: undefined },
             search: search,
             pinned: false,
+            textsNotice: null,
+            wordsClickable: true,
           });
           expect(elements.english?.textContent).toBe('In the beginning');
           return [...elements.english!.querySelectorAll('mark')].map(
@@ -562,6 +691,8 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
+            textsNotice: null,
+            wordsClickable: true,
           });
         }).not.toThrow();
       });
@@ -576,6 +707,8 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
+            textsNotice: null,
+            wordsClickable: true,
           });
         }).not.toThrow();
       });
@@ -590,6 +723,8 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
+            textsNotice: null,
+            wordsClickable: true,
           });
         }).not.toThrow();
       });
@@ -604,6 +739,8 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
+            textsNotice: null,
+            wordsClickable: true,
           });
         }).not.toThrow();
       });
@@ -616,7 +753,14 @@ describe('sidebar', () => {
         };
         const verse = createVerse({ book: 'Song of Songs', chapter: 1, verse: 1 });
 
-        updateSidebar(elements, verse, { verseTexts, overlay: null, search: null, pinned: false });
+        updateSidebar(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: false,
+          textsNotice: null,
+          wordsClickable: true,
+        });
 
         expect(elements.ref?.textContent).toBe('Song of Songs 1:1');
         expect(elements.link?.href).toBe('https://www.sefaria.org/Song_of_Songs.1.1?with=all');

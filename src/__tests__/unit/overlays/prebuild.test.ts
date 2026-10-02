@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { prebuildAll } from '../../../overlays/prebuild';
+import { prebuildCompleted } from '../../../overlays/prebuild';
 import { testOverlay } from '../../helpers/fixtures';
 
 /** A scheduler that runs nothing until told to, one turn at a time. */
@@ -11,17 +11,19 @@ function turns() {
 const withPrebuild = (id: string, path: string, prebuild = vi.fn()) =>
   testOverlay({ id, name: id, getVerseColor: () => null, data: { file: path }, prebuild });
 
-describe('prebuildAll', () => {
+describe('prebuildCompleted', () => {
   it('prebuilds one overlay per idle turn, each with its own data, nothing before the first', () => {
     const a = withPrebuild('a', 'a.json');
     const b = withPrebuild('b', 'b.json');
     const idle = turns();
-    prebuildAll(
+    prebuildCompleted(
       [a, b],
+      new Map(),
       new Map([
         ['a.json', 1],
         ['b.json', 2],
       ]),
+      () => {},
       idle.schedule,
     );
     expect(a.prebuild).not.toHaveBeenCalled();
@@ -36,7 +38,7 @@ describe('prebuildAll', () => {
     const missing = withPrebuild('m', 'missing.json');
     const plain = testOverlay({ id: 'p', name: 'p', getVerseColor: () => null });
     const idle = turns();
-    prebuildAll([missing, plain], new Map(), idle.schedule);
+    prebuildCompleted([missing, plain], new Map(), new Map(), () => {}, idle.schedule);
     idle.next();
     idle.next();
     expect(missing.prebuild).not.toHaveBeenCalled();
@@ -52,16 +54,57 @@ describe('prebuildAll', () => {
     );
     const after = withPrebuild('y', 'y.json');
     const idle = turns();
-    prebuildAll(
+    prebuildCompleted(
       [broken, after],
+      new Map(),
       new Map([
         ['x.json', 1],
         ['y.json', 2],
       ]),
+      () => {},
       idle.schedule,
     );
     expect(() => idle.next()).toThrow('broken');
     idle.next();
     expect(after.prebuild).toHaveBeenCalledWith({ file: 2 });
+  });
+
+  it('skips an overlay whose data was complete before', () => {
+    const a = withPrebuild('a', 'a.json');
+    const loaded = new Map([['a.json', 1]]);
+    const idle = turns();
+    prebuildCompleted(
+      [a],
+      loaded,
+      new Map([...loaded, ['other.json', 2]]),
+      () => {},
+      idle.schedule,
+    );
+    idle.next();
+    expect(a.prebuild).not.toHaveBeenCalled();
+  });
+
+  it('says which overlay it built, after building it', () => {
+    const a = withPrebuild('a', 'a.json');
+    const settled = vi.fn(() => expect(a.prebuild).toHaveBeenCalled());
+    const idle = turns();
+    prebuildCompleted([a], new Map(), new Map([['a.json', 1]]), settled, idle.schedule);
+    idle.next();
+    expect(settled).toHaveBeenCalledWith(a, true);
+  });
+
+  it('says so when a prebuild throws, and still throws', () => {
+    const broken = withPrebuild(
+      'x',
+      'x.json',
+      vi.fn(() => {
+        throw new Error('broken');
+      }),
+    );
+    const settled = vi.fn();
+    const idle = turns();
+    prebuildCompleted([broken], new Map(), new Map([['x.json', 1]]), settled, idle.schedule);
+    expect(() => idle.next()).toThrow('broken');
+    expect(settled).toHaveBeenCalledWith(broken, false);
   });
 });

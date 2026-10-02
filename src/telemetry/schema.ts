@@ -43,8 +43,12 @@ export const EVENTS = {
     blobs: ['how', 'what', 'story', 'stop_id', 'overlay'],
     doubles: ['searching', 'pinned'],
   },
-  // Milliseconds since navigation start; texts_kbps is 0 where the browser did not
-  // report the download (a cached copy, or no Resource Timing entry).
+  // Milliseconds since navigation start, sent once every download has settled:
+  // first_frame when the map first draws, from the structure alone; texts_in
+  // when the texts land; search_ready when search's index and dictionary are
+  // built, 0 if its files never arrived or it failed to build. texts_kbps is 0
+  // where the browser did not report the download (a cached copy, or no
+  // Resource Timing entry).
   load_timing: {
     blobs: ['connection'],
     doubles: ['first_frame', 'texts_in', 'search_ready', 'texts_kbps'],
@@ -105,7 +109,7 @@ export const MAX_BLOB_CHARS = 100;
 
 /** The source column of error and worker_error; errors.sql groups by it. */
 export type ErrorSource =
-  'main' | 'layout' | 'loadFiles' | 'uncaught' | 'unhandled_rejection' | 'linkPage';
+  'main' | 'layout' | 'loadFiles' | 'fileLanded' | 'uncaught' | 'unhandled_rejection' | 'linkPage';
 
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? `${error.name}: ${error.message}` : String(error);

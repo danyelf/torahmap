@@ -305,8 +305,8 @@ describe('the files main reads itself', () => {
     expect(() => structureFrom(new Map())).toThrow(STRUCTURE_FILE);
   });
 
-  it('hands back the texts it was loaded with, or an empty set', () => {
+  it('hands back the texts it was loaded with, or null while they are not in', () => {
     expect(textsFrom(new Map([[TEXTS_FILE, SAMPLE_VERSE_TEXTS]]))).toBe(SAMPLE_VERSE_TEXTS);
-    expect(textsFrom(new Map())).toEqual({});
+    expect(textsFrom(new Map())).toBeNull();
   });
 });

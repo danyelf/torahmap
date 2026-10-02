@@ -20,7 +20,12 @@ import {
 import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from '../../search/data.ts';
 import { spellingFor, versesFor, wordsOfVerse } from '../../search/dictionary.ts';
 import { excerpt, highlightTerms } from './highlight.ts';
-import { renderResults as renderResultsList, detachResults } from './resultsList.ts';
+import {
+  renderResults as renderResultsList,
+  requoteResults,
+  detachResults,
+  type ResultsView,
+} from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import {
   addTerm,
@@ -87,7 +92,11 @@ const searches = memoByValue((index: TextIndex) =>
   ),
 );
 
+const NO_SEARCH: Search = { active: [], results: [], matchingTerms: new Map() };
+
+/** The search these settings run; with no word typed, the empty one, building nothing. */
 function searchFor(data: SearchData, settings: SearchSettings): Search {
+  if (typedTerms(settings).length === 0) return NO_SEARCH;
   return searches(textIndexOf(data))(dictionaryOf(data))(settings);
 }
 
@@ -278,7 +287,6 @@ function updateHitCaption(settings: SearchSettings, data: SearchData | null): vo
     searchHitCaption.textContent = '';
     return;
   }
-
   const { active, results } = searchFor(data, settings);
   const listed = resultsForOpenRow(data, settings).length;
 
@@ -318,15 +326,27 @@ function renderResults(settings: SearchSettings, data: SearchData | null): void 
     return;
   }
 
-  const index = textIndexOf(data);
-  const dictionary = dictionaryOf(data);
   renderResultsList(searchResults, {
     results: resultsForOpenRow(data, settings),
     terms: searchFor(data, settings).active,
     focus: openTermIndex(settings),
     onSelect: showVerse,
-    snippet: (result, term) => excerpt(result, term, index, dictionary, data.parse),
+    snippet: snippetFor(data),
   });
+}
+
+function snippetFor(data: SearchData): ResultsView['snippet'] {
+  return (result, term) => excerpt(result, term, textIndexOf(data), dictionaryOf(data), data.parse);
+}
+
+/**
+ * Quote the results already listed again from `data`, which differs from the
+ * panel's only in the per-word parse: it marks a word better than its spelling.
+ */
+export function requoteSearchResults(data: SearchData): void {
+  if (!searchResults) return;
+  shownData = data;
+  requoteResults(searchResults, snippetFor(data));
 }
 
 /**
@@ -352,7 +372,8 @@ function openRow(id: string): void {
 const termRowsHost: TermRowsHost = {
   terms: () => shown?.terms ?? [],
   openId: () => (shown ? (openTerm(shown)?.id ?? null) : null),
-  dictionary: () => (shownData ? dictionaryOf(shownData) : null),
+  dictionary: () =>
+    shown && shownData && typedTerms(shown).length > 0 ? dictionaryOf(shownData) : null,
   hitCount: (term) => (shown && shownData ? termHitCount(shownData, shown, term) : null),
   edit(change) {
     requestChange?.((current) => ({ terms: change(current.terms) }));
