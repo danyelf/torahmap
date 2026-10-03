@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CHROME, STATES } from './app.ts';
+import { CHROME, STATES, viaMenu } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
 import { boxes, DRAWN_FLOOR, drawnPixels, allLoaded, openMap } from './page.ts';
 
@@ -65,6 +65,19 @@ test("a returning reader's Search button opens search, ready to type", async ({ 
   await openMap(page, '');
   await page.locator('[data-start="search"]').click();
   await expect(page.locator('#search-input')).toBeFocused();
+});
+
+test('choosing None offers the places to start, and an overlay takes them away', async ({
+  page,
+}) => {
+  await openMap(page, 'overlay=commentary');
+  await viaMenu(page, 'overlay');
+  const start = page.locator('[data-start="search"]');
+  await expect(start).toHaveCount(0);
+  await page.locator('#overlay-select').selectOption('none');
+  await expect(start).toBeVisible();
+  await page.locator('#overlay-select').selectOption('haftarah');
+  await expect(start).toHaveCount(0);
 });
 
 test("the haftarah legend's key shows only in the desktop layout", async ({ page }) => {

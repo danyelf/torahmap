@@ -55,13 +55,19 @@ export const STATES: State[] = [
   },
   { name: 'explore-link', link: 'overlay=commentary', shown: ['#map-legend'] },
   {
-    name: 'start-here',
+    name: 'overlay-none',
     link: '',
     returning: true,
-    shown: ['[data-start="search"]', '[data-start="overlay"][data-id="trop"]'],
+    shown: ['#overlay-select', '[data-start="search"]'],
   },
   {
-    name: 'start-here-trop',
+    // A link that only moves the camera shows nothing either.
+    name: 'overlay-none-camera-link',
+    link: 'zoom=0.32&x=1693.1&y=838.7',
+    shown: ['#overlay-select', '[data-start="search"]'],
+  },
+  {
+    name: 'overlay-none-trop',
     link: '',
     returning: true,
     then: async (page) => {

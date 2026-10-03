@@ -378,7 +378,6 @@ body[data-menu] #story-cue {
   flex-shrink: 0;
 }
 
-body[data-open='start'] #start-panel,
 body[data-open='search'] #search-panel,
 body[data-open='overlay'] #overlay-panel,
 body[data-open='stories'] #stories-panel,
@@ -438,6 +437,10 @@ body[data-open='about'] #about-panel {
   flex: 1 1 auto;
   min-height: 120px;
   max-height: none;
+}
+
+#overlay-starts:not(:empty) {
+  margin-top: 16px;
 }
 
 /* One width for every button, so the descriptions line up; a long story title wraps. */

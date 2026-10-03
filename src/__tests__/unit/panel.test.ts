@@ -3,7 +3,6 @@ import { CONTROL, panelHtml } from '../../panel';
 import { PANEL_TITLES, type Panel } from '../../frame';
 import { storiesHtml } from '../../storiesPanel';
 import { aboutHtml } from '../../aboutPanel';
-import { startHtml } from '../../startPanel';
 import { overlayPanelHtml, searchPanelHtml } from '../../toolPanels';
 
 function parse(html: string): HTMLDivElement {
@@ -39,7 +38,6 @@ describe('every panel is built by panelHtml, with shared controls', () => {
       ]),
     ],
     ['about', aboutHtml([])],
-    ['start', startHtml([{ id: 'tour', title: 'x', description: 'x' }])],
   ];
 
   it('search opens with its title', () => {

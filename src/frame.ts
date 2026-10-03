@@ -3,12 +3,11 @@
 // can be dragged to full height.
 
 /** Every panel, in the order the menu offers them. */
-export const PANELS = ['start', 'search', 'overlay', 'stories', 'about'] as const;
+export const PANELS = ['search', 'overlay', 'stories', 'about'] as const;
 export type Panel = (typeof PANELS)[number];
 
 /** What each panel is called, in the column's header and at the top of the panel. */
 export const PANEL_TITLES: Record<Panel, string> = {
-  start: 'Start here',
   search: 'Search',
   overlay: 'Overlay',
   stories: 'Stories',
@@ -62,12 +61,18 @@ const explore = (open: Panel | null): Frame => ({
   full: false,
 });
 
-/** Where a returning reader lands when the link names nothing: the phone's sheet opens too. */
-export const START_HERE: Frame = explore('start');
-
 /** Where leaving the story, or a link into the explore view, lands. */
 export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
   return explore(phone ? null : open);
+}
+
+/**
+ * Where arriving at the explore view lands. A map showing nothing opens the
+ * overlay panel even on a phone, where None offers somewhere to start.
+ */
+export function landingFrame(phone: boolean, shows: { overlay: boolean; search: boolean }): Frame {
+  if (!shows.overlay && !shows.search) return explore('overlay');
+  return exploreFrame(phone, shows.search ? 'search' : 'overlay');
 }
 
 export function nextFrame(frame: Frame, event: FrameEvent, phone: boolean): Frame {

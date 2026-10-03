@@ -1,7 +1,7 @@
-// What a blank map offers: search, each overlay at a starting setting that
-// shows something, and the stories.
+// What the overlay panel offers while None is chosen: search, each overlay at
+// a starting setting that shows something, and the stories.
 import { COMMENTARY, HAFTARAH, TROP, VERSE_LENGTH } from '@torahmap/overlay-catalog';
-import { CONTROL, panelHtml } from './panel.ts';
+import { CONTROL } from './panel.ts';
 import { escapeHtml } from './utils/html.ts';
 
 export type StartChoice =
@@ -40,19 +40,16 @@ const row = (kind: StartChoice['kind'], id: string, label: string, detail: strin
     <p class="start-detail">${escapeHtml(detail)}</p>
   </div>`;
 
-export function startHtml(stories: readonly StartStory[]): string {
-  return panelHtml(
-    'start',
-    [
-      row('search', '', 'Search…', 'Search for any word, Hebrew or English'),
-      DIVIDER,
-      ...OVERLAY_STARTS.map(({ overlay, detail }) =>
-        row('overlay', overlay.id, overlay.name, detail),
-      ),
-      DIVIDER,
-      ...stories.map((s) => row('story', s.id, s.title, s.description)),
-    ].join(''),
-  );
+export function startingPointsHtml(stories: readonly StartStory[]): string {
+  return [
+    row('search', '', 'Search…', 'Search for any word, Hebrew or English'),
+    DIVIDER,
+    ...OVERLAY_STARTS.map(({ overlay, detail }) =>
+      row('overlay', overlay.id, overlay.name, detail),
+    ),
+    DIVIDER,
+    ...stories.map((s) => row('story', s.id, s.title, s.description)),
+  ].join('');
 }
 
 /** The choice a click inside the panel made; null if none. */

@@ -5,6 +5,7 @@ import {
   exploreFrame,
   frontToolAfter,
   isPanel,
+  landingFrame,
   nextFrame,
   type Frame,
 } from '../../frame';
@@ -45,6 +46,20 @@ describe('the story', () => {
 describe('returning to the story', () => {
   it('comes from any panel', () => {
     expect(nextFrame(explore('about', true), { type: 'story' }, PHONE)).toEqual(STORY);
+  });
+});
+
+describe('arriving at the explore view', () => {
+  it('opens the overlay panel on a map that shows nothing, on a phone too', () => {
+    const blank = { overlay: false, search: false };
+    expect(landingFrame(DESKTOP, blank)).toEqual(explore('overlay'));
+    expect(landingFrame(PHONE, blank)).toEqual(explore('overlay'));
+  });
+
+  it("otherwise opens the shown tool's panel, and on a phone none", () => {
+    expect(landingFrame(DESKTOP, { overlay: true, search: false })).toEqual(explore('overlay'));
+    expect(landingFrame(DESKTOP, { overlay: true, search: true })).toEqual(explore('search'));
+    expect(landingFrame(PHONE, { overlay: false, search: true })).toEqual(explore(null));
   });
 });
 
@@ -189,7 +204,7 @@ describe('which tool leads', () => {
 
 describe('panel names', () => {
   it('accepts the panels and nothing else', () => {
-    expect(['start', 'search', 'overlay', 'stories', 'about'].every(isPanel)).toBe(true);
+    expect(['search', 'overlay', 'stories', 'about'].every(isPanel)).toBe(true);
     expect(isPanel('menu')).toBe(false);
     expect(isPanel('story')).toBe(false);
     expect(isPanel('restart')).toBe(false);

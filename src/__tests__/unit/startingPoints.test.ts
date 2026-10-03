@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { startHtml, startChosen, type StartStory } from '../../startPanel';
+import { startingPointsHtml, startChosen, type StartStory } from '../../startingPoints';
 
 const STORIES: StartStory[] = [
   { id: 'tour', title: 'The Guided Tour', description: 'Follows Abraham.' },
@@ -14,8 +14,8 @@ function parse(html: string): HTMLDivElement {
 
 const buttons = (div: Element): HTMLButtonElement[] => [...div.querySelectorAll('button')];
 
-describe('the start panel', () => {
-  const div = parse(startHtml(STORIES));
+describe('the starting points', () => {
+  const div = parse(startingPointsHtml(STORIES));
 
   it('offers search, then the overlays, then every story, divided into three', () => {
     const choices = buttons(div).map((b) => startChosen(b));

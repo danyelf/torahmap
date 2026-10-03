@@ -12,9 +12,9 @@ import { initBookData } from './constants/books.ts';
 import {
   DRAG_PX,
   STORY,
-  START_HERE,
   exploreFrame,
   frontToolAfter,
+  landingFrame,
   nextFrame,
   type Frame,
   type FrameEvent,
@@ -26,7 +26,7 @@ import { CONTINUE_STORY, SHARE, menuHtml, type StoryPlace } from './menu.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
-import { startHtml, startChosen, type StartChoice } from './startPanel.ts';
+import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
 import type { LinkParams } from './overlays/settings.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
@@ -577,7 +577,6 @@ async function main(): Promise<void> {
   const toolsTitle = document.getElementById('tools-title')!;
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
-  const startPanel = document.getElementById('start-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
@@ -642,7 +641,6 @@ async function main(): Promise<void> {
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
-    if (opened && frame.open === 'start') drawStart();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(allOverlays);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
@@ -1170,6 +1168,7 @@ async function main(): Promise<void> {
   const overlayControlsContainer = document.getElementById('overlay-controls');
   const searchControls = document.getElementById('search-controls')!;
   const overlayLegendContainer = document.getElementById('overlay-legend');
+  const overlayStarts = document.getElementById('overlay-starts')!;
 
   /** Switch the active overlay without drawing its UI, painting or writing the URL. */
   function activateOverlay(id: string): void {
@@ -1214,6 +1213,15 @@ async function main(): Promise<void> {
     if (fresh) {
       if (overlaySelect) overlaySelect.value = currentOverlayId();
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
+      overlayStarts.innerHTML = currentOverlay
+        ? ''
+        : startingPointsHtml(
+            listed.map(({ id, data }) => ({
+              id,
+              title: data.title,
+              description: data.description,
+            })),
+          );
     }
     renderOverlayControls();
     renderOverlayLegend();
@@ -1520,12 +1528,6 @@ async function main(): Promise<void> {
     readerOpensStory(fromStart ? 0 : left);
   }
 
-  function drawStart(): void {
-    startPanel.innerHTML = startHtml(
-      listed.map(({ id, data }) => ({ id, title: data.title, description: data.description })),
-    );
-  }
-
   function takeStart(choice: StartChoice): void {
     if (choice.kind === 'story') return readStory(choice.id, true);
     if (choice.kind === 'search') {
@@ -1533,12 +1535,7 @@ async function main(): Promise<void> {
       document.getElementById('search-input')?.focus();
       return;
     }
-    // The overlay before its panel: opening the panel measures a phone's sheet
-    // there and then, and with no overlay drawn yet it measures short. The
-    // ResizeObserver never corrects it, since the sheet is back to its old
-    // height by the next frame.
     setOverlay(choice.id, choice.params);
-    dispatch({ type: 'choose', panel: 'overlay' });
   }
 
   function drawStories(): void {
@@ -1967,7 +1964,8 @@ async function main(): Promise<void> {
       // Any other link change (Back/Forward while already exploring) must
       // leave frontTool at whatever the reader last chose from the legend.
       if (frame.mode === 'story') frontTool = open;
-      setStoryOpen(false, exploreFrame(phone, open));
+      const shows = { overlay: next.overlay !== NO_OVERLAY, search: !!next.searchParams.search };
+      setStoryOpen(false, landingFrame(phone, shows));
     }
 
     activateOverlay(next.overlay);
@@ -2001,7 +1999,9 @@ async function main(): Promise<void> {
   if (frame.mode === 'story' && startsFolded) {
     // A link that names nothing has opened the story and handed it the map.
     if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
-    setStoryOpen(false, START_HERE);
+    setStoryOpen(false, landingFrame(phone, { overlay: false, search: false }));
+    // No stop has drawn the overlay panel, so None's places to start are not in it yet.
+    drawOverlayPanel(true);
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';

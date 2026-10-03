@@ -25,7 +25,7 @@ describe('menuHtml', () => {
     const actions = items(menuHtml({ number: 1, total: 21, title: 'x' })).map(
       (b) => b.dataset.action,
     );
-    expect(actions).toEqual(['story', 'share', 'start', 'search', 'overlay', 'stories', 'about']);
+    expect(actions).toEqual(['story', 'share', 'search', 'overlay', 'stories', 'about']);
   });
 
   it("is headed with the site's name", () => {

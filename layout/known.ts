@@ -33,10 +33,5 @@ export const KNOWN: Record<string, Known> = {
   'explore-search-and-overlay-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-trop/phone/touch-targets': TROP_FOLD,
-  'start-here-trop/phone/touch-targets': TROP_FOLD,
-  'start-here/phone/touch-targets': {
-    reason:
-      "The sheet's fold cuts through the Verse Length button, and the check measures the sliver above it; the button is full size.",
-    violations: ['button.control-button is 152×5px, under 24'],
-  },
+  'overlay-none-trop/phone/touch-targets': TROP_FOLD,
 };
