@@ -5,11 +5,10 @@ import { excerptOf } from '../helpers/excerpt';
 import { buildTextIndex, type SearchResult, type TextIndex } from '../../search';
 import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
-const result = (verse: number, language: 'he' | 'en'): SearchResult => ({
+const result = (verse: number): SearchResult => ({
   book: 'Genesis',
   chapter: 1,
   verse,
-  language,
   matchingTerms: [{ termIndex: 0 }],
 });
 
@@ -28,13 +27,13 @@ describe('Snippet bounds', () => {
   });
 
   it.each([
-    [1, 'he', 'אלהים'],
-    [2, 'he', 'בראשית'],
-    [1, 'en', 'God'],
-    [2, 'en', 'beginning'],
-  ] as const)('keeps the mark inside the snippet (verse %i, %s)', (verse, language, term) => {
+    [1, 'אלהים'],
+    [2, 'בראשית'],
+    [1, 'God'],
+    [2, 'beginning'],
+  ] as const)('keeps the mark inside the snippet (verse %i, %s)', (verse, term) => {
     const { snippet, matchStart, matchEnd } = excerptOf(
-      result(verse, language),
+      result(verse),
       term,
       'word',
       index,
@@ -48,7 +47,7 @@ describe('Snippet bounds', () => {
 
   it('marks the whole of a pointed word that ends the verse', () => {
     const { snippet, matchStart, matchEnd } = excerptOf(
-      result(1, 'he'),
+      result(1),
       'אלהים',
       'word',
       index,
