@@ -123,7 +123,7 @@ describe('the panel summary', () => {
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
     typeIntoInput(rowInput(container, 1), 'spirit');
 
-    expect(searchOverlay.overlay.summary!(searchOverlay.settings)).toEqual({
+    expect(searchOverlay.summary()).toEqual({
       terms: [{ text: 'spirit', color: css(1) }],
     });
   });

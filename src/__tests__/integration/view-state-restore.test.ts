@@ -3,7 +3,7 @@ import { parseUrlState } from '../../urlState';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from '../../viewState';
 import { worldToScreen } from '../helpers/worldToScreen';
 import { registerAllOverlays, getOverlay, configureSearch } from '../../overlays/index';
-import { SAMPLE_VERSES, SAMPLE_VERSE_TEXTS, SAMPLE_LOADED } from '../helpers/fixtures';
+import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';

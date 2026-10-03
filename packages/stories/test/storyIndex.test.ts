@@ -37,9 +37,9 @@ describe('listedStories', () => {
 
 describe('storyToOpen', () => {
   const listed = [story('tour'), story('job')];
-  it('opens the story a link names', () => expect(storyToOpen(listed, 'job').id).toBe('job'));
+  it('opens the story a link names', () => expect(storyToOpen(listed, 'job')?.id).toBe('job'));
   it('opens the first story when a link names none', () =>
-    expect(storyToOpen(listed, null).id).toBe('tour'));
+    expect(storyToOpen(listed, null)?.id).toBe('tour'));
   it('opens the first story when a link names one not listed', () =>
-    expect(storyToOpen(listed, 'abraham_call').id).toBe('tour'));
+    expect(storyToOpen(listed, 'abraham_call')?.id).toBe('tour'));
 });

@@ -397,6 +397,7 @@ describe('sidebar', () => {
           english: null,
           link: null,
           closeBtn: null,
+          notice: null,
         };
 
         expect(() => {
