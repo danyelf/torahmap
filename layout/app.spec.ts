@@ -46,6 +46,9 @@ test('the rules report a layout broken on purpose', async ({ page }, info) => {
 
 for (const state of STATES) {
   test(state.name, async ({ page }, info) => {
+    if (state.returning) {
+      await page.addInitScript(() => localStorage.setItem('torahMap.visited', 'true'));
+    }
     const errors = await openMap(page, state.link);
     await state.then?.(page);
     expect(errors, `page errors after opening ${state.name}`).toEqual([]);
@@ -56,6 +59,13 @@ for (const state of STATES) {
     expect(errors, 'page errors while measuring').toEqual([]);
   });
 }
+
+test("a returning reader's Search button opens search, ready to type", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('torahMap.visited', 'true'));
+  await openMap(page, '');
+  await page.locator('[data-start="search"]').click();
+  await expect(page.locator('#search-input')).toBeFocused();
+});
 
 test("the haftarah legend's key shows only in the desktop layout", async ({ page }) => {
   const state = STATES.find((s) => s.name === 'explore-haftarah')!;

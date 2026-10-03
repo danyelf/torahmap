@@ -189,7 +189,7 @@ describe('which tool leads', () => {
 
 describe('panel names', () => {
   it('accepts the panels and nothing else', () => {
-    expect(['search', 'overlay', 'stories', 'about'].every(isPanel)).toBe(true);
+    expect(['start', 'search', 'overlay', 'stories', 'about'].every(isPanel)).toBe(true);
     expect(isPanel('menu')).toBe(false);
     expect(isPanel('story')).toBe(false);
     expect(isPanel('restart')).toBe(false);

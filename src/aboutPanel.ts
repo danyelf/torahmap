@@ -38,7 +38,7 @@ export function aboutHtml(
         <tr><td>Click pinned / Tap again</td><td>Unpin verse</td></tr>
         <tr><td>&larr; &rarr; arrow keys</td><td>Navigate verses</td></tr>
         <tr><td>Escape</td><td>Close the menu, unpin the verse, or close the panel or the story</td></tr>
-        <tr><td>☰</td><td>The menu: continue the story, share, search, overlays, stories, About &amp; settings</td></tr>
+        <tr><td>☰</td><td>The menu: continue the story, share, where to start, search, overlays, stories, About &amp; settings</td></tr>
         <tr><td>Legend</td><td>What colours the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>
       </table>

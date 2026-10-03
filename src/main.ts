@@ -12,6 +12,7 @@ import { initBookData } from './constants/books.ts';
 import {
   DRAG_PX,
   STORY,
+  START_HERE,
   exploreFrame,
   frontToolAfter,
   nextFrame,
@@ -25,6 +26,8 @@ import { CONTINUE_STORY, SHARE, menuHtml, type StoryPlace } from './menu.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
+import { startHtml, startChosen, type StartChoice } from './startPanel.ts';
+import type { LinkParams } from './overlays/settings.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
@@ -574,6 +577,7 @@ async function main(): Promise<void> {
   const toolsTitle = document.getElementById('tools-title')!;
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
+  const startPanel = document.getElementById('start-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
@@ -638,6 +642,7 @@ async function main(): Promise<void> {
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
+    if (opened && frame.open === 'start') drawStart();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(allOverlays);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
@@ -1272,9 +1277,11 @@ async function main(): Promise<void> {
     syncUrl(togglesSearch(before, after));
   }
 
-  function setOverlay(id: string): void {
+  /** `params` replaces the overlay's settings; without them it keeps what the reader left. */
+  function setOverlay(id: string, params?: LinkParams): void {
     trackOverlaySwitch(id, currentOverlayId());
     activateOverlay(id);
+    if (params && currentOverlay) overlaySettings.restore(currentOverlay, params);
     overlayChanged(true);
     applyTools();
     render();
@@ -1513,6 +1520,27 @@ async function main(): Promise<void> {
     readerOpensStory(fromStart ? 0 : left);
   }
 
+  function drawStart(): void {
+    startPanel.innerHTML = startHtml(
+      listed.map(({ id, data }) => ({ id, title: data.title, description: data.description })),
+    );
+  }
+
+  function takeStart(choice: StartChoice): void {
+    if (choice.kind === 'story') return readStory(choice.id, true);
+    if (choice.kind === 'search') {
+      dispatch({ type: 'choose', panel: 'search' });
+      document.getElementById('search-input')?.focus();
+      return;
+    }
+    // The overlay before its panel: opening the panel measures a phone's sheet
+    // there and then, and with no overlay drawn yet it measures short. The
+    // ResizeObserver never corrects it, since the sheet is back to its old
+    // height by the next frame.
+    setOverlay(choice.id, choice.params);
+    dispatch({ type: 'choose', panel: 'overlay' });
+  }
+
   function drawStories(): void {
     const cards = listed.map(({ id, data }): StoryCard => {
       const at = leftAt(id);
@@ -1542,6 +1570,8 @@ async function main(): Promise<void> {
       });
     const chosen = storyChosen(target);
     if (chosen) return readStory(chosen.id, chosen.fromStart);
+    const start = startChosen(target);
+    if (start) return takeStart(start);
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
     if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
@@ -1971,7 +2001,7 @@ async function main(): Promise<void> {
   if (frame.mode === 'story' && startsFolded) {
     // A link that names nothing has opened the story and handed it the map.
     if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
-    setStoryOpen(false);
+    setStoryOpen(false, START_HERE);
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';

@@ -9,6 +9,12 @@ const POPUP_KNOWN: Known = {
   violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
 };
 
+const TROP_FOLD: Known = {
+  reason:
+    "The sheet's fold cuts through the trop chart's second row, and the check measures the sliver above it; the buttons are full size.",
+  violations: Array(6).fill('button is 55×10px, under 24'),
+};
+
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
  * failure whose violations change — fixed, or joined by another — fails the
@@ -26,9 +32,11 @@ export const KNOWN: Record<string, Known> = {
   'story-stop-with-verse/tablet/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/tablet/touch-targets': POPUP_KNOWN,
-  'explore-trop/phone/touch-targets': {
+  'explore-trop/phone/touch-targets': TROP_FOLD,
+  'start-here-trop/phone/touch-targets': TROP_FOLD,
+  'start-here/phone/touch-targets': {
     reason:
-      "The sheet's fold cuts through the trop chart's second row, and the check measures the sliver above it; the buttons are full size.",
-    violations: Array(6).fill('button is 55×10px, under 24'),
+      "The sheet's fold cuts through the Verse Length button, and the check measures the sliver above it; the button is full size.",
+    violations: ['button.control-button is 152×5px, under 24'],
   },
 };

@@ -17,6 +17,7 @@ export const SHARE = 'share';
 // The menu offers a choice of overlays, where the open panel shows one; the
 // rest match PANEL_TITLES.
 const MENU_LABELS: Record<Panel, string> = {
+  start: 'Start here',
   search: 'Search',
   overlay: 'Overlays',
   stories: 'Stories',

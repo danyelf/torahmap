@@ -5,6 +5,8 @@ export interface State {
   name: string;
   link: string;
   then?: (page: Page) => Promise<void>;
+  /** Opens as a reader who has been before, whom a link naming nothing does not show the story. */
+  returning?: boolean;
   /** Elements that must show in full, so a selector that stops matching fails rather than measuring nothing. */
   shown?: string[];
 }
@@ -52,6 +54,22 @@ export const STATES: State[] = [
     shown: ['#menu', '.menu-item[data-action="share"]', '#map-legend'],
   },
   { name: 'explore-link', link: 'overlay=commentary', shown: ['#map-legend'] },
+  {
+    name: 'start-here',
+    link: '',
+    returning: true,
+    shown: ['[data-start="search"]', '[data-start="overlay"][data-id="trop"]'],
+  },
+  {
+    name: 'start-here-trop',
+    link: '',
+    returning: true,
+    then: async (page) => {
+      await page.locator('[data-start="overlay"][data-id="trop"]').click();
+      await expect(page).toHaveURL(/trop=geresh/);
+    },
+    shown: ['#overlay-select', '#map-legend'],
+  },
   {
     name: 'story-closed',
     link: 'story=tour&stop=intro',

@@ -378,6 +378,7 @@ body[data-menu] #story-cue {
   flex-shrink: 0;
 }
 
+body[data-open='start'] #start-panel,
 body[data-open='search'] #search-panel,
 body[data-open='overlay'] #overlay-panel,
 body[data-open='stories'] #stories-panel,
@@ -437,6 +438,36 @@ body[data-open='about'] #about-panel {
   flex: 1 1 auto;
   min-height: 120px;
   max-height: none;
+}
+
+/* One width for every button, so the descriptions line up; a long story title wraps. */
+.start-row {
+  display: grid;
+  grid-template-columns: 9.5em 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.start-row + .start-row {
+  margin-top: 8px;
+}
+
+.start-row .control-button {
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.start-detail {
+  margin: 0;
+  color: #ccc;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.start-divider {
+  margin: 14px 0;
+  border-top: 1px solid #333;
 }
 
 .story-card {
