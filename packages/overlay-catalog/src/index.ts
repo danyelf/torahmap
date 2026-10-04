@@ -19,9 +19,9 @@ export const COMMENTARY = {
   id: 'commentary',
   name: 'Commentary',
   description:
-    'Cross-references from later texts. Shades each verse by how many references there ' +
-    'are in later texts: the brighter the verse, the more commentary Sefaria records on ' +
-    'it. Choose a kind of commentary to count only that one.',
+    'Cross-references from later texts. Shades each verse by how many it has: the ' +
+    'brighter the verse, the more commentary Sefaria records on it. Choose a kind of ' +
+    'commentary to count only that one.',
   urlParams: COMMENTARY_PARAMS,
 } as const satisfies OverlayEntry;
 
@@ -32,7 +32,7 @@ export const TROP = {
   name: 'Trop',
   description:
     'The frequency of cantillation marks. The brighter the verse, the more often the ' +
-    'chosen mark appears in it. Pick a mark to see which verses carry it, and how often.',
+    'chosen mark appears in it. Pick a mark to see which verses carry it.',
   urlParams: TROP_PARAMS,
 } as const satisfies OverlayEntry;
 
