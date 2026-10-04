@@ -8,7 +8,7 @@ import { HEBREW_LABEL_FONT } from '../../constants/labels';
 // one and leave the other pointing at a font nothing asks for any more — the
 // labels then fall back to a system face and still take HEBREW_LABEL_SCALE,
 // which is measured for the face that failed to load.
-const ENTRY_POINTS = ['index.html', 'talmud.html'];
+const ENTRY_POINTS = ['index.html'];
 
 const familyName = HEBREW_LABEL_FONT.split(',')[0].replace(/"/g, '').trim();
 

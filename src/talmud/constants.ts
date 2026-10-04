@@ -76,7 +76,3 @@ export const SEDER_BACKGROUND_OPACITY = 0.1;
 export const DAF_LABEL_ZOOM_LOW = 0.3;
 export const DAF_LABEL_ZOOM_MID = 0.7;
 export const DAF_LABEL_ZOOM_HIGH = 1.5;
-
-// --- Prefetch concurrency ---
-
-export const PREFETCH_CONCURRENCY = 4;

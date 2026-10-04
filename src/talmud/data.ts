@@ -1,8 +1,4 @@
-// Runtime data loading for the Talmud map.
-// Loads public/data/talmud/structure.json eagerly at startup and per-tractate
-// text files lazily with in-memory caching.
-
-import { fetchData } from '../constants.ts';
+// The shapes of the Talmud data files in public/data/talmud/.
 
 export interface TalmudAmud {
   daf: number;
@@ -37,52 +33,6 @@ export interface TalmudStructure {
 export interface TalmudTractateText {
   name: string;
   amudim: string[][];
-}
-
-// Called once at page load.
-export async function loadTalmudStructure(): Promise<TalmudStructure> {
-  const res = await fetchData('talmud/structure.json');
-  if (!res.ok) {
-    throw new Error(`Failed to load talmud/structure.json: ${res.status}`);
-  }
-  return res.json() as Promise<TalmudStructure>;
-}
-
-const textCache = new Map<string, TalmudTractateText | Promise<TalmudTractateText>>();
-
-// Awaits an in-flight fetch if one exists rather than starting a second one,
-// so concurrent callers for the same tractate share one request.
-export async function getTractateText(name: string): Promise<TalmudTractateText> {
-  const existing = textCache.get(name);
-  if (existing) {
-    return await existing;
-  }
-  const promise = (async () => {
-    const res = await fetchData(`talmud/texts/${name}.json`);
-    if (!res.ok) {
-      throw new Error(`Failed to load ${name}: ${res.status}`);
-    }
-    return res.json() as Promise<TalmudTractateText>;
-  })();
-  textCache.set(name, promise);
-  promise.catch(() => {
-    // Clear the rejected promise so callers can retry.
-    if (textCache.get(name) === promise) textCache.delete(name);
-  });
-  const result = await promise;
-  textCache.set(name, result); // replace promise with resolved value
-  return result;
-}
-
-// True only once the text is fully loaded, not while a fetch is in flight.
-export function hasTractateText(name: string): boolean {
-  const entry = textCache.get(name);
-  return entry !== undefined && !(entry instanceof Promise);
-}
-
-// Test-only.
-export function resetTalmudDataCache(): void {
-  textCache.clear();
 }
 
 // False if the tractate/daf/amud/segment is unknown.
