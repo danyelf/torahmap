@@ -7,12 +7,23 @@ import {
   haftarahSheet,
   loadDictionary,
   loadHaftarahData,
+  firstWord,
   loadStructure,
   nameVerses,
   searchSheet,
 } from '../views.ts';
 
 const structure = loadStructure();
+
+describe('firstWord', () => {
+  it('drops vowels and accents, and splits at a maqaf', () => {
+    expect(firstWord('וַֽיְהִי־עֶ֥רֶב וַֽיְהִי־בֹ֖קֶר')).toBe('ויהי');
+  });
+
+  it('skips a single letter, which is never a word', () => {
+    expect(firstWord('ו אֱלֹהִ֑ים')).toBe('אלהים');
+  });
+});
 
 describe('haftarahSheet', () => {
   let sheet: SheetInput;

@@ -147,6 +147,89 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
         patch.title,
       );
     });
+    // The microtext patch, beside the others: the same verses three ways.
+    const mt = input.microtext;
+    const MX = 36 + input.patches.length * (P + 18);
+    const MW = W - 36 - MX;
+    const MH = 70;
+    const VARIANTS: {
+      name: string;
+      square: boolean;
+      word: (v: SheetInput['verses'][0]) => string;
+    }[] = [
+      { name: 'First word in ink, on the colour', square: true, word: () => ink },
+      { name: 'First word in the colour, no square', square: false, word: (v) => v.fills[0] },
+      { name: 'First word in paper, out of the colour', square: true, word: () => paper },
+    ];
+    const halfW = MW / 2 / input.scale;
+    const halfH = MH / 2 / input.scale;
+    const shown = mt.verses
+      .map((v, i) => ({ v, word: mt.words[i] }))
+      .filter(
+        ({ v }) =>
+          Math.abs(v.x - mt.centre.x) < halfW + v.side &&
+          Math.abs(v.y - mt.centre.y) < halfH + v.side,
+      );
+    VARIANTS.forEach((variant, k) => {
+      const y = 44 + k * (MH + 18);
+      const g = el(page, 'g', { class: 'microtext' });
+      el(el(defs, 'clipPath', { id: `microtext-${k}` }), 'rect', {
+        x: MX,
+        y,
+        width: MW,
+        height: MH,
+      });
+      const map = el(el(g, 'g', { 'clip-path': `url(#microtext-${k})` }), 'g', {
+        transform:
+          `translate(${MX + MW / 2 - mt.centre.x * input.scale},` +
+          `${y + MH / 2 - mt.centre.y * input.scale}) scale(${input.scale})`,
+      });
+      if (variant.square) {
+        drawVerses(
+          el(map, 'g', { class: 'verses' }),
+          shown.map(({ v }) => v),
+          input.bandOffset,
+          input.growth,
+        );
+      }
+      for (const { v, word } of shown) {
+        if (!word) continue;
+        // As wide as the square allows, and no taller than most of it.
+        const size = Math.min(v.side * 0.8, (v.side * 0.92) / measure(word, HEBREW, 1, 700));
+        el(
+          map,
+          'text',
+          {
+            class: 'word',
+            x: v.x + v.side / 2,
+            y: v.y + v.side / 2,
+            'text-anchor': 'middle',
+            'dominant-baseline': 'central',
+            'font-family': HEBREW,
+            'font-weight': 700,
+            'font-size': size,
+            fill: variant.word(v),
+          },
+          word,
+        );
+      }
+      el(g, 'rect', {
+        x: MX,
+        y,
+        width: MW,
+        height: MH,
+        fill: 'none',
+        stroke: inkSoft,
+        'stroke-width': 0.5,
+      });
+      el(
+        g,
+        'text',
+        { x: MX, y: y + MH + 10, 'font-family': LATIN, 'font-size': 7, fill: inkSoft },
+        `${mt.title} · ${variant.name}`,
+      );
+    });
+
     const COLS = 16;
     const CELL_W = (W - 72) / COLS;
     // A name too long for its cell loses letters to an ellipsis; the value,

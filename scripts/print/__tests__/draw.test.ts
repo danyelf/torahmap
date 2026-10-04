@@ -206,6 +206,15 @@ describe('draw, proof', () => {
         centre: { x: 100, y: 100 },
       },
     ],
+    microtext: {
+      title: 'C',
+      verses: [
+        { x: 100, y: 100, side: 4, fills: ['#0000aa'] },
+        { x: 3000, y: 3000, side: 4, fills: ['#0000aa'] },
+      ],
+      words: ['בראשית', 'ויאמר'],
+      centre: { x: 100, y: 100 },
+    },
     swatches: [
       { fill: '#aa0000', name: 'red', value: '#aa0000' },
       { fill: '#00aa00', name: 'Passover, Intermediate Sabbath', value: '#00aa00' },
@@ -226,6 +235,16 @@ describe('draw, proof', () => {
     for (const p of patches) expect(p.getAttribute('transform')).toContain('scale(0.7)');
     expect(svg.querySelectorAll('.swatch')).toHaveLength(2);
     expect(svg.textContent).toContain('#00aa00');
+  });
+
+  it('draws the microtext patch three ways, with only the words that fall inside it', () => {
+    const svg = svgOf(draw(proof));
+    const strips = [...svg.querySelectorAll('.microtext')];
+    expect(strips).toHaveLength(3);
+    for (const s of strips) {
+      expect([...s.querySelectorAll('.word')].map((t) => t.textContent)).toEqual(['בראשית']);
+    }
+    expect(strips.map((s) => s.querySelectorAll('.verses rect').length)).toEqual([1, 0, 1]);
   });
 
   it('shortens a swatch name too long for its cell, and keeps its value whole', () => {

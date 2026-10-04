@@ -91,7 +91,7 @@ try {
   const search = await searchSheet(structure, marks);
   const drawn = await write(page, 'haftarah', haftarah);
   await write(page, 'search', search);
-  await write(page, 'proof', proofInput(haftarah, search, drawn.scale));
+  await write(page, 'proof', proofInput(haftarah, search, drawn.scale, structure));
 } finally {
   await page.context().browser()?.close();
 }
