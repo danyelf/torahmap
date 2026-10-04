@@ -7,7 +7,6 @@ import {
   clearHover,
 } from '../../mouseState';
 import type { TanakhLayout } from '../../types';
-import { tanakhIdentitiesEqual } from '../../types';
 import { createVerse } from '../helpers/fixtures';
 
 describe('mouseState', () => {
@@ -26,46 +25,6 @@ describe('mouseState', () => {
 
       state1.isDragging = true;
       expect(state2.isDragging).toBe(false);
-    });
-  });
-
-  describe('tanakhIdentitiesEqual', () => {
-    it('returns true when both are null', () => {
-      expect(tanakhIdentitiesEqual(null, null)).toBe(true);
-    });
-
-    it('returns false when only first is null', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(null, verse)).toBe(false);
-    });
-
-    it('returns false when only second is null', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse, null)).toBe(false);
-    });
-
-    it('returns true when verses are the same', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ x: 100, y: 200, size: 2 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(true);
-    });
-
-    it('returns false when books differ', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ book: 'Exodus', x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
-    });
-
-    it('returns false when chapters differ', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ chapter: 2, x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
-    });
-
-    it('returns false when verse numbers differ', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ verse: 2, x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
     });
   });
 

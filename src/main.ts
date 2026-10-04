@@ -50,15 +50,7 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import {
-  parseVerseFromUrl,
-  verseToUrlFormat,
-  linkKind,
-  verseRef,
-  linkNamesAView,
-  DEFAULT_ZOOM,
-  type UrlState,
-} from '@torahmap/link';
+import { linkKind, verseRef, linkNamesAView, DEFAULT_ZOOM, type UrlState } from '@torahmap/link';
 import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
@@ -92,13 +84,8 @@ import {
   getPinchCenter,
   resetTouchState,
 } from './touchState.ts';
-import {
-  tanakhIdentitiesEqual,
-  findTanakhItem,
-  nextTanakhItem,
-  prevTanakhItem,
-  tanakhKey,
-} from './types.ts';
+import { tanakhKey } from './types.ts';
+import { indexItems, sameItem } from './items.ts';
 import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import {
@@ -249,6 +236,7 @@ async function main(): Promise<void> {
 
   initBookData(torahData);
   const verses = computeLayout(torahData, (message) => reportError('layout', message));
+  const squares = indexItems(verses);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
@@ -518,14 +506,11 @@ async function main(): Promise<void> {
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
-      const parsed = parseVerseFromUrl(stop.verse);
-      if (parsed) {
-        if (!tanakhIdentitiesEqual(pinnedVerse, parsed)) {
-          const verse = findTanakhItem(verses, parsed);
-          if (verse) {
-            pinnedVerse = verse;
-            updateSidebarWrapper(verse, true);
-          }
+      if (pinnedVerse?.id !== stop.verse) {
+        const verse = squares.find(stop.verse);
+        if (verse) {
+          pinnedVerse = verse;
+          updateSidebarWrapper(verse, true);
         }
       }
     } else if (pinnedVerse) {
@@ -941,7 +926,7 @@ async function main(): Promise<void> {
       if (dx < DRAG_PX && dy < DRAG_PX && duration < TAP_MAX_DURATION) {
         const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
         if (verse) {
-          if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
+          if (pinnedVerse && sameItem(pinnedVerse, verse)) {
             unpinVerse();
           } else {
             pinVerse(verse);
@@ -983,7 +968,7 @@ async function main(): Promise<void> {
     }
 
     if (pinnedVerse) {
-      state.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
+      state.verse = pinnedVerse.id;
     }
 
     if (camera.zoom !== DEFAULT_ZOOM) {
@@ -1101,7 +1086,7 @@ async function main(): Promise<void> {
     const previousHover = mouseState.hoveredVerse;
     setHoveredVerse(mouseState, verse);
     setCursorOver(verse);
-    if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
+    if (!sameItem(previousHover, verse)) repaint(previousHover);
     // A pinned verse keeps the popup.
     if (!pinnedVerse) updateSidebarWrapper(verse);
   });
@@ -1129,9 +1114,9 @@ async function main(): Promise<void> {
     let targetVerse: TanakhLayout | null = null;
 
     if (e.key === 'ArrowRight') {
-      targetVerse = nextTanakhItem(verses, pinnedVerse);
+      targetVerse = squares.step(pinnedVerse, 1);
     } else if (e.key === 'ArrowLeft') {
-      targetVerse = prevTanakhItem(verses, pinnedVerse);
+      targetVerse = squares.step(pinnedVerse, -1);
     }
 
     if (targetVerse) {
@@ -1339,7 +1324,7 @@ async function main(): Promise<void> {
           ...overlaySettings.toUrl(searchTool),
         };
         if (pinnedVerse) {
-          params.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
+          params.verse = pinnedVerse.id;
         }
         const comment = writeStopComment('STOP_ID', camera, params);
         navigator.clipboard.writeText(comment);
@@ -1951,7 +1936,7 @@ async function main(): Promise<void> {
     searchChanged(true);
     overlayChanged(true);
 
-    const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
+    const verse = next.verse ? squares.find(next.verse) : null;
     pinnedVerse = verse;
     updateSidebarWrapper(verse, verse !== null);
 

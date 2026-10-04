@@ -6,8 +6,8 @@ import {
 } from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
 import type { Book, TanakhLayout } from '../types';
-import { findTanakhItem } from '../types';
-import { bookFromUrl, parseVerseFromUrl } from '@torahmap/link';
+import { indexItems } from '../items.ts';
+import { bookFromUrl } from '@torahmap/link';
 import { getBookSection } from '../constants/books';
 import { SECTION_LABEL_REACH } from '../labels';
 import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera';
@@ -132,6 +132,7 @@ export function resolveStops(
   focus: ScreenPoint,
   mapSize: MapSize,
 ): ResolvedStoryStop[] {
+  const index = indexItems(verses);
   return stops.map((stop) => {
     const cam = stop.camera;
     let camera: CameraPosition;
@@ -143,8 +144,7 @@ export function resolveStops(
         : { ...initialCamera };
     } else if (isVerseRef(cam)) {
       const zoom = stop.zoom ?? 3;
-      const parsed = parseVerseFromUrl(cam.ref);
-      const verseLayout = parsed ? findTanakhItem(verses, parsed) : null;
+      const verseLayout = index.find(cam.ref);
       if (verseLayout) {
         camera = cameraForVerse(verseLayout, zoom, focus, mapSize);
       } else {
@@ -153,8 +153,7 @@ export function resolveStops(
     } else if (cam !== 'initial') {
       camera = cam;
     } else if (stop.verse) {
-      const parsed = parseVerseFromUrl(stop.verse);
-      const verseLayout = parsed ? findTanakhItem(verses, parsed) : null;
+      const verseLayout = index.find(stop.verse);
       if (verseLayout) {
         camera = cameraForVerse(verseLayout, initialCamera.zoom, focus, mapSize);
       } else {

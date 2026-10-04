@@ -38,6 +38,22 @@ describe('stopLabel', () => {
   });
 });
 
+describe('resolveStops with a pinned verse', () => {
+  const verses = [1, 2, 3].map((verse) => createVerse({ verse, x: verse * 10 }));
+  const initial = { x: 1, y: 2, zoom: 3 };
+  const resolve = (fields: Partial<StoryStop>) =>
+    resolveStops([stop(fields)], initial, verses, { x: 0, y: 0 }, { width: 400, height: 300 })[0]
+      .camera;
+
+  it('moves the camera to a verse the map holds', () => {
+    expect(resolve({ verse: verses[1].id })).not.toEqual(initial);
+  });
+
+  it('keeps the initial camera for a verse the map does not hold', () => {
+    expect(resolve({ verse: 'Genesis.99.1' })).toEqual(initial);
+  });
+});
+
 describe('resolveStops with a region camera', () => {
   initBookData({
     books: [
