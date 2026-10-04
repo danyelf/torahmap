@@ -36,8 +36,8 @@ export interface TorahData {
 }
 
 /**
- * A square on the map. Its id is its link form, so the app compares, finds
- * and links squares by id without knowing what they hold. Drawing, hit
+ * A square on the map. The app compares and finds squares by id without
+ * knowing what they hold; a Tanakh square's id is its link form. Drawing, hit
  * testing and the camera read only this.
  */
 export interface MapItem {
