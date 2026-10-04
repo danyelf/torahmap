@@ -147,6 +147,114 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
         patch.title,
       );
     });
+    // The microtext patch, beside the others: the same verses three ways.
+    const mt = input.microtext;
+    const MX = 36 + input.patches.length * (P + 18);
+    const MW = W - 36 - MX;
+    const MH = 70;
+    const VARIANTS: {
+      name: string;
+      square: boolean;
+      word: (v: SheetInput['verses'][0]) => string;
+    }[] = [
+      { name: 'Letters in ink, on the colour', square: true, word: () => ink },
+      { name: 'Letters in the colour, no square', square: false, word: (v) => v.fills[0] },
+      { name: 'Letters in paper, out of the colour', square: true, word: () => paper },
+    ];
+    // Letters are drawn closer than the face sets them, and rows a letter's
+    // height apart, so ascenders and descenders reach into the next row.
+    const KERN = -0.08; // ems
+    const BODY = (() => {
+      if (!ctx) return 0.6;
+      ctx.font = `700 100px "${HEBREW}"`;
+      return ctx.measureText('ה').actualBoundingBoxAscent / 100;
+    })();
+    // A word broken into rows of nearly equal length, in the number of rows
+    // that lets its letters be largest in a square of this side.
+    const stack = (word: string, side: number) => {
+      const letters = [...word];
+      let best = { rows: [word], size: 0 };
+      for (let n = 1; n <= letters.length; n++) {
+        const rows = Array.from({ length: n }, (_, r) =>
+          letters
+            .slice(Math.round((r * letters.length) / n), Math.round(((r + 1) * letters.length) / n))
+            .join(''),
+        );
+        const width = Math.max(
+          ...rows.map(
+            (row) => (measure(row, HEBREW, 100, 700) + KERN * 100 * (row.length - 1)) / 100,
+          ),
+        );
+        const size = Math.min(side / width, side / (n * BODY));
+        if (size > best.size) best = { rows, size };
+      }
+      return best;
+    };
+    const halfW = MW / 2 / input.scale;
+    const halfH = MH / 2 / input.scale;
+    const shown = mt.verses
+      .map((v, i) => ({ v, word: mt.words[i] }))
+      .filter(
+        ({ v }) =>
+          Math.abs(v.x - mt.centre.x) < halfW + v.side &&
+          Math.abs(v.y - mt.centre.y) < halfH + v.side,
+      );
+    VARIANTS.forEach((variant, k) => {
+      const y = 44 + k * (MH + 18);
+      const g = el(page, 'g', { class: 'microtext' });
+      el(el(defs, 'clipPath', { id: `microtext-${k}` }), 'rect', {
+        x: MX,
+        y,
+        width: MW,
+        height: MH,
+      });
+      const map = el(el(g, 'g', { 'clip-path': `url(#microtext-${k})` }), 'g', {
+        transform:
+          `translate(${MX + MW / 2 - mt.centre.x * input.scale},` +
+          `${y + MH / 2 - mt.centre.y * input.scale}) scale(${input.scale})`,
+      });
+      if (variant.square) {
+        drawVerses(
+          el(map, 'g', { class: 'verses' }),
+          shown.map(({ v }) => v),
+          input.bandOffset,
+          input.growth,
+        );
+      }
+      for (const { v, word } of shown) {
+        if (!word) continue;
+        const block = stack(word, v.side);
+        const g = el(map, 'g', {
+          class: 'word',
+          'text-anchor': 'middle',
+          'font-family': HEBREW,
+          'font-weight': 700,
+          'font-size': block.size,
+          'letter-spacing': KERN * block.size,
+          fill: variant.word(v),
+        });
+        const top = v.y + (v.side - block.rows.length * BODY * block.size) / 2;
+        block.rows.forEach((row, r) =>
+          el(g, 'text', { x: v.x + v.side / 2, y: top + (r + 1) * BODY * block.size }, row),
+        );
+      }
+      el(g, 'rect', {
+        x: MX,
+        y,
+        width: MW,
+        height: MH,
+        fill: 'none',
+        stroke: inkSoft,
+        'stroke-width': 0.5,
+      });
+      el(
+        g,
+        'text',
+        { x: MX, y: y + MH + 10, 'font-family': LATIN, 'font-size': 7, fill: inkSoft },
+        `${mt.title} · ${variant.name}`,
+      );
+    });
+
     const COLS = 16;
     const CELL_W = (W - 72) / COLS;
     // A name too long for its cell loses letters to an ellipsis; the value,

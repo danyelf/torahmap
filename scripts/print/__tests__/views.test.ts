@@ -8,11 +8,26 @@ import {
   loadDictionary,
   loadHaftarahData,
   loadStructure,
+  openingLetters,
   nameVerses,
   searchSheet,
 } from '../views.ts';
 
 const structure = loadStructure();
+
+describe('openingLetters', () => {
+  it('drops vowels and accents, and splits at a maqaf', () => {
+    expect(openingLetters('וַֽיְהִי־עֶ֥רֶב וַֽיְהִי־בֹ֖קֶר')).toBe('ויהי');
+  });
+
+  it('skips a single letter, which is never a word', () => {
+    expect(openingLetters('ו אֱלֹהִ֑ים')).toBe('אלהים');
+  });
+
+  it('runs a two-letter word on into the next', () => {
+    expect(openingLetters('כִּי־ט֑וֹב וַיֹּ֥אמֶר')).toBe('כיטוב');
+  });
+});
 
 describe('haftarahSheet', () => {
   let sheet: SheetInput;

@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '../../src/geometry.ts';
 import { loadNamedFiles } from '../../src/dataFiles.ts';
-import { STRUCTURE_FILE } from '../../src/verseTexts.ts';
+import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '../../src/verseTexts.ts';
 import {
   deriveHaftarah,
   HAFTARAH_FILES,
@@ -277,8 +277,43 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
   };
 }
 
-/** Two patches of the map at print scale, and every colour the prints use. */
-export function proofInput(haftarah: SheetInput, search: SheetInput, scale: number): ProofInput {
+/**
+ * A verse's first word, without vowels or accents, run on into the next when
+ * it has only two letters. A single letter is never a word, so it is skipped.
+ */
+export function openingLetters(hebrew: string): string {
+  const words = hebrew
+    .replace(/־/g, ' ') // maqaf
+    .replace(/[^א-ת\s]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 1);
+  return words[0]?.length === 2 ? words.slice(0, 2).join('') : (words[0] ?? '');
+}
+
+/** The haftarah print's opening of Genesis, with each verse's opening letters. */
+function microtextPatch(haftarah: SheetInput, structure: TorahData): ProofInput['microtext'] {
+  const texts: VerseTexts = JSON.parse(readFileSync(`public/data/${TEXTS_FILE}`, 'utf8'));
+  const layout = printLayout(structure);
+  const start =
+    haftarah.verses[
+      layout.findIndex((v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1)
+    ];
+  return {
+    title: 'Genesis 1–5',
+    verses: haftarah.verses,
+    words: layout.map((v) => openingLetters(texts[v.book]?.[v.chapter]?.[v.verse]?.he ?? '')),
+    // Genesis runs right to left, so its first verse is at the patch's top right.
+    centre: { x: start.x + start.side - 120, y: start.y + 45 },
+  };
+}
+
+/** Patches of the map at print scale, and every colour the prints use. */
+export function proofInput(
+  haftarah: SheetInput,
+  search: SheetInput,
+  scale: number,
+  structure: TorahData,
+): ProofInput {
   const readings = haftarah.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
   const names = search.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
   return {
@@ -290,6 +325,7 @@ export function proofInput(haftarah: SheetInput, search: SheetInput, scale: numb
       { title: 'Haftarah · Isaiah 40–60', verses: haftarah.verses, centre: { x: 1400, y: 880 } },
       { title: 'Five names · Genesis 22–32', verses: search.verses, centre: { x: 3200, y: 220 } },
     ],
+    microtext: microtextPatch(haftarah, structure),
     swatches: [
       ['paper', PAPER],
       ['ink', INK],
