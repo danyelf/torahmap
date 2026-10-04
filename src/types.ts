@@ -72,46 +72,6 @@ export interface TalmudIdentity {
 
 export type TanakhLayout = SpatialItem<TanakhIdentity>;
 
-/** True if both are null, or both refer to the same verse. */
-export function tanakhIdentitiesEqual(a: TanakhIdentity | null, b: TanakhIdentity | null): boolean {
-  if (a === null && b === null) return true;
-  if (a === null || b === null) return false;
-  return a.book === b.book && a.chapter === b.chapter && a.verse === b.verse;
-}
-
-/** The laid-out verse with this identity, or null if the map does not hold it. */
-export function findTanakhItem(verses: TanakhLayout[], id: TanakhIdentity): TanakhLayout | null {
-  return verses.find((v) => tanakhIdentitiesEqual(v, id)) ?? null;
-}
-
-/** Next verse in layout order, or null if current is last or not found. */
-export function nextTanakhItem(
-  verses: TanakhLayout[],
-  current: TanakhIdentity,
-): TanakhLayout | null {
-  const currentIndex = verses.findIndex((v) => tanakhIdentitiesEqual(v, current));
-
-  if (currentIndex === -1 || currentIndex >= verses.length - 1) {
-    return null;
-  }
-
-  return verses[currentIndex + 1];
-}
-
-/** Previous verse in layout order, or null if current is first or not found. */
-export function prevTanakhItem(
-  verses: TanakhLayout[],
-  current: TanakhIdentity,
-): TanakhLayout | null {
-  const currentIndex = verses.findIndex((v) => tanakhIdentitiesEqual(v, current));
-
-  if (currentIndex <= 0) {
-    return null;
-  }
-
-  return verses[currentIndex - 1];
-}
-
 export interface Bounds {
   width: number;
   height: number;

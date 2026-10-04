@@ -7,7 +7,8 @@ import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
-import { readLink } from '@torahmap/link';
+import { readLink, writeLink } from '@torahmap/link';
+import { indexItems } from '../../items';
 import { createOverlaySettings } from '../../overlays/settings';
 import { searchTool } from '../../overlays/search/index';
 
@@ -130,6 +131,24 @@ describe('restoring a link as one complete view', () => {
 
       expect(view.overlay).toBe('none');
       expect(view.verse).toBeNull();
+    });
+
+    it('carries the linked verse as the id it names', () => {
+      expect(viewFor('?verse=I.Samuel.1.5').verse).toBe('I.Samuel.1.5');
+    });
+
+    it('pins a verse through a written link and back', () => {
+      const square = SAMPLE_VERSES[3];
+      const view = viewFor(writeLink({ verse: square.id, overlayParams: {} }));
+      expect(indexItems(SAMPLE_VERSES).find(view.verse ?? '')).toBe(square);
+    });
+
+    it('pins nothing for a verse the map does not hold, and keeps the camera', () => {
+      for (const ref of ['Genesis.01.1', 'genesis.1.1', 'Genesis.1.999']) {
+        const view = viewFor(`?verse=${ref}&zoom=3`);
+        expect(indexItems(SAMPLE_VERSES).find(view.verse ?? '')).toBeNull();
+        expect(view.camera.zoom).toBe(3);
+      }
     });
 
     it('holds the default position when the link gives only a zoom', () => {
