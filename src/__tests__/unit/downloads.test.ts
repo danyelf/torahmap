@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { TanakhOverlay } from '../../overlays/index';
+import type { TanakhIdentity } from '../../types';
 import {
   downloadStages,
   filesFirst,
@@ -27,11 +28,12 @@ const without = (...paths: string[]): Loaded =>
 const explore = (
   map: TanakhOverlay[],
   panel: TanakhOverlay | null,
-  popup: boolean,
-): LandingView => ({
+  popup: string | null,
+): LandingView<TanakhIdentity> => ({
   source: 'overlay',
   map,
   panel,
+  search: searchTool,
   popup,
 });
 const NOTHING = {
@@ -44,21 +46,21 @@ const NOTHING = {
 
 describe('filesFirst', () => {
   it('names the files of the tools the opening view shows', () => {
-    expect(filesFirst({ tools: [commentaryOverlay], verse: false })).toEqual([COUNTS]);
+    expect(filesFirst({ tools: [commentaryOverlay], popup: null })).toEqual([COUNTS]);
   });
 
   it('names the files search requires, and not the per-word parse', () => {
-    const files = filesFirst({ tools: [searchTool], verse: false });
+    const files = filesFirst({ tools: [searchTool], popup: null });
     expect(files).toEqual(expect.arrayContaining([TEXTS_FILE, LEXICON]));
     expect(files).not.toContain(PARSE);
   });
 
   it('names the texts for a pinned verse', () => {
-    expect(filesFirst({ tools: [], verse: true })).toEqual([TEXTS_FILE]);
+    expect(filesFirst({ tools: [], popup: TEXTS_FILE })).toEqual([TEXTS_FILE]);
   });
 
   it('names nothing for a view with no tool and no verse', () => {
-    expect(filesFirst({ tools: [], verse: false })).toEqual([]);
+    expect(filesFirst({ tools: [], popup: null })).toEqual([]);
   });
 });
 
@@ -130,7 +132,7 @@ describe('staleAfterLanding', () => {
       staleAfterLanding(
         without(HAFTARAH),
         SAMPLE_LOADED,
-        explore([commentaryOverlay], commentaryOverlay, true),
+        explore([commentaryOverlay], commentaryOverlay, TEXTS_FILE),
       ),
     ).toEqual(NOTHING);
   });
@@ -140,14 +142,16 @@ describe('staleAfterLanding', () => {
       staleAfterLanding(
         without(TEXTS_FILE),
         SAMPLE_LOADED,
-        explore([tropOverlay], tropOverlay, true),
+        explore([tropOverlay], tropOverlay, TEXTS_FILE),
       ),
     ).toMatchObject({ map: 'overlay', overlayPanel: true, popup: true });
   });
 
   it('requotes the search results and redraws the popup when the per-word parse lands, and no panel', () => {
     const withParse = new Map(SAMPLE_LOADED).set(PARSE, { realigned: {}, verses: {} });
-    expect(staleAfterLanding(SAMPLE_LOADED, withParse, explore([searchTool], null, true))).toEqual({
+    expect(
+      staleAfterLanding(SAMPLE_LOADED, withParse, explore([searchTool], null, TEXTS_FILE)),
+    ).toEqual({
       ...NOTHING,
       searchResults: true,
       popup: true,
@@ -157,25 +161,29 @@ describe('staleAfterLanding', () => {
   it('requotes nothing when the per-word parse lands before the rest of search', () => {
     const before = without(LEXICON);
     const after = new Map(before).set(PARSE, { realigned: {}, verses: {} });
-    expect(staleAfterLanding(before, after, explore([searchTool], null, true))).toEqual(NOTHING);
+    expect(staleAfterLanding(before, after, explore([searchTool], null, TEXTS_FILE))).toEqual(
+      NOTHING,
+    );
   });
 
   it('fades the blend when the overlay of a stop the story is between lands', () => {
-    const view: LandingView = {
+    const view: LandingView<TanakhIdentity> = {
       source: 'blend',
       map: [commentaryOverlay],
       panel: null,
-      popup: false,
+      search: searchTool,
+      popup: null,
     };
     expect(staleAfterLanding(without(COUNTS), SAMPLE_LOADED, view).map).toBe('blend');
   });
 
   it('re-aims the ease when the overlay of the stop it eases to lands', () => {
-    const view: LandingView = {
+    const view: LandingView<TanakhIdentity> = {
       source: 'ease',
       map: [commentaryOverlay],
       panel: null,
-      popup: false,
+      search: searchTool,
+      popup: null,
     };
     expect(staleAfterLanding(without(COUNTS), SAMPLE_LOADED, view).map).toBe('ease');
   });
@@ -185,7 +193,7 @@ describe('staleAfterLanding', () => {
       staleAfterLanding(
         without(TEXTS_FILE, LEXICON),
         without(LEXICON),
-        explore([searchTool], null, false),
+        explore([searchTool], null, null),
       ),
     ).toEqual(NOTHING);
   });
@@ -195,16 +203,26 @@ describe('staleAfterLanding', () => {
       staleAfterLanding(
         without(COUNTS),
         SAMPLE_LOADED,
-        explore([commentaryOverlay], commentaryOverlay, false),
+        explore([commentaryOverlay], commentaryOverlay, null),
       ),
     ).toEqual({ ...NOTHING, map: 'overlay', overlayPanel: true });
   });
 
   it('redraws the search panel and the open popup when the dictionary lands, with no search on', () => {
-    expect(staleAfterLanding(without(LEXICON), SAMPLE_LOADED, explore([], null, true))).toEqual({
+    expect(
+      staleAfterLanding(without(LEXICON), SAMPLE_LOADED, explore([], null, TEXTS_FILE)),
+    ).toEqual({
       ...NOTHING,
       searchPanel: true,
       popup: true,
     });
+  });
+
+  it('puts the popup out of date when the file its square is in lands, and only that file', () => {
+    const view = explore([], null, 'talmud/texts/Berakhot.json');
+    const berakhot = new Map(SAMPLE_LOADED).set('talmud/texts/Berakhot.json', {});
+    const shabbat = new Map(SAMPLE_LOADED).set('talmud/texts/Shabbat.json', {});
+    expect(staleAfterLanding(SAMPLE_LOADED, berakhot, view).popup).toBe(true);
+    expect(staleAfterLanding(SAMPLE_LOADED, shabbat, view).popup).toBe(false);
   });
 });

@@ -14,17 +14,28 @@ const counts = testOverlay({
 describe('toolsShown', () => {
   it('shows the search once it has a word long enough to search on', () => {
     expect(
-      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' }), SAMPLE_LOADED)
-        .search?.tool,
+      toolsShown(
+        null,
+        undefined,
+        searchTool,
+        settingsFromLink(searchTool, { search: 'אור' }),
+        SAMPLE_LOADED,
+      ).search?.tool,
     ).toBe(searchTool);
   });
 
   it('leaves the search off for a single letter, or for nothing', () => {
     expect(
-      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'א' }), new Map()).search,
+      toolsShown(
+        null,
+        undefined,
+        searchTool,
+        settingsFromLink(searchTool, { search: 'א' }),
+        new Map(),
+      ).search,
     ).toBeNull();
     expect(
-      toolsShown(null, undefined, settingsFromLink(searchTool, {}), new Map()).search,
+      toolsShown(null, undefined, searchTool, settingsFromLink(searchTool, {}), new Map()).search,
     ).toBeNull();
   });
 
@@ -34,6 +45,7 @@ describe('toolsShown', () => {
     const tools = toolsShown(
       counts,
       settings,
+      searchTool,
       settingsFromLink(searchTool, { search: 'אור' }),
       loaded,
     );
@@ -45,6 +57,7 @@ describe('toolsShown', () => {
     const tools = toolsShown(
       counts,
       undefined,
+      searchTool,
       settingsFromLink(searchTool, { search: 'אור' }),
       SAMPLE_LOADED,
     );
@@ -54,8 +67,13 @@ describe('toolsShown', () => {
 
   it('leaves the search out while its files are missing', () => {
     expect(
-      toolsShown(null, undefined, settingsFromLink(searchTool, { search: 'אור' }), new Map())
-        .search,
+      toolsShown(
+        null,
+        undefined,
+        searchTool,
+        settingsFromLink(searchTool, { search: 'אור' }),
+        new Map(),
+      ).search,
     ).toBeNull();
   });
 });

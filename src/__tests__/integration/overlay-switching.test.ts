@@ -465,6 +465,7 @@ describe('Overlay Switching Integration', () => {
         toolsShown(
           getOverlay('commentary')!,
           undefined,
+          searchTool,
           settingsFromLink(searchTool, {}),
           new Map(),
         ).overlay,

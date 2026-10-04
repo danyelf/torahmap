@@ -339,12 +339,18 @@ async function main(): Promise<void> {
 
   /** The overlay and the search as they stand, each null while off. */
   function toolsNow(): TanakhTools {
-    return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool), loaded);
+    return toolsShown(
+      currentOverlay,
+      currentSettings(),
+      searchTool,
+      overlaySettings.get(searchTool),
+      loaded,
+    );
   }
 
   /** The overlay and the search as picked, whether or not their data is in. */
   function pickedTools(): TanakhOverlay[] {
-    return toolsPicked(currentOverlay, overlaySettings.get(searchTool));
+    return toolsPicked(currentOverlay, searchTool, overlaySettings.get(searchTool));
   }
 
   function searching(): boolean {
@@ -1818,13 +1824,14 @@ async function main(): Promise<void> {
   });
 
   /** What the link or the story stop shows first. */
-  function openingView(): OpeningView {
-    if (frame.mode !== 'story') return { tools: pickedTools(), verse: pinnedVerse !== null };
+  function openingView(): OpeningView<TanakhIdentity> {
+    if (frame.mode !== 'story')
+      return { tools: pickedTools(), popup: pinnedVerse ? TEXTS_FILE : null };
     const stop = resolvedStops[storyStopIndex()];
-    return { tools: stopTools(stop), verse: Boolean(stop.verse) };
+    return { tools: stopTools(stop), popup: stop.verse ? TEXTS_FILE : null };
   }
 
-  function landingView(): LandingView {
+  function landingView(): LandingView<TanakhIdentity> {
     let map = pickedTools();
     if (driver.by === 'story' && driver.blend) {
       map = [...stopTools(driver.blend.from), ...stopTools(driver.blend.to)];
@@ -1836,7 +1843,8 @@ async function main(): Promise<void> {
       source: colorSource(driver),
       map,
       panel: currentOverlay,
-      popup: pinnedVerse !== null || mouseState.hoveredVerse !== null,
+      search: searchTool,
+      popup: pinnedVerse || mouseState.hoveredVerse ? TEXTS_FILE : null,
     };
   }
 

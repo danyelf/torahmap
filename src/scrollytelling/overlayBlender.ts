@@ -48,7 +48,11 @@ function overlayOf(stop: StoryStop): TanakhOverlay | null {
 
 /** The tools a stop picks. */
 export function stopTools(stop: StoryStop): TanakhOverlay[] {
-  return toolsPicked(overlayOf(stop), settingsFromLink(searchTool, stop.searchParams ?? {}));
+  return toolsPicked(
+    overlayOf(stop),
+    searchTool,
+    settingsFromLink(searchTool, stop.searchParams ?? {}),
+  );
 }
 
 export function pictureForStop(
@@ -77,6 +81,7 @@ export function pictureForStop(
   const tools = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
+    searchTool,
     settingsFromLink(searchTool, stop.searchParams ?? {}),
     loaded,
   );
