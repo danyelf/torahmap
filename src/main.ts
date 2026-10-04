@@ -1214,14 +1214,7 @@ async function main(): Promise<void> {
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
       overlayStarts.innerHTML = currentOverlay
         ? ''
-        : startingPointsHtml(
-            getAllOverlays(),
-            listed.map(({ id, data }) => ({
-              id,
-              title: data.title,
-              description: data.description,
-            })),
-          );
+        : startingPointsHtml(searchTool, getAllOverlays(), listed);
     }
     renderOverlayControls();
     renderOverlayLegend();

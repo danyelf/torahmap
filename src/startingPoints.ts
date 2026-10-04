@@ -1,5 +1,5 @@
 // What the overlay panel offers while None is chosen: search, every overlay
-// by its tagline, and the stories.
+// and every story, each in its own words.
 import { CONTROL } from './panel.ts';
 import { escapeHtml } from './utils/html.ts';
 
@@ -12,10 +12,10 @@ export interface StartOverlay {
   tagline?: string;
 }
 
+/** A story as @torahmap/stories lists it; only what the button shows. */
 export interface StartStory {
   id: string;
-  title: string;
-  description: string;
+  data: { title: string; description: string };
 }
 
 const heading = (text: string): string => `<h3 class="start-heading">${text}</h3>`;
@@ -27,15 +27,16 @@ const row = (kind: StartChoice['kind'], id: string, label: string, detail = ''):
   </button>`;
 
 export function startingPointsHtml(
+  search: StartOverlay,
   overlays: readonly StartOverlay[],
   stories: readonly StartStory[],
 ): string {
   return [
-    row('search', '', 'Search…', 'Search for any word, Hebrew or English'),
+    row('search', '', `${search.name}…`, search.tagline),
     heading('Overlays'),
     ...overlays.map((o) => row('overlay', o.id, o.name, o.tagline)),
     heading('Stories'),
-    ...stories.map((s) => row('story', s.id, s.title, s.description)),
+    ...stories.map((s) => row('story', s.id, s.data.title, s.data.description)),
   ].join('');
 }
 

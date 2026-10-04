@@ -6,14 +6,16 @@ import {
   type StartStory,
 } from '../../startingPoints';
 
+const SEARCH: StartOverlay = { id: 'search', name: 'Find', tagline: 'Finds a word.' };
+
 const OVERLAYS: StartOverlay[] = [
   { id: 'colours', name: 'Colours', tagline: 'Paints the verses.' },
   { id: 'shades', name: 'Shades', tagline: 'Shades the verses.' },
 ];
 
 const STORIES: StartStory[] = [
-  { id: 'tour', title: 'The Guided Tour', description: 'Follows Abraham.' },
-  { id: 'job', title: 'Prose and Poetry', description: 'Job on the map.' },
+  { id: 'tour', data: { title: 'The Guided Tour', description: 'Follows Abraham.' } },
+  { id: 'job', data: { title: 'Prose and Poetry', description: 'Job on the map.' } },
 ];
 
 function parse(html: string): HTMLDivElement {
@@ -25,7 +27,7 @@ function parse(html: string): HTMLDivElement {
 const buttons = (div: Element): HTMLButtonElement[] => [...div.querySelectorAll('button')];
 
 describe('the starting points', () => {
-  const div = parse(startingPointsHtml(OVERLAYS, STORIES));
+  const div = parse(startingPointsHtml(SEARCH, OVERLAYS, STORIES));
 
   it('offers search, then every overlay and every story, in order, under a heading each', () => {
     expect(buttons(div).map((b) => startChosen(b))).toEqual([
@@ -38,9 +40,12 @@ describe('the starting points', () => {
     expect(div.querySelectorAll('h3')).toHaveLength(2);
   });
 
-  it('puts an overlay’s tagline and a story’s description in its button', () => {
-    const [, colours, , tour] = buttons(div);
+  it('names each button and says what it does, from search, the overlays and the stories', () => {
+    const [search, colours, , tour] = buttons(div);
+    expect(search.textContent).toContain('Find');
+    expect(search.textContent).toContain('Finds a word.');
     expect(colours.textContent).toContain('Paints the verses.');
+    expect(tour.textContent).toContain('The Guided Tour');
     expect(tour.textContent).toContain('Follows Abraham.');
   });
 
