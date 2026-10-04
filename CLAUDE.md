@@ -213,7 +213,7 @@ The codebase follows a **functional, modular design** with clear separation of c
 
 ### Key Concepts
 
-- **main.ts** orchestrates all modules and handles user interactions
+- **main.ts** is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. `src/tanakh/text.ts` and `src/talmud/text.ts` are the texts; `src/app/text.ts` says what a text supplies
 - **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
 - **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors

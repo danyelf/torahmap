@@ -1,7 +1,7 @@
 import type { StoryStop } from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
-import type { TanakhLayout } from '../types';
-import type { TanakhOverlay } from '../overlays/index.ts';
+import type { MapItem, VerseColor } from '../types';
+import type { Overlay } from '../overlays/types.ts';
 import type { Picture } from '../geometry.ts';
 import { getOverlay } from '../overlays/registry';
 import { fillDefaultColors, toolsPicture } from '../itemColoring';
@@ -9,7 +9,7 @@ import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { searchTool } from '../overlays/search/index.ts';
+import { searchTool as tanakhSearch } from '../overlays/search/index.ts';
 import { toolsPicked, toolsShown } from '../tools.ts';
 import type { Loaded } from '../dataFiles.ts';
 
@@ -19,7 +19,7 @@ import type { Loaded } from '../dataFiles.ts';
 // same thing share an entry. Colours that depend on the hover are recomputed
 // while a verse is hovered: caching by hover too would add an entry for every
 // verse the cursor crosses.
-const picturesCache = new WeakMap<TanakhLayout[], WeakMap<Loaded, Map<string, Picture>>>();
+const picturesCache = new WeakMap<readonly MapItem[], WeakMap<Loaded, Map<string, Picture>>>();
 
 // UrlParamValues declares every key optional; validateOverlayParams only ever
 // sets present keys to non-empty strings, so this just gives TypeScript proof
@@ -34,7 +34,7 @@ function paramsKey(values: UrlParamValues): string {
   return new URLSearchParams(Object.fromEntries(definedEntries(values))).toString();
 }
 
-function cacheKeyFor(overlay: TanakhOverlay | null, stop: StoryStop): string {
+function cacheKeyFor<T>(overlay: Overlay<T> | null, stop: StoryStop): string {
   const overlayKey = overlay
     ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
     : NO_OVERLAY;
@@ -42,26 +42,29 @@ function cacheKeyFor(overlay: TanakhOverlay | null, stop: StoryStop): string {
   return `${overlayKey}#${searchKey}`;
 }
 
-function overlayOf(stop: StoryStop): TanakhOverlay | null {
-  return (stop.overlay && getOverlay(stop.overlay)) || null;
+// Shortcut: a stop's overlay and search are the Tanakh's, whatever the text.
+function overlayOf<T>(stop: StoryStop): Overlay<T> | null {
+  return ((stop.overlay && getOverlay(stop.overlay)) || null) as Overlay<T> | null;
 }
+const searchOn = <T>(): Overlay<T> => tanakhSearch as unknown as Overlay<T>;
 
 /** The tools a stop picks. */
-export function stopTools(stop: StoryStop): TanakhOverlay[] {
+export function stopTools<T>(stop: StoryStop): Overlay<T>[] {
   return toolsPicked(
-    overlayOf(stop),
-    searchTool,
-    settingsFromLink(searchTool, stop.searchParams ?? {}),
+    overlayOf<T>(stop),
+    searchOn<T>(),
+    settingsFromLink(tanakhSearch, stop.searchParams ?? {}),
   );
 }
 
-export function pictureForStop(
+export function pictureForStop<I extends MapItem>(
   stop: ResolvedStoryStop,
-  verses: TanakhLayout[],
-  hovered: TanakhLayout | null,
+  verses: I[],
+  hovered: I | null,
   loaded: Loaded,
+  base?: (index: number) => VerseColor,
 ): Picture {
-  const overlay = overlayOf(stop);
+  const overlay = overlayOf<I>(stop);
   const byHover = !!(overlay?.hoverChangesColors && hovered);
 
   let byLoaded = picturesCache.get(verses);
@@ -81,11 +84,11 @@ export function pictureForStop(
   const tools = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
-    searchTool,
-    settingsFromLink(searchTool, stop.searchParams ?? {}),
+    searchOn<I>(),
+    settingsFromLink(tanakhSearch, stop.searchParams ?? {}),
     loaded,
   );
-  const picture = fillDefaultColors(toolsPicture(tools, verses, hovered));
+  const picture = fillDefaultColors(toolsPicture(tools, verses, hovered), base);
   if (!byHover) cache.set(key, picture);
   return picture;
 }
@@ -93,20 +96,21 @@ export function pictureForStop(
 // One stop's colours fading into the next's. At rest on a stop it is that
 // stop's alone, and so is t === 1, which controller.ts hands over with two
 // different stops when their rest zones touch.
-export function computeBlendedColors(
+export function computeBlendedColors<I extends MapItem>(
   fromStop: ResolvedStoryStop,
   toStop: ResolvedStoryStop,
   t: number,
-  verses: TanakhLayout[],
-  hovered: TanakhLayout | null,
+  verses: I[],
+  hovered: I | null,
   loaded: Loaded,
+  base?: (index: number) => VerseColor,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)
-    return still(pictureForStop(fromStop, verses, hovered, loaded));
-  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded));
+    return still(pictureForStop(fromStop, verses, hovered, loaded, base));
+  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded, base));
   return {
-    from: pictureForStop(fromStop, verses, hovered, loaded),
-    to: pictureForStop(toStop, verses, hovered, loaded),
+    from: pictureForStop(fromStop, verses, hovered, loaded, base),
+    to: pictureForStop(toStop, verses, hovered, loaded, base),
     t,
   };
 }

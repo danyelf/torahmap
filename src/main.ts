@@ -1,14 +1,9 @@
-// Tanakh Map - Main entry point
+// The app shell: the map, its panels, story, popup and links, for whichever text it is given.
 
-import { computeLayout, getLayoutBounds } from './layout.ts';
+import type { MapText } from './app/text.ts';
 import { mapPoint } from './mapPoint.ts';
-import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
-import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from './verseTexts.ts';
-import { stripNikkud } from './hebrew.ts';
-import { meaningsInVerse, wordsOfVerse } from './search/dictionary.ts';
-import { dictionaryOf } from './search/data.ts';
-import { openWordMenu, wordMenuOpen } from './wordMenu.ts';
-import { initBookData } from './constants/books.ts';
+import { TEXTS_FILE } from './verseTexts.ts';
+import { wordMenuOpen } from './wordMenu.ts';
 import {
   DRAG_PX,
   STORY,
@@ -35,7 +30,6 @@ import {
   downloadKbps,
   trackLoadTiming,
   reportError,
-  reportUncaughtErrors,
   trackOverlaySwitch,
   trackPageView,
   trackSefariaClick,
@@ -47,19 +41,16 @@ import {
   trackVerseClick,
   trackViewSettled,
   trackWebGLMissing,
-  trackWordMenuOpen,
-  trackWordSearch,
 } from './analytics.ts';
-import { linkKind, verseRef, linkNamesAView, DEFAULT_ZOOM, type UrlState } from '@torahmap/link';
+import { linkKind, linkNamesAView, DEFAULT_ZOOM, type UrlState } from '@torahmap/link';
 import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
 import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
-import { getSidebarElements, updateSidebar, setWordClickHandler } from './sidebar.ts';
+import { getSidebarElements } from './sidebar.ts';
 import {
-  createCamera,
   clampZoom,
   zoomAtPoint,
   centreForFocus,
@@ -95,22 +86,13 @@ import {
   type RenderContext,
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
-import type { TanakhIdentity, TanakhLayout, VerseColor } from './types.ts';
+import type { MapItem, VerseColor } from './types.ts';
+import { createOverlaySettings, type Overlay } from './overlays/index.ts';
+import type { Tools } from './overlays/types.ts';
+import type { SearchData } from './search/data.ts';
 import {
-  registerAllOverlays,
-  createOverlaySettings,
-  getOverlay,
-  getAllOverlays,
-  configureSearch,
-  type Overlay,
-  type TanakhOverlay,
-  type TanakhTools,
-} from './overlays/index.ts';
-import {
-  searchTool,
+  searchTool as tanakhSearch,
   focusSearchBox,
-  searchForMeaning,
-  canAddTerm,
   isSearching,
   requoteSearchResults,
   type SearchSettings,
@@ -137,9 +119,8 @@ import {
   SEARCH_WITH_OVERLAY,
   MAP_FADE,
 } from './constants.ts';
-import { renderStoryPanel, resolveStops, stopLabel } from './scrollytelling/storyPanel';
+import { renderStoryPanel, stopLabel } from './scrollytelling/storyPanel';
 import {
-  STORIES,
   DEFAULT_EASING,
   listedStories,
   storyToOpen,
@@ -175,7 +156,6 @@ import {
 } from './telemetry/driverChange.ts';
 import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
 import { showLegend, type LegendRow } from './mapLegend.ts';
-import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
 import './styles/map-title.css';
 import './styles/zoom-buttons.css';
 import './styles/frame.css';
@@ -206,7 +186,7 @@ function showCannotDraw(): void {
   document.getElementById('no-webgl')!.hidden = false;
 }
 
-async function main(): Promise<void> {
+export async function createApp<I extends MapItem>(text: MapText<I>): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
   showTitle();
 
@@ -218,9 +198,9 @@ async function main(): Promise<void> {
     trackWebGLMissing();
     return;
   }
-  // Everything but the structure loads behind the first frame (fileLanded).
-  const structure = loadFiles([STRUCTURE_FILE]);
-  // Compiled while the structure downloads. Some browsers with WebGL 2 still
+  // Everything but the text's first files loads behind the first frame (fileLanded).
+  const firstFiles = loadFiles(text.firstFiles);
+  // Compiled while the first files download. Some browsers with WebGL 2 still
   // fail to compile the shaders.
   let renderContext: RenderContext;
   try {
@@ -231,16 +211,19 @@ async function main(): Promise<void> {
     return;
   }
 
-  registerAllOverlays();
-  const allOverlays = [searchTool, ...getAllOverlays()];
-  let loaded: Loaded = await structure;
+  // Shortcut: search is the Tanakh's on every text. On another text it searches
+  // the Tanakh's words, which name no square, so it colours nothing.
+  const searchTool = tanakhSearch as unknown as Overlay<I, SearchSettings, SearchData>;
+  const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
+  const getOverlay = (id: string): Overlay<I> | undefined =>
+    text.overlays.find((overlay) => overlay.id === id);
+  let loaded: Loaded = await firstFiles;
   // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
     pending: new Set<string>(),
     failed: new Set<string>(),
     closed: new Set<string>(),
   };
-  const torahData = structureFrom(loaded);
 
   // For load_timing (sendLoadTiming).
   let firstFrame = 0;
@@ -250,21 +233,19 @@ async function main(): Promise<void> {
   let downloadsSettled = false;
   let timingSent = false;
 
-  initBookData(torahData);
-  const verses = computeLayout(torahData, (message) => reportError('layout', message));
+  const { items: verses, bounds } = text.layout(loaded);
   const squares = indexItems(verses);
-  const bounds = getLayoutBounds(verses);
+  const base = text.baseColor && ((i: number) => text.baseColor!(verses[i], i));
+  // A picture with its holes filled with each square's base colour.
+  const fill = (picture: Picture<VerseColor | null>): Picture<VerseColor> =>
+    fillDefaultColors(picture, base);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
   // Placed over the map; render() moves them with it.
   const labelLayer = document.createElement('div');
   labelLayer.id = 'map-labels';
   document.body.appendChild(labelLayer);
-  const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
-  const bookLabels = createBookLabels(verses, labelLayer, hebrewNames);
-  const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
-  createSectionLabels(verses, bookLabels, (book) => sections.get(book) ?? 'neviim');
-  const mapTitle = createMapTitle(verses, labelLayer, (book) => sections.get(book) === 'torah');
+  const moveLabels = text.labels(verses, loaded, labelLayer);
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -293,7 +274,7 @@ async function main(): Promise<void> {
 
   const renderState = createRenderState(renderContext, verses, dpr);
 
-  let currentOverlay: TanakhOverlay | null = null;
+  let currentOverlay: Overlay<I> | null = null;
   const currentOverlayId = (): string => currentOverlay?.id ?? NO_OVERLAY;
 
   // Every overlay's settings, kept while another overlay is showing.
@@ -327,12 +308,7 @@ async function main(): Promise<void> {
     if (inputs.every((input, i) => input === built[i])) return;
     built = inputs;
 
-    rebuildGeometry(
-      renderContext.gl,
-      renderState,
-      fillDefaultColors(from),
-      to && fillDefaultColors(to),
-    );
+    rebuildGeometry(renderContext.gl, renderState, fill(from), to && fill(to));
   }
 
   function setColorLayer(next: ColorLayer<VerseColor | null>): void {
@@ -341,7 +317,7 @@ async function main(): Promise<void> {
   }
 
   /** The overlay and the search as they stand, each null while off. */
-  function toolsNow(): TanakhTools {
+  function toolsNow(): Tools<I> {
     return toolsShown(
       currentOverlay,
       currentSettings(),
@@ -352,7 +328,7 @@ async function main(): Promise<void> {
   }
 
   /** The overlay and the search as picked, whether or not their data is in. */
-  function pickedTools(): TanakhOverlay[] {
+  function pickedTools(): Overlay<I>[] {
     return toolsPicked(currentOverlay, searchTool, overlaySettings.get(searchTool));
   }
 
@@ -464,14 +440,14 @@ async function main(): Promise<void> {
   }
 
   function fadeToTools(): void {
-    fadeMap(fillDefaultColors(explorePicture()), applyTools);
+    fadeMap(fill(explorePicture()), applyTools);
   }
 
   /** The story's blend between two stops, or null while it is not between them. */
   function blendColors(): ColorLayer | null {
     if (driver.by !== 'story' || !driver.blend) return null;
     const { from, to, t } = driver.blend;
-    return computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded);
+    return computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded, base);
   }
 
   function blendTransition(): void {
@@ -485,7 +461,7 @@ async function main(): Promise<void> {
    * hover the colour layer was drawn for; a pin leaves the hover alone, so it
    * passes nothing and only composites.
    */
-  function repaint(hoveredBefore: TanakhLayout | null = mouseState.hoveredVerse): void {
+  function repaint(hoveredBefore: I | null = mouseState.hoveredVerse): void {
     const layer = layerToRecompute(
       colorSource(driver),
       toolsNow().overlay,
@@ -541,11 +517,11 @@ async function main(): Promise<void> {
     }
   }
 
-  const camera = createCamera(mapViewport(), bounds);
+  const camera = text.startCamera(mapViewport(), bounds);
 
-  let pinnedVerse: TanakhLayout | null = null;
+  let pinnedVerse: I | null = null;
 
-  const mouseState = createMouseState<TanakhLayout>();
+  const mouseState = createMouseState<I>();
 
   // A scroll fires no pointer event, so the mid-scroll branch needs the last
   // known cursor position to re-run hit detection as the camera moves under it.
@@ -635,6 +611,7 @@ async function main(): Promise<void> {
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
+      // Shortcut: the About panel is the Tanakh's on every text.
       aboutPanel.innerHTML = aboutHtml(allOverlays);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
     }
@@ -771,16 +748,15 @@ async function main(): Promise<void> {
       mouseState.hoveredVerse,
       pinnedVerse,
     );
-    updateLabelPositions(bookLabels, offset, camera.zoom);
-    updateMapTitlePosition(mapTitle, offset, camera.zoom);
+    moveLabels(offset, camera.zoom);
   }
 
   /** The cursor over `verse`, or over no verse: a pointer only over one while another is pinned. */
-  function setCursorOver(verse: TanakhLayout | null): void {
+  function setCursorOver(verse: I | null): void {
     canvas.style.cursor = pinnedVerse && verse ? 'pointer' : 'default';
   }
 
-  function centerOnVerse(verse: TanakhLayout): void {
+  function centerOnVerse(verse: I): void {
     Object.assign(camera, centreForFocus(verse, camera.zoom, mapFocus(), mapViewport()));
   }
 
@@ -803,7 +779,7 @@ async function main(): Promise<void> {
    * Zooming in only when already further out: a reader who has zoomed past 2.5
    * has said what they want to see, and being pulled back would undo it.
    */
-  function glideToVerse(verse: TanakhLayout): void {
+  function glideToVerse(verse: I): void {
     cancelCameraGlide();
 
     const target = viewFocusedOn(verse, camera.zoom, RESULT_CLICK_ZOOM, mapFocus(), mapViewport());
@@ -816,9 +792,10 @@ async function main(): Promise<void> {
 
   // pinVerse, unpinVerse and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
-  function pinVerse(verse: TanakhLayout, centerCamera: boolean = false): void {
+  function pinVerse(verse: I, centerCamera: boolean = false): void {
     takeOver('takeover');
-    trackVerseClick(verse.book, verse.chapter, verse.verse);
+    const tracked = text.track.verse(verse);
+    trackVerseClick(tracked.book, tracked.chapter, tracked.verse);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
     if (centerCamera) {
@@ -1034,18 +1011,27 @@ async function main(): Promise<void> {
     const last = settledCamera;
     if (last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
     markViewSettled();
-    const book = findNearestItem(verses, camera.x, camera.y)?.book ?? '';
-    trackViewSettled(book, sections.get(book) ?? '', camera.zoom);
+    const near = findNearestItem(verses, camera.x, camera.y);
+    const where = near ? text.track.area(near) : { area: '', section: '' };
+    trackViewSettled(where.area, where.section, camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
-  function updateSidebarWrapper(verse: TanakhLayout | null, isPinned: boolean = false): void {
-    updateSidebar(sidebarElements, verse, {
-      verseTexts: textsFrom(loaded),
-      textsNotice: noticeFor([TEXTS_FILE]),
-      wordsClickable: dataFor(searchTool, loaded) !== null,
+  function updateSidebarWrapper(verse: I | null, isPinned: boolean = false): void {
+    const file = verse && text.popupFile(verse);
+    if (file) fetchPopupFile(file);
+    text.drawPopup(sidebarElements, verse, {
+      loaded,
+      notice: file ? noticeFor([file]) : null,
       ...toolsNow(),
       pinned: isPinned,
     });
+  }
+
+  /** A square's text downloads when its popup first shows, unless it is in, on its way or failed. */
+  function fetchPopupFile(path: string): void {
+    if (loaded.has(path) || downloads.pending.has(path) || downloads.failed.has(path)) return;
+    downloads.pending.add(path);
+    void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
   }
 
   /**
@@ -1133,7 +1119,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    let targetVerse: TanakhLayout | null = null;
+    let targetVerse: I | null = null;
 
     if (e.key === 'ArrowRight') {
       targetVerse = squares.step(pinnedVerse, 1);
@@ -1150,7 +1136,7 @@ async function main(): Promise<void> {
 
   // After the "None" option the picker starts with, in the order
   // @torahmap/overlay-catalog offers them.
-  for (const overlay of getAllOverlays()) {
+  for (const overlay of text.overlays) {
     const option = document.createElement('option');
     option.value = overlay.id;
     option.textContent = overlay.name;
@@ -1207,7 +1193,7 @@ async function main(): Promise<void> {
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
       overlayStarts.innerHTML = currentOverlay
         ? ''
-        : startingPointsHtml(searchTool, getAllOverlays(), listed);
+        : startingPointsHtml(searchTool, text.overlays, listed);
     }
     renderOverlayControls();
     renderOverlayLegend();
@@ -1219,7 +1205,7 @@ async function main(): Promise<void> {
    * control left over from an overlay that is no longer showing still changes
    * that overlay's settings, but paints nothing.
    */
-  function changeSettings<S>(overlay: Overlay<TanakhIdentity, S>, update: (current: S) => S): void {
+  function changeSettings<S>(overlay: Overlay<I, S>, update: (current: S) => S): void {
     overlaySettings.set(overlay, update(overlaySettings.get(overlay)));
     if (overlay !== currentOverlay) return;
 
@@ -1280,52 +1266,13 @@ async function main(): Promise<void> {
     syncUrl(true);
   }
 
-  setWordClickHandler((click) => {
-    const data = dataFor(searchTool, loaded);
-    // Without search's files there is no search to add the word to.
-    if (!data) return;
-    const dictionary = dictionaryOf(data);
-    // As a reader would type it: the letters as printed, final forms and all.
-    const word = stripNikkud(click.text);
-    const meanings = meaningsInVerse(
-      dictionary,
-      wordsOfVerse(data.parse, click.id, click.hebrew),
-      word,
-      click.id,
-      click.index,
-    );
-
-    const ref = verseRef(click);
-    const paletteFull = !canAddTerm(overlaySettings.get(searchTool));
-    trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
-
-    openWordMenu({
-      word: click.text,
-      meanings,
-      anchor: click.element,
-      paletteFull,
-      onChoose: (meaning) => {
-        // The menu counted the words when it opened; a keyboard reader can add one since.
-        if (!canAddTerm(overlaySettings.get(searchTool))) return;
-
-        trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
-        takeOver('takeover');
-        changeSearch(
-          (current) =>
-            searchForMeaning(dictionary, current, word, meaning?.keys ?? null) ?? current,
-        );
-        if (frame.mode === 'explore' && frame.open !== 'search') {
-          dispatch({ type: 'choose', panel: 'search' });
-        }
-      },
-    });
-  });
-
   // sendBeacon survives the page navigating away, so following the link to
   // Sefaria doesn't lose the event.
   sidebarElements.link?.addEventListener('click', () => {
     const verse = pinnedVerse ?? mouseState.hoveredVerse;
-    if (verse) trackSefariaClick(verse.book, verse.chapter, verse.verse, currentOverlayId());
+    if (!verse) return;
+    const tracked = text.track.verse(verse);
+    trackSefariaClick(tracked.book, tracked.chapter, tracked.verse, currentOverlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -1354,16 +1301,27 @@ async function main(): Promise<void> {
     });
   }
 
-  configureSearch({
-    verses,
-    callbacks: {
-      // Most hits are off screen, so travel to the verse as well as pinning it.
-      onVerseClick: (verse: TanakhLayout) => {
-        // A full-height sheet would hide the glide.
-        if (frame.full) setFrame({ ...frame, full: false });
-        pinVerse(verse);
-        glideToVerse(verse);
-      },
+  text.start?.({
+    items: verses,
+    loaded: () => loaded,
+    pinAndGlide: (verse) => {
+      // A full-height sheet would hide the glide.
+      if (frame.full) setFrame({ ...frame, full: false });
+      pinVerse(verse);
+      glideToVerse(verse);
+    },
+    searchSettings: () => overlaySettings.get(searchTool),
+    changeSearch: (update) => {
+      takeOver('takeover');
+      changeSearch(update);
+      if (frame.mode === 'explore' && frame.open !== 'search') {
+        dispatch({ type: 'choose', panel: 'search' });
+      }
+    },
+    storiesChanged: (list) => {
+      listed = listedStories(list, !__LIVE__);
+      reloadStory();
+      drawOverlayPanel(true);
     },
   });
   searchChanged(true);
@@ -1386,7 +1344,7 @@ async function main(): Promise<void> {
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let listed = listedStories(STORIES, !__LIVE__);
+  let listed = listedStories(text.stories.list, !__LIVE__);
   const storyNamed = (id: string | null): Story => {
     const found = storyToOpen(listed, id);
     if (!found) throw new Error('No story is listed');
@@ -1398,7 +1356,14 @@ async function main(): Promise<void> {
   let story = storyNamed(parseUrlState().story ?? null);
   configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
-    resolveStops(story.data.stops, initialCamera, verses, squares, mapFocus(), mapViewport());
+    text.stories.resolve(
+      story.data.stops,
+      initialCamera,
+      verses,
+      squares,
+      mapFocus(),
+      mapViewport(),
+    );
   let resolvedStops: ResolvedStoryStop[] = [];
   let stopElements: HTMLElement[] = [];
 
@@ -1455,15 +1420,10 @@ async function main(): Promise<void> {
     scheduleStoryFrame();
   }
 
-  // An edited story reloads in place on the dev server, keeping the reader's scroll.
-  if (import.meta.hot) {
-    import.meta.hot.accept('@torahmap/stories', (module) => {
-      if (!module) return;
-      listed = listedStories(module.STORIES, !__LIVE__);
-      reloadStory();
-      drawOverlayPanel(true);
-    });
-  }
+  // The shell imports the story helpers; accepting their edits here keeps an
+  // edited story from reloading the page. The text hands over its new stories
+  // (Shell.storiesChanged).
+  if (import.meta.hot) import.meta.hot.accept('@torahmap/stories', () => {});
 
   function leaveStory(exploring: Frame): void {
     takeOver('fold');
@@ -1700,8 +1660,8 @@ async function main(): Promise<void> {
   /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
   function withDefaults(layer: ColorLayer<VerseColor | null>): ColorLayer {
     return {
-      from: fillDefaultColors(layer.from),
-      to: layer.to && fillDefaultColors(layer.to),
+      from: fill(layer.from),
+      to: layer.to && fill(layer.to),
       t: layer.t,
     };
   }
@@ -1720,7 +1680,7 @@ async function main(): Promise<void> {
   function storyPicture(): Picture {
     const state = currentStoryState();
     return flatten(
-      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded),
+      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded, base),
     );
   }
 
@@ -1827,14 +1787,16 @@ async function main(): Promise<void> {
   });
 
   /** What the link or the story stop shows first. */
-  function openingView(): OpeningView<TanakhIdentity> {
+  function openingView(): OpeningView<I> {
     if (frame.mode !== 'story')
-      return { tools: pickedTools(), popup: pinnedVerse ? TEXTS_FILE : null };
+      return { tools: pickedTools(), popup: pinnedVerse && text.popupFile(pinnedVerse) };
     const stop = resolvedStops[storyStopIndex()];
-    return { tools: stopTools(stop), popup: stop.verse ? TEXTS_FILE : null };
+    const verse = stop.verse ? squares.find(stop.verse) : null;
+    return { tools: stopTools(stop), popup: verse && text.popupFile(verse) };
   }
 
-  function landingView(): LandingView<TanakhIdentity> {
+  function landingView(): LandingView<I> {
+    const shown = pinnedVerse ?? mouseState.hoveredVerse;
     let map = pickedTools();
     if (driver.by === 'story' && driver.blend) {
       map = [...stopTools(driver.blend.from), ...stopTools(driver.blend.to)];
@@ -1847,7 +1809,7 @@ async function main(): Promise<void> {
       map,
       panel: currentOverlay,
       search: searchTool,
-      popup: pinnedVerse || mouseState.hoveredVerse ? TEXTS_FILE : null,
+      popup: shown && text.popupFile(shown),
     };
   }
 
@@ -1866,6 +1828,7 @@ async function main(): Promise<void> {
   }
 
   function fileLanded(path: string, content: unknown): void {
+    // Shortcut: load timing measures the Tanakh's texts file.
     if (path === TEXTS_FILE) textsIn = performance.now();
     downloads.pending.delete(path);
     const before = loaded;
@@ -1897,7 +1860,7 @@ async function main(): Promise<void> {
     if (!wordMenuOpen()) refreshVersePopup();
   }
 
-  function prebuilt(overlay: TanakhOverlay, built: boolean): void {
+  function prebuilt(overlay: Overlay<I>, built: boolean): void {
     if (overlay !== searchTool) return;
     searchPrebuilt = true;
     if (built) searchReady = performance.now();
@@ -2027,6 +1990,3 @@ async function main(): Promise<void> {
   downloadsSettled = true;
   sendLoadTiming();
 }
-
-reportUncaughtErrors();
-main().catch((error) => reportError('main', error));
