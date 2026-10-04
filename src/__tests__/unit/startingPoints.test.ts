@@ -17,7 +17,7 @@ const buttons = (div: Element): HTMLButtonElement[] => [...div.querySelectorAll(
 describe('the starting points', () => {
   const div = parse(startingPointsHtml(STORIES));
 
-  it('offers search, then the overlays, then every story, divided into three', () => {
+  it('offers search, then the overlays and the stories under a heading each', () => {
     const choices = buttons(div).map((b) => startChosen(b));
     expect(choices).toEqual([
       { kind: 'search' },
@@ -28,7 +28,7 @@ describe('the starting points', () => {
       { kind: 'story', id: 'tour' },
       { kind: 'story', id: 'job' },
     ]);
-    expect(div.querySelectorAll('[role="separator"]')).toHaveLength(2);
+    expect(div.querySelectorAll('h3')).toHaveLength(2);
   });
 
   it('names each story by its title, with its description beside it', () => {

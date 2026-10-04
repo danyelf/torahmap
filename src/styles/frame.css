@@ -443,34 +443,37 @@ body[data-open='about'] #about-panel {
   margin-top: 16px;
 }
 
-/* One width for every button, so the descriptions line up; a long story title wraps. */
 .start-row {
-  display: grid;
-  grid-template-columns: 9.5em 1fr;
-  gap: 12px;
-  align-items: center;
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  text-align: left;
 }
 
 .start-row + .start-row {
   margin-top: 8px;
 }
 
-.start-row .control-button {
-  width: 100%;
-  padding: 6px 10px;
-  text-align: left;
+.start-label {
+  display: block;
+  font-weight: 600;
 }
 
 .start-detail {
-  margin: 0;
+  display: block;
+  margin-top: 2px;
   color: #ccc;
   font-size: 13px;
   line-height: 1.4;
 }
 
-.start-divider {
-  margin: 14px 0;
-  border-top: 1px solid #333;
+.start-heading {
+  margin: 24px 0 10px;
+  color: #888;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .story-card {

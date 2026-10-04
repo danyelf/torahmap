@@ -32,22 +32,22 @@ const OVERLAY_STARTS: OverlayStart[] = [
   { overlay: VERSE_LENGTH, detail: 'Compare how long the verses are', params: {} },
 ];
 
-const DIVIDER = '<div class="start-divider" role="separator"></div>';
+const heading = (text: string): string => `<h3 class="start-heading">${text}</h3>`;
 
 const row = (kind: StartChoice['kind'], id: string, label: string, detail: string): string =>
-  `<div class="start-row">
-    <button type="button" class="${CONTROL.button}" data-start="${kind}" data-id="${escapeHtml(id)}">${escapeHtml(label)}</button>
-    <p class="start-detail">${escapeHtml(detail)}</p>
-  </div>`;
+  `<button type="button" class="${CONTROL.button} start-row" data-start="${kind}" data-id="${escapeHtml(id)}">
+    <span class="start-label">${escapeHtml(label)}</span>
+    <span class="start-detail">${escapeHtml(detail)}</span>
+  </button>`;
 
 export function startingPointsHtml(stories: readonly StartStory[]): string {
   return [
     row('search', '', 'Search…', 'Search for any word, Hebrew or English'),
-    DIVIDER,
+    heading('Overlays'),
     ...OVERLAY_STARTS.map(({ overlay, detail }) =>
       row('overlay', overlay.id, overlay.name, detail),
     ),
-    DIVIDER,
+    heading('Stories'),
     ...stories.map((s) => row('story', s.id, s.title, s.description)),
   ].join('');
 }
