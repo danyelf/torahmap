@@ -161,6 +161,35 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       { name: 'First word in the colour, no square', square: false, word: (v) => v.fills[0] },
       { name: 'First word in paper, out of the colour', square: true, word: () => paper },
     ];
+    // Letters are drawn closer than the face sets them, and rows a letter's
+    // height apart, so ascenders and descenders reach into the next row.
+    const KERN = -0.08; // ems
+    const BODY = (() => {
+      if (!ctx) return 0.6;
+      ctx.font = `700 100px "${HEBREW}"`;
+      return ctx.measureText('ה').actualBoundingBoxAscent / 100;
+    })();
+    // A word broken into rows of nearly equal length, in the number of rows
+    // that lets its letters be largest in a square of this side.
+    const stack = (word: string, side: number) => {
+      const letters = [...word];
+      let best = { rows: [word], size: 0 };
+      for (let n = 1; n <= letters.length; n++) {
+        const rows = Array.from({ length: n }, (_, r) =>
+          letters
+            .slice(Math.round((r * letters.length) / n), Math.round(((r + 1) * letters.length) / n))
+            .join(''),
+        );
+        const width = Math.max(
+          ...rows.map(
+            (row) => (measure(row, HEBREW, 100, 700) + KERN * 100 * (row.length - 1)) / 100,
+          ),
+        );
+        const size = Math.min(side / width, side / (n * BODY));
+        if (size > best.size) best = { rows, size };
+      }
+      return best;
+    };
     const halfW = MW / 2 / input.scale;
     const halfH = MH / 2 / input.scale;
     const shown = mt.verses
@@ -194,23 +223,19 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       }
       for (const { v, word } of shown) {
         if (!word) continue;
-        // As wide as the square allows, and no taller than most of it.
-        const size = Math.min(v.side * 0.8, (v.side * 0.92) / measure(word, HEBREW, 1, 700));
-        el(
-          map,
-          'text',
-          {
-            class: 'word',
-            x: v.x + v.side / 2,
-            y: v.y + v.side / 2,
-            'text-anchor': 'middle',
-            'dominant-baseline': 'central',
-            'font-family': HEBREW,
-            'font-weight': 700,
-            'font-size': size,
-            fill: variant.word(v),
-          },
-          word,
+        const block = stack(word, v.side);
+        const g = el(map, 'g', {
+          class: 'word',
+          'text-anchor': 'middle',
+          'font-family': HEBREW,
+          'font-weight': 700,
+          'font-size': block.size,
+          'letter-spacing': KERN * block.size,
+          fill: variant.word(v),
+        });
+        const top = v.y + (v.side - block.rows.length * BODY * block.size) / 2;
+        block.rows.forEach((row, r) =>
+          el(g, 'text', { x: v.x + v.side / 2, y: top + (r + 1) * BODY * block.size }, row),
         );
       }
       el(g, 'rect', {
