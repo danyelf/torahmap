@@ -20,7 +20,7 @@ const index = buildTextIndex(texts, inTextsOrder(texts));
 
 describe('resultsForVerseSets', () => {
   it("turns one term's verse set into results for those verses", () => {
-    const results = resultsForVerseSets(index, [new Set(['Genesis:1:1'])]);
+    const results = resultsForVerseSets(index, [new Set(['Genesis.1.1'])]);
 
     expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -29,8 +29,8 @@ describe('resultsForVerseSets', () => {
 
   it('records both terms on a verse that matches both', () => {
     const results = resultsForVerseSets(index, [
-      new Set(['Genesis:1:1']),
-      new Set(['Genesis:1:1', 'Genesis:3:7']),
+      new Set(['Genesis.1.1']),
+      new Set(['Genesis.1.1', 'Genesis.3.7']),
     ]);
 
     const first = results.find((r) => r.verse === 1);
@@ -39,13 +39,13 @@ describe('resultsForVerseSets', () => {
   });
 
   it('keeps a gap where a term has no hits, so colours stay put', () => {
-    const results = resultsForVerseSets(index, [new Set(), new Set(['Genesis:3:7'])]);
+    const results = resultsForVerseSets(index, [new Set(), new Set(['Genesis.3.7'])]);
 
     expect(results).toHaveLength(1);
     expect(results[0].matchingTerms.map((m) => m.termIndex)).toEqual([1]);
   });
 
   it('ignores verse keys the loaded text does not have', () => {
-    expect(resultsForVerseSets(index, [new Set(['Nowhere:9:9'])])).toEqual([]);
+    expect(resultsForVerseSets(index, [new Set(['Nowhere.9.9'])])).toEqual([]);
   });
 });

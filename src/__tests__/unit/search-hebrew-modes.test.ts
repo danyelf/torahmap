@@ -80,35 +80,35 @@ describe('Hebrew Search Modes', () => {
   describe('substring mode', () => {
     it('matches inside a longer word', () => {
       // "אלה" inside "ואלה" (Exodus 1:1)
-      expect(found('אלה', 'substring').has('Exodus:1:1')).toBe(true);
+      expect(found('אלה', 'substring').has('Exodus.1.1')).toBe(true);
     });
 
     it('matches "ברא" in "בראשית" and "ברא"', () => {
-      expect(found('ברא', 'substring').has('Genesis:1:1')).toBe(true);
+      expect(found('ברא', 'substring').has('Genesis.1.1')).toBe(true);
     });
 
     it('finds "אבר" in both "אברהם" and "אברם"', () => {
       const verses = found('אבר', 'substring');
-      expect(verses.has('Genesis:12:1')).toBe(true);
-      expect(verses.has('Genesis:17:5')).toBe(true);
+      expect(verses.has('Genesis.12.1')).toBe(true);
+      expect(verses.has('Genesis.17.5')).toBe(true);
     });
   });
 
   describe('word mode', () => {
     it('does not match part of a word', () => {
       // "ואלה" is one word, prefix and all.
-      expect(found('אלה', 'word').has('Exodus:1:1')).toBe(false);
+      expect(found('אלה', 'word').has('Exodus.1.1')).toBe(false);
     });
 
     it('matches a whole word written with points', () => {
-      expect(found('אלהים', 'word').has('Genesis:1:1')).toBe(true);
+      expect(found('אלהים', 'word').has('Genesis.1.1')).toBe(true);
     });
 
     it('tells אברם from אברהם', () => {
       const abraham = found('אברהם', 'word');
-      expect([...abraham].sort()).toEqual(['Exodus:3:6', 'Genesis:17:5']);
+      expect([...abraham].sort()).toEqual(['Exodus.3.6', 'Genesis.17.5']);
       // Genesis 17:5 names both.
-      expect([...found('אברם', 'word')].sort()).toEqual(['Genesis:12:1', 'Genesis:17:5']);
+      expect([...found('אברם', 'word')].sort()).toEqual(['Genesis.12.1', 'Genesis.17.5']);
     });
 
     it('does not match "אבר" inside "אברהם"', () => {

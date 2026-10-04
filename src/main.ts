@@ -84,7 +84,6 @@ import {
   getPinchCenter,
   resetTouchState,
 } from './touchState.ts';
-import { tanakhKey } from './types.ts';
 import { indexItems, sameItem } from './items.ts';
 import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
@@ -1264,12 +1263,11 @@ async function main(): Promise<void> {
     const dictionary = dictionaryOf(data);
     // As a reader would type it: the letters as printed, final forms and all.
     const word = stripNikkud(click.text);
-    const verseKey = tanakhKey(click.book, click.chapter, click.verse);
     const meanings = meaningsInVerse(
       dictionary,
-      wordsOfVerse(data.parse, verseKey, click.hebrew),
+      wordsOfVerse(data.parse, click.id, click.hebrew),
       word,
-      verseKey,
+      click.id,
       click.index,
     );
 

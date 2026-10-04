@@ -54,7 +54,7 @@ const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
   await import('../../src/search/dictionary.ts');
 const { verseWords } = await import('../../src/verseWords.ts');
 const { stripNikkud } = await import('../../src/hebrew.ts');
-const { tanakhKey } = await import('../../src/types.ts');
+const { verseId } = await import('@torahmap/link');
 
 interface Report {
   /** Words whose reading the verse settles to exactly one dictionary word. */
@@ -90,7 +90,7 @@ function buildReport(
   for (const [book, chapters] of Object.entries(texts)) {
     for (const [chapter, verses] of Object.entries(chapters)) {
       for (const [verse, text] of Object.entries(verses)) {
-        const verseKey = tanakhKey(book, Number(chapter), Number(verse));
+        const verseKey = verseId(book, Number(chapter), Number(verse));
         const words = wordsOfVerse(parse, verseKey, text.he);
 
         for (const [wordIndex, { word }] of verseWords(text.he).entries()) {

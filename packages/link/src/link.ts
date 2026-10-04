@@ -142,21 +142,9 @@ export function bookFromUrl(urlBook: string): string {
   return urlBook.replace(/\./g, ' ');
 }
 
-/** "I Samuel" 1:5 -> "I.Samuel.1.5" */
-export function verseToUrlFormat(book: string, chapter: number, verse: number): string {
+/** A verse's id, the one name every part of the app uses for it: "I Samuel" 1:5 -> "I.Samuel.1.5". */
+export function verseId(book: string, chapter: number, verse: number): string {
   return `${bookToUrl(book)}.${chapter}.${verse}`;
-}
-
-/**
- * A verse written exactly as verseToUrlFormat writes it, or null for any
- * other spelling. A verse's square is found by that exact string, so
- * "Genesis.01.1" names no square.
- */
-export function parseExactVerse(
-  ref: string,
-): { book: string; chapter: number; verse: number } | null {
-  const v = parseVerseFromUrl(ref);
-  return v && verseToUrlFormat(v.book, v.chapter, v.verse) === ref ? v : null;
 }
 
 /** A verse as readers write it: "I Samuel 1:5". */
@@ -165,10 +153,10 @@ export function verseRef(v: { book: string; chapter: number; verse: number }): s
 }
 
 /**
- * Parse verse reference from URL format
- * "I.Samuel.1.5" -> { book: "I Samuel", chapter: 1, verse: 5 }
+ * Read a verse id: "I.Samuel.1.5" -> { book: "I Samuel", chapter: 1, verse: 5 },
+ * or null for anything verseId would not write.
  */
-export function parseVerseFromUrl(
+export function parseVerseId(
   verseStr: string,
 ): { book: string; chapter: number; verse: number } | null {
   // Split from the end to handle book names with dots, e.g. "I.Samuel.1.5".
@@ -191,5 +179,6 @@ export function parseVerseFromUrl(
 
   if (!validateBookName(book)) return null;
 
-  return { book, chapter, verse };
+  // A verse's square is found by its exact id, so "Genesis.01.1" names none.
+  return verseId(book, chapter, verse) === verseStr ? { book, chapter, verse } : null;
 }

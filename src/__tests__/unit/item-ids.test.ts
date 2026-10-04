@@ -2,8 +2,10 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
-import { parseVerseFromUrl } from '@torahmap/link';
+import { parseVerseId } from '@torahmap/link';
 import { STORIES } from '@torahmap/stories';
+import { namesRegion } from '../../scrollytelling/storyPanel.ts';
+import { initBookData } from '../../constants/books.ts';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
 import { talmudId } from '../../talmud/layout.ts';
@@ -29,6 +31,17 @@ describe('the shipped data', () => {
     expect(() => indexItems(computeLayout(shipped(STRUCTURE_FILE)))).not.toThrow();
   });
 
+  it('keys the search index by verses the map holds', () => {
+    const squares = indexItems(computeLayout(shipped(STRUCTURE_FILE)));
+    const morphology = shipped('search/verse-morphology.json');
+    const keys = [
+      ...Object.keys(shipped('search/verse-lexemes.json')),
+      ...Object.keys(morphology.verses),
+      ...Object.keys(morphology.realigned),
+    ];
+    expect(keys.filter((key) => !squares.find(key))).toEqual([]);
+  });
+
   it('has every story name only verses the map holds', () => {
     const squares = indexItems(computeLayout(shipped(STRUCTURE_FILE)));
     const named = STORIES.flatMap(({ id, data }) =>
@@ -43,6 +56,19 @@ describe('the shipped data', () => {
     expect(named.filter((where) => !squares.find(where.split(': ')[1]))).toEqual([]);
   });
 
+  it('has every story name only places the map holds', () => {
+    initBookData(shipped(STRUCTURE_FILE));
+    const verses = computeLayout(shipped(STRUCTURE_FILE));
+    const named = STORIES.flatMap(({ id, data }) =>
+      data.stops.flatMap((stop) =>
+        typeof stop.camera === 'object' && 'kind' in stop.camera && stop.camera.kind === 'regions'
+          ? stop.camera.names.map((name) => ({ where: `${id}/${stop.id}: ${name}`, name }))
+          : [],
+      ),
+    );
+    expect(named.filter(({ name }) => !namesRegion(verses, name)).map((n) => n.where)).toEqual([]);
+  });
+
   it('lays out the Talmud with no two squares sharing an id', () => {
     expect(() =>
       indexItems(computeTalmudLayout(shipped('talmud/structure.json')).items),
@@ -51,9 +77,9 @@ describe('the shipped data', () => {
 });
 
 describe('square ids', () => {
-  it('names each Tanakh square by its link form', () => {
+  it('names each Tanakh square by its verse id', () => {
     for (const v of computeLayout(torahData)) {
-      expect(parseVerseFromUrl(v.id)).toEqual({ book: v.book, chapter: v.chapter, verse: v.verse });
+      expect(parseVerseId(v.id)).toEqual({ book: v.book, chapter: v.chapter, verse: v.verse });
     }
   });
 

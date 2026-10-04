@@ -1,7 +1,7 @@
 import './verse-length.css';
 import type { Overlay, Color } from './types.ts';
-import type { TanakhIdentity } from '../types.ts';
-import { tanakhKey } from '../types.ts';
+import type { TanakhIdentity, TanakhLayout } from '../types.ts';
+import { verseId } from '@torahmap/link';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { verseWords } from '../verseWords.ts';
 import type { ColorStop } from '../utils/color.ts';
@@ -44,7 +44,7 @@ const wordCountsOf = memoByValue(({ texts }: VerseLengthData): WordCounts => {
     for (const chapter in texts[book]) {
       for (const verse in texts[book][chapter]) {
         const wordCount = verseWords(texts[book][chapter][verse].he).length;
-        byVerse.set(tanakhKey(book, parseInt(chapter), parseInt(verse)), wordCount);
+        byVerse.set(verseId(book, parseInt(chapter), parseInt(verse)), wordCount);
         if (wordCount > 0) {
           min = Math.min(min, wordCount);
           max = Math.max(max, wordCount);
@@ -56,11 +56,11 @@ const wordCountsOf = memoByValue(({ texts }: VerseLengthData): WordCounts => {
   return { byVerse, min, max, scale: scale(min, max, SQRT, PLASMA_STOPS) };
 });
 
-function wordCountAt(data: VerseLengthData, verse: TanakhIdentity): number | undefined {
-  return wordCountsOf(data).byVerse.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+function wordCountAt(data: VerseLengthData, verse: TanakhLayout): number | undefined {
+  return wordCountsOf(data).byVerse.get(verse.id);
 }
 
-function verseColorAt(data: VerseLengthData, verse: TanakhIdentity): Color | null {
+function verseColorAt(data: VerseLengthData, verse: TanakhLayout): Color | null {
   const wordCount = wordCountAt(data, verse);
   if (wordCount === undefined || wordCount === 0) return NO_DATA;
   return wordCountsOf(data).scale.colorOf(wordCount);

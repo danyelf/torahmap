@@ -23,7 +23,7 @@ const lexicon: LexiconFile = {
   lexemes: [['QWL/', 'קוֹל', 'voice', 'subs', 'heb', 'קול']],
 };
 const forms = { 'קול': [0] };
-const verseLexemes = { 'Genesis:1:2': [0] };
+const verseLexemes = { 'Genesis.1.2': [0] };
 
 describe('what search builds from its files', () => {
   it('builds one text index per texts value', () => {

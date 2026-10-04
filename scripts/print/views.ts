@@ -20,7 +20,7 @@ import {
   type Dictionary,
 } from '../../src/search.ts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/search/data.ts';
-import { tanakhKey, type Book, type TanakhLayout, type TorahData } from '../../src/types.ts';
+import type { Book, TanakhLayout, TorahData } from '../../src/types.ts';
 import {
   INK,
   INK_SOFT,
@@ -197,7 +197,7 @@ export async function haftarahSheet(structure: TorahData, marks: boolean): Promi
   // As colorAt in src/overlays/haftarah.ts: a Torah verse shows its portion,
   // any other verse every reading it is part of.
   const fillsOf = (v: TanakhLayout, i: number) => {
-    const key = tanakhKey(v.book, v.chapter, v.verse);
+    const key = v.id;
     const parsha = derived.torahVerseToParsha.get(key);
     const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
     return items.length ? items.map(colourOf) : [walnut(i)];
@@ -246,7 +246,7 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
   const sets = NAMES.map((n) => nameVerses(dictionary, n.he, n.en));
   const inks = NAME_HUES.map((_, i) => nameInk(i));
   const fillsOf = (v: TanakhLayout, i: number) => {
-    const key = tanakhKey(v.book, v.chapter, v.verse);
+    const key = v.id;
     const named = inks.filter((_, k) => sets[k].has(key));
     return named.length ? named : [paleTaupe(i)];
   };

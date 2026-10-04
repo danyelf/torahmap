@@ -4,10 +4,6 @@
 // distinction as the "default" color (parallel to getDefaultColor() on the
 // Tanakh side, which colors verses by book section), with per-segment
 // brightness jitter folded in.
-//
-// `composeWithMgBase(userOverlay)` returns an Overlay that prefers the user's
-// overlay color (when it has data for the segment) and falls back to the
-// structural M/G paint.
 
 import type { TalmudIdentity } from '../../types.ts';
 import type { Overlay } from '../../overlays/types.ts';
@@ -40,29 +36,6 @@ export function createMgBaseOverlay(
     getVerseColor(id: TalmudIdentity) {
       const mishnah = isSegmentMishnah(structure, id.tractate, id.daf, id.amud, id.segment);
       return jitteredColor(mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR, id);
-    },
-    colorsFor(items) {
-      return items.map((item) => this.getVerseColor(item));
-    },
-  };
-}
-
-/**
- * Wrap a user overlay so unmapped segments fall through to the M/G base
- * paint. `userOverlay` of null collapses to just the base.
- */
-export function composeWithMgBase(
-  base: Overlay<TalmudIdentity, void, void>,
-  userOverlay: Overlay<TalmudIdentity, void, void> | null,
-): Overlay<TalmudIdentity, void, void> {
-  if (userOverlay === null) return base;
-  return {
-    id: 'composed',
-    name: 'composed',
-    getVerseColor(id: TalmudIdentity) {
-      const c = userOverlay.getVerseColor(id);
-      if (c !== null) return c;
-      return base.getVerseColor(id);
     },
     colorsFor(items) {
       return items.map((item) => this.getVerseColor(item));

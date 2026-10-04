@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { lookup } from './sampleOverlays.ts';
-import { readLink, parseVerseFromUrl } from '../src/index.ts';
+import { readLink, parseVerseId } from '../src/index.ts';
 
 describe('URL Parameter Security Validation', () => {
   describe('XSS Prevention', () => {
@@ -41,49 +41,49 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Verse Format Validation', () => {
     it('accepts valid verse with alphanumeric book name', () => {
-      const result = parseVerseFromUrl('Genesis.1.1');
+      const result = parseVerseId('Genesis.1.1');
       expect(result).not.toBeNull();
       expect(result?.book).toBe('Genesis');
     });
 
     it('accepts valid verse with Roman numerals in book name', () => {
-      const result = parseVerseFromUrl('I.Samuel.1.1');
+      const result = parseVerseId('I.Samuel.1.1');
       expect(result).not.toBeNull();
       expect(result?.book).toBe('I Samuel');
     });
 
     it('rejects verse with invalid characters in book name', () => {
-      expect(parseVerseFromUrl('<script>.1.1')).toBeNull();
-      expect(parseVerseFromUrl('Genesis<script>.1.1')).toBeNull();
-      expect(parseVerseFromUrl('Gen/esis.1.1')).toBeNull();
-      expect(parseVerseFromUrl('Gen\\esis.1.1')).toBeNull();
+      expect(parseVerseId('<script>.1.1')).toBeNull();
+      expect(parseVerseId('Genesis<script>.1.1')).toBeNull();
+      expect(parseVerseId('Gen/esis.1.1')).toBeNull();
+      expect(parseVerseId('Gen\\esis.1.1')).toBeNull();
     });
 
     it('rejects verse with negative chapter number', () => {
-      expect(parseVerseFromUrl('Genesis.-1.1')).toBeNull();
+      expect(parseVerseId('Genesis.-1.1')).toBeNull();
     });
 
     it('rejects verse with negative verse number', () => {
-      expect(parseVerseFromUrl('Genesis.1.-1')).toBeNull();
+      expect(parseVerseId('Genesis.1.-1')).toBeNull();
     });
 
     it('rejects verse with excessively large chapter number', () => {
       // No book has more than 200 chapters
-      expect(parseVerseFromUrl('Genesis.999999.1')).toBeNull();
+      expect(parseVerseId('Genesis.999999.1')).toBeNull();
     });
 
     it('rejects verse with excessively large verse number', () => {
       // No chapter has more than 200 verses
-      expect(parseVerseFromUrl('Genesis.1.999999')).toBeNull();
+      expect(parseVerseId('Genesis.1.999999')).toBeNull();
     });
 
     it('rejects verse with non-integer chapter', () => {
-      expect(parseVerseFromUrl('Genesis.1.5.1')).toBeNull();
+      expect(parseVerseId('Genesis.1.5.1')).toBeNull();
     });
 
     it('rejects verse with floating point numbers', () => {
-      expect(parseVerseFromUrl('Genesis.1.5.5')).toBeNull();
-      expect(parseVerseFromUrl('Genesis.1.1.1.1')).toBeNull();
+      expect(parseVerseId('Genesis.1.5.5')).toBeNull();
+      expect(parseVerseId('Genesis.1.1.1.1')).toBeNull();
     });
   });
 

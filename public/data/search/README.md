@@ -21,7 +21,7 @@ occurrence. Nothing else we looked at has all three.
 | --- | --- |
 | `lexicon.json` | The dictionary. One row per lexeme: vocalized display form, English gloss, part of speech, language, and the spelling it is most often printed with. |
 | `word-lexemes.json` | Written form → the lexemes it could be, most frequent reading first. Keys have their points stripped and their final letters folded to the medial shape, matching what the search box does to what you type. Includes the spellings Sefaria prints where BHSA spells a word differently, each filed under the word BHSA parsed at that place in the verse. |
-| `verse-lexemes.json` | Verse key → the distinct dictionary words the verse uses, one per printed word. This is what search actually queries. |
+| `verse-lexemes.json` | Verse id (`Genesis.1.1`, as `verseId` in `@torahmap/link` writes it) → the distinct dictionary words the verse uses, one per printed word. This is what search actually queries. |
 | `verse-morphology.json` | Every word of every verse in text order with its lexeme and its grammatical parsing, and where each printed word begins and ends. This is what names the word a reader clicks or a search marks, rather than guessing from its spelling. 4.5 MB, more than the other three together, so it is fetched when the first verse is displayed rather than at startup. See below — its morphemes are not the words you see on the page. |
 
 Lexemes are referred to throughout by their position in the `lexicon.json`
@@ -38,7 +38,7 @@ its old description invited, silently shifts every word after the first prefix.
 So each verse in `verse-morphology.json` is three arrays rather than one:
 
 ```json
-"Genesis:1:1": [ [[0,0],[1,1],[2,2], ...],   // morphemes, in text order
+"Genesis.1.1": [ [[0,0],[1,1],[2,2], ...],   // morphemes, in text order
                  [2,1,1,1,2,2,2],          // morphemes per printed word
                  [] ]                      // words a maqaf follows
 ```

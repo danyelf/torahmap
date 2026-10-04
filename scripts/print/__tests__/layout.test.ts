@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { verseId } from '@torahmap/link';
 import { computeLayout } from '../../../src/layout.ts';
 import type { TanakhLayout } from '../../../src/types.ts';
 import { PSALMS_COLUMNS, printLayout } from '../layout.ts';
 import { loadStructure } from '../views.ts';
 
 const structure = loadStructure();
-const key = (v: TanakhLayout) => `${v.book}:${v.chapter}:${v.verse}`;
+const key = (v: TanakhLayout) => verseId(v.book, v.chapter, v.verse);
 
 function box(vs: TanakhLayout[]) {
   return {

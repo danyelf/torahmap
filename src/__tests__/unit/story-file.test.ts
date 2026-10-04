@@ -11,7 +11,7 @@ import {
   STORY_MARKDOWN,
 } from '@torahmap/stories';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
-import { writeLink, parseVerseFromUrl } from '@torahmap/link';
+import { writeLink, parseVerseId } from '@torahmap/link';
 import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../overlays/search/index';
 import { settingsFromLink } from '../../overlays/settings';
@@ -102,7 +102,7 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   it('names only verses that exist', () => {
     const texts = JSON.parse(fs.readFileSync(path.join(dataDir, 'all-texts.json'), 'utf-8'));
     const exists = (ref: string): boolean => {
-      const v = parseVerseFromUrl(ref);
+      const v = parseVerseId(ref);
       return !!v && !!texts[v.book]?.[String(v.chapter)]?.[String(v.verse)];
     };
     const missing = stops.flatMap((s) => {

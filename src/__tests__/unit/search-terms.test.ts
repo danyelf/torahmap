@@ -280,7 +280,7 @@ describe('showing only one meaning', () => {
     // verse contains, while the term's own list heads the same reading with
     // the other one. Matching on the head alone leaves the term selecting
     // nothing, which searches for nothing.
-    const chosen = meaningsInVerse(dictionary, null, 'כוש', 'Genesis:10:7')[0];
+    const chosen = meaningsInVerse(dictionary, null, 'כוש', 'Genesis.10.7')[0];
     let terms = addTerm([], 'כוש');
 
     terms = onlyMeaning(terms, terms[0].id, chosen.keys);
@@ -505,7 +505,7 @@ describe('a reading picked in the word menu', () => {
   // Genesis 34:4 holds one of ETCBC's two entries for Shechem the man. The
   // spelling's own list merges both into one row; the verse's list heads the
   // same reading with the entry it holds.
-  const VERSE = 'Genesis:34:4';
+  const VERSE = 'Genesis.34.4';
   const fromVerse = () =>
     meaningsInVerse(dictionary, null, 'שכם', VERSE).find((m) => m.gloss === 'Shechem')!;
 
@@ -567,7 +567,7 @@ describe('the m a choice writes', () => {
   }
 
   it('writes the key of a word of one meaning picked from the menu', () => {
-    const fromVerse = meaningsInVerse(dictionary, null, 'כוש', 'Genesis:10:7')[0];
+    const fromVerse = meaningsInVerse(dictionary, null, 'כוש', 'Genesis.10.7')[0];
     const terms = addTerm([], 'כוש');
     const picked = onlyMeaning(terms, terms[0].id, fromVerse.keys);
     expect(encodeMeanings(picked)).toBe(fromVerse.keys.join('|'));
@@ -575,7 +575,7 @@ describe('the m a choice writes', () => {
   });
 
   it('writes the key it was given for part of a merged row picked from the menu', () => {
-    const fromVerse = meaningsInVerse(dictionary, null, 'שכם', 'Genesis:34:4').find(
+    const fromVerse = meaningsInVerse(dictionary, null, 'שכם', 'Genesis.34.4').find(
       (m) => m.gloss === 'Shechem',
     )!;
     const terms = addTerm([], 'שכם');

@@ -6,7 +6,7 @@ import {
   type CameraRef,
   type CameraPosition,
 } from './types.ts';
-import { parseVerseFromUrl, SEARCH_KEYS } from '@torahmap/link';
+import { parseVerseId, SEARCH_KEYS } from '@torahmap/link';
 
 /** The frontmatter keys a story may set. */
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;
@@ -110,7 +110,7 @@ function parseCamera(params: Record<string, string>): CameraRef {
   }
 
   // e.g. "Genesis.12.1" or "I.Samuel.1.5"
-  if (parseVerseFromUrl(cameraStr)) {
+  if (parseVerseId(cameraStr)) {
     return { kind: 'verse', ref: cameraStr };
   }
 

@@ -5,8 +5,9 @@
 
 import './trop.css';
 import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts';
-import type { TanakhIdentity, TextLanguage } from '../types.ts';
-import { HEBREW, tanakhKey } from '../types.ts';
+import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../types.ts';
+import { HEBREW } from '../types.ts';
+import { verseId } from '@torahmap/link';
 import { isNikkud } from '../hebrew.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import {
@@ -95,7 +96,7 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
 
   const verseLookup = new Map<string, number>();
   for (const loc of entry.verses) {
-    verseLookup.set(tanakhKey(loc.book, loc.chapter, loc.verse), loc.count);
+    verseLookup.set(verseId(loc.book, loc.chapter, loc.verse), loc.count);
   }
 
   const tier = getRarityTier(entry.totalCount);
@@ -142,11 +143,11 @@ function tropInfoLine(entry: TropIndexEntry, options?: { withOccurrencesWord?: b
   return `${entry.name} (${entry.hebrewName}) · ${count} · ${tierLabel(tier)}`;
 }
 
-function countAt(verse: TanakhIdentity, derived: TropDerivation): number {
-  return derived.verseLookup.get(tanakhKey(verse.book, verse.chapter, verse.verse)) ?? 0;
+function countAt(verse: TanakhLayout, derived: TropDerivation): number {
+  return derived.verseLookup.get(verse.id) ?? 0;
 }
 
-function tropColorAt(verse: TanakhIdentity, derived: TropDerivation | null): Color | null {
+function tropColorAt(verse: TanakhLayout, derived: TropDerivation | null): Color | null {
   if (!derived) return null;
 
   const count = countAt(verse, derived);

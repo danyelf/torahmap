@@ -21,10 +21,9 @@ export {
   linkKind,
   readLink,
   writeLink,
-  verseToUrlFormat,
+  verseId,
   bookToUrl,
   bookFromUrl,
   verseRef,
-  parseVerseFromUrl,
-  parseExactVerse,
+  parseVerseId,
 } from './link.ts';

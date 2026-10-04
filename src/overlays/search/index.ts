@@ -9,7 +9,7 @@
 import './search.css';
 import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
-import { HEBREW, tanakhKey } from '../../types.ts';
+import { HEBREW } from '../../types.ts';
 import {
   getMatchingVerseTerms,
   parseSearchTerms,
@@ -403,8 +403,8 @@ function showVerse(result: SearchResult): void {
  * A verse's colour given what a term list found: each matching term's own
  * colour, split corner to corner when there are several.
  */
-function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
-  const termIndices = search.matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+function searchColorAt(verse: TanakhLayout, search: Search): Color | Color[] | null {
+  const termIndices = search.matchingTerms.get(verse.id);
   if (!termIndices || termIndices.length === 0) return null;
 
   const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(search.active, i)]);
@@ -536,7 +536,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
     const { active, matchingTerms } = searchFor(data, settings);
     if (active.length === 0) return null;
 
-    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+    const key = verse.id;
     const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 
@@ -566,10 +566,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   },
 
   highlightVerseText(verse, text, language, settings, data) {
-    const words =
-      language === HEBREW
-        ? wordsOfVerse(data.parse, tanakhKey(verse.book, verse.chapter, verse.verse), text)
-        : null;
+    const words = language === HEBREW ? wordsOfVerse(data.parse, verse.id, text) : null;
     return highlightTerms(
       text,
       language,

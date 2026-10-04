@@ -100,8 +100,8 @@ describe('versesFor', () => {
   });
 
   it('puts the fig leaves of Genesis 3:7 under leafage, not burnt-offering', () => {
-    expect(versesFor(dictionary, ['<LH=/@heb']).has('Genesis:3:7')).toBe(true);
-    expect(versesFor(dictionary, ['<LH/@heb']).has('Genesis:3:7')).toBe(false);
+    expect(versesFor(dictionary, ['<LH=/@heb']).has('Genesis.3.7')).toBe(true);
+    expect(versesFor(dictionary, ['<LH/@heb']).has('Genesis.3.7')).toBe(false);
   });
 
   it('ignores a key that no longer resolves', () => {

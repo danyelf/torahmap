@@ -5,6 +5,7 @@
 // "leafage", and more. A meanings-mode search looks for all of them.
 
 import { describe, it, expect } from 'vitest';
+import { verseId } from '@torahmap/link';
 import { excerptOf } from '../helpers/excerpt';
 import { findLexemesForWord, getLexeme } from '../../search';
 import { addTerm, onlyMeaning } from '../../search/terms';
@@ -15,7 +16,7 @@ import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { realSearchData } from '../helpers/searchData';
 
 const keys = (results: Array<{ book: string; chapter: number; verse: number }>) =>
-  new Set(results.map((r) => `${r.book}:${r.chapter}:${r.verse}`));
+  new Set(results.map((r) => verseId(r.book, r.chapter, r.verse)));
 
 describe('Meanings-mode search over the lexeme index', () => {
   const { index, dictionary, parse } = realSearchData();
@@ -69,12 +70,12 @@ describe('Meanings-mode search over the lexeme index', () => {
     it('finds every inflected form of a verb, not just the one typed', () => {
       // Genesis 1:3 has וַיֹּאמֶר; the search term is the bare verb.
       const results = keys(searchInMeaningsMode(index, dictionary, 'אמר'));
-      expect(results.has('Genesis:1:3')).toBe(true);
+      expect(results.has('Genesis.1.3')).toBe(true);
       expect(results.size).toBeGreaterThan(2000);
     });
 
     it('finds Genesis 19:14 when searching צחק (it has כִּמְצַחֵק)', () => {
-      expect(keys(searchInMeaningsMode(index, dictionary, 'צחק')).has('Genesis:19:14')).toBe(true);
+      expect(keys(searchInMeaningsMode(index, dictionary, 'צחק')).has('Genesis.19.14')).toBe(true);
     });
 
     it('marks a verse with every term that matched it', () => {
@@ -118,7 +119,7 @@ describe('Meanings-mode search over the lexeme index', () => {
       // Genesis 8:20: וַיַּעַל עֹלֹת — "and he offered burnt offerings".
       const [added] = addTerm([], 'עלה');
       const [term] = onlyMeaning([added], added.id, ['<LH/@heb']);
-      const verse = { book: 'Genesis', chapter: 8, verse: 20 };
+      const verse = { id: 'Genesis.8.20', book: 'Genesis', chapter: 8, verse: 20 };
       const snippet = excerpt({ ...verse, matchingTerms: [] }, term, index, dictionary, parse)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלת');

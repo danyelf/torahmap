@@ -659,7 +659,7 @@ describe('Commentary Overlay', () => {
     it('answers for settings it is handed without changing what it is showing', () => {
       commentaryOverlay.restore({ category: 'Midrash' });
 
-      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
+      const items = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })];
 
       // Asking about another category must not move the overlay off Midrash.
       commentaryOverlay.overlay.colorsFor!(

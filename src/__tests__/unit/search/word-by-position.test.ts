@@ -10,6 +10,7 @@
 // there names the word next door, so they are lined up by letter instead.
 
 import { describe, it, expect } from 'vitest';
+import { parseVerseId } from '@torahmap/link';
 import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
 import { verseWords } from '../../../verseWords';
@@ -24,8 +25,9 @@ const OFFERINGS = ['<LH/@heb', '<LH=/@heb', '<LH/@arc'];
 const texts = files.texts;
 
 const hebrewOf = (verseKey: string): string => {
-  const [book, chapter, verse] = verseKey.split(':');
-  return texts[book][chapter][verse].he;
+  const v = parseVerseId(verseKey);
+  if (!v) throw new Error(`${verseKey} is not a verse`);
+  return texts[v.book][v.chapter][v.verse].he;
 };
 
 /**
@@ -60,20 +62,20 @@ describe('marking the words of a verse', () => {
     // verse ends by saying he sent them up: וַיַּעַל. Both are spelled עלה once
     // the vowels come off, so a reader searching for the verb and for the noun
     // at once used to see one colour over both words.
-    expect(markedWords('Genesis:8:20', ASCEND)).toEqual(['ויעל']);
-    expect(markedWords('Genesis:8:20', OFFERINGS)).toEqual(['עלת']);
+    expect(markedWords('Genesis.8.20', ASCEND)).toEqual(['ויעל']);
+    expect(markedWords('Genesis.8.20', OFFERINGS)).toEqual(['עלת']);
   });
 
   it('marks the word in a verse the two sources divide differently', () => {
     // Numbers 2:12 prints צורישדי solid where BHSA has צורי שדי, so counting
     // words from the start of the verse would land one word out.
-    expect(markedWords('Numbers:2:12', ['YWRJCDJ/@heb'])).toEqual(['צורישדי']);
-    expect(markedWords('Numbers:2:12', ASCEND)).toEqual([]);
+    expect(markedWords('Numbers.2.12', ['YWRJCDJ/@heb'])).toEqual(['צורישדי']);
+    expect(markedWords('Numbers.2.12', ASCEND)).toEqual([]);
   });
 
   it('leaves a verse it has no parse for to the spelling', () => {
-    const hebrew = hebrewOf('Genesis:8:20');
-    const words = wordsOfVerse(parse, 'Nowhere:1:1', hebrew);
+    const hebrew = hebrewOf('Genesis.8.20');
+    const words = wordsOfVerse(parse, 'Nowhere.1.1', hebrew);
 
     // The spelling alone cannot tell the two apart, so both words answer to
     // both terms. That is the behaviour this replaces, kept for where the
@@ -89,8 +91,8 @@ describe('marking the words of a verse', () => {
     // The overlay hands over a string; nothing says it is the verse whose
     // parse is loaded. Reading one verse's words off another verse's parse
     // labels every word with a stranger's dictionary entry.
-    const words = wordsOfVerse(parse, 'Genesis:8:20', hebrewOf('Genesis:8:20'));
-    const elsewhere = stripNikkud(hebrewOf('Genesis:3:7'));
+    const words = wordsOfVerse(parse, 'Genesis.8.20', hebrewOf('Genesis.8.20'));
+    const elsewhere = stripNikkud(hebrewOf('Genesis.3.7'));
 
     const marked = splitIntoWords(elsewhere)
       .filter(({ word, start }) =>
@@ -109,7 +111,7 @@ describe('naming the word that was clicked', () => {
   it('reads עלת in Genesis 8:20 as the offering and ויעל as the verb', () => {
     // Without a position both words answer "either", which is what
     // word-in-verse.test.ts pins. With one, each word answers for itself.
-    const verse = 'Genesis:8:20';
+    const verse = 'Genesis.8.20';
 
     const offering = meaningsInVerse(
       dictionary,
@@ -134,7 +136,7 @@ describe('naming the word that was clicked', () => {
     // The index carries לו as a spelling of לֹא as well, because the two are
     // interchanged where the text is corrected, and this verse has לֹא־טוֹב. The
     // verse cannot choose; the word's own position can.
-    const verse = 'Genesis:2:18';
+    const verse = 'Genesis.2.18';
 
     const meanings = meaningsInVerse(
       dictionary,
@@ -150,7 +152,7 @@ describe('naming the word that was clicked', () => {
     // בֵּית אֵל is two words on the page and one in the dictionary. Reading them
     // separately gives "house" and "god", which is etymology rather than what
     // the verse says.
-    const verse = 'Genesis:13:3';
+    const verse = 'Genesis.13.3';
 
     expect(
       meaningsInVerse(
@@ -177,7 +179,7 @@ describe('naming the word that was clicked', () => {
     // עֲשָׂהאֵל solid where BHSA divides it in two, so every position in the verse
     // is one word behind: counting into it would answer אֲחִי, "brother", with
     // Asahel. Lined up by letter, each word is itself.
-    const verse = 'II Samuel:23:24';
+    const verse = 'II.Samuel.23.24';
 
     const words = wordsOfVerse(parse, verse, hebrewOf(verse));
     const at = (word: string) =>
@@ -191,7 +193,7 @@ describe('naming the word that was clicked', () => {
     // By position each word would be named as the other; by letter the
     // Tetragrammaton is itself, and אֱלֹהִים, which BHS does not have here, falls
     // back to its spelling.
-    const verse = 'II Samuel:7:22';
+    const verse = 'II.Samuel.7.22';
 
     expect(
       meaningsInVerse(
@@ -224,34 +226,34 @@ describe('a click on the written form of a corrected word', () => {
 
   it('offers what a click on the reading beside it offers', () => {
     // (אעבוד) [אֶעֱבוֹר]: no printed word is spelled אעבוד.
-    expect(clicked('Jeremiah:2:20', '(אעבוד)')).toEqual(clicked('Jeremiah:2:20', '[אעבור]'));
+    expect(clicked('Jeremiah.2.20', '(אעבוד)')).toEqual(clicked('Jeremiah.2.20', '[אעבור]'));
   });
 
   it('when the reading comes first', () => {
-    expect(clicked('Daniel:7:19', '(כלהון)')).toEqual(clicked('Daniel:7:19', '[כלהין]'));
+    expect(clicked('Daniel.7.19', '(כלהון)')).toEqual(clicked('Daniel.7.19', '[כלהין]'));
   });
 
   it('offers both words when one written word is read as two', () => {
     // (בגד) [בָּא גָד]
-    const both = [...clicked('Genesis:30:11', '[בא'), ...clicked('Genesis:30:11', 'גד]')];
-    expect(clicked('Genesis:30:11', '(בגד)')).toEqual(both);
+    const both = [...clicked('Genesis.30.11', '[בא'), ...clicked('Genesis.30.11', 'גד]')];
+    expect(clicked('Genesis.30.11', '(בגד)')).toEqual(both);
   });
 
   it('gives each of two written words the one word they are read as', () => {
     // (כי טוב) [כְּטוֹב]
-    const reading = clicked('Judges:16:25', '[כטוב]');
-    expect(clicked('Judges:16:25', '(כי')).toEqual(reading);
-    expect(clicked('Judges:16:25', 'טוב)')).toEqual(reading);
+    const reading = clicked('Judges.16.25', '[כטוב]');
+    expect(clicked('Judges.16.25', '(כי')).toEqual(reading);
+    expect(clicked('Judges.16.25', 'טוב)')).toEqual(reading);
   });
 
   it('offers no meaning for a word written but not read', () => {
     // (נא) in II Kings 5:18 has no reading beside it, and BHSA no word for it,
     // so nothing says which of the spelling's meanings it is.
-    expect(clicked('II Kings:5:18', '(נא)')).toEqual([]);
+    expect(clicked('II.Kings.5.18', '(נא)')).toEqual([]);
   });
 
   it('does not lend a reading to a word written but not read right after its pair', () => {
-    const verseKey = 'Jeremiah:2:20';
+    const verseKey = 'Jeremiah.2.20';
     const hebrew = hebrewOf(verseKey).replace(/(\[[^\]]*\])/, '$1 (נא)');
     const words = wordsOfVerse(parse, verseKey, hebrew);
     const index = verseWords(hebrew).findIndex((w) => withBrackets(hebrew, w) === '(נא)');
@@ -261,13 +263,13 @@ describe('a click on the written form of a corrected word', () => {
 
 describe('the words of a verse', () => {
   it('are not named without the parse', () => {
-    expect(wordsOfVerse(null, 'Genesis:8:20', hebrewOf('Genesis:8:20'))).toBeNull();
+    expect(wordsOfVerse(null, 'Genesis.8.20', hebrewOf('Genesis.8.20'))).toBeNull();
   });
 
   it('are the same object for the same parse and verse', () => {
-    const hebrew = hebrewOf('Genesis:8:20');
-    expect(wordsOfVerse(parse, 'Genesis:8:20', hebrew)).toBe(
-      wordsOfVerse(parse, 'Genesis:8:20', hebrew),
+    const hebrew = hebrewOf('Genesis.8.20');
+    expect(wordsOfVerse(parse, 'Genesis.8.20', hebrew)).toBe(
+      wordsOfVerse(parse, 'Genesis.8.20', hebrew),
     );
   });
 });

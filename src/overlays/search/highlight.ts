@@ -3,7 +3,7 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import { ENGLISH, HEBREW, tanakhKey, type TextLanguage } from '../../types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
 import {
   mapStrippedToOriginal,
   onlySeparators,
@@ -128,9 +128,7 @@ export function excerpt(
   const isHebrew = termIsHebrew(term);
   const text = displayedVerse(index, result, isHebrew ? HEBREW : ENGLISH);
   if (text === null) return null;
-  const words = isHebrew
-    ? wordsOfVerse(parse, tanakhKey(result.book, result.chapter, result.verse), text)
-    : null;
+  const words = isHebrew ? wordsOfVerse(parse, result.id, text) : null;
   const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, dictionary, words);
   if (!first) return quoteVerse(text, null);
 

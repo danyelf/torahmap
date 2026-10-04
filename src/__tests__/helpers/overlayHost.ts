@@ -3,7 +3,7 @@
 // drawing the controls again after each change, into the container they were
 // last drawn in.
 import type { Overlay, OverlaySummary, SettingsUpdate } from '../../overlays/types';
-import type { TanakhIdentity, TextLanguage } from '../../types';
+import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types';
 import { createOverlaySettings, settingsFromLink, type LinkParams } from '../../overlays/settings';
 import type { TanakhOverlay } from '../../overlays/index';
 
@@ -26,14 +26,14 @@ export interface OverlayHost<S, D> {
   /** Called after every change the controls or `change` make. Restoring is not a change. */
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
-  getVerseColor(verse: TanakhIdentity): ReturnType<TanakhOverlay['getVerseColor']>;
+  getVerseColor(verse: TanakhLayout): ReturnType<TanakhOverlay['getVerseColor']>;
   /** Returns false when the overlay declares no hoverChangesColors of its own. */
-  hoverChangesColors(before: TanakhIdentity | null, after: TanakhIdentity | null): boolean;
-  getHoverInfo(verse: TanakhIdentity): string | null;
-  highlightVerseText(verse: TanakhIdentity, text: string, language: TextLanguage): DocumentFragment;
+  hoverChangesColors(before: TanakhLayout | null, after: TanakhLayout | null): boolean;
+  getHoverInfo(verse: TanakhLayout): string | null;
+  highlightVerseText(verse: TanakhLayout, text: string, language: TextLanguage): DocumentFragment;
   renderLegend(container: HTMLElement): void;
   summary(): OverlaySummary;
-  renderSidebarInfo(verse: TanakhIdentity, isPinned: boolean): HTMLElement | null;
+  renderSidebarInfo(verse: TanakhLayout, isPinned: boolean): HTMLElement | null;
   destroy(): void;
 }
 

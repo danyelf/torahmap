@@ -50,6 +50,7 @@ describe("a result's excerpt", () => {
   });
 
   const genesis11: SearchResult = {
+    id: 'Genesis.1.1',
     book: 'Genesis',
     chapter: 1,
     verse: 1,

@@ -1,6 +1,6 @@
 // What a link is called in a tab and a chat preview.
 
-import { linkKind, parseExactVerse, verseRef, type UrlState } from '@torahmap/link';
+import { linkKind, parseVerseId, verseRef, type UrlState } from '@torahmap/link';
 import { overlayName } from '@torahmap/overlay-catalog';
 import { STORIES, listedStories, storyToOpen, firstSentence } from '@torahmap/stories';
 
@@ -33,7 +33,7 @@ export function describeLink(state: UrlState): LinkDescription {
       description: opening ? `${opening} ${TAGLINE}` : TAGLINE,
     };
   }
-  const verse = state.verse ? parseExactVerse(state.verse) : null;
+  const verse = state.verse ? parseVerseId(state.verse) : null;
   const search = state.searchParams?.search;
   const parts = [verse && verseRef(verse), search && `Search: ${search}`, SITE_NAME].filter(
     Boolean,

@@ -1,4 +1,4 @@
-import type { Color, TextLanguage } from '../types.ts';
+import type { Color, SpatialItem, TextLanguage } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 
@@ -95,12 +95,17 @@ interface OverlayMembers<T, S, D> {
   destroy?(): void;
 
   // null renders default gray; Color[] splits the square corner to corner, one band per color.
-  getVerseColor(verse: T, settings: S, data: D): Color | Color[] | null;
+  getVerseColor(verse: SpatialItem<T>, settings: S, data: D): Color | Color[] | null;
 
   // The same colours for many items at once, as the map and the story's blend
   // ask for them. `hovered` is the item under the cursor; only Haftarah's
   // colours depend on it.
-  colorsFor(items: T[], settings: S, hovered: T | null, data: D): (Color | Color[] | null)[];
+  colorsFor(
+    items: SpatialItem<T>[],
+    settings: S,
+    hovered: SpatialItem<T> | null,
+    data: D,
+  ): (Color | Color[] | null)[];
 
   // The panel may be drawn without the overlay's data; then data is null.
   //
@@ -124,18 +129,28 @@ interface OverlayMembers<T, S, D> {
   // are CSS values. Absent, the line is the name alone.
   summary?(settings: S, data: D): OverlaySummary;
 
-  getHoverInfo?(verse: T, settings: S, data: D): string | null;
+  getHoverInfo?(verse: SpatialItem<T>, settings: S, data: D): string | null;
 
   // Declaring this marks an overlay's colours as depending on the hovered verse:
   // the map recomputes them when it says so, and the story's blend does not
   // memoise them. True when moving the hover from `before` to `after` changes them.
-  hoverChangesColors?(before: T | null, after: T | null, settings: S, data: D): boolean;
+  hoverChangesColors?(
+    before: SpatialItem<T> | null,
+    after: SpatialItem<T> | null,
+    settings: S,
+    data: D,
+  ): boolean;
 
-  renderSidebarInfo?(verse: T, isPinned: boolean, settings: S, data: D): HTMLElement | null;
+  renderSidebarInfo?(
+    verse: SpatialItem<T>,
+    isPinned: boolean,
+    settings: S,
+    data: D,
+  ): HTMLElement | null;
 
   // Marks words by their place in the verse, so it is handed the verse as well as its text.
   highlightVerseText?(
-    verse: T,
+    verse: SpatialItem<T>,
     text: string,
     language: TextLanguage,
     settings: S,

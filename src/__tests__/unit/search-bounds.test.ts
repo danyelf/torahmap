@@ -6,6 +6,7 @@ import { buildTextIndex, type SearchResult, type TextIndex } from '../../search'
 import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
 const result = (verse: number): SearchResult => ({
+  id: `Genesis.1.${verse}`,
   book: 'Genesis',
   chapter: 1,
   verse,

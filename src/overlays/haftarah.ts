@@ -1,6 +1,6 @@
 import type { Overlay, Color, UrlParamValues } from './types.ts';
-import type { TanakhIdentity } from '../types.ts';
-import { tanakhKey } from '../types.ts';
+import type { TanakhIdentity, TanakhLayout } from '../types.ts';
+import { verseId } from '@torahmap/link';
 import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
 import { rgbToHsl, hslToRgb, colorToCss, brighten } from '../utils/color.ts';
 import { escapeHtml } from '../utils/html.ts';
@@ -58,18 +58,18 @@ export interface HaftarahSettings {
   readonly reading: string | null;
 }
 
-function isRelevantVerse(verse: TanakhIdentity, derived: HaftarahDerivation): boolean {
-  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+function isRelevantVerse(verse: TanakhLayout, derived: HaftarahDerivation): boolean {
+  const key = verse.id;
   return derived.torahVerseToParsha.has(key) || derived.haftarahVerseToItem.has(key);
 }
 
 /** The readings to light: whatever the hovered verse belongs to, or null when it belongs to none. */
 function litByHover(
   derived: HaftarahDerivation,
-  hovered: TanakhIdentity | null,
+  hovered: TanakhLayout | null,
 ): Set<HaftarahItem> | null {
   if (!hovered) return null;
-  const key = tanakhKey(hovered.book, hovered.chapter, hovered.verse);
+  const key = hovered.id;
   const parsha = derived.torahVerseToParsha.get(key);
   if (parsha) return new Set([parsha]);
   const items = derived.haftarahVerseToItem.get(key);
@@ -86,7 +86,7 @@ function litByPreview(
   const lit = new Set([item]);
   for (const range of item.haftarah[custom]) {
     forEachVerseInRange(data.structure, range, (book, ch, v) => {
-      derived.haftarahVerseToItem.get(tanakhKey(book, ch, v))?.forEach((i) => lit.add(i));
+      derived.haftarahVerseToItem.get(verseId(book, ch, v))?.forEach((i) => lit.add(i));
     });
   }
   return lit;
@@ -111,7 +111,7 @@ function litByName(
 function litFor(
   data: HaftarahData,
   settings: HaftarahSettings,
-  hovered: TanakhIdentity | null,
+  hovered: TanakhLayout | null,
 ): Set<HaftarahItem> | null {
   return (
     litByName(data, settings.custom, settings.preview) ??
@@ -126,11 +126,11 @@ function litFor(
  * tint of its colour, and a verse in none is grey.
  */
 function colorAt(
-  verse: TanakhIdentity,
+  verse: TanakhLayout,
   derived: HaftarahDerivation,
   lit: Set<HaftarahItem> | null,
 ): Color | Color[] | null {
-  const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+  const key = verse.id;
   const parsha = derived.torahVerseToParsha.get(key);
   const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
   if (items.length === 0) return lit ? DIMMED_GREY : null;
@@ -225,16 +225,14 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     if (settings.preview !== null) return false;
     // A verse outside every reading colours the map the same as no hover.
     const derived = deriveHaftarah(data, settings.custom);
-    const keyIfRelevant = (verse: TanakhIdentity | null) =>
-      verse && isRelevantVerse(verse, derived)
-        ? tanakhKey(verse.book, verse.chapter, verse.verse)
-        : null;
+    const keyIfRelevant = (verse: TanakhLayout | null) =>
+      verse && isRelevantVerse(verse, derived) ? verse.id : null;
     return keyIfRelevant(before) !== keyIfRelevant(after);
   },
 
   /** The colour with nothing hovered on the map. The map asks colorsFor, which takes the hover. */
   getVerseColor(
-    verse: TanakhIdentity,
+    verse: TanakhLayout,
     settings: HaftarahSettings,
     data: HaftarahData,
   ): Color | Color[] | null {
@@ -301,8 +299,8 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     `;
   },
 
-  getHoverInfo(verse: TanakhIdentity, settings: HaftarahSettings, data): string | null {
-    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+  getHoverInfo(verse: TanakhLayout, settings: HaftarahSettings, data): string | null {
+    const key = verse.id;
     const derived = deriveHaftarah(data, settings.custom);
 
     const parshaFromTorah = derived.torahVerseToParsha.get(key);
