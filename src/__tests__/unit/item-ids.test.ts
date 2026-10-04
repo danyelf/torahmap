@@ -4,6 +4,8 @@ import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { parseVerseId } from '@torahmap/link';
 import { STORIES } from '@torahmap/stories';
+import { namesRegion } from '../../scrollytelling/storyPanel.ts';
+import { initBookData } from '../../constants/books.ts';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
 import { talmudId } from '../../talmud/layout.ts';
@@ -52,6 +54,19 @@ describe('the shipped data', () => {
       }),
     );
     expect(named.filter((where) => !squares.find(where.split(': ')[1]))).toEqual([]);
+  });
+
+  it('has every story name only places the map holds', () => {
+    initBookData(shipped(STRUCTURE_FILE));
+    const verses = computeLayout(shipped(STRUCTURE_FILE));
+    const named = STORIES.flatMap(({ id, data }) =>
+      data.stops.flatMap((stop) =>
+        typeof stop.camera === 'object' && 'kind' in stop.camera && stop.camera.kind === 'regions'
+          ? stop.camera.names.map((name) => ({ where: `${id}/${stop.id}: ${name}`, name }))
+          : [],
+      ),
+    );
+    expect(named.filter(({ name }) => !namesRegion(verses, name)).map((n) => n.where)).toEqual([]);
   });
 
   it('lays out the Talmud with no two squares sharing an id', () => {

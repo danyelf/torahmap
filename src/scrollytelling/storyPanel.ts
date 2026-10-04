@@ -97,6 +97,11 @@ function inRegion(verse: TanakhLayout, name: string): boolean {
   return verse.book === bookFromUrl(name);
 }
 
+/** Whether `name` is a region of the map: everything, a section or a book. */
+export function namesRegion(verses: TanakhLayout[], name: string): boolean {
+  return verses.some((v) => inRegion(v, name));
+}
+
 /**
  * The box around every verse in the named regions and the section label to
  * their right, or null if they hold none.

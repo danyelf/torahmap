@@ -6,7 +6,6 @@ import {
   linkKind,
   verseId,
   parseVerseId,
-  parseExactVerse,
   validateOverlayParams,
   type UrlState,
   type UrlParamSpec,
@@ -561,18 +560,19 @@ describe('parseVerseId', () => {
   });
 });
 
-describe('parseExactVerse', () => {
+describe('parseVerseId, strictly', () => {
   it('reads a verse written as a link writes it', () => {
-    expect(parseExactVerse('I.Samuel.1.5')).toEqual({ book: 'I Samuel', chapter: 1, verse: 5 });
+    expect(parseVerseId('I.Samuel.1.5')).toEqual({ book: 'I Samuel', chapter: 1, verse: 5 });
   });
 
   it('refuses any other spelling of the same verse', () => {
-    expect(parseExactVerse('I.Samuel.01.5')).toBeNull();
-    expect(parseExactVerse('I Samuel.1.5')).toBeNull();
+    expect(parseVerseId('I.Samuel.01.5')).toBeNull();
+    expect(parseVerseId('I Samuel.1.5')).toBeNull();
+    expect(parseVerseId('Berakhot.2a.1')).toBeNull();
   });
 
   it('refuses what is no verse at all', () => {
-    expect(parseExactVerse('I.Samuel')).toBeNull();
+    expect(parseVerseId('I.Samuel')).toBeNull();
   });
 });
 
