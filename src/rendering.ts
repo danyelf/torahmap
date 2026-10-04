@@ -16,7 +16,8 @@ import {
   type Picture,
 } from './geometry';
 import { buildOutlineGeometry } from './outline';
-import type { Color, SpatialItem, TanakhIdentity } from './types';
+import type { Color, SpatialItem } from './types';
+import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, SEARCH_WITH_OVERLAY } from './constants';
 
@@ -41,11 +42,10 @@ export interface RenderContext {
 /**
  * Mutable rendering state that changes during the application's lifecycle.
  *
- * Generic over T (the identity shape) with default TanakhIdentity so existing
- * Tanakh callers keep their type inference. T is opaque — only x/y/size are
- * read by the rendering code.
+ * Generic over T, the text's own fields on each square, which the rendering
+ * code never reads.
  */
-export interface RenderState<T = TanakhIdentity> {
+export interface RenderState<T> {
   buffer: WebGLBuffer;
   /** Points each per-verse attribute of the main program at its slice of `buffer`. */
   vertexArray: WebGLVertexArrayObject;
@@ -129,7 +129,6 @@ export function render<T>(
   camera: Camera,
   hoveredVerse: SpatialItem<T> | null,
   pinnedVerse: SpatialItem<T> | null,
-  itemsEqual: (a: T | null, b: T | null) => boolean,
 ): { x: number; y: number } {
   const { gl, programs, canvas } = context;
   const { vertexArray, verses, dpr } = state;
@@ -161,7 +160,7 @@ export function render<T>(
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, verses.length);
   gl.bindVertexArray(null);
 
-  if (hoveredVerse && !itemsEqual(hoveredVerse, pinnedVerse)) {
+  if (hoveredVerse && !sameItem(hoveredVerse, pinnedVerse)) {
     const hoverColor = pinnedVerse
       ? HIGHLIGHT_CONSTANTS.HOVER_WHILE_PINNED_OUTLINE_COLOR
       : HIGHLIGHT_CONSTANTS.HOVER_OUTLINE_COLOR;

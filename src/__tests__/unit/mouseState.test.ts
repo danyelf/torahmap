@@ -7,13 +7,12 @@ import {
   clearHover,
 } from '../../mouseState';
 import type { TanakhLayout } from '../../types';
-import { tanakhIdentitiesEqual } from '../../types';
 import { createVerse } from '../helpers/fixtures';
 
 describe('mouseState', () => {
   describe('createMouseState', () => {
     it('creates initial state with no interaction', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
 
       expect(state.isDragging).toBe(false);
       expect(state.hoveredVerse).toBe(null);
@@ -21,71 +20,31 @@ describe('mouseState', () => {
     });
 
     it('creates independent state objects', () => {
-      const state1 = createMouseState();
-      const state2 = createMouseState();
+      const state1 = createMouseState<TanakhLayout>();
+      const state2 = createMouseState<TanakhLayout>();
 
       state1.isDragging = true;
       expect(state2.isDragging).toBe(false);
     });
   });
 
-  describe('tanakhIdentitiesEqual', () => {
-    it('returns true when both are null', () => {
-      expect(tanakhIdentitiesEqual(null, null)).toBe(true);
-    });
-
-    it('returns false when only first is null', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(null, verse)).toBe(false);
-    });
-
-    it('returns false when only second is null', () => {
-      const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse, null)).toBe(false);
-    });
-
-    it('returns true when verses are the same', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ x: 100, y: 200, size: 2 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(true);
-    });
-
-    it('returns false when books differ', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ book: 'Exodus', x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
-    });
-
-    it('returns false when chapters differ', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ chapter: 2, x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
-    });
-
-    it('returns false when verse numbers differ', () => {
-      const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
-      const verse2: TanakhLayout = createVerse({ verse: 2, x: 0, y: 0, size: 1 });
-      expect(tanakhIdentitiesEqual(verse1, verse2)).toBe(false);
-    });
-  });
-
   describe('startDrag', () => {
     it('sets isDragging to true', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       startDrag(state, 100, 200);
 
       expect(state.isDragging).toBe(true);
     });
 
     it('stores drag start position', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       startDrag(state, 100, 200);
 
       expect(state.dragStart).toEqual({ x: 100, y: 200 });
     });
 
     it('updates position on subsequent calls', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       startDrag(state, 100, 200);
       startDrag(state, 300, 400);
 
@@ -95,7 +54,7 @@ describe('mouseState', () => {
 
   describe('stopDrag', () => {
     it('sets isDragging to false', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       state.isDragging = true;
 
       stopDrag(state);
@@ -106,7 +65,7 @@ describe('mouseState', () => {
 
   describe('setHoveredVerse', () => {
     it('sets hovered verse', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
       setHoveredVerse(state, verse);
@@ -115,7 +74,7 @@ describe('mouseState', () => {
     });
 
     it('can set to null', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
       state.hoveredVerse = verse;
 
@@ -125,7 +84,7 @@ describe('mouseState', () => {
     });
 
     it('can change from one verse to another', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
       const verse2: TanakhLayout = createVerse({ verse: 2, y: 0, size: 1 });
 
@@ -139,7 +98,7 @@ describe('mouseState', () => {
 
   describe('clearHover', () => {
     it('clears isDragging', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       state.isDragging = true;
 
       clearHover(state);
@@ -148,7 +107,7 @@ describe('mouseState', () => {
     });
 
     it('clears hoveredVerse', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
       state.hoveredVerse = verse;
 
@@ -158,7 +117,7 @@ describe('mouseState', () => {
     });
 
     it('clears both dragging and hover', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
       state.isDragging = true;
       state.hoveredVerse = verse;
@@ -172,7 +131,7 @@ describe('mouseState', () => {
 
   describe('integration', () => {
     it('supports typical drag workflow', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
 
       // Start drag
       startDrag(state, 100, 200);
@@ -189,7 +148,7 @@ describe('mouseState', () => {
     });
 
     it('supports typical hover workflow', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       const verse1: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
       const verse2: TanakhLayout = createVerse({ verse: 2, y: 0, size: 1 });
 
@@ -207,7 +166,7 @@ describe('mouseState', () => {
     });
 
     it('supports drag while hovering', () => {
-      const state = createMouseState();
+      const state = createMouseState<TanakhLayout>();
       const verse: TanakhLayout = createVerse({ x: 0, y: 0, size: 1 });
 
       // Hover a verse

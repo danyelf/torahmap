@@ -1,14 +1,14 @@
 // Mouse State module - handles mouse interaction state
 
-import type { TanakhLayout } from './types';
+import type { MapItem } from './types';
 
-export interface MouseState {
+export interface MouseState<I extends MapItem> {
   isDragging: boolean;
-  hoveredVerse: TanakhLayout | null;
+  hoveredVerse: I | null;
   dragStart: { x: number; y: number };
 }
 
-export function createMouseState(): MouseState {
+export function createMouseState<I extends MapItem>(): MouseState<I> {
   return {
     isDragging: false,
     hoveredVerse: null,
@@ -16,21 +16,21 @@ export function createMouseState(): MouseState {
   };
 }
 
-export function startDrag(state: MouseState, x: number, y: number): void {
+export function startDrag<I extends MapItem>(state: MouseState<I>, x: number, y: number): void {
   state.isDragging = true;
   state.dragStart = { x, y };
 }
 
-export function stopDrag(state: MouseState): void {
+export function stopDrag<I extends MapItem>(state: MouseState<I>): void {
   state.isDragging = false;
 }
 
-export function setHoveredVerse(state: MouseState, verse: TanakhLayout | null): void {
+export function setHoveredVerse<I extends MapItem>(state: MouseState<I>, verse: I | null): void {
   state.hoveredVerse = verse;
 }
 
 /** Clears hover and drag state, e.g. when the mouse leaves the canvas. */
-export function clearHover(state: MouseState): void {
+export function clearHover<I extends MapItem>(state: MouseState<I>): void {
   state.isDragging = false;
   state.hoveredVerse = null;
 }

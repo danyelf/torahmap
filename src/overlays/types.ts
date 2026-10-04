@@ -1,4 +1,4 @@
-import type { Color, TanakhIdentity, TextLanguage } from '../types.ts';
+import type { Color, TextLanguage } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 
@@ -13,11 +13,11 @@ export type { Color };
 // sit in both directions and no Overlay<T, SomeSettings> would be an Overlay.
 export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHack'];
 
-// Generic over the identity type T, so that Talmud overlays can declare
-// Overlay<TalmudIdentity, void, void> (they have no settings and no data); over
-// the settings type S, which each overlay defines for itself; and over the data
-// type D, the files it reads. The app holds an overlay's settings and data and
-// hands them to every member that depends on them; the overlay keeps neither.
+// Generic over T, the text's own fields on each square (TanakhIdentity,
+// TalmudIdentity); over the settings type S, which each overlay defines for
+// itself; and over the data type D, the files it reads. The app holds an
+// overlay's settings and data and hands them to every member that depends on
+// them; the overlay keeps neither.
 //
 // Code that handles any overlay sees S as unknown, and only ever hands an
 // overlay settings that the same overlay produced. An Overlay<T, SearchSettings>
@@ -27,7 +27,7 @@ export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHac
 //
 // An overlay either has settings, and implements every member of
 // OverlayWithSettings, or has none and implements none of them.
-export type Overlay<T = TanakhIdentity, S = unknown, D = unknown> = OverlayMembers<T, S, D> &
+export type Overlay<T, S = unknown, D = unknown> = OverlayMembers<T, S, D> &
   (OverlayWithSettings<S> | OverlayWithoutSettings) &
   DataPart<D>;
 
@@ -160,14 +160,14 @@ export interface OverlaySummary {
 }
 
 /** A tool on the map, with the settings the app holds for it and its data. */
-export interface ToolOnMap<T = TanakhIdentity> {
+export interface ToolOnMap<T> {
   tool: Overlay<T>;
   settings: unknown;
   data: unknown;
 }
 
 /** What colours the map: the overlay and the search, each null while off. */
-export interface Tools<T = TanakhIdentity> {
+export interface Tools<T> {
   overlay: ToolOnMap<T> | null;
   search: ToolOnMap<T> | null;
 }

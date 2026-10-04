@@ -1,6 +1,6 @@
 import type { StoryStop } from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
-import type { TanakhLayout } from '../types';
+import type { TanakhIdentity, TanakhLayout } from '../types';
 import type { Overlay } from '../overlays/types.ts';
 import type { Picture } from '../geometry.ts';
 import { getOverlay } from '../overlays/registry';
@@ -34,7 +34,7 @@ function paramsKey(values: UrlParamValues): string {
   return new URLSearchParams(Object.fromEntries(definedEntries(values))).toString();
 }
 
-function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
+function cacheKeyFor(overlay: Overlay<TanakhIdentity> | null, stop: StoryStop): string {
   const overlayKey = overlay
     ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
     : NO_OVERLAY;
@@ -42,12 +42,12 @@ function cacheKeyFor(overlay: Overlay | null, stop: StoryStop): string {
   return `${overlayKey}#${searchKey}`;
 }
 
-function overlayOf(stop: StoryStop): Overlay | null {
+function overlayOf(stop: StoryStop): Overlay<TanakhIdentity> | null {
   return (stop.overlay && getOverlay(stop.overlay)) || null;
 }
 
 /** The tools a stop picks. */
-export function stopTools(stop: StoryStop): Overlay[] {
+export function stopTools(stop: StoryStop): Overlay<TanakhIdentity>[] {
   return toolsPicked(overlayOf(stop), settingsFromLink(searchTool, stop.searchParams ?? {}));
 }
 

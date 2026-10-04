@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { TanakhIdentity } from '../../types';
 import {
   createRenderContext,
   createRenderState,
@@ -9,7 +10,6 @@ import {
   type RenderState,
 } from '../../rendering';
 import type { Camera } from '../../camera';
-import { tanakhIdentitiesEqual } from '../../types';
 import { SEARCH_WITH_OVERLAY } from '../../constants';
 import { createMockCanvas, createVerse, createVerses } from '../helpers';
 
@@ -129,7 +129,7 @@ describe('rendering', () => {
 
   describe('rebuildGeometry', () => {
     let gl: WebGL2RenderingContext;
-    let state: RenderState;
+    let state: RenderState<TanakhIdentity>;
 
     beforeEach(() => {
       const context = createRenderContext(createMockCanvas());
@@ -177,7 +177,7 @@ describe('rendering', () => {
 
   describe('render', () => {
     let context: RenderContext;
-    let state: RenderState;
+    let state: RenderState<TanakhIdentity>;
     let camera: Camera;
 
     beforeEach(() => {
@@ -190,7 +190,7 @@ describe('rendering', () => {
     });
 
     it('clears canvas and sets viewport', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       expect(context.gl.viewport).toHaveBeenCalledWith(0, 0, 800, 600);
       expect(context.gl.clearColor).toHaveBeenCalledWith(0.1, 0.1, 0.1, 1.0);
@@ -198,13 +198,13 @@ describe('rendering', () => {
     });
 
     it('uses main shader program', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
     });
 
     it('sets camera uniforms with dpr scaling', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.main.uniforms.resolution,
@@ -224,7 +224,7 @@ describe('rendering', () => {
     });
 
     it('hands the shader the ring in device pixels', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
       expect(context.gl.uniform3f).toHaveBeenCalledWith(
@@ -236,7 +236,7 @@ describe('rendering', () => {
     });
 
     it('binds the vertex array for the draw, then unbinds it, without setting it up again', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       const bind = vi.mocked(context.gl.bindVertexArray).mock.calls;
       expect(bind).toEqual([[state.vertexArray], [null]]);
@@ -245,7 +245,7 @@ describe('rendering', () => {
     });
 
     it('draws six corners for each verse', () => {
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 10);
     });
@@ -254,7 +254,7 @@ describe('rendering', () => {
       const useProgram = context.gl.useProgram as any;
       useProgram.mockClear();
 
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       // Should only call useProgram once (for main shader, not outline)
       expect(useProgram).toHaveBeenCalledTimes(1);
@@ -264,7 +264,7 @@ describe('rendering', () => {
     it('renders hover outline when verse is hovered', () => {
       const hoveredVerse = state.verses[0];
 
-      render(context, state, camera, hoveredVerse, null, tanakhIdentitiesEqual);
+      render(context, state, camera, hoveredVerse, null);
 
       // Should have called useProgram for both main and outline shaders
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
@@ -274,7 +274,7 @@ describe('rendering', () => {
     it('renders pinned outline when verse is pinned', () => {
       const pinnedVerse = state.verses[2];
 
-      render(context, state, camera, null, pinnedVerse, tanakhIdentitiesEqual);
+      render(context, state, camera, null, pinnedVerse);
 
       // Should have called useProgram for both main and outline shaders
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
@@ -285,7 +285,7 @@ describe('rendering', () => {
       const verse = state.verses[0];
       (context.gl.useProgram as any).mockClear(); // Clear any previous calls
 
-      render(context, state, camera, verse, verse, tanakhIdentitiesEqual);
+      render(context, state, camera, verse, verse);
 
       // Should call useProgram 2 times total: once for main, once for pinned outline
       // Not for hover since hovered === pinned
@@ -294,12 +294,22 @@ describe('rendering', () => {
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.outline.program);
     });
 
+    it('draws no hover outline over the pinned square, even as a different object', () => {
+      const pinnedVerse = state.verses[0];
+      const hoveredCopy = { ...pinnedVerse };
+      vi.mocked(context.gl.useProgram).mockClear();
+
+      render(context, state, camera, hoveredCopy, pinnedVerse);
+
+      expect(context.gl.useProgram).toHaveBeenCalledTimes(2);
+    });
+
     it('renders both hover and pinned outlines when different verses', () => {
       const hoveredVerse = state.verses[0];
       const pinnedVerse = state.verses[1];
       (context.gl.useProgram as any).mockClear(); // Clear any previous calls
 
-      render(context, state, camera, hoveredVerse, pinnedVerse, tanakhIdentitiesEqual);
+      render(context, state, camera, hoveredVerse, pinnedVerse);
 
       // Should call useProgram 3 times total: main, hover outline, pinned outline
       expect(context.gl.useProgram).toHaveBeenCalledTimes(3);
@@ -310,7 +320,7 @@ describe('rendering', () => {
     it('handles zero verses', () => {
       state.verses = [];
 
-      expect(() => render(context, state, camera, null, null, tanakhIdentitiesEqual)).not.toThrow();
+      expect(() => render(context, state, camera, null, null)).not.toThrow();
       expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 0);
     });
 
@@ -318,7 +328,7 @@ describe('rendering', () => {
       state.dpr = 3.0;
       camera.zoom = 2.0;
 
-      render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      render(context, state, camera, null, null);
 
       expect(context.gl.uniform1f).toHaveBeenCalledWith(
         context.programs.main.uniforms.zoom,
@@ -330,7 +340,7 @@ describe('rendering', () => {
       camera.x = 120;
       camera.zoom = 2.0;
 
-      const offset = render(context, state, camera, null, null, tanakhIdentitiesEqual);
+      const offset = render(context, state, camera, null, null);
 
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.main.uniforms.pan,
@@ -342,7 +352,7 @@ describe('rendering', () => {
 
   describe('renderOutline', () => {
     let context: RenderContext;
-    let state: RenderState;
+    let state: RenderState<TanakhIdentity>;
     let camera: Camera;
     let verse: ReturnType<typeof createVerse>;
 
@@ -522,7 +532,7 @@ describe('rendering', () => {
 
       cameras.forEach((camera) => {
         vi.clearAllMocks();
-        render(context, state, camera, null, null, tanakhIdentitiesEqual);
+        render(context, state, camera, null, null);
 
         expect(context.gl.uniform2f).toHaveBeenCalledWith(
           context.programs.main.uniforms.pan,
@@ -549,7 +559,7 @@ describe('rendering', () => {
         const state = createRenderState(context, verses, dpr);
         const camera = { x: 0, y: 0, zoom };
 
-        render(context, state, camera, null, null, tanakhIdentitiesEqual);
+        render(context, state, camera, null, null);
 
         expect(context.gl.uniform1f).toHaveBeenCalledWith(
           context.programs.main.uniforms.zoom,

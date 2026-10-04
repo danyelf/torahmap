@@ -6,7 +6,7 @@ import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';
 import type { ResolvedStoryStop } from '../types';
-import type { TanakhLayout } from '../../types';
+import type { TanakhIdentity, TanakhLayout } from '../../types';
 import type { Color, Overlay, UrlParamValues } from '../../overlays/types';
 import {
   SAMPLE_COMMENTARY_COUNTS,
@@ -21,13 +21,13 @@ import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
 let verses: TanakhLayout[];
 beforeEach(() => {
   verses = [
-    { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
-    { book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
+    { id: 'Genesis.1.1', book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
+    { id: 'Genesis.1.2', book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
   ];
 });
 
 // Stub overlay that returns several colors for the first verse
-const multiColorOverlay: Overlay = {
+const multiColorOverlay: Overlay<TanakhIdentity> = {
   id: 'test-multi-color',
   name: 'Test Multi-color',
   getVerseColor: (verse) => {
@@ -134,7 +134,7 @@ describe('computeBlendedColors multi-color preservation', () => {
 describe('story stop settings reach the overlay', () => {
   let received: Record<string, string | undefined> | null = null;
 
-  const settingsOverlay: Overlay = {
+  const settingsOverlay: Overlay<TanakhIdentity> = {
     id: 'test-settings',
     name: 'Test Settings',
     urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
@@ -254,7 +254,7 @@ describe('the blender memoises colours by settings', () => {
     const colorsForSpy = vi.fn((items: TanakhLayout[]) =>
       items.map(() => [0.2, 0.2, 0.2] as [number, number, number]),
     );
-    const memoOverlay: Overlay = {
+    const memoOverlay: Overlay<TanakhIdentity> = {
       id: 'test-memo',
       name: 'Test Memo',
       urlParams: [{ key: 'state', kind: 'token' }],
@@ -297,7 +297,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const hoverColorsFor = vi.fn((items: TanakhLayout[]) =>
       items.map(() => [0.3, 0.3, 0.3] as [number, number, number]),
     );
-    const hoverOverlay: Overlay = {
+    const hoverOverlay: Overlay<TanakhIdentity> = {
       id: 'test-hover',
       name: 'Test Hover',
       getVerseColor: () => [0.3, 0.3, 0.3] as [number, number, number],
@@ -309,7 +309,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const noHoverColorsFor = vi.fn((items: TanakhLayout[]) =>
       items.map(() => [0.4, 0.4, 0.4] as [number, number, number]),
     );
-    const noHoverOverlay: Overlay = {
+    const noHoverOverlay: Overlay<TanakhIdentity> = {
       id: 'test-no-hover',
       name: 'Test No Hover',
       getVerseColor: () => [0.4, 0.4, 0.4] as [number, number, number],

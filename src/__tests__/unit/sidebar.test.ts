@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { TanakhIdentity } from '../../types';
 import {
   getSidebarElements,
   getSefariaUrl,
@@ -579,7 +580,7 @@ describe('sidebar', () => {
       });
 
       describe('with a search on', () => {
-        function searchOn(info: string | null): ToolOnMap {
+        function searchOn(info: string | null): ToolOnMap<TanakhIdentity> {
           return {
             tool: {
               id: 'search',
@@ -645,7 +646,7 @@ describe('sidebar', () => {
             getVerseColor: () => null,
             highlightVerseText: marking('trop-highlight', ...overlayMarks),
           });
-          const search: ToolOnMap = {
+          const search: ToolOnMap<TanakhIdentity> = {
             tool: {
               id: 'search',
               name: 'Search',
