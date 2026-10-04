@@ -63,15 +63,18 @@ export function combineLayers(
 }
 
 /**
- * `picture` with every null colour replaced by its verse's default grey, and
- * marked `uncoloured` for the hover. A cross-fade needs the greys so a
- * still-uncoloured verse blends from its own grey rather than mergePictures's
- * placeholder for "nothing here".
+ * `picture` with every null colour replaced by its square's base colour, the
+ * default grey unless the text gives one, and marked `uncoloured` for the
+ * hover. A cross-fade needs them so a still-uncoloured square blends from its
+ * own colour rather than mergePictures's placeholder for "nothing here".
  */
-export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<VerseColor> {
+export function fillDefaultColors(
+  picture: Picture<VerseColor | null>,
+  base: (index: number) => VerseColor = getDefaultColor,
+): Picture<VerseColor> {
   return {
     ...picture,
-    colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)),
+    colors: picture.colors.map((c, i) => c ?? base(i)),
     uncoloured: picture.colors.map((c) => c === null),
   };
 }

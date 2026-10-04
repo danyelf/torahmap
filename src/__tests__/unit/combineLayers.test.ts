@@ -110,6 +110,12 @@ describe('fillDefaultColors', () => {
     expect(picture.colors).toEqual([RED, getDefaultColor(1), BLUE]);
   });
 
+  it("fills a null colour with the text's base colour when it gives one", () => {
+    const picture = fillDefaultColors({ colors: [RED, null] }, () => BLUE);
+    expect(picture.colors).toEqual([RED, BLUE]);
+    expect(picture.uncoloured).toEqual([false, true]);
+  });
+
   it('marks the verses it filled as uncoloured', () => {
     expect(fillDefaultColors({ colors: [RED, null] }).uncoloured).toEqual([false, true]);
   });
