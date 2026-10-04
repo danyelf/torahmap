@@ -35,8 +35,8 @@ export default defineConfig(({ command }) => {
       __LIVE__: JSON.stringify(command === 'build' && branch === 'main'),
     },
     build: {
-      // Only the Tanakh map is published. The dev server still serves talmud.html
-      // and the test harness, since it serves any HTML file it is asked for.
+      // The dev server also serves the test harness, since it serves any HTML
+      // file it is asked for.
       rollupOptions: {
         input: { main: resolve(__dirname, 'index.html') },
       },

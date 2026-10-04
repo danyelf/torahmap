@@ -139,9 +139,10 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 ## Project Structure
 
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
-  a `scrollytelling/` mode, a `talmud/` mode with its own `main-talmud.ts`
-  entry point, `styles/`, the `worker/` that serves the deployed site, and the
-  `telemetry/` it records through.
+  a `scrollytelling/` mode, `talmud/` (the Talmud map's layout, labels and
+  overlays, waiting for the shared app shell), `styles/`, the
+  `worker/` that serves the deployed site, and the `telemetry/` it records
+  through.
 - `packages/` — shared code, kept free of the page so the Worker can import
   it, as npm workspace packages: `link` (reading and writing links),
   `overlay-catalog` (each overlay's name and link keys), `stories` (the
