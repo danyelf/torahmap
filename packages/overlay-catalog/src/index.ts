@@ -58,9 +58,7 @@ export const HAFTARAH = {
 export const VERSE_LENGTH = {
   id: 'verse-length',
   name: 'Verse Length',
-  description:
-    'Shades each verse by how many Hebrew words it has, the shortest dark and the ' +
-    'longest bright.',
+  description: 'How many Hebrew words long each verse is. Brighter colors are longer verses.',
 } as const satisfies OverlayEntry;
 
 /** Every overlay the menu offers, in the order it offers them. */
