@@ -297,7 +297,7 @@ describe('rendering', () => {
     it('draws no hover outline over the pinned square, even as a different object', () => {
       const pinnedVerse = state.verses[0];
       const hoveredCopy = { ...pinnedVerse };
-      (context.gl.useProgram as any).mockClear();
+      vi.mocked(context.gl.useProgram).mockClear();
 
       render(context, state, camera, hoveredCopy, pinnedVerse);
 
@@ -493,7 +493,7 @@ describe('rendering', () => {
     });
   });
 
-  describe('RenderState<TanakhIdentity> immutability', () => {
+  describe('RenderState immutability', () => {
     it('does not modify verses array when creating state', () => {
       const context = createRenderContext(createMockCanvas());
       const verses = createVerses(3);
