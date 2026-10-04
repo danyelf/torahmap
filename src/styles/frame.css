@@ -2,8 +2,8 @@
    column in both modes — the story, or the open tool — headed by the ☰ that
    drops the menu, so the map never moves or changes width when the mode does;
    closing the tool gives the column to the map. The map starts
-   at --map-left (src/styles/main.css), which the canvas, the book labels and
-   the title all read. What colours the map is named on the map, in the legend
+   at --map-left (src/styles/main.css), which the canvas and the labels
+   read. What colours the map is named on the map, in the legend
    card. On a phone the panel is a sheet along the bottom and the ☰ floats in
    the top-left corner. The mode and the open panel are data- attributes on
    <body>, set by main.ts from src/frame.ts. */
@@ -35,6 +35,18 @@
   width: calc(100vw - var(--map-left));
   /* A canvas does not stretch between its edges; 100% is of the visible window. */
   height: 100%;
+}
+
+/* The labels over the map, clipped to it, so a label beside it never shows
+   through the panel or the sheet. */
+#map-labels {
+  position: fixed;
+  left: var(--map-left);
+  right: 0;
+  top: 0;
+  bottom: var(--sheet-shown);
+  overflow: hidden;
+  pointer-events: none;
 }
 
 body {

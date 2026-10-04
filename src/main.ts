@@ -257,11 +257,14 @@ async function main(): Promise<void> {
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
   // Placed over the map; render() moves them with it.
+  const labelLayer = document.createElement('div');
+  labelLayer.id = 'map-labels';
+  document.body.appendChild(labelLayer);
   const hebrewNames = Object.fromEntries(torahData.books.map((b) => [b.name, b.hebrewName]));
-  const bookLabels = createBookLabels(verses, document.body, hebrewNames);
+  const bookLabels = createBookLabels(verses, labelLayer, hebrewNames);
   const sections = new Map(torahData.books.map((b) => [b.name, b.section]));
   createSectionLabels(verses, bookLabels, (book) => sections.get(book) ?? 'neviim');
-  const mapTitle = createMapTitle(verses, document.body, (book) => sections.get(book) === 'torah');
+  const mapTitle = createMapTitle(verses, labelLayer, (book) => sections.get(book) === 'torah');
 
   const dpr = window.devicePixelRatio || 1;
 

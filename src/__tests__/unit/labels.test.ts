@@ -85,16 +85,12 @@ describe('labels', () => {
         expect(labelsInDom).not.toBeNull();
       });
 
-      it('is fixed and clipped to the map', () => {
-        const verses = [createVerse()];
-        const labels = createBookLabels(verses, container);
+      // The container is the shell's layer, clipped to the map (#map-labels in frame.css).
+      it('fills the container it is drawn into', () => {
+        const labels = createBookLabels([createVerse()], container);
 
-        expect(labels.style.position).toBe('fixed');
-        expect(labels.style.top).toBe('0px');
-        expect(labels.style.left).toBe('var(--map-left)');
-        expect(labels.style.bottom).toBe('var(--sheet-shown)');
-        expect(labels.style.overflow).toBe('hidden');
-        expect(labels.style.pointerEvents).toBe('none');
+        expect(labels.parentElement).toBe(container);
+        expect(labels.style.position).toBe('absolute');
       });
 
       it('handles empty verse array', () => {

@@ -60,10 +60,11 @@ export function hideMap(hidden: boolean): void {
   if (!hide) {
     hide = document.createElement('style');
     hide.id = 'video-hide-map';
-    // The title is a child of the body of its own, so hiding every other child
-    // leaves it alone on the page's background.
+    // The title is a child of the labels' layer of its own, so hiding every
+    // other child of both leaves it alone on the page's background.
     hide.textContent =
-      'body > :not(#map-title, #video-caption, #video-still) { visibility: hidden; }';
+      'body > :not(#map-labels, #video-caption, #video-still), ' +
+      '#map-labels > :not(#map-title) { visibility: hidden; }';
     document.head.append(hide);
   }
   hide.disabled = !hidden;
