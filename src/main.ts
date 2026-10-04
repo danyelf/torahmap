@@ -171,6 +171,7 @@ function nearerStop(state: InterpolatedState): ResolvedStoryStop {
   return state.t > 0.5 ? state.toStop : state.fromStop;
 }
 
+// Shortcut: the tab title and the link's overlay keys are the Tanakh's on every text.
 /**
  * Set the tab's title from the address rather than from any state built for
  * it, so it can never name a view the address does not hold — a write
@@ -1425,11 +1426,6 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
     setStoryPosition(position);
     scheduleStoryFrame();
   }
-
-  // The shell imports the story helpers; accepting their edits here keeps an
-  // edited story from reloading the page. The text hands over its new stories
-  // (Shell.storiesChanged).
-  if (import.meta.hot) import.meta.hot.accept('@torahmap/stories', () => {});
 
   function leaveStory(exploring: Frame): void {
     takeOver('fold');

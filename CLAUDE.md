@@ -139,8 +139,9 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 ## Project Structure
 
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
-  a `scrollytelling/` mode, `talmud/` (the Talmud map's layout, labels and
-  overlays, waiting for the shared app shell), `styles/`, the
+  a `scrollytelling/` mode, `app/` (what a text gives the app
+  shell), `tanakh/` and `talmud/` (the two texts; the Talmud's page,
+  `talmud.html`, is served by the dev server only), `styles/`, the
   `worker/` that serves the deployed site, and the `telemetry/` it records
   through.
 - `packages/` — shared code, kept free of the page so the Worker can import
