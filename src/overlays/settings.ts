@@ -14,9 +14,9 @@ export interface OverlaySettings {
   get<T, S>(overlay: Overlay<T, S>): S;
   set<T, S>(overlay: Overlay<T, S>, next: S): void;
   /** Replace an overlay's settings with the ones a link or a story stop names. */
-  restore(overlay: Overlay, raw: LinkParams): void;
+  restore<T>(overlay: Overlay<T>, raw: LinkParams): void;
   /** An overlay's settings as link parameters, with values at their default left out. */
-  toUrl(overlay: Overlay): Record<string, string>;
+  toUrl<T>(overlay: Overlay<T>): Record<string, string>;
 }
 
 export function createOverlaySettings(): OverlaySettings {

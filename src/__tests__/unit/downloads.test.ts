@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { TanakhIdentity } from '../../types';
 import {
   downloadStages,
   filesFirst,
@@ -24,7 +25,11 @@ const PARSE = SEARCH_FILES.parse.optional;
 
 const without = (...paths: string[]): Loaded =>
   new Map([...SAMPLE_LOADED].filter(([path]) => !paths.includes(path)));
-const explore = (map: Overlay[], panel: Overlay | null, popup: boolean): LandingView => ({
+const explore = (
+  map: Overlay<TanakhIdentity>[],
+  panel: Overlay<TanakhIdentity> | null,
+  popup: boolean,
+): LandingView => ({
   source: 'overlay',
   map,
   panel,

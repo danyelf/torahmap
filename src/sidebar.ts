@@ -1,6 +1,6 @@
 // Sidebar management for verse details display
 
-import type { TanakhLayout, TextLanguage } from './types.ts';
+import type { TanakhIdentity, TanakhLayout, TextLanguage } from './types.ts';
 import { ENGLISH, HEBREW } from './types.ts';
 import type { Overlay, ToolOnMap } from './overlays/types.ts';
 import { getVerseText, type VerseTexts } from './verseTexts.ts';
@@ -114,7 +114,7 @@ export function getSefariaUrl(
   book: string,
   chapter: number,
   verse: number,
-  currentOverlay: Overlay | null = null,
+  currentOverlay: Overlay<TanakhIdentity> | null = null,
   overlaySettings: unknown = undefined,
 ): string {
   const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings) ?? 'all';
@@ -129,8 +129,8 @@ export interface PopupView {
   textsNotice: Node | null;
   /** Whether a Hebrew word opens its menu when clicked: only once search has its data. */
   wordsClickable: boolean;
-  overlay: ToolOnMap | null;
-  search: ToolOnMap | null;
+  overlay: ToolOnMap<TanakhIdentity> | null;
+  search: ToolOnMap<TanakhIdentity> | null;
   pinned: boolean;
 }
 

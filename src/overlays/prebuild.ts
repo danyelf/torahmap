@@ -7,11 +7,11 @@ import { whenIdle } from '../utils/idle.ts';
  * data, one per idle turn so none holds up a frame, and tell `settled` after
  * each whether it built. A prebuild that throws still throws.
  */
-export function prebuildCompleted(
-  overlays: readonly Overlay[],
+export function prebuildCompleted<T>(
+  overlays: readonly Overlay<T>[],
   before: Loaded,
   after: Loaded,
-  settled: (overlay: Overlay, built: boolean) => void,
+  settled: (overlay: Overlay<T>, built: boolean) => void,
   schedule: (run: () => void) => void = whenIdle,
 ): void {
   const waiting = overlays.filter(

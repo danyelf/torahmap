@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
+import type { TanakhIdentity } from '../../types';
 import {
   parseUrlState,
   updateUrl,
@@ -77,7 +78,7 @@ describe('the address holds the view in its query string', () => {
 });
 
 // A plausible value for each key an overlay declared.
-function plausibleSettings(overlay: Overlay): Record<string, string> {
+function plausibleSettings(overlay: Overlay<TanakhIdentity>): Record<string, string> {
   const settings: Record<string, string> = {};
   for (const spec of overlay.urlParams ?? []) {
     settings[spec.key] = spec.allowed?.[0] ?? 'x';

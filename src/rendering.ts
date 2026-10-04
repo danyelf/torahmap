@@ -16,7 +16,7 @@ import {
   type Picture,
 } from './geometry';
 import { buildOutlineGeometry } from './outline';
-import type { Color, SpatialItem, TanakhIdentity } from './types';
+import type { Color, SpatialItem } from './types';
 import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, SEARCH_WITH_OVERLAY } from './constants';
@@ -42,11 +42,10 @@ export interface RenderContext {
 /**
  * Mutable rendering state that changes during the application's lifecycle.
  *
- * Generic over T (the identity shape) with default TanakhIdentity so existing
- * Tanakh callers keep their type inference. T is opaque — only x/y/size are
- * read by the rendering code.
+ * Generic over T, the text's own fields on each square, which the rendering
+ * code never reads.
  */
-export interface RenderState<T = TanakhIdentity> {
+export interface RenderState<T> {
   buffer: WebGLBuffer;
   /** Points each per-verse attribute of the main program at its slice of `buffer`. */
   vertexArray: WebGLVertexArrayObject;
