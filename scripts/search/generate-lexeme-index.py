@@ -383,6 +383,8 @@ def main():
     form_counts = collections.Counter()
     # The first printed spelling of each (form, lexeme) counted.
     printed_as = {}
+    # Each verse id's book, chapter and verse, for the checks below.
+    verse_of = {}
     verse_lexemes = collections.defaultdict(set)
     verse_morph = collections.defaultdict(list)
     # How many morphemes make up each printed word, and which of those words a
@@ -412,6 +414,7 @@ def main():
             (book, chapter, verse), (book, chapter, verse)
         )
         key = verse_id(book, chapter, verse)
+        verse_of[key] = (book, chapter, verse)
 
         word_lengths = []
         maqaf_joins = []
@@ -528,11 +531,8 @@ def main():
 
     produced = collections.defaultdict(dict)
     for key in verse_lexemes:
-        book, chapter, verse = key.rsplit(".", 2)
-        book = book.replace(".", " ")
-        produced[book][int(chapter)] = max(
-            produced[book].get(int(chapter), 0), int(verse)
-        )
+        book, chapter, verse = verse_of[key]
+        produced[book][chapter] = max(produced[book].get(chapter, 0), verse)
 
     problems = []
     for book, chapters in expected.items():

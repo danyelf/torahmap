@@ -6,9 +6,9 @@
 //
 // Regenerate the files with:
 //   .venv/bin/python scripts/search/generate-lexeme-index.py
-import { parseVerseId, verseId } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
+import { parseVerseId, verseId } from '@torahmap/link';
 import { normalizeHebrewForSearch } from '../../hebrew';
 import { wordsBhsaParsed } from '../../search/dictionary';
 import * as fs from 'fs';

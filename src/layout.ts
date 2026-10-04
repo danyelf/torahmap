@@ -74,7 +74,6 @@ function layoutChapter(
       const x = bookX + lineIndent + lineVerseIdx * VERSE_SIZE + jitterX;
 
       verses.push({
-        // A verse's id is its link form, so a link names it directly.
         id: verseId(bookName, chapterIdx + 1, verseIdx + 1),
         book: bookName,
         chapter: chapterIdx + 1,

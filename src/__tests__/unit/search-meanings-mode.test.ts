@@ -3,9 +3,9 @@
 // The idea under test is a reading: one of the dictionary words a written form
 // could be. עלה could be the verb "ascend", the noun "burnt-offering", the noun
 // "leafage", and more. A meanings-mode search looks for all of them.
-import { verseId } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
+import { verseId } from '@torahmap/link';
 import { excerptOf } from '../helpers/excerpt';
 import { findLexemesForWord, getLexeme } from '../../search';
 import { addTerm, onlyMeaning } from '../../search/terms';

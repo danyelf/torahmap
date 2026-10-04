@@ -77,7 +77,7 @@ describe('the shipped data', () => {
 });
 
 describe('square ids', () => {
-  it('names each Tanakh square by its link form', () => {
+  it('names each Tanakh square by its verse id', () => {
     for (const v of computeLayout(torahData)) {
       expect(parseVerseId(v.id)).toEqual({ book: v.book, chapter: v.chapter, verse: v.verse });
     }

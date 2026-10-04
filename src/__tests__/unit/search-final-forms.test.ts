@@ -11,9 +11,9 @@
  * Search should treat these as equivalent, so searching for the regular
  * form matches the final form and vice versa.
  */
-import { verseId } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
+import { verseId } from '@torahmap/link';
 import { buildTextIndex, versesForTerm } from '../../search';
 import { inTextsOrder } from '../helpers/searchData';
 import { stripNikkud, normalizeHebrewForSearch } from '../../hebrew';

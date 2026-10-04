@@ -142,10 +142,7 @@ export function bookFromUrl(urlBook: string): string {
   return urlBook.replace(/\./g, ' ');
 }
 
-/**
- * A verse's id, its one name everywhere: on the map, in links, in stories and
- * as the key of every per-verse table. "I Samuel" 1:5 -> "I.Samuel.1.5".
- */
+/** A verse's id, the one name every part of the app uses for it: "I Samuel" 1:5 -> "I.Samuel.1.5". */
 export function verseId(book: string, chapter: number, verse: number): string {
   return `${bookToUrl(book)}.${chapter}.${verse}`;
 }
