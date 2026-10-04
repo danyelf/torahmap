@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { Box, Shown } from './geometry.ts';
+import { VISITED_KEY } from '../src/visits.ts';
 
 /** The canvas's clear colour and the page's background: #1a1a1a. */
 const BACKGROUND = 26;
@@ -46,6 +47,11 @@ export function collectErrors(page: Page, { console = true } = {}): string[] {
     });
   }
   return errors;
+}
+
+/** Makes the next load a return visit, so an empty link skips the story. */
+export async function asReturningReader(page: Page): Promise<void> {
+  await page.addInitScript((key) => localStorage.setItem(key, 'true'), VISITED_KEY);
 }
 
 /** Loads the map at `link` and waits until it has settled and drawn. Returns `collectErrors`'s list. */

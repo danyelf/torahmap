@@ -12,7 +12,6 @@ import { initBookData } from './constants/books.ts';
 import {
   DRAG_PX,
   STORY,
-  exploreFrame,
   frontToolAfter,
   landingFrame,
   nextFrame,
@@ -27,6 +26,7 @@ import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
+import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
@@ -119,6 +119,7 @@ import {
 } from './overlays/index.ts';
 import {
   searchTool,
+  focusSearchBox,
   searchForMeaning,
   canAddTerm,
   isSearching,
@@ -193,8 +194,6 @@ import './styles/frame.css';
 import './styles/verse-popup.css';
 import './styles/phone.css';
 
-const VISITED_KEY = 'torahMap.visited';
-
 // How far down a phone's map a verse brought into view is put. Halfway down,
 // the verse lands behind the popup that sits just above the sheet.
 const PHONE_STORY_FOCUS = 0.4;
@@ -202,24 +201,6 @@ const PHONE_STORY_FOCUS = 0.4;
 /** The stop a story between two stops counts as at: the one it is more than halfway to. */
 function nearerStop(state: InterpolatedState): ResolvedStoryStop {
   return state.t > 0.5 ? state.toStop : state.fromStop;
-}
-
-// Set once the reader has left the story or moved past the stop it opened on;
-// until then, a visit to the bare address starts the story again.
-function hasVisited(): boolean {
-  try {
-    return localStorage.getItem(VISITED_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function rememberVisit(): void {
-  try {
-    localStorage.setItem(VISITED_KEY, 'true');
-  } catch {
-    // Storage can be unavailable; the story simply opens next time.
-  }
 }
 
 /**
@@ -601,12 +582,19 @@ async function main(): Promise<void> {
     getComputedStyle(document.documentElement).getPropertyValue('--layout').trim() === 'phone';
   let phone = phoneLayoutShown();
 
-  /** Opens or closes the story; closing it lands on `exploring`. */
-  function setStoryOpen(open: boolean, exploring = exploreFrame(phone)): void {
-    if (!open && frame.mode === 'story') heldStop = storyStopIndex();
+  function showStory(): void {
     const previous = frame;
-    if (open) frame = STORY;
-    else if (frame.mode === 'story') frame = exploring;
+    frame = STORY;
+    applyFrame(previous);
+  }
+
+  /** Closes the story, landing on `exploring`. */
+  function closeStory(exploring: Frame): void {
+    const previous = frame;
+    if (frame.mode === 'story') {
+      heldStop = storyStopIndex();
+      frame = exploring;
+    }
     applyFrame(previous);
   }
 
@@ -1469,17 +1457,18 @@ async function main(): Promise<void> {
       if (!module) return;
       listed = listedStories(module.STORIES, !__LIVE__);
       reloadStory();
+      drawOverlayPanel(true);
     });
   }
 
-  function leaveStory(exploring?: Frame): void {
+  function leaveStory(exploring: Frame): void {
     takeOver('fold');
     // Exploring keeps only what a link carries, so a stop's highlight stays behind.
     if (currentOverlay) {
       overlaySettings.restore(currentOverlay, overlaySettings.toUrl(currentOverlay));
       applyTools();
     }
-    setStoryOpen(false, exploring);
+    closeStory(exploring);
     rememberVisit();
     render();
     syncUrl(true);
@@ -1491,7 +1480,7 @@ async function main(): Promise<void> {
    */
   function openStory(stop: number, arrive: 'ease' | 'cut', how: ReturnHow): void {
     heldStop = stop;
-    setStoryOpen(true);
+    showStory();
     resolvedStops = resolveStory();
     showStop(stopElements[stop]);
     // Handed over while the stop is still held, so the return names `stop`
@@ -1520,10 +1509,10 @@ async function main(): Promise<void> {
   }
 
   function takeStart(choice: StartChoice): void {
-    if (choice.kind === 'story') return readStory(choice.id, true);
+    if (choice.kind === 'story') return readStory(choice.id, false);
     if (choice.kind === 'search') {
       dispatch({ type: 'choose', panel: 'search' });
-      document.getElementById('search-input')?.focus();
+      focusSearchBox();
       return;
     }
     setOverlay(choice.id);
@@ -1955,8 +1944,7 @@ async function main(): Promise<void> {
       // Any other link change (Back/Forward while already exploring) must
       // leave frontTool at whatever the reader last chose from the legend.
       if (frame.mode === 'story') frontTool = open;
-      const shows = { overlay: next.overlay !== NO_OVERLAY, search: !!next.searchParams.search };
-      setStoryOpen(false, landingFrame(phone, shows));
+      closeStory(landingFrame(phone, open, open === 'overlay' && next.overlay === NO_OVERLAY));
     }
 
     activateOverlay(next.overlay);
@@ -1990,7 +1978,7 @@ async function main(): Promise<void> {
   if (frame.mode === 'story' && startsFolded) {
     // A link that names nothing has opened the story and handed it the map.
     if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
-    setStoryOpen(false, landingFrame(phone, { overlay: false, search: false }));
+    closeStory(landingFrame(phone, 'overlay', true));
     // No stop has drawn the overlay panel, so None's places to start are not in it yet.
     drawOverlayPanel(true);
   }

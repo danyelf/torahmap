@@ -15,8 +15,9 @@ describe('overlay descriptions', () => {
     expect(new Set(all.map((o) => o.description)).size).toBe(all.length);
   });
 
-  it('gives every overlay a tagline of its own', async () => {
-    const all = await overlays();
+  it('gives search and every overlay a tagline of its own', async () => {
+    const { searchTool } = await import('../../../overlays/search/index');
+    const all = [searchTool, ...(await overlays())];
     for (const o of all) expect(o.tagline, o.name).toBeTruthy();
     expect(new Set(all.map((o) => o.tagline)).size).toBe(all.length);
   });

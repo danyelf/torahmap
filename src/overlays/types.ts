@@ -92,8 +92,9 @@ interface OverlayMembers<T, S, D> {
   // view composes, are never offered to a reader.
   description?: string;
 
-  // What it shows, in a few words, on the button that offers it while no
-  // overlay is chosen. Optional, and tested, for the same reasons as description.
+  // What it does, in a few words, on the button that offers it while no
+  // overlay is chosen. Optional like description; a test requires one of search
+  // and of every registered overlay.
   tagline?: string;
 
   destroy?(): void;

@@ -467,13 +467,8 @@ body[data-open='about'] #about-panel {
   line-height: 1.4;
 }
 
-.start-heading {
+#overlay-starts .panel-section-heading {
   margin: 24px 0 10px;
-  color: #888;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .story-card {

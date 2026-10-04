@@ -27,6 +27,7 @@ import {
   type ResultsView,
 } from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
+export { focusSearchBox } from './termRows.ts';
 import {
   addTerm,
   chosenMeanings,

@@ -5,7 +5,7 @@ export interface State {
   name: string;
   link: string;
   then?: (page: Page) => Promise<void>;
-  /** Opens as a reader who has been before, whom a link naming nothing does not show the story. */
+  /** Opens as a returning reader, so an empty link skips the story. */
   returning?: boolean;
   /** Elements that must show in full, so a selector that stops matching fails rather than measuring nothing. */
   shown?: string[];
