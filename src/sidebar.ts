@@ -17,6 +17,8 @@ export interface WordClick {
   index: number;
   /** The verse's Hebrew, the text `index` counts in. */
   hebrew: string;
+  /** The verse's id. */
+  id: string;
   book: string;
   chapter: number;
   verse: number;
@@ -68,6 +70,7 @@ function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLay
       text: word.word,
       index,
       hebrew: text,
+      id: verse.id,
       book: verse.book,
       chapter: verse.chapter,
       verse: verse.verse,

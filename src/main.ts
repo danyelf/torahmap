@@ -50,14 +50,7 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import {
-  linkKind,
-  verseRef,
-  verseId,
-  linkNamesAView,
-  DEFAULT_ZOOM,
-  type UrlState,
-} from '@torahmap/link';
+import { linkKind, verseRef, linkNamesAView, DEFAULT_ZOOM, type UrlState } from '@torahmap/link';
 import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
@@ -1270,12 +1263,11 @@ async function main(): Promise<void> {
     const dictionary = dictionaryOf(data);
     // As a reader would type it: the letters as printed, final forms and all.
     const word = stripNikkud(click.text);
-    const verseKey = verseId(click.book, click.chapter, click.verse);
     const meanings = meaningsInVerse(
       dictionary,
-      wordsOfVerse(data.parse, verseKey, click.hebrew),
+      wordsOfVerse(data.parse, click.id, click.hebrew),
       word,
-      verseKey,
+      click.id,
       click.index,
     );
 

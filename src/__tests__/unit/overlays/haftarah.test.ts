@@ -580,7 +580,7 @@ describe('Haftarah Overlay', () => {
     it('answers for a custom it is handed without changing its own', () => {
       haftarahOverlay.restore({ custom: 'sephardi' });
 
-      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
+      const items = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })];
       haftarahOverlay.overlay.colorsFor!(
         items,
         haftarahOverlay.fromUrl({ custom: 'ashkenazi' }),
@@ -592,10 +592,10 @@ describe('Haftarah Overlay', () => {
     });
 
     it('brightens the hovered pairing, darkens other readings to a tint, and greys the rest', () => {
-      const torah = { book: 'Genesis', chapter: 1, verse: 1 };
-      const itsHaftarah = { book: 'Isaiah', chapter: 42, verse: 5 };
-      const otherParsha = { book: 'Genesis', chapter: 7, verse: 1 };
-      const noReading = { book: 'Psalms', chapter: 1, verse: 1 };
+      const torah = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      const itsHaftarah = createVerse({ book: 'Isaiah', chapter: 42, verse: 5 });
+      const otherParsha = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
+      const noReading = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
       const items = [torah, itsHaftarah, otherParsha, noReading];
       const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
@@ -642,8 +642,8 @@ describe('Haftarah Overlay', () => {
     });
 
     it('treats a hovered verse outside every reading the same as no hover', () => {
-      const items = [{ book: 'Genesis', chapter: 1, verse: 1 }];
-      const outsideEveryReading = { book: 'Psalms', chapter: 1, verse: 1 };
+      const items = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })];
+      const outsideEveryReading = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
       const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
       const noHover = haftarahOverlay.overlay.colorsFor!(items, settings, null, DATA);

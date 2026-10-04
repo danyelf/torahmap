@@ -1,3 +1,4 @@
+import { verseId } from '@torahmap/link';
 import type { Dictionary, SearchResult, TextIndex } from '../../search';
 import type { Parse } from '../../search/dictionary';
 import { addTerm, setMode, type SearchMode } from '../../search/terms';
@@ -14,5 +15,6 @@ export function excerptOf(
 ): ReturnType<typeof excerpt> {
   const [added] = addTerm([], text);
   const [term] = setMode([added], added.id, mode);
-  return excerpt({ matchingTerms: [], ...result }, term, index, dictionary, parse);
+  const id = verseId(result.book, result.chapter, result.verse);
+  return excerpt({ matchingTerms: [], ...result, id }, term, index, dictionary, parse);
 }

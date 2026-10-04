@@ -20,6 +20,7 @@ export interface TermMatch {
 }
 
 export interface SearchResult {
+  id: string;
   book: string;
   chapter: number;
   verse: number;
@@ -27,6 +28,7 @@ export interface SearchResult {
 }
 
 interface IndexEntry {
+  id: string;
   book: string;
   chapter: number;
   verse: number;
@@ -286,6 +288,7 @@ function textIndexFrom(verseTexts: VerseTexts, books: readonly string[]): TextIn
       for (const verse of verseNums) {
         const { he, en } = verses[String(verse)];
         const entry: IndexEntry = {
+          id: verseId(book, chapter, verse),
           book,
           chapter,
           verse,
@@ -295,7 +298,7 @@ function textIndexFrom(verseTexts: VerseTexts, books: readonly string[]): TextIn
           englishOriginal: en,
         };
         entries.push(entry);
-        byKey.set(verseId(book, chapter, verse), entry);
+        byKey.set(entry.id, entry);
       }
     }
   }
@@ -331,10 +334,10 @@ export function searchByLexemes(dictionary: Dictionary, lexemes: LexemeId[]): Se
 /** A verse's text as the reader sees it, or null for a verse the index lacks. */
 export function displayedVerse(
   index: TextIndex,
-  verse: { book: string; chapter: number; verse: number },
+  verse: { id: string },
   language: TextLanguage,
 ): string | null {
-  const entry = index.byKey.get(verseId(verse.book, verse.chapter, verse.verse));
+  const entry = index.byKey.get(verse.id);
   if (!entry) return null;
   return language === HEBREW ? entry.hebrewOriginal : entry.englishOriginal;
 }
@@ -377,7 +380,7 @@ export function versesForTerm(
   for (const entry of index.entries) {
     const haystack = language === HEBREW ? entry.hebrewText : entry.englishText;
     if (matchRangesInFolded(haystack, needle, { mode, language, limit: 1 }).length > 0) {
-      verses.add(verseId(entry.book, entry.chapter, entry.verse));
+      verses.add(entry.id);
     }
   }
   return verses;
@@ -407,6 +410,7 @@ export function resultsForVerseSets(
       let result = resultMap.get(verseKey);
       if (!result) {
         result = {
+          id: entry.id,
           book: entry.book,
           chapter: entry.chapter,
           verse: entry.verse,
@@ -470,7 +474,7 @@ function createSnippetAtPosition(
 export function getMatchingVerseTerms(results: SearchResult[]): Map<string, number[]> {
   const map = new Map<string, number[]>();
   for (const r of results) {
-    const key = verseId(r.book, r.chapter, r.verse);
+    const key = r.id;
     map.set(
       key,
       r.matchingTerms.map((m) => m.termIndex),
