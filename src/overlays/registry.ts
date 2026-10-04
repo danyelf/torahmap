@@ -1,11 +1,11 @@
 // The registry is where overlays come from. Nothing outside this module should
 // hold its own list: ask for an overlay by id, or ask for all of them.
-import type { Overlay } from './types.ts';
+import type { TanakhOverlay } from './tanakhTypes.ts';
 import { SEARCH_KEYS } from '@torahmap/link';
 
-const overlays = new Map<string, Overlay>();
+const overlays = new Map<string, TanakhOverlay>();
 
-export function registerOverlay(overlay: Overlay): void {
+export function registerOverlay(overlay: TanakhOverlay): void {
   const claimed = (overlay.urlParams ?? []).map((p) => p.key).filter((k) => SEARCH_KEYS.has(k));
   if (claimed.length > 0) {
     throw new Error(`${overlay.id} claims ${claimed.join(', ')}, which belong to the search`);
@@ -13,11 +13,11 @@ export function registerOverlay(overlay: Overlay): void {
   overlays.set(overlay.id, overlay);
 }
 
-export function getOverlay(id: string): Overlay | undefined {
+export function getOverlay(id: string): TanakhOverlay | undefined {
   return overlays.get(id);
 }
 
-export function getAllOverlays(): Overlay[] {
+export function getAllOverlays(): TanakhOverlay[] {
   return Array.from(overlays.values());
 }
 

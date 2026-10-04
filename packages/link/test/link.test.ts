@@ -6,6 +6,7 @@ import {
   linkKind,
   verseToUrlFormat,
   parseVerseFromUrl,
+  parseExactVerse,
   validateOverlayParams,
   type UrlState,
   type UrlParamSpec,
@@ -557,6 +558,21 @@ describe('parseVerseFromUrl', () => {
       chapter: 1,
       verse: 1,
     });
+  });
+});
+
+describe('parseExactVerse', () => {
+  it('reads a verse written as a link writes it', () => {
+    expect(parseExactVerse('I.Samuel.1.5')).toEqual({ book: 'I Samuel', chapter: 1, verse: 5 });
+  });
+
+  it('refuses any other spelling of the same verse', () => {
+    expect(parseExactVerse('I.Samuel.01.5')).toBeNull();
+    expect(parseExactVerse('I Samuel.1.5')).toBeNull();
+  });
+
+  it('refuses what is no verse at all', () => {
+    expect(parseExactVerse('I.Samuel')).toBeNull();
   });
 });
 

@@ -1,6 +1,7 @@
 // The site's layout with Psalms in three columns, which makes the map short
 // enough to fill a 36-inch sheet's width with the key beneath it.
 
+import { verseToUrlFormat } from '@torahmap/link';
 import { computeLayout } from '../../src/layout.ts';
 import type { TanakhLayout, TorahData } from '../../src/types.ts';
 
@@ -34,7 +35,9 @@ export function threeColumnPsalms(structure: TorahData): TorahData {
 
 export function printLayout(structure: TorahData): TanakhLayout[] {
   const offset = PSALMS_COLUMNS[2] - 1;
-  return computeLayout(threeColumnPsalms(structure)).map((v) =>
-    v.book === THIRD_COLUMN ? { ...v, book: 'Psalms', chapter: v.chapter + offset } : v,
-  );
+  return computeLayout(threeColumnPsalms(structure)).map((v) => {
+    if (v.book !== THIRD_COLUMN) return v;
+    const chapter = v.chapter + offset;
+    return { ...v, id: verseToUrlFormat('Psalms', chapter, v.verse), book: 'Psalms', chapter };
+  });
 }

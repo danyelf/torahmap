@@ -4,6 +4,8 @@ import { initBookData } from '../../constants/books';
 import { cameraToFit } from '../../camera';
 import { SECTION_LABEL_REACH } from '../../labels';
 import type { TanakhLayout } from '../../types';
+import { createVerse } from '../../__tests__/helpers/fixtures';
+import { indexItems } from '../../items';
 import type { StoryStop } from '@torahmap/stories';
 
 function stop(fields: Partial<StoryStop> = {}): StoryStop {
@@ -37,6 +39,28 @@ describe('stopLabel', () => {
   });
 });
 
+describe('resolveStops with a pinned verse', () => {
+  const verses = [1, 2, 3].map((verse) => createVerse({ verse, x: verse * 10 }));
+  const initial = { x: 1, y: 2, zoom: 3 };
+  const resolve = (fields: Partial<StoryStop>) =>
+    resolveStops(
+      [stop(fields)],
+      initial,
+      verses,
+      indexItems(verses),
+      { x: 0, y: 0 },
+      { width: 400, height: 300 },
+    )[0].camera;
+
+  it('moves the camera to a verse the map holds', () => {
+    expect(resolve({ verse: verses[1].id })).not.toEqual(initial);
+  });
+
+  it('keeps the initial camera for a verse the map does not hold', () => {
+    expect(resolve({ verse: 'Genesis.99.1' })).toEqual(initial);
+  });
+});
+
 describe('resolveStops with a region camera', () => {
   initBookData({
     books: [
@@ -46,19 +70,14 @@ describe('resolveStops with a region camera', () => {
     ],
     layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
   });
-  const verse = (book: string, x: number, y: number): TanakhLayout => ({
-    book,
-    chapter: 1,
-    verse: 1,
-    x,
-    y,
-    size: 10,
-  });
+  const verse = (book: string, x: number, y: number): TanakhLayout =>
+    createVerse({ book, x, y, size: 10 });
   const verses = [verse('Genesis', 0, 0), verse('I Samuel', 90, 100), verse('Psalms', 190, 200)];
   const initial = { x: 1, y: 2, zoom: 3 };
   const map = { width: 400, height: 300 };
   const resolve = (fields: Partial<StoryStop>) =>
-    resolveStops([stop(fields)], initial, verses, { x: 0, y: 0 }, map)[0].camera;
+    resolveStops([stop(fields)], initial, verses, indexItems(verses), { x: 0, y: 0 }, map)[0]
+      .camera;
 
   it('fits a book', () => {
     const box = { minX: 90, minY: 100, maxX: 100 + SECTION_LABEL_REACH, maxY: 110 };

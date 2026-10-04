@@ -50,15 +50,7 @@ import {
   trackWordMenuOpen,
   trackWordSearch,
 } from './analytics.ts';
-import {
-  parseVerseFromUrl,
-  verseToUrlFormat,
-  linkKind,
-  verseRef,
-  linkNamesAView,
-  DEFAULT_ZOOM,
-  type UrlState,
-} from '@torahmap/link';
+import { linkKind, verseRef, linkNamesAView, DEFAULT_ZOOM, type UrlState } from '@torahmap/link';
 import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
@@ -92,13 +84,8 @@ import {
   getPinchCenter,
   resetTouchState,
 } from './touchState.ts';
-import {
-  tanakhIdentitiesEqual,
-  findTanakhItem,
-  nextTanakhItem,
-  prevTanakhItem,
-  tanakhKey,
-} from './types.ts';
+import { tanakhKey } from './types.ts';
+import { indexItems, sameItem } from './items.ts';
 import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import {
@@ -116,6 +103,8 @@ import {
   getAllOverlays,
   configureSearch,
   type Overlay,
+  type TanakhOverlay,
+  type TanakhTools,
 } from './overlays/index.ts';
 import {
   searchTool,
@@ -141,7 +130,6 @@ import {
 } from './downloads.ts';
 import { LOADING, loadNotice } from './loadNotice.ts';
 import type { Picture } from './geometry.ts';
-import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -249,6 +237,7 @@ async function main(): Promise<void> {
 
   initBookData(torahData);
   const verses = computeLayout(torahData, (message) => reportError('layout', message));
+  const squares = indexItems(verses);
   const bounds = getLayoutBounds(verses);
   console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
@@ -287,7 +276,7 @@ async function main(): Promise<void> {
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext, verses, dpr);
 
-  let currentOverlay: Overlay | null = null;
+  let currentOverlay: TanakhOverlay | null = null;
   const currentOverlayId = (): string => currentOverlay?.id ?? NO_OVERLAY;
 
   // Every overlay's settings, kept while another overlay is showing.
@@ -335,12 +324,12 @@ async function main(): Promise<void> {
   }
 
   /** The overlay and the search as they stand, each null while off. */
-  function toolsNow(): Tools {
+  function toolsNow(): TanakhTools {
     return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool), loaded);
   }
 
   /** The overlay and the search as picked, whether or not their data is in. */
-  function pickedTools(): Overlay[] {
+  function pickedTools(): TanakhOverlay[] {
     return toolsPicked(currentOverlay, overlaySettings.get(searchTool));
   }
 
@@ -479,7 +468,6 @@ async function main(): Promise<void> {
       toolsNow().overlay,
       hoveredBefore,
       mouseState.hoveredVerse,
-      tanakhIdentitiesEqual,
     );
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
@@ -519,15 +507,10 @@ async function main(): Promise<void> {
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
-      const parsed = parseVerseFromUrl(stop.verse);
-      if (parsed) {
-        if (!tanakhIdentitiesEqual(pinnedVerse, parsed)) {
-          const verse = findTanakhItem(verses, parsed);
-          if (verse) {
-            pinnedVerse = verse;
-            updateSidebarWrapper(verse, true);
-          }
-        }
+      const verse = squares.find(stop.verse);
+      if (verse && !sameItem(pinnedVerse, verse)) {
+        pinnedVerse = verse;
+        updateSidebarWrapper(verse, true);
       }
     } else if (pinnedVerse) {
       pinnedVerse = null;
@@ -539,7 +522,7 @@ async function main(): Promise<void> {
 
   let pinnedVerse: TanakhLayout | null = null;
 
-  const mouseState = createMouseState();
+  const mouseState = createMouseState<TanakhLayout>();
 
   // A scroll fires no pointer event, so the mid-scroll branch needs the last
   // known cursor position to re-run hit detection as the camera moves under it.
@@ -764,7 +747,6 @@ async function main(): Promise<void> {
       camera,
       mouseState.hoveredVerse,
       pinnedVerse,
-      tanakhIdentitiesEqual,
     );
     updateLabelPositions(bookLabels, offset, camera.zoom);
     updateMapTitlePosition(mapTitle, offset, camera.zoom);
@@ -943,7 +925,7 @@ async function main(): Promise<void> {
       if (dx < DRAG_PX && dy < DRAG_PX && duration < TAP_MAX_DURATION) {
         const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
         if (verse) {
-          if (pinnedVerse && tanakhIdentitiesEqual(pinnedVerse, verse)) {
+          if (sameItem(pinnedVerse, verse)) {
             unpinVerse();
           } else {
             pinVerse(verse);
@@ -985,7 +967,7 @@ async function main(): Promise<void> {
     }
 
     if (pinnedVerse) {
-      state.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
+      state.verse = pinnedVerse.id;
     }
 
     if (camera.zoom !== DEFAULT_ZOOM) {
@@ -1103,7 +1085,7 @@ async function main(): Promise<void> {
     const previousHover = mouseState.hoveredVerse;
     setHoveredVerse(mouseState, verse);
     setCursorOver(verse);
-    if (!tanakhIdentitiesEqual(previousHover, verse)) repaint(previousHover);
+    if (!sameItem(previousHover, verse)) repaint(previousHover);
     // A pinned verse keeps the popup.
     if (!pinnedVerse) updateSidebarWrapper(verse);
   });
@@ -1131,9 +1113,9 @@ async function main(): Promise<void> {
     let targetVerse: TanakhLayout | null = null;
 
     if (e.key === 'ArrowRight') {
-      targetVerse = nextTanakhItem(verses, pinnedVerse);
+      targetVerse = squares.step(pinnedVerse, 1);
     } else if (e.key === 'ArrowLeft') {
-      targetVerse = prevTanakhItem(verses, pinnedVerse);
+      targetVerse = squares.step(pinnedVerse, -1);
     }
 
     if (targetVerse) {
@@ -1341,7 +1323,7 @@ async function main(): Promise<void> {
           ...overlaySettings.toUrl(searchTool),
         };
         if (pinnedVerse) {
-          params.verse = verseToUrlFormat(pinnedVerse.book, pinnedVerse.chapter, pinnedVerse.verse);
+          params.verse = pinnedVerse.id;
         }
         const comment = writeStopComment('STOP_ID', camera, params);
         navigator.clipboard.writeText(comment);
@@ -1394,7 +1376,7 @@ async function main(): Promise<void> {
   let story = storyNamed(parseUrlState().story ?? null);
   configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
-    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), mapViewport());
+    resolveStops(story.data.stops, initialCamera, verses, squares, mapFocus(), mapViewport());
   let resolvedStops: ResolvedStoryStop[] = [];
   let stopElements: HTMLElement[] = [];
 
@@ -1891,7 +1873,7 @@ async function main(): Promise<void> {
     if (!wordMenuOpen()) refreshVersePopup();
   }
 
-  function prebuilt(overlay: Overlay, built: boolean): void {
+  function prebuilt(overlay: TanakhOverlay, built: boolean): void {
     if (overlay !== searchTool) return;
     searchPrebuilt = true;
     if (built) searchReady = performance.now();
@@ -1953,7 +1935,7 @@ async function main(): Promise<void> {
     searchChanged(true);
     overlayChanged(true);
 
-    const verse = next.verse ? (findTanakhItem(verses, next.verse) ?? null) : null;
+    const verse = next.verse ? squares.find(next.verse) : null;
     pinnedVerse = verse;
     updateSidebarWrapper(verse, verse !== null);
 

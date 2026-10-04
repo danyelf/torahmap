@@ -3,12 +3,12 @@
 import { TEXTS_FILE } from './verseTexts.ts';
 import { dataFor, optionalFiles, requiredFiles, type Loaded } from './dataFiles.ts';
 import { searchTool } from './overlays/search/index.ts';
-import type { Overlay } from './overlays/types.ts';
+import type { TanakhOverlay } from './overlays/index.ts';
 import type { ColorSource } from './scrollytelling/driver.ts';
 
 /** What the first view shows: the tools it names, and whether it pins a verse. */
 export interface OpeningView {
-  tools: readonly Overlay[];
+  tools: readonly TanakhOverlay[];
   verse: boolean;
 }
 
@@ -26,7 +26,7 @@ export function filesFirst(view: OpeningView): string[] {
  */
 export function downloadStages(
   first: readonly string[],
-  overlays: readonly Overlay[],
+  overlays: readonly TanakhOverlay[],
   loaded: Loaded,
 ): string[][] {
   const taken = new Set(loaded.keys());
@@ -69,9 +69,9 @@ export interface LandingView {
    * search while it has a word, or the tools of the stops a story blend or
    * ease is between.
    */
-  map: readonly Overlay[];
+  map: readonly TanakhOverlay[];
   /** The overlay whose controls are drawn. Search's always are. */
-  panel: Overlay | null;
+  panel: TanakhOverlay | null;
   /** Whether the popup shows a verse. */
   popup: boolean;
 }
@@ -93,8 +93,8 @@ export interface Stale {
  * in place for it rather than redrawn, so a reader keeps their place.
  */
 export function staleAfterLanding(before: Loaded, after: Loaded, view: LandingView): Stale {
-  const drawn = (tool: Overlay): boolean => changed(tool, before, after, requiredFiles(tool));
-  const read = (tool: Overlay): boolean => changed(tool, before, after, null);
+  const drawn = (tool: TanakhOverlay): boolean => changed(tool, before, after, requiredFiles(tool));
+  const read = (tool: TanakhOverlay): boolean => changed(tool, before, after, null);
   return {
     map: view.map.some(drawn) ? view.source : null,
     overlayPanel: view.panel !== null && drawn(view.panel),
@@ -110,7 +110,7 @@ export function staleAfterLanding(before: Loaded, after: Loaded, view: LandingVi
 
 /** Whether a tool's data changed, through one of `paths` if given. */
 function changed(
-  tool: Overlay,
+  tool: TanakhOverlay,
   before: Loaded,
   after: Loaded,
   paths: readonly string[] | null,

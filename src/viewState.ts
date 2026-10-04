@@ -1,12 +1,5 @@
-import {
-  linkKind,
-  parseVerseFromUrl,
-  type OverlayParams,
-  type UrlParamValues,
-  type UrlState,
-} from '@torahmap/link';
+import { linkKind, type OverlayParams, type UrlParamValues, type UrlState } from '@torahmap/link';
 import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './camera.ts';
-import type { TanakhIdentity } from './types.ts';
 import type { Frame } from './frame.ts';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 
@@ -23,7 +16,7 @@ export interface ViewState {
   overlay: string;
   overlayParams: OverlayParams;
   searchParams: UrlParamValues;
-  verse: TanakhIdentity | null;
+  verse: string | null;
   camera: Camera;
 }
 
@@ -49,7 +42,7 @@ export function resolveViewState(
     overlay,
     overlayParams: overlay === NO_OVERLAY ? {} : url.overlayParams,
     searchParams: url.searchParams ?? {},
-    verse: url.verse ? parseVerseFromUrl(url.verse) : null,
+    verse: url.verse ?? null,
     camera: {
       zoom: url.zoom ?? defaultCamera.zoom,
       x: url.x ?? defaultCamera.x,

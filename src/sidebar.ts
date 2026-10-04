@@ -2,7 +2,7 @@
 
 import type { TanakhLayout, TextLanguage } from './types.ts';
 import { ENGLISH, HEBREW } from './types.ts';
-import type { Overlay, ToolOnMap } from './overlays/types.ts';
+import type { TanakhOverlay, TanakhTool } from './overlays/index.ts';
 import { getVerseText, type VerseTexts } from './verseTexts.ts';
 import { sefariaUrl } from './sefaria.ts';
 import { verseWords, wrapWordsInFragment } from './verseWords.ts';
@@ -114,7 +114,7 @@ export function getSefariaUrl(
   book: string,
   chapter: number,
   verse: number,
-  currentOverlay: Overlay | null = null,
+  currentOverlay: TanakhOverlay | null = null,
   overlaySettings: unknown = undefined,
 ): string {
   const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings) ?? 'all';
@@ -129,8 +129,8 @@ export interface PopupView {
   textsNotice: Node | null;
   /** Whether a Hebrew word opens its menu when clicked: only once search has its data. */
   wordsClickable: boolean;
-  overlay: ToolOnMap | null;
-  search: ToolOnMap | null;
+  overlay: TanakhTool | null;
+  search: TanakhTool | null;
   pinned: boolean;
 }
 

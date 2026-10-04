@@ -56,6 +56,10 @@ describe('describeLink', () => {
     expect(describeQuery('?verse=I.Samuel.1.5').title).toBe('I Samuel 1:5 · Torahmap');
   });
 
+  it('names no verse the page would not pin', () => {
+    expect(describeQuery('?verse=Genesis.01.1')).toEqual(describeQuery('?zoom=2'));
+  });
+
   it('names a draft or unknown story by the story the page opens instead', () => {
     const tour = { title: 'The Guided Tour · Torahmap', description: TAGLINE };
     expect(describeQuery('?story=sample')).toEqual(tour);

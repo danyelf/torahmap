@@ -1,5 +1,6 @@
 // Test fixtures for Torah Map tests
-import type { TanakhLayout, TorahData } from '../../types';
+import { verseToUrlFormat } from '@torahmap/link';
+import type { TanakhIdentity, TanakhLayout, TorahData } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import type { CommentaryCounts } from '../../overlays/commentary';
 import { HAFTARAH_FILES, type HaftarahMappings } from '../../overlays/haftarah/readings';
@@ -9,15 +10,8 @@ import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../search/data';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
-  return {
-    book: 'Genesis',
-    chapter: 1,
-    verse: 1,
-    x: 10,
-    y: 20,
-    size: 6,
-    ...overrides,
-  };
+  const verse = { book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20, size: 6, ...overrides };
+  return { ...verse, id: overrides.id ?? verseToUrlFormat(verse.book, verse.chapter, verse.verse) };
 }
 
 export function createVerses(
@@ -279,7 +273,7 @@ export const SAMPLE_TROP_MARKS = {
 };
 
 /** A test overlay that colours each item by `getVerseColor`. */
-export function testOverlay<T = TanakhLayout, S = unknown, D = unknown>(
+export function testOverlay<T = TanakhIdentity, S = unknown, D = unknown>(
   fields: Omit<Overlay<T, S, D>, 'colorsFor'>,
 ): Overlay<T, S, D> {
   return {

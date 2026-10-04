@@ -5,6 +5,7 @@
 import type { Overlay, OverlaySummary, SettingsUpdate } from '../../overlays/types';
 import type { TanakhIdentity, TextLanguage } from '../../types';
 import { createOverlaySettings, settingsFromLink, type LinkParams } from '../../overlays/settings';
+import type { TanakhOverlay } from '../../overlays/index';
 
 export interface OverlayHost<S, D> {
   readonly overlay: Overlay<TanakhIdentity, S, D>;
@@ -25,7 +26,7 @@ export interface OverlayHost<S, D> {
   /** Called after every change the controls or `change` make. Restoring is not a change. */
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
-  getVerseColor(verse: TanakhIdentity): ReturnType<Overlay['getVerseColor']>;
+  getVerseColor(verse: TanakhIdentity): ReturnType<TanakhOverlay['getVerseColor']>;
   /** Returns false when the overlay declares no hoverChangesColors of its own. */
   hoverChangesColors(before: TanakhIdentity | null, after: TanakhIdentity | null): boolean;
   getHoverInfo(verse: TanakhIdentity): string | null;

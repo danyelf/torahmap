@@ -1,10 +1,13 @@
 // The map shows an overlay and a search side by side, each on or off.
-import type { Overlay, ToolOnMap, Tools } from './overlays/types.ts';
+import type { TanakhOverlay, TanakhTool, TanakhTools } from './overlays/index.ts';
 import { isSearching, searchTool, type SearchSettings } from './overlays/search/index.ts';
 import { dataFor, type Loaded } from './dataFiles.ts';
 
 /** The tools a view picks: the overlay, if one is on, and the search, while it has a word to search on. */
-export function toolsPicked(overlay: Overlay | null, search: SearchSettings): Overlay[] {
+export function toolsPicked(
+  overlay: TanakhOverlay | null,
+  search: SearchSettings,
+): TanakhOverlay[] {
   return [...(overlay ? [overlay] : []), ...(isSearching(search) ? [searchTool] : [])];
 }
 
@@ -13,18 +16,18 @@ export function toolsPicked(overlay: Overlay | null, search: SearchSettings): Ov
  * while a file it reads is missing.
  */
 export function toolsShown(
-  overlay: Overlay | null,
+  overlay: TanakhOverlay | null,
   overlaySettings: unknown,
   search: SearchSettings,
   loaded: Loaded,
-): Tools {
+): TanakhTools {
   return {
     overlay: overlay && withData(overlay, overlaySettings, loaded),
     search: isSearching(search) ? withData(searchTool, search, loaded) : null,
   };
 }
 
-function withData(tool: Overlay, settings: unknown, loaded: Loaded): ToolOnMap | null {
+function withData(tool: TanakhOverlay, settings: unknown, loaded: Loaded): TanakhTool | null {
   const data = dataFor(tool, loaded);
   return data === null ? null : { tool, settings, data };
 }

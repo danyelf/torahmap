@@ -147,6 +147,18 @@ export function verseToUrlFormat(book: string, chapter: number, verse: number): 
   return `${bookToUrl(book)}.${chapter}.${verse}`;
 }
 
+/**
+ * A verse written exactly as verseToUrlFormat writes it, or null for any
+ * other spelling. A verse's square is found by that exact string, so
+ * "Genesis.01.1" names no square.
+ */
+export function parseExactVerse(
+  ref: string,
+): { book: string; chapter: number; verse: number } | null {
+  const v = parseVerseFromUrl(ref);
+  return v && verseToUrlFormat(v.book, v.chapter, v.verse) === ref ? v : null;
+}
+
 /** A verse as readers write it: "I Samuel 1:5". */
 export function verseRef(v: { book: string; chapter: number; verse: number }): string {
   return `${v.book} ${v.chapter}:${v.verse}`;

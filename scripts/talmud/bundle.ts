@@ -215,7 +215,7 @@ export function stripNikkudAndSeparators(s: string): string {
  * tags into segments — not just <br>/<big>/<strong> but also <img>
  * blobs (sometimes huge base64 PNGs), <a>/<span> wrappers, and the
  * occasional `[label](url)` markdown link. We want plain Hebrew text
- * for sidebar display AND for the segment-length overlay (which
+ * for the popup AND for counting segment lengths (which
  * counts characters, so a base64 blob would dwarf real content).
  */
 export function stripHtml(s: string): string {

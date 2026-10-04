@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import type { TanakhOverlay } from '../../../overlays/index';
 import { registerOverlay, clearOverlays, getOverlay } from '../../../overlays/registry';
-import type { Overlay } from '../../../overlays/types';
 
-function claiming(key: string): Overlay {
+function claiming(key: string): TanakhOverlay {
   return {
     id: `claims-${key}`,
     name: 'Claims',

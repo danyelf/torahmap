@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { TanakhOverlay } from '../../overlays/index';
 import {
   registerAllOverlays,
   registerOverlay,
   getOverlay,
   getAllOverlays,
   configureSearch,
-  type Overlay,
 } from '../../overlays/index';
 import { createVerses, SAMPLE_VERSES, SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
@@ -23,7 +23,7 @@ describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
   let mockLegendContainer: HTMLElement;
   let verses = SAMPLE_VERSES;
-  let currentOverlay: Overlay | null = null;
+  let currentOverlay: TanakhOverlay | null = null;
   let currentData: unknown;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
   // The settings the app holds for each overlay, as main.ts holds them.
@@ -56,7 +56,7 @@ describe('Overlay Switching Integration', () => {
   /**
    * Helper to simulate switching to an overlay
    */
-  function switchToOverlay(overlayId: string): Overlay {
+  function switchToOverlay(overlayId: string): TanakhOverlay {
     // Destroy previous overlay
     currentOverlay?.destroy?.();
 

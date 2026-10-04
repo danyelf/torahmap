@@ -27,6 +27,10 @@ describe('printLayout', () => {
     expect(print.map(key).sort()).toEqual(site.map(key).sort());
   });
 
+  it('gives every verse the id the site gives it', () => {
+    expect(print.map((v) => v.id).sort()).toEqual(site.map((v) => v.id).sort());
+  });
+
   it('keeps each Psalm whole, with its own verses', () => {
     const psalms = structure.books.find((b) => b.name === 'Psalms')!;
     psalms.chapters.forEach((count, i) => {

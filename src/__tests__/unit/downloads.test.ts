@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { TanakhOverlay } from '../../overlays/index';
 import {
   downloadStages,
   filesFirst,
@@ -8,7 +9,6 @@ import {
   type LandingView,
 } from '../../downloads';
 import type { Loaded } from '../../dataFiles';
-import type { Overlay } from '../../overlays/types';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { tropOverlay } from '../../overlays/trop';
 import { HAFTARAH_FILES } from '../../overlays/haftarah/readings';
@@ -24,7 +24,11 @@ const PARSE = SEARCH_FILES.parse.optional;
 
 const without = (...paths: string[]): Loaded =>
   new Map([...SAMPLE_LOADED].filter(([path]) => !paths.includes(path)));
-const explore = (map: Overlay[], panel: Overlay | null, popup: boolean): LandingView => ({
+const explore = (
+  map: TanakhOverlay[],
+  panel: TanakhOverlay | null,
+  popup: boolean,
+): LandingView => ({
   source: 'overlay',
   map,
   panel,

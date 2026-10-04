@@ -8,7 +8,7 @@ import { escapeHtml } from './utils/html.ts';
 export type StartChoice =
   { kind: 'search' } | { kind: 'overlay'; id: string } | { kind: 'story'; id: string };
 
-export type StartOverlay = Pick<Overlay, 'id' | 'name' | 'description'>;
+export type StartOverlay = Pick<Overlay<unknown>, 'id' | 'name' | 'description'>;
 
 const summary = (tool: StartOverlay): string | undefined =>
   firstSentence({ text: tool.description ?? '' });

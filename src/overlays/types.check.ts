@@ -58,4 +58,8 @@ export const doesWithoutAFileItNeeds: Overlay<unknown, void, WithParse> = {
 };
 
 // Any overlay, with or without data, is an Overlay.
-export const anyOverlay: Overlay[] = [takesDataNamesThem, takesNoData, namesAnOptionalFile];
+export const anyOverlay: Overlay<unknown>[] = [
+  takesDataNamesThem,
+  takesNoData,
+  namesAnOptionalFile,
+];
