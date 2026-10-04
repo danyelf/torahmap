@@ -3,7 +3,8 @@
 
 import type { VerseTexts } from './verseTexts';
 import { memoByValue } from './utils/memo.ts';
-import { HEBREW, tanakhKey } from './types.ts';
+import { HEBREW } from './types.ts';
+import { verseToUrlFormat } from '@torahmap/link';
 
 import {
   TERM_SEPARATORS,
@@ -294,7 +295,7 @@ function textIndexFrom(verseTexts: VerseTexts, books: readonly string[]): TextIn
           englishOriginal: en,
         };
         entries.push(entry);
-        byKey.set(tanakhKey(book, chapter, verse), entry);
+        byKey.set(verseToUrlFormat(book, chapter, verse), entry);
       }
     }
   }
@@ -333,7 +334,7 @@ export function displayedVerse(
   verse: { book: string; chapter: number; verse: number },
   language: TextLanguage,
 ): string | null {
-  const entry = index.byKey.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+  const entry = index.byKey.get(verseToUrlFormat(verse.book, verse.chapter, verse.verse));
   if (!entry) return null;
   return language === HEBREW ? entry.hebrewOriginal : entry.englishOriginal;
 }
@@ -376,7 +377,7 @@ export function versesForTerm(
   for (const entry of index.entries) {
     const haystack = language === HEBREW ? entry.hebrewText : entry.englishText;
     if (matchRangesInFolded(haystack, needle, { mode, language, limit: 1 }).length > 0) {
-      verses.add(tanakhKey(entry.book, entry.chapter, entry.verse));
+      verses.add(verseToUrlFormat(entry.book, entry.chapter, entry.verse));
     }
   }
   return verses;
@@ -469,7 +470,7 @@ function createSnippetAtPosition(
 export function getMatchingVerseTerms(results: SearchResult[]): Map<string, number[]> {
   const map = new Map<string, number[]>();
   for (const r of results) {
-    const key = tanakhKey(r.book, r.chapter, r.verse);
+    const key = verseToUrlFormat(r.book, r.chapter, r.verse);
     map.set(
       key,
       r.matchingTerms.map((m) => m.termIndex),

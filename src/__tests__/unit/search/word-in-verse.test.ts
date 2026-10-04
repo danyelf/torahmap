@@ -19,7 +19,7 @@ describe('resolving a word against its verse', () => {
     // The whole feature in one case. By frequency the spelling עלה is most
     // often the verb "ascend" (818 verses) and the fig leaf is its rarest
     // reading (13). The verse settles it the other way.
-    const meanings = meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7');
+    const meanings = meaningsInVerse(dictionary, null, 'עלה', 'Genesis.3.7');
 
     expect(meanings).toHaveLength(1);
     expect(meanings[0].gloss).toBe('leafage');
@@ -28,7 +28,7 @@ describe('resolving a word against its verse', () => {
   it('reads ורוח in Genesis 1:2 as wind, prefix and all', () => {
     // The ו is part of the written word; the index files whole tokens under
     // the lexeme of their stem, so the prefix must not have to be stripped.
-    const meanings = meaningsInVerse(dictionary, null, 'ורוח', 'Genesis:1:2');
+    const meanings = meaningsInVerse(dictionary, null, 'ורוח', 'Genesis.1.2');
 
     expect(meanings).toHaveLength(1);
     expect(meanings[0].gloss).toBe('wind');
@@ -38,7 +38,7 @@ describe('resolving a word against its verse', () => {
     // Noah offers burnt-offerings (עלת) and the verb "ascend" appears in the
     // same verse as ויעל. The verse cannot choose between them and neither
     // should we.
-    const glosses = meaningsInVerse(dictionary, null, 'עלת', 'Genesis:8:20').map((m) => m.gloss);
+    const glosses = meaningsInVerse(dictionary, null, 'עלת', 'Genesis.8.20').map((m) => m.gloss);
 
     expect(glosses).toContain('burnt-offering');
     expect(glosses).toContain('ascend');
@@ -52,7 +52,7 @@ describe('resolving a word against its verse', () => {
     // 100:3 prints (ולא) [ולו], Isaiah 63:9 prints (לא) [לו]), and this verse
     // has לֹא־טוֹב. A verse says which readings it permits, never which word was
     // clicked.
-    const glosses = meaningsInVerse(dictionary, null, 'לו', 'Genesis:2:18').map((m) => m.gloss);
+    const glosses = meaningsInVerse(dictionary, null, 'לו', 'Genesis.2.18').map((m) => m.gloss);
 
     expect(glosses).toContain('to');
     // The verse still narrows: לוּ "if only" is not in Genesis 2:18.
@@ -61,7 +61,7 @@ describe('resolving a word against its verse', () => {
 
   it('never offers a reading the spelling alone does not allow', () => {
     // The verse narrows; it must never widen.
-    const narrowed = meaningsInVerse(dictionary, null, 'עלה', 'Genesis:3:7');
+    const narrowed = meaningsInVerse(dictionary, null, 'עלה', 'Genesis.3.7');
     const fromSpelling = new Set(meaningsFor(dictionary, 'עלה').map((m) => m.keys[0]));
 
     for (const meaning of narrowed) {
@@ -70,6 +70,6 @@ describe('resolving a word against its verse', () => {
   });
 
   it('returns nothing for a verse it has no data for', () => {
-    expect(meaningsInVerse(dictionary, null, 'עלה', 'Nowhere:1:1')).toEqual([]);
+    expect(meaningsInVerse(dictionary, null, 'עלה', 'Nowhere.1.1')).toEqual([]);
   });
 });

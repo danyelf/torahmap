@@ -38,7 +38,7 @@ its old description invited, silently shifts every word after the first prefix.
 So each verse in `verse-morphology.json` is three arrays rather than one:
 
 ```json
-"Genesis:1:1": [ [[0,0],[1,1],[2,2], ...],   // morphemes, in text order
+"Genesis.1.1": [ [[0,0],[1,1],[2,2], ...],   // morphemes, in text order
                  [2,1,1,1,2,2,2],          // morphemes per printed word
                  [] ]                      // words a maqaf follows
 ```

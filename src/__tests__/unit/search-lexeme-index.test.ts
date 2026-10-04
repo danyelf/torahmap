@@ -6,6 +6,7 @@
 //
 // Regenerate the files with:
 //   .venv/bin/python scripts/search/generate-lexeme-index.py
+import { parseVerseFromUrl, verseToUrlFormat } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
 import { normalizeHebrewForSearch } from '../../hebrew';
@@ -245,7 +246,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       for (const book of structure.books) {
         book.chapters.forEach((verseCount, index) => {
           for (let verse = 1; verse <= verseCount; verse++) {
-            const key = `${book.name}:${index + 1}:${verse}`;
+            const key = verseToUrlFormat(book.name, index + 1, verse);
             if (!verses[key]?.length) missing.push(key);
           }
         });
@@ -257,19 +258,19 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       // BHSA gives each short prohibition its own verse and runs three ahead of
       // Sefaria for the rest of the chapter. The index follows Sefaria, so the
       // chapter must stop at 23 rather than 26.
-      expect(verses['Exodus:20:23']).toBeTruthy();
-      expect(verses['Exodus:20:24']).toBeUndefined();
-      expect(verses['Deuteronomy:5:30']).toBeTruthy();
-      expect(verses['Deuteronomy:5:31']).toBeUndefined();
+      expect(verses['Exodus.20.23']).toBeTruthy();
+      expect(verses['Exodus.20.24']).toBeUndefined();
+      expect(verses['Deuteronomy.5.30']).toBeTruthy();
+      expect(verses['Deuteronomy.5.31']).toBeUndefined();
     });
 
     it('moves the verse BHSA appends to Numbers 25 into Numbers 26', () => {
-      expect(verses['Numbers:25:19']).toBeUndefined();
-      expect(verses['Numbers:26:1']).toBeTruthy();
+      expect(verses['Numbers.25.19']).toBeUndefined();
+      expect(verses['Numbers.26.1']).toBeTruthy();
     });
 
     it('lists each lexeme of a verse once, in ascending order', () => {
-      const genesis = verses['Genesis:1:1'];
+      const genesis = verses['Genesis.1.1'];
       expect(genesis).toEqual([...new Set(genesis)].sort((a, b) => a - b));
       expect(genesis.map(gloss)).toContain('create');
       expect(genesis.map(gloss)).toContain('beginning');
@@ -316,7 +317,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     // תובל קין is one dictionary entry and two words on the page — and Genesis
     // 4:22 prints it both ways, once with a space and once with a maqaf. Each
     // time, the second half is a word of its own carrying no new morpheme.
-    const [morphemes, words, joined] = morphology['Genesis:4:22'];
+    const [morphemes, words, joined] = morphology['Genesis.4.22'];
     const continuations = words.flatMap((n, i) => (n === 0 ? [i] : []));
     expect(continuations.length).toBe(2);
 
@@ -343,7 +344,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
   it('splits the first verse of Genesis into the seven words it is printed as', () => {
     // בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת הַשָּׁמַיִם וְאֵת הָאָרֶץ — eleven ETCBC morphemes, because the
     // prefixed בְּ, הַ, וְ and הַ are each a unit, but seven words on the page.
-    const [morphemes, words, joined] = morphology['Genesis:1:1'];
+    const [morphemes, words, joined] = morphology['Genesis.1.1'];
     expect(morphemes.length).toBe(11);
     expect(words).toEqual([2, 1, 1, 1, 2, 2, 2]);
     expect(joined).toEqual([]);
@@ -354,7 +355,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     // and "your heart". A reader filtering for "heart" wants the highlight on
     // לְבָבְךָ alone, so the maqaf has to be a word boundary with a join recorded
     // across it.
-    const [morphemes, words, joined] = morphology['Deuteronomy:6:5'];
+    const [morphemes, words, joined] = morphology['Deuteronomy.6.5'];
     const glossesOf = (index: number) => {
       const start = words.slice(0, index).reduce((sum, n) => sum + n, 0);
       return morphemes.slice(start, start + words[index]).map(([lex]) => gloss(lex));
@@ -403,9 +404,10 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     expect(Object.keys(realigned)).not.toHaveLength(0);
     for (const [key, named] of Object.entries(realigned)) {
       expect(morphology[key], `${key} is lined up but absent`).toBeTruthy();
-      const [book, chapter, verse] = key.split(':');
-      const hebrew = texts[book]?.[chapter]?.[verse]?.he;
-      if (hebrew === undefined) continue;
+      const v = parseVerseFromUrl(key);
+      const hebrew = v && texts[v.book]?.[v.chapter]?.[v.verse]?.he;
+      expect(hebrew, `${key} names no verse the page shows`).toBeTruthy();
+      if (!hebrew) continue;
       expect(named, key).toHaveLength(wordsBhsaParsed(hebrew).length);
       for (const id of named.flat()) {
         expect(lexemes[id], `${key} names ${id}`).toBeTruthy();

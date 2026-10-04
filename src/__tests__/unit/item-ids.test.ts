@@ -29,6 +29,17 @@ describe('the shipped data', () => {
     expect(() => indexItems(computeLayout(shipped(STRUCTURE_FILE)))).not.toThrow();
   });
 
+  it('keys the search index by verses the map holds', () => {
+    const squares = indexItems(computeLayout(shipped(STRUCTURE_FILE)));
+    const morphology = shipped('search/verse-morphology.json');
+    const keys = [
+      ...Object.keys(shipped('search/verse-lexemes.json')),
+      ...Object.keys(morphology.verses),
+      ...Object.keys(morphology.realigned),
+    ];
+    expect(keys.filter((key) => !squares.find(key))).toEqual([]);
+  });
+
   it('has every story name only verses the map holds', () => {
     const squares = indexItems(computeLayout(shipped(STRUCTURE_FILE)));
     const named = STORIES.flatMap(({ id, data }) =>

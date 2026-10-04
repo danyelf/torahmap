@@ -9,7 +9,7 @@
 import './search.css';
 import type { Overlay, Color, UrlParamValues } from '../types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
-import { HEBREW, tanakhKey } from '../../types.ts';
+import { HEBREW } from '../../types.ts';
 import {
   getMatchingVerseTerms,
   parseSearchTerms,
@@ -46,7 +46,7 @@ import {
 } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { isSearchableWord } from '../../hebrew.ts';
-import { SEARCH_URL_PARAMS } from '@torahmap/link';
+import { SEARCH_URL_PARAMS, verseToUrlFormat } from '@torahmap/link';
 import { memoByValue } from '../../utils/memo.ts';
 
 /**
@@ -404,7 +404,9 @@ function showVerse(result: SearchResult): void {
  * colour, split corner to corner when there are several.
  */
 function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
-  const termIndices = search.matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
+  const termIndices = search.matchingTerms.get(
+    verseToUrlFormat(verse.book, verse.chapter, verse.verse),
+  );
   if (!termIndices || termIndices.length === 0) return null;
 
   const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(search.active, i)]);
@@ -536,7 +538,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
     const { active, matchingTerms } = searchFor(data, settings);
     if (active.length === 0) return null;
 
-    const key = tanakhKey(verse.book, verse.chapter, verse.verse);
+    const key = verseToUrlFormat(verse.book, verse.chapter, verse.verse);
     const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 
@@ -568,7 +570,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   highlightVerseText(verse, text, language, settings, data) {
     const words =
       language === HEBREW
-        ? wordsOfVerse(data.parse, tanakhKey(verse.book, verse.chapter, verse.verse), text)
+        ? wordsOfVerse(data.parse, verseToUrlFormat(verse.book, verse.chapter, verse.verse), text)
         : null;
     return highlightTerms(
       text,

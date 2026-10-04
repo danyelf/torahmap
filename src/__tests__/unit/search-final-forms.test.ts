@@ -11,6 +11,7 @@
  * Search should treat these as equivalent, so searching for the regular
  * form matches the final form and vice versa.
  */
+import { verseToUrlFormat } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
 import { buildTextIndex, versesForTerm } from '../../search';
@@ -82,32 +83,32 @@ describe('Hebrew Final Forms Normalization', () => {
     describe('substring mode', () => {
       it('should find אלהים (with final mem ם) when searching with regular mem (אלהימ)', () => {
         // Genesis 1:1 has אֱלֹהִים (Elohim) ending with ם (mem sofit)
-        expect(versesForTerm(index, 'אלהימ', 'he', 'substring').has('Genesis:1:1')).toBe(true);
+        expect(versesForTerm(index, 'אלהימ', 'he', 'substring').has('Genesis.1.1')).toBe(true);
       });
 
       it('should find אלהים when searching with final mem (אלהים)', () => {
         // Searching with correct final form should also work
-        expect(versesForTerm(index, 'אלהים', 'he', 'substring').has('Genesis:1:1')).toBe(true);
+        expect(versesForTerm(index, 'אלהים', 'he', 'substring').has('Genesis.1.1')).toBe(true);
       });
 
       it('should find הארץ (with final tzadi ץ) when searching with regular tzadi (הארצ)', () => {
         // Genesis 1:2 has הָאָרֶץ (the earth) ending with ץ (tzadi sofit)
-        expect(versesForTerm(index, 'הארצ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
+        expect(versesForTerm(index, 'הארצ', 'he', 'substring').has('Genesis.1.2')).toBe(true);
       });
 
       it('should find הארץ when searching with final tzadi (הארץ)', () => {
         // Searching with correct final form should also work
-        expect(versesForTerm(index, 'הארץ', 'he', 'substring').has('Genesis:1:2')).toBe(true);
+        expect(versesForTerm(index, 'הארץ', 'he', 'substring').has('Genesis.1.2')).toBe(true);
       });
 
       it('should find השמים (with final mem) when searching with regular mem (השמימ)', () => {
         // Genesis 2:1 has הַשָּׁמַיִם (the heavens) ending with ם (mem sofit)
-        expect(versesForTerm(index, 'השמימ', 'he', 'substring').has('Genesis:2:1')).toBe(true);
+        expect(versesForTerm(index, 'השמימ', 'he', 'substring').has('Genesis.2.1')).toBe(true);
       });
 
       it('should find שמות (with final tav) when searching either way', () => {
         // Exodus 1:1 has שְׁמוֹת (names) - tav doesn't have a final form, but testing consistency
-        expect(versesForTerm(index, 'שמות', 'he', 'substring').has('Exodus:1:1')).toBe(true);
+        expect(versesForTerm(index, 'שמות', 'he', 'substring').has('Exodus.1.1')).toBe(true);
       });
     });
 
@@ -167,7 +168,7 @@ describe('Hebrew Final Forms Normalization', () => {
 
       finalFormsTest.forEach(({ withRegular, withFinal, expectedWord, verse }) => {
         it(`should find ${expectedWord} when searching with regular form (${withRegular}) or final form (${withFinal})`, () => {
-          const key = `${verse.book}:${verse.chapter}:${verse.verse}`;
+          const key = verseToUrlFormat(verse.book, verse.chapter, verse.verse);
           expect(versesForTerm(index, withRegular, 'he', 'substring').has(key)).toBe(true);
           expect(versesForTerm(index, withFinal, 'he', 'substring').has(key)).toBe(true);
         });

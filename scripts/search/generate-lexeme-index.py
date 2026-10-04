@@ -159,6 +159,12 @@ MORPH_FIELDS = ["vs", "vt", "ps", "nu", "gn", "st"]
 PrintedWord = collections.namedtuple("PrintedWord", "letters lexemes split")
 
 
+def verse_id(book, chapter, verse):
+    """A verse's id on the map, as verseToUrlFormat in @torahmap/link writes
+    it: I Samuel 1:5 is "I.Samuel.1.5"."""
+    return f"{book.replace(' ', '.')}.{chapter}.{verse}"
+
+
 def normalize(text):
     """Fold Hebrew to the shape the search box works in.
 
@@ -405,7 +411,7 @@ def main():
         book, chapter, verse = VERSE_REMAP.get(
             (book, chapter, verse), (book, chapter, verse)
         )
-        key = f"{book}:{chapter}:{verse}"
+        key = verse_id(book, chapter, verse)
 
         word_lengths = []
         maqaf_joins = []
@@ -522,7 +528,8 @@ def main():
 
     produced = collections.defaultdict(dict)
     for key in verse_lexemes:
-        book, chapter, verse = key.rsplit(":", 2)
+        book, chapter, verse = key.rsplit(".", 2)
+        book = book.replace(".", " ")
         produced[book][int(chapter)] = max(
             produced[book].get(int(chapter), 0), int(verse)
         )
@@ -552,7 +559,7 @@ def main():
         for book, chapters in expected.items()
         for i, count in enumerate(chapters)
         for v in range(1, count + 1)
-        if f"{book}:{i + 1}:{v}" in verse_lexemes
+        if verse_id(book, i + 1, v) in verse_lexemes
     )
     total = sum(sum(b) for b in expected.values())
     print(f"  {covered} of {total} verses carry lexemes")
@@ -580,7 +587,7 @@ def main():
         ]
 
     displayed = {
-        f"{book}:{chapter}:{verse}": displayed_words(entry.get("he", ""))
+        verse_id(book, chapter, verse): displayed_words(entry.get("he", ""))
         for book, chapters in texts.items()
         for chapter, verses in chapters.items()
         for verse, entry in verses.items()

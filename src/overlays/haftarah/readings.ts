@@ -4,7 +4,7 @@
 
 import type { Color } from '../types.ts';
 import type { TorahData } from '../../types.ts';
-import { tanakhKey } from '../../types.ts';
+import { verseToUrlFormat } from '@torahmap/link';
 import { hslToRgb } from '../../utils/color.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { memoByValueAndKey } from '../../utils/memo.ts';
@@ -123,7 +123,7 @@ export const deriveHaftarah = memoByValueAndKey(
 
       if (isParsha(item)) {
         forEachVerseInRange(data.structure, item.torah, (book, ch, v) => {
-          torahVerseToParsha.set(tanakhKey(book, ch, v), item);
+          torahVerseToParsha.set(verseToUrlFormat(book, ch, v), item);
         });
       }
 
@@ -131,7 +131,7 @@ export const deriveHaftarah = memoByValueAndKey(
       const haftarahRanges = item.haftarah[custom];
       for (const range of haftarahRanges) {
         forEachVerseInRange(data.structure, range, (book, ch, v) => {
-          const key = tanakhKey(book, ch, v);
+          const key = verseToUrlFormat(book, ch, v);
           const existing = haftarahVerseToItem.get(key);
           if (existing) {
             existing.push(item);

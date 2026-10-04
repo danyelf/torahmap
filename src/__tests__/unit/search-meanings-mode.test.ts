@@ -3,6 +3,7 @@
 // The idea under test is a reading: one of the dictionary words a written form
 // could be. עלה could be the verb "ascend", the noun "burnt-offering", the noun
 // "leafage", and more. A meanings-mode search looks for all of them.
+import { verseToUrlFormat } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
@@ -15,7 +16,7 @@ import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { realSearchData } from '../helpers/searchData';
 
 const keys = (results: Array<{ book: string; chapter: number; verse: number }>) =>
-  new Set(results.map((r) => `${r.book}:${r.chapter}:${r.verse}`));
+  new Set(results.map((r) => verseToUrlFormat(r.book, r.chapter, r.verse)));
 
 describe('Meanings-mode search over the lexeme index', () => {
   const { index, dictionary, parse } = realSearchData();
@@ -69,12 +70,12 @@ describe('Meanings-mode search over the lexeme index', () => {
     it('finds every inflected form of a verb, not just the one typed', () => {
       // Genesis 1:3 has וַיֹּאמֶר; the search term is the bare verb.
       const results = keys(searchInMeaningsMode(index, dictionary, 'אמר'));
-      expect(results.has('Genesis:1:3')).toBe(true);
+      expect(results.has('Genesis.1.3')).toBe(true);
       expect(results.size).toBeGreaterThan(2000);
     });
 
     it('finds Genesis 19:14 when searching צחק (it has כִּמְצַחֵק)', () => {
-      expect(keys(searchInMeaningsMode(index, dictionary, 'צחק')).has('Genesis:19:14')).toBe(true);
+      expect(keys(searchInMeaningsMode(index, dictionary, 'צחק')).has('Genesis.19.14')).toBe(true);
     });
 
     it('marks a verse with every term that matched it', () => {

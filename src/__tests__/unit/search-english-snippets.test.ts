@@ -28,7 +28,7 @@ const texts: VerseTexts = {
 const index = buildTextIndex(texts, inTextsOrder(texts));
 
 function genesis99(): SearchResult {
-  return resultsForVerseSets(index, [new Set(['Genesis:9:9'])])[0];
+  return resultsForVerseSets(index, [new Set(['Genesis.9.9'])])[0];
 }
 
 describe('snippets for an English term', () => {
@@ -79,8 +79,8 @@ describe('a Hebrew term beside an English one', () => {
 
   function mixedResults() {
     return resultsForVerseSets(index, [
-      new Set(['Genesis:17:7']),
-      new Set(['Genesis:17:7', 'Genesis:9:9']),
+      new Set(['Genesis.17.7']),
+      new Set(['Genesis.17.7', 'Genesis.9.9']),
     ]);
   }
 

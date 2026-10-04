@@ -75,8 +75,3 @@ export interface Bounds {
   width: number;
   height: number;
 }
-
-// Verse key utilities for consistent key generation
-export function tanakhKey(book: string, chapter: number, verse: number): string {
-  return `${book}:${chapter}:${verse}`;
-}

@@ -73,7 +73,7 @@ describe('searchSheet', () => {
     const isaac = nameVerses(dictionary, 'יצחק', 'Isaac');
     expect(isaac.size).toBeGreaterThan(0);
     // Genesis 21:6, "everyone who hears will laugh with me", has the verb and not the name.
-    expect(isaac.has('Genesis:21:6')).toBe(false);
+    expect(isaac.has('Genesis.21.6')).toBe(false);
   });
 
   it('refuses a name with no dictionary entry', () => {

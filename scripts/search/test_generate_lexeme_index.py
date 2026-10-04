@@ -42,6 +42,10 @@ def test_folding_case(case):
     assert normalize(case["in"]) == case["out"]
 
 
+def test_verse_id_spells_a_verse_as_the_map_does():
+    assert generator.verse_id("I Samuel", 1, 5) == "I.Samuel.1.5"
+
+
 def test_none_is_safe():
     # Only Python can be handed None; BHSA returns it for an absent feature.
     assert normalize(None) == ""

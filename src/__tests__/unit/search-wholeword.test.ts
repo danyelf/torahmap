@@ -56,7 +56,7 @@ describe('Whole Word Search', () => {
 
   describe('English substring vs whole word', () => {
     it('substring finds "heaven" in "heavens"', () => {
-      expect(english('heaven', 'substring')).toEqual(['Genesis:1:1', 'Genesis:2:1']);
+      expect(english('heaven', 'substring')).toEqual(['Genesis.1.1', 'Genesis.2.1']);
     });
 
     it('whole word does not find "heaven" in "heavens"', () => {
@@ -64,19 +64,19 @@ describe('Whole Word Search', () => {
     });
 
     it('whole word finds "heavens"', () => {
-      expect(english('heavens', 'word')).toEqual(['Genesis:1:1', 'Genesis:2:1']);
+      expect(english('heavens', 'word')).toEqual(['Genesis.1.1', 'Genesis.2.1']);
     });
 
     it('whole word finds "the" but not "there"', () => {
       // Genesis 1:3: "God said let there be light"
-      expect(english('the', 'substring')).toContain('Genesis:1:3');
-      expect(english('the', 'word')).not.toContain('Genesis:1:3');
+      expect(english('the', 'substring')).toContain('Genesis.1.3');
+      expect(english('the', 'word')).not.toContain('Genesis.1.3');
     });
 
     it('whole word is bounded by punctuation', () => {
       const texts = { Genesis: { '1': { '1': { he: 'א', en: 'said God, let' } } } };
       index = buildTextIndex(texts, inTextsOrder(texts));
-      expect(english('god', 'word')).toEqual(['Genesis:1:1']);
+      expect(english('god', 'word')).toEqual(['Genesis.1.1']);
     });
 
     it('ignores case', () => {
@@ -85,19 +85,19 @@ describe('Whole Word Search', () => {
     });
 
     it('substring finds "ear" in "earth", whole word does not', () => {
-      expect(english('ear', 'substring')).toContain('Genesis:1:2');
-      expect(english('ear', 'word')).not.toContain('Genesis:1:2');
+      expect(english('ear', 'substring')).toContain('Genesis.1.2');
+      expect(english('ear', 'word')).not.toContain('Genesis.1.2');
     });
   });
 
   describe('Hebrew whole word', () => {
     it('finds a word written with points', () => {
-      expect(hebrew('אלהים')).toEqual(['Genesis:1:1', 'Genesis:1:3']);
-      expect(hebrew('ברא')).toEqual(['Genesis:1:1']);
+      expect(hebrew('אלהים')).toEqual(['Genesis.1.1', 'Genesis.1.3']);
+      expect(hebrew('ברא')).toEqual(['Genesis.1.1']);
     });
 
     it('finds the first word of a verse', () => {
-      expect(hebrew('בראשית')).toEqual(['Genesis:1:1']);
+      expect(hebrew('בראשית')).toEqual(['Genesis.1.1']);
     });
 
     it('does not match part of a word', () => {
