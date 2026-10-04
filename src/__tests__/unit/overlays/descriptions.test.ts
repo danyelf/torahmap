@@ -9,16 +9,10 @@ async function overlays() {
 }
 
 describe('overlay descriptions', () => {
-  it('gives every overlay a description of its own', async () => {
-    const all = await overlays();
-    for (const o of all) expect(o.description, o.name).toBeTruthy();
-    expect(new Set(all.map((o) => o.description)).size).toBe(all.length);
-  });
-
-  it('gives search and every overlay a tagline of its own', async () => {
+  it('gives search and every overlay a description of its own', async () => {
     const { searchTool } = await import('../../../overlays/search/index');
     const all = [searchTool, ...(await overlays())];
-    for (const o of all) expect(o.tagline, o.name).toBeTruthy();
-    expect(new Set(all.map((o) => o.tagline)).size).toBe(all.length);
+    for (const o of all) expect(o.description, o.name).toBeTruthy();
+    expect(new Set(all.map((o) => o.description)).size).toBe(all.length);
   });
 });

@@ -87,15 +87,11 @@ interface OverlayMembers<T, S, D> {
   id: string;
   name: string;
 
-  // Shown under the overlay picker (a test enforces one per registered
-  // overlay). Optional because internal overlays, such as the ones the Talmud
-  // view composes, are never offered to a reader.
+  // Shown under the overlay picker, and its first sentence on the button that
+  // offers it while None is chosen (a test enforces one for search and per
+  // registered overlay). Optional because internal overlays, such as the ones
+  // the Talmud view composes, are never offered to a reader.
   description?: string;
-
-  // What it does, in a few words, on the button that offers it while no
-  // overlay is chosen. Optional like description; a test requires one of search
-  // and of every registered overlay.
-  tagline?: string;
 
   destroy?(): void;
 

@@ -218,7 +218,6 @@ function renderTropChart(
 
 export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
   ...TROP,
-  tagline: 'See where each chanting mark falls',
   data: { texts: TEXTS_FILE },
 
   prebuild(data) {

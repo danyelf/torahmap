@@ -6,11 +6,11 @@ import {
   type StartStory,
 } from '../../startingPoints';
 
-const SEARCH: StartOverlay = { id: 'search', name: 'Find', tagline: 'Finds a word.' };
+const SEARCH: StartOverlay = { id: 'search', name: 'Find', description: 'Finds a word.' };
 
 const OVERLAYS: StartOverlay[] = [
-  { id: 'colours', name: 'Colours', tagline: 'Paints the verses.' },
-  { id: 'shades', name: 'Shades', tagline: 'Shades the verses.' },
+  { id: 'colours', name: 'Colours', description: 'Paints the verses. Brighter is more.' },
+  { id: 'shades', name: 'Shades', description: 'Shades the verses.' },
 ];
 
 const STORIES: StartStory[] = [
@@ -40,11 +40,12 @@ describe('the starting points', () => {
     expect(div.querySelectorAll('h3')).toHaveLength(2);
   });
 
-  it('names each button and says what it does, from search, the overlays and the stories', () => {
+  it('names each button, with the first sentence of a tool’s description or a story’s description', () => {
     const [search, colours, , tour] = buttons(div);
     expect(search.textContent).toContain('Find');
     expect(search.textContent).toContain('Finds a word.');
     expect(colours.textContent).toContain('Paints the verses.');
+    expect(colours.textContent).not.toContain('Brighter is more.');
     expect(tour.textContent).toContain('The Guided Tour');
     expect(tour.textContent).toContain('Follows Abraham.');
   });

@@ -209,7 +209,6 @@ function renderKey(
 
 export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, HaftarahData> = {
   ...HAFTARAH,
-  tagline: 'Highlight the weekly cycles',
   data: HAFTARAH_FILES,
   credits: [
     {

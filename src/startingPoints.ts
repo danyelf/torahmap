@@ -1,6 +1,6 @@
 // What the overlay panel offers while None is chosen: search, every overlay
 // and every story, each in its own words.
-import type { Story, StoryData } from '@torahmap/stories';
+import { firstSentence, type Story, type StoryData } from '@torahmap/stories';
 import type { Overlay } from './overlays/types.ts';
 import { CONTROL } from './panel.ts';
 import { escapeHtml } from './utils/html.ts';
@@ -8,7 +8,10 @@ import { escapeHtml } from './utils/html.ts';
 export type StartChoice =
   { kind: 'search' } | { kind: 'overlay'; id: string } | { kind: 'story'; id: string };
 
-export type StartOverlay = Pick<Overlay, 'id' | 'name' | 'tagline'>;
+export type StartOverlay = Pick<Overlay, 'id' | 'name' | 'description'>;
+
+const summary = (tool: StartOverlay): string | undefined =>
+  firstSentence({ text: tool.description ?? '' });
 export type StartStory = Pick<Story, 'id'> & { data: Pick<StoryData, 'title' | 'description'> };
 
 const heading = (text: string): string => `<h3 class="panel-section-heading">${text}</h3>`;
@@ -27,9 +30,9 @@ export function startingPointsHtml(
   stories: readonly StartStory[],
 ): string {
   return [
-    row({ kind: 'search' }, `${search.name}…`, search.tagline),
+    row({ kind: 'search' }, `${search.name}…`, summary(search)),
     heading('Overlays'),
-    ...overlays.map((o) => row({ kind: 'overlay', id: o.id }, o.name, o.tagline)),
+    ...overlays.map((o) => row({ kind: 'overlay', id: o.id }, o.name, summary(o))),
     heading('Stories'),
     ...stories.map((s) => row({ kind: 'story', id: s.id }, s.data.title, s.data.description)),
   ].join('');

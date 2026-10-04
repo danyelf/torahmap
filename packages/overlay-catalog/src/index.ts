@@ -19,9 +19,9 @@ export const COMMENTARY = {
   id: 'commentary',
   name: 'Commentary',
   description:
-    'Shades each verse by how much has been written about it: the brighter the verse, ' +
-    'the more commentary Sefaria records on it. Choose a kind of commentary to count ' +
-    'only that one.',
+    'Cross-references from later texts. Shades each verse by how many references there ' +
+    'are in other texts: the brighter the verse, the more commentary Sefaria records on ' +
+    'it. Choose a kind of commentary to count only that one.',
   urlParams: COMMENTARY_PARAMS,
 } as const satisfies OverlayEntry;
 
@@ -31,8 +31,8 @@ export const TROP = {
   id: 'trop',
   name: 'Trop',
   description:
-    'The cantillation marks that say how the Hebrew is chanted, and where in the text ' +
-    'they punctuate. Pick a mark to see which verses carry it, and how often.',
+    'The frequency of cantillation marks. Brighter marks appear more often in the text. ' +
+    'Pick a mark to see which verses carry it, and how often.',
   urlParams: TROP_PARAMS,
 } as const satisfies OverlayEntry;
 
@@ -49,9 +49,9 @@ export const HAFTARAH = {
   id: 'haftarah',
   name: 'Haftarah',
   description:
-    'The weekly Torah portion read in synagogue and the passage from the Prophets read ' +
-    'after it, shown in the same colour so the pairing is visible. Ashkenazi and ' +
-    'Sephardi custom differ, and you can switch between them.',
+    'The weekly haftarah readings. Shows the weekly Torah portion and the corresponding ' +
+    'passage from the Prophets in the same color. Ashkenazi and Sephardi custom differ, ' +
+    'and you can switch between them.',
   urlParams: HAFTARAH_PARAMS,
 } as const satisfies OverlayEntry;
 
