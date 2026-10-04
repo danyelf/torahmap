@@ -1,5 +1,5 @@
 // Test fixtures for Torah Map tests
-import { verseToUrlFormat } from '@torahmap/link';
+import { verseId } from '@torahmap/link';
 import type { TanakhIdentity, TanakhLayout, TorahData } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import type { CommentaryCounts } from '../../overlays/commentary';
@@ -11,7 +11,7 @@ import { DICTIONARY_FILES, type DictionaryFiles } from '../../search/data';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   const verse = { book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20, size: 6, ...overrides };
-  return { ...verse, id: overrides.id ?? verseToUrlFormat(verse.book, verse.chapter, verse.verse) };
+  return { ...verse, id: overrides.id ?? verseId(verse.book, verse.chapter, verse.verse) };
 }
 
 export function createVerses(

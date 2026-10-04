@@ -12,7 +12,7 @@ export interface CameraPosition {
 export type CameraRef =
   | CameraPosition
   | 'initial'
-  | { kind: 'verse'; ref: string } // ref in URL format, e.g. "Genesis.12.1"
+  | { kind: 'verse'; ref: string } // ref is a verse id, e.g. "Genesis.12.1"
   | { kind: 'regions'; names: string[] };
 
 export interface StoryStop {

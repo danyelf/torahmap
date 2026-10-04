@@ -160,7 +160,7 @@ PrintedWord = collections.namedtuple("PrintedWord", "letters lexemes split")
 
 
 def verse_id(book, chapter, verse):
-    """A verse's id on the map, as verseToUrlFormat in @torahmap/link writes
+    """A verse's id on the map, as verseId in @torahmap/link writes
     it: I Samuel 1:5 is "I.Samuel.1.5"."""
     return f"{book.replace(' ', '.')}.{chapter}.{verse}"
 

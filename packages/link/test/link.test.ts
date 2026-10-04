@@ -4,8 +4,8 @@ import {
   writeLink,
   linkNamesAView,
   linkKind,
-  verseToUrlFormat,
-  parseVerseFromUrl,
+  verseId,
+  parseVerseId,
   parseExactVerse,
   validateOverlayParams,
   type UrlState,
@@ -463,36 +463,36 @@ describe('a story in the link', () => {
   });
 });
 
-describe('verseToUrlFormat', () => {
+describe('verseId', () => {
   it('converts simple book name', () => {
-    const result = verseToUrlFormat('Genesis', 1, 1);
+    const result = verseId('Genesis', 1, 1);
     expect(result).toBe('Genesis.1.1');
   });
 
   it('converts book name with spaces', () => {
-    const result = verseToUrlFormat('I Samuel', 1, 5);
+    const result = verseId('I Samuel', 1, 5);
     expect(result).toBe('I.Samuel.1.5');
   });
 
   it('converts book name with multiple spaces', () => {
-    const result = verseToUrlFormat('Song of Songs', 2, 3);
+    const result = verseId('Song of Songs', 2, 3);
     expect(result).toBe('Song.of.Songs.2.3');
   });
 
   it('handles large chapter and verse numbers', () => {
-    const result = verseToUrlFormat('Psalms', 119, 176);
+    const result = verseId('Psalms', 119, 176);
     expect(result).toBe('Psalms.119.176');
   });
 
   it('handles book names already with dots (edge case)', () => {
-    const result = verseToUrlFormat('I. Samuel', 1, 1);
+    const result = verseId('I. Samuel', 1, 1);
     expect(result).toBe('I..Samuel.1.1');
   });
 });
 
-describe('parseVerseFromUrl', () => {
+describe('parseVerseId', () => {
   it('parses simple verse reference', () => {
-    const result = parseVerseFromUrl('Genesis.1.1');
+    const result = parseVerseId('Genesis.1.1');
     expect(result).toEqual({
       book: 'Genesis',
       chapter: 1,
@@ -501,7 +501,7 @@ describe('parseVerseFromUrl', () => {
   });
 
   it('parses verse with dotted book name', () => {
-    const result = parseVerseFromUrl('I.Samuel.1.5');
+    const result = parseVerseId('I.Samuel.1.5');
     expect(result).toEqual({
       book: 'I Samuel',
       chapter: 1,
@@ -510,7 +510,7 @@ describe('parseVerseFromUrl', () => {
   });
 
   it('parses verse with multi-word book name', () => {
-    const result = parseVerseFromUrl('Song.of.Songs.2.3');
+    const result = parseVerseId('Song.of.Songs.2.3');
     expect(result).toEqual({
       book: 'Song of Songs',
       chapter: 2,
@@ -519,7 +519,7 @@ describe('parseVerseFromUrl', () => {
   });
 
   it('handles large chapter and verse numbers', () => {
-    const result = parseVerseFromUrl('Psalms.119.176');
+    const result = parseVerseId('Psalms.119.176');
     expect(result).toEqual({
       book: 'Psalms',
       chapter: 119,
@@ -528,31 +528,31 @@ describe('parseVerseFromUrl', () => {
   });
 
   it('returns null for malformed input (too few parts)', () => {
-    expect(parseVerseFromUrl('Genesis.1')).toBeNull();
-    expect(parseVerseFromUrl('Genesis')).toBeNull();
-    expect(parseVerseFromUrl('1.1')).toBeNull();
+    expect(parseVerseId('Genesis.1')).toBeNull();
+    expect(parseVerseId('Genesis')).toBeNull();
+    expect(parseVerseId('1.1')).toBeNull();
   });
 
   it('returns null for non-numeric chapter', () => {
-    const result = parseVerseFromUrl('Genesis.abc.1');
+    const result = parseVerseId('Genesis.abc.1');
     expect(result).toBeNull();
   });
 
   it('returns null for non-numeric verse', () => {
-    const result = parseVerseFromUrl('Genesis.1.abc');
+    const result = parseVerseId('Genesis.1.abc');
     expect(result).toBeNull();
   });
 
   it('returns null for empty string', () => {
-    expect(parseVerseFromUrl('')).toBeNull();
+    expect(parseVerseId('')).toBeNull();
   });
 
   it('returns null when book name is missing', () => {
-    expect(parseVerseFromUrl('.1.1')).toBeNull();
+    expect(parseVerseId('.1.1')).toBeNull();
   });
 
   it('handles edge case with consecutive dots in book', () => {
-    const result = parseVerseFromUrl('I..Samuel.1.1');
+    const result = parseVerseId('I..Samuel.1.1');
     expect(result).toEqual({
       book: 'I  Samuel', // Double dot becomes double space when joined
       chapter: 1,
@@ -576,10 +576,10 @@ describe('parseExactVerse', () => {
   });
 });
 
-describe('verseToUrlFormat and parseVerseFromUrl roundtrip', () => {
+describe('verseId and parseVerseId roundtrip', () => {
   it('roundtrips simple book', () => {
-    const url = verseToUrlFormat('Genesis', 1, 1);
-    const parsed = parseVerseFromUrl(url);
+    const url = verseId('Genesis', 1, 1);
+    const parsed = parseVerseId(url);
     expect(parsed).toEqual({
       book: 'Genesis',
       chapter: 1,
@@ -588,8 +588,8 @@ describe('verseToUrlFormat and parseVerseFromUrl roundtrip', () => {
   });
 
   it('roundtrips book with spaces', () => {
-    const url = verseToUrlFormat('I Samuel', 10, 25);
-    const parsed = parseVerseFromUrl(url);
+    const url = verseId('I Samuel', 10, 25);
+    const parsed = parseVerseId(url);
     expect(parsed).toEqual({
       book: 'I Samuel',
       chapter: 10,
@@ -598,8 +598,8 @@ describe('verseToUrlFormat and parseVerseFromUrl roundtrip', () => {
   });
 
   it('roundtrips multi-word book', () => {
-    const url = verseToUrlFormat('Song of Songs', 8, 14);
-    const parsed = parseVerseFromUrl(url);
+    const url = verseId('Song of Songs', 8, 14);
+    const parsed = parseVerseId(url);
     expect(parsed).toEqual({
       book: 'Song of Songs',
       chapter: 8,
@@ -753,8 +753,8 @@ describe('edge cases and error handling', () => {
   });
 
   it('handles verse references with very large numbers', () => {
-    const verse = verseToUrlFormat('Psalms', 119, 176);
-    const parsed = parseVerseFromUrl(verse);
+    const verse = verseId('Psalms', 119, 176);
+    const parsed = parseVerseId(verse);
     expect(parsed).toEqual({
       book: 'Psalms',
       chapter: 119,
@@ -763,7 +763,7 @@ describe('edge cases and error handling', () => {
   });
 
   it('handles verse references with zero (invalid but handled)', () => {
-    const parsed = parseVerseFromUrl('Genesis.0.0');
+    const parsed = parseVerseId('Genesis.0.0');
     expect(parsed).toEqual({
       book: 'Genesis',
       chapter: 0,
@@ -773,7 +773,7 @@ describe('edge cases and error handling', () => {
   });
 
   it('handles multiple consecutive dots in verse', () => {
-    const parsed = parseVerseFromUrl('Genesis..1.1');
+    const parsed = parseVerseId('Genesis..1.1');
     expect(parsed).toEqual({
       book: 'Genesis ', // Dot becomes space when parts are joined
       chapter: 1,

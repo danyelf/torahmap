@@ -1,7 +1,7 @@
 // Layout algorithm: compute (x, y) position for every verse
 
 import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from './types.ts';
-import { verseToUrlFormat } from '@torahmap/link';
+import { verseId } from '@torahmap/link';
 import { seededRandom } from './utils/random.ts';
 import { JITTER_CENTER, JITTER_RANGE } from './constants.ts';
 
@@ -75,7 +75,7 @@ function layoutChapter(
 
       verses.push({
         // A verse's id is its link form, so a link names it directly.
-        id: verseToUrlFormat(bookName, chapterIdx + 1, verseIdx + 1),
+        id: verseId(bookName, chapterIdx + 1, verseIdx + 1),
         book: bookName,
         chapter: chapterIdx + 1,
         verse: verseIdx + 1,

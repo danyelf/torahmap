@@ -11,7 +11,7 @@
  * Search should treat these as equivalent, so searching for the regular
  * form matches the final form and vice versa.
  */
-import { verseToUrlFormat } from '@torahmap/link';
+import { verseId } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
 import { buildTextIndex, versesForTerm } from '../../search';
@@ -168,7 +168,7 @@ describe('Hebrew Final Forms Normalization', () => {
 
       finalFormsTest.forEach(({ withRegular, withFinal, expectedWord, verse }) => {
         it(`should find ${expectedWord} when searching with regular form (${withRegular}) or final form (${withFinal})`, () => {
-          const key = verseToUrlFormat(verse.book, verse.chapter, verse.verse);
+          const key = verseId(verse.book, verse.chapter, verse.verse);
           expect(versesForTerm(index, withRegular, 'he', 'substring').has(key)).toBe(true);
           expect(versesForTerm(index, withFinal, 'he', 'substring').has(key)).toBe(true);
         });

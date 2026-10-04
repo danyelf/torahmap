@@ -6,7 +6,7 @@
 //
 // Regenerate the files with:
 //   .venv/bin/python scripts/search/generate-lexeme-index.py
-import { parseVerseFromUrl, verseToUrlFormat } from '@torahmap/link';
+import { parseVerseId, verseId } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
 import { normalizeHebrewForSearch } from '../../hebrew';
@@ -246,7 +246,7 @@ describe.skipIf(!dataExists)('Lexeme index', () => {
       for (const book of structure.books) {
         book.chapters.forEach((verseCount, index) => {
           for (let verse = 1; verse <= verseCount; verse++) {
-            const key = verseToUrlFormat(book.name, index + 1, verse);
+            const key = verseId(book.name, index + 1, verse);
             if (!verses[key]?.length) missing.push(key);
           }
         });
@@ -404,7 +404,7 @@ describe.skipIf(!morphologyExists)('Word boundaries', () => {
     expect(Object.keys(realigned)).not.toHaveLength(0);
     for (const [key, named] of Object.entries(realigned)) {
       expect(morphology[key], `${key} is lined up but absent`).toBeTruthy();
-      const v = parseVerseFromUrl(key);
+      const v = parseVerseId(key);
       const hebrew = v && texts[v.book]?.[v.chapter]?.[v.verse]?.he;
       expect(hebrew, `${key} names no verse the page shows`).toBeTruthy();
       if (!hebrew) continue;

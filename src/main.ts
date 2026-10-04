@@ -53,7 +53,7 @@ import {
 import {
   linkKind,
   verseRef,
-  verseToUrlFormat,
+  verseId,
   linkNamesAView,
   DEFAULT_ZOOM,
   type UrlState,
@@ -1270,7 +1270,7 @@ async function main(): Promise<void> {
     const dictionary = dictionaryOf(data);
     // As a reader would type it: the letters as printed, final forms and all.
     const word = stripNikkud(click.text);
-    const verseKey = verseToUrlFormat(click.book, click.chapter, click.verse);
+    const verseKey = verseId(click.book, click.chapter, click.verse);
     const meanings = meaningsInVerse(
       dictionary,
       wordsOfVerse(data.parse, verseKey, click.hebrew),

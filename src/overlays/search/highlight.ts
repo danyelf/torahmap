@@ -4,7 +4,7 @@
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
 import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
-import { verseToUrlFormat } from '@torahmap/link';
+import { verseId } from '@torahmap/link';
 import {
   mapStrippedToOriginal,
   onlySeparators,
@@ -130,7 +130,7 @@ export function excerpt(
   const text = displayedVerse(index, result, isHebrew ? HEBREW : ENGLISH);
   if (text === null) return null;
   const words = isHebrew
-    ? wordsOfVerse(parse, verseToUrlFormat(result.book, result.chapter, result.verse), text)
+    ? wordsOfVerse(parse, verseId(result.book, result.chapter, result.verse), text)
     : null;
   const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, dictionary, words);
   if (!first) return quoteVerse(text, null);

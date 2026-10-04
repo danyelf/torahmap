@@ -10,7 +10,7 @@
 // there names the word next door, so they are lined up by letter instead.
 
 import { describe, it, expect } from 'vitest';
-import { parseVerseFromUrl } from '@torahmap/link';
+import { parseVerseId } from '@torahmap/link';
 import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
 import { verseWords } from '../../../verseWords';
@@ -25,7 +25,7 @@ const OFFERINGS = ['<LH/@heb', '<LH=/@heb', '<LH/@arc'];
 const texts = files.texts;
 
 const hebrewOf = (verseKey: string): string => {
-  const v = parseVerseFromUrl(verseKey);
+  const v = parseVerseId(verseKey);
   if (!v) throw new Error(`${verseKey} is not a verse`);
   return texts[v.book][v.chapter][v.verse].he;
 };

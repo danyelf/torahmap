@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
-import { parseVerseFromUrl } from '@torahmap/link';
+import { parseVerseId } from '@torahmap/link';
 import { STORIES } from '@torahmap/stories';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
@@ -64,7 +64,7 @@ describe('the shipped data', () => {
 describe('square ids', () => {
   it('names each Tanakh square by its link form', () => {
     for (const v of computeLayout(torahData)) {
-      expect(parseVerseFromUrl(v.id)).toEqual({ book: v.book, chapter: v.chapter, verse: v.verse });
+      expect(parseVerseId(v.id)).toEqual({ book: v.book, chapter: v.chapter, verse: v.verse });
     }
   });
 

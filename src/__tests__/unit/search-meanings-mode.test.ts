@@ -3,7 +3,7 @@
 // The idea under test is a reading: one of the dictionary words a written form
 // could be. עלה could be the verb "ascend", the noun "burnt-offering", the noun
 // "leafage", and more. A meanings-mode search looks for all of them.
-import { verseToUrlFormat } from '@torahmap/link';
+import { verseId } from '@torahmap/link';
 
 import { describe, it, expect } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
@@ -16,7 +16,7 @@ import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { realSearchData } from '../helpers/searchData';
 
 const keys = (results: Array<{ book: string; chapter: number; verse: number }>) =>
-  new Set(results.map((r) => verseToUrlFormat(r.book, r.chapter, r.verse)));
+  new Set(results.map((r) => verseId(r.book, r.chapter, r.verse)));
 
 describe('Meanings-mode search over the lexeme index', () => {
   const { index, dictionary, parse } = realSearchData();

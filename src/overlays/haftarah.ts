@@ -1,6 +1,6 @@
 import type { Overlay, Color, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
-import { verseToUrlFormat } from '@torahmap/link';
+import { verseId } from '@torahmap/link';
 import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
 import { rgbToHsl, hslToRgb, colorToCss, brighten } from '../utils/color.ts';
 import { escapeHtml } from '../utils/html.ts';
@@ -59,7 +59,7 @@ export interface HaftarahSettings {
 }
 
 function isRelevantVerse(verse: TanakhIdentity, derived: HaftarahDerivation): boolean {
-  const key = verseToUrlFormat(verse.book, verse.chapter, verse.verse);
+  const key = verseId(verse.book, verse.chapter, verse.verse);
   return derived.torahVerseToParsha.has(key) || derived.haftarahVerseToItem.has(key);
 }
 
@@ -69,7 +69,7 @@ function litByHover(
   hovered: TanakhIdentity | null,
 ): Set<HaftarahItem> | null {
   if (!hovered) return null;
-  const key = verseToUrlFormat(hovered.book, hovered.chapter, hovered.verse);
+  const key = verseId(hovered.book, hovered.chapter, hovered.verse);
   const parsha = derived.torahVerseToParsha.get(key);
   if (parsha) return new Set([parsha]);
   const items = derived.haftarahVerseToItem.get(key);
@@ -86,7 +86,7 @@ function litByPreview(
   const lit = new Set([item]);
   for (const range of item.haftarah[custom]) {
     forEachVerseInRange(data.structure, range, (book, ch, v) => {
-      derived.haftarahVerseToItem.get(verseToUrlFormat(book, ch, v))?.forEach((i) => lit.add(i));
+      derived.haftarahVerseToItem.get(verseId(book, ch, v))?.forEach((i) => lit.add(i));
     });
   }
   return lit;
@@ -130,7 +130,7 @@ function colorAt(
   derived: HaftarahDerivation,
   lit: Set<HaftarahItem> | null,
 ): Color | Color[] | null {
-  const key = verseToUrlFormat(verse.book, verse.chapter, verse.verse);
+  const key = verseId(verse.book, verse.chapter, verse.verse);
   const parsha = derived.torahVerseToParsha.get(key);
   const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
   if (items.length === 0) return lit ? DIMMED_GREY : null;
@@ -227,7 +227,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     const derived = deriveHaftarah(data, settings.custom);
     const keyIfRelevant = (verse: TanakhIdentity | null) =>
       verse && isRelevantVerse(verse, derived)
-        ? verseToUrlFormat(verse.book, verse.chapter, verse.verse)
+        ? verseId(verse.book, verse.chapter, verse.verse)
         : null;
     return keyIfRelevant(before) !== keyIfRelevant(after);
   },
@@ -302,7 +302,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
   },
 
   getHoverInfo(verse: TanakhIdentity, settings: HaftarahSettings, data): string | null {
-    const key = verseToUrlFormat(verse.book, verse.chapter, verse.verse);
+    const key = verseId(verse.book, verse.chapter, verse.verse);
     const derived = deriveHaftarah(data, settings.custom);
 
     const parshaFromTorah = derived.torahVerseToParsha.get(key);

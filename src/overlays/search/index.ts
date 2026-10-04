@@ -46,7 +46,7 @@ import {
 } from '../../search/terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { isSearchableWord } from '../../hebrew.ts';
-import { SEARCH_URL_PARAMS, verseToUrlFormat } from '@torahmap/link';
+import { SEARCH_URL_PARAMS, verseId } from '@torahmap/link';
 import { memoByValue } from '../../utils/memo.ts';
 
 /**
@@ -404,9 +404,7 @@ function showVerse(result: SearchResult): void {
  * colour, split corner to corner when there are several.
  */
 function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
-  const termIndices = search.matchingTerms.get(
-    verseToUrlFormat(verse.book, verse.chapter, verse.verse),
-  );
+  const termIndices = search.matchingTerms.get(verseId(verse.book, verse.chapter, verse.verse));
   if (!termIndices || termIndices.length === 0) return null;
 
   const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(search.active, i)]);
@@ -538,7 +536,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
     const { active, matchingTerms } = searchFor(data, settings);
     if (active.length === 0) return null;
 
-    const key = verseToUrlFormat(verse.book, verse.chapter, verse.verse);
+    const key = verseId(verse.book, verse.chapter, verse.verse);
     const termIndices = matchingTerms.get(key);
     if (!termIndices) return null;
 
@@ -570,7 +568,7 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   highlightVerseText(verse, text, language, settings, data) {
     const words =
       language === HEBREW
-        ? wordsOfVerse(data.parse, verseToUrlFormat(verse.book, verse.chapter, verse.verse), text)
+        ? wordsOfVerse(data.parse, verseId(verse.book, verse.chapter, verse.verse), text)
         : null;
     return highlightTerms(
       text,
