@@ -36,8 +36,7 @@ export function parseStoryMarkdown(markdown: string): StoryData {
  * string, so any other spelling of a real verse is refused here, where the
  * story author sees it.
  */
-function verseRef(ref: string): string {
-  const parsed = parseVerseFromUrl(ref);
+function storyVerse(ref: string, parsed = parseVerseFromUrl(ref)): string {
   if (!parsed) throw new Error(`[story] "${ref}" is not a verse`);
   const written = verseToUrlFormat(parsed.book, parsed.chapter, parsed.verse);
   if (written !== ref) throw new Error(`[story] write the verse "${ref}" as "${written}"`);
@@ -123,9 +122,8 @@ function parseCamera(params: Record<string, string>): CameraRef {
   }
 
   // e.g. "Genesis.12.1" or "I.Samuel.1.5"
-  if (parseVerseFromUrl(cameraStr)) {
-    return { kind: 'verse', ref: verseRef(cameraStr) };
-  }
+  const verse = parseVerseFromUrl(cameraStr);
+  if (verse) return { kind: 'verse', ref: storyVerse(cameraStr, verse) };
 
   // Region names, checked against the map when the stop is resolved.
   const names = cameraStr
@@ -184,7 +182,7 @@ function parseStops(body: string): StoryStop[] {
       } else if (key === 'easing') {
         easing = easingNamed(value);
       } else if (key === 'verse') {
-        verse = verseRef(value);
+        verse = storyVerse(value);
       } else if (key === 'zoom') {
         const z = parseFloat(value);
         if (!isNaN(z)) zoom = z;

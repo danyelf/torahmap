@@ -5,7 +5,7 @@ import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { parseVerseFromUrl } from '@torahmap/link';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
-import { talmudId } from '../../talmud/format.ts';
+import { talmudId } from '../../talmud/layout.ts';
 import type { TorahData } from '../../types.ts';
 import { talmudFixture } from '../helpers/talmudFixture.ts';
 

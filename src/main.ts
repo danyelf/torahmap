@@ -507,12 +507,10 @@ async function main(): Promise<void> {
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
     if (stop.verse) {
-      if (pinnedVerse?.id !== stop.verse) {
-        const verse = squares.find(stop.verse);
-        if (verse) {
-          pinnedVerse = verse;
-          updateSidebarWrapper(verse, true);
-        }
+      const verse = squares.find(stop.verse);
+      if (verse && !sameItem(pinnedVerse, verse)) {
+        pinnedVerse = verse;
+        updateSidebarWrapper(verse, true);
       }
     } else if (pinnedVerse) {
       pinnedVerse = null;
@@ -1378,7 +1376,7 @@ async function main(): Promise<void> {
   let story = storyNamed(parseUrlState().story ?? null);
   configureAnalytics({ getStory: () => story.id });
   const resolveStory = (): ResolvedStoryStop[] =>
-    resolveStops(story.data.stops, initialCamera, verses, mapFocus(), mapViewport());
+    resolveStops(story.data.stops, initialCamera, verses, squares, mapFocus(), mapViewport());
   let resolvedStops: ResolvedStoryStop[] = [];
   let stopElements: HTMLElement[] = [];
 

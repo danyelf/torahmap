@@ -12,7 +12,7 @@ import type { SpatialItem, TalmudIdentity } from '../types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
 import { seededRandom } from '../utils/random.ts';
 import { segmentHashId } from './segmentHash.ts';
-import { talmudId } from './format.ts';
+import { bookToUrl } from '@torahmap/link';
 import {
   SEGMENT_SIZE,
   PEREK_GAP,
@@ -26,6 +26,11 @@ import {
 } from './constants.ts';
 
 export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
+
+/** A segment's id: Bava Kamma 2a:1 is "Bava.Kamma.2a.1". */
+export function talmudId(s: TalmudIdentity): string {
+  return `${bookToUrl(s.tractate)}.${s.daf}${s.amud}.${s.segment}`;
+}
 
 export interface TractateBlock {
   name: string;

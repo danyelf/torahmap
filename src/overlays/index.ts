@@ -1,5 +1,4 @@
-import type { TanakhIdentity } from '../types.ts';
-import type { Overlay, ToolOnMap, Tools } from './types.ts';
+import type { TanakhOverlay } from './tanakhTypes.ts';
 import { registerOverlay, clearOverlays } from './registry.ts';
 import { commentaryOverlay } from './commentary.ts';
 import { tropOverlay } from './trop.ts';
@@ -8,10 +7,7 @@ import { verseLengthOverlay } from './verse-length.ts';
 import { OVERLAYS, type OverlayId } from '@torahmap/overlay-catalog';
 
 export type { Overlay, Color } from './types.ts';
-
-export type TanakhOverlay = Overlay<TanakhIdentity>;
-export type TanakhTool = ToolOnMap<TanakhIdentity>;
-export type TanakhTools = Tools<TanakhIdentity>;
+export type { TanakhOverlay, TanakhTool, TanakhTools } from './tanakhTypes.ts';
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { createOverlaySettings, settingsFromLink } from './settings.ts';
 export { highlightTropInText } from './trop.ts';

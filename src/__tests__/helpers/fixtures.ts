@@ -1,6 +1,6 @@
 // Test fixtures for Torah Map tests
 import { verseToUrlFormat } from '@torahmap/link';
-import type { TanakhLayout, TorahData } from '../../types';
+import type { TanakhIdentity, TanakhLayout, TorahData } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import type { CommentaryCounts } from '../../overlays/commentary';
 import { HAFTARAH_FILES, type HaftarahMappings } from '../../overlays/haftarah/readings';
@@ -273,7 +273,7 @@ export const SAMPLE_TROP_MARKS = {
 };
 
 /** A test overlay that colours each item by `getVerseColor`. */
-export function testOverlay<T = TanakhLayout, S = unknown, D = unknown>(
+export function testOverlay<T = TanakhIdentity, S = unknown, D = unknown>(
   fields: Omit<Overlay<T, S, D>, 'colorsFor'>,
 ): Overlay<T, S, D> {
   return {

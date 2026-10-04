@@ -26,4 +26,5 @@ export {
   bookFromUrl,
   verseRef,
   parseVerseFromUrl,
+  parseExactVerse,
 } from './link.ts';

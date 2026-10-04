@@ -115,12 +115,12 @@ const namesOf = (overlay: { data?: unknown }): Readonly<Record<string, FileName>
   (overlay.data ?? {}) as Readonly<Record<string, FileName>>;
 
 /** The paths an overlay cannot work without. */
-export function requiredFiles<T>(overlay: Overlay<T>): string[] {
+export function requiredFiles(overlay: Overlay<unknown>): string[] {
   return byNeed(namesOf(overlay)).required;
 }
 
 /** The paths an overlay is handed as null until they are in. */
-export function optionalFiles<T>(overlay: Overlay<T>): string[] {
+export function optionalFiles(overlay: Overlay<unknown>): string[] {
   return byNeed(namesOf(overlay)).optional;
 }
 
@@ -151,6 +151,6 @@ export function dataFor<T, S, D>(overlay: Overlay<T, S, D>, loaded: Loaded): D |
 }
 
 /** Every path the overlays name. */
-export function overlayFiles<T>(overlays: readonly Overlay<T>[]): string[] {
+export function overlayFiles(overlays: readonly Overlay<unknown>[]): string[] {
   return overlays.flatMap((overlay) => filePaths(namesOf(overlay)));
 }
