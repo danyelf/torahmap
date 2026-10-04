@@ -277,18 +277,20 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
   };
 }
 
-/** A verse's first word of two letters or more, without vowels or accents. */
-export function firstWord(hebrew: string): string {
-  return (
-    hebrew
-      .replace(/־/g, ' ') // maqaf
-      .replace(/[^א-ת\s]/g, '')
-      .split(/\s+/)
-      .find((w) => w.length > 1) ?? ''
-  );
+/**
+ * A verse's first word, without vowels or accents, run on into the next when
+ * it has only two letters. A single letter is never a word, so it is skipped.
+ */
+export function openingLetters(hebrew: string): string {
+  const words = hebrew
+    .replace(/־/g, ' ') // maqaf
+    .replace(/[^א-ת\s]/g, '')
+    .split(/\s+/)
+    .filter((w) => w.length > 1);
+  return words[0]?.length === 2 ? words.slice(0, 2).join('') : (words[0] ?? '');
 }
 
-/** The haftarah print's opening of Genesis, with each verse's first word. */
+/** The haftarah print's opening of Genesis, with each verse's opening letters. */
 function microtextPatch(haftarah: SheetInput, structure: TorahData): ProofInput['microtext'] {
   const texts: VerseTexts = JSON.parse(readFileSync(`public/data/${TEXTS_FILE}`, 'utf8'));
   const layout = printLayout(structure);
@@ -299,7 +301,7 @@ function microtextPatch(haftarah: SheetInput, structure: TorahData): ProofInput[
   return {
     title: 'Genesis 1–5',
     verses: haftarah.verses,
-    words: layout.map((v) => firstWord(texts[v.book]?.[v.chapter]?.[v.verse]?.he ?? '')),
+    words: layout.map((v) => openingLetters(texts[v.book]?.[v.chapter]?.[v.verse]?.he ?? '')),
     // Genesis runs right to left, so its first verse is at the patch's top right.
     centre: { x: start.x + start.side - 120, y: start.y + 45 },
   };

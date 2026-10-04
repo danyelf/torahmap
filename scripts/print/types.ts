@@ -103,7 +103,7 @@ export interface ProofInput {
   /** Points per map unit, as on the finished sheets. */
   scale: number;
   patches: ProofPatch[];
-  /** A patch drawn three ways with each verse's first word in its square. */
+  /** A patch drawn three ways with each verse's opening letters in its square. */
   microtext: ProofPatch & { words: string[] };
   swatches: { fill: string; name: string; value: string }[];
   bandOffset: number;

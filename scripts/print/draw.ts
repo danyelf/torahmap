@@ -157,9 +157,9 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       square: boolean;
       word: (v: SheetInput['verses'][0]) => string;
     }[] = [
-      { name: 'First word in ink, on the colour', square: true, word: () => ink },
-      { name: 'First word in the colour, no square', square: false, word: (v) => v.fills[0] },
-      { name: 'First word in paper, out of the colour', square: true, word: () => paper },
+      { name: 'Letters in ink, on the colour', square: true, word: () => ink },
+      { name: 'Letters in the colour, no square', square: false, word: (v) => v.fills[0] },
+      { name: 'Letters in paper, out of the colour', square: true, word: () => paper },
     ];
     // Letters are drawn closer than the face sets them, and rows a letter's
     // height apart, so ascenders and descenders reach into the next row.
