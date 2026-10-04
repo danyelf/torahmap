@@ -10,11 +10,11 @@ export function aboutHtml(
   return panelHtml(
     'about',
     `<section class="about-section">
-      <h3>Settings</h3>
+      <h3 class="panel-section-heading">Settings</h3>
       <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
-      <h3>${SITE_NAME}</h3>
+      <h3 class="panel-section-heading">${SITE_NAME}</h3>
       <p>An interactive visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position.</p>
       <p>The map is divided into three sections, stacked vertically:</p>
       <ul>
@@ -29,7 +29,7 @@ export function aboutHtml(
       </p>
     </section>
     <section class="about-section">
-      <h3>Controls</h3>
+      <h3 class="panel-section-heading">Controls</h3>
       <table class="controls-table">
         <tr><td>Scroll / Pinch</td><td>Zoom in/out</td></tr>
         <tr><td>Drag</td><td>Pan around</td></tr>
@@ -44,7 +44,7 @@ export function aboutHtml(
       </table>
     </section>
     <section class="about-section">
-      <h3>Sources and credits</h3>
+      <h3 class="panel-section-heading">Sources and credits</h3>
       ${renderCreditsHtml(overlays)}
     </section>`,
   );

@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   DRAG_PX,
   STORY,
-  exploreFrame,
   frontToolAfter,
   isPanel,
+  landingFrame,
   nextFrame,
   type Frame,
 } from '../../frame';
@@ -48,14 +48,22 @@ describe('returning to the story', () => {
   });
 });
 
-describe('exploring on a desktop', () => {
-  it('lands on the panel a link asks for, on a desktop', () => {
-    expect(exploreFrame(DESKTOP, 'search')).toEqual(explore('search'));
-    expect(exploreFrame(PHONE, 'search')).toEqual(explore(null));
+describe('arriving at the explore view', () => {
+  it('opens the overlay panel on a map that shows nothing, on a phone too', () => {
+    expect(landingFrame(DESKTOP, 'overlay', true)).toEqual(explore('overlay'));
+    expect(landingFrame(PHONE, 'overlay', true)).toEqual(explore('overlay'));
   });
 
-  it('opens on the overlay and keeps its panel when the map is touched', () => {
-    expect(exploreFrame(DESKTOP)).toEqual(explore('overlay'));
+  it("otherwise opens the shown tool's panel on a desktop, and on a phone none", () => {
+    expect(landingFrame(DESKTOP, 'overlay', false)).toEqual(explore('overlay'));
+    expect(landingFrame(DESKTOP, 'search', false)).toEqual(explore('search'));
+    expect(landingFrame(PHONE, 'search', false)).toEqual(explore(null));
+    expect(landingFrame(PHONE, 'overlay', false)).toEqual(explore(null));
+  });
+});
+
+describe('exploring on a desktop', () => {
+  it('keeps its panel when the map is touched', () => {
     expect(nextFrame(explore('stories'), { type: 'map-touched' }, DESKTOP)).toEqual(
       explore('stories'),
     );
@@ -105,10 +113,6 @@ describe('exploring on a desktop', () => {
 });
 
 describe('exploring on a phone', () => {
-  it('opens a link with nothing open', () => {
-    expect(exploreFrame(PHONE)).toEqual(explore(null));
-  });
-
   it('folds everything when the map is touched', () => {
     expect(nextFrame(explore('overlay', true), { type: 'map-touched' }, PHONE)).toEqual(
       explore(null),

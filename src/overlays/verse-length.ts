@@ -68,6 +68,7 @@ function verseColorAt(data: VerseLengthData, verse: TanakhIdentity): Color | nul
 
 export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> = {
   ...VERSE_LENGTH,
+  tagline: 'Compare how long the verses are',
   data: { texts: TEXTS_FILE },
 
   prebuild(data) {

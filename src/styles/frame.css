@@ -439,6 +439,38 @@ body[data-open='about'] #about-panel {
   max-height: none;
 }
 
+#overlay-starts:not(:empty) {
+  margin-top: 16px;
+}
+
+.start-row {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.start-row + .start-row {
+  margin-top: 8px;
+}
+
+.start-label {
+  display: block;
+  font-weight: 600;
+}
+
+.start-detail {
+  display: block;
+  margin-top: 2px;
+  color: #ccc;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#overlay-starts .panel-section-heading {
+  margin: 24px 0 10px;
+}
+
 .story-card {
   padding: 14px;
   border: 1px solid #333;

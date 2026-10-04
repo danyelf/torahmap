@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { CHROME, STATES } from './app.ts';
+import { CHROME, STATES, viaMenu } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
-import { boxes, DRAWN_FLOOR, drawnPixels, allLoaded, openMap } from './page.ts';
+import { NO_OVERLAY } from '@torahmap/overlay-catalog';
+import { asReturningReader, boxes, DRAWN_FLOOR, drawnPixels, allLoaded, openMap } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
   // No draw call runs; the clear still does.
@@ -46,6 +47,7 @@ test('the rules report a layout broken on purpose', async ({ page }, info) => {
 
 for (const state of STATES) {
   test(state.name, async ({ page }, info) => {
+    if (state.returning) await asReturningReader(page);
     const errors = await openMap(page, state.link);
     await state.then?.(page);
     expect(errors, `page errors after opening ${state.name}`).toEqual([]);
@@ -56,6 +58,26 @@ for (const state of STATES) {
     expect(errors, 'page errors while measuring').toEqual([]);
   });
 }
+
+test("a returning reader's Search button opens search, ready to type", async ({ page }) => {
+  await asReturningReader(page);
+  await openMap(page, '');
+  await page.locator('[data-start="search"]').click();
+  await expect(page.locator('#search-input')).toBeFocused();
+});
+
+test('choosing None offers the places to start, and an overlay takes them away', async ({
+  page,
+}) => {
+  await openMap(page, 'overlay=commentary');
+  await viaMenu(page, 'overlay');
+  const start = page.locator('[data-start="search"]');
+  await expect(start).toHaveCount(0);
+  await page.locator('#overlay-select').selectOption(NO_OVERLAY);
+  await expect(start).toBeVisible();
+  await page.locator('#overlay-select').selectOption('haftarah');
+  await expect(start).toHaveCount(0);
+});
 
 test("the haftarah legend's key shows only in the desktop layout", async ({ page }) => {
   const state = STATES.find((s) => s.name === 'explore-haftarah')!;

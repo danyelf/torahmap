@@ -61,9 +61,13 @@ const explore = (open: Panel | null): Frame => ({
   full: false,
 });
 
-/** Where leaving the story, or a link into the explore view, lands. */
-export function exploreFrame(phone: boolean, open: Panel = 'overlay'): Frame {
-  return explore(phone ? null : open);
+/**
+ * Where leaving the story, or a link into the explore view, lands: the shown
+ * tool's panel, which a phone keeps folded unless the map is blank, when None
+ * offers somewhere to start.
+ */
+export function landingFrame(phone: boolean, open: FrontTool, blank: boolean): Frame {
+  return explore(phone && !blank ? null : open);
 }
 
 export function nextFrame(frame: Frame, event: FrameEvent, phone: boolean): Frame {

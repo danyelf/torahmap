@@ -89,6 +89,7 @@ function commentaryColorAt(
 
 export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, CommentaryData> = {
   ...COMMENTARY,
+  tagline: 'Show the most-referenced verses',
   credits: [
     {
       source: 'Sefaria link exports',

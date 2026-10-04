@@ -5,6 +5,8 @@ export interface State {
   name: string;
   link: string;
   then?: (page: Page) => Promise<void>;
+  /** Opens as a returning reader, so an empty link skips the story. */
+  returning?: boolean;
   /** Elements that must show in full, so a selector that stops matching fails rather than measuring nothing. */
   shown?: string[];
 }
@@ -52,6 +54,31 @@ export const STATES: State[] = [
     shown: ['#menu', '.menu-item[data-action="share"]', '#map-legend'],
   },
   { name: 'explore-link', link: 'overlay=commentary', shown: ['#map-legend'] },
+  {
+    name: 'overlay-none',
+    link: '',
+    returning: true,
+    shown: ['#overlay-select', '[data-start="search"]'],
+  },
+  {
+    // A link that only moves the camera shows nothing either.
+    name: 'overlay-none-camera-link',
+    link: 'zoom=0.32&x=1693.1&y=838.7',
+    shown: ['#overlay-select', '[data-start="search"]'],
+  },
+  {
+    name: 'overlay-none-trop',
+    link: '',
+    returning: true,
+    then: async (page) => {
+      await page.locator('[data-start="overlay"][data-id="trop"]').click();
+      await expect(page).toHaveURL(/overlay=trop/);
+      // Left where it clicked, the pointer is over the trop chart that replaced
+      // the button, and the map previews the mark under it.
+      await page.locator('#overlay-description').hover();
+    },
+    shown: ['#overlay-select', '#map-legend'],
+  },
   {
     name: 'story-closed',
     link: 'story=tour&stop=intro',
