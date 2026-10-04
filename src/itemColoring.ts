@@ -4,6 +4,7 @@ import type { Color, SpatialItem, VerseColor } from './types';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import type { ColorSource } from './scrollytelling/driver';
+import { sameItem } from './items.ts';
 import { seededRandom } from './utils/random';
 import { brighten } from './utils/color';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
@@ -107,11 +108,10 @@ export function toolsPicture<T>(
 export function layerToRecompute<T>(
   source: ColorSource,
   overlay: ToolOnMap<T> | null,
-  before: T | null,
-  after: T | null,
-  itemsEqual: (a: T | null, b: T | null) => boolean,
+  before: SpatialItem<T> | null,
+  after: SpatialItem<T> | null,
 ): 'blend' | 'overlay' | null {
-  if (itemsEqual(before, after) || source === 'ease') return null;
+  if (sameItem(before, after) || source === 'ease') return null;
   if (source === 'blend') return 'blend';
   return overlay?.tool.hoverChangesColors?.(before, after, overlay.settings, overlay.data)
     ? 'overlay'

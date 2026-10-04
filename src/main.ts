@@ -479,7 +479,6 @@ async function main(): Promise<void> {
       toolsNow().overlay,
       hoveredBefore,
       mouseState.hoveredVerse,
-      tanakhIdentitiesEqual,
     );
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
@@ -764,7 +763,6 @@ async function main(): Promise<void> {
       camera,
       mouseState.hoveredVerse,
       pinnedVerse,
-      tanakhIdentitiesEqual,
     );
     updateLabelPositions(bookLabels, offset, camera.zoom);
     updateMapTitlePosition(mapTitle, offset, camera.zoom);
