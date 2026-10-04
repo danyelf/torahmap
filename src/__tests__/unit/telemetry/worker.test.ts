@@ -43,6 +43,20 @@ describe('telemetry worker', () => {
     });
   });
 
+  it("records an error's browser from the request, not from the page", async () => {
+    const e = env();
+    const body = JSON.stringify({
+      event: 'error',
+      visit: 'v1',
+      mode: 'reader',
+      fields: { source: 'main', message: 'boom', browser: 'made up' },
+    });
+    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; rv:131.0) Gecko/20100101 Firefox/131.0';
+    await worker.fetch(post(body, { 'User-Agent': userAgent }), e);
+    const point: DataPoint = e.TORAHMAP_EVENTS.writeDataPoint.mock.calls[0][0];
+    expect(point.blobs[columns('error').blobs.indexOf('browser')]).toBe('Firefox 131 Windows');
+  });
+
   it('takes the host from the request URL when the Origin matches it', async () => {
     const e = env();
     const previewUrl = 'https://telemetry-torahmap.example.workers.dev/api/event';

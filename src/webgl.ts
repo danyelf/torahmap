@@ -122,8 +122,8 @@ const FRAGMENT_SHADER = `#version 300 es
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
   }
 
-  vec3 unpack(highp float packed) {
-    highp int c = int(packed);
+  vec3 unpack(highp float rgb) {
+    highp int c = int(rgb);
     return vec3(float(c >> 16), float((c >> 8) & 255), float(c & 255)) / 255.0;
   }
 

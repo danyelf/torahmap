@@ -92,6 +92,7 @@ import {
   createRenderState,
   rebuildGeometry,
   render as renderFrame,
+  type RenderContext,
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
 import type { TanakhIdentity, TanakhLayout, VerseColor } from './types.ts';
@@ -200,19 +201,36 @@ function showTitle(): void {
   if (document.title !== title) document.title = title;
 }
 
+/** The renderer, or null after reporting why this browser cannot have one. */
+function startRenderer(canvas: HTMLCanvasElement): RenderContext | null {
+  if (!getWebGL2(canvas)) {
+    trackWebGLMissing();
+    return null;
+  }
+  try {
+    return createRenderContext(canvas);
+  } catch (error) {
+    // Some browsers have WebGL 2 but fail to compile the shaders.
+    reportError('main', error, 'starting the renderer');
+    return null;
+  }
+}
+
 async function main(): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
   showTitle();
 
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
-  // Before any download: without WebGL 2 the map cannot draw at all.
-  if (!getWebGL2(canvas)) {
+  // Before any download: without a renderer the map cannot draw at all.
+  const renderer = startRenderer(canvas);
+  if (!renderer) {
     document.body.classList.add('no-webgl');
     document.getElementById('no-webgl')!.hidden = false;
-    trackWebGLMissing();
     return;
   }
+  // Narrowed here: the function declarations below cannot see the check above.
+  const renderContext: RenderContext = renderer;
 
   registerAllOverlays();
   const allOverlays = [searchTool, ...getAllOverlays()];
@@ -272,7 +290,6 @@ async function main(): Promise<void> {
   const onMap = (e: { clientX: number; clientY: number }): { x: number; y: number } =>
     mapPoint(e.clientX, e.clientY, canvasOrigin);
 
-  const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext, verses, dpr);
 
   let currentOverlay: TanakhOverlay | null = null;

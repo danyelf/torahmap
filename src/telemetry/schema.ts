@@ -11,7 +11,14 @@ import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
 
 const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
-export type RequestContext = Record<Exclude<CommonColumn, 'event' | 'mode'>, string>;
+// Columns the Worker fills from the request wherever an event lists them; the
+// page never sends them. Not common columns, since adding one of those would
+// shift every event's own fields.
+type RequestColumn = 'browser';
+export type RequestContext = Record<
+  Exclude<CommonColumn, 'event' | 'mode'> | RequestColumn,
+  string
+>;
 
 export const EVENTS = {
   // arrived_with is blank on views recorded before the column existed —
@@ -20,7 +27,7 @@ export const EVENTS = {
   // first stop on an earlier visit (main.ts's rememberVisit), so a return by
   // someone who bounced off the first stop reads 'no'.
   page_view: {
-    blobs: ['story_stop', 'referrer', 'story', 'arrived_with', 'visited'],
+    blobs: ['story_stop', 'referrer', 'story', 'arrived_with', 'visited', 'browser'],
     doubles: [],
   },
   story_stop: { blobs: ['stop_id', 'story'], doubles: ['stop_number', 'total_stops'] },
@@ -34,9 +41,9 @@ export const EVENTS = {
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
   webgl_missing: { blobs: [], doubles: [] },
-  error: { blobs: ['source', 'message'], doubles: [] },
+  error: { blobs: ['source', 'message', 'browser'], doubles: [] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [], by: 'worker' },
-  worker_error: { blobs: ['source', 'message'], doubles: [], by: 'worker' },
+  worker_error: { blobs: ['source', 'message', 'browser'], doubles: [], by: 'worker' },
   // A stop share records overlay 'none': stop links carry no overlay (the stop
   // picks its own), so group share.overlay by view shares.
   share: {
@@ -76,7 +83,7 @@ export function columns(event: EventName): { blobs: string[]; doubles: string[] 
     doubles: [...EVENTS[event].doubles],
   };
 }
-type Blobs<E extends EventName> = (typeof EVENTS)[E]['blobs'][number];
+type Blobs<E extends EventName> = Exclude<(typeof EVENTS)[E]['blobs'][number], RequestColumn>;
 type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
 // Columns narrower than a string, matched by column name in every event.
 interface NarrowBlobs {
@@ -157,7 +164,7 @@ function dataPoint(
   given: Record<string, unknown>,
 ): DataPoint {
   const blob = (name: string) => {
-    const value = given[name];
+    const value = name === 'browser' ? context.browser : given[name];
     return typeof value === 'string' ? value.slice(0, MAX_BLOB_CHARS) : '';
   };
   const double = (name: string) => {
