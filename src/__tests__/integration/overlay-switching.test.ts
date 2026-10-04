@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import type { TanakhIdentity } from '../../types';
 import {
   registerAllOverlays,
   registerOverlay,
@@ -19,11 +20,11 @@ import {
   type OverlaySettings,
 } from '../../overlays/settings';
 
-describe('Overlay Switching Integration', () => {
+describe('Overlay<TanakhIdentity> Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
   let mockLegendContainer: HTMLElement;
   let verses = SAMPLE_VERSES;
-  let currentOverlay: Overlay | null = null;
+  let currentOverlay: Overlay<TanakhIdentity> | null = null;
   let currentData: unknown;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
   // The settings the app holds for each overlay, as main.ts holds them.
@@ -56,14 +57,14 @@ describe('Overlay Switching Integration', () => {
   /**
    * Helper to simulate switching to an overlay
    */
-  function switchToOverlay(overlayId: string): Overlay {
+  function switchToOverlay(overlayId: string): Overlay<TanakhIdentity> {
     // Destroy previous overlay
     currentOverlay?.destroy?.();
 
     // Get new overlay
     const overlay = getOverlay(overlayId);
     if (!overlay) {
-      throw new Error(`Overlay ${overlayId} not found`);
+      throw new Error(`Overlay<TanakhIdentity> ${overlayId} not found`);
     }
 
     const data = dataFor(overlay, SAMPLE_LOADED);
@@ -100,7 +101,7 @@ describe('Overlay Switching Integration', () => {
     expect(nonNullColors.length).toBeLessThanOrEqual(colorCount);
   }
 
-  describe('Basic Overlay Switching', () => {
+  describe('Basic Overlay<TanakhIdentity> Switching', () => {
     it('switches from no overlay to commentary overlay', () => {
       const overlay = switchToOverlay('commentary');
 
@@ -365,7 +366,7 @@ describe('Overlay Switching Integration', () => {
     it('handles overlay with no destroy method', () => {
       const overlayWithoutDestroy = testOverlay({
         id: 'test-overlay-2',
-        name: 'Test Overlay 2',
+        name: 'Test Overlay<TanakhIdentity> 2',
         getVerseColor: () => [0, 1, 0],
         // No destroy method
       });

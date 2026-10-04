@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { TanakhIdentity } from '../../types';
 import {
   createRenderContext,
   createRenderState,
@@ -128,7 +129,7 @@ describe('rendering', () => {
 
   describe('rebuildGeometry', () => {
     let gl: WebGL2RenderingContext;
-    let state: RenderState;
+    let state: RenderState<TanakhIdentity>;
 
     beforeEach(() => {
       const context = createRenderContext(createMockCanvas());
@@ -176,7 +177,7 @@ describe('rendering', () => {
 
   describe('render', () => {
     let context: RenderContext;
-    let state: RenderState;
+    let state: RenderState<TanakhIdentity>;
     let camera: Camera;
 
     beforeEach(() => {
@@ -351,7 +352,7 @@ describe('rendering', () => {
 
   describe('renderOutline', () => {
     let context: RenderContext;
-    let state: RenderState;
+    let state: RenderState<TanakhIdentity>;
     let camera: Camera;
     let verse: ReturnType<typeof createVerse>;
 
@@ -492,7 +493,7 @@ describe('rendering', () => {
     });
   });
 
-  describe('RenderState immutability', () => {
+  describe('RenderState<TanakhIdentity> immutability', () => {
     it('does not modify verses array when creating state', () => {
       const context = createRenderContext(createMockCanvas());
       const verses = createVerses(3);

@@ -292,7 +292,7 @@ async function main(): Promise<void> {
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext, verses, dpr);
 
-  let currentOverlay: Overlay | null = null;
+  let currentOverlay: Overlay<TanakhIdentity> | null = null;
   const currentOverlayId = (): string => currentOverlay?.id ?? NO_OVERLAY;
 
   // Every overlay's settings, kept while another overlay is showing.
@@ -340,12 +340,12 @@ async function main(): Promise<void> {
   }
 
   /** The overlay and the search as they stand, each null while off. */
-  function toolsNow(): Tools {
+  function toolsNow(): Tools<TanakhIdentity> {
     return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool), loaded);
   }
 
   /** The overlay and the search as picked, whether or not their data is in. */
-  function pickedTools(): Overlay[] {
+  function pickedTools(): Overlay<TanakhIdentity>[] {
     return toolsPicked(currentOverlay, overlaySettings.get(searchTool));
   }
 
@@ -540,7 +540,7 @@ async function main(): Promise<void> {
 
   let pinnedVerse: TanakhLayout | null = null;
 
-  const mouseState = createMouseState();
+  const mouseState = createMouseState<TanakhLayout>();
 
   // A scroll fires no pointer event, so the mid-scroll branch needs the last
   // known cursor position to re-run hit detection as the camera moves under it.
@@ -1867,7 +1867,7 @@ async function main(): Promise<void> {
     if (!wordMenuOpen()) refreshVersePopup();
   }
 
-  function prebuilt(overlay: Overlay, built: boolean): void {
+  function prebuilt(overlay: Overlay<TanakhIdentity>, built: boolean): void {
     if (overlay !== searchTool) return;
     searchPrebuilt = true;
     if (built) searchReady = performance.now();

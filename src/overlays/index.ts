@@ -1,3 +1,4 @@
+import type { TanakhIdentity } from '../types.ts';
 import type { Overlay } from './types.ts';
 import { registerOverlay, clearOverlays } from './registry.ts';
 import { commentaryOverlay } from './commentary.ts';
@@ -14,7 +15,7 @@ export { configure as configureSearch } from './search/index.ts';
 
 // The catalog decides which overlays the menu offers and in what order; this
 // supplies the drawing code for each.
-const IMPLEMENTATIONS: Record<OverlayId, Overlay> = {
+const IMPLEMENTATIONS: Record<OverlayId, Overlay<TanakhIdentity>> = {
   commentary: commentaryOverlay,
   trop: tropOverlay,
   haftarah: haftarahOverlay,

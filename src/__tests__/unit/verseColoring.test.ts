@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { TanakhIdentity } from '../../types';
 import { getDefaultColor, overlayColorsFor, layerToRecompute } from '../../itemColoring';
 import type { Overlay } from '../../overlays/types';
 import * as randomModule from '../../utils/random';
@@ -54,7 +55,12 @@ describe('itemColoring', () => {
     it('hands colorsFor the hovered verse', () => {
       const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
       const colorsFor = vi.fn().mockReturnValue([[1, 0, 0], null]);
-      const overlay: Overlay = { id: 'test', name: 'Test', getVerseColor: vi.fn(), colorsFor };
+      const overlay: Overlay<TanakhIdentity> = {
+        id: 'test',
+        name: 'Test',
+        getVerseColor: vi.fn(),
+        colorsFor,
+      };
 
       const colors = overlayColorsFor(overlay, verses, 'settings', verses[1], 'data');
 
@@ -149,7 +155,7 @@ describe('itemColoring', () => {
 
     it('hands the overlay the settings and data to judge the hover by', () => {
       const hoverChangesColors = vi.fn().mockReturnValue(false);
-      const overlay: Overlay = { ...hoverBlind, hoverChangesColors };
+      const overlay: Overlay<TanakhIdentity> = { ...hoverBlind, hoverChangesColors };
 
       layerToRecompute('overlay', { tool: overlay, settings: 'settings', data: 'data' }, a, b);
 
