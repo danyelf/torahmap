@@ -1,7 +1,7 @@
 # One App, Two Texts
 
 **Date:** 2026-10-03
-**Status:** Design, awaiting review. Covers project 1 in full; projects 2–4 in outline.
+**Status:** Design, approved 2026-10-03. Covers project 1 in full; projects 2–4 in outline.
 
 The Talmud map becomes a sibling site of torahmap: the same menu, panels,
 stories, popup and links, with its own text, layout and overlays. It may grow
@@ -17,7 +17,8 @@ change of 2026-09-26. This design shares the app instead.
 
 1. **Draw the line inside `src/`.** `main.ts` becomes `createApp(text)`, and
    both the Tanakh and the Talmud boot through it. The Talmud page is dev-only
-   and plain. The Tanakh site behaves exactly as before.
+   and plain, and is not built for production until project 3. The Tanakh site
+   behaves exactly as before.
 2. **Move into packages:** `packages/utils`, `packages/engine`,
    `packages/shell`, `apps/tanakh`, `apps/talmud`.
 3. **The Talmud's look and feel, and going live** at `/talmud/`. Its own
@@ -203,8 +204,3 @@ telemetry for both sites. Project 4: Talmud search.
   much. Each text owns what goes in a square.
 - **Copying `main.ts` for the Talmud and pulling out what matches,** and **a
   new shell the Tanakh moves into.** Both mean living with two of something.
-
-## Open questions
-
-- Whether the Talmud page is built for production during project 1, unlinked,
-  or stays dev-only until project 3. Assumed: dev-only.
