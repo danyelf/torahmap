@@ -18,7 +18,11 @@ export default defineConfig({
   projects: [
     // Pure checks, no page. The web server still starts: it is shared by every project.
     { name: 'rules', testMatch: ['geometry.spec.ts', 'known.spec.ts'] },
-    ...SCREENS.map((s) => ({ name: s.name, use: s.use, testMatch: 'app.spec.ts' })),
+    ...SCREENS.map((s) => ({
+      name: s.name,
+      use: s.use,
+      testMatch: ['app.spec.ts', 'talmud.spec.ts'],
+    })),
   ],
   webServer: {
     command: `npx vite --port ${PORT} --strictPort`,

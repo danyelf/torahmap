@@ -231,6 +231,7 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
   let searchReady = 0;
   let searchPrebuilt = false;
   let downloadsSettled = false;
+  let downloadsStarted = false;
   let timingSent = false;
 
   const { items: verses, bounds } = text.layout(loaded);
@@ -1027,8 +1028,13 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
     });
   }
 
-  /** A square's text downloads when its popup first shows, unless it is in, on its way or failed. */
+  /**
+   * A square's text downloads when its popup first shows, unless it is in, on
+   * its way or failed. Until the downloads start, the opening view's popup
+   * file is left to their first stage (filesFirst).
+   */
   function fetchPopupFile(path: string): void {
+    if (!downloadsStarted) return;
     if (loaded.has(path) || downloads.pending.has(path) || downloads.failed.has(path)) return;
     downloads.pending.add(path);
     void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
@@ -1975,6 +1981,7 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
 
   const stages = downloadStages(filesFirst(openingView()), allOverlays, loaded);
   for (const path of stages.flat()) downloads.pending.add(path);
+  downloadsStarted = true;
 
   // The loading tests wait on this; nothing in the app reads it.
   document.documentElement.dataset.firstFrame = '';
