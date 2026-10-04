@@ -1,7 +1,7 @@
 # One App, Two Texts
 
 **Date:** 2026-10-03
-**Status:** Design, approved 2026-10-03. Covers project 1 in full; projects 2–4 in outline.
+**Status:** Design, approved 2026-10-03; project 1's order revised 2026-10-04 to put the shell first. Covers project 1 in full; projects 2–4 in outline.
 
 The Talmud map becomes a sibling site of torahmap: the same menu, panels,
 stories, popup and links, with its own text, layout and overlays. It may grow
@@ -51,8 +51,8 @@ using 28 marked shortcuts. Findings:
 ## The text
 
 A text is what `createApp` is given. Everything the shell knows about Tanakh or
-Talmud arrives through it. The interface below is a sketch; step 4 settles its
-exact types.
+Talmud arrives through it. The interface below is a sketch; the `createApp`
+step settles its exact types.
 
 ```ts
 interface MapText<I extends MapItem> {
@@ -145,23 +145,40 @@ project 3: the dev server sends nothing, and the Talmud is dev-only until then.
 
 Each builds, passes the tests, and leaves the Tanakh site as it is.
 
-1. **Ids and links.** Every square gets its `id`; comparing, stepping, finding
-   and linking go through it; the renderer drops `itemsEqual`; the
-   `TanakhIdentity` defaults go. `@torahmap/link` carries the id as an opaque
-   string under a key the caller names. The Talmud's squares get ids too, with
-   a test that each one survives square → link → square.
-2. **Search as a tool, and the popup split.** The text's tool list replaces the
-   imported `searchTool`; the popup takes text and link from the text and marks
-   from the tools; word clicks move into the search tool.
-3. **Stories optional.** Explore is the shell's normal state; story place names
-   are resolved through a function the shell is given.
-4. **`createApp`.** `main.ts` becomes `createApp(text)`, called by
-   `main-tanakh.ts` and `main-talmud.ts`; the old Talmud entry, its sidebar,
-   loader and hash links are deleted. The page template, site per text, start
-   camera, base colour, label container and telemetry events land here. A test
-   fails if a shell or engine module imports Tanakh or Talmud code. The layout
-   tests gain the Talmud page — the map drew, its labels are on screen — so it
-   cannot rot unseen again.
+The shell comes first. Booting the Talmud through `createApp` early means every
+later change is shaped by two real texts rather than one text and a guess.
+
+**Done:** every square has an id, and the app compares, finds, steps through
+and links squares by it (#346); the old Talmud page is deleted (#349); a verse
+has one name, its id, everywhere, data files included (#350).
+
+**Next: `createApp`, with both texts booting.** `main.ts` becomes
+`createApp(text)`, called by `main-tanakh.ts` and a dev-only `main-talmud.ts`.
+The Talmud supplies what it already has: its layout, labels, ids, Mishnah and
+Gemara as its base colour, and its text in the popup, one tractate at a time
+through the download manager. Where a slot isn't built yet, a **shortcut**
+stands in: the plainest code that lets the Talmud boot without the slot, with a
+comment saying in the present tense what is missing, and a line in #342's
+checklist. The layout tests gain the Talmud page, checking that the map drew and
+its labels are on screen, so it cannot rot unseen again.
+
+**Then one pull request per shortcut,** each removing it with both texts
+running. The order is decided as we go, starting with whichever shortcut is
+most in the way:
+
+- **Search as a tool.** The text's tools replace the imported `searchTool`; the
+  Talmud supplies none, and the shell shows no Search entry.
+- **Stories optional.** Explore is the shell's normal state; story place names
+  are resolved through a function the shell is given.
+- **The popup.** The text supplies a verse's text, reference and link; the
+  shell applies the tools' marks; word clicks belong to search.
+- **The page and the site per text.** One HTML template; each text's name,
+  About copy and credits; each text names its link parameter (`verse`, `at`)
+  and describes its own links.
+- **Telemetry** by id and area.
+
+**Last: the boundary.** A test fails if a shell or engine module imports Tanakh
+or Talmud code. When it passes with no shortcuts left, project 1 is done.
 
 **Checks for every step:** the unit tests, `npm run test:layout`,
 `npm run test:loading`, and a production build served locally, with a pinned
@@ -171,7 +188,7 @@ compared with the live site.
 ## Project 2: packages
 
 One pull request moves the files; the package boundaries then enforce the
-line, and the import test from step 4 retires.
+line, and the boundary test retires.
 
 - `packages/utils`: knows nothing of the map or either text. `color`, `random`,
   `scale`, `memo`, `html`, `debounce`, `idle`, the Sefaria link builder; the
