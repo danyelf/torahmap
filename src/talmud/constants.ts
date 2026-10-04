@@ -34,11 +34,8 @@ export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.48, 0.58
 export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.66, 0.57, 0.42];
 
 // --- Per-segment brightness jitter ---
-// Each segment gets a deterministic ±BRIGHTNESS_JITTER offset so the grid
-// reads as living rainfall instead of flat tiles. The Torah map gets this
-// for free via getDefaultColor() because all unhighlighted verses fall
-// through there. The Talmud always paints via the M/G base overlay, so we
-// need to mix the jitter into the overlay's output.
+// Each segment is a deterministic ±BRIGHTNESS_JITTER brighter or darker
+// (baseColor.ts), so the grid reads as rainfall rather than flat tiles.
 
 export const BRIGHTNESS_JITTER = 0.18;
 

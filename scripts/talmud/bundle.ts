@@ -18,6 +18,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { stripNikkud } from '../../src/hebrew.ts';
+import { amudIndex } from '../../src/talmud/data.ts';
 
 // Pure helpers (unit-tested).
 
@@ -340,13 +341,6 @@ export function parseWholeRef(ref: string): {
   return null;
 }
 
-/**
- * Convert (daf, amud) to an amud index, given the tractate's firstDaf.
- */
-export function dafAmudToIdx(daf: number, amud: 'a' | 'b', firstDaf: number): number {
-  return (daf - firstDaf) * 2 + (amud === 'b' ? 1 : 0);
-}
-
 export interface MishnahJson {
   text: string[][]; // [perek][mishnah_unit]
 }
@@ -381,7 +375,7 @@ export function processTractate(
   // Sefaria-Export indexes its amud array starting from daf 1 (with 1a/1b
   // as empty placeholders — the Talmud traditionally has no daf 1). So the
   // firstDaf is always 1, and the schema's perek refs like "Berakhot 2a:1"
-  // are resolved against that origin via dafAmudToIdx(daf, amud, 1).
+  // are resolved against that origin via amudIndex(daf, amud, 1).
   const firstDaf = 1;
 
   // Build perakim array and compute per-amud perekIdx + boundary markers.
@@ -395,8 +389,8 @@ export function processTractate(
     if (!ref) {
       throw new Error(`${tractateName}: cannot parse perek ${pi} wholeRef "${node.wholeRef}"`);
     }
-    const startIdx = dafAmudToIdx(ref.startDaf, ref.startAmud, firstDaf);
-    const endIdx = dafAmudToIdx(ref.endDaf, ref.endAmud, firstDaf);
+    const startIdx = amudIndex(ref.startDaf, ref.startAmud, firstDaf);
+    const endIdx = amudIndex(ref.endDaf, ref.endAmud, firstDaf);
 
     perakim.push({
       hebrewName: node.heTitle ?? `פרק ${pi + 1}`,

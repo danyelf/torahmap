@@ -150,7 +150,7 @@ test('the texts download once, however often the popup asks for them before they
   page.on('request', (r) => {
     if (r.url().endsWith(`/data/${TEXTS_FILE}`)) requests++;
   });
-  const { release, errors } = await open(page, 'verse=Genesis.12.1', [TEXTS_FILE]);
+  const { release, errors } = await open(page, 'overlay=commentary', [TEXTS_FILE]);
   const map = (await page.locator('#canvas').boundingBox())!;
   for (let i = 1; i < 10; i++) {
     await page.mouse.move(map.x + (map.width * i) / 10, map.y + map.height / 2);

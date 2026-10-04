@@ -171,13 +171,13 @@ function nearerStop(state: InterpolatedState): ResolvedStoryStop {
   return state.t > 0.5 ? state.toStop : state.fromStop;
 }
 
-// Shortcut: the tab title and the link's overlay keys are the Tanakh's on every text.
 /**
  * Set the tab's title from the address rather than from any state built for
  * it, so it can never name a view the address does not hold — a write
  * suppressed by `applyingExternalState` leaves both unchanged.
  */
 function showTitle(): void {
+  // Shortcut: the tab title and the link's overlay keys are the Tanakh's on every text.
   const title = tabTitle(parseUrlState(overlayParamSpecs), __LIVE__ ? null : __GIT_BRANCH__);
   if (document.title !== title) document.title = title;
 }
@@ -187,7 +187,7 @@ function showCannotDraw(): void {
   document.getElementById('no-webgl')!.hidden = false;
 }
 
-export async function createApp<I extends MapItem>(text: MapText<I>): Promise<void> {
+export async function createApp<I extends MapItem>(source: MapText<I>): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
   showTitle();
 
@@ -200,7 +200,7 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
     return;
   }
   // Everything but the text's first files loads behind the first frame (fileLanded).
-  const firstFiles = loadFiles(text.firstFiles);
+  const firstFiles = loadFiles(source.firstFiles);
   // Compiled while the first files download. Some browsers with WebGL 2 still
   // fail to compile the shaders.
   let renderContext: RenderContext;
@@ -212,13 +212,15 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
     return;
   }
 
+  let loaded: Loaded = await firstFiles;
+  const text = source.open(loaded);
+  const { items: verses, bounds } = text;
   // Shortcut: search is the Tanakh's on every text. On another text it searches
   // the Tanakh's words, which name no square, so it colours nothing.
   const searchTool = tanakhSearch as unknown as Overlay<I, SearchSettings, SearchData>;
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
   const getOverlay = (id: string): Overlay<I> | undefined =>
     text.overlays.find((overlay) => overlay.id === id);
-  let loaded: Loaded = await firstFiles;
   // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
     pending: new Set<string>(),
@@ -235,7 +237,6 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
   let downloadsStarted = false;
   let timingSent = false;
 
-  const { items: verses, bounds } = text.layout(loaded);
   const squares = indexItems(verses);
   const base = text.baseColor && ((i: number) => text.baseColor!(verses[i], i));
   // A picture with its holes filled with each square's base colour.
@@ -247,7 +248,7 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
   const labelLayer = document.createElement('div');
   labelLayer.id = 'map-labels';
   document.body.appendChild(labelLayer);
-  const moveLabels = text.labels(verses, loaded, labelLayer);
+  const moveLabels = text.labels(labelLayer);
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -519,7 +520,7 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
     }
   }
 
-  const camera = text.startCamera(mapViewport(), bounds);
+  const camera = text.startCamera(mapViewport());
 
   let pinnedVerse: I | null = null;
 
@@ -1309,7 +1310,6 @@ export async function createApp<I extends MapItem>(text: MapText<I>): Promise<vo
   }
 
   text.start?.({
-    items: verses,
     loaded: () => loaded,
     pinAndGlide: (verse) => {
       // A full-height sheet would hide the glide.

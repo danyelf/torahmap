@@ -11,18 +11,21 @@ import type { SidebarElements } from '../sidebar.ts';
 import type { Bounds, MapItem, VerseColor } from '../types.ts';
 
 export interface MapText<I extends MapItem> {
-  /** Downloaded before the first frame; the layout is computed from them. */
+  /** Downloaded before the first frame. */
   firstFiles: string[];
-  layout(loaded: Loaded): { items: I[]; bounds: Bounds };
-  startCamera(viewport: Viewport, bounds: Bounds): Camera;
+  /** The text, laid out from its first files. */
+  open(loaded: Loaded): OpenText<I>;
+}
+
+/** A text once its first files are in. */
+export interface OpenText<I extends MapItem> {
+  items: I[];
+  bounds: Bounds;
+  startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. Without one, the shell's grey. */
   baseColor?(item: I, index: number): VerseColor;
   /** Draws the labels into `container`; the function returned moves them with the map. */
-  labels(
-    items: I[],
-    loaded: Loaded,
-    container: HTMLElement,
-  ): (offset: ScreenPoint, zoom: number) => void;
+  labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
   /** The file a square's text is in. The shell downloads it when the square's popup first shows. */
   popupFile(item: I): string;
   /** Shortcut: each text draws its own popup, marks and word clicks included. */
@@ -61,7 +64,6 @@ export interface PopupView<I extends MapItem> {
 
 /** What a text's own code may ask of the shell. */
 export interface Shell<I extends MapItem> {
-  items: readonly I[];
   loaded(): Loaded;
   /** Pin a square and travel to it, as a search result does. */
   pinAndGlide(item: I): void;

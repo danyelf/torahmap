@@ -11,9 +11,8 @@ function jitteredColor(
   base: readonly [number, number, number],
   id: TalmudIdentity,
 ): [number, number, number] {
-  // seededRandom returns [0,1); recenter to [-1,1] then scale.
   const j = (seededRandom(segmentHashId(id)) - 0.5) * 2 * BRIGHTNESS_JITTER;
-  // Multiplicative jitter preserves hue; clamp to [0,1].
+  // Multiplied, so the hue holds.
   const f = 1 + j;
   return [
     Math.max(0, Math.min(1, base[0] * f)),

@@ -91,4 +91,17 @@ describe('computeTalmudLayout', () => {
     expect(result.bounds.width).toBe(maxX);
     expect(result.bounds.height).toBe(maxY);
   });
+
+  it("anchors each amud's daf label at its row's right edge and top", () => {
+    expect(result.dafRows.length).toBe(
+      new Set(result.items.map((i) => `${i.tractate}:${i.daf}${i.amud}`)).size,
+    );
+    for (const row of result.dafRows) {
+      const squares = result.items.filter(
+        (i) => i.tractate === row.tractate && i.daf === row.daf && i.amud === row.amud,
+      );
+      expect(row.rightX).toBe(Math.max(...squares.map((s) => s.x + s.size)));
+      expect(row.topY).toBe(Math.min(...squares.map((s) => s.y)));
+    }
+  });
 });

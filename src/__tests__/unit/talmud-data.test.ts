@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSegmentMishnah, type TalmudStructure } from '../../talmud/data.ts';
+import { amudIndex, isSegmentMishnah, type TalmudStructure } from '../../talmud/data.ts';
 
 describe('isSegmentMishnah', () => {
   const structure: TalmudStructure = {
@@ -42,5 +42,14 @@ describe('isSegmentMishnah', () => {
 
   it('returns false for an out-of-range daf', () => {
     expect(isSegmentMishnah(structure, 'Berakhot', 99, 'a', 1)).toBe(false);
+  });
+});
+
+describe('amudIndex', () => {
+  it('counts amudim from the tractate’s first daf', () => {
+    expect(amudIndex(2, 'a', 2)).toBe(0);
+    expect(amudIndex(2, 'b', 2)).toBe(1);
+    expect(amudIndex(3, 'a', 2)).toBe(2);
+    expect(amudIndex(11, 'b', 10)).toBe(3);
   });
 });

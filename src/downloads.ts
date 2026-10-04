@@ -1,5 +1,5 @@
-// What downloads when, and what a file landing puts out of date. Main draws
-// the map from the structure alone and loads every other file behind it.
+// What downloads when, and what a file landing puts out of date. The shell draws
+// the map from the text's first files and loads every other file behind it.
 import { dataFor, optionalFiles, requiredFiles, type Loaded } from './dataFiles.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { ColorSource } from './scrollytelling/driver.ts';

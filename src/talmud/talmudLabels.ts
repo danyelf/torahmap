@@ -5,7 +5,7 @@
 //
 // Tractate labels are always visible; daf labels toggle by zoom level.
 
-import type { TractateBlock, SederBlock, PerekAnchor } from './layout.ts';
+import type { TractateBlock, SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
   DAF_LABEL_ZOOM_LOW,
   DAF_LABEL_ZOOM_MID,
@@ -47,15 +47,6 @@ const SEDER_HEBREW: Record<string, string> = {
   'Seder Kodashim': 'סדר קדשים',
   'Seder Tahorot': 'סדר טהרות',
 };
-
-export interface DafRowAnchor {
-  tractate: string;
-  daf: number;
-  amud: 'a' | 'b';
-  // Right-edge x and top y of the row, in world coordinates.
-  rightX: number;
-  topY: number;
-}
 
 export interface TalmudLabelState {
   container: HTMLDivElement;

@@ -6,7 +6,6 @@ import {
   stripHtml,
   stripNikkudAndSeparators,
   parseWholeRef,
-  dafAmudToIdx,
   processTractate,
 } from '../../../scripts/talmud/bundle.ts';
 
@@ -316,24 +315,5 @@ describe('parseWholeRef', () => {
   it('returns null for unparseable refs', () => {
     expect(parseWholeRef('garbage')).toBeNull();
     expect(parseWholeRef('Berakhot 2')).toBeNull();
-  });
-});
-
-describe('dafAmudToIdx', () => {
-  it('maps daf 2a to index 0 when firstDaf=2', () => {
-    expect(dafAmudToIdx(2, 'a', 2)).toBe(0);
-  });
-
-  it('maps daf 2b to index 1', () => {
-    expect(dafAmudToIdx(2, 'b', 2)).toBe(1);
-  });
-
-  it('maps daf 3a to index 2', () => {
-    expect(dafAmudToIdx(3, 'a', 2)).toBe(2);
-  });
-
-  it('handles a tractate starting at daf 10', () => {
-    expect(dafAmudToIdx(10, 'a', 10)).toBe(0);
-    expect(dafAmudToIdx(11, 'b', 10)).toBe(3);
   });
 });

@@ -62,11 +62,21 @@ export interface PerekAnchor {
   width: number;
 }
 
+/** Where an amud's daf label goes: its row's right edge and top, in world coordinates. */
+export interface DafRowAnchor {
+  tractate: string;
+  daf: number;
+  amud: 'a' | 'b';
+  rightX: number;
+  topY: number;
+}
+
 export interface TalmudLayoutResult {
   items: TalmudLayoutItem[];
   tractateBlocks: TractateBlock[];
   sederBlocks: SederBlock[];
   perekAnchors: PerekAnchor[];
+  dafRows: DafRowAnchor[];
   bounds: { width: number; height: number };
 }
 
@@ -335,6 +345,21 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
   };
 }
 
+function dafRowsOf(items: TalmudLayoutItem[]): DafRowAnchor[] {
+  const rows = new Map<string, DafRowAnchor>();
+  for (const { tractate, daf, amud, x, y, size } of items) {
+    const key = `${tractate}:${daf}${amud}`;
+    const row = rows.get(key);
+    if (!row) {
+      rows.set(key, { tractate, daf, amud, rightX: x + size, topY: y });
+    } else {
+      row.rightX = Math.max(row.rightX, x + size);
+      row.topY = Math.min(row.topY, y);
+    }
+  }
+  return [...rows.values()];
+}
+
 export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutResult {
   // 1. Lay out each tractate in local coordinates.
   const laid = structure.tractates.map(layoutTractate);
@@ -480,6 +505,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     tractateBlocks,
     sederBlocks,
     perekAnchors: allPerekAnchors,
+    dafRows: dafRowsOf(allItems),
     bounds: { width: maxX, height: maxY },
   };
 }
