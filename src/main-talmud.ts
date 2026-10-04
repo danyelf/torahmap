@@ -31,14 +31,7 @@ import { parseTalmudUrlState, updateTalmudUrl } from './talmud/urlState.ts';
 import { debounce } from './utils/debounce.ts';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { ZOOM_OUT_FACTOR, ZOOM_IN_FACTOR, URL_UPDATE_DEBOUNCE_MS } from './constants.ts';
-
-function talmudSegmentsEqual(a: TalmudIdentity | null, b: TalmudIdentity | null): boolean {
-  if (a === null && b === null) return true;
-  if (a === null || b === null) return false;
-  return (
-    a.tractate === b.tractate && a.daf === b.daf && a.amud === b.amud && a.segment === b.segment
-  );
-}
+import { sameItem } from './items.ts';
 
 // A mouse that moves further than this, in pixels across and down together,
 // between press and release dragged the map rather than clicked.
@@ -108,14 +101,7 @@ async function main(): Promise<void> {
   }
 
   function doRender(): void {
-    renderFrame<TalmudIdentity>(
-      renderContext,
-      renderState,
-      camera,
-      hoveredItem,
-      pinnedItem,
-      talmudSegmentsEqual,
-    );
+    renderFrame<TalmudIdentity>(renderContext, renderState, camera, hoveredItem, pinnedItem);
   }
 
   // Daf-row anchors for label positioning, built from the layout items.
@@ -248,7 +234,7 @@ async function main(): Promise<void> {
       e.clientY,
     );
     if (hit) {
-      if (pinnedItem && talmudSegmentsEqual(pinnedItem, hit)) {
+      if (pinnedItem && sameItem(pinnedItem, hit)) {
         // Clicking pinned = unpin
         pinnedItem = null;
         updateTalmudSidebar(null, structure, sidebarElements);

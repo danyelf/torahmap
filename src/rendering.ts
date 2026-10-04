@@ -17,6 +17,7 @@ import {
 } from './geometry';
 import { buildOutlineGeometry } from './outline';
 import type { Color, SpatialItem, TanakhIdentity } from './types';
+import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, SEARCH_WITH_OVERLAY } from './constants';
 
@@ -129,7 +130,6 @@ export function render<T>(
   camera: Camera,
   hoveredVerse: SpatialItem<T> | null,
   pinnedVerse: SpatialItem<T> | null,
-  itemsEqual: (a: T | null, b: T | null) => boolean,
 ): { x: number; y: number } {
   const { gl, programs, canvas } = context;
   const { vertexArray, verses, dpr } = state;
@@ -161,7 +161,7 @@ export function render<T>(
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, verses.length);
   gl.bindVertexArray(null);
 
-  if (hoveredVerse && !itemsEqual(hoveredVerse, pinnedVerse)) {
+  if (hoveredVerse && !sameItem(hoveredVerse, pinnedVerse)) {
     const hoverColor = pinnedVerse
       ? HIGHLIGHT_CONSTANTS.HOVER_WHILE_PINNED_OUTLINE_COLOR
       : HIGHLIGHT_CONSTANTS.HOVER_OUTLINE_COLOR;
