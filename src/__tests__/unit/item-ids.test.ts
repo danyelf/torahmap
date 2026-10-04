@@ -1,4 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
+import { indexItems } from '../../items.ts';
+import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { parseVerseFromUrl } from '@torahmap/link';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
@@ -14,6 +17,22 @@ const torahData: TorahData = {
   ],
   layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
 };
+
+// The map refuses to start if two squares share an id, so the shipped data is
+// checked here, before it can reach a reader.
+describe('the shipped data', () => {
+  const shipped = (path: string) => JSON.parse(readFileSync(`public/data/${path}`, 'utf8'));
+
+  it('lays out the Tanakh with no two squares sharing an id', () => {
+    expect(() => indexItems(computeLayout(shipped(STRUCTURE_FILE)))).not.toThrow();
+  });
+
+  it('lays out the Talmud with no two squares sharing an id', () => {
+    expect(() =>
+      indexItems(computeTalmudLayout(shipped('talmud/structure.json')).items),
+    ).not.toThrow();
+  });
+});
 
 describe('square ids', () => {
   it('names each Tanakh square by its link form', () => {

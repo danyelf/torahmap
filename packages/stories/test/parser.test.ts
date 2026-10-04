@@ -231,6 +231,27 @@ describe('story frontmatter', () => {
   });
 });
 
+describe('verse references', () => {
+  const stop = (params: string) =>
+    parseStoryMarkdown(`<!-- stop: a | ${params} -->\nText.`).stops[0];
+
+  it('accepts a verse written as a link writes it', () => {
+    expect(stop('camera: I.Samuel.1.5 | verse: I.Samuel.1.5')).toMatchObject({
+      camera: { kind: 'verse', ref: 'I.Samuel.1.5' },
+      verse: 'I.Samuel.1.5',
+    });
+  });
+
+  it('refuses a verse written any other way, naming the form to use', () => {
+    expect(() => stop('camera: Isaiah.040.1')).toThrow(/Isaiah\.40\.1/);
+    expect(() => stop('verse: Isaiah.040.1')).toThrow(/Isaiah\.40\.1/);
+  });
+
+  it('refuses a stop verse that is no verse at all', () => {
+    expect(() => stop('verse: Isaiah')).toThrow(/Isaiah/);
+  });
+});
+
 describe('easing', () => {
   it('refuses a name it does not know', () => {
     expect(() => parseStoryMarkdown('---\neasing: bouncy\n---\n')).toThrow(/bouncy/);

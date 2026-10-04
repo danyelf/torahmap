@@ -927,7 +927,7 @@ async function main(): Promise<void> {
       if (dx < DRAG_PX && dy < DRAG_PX && duration < TAP_MAX_DURATION) {
         const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
         if (verse) {
-          if (pinnedVerse && sameItem(pinnedVerse, verse)) {
+          if (sameItem(pinnedVerse, verse)) {
             unpinVerse();
           } else {
             pinVerse(verse);

@@ -41,9 +41,7 @@ export interface RenderContext {
 
 /**
  * Mutable rendering state that changes during the application's lifecycle.
- *
- * Generic over T, the text's own fields on each square, which the rendering
- * code never reads.
+ * Generic over T, which the rendering code never reads.
  */
 export interface RenderState<T> {
   buffer: WebGLBuffer;

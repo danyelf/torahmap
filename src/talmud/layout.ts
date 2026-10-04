@@ -11,7 +11,7 @@
 import type { SpatialItem, TalmudIdentity } from '../types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
 import { seededRandom } from '../utils/random.ts';
-import { segmentHash } from './segmentHash.ts';
+import { segmentHashId } from './segmentHash.ts';
 import { talmudId } from './format.ts';
 import {
   SEGMENT_SIZE,
@@ -255,16 +255,16 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
       for (let i = 0; i < row.segments.length; i++) {
         const seg = row.segments[i];
         const baseX = -(i + 1) * SEGMENT_SIZE;
-        // Per-segment positional jitter — break up the perfect grid.
-        const seed = segmentHash(tractate.name, row.daf, row.amud, seg.segment);
-        const jx = (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER;
-        const jy = (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER;
         const segment = {
           tractate: tractate.name,
           daf: row.daf,
           amud: row.amud,
           segment: seg.segment,
         };
+        // Per-segment positional jitter — break up the perfect grid.
+        const seed = segmentHashId(segment);
+        const jx = (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER;
+        const jy = (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER;
         colItems.push({
           ...segment,
           id: talmudId(segment),

@@ -13,8 +13,7 @@ export type { Color };
 // sit in both directions and no Overlay<T, SomeSettings> would be an Overlay.
 export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHack'];
 
-// Generic over T, the text's own fields on each square (TanakhIdentity,
-// TalmudIdentity); over the settings type S, which each overlay defines for
+// Generic over T; over the settings type S, which each overlay defines for
 // itself; and over the data type D, the files it reads. The app holds an
 // overlay's settings and data and hands them to every member that depends on
 // them; the overlay keeps neither.
