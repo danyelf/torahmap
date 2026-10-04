@@ -6,7 +6,7 @@ import {
   type CameraRef,
   type CameraPosition,
 } from './types.ts';
-import { parseVerseFromUrl, SEARCH_KEYS, verseToUrlFormat } from '@torahmap/link';
+import { parseVerseFromUrl, SEARCH_KEYS } from '@torahmap/link';
 
 /** The frontmatter keys a story may set. */
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;
@@ -29,18 +29,6 @@ export function parseStoryMarkdown(markdown: string): StoryData {
     order: Number.isFinite(order) ? order : undefined,
     draft: front.draft === 'true',
   };
-}
-
-/**
- * A verse as a link writes it. The map finds a stop's verse by exactly this
- * string, so any other spelling of a real verse is refused here, where the
- * story author sees it.
- */
-function storyVerse(ref: string, parsed = parseVerseFromUrl(ref)): string {
-  if (!parsed) throw new Error(`[story] "${ref}" is not a verse`);
-  const written = verseToUrlFormat(parsed.book, parsed.chapter, parsed.verse);
-  if (written !== ref) throw new Error(`[story] write the verse "${ref}" as "${written}"`);
-  return ref;
 }
 
 function easingNamed(name: string | undefined): EasingName | undefined {
@@ -122,8 +110,9 @@ function parseCamera(params: Record<string, string>): CameraRef {
   }
 
   // e.g. "Genesis.12.1" or "I.Samuel.1.5"
-  const verse = parseVerseFromUrl(cameraStr);
-  if (verse) return { kind: 'verse', ref: storyVerse(cameraStr, verse) };
+  if (parseVerseFromUrl(cameraStr)) {
+    return { kind: 'verse', ref: cameraStr };
+  }
 
   // Region names, checked against the map when the stop is resolved.
   const names = cameraStr
@@ -182,7 +171,7 @@ function parseStops(body: string): StoryStop[] {
       } else if (key === 'easing') {
         easing = easingNamed(value);
       } else if (key === 'verse') {
-        verse = storyVerse(value);
+        verse = value;
       } else if (key === 'zoom') {
         const z = parseFloat(value);
         if (!isNaN(z)) zoom = z;

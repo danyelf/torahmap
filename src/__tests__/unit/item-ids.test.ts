@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { parseVerseFromUrl } from '@torahmap/link';
+import { STORIES } from '@torahmap/stories';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
 import { talmudId } from '../../talmud/layout.ts';
@@ -18,13 +19,28 @@ const torahData: TorahData = {
   layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
 };
 
-// The map refuses to start if two squares share an id, so the shipped data is
-// checked here, before it can reach a reader.
+// Mistakes in the shipped data and stories are caught here, before they reach a
+// reader: the map refuses to start if two squares share an id, and a story stop
+// naming a verse the map lacks lands nowhere.
 describe('the shipped data', () => {
   const shipped = (path: string) => JSON.parse(readFileSync(`public/data/${path}`, 'utf8'));
 
   it('lays out the Tanakh with no two squares sharing an id', () => {
     expect(() => indexItems(computeLayout(shipped(STRUCTURE_FILE)))).not.toThrow();
+  });
+
+  it('has every story name only verses the map holds', () => {
+    const squares = indexItems(computeLayout(shipped(STRUCTURE_FILE)));
+    const named = STORIES.flatMap(({ id, data }) =>
+      data.stops.flatMap((stop) => {
+        const camera =
+          typeof stop.camera === 'object' && 'kind' in stop.camera && stop.camera.kind === 'verse'
+            ? stop.camera.ref
+            : undefined;
+        return [stop.verse, camera].flatMap((ref) => (ref ? [`${id}/${stop.id}: ${ref}`] : []));
+      }),
+    );
+    expect(named.filter((where) => !squares.find(where.split(': ')[1]))).toEqual([]);
   });
 
   it('lays out the Talmud with no two squares sharing an id', () => {

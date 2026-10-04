@@ -69,7 +69,9 @@ version that works, and say what each addition beyond it buys.
 wording, the data or the machine changes: no assertions on text readers see, on
 counts taken from the shipped data, or on how long something takes. A check
 that walks the whole Tanakh is a report, kept beside the script that generates
-what it measures.
+what it measures. The exception is a check that the shipped data is valid, such
+as no two squares sharing an id or every verse a story names existing: it fails
+only when the data is wrong, so it is a test.
 
 **Links need no backward compatibility.** Change the link format, its
 parameters or the data files outright; nothing old has to keep working.
