@@ -103,6 +103,8 @@ import {
   getAllOverlays,
   configureSearch,
   type Overlay,
+  type TanakhOverlay,
+  type TanakhTools,
 } from './overlays/index.ts';
 import {
   searchTool,
@@ -128,7 +130,6 @@ import {
 } from './downloads.ts';
 import { LOADING, loadNotice } from './loadNotice.ts';
 import type { Picture } from './geometry.ts';
-import type { Tools } from './overlays/types.ts';
 import {
   ZOOM_OUT_FACTOR,
   ZOOM_IN_FACTOR,
@@ -275,7 +276,7 @@ async function main(): Promise<void> {
   const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext, verses, dpr);
 
-  let currentOverlay: Overlay<TanakhIdentity> | null = null;
+  let currentOverlay: TanakhOverlay | null = null;
   const currentOverlayId = (): string => currentOverlay?.id ?? NO_OVERLAY;
 
   // Every overlay's settings, kept while another overlay is showing.
@@ -323,12 +324,12 @@ async function main(): Promise<void> {
   }
 
   /** The overlay and the search as they stand, each null while off. */
-  function toolsNow(): Tools<TanakhIdentity> {
+  function toolsNow(): TanakhTools {
     return toolsShown(currentOverlay, currentSettings(), overlaySettings.get(searchTool), loaded);
   }
 
   /** The overlay and the search as picked, whether or not their data is in. */
-  function pickedTools(): Overlay<TanakhIdentity>[] {
+  function pickedTools(): TanakhOverlay[] {
     return toolsPicked(currentOverlay, overlaySettings.get(searchTool));
   }
 
@@ -1874,7 +1875,7 @@ async function main(): Promise<void> {
     if (!wordMenuOpen()) refreshVersePopup();
   }
 
-  function prebuilt(overlay: Overlay<TanakhIdentity>, built: boolean): void {
+  function prebuilt(overlay: TanakhOverlay, built: boolean): void {
     if (overlay !== searchTool) return;
     searchPrebuilt = true;
     if (built) searchReady = performance.now();

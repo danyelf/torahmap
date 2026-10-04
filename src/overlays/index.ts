@@ -1,5 +1,5 @@
 import type { TanakhIdentity } from '../types.ts';
-import type { Overlay } from './types.ts';
+import type { Overlay, ToolOnMap, Tools } from './types.ts';
 import { registerOverlay, clearOverlays } from './registry.ts';
 import { commentaryOverlay } from './commentary.ts';
 import { tropOverlay } from './trop.ts';
@@ -8,6 +8,10 @@ import { verseLengthOverlay } from './verse-length.ts';
 import { OVERLAYS, type OverlayId } from '@torahmap/overlay-catalog';
 
 export type { Overlay, Color } from './types.ts';
+
+export type TanakhOverlay = Overlay<TanakhIdentity>;
+export type TanakhTool = ToolOnMap<TanakhIdentity>;
+export type TanakhTools = Tools<TanakhIdentity>;
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 export { createOverlaySettings, settingsFromLink } from './settings.ts';
 export { highlightTropInText } from './trop.ts';
@@ -15,7 +19,7 @@ export { configure as configureSearch } from './search/index.ts';
 
 // The catalog decides which overlays the menu offers and in what order; this
 // supplies the drawing code for each.
-const IMPLEMENTATIONS: Record<OverlayId, Overlay<TanakhIdentity>> = {
+const IMPLEMENTATIONS: Record<OverlayId, TanakhOverlay> = {
   commentary: commentaryOverlay,
   trop: tropOverlay,
   haftarah: haftarahOverlay,

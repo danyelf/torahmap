@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { TanakhIdentity } from '../../types';
+import type { TanakhTool } from '../../overlays/index';
 import {
   getSidebarElements,
   getSefariaUrl,
   updateSidebar,
   type SidebarElements,
 } from '../../sidebar';
-import type { ToolOnMap } from '../../overlays/types';
 import type { VerseTexts } from '../../verseTexts';
 import { createVerse, testOverlay } from '../helpers';
 
@@ -580,7 +579,7 @@ describe('sidebar', () => {
       });
 
       describe('with a search on', () => {
-        function searchOn(info: string | null): ToolOnMap<TanakhIdentity> {
+        function searchOn(info: string | null): TanakhTool {
           return {
             tool: {
               id: 'search',
@@ -646,7 +645,7 @@ describe('sidebar', () => {
             getVerseColor: () => null,
             highlightVerseText: marking('trop-highlight', ...overlayMarks),
           });
-          const search: ToolOnMap<TanakhIdentity> = {
+          const search: TanakhTool = {
             tool: {
               id: 'search',
               name: 'Search',

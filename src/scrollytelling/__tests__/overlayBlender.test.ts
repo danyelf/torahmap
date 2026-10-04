@@ -6,8 +6,9 @@ import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';
 import type { ResolvedStoryStop } from '../types';
-import type { TanakhIdentity, TanakhLayout } from '../../types';
+import type { TanakhLayout } from '../../types';
 import type { Color, Overlay, UrlParamValues } from '../../overlays/types';
+import type { TanakhOverlay } from '../../overlays/index';
 import {
   SAMPLE_COMMENTARY_COUNTS,
   SAMPLE_LOADED,
@@ -27,7 +28,7 @@ beforeEach(() => {
 });
 
 // Stub overlay that returns several colors for the first verse
-const multiColorOverlay: Overlay<TanakhIdentity> = {
+const multiColorOverlay: TanakhOverlay = {
   id: 'test-multi-color',
   name: 'Test Multi-color',
   getVerseColor: (verse) => {
@@ -134,7 +135,7 @@ describe('computeBlendedColors multi-color preservation', () => {
 describe('story stop settings reach the overlay', () => {
   let received: Record<string, string | undefined> | null = null;
 
-  const settingsOverlay: Overlay<TanakhIdentity> = {
+  const settingsOverlay: TanakhOverlay = {
     id: 'test-settings',
     name: 'Test Settings',
     urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
@@ -254,7 +255,7 @@ describe('the blender memoises colours by settings', () => {
     const colorsForSpy = vi.fn((items: TanakhLayout[]) =>
       items.map(() => [0.2, 0.2, 0.2] as [number, number, number]),
     );
-    const memoOverlay: Overlay<TanakhIdentity> = {
+    const memoOverlay: TanakhOverlay = {
       id: 'test-memo',
       name: 'Test Memo',
       urlParams: [{ key: 'state', kind: 'token' }],
@@ -297,7 +298,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const hoverColorsFor = vi.fn((items: TanakhLayout[]) =>
       items.map(() => [0.3, 0.3, 0.3] as [number, number, number]),
     );
-    const hoverOverlay: Overlay<TanakhIdentity> = {
+    const hoverOverlay: TanakhOverlay = {
       id: 'test-hover',
       name: 'Test Hover',
       getVerseColor: () => [0.3, 0.3, 0.3] as [number, number, number],
@@ -309,7 +310,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const noHoverColorsFor = vi.fn((items: TanakhLayout[]) =>
       items.map(() => [0.4, 0.4, 0.4] as [number, number, number]),
     );
-    const noHoverOverlay: Overlay<TanakhIdentity> = {
+    const noHoverOverlay: TanakhOverlay = {
       id: 'test-no-hover',
       name: 'Test No Hover',
       getVerseColor: () => [0.4, 0.4, 0.4] as [number, number, number],

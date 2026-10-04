@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { TanakhIdentity } from '../../types';
+import type { TanakhOverlay } from '../../overlays/index';
 import {
   registerAllOverlays,
   registerOverlay,
   getOverlay,
   getAllOverlays,
   configureSearch,
-  type Overlay,
 } from '../../overlays/index';
 import { createVerses, SAMPLE_VERSES, SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
@@ -20,11 +19,11 @@ import {
   type OverlaySettings,
 } from '../../overlays/settings';
 
-describe('Overlay<TanakhIdentity> Switching Integration', () => {
+describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
   let mockLegendContainer: HTMLElement;
   let verses = SAMPLE_VERSES;
-  let currentOverlay: Overlay<TanakhIdentity> | null = null;
+  let currentOverlay: TanakhOverlay | null = null;
   let currentData: unknown;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
   // The settings the app holds for each overlay, as main.ts holds them.
@@ -57,14 +56,14 @@ describe('Overlay<TanakhIdentity> Switching Integration', () => {
   /**
    * Helper to simulate switching to an overlay
    */
-  function switchToOverlay(overlayId: string): Overlay<TanakhIdentity> {
+  function switchToOverlay(overlayId: string): TanakhOverlay {
     // Destroy previous overlay
     currentOverlay?.destroy?.();
 
     // Get new overlay
     const overlay = getOverlay(overlayId);
     if (!overlay) {
-      throw new Error(`Overlay<TanakhIdentity> ${overlayId} not found`);
+      throw new Error(`Overlay ${overlayId} not found`);
     }
 
     const data = dataFor(overlay, SAMPLE_LOADED);
@@ -101,7 +100,7 @@ describe('Overlay<TanakhIdentity> Switching Integration', () => {
     expect(nonNullColors.length).toBeLessThanOrEqual(colorCount);
   }
 
-  describe('Basic Overlay<TanakhIdentity> Switching', () => {
+  describe('Basic Overlay Switching', () => {
     it('switches from no overlay to commentary overlay', () => {
       const overlay = switchToOverlay('commentary');
 
@@ -366,7 +365,7 @@ describe('Overlay<TanakhIdentity> Switching Integration', () => {
     it('handles overlay with no destroy method', () => {
       const overlayWithoutDestroy = testOverlay({
         id: 'test-overlay-2',
-        name: 'Test Overlay<TanakhIdentity> 2',
+        name: 'Test Overlay 2',
         getVerseColor: () => [0, 1, 0],
         // No destroy method
       });

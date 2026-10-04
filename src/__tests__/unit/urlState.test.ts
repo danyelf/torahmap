@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import type { TanakhIdentity } from '../../types';
+import type { TanakhOverlay } from '../../overlays/index';
 import {
   parseUrlState,
   updateUrl,
@@ -13,7 +13,6 @@ import { setLink } from '../helpers/setLink';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
 import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
-import type { Overlay } from '../../overlays/types';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -78,7 +77,7 @@ describe('the address holds the view in its query string', () => {
 });
 
 // A plausible value for each key an overlay declared.
-function plausibleSettings(overlay: Overlay<TanakhIdentity>): Record<string, string> {
+function plausibleSettings(overlay: TanakhOverlay): Record<string, string> {
   const settings: Record<string, string> = {};
   for (const spec of overlay.urlParams ?? []) {
     settings[spec.key] = spec.allowed?.[0] ?? 'x';
