@@ -27,7 +27,6 @@ import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
-import type { LinkParams } from './overlays/settings.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
@@ -1216,6 +1215,7 @@ async function main(): Promise<void> {
       overlayStarts.innerHTML = currentOverlay
         ? ''
         : startingPointsHtml(
+            getAllOverlays(),
             listed.map(({ id, data }) => ({
               id,
               title: data.title,
@@ -1285,11 +1285,9 @@ async function main(): Promise<void> {
     syncUrl(togglesSearch(before, after));
   }
 
-  /** `params` replaces the overlay's settings; without them it keeps what the reader left. */
-  function setOverlay(id: string, params?: LinkParams): void {
+  function setOverlay(id: string): void {
     trackOverlaySwitch(id, currentOverlayId());
     activateOverlay(id);
-    if (params && currentOverlay) overlaySettings.restore(currentOverlay, params);
     overlayChanged(true);
     applyTools();
     render();
@@ -1535,7 +1533,7 @@ async function main(): Promise<void> {
       document.getElementById('search-input')?.focus();
       return;
     }
-    setOverlay(choice.id, choice.params);
+    setOverlay(choice.id);
   }
 
   function drawStories(): void {

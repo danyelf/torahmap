@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { startingPointsHtml, startChosen, type StartStory } from '../../startingPoints';
+import {
+  startingPointsHtml,
+  startChosen,
+  type StartOverlay,
+  type StartStory,
+} from '../../startingPoints';
+
+const OVERLAYS: StartOverlay[] = [
+  { id: 'colours', name: 'Colours', tagline: 'Paints the verses.' },
+  { id: 'shades', name: 'Shades', tagline: 'Shades the verses.' },
+];
 
 const STORIES: StartStory[] = [
   { id: 'tour', title: 'The Guided Tour', description: 'Follows Abraham.' },
@@ -15,30 +25,27 @@ function parse(html: string): HTMLDivElement {
 const buttons = (div: Element): HTMLButtonElement[] => [...div.querySelectorAll('button')];
 
 describe('the starting points', () => {
-  const div = parse(startingPointsHtml(STORIES));
+  const div = parse(startingPointsHtml(OVERLAYS, STORIES));
 
-  it('offers search, then the overlays and the stories under a heading each', () => {
-    const choices = buttons(div).map((b) => startChosen(b));
-    expect(choices).toEqual([
+  it('offers search, then every overlay and every story, in order, under a heading each', () => {
+    expect(buttons(div).map((b) => startChosen(b))).toEqual([
       { kind: 'search' },
-      { kind: 'overlay', id: 'haftarah', params: {} },
-      { kind: 'overlay', id: 'commentary', params: {} },
-      { kind: 'overlay', id: 'trop', params: { trop: 'geresh' } },
-      { kind: 'overlay', id: 'verse-length', params: {} },
+      { kind: 'overlay', id: 'colours' },
+      { kind: 'overlay', id: 'shades' },
       { kind: 'story', id: 'tour' },
       { kind: 'story', id: 'job' },
     ]);
     expect(div.querySelectorAll('h3')).toHaveLength(2);
   });
 
-  it('names each story by its title, with its description beside it', () => {
-    const row = buttons(div).find((b) => startChosen(b)?.kind === 'story')!.parentElement!;
-    expect(row.textContent).toContain('The Guided Tour');
-    expect(row.textContent).toContain('Follows Abraham.');
+  it('puts an overlay’s tagline and a story’s description in its button', () => {
+    const [, colours, , tour] = buttons(div);
+    expect(colours.textContent).toContain('Paints the verses.');
+    expect(tour.textContent).toContain('Follows Abraham.');
   });
 
   it('finds the choice from anywhere inside a button', () => {
-    const label = buttons(div)[0].firstElementChild ?? buttons(div)[0];
+    const label = buttons(div)[0].firstElementChild!;
     expect(startChosen(label)).toEqual({ kind: 'search' });
   });
 

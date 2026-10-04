@@ -14,4 +14,10 @@ describe('overlay descriptions', () => {
     for (const o of all) expect(o.description, o.name).toBeTruthy();
     expect(new Set(all.map((o) => o.description)).size).toBe(all.length);
   });
+
+  it('gives every overlay a tagline of its own', async () => {
+    const all = await overlays();
+    for (const o of all) expect(o.tagline, o.name).toBeTruthy();
+    expect(new Set(all.map((o) => o.tagline)).size).toBe(all.length);
+  });
 });

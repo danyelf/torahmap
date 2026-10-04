@@ -72,9 +72,9 @@ export const STATES: State[] = [
     returning: true,
     then: async (page) => {
       await page.locator('[data-start="overlay"][data-id="trop"]').click();
-      await expect(page).toHaveURL(/trop=geresh/);
+      await expect(page).toHaveURL(/overlay=trop/);
       // Left where it clicked, the pointer is over the trop chart that replaced
-      // the button, and the map previews the mark under it instead of Geresh.
+      // the button, and the map previews the mark under it.
       await page.locator('#overlay-description').hover();
     },
     shown: ['#overlay-select', '#map-legend'],

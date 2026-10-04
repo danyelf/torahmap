@@ -92,6 +92,10 @@ interface OverlayMembers<T, S, D> {
   // view composes, are never offered to a reader.
   description?: string;
 
+  // What it shows, in a few words, on the button that offers it while no
+  // overlay is chosen. Optional, and tested, for the same reasons as description.
+  tagline?: string;
+
   destroy?(): void;
 
   // null renders default gray; Color[] splits the square corner to corner, one band per color.
