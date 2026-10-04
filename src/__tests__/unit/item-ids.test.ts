@@ -1,0 +1,41 @@
+import { describe, it, expect } from 'vitest';
+import { parseVerseFromUrl } from '@torahmap/link';
+import { computeLayout } from '../../layout.ts';
+import { computeTalmudLayout } from '../../talmud/layout.ts';
+import { talmudId } from '../../talmud/format.ts';
+import type { TorahData } from '../../types.ts';
+import { talmudFixture } from '../helpers/talmudFixture.ts';
+
+const torahData: TorahData = {
+  books: [
+    { name: 'Genesis', hebrewName: 'בראשית', section: 'torah', chapters: [3, 2] },
+    { name: 'I Samuel', hebrewName: 'שמואל א', section: 'neviim', chapters: [2] },
+    { name: 'Song of Songs', hebrewName: 'שיר השירים', section: 'ketuvim', chapters: [2] },
+  ],
+  layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+};
+
+describe('square ids', () => {
+  it('names each Tanakh square by its link form', () => {
+    for (const v of computeLayout(torahData)) {
+      expect(parseVerseFromUrl(v.id)).toEqual({ book: v.book, chapter: v.chapter, verse: v.verse });
+    }
+  });
+
+  it('gives every Tanakh square a different id', () => {
+    const ids = computeLayout(torahData).map((v) => v.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('writes a Talmud segment as tractate, page and segment, with dots for spaces', () => {
+    expect(talmudId({ tractate: 'Bava Kamma', daf: 2, amud: 'a', segment: 1 })).toBe(
+      'Bava.Kamma.2a.1',
+    );
+  });
+
+  it('gives every Talmud square a different id, matching its segment', () => {
+    const { items } = computeTalmudLayout(talmudFixture);
+    for (const s of items) expect(s.id).toBe(talmudId(s));
+    expect(new Set(items.map((s) => s.id)).size).toBe(items.length);
+  });
+});

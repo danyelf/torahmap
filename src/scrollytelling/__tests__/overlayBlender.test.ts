@@ -21,8 +21,8 @@ import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
 let verses: TanakhLayout[];
 beforeEach(() => {
   verses = [
-    { book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
-    { book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
+    { id: 'Genesis.1.1', book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
+    { id: 'Genesis.1.2', book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
   ];
 });
 

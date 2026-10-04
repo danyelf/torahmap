@@ -36,16 +36,19 @@ export interface TorahData {
 }
 
 /**
- * Any domain identity (book, chapter and verse; or a Talmud segment) paired
- * with a position and a size. The rendering pipeline — geometry, hit
- * detection, camera — reads only x/y/size, so a new corpus needs only an
- * identity type to reuse it unchanged.
+ * A square on the map. Its id is its link form, so the app compares, finds
+ * and links squares by id without knowing what they hold. Drawing, hit
+ * testing and the camera read only this.
  */
-export type SpatialItem<T> = T & {
+export interface MapItem {
+  id: string;
   x: number;
   y: number;
   size: number;
-};
+}
+
+/** A text's own fields (book, chapter and verse; or a Talmud segment) on a square. */
+export type SpatialItem<T> = T & MapItem;
 
 /**
  * Identity of a Tanakh verse. Three levels: book, chapter, verse.
@@ -68,7 +71,6 @@ export interface TalmudIdentity {
 }
 
 export type TanakhLayout = SpatialItem<TanakhIdentity>;
-export type TalmudLayout = SpatialItem<TalmudIdentity>;
 
 /** True if both are null, or both refer to the same verse. */
 export function tanakhIdentitiesEqual(a: TanakhIdentity | null, b: TanakhIdentity | null): boolean {

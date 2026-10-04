@@ -12,6 +12,7 @@ import type { SpatialItem, TalmudIdentity } from '../types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
 import { seededRandom } from '../utils/random.ts';
 import { segmentHash } from './segmentHash.ts';
+import { talmudId } from './format.ts';
 import {
   SEGMENT_SIZE,
   PEREK_GAP,
@@ -258,11 +259,15 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
         const seed = segmentHash(tractate.name, row.daf, row.amud, seg.segment);
         const jx = (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER;
         const jy = (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER;
-        colItems.push({
+        const segment = {
           tractate: tractate.name,
           daf: row.daf,
           amud: row.amud,
           segment: seg.segment,
+        };
+        colItems.push({
+          ...segment,
+          id: talmudId(segment),
           x: baseX + jx,
           y: y + jy,
           size: SEGMENT_SIZE,

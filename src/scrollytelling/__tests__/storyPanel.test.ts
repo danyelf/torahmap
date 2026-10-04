@@ -4,6 +4,7 @@ import { initBookData } from '../../constants/books';
 import { cameraToFit } from '../../camera';
 import { SECTION_LABEL_REACH } from '../../labels';
 import type { TanakhLayout } from '../../types';
+import { createVerse } from '../../__tests__/helpers/fixtures';
 import type { StoryStop } from '@torahmap/stories';
 
 function stop(fields: Partial<StoryStop> = {}): StoryStop {
@@ -46,14 +47,8 @@ describe('resolveStops with a region camera', () => {
     ],
     layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
   });
-  const verse = (book: string, x: number, y: number): TanakhLayout => ({
-    book,
-    chapter: 1,
-    verse: 1,
-    x,
-    y,
-    size: 10,
-  });
+  const verse = (book: string, x: number, y: number): TanakhLayout =>
+    createVerse({ book, x, y, size: 10 });
   const verses = [verse('Genesis', 0, 0), verse('I Samuel', 90, 100), verse('Psalms', 190, 200)];
   const initial = { x: 1, y: 2, zoom: 3 };
   const map = { width: 400, height: 300 };

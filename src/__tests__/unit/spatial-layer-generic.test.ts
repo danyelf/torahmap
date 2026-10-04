@@ -6,8 +6,8 @@ import { findExactHit } from '../../hitDetection.ts';
 describe('spatial layer genericization', () => {
   it('buildItemGeometry accepts SpatialItem<TanakhIdentity>', () => {
     const items: SpatialItem<TanakhIdentity>[] = [
-      { book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20, size: 6 },
-      { book: 'Genesis', chapter: 1, verse: 2, x: 16, y: 20, size: 6 },
+      { id: 'Genesis.1.1', book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20, size: 6 },
+      { id: 'Genesis.1.2', book: 'Genesis', chapter: 1, verse: 2, x: 16, y: 20, size: 6 },
     ];
     const geom = buildItemGeometry(items);
     expect(geom).toBeInstanceOf(Float32Array);
@@ -16,8 +16,26 @@ describe('spatial layer genericization', () => {
 
   it('buildItemGeometry accepts SpatialItem<TalmudIdentity>', () => {
     const items: SpatialItem<TalmudIdentity>[] = [
-      { tractate: 'Berakhot', daf: 2, amud: 'a', segment: 1, x: 10, y: 20, size: 6 },
-      { tractate: 'Berakhot', daf: 2, amud: 'a', segment: 2, x: 16, y: 20, size: 6 },
+      {
+        id: 'Berakhot.2a.1',
+        tractate: 'Berakhot',
+        daf: 2,
+        amud: 'a',
+        segment: 1,
+        x: 10,
+        y: 20,
+        size: 6,
+      },
+      {
+        id: 'Berakhot.2a.2',
+        tractate: 'Berakhot',
+        daf: 2,
+        amud: 'a',
+        segment: 2,
+        x: 16,
+        y: 20,
+        size: 6,
+      },
     ];
     const geom = buildItemGeometry(items);
     expect(geom).toBeInstanceOf(Float32Array);
@@ -26,7 +44,16 @@ describe('spatial layer genericization', () => {
 
   it('findExactHit accepts SpatialItem<TalmudIdentity>', () => {
     const items: SpatialItem<TalmudIdentity>[] = [
-      { tractate: 'Berakhot', daf: 2, amud: 'a', segment: 1, x: 10, y: 20, size: 6 },
+      {
+        id: 'Berakhot.2a.1',
+        tractate: 'Berakhot',
+        daf: 2,
+        amud: 'a',
+        segment: 1,
+        x: 10,
+        y: 20,
+        size: 6,
+      },
     ];
     const hit = findExactHit(items, 12, 22);
     expect(hit).not.toBeNull();
