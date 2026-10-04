@@ -62,3 +62,12 @@
 .control-icon:hover {
   color: #fff;
 }
+
+/* A heading over a section of a panel. Each panel sets its own spacing. */
+.panel-section-heading {
+  color: #999;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

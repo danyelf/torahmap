@@ -27,6 +27,7 @@ import {
   type ResultsView,
 } from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
+export { focusSearchBox } from './termRows.ts';
 import {
   addTerm,
   chosenMeanings,
@@ -427,6 +428,7 @@ export function isSearching(settings: SearchSettings): boolean {
 export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   id: 'search',
   name: 'Search',
+  description: 'Any word, Hebrew or English.',
   credits: [
     {
       source:
