@@ -428,7 +428,7 @@ export function isSearching(settings: SearchSettings): boolean {
 export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   id: 'search',
   name: 'Search',
-  description: 'Search for any word, Hebrew or English.',
+  description: 'Any word, Hebrew or English.',
   credits: [
     {
       source:
