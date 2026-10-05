@@ -1,0 +1,404 @@
+<!doctype html>
+<!-- The page usage.sh fills with data; open what it writes, not this. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Torah Map usage</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f9f9f7;
+        --surface: #fcfcfb;
+        --ink: #0b0b0b;
+        --ink-2: #52514e;
+        --muted: #898781;
+        --grid: #e1e0d9;
+        --axis: #c3c2b7;
+        --ring: rgba(11, 11, 11, 0.1);
+        --s1: #2a78d6;
+        --s2: #eb6834;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --page: #0d0d0d;
+          --surface: #1a1a19;
+          --ink: #ffffff;
+          --ink-2: #c3c2b7;
+          --grid: #2c2c2a;
+          --axis: #383835;
+          --ring: rgba(255, 255, 255, 0.1);
+          --s1: #3987e5;
+          --s2: #d95926;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font:
+          15px/1.45 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 16px 48px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 4px;
+        font-weight: 600;
+      }
+      h2 {
+        font-size: 17px;
+        margin: 0 0 2px;
+        font-weight: 600;
+      }
+      .sub {
+        color: var(--ink-2);
+        margin: 0 0 20px;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .tile,
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        border-radius: 10px;
+      }
+      .tile {
+        padding: 12px 14px;
+      }
+      .tile .label {
+        color: var(--ink-2);
+        font-size: 13px;
+      }
+      .tile .value {
+        font-size: 28px;
+        font-weight: 600;
+      }
+      .tile .note {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .card {
+        padding: 16px;
+        margin-bottom: 20px;
+        position: relative;
+      }
+      .card .sub {
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+      svg text {
+        fill: var(--muted);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      svg text.ann {
+        fill: var(--ink-2);
+        font-size: 12px;
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-bottom: 4px;
+      }
+      .legend i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        margin-right: 6px;
+        vertical-align: -1px;
+      }
+      .tip {
+        position: absolute;
+        pointer-events: none;
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 12px;
+        display: none;
+        white-space: nowrap;
+      }
+      .tip b {
+        display: block;
+        color: var(--ink);
+      }
+      .tip span {
+        color: var(--ink-2);
+      }
+      details {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      table {
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        padding: 3px 10px;
+        text-align: right;
+        border-bottom: 1px solid var(--grid);
+      }
+      th:first-child,
+      td:first-child {
+        text-align: left;
+      }
+      ul.caveats {
+        color: var(--ink-2);
+        font-size: 13px;
+        padding-left: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Torah Map usage</h1>
+      <p class="sub" id="range"></p>
+      <div class="tiles" id="tiles"></div>
+
+      <div class="card">
+        <h2>Page views per day</h2>
+        <p class="sub">Every load of torahmap.org, by UTC day. A reload counts again.</p>
+        <svg id="views" role="img" aria-label="Column chart of page views per day"></svg>
+        <div class="tip"></div>
+        <details>
+          <summary>Table</summary>
+          <div id="views-table"></div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>First-time and returning visitors</h2>
+        <p class="sub" id="returns-sub"></p>
+        <div class="legend">
+          <span><i style="background: var(--s1)"></i>First time</span
+          ><span><i style="background: var(--s2)"></i>Returning</span>
+        </div>
+        <svg
+          id="returns"
+          role="img"
+          aria-label="Stacked columns of first-time and returning page views per day"
+        ></svg>
+        <div class="tip"></div>
+      </div>
+
+      <h2>Reading these numbers</h2>
+      <ul class="caveats">
+        <li>Counts are weighted by Analytics Engine’s sample interval, so they are estimates.</li>
+        <li>
+          There is no visitor id: each page load is a fresh visit, so one person reloading counts
+          several times.
+        </li>
+        <li>
+          Only torahmap.org is counted, so pull-request previews and the dev server are left out;
+          visits by the site’s own authors are included.
+        </li>
+        <li>The last day is only as far as the time the data was fetched.</li>
+      </ul>
+    </main>
+
+    <script>
+      const data = /*DATA*/ null;
+
+      const DAY = 864e5;
+      const SOCIAL = /facebook|linkedin|bsky|t\.co$|twitter|reddit|instagram|threads/;
+      const fmtDay = (iso, opts = { month: 'short', day: 'numeric' }) =>
+        new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', ...opts });
+
+      // One row per day, with every day in the range present so gaps show as empty columns.
+      const blank = (day) => ({ day, views: 0, mobile: 0, story: 0, first_time: 0, returning: 0 });
+      const byDay = new Map();
+      for (const r of data.visits) {
+        const day = r.day.slice(0, 10);
+        const d = byDay.get(day) ?? blank(day);
+        const n = Number(r.visits);
+        d.views += n;
+        if (r.device === 'mobile') d.mobile += n;
+        if (r.mode === 'story') d.story += n;
+        if (r.visited === 'no') d.first_time += n;
+        if (r.visited === 'yes') d.returning += n;
+        byDay.set(day, d);
+      }
+      const known = [...byDay.keys()].sort();
+      const days = [];
+      for (
+        let t = Date.parse(known[0] + 'T00:00:00Z');
+        t <= Date.parse(known.at(-1) + 'T00:00:00Z');
+        t += DAY
+      ) {
+        const day = new Date(t).toISOString().slice(0, 10);
+        days.push(byDay.get(day) ?? blank(day));
+      }
+      const today = data.fetched.slice(0, 10);
+      const sum = (k, rows) => rows.reduce((a, d) => a + d[k], 0);
+      // Whether a browser had visited before is recorded only from the first day it appears.
+      const recordsReturns = days.findIndex((d) => d.first_time + d.returning > 0);
+
+      document.getElementById('range').textContent =
+        `${fmtDay(days[0].day)} – ${fmtDay(days.at(-1).day, { month: 'short', day: 'numeric', year: 'numeric' })}` +
+        ` · ${days.length} days · fetched ${data.fetched.replace('T', ' ')}`;
+      const peak = days.reduce((a, d) => (d.views > a.views ? d : a));
+      const total = sum('views', days);
+      const referred = (test) =>
+        data.referrers.filter((r) => test(r.referrer)).reduce((a, r) => a + Number(r.views), 0);
+      const tiles = [
+        ['Page views', total.toLocaleString(), `${days.length} days`],
+        ['Busiest day', peak.views.toLocaleString(), fmtDay(peak.day)],
+        ['On a phone', Math.round((100 * sum('mobile', days)) / total) + '%', 'of page views'],
+        [
+          'From social links',
+          Math.round((100 * referred((r) => SOCIAL.test(r))) / total) + '%',
+          'Facebook, LinkedIn, Bluesky and the like',
+        ],
+      ];
+      document.getElementById('tiles').innerHTML = tiles
+        .map(
+          ([l, v, n]) =>
+            `<div class="tile"><div class="label">${l}</div><div class="value">${v}</div><div class="note">${n}</div></div>`,
+        )
+        .join('');
+
+      // A column chart, stacked when given more than one series.
+      function columns(svg, rows, series, { label = () => null, height = 260 } = {}) {
+        const W = 900;
+        const H = height;
+        const m = { t: 36, r: 8, b: 26, l: 36 };
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        const iw = W - m.l - m.r;
+        const ih = H - m.t - m.b;
+        const max = Math.max(1, ...rows.map((d) => series.reduce((a, s) => a + d[s.key], 0)));
+        const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 2000, 5000].find(
+          (s) => max / s <= 5,
+        );
+        const top = Math.ceil(max / step) * step;
+        const y = (v) => m.t + ih - (v / top) * ih;
+        const band = iw / rows.length;
+        const bw = Math.max(2, Math.min(24, band - 4));
+        const el = (name, attrs, text) => {
+          const e = document.createElementNS('http://www.w3.org/2000/svg', name);
+          for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+          if (text != null) e.textContent = text;
+          svg.appendChild(e);
+          return e;
+        };
+        for (let v = 0; v <= top; v += step) {
+          el('line', {
+            x1: m.l,
+            x2: W - m.r,
+            y1: y(v),
+            y2: y(v),
+            stroke: v ? 'var(--grid)' : 'var(--axis)',
+          });
+          el('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end' }, v.toLocaleString());
+        }
+        const tip = svg.nextElementSibling;
+        const labelEvery = Math.ceil(rows.length / 12);
+        rows.forEach((d, i) => {
+          const cx = m.l + band * (i + 0.5);
+          let base = 0;
+          series.forEach((s, j) => {
+            const v = d[s.key];
+            if (!v) return;
+            const isTop = series.slice(j + 1).every((t) => !d[t.key]);
+            const gap = base ? 2 : 0;
+            const h = Math.max(0, y(base) - y(base + v) - gap);
+            const r = isTop ? Math.min(4, h, bw / 2) : 0;
+            const x = cx - bw / 2;
+            const yt = y(base) - gap - h;
+            el('path', {
+              d: `M${x},${yt + h}V${yt + r}q0,-${r} ${r},-${r}h${bw - 2 * r}q${r},0 ${r},${r}V${yt + h}Z`,
+              fill: s.color,
+              opacity: d.day === today ? 0.5 : 1,
+            });
+            base += v;
+          });
+          const text = label(d);
+          if (text)
+            el('text', { x: cx, y: y(base) - 6, 'text-anchor': 'middle', class: 'ann' }, text);
+          if (i % labelEvery === 0) {
+            el('text', { x: cx, y: H - 8, 'text-anchor': 'middle' }, fmtDay(d.day));
+          }
+          const hit = el('rect', {
+            x: cx - band / 2,
+            y: m.t,
+            width: band,
+            height: ih,
+            fill: 'transparent',
+          });
+          hit.addEventListener('mousemove', (ev) => {
+            const box = svg.getBoundingClientRect();
+            const card = svg.parentElement.getBoundingClientRect();
+            tip.innerHTML =
+              `<b>${fmtDay(d.day, { weekday: 'short', month: 'short', day: 'numeric' })}${d.day === today ? ' (so far)' : ''}</b>` +
+              series.map((s) => `<span>${s.label}: ${d[s.key]}</span>`).join('<br>');
+            tip.style.display = 'block';
+            const left = (cx / W) * box.width + box.left - card.left;
+            tip.style.left = Math.min(left + 12, card.width - tip.offsetWidth - 8) + 'px';
+            tip.style.top = ev.clientY - card.top - 10 + 'px';
+          });
+          hit.addEventListener('mouseleave', () => (tip.style.display = 'none'));
+        });
+      }
+
+      columns(
+        document.getElementById('views'),
+        days,
+        [{ key: 'views', label: 'Page views', color: 'var(--s1)' }],
+        { label: (d) => (d === peak ? d.views : null) },
+      );
+
+      const returnDays = recordsReturns < 0 ? [] : days.slice(recordsReturns);
+      document.getElementById('returns-sub').textContent = returnDays.length
+        ? `From ${fmtDay(returnDays[0].day)}, when page views started recording whether this browser had been here before; that day may be partly covered.`
+        : 'No page views in this range record whether the browser had been here before.';
+      if (returnDays.length) {
+        columns(
+          document.getElementById('returns'),
+          returnDays,
+          [
+            { key: 'first_time', label: 'First time', color: 'var(--s1)' },
+            { key: 'returning', label: 'Returning', color: 'var(--s2)' },
+          ],
+          { height: 200 },
+        );
+      }
+
+      document.getElementById('views-table').innerHTML =
+        '<table><tr><th>Day</th><th>Page views</th><th>On a phone</th><th>In a story</th><th>Returning</th></tr>' +
+        days
+          .map(
+            (d, i) =>
+              `<tr><td>${d.day}</td><td>${d.views}</td><td>${d.mobile}</td><td>${d.story}</td><td>${recordsReturns >= 0 && i >= recordsReturns ? d.returning : '–'}</td></tr>`,
+          )
+          .join('') +
+        '</table>';
+    </script>
+  </body>
+</html>

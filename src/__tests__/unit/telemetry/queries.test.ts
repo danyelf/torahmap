@@ -48,8 +48,8 @@ describe('telemetry queries', () => {
     }
   });
 
-  it('report.sh expands {{SITE}} to rows whose host column equals the site', () => {
-    const script = readFileSync(join(dir, 'report.sh'), 'utf8');
+  it('query.sh expands {{SITE}} to rows whose host column equals the site', () => {
+    const script = readFileSync(join(dir, 'query.sh'), 'utf8');
     const host = columns('page_view').blobs.indexOf('host') + 1;
     expect(host).toBeGreaterThan(0);
     expect(script).toMatch(new RegExp(`\\bsite="blob${host} = '[^']+'`));
