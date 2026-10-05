@@ -39,3 +39,6 @@ packages/stories/src/generated.ts
 
 # Wall print output (npm run print)
 scripts/print/out/
+
+# Written by scripts/telemetry/usage.sh
+telemetry-report/
