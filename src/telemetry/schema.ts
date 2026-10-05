@@ -11,9 +11,8 @@ import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
 
 const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
-// Columns the Worker fills from the request wherever an event lists them; the
-// page never sends them. Not common columns, since adding one of those would
-// shift every event's own fields.
+// Filled by the Worker wherever an event lists it; the page never sends it.
+// Not common: appending to COMMON_COLUMNS would shift every event's fields.
 type RequestColumn = 'browser';
 export type RequestContext = Record<
   Exclude<CommonColumn, 'event' | 'mode'> | RequestColumn,
@@ -40,7 +39,9 @@ export const EVENTS = {
   word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
-  webgl_missing: { blobs: [], doubles: [] },
+  // A browser with WebGL 2 whose shaders fail to compile records an error from
+  // 'main' instead: both show the same notice, but the causes differ.
+  webgl_missing: { blobs: ['browser'], doubles: [] },
   error: { blobs: ['source', 'message', 'browser'], doubles: [] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [], by: 'worker' },
   worker_error: { blobs: ['source', 'message', 'browser'], doubles: [], by: 'worker' },
@@ -164,7 +165,7 @@ function dataPoint(
   given: Record<string, unknown>,
 ): DataPoint {
   const blob = (name: string) => {
-    const value = name === 'browser' ? context.browser : given[name];
+    const value = given[name];
     return typeof value === 'string' ? value.slice(0, MAX_BLOB_CHARS) : '';
   };
   const double = (name: string) => {
@@ -172,11 +173,11 @@ function dataPoint(
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;
   };
 
-  const common: Record<string, string> = { event, mode, ...context };
+  const fromRequest: Record<string, string> = { event, mode, ...context };
   const { blobs, doubles } = columns(event);
   return {
     indexes: [index],
-    blobs: blobs.map((name, i) => (i < COMMON_COLUMNS.length ? common[name] : blob(name))),
+    blobs: blobs.map((name) => (name in fromRequest ? fromRequest[name] : blob(name))),
     doubles: doubles.map(double),
   };
 }

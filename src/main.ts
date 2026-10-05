@@ -201,19 +201,9 @@ function showTitle(): void {
   if (document.title !== title) document.title = title;
 }
 
-/** The renderer, or null after reporting why this browser cannot have one. */
-function startRenderer(canvas: HTMLCanvasElement): RenderContext | null {
-  if (!getWebGL2(canvas)) {
-    trackWebGLMissing();
-    return null;
-  }
-  try {
-    return createRenderContext(canvas);
-  } catch (error) {
-    // Some browsers have WebGL 2 but fail to compile the shaders.
-    reportError('main', error, 'starting the renderer');
-    return null;
-  }
+function showCannotDraw(): void {
+  document.body.classList.add('no-webgl');
+  document.getElementById('no-webgl')!.hidden = false;
 }
 
 async function main(): Promise<void> {
@@ -222,20 +212,28 @@ async function main(): Promise<void> {
 
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
-  // Before any download: without a renderer the map cannot draw at all.
-  const renderer = startRenderer(canvas);
-  if (!renderer) {
-    document.body.classList.add('no-webgl');
-    document.getElementById('no-webgl')!.hidden = false;
+  // Before any download: without WebGL 2 the map cannot draw at all.
+  if (!getWebGL2(canvas)) {
+    showCannotDraw();
+    trackWebGLMissing();
     return;
   }
-  // Narrowed here: the function declarations below cannot see the check above.
-  const renderContext: RenderContext = renderer;
+  // Everything but the structure loads behind the first frame (fileLanded).
+  const structure = loadFiles([STRUCTURE_FILE]);
+  // Compiled while the structure downloads. Some browsers with WebGL 2 still
+  // fail to compile the shaders.
+  let renderContext: RenderContext;
+  try {
+    renderContext = createRenderContext(canvas);
+  } catch (error) {
+    showCannotDraw();
+    reportError('main', error, 'compiling the shaders');
+    return;
+  }
 
   registerAllOverlays();
   const allOverlays = [searchTool, ...getAllOverlays()];
-  // Everything but the structure loads behind the first frame (fileLanded).
-  let loaded: Loaded = await loadFiles([STRUCTURE_FILE]);
+  let loaded: Loaded = await structure;
   // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
     pending: new Set<string>(),
