@@ -92,6 +92,7 @@ import {
   createRenderState,
   rebuildGeometry,
   render as renderFrame,
+  type RenderContext,
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
 import type { TanakhIdentity, TanakhLayout, VerseColor } from './types.ts';
@@ -200,6 +201,11 @@ function showTitle(): void {
   if (document.title !== title) document.title = title;
 }
 
+function showCannotDraw(): void {
+  document.body.classList.add('no-webgl');
+  document.getElementById('no-webgl')!.hidden = false;
+}
+
 async function main(): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
   showTitle();
@@ -208,16 +214,26 @@ async function main(): Promise<void> {
   if (!canvas) throw new Error('Canvas not found');
   // Before any download: without WebGL 2 the map cannot draw at all.
   if (!getWebGL2(canvas)) {
-    document.body.classList.add('no-webgl');
-    document.getElementById('no-webgl')!.hidden = false;
+    showCannotDraw();
     trackWebGLMissing();
+    return;
+  }
+  // Everything but the structure loads behind the first frame (fileLanded).
+  const structure = loadFiles([STRUCTURE_FILE]);
+  // Compiled while the structure downloads. Some browsers with WebGL 2 still
+  // fail to compile the shaders.
+  let renderContext: RenderContext;
+  try {
+    renderContext = createRenderContext(canvas);
+  } catch (error) {
+    showCannotDraw();
+    reportError('main', error, 'compiling the shaders');
     return;
   }
 
   registerAllOverlays();
   const allOverlays = [searchTool, ...getAllOverlays()];
-  // Everything but the structure loads behind the first frame (fileLanded).
-  let loaded: Loaded = await loadFiles([STRUCTURE_FILE]);
+  let loaded: Loaded = await structure;
   // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
     pending: new Set<string>(),
@@ -272,7 +288,6 @@ async function main(): Promise<void> {
   const onMap = (e: { clientX: number; clientY: number }): { x: number; y: number } =>
     mapPoint(e.clientX, e.clientY, canvasOrigin);
 
-  const renderContext = createRenderContext(canvas);
   const renderState = createRenderState(renderContext, verses, dpr);
 
   let currentOverlay: TanakhOverlay | null = null;

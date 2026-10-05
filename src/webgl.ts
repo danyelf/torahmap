@@ -122,8 +122,9 @@ const FRAGMENT_SHADER = `#version 300 es
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
   }
 
-  vec3 unpack(highp float packed) {
-    highp int c = int(packed);
+  // Not "packed": GLSL ES 1.00 reserves it, and some browsers apply that to 3.00 shaders.
+  vec3 unpack(highp float rgb) {
+    highp int c = int(rgb);
     return vec3(float(c >> 16), float((c >> 8) & 255), float(c & 255)) / 255.0;
   }
 

@@ -19,6 +19,7 @@ import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { describeLink } from '@torahmap/site';
 import { rewritePage } from './page.ts';
 import { previewFetcher } from './fetchers.ts';
+import { browserName } from './browser.ts';
 
 interface EventsDataset {
   writeDataPoint(point: DataPoint): void;
@@ -32,10 +33,9 @@ export interface Env {
 // Cloudflare attaches `cf` to incoming requests; the DOM Request type has no such field.
 function requestContext(request: Request, url: URL): RequestContext {
   const country = (request as unknown as { cf?: { country?: string } }).cf?.country ?? '';
-  const device = /Mobi|Android/i.test(request.headers.get('User-Agent') ?? '')
-    ? 'mobile'
-    : 'desktop';
-  return { country, device, host: url.hostname };
+  const userAgent = request.headers.get('User-Agent') ?? '';
+  const device = /Mobi|Android/i.test(userAgent) ? 'mobile' : 'desktop';
+  return { country, device, host: url.hostname, browser: browserName(userAgent) };
 }
 
 async function handleEvent(request: Request, url: URL, env: Env): Promise<Response> {

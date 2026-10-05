@@ -178,11 +178,17 @@ export function reportError(source: ErrorSource, error: unknown, context?: strin
   trackError(source, context ? `${context}: ${errorMessage(error)}` : errorMessage(error));
 }
 
+// The browser's notice that a resize observer was held over a frame. On a
+// phone the map resizes as the sheet does, inside the sheet's observer, so it
+// redraws a frame late — expected, not a fault.
+const RESIZE_OBSERVER_LOOP = /^ResizeObserver loop/;
+
 /** Reports what nothing caught; the browser has already logged it. */
 export function reportUncaughtErrors(target: Window = window): void {
-  target.addEventListener('error', (e) =>
-    trackError('uncaught', errorMessage(e.error ?? e.message)),
-  );
+  target.addEventListener('error', (e) => {
+    if (!e.error && RESIZE_OBSERVER_LOOP.test(e.message)) return;
+    trackError('uncaught', errorMessage(e.error ?? e.message));
+  });
   target.addEventListener('unhandledrejection', (e) =>
     trackError('unhandled_rejection', errorMessage(e.reason)),
   );

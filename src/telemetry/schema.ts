@@ -11,7 +11,13 @@ import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
 
 const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];
-export type RequestContext = Record<Exclude<CommonColumn, 'event' | 'mode'>, string>;
+// Filled by the Worker wherever an event lists it; the page never sends it.
+// Not common: appending to COMMON_COLUMNS would shift every event's fields.
+type RequestColumn = 'browser';
+export type RequestContext = Record<
+  Exclude<CommonColumn, 'event' | 'mode'> | RequestColumn,
+  string
+>;
 
 export const EVENTS = {
   // arrived_with is blank on views recorded before the column existed —
@@ -20,7 +26,7 @@ export const EVENTS = {
   // first stop on an earlier visit (main.ts's rememberVisit), so a return by
   // someone who bounced off the first stop reads 'no'.
   page_view: {
-    blobs: ['story_stop', 'referrer', 'story', 'arrived_with', 'visited'],
+    blobs: ['story_stop', 'referrer', 'story', 'arrived_with', 'visited', 'browser'],
     doubles: [],
   },
   story_stop: { blobs: ['stop_id', 'story'], doubles: ['stop_number', 'total_stops'] },
@@ -33,10 +39,12 @@ export const EVENTS = {
   word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
   sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
-  webgl_missing: { blobs: [], doubles: [] },
-  error: { blobs: ['source', 'message'], doubles: [] },
+  // A browser with WebGL 2 whose shaders fail to compile records an error from
+  // 'main' instead: both show the same notice, but the causes differ.
+  webgl_missing: { blobs: ['browser'], doubles: [] },
+  error: { blobs: ['source', 'message', 'browser'], doubles: [] },
   link_preview: { blobs: ['fetcher', 'what'], doubles: [], by: 'worker' },
-  worker_error: { blobs: ['source', 'message'], doubles: [], by: 'worker' },
+  worker_error: { blobs: ['source', 'message', 'browser'], doubles: [], by: 'worker' },
   // A stop share records overlay 'none': stop links carry no overlay (the stop
   // picks its own), so group share.overlay by view shares.
   share: {
@@ -76,7 +84,7 @@ export function columns(event: EventName): { blobs: string[]; doubles: string[] 
     doubles: [...EVENTS[event].doubles],
   };
 }
-type Blobs<E extends EventName> = (typeof EVENTS)[E]['blobs'][number];
+type Blobs<E extends EventName> = Exclude<(typeof EVENTS)[E]['blobs'][number], RequestColumn>;
 type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
 // Columns narrower than a string, matched by column name in every event.
 interface NarrowBlobs {
@@ -165,11 +173,11 @@ function dataPoint(
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;
   };
 
-  const common: Record<string, string> = { event, mode, ...context };
+  const fromRequest: Record<string, string> = { event, mode, ...context };
   const { blobs, doubles } = columns(event);
   return {
     indexes: [index],
-    blobs: blobs.map((name, i) => (i < COMMON_COLUMNS.length ? common[name] : blob(name))),
+    blobs: blobs.map((name) => (name in fromRequest ? fromRequest[name] : blob(name))),
     doubles: doubles.map(double),
   };
 }

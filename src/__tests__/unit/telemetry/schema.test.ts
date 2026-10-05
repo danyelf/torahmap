@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { DRIVER_KINDS } from '../../../scrollytelling/driver.ts';
 import { toDataPoint, workerDataPoint } from '../../../telemetry/schema.ts';
 
-const context = { country: 'IL', device: 'mobile', host: 'torahmap.org' };
+const context = {
+  country: 'IL',
+  device: 'mobile',
+  host: 'torahmap.org',
+  browser: 'Safari 17 iOS 17.4',
+};
 
 describe('toDataPoint', () => {
   it('accepts exactly the modes in DRIVER_KINDS', () => {

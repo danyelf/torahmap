@@ -226,6 +226,14 @@ describe('errors', () => {
     ]);
     expect(consoleError).not.toHaveBeenCalled();
   });
+
+  it('does not report a resize observer held over a frame', () => {
+    const target = new EventTarget() as Window;
+    reportUncaughtErrors(target);
+    const message = 'ResizeObserver loop completed with undelivered notifications.';
+    target.dispatchEvent(Object.assign(new Event('error'), { error: null, message }));
+    expect(sent()).toEqual([]);
+  });
 });
 
 describe('downloadKbps', () => {
