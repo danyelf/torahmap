@@ -238,7 +238,8 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
   let timingSent = false;
 
   const squares = indexItems(verses);
-  const base = text.baseColor && ((i: number) => text.baseColor!(verses[i], i));
+  const baseColors = verses.map((verse, i) => text.baseColor(verse, i));
+  const base = (i: number): VerseColor => baseColors[i];
   // A picture with its holes filled with each square's base colour.
   const fill = (picture: Picture<VerseColor | null>): Picture<VerseColor> =>
     fillDefaultColors(picture, base);
@@ -387,7 +388,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
   function explorePicture(): Picture<VerseColor | null> {
-    return toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool));
+    return toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool), base);
   }
 
   function applyTools(): void {

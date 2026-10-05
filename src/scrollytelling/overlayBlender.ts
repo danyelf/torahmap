@@ -88,7 +88,7 @@ export function pictureForStop<I extends MapItem>(
     settingsFromLink(tanakhSearch, stop.searchParams ?? {}),
     loaded,
   );
-  const picture = fillDefaultColors(toolsPicture(tools, verses, hovered), base);
+  const picture = fillDefaultColors(toolsPicture(tools, verses, hovered, undefined, base), base);
   if (!byHover) cache.set(key, picture);
   return picture;
 }

@@ -78,6 +78,12 @@ describe('combineLayers', () => {
       expect(combineLayers(1, [null], [null]).colors[0]).toEqual(scaled(getDefaultColor(0), DIM));
     });
 
+    it("dims the text's base colour of a square the overlay leaves uncoloured", () => {
+      expect(combineLayers(1, [null], [null], DIM, () => BLUE).colors[0]).toEqual(
+        scaled(BLUE, DIM),
+      );
+    });
+
     it('dims every verse when the search matches nothing', () => {
       const { colors, rings } = combineLayers(2, [null, null], [RED, BLUE]);
       expect(colors).toEqual([scaled(RED, DIM), scaled(BLUE, DIM)]);

@@ -6,6 +6,7 @@ import { createMapTitle, updateMapTitlePosition } from '../mapTitle.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from '../verseTexts.ts';
 import { initBookData } from '../constants/books.ts';
 import { createCamera } from '../camera.ts';
+import { getDefaultColor } from '../itemColoring.ts';
 import { updateSidebar } from '../sidebar.ts';
 import { reportError } from '../analytics.ts';
 import { STORIES } from '@torahmap/stories';
@@ -34,6 +35,8 @@ export const tanakhText: MapText<TanakhLayout> = {
       bounds,
 
       startCamera: (viewport) => createCamera(viewport, bounds),
+
+      baseColor: (_, i) => getDefaultColor(i),
 
       labels(container) {
         const hebrewNames = Object.fromEntries(data.books.map((b) => [b.name, b.hebrewName]));

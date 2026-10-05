@@ -28,18 +28,20 @@ function brightenBands(color: VerseColor, factor: number): VerseColor {
 /**
  * The map's colours from its two layers, search over overlay. `search` is null
  * with no search on and `overlay` null with no overlay; a null colour is
- * painted grey by fillDefaultColors.
+ * painted its base colour by fillDefaultColors.
  *
  * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
  * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
  * search leads, 1 while the overlay leads; it does nothing with search alone,
- * which always dims to its own grey.
+ * which always dims to its own grey. With both on, a square neither colours
+ * dims from its `base` colour.
  */
 export function combineLayers(
   count: number,
   search: readonly (VerseColor | null)[] | null,
   overlay: readonly (VerseColor | null)[] | null,
   nonMatchDim: number = SEARCH_WITH_OVERLAY.NON_MATCH_DIM,
+  base: (index: number) => VerseColor = getDefaultColor,
 ): Picture<VerseColor | null> {
   const colors: (VerseColor | null)[] = new Array(count);
   const rings: (VerseColor | null)[] = new Array(count).fill(null);
@@ -55,7 +57,7 @@ export function combineLayers(
       colors[i] = under;
       rings[i] = match;
     } else {
-      colors[i] = brightenBands(under ?? getDefaultColor(i), nonMatchDim);
+      colors[i] = brightenBands(under ?? base(i), nonMatchDim);
     }
   }
 
@@ -90,16 +92,23 @@ export function overlayColorsFor<T, S, D>(
   return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
 }
 
-/** The map's colours for the tools a view shows. `nonMatchDim` passes through to combineLayers. */
+/** The map's colours for the tools a view shows. `nonMatchDim` and `base` pass through to combineLayers. */
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
   hovered: SpatialItem<T> | null,
   nonMatchDim?: number,
+  base?: (index: number) => VerseColor,
 ): Picture<VerseColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
     on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
-  return combineLayers(items.length, colorsOf(tools.search), colorsOf(tools.overlay), nonMatchDim);
+  return combineLayers(
+    items.length,
+    colorsOf(tools.search),
+    colorsOf(tools.overlay),
+    nonMatchDim,
+    base,
+  );
 }
 
 /**

@@ -22,8 +22,8 @@ export interface OpenText<I extends MapItem> {
   items: I[];
   bounds: Bounds;
   startCamera(viewport: Viewport): Camera;
-  /** A square's colour while no tool colours it. Without one, the shell's grey. */
-  baseColor?(item: I, index: number): VerseColor;
+  /** A square's colour while no tool colours it. */
+  baseColor(item: I, index: number): VerseColor;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
   /** The file a square's text is in. The shell downloads it when the square's popup first shows. */
