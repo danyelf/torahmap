@@ -29,6 +29,11 @@ describe('the About panel', () => {
     expect(text).toContain('Danyel Fisher');
   });
 
+  it('offers a way to write to the author', async () => {
+    const div = await about();
+    expect(div.querySelector('.byline a[href^="mailto:"]')).not.toBeNull();
+  });
+
   it('lists the controls, the menu among them', async () => {
     const labels = [...(await about()).querySelectorAll('.controls-table td:first-child')].map(
       (td) => td.textContent,

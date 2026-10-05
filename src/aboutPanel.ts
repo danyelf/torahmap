@@ -25,7 +25,8 @@ export function aboutHtml(
       <p>Switch between different analytical overlays to reveal patterns across 23,000+ verses.</p>
       <p class="byline">
         By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a> ·
-        <a href="https://github.com/danyelf/torahmap" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/danyelf/torahmap" target="_blank" rel="noopener noreferrer">GitHub</a> ·
+        <a href="mailto:danyel@torahmap.org">Contact</a>
       </p>
     </section>
     <section class="about-section">
