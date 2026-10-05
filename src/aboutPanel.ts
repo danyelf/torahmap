@@ -25,14 +25,7 @@ export function aboutHtml(
     </section>
     <section class="about-section">
       <h3 class="panel-section-heading">${SITE_NAME}</h3>
-      <p>An interactive visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position.</p>
-      <p>The map is divided into three sections, stacked vertically:</p>
-      <ul>
-        <li><strong>Torah</strong> — The Five Books of Moses</li>
-        <li><strong>Nevi'im</strong> — The Prophets</li>
-        <li><strong>Ketuvim</strong> — The Writings</li>
-      </ul>
-      <p>Switch between different analytical overlays to reveal patterns across 23,000+ verses.</p>
+      <p>An interactive visualization of the entire Tanakh (Hebrew Bible). Every verse has a fixed position.</p>
       <p class="byline">
         By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a>
         <a class="byline-icon" href="https://github.com/danyelf/torahmap" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">${GITHUB_ICON}</a>
@@ -43,14 +36,12 @@ export function aboutHtml(
       <h3 class="panel-section-heading">Controls</h3>
       <table class="controls-table">
         <tr><td>Scroll / Pinch</td><td>Zoom in/out</td></tr>
-        <tr><td>Drag</td><td>Pan around</td></tr>
+        <tr><td>Drag</td><td>Pan the map</td></tr>
         <tr><td>Hover</td><td>Preview verse details</td></tr>
-        <tr><td>Click / Tap</td><td>Pin verse details</td></tr>
-        <tr><td>Click pinned / Tap again</td><td>Unpin verse</td></tr>
+        <tr><td>Click / Tap</td><td>Pin verse details; repeat to unpin</td></tr>
         <tr><td>&larr; &rarr; arrow keys</td><td>Navigate verses</td></tr>
         <tr><td>Escape</td><td>Close the menu, unpin the verse, or close the panel or the story</td></tr>
-        <tr><td>☰</td><td>The menu: continue the story, share, search, overlays, stories, About &amp; settings</td></tr>
-        <tr><td>Legend</td><td>What colours the map; tap a row to open its tool</td></tr>
+        <tr><td>Legend</td><td>Shows colors for the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>
       </table>
     </section>
