@@ -60,7 +60,8 @@ export function hideMap(hidden: boolean): void {
   if (!hide) {
     hide = document.createElement('style');
     hide.id = 'video-hide-map';
-    // The title sits in #map-labels, beside the book labels.
+    // The second rule hides the book labels beside the title, leaving it alone
+    // on the page's background.
     hide.textContent =
       'body > :not(#map-labels, #video-caption, #video-still), ' +
       '#map-labels > :not(#map-title) { visibility: hidden; }';

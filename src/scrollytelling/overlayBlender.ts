@@ -49,11 +49,8 @@ function overlayOf<T>(stop: StoryStop): Overlay<T> | null {
 
 /** The tools a stop picks. */
 export function stopTools<T>(stop: StoryStop): Overlay<T>[] {
-  return toolsPicked(
-    overlayOf<T>(stop),
-    searchOnAnyText<T>(),
-    settingsFromLink(searchOnAnyText<T>(), stop.searchParams ?? {}),
-  );
+  const search = searchOnAnyText<T>();
+  return toolsPicked(overlayOf<T>(stop), search, settingsFromLink(search, stop.searchParams ?? {}));
 }
 
 export function pictureForStop<I extends MapItem>(
@@ -80,11 +77,12 @@ export function pictureForStop<I extends MapItem>(
   const cached = byHover ? undefined : cache.get(key);
   if (cached) return cached;
 
+  const search = searchOnAnyText<I>();
   const tools = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
-    searchOnAnyText<I>(),
-    settingsFromLink(searchOnAnyText<I>(), stop.searchParams ?? {}),
+    search,
+    settingsFromLink(search, stop.searchParams ?? {}),
     loaded,
   );
   const picture = fillDefaultColors(toolsPicture(tools, verses, hovered, base), base);

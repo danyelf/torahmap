@@ -65,9 +65,8 @@ export function combineLayers(
 }
 
 /**
- * `picture` with every null colour replaced by its square's base colour, the
- * default grey unless the text gives one, and marked `uncoloured` for the
- * hover. A cross-fade needs them so a still-uncoloured square blends from its
+ * `picture` with every null colour replaced by its square's base colour, and
+ * marked `uncoloured` for the hover. A cross-fade needs them so a still-uncoloured square blends from its
  * own colour rather than mergePictures's placeholder for "nothing here".
  */
 export function fillDefaultColors(
