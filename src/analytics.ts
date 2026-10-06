@@ -1,7 +1,6 @@
 // Events for the site's own Worker (src/worker/index.ts). No cookies and no
 // browser storage: the visit id lives in memory, so a reload is a new visit.
 import type { TextLanguage } from './types.ts';
-import type { SearchMode } from './tanakh/search/terms.ts';
 import type { DriverKind } from './scrollytelling/driver.ts';
 import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
 import {
@@ -119,7 +118,7 @@ export function trackOverlaySwitch(overlay: string, previousOverlay: string): vo
 export function trackSearchExecute(
   term: string,
   language: TextLanguage,
-  searchMode: SearchMode,
+  searchMode: string,
   resultCount: number,
 ): void {
   track('search_execute', {

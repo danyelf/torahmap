@@ -1,7 +1,8 @@
 // A click on a Hebrew word in the verse popup opens its menu, which adds the
 // word, or one of its meanings, to the search.
 
-import type { Loaded } from '../../dataFiles.ts';
+import type { Shell } from '../../app/text.ts';
+import type { TanakhLayout } from '../../types.ts';
 import { dataFor } from '../../dataFiles.ts';
 import { stripNikkud } from '../../hebrew.ts';
 import { meaningsInVerse, wordsOfVerse } from './dictionary.ts';
@@ -13,12 +14,10 @@ import { verseRef } from '@torahmap/link';
 import { searchTool, searchForMeaning, canAddTerm, type SearchSettings } from './index.ts';
 
 /** What the word menu reads and changes. */
-export interface WordClickHost {
-  loaded(): Loaded;
-  searchSettings(): SearchSettings;
-  /** Change the search as the reader did, and open its panel. */
-  changeSearch(update: (current: SearchSettings) => SearchSettings): void;
-}
+export type WordClickHost = Pick<
+  Shell<TanakhLayout, SearchSettings>,
+  'loaded' | 'searchSettings' | 'changeSearch'
+>;
 
 export function listenForWordClicks(host: WordClickHost): void {
   setWordClickHandler((click) => {

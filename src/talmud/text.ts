@@ -7,6 +7,7 @@ import { sefariaUrl } from '../sefaria.ts';
 import { computeTalmudLayout, type TalmudLayoutItem } from './layout.ts';
 import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
+import { talmudSearch, type TalmudSearchSettings } from './search.ts';
 import {
   STRUCTURE_FILE,
   amudIndex,
@@ -35,7 +36,7 @@ const WHOLE_MAP: Story = {
   },
 };
 
-export const talmudText: MapText<TalmudLayoutItem> = {
+export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {
@@ -91,6 +92,8 @@ export const talmudText: MapText<TalmudLayoutItem> = {
       },
 
       overlays: [],
+
+      search: talmudSearch,
 
       stories: {
         list: [WHOLE_MAP],

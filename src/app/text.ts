@@ -5,20 +5,20 @@ import type { Camera, ScreenPoint, Viewport } from '../camera.ts';
 import type { Loaded } from '../dataFiles.ts';
 import type { ItemIndex } from '../items.ts';
 import type { Overlay, ToolOnMap } from '../overlays/types.ts';
-import type { WordClickHost } from '../tanakh/search/wordClicks.ts';
+import type { SearchTool } from './search.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { SidebarElements } from '../sidebar.ts';
 import type { MapItem, VerseColor } from '../types.ts';
 
-export interface MapText<I extends MapItem> {
+export interface MapText<I extends MapItem, S = unknown> {
   /** Downloaded before the first frame. */
   firstFiles: string[];
   /** The text, laid out from its first files. */
-  open(loaded: Loaded): OpenText<I>;
+  open(loaded: Loaded): OpenText<I, S>;
 }
 
 /** A text once its first files are in. */
-export interface OpenText<I extends MapItem> {
+export interface OpenText<I extends MapItem, S = unknown> {
   items: I[];
   startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */
@@ -30,6 +30,7 @@ export interface OpenText<I extends MapItem> {
   /** Shortcut: each text draws its own popup, marks and word clicks included. */
   drawPopup(elements: SidebarElements, item: I | null, view: PopupView<I>): void;
   overlays: Overlay<I>[];
+  search: SearchTool<I, S>;
   /** Shortcut: the shell cannot run without a story, so every text supplies at least one. */
   stories: {
     list: readonly Story[];
@@ -48,7 +49,7 @@ export interface OpenText<I extends MapItem> {
     area(item: I): { area: string; section: string };
   };
   /** Wires the text's own parts to the running shell. */
-  start?(shell: Shell<I>): void;
+  start?(shell: Shell<I, S>): void;
 }
 
 /** What a text's popup is drawn from. */
@@ -61,8 +62,12 @@ export interface PopupView<I extends MapItem> {
   pinned: boolean;
 }
 
-/** What a text's own code may ask of the shell, the word menu's needs among it. */
-export interface Shell<I extends MapItem> extends WordClickHost {
+/** What a text's own code may ask of the shell. */
+export interface Shell<I extends MapItem, S = unknown> {
+  loaded(): Loaded;
+  searchSettings(): S;
+  /** Change the search as the reader did, and open its panel. */
+  changeSearch(update: (current: S) => S): void;
   /** Pin a square and travel to it, as a search result does. */
   pinAndGlide(item: I): void;
   /** The text's stories changed, as they do when one is edited on the dev server. */

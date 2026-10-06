@@ -5,12 +5,11 @@ import {
   registerOverlay,
   getOverlay,
   getAllOverlays,
-  configureSearch,
 } from '../../overlays/index';
 import { createVerses, SAMPLE_VERSES, SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { toolsShown } from '../../tools';
-import { searchTool } from '../../tanakh/search/index';
+import { configure as configureSearch, searchTool } from '../../tanakh/search/index';
 import { commentaryOverlay, type CommentaryCounts } from '../../overlays/commentary';
 import { restoreAllMocks } from '../helpers/mocks';
 import {

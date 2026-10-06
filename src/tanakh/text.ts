@@ -11,14 +11,14 @@ import { updateSidebar } from '../sidebar.ts';
 import { reportError } from '../analytics.ts';
 import { STORIES } from '@torahmap/stories';
 import { resolveStops } from '../scrollytelling/storyPanel.ts';
-import { registerAllOverlays, getAllOverlays, configureSearch } from '../overlays/index.ts';
-import { searchTool } from './search/index.ts';
+import { registerAllOverlays, getAllOverlays } from '../overlays/index.ts';
+import { configure as configureSearch, searchTool, type SearchSettings } from './search/index.ts';
 import { listenForWordClicks } from './search/wordClicks.ts';
 import { dataFor } from '../dataFiles.ts';
 import type { TanakhLayout } from '../types.ts';
 import type { MapText } from '../app/text.ts';
 
-export const tanakhText: MapText<TanakhLayout> = {
+export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {
@@ -61,6 +61,8 @@ export const tanakhText: MapText<TanakhLayout> = {
       },
 
       overlays: getAllOverlays(),
+
+      search: searchTool,
 
       stories: { list: STORIES, resolve: resolveStops },
 

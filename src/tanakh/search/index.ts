@@ -7,7 +7,9 @@
 // each is handed what it needs. Which row the reader is working in is
 // presentation, not a setting, so it stays here.
 import './search.css';
-import type { Overlay, Color, UrlParamValues } from '../../overlays/types.ts';
+import type { Color, UrlParamValues } from '../../overlays/types.ts';
+import type { SearchTool } from '../../app/search.ts';
+import { trackSearchExecute } from '../../analytics.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
 import { HEBREW } from '../../types.ts';
 import {
@@ -26,8 +28,16 @@ import {
   detachResults,
   type ResultsView,
 } from './resultsList.ts';
-import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
-export { focusSearchBox } from './termRows.ts';
+import {
+  focusSearchBox,
+  mountTermRows,
+  renderTermRows,
+  unmountTermRows,
+  type TermRowsHost,
+} from './termRows.ts';
+import { createSearchRecorder } from './recording.ts';
+import { SEARCH_RECORD_DELAY_MS } from './constants.ts';
+import { wordMenuOpen } from './wordMenu.ts';
 import {
   addTerm,
   chosenMeanings,
@@ -425,7 +435,7 @@ export function isSearching(settings: SearchSettings): boolean {
   return activeTerms(settings).length > 0;
 }
 
-export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
+export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> = {
   id: 'search',
   name: 'Search',
   description: 'Any word, Hebrew or English.',
@@ -443,6 +453,12 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   ],
 
   data: SEARCH_FILES,
+
+  isSearching,
+  focus: focusSearchBox,
+  recorder: createSearchRecorder({ delayMs: SEARCH_RECORD_DELAY_MS, send: trackSearchExecute }),
+  requote: requoteSearchResults,
+  holdsPopup: wordMenuOpen,
 
   prebuild(data) {
     textIndexOf(data);
@@ -576,12 +592,3 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
     );
   },
 };
-
-/**
- * Shortcut: search is the Tanakh's on every text. On another text it searches
- * the Tanakh's words, which name no square, so a search dims the whole map; the
- * page still downloads and prepares search's files.
- */
-export function searchOnAnyText<T>(): Overlay<T, SearchSettings, SearchData> {
-  return searchTool as unknown as Overlay<T, SearchSettings, SearchData>;
-}

@@ -62,7 +62,10 @@ type ValueOf<P extends UrlParamSpec> = P extends { allowed: readonly (infer V ex
   ? V
   : string;
 
-/** The search's keys, read whatever overlay is on; no overlay may claim them. */
+/**
+ * The search's keys, read whatever overlay is on; no overlay may claim them.
+ * Shortcut: they are the Tanakh's search's keys, read on every text.
+ */
 export const SEARCH_URL_PARAMS = [
   { key: 'search', kind: 'text' },
   // Positional across the terms in `search`, one letter each, and an empty

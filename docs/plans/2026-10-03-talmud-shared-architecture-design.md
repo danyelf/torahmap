@@ -82,7 +82,8 @@ interface MapItem { id: string; x: number; y: number; size: number }
 | `link` | `verse`, `Genesis.1.1` | `at`, `Berakhot.2a.1` |
 | `name` | `Genesis 1:1` | `Berakhot 2a:1` |
 | `popup` | `all-texts.json` | the tractate's file |
-| `tools` | five overlays and search | segment length |
+| `overlays` | five overlays | segment length |
+| `search` | stems and meanings over the BHSA | a stand-in that finds nothing, until project 4 |
 | `stories` | today's stories and place names | none |
 | `area` | book | tractate |
 
@@ -98,10 +99,13 @@ Notes on the slots:
   manager on demand, shows the loading or failed notice while it waits, and
   applies the overlay's and search's marks to the text once it arrives. Word
   clicks in the popup belong to search: the search tool supplies them.
-- **Tools.** Search is one of the text's tools, not a slot of its own. A text
-  without search lists none, and the shell shows no Search entry. `tools.ts`,
-  `downloads.ts`, `overlayBlender.ts` and `overlays/search/recording.ts` take
-  the tools they need as arguments instead of importing `searchTool`.
+- **Search.** Every text has one; the Talmud's finds nothing until project 4.
+  The shell sees it through `SearchTool` (`src/app/search.ts`): an overlay whose
+  settings and data only the search understands, plus whether it is searching,
+  focusing its box, a recorder for telemetry, requoting its results and
+  holding the popup under its word menu. The Tanakh's search, with its stemming
+  dictionary, lives in `src/tanakh/search/`, and a test keeps everything outside
+  `src/tanakh/` from importing it.
 - **Stories.** Optional. Explore becomes the shell's normal state and a story is
   something it can enter; the Tanakh still opens on its story, as today, and a
   text without stories opens in Explore. Place names in
@@ -151,7 +155,8 @@ later change is shaped by two real texts rather than one text and a guess.
 **Done:** every square has an id, and the app compares, finds, steps through
 and links squares by it (#346); the old Talmud page is deleted (#349); a verse
 has one name, its id, everywhere, data files included (#350); `createApp`,
-with both texts booting (described below).
+with both texts booting (described below); search as a slot every text fills,
+the Tanakh's moved into `src/tanakh/search/`.
 
 **`createApp`, with both texts booting.** `main.ts` becomes
 `createApp(text)`, called by `main-tanakh.ts` and a dev-only `main-talmud.ts`.
@@ -167,8 +172,6 @@ its labels are on screen, so it cannot rot unseen again.
 running. The order is decided as we go, starting with whichever shortcut is
 most in the way:
 
-- **Search as a tool.** The text's tools replace the imported `searchTool`; the
-  Talmud supplies none, and the shell shows no Search entry.
 - **Stories optional.** Explore is the shell's normal state; story place names
   are resolved through a function the shell is given.
 - **The popup.** The text supplies a verse's text, reference and link; the
