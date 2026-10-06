@@ -141,7 +141,7 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
   a `scrollytelling/` mode, `app/` (what a text gives the app
   shell), `tanakh/` and `talmud/` (the two texts; the Talmud's page,
-  `talmud.html`, is served by the dev server only), `styles/`, the
+  `talmud/index.html`, is served at `/talmud/` by the dev server only), `styles/`, the
   `worker/` that serves the deployed site, and the `telemetry/` it records
   through.
 - `packages/` — shared code, kept free of the page so the Worker can import

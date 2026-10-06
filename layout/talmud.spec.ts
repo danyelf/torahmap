@@ -1,11 +1,11 @@
-// The Talmud page, on the dev server only: it draws, its labels sit over the
+// The Talmud page, at /talmud/ on the dev server only: it draws, its labels sit over the
 // map, and a pinned segment shows its text.
 import { expect, test, type Page } from '@playwright/test';
 import { allLoaded, boxes, collectErrors, DRAWN_FLOOR, drawnPixels } from './page.ts';
 
 async function openTalmud(page: Page, link = ''): Promise<string[]> {
   const errors = collectErrors(page);
-  await page.goto(`/talmud.html${link ? `?${link}` : ''}`);
+  await page.goto(`/talmud/${link ? `?${link}` : ''}`);
   await allLoaded(page);
   return errors;
 }
