@@ -86,11 +86,10 @@ describe('labels', () => {
       });
 
       // The container is the shell's layer, clipped to the map (#map-labels in frame.css).
-      it('fills the container it is drawn into', () => {
+      it('is drawn into the container it is given', () => {
         const labels = createBookLabels([createVerse()], container);
 
         expect(labels.parentElement).toBe(container);
-        expect(labels.style.position).toBe('absolute');
       });
 
       it('handles empty verse array', () => {

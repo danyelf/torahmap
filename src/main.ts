@@ -89,9 +89,8 @@ import { getWebGL2 } from './webgl.ts';
 import type { MapItem, VerseColor } from './types.ts';
 import { createOverlaySettings, type Overlay } from './overlays/index.ts';
 import type { Tools } from './overlays/types.ts';
-import type { SearchData } from './search/data.ts';
 import {
-  searchTool as tanakhSearch,
+  searchOnAnyText,
   focusSearchBox,
   isSearching,
   requoteSearchResults,
@@ -214,10 +213,8 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
 
   let loaded: Loaded = await firstFiles;
   const text = source.open(loaded);
-  const { items: verses, bounds } = text;
-  // Shortcut: search is the Tanakh's on every text. On another text it searches
-  // the Tanakh's words, which name no square, so it colours nothing.
-  const searchTool = tanakhSearch as unknown as Overlay<I, SearchSettings, SearchData>;
+  const verses = text.items;
+  const searchTool = searchOnAnyText<I>();
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
   const getOverlay = (id: string): Overlay<I> | undefined =>
     text.overlays.find((overlay) => overlay.id === id);
@@ -243,7 +240,6 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
   // A picture with its holes filled with each square's base colour.
   const fill = (picture: Picture<VerseColor | null>): Picture<VerseColor> =>
     fillDefaultColors(picture, base);
-  console.log(`Loaded ${verses.length} verses, bounds: ${bounds.width}x${bounds.height}`);
 
   // Placed over the map; render() moves them with it.
   const labelLayer = document.createElement('div');
@@ -388,7 +384,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
   function explorePicture(): Picture<VerseColor | null> {
-    return toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, dimFor(frontTool), base);
+    return toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, base, dimFor(frontTool));
   }
 
   function applyTools(): void {

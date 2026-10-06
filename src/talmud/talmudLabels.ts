@@ -66,7 +66,6 @@ export function createTalmudLabels(
 ): TalmudLabelState {
   const container = document.createElement('div');
   container.id = 'talmud-labels';
-  container.style.cssText = 'position:absolute;inset:0;';
 
   // --- Seder background tints (drawn first so labels and tractates layer on
   // top in DOM order). Each rect spans the full shelf in world space and is

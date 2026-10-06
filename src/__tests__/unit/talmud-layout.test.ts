@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTalmudLayout } from '../../talmud/layout.ts';
+import { computeTalmudLayout, dafRowsOf } from '../../talmud/layout.ts';
 import { talmudFixture as fixture } from '../helpers/talmudFixture.ts';
 import { SEGMENT_SIZE, PEREK_GAP, SEDER_GAP } from '../../talmud/constants.ts';
 
@@ -92,16 +92,34 @@ describe('computeTalmudLayout', () => {
     expect(result.bounds.height).toBe(maxY);
   });
 
-  it("anchors each amud's daf label at its row's right edge and top", () => {
+  it('returns a daf row for every amud', () => {
     expect(result.dafRows.length).toBe(
       new Set(result.items.map((i) => `${i.tractate}:${i.daf}${i.amud}`)).size,
     );
-    for (const row of result.dafRows) {
-      const squares = result.items.filter(
-        (i) => i.tractate === row.tractate && i.daf === row.daf && i.amud === row.amud,
-      );
-      expect(row.rightX).toBe(Math.max(...squares.map((s) => s.x + s.size)));
-      expect(row.topY).toBe(Math.min(...squares.map((s) => s.y)));
-    }
+  });
+});
+
+describe('dafRowsOf', () => {
+  const square = (amud: 'a' | 'b', segment: number, x: number, y: number) => ({
+    tractate: 'T',
+    daf: 2,
+    amud,
+    segment,
+    id: `T.2${amud}.${segment}`,
+    x,
+    y,
+    size: 6,
+  });
+
+  it("anchors each amud's label at its squares' right edge and top", () => {
+    const rows = dafRowsOf([
+      square('a', 1, 40, 12),
+      square('a', 2, 30, 10),
+      square('b', 1, 20, 30),
+    ]);
+    expect(rows).toEqual([
+      { tractate: 'T', daf: 2, amud: 'a', rightX: 46, topY: 10 },
+      { tractate: 'T', daf: 2, amud: 'b', rightX: 26, topY: 30 },
+    ]);
   });
 });

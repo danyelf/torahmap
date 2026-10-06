@@ -40,8 +40,8 @@ export function combineLayers(
   count: number,
   search: readonly (VerseColor | null)[] | null,
   overlay: readonly (VerseColor | null)[] | null,
+  base: (index: number) => VerseColor,
   nonMatchDim: number = SEARCH_WITH_OVERLAY.NON_MATCH_DIM,
-  base: (index: number) => VerseColor = getDefaultColor,
 ): Picture<VerseColor | null> {
   const colors: (VerseColor | null)[] = new Array(count);
   const rings: (VerseColor | null)[] = new Array(count).fill(null);
@@ -72,7 +72,7 @@ export function combineLayers(
  */
 export function fillDefaultColors(
   picture: Picture<VerseColor | null>,
-  base: (index: number) => VerseColor = getDefaultColor,
+  base: (index: number) => VerseColor,
 ): Picture<VerseColor> {
   return {
     ...picture,
@@ -92,13 +92,13 @@ export function overlayColorsFor<T, S, D>(
   return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
 }
 
-/** The map's colours for the tools a view shows. `nonMatchDim` and `base` pass through to combineLayers. */
+/** The map's colours for the tools a view shows. `base` and `nonMatchDim` pass through to combineLayers. */
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
   hovered: SpatialItem<T> | null,
+  base: (index: number) => VerseColor,
   nonMatchDim?: number,
-  base?: (index: number) => VerseColor,
 ): Picture<VerseColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
     on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
@@ -106,8 +106,8 @@ export function toolsPicture<T>(
     items.length,
     colorsOf(tools.search),
     colorsOf(tools.overlay),
-    nonMatchDim,
     base,
+    nonMatchDim,
   );
 }
 

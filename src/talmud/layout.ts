@@ -345,7 +345,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
   };
 }
 
-function dafRowsOf(items: TalmudLayoutItem[]): DafRowAnchor[] {
+export function dafRowsOf(items: TalmudLayoutItem[]): DafRowAnchor[] {
   const rows = new Map<string, DafRowAnchor>();
   for (const { tractate, daf, amud, x, y, size } of items) {
     const key = `${tractate}:${daf}${amud}`;

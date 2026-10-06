@@ -18,12 +18,11 @@ import { dataFor } from '../dataFiles.ts';
 import type { TanakhLayout } from '../types.ts';
 import type { MapText } from '../app/text.ts';
 
-registerAllOverlays();
-
 export const tanakhText: MapText<TanakhLayout> = {
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {
+    registerAllOverlays();
     const data = structureFrom(loaded);
     initBookData(data);
     const sections = new Map(data.books.map((b) => [b.name, b.section]));
@@ -32,7 +31,6 @@ export const tanakhText: MapText<TanakhLayout> = {
 
     return {
       items,
-      bounds,
 
       startCamera: (viewport) => createCamera(viewport, bounds),
 
@@ -67,7 +65,7 @@ export const tanakhText: MapText<TanakhLayout> = {
       stories: { list: STORIES, resolve: resolveStops },
 
       track: {
-        verse: (v) => ({ book: v.book, chapter: v.chapter, verse: v.verse }),
+        verse: (v) => v,
         area: (v) => ({ area: v.book, section: sections.get(v.book) ?? '' }),
       },
 

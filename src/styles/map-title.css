@@ -6,11 +6,6 @@
  * viewBox, so the parts of the title hold their proportions at every zoom.
  */
 
-#map-title {
-  position: absolute;
-  inset: 0;
-}
-
 #map-title svg {
   position: absolute;
   /* Anchored on the middle of the empty corner, not its left edge. */

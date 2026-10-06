@@ -1,5 +1,4 @@
-// A Talmud segment's colour while no tool colours it: Mishnah or Gemara, each
-// segment a little brighter or darker than the next.
+// A Talmud segment's colour while no tool colours it: Mishnah or Gemara.
 
 import type { Color, TalmudIdentity } from '../types.ts';
 import { isSegmentMishnah, type TalmudStructure } from './data.ts';

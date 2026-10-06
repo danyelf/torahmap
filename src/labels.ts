@@ -62,7 +62,6 @@ export function createBookLabels(
 
   const labels = document.createElement('div');
   labels.id = 'book-labels';
-  labels.style.cssText = 'position:absolute;inset:0;';
 
   for (const [name, pos] of Object.entries(books)) {
     const label = document.createElement('div');

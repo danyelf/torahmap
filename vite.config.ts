@@ -33,7 +33,7 @@ function talmudPlugin(): Plugin {
       server.middlewares.use((req, res, next) => {
         const [path, query] = (req.url ?? '').split('?');
         if (path !== '/talmud') return next();
-        res.writeHead(301, { Location: `/talmud/${query === undefined ? '' : `?${query}`}` });
+        res.writeHead(302, { Location: `/talmud/${query === undefined ? '' : `?${query}`}` });
         res.end();
       });
     },

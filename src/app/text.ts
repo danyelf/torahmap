@@ -5,10 +5,10 @@ import type { Camera, ScreenPoint, Viewport } from '../camera.ts';
 import type { Loaded } from '../dataFiles.ts';
 import type { ItemIndex } from '../items.ts';
 import type { Overlay, ToolOnMap } from '../overlays/types.ts';
-import type { SearchSettings } from '../overlays/search/index.ts';
+import type { WordClickHost } from '../overlays/search/wordClicks.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { SidebarElements } from '../sidebar.ts';
-import type { Bounds, MapItem, VerseColor } from '../types.ts';
+import type { MapItem, VerseColor } from '../types.ts';
 
 export interface MapText<I extends MapItem> {
   /** Downloaded before the first frame. */
@@ -20,7 +20,6 @@ export interface MapText<I extends MapItem> {
 /** A text once its first files are in. */
 export interface OpenText<I extends MapItem> {
   items: I[];
-  bounds: Bounds;
   startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */
   baseColor(item: I, index: number): VerseColor;
@@ -62,14 +61,10 @@ export interface PopupView<I extends MapItem> {
   pinned: boolean;
 }
 
-/** What a text's own code may ask of the shell. */
-export interface Shell<I extends MapItem> {
-  loaded(): Loaded;
+/** What a text's own code may ask of the shell, the word menu's needs among it. */
+export interface Shell<I extends MapItem> extends WordClickHost {
   /** Pin a square and travel to it, as a search result does. */
   pinAndGlide(item: I): void;
-  searchSettings(): SearchSettings;
-  /** Change the search as the reader did, and open its panel. */
-  changeSearch(update: (current: SearchSettings) => SearchSettings): void;
   /** The text's stories changed, as they do when one is edited on the dev server. */
   storiesChanged(list: readonly Story[]): void;
 }

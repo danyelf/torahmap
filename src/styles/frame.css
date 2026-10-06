@@ -49,6 +49,12 @@
   pointer-events: none;
 }
 
+/* Each text's labels, and the title, fill the layer. */
+#map-labels > * {
+  position: absolute;
+  inset: 0;
+}
+
 body {
   font-family: system-ui, sans-serif;
 }

@@ -22,70 +22,79 @@ describe('combineLayers', () => {
   describe('with no search', () => {
     it('passes the overlay through untouched, with no rings', () => {
       const overlay = [RED, null, [RED, BLUE] as Color[]];
-      expect(combineLayers(3, null, overlay)).toEqual({ colors: overlay });
+      expect(combineLayers(3, null, overlay, getDefaultColor)).toEqual({ colors: overlay });
     });
 
     it('leaves every verse grey with no overlay either', () => {
-      expect(combineLayers(2, null, null)).toEqual({ colors: [null, null] });
+      expect(combineLayers(2, null, null, getDefaultColor)).toEqual({ colors: [null, null] });
     });
   });
 
   describe('search alone', () => {
     it('fills a match with its search colour', () => {
-      expect(combineLayers(1, [CYAN], null).colors[0]).toEqual(CYAN);
+      expect(combineLayers(1, [CYAN], null, getDefaultColor).colors[0]).toEqual(CYAN);
     });
 
     it('dims a verse it does not match to the grey search alone has always used', () => {
-      expect(combineLayers(1, [null], null).colors[0]).toEqual([ALONE, ALONE, ALONE]);
+      expect(combineLayers(1, [null], null, getDefaultColor).colors[0]).toEqual([
+        ALONE,
+        ALONE,
+        ALONE,
+      ]);
     });
 
     it('draws no rings', () => {
-      expect(combineLayers(1, [CYAN], null).rings).toBeUndefined();
+      expect(combineLayers(1, [CYAN], null, getDefaultColor).rings).toBeUndefined();
     });
   });
 
   describe('search over an overlay', () => {
     it('rings a match in its search colour around the overlay colour', () => {
-      const { colors, rings } = combineLayers(1, [CYAN], [RED]);
+      const { colors, rings } = combineLayers(1, [CYAN], [RED], getDefaultColor);
       expect(colors[0]).toEqual(RED);
       expect(rings![0]).toEqual(CYAN);
     });
 
     it('leaves the hole grey where the overlay has no colour for the match', () => {
-      const { colors, rings } = combineLayers(1, [CYAN], [null]);
+      const { colors, rings } = combineLayers(1, [CYAN], [null], getDefaultColor);
       expect(colors[0]).toBeNull();
       expect(rings![0]).toEqual(CYAN);
     });
 
     it('splits the ring of a verse several words match', () => {
-      expect(combineLayers(1, [[CYAN, ORANGE]], [RED]).rings![0]).toEqual([CYAN, ORANGE]);
+      expect(combineLayers(1, [[CYAN, ORANGE]], [RED], getDefaultColor).rings![0]).toEqual([
+        CYAN,
+        ORANGE,
+      ]);
     });
 
     it('dims a verse it does not match, and gives it no ring', () => {
-      const { colors, rings } = combineLayers(1, [null], [RED]);
+      const { colors, rings } = combineLayers(1, [null], [RED], getDefaultColor);
       expect(colors[0]).toEqual(scaled(RED, DIM));
       expect(rings![0]).toBeNull();
     });
 
     it('dims each stripe of a verse the overlay splits', () => {
-      expect(combineLayers(1, [null], [[RED, BLUE]]).colors[0]).toEqual([
+      expect(combineLayers(1, [null], [[RED, BLUE]], getDefaultColor).colors[0]).toEqual([
         scaled(RED, DIM),
         scaled(BLUE, DIM),
       ]);
     });
 
     it('dims the grey of a verse the overlay leaves uncoloured', () => {
-      expect(combineLayers(1, [null], [null]).colors[0]).toEqual(scaled(getDefaultColor(0), DIM));
+      expect(combineLayers(1, [null], [null], getDefaultColor).colors[0]).toEqual(
+        scaled(getDefaultColor(0), DIM),
+      );
     });
 
     it("dims the text's base colour of a square the overlay leaves uncoloured", () => {
-      expect(combineLayers(1, [null], [null], DIM, () => BLUE).colors[0]).toEqual(
+      expect(combineLayers(1, [null], [null], () => BLUE, DIM).colors[0]).toEqual(
         scaled(BLUE, DIM),
       );
     });
 
     it('dims every verse when the search matches nothing', () => {
-      const { colors, rings } = combineLayers(2, [null, null], [RED, BLUE]);
+      const { colors, rings } = combineLayers(2, [null, null], [RED, BLUE], getDefaultColor);
       expect(colors).toEqual([scaled(RED, DIM), scaled(BLUE, DIM)]);
       expect(rings).toEqual([null, null]);
     });
@@ -93,26 +102,28 @@ describe('combineLayers', () => {
 
   describe('with the overlay in front', () => {
     it('leaves a non-match at the overlay colour, full strength', () => {
-      const { colors, rings } = combineLayers(1, [null], [RED], 1);
+      const { colors, rings } = combineLayers(1, [null], [RED], getDefaultColor, 1);
       expect(colors[0]).toEqual(RED);
       expect(rings![0]).toBeNull();
     });
 
     it('still rings a match', () => {
-      const { colors, rings } = combineLayers(1, [CYAN], [RED], 1);
+      const { colors, rings } = combineLayers(1, [CYAN], [RED], getDefaultColor, 1);
       expect(colors[0]).toEqual(RED);
       expect(rings![0]).toEqual(CYAN);
     });
 
     it('leaves the default grey undimmed where the overlay has no colour', () => {
-      expect(combineLayers(1, [null], [null], 1).colors[0]).toEqual(getDefaultColor(0));
+      expect(combineLayers(1, [null], [null], getDefaultColor, 1).colors[0]).toEqual(
+        getDefaultColor(0),
+      );
     });
   });
 });
 
 describe('fillDefaultColors', () => {
   it('replaces a null colour with the verse default, leaving others untouched', () => {
-    const picture = fillDefaultColors({ colors: [RED, null, BLUE] });
+    const picture = fillDefaultColors({ colors: [RED, null, BLUE] }, getDefaultColor);
     expect(picture.colors).toEqual([RED, getDefaultColor(1), BLUE]);
   });
 
@@ -123,11 +134,17 @@ describe('fillDefaultColors', () => {
   });
 
   it('marks the verses it filled as uncoloured', () => {
-    expect(fillDefaultColors({ colors: [RED, null] }).uncoloured).toEqual([false, true]);
+    expect(fillDefaultColors({ colors: [RED, null] }, getDefaultColor).uncoloured).toEqual([
+      false,
+      true,
+    ]);
   });
 
   it('carries growth and rings through unchanged', () => {
-    const picture = fillDefaultColors({ colors: [null], growth: [0.5], rings: [CYAN] });
+    const picture = fillDefaultColors(
+      { colors: [null], growth: [0.5], rings: [CYAN] },
+      getDefaultColor,
+    );
     expect(picture.growth).toEqual([0.5]);
     expect(picture.rings).toEqual([CYAN]);
   });
@@ -150,6 +167,7 @@ describe('toolsPicture', () => {
       },
       items,
       null,
+      getDefaultColor,
     );
 
     expect(picture.colors).toEqual([RED, scaled(RED, DIM)]);
@@ -168,6 +186,7 @@ describe('toolsPicture', () => {
       },
       items,
       null,
+      getDefaultColor,
       1,
     );
 

@@ -37,7 +37,7 @@ export function downloadStages<T>(
   return stages;
 }
 
-/** The downloads main has not heard back from, the ones that failed, and the warnings closed. */
+/** The downloads the shell has not heard back from, the ones that failed, and the warnings closed. */
 export interface Downloads {
   pending: ReadonlySet<string>;
   failed: ReadonlySet<string>;

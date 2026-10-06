@@ -17,8 +17,7 @@ import {
 
 const ref = (s: TalmudLayoutItem): string => `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
 
-// Shortcut: the shell cannot run without a story, so the Talmud has one, with
-// one stop that shows the whole map.
+// The Talmud's one story: one stop that shows the whole map.
 const WHOLE_MAP: Story = {
   id: 'talmud',
   data: {
@@ -52,7 +51,6 @@ export const talmudText: MapText<TalmudLayoutItem> = {
 
     return {
       items: laid.items,
-      bounds: laid.bounds,
 
       startCamera: (viewport) =>
         cameraToFit(
@@ -76,8 +74,7 @@ export const talmudText: MapText<TalmudLayoutItem> = {
 
       popupFile: (item) => textsFile(item.tractate),
 
-      // Shortcut: the Talmud's popup is plain: reference, text and link, without the
-      // overlay's line or any marks.
+      // Reference, text and link, without the overlay's line or any marks.
       drawPopup(elements, item, view) {
         const { sidebar, ref: refText, overlayInfo, hebrew, notice, english, link } = elements;
         if (!sidebar) return;
@@ -100,7 +97,7 @@ export const talmudText: MapText<TalmudLayoutItem> = {
         resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
       },
 
-      // Shortcut: the verse events name the tractate as the book.
+      // The tractate stands in for the book.
       track: {
         verse: (s) => ({ book: s.tractate, chapter: s.daf, verse: s.segment }),
         area: (s) => ({ area: s.tractate, section: tractates.get(s.tractate)?.seder ?? '' }),
