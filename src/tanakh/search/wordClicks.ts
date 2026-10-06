@@ -16,7 +16,7 @@ import { searchTool, searchForMeaning, canAddTerm, type SearchSettings } from '.
 /** What the word menu reads and changes. */
 export type WordClickHost = Pick<
   Shell<TanakhLayout, SearchSettings>,
-  'loaded' | 'searchSettings' | 'changeSearch'
+  'loaded' | 'searchSettings' | 'changeSearch' | 'holdPopup'
 >;
 
 export function listenForWordClicks(host: WordClickHost): void {
@@ -44,6 +44,7 @@ export function listenForWordClicks(host: WordClickHost): void {
       meanings,
       anchor: click.element,
       paletteFull,
+      onClose: host.holdPopup(),
       onChoose: (meaning) => {
         // The menu counted the words when it opened; a keyboard reader can add one since.
         if (!canAddTerm(host.searchSettings())) return;

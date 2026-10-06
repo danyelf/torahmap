@@ -99,6 +99,7 @@ import {
   type OpeningView,
 } from './downloads.ts';
 import { LOADING, loadNotice } from './loadNotice.ts';
+import { createPopupHold } from './popupHold.ts';
 import type { Picture } from './geometry.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -948,6 +949,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   });
 
   const sidebarElements = getSidebarElements();
+  const popupHold = createPopupHold();
 
   function buildOverlayParamsForUrl(): Record<string, string> {
     return currentOverlay ? overlaySettings.toUrl(currentOverlay) : {};
@@ -1301,6 +1303,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   text.start?.({
     loaded: () => loaded,
+    holdPopup: popupHold.hold,
     pinAndGlide: (verse) => {
       // A full-height sheet would hide the glide.
       if (frame.full) setFrame({ ...frame, full: false });
@@ -1860,10 +1863,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     refreshPopupAfterDownload();
   }
 
-  // Redrawing the popup under an open word menu would take away the word it
-  // names; the popup catches up on its next redraw.
   function refreshPopupAfterDownload(): void {
-    if (!searchTool.holdsPopup?.()) refreshVersePopup();
+    if (!popupHold.held()) refreshVersePopup();
   }
 
   function prebuilt(overlay: Overlay<I>, built: boolean): void {

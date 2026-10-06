@@ -101,9 +101,10 @@ Notes on the slots:
   clicks in the popup belong to search: the search tool supplies them.
 - **Search.** Every text has one; the Talmud's finds nothing until project 4.
   The shell sees it through `SearchTool` (`src/app/search.ts`): an overlay whose
-  settings and data only the search understands, plus whether it is searching,
-  focusing its box, a recorder for telemetry, requoting its results and
-  holding the popup under its word menu. The Tanakh's search, with its stemming
+  settings and data only the search understands, plus whether it is searching
+  and what happens to it, for telemetry. Anything a text opens over the popup,
+  such as the word menu, holds the popup through the shell, so a file landing
+  does not redraw it out from under the menu. The Tanakh's search, with its stemming
   dictionary, lives in `src/tanakh/search/`, and a test keeps everything outside
   `src/tanakh/` from importing it.
 - **Stories.** Optional. Explore becomes the shell's normal state and a story is

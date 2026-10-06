@@ -12,8 +12,6 @@ interface SearchMembers<S, D> {
   isSearching(settings: S): boolean;
   /** Told what happens to the search; what it sends, if anything, is its own business. */
   telemetry: SearchTelemetry<S, D>;
-  /** Whether a menu search opened over the popup is showing, so the popup must not be redrawn under it. */
-  holdsPopup?(): boolean;
 }
 
 export interface SearchTelemetry<S, D> {

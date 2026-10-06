@@ -31,7 +31,6 @@ import {
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import { searchTelemetry } from './telemetry.ts';
 import { SEARCH_RECORD_DELAY_MS } from './constants.ts';
-import { wordMenuOpen } from './wordMenu.ts';
 import {
   addTerm,
   chosenMeanings,
@@ -446,7 +445,6 @@ export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> 
 
   isSearching,
   telemetry: searchTelemetry({ delayMs: SEARCH_RECORD_DELAY_MS, send: trackSearchExecute }),
-  holdsPopup: wordMenuOpen,
 
   prebuild(data) {
     textIndexOf(data);

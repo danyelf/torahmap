@@ -68,6 +68,8 @@ export interface Shell<I extends MapItem, S = unknown> {
   searchSettings(): S;
   /** Change the search as the reader did, and open its panel. */
   changeSearch(update: (current: S) => S): void;
+  /** Hold the popup while something is open over it; the function returned releases the hold. */
+  holdPopup(): () => void;
   /** Pin a square and travel to it, as a search result does. */
   pinAndGlide(item: I): void;
   /** The text's stories changed, as they do when one is edited on the dev server. */

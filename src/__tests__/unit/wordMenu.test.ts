@@ -61,6 +61,7 @@ function open(overrides: Partial<WordMenuOptions> = {}): void {
     anchor: anchor(),
     paletteFull: false,
     onChoose: vi.fn(),
+    onClose: vi.fn(),
     ...overrides,
   });
 }
@@ -275,6 +276,24 @@ describe('dismissing', () => {
     open({ word: 'רוח', meanings: [ascend] });
 
     expect(document.querySelectorAll('.word-menu')).toHaveLength(1);
+  });
+
+  it('says it closed once, however it closes', () => {
+    const onClose = vi.fn();
+    open({ onClose });
+
+    window.dispatchEvent(new Event('resize'));
+    closeWordMenu();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('says it closed when another menu replaces it', () => {
+    const onClose = vi.fn();
+    open({ onClose });
+    open();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
 
