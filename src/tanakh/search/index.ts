@@ -28,14 +28,8 @@ import {
   detachResults,
   type ResultsView,
 } from './resultsList.ts';
-import {
-  focusSearchBox,
-  mountTermRows,
-  renderTermRows,
-  unmountTermRows,
-  type TermRowsHost,
-} from './termRows.ts';
-import { createSearchRecorder } from './recording.ts';
+import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
+import { searchTelemetry } from './telemetry.ts';
 import { SEARCH_RECORD_DELAY_MS } from './constants.ts';
 import { wordMenuOpen } from './wordMenu.ts';
 import {
@@ -451,8 +445,7 @@ export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> 
   data: SEARCH_FILES,
 
   isSearching,
-  focus: focusSearchBox,
-  recorder: createSearchRecorder({ delayMs: SEARCH_RECORD_DELAY_MS, send: trackSearchExecute }),
+  telemetry: searchTelemetry({ delayMs: SEARCH_RECORD_DELAY_MS, send: trackSearchExecute }),
   holdsPopup: wordMenuOpen,
 
   prebuild(data) {

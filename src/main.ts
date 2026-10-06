@@ -1233,7 +1233,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
-      searchTool.recorder.replaced(overlaySettings.get(searchTool), dataFor(searchTool, loaded));
+      searchTool.telemetry.replaced(overlaySettings.get(searchTool), dataFor(searchTool, loaded));
     }
     searchTool.renderControls?.(
       searchControls,
@@ -1248,7 +1248,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const before = overlaySettings.get(searchTool);
     const after = update(before);
     overlaySettings.set(searchTool, after);
-    searchTool.recorder.readerChanged(after, dataFor(searchTool, loaded));
+    searchTool.telemetry.readerChanged(after, dataFor(searchTool, loaded));
     applyTools();
     searchChanged(false);
     render();
@@ -1468,7 +1468,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (choice.kind === 'story') return readStory(choice.id, false);
     if (choice.kind === 'search') {
       dispatch({ type: 'choose', panel: 'search' });
-      searchTool.focus();
+      // Ready to type: the first field the search drew is its box.
+      searchControls
+        .querySelector<HTMLInputElement>('input[type="text"], input[type="search"]')
+        ?.focus();
       return;
     }
     setOverlay(choice.id);
@@ -1840,7 +1843,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // Before the redraws, so one that throws cannot hold back load timing.
     prebuildCompleted(allOverlays, before, loaded, prebuilt);
     const search = dataFor(searchTool, loaded);
-    if (search && search !== dataFor(searchTool, before)) searchTool.recorder.dataLoaded(search);
+    if (search && search !== dataFor(searchTool, before)) searchTool.telemetry.dataLoaded(search);
     const stale = staleAfterLanding(before, loaded, landingView());
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) drawOverlayPanel(false);

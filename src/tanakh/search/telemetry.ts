@@ -1,6 +1,6 @@
 // Which searched terms are worth an analytics event, and when: once the reader
 // has stopped changing the search and search has its data.
-import type { SearchRecorder } from '../../app/search.ts';
+import type { SearchTelemetry } from '../../app/search.ts';
 import type { TextLanguage } from '../../types.ts';
 import { termQuery, type SearchMode, type SearchTerm } from './terms.ts';
 import type { Dictionary } from './search.ts';
@@ -38,10 +38,10 @@ export function termsToRecord(
  * search a link or a story stop put in place counts as sent, and drops one
  * waiting; a search waiting only for its data is sent when the data lands.
  */
-export function createSearchRecorder(options: {
+export function searchTelemetry(options: {
   delayMs: number;
   send(text: string, language: TextLanguage, mode: SearchMode, hits: number): void;
-}): SearchRecorder<SearchSettings, SearchData> {
+}): SearchTelemetry<SearchSettings, SearchData> {
   let recorded: Recorded = new Map();
   /**
    * A search that replaced the reader's, to count as sent. A term's record

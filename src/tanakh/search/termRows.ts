@@ -32,11 +32,6 @@ import { CONTROL } from '../../panel.ts';
 /** What the rows ask of whoever owns the search. */
 const SEARCH_INPUT_ID = 'search-input';
 
-/** Puts the cursor in the search box, ready to type. */
-export function focusSearchBox(): void {
-  document.getElementById(SEARCH_INPUT_ID)?.focus();
-}
-
 export interface TermRowsHost {
   /** The rows to draw, always at least one so there is somewhere to type. For drawing only. */
   terms(): SearchTerm[];

@@ -20,11 +20,7 @@ export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, vo
 
   isSearching: (settings) => settings.text.trim() !== '',
 
-  focus() {
-    document.getElementById(BOX_ID)?.focus();
-  },
-
-  recorder: { readerChanged() {}, replaced() {}, dataLoaded() {} },
+  telemetry: { readerChanged() {}, replaced() {}, dataLoaded() {} },
 
   getVerseColor: () => null,
 

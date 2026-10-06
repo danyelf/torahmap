@@ -10,15 +10,13 @@ export type SearchTool<T, S = unknown, D = unknown> = Overlay<T, S, D> & SearchM
 interface SearchMembers<S, D> {
   /** Whether `settings` search on anything. While not, search colours nothing. */
   isSearching(settings: S): boolean;
-  /** Puts the cursor in the search box. */
-  focus(): void;
-  /** Hears what happens to the search, for telemetry. */
-  recorder: SearchRecorder<S, D>;
+  /** Told what happens to the search; what it sends, if anything, is its own business. */
+  telemetry: SearchTelemetry<S, D>;
   /** Whether a menu search opened over the popup is showing, so the popup must not be redrawn under it. */
   holdsPopup?(): boolean;
 }
 
-export interface SearchRecorder<S, D> {
+export interface SearchTelemetry<S, D> {
   /** The reader changed the search. */
   readerChanged(settings: S, data: D | null): void;
   /** A link or a story stop replaced the search. */
