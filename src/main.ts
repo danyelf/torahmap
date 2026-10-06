@@ -1,6 +1,7 @@
 // The app shell: the map, its panels, story, popup and links, for whichever text it is given.
 
 import type { MapText } from './app/text.ts';
+import { SEARCH_BOX_ID } from './app/search.ts';
 import { mapPoint } from './mapPoint.ts';
 import { TEXTS_FILE } from './verseTexts.ts';
 import {
@@ -1471,10 +1472,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (choice.kind === 'story') return readStory(choice.id, false);
     if (choice.kind === 'search') {
       dispatch({ type: 'choose', panel: 'search' });
-      // Ready to type: the first field the search drew is its box.
-      searchControls
-        .querySelector<HTMLInputElement>('input[type="text"], input[type="search"]')
-        ?.focus();
+      document.getElementById(SEARCH_BOX_ID)?.focus();
       return;
     }
     setOverlay(choice.id);

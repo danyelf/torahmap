@@ -2,7 +2,7 @@
 // segment matches, so the shell's search runs on the Talmud page, panel, link
 // and Back step included, until the Talmud has a search of its own.
 import type { UrlParamSpec } from '@torahmap/link';
-import type { SearchTool } from '../app/search.ts';
+import { SEARCH_BOX_ID, type SearchTool } from '../app/search.ts';
 import type { TalmudLayoutItem } from './layout.ts';
 
 export interface TalmudSearchSettings {
@@ -10,8 +10,6 @@ export interface TalmudSearchSettings {
 }
 
 const URL_PARAMS = [{ key: 'search', kind: 'text' }] as const satisfies readonly UrlParamSpec[];
-
-const BOX_ID = 'talmud-search-box';
 
 export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, void> = {
   id: 'search',
@@ -34,10 +32,10 @@ export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, vo
     settings.text.trim() ? { search: settings.text.trim() } : {},
 
   renderControls(container, settings, onChange) {
-    let box = container.querySelector<HTMLInputElement>(`#${BOX_ID}`);
+    let box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`);
     if (!box) {
-      container.innerHTML = `<input id="${BOX_ID}" type="search" aria-label="Search"><p></p>`;
-      box = container.querySelector<HTMLInputElement>(`#${BOX_ID}`)!;
+      container.innerHTML = `<input id="${SEARCH_BOX_ID}" type="search" aria-label="Search"><p></p>`;
+      box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`)!;
       box.addEventListener('input', () => onChange(() => ({ text: box!.value })));
     }
     if (box.value !== settings.text) box.value = settings.text;

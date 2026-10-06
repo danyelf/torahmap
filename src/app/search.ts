@@ -3,6 +3,9 @@
 // the shell holds them and hands them back.
 import type { Overlay } from '../overlays/types.ts';
 
+/** The page's one search box: every search gives its box this id, and the shell focuses it. */
+export const SEARCH_BOX_ID = 'search-input';
+
 // Members are methods so that, as with Overlay, a SearchTool<T, SomeSettings>
 // is a SearchTool<T>.
 export type SearchTool<T, S = unknown, D = unknown> = Overlay<T, S, D> & SearchMembers<S, D>;

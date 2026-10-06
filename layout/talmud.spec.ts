@@ -48,7 +48,7 @@ test("a link's search reaches the Talmud's own search, not the Tanakh's", async 
     if (request.url().includes('/data/search/')) searchFiles.push(request.url());
   });
   await openMap(page, 'search=משנה', TALMUD);
-  await expect(page.locator('#talmud-search-box')).toHaveValue('משנה');
+  await expect(page.locator('#search-input')).toHaveValue('משנה');
   expect(searchFiles).toEqual([]);
 });
 

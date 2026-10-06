@@ -28,10 +28,9 @@ import {
 } from './terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { CONTROL } from '../../panel.ts';
+import { SEARCH_BOX_ID } from '../../app/search.ts';
 
 /** What the rows ask of whoever owns the search. */
-const SEARCH_INPUT_ID = 'search-input';
-
 export interface TermRowsHost {
   /** The rows to draw, always at least one so there is somewhere to type. For drawing only. */
   terms(): SearchTerm[];
@@ -388,7 +387,7 @@ function buildOpenRow(row: HTMLElement, term: SearchTerm, index: number): void {
   input.className = 'term-input';
   // The first row carries the well-known ids: it is the search box, and its
   // button is what clears the search.
-  if (index === 0) input.id = SEARCH_INPUT_ID;
+  if (index === 0) input.id = SEARCH_BOX_ID;
   input.value = term.text;
   input.addEventListener('input', () => onTermInput(term.id, input));
   input.addEventListener('paste', (e) => onTermPaste(e, input));
