@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EVERYTHING } from '../../../loading/files';
 import { registerAllOverlays } from '../../overlays/index';
 import { getAllOverlays } from '../../overlays/registry';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 import { overlayFiles } from '../../dataFiles';
 import { STRUCTURE_FILE } from '../../verseTexts';
 

@@ -13,8 +13,8 @@ import type { Loaded } from '../../dataFiles';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { tropOverlay } from '../../overlays/trop';
 import { HAFTARAH_FILES } from '../../overlays/haftarah/readings';
-import { searchTool } from '../../overlays/search/index';
-import { DICTIONARY_FILES, SEARCH_FILES } from '../../search/data';
+import { searchTool } from '../../tanakh/search/index';
+import { DICTIONARY_FILES, SEARCH_FILES } from '../../tanakh/search/data';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { SAMPLE_LOADED, SAMPLE_STRUCTURE } from '../helpers/fixtures';
 

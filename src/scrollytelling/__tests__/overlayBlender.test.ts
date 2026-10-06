@@ -1,7 +1,7 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { pictureForStop, computeBlendedColors, stopTools } from '../overlayBlender';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 import { registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { createOverlaySettings } from '../../overlays/settings';

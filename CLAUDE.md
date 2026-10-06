@@ -124,7 +124,7 @@ than chosen by taste, so the reformat moved as few lines as it could:
 `singleQuote` because committed source held 6995 single-quoted strings to 1112
 double, and `printWidth: 100` because line lengths ran to a p99 of 100.
 `quoteProps: preserve` keeps the quotes on Hebrew object keys such as
-`'ך': 'כ'` in `src/search.ts`, which Prettier would otherwise strip — they are
+`'ך': 'כ'` in `src/hebrew.ts`, which Prettier would otherwise strip — they are
 valid JavaScript identifiers, so nothing forces the quotes, but the letters are
 much easier to pick out with them.
 

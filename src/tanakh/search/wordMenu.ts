@@ -6,9 +6,9 @@
 // the confirmation that we found the word the reader meant, since Hebrew words
 // run together and a misfire should be visible before it costs anything.
 
-import './styles/wordMenu.css';
-import type { Meaning } from './search/dictionary.ts';
-import { MAX_TERMS } from './search/terms.ts';
+import '../../styles/wordMenu.css';
+import type { Meaning } from './dictionary.ts';
+import { MAX_TERMS } from './terms.ts';
 
 export interface WordMenuOptions {
   word: string;

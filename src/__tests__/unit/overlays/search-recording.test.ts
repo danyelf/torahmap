@@ -3,10 +3,10 @@ import {
   createSearchRecorder,
   termsToRecord,
   type Recorded,
-} from '../../../overlays/search/recording';
-import type { SearchSettings } from '../../../overlays/search';
+} from '../../../tanakh/search/recording';
+import type { SearchSettings } from '../../../tanakh/search/index.ts';
 import { EMPTY_DICTIONARY, searchDataFor } from '../../helpers/searchData';
-import { addTerm, setMode, setTermText, type SearchTerm } from '../../../search/terms';
+import { addTerm, setMode, setTermText, type SearchTerm } from '../../../tanakh/search/terms';
 
 const none: Recorded = new Map();
 

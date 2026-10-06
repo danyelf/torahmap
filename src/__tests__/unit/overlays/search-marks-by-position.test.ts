@@ -12,8 +12,8 @@
 // exactly the gap this closes.
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { searchTool } from '../../../overlays/search/index';
-import { configure } from '../../../overlays/search';
+import { searchTool } from '../../../tanakh/search/index';
+import { configure } from '../../../tanakh/search/index.ts';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse } from '../../helpers/fixtures';
 import { realSearchData } from '../../helpers/searchData';

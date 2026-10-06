@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseVerseId } from '@torahmap/link';
-import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../search/dictionary';
+import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../tanakh/search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
 import { verseWords } from '../../../verseWords';
 import { realSearchData } from '../../helpers/searchData';

@@ -5,13 +5,13 @@
 // result with one; these tests are about the control that splits them.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { searchTool } from '../../../overlays/search/index';
-import { configure } from '../../../overlays/search';
+import { searchTool } from '../../../tanakh/search/index';
+import { configure } from '../../../tanakh/search/index.ts';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../verseTexts';
-import { meaningsFor } from '../../../search/dictionary';
+import { meaningsFor } from '../../../tanakh/search/dictionary';
 import { realSearchData } from '../../helpers/searchData';
 
 // Real Hebrew, so the lexeme index has something to resolve.

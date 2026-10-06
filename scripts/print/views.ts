@@ -18,8 +18,8 @@ import {
   getLexeme,
   searchByLexemes,
   type Dictionary,
-} from '../../src/search.ts';
-import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/search/data.ts';
+} from '../../src/tanakh/search/search.ts';
+import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/tanakh/search/data.ts';
 import type { Book, TanakhLayout, TorahData } from '../../src/types.ts';
 import {
   INK,

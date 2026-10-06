@@ -5,7 +5,7 @@ import type { Camera, ScreenPoint, Viewport } from '../camera.ts';
 import type { Loaded } from '../dataFiles.ts';
 import type { ItemIndex } from '../items.ts';
 import type { Overlay, ToolOnMap } from '../overlays/types.ts';
-import type { WordClickHost } from '../overlays/search/wordClicks.ts';
+import type { WordClickHost } from '../tanakh/search/wordClicks.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { SidebarElements } from '../sidebar.ts';
 import type { MapItem, VerseColor } from '../types.ts';

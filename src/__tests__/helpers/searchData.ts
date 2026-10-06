@@ -3,7 +3,12 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildDictionary, type BookOrder, type Dictionary, type TextIndex } from '../../search';
+import {
+  buildDictionary,
+  type BookOrder,
+  type Dictionary,
+  type TextIndex,
+} from '../../tanakh/search/search';
 import {
   DICTIONARY_FILES,
   dictionaryOf,
@@ -11,8 +16,8 @@ import {
   textIndexOf,
   type DictionaryFiles,
   type SearchData,
-} from '../../search/data';
-import type { Parse } from '../../search/dictionary';
+} from '../../tanakh/search/data';
+import type { Parse } from '../../tanakh/search/dictionary';
 import { memoByValue } from '../../utils/memo';
 import type { VerseTexts } from '../../verseTexts';
 import { EMPTY_DICTIONARY_FILES } from './fixtures';

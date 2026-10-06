@@ -13,7 +13,7 @@ import {
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { writeLink, parseVerseId } from '@torahmap/link';
 import { parseUrlState } from '../../urlState';
-import { isSearching, searchTool } from '../../overlays/search/index';
+import { isSearching, searchTool } from '../../tanakh/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { haftarahOverlay } from '../../overlays/haftarah';
 import { commentaryOverlay } from '../../overlays/commentary';

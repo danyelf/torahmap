@@ -9,7 +9,7 @@ import { still, type ColorLayer } from './colorBlending';
 import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { searchOnAnyText } from '../overlays/search/index.ts';
+import { searchOnAnyText } from '../tanakh/search/index.ts';
 import { toolsPicked, toolsShown } from '../tools.ts';
 import type { Loaded } from '../dataFiles.ts';
 

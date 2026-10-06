@@ -6,8 +6,8 @@
 // until a term is removed, and then they are not.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { searchTool } from '../../../overlays/search/index';
-import { configure } from '../../../overlays/search';
+import { searchTool } from '../../../tanakh/search/index';
+import { configure } from '../../../tanakh/search/index.ts';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';

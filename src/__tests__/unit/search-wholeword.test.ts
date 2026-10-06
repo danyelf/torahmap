@@ -1,6 +1,6 @@
 // Tests for whole-word search functionality
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
+import { buildTextIndex, type TextIndex, versesForTerm } from '../../tanakh/search/search';
 import type { VerseTexts } from '../../verseTexts';
 import { inTextsOrder } from '../helpers/searchData';
 

@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { searchTool } from '../../../overlays/search/index';
-import { configure, type SearchSettings } from '../../../overlays/search';
+import { searchTool } from '../../../tanakh/search/index';
+import { configure, type SearchSettings } from '../../../tanakh/search/index.ts';
 import type { Color } from '../../../overlays/types';
-import { parseSearchTerms } from '../../../search';
+import { parseSearchTerms } from '../../../tanakh/search/search';
 import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
-import { SEARCH_RECORD_DELAY_MS } from '../../../search/constants';
+import { SEARCH_RECORD_DELAY_MS } from '../../../tanakh/search/constants';
 import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';

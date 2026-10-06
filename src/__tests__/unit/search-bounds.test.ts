@@ -2,7 +2,7 @@
 // the verse and carries points.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex, type SearchResult, type TextIndex } from '../../search';
+import { buildTextIndex, type SearchResult, type TextIndex } from '../../tanakh/search/search';
 import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
 const result = (verse: number): SearchResult => ({

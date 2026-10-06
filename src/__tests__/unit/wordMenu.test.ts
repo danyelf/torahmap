@@ -11,9 +11,14 @@
 // decided not to build.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { openWordMenu, closeWordMenu, wordMenuOpen, type WordMenuOptions } from '../../wordMenu';
-import type { Meaning } from '../../search/dictionary.ts';
-import { MAX_TERMS } from '../../search/terms.ts';
+import {
+  openWordMenu,
+  closeWordMenu,
+  wordMenuOpen,
+  type WordMenuOptions,
+} from '../../tanakh/search/wordMenu';
+import type { Meaning } from '../../tanakh/search/dictionary.ts';
+import { MAX_TERMS } from '../../tanakh/search/terms.ts';
 
 const leaf: Meaning = {
   keys: ['<LH=/@heb'],

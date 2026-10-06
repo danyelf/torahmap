@@ -3,7 +3,7 @@
 import type { MapText } from './app/text.ts';
 import { mapPoint } from './mapPoint.ts';
 import { TEXTS_FILE } from './verseTexts.ts';
-import { wordMenuOpen } from './wordMenu.ts';
+import { wordMenuOpen } from './tanakh/search/wordMenu.ts';
 import {
   DRAG_PX,
   STORY,
@@ -95,9 +95,9 @@ import {
   isSearching,
   requoteSearchResults,
   type SearchSettings,
-} from './overlays/search/index.ts';
-import { createSearchRecorder } from './overlays/search/recording.ts';
-import { SEARCH_RECORD_DELAY_MS } from './search/constants.ts';
+} from './tanakh/search/index.ts';
+import { createSearchRecorder } from './tanakh/search/recording.ts';
+import { SEARCH_RECORD_DELAY_MS } from './tanakh/search/constants.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, downloadFiles, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';

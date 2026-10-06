@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { searchTool } from '../../../overlays/search/index';
+import { searchTool } from '../../../tanakh/search/index';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { realSearchData } from '../../helpers/searchData';
 

@@ -2,7 +2,7 @@
 // and the term.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex, type SearchResult, type TextIndex } from '../../search';
+import { buildTextIndex, type SearchResult, type TextIndex } from '../../tanakh/search/search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import type { VerseTexts } from '../../verseTexts';

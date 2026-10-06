@@ -6,8 +6,8 @@
 // the selection silently lands on a different word.
 
 import { describe, it, expect } from 'vitest';
-import { parseSearchTerms } from '../../search.ts';
-import { meaningsInVerse, sameMeaning, versesFor } from '../../search/dictionary.ts';
+import { parseSearchTerms } from '../../tanakh/search/search.ts';
+import { meaningsInVerse, sameMeaning, versesFor } from '../../tanakh/search/dictionary.ts';
 import {
   addTerm,
   removeTerm,
@@ -29,7 +29,7 @@ import {
   encodeModes,
   applyModes,
   type SearchTerm,
-} from '../../search/terms.ts';
+} from '../../tanakh/search/terms.ts';
 import { realSearchData } from '../helpers/searchData';
 
 const { dictionary } = realSearchData();

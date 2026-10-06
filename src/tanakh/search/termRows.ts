@@ -6,8 +6,8 @@
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { isHebrew, stripNikkud } from '../../hebrew.ts';
-import type { Dictionary, LexemeLanguage } from '../../search.ts';
-import type { Meaning } from '../../search/dictionary.ts';
+import type { Dictionary, LexemeLanguage } from './search.ts';
+import type { Meaning } from './dictionary.ts';
 import {
   meaningsOf,
   chosenAmong,
@@ -25,7 +25,7 @@ import {
   MAX_TERMS,
   type SearchTerm,
   type SearchMode,
-} from '../../search/terms.ts';
+} from './terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { CONTROL } from '../../panel.ts';
 

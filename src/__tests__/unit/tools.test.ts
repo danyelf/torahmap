@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { toolsShown, togglesSearch } from '../../tools';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 

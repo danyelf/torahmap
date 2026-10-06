@@ -7,7 +7,7 @@ import { HAFTARAH_FILES, type HaftarahMappings } from '../../overlays/haftarah/r
 import { commentaryOverlay } from '../../overlays/commentary';
 import type { Loaded } from '../../dataFiles';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
-import { DICTIONARY_FILES, type DictionaryFiles } from '../../search/data';
+import { DICTIONARY_FILES, type DictionaryFiles } from '../../tanakh/search/data';
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   const verse = { book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20, size: 6, ...overrides };

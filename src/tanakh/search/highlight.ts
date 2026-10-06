@@ -10,8 +10,8 @@ import {
   splitIntoWords,
   stripNikkud,
 } from '../../hebrew.ts';
-import { foldForMatching, matchRangesInFolded } from '../../search/matching.ts';
-import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from '../../search/dictionary.ts';
+import { foldForMatching, matchRangesInFolded } from './matching.ts';
+import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
 import {
   displayedVerse,
   quoteVerse,
@@ -19,14 +19,14 @@ import {
   type SearchResult,
   type Snippet,
   type TextIndex,
-} from '../../search.ts';
+} from './search.ts';
 import {
   colorIndexAt,
   effectiveMode,
   selectedKeys,
   termIsHebrew,
   type SearchTerm,
-} from '../../search/terms.ts';
+} from './terms.ts';
 
 /**
  * A term's colour is carried on the mark's class, and the stylesheet holds one

@@ -85,7 +85,7 @@ Text-Fabric the first time. Once that setup is done:
 .venv/bin/python scripts/search/generate-lexeme-index.py
 ```
 
-Then set the BHSA `collected` date in `src/overlays/search.ts`.
+Then set the BHSA `collected` date in `src/tanakh/search/index.ts`.
 
 Afterwards, check what the new index can name:
 

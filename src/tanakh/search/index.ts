@@ -7,7 +7,7 @@
 // each is handed what it needs. Which row the reader is working in is
 // presentation, not a setting, so it stays here.
 import './search.css';
-import type { Overlay, Color, UrlParamValues } from '../types.ts';
+import type { Overlay, Color, UrlParamValues } from '../../overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
 import { HEBREW } from '../../types.ts';
 import {
@@ -16,9 +16,9 @@ import {
   type Dictionary,
   type SearchResult,
   type TextIndex,
-} from '../../search.ts';
-import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from '../../search/data.ts';
-import { spellingFor, versesFor, wordsOfVerse } from '../../search/dictionary.ts';
+} from './search.ts';
+import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from './data.ts';
+import { spellingFor, versesFor, wordsOfVerse } from './dictionary.ts';
 import { excerpt, highlightTerms } from './highlight.ts';
 import {
   renderResults as renderResultsList,
@@ -43,7 +43,7 @@ import {
   applyModes,
   MAX_TERMS,
   type SearchTerm,
-} from '../../search/terms.ts';
+} from './terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { isSearchableWord } from '../../hebrew.ts';
 import { SEARCH_URL_PARAMS } from '@torahmap/link';

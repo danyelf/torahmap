@@ -2,8 +2,8 @@
 // better than its spelling: the results already listed are quoted again, in
 // place.
 import { afterEach, describe, expect, it } from 'vitest';
-import { requoteSearchResults, searchTool } from '../../../overlays/search/index';
-import { addTerm } from '../../../search/terms';
+import { requoteSearchResults, searchTool } from '../../../tanakh/search/index';
+import { addTerm } from '../../../tanakh/search/terms';
 import { realSearchData } from '../../helpers/searchData';
 
 const { files } = realSearchData();

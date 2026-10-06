@@ -22,7 +22,7 @@ import {
   type Dictionary,
   type Lexeme,
   type LexemeId,
-} from '../search.ts';
+} from './search.ts';
 import {
   KETIV,
   QERE,
@@ -32,9 +32,9 @@ import {
   splitIntoWords,
   stripNikkud,
   type TextWord,
-} from '../hebrew.ts';
-import { isSectionMarker, verseWords } from '../verseWords.ts';
-import { memoByValue, memoByValueAndKey } from '../utils/memo.ts';
+} from '../../hebrew.ts';
+import { isSectionMarker, verseWords } from '../../verseWords.ts';
+import { memoByValue, memoByValueAndKey } from '../../utils/memo.ts';
 
 /**
  * One dictionary word a written form might be, as a reader sees it.

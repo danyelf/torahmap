@@ -3,16 +3,16 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { searchTool as overlay } from '../../overlays/search';
+import { searchTool as overlay } from '../../tanakh/search/index.ts';
 import { hostOverlay } from '../helpers/overlayHost';
 import { createVerse } from '../helpers/fixtures';
 import { EMPTY_DICTIONARY, inTextsOrder, searchDataFor } from '../helpers/searchData';
 
 const searchOverlay = hostOverlay(overlay, searchDataFor({}));
-import { buildTextIndex, versesForTerm } from '../../search';
-import { matchRangesInFolded, foldForMatching } from '../../search/matching';
+import { buildTextIndex, versesForTerm } from '../../tanakh/search/search';
+import { matchRangesInFolded, foldForMatching } from '../../tanakh/search/matching';
 import type { VerseTexts } from '../../verseTexts';
-import { setTermText } from '../../search/terms';
+import { setTermText } from '../../tanakh/search/terms';
 
 const GENESIS_1_1 = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
 

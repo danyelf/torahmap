@@ -4,10 +4,10 @@
 import type { Loaded } from '../../dataFiles.ts';
 import { dataFor } from '../../dataFiles.ts';
 import { stripNikkud } from '../../hebrew.ts';
-import { meaningsInVerse, wordsOfVerse } from '../../search/dictionary.ts';
-import { dictionaryOf } from '../../search/data.ts';
+import { meaningsInVerse, wordsOfVerse } from './dictionary.ts';
+import { dictionaryOf } from './data.ts';
 import { setWordClickHandler } from '../../sidebar.ts';
-import { openWordMenu } from '../../wordMenu.ts';
+import { openWordMenu } from './wordMenu.ts';
 import { trackWordMenuOpen, trackWordSearch } from '../../analytics.ts';
 import { verseRef } from '@torahmap/link';
 import { searchTool, searchForMeaning, canAddTerm, type SearchSettings } from './index.ts';

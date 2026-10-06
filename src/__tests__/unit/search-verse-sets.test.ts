@@ -5,7 +5,7 @@
 // meanings lives — the overlay — not in search().
 
 import { describe, it, expect } from 'vitest';
-import { buildTextIndex, resultsForVerseSets } from '../../search.ts';
+import { buildTextIndex, resultsForVerseSets } from '../../tanakh/search/search.ts';
 import type { VerseTexts } from '../../verseTexts.ts';
 import { inTextsOrder } from '../helpers/searchData';
 

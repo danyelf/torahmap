@@ -10,7 +10,7 @@ import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { readLink, writeLink } from '@torahmap/link';
 import { indexItems } from '../../items';
 import { createOverlaySettings } from '../../overlays/settings';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 
 const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };
 

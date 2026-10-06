@@ -1,6 +1,6 @@
 // The map shows an overlay and a search side by side, each on or off.
 import type { Overlay, ToolOnMap, Tools } from './overlays/types.ts';
-import { isSearching, type SearchSettings } from './overlays/search/index.ts';
+import { isSearching, type SearchSettings } from './tanakh/search/index.ts';
 import { dataFor, type Loaded } from './dataFiles.ts';
 
 /** The tools a view picks: the overlay, if one is on, and the search, while it has a word to search on. */

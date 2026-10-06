@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { writeLink, type UrlState } from '@torahmap/link';
 import { parseUrlState, updateUrl } from '../../urlState';
 import { registerAllOverlays, getOverlay, configureSearch } from '../../overlays/index';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';

@@ -1,6 +1,6 @@
 // The data files the cases hold back, by the names the app gives them.
 import { STRUCTURE_FILE, TEXTS_FILE } from '../src/verseTexts.ts';
-import { DICTIONARY_FILES, SEARCH_FILES } from '../src/search/data.ts';
+import { DICTIONARY_FILES, SEARCH_FILES } from '../src/tanakh/search/data.ts';
 import { HAFTARAH_FILES } from '../src/overlays/haftarah/readings.ts';
 
 export { TEXTS_FILE };

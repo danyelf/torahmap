@@ -5,7 +5,7 @@
 import { dataFor, loadFiles, overlayFiles } from '../src/dataFiles.ts';
 import { isHebrew } from '../src/hebrew.ts';
 import { configureSearch, createOverlaySettings } from '../src/overlays/index.ts';
-import { searchTool as searchOverlay } from '../src/overlays/search/index.ts';
+import { searchTool as searchOverlay } from '../src/tanakh/search/index.ts';
 
 // --- Event log ---
 
