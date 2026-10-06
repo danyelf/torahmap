@@ -47,3 +47,9 @@ test("a tractate file that fails says so, and isn't fetched again", async ({ pag
   await expect(page.locator('#verse-popup .ref-text')).toHaveText('Berakhot 2a:1');
   expect(requests).toBe(1);
 });
+
+test('/talmud, without the slash, opens the same page and keeps the link', async ({ page }) => {
+  await page.goto('/talmud?verse=Berakhot.2a.1');
+  await expect(page).toHaveURL(/\/talmud\/\?verse=Berakhot\.2a\.1$/);
+  await expect(page.locator('#talmud-labels')).toHaveCount(1);
+});
