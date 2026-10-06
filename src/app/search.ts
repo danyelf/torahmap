@@ -14,8 +14,6 @@ interface SearchMembers<S, D> {
   focus(): void;
   /** Hears what happens to the search, for telemetry. */
   recorder: SearchRecorder<S, D>;
-  /** Search's data changed in a way its results list quotes, though its panel is not redrawn. */
-  requote?(data: D): void;
   /** Whether a menu search opened over the popup is showing, so the popup must not be redrawn under it. */
   holdsPopup?(): boolean;
 }
@@ -25,6 +23,6 @@ export interface SearchRecorder<S, D> {
   readerChanged(settings: S, data: D | null): void;
   /** A link or a story stop replaced the search. */
   replaced(settings: S, data: D | null): void;
-  /** Search's data changed. */
-  dataChanged(data: D | null): void;
+  /** Search's files loaded: a search waiting for them can now be recorded. */
+  dataLoaded(data: D): void;
 }

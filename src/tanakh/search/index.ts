@@ -350,14 +350,10 @@ function snippetFor(data: SearchData): ResultsView['snippet'] {
   return (result, term) => excerpt(result, term, textIndexOf(data), dictionaryOf(data), data.parse);
 }
 
-/**
- * Quote the results already listed again from `data`, which differs from the
- * panel's only in the per-word parse: it marks a word better than its spelling.
- */
-export function requoteSearchResults(data: SearchData): void {
-  if (!searchResults) return;
-  shownData = data;
-  requoteResults(searchResults, snippetFor(data));
+/** Whether two sets of search's files differ only in the per-word parse. */
+function onlyParseDiffers(a: SearchData, b: SearchData): boolean {
+  const keys = Object.keys(SEARCH_FILES) as (keyof SearchData)[];
+  return keys.every((key) => key === 'parse' || a[key] === b[key]);
 }
 
 /**
@@ -457,7 +453,6 @@ export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> 
   isSearching,
   focus: focusSearchBox,
   recorder: createSearchRecorder({ delayMs: SEARCH_RECORD_DELAY_MS, send: trackSearchExecute }),
-  requote: requoteSearchResults,
   holdsPopup: wordMenuOpen,
 
   prebuild(data) {
@@ -539,6 +534,16 @@ export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> 
       );
     } else if (settings === previous && data === previousData) {
       // Nothing has changed, and redrawing the list would scroll it to the top.
+      return;
+    } else if (
+      settings === previous &&
+      data &&
+      previousData &&
+      onlyParseDiffers(previousData, data)
+    ) {
+      // The parse marks a word better than its spelling: quote the list again
+      // in place, so the reader keeps their place in it.
+      requoteResults(searchResults, snippetFor(data));
       return;
     }
 

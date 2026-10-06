@@ -96,7 +96,7 @@ export function createSearchRecorder(options: {
       data = next;
       sendIfReady();
     },
-    dataChanged(next) {
+    dataLoaded(next) {
       data = next;
       sendIfReady();
     },

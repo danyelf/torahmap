@@ -1840,12 +1840,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // Before the redraws, so one that throws cannot hold back load timing.
     prebuildCompleted(allOverlays, before, loaded, prebuilt);
     const search = dataFor(searchTool, loaded);
-    if (search !== dataFor(searchTool, before)) searchTool.recorder.dataChanged(search);
+    if (search && search !== dataFor(searchTool, before)) searchTool.recorder.dataLoaded(search);
     const stale = staleAfterLanding(before, loaded, landingView());
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) drawOverlayPanel(false);
     if (stale.searchPanel) drawSearchPanel(false);
-    if (stale.searchResults && search) searchTool.requote?.(search);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
     if (stale.popup) refreshPopupAfterDownload();
   }

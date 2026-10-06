@@ -24,7 +24,7 @@ export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, vo
     document.getElementById(BOX_ID)?.focus();
   },
 
-  recorder: { readerChanged() {}, replaced() {}, dataChanged() {} },
+  recorder: { readerChanged() {}, replaced() {}, dataLoaded() {} },
 
   getVerseColor: () => null,
 

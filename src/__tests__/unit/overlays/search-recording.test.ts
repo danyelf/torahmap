@@ -146,13 +146,13 @@ describe('createSearchRecorder', () => {
     recorder.readerChanged(search('heavens'), null);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([]);
-    recorder.dataChanged(data);
+    recorder.dataLoaded(data);
     expect(sent).toEqual([['heavens', 2]]);
   });
 
   it('waits for the search to settle even when the data arrives first', () => {
     recorder.readerChanged(search('heavens'), null);
-    recorder.dataChanged(data);
+    recorder.dataLoaded(data);
     expect(sent).toEqual([]);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([['heavens', 2]]);
@@ -161,7 +161,7 @@ describe('createSearchRecorder', () => {
   it("counts a link's terms as sent before the data arrives", () => {
     const link = search('heavens');
     recorder.replaced(link, null);
-    recorder.dataChanged(data);
+    recorder.dataLoaded(data);
     recorder.readerChanged({ terms: addTerm(link.terms, 'names') }, data);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([['names', 1]]);
@@ -172,7 +172,7 @@ describe('createSearchRecorder', () => {
     const empty = { terms: addTerm([], '') };
     expect(() => {
       recorder.replaced(empty, unbuildable);
-      recorder.dataChanged(unbuildable);
+      recorder.dataLoaded(unbuildable);
       recorder.readerChanged(empty, unbuildable);
       vi.advanceTimersByTime(DELAY);
     }).not.toThrow();
@@ -183,7 +183,7 @@ describe('createSearchRecorder', () => {
     recorder.replaced(link, null);
     recorder.readerChanged({ terms: addTerm(link.terms, 'names') }, null);
     vi.advanceTimersByTime(DELAY);
-    recorder.dataChanged(data);
+    recorder.dataLoaded(data);
     expect(sent).toEqual([['names', 1]]);
   });
 });
