@@ -13,7 +13,7 @@ export type SearchTool<T, S = unknown, D = unknown> = Overlay<T, S, D> & SearchM
 interface SearchMembers<S, D> {
   /** Whether `settings` search on anything. While not, search colours nothing. */
   isSearching(settings: S): boolean;
-  /** Told what happens to the search; what it sends, if anything, is its own business. */
+  /** Told what happens to the search, for telemetry. */
   telemetry: SearchTelemetry<S, D>;
 }
 

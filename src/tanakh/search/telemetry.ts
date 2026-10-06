@@ -33,11 +33,7 @@ export function termsToRecord(
   return { send, recorded };
 }
 
-/**
- * Sends the reader's search once it has sat unchanged and its data is in. A
- * search a link or a story stop put in place counts as sent, and drops one
- * waiting; a search waiting only for its data is sent when the data lands.
- */
+/** A search a link or a story stop put in place counts as already sent, and drops one waiting. */
 export function searchTelemetry(options: {
   delayMs: number;
   send(text: string, language: TextLanguage, mode: SearchMode, hits: number): void;

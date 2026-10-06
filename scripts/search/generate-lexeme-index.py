@@ -363,7 +363,7 @@ def main():
     lexemes = []
     for node in lex_nodes:
         display = F.voc_lex_utf8.v(node) or F.lex_utf8.v(node) or ""
-        # The row order LexemeRow in src/search.ts reads.
+        # The row order LexemeRow in src/tanakh/search/search.ts reads.
         lexemes.append(
             [
                 F.lex.v(node),

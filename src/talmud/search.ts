@@ -11,12 +11,14 @@ export interface TalmudSearchSettings {
 
 const URL_PARAMS = [{ key: 'search', kind: 'text' }] as const satisfies readonly UrlParamSpec[];
 
+const wordIn = (settings: TalmudSearchSettings): string => settings.text.trim();
+
 export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, void> = {
   id: 'search',
   name: 'Search',
   description: 'Finds nothing yet.',
 
-  isSearching: (settings) => settings.text.trim() !== '',
+  isSearching: (settings) => wordIn(settings) !== '',
 
   telemetry: { readerChanged() {}, replaced() {}, dataLoaded() {} },
 
@@ -28,8 +30,10 @@ export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, vo
 
   settingsFromUrl: (params) => ({ text: params.search ?? '' }),
 
-  settingsToUrl: (settings): Record<string, string> =>
-    settings.text.trim() ? { search: settings.text.trim() } : {},
+  settingsToUrl: (settings): Record<string, string> => {
+    const word = wordIn(settings);
+    return word ? { search: word } : {};
+  },
 
   renderControls(container, settings, onChange) {
     let box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`);
@@ -39,7 +43,7 @@ export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, vo
       box.addEventListener('input', () => onChange(() => ({ text: box!.value })));
     }
     if (box.value !== settings.text) box.value = settings.text;
-    container.querySelector('p')!.textContent = settings.text.trim()
+    container.querySelector('p')!.textContent = wordIn(settings)
       ? 'No matching segments'
       : 'Type to search';
   },

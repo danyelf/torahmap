@@ -133,7 +133,7 @@ against the baseline it keeps in `scripts/search/`.
 ## One thing to watch
 
 `normalize()` in the generator and `normalizeHebrewForSearch()` in
-`src/search.ts` must fold Hebrew the same way. If they drift apart, every
+`src/hebrew.ts` must fold Hebrew the same way. If they drift apart, every
 lookup misses and meanings search silently finds nothing. Change one
 and you have to change the other.
 

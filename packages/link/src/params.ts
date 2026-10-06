@@ -69,7 +69,7 @@ type ValueOf<P extends UrlParamSpec> = P extends { allowed: readonly (infer V ex
 export const SEARCH_URL_PARAMS = [
   { key: 'search', kind: 'text' },
   // Positional across the terms in `search`, one letter each, and an empty
-  // entry for a term still on its default (see MODE_LETTERS in search/terms.ts).
+  // entry for a term still on its default (see MODE_LETTERS in src/tanakh/search/terms.ts).
   { key: 'mode', kind: 'token' },
   { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
