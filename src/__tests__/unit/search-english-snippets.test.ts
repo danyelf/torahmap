@@ -2,7 +2,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex, resultsForVerseSets, type SearchResult } from '../../search';
+import { buildTextIndex, resultsForVerseSets, type SearchResult } from '../../tanakh/search/search';
 import type { VerseTexts } from '../../verseTexts';
 import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 

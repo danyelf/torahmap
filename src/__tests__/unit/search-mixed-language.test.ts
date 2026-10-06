@@ -5,10 +5,10 @@
 // and a blank row means "nothing yet", not "everything".
 
 import { describe, it, expect } from 'vitest';
-import { buildTextIndex, versesForTerm } from '../../search.ts';
-import { addTerm, termQuery } from '../../search/terms.ts';
+import { buildTextIndex, versesForTerm } from '../../tanakh/search/search.ts';
+import { addTerm, termQuery } from '../../tanakh/search/terms.ts';
 import { ALL_TEXTS_FIXTURE } from '../helpers/mixedLanguageTexts.ts';
-import { meaningsFor, versesFor } from '../../search/dictionary.ts';
+import { meaningsFor, versesFor } from '../../tanakh/search/dictionary.ts';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';
 
 const index = buildTextIndex(ALL_TEXTS_FIXTURE, inTextsOrder(ALL_TEXTS_FIXTURE));

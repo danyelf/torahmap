@@ -1,24 +1,23 @@
 // A click on a Hebrew word in the verse popup opens its menu, which adds the
 // word, or one of its meanings, to the search.
 
-import type { Loaded } from '../../dataFiles.ts';
+import type { Shell } from '../../app/text.ts';
+import type { TanakhLayout } from '../../types.ts';
 import { dataFor } from '../../dataFiles.ts';
 import { stripNikkud } from '../../hebrew.ts';
-import { meaningsInVerse, wordsOfVerse } from '../../search/dictionary.ts';
-import { dictionaryOf } from '../../search/data.ts';
+import { meaningsInVerse, wordsOfVerse } from './dictionary.ts';
+import { dictionaryOf } from './data.ts';
 import { setWordClickHandler } from '../../sidebar.ts';
-import { openWordMenu } from '../../wordMenu.ts';
+import { openWordMenu } from './wordMenu.ts';
 import { trackWordMenuOpen, trackWordSearch } from '../../analytics.ts';
 import { verseRef } from '@torahmap/link';
 import { searchTool, searchForMeaning, canAddTerm, type SearchSettings } from './index.ts';
 
 /** What the word menu reads and changes. */
-export interface WordClickHost {
-  loaded(): Loaded;
-  searchSettings(): SearchSettings;
-  /** Change the search as the reader did, and open its panel. */
-  changeSearch(update: (current: SearchSettings) => SearchSettings): void;
-}
+export type WordClickHost = Pick<
+  Shell<TanakhLayout, SearchSettings>,
+  'loaded' | 'searchSettings' | 'changeSearch' | 'holdPopup'
+>;
 
 export function listenForWordClicks(host: WordClickHost): void {
   setWordClickHandler((click) => {
@@ -45,6 +44,7 @@ export function listenForWordClicks(host: WordClickHost): void {
       meanings,
       anchor: click.element,
       paletteFull,
+      onClose: host.holdPopup(),
       onChoose: (meaning) => {
         // The menu counted the words when it opened; a keyboard reader can add one since.
         if (!canAddTerm(host.searchSettings())) return;

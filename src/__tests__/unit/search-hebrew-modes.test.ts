@@ -1,7 +1,7 @@
 // Tests for Hebrew search modes (substring, word, meanings)
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
-import type { MatchMode } from '../../search/matching';
+import { buildTextIndex, type TextIndex, versesForTerm } from '../../tanakh/search/search';
+import type { MatchMode } from '../../tanakh/search/matching';
 import type { VerseTexts } from '../../verseTexts';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';

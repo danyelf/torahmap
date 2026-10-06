@@ -1,9 +1,9 @@
 // The app shell: the map, its panels, story, popup and links, for whichever text it is given.
 
 import type { MapText } from './app/text.ts';
+import { SEARCH_BOX_ID } from './app/search.ts';
 import { mapPoint } from './mapPoint.ts';
 import { TEXTS_FILE } from './verseTexts.ts';
-import { wordMenuOpen } from './wordMenu.ts';
 import {
   DRAG_PX,
   STORY,
@@ -36,7 +36,6 @@ import {
   trackShare,
   trackStoryExit,
   trackStoryReturn,
-  trackSearchExecute,
   trackStoryStop,
   trackVerseClick,
   trackViewSettled,
@@ -89,15 +88,6 @@ import { getWebGL2 } from './webgl.ts';
 import type { MapItem, VerseColor } from './types.ts';
 import { createOverlaySettings, type Overlay } from './overlays/index.ts';
 import type { Tools } from './overlays/types.ts';
-import {
-  searchOnAnyText,
-  focusSearchBox,
-  isSearching,
-  requoteSearchResults,
-  type SearchSettings,
-} from './overlays/search/index.ts';
-import { createSearchRecorder } from './overlays/search/recording.ts';
-import { SEARCH_RECORD_DELAY_MS } from './search/constants.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, downloadFiles, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';
@@ -110,6 +100,7 @@ import {
   type OpeningView,
 } from './downloads.ts';
 import { LOADING, loadNotice } from './loadNotice.ts';
+import { createPopupHold } from './popupHold.ts';
 import type { Picture } from './geometry.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -186,7 +177,7 @@ function showCannotDraw(): void {
   document.getElementById('no-webgl')!.hidden = false;
 }
 
-export async function createApp<I extends MapItem>(source: MapText<I>): Promise<void> {
+export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
   showTitle();
 
@@ -214,7 +205,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
   let loaded: Loaded = await firstFiles;
   const text = source.open(loaded);
   const verses = text.items;
-  const searchTool = searchOnAnyText<I>();
+  const searchTool = text.search;
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
   const getOverlay = (id: string): Overlay<I> | undefined =>
     text.overlays.find((overlay) => overlay.id === id);
@@ -333,7 +324,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
   }
 
   function searching(): boolean {
-    return isSearching(overlaySettings.get(searchTool));
+    return searchTool.isSearching(overlaySettings.get(searchTool));
   }
 
   /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
@@ -447,7 +438,16 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
   function blendColors(): ColorLayer | null {
     if (driver.by !== 'story' || !driver.blend) return null;
     const { from, to, t } = driver.blend;
-    return computeBlendedColors(from, to, t, verses, mouseState.hoveredVerse, loaded, base);
+    return computeBlendedColors(
+      from,
+      to,
+      t,
+      verses,
+      mouseState.hoveredVerse,
+      loaded,
+      base,
+      searchTool,
+    );
   }
 
   function blendTransition(): void {
@@ -950,6 +950,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
   });
 
   const sidebarElements = getSidebarElements();
+  const popupHold = createPopupHold();
 
   function buildOverlayParamsForUrl(): Record<string, string> {
     return currentOverlay ? overlaySettings.toUrl(currentOverlay) : {};
@@ -1220,11 +1221,6 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
     syncUrl(false);
   }
 
-  const searchRecorder = createSearchRecorder({
-    delayMs: SEARCH_RECORD_DELAY_MS,
-    send: trackSearchExecute,
-  });
-
   /**
    * Redraw what shows the search. `fresh` clears the controls first, for
    * settings from a link or a story stop; a reader's own edit redraws into
@@ -1240,7 +1236,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
-      searchRecorder.replaced(overlaySettings.get(searchTool), dataFor(searchTool, loaded));
+      searchTool.telemetry.replaced(overlaySettings.get(searchTool), dataFor(searchTool, loaded));
     }
     searchTool.renderControls?.(
       searchControls,
@@ -1251,15 +1247,15 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
     showSearchNotice();
   }
 
-  function changeSearch(update: (current: SearchSettings) => SearchSettings): void {
+  function changeSearch(update: (current: S) => S): void {
     const before = overlaySettings.get(searchTool);
     const after = update(before);
     overlaySettings.set(searchTool, after);
-    searchRecorder.readerChanged(after, dataFor(searchTool, loaded));
+    searchTool.telemetry.readerChanged(after, dataFor(searchTool, loaded));
     applyTools();
     searchChanged(false);
     render();
-    syncUrl(togglesSearch(before, after));
+    syncUrl(togglesSearch(searchTool, before, after));
   }
 
   function setOverlay(id: string): void {
@@ -1308,6 +1304,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
 
   text.start?.({
     loaded: () => loaded,
+    holdPopup: popupHold.hold,
     pinAndGlide: (verse) => {
       // A full-height sheet would hide the glide.
       if (frame.full) setFrame({ ...frame, full: false });
@@ -1475,7 +1472,7 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
     if (choice.kind === 'story') return readStory(choice.id, false);
     if (choice.kind === 'search') {
       dispatch({ type: 'choose', panel: 'search' });
-      focusSearchBox();
+      document.getElementById(SEARCH_BOX_ID)?.focus();
       return;
     }
     setOverlay(choice.id);
@@ -1679,7 +1676,16 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
   function storyPicture(): Picture {
     const state = currentStoryState();
     return flatten(
-      computeBlendedColors(state.fromStop, state.toStop, state.t, verses, null, loaded, base),
+      computeBlendedColors(
+        state.fromStop,
+        state.toStop,
+        state.t,
+        verses,
+        null,
+        loaded,
+        base,
+        searchTool,
+      ),
     );
   }
 
@@ -1791,17 +1797,20 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
       return { tools: pickedTools(), popup: pinnedVerse && text.popupFile(pinnedVerse) };
     const stop = resolvedStops[storyStopIndex()];
     const verse = stop.verse ? squares.find(stop.verse) : null;
-    return { tools: stopTools(stop), popup: verse && text.popupFile(verse) };
+    return { tools: stopTools(stop, searchTool), popup: verse && text.popupFile(verse) };
   }
 
   function landingView(): LandingView<I> {
     const shown = pinnedVerse ?? mouseState.hoveredVerse;
     let map = pickedTools();
     if (driver.by === 'story' && driver.blend) {
-      map = [...stopTools(driver.blend.from), ...stopTools(driver.blend.to)];
+      map = [
+        ...stopTools(driver.blend.from, searchTool),
+        ...stopTools(driver.blend.to, searchTool),
+      ];
     } else if (driver.by === 'rejoining') {
       const state = currentStoryState();
-      map = [...stopTools(state.fromStop), ...stopTools(state.toStop)];
+      map = [...stopTools(state.fromStop, searchTool), ...stopTools(state.toStop, searchTool)];
     }
     return {
       source: colorSource(driver),
@@ -1835,12 +1844,11 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
     // Before the redraws, so one that throws cannot hold back load timing.
     prebuildCompleted(allOverlays, before, loaded, prebuilt);
     const search = dataFor(searchTool, loaded);
-    if (search !== dataFor(searchTool, before)) searchRecorder.dataChanged(search);
+    if (search && search !== dataFor(searchTool, before)) searchTool.telemetry.dataLoaded(search);
     const stale = staleAfterLanding(before, loaded, landingView());
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) drawOverlayPanel(false);
     if (stale.searchPanel) drawSearchPanel(false);
-    if (stale.searchResults && search) requoteSearchResults(search);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
     if (stale.popup) refreshPopupAfterDownload();
   }
@@ -1853,10 +1861,8 @@ export async function createApp<I extends MapItem>(source: MapText<I>): Promise<
     refreshPopupAfterDownload();
   }
 
-  // Redrawing the popup under an open word menu would take away the word it
-  // names; the popup catches up on its next redraw.
   function refreshPopupAfterDownload(): void {
-    if (!wordMenuOpen()) refreshVersePopup();
+    if (!popupHold.held()) refreshVersePopup();
   }
 
   function prebuilt(overlay: Overlay<I>, built: boolean): void {

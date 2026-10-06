@@ -79,18 +79,14 @@ export interface Stale {
   map: ColorSource | null;
   overlayPanel: boolean;
   searchPanel: boolean;
-  /** The search results already listed, quoted from data the panel was not redrawn for. */
-  searchResults: boolean;
   popup: boolean;
 }
 
 /**
  * What a file landing put out of date: whatever is drawn from a tool whose
- * data it changed. The map and the panels are drawn from the files a tool
- * requires; the popup also from its optional files, and from the file its
- * square's text is in. The search results also quote from search's optional
- * file, and are quoted again in place for it rather than redrawn, so a reader
- * keeps their place.
+ * data it changed. The map and the overlay's panel are drawn from the files a
+ * tool requires; the search panel also from its optional ones, and the popup
+ * from both tools' optional ones and the file its square's text is in.
  */
 export function staleAfterLanding<T>(before: Loaded, after: Loaded, view: LandingView<T>): Stale {
   const drawn = (tool: Overlay<T>): boolean => changed(tool, before, after, requiredFiles(tool));
@@ -98,8 +94,7 @@ export function staleAfterLanding<T>(before: Loaded, after: Loaded, view: Landin
   return {
     map: view.map.some(drawn) ? view.source : null,
     overlayPanel: view.panel !== null && drawn(view.panel),
-    searchPanel: drawn(view.search),
-    searchResults: read(view.search) && !drawn(view.search),
+    searchPanel: read(view.search),
     popup:
       view.popup !== null &&
       (before.get(view.popup) !== after.get(view.popup) ||

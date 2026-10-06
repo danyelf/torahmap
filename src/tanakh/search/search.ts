@@ -1,19 +1,19 @@
 // Full-text search over Hebrew and English.
 // Meanings mode resolves a written form to the ETCBC BHSA lexemes it can be.
 
-import type { VerseTexts } from './verseTexts';
-import { memoByValue } from './utils/memo.ts';
-import { HEBREW } from './types.ts';
+import type { VerseTexts } from '../../verseTexts';
+import { memoByValue } from '../../utils/memo.ts';
+import { HEBREW } from '../../types.ts';
 import { verseId } from '@torahmap/link';
 
 import {
   TERM_SEPARATORS,
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
-} from './search/constants.ts';
-import { isSearchableWord, normalizeHebrewForSearch } from './hebrew.ts';
-import { foldForMatching, matchRangesInFolded, type MatchMode } from './search/matching.ts';
-import type { TextLanguage } from './types.ts';
+} from './constants.ts';
+import { isSearchableWord, normalizeHebrewForSearch } from '../../hebrew.ts';
+import { foldForMatching, matchRangesInFolded, type MatchMode } from './matching.ts';
+import type { TextLanguage } from '../../types.ts';
 
 export interface TermMatch {
   termIndex: number;

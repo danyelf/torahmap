@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as data from '../../../search/data';
-import { searchTool } from '../../../overlays/search/index';
+import * as data from '../../../tanakh/search/data';
+import { searchTool } from '../../../tanakh/search/index';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { searchDataFor } from '../../helpers/searchData';
 import { typeInSearch } from '../../helpers/searchOverlay';
 
-vi.mock('../../../search/data', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../search/data')>();
+vi.mock('../../../tanakh/search/data', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../tanakh/search/data')>();
   return {
     ...actual,
     textIndexOf: vi.fn(actual.textIndexOf),

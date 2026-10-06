@@ -7,7 +7,7 @@
 // escapes it.
 
 import { describe, it, expect } from 'vitest';
-import { meaningsFor, versesFor, formMatches } from '../../search/dictionary.ts';
+import { meaningsFor, versesFor, formMatches } from '../../tanakh/search/dictionary.ts';
 import { realSearchData } from '../helpers/searchData';
 
 const { dictionary } = realSearchData();

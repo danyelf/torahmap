@@ -2,9 +2,14 @@
 // checked, which is what the reader gets before touching anything. Tests can
 // then describe meanings-mode behaviour without driving the overlay's DOM.
 
-import { parseSearchTerms, type Dictionary, type SearchResult, type TextIndex } from '../../search';
-import { matchesForTerms } from '../../overlays/search';
-import { addTerm, type SearchTerm } from '../../search/terms';
+import {
+  parseSearchTerms,
+  type Dictionary,
+  type SearchResult,
+  type TextIndex,
+} from '../../tanakh/search/search';
+import { matchesForTerms } from '../../tanakh/search/index.ts';
+import { addTerm, type SearchTerm } from '../../tanakh/search/terms';
 
 export function searchInMeaningsMode(
   index: TextIndex,

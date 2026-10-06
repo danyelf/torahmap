@@ -6,10 +6,10 @@ import type { Picture } from '../geometry.ts';
 import { getOverlay } from '../overlays/registry';
 import { fillDefaultColors, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
-import { SEARCH_URL_PARAMS, validateOverlayParams, type UrlParamValues } from '@torahmap/link';
+import { validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { settingsFromLink } from '../overlays/settings.ts';
-import { searchOnAnyText } from '../overlays/search/index.ts';
+import type { SearchTool } from '../app/search.ts';
 import { toolsPicked, toolsShown } from '../tools.ts';
 import type { Loaded } from '../dataFiles.ts';
 
@@ -34,11 +34,15 @@ function paramsKey(values: UrlParamValues): string {
   return new URLSearchParams(Object.fromEntries(definedEntries(values))).toString();
 }
 
-function cacheKeyFor<T>(overlay: Overlay<T> | null, stop: StoryStop): string {
+function cacheKeyFor<T>(
+  overlay: Overlay<T> | null,
+  search: SearchTool<T>,
+  stop: StoryStop,
+): string {
   const overlayKey = overlay
     ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
     : NO_OVERLAY;
-  const searchKey = paramsKey(validateOverlayParams(SEARCH_URL_PARAMS, stop.searchParams ?? {}));
+  const searchKey = paramsKey(validateOverlayParams(search.urlParams, stop.searchParams ?? {}));
   return `${overlayKey}#${searchKey}`;
 }
 
@@ -48,8 +52,7 @@ function overlayOf<T>(stop: StoryStop): Overlay<T> | null {
 }
 
 /** The tools a stop picks. */
-export function stopTools<T>(stop: StoryStop): Overlay<T>[] {
-  const search = searchOnAnyText<T>();
+export function stopTools<T>(stop: StoryStop, search: SearchTool<T>): Overlay<T>[] {
   return toolsPicked(overlayOf<T>(stop), search, settingsFromLink(search, stop.searchParams ?? {}));
 }
 
@@ -59,6 +62,7 @@ export function pictureForStop<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => VerseColor,
+  search: SearchTool<I>,
 ): Picture {
   const overlay = overlayOf<I>(stop);
   const byHover = !!(overlay?.hoverChangesColors && hovered);
@@ -73,11 +77,10 @@ export function pictureForStop<I extends MapItem>(
     cache = new Map();
     byLoaded.set(loaded, cache);
   }
-  const key = cacheKeyFor(overlay, stop);
+  const key = cacheKeyFor(overlay, search, stop);
   const cached = byHover ? undefined : cache.get(key);
   if (cached) return cached;
 
-  const search = searchOnAnyText<I>();
   const tools = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
@@ -101,13 +104,14 @@ export function computeBlendedColors<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => VerseColor,
+  search: SearchTool<I>,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)
-    return still(pictureForStop(fromStop, verses, hovered, loaded, base));
-  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded, base));
+    return still(pictureForStop(fromStop, verses, hovered, loaded, base, search));
+  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded, base, search));
   return {
-    from: pictureForStop(fromStop, verses, hovered, loaded, base),
-    to: pictureForStop(toStop, verses, hovered, loaded, base),
+    from: pictureForStop(fromStop, verses, hovered, loaded, base, search),
+    to: pictureForStop(toStop, verses, hovered, loaded, base, search),
     t,
   };
 }

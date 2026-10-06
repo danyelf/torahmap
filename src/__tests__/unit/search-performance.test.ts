@@ -7,7 +7,7 @@
 // machine. Meanings-mode search is about 1ms once warm, so a genuinely slow
 // search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildTextIndex, type TextIndex, versesForTerm } from '../../search';
+import { buildTextIndex, type TextIndex, versesForTerm } from '../../tanakh/search/search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';

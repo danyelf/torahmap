@@ -4,14 +4,14 @@
 // comparing, and two words in two colours is the comparison.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { searchTool } from '../../../overlays/search/index';
+import { searchTool } from '../../../tanakh/search/index';
 import {
   configure,
   searchForMeaning,
   canAddTerm,
   type SearchSettings,
-} from '../../../overlays/search';
-import { meaningsInVerse } from '../../../search/dictionary';
+} from '../../../tanakh/search/index.ts';
+import { meaningsInVerse } from '../../../tanakh/search/dictionary';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls } from '../../helpers/searchOverlay';

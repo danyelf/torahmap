@@ -7,9 +7,9 @@
 import { describe, it, expect } from 'vitest';
 import { verseId } from '@torahmap/link';
 import { excerptOf } from '../helpers/excerpt';
-import { findLexemesForWord, getLexeme } from '../../search';
-import { addTerm, onlyMeaning } from '../../search/terms';
-import { excerpt } from '../../overlays/search/highlight';
+import { findLexemesForWord, getLexeme } from '../../tanakh/search/search';
+import { addTerm, onlyMeaning } from '../../tanakh/search/terms';
+import { excerpt } from '../../tanakh/search/highlight';
 import { stripNikkud } from '../../hebrew';
 
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';

@@ -7,7 +7,9 @@
 // each is handed what it needs. Which row the reader is working in is
 // presentation, not a setting, so it stays here.
 import './search.css';
-import type { Overlay, Color, UrlParamValues } from '../types.ts';
+import type { Color, UrlParamValues } from '../../overlays/types.ts';
+import type { SearchTool } from '../../app/search.ts';
+import { trackSearchExecute } from '../../analytics.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
 import { HEBREW } from '../../types.ts';
 import {
@@ -16,9 +18,9 @@ import {
   type Dictionary,
   type SearchResult,
   type TextIndex,
-} from '../../search.ts';
-import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from '../../search/data.ts';
-import { spellingFor, versesFor, wordsOfVerse } from '../../search/dictionary.ts';
+} from './search.ts';
+import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from './data.ts';
+import { spellingFor, versesFor, wordsOfVerse } from './dictionary.ts';
 import { excerpt, highlightTerms } from './highlight.ts';
 import {
   renderResults as renderResultsList,
@@ -27,7 +29,8 @@ import {
   type ResultsView,
 } from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
-export { focusSearchBox } from './termRows.ts';
+import { searchTelemetry } from './telemetry.ts';
+import { SEARCH_RECORD_DELAY_MS } from './constants.ts';
 import {
   addTerm,
   chosenMeanings,
@@ -43,7 +46,7 @@ import {
   applyModes,
   MAX_TERMS,
   type SearchTerm,
-} from '../../search/terms.ts';
+} from './terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { isSearchableWord } from '../../hebrew.ts';
 import { SEARCH_URL_PARAMS } from '@torahmap/link';
@@ -340,14 +343,10 @@ function snippetFor(data: SearchData): ResultsView['snippet'] {
   return (result, term) => excerpt(result, term, textIndexOf(data), dictionaryOf(data), data.parse);
 }
 
-/**
- * Quote the results already listed again from `data`, which differs from the
- * panel's only in the per-word parse: it marks a word better than its spelling.
- */
-export function requoteSearchResults(data: SearchData): void {
-  if (!searchResults) return;
-  shownData = data;
-  requoteResults(searchResults, snippetFor(data));
+/** Whether two sets of search's files differ only in the per-word parse. */
+function onlyParseDiffers(a: SearchData, b: SearchData): boolean {
+  const keys = Object.keys(SEARCH_FILES) as (keyof SearchData)[];
+  return keys.every((key) => key === 'parse' || a[key] === b[key]);
 }
 
 /**
@@ -425,7 +424,7 @@ export function isSearching(settings: SearchSettings): boolean {
   return activeTerms(settings).length > 0;
 }
 
-export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
+export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> = {
   id: 'search',
   name: 'Search',
   description: 'Any word, Hebrew or English.',
@@ -443,6 +442,9 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
   ],
 
   data: SEARCH_FILES,
+
+  isSearching,
+  telemetry: searchTelemetry({ delayMs: SEARCH_RECORD_DELAY_MS, send: trackSearchExecute }),
 
   prebuild(data) {
     textIndexOf(data);
@@ -524,6 +526,16 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
     } else if (settings === previous && data === previousData) {
       // Nothing has changed, and redrawing the list would scroll it to the top.
       return;
+    } else if (
+      settings === previous &&
+      data &&
+      previousData &&
+      onlyParseDiffers(previousData, data)
+    ) {
+      // The parse marks a word better than its spelling: quote the list again
+      // in place, so the reader keeps their place in it.
+      requoteResults(searchResults, snippetFor(data));
+      return;
     }
 
     renderTermRows();
@@ -576,12 +588,3 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
     );
   },
 };
-
-/**
- * Shortcut: search is the Tanakh's on every text. On another text it searches
- * the Tanakh's words, which name no square, so a search dims the whole map; the
- * page still downloads and prepares search's files.
- */
-export function searchOnAnyText<T>(): Overlay<T, SearchSettings, SearchData> {
-  return searchTool as unknown as Overlay<T, SearchSettings, SearchData>;
-}

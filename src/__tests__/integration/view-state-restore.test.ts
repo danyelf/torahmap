@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { parseUrlState } from '../../urlState';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from '../../viewState';
 import { worldToScreen } from '../helpers/worldToScreen';
-import { registerAllOverlays, getOverlay, configureSearch } from '../../overlays/index';
+import { registerAllOverlays, getOverlay } from '../../overlays/index';
+import { configure as configureSearch } from '../../tanakh/search/index';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
@@ -10,7 +11,7 @@ import { overlayParamSpecs } from '@torahmap/overlay-catalog';
 import { readLink, writeLink } from '@torahmap/link';
 import { indexItems } from '../../items';
 import { createOverlaySettings } from '../../overlays/settings';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 
 const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };
 

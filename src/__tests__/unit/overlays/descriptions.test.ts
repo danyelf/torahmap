@@ -10,7 +10,7 @@ async function overlays() {
 
 describe('overlay descriptions', () => {
   it('gives search and every overlay a description of its own', async () => {
-    const { searchTool } = await import('../../../overlays/search/index');
+    const { searchTool } = await import('../../../tanakh/search/index');
     const all = [searchTool, ...(await overlays())];
     for (const o of all) expect(o.description, o.name).toBeTruthy();
     expect(new Set(all.map((o) => o.description)).size).toBe(all.length);

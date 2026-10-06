@@ -1,12 +1,8 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
-import {
-  createSearchRecorder,
-  termsToRecord,
-  type Recorded,
-} from '../../../overlays/search/recording';
-import type { SearchSettings } from '../../../overlays/search';
+import { searchTelemetry, termsToRecord, type Recorded } from '../../../tanakh/search/telemetry';
+import type { SearchSettings } from '../../../tanakh/search/index.ts';
 import { EMPTY_DICTIONARY, searchDataFor } from '../../helpers/searchData';
-import { addTerm, setMode, setTermText, type SearchTerm } from '../../../search/terms';
+import { addTerm, setMode, setTermText, type SearchTerm } from '../../../tanakh/search/terms';
 
 const none: Recorded = new Map();
 
@@ -68,7 +64,7 @@ describe('termsToRecord', () => {
   });
 });
 
-describe('createSearchRecorder', () => {
+describe('searchTelemetry', () => {
   const DELAY = 1000;
   const data = searchDataFor({
     Genesis: {
@@ -77,14 +73,14 @@ describe('createSearchRecorder', () => {
     },
   });
   let sent: [string, number][];
-  let recorder: ReturnType<typeof createSearchRecorder>;
+  let telemetry: ReturnType<typeof searchTelemetry>;
 
   const search = (...words: string[]): SearchSettings => ({ terms: words.reduce(addTerm, []) });
 
   beforeEach(() => {
     vi.useFakeTimers();
     sent = [];
-    recorder = createSearchRecorder({
+    telemetry = searchTelemetry({
       delayMs: DELAY,
       send: (text, _language, _mode, hits) => sent.push([text, hits]),
     });
@@ -93,7 +89,7 @@ describe('createSearchRecorder', () => {
   afterEach(() => vi.useRealTimers());
 
   it('sends a search once it has sat for the delay, with each term’s count', () => {
-    recorder.readerChanged(search('heavens'), data);
+    telemetry.readerChanged(search('heavens'), data);
     vi.advanceTimersByTime(DELAY - 1);
     expect(sent).toEqual([]);
     vi.advanceTimersByTime(1);
@@ -102,9 +98,9 @@ describe('createSearchRecorder', () => {
 
   it('sends only the term added, each with its own count', () => {
     const one = search('heavens');
-    recorder.readerChanged(one, data);
+    telemetry.readerChanged(one, data);
     vi.advanceTimersByTime(DELAY);
-    recorder.readerChanged({ terms: addTerm(one.terms, 'names') }, data);
+    telemetry.readerChanged({ terms: addTerm(one.terms, 'names') }, data);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([
       ['heavens', 2],
@@ -113,46 +109,46 @@ describe('createSearchRecorder', () => {
   });
 
   it('sends nothing for a term too short to search on', () => {
-    recorder.readerChanged(search('h'), data);
+    telemetry.readerChanged(search('h'), data);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([]);
   });
 
   it('sends a term again when how it is matched changes', () => {
     const before = search('heavens');
-    recorder.readerChanged(before, data);
+    telemetry.readerChanged(before, data);
     vi.advanceTimersByTime(DELAY);
-    recorder.readerChanged({ terms: setMode(before.terms, before.terms[0].id, 'word') }, data);
+    telemetry.readerChanged({ terms: setMode(before.terms, before.terms[0].id, 'word') }, data);
     vi.advanceTimersByTime(DELAY);
     expect(sent.map(([text]) => text)).toEqual(['heavens', 'heavens']);
   });
 
   it("does not send a link's terms when the reader adds another", () => {
     const link = search('heavens');
-    recorder.replaced(link, data);
-    recorder.readerChanged({ terms: addTerm(link.terms, 'names') }, data);
+    telemetry.replaced(link, data);
+    telemetry.readerChanged({ terms: addTerm(link.terms, 'names') }, data);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([['names', 1]]);
   });
 
   it('drops a search a link replaces before it settles', () => {
-    recorder.readerChanged(search('hea'), data);
-    recorder.replaced(search('earth'), data);
+    telemetry.readerChanged(search('hea'), data);
+    telemetry.replaced(search('earth'), data);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([]);
   });
 
   it('sends a search typed before the data once the data arrives, with its count', () => {
-    recorder.readerChanged(search('heavens'), null);
+    telemetry.readerChanged(search('heavens'), null);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([]);
-    recorder.dataChanged(data);
+    telemetry.dataLoaded(data);
     expect(sent).toEqual([['heavens', 2]]);
   });
 
   it('waits for the search to settle even when the data arrives first', () => {
-    recorder.readerChanged(search('heavens'), null);
-    recorder.dataChanged(data);
+    telemetry.readerChanged(search('heavens'), null);
+    telemetry.dataLoaded(data);
     expect(sent).toEqual([]);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([['heavens', 2]]);
@@ -160,9 +156,9 @@ describe('createSearchRecorder', () => {
 
   it("counts a link's terms as sent before the data arrives", () => {
     const link = search('heavens');
-    recorder.replaced(link, null);
-    recorder.dataChanged(data);
-    recorder.readerChanged({ terms: addTerm(link.terms, 'names') }, data);
+    telemetry.replaced(link, null);
+    telemetry.dataLoaded(data);
+    telemetry.readerChanged({ terms: addTerm(link.terms, 'names') }, data);
     vi.advanceTimersByTime(DELAY);
     expect(sent).toEqual([['names', 1]]);
   });
@@ -171,19 +167,19 @@ describe('createSearchRecorder', () => {
     const unbuildable = { ...data, lexicon: {} as typeof data.lexicon };
     const empty = { terms: addTerm([], '') };
     expect(() => {
-      recorder.replaced(empty, unbuildable);
-      recorder.dataChanged(unbuildable);
-      recorder.readerChanged(empty, unbuildable);
+      telemetry.replaced(empty, unbuildable);
+      telemetry.dataLoaded(unbuildable);
+      telemetry.readerChanged(empty, unbuildable);
       vi.advanceTimersByTime(DELAY);
     }).not.toThrow();
   });
 
   it("counts a link's terms as sent when the reader adds one before the data arrives", () => {
     const link = search('heavens');
-    recorder.replaced(link, null);
-    recorder.readerChanged({ terms: addTerm(link.terms, 'names') }, null);
+    telemetry.replaced(link, null);
+    telemetry.readerChanged({ terms: addTerm(link.terms, 'names') }, null);
     vi.advanceTimersByTime(DELAY);
-    recorder.dataChanged(data);
+    telemetry.dataLoaded(data);
     expect(sent).toEqual([['names', 1]]);
   });
 });

@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { APP_CREDITS, renderCreditBlock, renderCreditsHtml, type Credit } from '../../credits';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 
 registerAllOverlays();
 

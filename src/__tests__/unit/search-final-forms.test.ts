@@ -14,7 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { verseId } from '@torahmap/link';
-import { buildTextIndex, versesForTerm } from '../../search';
+import { buildTextIndex, versesForTerm } from '../../tanakh/search/search';
 import { inTextsOrder } from '../helpers/searchData';
 import { stripNikkud, normalizeHebrewForSearch } from '../../hebrew';
 import type { VerseTexts } from '../../verseTexts';

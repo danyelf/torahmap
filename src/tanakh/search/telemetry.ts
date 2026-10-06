@@ -1,9 +1,10 @@
 // Which searched terms are worth an analytics event, and when: once the reader
 // has stopped changing the search and search has its data.
+import type { SearchTelemetry } from '../../app/search.ts';
 import type { TextLanguage } from '../../types.ts';
-import { termQuery, type SearchMode, type SearchTerm } from '../../search/terms.ts';
-import type { Dictionary } from '../../search.ts';
-import { dictionaryOf, type SearchData } from '../../search/data.ts';
+import { termQuery, type SearchMode, type SearchTerm } from './terms.ts';
+import type { Dictionary } from './search.ts';
+import { dictionaryOf, type SearchData } from './data.ts';
 import { debounce } from '../../utils/debounce.ts';
 import { activeTerms, termHitCount, type SearchSettings } from './index.ts';
 
@@ -32,19 +33,11 @@ export function termsToRecord(
   return { send, recorded };
 }
 
-export interface SearchRecorder {
-  /** The reader changed the search: send it once it has sat unchanged and its data is in. */
-  readerChanged(settings: SearchSettings, data: SearchData | null): void;
-  /** A link or a story stop replaced the search: its terms count as sent, and a search waiting is dropped. */
-  replaced(settings: SearchSettings, data: SearchData | null): void;
-  /** Search's data changed: a search waiting only for it is sent now. */
-  dataChanged(data: SearchData | null): void;
-}
-
-export function createSearchRecorder(options: {
+/** A search a link or a story stop put in place counts as already sent, and drops one waiting. */
+export function searchTelemetry(options: {
   delayMs: number;
   send(text: string, language: TextLanguage, mode: SearchMode, hits: number): void;
-}): SearchRecorder {
+}): SearchTelemetry<SearchSettings, SearchData> {
   let recorded: Recorded = new Map();
   /**
    * A search that replaced the reader's, to count as sent. A term's record
@@ -99,7 +92,7 @@ export function createSearchRecorder(options: {
       data = next;
       sendIfReady();
     },
-    dataChanged(next) {
+    dataLoaded(next) {
       data = next;
       sendIfReady();
     },

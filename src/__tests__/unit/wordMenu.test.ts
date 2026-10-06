@@ -11,9 +11,9 @@
 // decided not to build.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { openWordMenu, closeWordMenu, wordMenuOpen, type WordMenuOptions } from '../../wordMenu';
-import type { Meaning } from '../../search/dictionary.ts';
-import { MAX_TERMS } from '../../search/terms.ts';
+import { openWordMenu, closeWordMenu, type WordMenuOptions } from '../../tanakh/search/wordMenu';
+import type { Meaning } from '../../tanakh/search/dictionary.ts';
+import { MAX_TERMS } from '../../tanakh/search/terms.ts';
 
 const leaf: Meaning = {
   keys: ['<LH=/@heb'],
@@ -56,6 +56,7 @@ function open(overrides: Partial<WordMenuOptions> = {}): void {
     anchor: anchor(),
     paletteFull: false,
     onChoose: vi.fn(),
+    onClose: vi.fn(),
     ...overrides,
   });
 }
@@ -271,6 +272,24 @@ describe('dismissing', () => {
 
     expect(document.querySelectorAll('.word-menu')).toHaveLength(1);
   });
+
+  it('says it closed once, however it closes', () => {
+    const onClose = vi.fn();
+    open({ onClose });
+
+    window.dispatchEvent(new Event('resize'));
+    closeWordMenu();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('says it closed when another menu replaces it', () => {
+    const onClose = vi.fn();
+    open({ onClose });
+    open();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('placement', () => {
@@ -307,15 +326,5 @@ describe('placement', () => {
       expect(top).toBeGreaterThanOrEqual(0);
       expect(bottom).toBeLessThanOrEqual(600);
     }
-  });
-});
-
-describe('whether a menu is open', () => {
-  it('says so from opening until it is dismissed', () => {
-    expect(wordMenuOpen()).toBe(false);
-    open();
-    expect(wordMenuOpen()).toBe(true);
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    expect(wordMenuOpen()).toBe(false);
   });
 });

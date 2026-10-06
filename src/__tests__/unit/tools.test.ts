@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { toolsShown, togglesSearch } from '../../tools';
-import { searchTool } from '../../overlays/search/index';
+import { searchTool } from '../../tanakh/search/index';
 import { settingsFromLink } from '../../overlays/settings';
 import { SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 
@@ -82,19 +82,19 @@ describe('togglesSearch', () => {
   const at = (words: string) => settingsFromLink(searchTool, { search: words });
 
   it('turns the search on with the first word long enough to search on', () => {
-    expect(togglesSearch(at('א'), at('אב'))).toBe(true);
+    expect(togglesSearch(searchTool, at('א'), at('אב'))).toBe(true);
   });
 
   it('does not count a lone letter', () => {
-    expect(togglesSearch(at(''), at('א'))).toBe(false);
+    expect(togglesSearch(searchTool, at(''), at('א'))).toBe(false);
   });
 
   it('edits, rather than toggles, as a word grows or another joins it', () => {
-    expect(togglesSearch(at('אב'), at('אבר'))).toBe(false);
-    expect(togglesSearch(at('אברם'), at('אברם,אברהם'))).toBe(false);
+    expect(togglesSearch(searchTool, at('אב'), at('אבר'))).toBe(false);
+    expect(togglesSearch(searchTool, at('אברם'), at('אברם,אברהם'))).toBe(false);
   });
 
   it('turns the search off when the last word goes', () => {
-    expect(togglesSearch(at('אברם'), at(''))).toBe(true);
+    expect(togglesSearch(searchTool, at('אברם'), at(''))).toBe(true);
   });
 });

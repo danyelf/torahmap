@@ -42,6 +42,16 @@ test("a tractate file that fails says so, and isn't fetched again", async ({ pag
   expect(requests).toBe(1);
 });
 
+test("a link's search reaches the Talmud's own search, not the Tanakh's", async ({ page }) => {
+  const searchFiles: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/data/search/')) searchFiles.push(request.url());
+  });
+  await openMap(page, 'search=משנה', TALMUD);
+  await expect(page.locator('#search-input')).toHaveValue('משנה');
+  expect(searchFiles).toEqual([]);
+});
+
 test('/talmud, without the slash, opens the same page and keeps the link', async ({ page }) => {
   await page.goto('/talmud?verse=Berakhot.2a.1');
   await expect(page).toHaveURL(/\/talmud\/\?verse=Berakhot\.2a\.1$/);

@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { deriveHaftarah } from '../../../src/overlays/haftarah/readings.ts';
-import type { Dictionary } from '../../../src/search.ts';
+import type { Dictionary } from '../../../src/tanakh/search/search.ts';
 import type { SheetInput } from '../types.ts';
 import {
   haftarahKey,

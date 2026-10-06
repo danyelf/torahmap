@@ -13,8 +13,8 @@ import type { Loaded } from '../../dataFiles';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { tropOverlay } from '../../overlays/trop';
 import { HAFTARAH_FILES } from '../../overlays/haftarah/readings';
-import { searchTool } from '../../overlays/search/index';
-import { DICTIONARY_FILES, SEARCH_FILES } from '../../search/data';
+import { searchTool } from '../../tanakh/search/index';
+import { DICTIONARY_FILES, SEARCH_FILES } from '../../tanakh/search/data';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { SAMPLE_LOADED, SAMPLE_STRUCTURE } from '../helpers/fixtures';
 
@@ -40,7 +40,6 @@ const NOTHING = {
   map: null,
   overlayPanel: false,
   searchPanel: false,
-  searchResults: false,
   popup: false,
 };
 
@@ -147,18 +146,18 @@ describe('staleAfterLanding', () => {
     ).toMatchObject({ map: 'overlay', overlayPanel: true, popup: true });
   });
 
-  it('requotes the search results and redraws the popup when the per-word parse lands, and no panel', () => {
+  it('redraws the search panel and the popup when the per-word parse lands', () => {
     const withParse = new Map(SAMPLE_LOADED).set(PARSE, { realigned: {}, verses: {} });
     expect(
       staleAfterLanding(SAMPLE_LOADED, withParse, explore([searchTool], null, TEXTS_FILE)),
     ).toEqual({
       ...NOTHING,
-      searchResults: true,
+      searchPanel: true,
       popup: true,
     });
   });
 
-  it('requotes nothing when the per-word parse lands before the rest of search', () => {
+  it('redraws nothing when the per-word parse lands before the rest of search', () => {
     const before = without(LEXICON);
     const after = new Map(before).set(PARSE, { realigned: {}, verses: {} });
     expect(staleAfterLanding(before, after, explore([searchTool], null, TEXTS_FILE))).toEqual(

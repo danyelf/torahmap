@@ -99,6 +99,22 @@ test('the search results are quoted again when the per-word parse lands, keeping
   expect(errors).toEqual([]);
 });
 
+test('a file landing leaves the popup alone under an open word menu', async ({ page }) => {
+  const { release, errors } = await open(page, 'verse=Genesis.30.11', [PARSE]);
+  const word = page.locator('#verse-popup .verse-word', { hasText: 'בגד' });
+  // The menu opens once search's dictionary is in, which is not held.
+  await expect(async () => {
+    await word.click();
+    await expect(page.locator('.word-menu')).toBeVisible({ timeout: 500 });
+  }).toPass({ timeout: 60_000 });
+  const anchor = await word.elementHandle();
+  release();
+  await allLoaded(page);
+  expect(await anchor!.evaluate((el) => el.isConnected)).toBe(true);
+  await expect(page.locator('.word-menu')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('a narrowed search link keeps its meaning while the dictionary is on its way', async ({
   page,
 }) => {

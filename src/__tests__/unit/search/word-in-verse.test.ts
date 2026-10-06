@@ -9,7 +9,7 @@
 // assertion, and lives in scripts/search/click-resolution-report.ts.
 
 import { describe, it, expect } from 'vitest';
-import { meaningsInVerse, meaningsFor } from '../../../search/dictionary';
+import { meaningsInVerse, meaningsFor } from '../../../tanakh/search/dictionary';
 import { realSearchData } from '../../helpers/searchData';
 
 const { dictionary } = realSearchData();

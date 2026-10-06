@@ -6,9 +6,9 @@
 // the confirmation that we found the word the reader meant, since Hebrew words
 // run together and a misfire should be visible before it costs anything.
 
-import './styles/wordMenu.css';
-import type { Meaning } from './search/dictionary.ts';
-import { MAX_TERMS } from './search/terms.ts';
+import '../../styles/wordMenu.css';
+import type { Meaning } from './dictionary.ts';
+import { MAX_TERMS } from './terms.ts';
 
 export interface WordMenuOptions {
   word: string;
@@ -18,6 +18,8 @@ export interface WordMenuOptions {
   paletteFull: boolean;
   /** A reading of the word, or null for the written form itself. */
   onChoose: (meaning: Meaning | null) => void;
+  /** Called once, however the menu closes. */
+  onClose: () => void;
 }
 
 /** Between the menu and its word. */
@@ -28,10 +30,7 @@ const MARGIN = 8;
 let open: HTMLElement | null = null;
 let dismiss: ((event: MouseEvent | KeyboardEvent) => void) | null = null;
 let goStale: (() => void) | null = null;
-
-export function wordMenuOpen(): boolean {
-  return open !== null;
-}
+let onClose: (() => void) | null = null;
 
 export function closeWordMenu(): void {
   open?.remove();
@@ -46,6 +45,9 @@ export function closeWordMenu(): void {
     window.removeEventListener('resize', goStale);
     goStale = null;
   }
+  const closed = onClose;
+  onClose = null;
+  closed?.();
 }
 
 function choice(label: HTMLElement, onPick: () => void): HTMLButtonElement {
@@ -101,6 +103,7 @@ function meaningLabel(meaning: Meaning): HTMLElement {
 
 export function openWordMenu(options: WordMenuOptions): void {
   closeWordMenu();
+  onClose = options.onClose;
 
   const menu = document.createElement('div');
   menu.className = 'word-menu';

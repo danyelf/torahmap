@@ -1,6 +1,6 @@
 // Search's files, and the text index and dictionary it builds from them.
-import { optional } from '../dataFiles.ts';
-import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
+import { optional } from '../../dataFiles.ts';
+import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '../../verseTexts.ts';
 import type { Parse } from './dictionary.ts';
 import {
   buildDictionary,
@@ -9,7 +9,7 @@ import {
   type Dictionary,
   type DictionaryFiles,
   type TextIndex,
-} from '../search.ts';
+} from './search.ts';
 
 export type { DictionaryFiles };
 

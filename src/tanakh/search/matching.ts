@@ -1,8 +1,8 @@
 // What counts as a match, for both the search that finds verses and the
 // highlighter that marks them.
 
-import { isWordSeparator, normalizeHebrewForSearch, splitIntoWords } from '../hebrew.ts';
-import { ENGLISH, HEBREW, type TextLanguage } from '../types.ts';
+import { isWordSeparator, normalizeHebrewForSearch, splitIntoWords } from '../../hebrew.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
 
 export interface TextRange {
   start: number;
