@@ -139,8 +139,9 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 ## Project Structure
 
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
-  a `scrollytelling/` mode, `talmud/` (the Talmud map's layout, labels and
-  overlays, waiting for the shared app shell), `styles/`, the
+  a `scrollytelling/` mode, `app/` (what a text gives the app
+  shell), `tanakh/` and `talmud/` (the two texts; the Talmud's page,
+  `talmud/index.html`, is served at `/talmud/` by the dev server only), `styles/`, the
   `worker/` that serves the deployed site, and the `telemetry/` it records
   through.
 - `packages/` — shared code, kept free of the page so the Worker can import
@@ -213,7 +214,7 @@ The codebase follows a **functional, modular design** with clear separation of c
 
 ### Key Concepts
 
-- **main.ts** orchestrates all modules and handles user interactions
+- **main.ts** is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given
 - **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
 - **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors

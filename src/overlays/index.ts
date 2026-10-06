@@ -22,7 +22,7 @@ const IMPLEMENTATIONS: Record<OverlayId, TanakhOverlay> = {
   'verse-length': verseLengthOverlay,
 };
 
-// Lives here rather than inside main() so a test can put the app's real
+// Lives here rather than in the Tanakh's text so a test can put the app's real
 // overlays in the registry the same way the app does.
 export function registerAllOverlays(): void {
   clearOverlays();

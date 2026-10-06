@@ -5,7 +5,7 @@
 //
 // Tractate labels are always visible; daf labels toggle by zoom level.
 
-import type { TractateBlock, SederBlock, PerekAnchor } from './layout.ts';
+import type { TractateBlock, SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
   DAF_LABEL_ZOOM_LOW,
   DAF_LABEL_ZOOM_MID,
@@ -48,15 +48,6 @@ const SEDER_HEBREW: Record<string, string> = {
   'Seder Tahorot': 'סדר טהרות',
 };
 
-export interface DafRowAnchor {
-  tractate: string;
-  daf: number;
-  amud: 'a' | 'b';
-  // Right-edge x and top y of the row, in world coordinates.
-  rightX: number;
-  topY: number;
-}
-
 export interface TalmudLabelState {
   container: HTMLDivElement;
   sederBackgrounds: HTMLDivElement;
@@ -75,7 +66,6 @@ export function createTalmudLabels(
 ): TalmudLabelState {
   const container = document.createElement('div');
   container.id = 'talmud-labels';
-  container.style.cssText = 'position:fixed;top:0;left:0;pointer-events:none;width:0;height:0;';
 
   // --- Seder background tints (drawn first so labels and tractates layer on
   // top in DOM order). Each rect spans the full shelf in world space and is

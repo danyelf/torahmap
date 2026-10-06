@@ -15,6 +15,7 @@ import {
   testOverlay,
 } from '../../__tests__/helpers/fixtures';
 import { SEARCH_COLORS } from '../../utils/color';
+import { getDefaultColor } from '../../itemColoring';
 import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
 
 // The blender memoises per verses array, so a fresh one keeps each test's
@@ -63,7 +64,8 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(stop, stop, 0, verses, null, new Map()).from.colors;
+    const result = computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor)
+      .from.colors;
 
     // Verse 0 should be a Color[] (array of tuples), not a flattened single tuple
     const c0 = result[0];
@@ -96,7 +98,15 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const result = computeBlendedColors(fromStop, toStop, 0, verses, null, new Map()).from.colors;
+    const result = computeBlendedColors(
+      fromStop,
+      toStop,
+      0,
+      verses,
+      null,
+      new Map(),
+      getDefaultColor,
+    ).from.colors;
     const c0 = result[0];
     expect(Array.isArray(c0)).toBe(true);
     expect(Array.isArray((c0 as unknown[])[0])).toBe(true);
@@ -121,7 +131,15 @@ describe('computeBlendedColors multi-color preservation', () => {
       camera: { x: 0, y: 0, zoom: 1 },
       overlay: 'test-multi-color',
     };
-    const layer = computeBlendedColors(fromStop, toStop, 0.5, verses, null, new Map());
+    const layer = computeBlendedColors(
+      fromStop,
+      toStop,
+      0.5,
+      verses,
+      null,
+      new Map(),
+      getDefaultColor,
+    );
     const stripes = [
       [1, 0, 0],
       [0, 0, 1],
@@ -166,20 +184,20 @@ describe('story stop settings reach the overlay', () => {
 
   it('passes a declared setting through', () => {
     const stop = stopWith({ state: 'on' });
-    computeBlendedColors(stop, stop, 0, verses, null, new Map());
+    computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor);
     expect(received).toEqual({ state: 'on' });
   });
 
   it('drops a value the overlay did not allow', () => {
     // Story stops are hand-written, so they are checked like any link.
     const stop = stopWith({ state: 'sideways' });
-    computeBlendedColors(stop, stop, 0, verses, null, new Map());
+    computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor);
     expect(received).toEqual({});
   });
 
   it('drops a key the overlay never declared', () => {
     const stop = stopWith({ state: 'off', nonsense: 'x' });
-    computeBlendedColors(stop, stop, 0, verses, null, new Map());
+    computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor);
     expect(received).toEqual({ state: 'off' });
   });
 
@@ -200,7 +218,7 @@ describe('story stop settings reach the overlay', () => {
     registerOverlay(typedOverlay);
 
     const stop = { ...stopWith({ state: 'on' }), overlay: 'test-typed-settings' };
-    computeBlendedColors(stop, stop, 0, verses, null, new Map());
+    computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor);
     expect(handed).toEqual({ on: true });
   });
 });
@@ -240,7 +258,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
       overlay: 'commentary',
       overlayParams: { category: 'Mishnah' },
     };
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null, SAMPLE_LOADED);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null, SAMPLE_LOADED, getDefaultColor);
 
     expect(
       commentaryOverlay.getVerseColor(verse, settings.get(commentaryOverlay), {
@@ -284,8 +302,8 @@ describe('the blender memoises colours by settings', () => {
     };
 
     const loaded = new Map();
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null, loaded);
-    computeBlendedColors(fromStop, toStop, 0.5, verses, null, loaded);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null, loaded, getDefaultColor);
+    computeBlendedColors(fromStop, toStop, 0.5, verses, null, loaded, getDefaultColor);
 
     // Two distinct settings (state 'a' and 'b') across two blends: once each,
     // not once per call — the second blend shares both cache entries.
@@ -336,10 +354,10 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const [verseA, verseB] = verses;
 
     const loaded = new Map();
-    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseA, loaded);
-    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseB, loaded);
-    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseA, loaded);
-    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseB, loaded);
+    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseA, loaded, getDefaultColor);
+    computeBlendedColors(hoverStop, hoverStop, 0, verses, verseB, loaded, getDefaultColor);
+    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseA, loaded, getDefaultColor);
+    computeBlendedColors(noHoverStop, noHoverStop, 0, verses, verseB, loaded, getDefaultColor);
 
     // Declares hoverChangesColors: its colours could depend on which verse is
     // hovered, so every call with a hovered verse is evaluated fresh.
@@ -360,8 +378,8 @@ describe('pictureForStop', () => {
       overlay: 'test-multi-color',
     };
 
-    expect(pictureForStop(stop, verses, null, new Map())).toEqual(
-      computeBlendedColors(stop, stop, 0, verses, null, new Map()).from,
+    expect(pictureForStop(stop, verses, null, new Map(), getDefaultColor)).toEqual(
+      computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor).from,
     );
   });
 });
@@ -386,18 +404,26 @@ describe('a stop whose overlay data is missing', () => {
   beforeEach(() => registerOverlay(late));
 
   it('is drawn without the overlay, and with it once the data arrives', () => {
-    expect(pictureForStop(stop, verses, null, new Map())).toEqual(
-      pictureForStop(bare, verses, null, new Map()),
+    expect(pictureForStop(stop, verses, null, new Map(), getDefaultColor)).toEqual(
+      pictureForStop(bare, verses, null, new Map(), getDefaultColor),
     );
-    const arrived = pictureForStop(stop, verses, null, new Map([['late.json', {}]]));
+    const arrived = pictureForStop(
+      stop,
+      verses,
+      null,
+      new Map([['late.json', {}]]),
+      getDefaultColor,
+    );
     expect(arrived.colors).toEqual([RED, RED]);
   });
 
   it('serves the same picture for the same loaded value, and a fresh one for a new value', () => {
     const loaded = new Map([['late.json', {}]]);
-    const first = pictureForStop(stop, verses, null, loaded);
-    expect(pictureForStop(stop, verses, null, loaded)).toBe(first);
-    expect(pictureForStop(stop, verses, null, new Map([['late.json', {}]]))).not.toBe(first);
+    const first = pictureForStop(stop, verses, null, loaded, getDefaultColor);
+    expect(pictureForStop(stop, verses, null, loaded, getDefaultColor)).toBe(first);
+    expect(
+      pictureForStop(stop, verses, null, new Map([['late.json', {}]]), getDefaultColor),
+    ).not.toBe(first);
   });
 });
 
@@ -420,6 +446,7 @@ describe('a stop that searches', () => {
       verses,
       null,
       SAMPLE_LOADED,
+      getDefaultColor,
     );
 
     expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
@@ -429,7 +456,7 @@ describe('a stop that searches', () => {
 
   it('rings its matches over its overlay and dims the rest', () => {
     const stop = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
-    const picture = pictureForStop(stop, verses, null, SAMPLE_LOADED);
+    const picture = pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor);
 
     expect(picture.colors[0]).toEqual([
       [1, 0, 0],
@@ -443,17 +470,19 @@ describe('a stop that searches', () => {
   it('keeps apart stops that differ only in their search', () => {
     const god = stopWith({ overlay: 'test-multi-color', searchParams: { search: 'God' } });
     const earth = { ...god, id: 'earth', searchParams: { search: 'earth' } };
-    expect(pictureForStop(god, verses, null, SAMPLE_LOADED)).not.toEqual(
-      pictureForStop(earth, verses, null, SAMPLE_LOADED),
+    expect(pictureForStop(god, verses, null, SAMPLE_LOADED, getDefaultColor)).not.toEqual(
+      pictureForStop(earth, verses, null, SAMPLE_LOADED, getDefaultColor),
     );
   });
 
   it('is drawn without the search before search has its files, and with it once they arrive', () => {
     const stop = stopWith({ searchParams: { search: 'God' } });
-    expect(pictureForStop(stop, verses, null, new Map())).toEqual(
-      pictureForStop(stopWith({ id: 'bare' }), verses, null, new Map()),
+    expect(pictureForStop(stop, verses, null, new Map(), getDefaultColor)).toEqual(
+      pictureForStop(stopWith({ id: 'bare' }), verses, null, new Map(), getDefaultColor),
     );
-    expect(pictureForStop(stop, verses, null, SAMPLE_LOADED).colors[0]).toEqual(SEARCH_COLORS[0]);
+    expect(pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor).colors[0]).toEqual(
+      SEARCH_COLORS[0],
+    );
   });
 });
 

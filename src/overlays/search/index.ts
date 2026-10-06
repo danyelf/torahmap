@@ -576,3 +576,12 @@ export const searchTool: Overlay<TanakhIdentity, SearchSettings, SearchData> = {
     );
   },
 };
+
+/**
+ * Shortcut: search is the Tanakh's on every text. On another text it searches
+ * the Tanakh's words, which name no square, so a search dims the whole map; the
+ * page still downloads and prepares search's files.
+ */
+export function searchOnAnyText<T>(): Overlay<T, SearchSettings, SearchData> {
+  return searchTool as unknown as Overlay<T, SearchSettings, SearchData>;
+}

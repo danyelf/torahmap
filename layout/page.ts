@@ -54,10 +54,10 @@ export async function asReturningReader(page: Page): Promise<void> {
   await page.addInitScript((key) => localStorage.setItem(key, 'true'), VISITED_KEY);
 }
 
-/** Loads the map at `link` and waits until it has settled and drawn. Returns `collectErrors`'s list. */
-export async function openMap(page: Page, link: string): Promise<string[]> {
+/** Loads the map at `link` on the page at `path` and waits until it has settled and drawn. Returns `collectErrors`'s list. */
+export async function openMap(page: Page, link: string, path = '/'): Promise<string[]> {
   const errors = collectErrors(page);
-  await page.goto(link ? `/?${link}` : '/');
+  await page.goto(link ? `${path}?${link}` : path);
   await allLoaded(page);
   await expect
     .poll(async () => drawnPixels(page), { timeout: 15_000 })

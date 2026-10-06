@@ -25,10 +25,25 @@ function sitePlugin(): Plugin {
   };
 }
 
+// The dev server serves the Talmud at /talmud/; /talmud, without the slash, goes there too.
+function talmudPlugin(): Plugin {
+  return {
+    name: 'talmud-address',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const [path, query] = (req.url ?? '').split('?');
+        if (path !== '/talmud') return next();
+        res.writeHead(302, { Location: `/talmud/${query === undefined ? '' : `?${query}`}` });
+        res.end();
+      });
+    },
+  };
+}
+
 export default defineConfig(({ command }) => {
   const branch = getGitBranch();
   return {
-    plugins: [storiesPlugin(), sitePlugin()],
+    plugins: [storiesPlugin(), sitePlugin(), talmudPlugin()],
     // Declared in src/env.d.ts.
     define: {
       __GIT_BRANCH__: JSON.stringify(branch),

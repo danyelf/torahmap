@@ -150,9 +150,10 @@ later change is shaped by two real texts rather than one text and a guess.
 
 **Done:** every square has an id, and the app compares, finds, steps through
 and links squares by it (#346); the old Talmud page is deleted (#349); a verse
-has one name, its id, everywhere, data files included (#350).
+has one name, its id, everywhere, data files included (#350); `createApp`,
+with both texts booting (described below).
 
-**Next: `createApp`, with both texts booting.** `main.ts` becomes
+**`createApp`, with both texts booting.** `main.ts` becomes
 `createApp(text)`, called by `main-tanakh.ts` and a dev-only `main-talmud.ts`.
 The Talmud supplies what it already has: its layout, labels, ids, Mishnah and
 Gemara as its base colour, and its text in the popup, one tractate at a time
@@ -162,7 +163,7 @@ comment saying in the present tense what is missing, and a line in #342's
 checklist. The layout tests gain the Talmud page, checking that the map drew and
 its labels are on screen, so it cannot rot unseen again.
 
-**Then one pull request per shortcut,** each removing it with both texts
+**Next: one pull request per shortcut,** each removing it with both texts
 running. The order is decided as we go, starting with whichever shortcut is
 most in the way:
 

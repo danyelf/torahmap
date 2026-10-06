@@ -28,17 +28,19 @@ function brightenBands(color: VerseColor, factor: number): VerseColor {
 /**
  * The map's colours from its two layers, search over overlay. `search` is null
  * with no search on and `overlay` null with no overlay; a null colour is
- * painted grey by fillDefaultColors.
+ * painted its base colour by fillDefaultColors.
  *
  * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
  * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
  * search leads, 1 while the overlay leads; it does nothing with search alone,
- * which always dims to its own grey.
+ * which always dims to its own grey. With both on, a square neither colours
+ * dims from its `base` colour.
  */
 export function combineLayers(
   count: number,
   search: readonly (VerseColor | null)[] | null,
   overlay: readonly (VerseColor | null)[] | null,
+  base: (index: number) => VerseColor,
   nonMatchDim: number = SEARCH_WITH_OVERLAY.NON_MATCH_DIM,
 ): Picture<VerseColor | null> {
   const colors: (VerseColor | null)[] = new Array(count);
@@ -55,7 +57,7 @@ export function combineLayers(
       colors[i] = under;
       rings[i] = match;
     } else {
-      colors[i] = brightenBands(under ?? getDefaultColor(i), nonMatchDim);
+      colors[i] = brightenBands(under ?? base(i), nonMatchDim);
     }
   }
 
@@ -63,15 +65,17 @@ export function combineLayers(
 }
 
 /**
- * `picture` with every null colour replaced by its verse's default grey, and
- * marked `uncoloured` for the hover. A cross-fade needs the greys so a
- * still-uncoloured verse blends from its own grey rather than mergePictures's
- * placeholder for "nothing here".
+ * `picture` with every null colour replaced by its square's base colour, and
+ * marked `uncoloured` for the hover. A cross-fade needs them so a still-uncoloured square blends from its
+ * own colour rather than mergePictures's placeholder for "nothing here".
  */
-export function fillDefaultColors(picture: Picture<VerseColor | null>): Picture<VerseColor> {
+export function fillDefaultColors(
+  picture: Picture<VerseColor | null>,
+  base: (index: number) => VerseColor,
+): Picture<VerseColor> {
   return {
     ...picture,
-    colors: picture.colors.map((c, i) => c ?? getDefaultColor(i)),
+    colors: picture.colors.map((c, i) => c ?? base(i)),
     uncoloured: picture.colors.map((c) => c === null),
   };
 }
@@ -87,16 +91,23 @@ export function overlayColorsFor<T, S, D>(
   return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
 }
 
-/** The map's colours for the tools a view shows. `nonMatchDim` passes through to combineLayers. */
+/** The map's colours for the tools a view shows. `base` and `nonMatchDim` pass through to combineLayers. */
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
   hovered: SpatialItem<T> | null,
+  base: (index: number) => VerseColor,
   nonMatchDim?: number,
 ): Picture<VerseColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
     on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
-  return combineLayers(items.length, colorsOf(tools.search), colorsOf(tools.overlay), nonMatchDim);
+  return combineLayers(
+    items.length,
+    colorsOf(tools.search),
+    colorsOf(tools.overlay),
+    base,
+    nonMatchDim,
+  );
 }
 
 /**
