@@ -152,4 +152,4 @@ preview on a desktop and a phone.
 
 ## Size
 
-`main.ts` shrinks by 171 lines, to 1,695; the module is 211.
+`main.ts` shrinks by 190 lines, to 1,676; the module is 219.
