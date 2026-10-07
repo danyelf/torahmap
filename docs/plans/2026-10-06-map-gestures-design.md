@@ -100,14 +100,14 @@ function createMapGestures<I extends MapItem>(options: {
 | Pointer down lifts the menu, folds a phone's sheet, stops a glide | `grab` | `dispatch({ type: 'map-touched' })`, cancel glide |
 | Drag (mouse or one finger) pans; takes the map only if it moved | `pan`, only when non-zero; `moveEnded` on release | `takeOver`, move camera, render |
 | Pinch suppresses drag panning | inside the module | — |
-| Mouse over a square highlights it and shows its popup unless one is pinned | `hover` | set hover, repaint, popup if nothing pinned |
+| Mouse over a square highlights it and shows its popup unless one is pinned | `hover`, on every mouse move | set hover, repaint if it changed, popup if nothing pinned |
 | Touch moves never hover | inside the module | — |
 | Leaving the map clears the highlight but leaves the popup | `leave` | clear hover, repaint |
 | Tap a square pins it; tap the pinned one unpins | `tap(square)` | pin or unpin |
 | Tap empty map unpins | `tap(null)` | unpin if pinned |
 | Cursor after a drag ends | inside the module, via `clickable` | — |
 | Story scroll moves the map under a still mouse | `squareUnderMouse()`, called from the frame loop as now | set hover |
-| Escape closes the menu, else unpins, else closes the panel or story | `escape` | the same order |
+| Escape closes the menu, else unpins, else closes the panel or story | `escape(inField)` | the same order, but never unpins from a field |
 | Arrow keys step the pinned verse and centre on it | `step` | step if pinned |
 | `touchcancel` forgets every touch | inside the module | — |
 
@@ -115,17 +115,19 @@ function createMapGestures<I extends MapItem>(options: {
 
 - Every zoom stops a glide. The buttons did not, so a press during one was
   overwritten on the glide's next frame.
-- Keys typed into a text field are the field's: ArrowLeft, ArrowRight and
-  Escape in the search box no longer step or unpin the verse.
+- A field's arrow keys are its own, and Escape in a field closes the menu or
+  panel but leaves the verse pinned. Typed in the search box or pressed in a
+  dropdown, they no longer step or unpin the verse.
 - A pointer the browser cancels (`pointercancel`) ends the drag and is never a
   tap.
-- Only the main button presses the map, so a right-click pins nothing.
+- Only the main button drags or taps, so a right-click pins nothing. Every
+  button still grabs the map.
 
-## What does not fit cleanly
+## Worth knowing
 
-- **Hover is reported on change only.** Today the popup is redrawn on every
-  mouse move over the same square; on change gives the same picture, since a
-  file landing redraws the popup anyway.
+- **Hover is reported on every mouse move**, not only when the square
+  changes: the popup is redrawn each time, which puts it back after an unpin
+  or a story stop has emptied it.
 - **`leave` and `hover(null)` look alike but differ**: leaving keeps the popup
   so the reader can reach it. Two intents keep that rule visible.
 
@@ -141,9 +143,9 @@ and recording intents; events built by hand, no WebGL.
 - Two touches report `zoom` with the distance ratio and midpoint, suppress
   `pan`, and `moveEnded` only when both lift; `touchcancel` forgets them.
 - A wheel turn reports one step factor at the cursor; its default is prevented.
-- Mouse moves report `hover` on change only; touch moves never; leaving
+- Mouse moves report `hover` each time; touch moves never; leaving
   reports `leave`, and `squareUnderMouse` is then null.
-- Keys report `escape` and `step(±1)`.
+- Keys report `escape` and `step(±1)`; in a field, only `escape`, saying so.
 
 Then the existing unit, layout and loading tests, and a pass on the branch
 preview on a desktop and a phone.

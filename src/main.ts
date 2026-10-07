@@ -232,7 +232,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }).observe(canvas);
 
   /** Where a pointer is on the map: the canvas need not start at the window's corner. */
-  const onMap = (e: { clientX: number; clientY: number }): { x: number; y: number } =>
+  const onMap = (e: { clientX: number; clientY: number }): ScreenPoint =>
     mapPoint(e.clientX, e.clientY, canvasOrigin);
 
   const renderState = createRenderState(renderContext, verses, dpr);
@@ -753,7 +753,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       hover(square) {
         const before = hoveredVerse;
         hoveredVerse = square;
-        repaint(before);
+        if (!sameItem(before, square)) repaint(before);
         // A pinned verse keeps the popup.
         if (!pinnedVerse) updateSidebarWrapper(square);
       },
@@ -770,9 +770,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         const next = pinnedVerse && squares.step(pinnedVerse, by);
         if (next) pinVerse(next, true);
       },
-      escape() {
+      escape(inField) {
         if (frame.menu) dispatch({ type: 'menu' });
-        else if (pinnedVerse) unpinVerse();
+        else if (pinnedVerse && !inField) unpinVerse();
         else dispatch({ type: 'close' });
       },
     },
@@ -1452,8 +1452,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const nearer = nearerStop(state);
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
-    // A scroll fires no pointer event, so re-run hit detection under the
-    // last known cursor position now that the camera has moved.
     hoveredVerse = gestures.squareUnderMouse();
 
     if (settled) {

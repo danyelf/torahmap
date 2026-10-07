@@ -69,7 +69,7 @@ beforeEach(() => {
       leave: () => log.push('leave'),
       tap: (square) => log.push(`tap ${id(square)}`),
       step: (by) => log.push(`step ${by}`),
-      escape: () => log.push('escape'),
+      escape: (inField) => log.push(inField ? 'escape from a field' : 'escape'),
     },
   });
 });
@@ -105,10 +105,11 @@ describe('a tap', () => {
     expect(heard.some((h) => h.startsWith('tap'))).toBe(false);
   });
 
-  it('is not a right-click', () => {
+  it('is not a right-click, though that still grabs the map', () => {
     pointer('pointerdown', 15, 25, { button: 2 });
+    pointer('pointermove', 40, 25, { button: 2 });
     pointer('pointerup', 15, 25, { button: 2 });
-    expect(heard).toEqual([]);
+    expect(heard).toEqual(['grab', 'hover 4,2']);
   });
 
   it('is not a press the browser cancelled', () => {
@@ -198,12 +199,12 @@ describe('zooming', () => {
 });
 
 describe('the mouse over the map', () => {
-  it('says when it moves onto another square, and only then', () => {
+  it('says which square it is over each time it moves', () => {
     pointer('pointermove', 1, 1);
     pointer('pointermove', 2, 2);
     pointer('pointermove', 12, 2);
     pointer('pointermove', -1, 2);
-    expect(heard).toEqual(['hover 0,0', 'hover 1,0', 'hover none']);
+    expect(heard).toEqual(['hover 0,0', 'hover 0,0', 'hover 1,0', 'hover none']);
   });
 
   it('hovers nothing with a finger', () => {
@@ -232,11 +233,11 @@ describe('the keys', () => {
     expect(heard).toEqual(['step 1', 'step -1', 'escape']);
   });
 
-  it('belong to a text field while one is typed in', () => {
-    const field = document.createElement('input');
+  it('leave the arrows to a field in use, and say Escape came from one', () => {
+    const field = document.createElement('select');
     document.body.append(field);
     key('ArrowLeft', field);
     key('Escape', field);
-    expect(heard).toEqual([]);
+    expect(heard).toEqual(['escape from a field']);
   });
 });

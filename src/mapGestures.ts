@@ -27,16 +27,16 @@ export interface MapIntents<I extends MapItem> {
   zoom(factor: number, at: ScreenPoint): void;
   /** A wheel turn, button press, drag or pinch has finished. */
   moveEnded(): void;
-  /** A mouse moved onto another square, or off every square. */
+  /** A mouse moved over the map, onto this square or onto none. */
   hover(square: I | null): void;
-  /** The pointer left the map. Unlike hovering off every square, this leaves the popup up, so the reader can reach it. */
+  /** The pointer left the map; the popup stays up. */
   leave(): void;
   /** A short press that did not move, on a square or on empty map. */
   tap(square: I | null): void;
   /** ArrowRight or ArrowLeft. */
   step(by: 1 | -1): void;
-  /** Escape. */
-  escape(): void;
+  /** Escape, pressed in a field such as the search box or not. */
+  escape(inField: boolean): void;
 }
 
 export interface MapGestures<I extends MapItem> {
@@ -50,7 +50,7 @@ export function createMapGestures<I extends MapItem>(options: {
   zoomOut: HTMLElement | null;
   onMap: (e: { clientX: number; clientY: number }) => ScreenPoint;
   squareUnder: (p: ScreenPoint) => I | null;
-  /** Whether a click on this square, or on empty map, would do something worth a pointing cursor. */
+  /** Whether the cursor over this square, or over empty map, is a pointer. */
   clickable: (square: I | null) => boolean;
   intents: MapIntents<I>;
 }): MapGestures<I> {
@@ -63,9 +63,6 @@ export function createMapGestures<I extends MapItem>(options: {
   // Where a drag last reported, while one is under way.
   let dragFrom: ScreenPoint | null = null;
   let mouse: ScreenPoint | null = null;
-  let hovered: I | null = null;
-
-  const sameSquare = (a: I | null, b: I | null): boolean => (a?.id ?? null) === (b?.id ?? null);
 
   function cursorOver(square: I | null): void {
     canvas.style.cursor = clickable(square) ? 'pointer' : 'default';
@@ -135,9 +132,9 @@ export function createMapGestures<I extends MapItem>(options: {
   });
 
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-    // Only the main button: a right-click opens the browser's menu.
-    if (e.button !== 0) return;
     intents.grab();
+    // Only the main button drags or taps: a right-click opens the browser's menu.
+    if (e.button !== 0) return;
     const p = onMap(e);
     dragFrom = p;
     press = { ...p, time: Date.now() };
@@ -159,8 +156,6 @@ export function createMapGestures<I extends MapItem>(options: {
     mouse = p;
     const square = squareUnder(p);
     cursorOver(square);
-    if (sameSquare(square, hovered)) return;
-    hovered = square;
     intents.hover(square);
   });
 
@@ -172,8 +167,9 @@ export function createMapGestures<I extends MapItem>(options: {
     press = null;
     dragFrom = null;
     intents.moveEnded();
-    if (still && quick) intents.tap(squareUnder(p));
-    cursorOver(squareUnder(p));
+    const square = squareUnder(p);
+    if (still && quick) intents.tap(square);
+    cursorOver(square);
   });
 
   canvas.addEventListener('pointercancel', () => {
@@ -188,24 +184,25 @@ export function createMapGestures<I extends MapItem>(options: {
     press = null;
     dragFrom = null;
     mouse = null;
-    hovered = null;
     canvas.style.cursor = 'default';
     intents.leave();
   });
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
-    // Keys typed into a field are the field's.
     const target = e.target as HTMLElement | null;
-    if (target?.closest?.('input, textarea, select, [contenteditable]')) return;
-    if (e.key === 'Escape') intents.escape();
-    else if (e.key === 'ArrowRight') intents.step(1);
+    const inField = !!target?.closest?.(
+      'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
+    );
+    if (e.key === 'Escape') return intents.escape(inField);
+    // A field's arrow keys are its own.
+    if (inField) return;
+    if (e.key === 'ArrowRight') intents.step(1);
     else if (e.key === 'ArrowLeft') intents.step(-1);
   });
 
   return {
     squareUnderMouse() {
-      hovered = mouse && squareUnder(mouse);
-      return hovered;
+      return mouse && squareUnder(mouse);
     },
   };
 }
