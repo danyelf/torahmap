@@ -59,7 +59,7 @@ import {
   type ScreenPoint,
   type Viewport,
 } from './camera.ts';
-import { createMapGestures } from './mapGestures.ts';
+import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { indexItems, sameItem } from './items.ts';
 import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
@@ -728,6 +728,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   render();
 
+  function setHover(square: I | null): void {
+    const before = hoveredVerse;
+    hoveredVerse = square;
+    if (!sameItem(before, square)) repaint(before);
+  }
+
   const gestures = createMapGestures<I>({
     canvas,
     zoomIn: document.getElementById('zoom-in'),
@@ -751,29 +757,24 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       zoom: zoomAt,
       moveEnded: () => debouncedCameraSettled(),
       hover(square) {
-        const before = hoveredVerse;
-        hoveredVerse = square;
-        if (!sameItem(before, square)) repaint(before);
+        setHover(square);
         // A pinned verse keeps the popup.
         if (!pinnedVerse) updateSidebarWrapper(square);
       },
-      leave() {
-        const before = hoveredVerse;
-        hoveredVerse = null;
-        if (before) repaint(before);
-      },
+      leave: () => setHover(null),
       tap(square) {
-        if (square && !sameItem(pinnedVerse, square)) pinVerse(square);
-        else if (pinnedVerse) unpinVerse();
+        const does = tapDoes(square, pinnedVerse);
+        if (does === 'pin' && square) pinVerse(square);
+        else if (does === 'unpin') unpinVerse();
       },
       step(by) {
         const next = pinnedVerse && squares.step(pinnedVerse, by);
         if (next) pinVerse(next, true);
       },
       escape(inField) {
-        if (frame.menu) dispatch({ type: 'menu' });
-        else if (pinnedVerse && !inField) unpinVerse();
-        else dispatch({ type: 'close' });
+        const does = escapeDoes({ menu: frame.menu, pinned: pinnedVerse !== null, inField });
+        if (does === 'unpin') unpinVerse();
+        else dispatch({ type: does });
       },
     },
   });
@@ -1452,6 +1453,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const nearer = nearerStop(state);
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
+    // Not setHover: the render below draws the highlight.
     hoveredVerse = gestures.squareUnderMouse();
 
     if (settled) {

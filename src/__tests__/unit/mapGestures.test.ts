@@ -1,8 +1,8 @@
 // The reader's hands on the map, turned into intents. The map is a grid of
-// 10-pixel squares, each named by its column and row; a square is pinned when
-// `pinned` names it.
+// 10-pixel squares, each named by its column and row; the cursor points only
+// while something is pinned.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMapGestures, type MapGestures } from '../../mapGestures';
+import { createMapGestures, escapeDoes, tapDoes, type MapGestures } from '../../mapGestures';
 import { DRAG_PX } from '../../frame';
 import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../../constants';
 import type { MapItem } from '../../types';
@@ -137,12 +137,34 @@ describe('a drag', () => {
     expect(heard).toEqual(['grab', 'moveEnded']);
   });
 
-  it('leaves a pointing cursor over a square that a click would do something to', () => {
+  it('leaves a pointing cursor over a square while something is pinned', () => {
     pinned = squareAt(0, 0);
     pointer('pointerdown', 50, 50);
     expect(canvas.style.cursor).toBe('grabbing');
     pointer('pointerup', 80, 50);
     expect(canvas.style.cursor).toBe('pointer');
+  });
+
+  it('leaves the arrow over empty map', () => {
+    pinned = squareAt(0, 0);
+    pointer('pointerdown', 50, 50);
+    pointer('pointerup', -5, 50);
+    expect(canvas.style.cursor).toBe('default');
+  });
+
+  it('leaves the arrow when the browser cancels it', () => {
+    pointer('pointerdown', 50, 50);
+    pointer('pointercancel', 50, 50);
+    expect(canvas.style.cursor).toBe('default');
+  });
+
+  it('is over once the pointer leaves the map', () => {
+    pointer('pointerdown', 50, 50);
+    canvas.dispatchEvent(new PointerEvent('pointerleave'));
+    pointer('pointermove', 60, 50, { pointerType: 'touch' });
+    pointer('pointerup', 50, 50);
+    expect(heard).toEqual(['grab', 'leave']);
+    expect(canvas.style.cursor).toBe('default');
   });
 });
 
@@ -158,16 +180,17 @@ describe('a pinch', () => {
     expect(heard).toEqual(['grab', 'zoom 2.00 at 60,50']);
   });
 
-  it('has ended only when both fingers lift', () => {
+  it('has ended when a finger lifts', () => {
     touch('touchstart', [
       { id: 1, x: 40, y: 50 },
       { id: 2, x: 60, y: 50 },
     ]);
+    pointer('pointerdown', 40, 50, { pointerType: 'touch' });
     touch('touchmove', [{ id: 2, x: 80, y: 50 }]);
     touch('touchend', [{ id: 1, x: 40, y: 50 }]);
-    expect(heard).not.toContain('moveEnded');
+    pointer('pointerup', 40, 50, { pointerType: 'touch' });
     touch('touchend', [{ id: 2, x: 80, y: 50 }]);
-    expect(heard).toContain('moveEnded');
+    expect(heard.filter((h) => h === 'moveEnded')).toHaveLength(1);
   });
 
   it('forgets its fingers when the browser cancels the touch', () => {
@@ -193,8 +216,14 @@ describe('zooming', () => {
   });
 
   it('zooms from the buttons around the middle of the map', () => {
+    zoomIn.click();
     zoomOut.click();
-    expect(heard).toEqual([`zoom ${ZOOM_OUT_FACTOR.toFixed(2)} at 100,50`, 'moveEnded']);
+    expect(heard).toEqual([
+      `zoom ${ZOOM_IN_FACTOR.toFixed(2)} at 100,50`,
+      'moveEnded',
+      `zoom ${ZOOM_OUT_FACTOR.toFixed(2)} at 100,50`,
+      'moveEnded',
+    ]);
   });
 });
 
@@ -233,11 +262,57 @@ describe('the keys', () => {
     expect(heard).toEqual(['step 1', 'step -1', 'escape']);
   });
 
-  it('leave the arrows to a field in use, and say Escape came from one', () => {
-    const field = document.createElement('select');
-    document.body.append(field);
-    key('ArrowLeft', field);
-    key('Escape', field);
-    expect(heard).toEqual(['escape from a field']);
+  it.each(['<input>', '<textarea></textarea>', '<select></select>', '<div contenteditable></div>'])(
+    'leave the arrows to %s, and say Escape came from a field',
+    (html) => {
+      document.body.insertAdjacentHTML('beforeend', html);
+      const field = document.body.lastElementChild!;
+      key('ArrowLeft', field);
+      key('Escape', field);
+      expect(heard).toEqual(['escape from a field']);
+    },
+  );
+
+  it("are the map's in text that cannot be edited", () => {
+    document.body.insertAdjacentHTML('beforeend', '<div contenteditable="false"></div>');
+    key('ArrowLeft', document.body.lastElementChild!);
+    expect(heard).toEqual(['step -1']);
+  });
+});
+
+describe('Escape', () => {
+  it('closes the menu first', () => {
+    expect(escapeDoes({ menu: true, pinned: true, inField: false })).toBe('menu');
+  });
+
+  it('then unpins the verse', () => {
+    expect(escapeDoes({ menu: false, pinned: true, inField: false })).toBe('unpin');
+  });
+
+  it('never unpins from a field', () => {
+    expect(escapeDoes({ menu: false, pinned: true, inField: true })).toBe('close');
+  });
+
+  it('closes the panel or story when nothing is pinned', () => {
+    expect(escapeDoes({ menu: false, pinned: false, inField: false })).toBe('close');
+  });
+});
+
+describe('what a tap does', () => {
+  const a = squareAt(0, 0);
+  const b = squareAt(10, 0);
+
+  it('pins a square', () => {
+    expect(tapDoes(a, null)).toBe('pin');
+    expect(tapDoes(b, a)).toBe('pin');
+  });
+
+  it('unpins the pinned square, or on empty map', () => {
+    expect(tapDoes(squareAt(0, 0), a)).toBe('unpin');
+    expect(tapDoes(null, a)).toBe('unpin');
+  });
+
+  it('does nothing on empty map with nothing pinned', () => {
+    expect(tapDoes(null, null)).toBeNull();
   });
 });

@@ -1,12 +1,9 @@
 // Touch State module - tracks active touches for pinch-to-zoom
 
-interface TouchPoint {
-  x: number;
-  y: number;
-}
+import type { ScreenPoint } from './camera.ts';
 
 export interface TouchState {
-  activeTouches: Map<number, TouchPoint>;
+  activeTouches: Map<number, ScreenPoint>;
   lastPinchDistance: number | null;
 }
 
@@ -37,7 +34,7 @@ export function getPinchDistance(state: TouchState): number | null {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-export function getPinchCenter(state: TouchState): TouchPoint | null {
+export function getPinchCenter(state: TouchState): ScreenPoint | null {
   if (state.activeTouches.size < 2) return null;
   const [a, b] = [...state.activeTouches.values()];
   return {

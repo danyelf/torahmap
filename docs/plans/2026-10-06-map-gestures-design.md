@@ -96,7 +96,7 @@ function createMapGestures<I extends MapItem>(options: {
 | --- | --- | --- |
 | Wheel zooms around the cursor, one fixed step per event | `zoom`, then `moveEnded` | cancel glide, `zoomAt` |
 | Zoom buttons zoom around the canvas centre | `zoom`, then `moveEnded` | cancel glide, `zoomAt` |
-| Two fingers pinch around their midpoint | `zoom` per move; `moveEnded` when the last finger lifts | `zoomAt` |
+| Two fingers pinch around their midpoint | `zoom` per move; `moveEnded` when a finger lifts, from its pointer release | `zoomAt` |
 | Pointer down lifts the menu, folds a phone's sheet, stops a glide | `grab` | `dispatch({ type: 'map-touched' })`, cancel glide |
 | Drag (mouse or one finger) pans; takes the map only if it moved | `pan`, only when non-zero; `moveEnded` on release | `takeOver`, move camera, render |
 | Pinch suppresses drag panning | inside the module | — |
@@ -141,7 +141,7 @@ and recording intents; events built by hand, no WebGL.
 - A drag reports `pan` with the pixel deltas, nothing for a zero move, then
   `moveEnded`.
 - Two touches report `zoom` with the distance ratio and midpoint, suppress
-  `pan`, and `moveEnded` only when both lift; `touchcancel` forgets them.
+  `pan`, and `moveEnded` once when a finger lifts; `touchcancel` forgets them.
 - A wheel turn reports one step factor at the cursor; its default is prevented.
 - Mouse moves report `hover` each time; touch moves never; leaving
   reports `leave`, and `squareUnderMouse` is then null.

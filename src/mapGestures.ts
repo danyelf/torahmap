@@ -1,10 +1,11 @@
 // The reader's hands on the map: drags, pinches, the wheel, taps and keys,
-// each reported as what it asks for, in screen pixels. The shell answers by
-// its own rules; nothing here touches the camera, the pin or the link.
+// each reported as what it asks for, in screen pixels, and what a tap and
+// Escape do. Nothing here touches the camera, the pin or the link.
 
 import type { ScreenPoint } from './camera.ts';
 import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from './constants.ts';
 import { DRAG_PX } from './frame.ts';
+import { sameItem } from './items.ts';
 import type { MapItem } from './types.ts';
 import {
   createTouchState,
@@ -25,7 +26,7 @@ export interface MapIntents<I extends MapItem> {
   pan(dx: number, dy: number): void;
   /** Zoom by `factor`, holding the point `at` still. */
   zoom(factor: number, at: ScreenPoint): void;
-  /** A wheel turn, button press, drag or pinch has finished. */
+  /** A wheel turn, a zoom button, or a press of the map (a drag, a pinch or a tap) has finished. */
   moveEnded(): void;
   /** A mouse moved over the map, onto this square or onto none. */
   hover(square: I | null): void;
@@ -33,10 +34,26 @@ export interface MapIntents<I extends MapItem> {
   leave(): void;
   /** A short press that did not move, on a square or on empty map. */
   tap(square: I | null): void;
-  /** ArrowRight or ArrowLeft. */
   step(by: 1 | -1): void;
   /** Escape, pressed in a field such as the search box or not. */
   escape(inField: boolean): void;
+}
+
+/** What Escape does: closes the menu, else unpins the verse unless pressed in a field, else closes the panel or story. */
+export function escapeDoes(state: {
+  menu: boolean;
+  pinned: boolean;
+  inField: boolean;
+}): 'menu' | 'unpin' | 'close' {
+  if (state.menu) return 'menu';
+  if (state.pinned && !state.inField) return 'unpin';
+  return 'close';
+}
+
+/** What a tap does: pins a square other than the pinned one, and otherwise unpins. */
+export function tapDoes(tapped: MapItem | null, pinned: MapItem | null): 'pin' | 'unpin' | null {
+  if (tapped && !sameItem(tapped, pinned)) return 'pin';
+  return pinned ? 'unpin' : null;
 }
 
 export interface MapGestures<I extends MapItem> {
@@ -57,12 +74,16 @@ export function createMapGestures<I extends MapItem>(options: {
   const { canvas, onMap, squareUnder, clickable, intents } = options;
 
   const touches = createTouchState();
-  let pinched = false;
   // Where a press went down and when, until it is released or cancelled.
   let press: (ScreenPoint & { time: number }) | null = null;
   // Where a drag last reported, while one is under way.
   let dragFrom: ScreenPoint | null = null;
   let mouse: ScreenPoint | null = null;
+
+  function endPress(): void {
+    press = null;
+    dragFrom = null;
+  }
 
   function cursorOver(square: I | null): void {
     canvas.style.cursor = clickable(square) ? 'pointer' : 'default';
@@ -111,25 +132,18 @@ export function createMapGestures<I extends MapItem>(options: {
       const centre = getPinchCenter(touches);
       if (distance && centre && touches.lastPinchDistance) {
         intents.zoom(distance / touches.lastPinchDistance, centre);
-        pinched = true;
       }
       touches.lastPinchDistance = distance;
     },
     { passive: true },
   );
 
+  // A pinch has ended once a finger lifts, which its pointerup reports.
   canvas.addEventListener('touchend', (e: TouchEvent) => {
     for (const t of e.changedTouches) releaseTouch(touches, t.identifier);
-    if (touches.activeTouches.size === 0 && pinched) {
-      pinched = false;
-      intents.moveEnded();
-    }
   });
 
-  canvas.addEventListener('touchcancel', () => {
-    resetTouchState(touches);
-    pinched = false;
-  });
+  canvas.addEventListener('touchcancel', () => resetTouchState(touches));
 
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
     intents.grab();
@@ -164,8 +178,7 @@ export function createMapGestures<I extends MapItem>(options: {
     const p = onMap(e);
     const still = Math.abs(p.x - press.x) < DRAG_PX && Math.abs(p.y - press.y) < DRAG_PX;
     const quick = Date.now() - press.time < TAP_MS;
-    press = null;
-    dragFrom = null;
+    endPress();
     intents.moveEnded();
     const square = squareUnder(p);
     if (still && quick) intents.tap(square);
@@ -174,15 +187,13 @@ export function createMapGestures<I extends MapItem>(options: {
 
   canvas.addEventListener('pointercancel', () => {
     if (!press) return;
-    press = null;
-    dragFrom = null;
+    endPress();
     canvas.style.cursor = 'default';
     intents.moveEnded();
   });
 
   canvas.addEventListener('pointerleave', () => {
-    press = null;
-    dragFrom = null;
+    endPress();
     mouse = null;
     canvas.style.cursor = 'default';
     intents.leave();
