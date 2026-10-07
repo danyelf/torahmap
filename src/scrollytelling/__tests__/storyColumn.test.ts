@@ -2,7 +2,7 @@
 // each page as wide as the column. Which stop shows is read from the scroll.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Story, StoryStop } from '@torahmap/stories';
-import { createStoryColumn, type StoryColumn } from '../storyColumn';
+import { createStoryColumn, placeIn, type StoryColumn } from '../storyColumn';
 
 const PAGE = 100;
 
@@ -27,6 +27,7 @@ const STORIES = [story('torah', ['t1', 't2', 't3']), story('psalms', ['p1', 'p2'
 
 let content: HTMLElement;
 let column: StoryColumn;
+let progress: HTMLElement;
 
 /** The reader swipes to page `index`. */
 function swipeTo(index: number): void {
@@ -40,6 +41,7 @@ beforeEach(() => {
   document.documentElement.style.setProperty('--layout', 'phone');
   Object.defineProperty(content, 'clientWidth', { value: PAGE });
   document.body.append(content);
+  progress = document.createElement('div');
   // A stop brought into view puts its page in the column.
   vi.spyOn(HTMLElement.prototype, 'scrollIntoView').mockImplementation(function (
     this: HTMLElement,
@@ -47,7 +49,7 @@ beforeEach(() => {
     content.scrollLeft = [...content.children].indexOf(this) * PAGE;
   });
   column = createStoryColumn(
-    { content, progress: document.createElement('div'), title: document.createElement('div') },
+    { content, progress, title: document.createElement('div') },
     STORIES,
     null,
     (stops) => stops.map((stop) => ({ ...stop, camera: { x: 0, y: 0, zoom: 1 } })),
@@ -98,11 +100,30 @@ describe('the story column', () => {
     expect(column.where().stop.id).toBe('t2');
   });
 
+  it('counts the stops of a story edited on the dev server', () => {
+    column.storiesChanged([story('torah', ['t1', 't2', 't3', 't4']), STORIES[1]]);
+    expect(progress.getAttribute('aria-valuemax')).toBe('4');
+  });
+
   it('says nothing of a scroll while folded', () => {
     let moves = 0;
     column.onMove(() => moves++);
     column.fold();
     swipeTo(2);
     expect(moves).toBe(0);
+  });
+});
+
+describe("a stop's place", () => {
+  const stops = [{ id: 'intro' }, { id: 'creation' }, { id: 'flood' }];
+
+  it('counts from one, out of every stop', () => {
+    expect(placeIn(stops, 0)).toEqual({ number: 1, total: 3 });
+    expect(placeIn(stops, 2)).toEqual({ number: 3, total: 3 });
+  });
+
+  it('is zero for a place not in the story', () => {
+    expect(placeIn(stops, -1)).toEqual({ number: 0, total: 3 });
+    expect(placeIn(stops, 3)).toEqual({ number: 0, total: 3 });
   });
 });

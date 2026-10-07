@@ -31,7 +31,6 @@ export interface OpenText<I extends MapItem, S = unknown> {
   drawPopup(elements: SidebarElements, item: I | null, view: PopupView<I>): void;
   overlays: Overlay<I>[];
   search: SearchTool<I, S>;
-  /** Every text has stories. */
   stories: {
     list: readonly Story[];
     resolve(

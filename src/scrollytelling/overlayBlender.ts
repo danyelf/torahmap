@@ -46,17 +46,17 @@ function cacheKeyFor<T>(
 }
 
 /** The text's tools a stop names: its search, and its overlays by id. */
-export interface StopTools<T> {
+export interface TextTools<T> {
   search: SearchTool<T>;
   overlay(id: string): Overlay<T> | undefined;
 }
 
-function overlayOf<T>(stop: StoryStop, tools: StopTools<T>): Overlay<T> | null {
+function overlayOf<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T> | null {
   return (stop.overlay && tools.overlay(stop.overlay)) || null;
 }
 
 /** The tools a stop picks. */
-export function stopTools<T>(stop: StoryStop, tools: StopTools<T>): Overlay<T>[] {
+export function stopTools<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T>[] {
   const { search } = tools;
   return toolsPicked(
     overlayOf(stop, tools),
@@ -71,7 +71,7 @@ export function pictureForStop<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => VerseColor,
-  tools: StopTools<I>,
+  tools: TextTools<I>,
 ): Picture {
   const { search } = tools;
   const overlay = overlayOf(stop, tools);
@@ -114,7 +114,7 @@ export function computeBlendedColors<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => VerseColor,
-  tools: StopTools<I>,
+  tools: TextTools<I>,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)
     return still(pictureForStop(fromStop, verses, hovered, loaded, base, tools));

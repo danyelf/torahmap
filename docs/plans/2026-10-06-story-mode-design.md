@@ -59,8 +59,8 @@ stories change.
 ### What it does not own
 
 - **The set of stories** stays the text's slot. The column is handed it, and
-  given a new one when a story is edited on the dev server. The Stories panel
-  and the starting points read the set and `leftAt`.
+  given a new one when a story is edited on the dev server; the Stories panel
+  and the starting points read the list and `leftAt` from it.
 - **The frame**: whether the column is showing, which panel is open, the
   menu. The shell opens and folds the column as the frame changes.
 - **The map.** Applying a stop's overlay, settings, search and pin; moving

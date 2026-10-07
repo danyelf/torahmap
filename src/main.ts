@@ -112,8 +112,13 @@ import {
 } from './constants.ts';
 import { stopLabel } from './scrollytelling/storyPanel';
 import { DEFAULT_EASING, listedStories, writeStopComment } from '@torahmap/stories';
-import { createStoryColumn, nearerStop, placeIn } from './scrollytelling/storyColumn.ts';
-import { computeBlendedColors, stopTools, type StopTools } from './scrollytelling/overlayBlender';
+import {
+  createStoryColumn,
+  nearerStop,
+  placeIn,
+  type StopPlace,
+} from './scrollytelling/storyColumn.ts';
+import { computeBlendedColors, stopTools, type TextTools } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
@@ -151,9 +156,6 @@ const PHONE_STORY_FOCUS = 0.4;
  * it, so it can never name a view the address does not hold — a write
  * suppressed by `applyingExternalState` leaves both unchanged.
  */
-/** A story stop as telemetry names it: its id, and its place counted from one. */
-type StopAt = { id: string; number: number };
-
 function showTitle(): void {
   // Shortcut: the tab title and the link's overlay keys are the Tanakh's on every text.
   const title = tabTitle(parseUrlState(overlayParamSpecs), __LIVE__ ? null : __GIT_BRANCH__);
@@ -198,7 +200,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const getOverlay = (id: string): Overlay<I> | undefined =>
     text.overlays.find((overlay) => overlay.id === id);
   // What a story stop may name.
-  const stopToolsOf: StopTools<I> = { search: searchTool, overlay: getOverlay };
+  const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
   // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
     pending: new Set<string>(),
@@ -436,7 +438,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       mouseState.hoveredVerse,
       loaded,
       base,
-      stopToolsOf,
+      textTools,
     );
   }
 
@@ -635,29 +637,26 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  /** The stop the story is at, as a change of hands is told against it. */
-  function storyAt(): StopAt {
-    const { stop, place } = storyColumn.where();
-    return { id: stop.id, number: place.number };
-  }
-
   // Off until the page view is sent: who drives when the page opens is part of it.
   let recordingDriver = false;
 
-  // Every change of driver goes through here, by way of handOver or keepDriving.
-  /** `at` is the stop the change of hands is told against: by default where the story is. */
-  function setDriver(next: Driver, how: ExitHow | ReturnHow | null, at?: StopAt): void {
+  /**
+   * Every change of driver goes through here, by way of handOver or
+   * keepDriving. `at` is the stop the change of hands is told against: by
+   * default, where the story is.
+   */
+  function setDriver(next: Driver, how: ExitHow | ReturnHow | null, at?: StopPlace): void {
     // The story taking the map back mid-fade would otherwise still get the
     // fade's later frames, painting a stale explore picture over its own.
     if (next.by !== 'reader') cancelFade();
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
     if (!event) return;
-    const stop = at ?? storyAt();
+    const { stop, place } = at ?? storyColumn.where();
     // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
     if (event === 'story_exit') {
       markViewSettled();
-      trackStoryExit(stop.id, stop.number, how as ExitHow);
+      trackStoryExit(stop.id, place.number, how as ExitHow);
     } else {
       trackStoryReturn(stop.id, how as ReturnHow);
     }
@@ -665,8 +664,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** Give the map to `next`, which may pass it between the story and the reader, for the reason `how`. */
   function handOver(next: ReaderDriving, how: ExitHow): void;
-  function handOver(next: StoryHasMap, how: ReturnHow, at?: StopAt): void;
-  function handOver(next: Driver, how: ExitHow | ReturnHow, at?: StopAt): void {
+  function handOver(next: StoryHasMap, how: ReturnHow, at?: StopPlace): void;
+  function handOver(next: Driver, how: ExitHow | ReturnHow, at?: StopPlace): void {
     setDriver(next, how, at);
   }
 
@@ -1153,7 +1152,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
       overlayStarts.innerHTML = currentOverlay
         ? ''
-        : startingPointsHtml(searchTool, text.overlays, listed);
+        : startingPointsHtml(searchTool, text.overlays, storyColumn.listed());
     }
     renderOverlayControls();
     renderOverlayLegend();
@@ -1274,8 +1273,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     },
     storiesChanged: (list) => {
-      listed = listedStories(list, !__LIVE__);
-      storyColumn.storiesChanged(listed);
+      storyColumn.storiesChanged(listedStories(list, !__LIVE__));
       // Whatever the edited stop holds is applied on the next frame.
       lastSyncedStopId = null;
       scheduleStoryFrame();
@@ -1302,10 +1300,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let listed = listedStories(text.stories.list, !__LIVE__);
   const storyColumn = createStoryColumn(
     { content: storyContent, progress: storyProgress, title: storyProgressTitle },
-    listed,
+    listedStories(text.stories.list, !__LIVE__),
     parseUrlState().story ?? null,
     (stops) =>
       text.stories.resolve(stops, initialCamera, verses, squares, mapFocus(), mapViewport()),
@@ -1345,10 +1342,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Open the story at `stop` and hand it the map, easing from the reader's view
-   * or cutting to the stop, as a link does.
+   * Open the column at a stop (see StoryColumn.open) and hand it the map,
+   * easing from the reader's view or cutting to the stop, as a link does.
    */
-  /** Open the column at a stop (see StoryColumn.open) and hand it the map, easing there or cutting, as a link does. */
   function openStory(
     arrive: 'ease' | 'cut',
     how: ReturnHow,
@@ -1356,13 +1352,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     stop?: string | null,
   ): void {
     showStory();
+    const was = storyColumn.where().story;
     const opened = storyColumn.open(storyId, stop);
+    // No stop of another story has been applied to the map.
+    if (storyColumn.where().story !== was) lastSyncedStopId = null;
     // Told against the stop opened, not wherever the column's scroll puts it.
-    const at = { id: opened.stop.id, number: opened.place.number };
     if (arrive === 'ease') {
-      handOver(beginEase(REJOIN_EASE_MS, performance.now()), how, at);
+      handOver(beginEase(REJOIN_EASE_MS, performance.now()), how, opened);
     } else {
-      handOver(STORY_DRIVING, how, at);
+      handOver(STORY_DRIVING, how, opened);
       // Make the next frame apply the stop's overlay, settings and pin.
       lastSyncedStopId = null;
     }
@@ -1390,7 +1388,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function drawStories(): void {
-    const cards = listed.map(({ id, data }): StoryCard => {
+    const cards = storyColumn.listed().map(({ id, data }): StoryCard => {
       const at = storyColumn.leftAt(id);
       return {
         id,
@@ -1576,7 +1574,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         null,
         loaded,
         base,
-        stopToolsOf,
+        textTools,
       ),
     );
   }
@@ -1672,20 +1670,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       return { tools: pickedTools(), popup: pinnedVerse && text.popupFile(pinnedVerse) };
     const { stop } = storyColumn.where();
     const verse = stop.verse ? squares.find(stop.verse) : null;
-    return { tools: stopTools(stop, stopToolsOf), popup: verse && text.popupFile(verse) };
+    return { tools: stopTools(stop, textTools), popup: verse && text.popupFile(verse) };
   }
 
   function landingView(): LandingView<I> {
     const shown = pinnedVerse ?? mouseState.hoveredVerse;
     let map = pickedTools();
     if (driver.by === 'story' && driver.blend) {
-      map = [
-        ...stopTools(driver.blend.from, stopToolsOf),
-        ...stopTools(driver.blend.to, stopToolsOf),
-      ];
+      map = [...stopTools(driver.blend.from, textTools), ...stopTools(driver.blend.to, textTools)];
     } else if (driver.by === 'rejoining') {
       const state = storyColumn.view();
-      map = [...stopTools(state.fromStop, stopToolsOf), ...stopTools(state.toStop, stopToolsOf)];
+      map = [...stopTools(state.fromStop, textTools), ...stopTools(state.toStop, textTools)];
     }
     return {
       source: colorSource(driver),

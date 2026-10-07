@@ -15,7 +15,7 @@ export interface StoryColumn {
   /** The reader moved the story. */
   onMove(listener: () => void): void;
   /** The story open and the stop the reader is at, for the URL and the menu. */
-  where(): { story: Story; stop: ResolvedStoryStop; place: StoryPlace };
+  where(): StopPlace & { story: Story };
   /** The stop a story was left at this visit, or undefined if it has not been opened. */
   leftAt(id: string): number | undefined;
   /**
@@ -23,18 +23,23 @@ export interface StoryColumn {
    * story open, null opens the first listed; `stop` undefined goes to where the
    * story was left this visit, and null, or an id it does not have, to its start.
    */
-  open(
-    storyId?: string | null,
-    stop?: string | null,
-  ): { stop: ResolvedStoryStop; place: StoryPlace };
+  open(storyId?: string | null, stop?: string | null): StopPlace;
   /** Hide the column, holding the stop it is at: hidden, it has no height to scroll. */
   fold(): void;
   /** How far along the column is scrolled, for the rule that hands the map back to the story. */
   position(): number;
   /** The map's size or the page's layout changed: place the stops again, keeping the reader's. */
   resized(): void;
+  /** The stories listed, drafts left out on the live site. */
+  listed(): readonly Story[];
   /** The stories changed, as they do when one is edited on the dev server. */
   storiesChanged(list: readonly Story[]): void;
+}
+
+/** A stop, and its place in its story. */
+export interface StopPlace {
+  stop: ResolvedStoryStop;
+  place: StoryPlace;
 }
 
 export interface StoryColumnParts {
@@ -85,7 +90,6 @@ export function createStoryColumn(
     story = next;
     title.textContent = story.data.title;
     title.dataset.title = story.data.title;
-    stops = resolve(story.data.stops);
     elements = renderStoryPanel(content, story.data.stops);
   }
 
@@ -152,17 +156,21 @@ export function createStoryColumn(
   });
 
   load(story);
+  stops = resolve(story.data.stops);
   wasSideways = sideways();
   arrived();
 
   return {
     view,
     onMove: (listener) => listeners.push(listener),
-    where: () => ({ story, stop: stops[stopIndex()], place: placeIn(stops, stopIndex()) }),
+    where() {
+      const index = stopIndex();
+      return { story, stop: stops[index], place: placeIn(stops, index) };
+    },
     leftAt: (id) => (id === story.id ? stopIndex() : places.get(id)),
 
     open(storyId, stop) {
-      let index = held ?? stopIndex();
+      let index = stopIndex();
       if (storyId !== undefined) {
         const next = named(storyId);
         if (next.id !== story.id) {
@@ -195,18 +203,23 @@ export function createStoryColumn(
     position,
 
     resized() {
-      stops = resolve(story.data.stops);
       const relaid = sideways() !== wasSideways;
       wasSideways = sideways();
-      if (held !== null || !relaid) return;
-      show(current);
+      // Folded, the map is not the story's size: open places the stops.
+      if (held !== null) return;
+      stops = resolve(story.data.stops);
+      if (relaid) show(current);
     },
+
+    listed: () => listed,
 
     storiesChanged(list) {
       listed = list;
       const at = position();
       load(named(story.id));
+      stops = resolve(story.data.stops);
       setPosition(at);
+      arrived();
     },
   };
 }
