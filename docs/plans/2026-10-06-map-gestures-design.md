@@ -1,7 +1,7 @@
 # Map Gestures Out of main.ts
 
 **Date:** 2026-10-06
-**Status:** Design, for review. A step of #342.
+**Status:** Built. A step of #342.
 
 ## The problem
 
@@ -70,9 +70,9 @@ function createMapGestures<I extends MapItem>(options: {
 - Every listener on the canvas and the zoom buttons, and the `keydown`
   listener for the map's keys.
 - The input state: active touches and the last pinch distance
-  (`touchState.ts`), the drag start (`mouseState.ts`'s `isDragging` and
-  `dragStart`), where and when the pointer went down, the last mouse position.
-  The two state files become private to the module or fold into it.
+  (`touchState.ts`, now read only here), where and when a press went down,
+  where a drag last reported, the last mouse position. `mouseState.ts` folds
+  into the module.
 - The thresholds: a tap is under `DRAG_PX` in each direction and under 300 ms;
   the wheel's step factors `ZOOM_IN_FACTOR` and `ZOOM_OUT_FACTOR`.
 - `preventDefault` on the wheel, pointer capture, and the cursor (`grabbing`
@@ -95,7 +95,7 @@ function createMapGestures<I extends MapItem>(options: {
 | Today | Intent | Shell answers |
 | --- | --- | --- |
 | Wheel zooms around the cursor, one fixed step per event | `zoom`, then `moveEnded` | cancel glide, `zoomAt` |
-| Zoom buttons zoom around the canvas centre | `zoom`, then `moveEnded` | `zoomAt` |
+| Zoom buttons zoom around the canvas centre | `zoom`, then `moveEnded` | cancel glide, `zoomAt` |
 | Two fingers pinch around their midpoint | `zoom` per move; `moveEnded` when the last finger lifts | `zoomAt` |
 | Pointer down lifts the menu, folds a phone's sheet, stops a glide | `grab` | `dispatch({ type: 'map-touched' })`, cancel glide |
 | Drag (mouse or one finger) pans; takes the map only if it moved | `pan`, only when non-zero; `moveEnded` on release | `takeOver`, move camera, render |
@@ -107,20 +107,25 @@ function createMapGestures<I extends MapItem>(options: {
 | Tap empty map unpins | `tap(null)` | unpin if pinned |
 | Cursor after a drag ends | inside the module, via `clickable` | — |
 | Story scroll moves the map under a still mouse | `squareUnderMouse()`, called from the frame loop as now | set hover |
-| Escape closes the menu, else the panel, else unpins | `escape` | the same order |
+| Escape closes the menu, else unpins, else closes the panel or story | `escape` | the same order |
 | Arrow keys step the pinned verse and centre on it | `step` | step if pinned |
 | `touchcancel` forgets every touch | inside the module | — |
 
-### What does not fit cleanly
+## Fixed in passing
+
+- Every zoom stops a glide. The buttons did not, so a press during one was
+  overwritten on the glide's next frame.
+- Keys typed into a text field are the field's: ArrowLeft, ArrowRight and
+  Escape in the search box no longer step or unpin the verse.
+- A pointer the browser cancels (`pointercancel`) ends the drag and is never a
+  tap.
+- Only the main button presses the map, so a right-click pins nothing.
+
+## What does not fit cleanly
 
 - **Hover is reported on change only.** Today the popup is redrawn on every
   mouse move over the same square; on change gives the same picture, since a
   file landing redraws the popup anyway.
-- **Zoom buttons do not stop a glide**, so a press during one is overwritten
-  on the glide's next frame. If the shell's
-  `zoom` answer cancels the glide for every source, the buttons are fixed in
-  passing. That is a visible change, so it needs a yes; otherwise `zoom`
-  carries its source and only the wheel cancels.
 - **`leave` and `hover(null)` look alike but differ**: leaving keeps the popup
   so the reader can reach it. Two intents keep that rule visible.
 
@@ -145,7 +150,4 @@ preview on a desktop and a phone.
 
 ## Size
 
-About 190 lines leave `main.ts`: the listeners and their state (roughly 125
-at 740 and 826–950, 25 at 1082–1105, 25 for the keys, 15 of imports and
-declarations). About 45 come back as the intent answers, so `main.ts` shrinks
-by about 145. The module is about 200 lines with comments.
+`main.ts` shrinks by 171 lines, to 1,695; the module is 211.

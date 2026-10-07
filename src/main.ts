@@ -59,21 +59,7 @@ import {
   type ScreenPoint,
   type Viewport,
 } from './camera.ts';
-import {
-  createMouseState,
-  startDrag,
-  stopDrag,
-  setHoveredVerse,
-  clearHover,
-} from './mouseState.ts';
-import {
-  createTouchState,
-  trackTouch,
-  releaseTouch,
-  getPinchDistance,
-  getPinchCenter,
-  resetTouchState,
-} from './touchState.ts';
+import { createMapGestures } from './mapGestures.ts';
 import { indexItems, sameItem } from './items.ts';
 import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
@@ -103,13 +89,7 @@ import { LOADING, loadNotice } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
 import type { Picture } from './geometry.ts';
-import {
-  ZOOM_OUT_FACTOR,
-  ZOOM_IN_FACTOR,
-  URL_UPDATE_DEBOUNCE_MS,
-  SEARCH_WITH_OVERLAY,
-  MAP_FADE,
-} from './constants.ts';
+import { URL_UPDATE_DEBOUNCE_MS, SEARCH_WITH_OVERLAY, MAP_FADE } from './constants.ts';
 import { stopLabel } from './scrollytelling/storyPanel';
 import { DEFAULT_EASING, listedStories, writeStopComment } from '@torahmap/stories';
 import {
@@ -367,7 +347,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
   function explorePicture(): Picture<VerseColor | null> {
-    return toolsPicture(toolsNow(), verses, mouseState.hoveredVerse, base, dimFor(frontTool));
+    return toolsPicture(toolsNow(), verses, hoveredVerse, base, dimFor(frontTool));
   }
 
   function applyTools(): void {
@@ -430,16 +410,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function blendColors(): ColorLayer | null {
     if (driver.by !== 'story' || !driver.blend) return null;
     const { from, to, t } = driver.blend;
-    return computeBlendedColors(
-      from,
-      to,
-      t,
-      verses,
-      mouseState.hoveredVerse,
-      loaded,
-      base,
-      textTools,
-    );
+    return computeBlendedColors(from, to, t, verses, hoveredVerse, loaded, base, textTools);
   }
 
   function blendTransition(): void {
@@ -453,12 +424,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * hover the colour layer was drawn for; a pin leaves the hover alone, so it
    * passes nothing and only composites.
    */
-  function repaint(hoveredBefore: I | null = mouseState.hoveredVerse): void {
+  function repaint(hoveredBefore: I | null = hoveredVerse): void {
     const layer = layerToRecompute(
       colorSource(driver),
       toolsNow().overlay,
       hoveredBefore,
-      mouseState.hoveredVerse,
+      hoveredVerse,
     );
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
@@ -513,13 +484,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   let pinnedVerse: I | null = null;
 
-  const mouseState = createMouseState<I>();
-
-  // A scroll fires no pointer event, so the mid-scroll branch needs the last
-  // known cursor position to re-run hit detection as the camera moves under it.
-  let lastPointerPosition: { x: number; y: number } | null = null;
-
-  const touchState = createTouchState();
+  let hoveredVerse: I | null = null;
 
   const storyContent = document.getElementById('story-content')!;
 
@@ -689,23 +654,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // Reset whenever the story comes back, since the reader may have changed the
   // overlay or pin out from under it.
   let lastSyncedStopId: string | null = null;
-  let pointerDownPos: { x: number; y: number; time: number } | null = null;
-  const TAP_MAX_DURATION = 300; // max ms to count as tap
 
   function render(): void {
-    const offset = renderFrame(
-      renderContext,
-      renderState,
-      camera,
-      mouseState.hoveredVerse,
-      pinnedVerse,
-    );
+    const offset = renderFrame(renderContext, renderState, camera, hoveredVerse, pinnedVerse);
     moveLabels(offset, camera.zoom);
-  }
-
-  /** The cursor over `verse`, or over no verse: a pointer only over one while another is pinned. */
-  function setCursorOver(verse: I | null): void {
-    canvas.style.cursor = pinnedVerse && verse ? 'pointer' : 'default';
   }
 
   function centerOnVerse(verse: I): void {
@@ -765,140 +717,65 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     syncUrl(true);
   }
 
-  /** Zoom by `factor`, holding whatever is under (screenX, screenY) still. */
-  function zoomAt(factor: number, screenX: number, screenY: number): void {
+  /** Zoom by `factor`, holding whatever is under `at` still. */
+  function zoomAt(factor: number, at: ScreenPoint): void {
     takeOver('takeover');
+    cancelCameraGlide();
     const newZoom = clampZoom(camera.zoom * factor);
-    Object.assign(camera, zoomAtPoint(camera, newZoom, { x: screenX, y: screenY }, mapViewport()));
+    Object.assign(camera, zoomAtPoint(camera, newZoom, at, mapViewport()));
     render();
   }
 
   render();
 
-  canvas.addEventListener(
-    'wheel',
-    (e: WheelEvent) => {
-      e.preventDefault();
-      cancelCameraGlide();
-      const zoomFactor = e.deltaY > 0 ? ZOOM_OUT_FACTOR : ZOOM_IN_FACTOR;
-      const p = onMap(e);
-      zoomAt(zoomFactor, p.x, p.y);
-      debouncedCameraSettled();
+  const gestures = createMapGestures<I>({
+    canvas,
+    zoomIn: document.getElementById('zoom-in'),
+    zoomOut: document.getElementById('zoom-out'),
+    onMap,
+    squareUnder: (p) => findItemAtPoint(verses, camera, mapViewport(), p.x, p.y),
+    clickable: (square) => pinnedVerse !== null && square !== null,
+    intents: {
+      grab() {
+        // A touch on the map lifts the menu and folds a phone's sheet.
+        dispatch({ type: 'map-touched' });
+        // A hand on the map outranks a glide that is still running.
+        cancelCameraGlide();
+      },
+      pan(dx, dy) {
+        takeOver('takeover');
+        camera.x -= dx / camera.zoom;
+        camera.y -= dy / camera.zoom;
+        render();
+      },
+      zoom: zoomAt,
+      moveEnded: () => debouncedCameraSettled(),
+      hover(square) {
+        const before = hoveredVerse;
+        hoveredVerse = square;
+        repaint(before);
+        // A pinned verse keeps the popup.
+        if (!pinnedVerse) updateSidebarWrapper(square);
+      },
+      leave() {
+        const before = hoveredVerse;
+        hoveredVerse = null;
+        if (before) repaint(before);
+      },
+      tap(square) {
+        if (square && !sameItem(pinnedVerse, square)) pinVerse(square);
+        else if (pinnedVerse) unpinVerse();
+      },
+      step(by) {
+        const next = pinnedVerse && squares.step(pinnedVerse, by);
+        if (next) pinVerse(next, true);
+      },
+      escape() {
+        if (frame.menu) dispatch({ type: 'menu' });
+        else if (pinnedVerse) unpinVerse();
+        else dispatch({ type: 'close' });
+      },
     },
-    { passive: false },
-  );
-
-  const zoomInBtn = document.getElementById('zoom-in');
-  const zoomOutBtn = document.getElementById('zoom-out');
-
-  zoomInBtn?.addEventListener('click', () => {
-    zoomAt(ZOOM_IN_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedCameraSettled();
-  });
-
-  zoomOutBtn?.addEventListener('click', () => {
-    zoomAt(ZOOM_OUT_FACTOR, canvas.clientWidth / 2, canvas.clientHeight / 2);
-    debouncedCameraSettled();
-  });
-
-  canvas.addEventListener(
-    'touchstart',
-    (e: TouchEvent) => {
-      for (const touch of e.changedTouches) {
-        const p = onMap(touch);
-        trackTouch(touchState, touch.identifier, p.x, p.y);
-      }
-      if (touchState.activeTouches.size === 2) {
-        touchState.lastPinchDistance = getPinchDistance(touchState);
-      }
-    },
-    { passive: true },
-  );
-
-  canvas.addEventListener(
-    'touchmove',
-    (e: TouchEvent) => {
-      for (const touch of e.changedTouches) {
-        const p = onMap(touch);
-        trackTouch(touchState, touch.identifier, p.x, p.y);
-      }
-
-      if (touchState.activeTouches.size >= 2) {
-        const newDist = getPinchDistance(touchState);
-        const center = getPinchCenter(touchState);
-        if (newDist && center && touchState.lastPinchDistance) {
-          const scale = newDist / touchState.lastPinchDistance;
-          zoomAt(scale, center.x, center.y);
-        }
-        touchState.lastPinchDistance = newDist;
-      }
-    },
-    { passive: true },
-  );
-
-  canvas.addEventListener('touchend', (e: TouchEvent) => {
-    for (const touch of e.changedTouches) {
-      releaseTouch(touchState, touch.identifier);
-    }
-    if (touchState.activeTouches.size === 0) {
-      debouncedCameraSettled();
-    }
-  });
-
-  canvas.addEventListener('touchcancel', () => {
-    resetTouchState(touchState);
-  });
-
-  canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-    // A touch on the map lifts the menu and folds a phone's sheet.
-    dispatch({ type: 'map-touched' });
-    // A hand on the map outranks a glide that is still running.
-    cancelCameraGlide();
-    const p = onMap(e);
-    startDrag(mouseState, p.x, p.y);
-    canvas.style.cursor = 'grabbing';
-    canvas.setPointerCapture(e.pointerId);
-    pointerDownPos = { x: p.x, y: p.y, time: Date.now() };
-  });
-
-  canvas.addEventListener('pointerup', (e: PointerEvent) => {
-    const p = onMap(e);
-    const wasDragging = mouseState.isDragging;
-    if (wasDragging) {
-      stopDrag(mouseState);
-      debouncedCameraSettled();
-    }
-
-    if (pointerDownPos) {
-      const dx = Math.abs(p.x - pointerDownPos.x);
-      const dy = Math.abs(p.y - pointerDownPos.y);
-      const duration = Date.now() - pointerDownPos.time;
-
-      if (dx < DRAG_PX && dy < DRAG_PX && duration < TAP_MAX_DURATION) {
-        const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
-        if (verse) {
-          if (sameItem(pinnedVerse, verse)) {
-            unpinVerse();
-          } else {
-            pinVerse(verse);
-          }
-        } else if (pinnedVerse) {
-          unpinVerse();
-        }
-      }
-      pointerDownPos = null;
-    }
-
-    if (wasDragging) setCursorOver(findItemAtPoint(verses, camera, mapViewport(), p.x, p.y));
-  });
-
-  canvas.addEventListener('pointerleave', () => {
-    const previousHover = mouseState.hoveredVerse;
-    clearHover(mouseState);
-    lastPointerPosition = null;
-    canvas.style.cursor = 'default';
-
-    if (previousHover) repaint(previousHover);
   });
 
   const sidebarElements = getSidebarElements();
@@ -1000,7 +877,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    */
   function refreshVersePopup(): void {
     if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
-    else if (mouseState.hoveredVerse) updateSidebarWrapper(mouseState.hoveredVerse, false);
+    else if (hoveredVerse) updateSidebarWrapper(hoveredVerse, false);
   }
 
   /** Say in the search caption that search's files are loading or failed; search fills it once they are in. */
@@ -1031,64 +908,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     showLoadState();
   }
 
-  // A drag pans the map, and a mouse moving over it hovers. Two fingers pinch.
-  canvas.addEventListener('pointermove', (e: PointerEvent) => {
-    if (touchState.activeTouches.size >= 2) return;
-    const p = onMap(e);
-
-    if (mouseState.isDragging) {
-      const dx = p.x - mouseState.dragStart.x;
-      const dy = p.y - mouseState.dragStart.y;
-      if (dx !== 0 || dy !== 0) takeOver('takeover');
-      camera.x -= dx / camera.zoom;
-      camera.y -= dy / camera.zoom;
-      mouseState.dragStart = { x: p.x, y: p.y };
-      render();
-      return;
-    }
-    if (e.pointerType === 'touch') return;
-
-    lastPointerPosition = { x: p.x, y: p.y };
-    const verse = findItemAtPoint(verses, camera, mapViewport(), p.x, p.y);
-    const previousHover = mouseState.hoveredVerse;
-    setHoveredVerse(mouseState, verse);
-    setCursorOver(verse);
-    if (!sameItem(previousHover, verse)) repaint(previousHover);
-    // A pinned verse keeps the popup.
-    if (!pinnedVerse) updateSidebarWrapper(verse);
-  });
-
   sidebarElements.closeBtn?.addEventListener('click', () => {
     unpinVerse();
-  });
-
-  window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && frame.menu) {
-      dispatch({ type: 'menu' });
-      return;
-    }
-    if (e.key === 'Escape' && !pinnedVerse) {
-      dispatch({ type: 'close' });
-      return;
-    }
-    if (!pinnedVerse) return;
-
-    if (e.key === 'Escape') {
-      unpinVerse();
-      return;
-    }
-
-    let targetVerse: I | null = null;
-
-    if (e.key === 'ArrowRight') {
-      targetVerse = squares.step(pinnedVerse, 1);
-    } else if (e.key === 'ArrowLeft') {
-      targetVerse = squares.step(pinnedVerse, -1);
-    }
-
-    if (targetVerse) {
-      pinVerse(targetVerse, true);
-    }
   });
 
   const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
@@ -1223,7 +1044,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // sendBeacon survives the page navigating away, so following the link to
   // Sefaria doesn't lose the event.
   sidebarElements.link?.addEventListener('click', () => {
-    const verse = pinnedVerse ?? mouseState.hoveredVerse;
+    const verse = pinnedVerse ?? hoveredVerse;
     if (!verse) return;
     const tracked = text.track.verse(verse);
     trackSefariaClick(tracked.book, tracked.chapter, tracked.verse, currentOverlayId());
@@ -1633,18 +1454,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     // A scroll fires no pointer event, so re-run hit detection under the
     // last known cursor position now that the camera has moved.
-    if (lastPointerPosition) {
-      setHoveredVerse(
-        mouseState,
-        findItemAtPoint(
-          verses,
-          camera,
-          mapViewport(),
-          lastPointerPosition.x,
-          lastPointerPosition.y,
-        ),
-      );
-    }
+    hoveredVerse = gestures.squareUnderMouse();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.
@@ -1674,7 +1484,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function landingView(): LandingView<I> {
-    const shown = pinnedVerse ?? mouseState.hoveredVerse;
+    const shown = pinnedVerse ?? hoveredVerse;
     let map = pickedTools();
     if (driver.by === 'story' && driver.blend) {
       map = [...stopTools(driver.blend.from, textTools), ...stopTools(driver.blend.to, textTools)];
