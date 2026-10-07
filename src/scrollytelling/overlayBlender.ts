@@ -3,7 +3,6 @@ import type { ResolvedStoryStop } from './types';
 import type { MapItem, VerseColor } from '../types';
 import type { Overlay } from '../overlays/types.ts';
 import type { Picture } from '../geometry.ts';
-import { getOverlay } from '../overlays/registry';
 import { fillDefaultColors, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '@torahmap/link';
@@ -46,14 +45,24 @@ function cacheKeyFor<T>(
   return `${overlayKey}#${searchKey}`;
 }
 
-// Shortcut: a stop's overlay is the Tanakh's, whatever the text.
-function overlayOf<T>(stop: StoryStop): Overlay<T> | null {
-  return ((stop.overlay && getOverlay(stop.overlay)) || null) as Overlay<T> | null;
+/** The text's tools a stop names: its search, and its overlays by id. */
+export interface TextTools<T> {
+  search: SearchTool<T>;
+  overlay(id: string): Overlay<T> | undefined;
+}
+
+function overlayOf<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T> | null {
+  return (stop.overlay && tools.overlay(stop.overlay)) || null;
 }
 
 /** The tools a stop picks. */
-export function stopTools<T>(stop: StoryStop, search: SearchTool<T>): Overlay<T>[] {
-  return toolsPicked(overlayOf<T>(stop), search, settingsFromLink(search, stop.searchParams ?? {}));
+export function stopTools<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T>[] {
+  const { search } = tools;
+  return toolsPicked(
+    overlayOf(stop, tools),
+    search,
+    settingsFromLink(search, stop.searchParams ?? {}),
+  );
 }
 
 export function pictureForStop<I extends MapItem>(
@@ -62,9 +71,10 @@ export function pictureForStop<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => VerseColor,
-  search: SearchTool<I>,
+  tools: TextTools<I>,
 ): Picture {
-  const overlay = overlayOf<I>(stop);
+  const { search } = tools;
+  const overlay = overlayOf(stop, tools);
   const byHover = !!(overlay?.hoverChangesColors && hovered);
 
   let byLoaded = picturesCache.get(verses);
@@ -81,14 +91,14 @@ export function pictureForStop<I extends MapItem>(
   const cached = byHover ? undefined : cache.get(key);
   if (cached) return cached;
 
-  const tools = toolsShown(
+  const shown = toolsShown(
     overlay,
     overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
     search,
     settingsFromLink(search, stop.searchParams ?? {}),
     loaded,
   );
-  const picture = fillDefaultColors(toolsPicture(tools, verses, hovered, base), base);
+  const picture = fillDefaultColors(toolsPicture(shown, verses, hovered, base), base);
   if (!byHover) cache.set(key, picture);
   return picture;
 }
@@ -104,14 +114,14 @@ export function computeBlendedColors<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => VerseColor,
-  search: SearchTool<I>,
+  tools: TextTools<I>,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)
-    return still(pictureForStop(fromStop, verses, hovered, loaded, base, search));
-  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded, base, search));
+    return still(pictureForStop(fromStop, verses, hovered, loaded, base, tools));
+  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded, base, tools));
   return {
-    from: pictureForStop(fromStop, verses, hovered, loaded, base, search),
-    to: pictureForStop(toStop, verses, hovered, loaded, base, search),
+    from: pictureForStop(fromStop, verses, hovered, loaded, base, tools),
+    to: pictureForStop(toStop, verses, hovered, loaded, base, tools),
     t,
   };
 }

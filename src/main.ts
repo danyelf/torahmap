@@ -16,7 +16,7 @@ import {
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
-import { CONTINUE_STORY, SHARE, menuHtml, type StoryPlace } from './menu.ts';
+import { CONTINUE_STORY, SHARE, menuHtml } from './menu.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
@@ -101,6 +101,7 @@ import {
 } from './downloads.ts';
 import { LOADING, loadNotice } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
+import { isPhone } from './phone.ts';
 import type { Picture } from './geometry.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -109,16 +110,15 @@ import {
   SEARCH_WITH_OVERLAY,
   MAP_FADE,
 } from './constants.ts';
-import { renderStoryPanel, stopLabel } from './scrollytelling/storyPanel';
+import { stopLabel } from './scrollytelling/storyPanel';
+import { DEFAULT_EASING, listedStories, writeStopComment } from '@torahmap/stories';
 import {
-  DEFAULT_EASING,
-  listedStories,
-  storyToOpen,
-  writeStopComment,
-  type Story,
-} from '@torahmap/stories';
-import { computeInterpolatedState } from './scrollytelling/controller';
-import { computeBlendedColors, stopTools } from './scrollytelling/overlayBlender';
+  createStoryColumn,
+  nearerStop,
+  placeIn,
+  type StopPlace,
+} from './scrollytelling/storyColumn.ts';
+import { computeBlendedColors, stopTools, type TextTools } from './scrollytelling/overlayBlender';
 import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
 import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
@@ -138,13 +138,8 @@ import {
   type ReaderDriving,
   type StoryHasMap,
 } from './scrollytelling/driver';
-import {
-  driverChangeEvent,
-  stopAt,
-  type ExitHow,
-  type ReturnHow,
-} from './telemetry/driverChange.ts';
-import type { InterpolatedState, ResolvedStoryStop } from './scrollytelling/types';
+import { driverChangeEvent, type ExitHow, type ReturnHow } from './telemetry/driverChange.ts';
+import type { ResolvedStoryStop } from './scrollytelling/types';
 import { showLegend, type LegendRow } from './mapLegend.ts';
 import './styles/map-title.css';
 import './styles/zoom-buttons.css';
@@ -155,11 +150,6 @@ import './styles/phone.css';
 // How far down a phone's map a verse brought into view is put. Halfway down,
 // the verse lands behind the popup that sits just above the sheet.
 const PHONE_STORY_FOCUS = 0.4;
-
-/** The stop a story between two stops counts as at: the one it is more than halfway to. */
-function nearerStop(state: InterpolatedState): ResolvedStoryStop {
-  return state.t > 0.5 ? state.toStop : state.fromStop;
-}
 
 /**
  * Set the tab's title from the address rather than from any state built for
@@ -209,6 +199,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
   const getOverlay = (id: string): Overlay<I> | undefined =>
     text.overlays.find((overlay) => overlay.id === id);
+  // What a story stop may name.
+  const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
   // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
     pending: new Set<string>(),
@@ -446,7 +438,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       mouseState.hoveredVerse,
       loaded,
       base,
-      searchTool,
+      textTools,
     );
   }
 
@@ -549,20 +541,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // What the panel shows (src/frame.ts); the story is open while its mode is 'story'.
   let frame: Frame = STORY;
 
-  // The stop the story is at while it cannot be scrolled there: hidden, it has
-  // no height. Null while its scroll says where it is.
-  let heldStop: number | null = null;
-
-  function storyStopIndex(): number {
-    if (heldStop !== null) return heldStop;
-    return resolvedStops.indexOf(nearerStop(currentStoryState()));
-  }
-
-  // Read from the stylesheet, like storyIsSideways, so the script cannot
-  // disagree with src/styles/phone.css about which layout is showing.
-  const phoneLayoutShown = (): boolean =>
-    getComputedStyle(document.documentElement).getPropertyValue('--layout').trim() === 'phone';
-  let phone = phoneLayoutShown();
+  // The layout last put on the page, so a resize can tell when it crosses over.
+  let phone = isPhone();
 
   function showStory(): void {
     const previous = frame;
@@ -574,18 +554,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function closeStory(exploring: Frame): void {
     const previous = frame;
     if (frame.mode === 'story') {
-      heldStop = storyStopIndex();
+      storyColumn.fold();
       frame = exploring;
     }
     applyFrame(previous);
-  }
-
-  function placeIn(stops: readonly { id: string }[], index: number): StoryPlace {
-    return { number: stopAt(stops, index).number, total: stops.length };
-  }
-
-  function storyPlace(): StoryPlace {
-    return placeIn(resolvedStops, storyStopIndex());
   }
 
   /**
@@ -606,7 +578,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
-      droppedMenu.innerHTML = menuHtml({ ...storyPlace(), title: story.data.title });
+      const { story, place } = storyColumn.where();
+      droppedMenu.innerHTML = menuHtml({ ...place, title: story.data.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
@@ -664,47 +637,26 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  // On a phone the stops sit side by side and a swipe moves one; elsewhere
-  // they stack and scroll. Either way the story is driven by how far along
-  // that one axis it has been moved. The axis is read from the story's layout,
-  // so the script cannot disagree with the stylesheet about it.
-  function storyIsSideways(): boolean {
-    return getComputedStyle(storyContent).display === 'flex';
-  }
-
-  function storyPosition(): number {
-    return storyIsSideways() ? storyContent.scrollLeft : storyContent.scrollTop;
-  }
-
-  function setStoryPosition(position: number): void {
-    if (storyIsSideways()) storyContent.scrollLeft = position;
-    else storyContent.scrollTop = position;
-  }
-
-  function showStop(stop: HTMLElement | undefined): void {
-    // Centred, where the story holds a stop still; top-aligned, a stop shorter
-    // than the story settles partway into the next.
-    stop?.scrollIntoView(
-      storyIsSideways() ? { block: 'nearest', inline: 'center' } : { block: 'center' },
-    );
-  }
-
   // Off until the page view is sent: who drives when the page opens is part of it.
   let recordingDriver = false;
 
-  // Every change of driver goes through here, by way of handOver or keepDriving.
-  function setDriver(next: Driver, how: ExitHow | ReturnHow | null): void {
+  /**
+   * Every change of driver goes through here, by way of handOver or
+   * keepDriving. `at` is the stop the change of hands is told against: by
+   * default, where the story is.
+   */
+  function setDriver(next: Driver, how: ExitHow | ReturnHow | null, at?: StopPlace): void {
     // The story taking the map back mid-fade would otherwise still get the
     // fade's later frames, painting a stale explore picture over its own.
     if (next.by !== 'reader') cancelFade();
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
     if (!event) return;
-    const stop = stopAt(resolvedStops, storyStopIndex());
+    const { stop, place } = at ?? storyColumn.where();
     // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
     if (event === 'story_exit') {
       markViewSettled();
-      trackStoryExit(stop.id, stop.number, how as ExitHow);
+      trackStoryExit(stop.id, place.number, how as ExitHow);
     } else {
       trackStoryReturn(stop.id, how as ReturnHow);
     }
@@ -712,9 +664,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** Give the map to `next`, which may pass it between the story and the reader, for the reason `how`. */
   function handOver(next: ReaderDriving, how: ExitHow): void;
-  function handOver(next: StoryHasMap, how: ReturnHow): void;
-  function handOver(next: Driver, how: ExitHow | ReturnHow): void {
-    setDriver(next, how);
+  function handOver(next: StoryHasMap, how: ReturnHow, at?: StopPlace): void;
+  function handOver(next: Driver, how: ExitHow | ReturnHow, at?: StopPlace): void {
+    setDriver(next, how, at);
   }
 
   /** A change that leaves the same one driving. */
@@ -728,7 +680,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   /** Anything the reader does that changes what the map shows hands them the map. */
   function takeOver(how: ExitHow): void {
     if (frame.mode !== 'story' || driver.by === 'reader') return;
-    handOver(readerTakesOver(storyPosition()), how);
+    handOver(readerTakesOver(storyColumn.position()), how);
     applyTools();
   }
 
@@ -986,10 +938,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** Write the URL for what is on screen; `push` asks for a history entry, for a discrete step rather than a pan or a scroll. */
   function syncUrl(push: boolean = false): void {
+    const { story, stop } = storyColumn.where();
     const next = linkForScreen({
       mode: frame.mode,
       driver: driverKind(driver),
-      story: { id: story.id, stop: resolvedStops[storyStopIndex()].id },
+      story: { id: story.id, stop: stop.id },
       explore: buildCurrentUrlState,
     });
     updateUrl(next, pushes(parseUrlState(), next, push));
@@ -1199,7 +1152,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
       overlayStarts.innerHTML = currentOverlay
         ? ''
-        : startingPointsHtml(searchTool, text.overlays, listed);
+        : startingPointsHtml(searchTool, text.overlays, storyColumn.listed());
     }
     renderOverlayControls();
     renderOverlayLegend();
@@ -1320,8 +1273,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     },
     storiesChanged: (list) => {
-      listed = listedStories(list, !__LIVE__);
-      reloadStory();
+      storyColumn.storiesChanged(listedStories(list, !__LIVE__));
+      // Whatever the edited stop holds is applied on the next frame.
+      lastSyncedStopId = null;
+      scheduleStoryFrame();
       drawOverlayPanel(true);
     },
   });
@@ -1345,81 +1300,33 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return { x: canvas.clientWidth / 2, y: height };
   }
 
-  let listed = listedStories(text.stories.list, !__LIVE__);
-  const storyNamed = (id: string | null): Story => {
-    const found = storyToOpen(listed, id);
-    if (!found) throw new Error('No story is listed');
-    return found;
-  };
-  // Where each story other than the current one was left, this visit.
-  const places = new Map<string, number>();
-
-  let story = storyNamed(parseUrlState().story ?? null);
-  configureAnalytics({ getStory: () => story.id });
-  const resolveStory = (): ResolvedStoryStop[] =>
-    text.stories.resolve(
-      story.data.stops,
-      initialCamera,
-      verses,
-      squares,
-      mapFocus(),
-      mapViewport(),
-    );
-  let resolvedStops: ResolvedStoryStop[] = [];
-  let stopElements: HTMLElement[] = [];
-
-  /** Puts `next` in the story column, with no stop yet applied to the map. */
-  function loadStory(next: Story): void {
-    story = next;
-    storyProgressTitle.textContent = story.data.title;
-    storyProgressTitle.dataset.title = story.data.title;
-    resolvedStops = resolveStory();
-    stopElements = renderStoryPanel(storyContent, story.data.stops);
-    lastSyncedStopId = null;
-  }
-
-  loadStory(story);
+  const storyColumn = createStoryColumn(
+    { content: storyContent, progress: storyProgress, title: storyProgressTitle },
+    listedStories(text.stories.list, !__LIVE__),
+    parseUrlState().story ?? null,
+    (stops) =>
+      text.stories.resolve(stops, initialCamera, verses, squares, mapFocus(), mapViewport()),
+  );
+  storyColumn.onMove(storyMoved);
+  configureAnalytics({ getStory: () => storyColumn.where().story.id });
   applyFrame();
 
-  // Crossing into or out of phone width turns the story from a column into a
-  // row, or back, and moves where it centres verses; keep the reader's stop.
-  // By the time this runs the story is laid out on its new axis, so its scroll
-  // no longer says which stop it was at; the last stop synced does.
   window.addEventListener('resize', () => {
-    if (phoneLayoutShown() === phone) return;
-    phone = !phone;
-    if (!phone) document.documentElement.style.removeProperty('--sheet-shown');
-    setFrame(nextFrame(frame, { type: 'layout-changed' }, phone));
-    resolvedStops = resolveStory();
-    if (heldStop === null) {
-      showStop(stopElements.find((el) => el.dataset.stopId === lastSyncedStopId));
-      // That scroll was ours, not the reader's.
-      if (driver.by === 'reader') keepDriving(readerTakesOver(storyPosition()));
+    // Crossing into or out of phone width turns the story from a column into a
+    // row, or back, and moves where it centres verses.
+    const relaid = isPhone() !== phone;
+    if (relaid) {
+      phone = !phone;
+      if (!phone) document.documentElement.style.removeProperty('--sheet-shown');
+      setFrame(nextFrame(frame, { type: 'layout-changed' }, phone));
     }
-    scheduleStoryFrame();
+    storyColumn.resized();
+    // The column's scroll back to its stop was ours, not the reader's.
+    if (relaid && frame.mode === 'story' && driver.by === 'reader') {
+      keepDriving(readerTakesOver(storyColumn.position()));
+    }
+    if (relaid || frame.mode === 'story') scheduleStoryFrame();
   });
-
-  /** Makes `next` the current story, remembering where the one it replaces was left. */
-  function switchStory(next: Story): void {
-    if (next.id === story.id) return;
-    places.set(story.id, storyStopIndex());
-    places.delete(next.id);
-    loadStory(next);
-    // A stop held for the old story means nothing in this one.
-    if (heldStop !== null) heldStop = 0;
-  }
-
-  /** The stop `id` was left at this visit; undefined if it has not been opened. */
-  function leftAt(id: string): number | undefined {
-    return id === story.id ? storyStopIndex() : places.get(id);
-  }
-
-  function reloadStory(): void {
-    const position = storyPosition();
-    loadStory(storyNamed(story.id));
-    setStoryPosition(position);
-    scheduleStoryFrame();
-  }
 
   function leaveStory(exploring: Frame): void {
     takeOver('fold');
@@ -1435,37 +1342,39 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Open the story at `stop` and hand it the map, easing from the reader's view
-   * or cutting to the stop, as a link does.
+   * Open the column at a stop (see StoryColumn.open) and hand it the map,
+   * easing from the reader's view or cutting to the stop, as a link does.
    */
-  function openStory(stop: number, arrive: 'ease' | 'cut', how: ReturnHow): void {
-    heldStop = stop;
+  function openStory(
+    arrive: 'ease' | 'cut',
+    how: ReturnHow,
+    storyId?: string | null,
+    stop?: string | null,
+  ): void {
     showStory();
-    resolvedStops = resolveStory();
-    showStop(stopElements[stop]);
-    // Handed over while the stop is still held, so the return names `stop`
-    // rather than wherever the story's scroll has got to.
+    const was = storyColumn.where().story;
+    const opened = storyColumn.open(storyId, stop);
+    // No stop of another story has been applied to the map.
+    if (storyColumn.where().story !== was) lastSyncedStopId = null;
+    // Told against the stop opened, not wherever the column's scroll puts it.
     if (arrive === 'ease') {
-      handOver(beginEase(REJOIN_EASE_MS, performance.now()), how);
+      handOver(beginEase(REJOIN_EASE_MS, performance.now()), how, opened);
     } else {
-      handOver(STORY_DRIVING, how);
+      handOver(STORY_DRIVING, how, opened);
       // Make the next frame apply the stop's overlay, settings and pin.
       lastSyncedStopId = null;
     }
-    heldStop = null;
     scheduleStoryFrame();
   }
 
-  function readerOpensStory(stop = storyStopIndex()): void {
-    openStory(stop, 'ease', 'open');
+  function readerOpensStory(storyId?: string, stop?: string | null): void {
+    openStory('ease', 'open', storyId, stop);
     syncUrl(true);
   }
 
   /** Opens a story from the Stories panel: where it was left this visit, or its start. */
   function readStory(id: string, fromStart: boolean): void {
-    const left = leftAt(id) ?? 0;
-    switchStory(storyNamed(id));
-    readerOpensStory(fromStart ? 0 : left);
+    readerOpensStory(id, fromStart ? null : undefined);
   }
 
   function takeStart(choice: StartChoice): void {
@@ -1479,8 +1388,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function drawStories(): void {
-    const cards = listed.map(({ id, data }): StoryCard => {
-      const at = leftAt(id);
+    const cards = storyColumn.listed().map(({ id, data }): StoryCard => {
+      const at = storyColumn.leftAt(id);
       return {
         id,
         draft: data.draft,
@@ -1608,13 +1517,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   });
 
-  // Scrolling is the only thing that moves the story on. While the reader
+  // Moving the story is the only thing that moves it on. While the reader
   // drives it only counts towards handing the map back.
-  storyContent.addEventListener('scroll', () => {
-    if (frame.mode !== 'story' || heldStop !== null) return;
+  function storyMoved(): void {
+    if (frame.mode !== 'story') return;
 
     if (driver.by === 'reader') {
-      const next = storyScrolled(driver, storyPosition());
+      const next = storyScrolled(driver, storyColumn.position());
       if (next !== 'rejoin') {
         keepDriving(next);
         return;
@@ -1622,7 +1531,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       handOver(beginEase(REJOIN_EASE_MS, performance.now()), 'rejoin');
     }
     scheduleStoryFrame();
-  });
+  }
 
   let storyFrame: number | null = null;
   // The layer the story last painted at rest, and the stop it was for.
@@ -1632,25 +1541,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   /** Repaint from the story without counting as a scroll. */
   function scheduleStoryFrame(): void {
     if (storyFrame === null) storyFrame = requestAnimationFrame(paintStoryFrame);
-  }
-
-  function currentStoryState(): InterpolatedState {
-    // On a phone the story is at whichever page is showing. Moving between
-    // pages is eased on a timer (beginEase), not tracked through the swipe.
-    if (storyIsSideways()) {
-      const page = Math.round(storyContent.scrollLeft / Math.max(1, storyContent.clientWidth));
-      const stop = resolvedStops[Math.min(resolvedStops.length - 1, Math.max(0, page))];
-      return { camera: { ...stop.camera }, fromStop: stop, toStop: stop, t: 0 };
-    }
-    return computeInterpolatedState(
-      resolvedStops,
-      stopElements.map((el) => el.offsetTop),
-      storyContent.scrollHeight,
-      storyContent.scrollTop,
-      story.data.easing,
-      stopElements.map((el) => el.offsetHeight),
-      storyContent.clientHeight,
-    );
   }
 
   /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
@@ -1674,7 +1564,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** The story's picture where it is now. */
   function storyPicture(): Picture {
-    const state = currentStoryState();
+    const state = storyColumn.view();
     return flatten(
       computeBlendedColors(
         state.fromStop,
@@ -1684,7 +1574,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         null,
         loaded,
         base,
-        searchTool,
+        textTools,
       ),
     );
   }
@@ -1697,17 +1587,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stop.id !== firstStopId) rememberVisit();
     syncStoryStopState(stop);
     lastSyncedStopId = stop.id;
-    const { number } = stopAt(resolvedStops, resolvedStops.indexOf(stop));
-    storyProgress.style.setProperty('--progress', `${(number / resolvedStops.length) * 100}%`);
-    storyProgress.setAttribute('aria-valuenow', String(number));
-    storyProgress.setAttribute('aria-valuemax', String(resolvedStops.length));
-    trackStoryStop(stop.id, number, resolvedStops.length);
+    const { place } = storyColumn.where();
+    trackStoryStop(stop.id, place.number, place.total);
   }
 
   function paintStoryFrame(now: number): void {
     storyFrame = null;
     // The reader can take the map, or fold the story, between the scroll and this frame.
-    if (frame.mode !== 'story' || heldStop !== null || driver.by === 'reader') return;
+    if (frame.mode !== 'story' || driver.by === 'reader') return;
 
     if (driver.by === 'rejoining') {
       const next = settle(driver, now);
@@ -1716,15 +1603,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       if (next.by === 'story') lastSyncedStopId = null;
     }
 
-    const state = currentStoryState();
-    // Nothing further to scroll to, so no cue to.
-    document.body.classList.toggle(
-      'story-at-end',
-      state.toStop === resolvedStops[resolvedStops.length - 1],
-    );
+    const state = storyColumn.view();
 
     // A new page on a phone eases in rather than cutting to it.
-    if (storyIsSideways() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
+    if (isPhone() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
       keepDriving(beginEase(SWIPE_EASE_MS, now));
       // The controls and the popup move to the new stop as it starts.
       arriveAtStop(state.toStop);
@@ -1782,35 +1664,23 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     syncUrlSoon();
   }
 
-  // A stop's camera places its verse, or fits its region, against the map's
-  // size, which the window sets. Outside the story the map's height is not the
-  // story's, so the stops wait for openStory to resolve them.
-  window.addEventListener('resize', () => {
-    if (frame.mode !== 'story') return;
-    resolvedStops = resolveStory();
-    scheduleStoryFrame();
-  });
-
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView<I> {
     if (frame.mode !== 'story')
       return { tools: pickedTools(), popup: pinnedVerse && text.popupFile(pinnedVerse) };
-    const stop = resolvedStops[storyStopIndex()];
+    const { stop } = storyColumn.where();
     const verse = stop.verse ? squares.find(stop.verse) : null;
-    return { tools: stopTools(stop, searchTool), popup: verse && text.popupFile(verse) };
+    return { tools: stopTools(stop, textTools), popup: verse && text.popupFile(verse) };
   }
 
   function landingView(): LandingView<I> {
     const shown = pinnedVerse ?? mouseState.hoveredVerse;
     let map = pickedTools();
     if (driver.by === 'story' && driver.blend) {
-      map = [
-        ...stopTools(driver.blend.from, searchTool),
-        ...stopTools(driver.blend.to, searchTool),
-      ];
+      map = [...stopTools(driver.blend.from, textTools), ...stopTools(driver.blend.to, textTools)];
     } else if (driver.by === 'rejoining') {
-      const state = currentStoryState();
-      map = [...stopTools(state.fromStop, searchTool), ...stopTools(state.toStop, searchTool)];
+      const state = storyColumn.view();
+      map = [...stopTools(state.fromStop, textTools), ...stopTools(state.toStop, textTools)];
     }
     return {
       source: colorSource(driver),
@@ -1911,7 +1781,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    */
   function applyViewState(next: ViewState): void {
     if (next.mode === 'explore') {
-      handOver(readerTakesOver(storyPosition()), 'fold');
+      handOver(readerTakesOver(storyColumn.position()), 'fold');
       const open = next.searchParams.search ? 'search' : 'overlay';
       // Only for a story exit: a phone opens with no panel shown, so
       // applyFrame's own tracking of the open panel can't see it land here.
@@ -1938,9 +1808,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     render();
 
     if (next.mode === 'story') {
-      switchStory(storyNamed(next.story));
-      const stop = resolvedStops.findIndex((s) => s.id === next.stop);
-      openStory(Math.max(0, stop), 'cut', 'link');
+      openStory('cut', 'link', next.story, next.stop);
     }
   }
 

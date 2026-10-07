@@ -16,12 +16,3 @@ export function driverChangeEvent(from: Driver, to: Driver): 'story_exit' | 'sto
   if (before === after) return null;
   return after === 'reader' ? 'story_exit' : 'story_return';
 }
-
-/** The stop at `index` and its place in the story, counting from one. */
-export function stopAt(
-  stops: readonly { id: string }[],
-  index: number,
-): { id: string; number: number } {
-  const stop = stops[index];
-  return stop ? { id: stop.id, number: index + 1 } : { id: '', number: 0 };
-}
