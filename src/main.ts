@@ -101,6 +101,7 @@ import {
 } from './downloads.ts';
 import { LOADING, loadNotice } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
+import { isPhone } from './phone.ts';
 import type { Picture } from './geometry.ts';
 import {
   ZOOM_OUT_FACTOR,
@@ -538,11 +539,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // What the panel shows (src/frame.ts); the story is open while its mode is 'story'.
   let frame: Frame = STORY;
 
-  // Read from the stylesheet, as the story column reads its axis, so the script cannot
-  // disagree with src/styles/phone.css about which layout is showing.
-  const phoneLayoutShown = (): boolean =>
-    getComputedStyle(document.documentElement).getPropertyValue('--layout').trim() === 'phone';
-  let phone = phoneLayoutShown();
+  // The layout last put on the page, so a resize can tell when it crosses over.
+  let phone = isPhone();
 
   function showStory(): void {
     const previous = frame;
@@ -648,19 +646,20 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   // Every change of driver goes through here, by way of handOver or keepDriving.
   /** `at` is the stop the change of hands is told against: by default where the story is. */
-  function setDriver(next: Driver, how: ExitHow | ReturnHow | null, at = storyAt()): void {
+  function setDriver(next: Driver, how: ExitHow | ReturnHow | null, at?: StopAt): void {
     // The story taking the map back mid-fade would otherwise still get the
     // fade's later frames, painting a stale explore picture over its own.
     if (next.by !== 'reader') cancelFade();
     const event = recordingDriver ? driverChangeEvent(driver, next) : null;
     driver = next;
     if (!event) return;
+    const stop = at ?? storyAt();
     // handOver's overloads pair an exit with an ExitHow and a return with a ReturnHow.
     if (event === 'story_exit') {
       markViewSettled();
-      trackStoryExit(at.id, at.number, how as ExitHow);
+      trackStoryExit(stop.id, stop.number, how as ExitHow);
     } else {
-      trackStoryReturn(at.id, how as ReturnHow);
+      trackStoryReturn(stop.id, how as ReturnHow);
     }
   }
 
@@ -1318,7 +1317,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   window.addEventListener('resize', () => {
     // Crossing into or out of phone width turns the story from a column into a
     // row, or back, and moves where it centres verses.
-    const relaid = phoneLayoutShown() !== phone;
+    const relaid = isPhone() !== phone;
     if (relaid) {
       phone = !phone;
       if (!phone) document.documentElement.style.removeProperty('--sheet-shown');
@@ -1520,14 +1519,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   });
 
-  // A phone turned to another stop since the story last painted.
-  let pageTurned = false;
-
   // Moving the story is the only thing that moves it on. While the reader
   // drives it only counts towards handing the map back.
-  function storyMoved(how: 'scroll' | 'page'): void {
+  function storyMoved(): void {
     if (frame.mode !== 'story') return;
-    if (how === 'page') pageTurned = true;
 
     if (driver.by === 'reader') {
       const next = storyScrolled(driver, storyColumn.position());
@@ -1613,9 +1608,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const state = storyColumn.view();
 
     // A new page on a phone eases in rather than cutting to it.
-    const turned = pageTurned;
-    pageTurned = false;
-    if (turned && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
+    if (isPhone() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
       keepDriving(beginEase(SWIPE_EASE_MS, now));
       // The controls and the popup move to the new stop as it starts.
       arriveAtStop(state.toStop);

@@ -1,5 +1,5 @@
 /* Everything that changes on a phone, and the one place a phone's width is
-   decided. main.ts reads --layout to know which layout it is in. Imported
+   decided. src/phone.ts reads --layout to know which layout it is in. Imported
    after every other stylesheet, so a rule here outranks its desktop twin of
    the same specificity. Search's and the haftarah overlay's phone rules are
    still in their own stylesheets (src/styles/overlays/).

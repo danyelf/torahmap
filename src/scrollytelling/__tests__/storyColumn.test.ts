@@ -36,7 +36,8 @@ function swipeTo(index: number): void {
 
 beforeEach(() => {
   content = document.createElement('div');
-  content.style.display = 'flex';
+  // Laid out as on a phone, as phone.css says with --layout.
+  document.documentElement.style.setProperty('--layout', 'phone');
   Object.defineProperty(content, 'clientWidth', { value: PAGE });
   document.body.append(content);
   // A stop brought into view puts its page in the column.
@@ -56,6 +57,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   content.remove();
+  document.documentElement.style.removeProperty('--layout');
 });
 
 describe('the story column', () => {
@@ -88,21 +90,19 @@ describe('the story column', () => {
     expect(column.open('torah').stop.id).toBe('t2');
   });
 
-  it('says a swipe to another stop turned the page, and a scroll within one did not', () => {
-    const moves: string[] = [];
-    column.onMove((how) => moves.push(how));
+  it('says when the reader swipes to another stop, and is there', () => {
+    let moves = 0;
+    column.onMove(() => moves++);
     swipeTo(1);
-    content.scrollLeft = PAGE + 10;
-    content.dispatchEvent(new Event('scroll'));
-    expect(moves).toEqual(['page', 'scroll']);
+    expect(moves).toBe(1);
     expect(column.where().stop.id).toBe('t2');
   });
 
   it('says nothing of a scroll while folded', () => {
-    const moves: string[] = [];
-    column.onMove((how) => moves.push(how));
+    let moves = 0;
+    column.onMove(() => moves++);
     column.fold();
     swipeTo(2);
-    expect(moves).toEqual([]);
+    expect(moves).toBe(0);
   });
 });

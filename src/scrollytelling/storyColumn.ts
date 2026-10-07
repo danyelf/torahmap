@@ -4,6 +4,7 @@
 
 import { storyToOpen, type Story, type StoryStop } from '@torahmap/stories';
 import type { StoryPlace } from '../menu.ts';
+import { isPhone } from '../phone.ts';
 import { computeInterpolatedState } from './controller';
 import { renderStoryPanel } from './storyPanel';
 import type { InterpolatedState, ResolvedStoryStop } from './types';
@@ -11,8 +12,8 @@ import type { InterpolatedState, ResolvedStoryStop } from './types';
 export interface StoryColumn {
   /** What the story shows where the reader has scrolled: `fromStop` and `toStop` are the same stop at rest. */
   view(): InterpolatedState;
-  /** The reader moved the story: scrolled it, or on a phone turned to another stop. */
-  onMove(listener: (how: 'scroll' | 'page') => void): void;
+  /** The reader moved the story. */
+  onMove(listener: () => void): void;
   /** The story open and the stop the reader is at, for the URL and the menu. */
   where(): { story: Story; stop: ResolvedStoryStop; place: StoryPlace };
   /** The stop a story was left at this visit, or undefined if it has not been opened. */
@@ -72,8 +73,7 @@ export function createStoryColumn(
   // keep the reader's stop when a phone and a desktop layout swap.
   let current = 0;
   let wasSideways = false;
-  let page = 0;
-  const listeners: ((how: 'scroll' | 'page') => void)[] = [];
+  const listeners: (() => void)[] = [];
 
   function named(id: string | null): Story {
     const found = storyToOpen(listed, id);
@@ -90,9 +90,8 @@ export function createStoryColumn(
   }
 
   // On a phone the stops sit side by side and a swipe moves one; elsewhere
-  // they stack and scroll. The axis is read from the column's layout, so the
-  // script cannot disagree with the stylesheet about it.
-  const sideways = (): boolean => getComputedStyle(content).display === 'flex';
+  // they stack and scroll.
+  const sideways = isPhone;
 
   const position = (): number => (sideways() ? content.scrollLeft : content.scrollTop);
 
@@ -149,9 +148,7 @@ export function createStoryColumn(
   content.addEventListener('scroll', () => {
     if (held !== null) return;
     arrived();
-    const turned = sideways() && pageShown() !== page;
-    page = pageShown();
-    for (const listener of listeners) listener(turned ? 'page' : 'scroll');
+    for (const listener of listeners) listener();
   });
 
   load(story);
@@ -187,7 +184,6 @@ export function createStoryColumn(
       const opened = { stop: stops[held], place: placeIn(stops, held) };
       show(held);
       held = null;
-      page = pageShown();
       arrived();
       return opened;
     },
@@ -204,7 +200,6 @@ export function createStoryColumn(
       wasSideways = sideways();
       if (held !== null || !relaid) return;
       show(current);
-      page = pageShown();
     },
 
     storiesChanged(list) {
