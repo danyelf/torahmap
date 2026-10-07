@@ -33,42 +33,27 @@ with the shell.
 
 ## The story column
 
-`src/scrollytelling/storyColumn.ts`. Made from the column's elements, the set
-of stories, and a function that resolves a story's stops against the map as
-it is now (the text's `stories.resolve`, given the shell's camera, focus and
-viewport).
-
-```ts
-interface StoryColumn {
-  /** What the story shows where the reader has scrolled: `from` and `to` are the same stop at rest. */
-  view(): { camera: CameraPosition; from: ResolvedStoryStop; to: ResolvedStoryStop; t: number };
-  /** The reader moved the story: scrolled it, or on a phone turned to another stop. */
-  onMove(listener: (how: 'scroll' | 'page') => void): void;
-  /** The story open and the stop the reader is at, for the URL and the menu. */
-  where(): { story: Story; stop: ResolvedStoryStop; place: StoryPlace };
-  /** The stop a story was left at this visit, or undefined if it has not been opened. */
-  leftAt(id: string): number | undefined;
-  /** Show the column at a story's stop, by default where it was left this visit, or its start. */
-  open(storyId: string | null, stop?: string): void;
-  /** Hide the column, holding the stop it is at: hidden, it has no height to scroll. */
-  fold(): void;
-  /** How far along the column is scrolled, for the rule that hands the map back to the story. */
-  position(): number;
-}
-```
+`src/scrollytelling/storyColumn.ts`, where its interface is. Made from the
+column's elements, the set of stories, and a function that resolves a story's
+stops against the map as it is now (the text's `stories.resolve`, given the
+shell's camera, focus and viewport). It answers what the story shows now
+(`view`) and where the reader is (`where`, `leftAt`, `position`), and says
+when the reader moves it (`onMove`: a scroll, or a phone's page turn). The
+shell opens and folds it, and tells it when the window is resized or the
+stories change.
 
 ### What it owns
 
 - The story open, where the others were left this visit, the stop held while
   folded.
-- Its stops, resolved when it opens and when the window changes size while it
-  shows, and the stop elements drawn for them.
-- Reading its own scroll: where between two stops the reader is (today's
-  `currentStoryState`), whether a phone has turned to another stop, which
-  stop is nearer.
-- The progress bar and the title above the column, moved as the reader goes.
-- Re-laying itself out when the window crosses between phone and desktop
-  width, keeping the reader's stop.
+- Its stops, resolved when it opens and whenever the window changes size, and
+  the stop elements drawn for them.
+- Reading its own scroll: where between two stops the reader is, whether a
+  phone has turned to another stop, which stop is nearer.
+- The progress bar, the end-of-story cue and the title above the column,
+  moved as the reader goes.
+- Keeping the reader's stop when the window crosses between phone and desktop
+  width and the stops change axis.
 
 ### What it does not own
 
@@ -96,7 +81,7 @@ The map's side, unchanged apart from where its story values come from:
   from the Stories panel, following a link to a stop. Each becomes a few
   calls to the column, the driver and the frame.
 
-About 200 of the 500 lines leave `main.ts` in this step. The rest is the
+About 120 lines leave `main.ts` in this step. The rest of story mode is the
 map's, and a later step could give the map's driving its own module, taking
 views from the story, from glides and from the video harness alike. That is a
 separate idea, not part of this one.
@@ -106,14 +91,14 @@ separate idea, not part of this one.
 What a reader sees does not change, and story mode is the most timing-sensitive
 code on the site. So:
 
-- **Unit tests for the column** against a plain element with set sizes: a
-  scroll between two stops gives both and the fraction; a fold then an open
-  returns to the held stop; switching stories remembers where the old one was
-  left; a phone's page turn is reported as `'page'`.
+- **Unit tests for the column**, laid out as on a phone: it opens at the stop
+  asked for, holds its stop while folded, remembers where a story was left,
+  and tells a page turn from a scroll. Where between two stops a scroll falls
+  is `controller.ts`'s, and tested there.
 - The scrollytelling unit tests, the layout and loading tests, and the pixel
   comparison against main.
-- Scrolling the main story on the branch preview against torahmap.org, on a
-  desktop and a phone, including leaving and rejoining mid-ease.
+- The opening story scrolled to set places on a desktop, the map taken and
+  handed back, and a phone's pages turned, screenshot against main.
 
 ## Also in this step
 

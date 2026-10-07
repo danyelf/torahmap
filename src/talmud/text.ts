@@ -18,7 +18,8 @@ import {
 
 const ref = (s: TalmudLayoutItem): string => `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
 
-// The Talmud's one story: one stop that shows the whole map.
+// Shortcut: the Talmud's one story is a single stop showing the whole map, until
+// its first real story is written.
 const WHOLE_MAP: Story = {
   id: 'talmud',
   data: {

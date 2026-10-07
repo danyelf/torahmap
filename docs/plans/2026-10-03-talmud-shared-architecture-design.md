@@ -66,7 +66,7 @@ interface MapText<I extends MapItem> {
   name(item: I): string;
   popup: { file(item: I): string; content(item: I, file: unknown): { he; en?; sefaria } };
   tools: Overlay<I>[];
-  stories?: { list; resolve(stops, items, bounds) };
+  stories: { list; resolve(stops, items, bounds) };
   area(item: I): string;
 }
 interface MapItem { id: string; x: number; y: number; size: number }
@@ -84,7 +84,7 @@ interface MapItem { id: string; x: number; y: number; size: number }
 | `popup` | `all-texts.json` | the tractate's file |
 | `overlays` | five overlays | segment length |
 | `search` | stems and meanings over the BHSA | a stand-in that finds nothing, until project 4 |
-| `stories` | today's stories and place names | none |
+| `stories` | today's stories and place names | its own, once written |
 | `area` | book | tractate |
 
 Notes on the slots:
@@ -107,10 +107,11 @@ Notes on the slots:
   does not redraw it out from under the menu. The Tanakh's search, with its stemming
   dictionary, lives in `src/tanakh/search/`, and a test keeps everything outside
   `src/tanakh/` from importing it.
-- **Stories.** Optional. Explore becomes the shell's normal state and a story is
-  something it can enter; the Tanakh still opens on its story, as today, and a
-  text without stories opens in Explore. Place names in
-  stops ("Torah", "Psalms") are resolved by the text, not `storyPanel.ts`.
+- **Stories.** Every text has them, the Talmud included once its first is
+  written; until then its one-stop story stands in. Place names in stops
+  ("Torah", "Psalms") are resolved by the text. The story column, where the
+  reader is in the stories, lives in `src/scrollytelling/storyColumn.ts` (see
+  `2026-10-06-story-mode-design.md`).
 - **Generic types** stop at the edge: `createApp` and overlays are typed by the
   text's square; the renderer, camera, hit testing, colour layers and mouse
   state see `MapItem` only. No shared type defaults to `TanakhIdentity`.
@@ -157,7 +158,7 @@ later change is shaped by two real texts rather than one text and a guess.
 and links squares by it (#346); the old Talmud page is deleted (#349); a verse
 has one name, its id, everywhere, data files included (#350); `createApp`,
 with both texts booting (described below); search as a slot every text fills,
-the Tanakh's moved into `src/tanakh/search/`.
+the Tanakh's moved into `src/tanakh/search/`; the story column out of `main.ts`.
 
 **`createApp`, with both texts booting.** `main.ts` becomes
 `createApp(text)`, called by `main-tanakh.ts` and a dev-only `main-talmud.ts`.
@@ -173,8 +174,6 @@ its labels are on screen, so it cannot rot unseen again.
 running. The order is decided as we go, starting with whichever shortcut is
 most in the way:
 
-- **Stories optional.** Explore is the shell's normal state; story place names
-  are resolved through a function the shell is given.
 - **The popup.** The text supplies a verse's text, reference and link; the
   shell applies the tools' marks; word clicks belong to search.
 - **The page and the site per text.** One HTML template; each text's name,
