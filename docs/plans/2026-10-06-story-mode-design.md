@@ -38,7 +38,7 @@ column's elements, the set of stories, and a function that resolves a story's
 stops against the map as it is now (the text's `stories.resolve`, given the
 shell's camera, focus and viewport). It answers what the story shows now
 (`view`) and where the reader is (`where`, `leftAt`, `position`), and says
-when the reader moves it (`onMove`: a scroll, or a phone's page turn). The
+when the reader moves it (`onMove`). The
 shell opens and folds it, and tells it when the window is resized or the
 stories change.
 
@@ -53,7 +53,8 @@ stories change.
 - The progress bar, the end-of-story cue and the title above the column,
   moved as the reader goes.
 - Keeping the reader's stop when the window crosses between phone and desktop
-  width and the stops change axis.
+  width and the stops change axis. Whether the page is laid out for a phone is
+  read through `isPhone` (`src/phone.ts`), as the shell reads it.
 
 ### What it does not own
 
@@ -73,8 +74,8 @@ The map's side, unchanged apart from where its story values come from:
   (`takeOver`); scrolling the column far enough hands it back, by the rules in
   `driver.ts`, reading `position()`.
 - **The frame loop.** On a move, the shell asks `view()` and paints it: the
-  camera, the colours between two stops, or the explore picture at rest. A
-  `'page'` move eases in, as a phone's swipe does today.
+  camera, the colours between two stops, or the explore picture at rest. On a
+  phone a new stop eases in, as a swipe does today.
 - **Applying a stop** when the nearer stop changes, and the telemetry for
   reaching one.
 - **The flows** that join the pieces: opening a story, leaving it, reading one
@@ -93,7 +94,7 @@ code on the site. So:
 
 - **Unit tests for the column**, laid out as on a phone: it opens at the stop
   asked for, holds its stop while folded, remembers where a story was left,
-  and tells a page turn from a scroll. Where between two stops a scroll falls
+  and says when the reader moves it. Where between two stops a scroll falls
   is `controller.ts`'s, and tested there.
 - The scrollytelling unit tests, the layout and loading tests, and the pixel
   comparison against main.
