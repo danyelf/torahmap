@@ -5,105 +5,121 @@
 
 ## The problem
 
-`main.ts` is 2,000 lines, and about 500 of them are story mode: who is moving
-the map, painting the story frame by frame, applying a stop, opening, leaving
-and switching stories. The pure parts are already modules
-(`src/scrollytelling/`: the controller, the driver rules, colour blending, the
-story panel). What stays in `main.ts` is the glue, and it reads and writes the
-shell's variables freely, so neither side can be understood alone.
+`main.ts` is 2,000 lines, and about 500 of them are story mode. The pure parts
+are already modules: the driver's rules (`driver.ts`), where the scroll falls
+between two stops (`controller.ts`), a stop's colours (`overlayBlender.ts`),
+the story panel's HTML (`storyPanel.ts`), the telemetry when the map changes
+hands (`telemetry/driverChange.ts`). What stays in `main.ts` is the wiring, and
+it reads and writes the shell's variables freely, so no part of it can be
+understood or tested alone, and the shell cannot move into a package
+(project 2) with it inside.
 
 Every text will have stories, the Talmud included, so the shell keeps
 requiring them. The Talmud's one-stop story stays a marked shortcut until it
 has a real one.
 
-## The design
+## Three things, two new modules
 
-One module, `src/scrollytelling/storyMode.ts`, owns the story's state. The
-shell hands it a host of shell functions and gets back a small object. Story
-mode touches the shell only through the host, the way a text touches it only
-through `Shell`.
+1. **The set of stories**: what exists, each story's stops, resolving a stop
+   against the map. The text's `stories` slot, unchanged.
+2. **The story reader** (`src/scrollytelling/storyReader.ts`): the story
+   column and where the reader is in it. Which stop is mostly not stored: it
+   is read from the column's scroll. What is stored is small: the story open,
+   where the others were left this visit, the stop held while the column is
+   folded. It never touches the map.
+3. **The story driver** (`src/scrollytelling/storyDriver.ts`): who is moving
+   the map, the story, an ease back to it or the reader, and moving it frame by
+   frame. It asks the reader where the story is and moves the camera and
+   colours through the shell. It is the only one of the three that touches the
+   map.
 
-### What moves into story mode
+The shell keeps the frame (story or Explore, which panel, the menu), applying
+a stop to its own state (the overlay and its settings, the search, the front
+tool, the pinned verse), and the flows that join the pieces: opening a story,
+leaving it, reading one from the Stories panel, following a link to a stop.
+Each flow is a few calls to the reader, the driver and the frame.
 
-- The current story, the stories listed, where each was left this visit.
-- Its resolved stops and their elements, the stop held while the story is
-  hidden, the stop last applied.
-- **The driver**: who is moving the map (the story, an ease back to it, or the
-  reader), and the telemetry sent when it changes hands.
-- The frame loop: the scroll listener, `paintStoryFrame`, eases, the picture
-  at rest, the progress bar, re-resolving stops on resize.
-- The Stories panel's cards.
+### The reader
 
-### What stays in the shell
-
-- The frame (story or Explore, which panel, the menu) and `dispatch`. Story
-  mode asks whether the story is showing; the shell tells it when it opens or
-  folds.
-- Applying a stop to the shell's state (`syncStoryStopState`): the overlay
-  and its settings, the search, the front tool, the pinned verse. A stop
-  changes what the reader can change, and that state is the shell's.
-- The camera, the colour layer, fades, rendering, hover, the URL.
-
-### The host: what the shell hands story mode
+Made from the story column's elements, the stories listed and a function that
+resolves a story's stops against the map as it is now.
 
 ```ts
-interface StoryHost<I> {
-  camera: Camera;                     // story mode moves it each frame
+interface StoryReader {
+  story(): Story;
+  stops(): readonly ResolvedStoryStop[];
+  /** Where the column's scroll puts the story: between two stops, or at one. */
+  state(): InterpolatedState;
+  /** The stop the reader is at: the held one while folded, else the nearer. */
+  stopIndex(): number;
+  place(): StoryPlace;
+  /** How far along the column is scrolled, for the driver's hand-back rules. */
+  position(): number;
+  sideways(): boolean;                // a phone's stops sit side by side
+  onScroll(listener: () => void): void;
+  /** Fold the column, holding the stop it is at; or bring it back at `stop`. */
+  fold(): void;
+  show(stop: number): void;
+  switchTo(id: string | null): void;  // remembers where the one it leaves was
+  listed(): readonly Story[];
+  storiesChanged(list: readonly Story[]): void;
+  /** The map's size changed: resolve the stops again. */
+  resize(): void;
+  arrived(stop: ResolvedStoryStop): void;   // moves the progress bar
+  drawStories(panel: HTMLElement): void;
+}
+```
+
+### The driver
+
+Made from the reader and a host of shell functions.
+
+```ts
+interface StoryDriverHost<I> {
+  camera: Camera;                     // set each frame while the story drives
   cancelCameraGlide(): void;
   showing(): boolean;                 // the frame is in story mode
-  resolve(stops: StoryStop[]): ResolvedStoryStop[];
-  /** The map's colours for a point between two stops. */
-  colorsBetween(from: ResolvedStoryStop, to: ResolvedStoryStop, t: number, hovered: I | null): ColorLayer;
+  colorsBetween(from: ResolvedStoryStop, to: ResolvedStoryStop, t: number): ColorLayer;
   shownPicture(): Picture;            // what is on screen, a fade flattened
   setColorLayer(layer: ColorLayer): void;
-  cancelFade(): void;
   paintTools(): void;                 // the explore picture, at rest on a stop
   render(): void;
   applyStop(stop: ResolvedStoryStop): void;
   hoverMoved(): void;                 // re-run hit testing after the camera moved
   syncUrlSoon(): void;
-  visited(): void;                    // rememberVisit
-  viewSettled(): void;                // markViewSettled
+  visited(): void;
+  viewSettled(): void;
 }
-```
 
-### What story mode hands back
-
-```ts
-interface StoryMode {
-  /** Where the map's colours come from: colorSource(driver). */
+interface StoryDriver {
+  /** Where the map's colours come from: the explore picture, or the story's blend. */
   colorSource(): ColorSource;
-  /** The reader did something to the map: they take it from the story. */
-  takeOver(how: ExitHow): void;
+  kind(): DriverKind;                 // for the URL and telemetry's mode
   /** The stops whose tools the map shows: one at rest, two in a blend or ease. */
   stopsShown(): ResolvedStoryStop[];
-  /** A file landed for what the story shows; true if story mode redraws for it. */
+  /** The reader did something to the map, and takes it from the story. */
+  takeOver(how: ExitHow): void;
+  /** Hand the map to the story, easing there or cutting, as a link does. */
+  giveToStory(arrive: 'ease' | 'cut', how: ReturnHow): void;
+  /** A file landed for what the map shows; true if the driver redraws for it. */
   dataLanded(how: ColorSource): boolean;
-  /** The story and its stop, for the URL, the menu and the opening downloads. */
-  where(): { story: Story; stop: ResolvedStoryStop; place: StoryPlace };
-  open(stop: number, arrive: 'ease' | 'cut', how: ReturnHow): void;
-  read(id: string, fromStart: boolean): void;   // from the Stories panel or a start row
-  openFromLink(storyId: string | null, stopId: string | null): void;
-  fold(): void;                       // the shell is closing the story
-  listed(): readonly Story[];
-  storiesChanged(list: readonly Story[]): void;
-  drawStories(panel: HTMLElement): void;
   scheduleFrame(): void;
+  /** From the page view on, changes of hands are sent. */
+  startRecording(): void;
 }
 ```
 
-The bare driver stays inside story mode. The shell asks what it needs of it
-(`colorSource`, `stopsShown`, `takeOver`), so the driver's rules live in one
-place.
+The bare driver value never leaves the driver: the shell asks what it needs of
+it, so its rules live in one place.
 
 ## What does not change
 
 What a reader sees. Story mode is the most timing-sensitive code on the site
 (scroll, eases, rejoining, phone swipes), so the step is checked by:
 
-- the scrollytelling unit tests, and new ones for story mode against a fake
-  host: a reader action takes the map, a fold holds the stop, a link cuts to
-  its stop;
+- the scrollytelling unit tests, and new ones for the driver against a fake
+  reader and host: a reader action takes the map, a fold leaves the reader
+  driving, a link cuts to its stop, data landing mid-ease re-aims the ease;
 - the layout and loading tests, and the pixel comparison against main;
 - scrolling the main story on the branch preview against torahmap.org, on a
   desktop and a phone, including leaving and rejoining mid-ease.
