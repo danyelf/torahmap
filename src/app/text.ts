@@ -13,6 +13,8 @@ import type { MapItem, VerseColor } from '../types.ts';
 export interface MapText<I extends MapItem, S = unknown> {
   /** Downloaded before the first frame. */
   firstFiles: string[];
+  /** The file whose arrival and download speed load timing reports. */
+  timedFile?: string;
   /** The text, laid out from its first files. */
   open(loaded: Loaded): OpenText<I, S>;
 }
@@ -42,11 +44,8 @@ export interface OpenText<I extends MapItem, S = unknown> {
       viewport: Viewport,
     ): ResolvedStoryStop[];
   };
-  /** Shortcut: telemetry's events still carry a book, chapter and verse. */
-  track: {
-    verse(item: I): { book: string; chapter: number; verse: number };
-    area(item: I): { area: string; section: string };
-  };
+  /** Where on the map a square is, for telemetry: its book or tractate, and that one's section. */
+  area(item: I): { area: string; section: string };
   /** Wires the text's own parts to the running shell. */
   start?(shell: Shell<I, S>): void;
 }

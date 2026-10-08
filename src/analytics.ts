@@ -129,8 +129,8 @@ export function trackSearchExecute(
   });
 }
 
-export function trackVerseClick(book: string, chapter: number, verse: number): void {
-  track('verse_click', { book, chapter, verse });
+export function trackSquareClick(id: string, area: string): void {
+  track('square_click', { id, area });
 }
 
 export function trackWordMenuOpen(
@@ -146,13 +146,8 @@ export function trackWordSearch(word: string, choice: string, verse: string): vo
   track('word_search', { word, choice, verse });
 }
 
-export function trackSefariaClick(
-  book: string,
-  chapter: number,
-  verse: number,
-  overlay: string,
-): void {
-  track('sefaria_click', { book, chapter, verse, overlay });
+export function trackSefariaOpen(id: string, area: string, overlay: string): void {
+  track('sefaria_open', { id, area, overlay });
 }
 
 export function trackWebGLMissing(): void {

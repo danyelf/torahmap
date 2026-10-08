@@ -19,6 +19,7 @@ import type { MapText } from '../app/text.ts';
 
 export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
   firstFiles: [STRUCTURE_FILE],
+  timedFile: TEXTS_FILE,
 
   open(loaded) {
     registerAllOverlays();
@@ -56,10 +57,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
 
       stories: { list: STORIES, resolve: resolveStops },
 
-      track: {
-        verse: (v) => v,
-        area: (v) => ({ area: v.book, section: sections.get(v.book) ?? '' }),
-      },
+      area: (v) => ({ area: v.book, section: sections.get(v.book) ?? '' }),
 
       start(shell) {
         // Most hits are off screen, so a result travels to its verse as well as pinning it.

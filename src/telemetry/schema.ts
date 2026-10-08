@@ -35,10 +35,11 @@ export const EVENTS = {
   view_settled: { blobs: ['book', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
-  verse_click: { blobs: ['book'], doubles: ['chapter', 'verse'] },
+  // A square's id is its link form; area is its book or tractate.
+  square_click: { blobs: ['id', 'area'], doubles: [] },
   word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
-  sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
+  sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },
   // A browser with WebGL 2 whose shaders fail to compile records an error from
   // 'main' instead: both show the same notice, but the causes differ.
   webgl_missing: { blobs: ['browser'], doubles: [] },
@@ -53,7 +54,8 @@ export const EVENTS = {
   },
   // Milliseconds since navigation start, sent once every download has settled:
   // first_frame when the map first draws, from the structure alone; texts_in
-  // when the texts land; search_ready when search's index and dictionary are
+  // when the text's timed file lands (the Tanakh's verse texts), 0 for a text
+  // that names none; search_ready when search's index and dictionary are
   // built, 0 if its files never arrived or it failed to build. texts_kbps is 0
   // where the browser did not report the download (a cached copy, or no
   // Resource Timing entry).
