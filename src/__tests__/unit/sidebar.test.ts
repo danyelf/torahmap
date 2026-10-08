@@ -1,11 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { TanakhTool } from '../../overlays/index';
-import {
-  getSidebarElements,
-  getSefariaUrl,
-  updateSidebar,
-  type SidebarElements,
-} from '../../sidebar';
+import { getSidebarElements, setWordClickHandler, type SidebarElements } from '../../sidebar';
+import { getSefariaUrl } from '../../tanakh/popup';
+import { showVerse } from '../helpers/tanakhPopup';
 import type { VerseTexts } from '../../verseTexts';
 import { createVerse, testOverlay } from '../helpers';
 
@@ -157,7 +154,7 @@ describe('sidebar', () => {
     });
   });
 
-  describe('updateSidebar', () => {
+  describe('the popup', () => {
     let elements: SidebarElements;
     let verseTexts: VerseTexts;
 
@@ -193,6 +190,9 @@ describe('sidebar', () => {
         closeBtn,
       };
 
+      // The Tanakh's search listens for word clicks.
+      setWordClickHandler(() => {});
+
       verseTexts = {
         'Genesis': {
           '1': {
@@ -203,6 +203,7 @@ describe('sidebar', () => {
     });
 
     afterEach(() => {
+      setWordClickHandler(null);
       if (elements.sidebar?.parentNode) {
         document.body.removeChild(elements.sidebar);
       }
@@ -211,7 +212,7 @@ describe('sidebar', () => {
     describe('showing verse info', () => {
       it('displays verse reference', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -225,7 +226,7 @@ describe('sidebar', () => {
 
       it('displays Hebrew text', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -239,7 +240,7 @@ describe('sidebar', () => {
 
       it('displays English text', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -253,7 +254,7 @@ describe('sidebar', () => {
 
       it('sets Sefaria link href', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -267,7 +268,7 @@ describe('sidebar', () => {
 
       it('makes sidebar visible', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -281,7 +282,7 @@ describe('sidebar', () => {
 
       it('shows nothing for a verse the texts do not hold', () => {
         const verse = createVerse({ book: 'Exodus', chapter: 20, verse: 2 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -297,7 +298,7 @@ describe('sidebar', () => {
       it('shows the notice apart from the text while the texts are not in', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         const loading = document.createElement('span');
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts: null,
           overlay: null,
           search: null,
@@ -316,7 +317,7 @@ describe('sidebar', () => {
     describe('pinned state', () => {
       it('adds pinned class when isPinned is true', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -330,7 +331,7 @@ describe('sidebar', () => {
 
       it('does not add pinned class when isPinned is false', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -346,7 +347,7 @@ describe('sidebar', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         elements.sidebar?.classList.add('pinned');
 
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -362,7 +363,7 @@ describe('sidebar', () => {
     describe('hiding sidebar', () => {
       it('removes visible class when verse is null', () => {
         elements.sidebar?.classList.add('visible');
-        updateSidebar(elements, null, {
+        showVerse(elements, null, {
           verseTexts,
           overlay: null,
           search: null,
@@ -376,7 +377,7 @@ describe('sidebar', () => {
 
       it('removes pinned class when verse is null', () => {
         elements.sidebar?.classList.add('pinned');
-        updateSidebar(elements, null, {
+        showVerse(elements, null, {
           verseTexts,
           overlay: null,
           search: null,
@@ -401,7 +402,7 @@ describe('sidebar', () => {
         };
 
         expect(() => {
-          updateSidebar(nullElements, null, {
+          showVerse(nullElements, null, {
             verseTexts,
             overlay: null,
             search: null,
@@ -424,7 +425,7 @@ describe('sidebar', () => {
 
         const settings = { category: 'x' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
@@ -445,7 +446,7 @@ describe('sidebar', () => {
         });
 
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: { tool: mockOverlay, settings: undefined, data: undefined },
           search: null,
@@ -459,7 +460,7 @@ describe('sidebar', () => {
 
       it('clears overlay info when overlay is null', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -497,7 +498,7 @@ describe('sidebar', () => {
 
         const settings = { any: 'value' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
@@ -538,7 +539,7 @@ describe('sidebar', () => {
 
         const settings = { any: 'value' };
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
@@ -565,7 +566,7 @@ describe('sidebar', () => {
 
       it('uses plain text when no special overlay is active', () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,
@@ -608,7 +609,7 @@ describe('sidebar', () => {
             getHoverInfo: () => '680 references',
           });
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-          updateSidebar(elements, verse, {
+          showVerse(elements, verse, {
             verseTexts,
             overlay: { tool: overlay, settings: undefined, data: undefined },
             search: searchOn('Matches: אברם'),
@@ -657,7 +658,7 @@ describe('sidebar', () => {
             data: undefined,
           };
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-          updateSidebar(elements, verse, {
+          showVerse(elements, verse, {
             verseTexts,
             overlay: { tool: overlay, settings: undefined, data: undefined },
             search: search,
@@ -687,7 +688,7 @@ describe('sidebar', () => {
         elements.ref = null;
 
         expect(() => {
-          updateSidebar(elements, verse, {
+          showVerse(elements, verse, {
             verseTexts,
             overlay: null,
             search: null,
@@ -703,7 +704,7 @@ describe('sidebar', () => {
         elements.hebrew = null;
 
         expect(() => {
-          updateSidebar(elements, verse, {
+          showVerse(elements, verse, {
             verseTexts,
             overlay: null,
             search: null,
@@ -719,7 +720,7 @@ describe('sidebar', () => {
         elements.english = null;
 
         expect(() => {
-          updateSidebar(elements, verse, {
+          showVerse(elements, verse, {
             verseTexts,
             overlay: null,
             search: null,
@@ -735,7 +736,7 @@ describe('sidebar', () => {
         elements.link = null;
 
         expect(() => {
-          updateSidebar(elements, verse, {
+          showVerse(elements, verse, {
             verseTexts,
             overlay: null,
             search: null,
@@ -754,7 +755,7 @@ describe('sidebar', () => {
         };
         const verse = createVerse({ book: 'Song of Songs', chapter: 1, verse: 1 });
 
-        updateSidebar(elements, verse, {
+        showVerse(elements, verse, {
           verseTexts,
           overlay: null,
           search: null,

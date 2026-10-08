@@ -5,7 +5,8 @@
 // listening.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSidebarElements, updateSidebar, setWordClickHandler } from '../../sidebar';
+import { getSidebarElements, setWordClickHandler } from '../../sidebar';
+import { showVerse } from '../helpers/tanakhPopup';
 import { createVerse, testOverlay } from '../helpers/fixtures';
 import type { VerseTexts } from '../../verseTexts';
 
@@ -27,13 +28,13 @@ function mountPopup(): void {
 
 beforeEach(() => {
   mountPopup();
-  setWordClickHandler(null);
+  setWordClickHandler(() => {});
 });
 
 describe('words in the verse popup', () => {
   it('renders one clickable span per word', () => {
     const elements = getSidebarElements();
-    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+    showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
       overlay: null,
       search: null,
@@ -50,7 +51,7 @@ describe('words in the verse popup', () => {
     const handler = vi.fn();
     setWordClickHandler(handler);
     const elements = getSidebarElements();
-    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+    showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
       overlay: null,
       search: null,
@@ -69,7 +70,7 @@ describe('words in the verse popup', () => {
     setWordClickHandler(handler);
 
     const elements = getSidebarElements();
-    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+    showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
       overlay: null,
       search: null,
@@ -84,9 +85,7 @@ describe('words in the verse popup', () => {
     expect(handler.mock.calls[0][0]).toMatchObject({
       text: 'וְר֣וּחַ',
       index: 0,
-      book: 'Genesis',
-      chapter: 1,
-      verse: 2,
+      item: { book: 'Genesis', chapter: 1, verse: 2 },
     });
   });
 
@@ -95,7 +94,7 @@ describe('words in the verse popup', () => {
     setWordClickHandler(handler);
 
     const elements = getSidebarElements();
-    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+    showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
       overlay: null,
       search: null,
@@ -114,7 +113,7 @@ describe('words in the verse popup', () => {
 
   it('leaves the English alone', () => {
     const elements = getSidebarElements();
-    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+    showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
       overlay: null,
       search: null,
@@ -126,9 +125,10 @@ describe('words in the verse popup', () => {
     expect(document.querySelectorAll('.verse-english .verse-word')).toHaveLength(0);
   });
 
-  it('says nothing when there is no handler', () => {
+  it('leaves the words plain while nothing listens', () => {
+    setWordClickHandler(null);
     const elements = getSidebarElements();
-    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+    showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
       overlay: null,
       search: null,
@@ -137,9 +137,7 @@ describe('words in the verse popup', () => {
       wordsClickable: true,
     });
 
-    expect(() =>
-      document.querySelector<HTMLElement>('[data-word-index="0"]')!.click(),
-    ).not.toThrow();
+    expect(document.querySelectorAll('.verse-hebrew .verse-word')).toHaveLength(0);
   });
 
   it('reports the whole word when a click lands inside an overlay mark', () => {
@@ -173,7 +171,7 @@ describe('words in the verse popup', () => {
     });
 
     const elements = getSidebarElements();
-    updateSidebar(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
+    showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
       verseTexts: texts,
       overlay: { tool: mockOverlay, settings: undefined, data: undefined },
       search: null,
@@ -197,9 +195,7 @@ describe('words in the verse popup', () => {
     expect(handler.mock.calls[0][0]).toMatchObject({
       text: 'וְר֣וּחַ',
       index: 0,
-      book: 'Genesis',
-      chapter: 1,
-      verse: 2,
+      item: { book: 'Genesis', chapter: 1, verse: 2 },
     });
   });
 });

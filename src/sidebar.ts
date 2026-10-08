@@ -1,27 +1,21 @@
-// Sidebar management for verse details display
+// The popup for a square: what the text says of it, marked by the overlay and
+// the search, with its words clickable for the search.
 
-import type { TanakhLayout, TextLanguage } from './types.ts';
+import type { MapItem, TextLanguage } from './types.ts';
 import { ENGLISH, HEBREW } from './types.ts';
-import type { TanakhOverlay, TanakhTool } from './overlays/index.ts';
-import { getVerseText, type VerseTexts } from './verseTexts.ts';
-import { sefariaUrl } from './sefaria.ts';
+import type { ToolOnMap } from './overlays/types.ts';
 import { verseWords, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';
-import { verseRef } from '@torahmap/link';
 
-/** A click on a word in the verse popup's Hebrew text. */
-export interface WordClick {
+/** A click on a word in the popup's Hebrew text. */
+export interface WordClick<I extends MapItem = MapItem> {
   /** The word exactly as displayed, points and all. */
   text: string;
   /** Its position among the verse's words. */
   index: number;
-  /** The verse's Hebrew, the text `index` counts in. */
+  /** The square's Hebrew, the text `index` counts in. */
   hebrew: string;
-  /** The verse's id. */
-  id: string;
-  book: string;
-  chapter: number;
-  verse: number;
+  item: I;
   /** The span that was clicked, for anchoring a popover. */
   element: HTMLElement;
 }
@@ -48,12 +42,15 @@ let wordClickHandler: ((click: WordClick) => void) | null = null;
  * The sidebar reports which word was clicked and leaves the meaning of that to
  * the caller, so that the Hebrew stays clickable whatever overlay is active.
  */
-export function setWordClickHandler(handler: ((click: WordClick) => void) | null): void {
-  wordClickHandler = handler;
+export function setWordClickHandler<I extends MapItem>(
+  handler: ((click: WordClick<I>) => void) | null,
+): void {
+  // Only this text's squares are ever drawn, so every click is on an I.
+  wordClickHandler = handler as ((click: WordClick) => void) | null;
 }
 
 /** One listener on the container, so re-rendering the verse cannot pile them up. */
-function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLayout): void {
+function attachWordClicks(container: HTMLElement, text: string, item: MapItem): void {
   const words = verseWords(text);
 
   container.onclick = (event) => {
@@ -70,10 +67,7 @@ function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLay
       text: word.word,
       index,
       hebrew: text,
-      id: verse.id,
-      book: verse.book,
-      chapter: verse.chapter,
-      verse: verse.verse,
+      item,
       element: span,
     });
   };
@@ -106,60 +100,50 @@ export function getSidebarElements(): SidebarElements {
   };
 }
 
-/**
- * Build the Sefaria URL for a verse.
- *
- * If the current overlay has an opinion (e.g. commentary's selected
- * category), opens Sefaria to that connection type. Otherwise opens to all
- * connections (?with=all).
- */
-export function getSefariaUrl(
-  book: string,
-  chapter: number,
-  verse: number,
-  currentOverlay: TanakhOverlay | null = null,
-  overlaySettings: unknown = undefined,
-): string {
-  const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings) ?? 'all';
-  return `${sefariaUrl(book, [chapter, verse])}?with=${encodeURIComponent(param)}`;
+/** What a square's popup says, from its text. The Hebrew and English are empty until its file is in. */
+export interface PopupText {
+  ref: string;
+  hebrew: string;
+  english: string;
+  link: string;
 }
 
-/** What the popup shows beside the verse, and whether the verse is pinned. */
-export interface PopupView {
-  /** Null until the texts file is in. */
-  verseTexts: VerseTexts | null;
-  /** Shown while the texts are not in. */
+/** What the popup shows beside the square's text, and whether the square is pinned. */
+export interface PopupView<I extends MapItem> {
+  /** Shown while the square's file is not in. */
   textsNotice: Node | null;
-  /** Whether a Hebrew word opens its menu when clicked: only once search has its data. */
+  /** Whether a Hebrew word can be clicked: only once search has its data, and only while something listens. */
   wordsClickable: boolean;
-  overlay: TanakhTool | null;
-  search: TanakhTool | null;
+  overlay: ToolOnMap<I> | null;
+  search: ToolOnMap<I> | null;
   pinned: boolean;
 }
 
-export function updateSidebar(
+export function updateSidebar<I extends MapItem>(
   elements: SidebarElements,
-  verse: TanakhLayout | null,
-  view: PopupView,
+  shown: { item: I; text: PopupText } | null,
+  view: PopupView<I>,
 ): void {
   const { sidebar, ref, overlayInfo, hebrew, notice, english, link } = elements;
-  const { verseTexts, textsNotice, wordsClickable, search, pinned: isPinned } = view;
+  const { textsNotice, search, pinned: isPinned } = view;
+  const wordsClickable = view.wordsClickable && wordClickHandler !== null;
   const currentOverlay = view.overlay?.tool ?? null;
   const overlaySettings = view.overlay?.settings;
   const overlayData = view.overlay?.data;
 
   if (!sidebar) return;
 
-  if (!verse) {
+  if (!shown) {
     sidebar.classList.remove('visible');
     sidebar.classList.remove('pinned');
     return;
   }
 
-  const text = verseTexts && getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
+  const { item: verse, text: said } = shown;
+  const text = said.hebrew || said.english ? { he: said.hebrew, en: said.english } : null;
 
   if (ref) {
-    ref.textContent = verseRef(verse);
+    ref.textContent = said.ref;
   }
   if (overlayInfo) {
     const lines = [
@@ -212,15 +196,7 @@ export function updateSidebar(
     if (highlighted) english.replaceChildren(highlighted);
     else english.textContent = text?.en ?? '';
   }
-  if (link) {
-    link.href = getSefariaUrl(
-      verse.book,
-      verse.chapter,
-      verse.verse,
-      currentOverlay,
-      overlaySettings,
-    );
-  }
+  if (link) link.href = said.link;
 
   sidebar.classList.add('visible');
   if (isPinned) {

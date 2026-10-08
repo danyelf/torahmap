@@ -20,7 +20,7 @@ export type WordClickHost = Pick<
 >;
 
 export function listenForWordClicks(host: WordClickHost): void {
-  setWordClickHandler((click) => {
+  setWordClickHandler<TanakhLayout>((click) => {
     const data = dataFor(searchTool, host.loaded());
     // Without search's files there is no search to add the word to.
     if (!data) return;
@@ -29,13 +29,13 @@ export function listenForWordClicks(host: WordClickHost): void {
     const word = stripNikkud(click.text);
     const meanings = meaningsInVerse(
       dictionary,
-      wordsOfVerse(data.parse, click.id, click.hebrew),
+      wordsOfVerse(data.parse, click.item.id, click.hebrew),
       word,
-      click.id,
+      click.item.id,
       click.index,
     );
 
-    const ref = verseRef(click);
+    const ref = verseRef(click.item);
     const paletteFull = !canAddTerm(host.searchSettings());
     trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
 
