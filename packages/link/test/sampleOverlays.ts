@@ -17,7 +17,7 @@ export const lookup: OverlayParamSpecLookup = (id) => {
   }
 };
 
-// A text's keys, shaped like the Tanakh's.
+// A copy of the Tanakh's keys, which live in a package this one cannot import.
 export const keys: LinkKeys = {
   square: 'verse',
   search: [

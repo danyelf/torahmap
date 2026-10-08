@@ -315,19 +315,31 @@ describe('writeLink', () => {
     expect(writeLink(state, keys)).not.toContain('category=');
   });
 
-  it('refuses overlay parameters that would collide with core keys', () => {
+  it("refuses overlay parameters that would collide with the link's or the text's keys", () => {
     const state: UrlState = {
       overlay: 'commentary',
       zoom: 2,
-      overlayParams: {
-        zoom: '9',
-        square: 'Genesis.1.1',
-      },
+      square: 'Genesis.1.1',
+      searchParams: { search: 'light' },
+      overlayParams: { zoom: '9', [keys.square]: 'Exodus.2.2', search: 'dark' },
     };
-    const query = writeLink(state, keys);
-    expect(query).toContain('zoom=2');
-    expect(query).not.toContain('zoom=9');
-    expect(query).not.toContain('verse=');
+    const query = new URLSearchParams(writeLink(state, keys));
+    expect(query.get('zoom')).toBe('2');
+    expect(query.get(keys.square)).toBe('Genesis.1.1');
+    expect(query.get('search')).toBe('light');
+  });
+
+  it("gives an overlay none of the text's own keys, though it declares them", () => {
+    const claiming: LinkKeys = {
+      ...keys,
+      overlayParams: () => [
+        { key: keys.square, kind: 'token' },
+        { key: 'search', kind: 'text' },
+        { key: 'trop', kind: 'token' },
+      ],
+    };
+    const state = readLink('?overlay=x&verse=Genesis.1.1&search=light&trop=etnachta', claiming);
+    expect(state.overlayParams).toEqual({ trop: 'etnachta' });
   });
 
   it('includes search query', () => {

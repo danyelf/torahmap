@@ -14,10 +14,10 @@ import type { MapItem, VerseColor } from '../types.ts';
 
 /** What a text's site calls itself and its links. */
 export interface Site {
-  /** Plain text, as are `square` and the title. */
+  /** Plain text, as are `squareName` and the title. */
   name: string;
   /** What a reader calls one square: "verse", "segment". */
-  square: string;
+  squareName: string;
   /** What the map is, as the About panel's opening paragraph. */
   aboutHtml: string;
   /** What the map itself rests on, credited above each tool's sources. */

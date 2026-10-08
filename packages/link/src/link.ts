@@ -3,7 +3,7 @@
 import {
   validateOverlayParams,
   RESERVED_KEYS,
-  SQUARE_KEY,
+  SQUARE_ID,
   TEXT_KEYS,
   NUMBER_KEYS,
   type ViewKey,
@@ -20,13 +20,18 @@ export interface UrlState extends ViewFields {
   searchParams?: UrlParamValues;
 }
 
-/** The keys a text's links use beside the view's own; no overlay may claim the first two. */
+/** The keys a text's links use beside the view's own. */
 export interface LinkKeys {
-  /** The pinned square's key: "verse", "at". */
+  /** The pinned square's key. */
   square: string;
   /** The search's keys, read whatever overlay is on. */
   search: readonly UrlParamSpec[];
   overlayParams: OverlayParamSpecLookup;
+}
+
+/** The keys no overlay may have: the view's own, the square's and the search's. */
+function takenKeys(keys: LinkKeys): ReadonlySet<string> {
+  return new Set([...RESERVED_KEYS, keys.square, ...keys.search.map((spec) => spec.key)]);
 }
 
 // Allows letters (including Hebrew), spaces, and dots, for names like "I.Samuel".
@@ -67,11 +72,13 @@ export function readLink(query: string | URLSearchParams, keys: LinkKeys): UrlSt
   readKeys(state, TEXT_KEYS, params);
   readKeys(state, NUMBER_KEYS, params);
   const square = params.get(keys.square);
-  const id = square ? SQUARE_KEY.parse(square) : null;
+  const id = square ? SQUARE_ID.parse(square) : null;
   if (id !== null) state.square = id;
 
   if (state.overlay) {
-    state.overlayParams = validateOverlayParams(keys.overlayParams(state.overlay), params);
+    const taken = takenKeys(keys);
+    const specs = keys.overlayParams(state.overlay)?.filter((spec) => !taken.has(spec.key));
+    state.overlayParams = validateOverlayParams(specs, params);
   }
 
   const search = validateOverlayParams(keys.search, params);
@@ -108,7 +115,7 @@ function writeKeys<K extends string, V>(
 }
 
 /** The query string for a view, with its leading "?", or "" for the default view. */
-export function writeLink(state: UrlState, keys: Pick<LinkKeys, 'square'>): string {
+export function writeLink(state: UrlState, keys: LinkKeys): string {
   const params = new URLSearchParams();
   if (linkKind(state) === 'stop') {
     writeKeys(params, state, { story: TEXT_KEYS.story, stop: TEXT_KEYS.stop });
@@ -123,16 +130,15 @@ export function writeLink(state: UrlState, keys: Pick<LinkKeys, 'square'>): stri
   // A square centres the map, so a link that names one carries no pan.
   const view = state.square ? { ...state, x: undefined, y: undefined } : state;
   writeKeys(params, view, TEXT_KEYS);
-  const square = view.square && SQUARE_KEY.format(view.square);
+  const square = view.square && SQUARE_ID.format(view.square);
   if (square) params.set(keys.square, square);
   writeKeys(params, view, NUMBER_KEYS);
 
   // Overlay-specific parameters, written through unchanged. Overlays omit
   // their own defaults, so whatever arrives here belongs in the URL.
+  const taken = takenKeys(keys);
   for (const [key, value] of Object.entries(state.overlayParams)) {
-    if (!value) continue;
-    if (RESERVED_KEYS.has(key)) continue;
-    params.set(key, value);
+    if (value && !taken.has(key)) params.set(key, value);
   }
 
   const query = params.toString();

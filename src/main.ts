@@ -1070,7 +1070,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
           ...overlaySettings.toUrl(searchTool),
         };
         if (pinnedVerse) {
-          params[source.link.square] = pinnedVerse.id;
+          params.verse = pinnedVerse.id;
         }
         const comment = writeStopComment('STOP_ID', camera, params);
         navigator.clipboard.writeText(comment);

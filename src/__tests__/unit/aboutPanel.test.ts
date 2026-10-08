@@ -56,7 +56,7 @@ describe('the About panel', () => {
     expect(div.textContent).toContain(talmudSite.name);
     const { tanakhSite } = await import('../../tanakh/site');
     expect(div.textContent).not.toContain(tanakhSite.name);
-    expect(div.querySelector('.controls-table')?.textContent).not.toContain(tanakhSite.square);
+    expect(div.querySelector('.controls-table')?.textContent).not.toContain(tanakhSite.squareName);
     expect([...div.querySelectorAll('.credit-source')].map((s) => s.textContent)).toEqual(
       talmudSite.credits.map((c) => c.source),
     );

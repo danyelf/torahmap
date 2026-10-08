@@ -245,8 +245,8 @@ export const TEXT_KEYS: Readonly<Record<TextKey, ViewKey<string>>> = {
   overlay: name(),
 };
 
-/** A square's id, e.g. "I.Samuel.1.5". */
-export const SQUARE_KEY: ViewKey<string> = name(100);
+/** A square's id, e.g. "I.Samuel.1.5" or "Berakhot.2a.1". */
+export const SQUARE_ID: ViewKey<string> = name(100);
 
 export const NUMBER_KEYS: Readonly<Record<NumberKey, ViewKey<number>>> = {
   zoom: number(2, (n) => n >= MIN_ZOOM && n <= MAX_ZOOM, DEFAULT_ZOOM),

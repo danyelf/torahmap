@@ -5,7 +5,7 @@ import type { Site } from '../app/text.ts';
 
 export const tanakhSite: Site = {
   name: SITE_NAME,
-  square: 'verse',
+  squareName: 'verse',
   aboutHtml:
     '<p>An interactive visualization of the entire Tanakh (Hebrew Bible). Every verse has a fixed position.</p>',
   credits: [

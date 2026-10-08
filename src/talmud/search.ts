@@ -9,7 +9,7 @@ export interface TalmudSearchSettings {
   readonly text: string;
 }
 
-export const SEARCH_URL_PARAMS = [
+export const TALMUD_SEARCH_PARAMS = [
   { key: 'search', kind: 'text' },
 ] as const satisfies readonly UrlParamSpec[];
 
@@ -28,7 +28,7 @@ export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, vo
 
   colorsFor: (items) => items.map(() => null),
 
-  urlParams: SEARCH_URL_PARAMS,
+  urlParams: TALMUD_SEARCH_PARAMS,
 
   settingsFromUrl: (params) => ({ text: params.search ?? '' }),
 

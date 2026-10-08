@@ -8,7 +8,7 @@ const NAME = 'Talmud Map';
 
 export const talmudSite: Site = {
   name: NAME,
-  square: 'segment',
+  squareName: 'segment',
   aboutHtml:
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [
