@@ -2,11 +2,11 @@
 // to and from the address bar, and suspending those writes while external
 // state (a link being restored, a story stop) is being applied.
 
-import { readLink, writeLink, type OverlayParamSpecLookup, type UrlState } from '@torahmap/link';
+import { readLink, writeLink, type LinkKeys, type UrlState } from '@torahmap/link';
 
 /** The view the current address names. */
-export function parseUrlState(lookupOverlayParams?: OverlayParamSpecLookup): UrlState {
-  return readLink(window.location.search, lookupOverlayParams);
+export function parseUrlState(keys: LinkKeys): UrlState {
+  return readLink(window.location.search, keys);
 }
 
 // How many nested applyingExternalState() calls are in progress.
@@ -44,9 +44,9 @@ export function isApplyingExternalState(): boolean {
  * overlay or verse; otherwise it replaces the current entry, for pan/zoom.
  * A URL that would not change is left alone, so it adds no history entry.
  */
-export function updateUrl(state: UrlState, pushHistory: boolean = false): void {
+export function updateUrl(state: UrlState, keys: LinkKeys, pushHistory: boolean = false): void {
   if (urlWritesSuspended > 0) return;
-  const query = writeLink(state);
+  const query = writeLink(state, keys);
   if (query === window.location.search && !window.location.hash) return;
   const newUrl = window.location.pathname + query;
 

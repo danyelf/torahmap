@@ -33,7 +33,7 @@ export function describeLink(state: UrlState): LinkDescription {
       description: opening ? `${opening} ${TAGLINE}` : TAGLINE,
     };
   }
-  const verse = state.verse ? parseVerseId(state.verse) : null;
+  const verse = state.square ? parseVerseId(state.square) : null;
   const overlay = state.overlay ? overlayName(state.overlay) : undefined;
   return {
     title: viewTitle(SITE_NAME, verse && verseRef(verse), state),

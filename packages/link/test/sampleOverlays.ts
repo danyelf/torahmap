@@ -1,4 +1,4 @@
-import type { OverlayParamSpecLookup } from '../src/index.ts';
+import type { LinkKeys, OverlayParamSpecLookup } from '../src/index.ts';
 
 // Samples shaped like the real overlays, one per kind of setting. The real
 // declarations go through readLink and writeLink in the catalog's own test.
@@ -15,4 +15,15 @@ export const lookup: OverlayParamSpecLookup = (id) => {
     default:
       return undefined;
   }
+};
+
+// A text's keys, shaped like the Tanakh's.
+export const keys: LinkKeys = {
+  square: 'verse',
+  search: [
+    { key: 'search', kind: 'text' },
+    { key: 'mode', kind: 'token' },
+    { key: 'm', kind: 'names' },
+  ],
+  overlayParams: lookup,
 };

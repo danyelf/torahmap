@@ -40,8 +40,14 @@ import {
   trackViewSettled,
   trackWebGLMissing,
 } from './analytics.ts';
-import { linkKind, linkNamesAView, DEFAULT_ZOOM, type UrlState } from '@torahmap/link';
-import { NO_OVERLAY, overlayParamSpecs } from '@torahmap/overlay-catalog';
+import {
+  linkKind,
+  linkNamesAView,
+  DEFAULT_ZOOM,
+  type LinkKeys,
+  type UrlState,
+} from '@torahmap/link';
+import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
@@ -135,9 +141,8 @@ const PHONE_STORY_FOCUS = 0.4;
  * it, so it can never name a view the address does not hold — a write
  * suppressed by `applyingExternalState` leaves both unchanged.
  */
-function showTitle(site: Site): void {
-  // Shortcut: the link's overlay keys are the Tanakh's on every text.
-  const title = tabTitle(site, parseUrlState(overlayParamSpecs), __LIVE__ ? null : __GIT_BRANCH__);
+function showTitle({ site, link }: { site: Site; link: LinkKeys }): void {
+  const title = tabTitle(site, parseUrlState(link), __LIVE__ ? null : __GIT_BRANCH__);
   if (document.title !== title) document.title = title;
 }
 
@@ -148,7 +153,7 @@ function showCannotDraw(): void {
 
 export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
-  showTitle(source.site);
+  showTitle(source);
 
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
@@ -256,7 +261,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let built: unknown[] = [];
 
   const visited = hasVisited();
-  const startsFolded = opensFolded(parseUrlState(), visited);
+  const startsFolded = opensFolded(parseUrlState(source.link), visited);
   let driver: Driver = startsFolded ? readerTakesOver(0) : STORY_DRIVING;
   configureAnalytics({ getMode: () => driverKind(driver) });
 
@@ -795,7 +800,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
 
     if (pinnedVerse) {
-      state.verse = pinnedVerse.id;
+      state.square = pinnedVerse.id;
     }
 
     if (camera.zoom !== DEFAULT_ZOOM) {
@@ -820,8 +825,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       story: { id: story.id, stop: stop.id },
       explore: buildCurrentUrlState,
     });
-    updateUrl(next, pushes(parseUrlState(), next, push));
-    showTitle(source.site);
+    updateUrl(next, source.link, pushes(parseUrlState(source.link), next, push));
+    showTitle(source);
   }
 
   // For a write asked every frame, as a story scroll does. It asks for no history
@@ -1065,7 +1070,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
           ...overlaySettings.toUrl(searchTool),
         };
         if (pinnedVerse) {
-          params.verse = pinnedVerse.id;
+          params[source.link.square] = pinnedVerse.id;
         }
         const comment = writeStopComment('STOP_ID', camera, params);
         navigator.clipboard.writeText(comment);
@@ -1122,7 +1127,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const storyColumn = createStoryColumn(
     { content: storyContent, progress: storyProgress, title: storyProgressTitle },
     listedStories(text.stories.list, !__LIVE__),
-    parseUrlState().story ?? null,
+    parseUrlState(source.link).story ?? null,
     (stops) =>
       text.stories.resolve(stops, initialCamera, verses, squares, mapFocus(), mapViewport()),
   );
@@ -1265,7 +1270,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // ahead of the await below, means even a repeated outcome starts from empty.
     shareStatus.textContent = '';
     syncUrl(false);
-    const shared = parseUrlState(overlayParamSpecs);
+    const shared = parseUrlState(source.link);
     const outcome = await shareLink(location.href, document.title, {
       share: navigator.share?.bind(navigator),
       writeText: (t) => navigator.clipboard.writeText(t),
@@ -1278,7 +1283,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       stop_id: shared.stop ?? '',
       overlay: shared.overlay ?? NO_OVERLAY,
       searching: shared.searchParams ? 1 : 0,
-      pinned: shared.verse ? 1 : 0,
+      pinned: shared.square ? 1 : 0,
     });
     if (outcome === 'copied' || outcome === 'failed') {
       const label = outcome === 'copied' ? 'Link copied' : "Couldn't copy";
@@ -1579,7 +1584,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     applyingExternalState(() => applyViewState(next));
     // The link moved the camera, not the reader.
     markViewSettled();
-    showTitle(source.site);
+    showTitle(source);
   }
 
   /**
@@ -1620,7 +1625,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  const link = parseUrlState(overlayParamSpecs);
+  const link = parseUrlState(source.link);
   if (linkNamesAView(link)) {
     restoreFromUrl(link);
   }
@@ -1649,7 +1654,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   markViewSettled();
 
   subscribeToHistory(() => {
-    restoreFromUrl(parseUrlState(overlayParamSpecs));
+    restoreFromUrl(parseUrlState(source.link));
   });
 
   scheduleStoryFrame();

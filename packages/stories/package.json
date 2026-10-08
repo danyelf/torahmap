@@ -7,6 +7,7 @@
     "./vite-plugin": "./vite-plugin.mjs"
   },
   "dependencies": {
-    "@torahmap/link": "*"
+    "@torahmap/link": "*",
+    "@torahmap/overlay-catalog": "*"
   }
 }

@@ -19,7 +19,7 @@ export const talmudSite: Site = {
     },
   ],
   title(link) {
-    const segment = link.verse ? parseTalmudId(link.verse) : null;
+    const segment = link.square ? parseTalmudId(link.square) : null;
     return viewTitle(NAME, segment && talmudRef(segment), link);
   },
 };

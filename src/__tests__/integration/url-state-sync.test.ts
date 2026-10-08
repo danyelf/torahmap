@@ -7,7 +7,7 @@ import { searchTool } from '../../tanakh/search/index';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
 
 describe('URL State Sync Integration', () => {
@@ -79,14 +79,14 @@ describe('URL State Sync Integration', () => {
     it('handles overlay switch in URL', () => {
       // Start with commentary
       mockWindowLocation('http://localhost:5173/?overlay=commentary&category=midrash');
-      let state = parseUrlState(overlayParamSpecs);
+      let state = parseUrlState(LINK_KEYS);
 
       expect(state.overlay).toBe('commentary');
       expect(state.overlayParams.category).toBe('midrash');
 
       // Switch to trop
       mockWindowLocation('http://localhost:5173/?overlay=trop&trop=etnachta');
-      state = parseUrlState(overlayParamSpecs);
+      state = parseUrlState(LINK_KEYS);
 
       expect(state.overlay).toBe('trop');
       expect(state.overlayParams.trop).toBe('etnachta');
@@ -99,14 +99,14 @@ describe('URL State Sync Integration', () => {
         overlay: 'commentary',
         overlayParams: { category: 'talmud' },
       };
-      const query1 = writeLink(state1);
+      const query1 = writeLink(state1, LINK_KEYS);
 
       // Switch to trop (no category param)
       const state2: UrlState = {
         overlay: 'trop',
         overlayParams: { trop: 'tipcha' },
       };
-      const query2 = writeLink(state2);
+      const query2 = writeLink(state2, LINK_KEYS);
 
       expect(query1).toContain('category=talmud');
       expect(query2).not.toContain('category');
@@ -133,18 +133,18 @@ describe('URL State Sync Integration', () => {
       const state: UrlState = {
         overlay: 'trop',
         overlayParams: { trop: chosen! },
-        verse: 'Genesis.39.8',
+        square: 'Genesis.39.8',
         zoom: 4.0,
       };
 
       // Generate a shareable URL and simulate a colleague opening it.
-      const query = writeLink(state);
+      const query = writeLink(state, LINK_KEYS);
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const restored = parseUrlState(overlayParamSpecs);
+      const restored = parseUrlState(LINK_KEYS);
 
       expect(restored.overlay).toBe('trop');
       expect(restored.overlayParams.trop).toBe(chosen);
-      expect(restored.verse).toBe('Genesis.39.8');
+      expect(restored.square).toBe('Genesis.39.8');
       expect(restored.zoom).toBe(4.0);
 
       // Clear the selection first (clicking a selected mark deselects it),
@@ -167,13 +167,13 @@ describe('URL State Sync Integration', () => {
         overlay: 'commentary',
         overlayParams: {},
       };
-      updateUrl(state1, true);
+      updateUrl(state1, LINK_KEYS, true);
 
       const state2: UrlState = {
         overlay: 'trop',
         overlayParams: {},
       };
-      updateUrl(state2, true);
+      updateUrl(state2, LINK_KEYS, true);
 
       expect(historyStates.length).toBe(2);
       expect(historyStates[0]).toContain('commentary');
@@ -185,13 +185,13 @@ describe('URL State Sync Integration', () => {
         zoom: 1.5,
         overlayParams: {},
       };
-      updateUrl(state1, false);
+      updateUrl(state1, LINK_KEYS, false);
 
       const state2: UrlState = {
         zoom: 2.0,
         overlayParams: {},
       };
-      updateUrl(state2, false);
+      updateUrl(state2, LINK_KEYS, false);
 
       expect(historyStates.length).toBe(1);
       expect(historyStates[0]).toContain('zoom=2');
@@ -201,7 +201,7 @@ describe('URL State Sync Integration', () => {
   describe('Edge Cases and Error Handling', () => {
     it('handles missing overlay parameter gracefully', () => {
       mockWindowLocation('http://localhost:5173/?category=talmud');
-      const state = parseUrlState(overlayParamSpecs);
+      const state = parseUrlState(LINK_KEYS);
 
       // With no overlay named, there is nobody the setting could belong to,
       // so it is dropped rather than carried around unused.
@@ -212,14 +212,14 @@ describe('URL State Sync Integration', () => {
     it('handles a malformed URL query', () => {
       mockWindowLocation('http://localhost:5173/?invalid&&&format');
 
-      expect(() => parseUrlState(overlayParamSpecs)).not.toThrow();
-      const state = parseUrlState(overlayParamSpecs);
+      expect(() => parseUrlState(LINK_KEYS)).not.toThrow();
+      const state = parseUrlState(LINK_KEYS);
       expect(state).toBeDefined();
     });
 
     it('handles empty parameter values', () => {
       mockWindowLocation('http://localhost:5173/?overlay=&category=');
-      const state = parseUrlState(overlayParamSpecs);
+      const state = parseUrlState(LINK_KEYS);
 
       // Empty string values are treated as falsy and ignored for all params
       expect(state.overlay).toBeUndefined();
@@ -232,13 +232,13 @@ describe('URL State Sync Integration', () => {
         overlayParams: {},
       };
 
-      const query = writeLink(state);
+      const query = writeLink(state, LINK_KEYS);
       expect(query).not.toContain('overlay=');
       expect(query).toContain('search=');
 
       // Parse it back
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const parsed = parseUrlState(overlayParamSpecs);
+      const parsed = parseUrlState(LINK_KEYS);
       expect(parsed.searchParams?.search).toBe('שלום עולם');
     });
 
@@ -246,20 +246,20 @@ describe('URL State Sync Integration', () => {
       const state: UrlState = {
         overlay: 'commentary',
         overlayParams: { category: 'talmud' },
-        verse: 'Genesis.1.1',
+        square: 'Genesis.1.1',
         zoom: 2.5,
         x: 100,
         y: 200,
       };
 
-      const query = writeLink(state);
+      const query = writeLink(state, LINK_KEYS);
 
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const parsed = parseUrlState(overlayParamSpecs);
+      const parsed = parseUrlState(LINK_KEYS);
 
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('talmud');
-      expect(parsed.verse).toBe('Genesis.1.1');
+      expect(parsed.square).toBe('Genesis.1.1');
       expect(parsed.zoom).toBe(2.5);
 
       // x and y are omitted from the query when a verse is present (writeLink's behavior).
@@ -273,7 +273,7 @@ describe('URL State Sync Integration', () => {
 
     it('handles overlay with invalid/unknown ID', () => {
       mockWindowLocation('http://localhost:5173/?overlay=nonexistent');
-      const state = parseUrlState(overlayParamSpecs);
+      const state = parseUrlState(LINK_KEYS);
 
       expect(state.overlay).toBe('nonexistent');
       // Getting the overlay should return undefined
@@ -283,7 +283,7 @@ describe('URL State Sync Integration', () => {
 
     it('handles numeric values at boundary conditions', () => {
       mockWindowLocation('http://localhost:5173/?zoom=0.1&x=0&y=0');
-      const state = parseUrlState(overlayParamSpecs);
+      const state = parseUrlState(LINK_KEYS);
 
       expect(state.zoom).toBe(0.1);
       expect(state.x).toBe(0);
@@ -297,7 +297,7 @@ describe('URL State Sync Integration', () => {
         overlayParams: {},
       };
 
-      const query = writeLink(state);
+      const query = writeLink(state, LINK_KEYS);
       expect(query).toContain('x=-100');
       expect(query).toContain('y=-200');
     });
@@ -308,17 +308,17 @@ describe('URL State Sync Integration', () => {
       const originalState: UrlState = {
         overlay: 'commentary',
         overlayParams: { category: 'midrash' },
-        verse: 'Exodus.20.1',
+        square: 'Exodus.20.1',
         zoom: 1.75,
       };
 
-      const query = writeLink(originalState);
+      const query = writeLink(originalState, LINK_KEYS);
       mockWindowLocation(`http://localhost:5173/${query}`);
-      const parsedState = parseUrlState(overlayParamSpecs);
+      const parsedState = parseUrlState(LINK_KEYS);
 
       expect(parsedState.overlay).toBe(originalState.overlay);
       expect(parsedState.overlayParams.category).toBe(originalState.overlayParams.category);
-      expect(parsedState.verse).toBe(originalState.verse);
+      expect(parsedState.square).toBe(originalState.square);
       expect(parsedState.zoom).toBe(originalState.zoom);
     });
 
@@ -340,11 +340,11 @@ describe('URL State Sync Integration', () => {
         overlay: 'commentary',
         overlayParams: urlParams1 ?? {},
       };
-      const query1 = writeLink(state1);
+      const query1 = writeLink(state1, LINK_KEYS);
 
       // Parse it back
       mockWindowLocation(`http://localhost:5173/${query1}`);
-      const parsed1 = parseUrlState(overlayParamSpecs);
+      const parsed1 = parseUrlState(LINK_KEYS);
 
       expect(parsed1.overlay).toBe('commentary');
       expect(parsed1.overlayParams.category).toBe('talmud');
@@ -358,9 +358,9 @@ describe('URL State Sync Integration', () => {
         overlayParams: {},
       };
 
-      updateUrl(state, false);
+      updateUrl(state, LINK_KEYS, false);
 
-      const parsed = parseUrlState(overlayParamSpecs);
+      const parsed = parseUrlState(LINK_KEYS);
       expect(parsed.zoom).toBe(2.0);
       expect(parsed.x).toBe(150);
       expect(parsed.y).toBe(250);
@@ -373,9 +373,9 @@ describe('URL State Sync Integration', () => {
         overlayParams: { category: 'talmud' },
         zoom: 1.5,
       };
-      updateUrl(state1, true);
+      updateUrl(state1, LINK_KEYS, true);
 
-      let parsed = parseUrlState(overlayParamSpecs);
+      let parsed = parseUrlState(LINK_KEYS);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('talmud');
 
@@ -385,9 +385,9 @@ describe('URL State Sync Integration', () => {
         overlayParams: { trop: 'etnachta' },
         zoom: 1.5,
       };
-      updateUrl(state2, true);
+      updateUrl(state2, LINK_KEYS, true);
 
-      parsed = parseUrlState(overlayParamSpecs);
+      parsed = parseUrlState(LINK_KEYS);
       expect(parsed.overlay).toBe('trop');
       expect(parsed.overlayParams.trop).toBe('etnachta');
       expect(parsed.overlayParams.category).toBeUndefined();
@@ -398,9 +398,9 @@ describe('URL State Sync Integration', () => {
         overlayParams: {},
         zoom: 1.5,
       };
-      updateUrl(state3, true);
+      updateUrl(state3, LINK_KEYS, true);
 
-      parsed = parseUrlState(overlayParamSpecs);
+      parsed = parseUrlState(LINK_KEYS);
       expect(parsed.overlay).toBeUndefined();
       expect(parsed.searchParams?.search).toBe('abraham');
       expect(parsed.overlayParams.trop).toBeUndefined();
@@ -416,7 +416,7 @@ describe('URL State Sync Integration', () => {
         overlayParams: { category: 'midrash' },
         zoom: 1.0,
       };
-      updateUrl(state1, true);
+      updateUrl(state1, LINK_KEYS, true);
 
       // Update only zoom (replaceState)
       const state2: UrlState = {
@@ -424,10 +424,10 @@ describe('URL State Sync Integration', () => {
         overlayParams: { category: 'midrash' },
         zoom: 2.0,
       };
-      updateUrl(state2, false);
+      updateUrl(state2, LINK_KEYS, false);
 
       // Parse final state
-      const parsed = parseUrlState(overlayParamSpecs);
+      const parsed = parseUrlState(LINK_KEYS);
       expect(parsed.overlay).toBe('commentary');
       expect(parsed.overlayParams.category).toBe('midrash');
       expect(parsed.zoom).toBe(2.0);
@@ -442,19 +442,19 @@ describe('URL State Sync Integration', () => {
       const state: UrlState = {
         overlay: 'commentary',
         overlayParams: { category: 'chasidut' },
-        verse: 'Deuteronomy.6.4',
+        square: 'Deuteronomy.6.4',
         zoom: 2.5,
       };
 
-      const query = writeLink(state);
+      const query = writeLink(state, LINK_KEYS);
       const url = `http://localhost:5173/${query}`;
 
       mockWindowLocation(url);
-      const restored = parseUrlState(overlayParamSpecs);
+      const restored = parseUrlState(LINK_KEYS);
 
       expect(restored.overlay).toBe('commentary');
       expect(restored.overlayParams.category).toBe('chasidut');
-      expect(restored.verse).toBe('Deuteronomy.6.4');
+      expect(restored.square).toBe('Deuteronomy.6.4');
       expect(restored.zoom).toBe(2.5);
     });
 
@@ -463,15 +463,15 @@ describe('URL State Sync Integration', () => {
         searchParams: { search: 'covenant' },
         overlayParams: {},
       };
-      updateUrl(searchState, true);
+      updateUrl(searchState, LINK_KEYS, true);
 
       const selectedState: UrlState = {
         searchParams: { search: 'covenant' },
         overlayParams: {},
-        verse: 'Genesis.17.2',
+        square: 'Genesis.17.2',
         zoom: 2.0,
       };
-      updateUrl(selectedState, true);
+      updateUrl(selectedState, LINK_KEYS, true);
 
       expect(historyStates.length).toBe(2);
       expect(historyStates[0]).toContain('search=covenant');
@@ -486,7 +486,7 @@ describe('URL State Sync Integration', () => {
           overlay: overlayId,
           overlayParams: {},
         };
-        updateUrl(state, true);
+        updateUrl(state, LINK_KEYS, true);
       }
 
       expect(historyStates.length).toBe(3);
@@ -501,7 +501,7 @@ describe('URL State Sync Integration', () => {
         zoom: 1.0,
         overlayParams: {},
       };
-      updateUrl(state1, true);
+      updateUrl(state1, LINK_KEYS, true);
 
       // Multiple pan/zoom adjustments (all replaceState)
       for (let i = 0; i < 5; i++) {
@@ -511,7 +511,7 @@ describe('URL State Sync Integration', () => {
           y: i * 20,
           overlayParams: {},
         };
-        updateUrl(state, false);
+        updateUrl(state, LINK_KEYS, false);
       }
 
       // Should only have 1 history entry

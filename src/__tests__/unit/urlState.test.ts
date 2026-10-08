@@ -11,7 +11,7 @@ import { readLink, writeLink } from '@torahmap/link';
 import { mockHistory } from '../helpers/mocks';
 import { setLink } from '../helpers/setLink';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
-import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '../../overlays/settings';
 
 // The registry is where overlays come from — populate it the way the app does.
@@ -27,44 +27,47 @@ beforeAll(() => {
 describe('the address holds the view in its query string', () => {
   it('reads the view from the query string', () => {
     setLink('?verse=Genesis.1.1&overlay=commentary');
-    expect(parseUrlState()).toMatchObject({ verse: 'Genesis.1.1', overlay: 'commentary' });
+    expect(parseUrlState(LINK_KEYS)).toMatchObject({
+      square: 'Genesis.1.1',
+      overlay: 'commentary',
+    });
   });
 
   it('ignores a hash link', () => {
     history.replaceState(null, '', '/#verse=Genesis.1.1');
-    expect(parseUrlState().verse).toBeUndefined();
+    expect(parseUrlState(LINK_KEYS).square).toBeUndefined();
   });
 
   it('writes the query string and drops any hash', () => {
     history.replaceState(null, '', '/#verse=Genesis.1.1');
-    updateUrl({ verse: 'Exodus.2.3', overlayParams: {} });
+    updateUrl({ square: 'Exodus.2.3', overlayParams: {} }, LINK_KEYS);
     expect(window.location.search).toBe('?verse=Exodus.2.3');
     expect(window.location.hash).toBe('');
   });
 
   it('writes the bare pathname for an empty view', () => {
     setLink('?verse=Genesis.1.1');
-    updateUrl({ overlayParams: {} });
+    updateUrl({ overlayParams: {} }, LINK_KEYS);
     expect(window.location.search).toBe('');
   });
 
   it('drops a leftover hash even when the query itself is unchanged', () => {
     history.replaceState(null, '', '/?verse=Genesis.1.1#x');
-    updateUrl({ verse: 'Genesis.1.1', overlayParams: {} });
+    updateUrl({ square: 'Genesis.1.1', overlayParams: {} }, LINK_KEYS);
     expect(window.location.hash).toBe('');
     expect(window.location.search).toBe('?verse=Genesis.1.1');
   });
 
   it('keeps the pathname', () => {
     history.replaceState(null, '', '/index.html?verse=Genesis.1.1');
-    updateUrl({ verse: 'Exodus.2.3', overlayParams: {} });
+    updateUrl({ square: 'Exodus.2.3', overlayParams: {} }, LINK_KEYS);
     expect(window.location.pathname).toBe('/index.html');
   });
 
   it('adds no history entry for an unchanged view', () => {
     setLink('?verse=Genesis.1.1');
     const before = history.length;
-    updateUrl({ verse: 'Genesis.1.1', overlayParams: {} }, true);
+    updateUrl({ square: 'Genesis.1.1', overlayParams: {} }, LINK_KEYS, true);
     expect(history.length).toBe(before);
   });
 
@@ -118,7 +121,7 @@ describe('the restore guard itself', () => {
   it('lets URL writes through normally', () => {
     const { replaceState } = mockHistory('http://localhost:5173/');
 
-    updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    updateUrl({ overlay: 'commentary', overlayParams: {} }, LINK_KEYS, false);
     expect(replaceState).toHaveBeenCalled();
   });
 
@@ -127,12 +130,12 @@ describe('the restore guard itself', () => {
 
     applyingExternalState(() => {
       expect(isApplyingExternalState()).toBe(true);
-      updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+      updateUrl({ overlay: 'commentary', overlayParams: {} }, LINK_KEYS, false);
     });
     expect(replaceState).not.toHaveBeenCalled();
 
     expect(isApplyingExternalState()).toBe(false);
-    updateUrl({ overlay: 'commentary', overlayParams: {} }, false);
+    updateUrl({ overlay: 'commentary', overlayParams: {} }, LINK_KEYS, false);
     expect(replaceState).toHaveBeenCalledTimes(1);
   });
 
@@ -155,14 +158,14 @@ describe('whole links, parsed with the real overlay declarations', () => {
 
   links.forEach(([query, expected]) => {
     it(`parses ${query}`, () => {
-      const state = readLink(query, overlayParamSpecs);
+      const state = readLink(query, LINK_KEYS);
       expect(state.overlayParams).toEqual(expected);
     });
   });
 
   it('keeps a full link intact through a parse and rebuild', () => {
     const query = '?overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud';
-    const rebuilt = writeLink(readLink(query, overlayParamSpecs));
+    const rebuilt = writeLink(readLink(query, LINK_KEYS), LINK_KEYS);
     expect(rebuilt).toContain('overlay=commentary');
     expect(rebuilt).toContain('verse=Exodus.20.1');
     expect(rebuilt).toContain('zoom=3');

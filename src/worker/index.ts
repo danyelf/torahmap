@@ -15,7 +15,7 @@ import {
   type WorkerEvent,
 } from '../telemetry/schema.ts';
 import { readLink, writeLink, linkKind } from '@torahmap/link';
-import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { describeLink } from '@torahmap/site';
 import { rewritePage } from './page.ts';
 import { previewFetcher } from './fetchers.ts';
@@ -89,7 +89,7 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
   if (!fetcher) return env.ASSETS.fetch(request);
 
   const response = await env.ASSETS.fetch(request);
-  const link = readLink(url.search, overlayParamSpecs);
+  const link = readLink(url.search, LINK_KEYS);
 
   // Recorded even when the static files return an error.
   writeWorkerEvent('link_preview', { fetcher, what: linkKind(link) }, request, url, env);
@@ -102,7 +102,7 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
   try {
     const { title, description } = describeLink(link);
     // The link as the app reads it, so tracking keys such as fbclid are dropped.
-    const canonical = new URL(writeLink(link), url.origin).href;
+    const canonical = new URL(writeLink(link, LINK_KEYS), url.origin).href;
     const body = rewritePage(html, { title, description, url: canonical });
 
     const headers = new Headers(response.headers);

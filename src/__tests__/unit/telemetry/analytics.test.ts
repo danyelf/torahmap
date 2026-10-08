@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { readLink } from '@torahmap/link';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import {
   arrivedWith,
   configureAnalytics,
@@ -159,20 +160,22 @@ describe('analytics', () => {
 
 describe('arrivedWith', () => {
   it('names a view for a verse link on an ordinary navigation', () => {
-    expect(arrivedWith(readLink('?verse=Genesis.1.1'), 'navigate')).toBe('view');
+    expect(arrivedWith(readLink('?verse=Genesis.1.1', LINK_KEYS), 'navigate')).toBe('view');
   });
 
   it('names a stop for a story link', () => {
-    expect(arrivedWith(readLink('?story=tour&stop=intro'), 'navigate')).toBe('stop');
+    expect(arrivedWith(readLink('?story=tour&stop=intro', LINK_KEYS), 'navigate')).toBe('stop');
   });
 
   it('names nothing for a bare link', () => {
-    expect(arrivedWith(readLink(''), 'navigate')).toBe('nothing');
+    expect(arrivedWith(readLink('', LINK_KEYS), 'navigate')).toBe('nothing');
   });
 
   it('names nothing for any link on a reload or Back/Forward', () => {
-    expect(arrivedWith(readLink('?verse=Genesis.1.1'), 'reload')).toBe('nothing');
-    expect(arrivedWith(readLink('?story=tour&stop=intro'), 'back_forward')).toBe('nothing');
+    expect(arrivedWith(readLink('?verse=Genesis.1.1', LINK_KEYS), 'reload')).toBe('nothing');
+    expect(arrivedWith(readLink('?story=tour&stop=intro', LINK_KEYS), 'back_forward')).toBe(
+      'nothing',
+    );
   });
 });
 

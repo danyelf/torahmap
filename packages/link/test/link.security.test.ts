@@ -1,38 +1,38 @@
 import { describe, it, expect } from 'vitest';
-import { lookup } from './sampleOverlays.ts';
+import { keys } from './sampleOverlays.ts';
 import { readLink, parseVerseId } from '../src/index.ts';
 
 describe('URL Parameter Security Validation', () => {
   describe('XSS Prevention', () => {
     it('rejects verse parameter with HTML tags', () => {
-      const state = readLink('?verse=<script>alert(1)</script>');
-      expect(state.verse).toBeUndefined();
+      const state = readLink('?verse=<script>alert(1)</script>', keys);
+      expect(state.square).toBeUndefined();
     });
 
     it('rejects verse parameter with javascript: protocol', () => {
-      const state = readLink('?verse=javascript:alert(1)');
-      expect(state.verse).toBeUndefined();
+      const state = readLink('?verse=javascript:alert(1)', keys);
+      expect(state.square).toBeUndefined();
     });
 
     it('rejects overlay parameter with HTML tags', () => {
-      const state = readLink('?overlay=<img src=x onerror=alert(1)>');
+      const state = readLink('?overlay=<img src=x onerror=alert(1)>', keys);
       expect(state.overlay).toBeUndefined();
     });
 
     it('rejects trop parameter with HTML tags', () => {
-      const state = readLink('?overlay=trop&trop=<script>alert(1)</script>', lookup);
+      const state = readLink('?overlay=trop&trop=<script>alert(1)</script>', keys);
       expect(state.overlayParams.trop).toBeUndefined();
     });
 
     it('rejects category parameter with HTML tags, falling back to the default', () => {
-      const state = readLink('?overlay=commentary&category=<img src=x>', lookup);
+      const state = readLink('?overlay=commentary&category=<img src=x>', keys);
       expect(state.overlayParams.category).toBe('total');
     });
 
     it('sanitizes search query with HTML tags by encoding them', () => {
       // Search queries should preserve user input but safely encode it
       // The overlay itself should handle display sanitization
-      const state = readLink('?search=<script>alert(1)</script>');
+      const state = readLink('?search=<script>alert(1)</script>', keys);
       // We allow the raw value but expect consumers to sanitize when displaying
       expect(state.searchParams?.search).toBeDefined();
       expect(state.searchParams?.search).not.toContain('<script>');
@@ -89,39 +89,39 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Pan Position Bounds', () => {
     it('accepts reasonable pan positions', () => {
-      const state = readLink('?x=500&y=300');
+      const state = readLink('?x=500&y=300', keys);
       expect(state.x).toBe(500);
       expect(state.y).toBe(300);
     });
 
     it('rejects excessively large positive pan positions', () => {
       // MAX_PAN_POSITION is 1000000, so test beyond that
-      const state = readLink('?x=10000000&y=10000000');
+      const state = readLink('?x=10000000&y=10000000', keys);
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
 
     it('rejects excessively large negative pan positions', () => {
-      const state = readLink('?x=-10000000&y=-10000000');
+      const state = readLink('?x=-10000000&y=-10000000', keys);
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
 
     it('accepts pan positions at reasonable bounds', () => {
       // Test that values within MAX_PAN_POSITION work
-      const state = readLink('?x=999999&y=-999999');
+      const state = readLink('?x=999999&y=-999999', keys);
       expect(state.x).toBe(999999);
       expect(state.y).toBe(-999999);
     });
 
     it('rejects Infinity as pan position', () => {
-      const state = readLink('?x=Infinity&y=-Infinity');
+      const state = readLink('?x=Infinity&y=-Infinity', keys);
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
 
     it('rejects NaN as pan position', () => {
-      const state = readLink('?x=NaN&y=NaN');
+      const state = readLink('?x=NaN&y=NaN', keys);
       expect(state.x).toBeUndefined();
       expect(state.y).toBeUndefined();
     });
@@ -131,13 +131,13 @@ describe('URL Parameter Security Validation', () => {
     it('accepts valid overlay names', () => {
       const validOverlays = ['commentary', 'trop', 'search'];
       validOverlays.forEach((overlay) => {
-        const state = readLink(`?overlay=${overlay}`);
+        const state = readLink(`?overlay=${overlay}`, keys);
         expect(state.overlay).toBe(overlay);
       });
     });
 
     it('accepts unknown overlay names for forward/backward compatibility', () => {
-      const state = readLink('?overlay=future-overlay');
+      const state = readLink('?overlay=future-overlay', keys);
       expect(state.overlay).toBe('future-overlay');
     });
 
@@ -150,19 +150,19 @@ describe('URL Parameter Security Validation', () => {
         'overlay|pipe',
       ];
       invalidOverlays.forEach((overlay) => {
-        const state = readLink(`?overlay=${encodeURIComponent(overlay)}`);
+        const state = readLink(`?overlay=${encodeURIComponent(overlay)}`, keys);
         expect(state.overlay).toBeUndefined();
       });
     });
 
     it('rejects excessively long overlay names', () => {
       const longOverlay = 'a'.repeat(100);
-      const state = readLink(`?overlay=${longOverlay}`);
+      const state = readLink(`?overlay=${longOverlay}`, keys);
       expect(state.overlay).toBeUndefined();
     });
 
     it('accepts overlay name with hyphens', () => {
-      const state = readLink('?overlay=text-dating');
+      const state = readLink('?overlay=text-dating', keys);
       expect(state.overlay).toBe('text-dating');
     });
   });
@@ -184,20 +184,20 @@ describe('URL Parameter Security Validation', () => {
       validCategories.forEach((category) => {
         const state = readLink(
           `?overlay=commentary&category=${encodeURIComponent(category)}`,
-          lookup,
+          keys,
         );
         expect(state.overlayParams.category).toBe(category);
       });
     });
 
     it('rejects category with special characters, falling back to the default', () => {
-      const state = readLink('?overlay=commentary&category=Test<script>', lookup);
+      const state = readLink('?overlay=commentary&category=Test<script>', keys);
       expect(state.overlayParams.category).toBe('total');
     });
 
     it('rejects excessively long category names, falling back to the default', () => {
       const longCategory = 'a'.repeat(100);
-      const state = readLink(`?overlay=commentary&category=${longCategory}`, lookup);
+      const state = readLink(`?overlay=commentary&category=${longCategory}`, keys);
       expect(state.overlayParams.category).toBe('total');
     });
   });
@@ -215,37 +215,37 @@ describe('URL Parameter Security Validation', () => {
         'pashta',
       ];
       validTrops.forEach((trop) => {
-        const state = readLink(`?overlay=trop&trop=${trop}`, lookup);
+        const state = readLink(`?overlay=trop&trop=${trop}`, keys);
         expect(state.overlayParams.trop).toBe(trop);
       });
     });
 
     it('rejects trop with special characters', () => {
-      const state = readLink('?overlay=trop&trop=test<script>', lookup);
+      const state = readLink('?overlay=trop&trop=test<script>', keys);
       expect(state.overlayParams.trop).toBeUndefined();
     });
 
     it('rejects excessively long trop names', () => {
       const longTrop = 'a'.repeat(100);
-      const state = readLink(`?overlay=trop&trop=${longTrop}`, lookup);
+      const state = readLink(`?overlay=trop&trop=${longTrop}`, keys);
       expect(state.overlayParams.trop).toBeUndefined();
     });
   });
 
   describe('Search Query Validation', () => {
     it('accepts search query with Hebrew text', () => {
-      const state = readLink('?search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA');
+      const state = readLink('?search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', keys);
       expect(state.searchParams?.search).toBe('בראשית');
     });
 
     it('accepts search query with English text', () => {
-      const state = readLink('?search=beginning');
+      const state = readLink('?search=beginning', keys);
       expect(state.searchParams?.search).toBe('beginning');
     });
 
     it('limits search query length', () => {
       const longQuery = 'a'.repeat(10000);
-      const state = readLink(`?search=${longQuery}`);
+      const state = readLink(`?search=${longQuery}`, keys);
       // Should either truncate or reject excessively long queries
       if (state.searchParams?.search) {
         expect(state.searchParams?.search.length).toBeLessThanOrEqual(1000);
@@ -255,7 +255,7 @@ describe('URL Parameter Security Validation', () => {
     });
 
     it('strips HTML tags from search query', () => {
-      const state = readLink('?search=<script>alert(1)</script>test');
+      const state = readLink('?search=<script>alert(1)</script>test', keys);
       if (state.searchParams?.search) {
         expect(state.searchParams?.search).not.toContain('<script>');
         expect(state.searchParams?.search).not.toContain('</script>');
@@ -265,23 +265,23 @@ describe('URL Parameter Security Validation', () => {
 
   describe('Empty and Whitespace Values', () => {
     it('rejects empty overlay parameter', () => {
-      const state = readLink('?overlay=');
+      const state = readLink('?overlay=', keys);
       expect(state.overlay).toBeUndefined();
     });
 
     it('rejects whitespace-only overlay parameter', () => {
-      const state = readLink('?overlay=%20%20%20');
+      const state = readLink('?overlay=%20%20%20', keys);
       expect(state.overlay).toBeUndefined();
     });
 
     it('rejects empty verse parameter', () => {
-      const state = readLink('?verse=');
-      expect(state.verse).toBeUndefined();
+      const state = readLink('?verse=', keys);
+      expect(state.square).toBeUndefined();
     });
 
     it('rejects whitespace-only verse parameter', () => {
-      const state = readLink('?verse=%20%20%20');
-      expect(state.verse).toBeUndefined();
+      const state = readLink('?verse=%20%20%20', keys);
+      expect(state.square).toBeUndefined();
     });
   });
 });

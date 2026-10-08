@@ -8,7 +8,7 @@ import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.
 import { talmudSite } from './site.ts';
 import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
-import { talmudSearch, type TalmudSearchSettings } from './search.ts';
+import { SEARCH_URL_PARAMS, talmudSearch, type TalmudSearchSettings } from './search.ts';
 import {
   STRUCTURE_FILE,
   amudIndex,
@@ -38,6 +38,7 @@ const WHOLE_MAP: Story = {
 
 export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
   site: talmudSite,
+  link: { square: 'at', search: SEARCH_URL_PARAMS, overlayParams: () => undefined },
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {

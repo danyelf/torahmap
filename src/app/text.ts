@@ -1,6 +1,6 @@
 // What a text (the Tanakh, the Talmud) hands the app shell, and what the shell hands back.
 
-import type { UrlState } from '@torahmap/link';
+import type { LinkKeys, UrlState } from '@torahmap/link';
 import type { CameraPosition, Story, StoryStop } from '@torahmap/stories';
 import type { Credit } from '../credits.ts';
 import type { Camera, ScreenPoint, Viewport } from '../camera.ts';
@@ -28,6 +28,7 @@ export interface Site {
 
 export interface MapText<I extends MapItem, S = unknown> {
   site: Site;
+  link: LinkKeys;
   /** Downloaded before the first frame. */
   firstFiles: string[];
   /** The file whose arrival and download speed load timing reports. */

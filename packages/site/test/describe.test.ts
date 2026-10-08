@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { readLink } from '@torahmap/link';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { describeLink, TAGLINE } from '@torahmap/site';
 
-const describeQuery = (q: string) => describeLink(readLink(q));
+const describeQuery = (q: string) => describeLink(readLink(q, LINK_KEYS));
 
 describe('describeLink', () => {
   it('names a pinned verse, with the overlay in the description', () => {
