@@ -3,6 +3,7 @@
 import type { LinkKeys, UrlState } from '@torahmap/link';
 import type { CameraPosition, Story, StoryStop } from '@torahmap/stories';
 import type { Credit } from '../credits.ts';
+import type { PageCopy } from './page.ts';
 import type { Camera, ScreenPoint, Viewport } from '../camera.ts';
 import type { Loaded } from '../dataFiles.ts';
 import type { ItemIndex } from '../items.ts';
@@ -14,32 +15,16 @@ import type { MapItem, VerseColor } from '../types.ts';
 
 /** What a text's site calls itself and its links. */
 export interface Site {
-  /** Plain text, as are `squareName` and the title. */
-  name: string;
-  /** What a reader calls one square: "verse", "segment". */
+  /** Its page, and its name there and everywhere. */
+  page: PageCopy;
+  /** What a reader calls one square, in plain text: "verse", "segment". */
   squareName: string;
   /** What the map is, as the About panel's opening paragraph. */
   aboutHtml: string;
   /** What the map itself rests on, credited above each tool's sources. */
   credits: readonly Credit[];
-  /** What a link is called in a tab. */
+  /** What a link is called in a tab, in plain text. */
   title(link: UrlState): string;
-  page: SitePage;
-}
-
-/** What the text's page says before the map runs, and to link previews; plain text throughout. */
-export interface SitePage {
-  tagline: string;
-  /** The page's address once deployed. */
-  url: string;
-  /** The link preview's picture, 1200×630. */
-  image?: { url: string; alt: string };
-  /** What the map is, to a browser that runs no script. */
-  noScript: string;
-  /** What the map is, ahead of why this browser cannot draw it. */
-  noWebGl: string;
-  /** Where the text can be read meanwhile. */
-  textUrl: string;
 }
 
 export interface MapText<I extends MapItem, S = unknown> {

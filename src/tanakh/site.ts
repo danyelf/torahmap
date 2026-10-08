@@ -1,10 +1,11 @@
 // What the Tanakh's site calls itself: torahmap.org.
 
-import { SITE_NAME, TAGLINE, describeLink } from '@torahmap/site';
+import { describeLink } from '@torahmap/site';
 import type { Site } from '../app/text.ts';
+import { TANAKH_PAGE } from './page.ts';
 
 export const tanakhSite: Site = {
-  name: SITE_NAME,
+  page: TANAKH_PAGE,
   squareName: 'verse',
   aboutHtml:
     '<p>An interactive visualization of the entire Tanakh (Hebrew Bible). Every verse has a fixed position.</p>',
@@ -27,17 +28,4 @@ export const tanakhSite: Site = {
     },
   ],
   title: (link) => describeLink(link).title,
-  page: {
-    tagline: TAGLINE,
-    url: 'https://torahmap.org/',
-    image: {
-      url: 'https://torahmap.org/og-image.jpg',
-      alt: 'The five books of the Torah above the first books of the Prophets, each verse a small square colored by how much commentary it has.',
-    },
-    noScript:
-      'Torahmap lays out all 23,000 verses of the Hebrew Bible — Torah, Prophets and Writings — as colored squares, each in a fixed place, so that search results, commentary and haftarah readings show their patterns across the whole text.',
-    noWebGl:
-      'Torahmap lays out all 23,000 verses of the Hebrew Bible as colored squares, each in a fixed place.',
-    textUrl: 'https://www.sefaria.org/texts/Tanakh',
-  },
 };

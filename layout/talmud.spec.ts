@@ -2,10 +2,8 @@
 // map, and a pinned segment shows its text.
 import { expect, test } from '@playwright/test';
 import { allLoaded, boxes, openMap } from './page.ts';
-import { tanakhSite } from '../src/tanakh/site.ts';
-import { talmudSite } from '../src/talmud/site.ts';
-
-const TALMUD = '/talmud/';
+import { TALMUD_PATH as TALMUD } from '../src/pages.ts';
+import { TALMUD_PAGE } from '../src/talmud/page.ts';
 
 test('the Talmud map draws, with its tractate labels over it', async ({ page }) => {
   await openMap(page, '', TALMUD);
@@ -15,12 +13,13 @@ test('the Talmud map draws, with its tractate labels over it', async ({ page }) 
   for (const label of labels) expect(label.x).toBeGreaterThanOrEqual(map.x);
 });
 
-test('the page is filled from the Talmud’s site, not the Tanakh’s', async ({ page }) => {
-  await page.goto(TALMUD);
-  const html = await page.content();
-  for (const words of [talmudSite.name, talmudSite.page.tagline, talmudSite.page.noWebGl])
-    expect(html).toContain(words);
-  expect(html).not.toContain(tanakhSite.page.tagline);
+test('the dev server fills the Talmud’s page with its own copy', async ({ request }, info) => {
+  test.skip(info.project.name !== 'desktop', 'what the server sends does not depend on the screen');
+  for (const address of [TALMUD, `${TALMUD}index.html`, `${TALMUD}?at=Berakhot.2a.1`]) {
+    const html = await (await request.get(address)).text();
+    expect(html).toContain(`<title>${TALMUD_PAGE.name}</title>`);
+    expect(html).toContain(`content="${TALMUD_PAGE.tagline}"`);
+  }
 });
 
 test("a pinned segment's popup shows its text", async ({ page }) => {

@@ -4,6 +4,7 @@ import { linkKind, parseVerseId, verseRef, type UrlState } from '@torahmap/link'
 import { overlayName } from '@torahmap/overlay-catalog';
 import { STORIES, listedStories, storyToOpen, firstSentence } from '@torahmap/stories';
 
+export const ORIGIN = 'https://torahmap.org';
 export const SITE_NAME = 'Torahmap';
 export const TAGLINE = 'A Visual Concordance of the Hebrew Bible.';
 const SEPARATOR = ' · ';

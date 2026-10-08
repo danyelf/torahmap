@@ -27,7 +27,7 @@ export function aboutHtml(
       <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
-      <h3 class="panel-section-heading">${escapeHtml(site.name)}</h3>
+      <h3 class="panel-section-heading">${escapeHtml(site.page.name)}</h3>
       ${site.aboutHtml}
       <p class="byline">
         By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a>

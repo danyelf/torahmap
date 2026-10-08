@@ -10,13 +10,15 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { fillPage } from '../../../app/page.ts';
-import { tanakhSite } from '../../../tanakh/site.ts';
+import { pageAt } from '../../../pages.ts';
 import { rewritePage } from '../../../worker/page.ts';
 
+// The page the Worker serves, at the root.
+const ROOT = pageAt('/');
 const INDEX = fillPage(
   readFileSync(new URL('../../../../index.html', import.meta.url), 'utf8'),
-  tanakhSite,
-  '/src/main-tanakh.ts',
+  ROOT.copy,
+  ROOT.entry,
 );
 const tags = {
   title: 'Genesis 12:1 · Torahmap',
@@ -46,7 +48,7 @@ describe('rewritePage, on the real index.html', () => {
   });
 
   it('keeps canonical on the home page', () => {
-    expect(page).toContain('<link rel="canonical" href="https://torahmap.org/" />');
+    expect(page).toContain(`<link rel="canonical" href="${ROOT.copy.url}" />`);
   });
 
   it('changes nothing else', () => {

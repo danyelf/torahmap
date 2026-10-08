@@ -4,8 +4,7 @@ import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from './src/app/page.ts';
-import { tanakhSite } from './src/tanakh/site.ts';
-import { talmudSite } from './src/talmud/site.ts';
+import { TALMUD_PATH, pageAt } from './src/pages.ts';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -20,39 +19,45 @@ function getGitBranch(): string {
   }
 }
 
-const TALMUD = '/talmud/';
-
-// index.html is every text's page, filled from its site: the Tanakh's at /,
-// the Talmud's at /talmud/. Before Vite reads the page, so it finds the entry script.
+// index.html is every text's page, filled from its copy by address (src/pages.ts).
+// Runs first, so Vite sees the filled-in entry script.
 function pagePlugin(): Plugin {
   return {
     name: 'page',
     transformIndexHtml: {
       order: 'pre',
-      handler: (html, { path }) =>
-        path.startsWith(TALMUD)
-          ? fillPage(html, talmudSite, '/src/main-talmud.ts')
-          : fillPage(html, tanakhSite, '/src/main-tanakh.ts'),
+      handler: (html, { path }) => {
+        const { copy, entry } = pageAt(path);
+        return fillPage(html, copy, entry);
+      },
     },
   };
 }
 
-// The dev server serves the Talmud at /talmud/; /talmud, without the slash, goes there too.
+// The dev server serves the Talmud's page from index.html; /talmud, without the slash, goes there too.
 function talmudPlugin(): Plugin {
   return {
     name: 'talmud-address',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const [path, query] = (req.url ?? '').split('?');
-        if (path === '/talmud') {
-          res.writeHead(302, { Location: `${TALMUD}${query === undefined ? '' : `?${query}`}` });
+        if (`${path}/` === TALMUD_PATH) {
+          res.writeHead(302, {
+            Location: `${TALMUD_PATH}${query === undefined ? '' : `?${query}`}`,
+          });
           res.end();
-        } else if (path === TALMUD || path === `${TALMUD}index.html`) {
+          return;
+        }
+        if (pageAt(path).path !== TALMUD_PATH) return next();
+        try {
           const template = await readFile(resolve(__dirname, 'index.html'), 'utf8');
+          const page = `${TALMUD_PATH}index.html`;
+          const html = await server.transformIndexHtml(page, template, req.originalUrl);
           res.setHeader('Content-Type', 'text/html');
-          res.end(await server.transformIndexHtml(req.url ?? TALMUD, template));
-        } else {
-          next();
+          res.setHeader('Cache-Control', 'no-cache');
+          res.end(html);
+        } catch (error) {
+          next(error);
         }
       });
     },

@@ -31,7 +31,7 @@ const item = (action: string, label: string, detail = ''): string =>
 /** The menu: the site's name, then its items. Each item carries the action it takes; the click handler reads it. */
 export function menuHtml(site: Site, place: StoryPlace & { title: string }): string {
   return [
-    `<h2 class="menu-title">${escapeHtml(site.name)}</h2>`,
+    `<h2 class="menu-title">${escapeHtml(site.page.name)}</h2>`,
     item(CONTINUE_STORY, `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
     item(SHARE, 'Share'),
     '<div class="menu-divider" role="separator"></div>',
