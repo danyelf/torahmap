@@ -7,7 +7,7 @@ import type { ItemIndex } from '../items.ts';
 import type { Overlay, ToolOnMap } from '../overlays/types.ts';
 import type { SearchTool } from './search.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
-import type { SidebarElements } from '../sidebar.ts';
+import type { PopupText } from '../sidebar.ts';
 import type { MapItem, VerseColor } from '../types.ts';
 
 export interface MapText<I extends MapItem, S = unknown> {
@@ -27,8 +27,8 @@ export interface OpenText<I extends MapItem, S = unknown> {
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
   /** The file a square's text is in. The shell downloads it when the square's popup first shows. */
   popupFile(item: I): string;
-  /** Shortcut: each text draws its own popup, marks and word clicks included. */
-  drawPopup(elements: SidebarElements, item: I | null, view: PopupView<I>): void;
+  /** What a square's popup says; the shell marks it and makes its words clickable. */
+  popupText(item: I, loaded: Loaded, overlay: ToolOnMap<I> | null): PopupText;
   overlays: Overlay<I>[];
   search: SearchTool<I, S>;
   stories: {
@@ -49,16 +49,6 @@ export interface OpenText<I extends MapItem, S = unknown> {
   };
   /** Wires the text's own parts to the running shell. */
   start?(shell: Shell<I, S>): void;
-}
-
-/** What a text's popup is drawn from. */
-export interface PopupView<I extends MapItem> {
-  loaded: Loaded;
-  /** The loading or failed notice for the square's file, or null once it is in. */
-  notice: Node | null;
-  overlay: ToolOnMap<I> | null;
-  search: ToolOnMap<I> | null;
-  pinned: boolean;
 }
 
 /** What a text's own code may ask of the shell. */

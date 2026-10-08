@@ -1,27 +1,21 @@
-// Sidebar management for verse details display
+// The popup for a square: what the text says of it, marked by the overlay and
+// the search, with its words clickable for the search.
 
-import type { TanakhLayout, TextLanguage } from './types.ts';
+import type { MapItem, TextLanguage } from './types.ts';
 import { ENGLISH, HEBREW } from './types.ts';
-import type { TanakhOverlay, TanakhTool } from './overlays/index.ts';
-import { getVerseText, type VerseTexts } from './verseTexts.ts';
-import { sefariaUrl } from './sefaria.ts';
+import type { ToolOnMap } from './overlays/types.ts';
 import { verseWords, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';
-import { verseRef } from '@torahmap/link';
 
-/** A click on a word in the verse popup's Hebrew text. */
-export interface WordClick {
+/** A click on a word in the popup's Hebrew text. */
+export interface WordClick<I extends MapItem = MapItem> {
   /** The word exactly as displayed, points and all. */
   text: string;
-  /** Its position among the verse's words. */
+  /** Its position among the square's words. */
   index: number;
-  /** The verse's Hebrew, the text `index` counts in. */
+  /** The square's Hebrew, the text `index` counts in. */
   hebrew: string;
-  /** The verse's id. */
-  id: string;
-  book: string;
-  chapter: number;
-  verse: number;
+  item: I;
   /** The span that was clicked, for anchoring a popover. */
   element: HTMLElement;
 }
@@ -43,22 +37,28 @@ function infoLine(line: HTMLElement | string): HTMLElement {
 let wordClickHandler: ((click: WordClick) => void) | null = null;
 
 /**
- * Listen for clicks on words in the verse popup.
+ * Listen for clicks on words in the popup.
  *
- * The sidebar reports which word was clicked and leaves the meaning of that to
+ * The popup reports which word was clicked and leaves the meaning of that to
  * the caller, so that the Hebrew stays clickable whatever overlay is active.
  */
-export function setWordClickHandler(handler: ((click: WordClick) => void) | null): void {
-  wordClickHandler = handler;
+export function setWordClickHandler<I extends MapItem>(
+  handler: ((click: WordClick<I>) => void) | null,
+): void {
+  // Only this text's squares are ever drawn, so every click is on an I.
+  wordClickHandler = handler as ((click: WordClick) => void) | null;
 }
 
-/** One listener on the container, so re-rendering the verse cannot pile them up. */
-function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLayout): void {
+/** One listener on the container, so drawing the popup again cannot pile them up. */
+function attachWordClicks(
+  container: HTMLElement,
+  text: string,
+  item: MapItem,
+  heard: (click: WordClick) => void,
+): void {
   const words = verseWords(text);
 
   container.onclick = (event) => {
-    if (!wordClickHandler) return;
-
     const span = (event.target as HTMLElement)?.closest?.('.verse-word');
     if (!(span instanceof HTMLElement)) return;
 
@@ -66,14 +66,11 @@ function attachWordClicks(container: HTMLElement, text: string, verse: TanakhLay
     const word = words[index];
     if (!word) return;
 
-    wordClickHandler({
+    heard({
       text: word.word,
       index,
       hebrew: text,
-      id: verse.id,
-      book: verse.book,
-      chapter: verse.chapter,
-      verse: verse.verse,
+      item,
       element: span,
     });
   };
@@ -106,101 +103,93 @@ export function getSidebarElements(): SidebarElements {
   };
 }
 
-/**
- * Build the Sefaria URL for a verse.
- *
- * If the current overlay has an opinion (e.g. commentary's selected
- * category), opens Sefaria to that connection type. Otherwise opens to all
- * connections (?with=all).
- */
-export function getSefariaUrl(
-  book: string,
-  chapter: number,
-  verse: number,
-  currentOverlay: TanakhOverlay | null = null,
-  overlaySettings: unknown = undefined,
-): string {
-  const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings) ?? 'all';
-  return `${sefariaUrl(book, [chapter, verse])}?with=${encodeURIComponent(param)}`;
+/** What a square's popup says, from its text. The Hebrew and English are empty while its file is not in, or does not hold it. */
+export interface PopupText {
+  ref: string;
+  hebrew: string;
+  english: string;
+  link: string;
 }
 
-/** What the popup shows beside the verse, and whether the verse is pinned. */
-export interface PopupView {
-  /** Null until the texts file is in. */
-  verseTexts: VerseTexts | null;
-  /** Shown while the texts are not in. */
+/** What the popup shows beside the square's text, and whether the square is pinned. */
+export interface PopupView<I extends MapItem> {
+  /** Shown while the square's file is not in. */
   textsNotice: Node | null;
-  /** Whether a Hebrew word opens its menu when clicked: only once search has its data. */
+  /** Whether search has its data, so a clicked word has a search to join. */
   wordsClickable: boolean;
-  overlay: TanakhTool | null;
-  search: TanakhTool | null;
+  overlay: ToolOnMap<I> | null;
+  search: ToolOnMap<I> | null;
   pinned: boolean;
 }
 
-export function updateSidebar(
+/** Draw `item`'s popup, or hide it for null; `say` is the text's popupText. */
+export function updateSidebar<I extends MapItem>(
   elements: SidebarElements,
-  verse: TanakhLayout | null,
-  view: PopupView,
+  item: I | null,
+  say: (item: I) => PopupText,
+  view: PopupView<I>,
 ): void {
   const { sidebar, ref, overlayInfo, hebrew, notice, english, link } = elements;
-  const { verseTexts, textsNotice, wordsClickable, search, pinned: isPinned } = view;
+  const { textsNotice, search, pinned: isPinned } = view;
+  // Words are clickable only while something listens for them.
+  const heard = view.wordsClickable ? wordClickHandler : null;
   const currentOverlay = view.overlay?.tool ?? null;
   const overlaySettings = view.overlay?.settings;
   const overlayData = view.overlay?.data;
 
   if (!sidebar) return;
 
-  if (!verse) {
+  if (!item) {
     sidebar.classList.remove('visible');
     sidebar.classList.remove('pinned');
     return;
   }
 
-  const text = verseTexts && getVerseText(verseTexts, verse.book, verse.chapter, verse.verse);
+  const text = say(item);
 
   if (ref) {
-    ref.textContent = verseRef(verse);
+    ref.textContent = text.ref;
   }
   if (overlayInfo) {
     const lines = [
-      currentOverlay?.renderSidebarInfo?.(verse, isPinned, overlaySettings, overlayData) ??
-        currentOverlay?.getHoverInfo?.(verse, overlaySettings, overlayData),
-      search?.tool.getHoverInfo?.(verse, search.settings, search.data),
+      currentOverlay?.renderSidebarInfo?.(item, isPinned, overlaySettings, overlayData) ??
+        currentOverlay?.getHoverInfo?.(item, overlaySettings, overlayData),
+      search?.tool.getHoverInfo?.(item, search.settings, search.data),
     ].filter((line): line is HTMLElement | string => !!line);
     overlayInfo.replaceChildren(...lines.map(infoLine));
   }
 
   // Both tools mark the text; where they mark the same letters, the search's mark is kept.
-  const marked = (text: string, language: TextLanguage): DocumentFragment | null => {
+  const marked = (words: string, language: TextLanguage): DocumentFragment | null => {
     const overlayMarks = currentOverlay?.highlightVerseText?.(
-      verse,
-      text,
+      item,
+      words,
       language,
       overlaySettings,
       overlayData,
     );
     const searchMarks = search?.tool.highlightVerseText?.(
-      verse,
-      text,
+      item,
+      words,
       language,
       search.settings,
       search.data,
     );
-    if (overlayMarks && searchMarks) return combineMarks(text, overlayMarks, searchMarks);
+    if (overlayMarks && searchMarks) return combineMarks(words, overlayMarks, searchMarks);
     return searchMarks ?? overlayMarks ?? null;
   };
   if (hebrew) {
     const container = hebrew as HTMLElement;
     container.onclick = null;
-    if (!text) {
+    if (!text.hebrew) {
       container.replaceChildren();
     } else {
-      const fragment = marked(text.he, HEBREW) ?? textFragment(text.he);
-      if (wordsClickable) {
+      const fragment = marked(text.hebrew, HEBREW) ?? textFragment(text.hebrew);
+      if (heard) {
         // Whatever the overlay produced, words are wrapped afterwards, so a click
         // finds a word whether or not anything is highlighting the text.
-        container.replaceChildren(wrapWordsInFragment(fragment, text.he));
-        attachWordClicks(container, text.he, verse);
+        container.replaceChildren(wrapWordsInFragment(fragment, text.hebrew));
+        attachWordClicks(container, text.hebrew, item, heard);
       } else {
         container.replaceChildren(fragment);
       }
@@ -208,19 +197,11 @@ export function updateSidebar(
   }
   notice?.replaceChildren(...(textsNotice ? [textsNotice] : []));
   if (english) {
-    const highlighted = text && marked(text.en, ENGLISH);
+    const highlighted = text.english && marked(text.english, ENGLISH);
     if (highlighted) english.replaceChildren(highlighted);
-    else english.textContent = text?.en ?? '';
+    else english.textContent = text.english;
   }
-  if (link) {
-    link.href = getSefariaUrl(
-      verse.book,
-      verse.chapter,
-      verse.verse,
-      currentOverlay,
-      overlaySettings,
-    );
-  }
+  if (link) link.href = text.link;
 
   sidebar.classList.add('visible');
   if (isPinned) {

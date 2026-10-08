@@ -48,7 +48,7 @@ import { resolveViewState, cameraForView, opensFolded, type ViewState } from './
 import { debounce } from './utils/debounce.ts';
 import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
-import { getSidebarElements } from './sidebar.ts';
+import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import {
   clampZoom,
   zoomAtPoint,
@@ -851,10 +851,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function updateSidebarWrapper(verse: I | null, isPinned: boolean = false): void {
     const file = verse && text.popupFile(verse);
     if (file) fetchPopupFile(file);
-    text.drawPopup(sidebarElements, verse, {
-      loaded,
-      notice: file ? noticeFor([file]) : null,
-      ...toolsNow(),
+    const tools = toolsNow();
+    updateSidebar(sidebarElements, verse, (item) => text.popupText(item, loaded, tools.overlay), {
+      textsNotice: file ? noticeFor([file]) : null,
+      wordsClickable: dataFor(searchTool, loaded) !== null,
+      ...tools,
       pinned: isPinned,
     });
   }

@@ -3,18 +3,17 @@
 import { computeLayout, getLayoutBounds } from '../layout.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from '../labels.ts';
 import { createMapTitle, updateMapTitlePosition } from '../mapTitle.ts';
-import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from '../verseTexts.ts';
+import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from '../verseTexts.ts';
 import { initBookData } from '../constants/books.ts';
 import { createCamera } from '../camera.ts';
 import { getDefaultColor } from '../itemColoring.ts';
-import { updateSidebar } from '../sidebar.ts';
+import { popupText } from './popup.ts';
 import { reportError } from '../analytics.ts';
 import { STORIES } from '@torahmap/stories';
 import { resolveStops } from '../scrollytelling/storyPanel.ts';
 import { registerAllOverlays, getAllOverlays } from '../overlays/index.ts';
 import { configure as configureSearch, searchTool, type SearchSettings } from './search/index.ts';
 import { listenForWordClicks } from './search/wordClicks.ts';
-import { dataFor } from '../dataFiles.ts';
 import type { TanakhLayout } from '../types.ts';
 import type { MapText } from '../app/text.ts';
 
@@ -49,16 +48,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
 
       popupFile: () => TEXTS_FILE,
 
-      drawPopup(elements, verse, view) {
-        updateSidebar(elements, verse, {
-          verseTexts: textsFrom(view.loaded),
-          textsNotice: view.notice,
-          wordsClickable: dataFor(searchTool, view.loaded) !== null,
-          overlay: view.overlay,
-          search: view.search,
-          pinned: view.pinned,
-        });
-      },
+      popupText,
 
       overlays: getAllOverlays(),
 

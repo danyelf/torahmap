@@ -76,20 +76,14 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
 
       popupFile: (item) => textsFile(item.tractate),
 
-      // Reference, text and link, without the overlay's line or any marks.
-      drawPopup(elements, item, view) {
-        const { sidebar, ref: refText, overlayInfo, hebrew, notice, english, link } = elements;
-        if (!sidebar) return;
-        sidebar.classList.toggle('visible', item !== null);
-        sidebar.classList.toggle('pinned', item !== null && view.pinned);
-        if (!item) return;
-        const file = view.loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;
-        if (refText) refText.textContent = ref(item);
-        overlayInfo?.replaceChildren();
-        if (hebrew) hebrew.textContent = file ? segmentText(item, file) : '';
-        notice?.replaceChildren(...(view.notice ? [view.notice] : []));
-        if (english) english.textContent = '';
-        if (link) link.href = sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]);
+      popupText(item, loaded) {
+        const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;
+        return {
+          ref: ref(item),
+          hebrew: file ? segmentText(item, file) : '',
+          english: '',
+          link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
+        };
       },
 
       overlays: [],
