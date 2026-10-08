@@ -145,53 +145,51 @@ export function updateSidebar<I extends MapItem>(
     return;
   }
 
-  const verse = item;
-  const said = say(item);
-  const text = said.hebrew || said.english ? { he: said.hebrew, en: said.english } : null;
+  const text = say(item);
 
   if (ref) {
-    ref.textContent = said.ref;
+    ref.textContent = text.ref;
   }
   if (overlayInfo) {
     const lines = [
-      currentOverlay?.renderSidebarInfo?.(verse, isPinned, overlaySettings, overlayData) ??
-        currentOverlay?.getHoverInfo?.(verse, overlaySettings, overlayData),
-      search?.tool.getHoverInfo?.(verse, search.settings, search.data),
+      currentOverlay?.renderSidebarInfo?.(item, isPinned, overlaySettings, overlayData) ??
+        currentOverlay?.getHoverInfo?.(item, overlaySettings, overlayData),
+      search?.tool.getHoverInfo?.(item, search.settings, search.data),
     ].filter((line): line is HTMLElement | string => !!line);
     overlayInfo.replaceChildren(...lines.map(infoLine));
   }
 
   // Both tools mark the text; where they mark the same letters, the search's mark is kept.
-  const marked = (text: string, language: TextLanguage): DocumentFragment | null => {
+  const marked = (words: string, language: TextLanguage): DocumentFragment | null => {
     const overlayMarks = currentOverlay?.highlightVerseText?.(
-      verse,
-      text,
+      item,
+      words,
       language,
       overlaySettings,
       overlayData,
     );
     const searchMarks = search?.tool.highlightVerseText?.(
-      verse,
-      text,
+      item,
+      words,
       language,
       search.settings,
       search.data,
     );
-    if (overlayMarks && searchMarks) return combineMarks(text, overlayMarks, searchMarks);
+    if (overlayMarks && searchMarks) return combineMarks(words, overlayMarks, searchMarks);
     return searchMarks ?? overlayMarks ?? null;
   };
   if (hebrew) {
     const container = hebrew as HTMLElement;
     container.onclick = null;
-    if (!text) {
+    if (!text.hebrew) {
       container.replaceChildren();
     } else {
-      const fragment = marked(text.he, HEBREW) ?? textFragment(text.he);
+      const fragment = marked(text.hebrew, HEBREW) ?? textFragment(text.hebrew);
       if (heard) {
         // Whatever the overlay produced, words are wrapped afterwards, so a click
         // finds a word whether or not anything is highlighting the text.
-        container.replaceChildren(wrapWordsInFragment(fragment, text.he));
-        attachWordClicks(container, text.he, verse, heard);
+        container.replaceChildren(wrapWordsInFragment(fragment, text.hebrew));
+        attachWordClicks(container, text.hebrew, item, heard);
       } else {
         container.replaceChildren(fragment);
       }
@@ -199,11 +197,11 @@ export function updateSidebar<I extends MapItem>(
   }
   notice?.replaceChildren(...(textsNotice ? [textsNotice] : []));
   if (english) {
-    const highlighted = text && marked(text.en, ENGLISH);
+    const highlighted = text.english && marked(text.english, ENGLISH);
     if (highlighted) english.replaceChildren(highlighted);
-    else english.textContent = text?.en ?? '';
+    else english.textContent = text.english;
   }
-  if (link) link.href = said.link;
+  if (link) link.href = text.link;
 
   sidebar.classList.add('visible');
   if (isPinned) {
