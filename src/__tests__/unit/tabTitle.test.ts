@@ -29,6 +29,15 @@ describe('tabTitle', () => {
     );
   });
 
+  it('names the search on either text', () => {
+    expect(tabTitle(talmudSite, readLink('?search=light'), null)).toBe(
+      tabTitle(tanakhSite, readLink('?search=light'), null).replace(
+        tanakhSite.name,
+        talmudSite.name,
+      ),
+    );
+  });
+
   it('is the site’s name alone with nothing pinned', () => {
     expect(tabTitle(talmudSite, readLink(''), null)).toBe(talmudSite.name);
   });

@@ -8,7 +8,7 @@ import { namesRegion } from '../../scrollytelling/storyPanel.ts';
 import { initBookData } from '../../constants/books.ts';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
-import { talmudId } from '../../talmud/layout.ts';
+import { parseTalmudId, talmudId } from '../../talmud/layout.ts';
 import type { TorahData } from '../../types.ts';
 import { talmudFixture } from '../helpers/talmudFixture.ts';
 
@@ -98,5 +98,17 @@ describe('square ids', () => {
     const { items } = computeTalmudLayout(talmudFixture);
     for (const s of items) expect(s.id).toBe(talmudId(s));
     expect(new Set(items.map((s) => s.id)).size).toBe(items.length);
+  });
+
+  it('reads back every Talmud id as its segment', () => {
+    for (const s of computeTalmudLayout(talmudFixture).items) {
+      const { tractate, daf, amud, segment } = s;
+      expect(parseTalmudId(s.id)).toEqual({ tractate, daf, amud, segment });
+    }
+  });
+
+  it('reads no segment from an id no segment writes', () => {
+    for (const id of ['Genesis.12.1', 'Bava.Kamma.02a.1', 'Berakhot.2c.1', 'Berakhot.2a'])
+      expect(parseTalmudId(id)).toBeNull();
   });
 });

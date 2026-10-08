@@ -543,7 +543,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
-      droppedMenu.innerHTML = menuHtml(source.site.name, { ...place, title: story.data.title });
+      droppedMenu.innerHTML = menuHtml(source.site, { ...place, title: story.data.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();

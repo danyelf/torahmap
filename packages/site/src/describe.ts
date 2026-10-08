@@ -34,13 +34,15 @@ export function describeLink(state: UrlState): LinkDescription {
     };
   }
   const verse = state.verse ? parseVerseId(state.verse) : null;
-  const search = state.searchParams?.search;
-  const parts = [verse && verseRef(verse), search && `Search: ${search}`, SITE_NAME].filter(
-    Boolean,
-  );
   const overlay = state.overlay ? overlayName(state.overlay) : undefined;
   return {
-    title: parts.join(SEPARATOR),
+    title: viewTitle(SITE_NAME, verse && verseRef(verse), state),
     description: overlay ? `${overlay} overlay. ${TAGLINE}` : TAGLINE,
   };
+}
+
+/** A view's title on any text's site: what it pins, then its search, then the site's name. */
+export function viewTitle(siteName: string, pinned: string | null, state: UrlState): string {
+  const search = state.searchParams?.search;
+  return [pinned, search && `Search: ${search}`, siteName].filter(Boolean).join(SEPARATOR);
 }

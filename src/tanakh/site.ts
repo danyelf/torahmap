@@ -5,6 +5,7 @@ import type { Site } from '../app/text.ts';
 
 export const tanakhSite: Site = {
   name: SITE_NAME,
+  square: 'verse',
   aboutHtml:
     '<p>An interactive visualization of the entire Tanakh (Hebrew Bible). Every verse has a fixed position.</p>',
   credits: [
@@ -25,5 +26,5 @@ export const tanakhSite: Site = {
       note: 'The English text, from the Jewish Publication Society, downloaded via Sefaria. The English search index is built from it.',
     },
   ],
-  describe: describeLink,
+  title: (link) => describeLink(link).title,
 };

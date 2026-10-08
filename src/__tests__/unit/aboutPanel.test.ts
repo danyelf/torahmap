@@ -54,7 +54,9 @@ describe('the About panel', () => {
     const div = document.createElement('div');
     div.innerHTML = aboutHtml(talmudSite, []);
     expect(div.textContent).toContain(talmudSite.name);
-    expect(div.textContent).not.toContain('Torahmap');
+    const { tanakhSite } = await import('../../tanakh/site');
+    expect(div.textContent).not.toContain(tanakhSite.name);
+    expect(div.querySelector('.controls-table')?.textContent).not.toContain(tanakhSite.square);
     expect([...div.querySelectorAll('.credit-source')].map((s) => s.textContent)).toEqual(
       talmudSite.credits.map((c) => c.source),
     );

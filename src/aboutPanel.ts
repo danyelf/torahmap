@@ -2,6 +2,7 @@ import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
 import { CONTROL, panelHtml } from './panel.ts';
 import type { Site } from './app/text.ts';
+import { escapeHtml } from './utils/html.ts';
 
 // GitHub's Octicons (MIT): mark-github and mail.
 const icon = (path: string): string =>
@@ -18,6 +19,7 @@ export function aboutHtml(
   site: Site,
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
 ): string {
+  const square = escapeHtml(site.square);
   return panelHtml(
     'about',
     `<section class="about-section">
@@ -25,7 +27,7 @@ export function aboutHtml(
       <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
-      <h3 class="panel-section-heading">${site.name}</h3>
+      <h3 class="panel-section-heading">${escapeHtml(site.name)}</h3>
       ${site.aboutHtml}
       <p class="byline">
         By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a>
@@ -38,10 +40,10 @@ export function aboutHtml(
       <table class="controls-table">
         <tr><td>Scroll / Pinch</td><td>Zoom in/out</td></tr>
         <tr><td>Drag</td><td>Pan the map</td></tr>
-        <tr><td>Hover</td><td>Preview verse details</td></tr>
-        <tr><td>Click / Tap</td><td>Pin verse details; repeat to unpin</td></tr>
-        <tr><td>&larr; &rarr; arrow keys</td><td>Navigate verses</td></tr>
-        <tr><td>Escape</td><td>Close the menu, unpin the verse, or close the panel or the story</td></tr>
+        <tr><td>Hover</td><td>Preview ${square} details</td></tr>
+        <tr><td>Click / Tap</td><td>Pin ${square} details; repeat to unpin</td></tr>
+        <tr><td>&larr; &rarr; arrow keys</td><td>Navigate ${square}s</td></tr>
+        <tr><td>Escape</td><td>Close the menu, unpin the ${square}, or close the panel or the story</td></tr>
         <tr><td>Legend</td><td>Shows colors for the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>
       </table>

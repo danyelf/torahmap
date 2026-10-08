@@ -1,13 +1,14 @@
 // What the Talmud's site calls itself.
 
+import { viewTitle } from '@torahmap/site';
 import type { Site } from '../app/text.ts';
 import { parseTalmudId, talmudRef } from './layout.ts';
 
 const NAME = 'Talmud Map';
-const SEPARATOR = ' · ';
 
 export const talmudSite: Site = {
   name: NAME,
+  square: 'segment',
   aboutHtml:
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [
@@ -17,11 +18,8 @@ export const talmudSite: Site = {
       note: 'The Hebrew and Aramaic text, from Hebrew Wikisource, downloaded via Sefaria.',
     },
   ],
-  describe(link) {
+  title(link) {
     const segment = link.verse ? parseTalmudId(link.verse) : null;
-    return {
-      title: segment ? [talmudRef(segment), NAME].join(SEPARATOR) : NAME,
-      description: '',
-    };
+    return viewTitle(NAME, segment && talmudRef(segment), link);
   },
 };

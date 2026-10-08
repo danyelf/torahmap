@@ -37,12 +37,14 @@ export function parseTalmudId(id: string): TalmudIdentity | null {
   const match = /^(.+)\.(\d+)([ab])\.(\d+)$/.exec(id);
   if (!match) return null;
   const [, tractate, daf, amud, segment] = match;
-  return {
+  const parsed: TalmudIdentity = {
     tractate: bookFromUrl(tractate),
     daf: Number(daf),
     amud: amud as 'a' | 'b',
     segment: Number(segment),
   };
+  // "2a" and "02a" are the same page, but only one is a square's id.
+  return talmudId(parsed) === id ? parsed : null;
 }
 
 /** A segment as readers write it: "Bava Kamma 2a:1". */
