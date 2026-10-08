@@ -9,7 +9,7 @@ const queries = readdirSync(dir).filter((f) => f.endsWith('.sql'));
 
 // An alias that reads one column across events, naming the field it holds for each.
 const ALIASES: Record<string, Partial<Record<EventName, string>>> = {
-  choice_or_verse: { word_menu_open: 'verse', word_search: 'choice' },
+  choice_or_id: { word_menu_open: 'id', word_search: 'choice' },
 };
 
 function eventsRead(sql: string): string[] {

@@ -189,7 +189,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   // For load_timing (sendLoadTiming).
   let firstFrame = 0;
-  let textsIn = 0;
+  let timedIn = 0;
   let searchReady = 0;
   let searchPrebuilt = false;
   let downloadsSettled = false;
@@ -1514,7 +1514,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function fileLanded(path: string, content: unknown): void {
-    if (path === source.timedFile) textsIn = performance.now();
+    if (path === source.timedFile) timedIn = performance.now();
     downloads.pending.delete(path);
     const before = loaded;
     loaded = new Map(before).set(path, content);
@@ -1556,15 +1556,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     timingSent = true;
     const { timedFile } = source;
     const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-    const textsEntry = timedFile
+    const timedEntry = timedFile
       ? resources.find((e) => e.name.endsWith(`/${timedFile}`))
       : undefined;
     const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
     trackLoadTiming({
       first_frame: Math.round(firstFrame),
-      texts_in: Math.round(textsIn),
+      texts_in: Math.round(timedIn),
       search_ready: Math.round(searchReady),
-      texts_kbps: downloadKbps(textsEntry),
+      texts_kbps: downloadKbps(timedEntry),
       connection: connection?.effectiveType ?? '',
     });
   }

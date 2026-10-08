@@ -10,7 +10,6 @@ import { dictionaryOf } from './data.ts';
 import { setWordClickHandler } from '../../sidebar.ts';
 import { openWordMenu } from './wordMenu.ts';
 import { trackWordMenuOpen, trackWordSearch } from '../../analytics.ts';
-import { verseRef } from '@torahmap/link';
 import { searchTool, searchForMeaning, canAddTerm, type SearchSettings } from './index.ts';
 
 /** What the word menu reads and changes. */
@@ -35,9 +34,8 @@ export function listenForWordClicks(host: WordClickHost): void {
       click.index,
     );
 
-    const ref = verseRef(click.item);
     const paletteFull = !canAddTerm(host.searchSettings());
-    trackWordMenuOpen(click.text, ref, meanings.length, paletteFull);
+    trackWordMenuOpen(click.text, click.item.id, meanings.length, paletteFull);
 
     openWordMenu({
       word: click.text,
@@ -49,7 +47,11 @@ export function listenForWordClicks(host: WordClickHost): void {
         // The menu counted the words when it opened; a keyboard reader can add one since.
         if (!canAddTerm(host.searchSettings())) return;
 
-        trackWordSearch(click.text, meaning ? `${meaning.form} ${meaning.gloss}` : 'exact', ref);
+        trackWordSearch(
+          click.text,
+          meaning ? `${meaning.form} ${meaning.gloss}` : 'exact',
+          click.item.id,
+        );
         host.changeSearch(
           (current) =>
             searchForMeaning(dictionary, current, word, meaning?.keys ?? null) ?? current,

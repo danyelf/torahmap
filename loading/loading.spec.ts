@@ -20,6 +20,7 @@ import {
   open,
   param,
   recordEvents,
+  sentFields,
   sentLoadTiming,
   sentSearches,
   stillShot,
@@ -359,6 +360,29 @@ test('a lexicon search cannot build from fails its prebuild alone, and the rest 
   await expect.poll(() => errors.length).toBe(1);
   expect(errors[0]).not.toMatch(/^console:/);
   expect(errors[0]).toContain('buildDictionary');
+});
+
+test('load timing says when the texts landed, after the first frame', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'what loads does not depend on the screen');
+  const { release, errors } = await open(page, '', [TEXTS_FILE]);
+  await recordEvents(page);
+  release();
+  await allLoaded(page);
+  await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
+  const [timing] = await sentLoadTiming(page);
+  expect(timing.texts_in).toBeGreaterThan(timing.first_frame as number);
+  expect(errors).toEqual([]);
+});
+
+test('stepping to a verse records it by its id and book', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'the arrow keys are the same on every screen');
+  const { errors } = await open(page, 'verse=Genesis.12.1', [], { until: 'loaded' });
+  await recordEvents(page);
+  await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(() => sentFields(page, 'square_click'))
+    .toEqual([{ id: 'Genesis.12.2', area: 'Genesis' }]);
+  expect(errors).toEqual([]);
 });
 
 test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }, info) => {

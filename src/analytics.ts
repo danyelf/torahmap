@@ -106,9 +106,9 @@ export function trackStoryReturn(stopId: string, how: ReturnHow): void {
   track('story_return', { stop_id: stopId, how, story: options.getStory() });
 }
 
-export function trackViewSettled(book: string, section: string, zoom: number): void {
+export function trackViewSettled(area: string, section: string, zoom: number): void {
   const zoomBand = zoom > 3 ? 'close' : zoom >= 1 ? 'medium' : 'far';
-  track('view_settled', { book, section, zoom_band: zoomBand, zoom: Math.round(zoom * 100) / 100 });
+  track('view_settled', { area, section, zoom_band: zoomBand, zoom: Math.round(zoom * 100) / 100 });
 }
 
 export function trackOverlaySwitch(overlay: string, previousOverlay: string): void {
@@ -135,15 +135,15 @@ export function trackSquareClick(id: string, area: string): void {
 
 export function trackWordMenuOpen(
   word: string,
-  verse: string,
+  id: string,
   meanings: number,
   paletteFull: boolean,
 ): void {
-  track('word_menu_open', { word, verse, meanings, palette_full: paletteFull ? 'yes' : 'no' });
+  track('word_menu_open', { word, id, meanings, palette_full: paletteFull ? 'yes' : 'no' });
 }
 
-export function trackWordSearch(word: string, choice: string, verse: string): void {
-  track('word_search', { word, choice, verse });
+export function trackWordSearch(word: string, choice: string, id: string): void {
+  track('word_search', { word, choice, id });
 }
 
 export function trackSefariaOpen(id: string, area: string, overlay: string): void {

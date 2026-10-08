@@ -44,7 +44,7 @@ export interface OpenText<I extends MapItem, S = unknown> {
       viewport: Viewport,
     ): ResolvedStoryStop[];
   };
-  /** Where on the map a square is, for telemetry: its book or tractate, and that one's section. */
+  /** For telemetry: a square's book or tractate, and its section. */
   area(item: I): { area: string; section: string };
   /** Wires the text's own parts to the running shell. */
   start?(shell: Shell<I, S>): void;
