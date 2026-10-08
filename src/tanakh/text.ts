@@ -16,8 +16,10 @@ import { configure as configureSearch, searchTool, type SearchSettings } from '.
 import { listenForWordClicks } from './search/wordClicks.ts';
 import type { TanakhLayout } from '../types.ts';
 import type { MapText } from '../app/text.ts';
+import { tanakhSite } from './site.ts';
 
 export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
+  site: tanakhSite,
   firstFiles: [STRUCTURE_FILE],
   timedFile: TEXTS_FILE,
 

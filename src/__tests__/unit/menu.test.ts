@@ -9,7 +9,7 @@ function items(html: string): HTMLButtonElement[] {
 
 describe('menuHtml', () => {
   it('offers the current story first, by name, with where it is', () => {
-    const [first] = items(menuHtml({ number: 7, total: 21, title: 'The guided tour' }));
+    const [first] = items(menuHtml('Torahmap', { number: 7, total: 21, title: 'The guided tour' }));
     expect(first.dataset.action).toBe('story');
     expect(first.textContent).toContain('Continue The guided tour');
     expect(first.textContent).toContain('7/21');
@@ -17,12 +17,12 @@ describe('menuHtml', () => {
 
   it("escapes the story's title", () => {
     const div = document.createElement('div');
-    div.innerHTML = menuHtml({ number: 1, total: 2, title: '<img src=x>' });
+    div.innerHTML = menuHtml('Torahmap', { number: 1, total: 2, title: '<img src=x>' });
     expect(div.querySelector('img')).toBeNull();
   });
 
   it('then share, the search, the overlays, the stories, and about', () => {
-    const actions = items(menuHtml({ number: 1, total: 21, title: 'x' })).map(
+    const actions = items(menuHtml('Torahmap', { number: 1, total: 21, title: 'x' })).map(
       (b) => b.dataset.action,
     );
     expect(actions).toEqual(['story', 'share', 'search', 'overlay', 'stories', 'about']);
@@ -30,18 +30,24 @@ describe('menuHtml', () => {
 
   it("is headed with the site's name", () => {
     const div = document.createElement('div');
-    div.innerHTML = menuHtml({ number: 1, total: 2, title: 'x' });
+    div.innerHTML = menuHtml('Torahmap', { number: 1, total: 2, title: 'x' });
     expect(div.firstElementChild?.textContent).toBe('Torahmap');
   });
 
   it('makes every item a real button', () => {
-    for (const b of items(menuHtml({ number: 1, total: 2, title: 'x' })))
+    for (const b of items(menuHtml('Torahmap', { number: 1, total: 2, title: 'x' })))
       expect(b.type).toBe('button');
+  });
+
+  it("is headed with the site's name", () => {
+    const div = document.createElement('div');
+    div.innerHTML = menuHtml('Talmud Map', { number: 1, total: 2, title: 'x' });
+    expect(div.querySelector('.menu-title')?.textContent).toBe('Talmud Map');
   });
 
   it('sets the two actions apart from the tools', () => {
     const div = document.createElement('div');
-    div.innerHTML = menuHtml({ number: 1, total: 2, title: 'x' });
+    div.innerHTML = menuHtml('Torahmap', { number: 1, total: 2, title: 'x' });
     const share = div.querySelector('[data-action="share"]');
     expect(share?.nextElementSibling?.classList.contains('menu-divider')).toBe(true);
   });

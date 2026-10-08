@@ -1,8 +1,10 @@
 // Tests for the credits data and its renderer.
 import { describe, it, expect } from 'vitest';
-import { APP_CREDITS, renderCreditBlock, renderCreditsHtml, type Credit } from '../../credits';
+import { renderCreditBlock, renderCreditsHtml, type Credit } from '../../credits';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
 import { searchTool } from '../../tanakh/search/index';
+import { tanakhSite } from '../../tanakh/site';
+import { talmudSite } from '../../talmud/site';
 
 registerAllOverlays();
 
@@ -100,7 +102,10 @@ describe('renderCreditBlock', () => {
 
 describe('renderCreditsHtml', () => {
   it('puts what the whole map rests on above what each overlay adds', () => {
-    const html = renderCreditsHtml([{ name: 'Text Search', credits: [{ source: 'BHSA' }] }]);
+    const html = renderCreditsHtml(
+      [{ source: 'Miqra according to the Masorah' }],
+      [{ name: 'Text Search', credits: [{ source: 'BHSA' }] }],
+    );
     const base = html.indexOf('Miqra according to the Masorah');
     const overlay = html.indexOf('BHSA');
 
@@ -109,10 +114,10 @@ describe('renderCreditsHtml', () => {
   });
 
   it('leaves out overlays that declare no credits', () => {
-    const html = renderCreditsHtml([
-      { name: 'Verse Length' },
-      { name: 'Haftarah', credits: [{ source: 'Mechon Mamre' }] },
-    ]);
+    const html = renderCreditsHtml(
+      [],
+      [{ name: 'Verse Length' }, { name: 'Haftarah', credits: [{ source: 'Mechon Mamre' }] }],
+    );
 
     expect(html).not.toContain('Verse Length');
     expect(html).toContain('Mechon Mamre');
@@ -121,7 +126,8 @@ describe('renderCreditsHtml', () => {
 
 describe('the credits the app ships', () => {
   const everyCredit = () => [
-    ...APP_CREDITS,
+    ...tanakhSite.credits,
+    ...talmudSite.credits,
     ...[searchTool, ...getAllOverlays()].flatMap((o) => o.credits ?? []),
   ];
 
@@ -134,8 +140,9 @@ describe('the credits the app ships', () => {
     expect(uncredited).toEqual([]);
   });
 
-  it('says what the map itself rests on', () => {
-    expect(APP_CREDITS.length).toBeGreaterThan(0);
+  it('says what each map rests on', () => {
+    expect(tanakhSite.credits.length).toBeGreaterThan(0);
+    expect(talmudSite.credits.length).toBeGreaterThan(0);
   });
 
   it('gives every credit something to show', () => {

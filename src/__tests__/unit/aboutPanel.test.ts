@@ -7,8 +7,9 @@ async function about(): Promise<HTMLDivElement> {
   registerAllOverlays();
   const { getAllOverlays } = await import('../../overlays/registry');
   const { aboutHtml } = await import('../../aboutPanel');
+  const { tanakhSite } = await import('../../tanakh/site');
   const div = document.createElement('div');
-  div.innerHTML = aboutHtml(getAllOverlays());
+  div.innerHTML = aboutHtml(tanakhSite, getAllOverlays());
   return div;
 }
 
@@ -45,6 +46,18 @@ describe('the About panel', () => {
     );
     expect(titles[0]).toBe('The map itself');
     expect(titles.length).toBeGreaterThan(1);
+  });
+
+  it('is about the text it is given, with that text’s credits', async () => {
+    const { aboutHtml } = await import('../../aboutPanel');
+    const { talmudSite } = await import('../../talmud/site');
+    const div = document.createElement('div');
+    div.innerHTML = aboutHtml(talmudSite, []);
+    expect(div.textContent).toContain(talmudSite.name);
+    expect(div.textContent).not.toContain('Torahmap');
+    expect([...div.querySelectorAll('.credit-source')].map((s) => s.textContent)).toEqual(
+      talmudSite.credits.map((c) => c.source),
+    );
   });
 
   it('opens every source link in a new tab, safely', async () => {

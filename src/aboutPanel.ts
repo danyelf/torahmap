@@ -1,7 +1,7 @@
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
 import { CONTROL, panelHtml } from './panel.ts';
-import { SITE_NAME } from '@torahmap/site';
+import type { Site } from './app/text.ts';
 
 // GitHub's Octicons (MIT): mark-github and mail.
 const icon = (path: string): string =>
@@ -15,6 +15,7 @@ const EMAIL_ICON = icon(
 
 /** About & settings: one scrolling panel, settings first because they are what a returning reader wants. */
 export function aboutHtml(
+  site: Site,
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
 ): string {
   return panelHtml(
@@ -24,8 +25,8 @@ export function aboutHtml(
       <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
     </section>
     <section class="about-section">
-      <h3 class="panel-section-heading">${SITE_NAME}</h3>
-      <p>An interactive visualization of the entire Tanakh (Hebrew Bible). Every verse has a fixed position.</p>
+      <h3 class="panel-section-heading">${site.name}</h3>
+      ${site.aboutHtml}
       <p class="byline">
         By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a>
         <a class="byline-icon" href="https://github.com/danyelf/torahmap" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">${GITHUB_ICON}</a>
@@ -47,7 +48,7 @@ export function aboutHtml(
     </section>
     <section class="about-section">
       <h3 class="panel-section-heading">Sources and credits</h3>
-      ${renderCreditsHtml(overlays)}
+      ${renderCreditsHtml(site.credits, overlays)}
     </section>`,
   );
 }

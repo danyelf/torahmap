@@ -1,6 +1,9 @@
 // What a text (the Tanakh, the Talmud) hands the app shell, and what the shell hands back.
 
+import type { UrlState } from '@torahmap/link';
+import type { LinkDescription } from '@torahmap/site';
 import type { CameraPosition, Story, StoryStop } from '@torahmap/stories';
+import type { Credit } from '../credits.ts';
 import type { Camera, ScreenPoint, Viewport } from '../camera.ts';
 import type { Loaded } from '../dataFiles.ts';
 import type { ItemIndex } from '../items.ts';
@@ -10,7 +13,19 @@ import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { PopupText } from '../sidebar.ts';
 import type { MapItem, VerseColor } from '../types.ts';
 
+/** What a text's site calls itself and its links. */
+export interface Site {
+  name: string;
+  /** What the map is, as the About panel's opening paragraph. */
+  aboutHtml: string;
+  /** What the map itself rests on, credited above each tool's sources. */
+  credits: readonly Credit[];
+  /** What a link is called in a tab. */
+  describe(link: UrlState): LinkDescription;
+}
+
 export interface MapText<I extends MapItem, S = unknown> {
+  site: Site;
   /** Downloaded before the first frame. */
   firstFiles: string[];
   /** The file whose arrival and download speed load timing reports. */

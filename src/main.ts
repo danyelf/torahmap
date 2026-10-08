@@ -1,6 +1,6 @@
 // The app shell: the map, its panels, story, popup and links, for whichever text it is given.
 
-import type { MapText } from './app/text.ts';
+import type { MapText, Site } from './app/text.ts';
 import { SEARCH_BOX_ID } from './app/search.ts';
 import { mapPoint } from './mapPoint.ts';
 import {
@@ -135,9 +135,9 @@ const PHONE_STORY_FOCUS = 0.4;
  * it, so it can never name a view the address does not hold — a write
  * suppressed by `applyingExternalState` leaves both unchanged.
  */
-function showTitle(): void {
-  // Shortcut: the tab title and the link's overlay keys are the Tanakh's on every text.
-  const title = tabTitle(parseUrlState(overlayParamSpecs), __LIVE__ ? null : __GIT_BRANCH__);
+function showTitle(site: Site): void {
+  // Shortcut: the link's overlay keys are the Tanakh's on every text.
+  const title = tabTitle(site, parseUrlState(overlayParamSpecs), __LIVE__ ? null : __GIT_BRANCH__);
   if (document.title !== title) document.title = title;
 }
 
@@ -148,7 +148,7 @@ function showCannotDraw(): void {
 
 export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
-  showTitle();
+  showTitle(source.site);
 
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
@@ -543,13 +543,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
-      droppedMenu.innerHTML = menuHtml({ ...place, title: story.data.title });
+      droppedMenu.innerHTML = menuHtml(source.site.name, { ...place, title: story.data.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
-      // Shortcut: the About panel is the Tanakh's on every text.
-      aboutPanel.innerHTML = aboutHtml(allOverlays);
+      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays);
       bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
@@ -822,7 +821,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       explore: buildCurrentUrlState,
     });
     updateUrl(next, pushes(parseUrlState(), next, push));
-    showTitle();
+    showTitle(source.site);
   }
 
   // For a write asked every frame, as a story scroll does. It asks for no history
@@ -1580,7 +1579,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     applyingExternalState(() => applyViewState(next));
     // The link moved the camera, not the reader.
     markViewSettled();
-    showTitle();
+    showTitle(source.site);
   }
 
   /**
