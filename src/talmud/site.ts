@@ -22,4 +22,13 @@ export const talmudSite: Site = {
     const segment = link.square ? parseTalmudId(link.square) : null;
     return viewTitle(NAME, segment && talmudRef(segment), link);
   },
+  page: {
+    tagline: 'A map of the Babylonian Talmud.',
+    url: 'https://torahmap.org/talmud/',
+    noScript:
+      'Talmud Map lays out the Babylonian Talmud as colored squares, one for each segment, each in a fixed place.',
+    noWebGl:
+      'Talmud Map lays out the Babylonian Talmud as colored squares, one for each segment, each in a fixed place.',
+    textUrl: 'https://www.sefaria.org/texts/Talmud',
+  },
 };

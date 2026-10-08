@@ -140,8 +140,10 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 
 - `src/` — application source, plus `__tests__/` for the test suite. Includes
   a `scrollytelling/` mode, `app/` (what a text gives the app
-  shell), `tanakh/` and `talmud/` (the two texts, each with its own search; the Talmud's page,
-  `talmud/index.html`, is served at `/talmud/` by the dev server only), `styles/`, the
+  shell), `tanakh/` and `talmud/` (the two texts, each with its own search and
+  site; `index.html` is every text's page, filled from its site by
+  `vite.config.ts`, and the dev server alone serves the Talmud's, at
+  `/talmud/`), `styles/`, the
   `worker/` that serves the deployed site, and the `telemetry/` it records
   through.
 - `packages/` — shared code, kept free of the page so the Worker can import

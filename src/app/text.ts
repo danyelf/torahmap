@@ -24,6 +24,22 @@ export interface Site {
   credits: readonly Credit[];
   /** What a link is called in a tab. */
   title(link: UrlState): string;
+  page: SitePage;
+}
+
+/** What the text's page says before the map runs, and to link previews; plain text throughout. */
+export interface SitePage {
+  tagline: string;
+  /** The page's address once deployed. */
+  url: string;
+  /** The link preview's picture, 1200×630. */
+  image?: { url: string; alt: string };
+  /** What the map is, to a browser that runs no script. */
+  noScript: string;
+  /** What the map is, ahead of why this browser cannot draw it. */
+  noWebGl: string;
+  /** Where the text can be read meanwhile. */
+  textUrl: string;
 }
 
 export interface MapText<I extends MapItem, S = unknown> {

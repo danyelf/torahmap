@@ -11,11 +11,6 @@ const SEPARATOR = ' · ';
 // torahmap.org's list; a preview build that lists drafts can open another story.
 const LISTED = listedStories(STORIES, false);
 
-/** Fills index.html's %SITE_NAME%/%TAGLINE% placeholders; the Vite build runs it on the page. */
-export function fillSiteTags(html: string): string {
-  return html.replace(/%SITE_NAME%/g, SITE_NAME).replace(/%TAGLINE%/g, TAGLINE);
-}
-
 export interface LinkDescription {
   title: string;
   description: string;
