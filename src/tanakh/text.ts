@@ -3,7 +3,7 @@
 import { computeLayout, getLayoutBounds } from '../layout.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from '../labels.ts';
 import { createMapTitle, updateMapTitlePosition } from '../mapTitle.ts';
-import { STRUCTURE_FILE, TEXTS_FILE, structureFrom, textsFrom } from '../verseTexts.ts';
+import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from '../verseTexts.ts';
 import { initBookData } from '../constants/books.ts';
 import { createCamera } from '../camera.ts';
 import { getDefaultColor } from '../itemColoring.ts';
@@ -48,7 +48,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
 
       popupFile: () => TEXTS_FILE,
 
-      popupText: (verse, loaded, overlay) => popupText(verse, textsFrom(loaded), overlay),
+      popupText,
 
       overlays: getAllOverlays(),
 

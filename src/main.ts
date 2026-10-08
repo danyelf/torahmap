@@ -852,16 +852,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const file = verse && text.popupFile(verse);
     if (file) fetchPopupFile(file);
     const tools = toolsNow();
-    updateSidebar(
-      sidebarElements,
-      verse && { item: verse, text: text.popupText(verse, loaded, tools.overlay) },
-      {
-        textsNotice: file ? noticeFor([file]) : null,
-        wordsClickable: dataFor(searchTool, loaded) !== null,
-        ...tools,
-        pinned: isPinned,
-      },
-    );
+    updateSidebar(sidebarElements, verse, (item) => text.popupText(item, loaded, tools.overlay), {
+      textsNotice: file ? noticeFor([file]) : null,
+      wordsClickable: dataFor(searchTool, loaded) !== null,
+      ...tools,
+      pinned: isPinned,
+    });
   }
 
   /**

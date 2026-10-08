@@ -1,47 +1,30 @@
 // What the Tanakh's popup says of a verse.
 
 import { verseRef } from '@torahmap/link';
-import type { TanakhOverlay, TanakhTool } from '../overlays/index.ts';
+import type { Loaded } from '../dataFiles.ts';
+import type { TanakhTool } from '../overlays/index.ts';
 import { sefariaUrl } from '../sefaria.ts';
 import type { PopupText } from '../sidebar.ts';
 import type { TanakhLayout } from '../types.ts';
-import { getVerseText, type VerseTexts } from '../verseTexts.ts';
+import { getVerseText, textsFrom } from '../verseTexts.ts';
 
-/**
- * Build the Sefaria URL for a verse.
- *
- * If the current overlay has an opinion (e.g. commentary's selected
- * category), opens Sefaria to that connection type. Otherwise opens to all
- * connections (?with=all).
- */
-export function getSefariaUrl(
-  book: string,
-  chapter: number,
-  verse: number,
-  currentOverlay: TanakhOverlay | null = null,
-  overlaySettings: unknown = undefined,
-): string {
-  const param = currentOverlay?.getSefariaConnectionParam?.(overlaySettings) ?? 'all';
-  return `${sefariaUrl(book, [chapter, verse])}?with=${encodeURIComponent(param)}`;
+/** Opens Sefaria to the overlay's connection type, or to all of them. */
+export function getSefariaUrl(verse: TanakhLayout, overlay: TanakhTool | null): string {
+  const param = overlay?.tool.getSefariaConnectionParam?.(overlay.settings) ?? 'all';
+  return `${sefariaUrl(verse.book, [verse.chapter, verse.verse])}?with=${encodeURIComponent(param)}`;
 }
 
-/** `texts` is null until the texts file is in. */
 export function popupText(
   verse: TanakhLayout,
-  texts: VerseTexts | null,
+  loaded: Loaded,
   overlay: TanakhTool | null,
 ): PopupText {
+  const texts = textsFrom(loaded);
   const text = texts && getVerseText(texts, verse.book, verse.chapter, verse.verse);
   return {
     ref: verseRef(verse),
     hebrew: text?.he ?? '',
     english: text?.en ?? '',
-    link: getSefariaUrl(
-      verse.book,
-      verse.chapter,
-      verse.verse,
-      overlay?.tool ?? null,
-      overlay?.settings,
-    ),
+    link: getSefariaUrl(verse, overlay),
   };
 }

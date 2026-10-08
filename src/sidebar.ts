@@ -11,7 +11,7 @@ import { combineMarks } from './verseMarks.ts';
 export interface WordClick<I extends MapItem = MapItem> {
   /** The word exactly as displayed, points and all. */
   text: string;
-  /** Its position among the verse's words. */
+  /** Its position among the square's words. */
   index: number;
   /** The square's Hebrew, the text `index` counts in. */
   hebrew: string;
@@ -37,9 +37,9 @@ function infoLine(line: HTMLElement | string): HTMLElement {
 let wordClickHandler: ((click: WordClick) => void) | null = null;
 
 /**
- * Listen for clicks on words in the verse popup.
+ * Listen for clicks on words in the popup.
  *
- * The sidebar reports which word was clicked and leaves the meaning of that to
+ * The popup reports which word was clicked and leaves the meaning of that to
  * the caller, so that the Hebrew stays clickable whatever overlay is active.
  */
 export function setWordClickHandler<I extends MapItem>(
@@ -49,13 +49,16 @@ export function setWordClickHandler<I extends MapItem>(
   wordClickHandler = handler as ((click: WordClick) => void) | null;
 }
 
-/** One listener on the container, so re-rendering the verse cannot pile them up. */
-function attachWordClicks(container: HTMLElement, text: string, item: MapItem): void {
+/** One listener on the container, so drawing the popup again cannot pile them up. */
+function attachWordClicks(
+  container: HTMLElement,
+  text: string,
+  item: MapItem,
+  heard: (click: WordClick) => void,
+): void {
   const words = verseWords(text);
 
   container.onclick = (event) => {
-    if (!wordClickHandler) return;
-
     const span = (event.target as HTMLElement)?.closest?.('.verse-word');
     if (!(span instanceof HTMLElement)) return;
 
@@ -63,7 +66,7 @@ function attachWordClicks(container: HTMLElement, text: string, item: MapItem): 
     const word = words[index];
     if (!word) return;
 
-    wordClickHandler({
+    heard({
       text: word.word,
       index,
       hebrew: text,
@@ -100,7 +103,7 @@ export function getSidebarElements(): SidebarElements {
   };
 }
 
-/** What a square's popup says, from its text. The Hebrew and English are empty until its file is in. */
+/** What a square's popup says, from its text. The Hebrew and English are empty while its file is not in, or does not hold it. */
 export interface PopupText {
   ref: string;
   hebrew: string;
@@ -112,34 +115,38 @@ export interface PopupText {
 export interface PopupView<I extends MapItem> {
   /** Shown while the square's file is not in. */
   textsNotice: Node | null;
-  /** Whether a Hebrew word can be clicked: only once search has its data, and only while something listens. */
+  /** Whether search has its data, so a clicked word has a search to join. */
   wordsClickable: boolean;
   overlay: ToolOnMap<I> | null;
   search: ToolOnMap<I> | null;
   pinned: boolean;
 }
 
+/** Draw `item`'s popup, or hide it for null; `say` is the text's popupText. */
 export function updateSidebar<I extends MapItem>(
   elements: SidebarElements,
-  shown: { item: I; text: PopupText } | null,
+  item: I | null,
+  say: (item: I) => PopupText,
   view: PopupView<I>,
 ): void {
   const { sidebar, ref, overlayInfo, hebrew, notice, english, link } = elements;
   const { textsNotice, search, pinned: isPinned } = view;
-  const wordsClickable = view.wordsClickable && wordClickHandler !== null;
+  // Words are clickable only while something listens for them.
+  const heard = view.wordsClickable ? wordClickHandler : null;
   const currentOverlay = view.overlay?.tool ?? null;
   const overlaySettings = view.overlay?.settings;
   const overlayData = view.overlay?.data;
 
   if (!sidebar) return;
 
-  if (!shown) {
+  if (!item) {
     sidebar.classList.remove('visible');
     sidebar.classList.remove('pinned');
     return;
   }
 
-  const { item: verse, text: said } = shown;
+  const verse = item;
+  const said = say(item);
   const text = said.hebrew || said.english ? { he: said.hebrew, en: said.english } : null;
 
   if (ref) {
@@ -180,11 +187,11 @@ export function updateSidebar<I extends MapItem>(
       container.replaceChildren();
     } else {
       const fragment = marked(text.he, HEBREW) ?? textFragment(text.he);
-      if (wordsClickable) {
+      if (heard) {
         // Whatever the overlay produced, words are wrapped afterwards, so a click
         // finds a word whether or not anything is highlighting the text.
         container.replaceChildren(wrapWordsInFragment(fragment, text.he));
-        attachWordClicks(container, text.he, verse);
+        attachWordClicks(container, text.he, verse, heard);
       } else {
         container.replaceChildren(fragment);
       }

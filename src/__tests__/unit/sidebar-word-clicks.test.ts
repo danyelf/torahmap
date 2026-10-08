@@ -4,7 +4,7 @@
 // hit. It does not decide what the click means - that belongs to whatever is
 // listening.
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { getSidebarElements, setWordClickHandler } from '../../sidebar';
 import { showVerse } from '../helpers/tanakhPopup';
 import { createVerse, testOverlay } from '../helpers/fixtures';
@@ -31,7 +31,9 @@ beforeEach(() => {
   setWordClickHandler(() => {});
 });
 
-describe('words in the verse popup', () => {
+afterEach(() => setWordClickHandler(null));
+
+describe('words in the popup', () => {
   it('renders one clickable span per word', () => {
     const elements = getSidebarElements();
     showVerse(elements, createVerse({ book: 'Genesis', chapter: 1, verse: 2 }), {
