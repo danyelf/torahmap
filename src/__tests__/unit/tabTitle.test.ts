@@ -27,20 +27,20 @@ describe('tabTitle', () => {
 
   it('names a pinned square in the words of its own text', () => {
     expect(tabTitle(talmudSite, readLink('?at=Bava.Kamma.2a.1', talmudText.link), null)).toBe(
-      `Bava Kamma 2a:1 · ${talmudSite.name}`,
+      `Bava Kamma 2a:1 · ${talmudSite.page.name}`,
     );
   });
 
   it('names the search on either text', () => {
     expect(tabTitle(talmudSite, readLink('?search=light', talmudText.link), null)).toBe(
       tabTitle(tanakhSite, readLink('?search=light', LINK_KEYS), null).replace(
-        tanakhSite.name,
-        talmudSite.name,
+        tanakhSite.page.name,
+        talmudSite.page.name,
       ),
     );
   });
 
   it('is the site’s name alone with nothing pinned', () => {
-    expect(tabTitle(talmudSite, readLink('', talmudText.link), null)).toBe(talmudSite.name);
+    expect(tabTitle(talmudSite, readLink('', talmudText.link), null)).toBe(talmudSite.page.name);
   });
 });

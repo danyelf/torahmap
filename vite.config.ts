@@ -1,8 +1,10 @@
 import { defineConfig, type Plugin } from 'vite';
 import { execSync } from 'child_process';
+import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
-import { fillSiteTags } from '@torahmap/site';
+import { fillPage } from './src/app/page.ts';
+import { TALMUD_PATH, pageAt } from './src/pages.ts';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -17,24 +19,46 @@ function getGitBranch(): string {
   }
 }
 
-// index.html names and describes the site in the words the tab title and link previews use.
-function sitePlugin(): Plugin {
+// index.html is every text's page, filled from its copy by address (src/pages.ts).
+// Runs first, so Vite sees the filled-in entry script.
+function pagePlugin(): Plugin {
   return {
-    name: 'site-name',
-    transformIndexHtml: fillSiteTags,
+    name: 'page',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html, { path }) => {
+        const { copy, entry } = pageAt(path);
+        return fillPage(html, copy, entry);
+      },
+    },
   };
 }
 
-// The dev server serves the Talmud at /talmud/; /talmud, without the slash, goes there too.
+// The dev server serves the Talmud's page from index.html; /talmud, without the slash, goes there too.
 function talmudPlugin(): Plugin {
   return {
     name: 'talmud-address',
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
+      server.middlewares.use(async (req, res, next) => {
         const [path, query] = (req.url ?? '').split('?');
-        if (path !== '/talmud') return next();
-        res.writeHead(302, { Location: `/talmud/${query === undefined ? '' : `?${query}`}` });
-        res.end();
+        if (`${path}/` === TALMUD_PATH) {
+          res.writeHead(302, {
+            Location: `${TALMUD_PATH}${query === undefined ? '' : `?${query}`}`,
+          });
+          res.end();
+          return;
+        }
+        if (pageAt(path).path !== TALMUD_PATH) return next();
+        try {
+          const template = await readFile(resolve(__dirname, 'index.html'), 'utf8');
+          const page = `${TALMUD_PATH}index.html`;
+          const html = await server.transformIndexHtml(page, template, req.originalUrl);
+          res.setHeader('Content-Type', 'text/html');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.end(html);
+        } catch (error) {
+          next(error);
+        }
       });
     },
   };
@@ -43,7 +67,7 @@ function talmudPlugin(): Plugin {
 export default defineConfig(({ command }) => {
   const branch = getGitBranch();
   return {
-    plugins: [storiesPlugin(), sitePlugin(), talmudPlugin()],
+    plugins: [storiesPlugin(), pagePlugin(), talmudPlugin()],
     // Declared in src/env.d.ts.
     define: {
       __GIT_BRANCH__: JSON.stringify(branch),

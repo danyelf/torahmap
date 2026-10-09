@@ -3,23 +3,22 @@
 import { viewTitle } from '@torahmap/site';
 import type { Site } from '../app/text.ts';
 import { parseTalmudId, talmudRef } from './layout.ts';
-
-const NAME = 'Talmud Map';
+import { SEFARIA_TALMUD, TALMUD_PAGE } from './page.ts';
 
 export const talmudSite: Site = {
-  name: NAME,
+  page: TALMUD_PAGE,
   squareName: 'segment',
   aboutHtml:
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [
     {
       source: 'Wikisource Talmud Bavli',
-      url: 'https://www.sefaria.org/texts/Talmud',
+      url: SEFARIA_TALMUD,
       note: 'The Hebrew and Aramaic text, from Hebrew Wikisource, downloaded via Sefaria.',
     },
   ],
   title(link) {
     const segment = link.square ? parseTalmudId(link.square) : null;
-    return viewTitle(NAME, segment && talmudRef(segment), link);
+    return viewTitle(TALMUD_PAGE.name, segment && talmudRef(segment), link);
   },
 };

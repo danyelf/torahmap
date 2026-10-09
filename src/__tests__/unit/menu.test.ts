@@ -38,7 +38,7 @@ describe('menuHtml', () => {
   it("is headed with the site's name", () => {
     const div = document.createElement('div');
     div.innerHTML = menuHtml(talmudSite, { number: 1, total: 2, title: 'x' });
-    expect(div.firstElementChild?.textContent).toBe(talmudSite.name);
+    expect(div.firstElementChild?.textContent).toBe(talmudSite.page.name);
   });
 
   it('sets the two actions apart from the tools', () => {
