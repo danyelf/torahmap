@@ -4,13 +4,9 @@ import { initBookData } from '../../constants/books';
 import { cameraToFit } from '../../camera';
 import { SECTION_LABEL_REACH } from '../../labels';
 import type { TanakhLayout } from '../../types';
-import { createVerse } from '../helpers/fixtures';
+import { createStoryStop as stop, createVerse } from '../helpers/fixtures';
 import { indexItems } from '../../items';
 import type { StoryStop } from '@torahmap/stories';
-
-function stop(fields: Partial<StoryStop> = {}): StoryStop {
-  return { id: 's', text: 'Text.', camera: 'initial', overlay: null, ...fields };
-}
 
 describe('resolveStops with a pinned verse', () => {
   const verses = [1, 2, 3].map((verse) => createVerse({ verse, x: verse * 10 }));

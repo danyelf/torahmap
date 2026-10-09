@@ -5,22 +5,20 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = resolve(__dirname, '../..');
 
-/** The texts' own code: their folders, and the Tanakh's files still outside its folder. */
-const TEXT_CODE = [
+/** Each text's own code: its folder and page, and for the Tanakh its overlays and layout. */
+const TANAKH = [
   'tanakh/',
-  'talmud/',
-  'overlays/index.ts',
-  'overlays/commentary.ts',
-  'overlays/haftarah.ts',
-  'overlays/haftarah/',
-  'overlays/trop.ts',
-  'overlays/trop/',
-  'overlays/verse-length.ts',
+  'main-tanakh.ts',
+  'overlays/',
   'layout.ts',
   'labels.ts',
+  'mapTitle.ts',
   'constants/books.ts',
   'verseTexts.ts',
 ];
+const TALMUD = ['talmud/', 'main-talmud.ts'];
+/** What any text's overlays are built on. */
+const OVERLAY_BASE = ['overlays/types.ts', 'overlays/settings.ts', 'overlays/prebuild.ts'];
 
 // `from './x'`, `import './x'` and `import('./x')`.
 const IMPORT = /(?:\bfrom|\bimport)\s*\(?\s*'(\.[^']+)'/g;
@@ -47,10 +45,25 @@ function reached(start: string): Set<string> {
   return seen;
 }
 
-describe('the app shell', () => {
-  it('reaches no text’s own code', () => {
-    const files = [...reached(resolve(SRC, 'main.ts'))].map((file) => relative(SRC, file));
-    expect(files.length).toBeGreaterThan(1);
-    expect(files.filter((file) => TEXT_CODE.some((code) => file.startsWith(code)))).toEqual([]);
+/** The files `start` reaches that are one of `texts`' own code. */
+function reachedIn(start: string, ...texts: string[][]): string[] {
+  const files = [...reached(resolve(SRC, start))].map((file) => relative(SRC, file));
+  expect(files.length).toBeGreaterThan(1);
+  return files.filter(
+    (file) => !OVERLAY_BASE.includes(file) && texts.flat().some((code) => file.startsWith(code)),
+  );
+}
+
+describe('the code each page runs', () => {
+  it('in the app shell, is no text’s own', () => {
+    expect(reachedIn('main.ts', TANAKH, TALMUD)).toEqual([]);
+  });
+
+  it('for the Talmud, is none of the Tanakh’s', () => {
+    expect(reachedIn('main-talmud.ts', TANAKH)).toEqual([]);
+  });
+
+  it('for the Tanakh, is none of the Talmud’s', () => {
+    expect(reachedIn('main-tanakh.ts', TALMUD)).toEqual([]);
   });
 });

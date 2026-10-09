@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderStoryPanel, stopLabel } from '../storyPanel';
-import type { StoryStop } from '@torahmap/stories';
-
-function stop(fields: Partial<StoryStop> = {}): StoryStop {
-  return { id: 's', text: 'Text.', camera: 'initial', overlay: null, ...fields };
-}
+import { createStoryStop as stop } from '../../__tests__/helpers/fixtures';
 
 describe('renderStoryPanel', () => {
   it('shows a heading for a titled stop', () => {
