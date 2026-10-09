@@ -1,8 +1,9 @@
 // What a Cloudflare Worker (or anything else outside the map) can know about an
 // overlay without pulling in its drawing code, which imports CSS and touches
-// the DOM: its id, name, description and the URL parameters it owns.
+// the DOM: its id, name, description and the URL parameters it owns; and the
+// search's, which together make a Tanakh link's keys.
 
-import type { UrlParamSpec, OverlayParamSpecLookup } from '@torahmap/link';
+import type { LinkKeys, UrlParamSpec, OverlayParamSpecLookup } from '@torahmap/link';
 
 export interface OverlayEntry<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> {
   readonly id: string;
@@ -70,6 +71,24 @@ const BY_ID: ReadonlyMap<string, OverlayEntry> = new Map(OVERLAYS.map((e) => [e.
 
 /** The link keys an overlay declares, by id; undefined for an unknown id. */
 export const overlayParamSpecs: OverlayParamSpecLookup = (id) => BY_ID.get(id)?.urlParams;
+
+/** The search's keys, read whatever overlay is on; no overlay may claim them. */
+export const SEARCH_URL_PARAMS = [
+  { key: 'search', kind: 'text' },
+  // Positional across the terms in `search`, one letter each, and an empty
+  // entry for a term still on its default (see MODE_LETTERS in src/tanakh/search/terms.ts).
+  { key: 'mode', kind: 'token' },
+  { key: 'm', kind: 'names' },
+] as const satisfies readonly UrlParamSpec[];
+
+export const SEARCH_KEYS: ReadonlySet<string> = new Set(SEARCH_URL_PARAMS.map((p) => p.key));
+
+/** The keys of a Tanakh link, which the map and the Worker read alike. */
+export const LINK_KEYS: LinkKeys = {
+  square: 'verse',
+  search: SEARCH_URL_PARAMS,
+  overlayParams: overlayParamSpecs,
+};
 
 /** An overlay's display name, by id; undefined for an unknown id. */
 export const overlayName = (id: string): string | undefined => BY_ID.get(id)?.name;

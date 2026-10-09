@@ -12,6 +12,7 @@ import {
 } from '@torahmap/stories';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { writeLink, parseVerseId } from '@torahmap/link';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../tanakh/search/index';
 import { settingsFromLink } from '../../overlays/settings';
@@ -62,8 +63,8 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   );
 
   it('has an id a link can carry', () => {
-    setLink(writeLink({ story: id, overlayParams: {} }));
-    expect(parseUrlState().story).toBe(id);
+    setLink(writeLink({ story: id, overlayParams: {} }, LINK_KEYS));
+    expect(parseUrlState(LINK_KEYS).story).toBe(id);
   });
 
   it('has a title and a description', () => {

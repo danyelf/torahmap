@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  SEARCH_KEYS,
   RESERVED_KEYS,
   readLink,
   writeLink,
@@ -10,6 +9,8 @@ import {
 import {
   overlayName,
   overlayParamSpecs,
+  LINK_KEYS,
+  SEARCH_KEYS,
   COMMENTARY,
   OVERLAYS,
   type OverlayEntry,
@@ -32,7 +33,9 @@ describe('the overlay catalog', () => {
     const keys = (entry.urlParams ?? []).map((spec) => spec.key);
     expect(new Set(keys).size).toBe(keys.length);
     for (const key of keys) {
-      expect(SEARCH_KEYS.has(key) || RESERVED_KEYS.has(key)).toBe(false);
+      expect(SEARCH_KEYS.has(key) || RESERVED_KEYS.has(key) || key === LINK_KEYS.square).toBe(
+        false,
+      );
     }
   });
 });
@@ -51,7 +54,7 @@ describe('each overlay’s settings survive a link', () => {
     const settings = Object.fromEntries(
       (entry.urlParams ?? []).map((spec) => [spec.key, sampleValue(spec)]),
     );
-    const link = writeLink({ overlay: entry.id, overlayParams: settings });
-    expect(readLink(link, overlayParamSpecs).overlayParams).toEqual(settings);
+    const link = writeLink({ overlay: entry.id, overlayParams: settings }, LINK_KEYS);
+    expect(readLink(link, LINK_KEYS).overlayParams).toEqual(settings);
   });
 });

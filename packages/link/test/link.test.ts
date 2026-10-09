@@ -7,111 +7,112 @@ import {
   verseId,
   parseVerseId,
   validateOverlayParams,
+  type LinkKeys,
   type UrlState,
   type UrlParamSpec,
 } from '../src/index.ts';
-import { lookup } from './sampleOverlays.ts';
+import { keys, lookup } from './sampleOverlays.ts';
 
 describe('readLink', () => {
   it('parses empty query to minimal state', () => {
-    const state = readLink('', lookup);
+    const state = readLink('', keys);
     expect(state).toEqual({
       overlayParams: {},
     });
   });
 
   it('parses a camera-only query with no overlay', () => {
-    const state = readLink('?zoom=4&x=100&y=200', lookup);
+    const state = readLink('?zoom=4&x=100&y=200', keys);
 
     expect(state.zoom).toBe(4);
     expect(state.overlay).toBeUndefined();
   });
 
   it('parses overlay parameter', () => {
-    const state = readLink('?overlay=commentary', lookup);
+    const state = readLink('?overlay=commentary', keys);
     expect(state.overlay).toBe('commentary');
   });
 
   it('parses verse parameter', () => {
-    const state = readLink('?verse=Genesis.1.1', lookup);
-    expect(state.verse).toBe('Genesis.1.1');
+    const state = readLink('?verse=Genesis.1.1', keys);
+    expect(state.square).toBe('Genesis.1.1');
   });
 
   it('parses zoom parameter within valid range', () => {
-    const state = readLink('?zoom=2.5', lookup);
+    const state = readLink('?zoom=2.5', keys);
     expect(state.zoom).toBe(2.5);
   });
 
   it('rejects zoom below minimum (0.1)', () => {
-    const state = readLink('?zoom=0.05', lookup);
+    const state = readLink('?zoom=0.05', keys);
     expect(state.zoom).toBeUndefined();
   });
 
   it('rejects zoom above maximum (10)', () => {
-    const state = readLink('?zoom=15', lookup);
+    const state = readLink('?zoom=15', keys);
     expect(state.zoom).toBeUndefined();
   });
 
   it('accepts zoom at boundary (0.1)', () => {
-    const state = readLink('?zoom=0.1', lookup);
+    const state = readLink('?zoom=0.1', keys);
     expect(state.zoom).toBe(0.1);
   });
 
   it('accepts zoom at boundary (10)', () => {
-    const state = readLink('?zoom=10', lookup);
+    const state = readLink('?zoom=10', keys);
     expect(state.zoom).toBe(10);
   });
 
   it('rejects non-numeric zoom', () => {
-    const state = readLink('?zoom=abc', lookup);
+    const state = readLink('?zoom=abc', keys);
     expect(state.zoom).toBeUndefined();
   });
 
   it('parses x and y pan positions', () => {
-    const state = readLink('?x=100.5&y=-50.25', lookup);
+    const state = readLink('?x=100.5&y=-50.25', keys);
     expect(state.x).toBe(100.5);
     expect(state.y).toBe(-50.25);
   });
 
   it('rejects non-numeric x and y', () => {
-    const state = readLink('?x=abc&y=def', lookup);
+    const state = readLink('?x=abc&y=def', keys);
     expect(state.x).toBeUndefined();
     expect(state.y).toBeUndefined();
   });
 
   it('parses trop overlay parameter', () => {
-    const state = readLink('?overlay=trop&trop=etnachta', lookup);
+    const state = readLink('?overlay=trop&trop=etnachta', keys);
     expect(state.overlay).toBe('trop');
     expect(state.overlayParams.trop).toBe('etnachta');
   });
 
   it('parses category overlay parameter', () => {
-    const state = readLink('?overlay=commentary&category=Midrash', lookup);
+    const state = readLink('?overlay=commentary&category=Midrash', keys);
     expect(state.overlay).toBe('commentary');
     expect(state.overlayParams.category).toBe('Midrash');
   });
 
   it('parses search query parameter', () => {
-    const state = readLink('?search=בראשית', lookup);
+    const state = readLink('?search=בראשית', keys);
     expect(state.overlay).toBeUndefined();
     expect(state.searchParams?.search).toBe('בראשית');
   });
 
   it('parses search query with special characters', () => {
-    const state = readLink('?search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', lookup);
+    const state = readLink('?search=%D7%91%D7%A8%D7%90%D7%A9%D7%99%D7%AA', keys);
     expect(state.searchParams?.search).toBe('בראשית');
   });
 
   it('parses search query with spaces', () => {
-    const state = readLink('?search=In%20the%20beginning', lookup);
+    const state = readLink('?search=In%20the%20beginning', keys);
     expect(state.searchParams?.search).toBe('In the beginning');
   });
 
   it('parses complete state with all parameters', () => {
-    const state = readLink('?overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud', lookup);
+    const state = readLink('?overlay=commentary&verse=Exodus.20.1&zoom=3&category=Talmud', keys);
     expect(state).toEqual({
       overlay: 'commentary',
-      verse: 'Exodus.20.1',
+      square: 'Exodus.20.1',
       zoom: 3,
       overlayParams: {
         category: 'Talmud',
@@ -120,74 +121,74 @@ describe('readLink', () => {
   });
 
   it('handles malformed query with missing values', () => {
-    const state = readLink('?overlay=&verse=&zoom=', lookup);
+    const state = readLink('?overlay=&verse=&zoom=', keys);
     // Empty strings should be ignored
     expect(state.overlay).toBeUndefined();
-    expect(state.verse).toBeUndefined();
+    expect(state.square).toBeUndefined();
     expect(state.zoom).toBeUndefined();
   });
 
   it('ignores unknown parameters', () => {
-    const state = readLink('?overlay=trop&unknown=value&another=param', lookup);
+    const state = readLink('?overlay=trop&unknown=value&another=param', keys);
     expect(state.overlay).toBe('trop');
     expect((state as any).unknown).toBeUndefined();
   });
 
   it('handles negative zoom (invalid)', () => {
-    const state = readLink('?zoom=-1', lookup);
+    const state = readLink('?zoom=-1', keys);
     expect(state.zoom).toBeUndefined();
   });
 
   it('handles zero zoom (invalid)', () => {
-    const state = readLink('?zoom=0', lookup);
+    const state = readLink('?zoom=0', keys);
     expect(state.zoom).toBeUndefined();
   });
 
   it('handles negative pan positions', () => {
-    const state = readLink('?x=-100&y=-200', lookup);
+    const state = readLink('?x=-100&y=-200', keys);
     expect(state.x).toBe(-100);
     expect(state.y).toBe(-200);
   });
 
   it('handles verse with dots in book name', () => {
-    const state = readLink('?verse=I.Samuel.1.1', lookup);
-    expect(state.verse).toBe('I.Samuel.1.1');
+    const state = readLink('?verse=I.Samuel.1.1', keys);
+    expect(state.square).toBe('I.Samuel.1.1');
   });
 });
 
 describe('a tracking-only link opens the same as a bare address', () => {
   it('a bare address names no view', () => {
-    expect(linkNamesAView(readLink(''))).toBe(false);
+    expect(linkNamesAView(readLink('', keys))).toBe(false);
   });
 
   it('utm_source and fbclid, the parameters chat apps and Facebook add to a shared link, name no view either', () => {
-    expect(linkNamesAView(readLink('?utm_source=x&fbclid=abc'))).toBe(false);
+    expect(linkNamesAView(readLink('?utm_source=x&fbclid=abc', keys))).toBe(false);
   });
 
   it('a real view field names a view', () => {
-    expect(linkNamesAView(readLink('?verse=Genesis.1.1'))).toBe(true);
+    expect(linkNamesAView(readLink('?verse=Genesis.1.1', keys))).toBe(true);
   });
 
   it('an explicit default zoom still names a view', () => {
-    expect(linkNamesAView(readLink('?zoom=1'))).toBe(true);
+    expect(linkNamesAView(readLink('?zoom=1', keys))).toBe(true);
   });
 });
 
 describe('linkKind', () => {
   it('a story, or a stop alone, is a stop', () => {
-    expect(linkKind(readLink('?story=tour&stop=intro'))).toBe('stop');
-    expect(linkKind(readLink('?story=tour'))).toBe('stop');
-    expect(linkKind(readLink('?stop=intro'))).toBe('stop');
+    expect(linkKind(readLink('?story=tour&stop=intro', keys))).toBe('stop');
+    expect(linkKind(readLink('?story=tour', keys))).toBe('stop');
+    expect(linkKind(readLink('?stop=intro', keys))).toBe('stop');
   });
 
   it('any other named field is a view', () => {
-    expect(linkKind(readLink('?verse=Genesis.1.1'))).toBe('view');
-    expect(linkKind(readLink('?zoom=2'))).toBe('view');
+    expect(linkKind(readLink('?verse=Genesis.1.1', keys))).toBe('view');
+    expect(linkKind(readLink('?zoom=2', keys))).toBe('view');
   });
 
   it('a bare or tracking-only link is nothing', () => {
-    expect(linkKind(readLink(''))).toBe('nothing');
-    expect(linkKind(readLink('?utm_source=x&fbclid=abc'))).toBe('nothing');
+    expect(linkKind(readLink('', keys))).toBe('nothing');
+    expect(linkKind(readLink('?utm_source=x&fbclid=abc', keys))).toBe('nothing');
   });
 });
 
@@ -196,7 +197,7 @@ describe('writeLink', () => {
     const state: UrlState = {
       overlayParams: {},
     };
-    expect(writeLink(state)).toBe('');
+    expect(writeLink(state, keys)).toBe('');
   });
 
   it('builds query with overlay', () => {
@@ -204,15 +205,15 @@ describe('writeLink', () => {
       overlay: 'commentary',
       overlayParams: {},
     };
-    expect(writeLink(state)).toBe('?overlay=commentary');
+    expect(writeLink(state, keys)).toBe('?overlay=commentary');
   });
 
   it('builds query with verse', () => {
     const state: UrlState = {
-      verse: 'Genesis.1.1',
+      square: 'Genesis.1.1',
       overlayParams: {},
     };
-    expect(writeLink(state)).toBe('?verse=Genesis.1.1');
+    expect(writeLink(state, keys)).toBe('?verse=Genesis.1.1');
   });
 
   it('omits default zoom (1.0)', () => {
@@ -220,7 +221,7 @@ describe('writeLink', () => {
       zoom: 1.0,
       overlayParams: {},
     };
-    expect(writeLink(state)).toBe('');
+    expect(writeLink(state, keys)).toBe('');
   });
 
   it('includes non-default zoom', () => {
@@ -228,7 +229,7 @@ describe('writeLink', () => {
       zoom: 2.5,
       overlayParams: {},
     };
-    expect(writeLink(state)).toBe('?zoom=2.5');
+    expect(writeLink(state, keys)).toBe('?zoom=2.5');
   });
 
   it('rounds zoom to 2 decimal places and strips trailing zeros', () => {
@@ -236,13 +237,13 @@ describe('writeLink', () => {
       zoom: 1.234567,
       overlayParams: {},
     };
-    expect(writeLink(state)).toBe('?zoom=1.23');
+    expect(writeLink(state, keys)).toBe('?zoom=1.23');
 
     state.zoom = 2.0;
-    expect(writeLink(state)).toBe('?zoom=2');
+    expect(writeLink(state, keys)).toBe('?zoom=2');
 
     state.zoom = 2.1;
-    expect(writeLink(state)).toBe('?zoom=2.1');
+    expect(writeLink(state, keys)).toBe('?zoom=2.1');
   });
 
   it('includes pan positions when no verse is specified', () => {
@@ -251,7 +252,7 @@ describe('writeLink', () => {
       y: -50.25,
       overlayParams: {},
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).toContain('x=100.5');
     expect(query).toContain('y=-50.3'); // Rounded to 1 decimal
   });
@@ -262,19 +263,19 @@ describe('writeLink', () => {
       y: 50.567,
       overlayParams: {},
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).toContain('x=100');
     expect(query).toContain('y=50.6');
   });
 
   it('omits pan when verse is specified', () => {
     const state: UrlState = {
-      verse: 'Genesis.1.1',
+      square: 'Genesis.1.1',
       x: 100,
       y: 200,
       overlayParams: {},
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).not.toContain('x=');
     expect(query).not.toContain('y=');
     expect(query).toContain('verse=Genesis.1.1');
@@ -287,7 +288,7 @@ describe('writeLink', () => {
         trop: 'etnachta',
       },
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).toContain('overlay=trop');
     expect(query).toContain('trop=etnachta');
   });
@@ -299,7 +300,7 @@ describe('writeLink', () => {
         category: 'Midrash',
       },
     };
-    expect(writeLink(state)).toContain('category=Midrash');
+    expect(writeLink(state, keys)).toContain('category=Midrash');
   });
 
   it('omits overlay parameters with an empty value', () => {
@@ -311,22 +312,34 @@ describe('writeLink', () => {
         category: '',
       },
     };
-    expect(writeLink(state)).not.toContain('category=');
+    expect(writeLink(state, keys)).not.toContain('category=');
   });
 
-  it('refuses overlay parameters that would collide with core keys', () => {
+  it("refuses overlay parameters that would collide with the link's or the text's keys", () => {
     const state: UrlState = {
       overlay: 'commentary',
       zoom: 2,
-      overlayParams: {
-        zoom: '9',
-        verse: 'Genesis.1.1',
-      },
+      square: 'Genesis.1.1',
+      searchParams: { search: 'light' },
+      overlayParams: { zoom: '9', [keys.square]: 'Exodus.2.2', search: 'dark' },
     };
-    const query = writeLink(state);
-    expect(query).toContain('zoom=2');
-    expect(query).not.toContain('zoom=9');
-    expect(query).not.toContain('verse=');
+    const query = new URLSearchParams(writeLink(state, keys));
+    expect(query.get('zoom')).toBe('2');
+    expect(query.get(keys.square)).toBe('Genesis.1.1');
+    expect(query.get('search')).toBe('light');
+  });
+
+  it("gives an overlay none of the text's own keys, though it declares them", () => {
+    const claiming: LinkKeys = {
+      ...keys,
+      overlayParams: () => [
+        { key: keys.square, kind: 'token' },
+        { key: 'search', kind: 'text' },
+        { key: 'trop', kind: 'token' },
+      ],
+    };
+    const state = readLink('?overlay=x&verse=Genesis.1.1&search=light&trop=etnachta', claiming);
+    expect(state.overlayParams).toEqual({ trop: 'etnachta' });
   });
 
   it('includes search query', () => {
@@ -334,7 +347,7 @@ describe('writeLink', () => {
       searchParams: { search: 'בראשית' },
       overlayParams: {},
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).not.toContain('overlay=');
     expect(query).toContain('search=');
   });
@@ -344,19 +357,19 @@ describe('writeLink', () => {
       searchParams: { search: 'test & special' },
       overlayParams: {},
     };
-    expect(writeLink(state)).toContain('search=test+%26+special');
+    expect(writeLink(state, keys)).toContain('search=test+%26+special');
   });
 
   it('builds complete query with multiple parameters', () => {
     const state: UrlState = {
       overlay: 'commentary',
-      verse: 'Exodus.20.1',
+      square: 'Exodus.20.1',
       zoom: 3.5,
       overlayParams: {
         category: 'Talmud',
       },
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).toContain('overlay=commentary');
     expect(query).toContain('verse=Exodus.20.1');
     expect(query).toContain('zoom=3.5');
@@ -369,7 +382,7 @@ describe('writeLink', () => {
       y: -200,
       overlayParams: {},
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).toContain('x=-100');
     expect(query).toContain('y=-200');
   });
@@ -380,7 +393,7 @@ describe('writeLink', () => {
       y: 0,
       overlayParams: {},
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).toContain('x=0');
     expect(query).toContain('y=0');
   });
@@ -389,20 +402,20 @@ describe('writeLink', () => {
 describe('readLink and writeLink roundtrip', () => {
   it('roundtrips minimal state', () => {
     const original: UrlState = { overlayParams: {} };
-    const parsed = readLink(writeLink(original), lookup);
+    const parsed = readLink(writeLink(original, keys), keys);
     expect(parsed).toEqual(original);
   });
 
   it('roundtrips full state', () => {
     const original: UrlState = {
       overlay: 'commentary',
-      verse: 'Psalms.23.1',
+      square: 'Psalms.23.1',
       zoom: 2.5,
       overlayParams: {
         category: 'Midrash',
       },
     };
-    const parsed = readLink(writeLink(original), lookup);
+    const parsed = readLink(writeLink(original, keys), keys);
     expect(parsed).toEqual(original);
   });
 
@@ -413,7 +426,7 @@ describe('readLink and writeLink roundtrip', () => {
         trop: 'sof-pasuk',
       },
     };
-    const parsed = readLink(writeLink(original), lookup);
+    const parsed = readLink(writeLink(original, keys), keys);
     expect(parsed).toEqual(original);
   });
 
@@ -422,7 +435,7 @@ describe('readLink and writeLink roundtrip', () => {
       searchParams: { search: 'בראשית' },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(original), lookup);
+    const parsed = readLink(writeLink(original, keys), keys);
     expect(parsed).toEqual(original);
   });
 
@@ -432,33 +445,53 @@ describe('readLink and writeLink roundtrip', () => {
       y: -50.2, // Will be rounded to -50.2
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(original), lookup);
+    const parsed = readLink(writeLink(original, keys), keys);
     expect(parsed.x).toBe(100.5);
     expect(parsed.y).toBe(-50.2);
   });
 });
 
+describe("a text's own keys", () => {
+  const talmud: LinkKeys = {
+    square: 'at',
+    search: [{ key: 'search', kind: 'text' }],
+    overlayParams: lookup,
+  };
+
+  it('reads and writes the pinned square under the key its text names', () => {
+    const state = readLink('?at=Berakhot.2a.1&verse=Genesis.1.1', talmud);
+    expect(state.square).toBe('Berakhot.2a.1');
+    expect(writeLink(state, talmud)).toBe('?at=Berakhot.2a.1');
+  });
+
+  it("reads only its text's search keys", () => {
+    expect(readLink('?search=light&mode=w', talmud).searchParams).toEqual({ search: 'light' });
+  });
+});
+
 describe('a story in the link', () => {
   it('reads a story and its stop together', () => {
-    const state = readLink('?story=tour&stop=abraham_call', lookup);
+    const state = readLink('?story=tour&stop=abraham_call', keys);
     expect(state.story).toBe('tour');
     expect(state.stop).toBe('abraham_call');
   });
 
   it('writes a story and its stop together', () => {
-    expect(writeLink({ story: 'tour', stop: 'abraham_call', overlayParams: {} })).toBe(
+    expect(writeLink({ story: 'tour', stop: 'abraham_call', overlayParams: {} }, keys)).toBe(
       '?story=tour&stop=abraham_call',
     );
   });
 
   it('keeps a stop without a story', () => {
-    expect(writeLink(readLink('?stop=abraham_call&fbclid=abc'))).toBe('?stop=abraham_call');
+    expect(writeLink(readLink('?stop=abraham_call&fbclid=abc', keys), keys)).toBe(
+      '?stop=abraham_call',
+    );
   });
 
   it('writes a stop link as its stop alone, whatever else it names', () => {
-    expect(writeLink(readLink('?stop=abraham_call&verse=Genesis.1.1&overlay=trop'))).toBe(
-      '?stop=abraham_call',
-    );
+    expect(
+      writeLink(readLink('?stop=abraham_call&verse=Genesis.1.1&overlay=trop', keys), keys),
+    ).toBe('?stop=abraham_call');
   });
 });
 
@@ -610,25 +643,25 @@ describe('verseId and parseVerseId roundtrip', () => {
 
 describe('sparse and malformed queries', () => {
   it('ignores a bare word that names no parameter', () => {
-    const state = readLink('?commentary', lookup);
+    const state = readLink('?commentary', keys);
     // Should parse as empty since it's not a valid param
     expect(state).toEqual({ overlayParams: {} });
   });
 
   it('handles queries with only verse (common sharing pattern)', () => {
-    const state = readLink('?verse=Psalms.23.1', lookup);
-    expect(state.verse).toBe('Psalms.23.1');
+    const state = readLink('?verse=Psalms.23.1', keys);
+    expect(state.square).toBe('Psalms.23.1');
     expect(state.overlay).toBeUndefined();
   });
 
   it('reads a malformed zoom by its leading number', () => {
-    const state = readLink('?zoom=2.5x', lookup);
+    const state = readLink('?zoom=2.5x', keys);
     // parseFloat('2.5x') returns 2.5, which is valid
     expect(state.zoom).toBe(2.5);
   });
 
   it('accepts a category name containing a space', () => {
-    const state = readLink('?overlay=commentary&category=Modern%20Commentary', lookup);
+    const state = readLink('?overlay=commentary&category=Modern%20Commentary', keys);
     expect(state.overlayParams.category).toBe('Modern Commentary');
   });
 });
@@ -639,7 +672,7 @@ describe('special character encoding', () => {
       searchParams: { search: 'בְּרֵאשִׁית בָּרָא אֱלֹהִים' },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.searchParams?.search).toBe('בְּרֵאשִׁית בָּרָא אֱלֹהִים');
   });
 
@@ -648,7 +681,7 @@ describe('special character encoding', () => {
       searchParams: { search: 'heaven & earth' },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.searchParams?.search).toBe('heaven & earth');
   });
 
@@ -657,7 +690,7 @@ describe('special character encoding', () => {
       searchParams: { search: '"In the beginning"' },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.searchParams?.search).toBe('"In the beginning"');
   });
 
@@ -666,7 +699,7 @@ describe('special character encoding', () => {
       searchParams: { search: 'word1, word2; word3!' },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.searchParams?.search).toBe('word1, word2; word3!');
   });
 
@@ -675,7 +708,7 @@ describe('special character encoding', () => {
       searchParams: { search: 'word+with+plus' },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.searchParams?.search).toBe('word+with+plus');
   });
 
@@ -684,7 +717,7 @@ describe('special character encoding', () => {
       searchParams: { search: 'test=value' },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.searchParams?.search).toBe('test=value');
   });
 
@@ -695,7 +728,7 @@ describe('special character encoding', () => {
         category: 'Talmud/Mishnah',
       },
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.overlayParams.category).toBe('Talmud/Mishnah');
   });
 });
@@ -707,36 +740,36 @@ describe('edge cases and error handling', () => {
       searchParams: { search: longQuery },
       overlayParams: {},
     };
-    const parsed = readLink(writeLink(state), lookup);
+    const parsed = readLink(writeLink(state, keys), keys);
     expect(parsed.searchParams?.search).toBe(longQuery);
   });
 
   it('handles extreme zoom values at boundaries', () => {
-    expect(readLink('?zoom=0.1', lookup).zoom).toBe(0.1);
-    expect(readLink('?zoom=10', lookup).zoom).toBe(10);
-    expect(readLink('?zoom=0.09999', lookup).zoom).toBeUndefined();
-    expect(readLink('?zoom=10.0001', lookup).zoom).toBeUndefined();
+    expect(readLink('?zoom=0.1', keys).zoom).toBe(0.1);
+    expect(readLink('?zoom=10', keys).zoom).toBe(10);
+    expect(readLink('?zoom=0.09999', keys).zoom).toBeUndefined();
+    expect(readLink('?zoom=10.0001', keys).zoom).toBeUndefined();
   });
 
   it('handles very large pan positions', () => {
-    const state = readLink('?x=999999&y=-999999', lookup);
+    const state = readLink('?x=999999&y=-999999', keys);
     expect(state.x).toBe(999999);
     expect(state.y).toBe(-999999);
   });
 
   it('handles decimal pan positions', () => {
-    const state = readLink('?x=123.456789&y=987.654321', lookup);
+    const state = readLink('?x=123.456789&y=987.654321', keys);
     expect(state.x).toBe(123.456789);
     expect(state.y).toBe(987.654321);
   });
 
   it('handles empty overlay parameter', () => {
-    const state = readLink('?overlay=', lookup);
+    const state = readLink('?overlay=', keys);
     expect(state.overlay).toBeUndefined();
   });
 
   it('handles multiple question marks (malformed)', () => {
-    const state = readLink('?overlay=trop&trop=???', lookup);
+    const state = readLink('?overlay=trop&trop=???', keys);
     expect(state.overlayParams.trop).toBe('???');
   });
 
@@ -747,7 +780,7 @@ describe('edge cases and error handling', () => {
         overlay: 'trop',
         overlayParams: { trop },
       };
-      const parsed = readLink(writeLink(state), lookup);
+      const parsed = readLink(writeLink(state, keys), keys);
       expect(parsed.overlayParams.trop).toBe(trop);
     });
   });
@@ -782,12 +815,12 @@ describe('edge cases and error handling', () => {
   });
 
   it('handles a query with no parameters', () => {
-    const state = readLink('', lookup);
+    const state = readLink('', keys);
     expect(state).toEqual({ overlayParams: {} });
   });
 
   it('handles duplicate parameters (URLSearchParams takes first)', () => {
-    const state = readLink('?overlay=trop&overlay=search', lookup);
+    const state = readLink('?overlay=trop&overlay=search', keys);
     expect(state.overlay).toBe('trop'); // URLSearchParams.get() returns first value
   });
 });
@@ -795,46 +828,40 @@ describe('edge cases and error handling', () => {
 describe('overlay-supplied parameters', () => {
   it('reads only the keys the active overlay declares', () => {
     // "category" belongs to commentary, not to trop
-    const state = readLink('?overlay=trop&trop=etnachta&category=x', lookup);
+    const state = readLink('?overlay=trop&trop=etnachta&category=x', keys);
     expect(state.overlayParams).toEqual({ trop: 'etnachta' });
   });
 
   it('ignores keys no overlay declared', () => {
-    const state = readLink('?overlay=trop&trop=etnachta&nonsense=1', lookup);
+    const state = readLink('?overlay=trop&trop=etnachta&nonsense=1', keys);
     expect(state.overlayParams).toEqual({ trop: 'etnachta' });
   });
 
   it('reads nothing for an overlay that declares no parameters', () => {
-    const state = readLink('?overlay=text-dating&search=light', lookup);
+    const state = readLink('?overlay=text-dating&search=light', keys);
     expect(state.overlayParams).toEqual({});
   });
 
   it('reads nothing when no overlay is active', () => {
-    const state = readLink('?search=light&trop=etnachta', lookup);
-    expect(state.overlayParams).toEqual({});
-  });
-
-  it('reads nothing when given no lookup at all', () => {
-    const state = readLink('?overlay=trop&trop=etnachta');
-    expect(state.overlay).toBe('trop');
+    const state = readLink('?search=light&trop=etnachta', keys);
     expect(state.overlayParams).toEqual({});
   });
 
   it('falls back to the default when the value is outside the set the overlay allows', () => {
-    const state = readLink('?overlay=haftarah&custom=yemenite', lookup);
+    const state = readLink('?overlay=haftarah&custom=yemenite', keys);
     expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
   it('accepts every value in the set the overlay allows', () => {
     for (const custom of ['ashkenazi', 'sephardi']) {
-      const state = readLink(`?overlay=haftarah&custom=${custom}`, lookup);
+      const state = readLink(`?overlay=haftarah&custom=${custom}`, keys);
       expect(state.overlayParams.custom).toBe(custom);
     }
   });
 
   it('refuses an overlay key that collides with a core key', () => {
     const collidingLookup = () => [{ key: 'zoom', kind: 'token' } as const];
-    const state = readLink('?overlay=trop&zoom=3', collidingLookup);
+    const state = readLink('?overlay=trop&zoom=3', { ...keys, overlayParams: collidingLookup });
     expect(state.zoom).toBe(3);
     expect(state.overlayParams).toEqual({});
   });
@@ -844,7 +871,7 @@ describe('overlay-supplied parameters', () => {
       overlay: 'brand-new-overlay',
       overlayParams: { anything: 'at all', another: '7' },
     };
-    const query = writeLink(state);
+    const query = writeLink(state, keys);
     expect(query).toContain('anything=at+all');
     expect(query).toContain('another=7');
   });
@@ -879,33 +906,36 @@ describe('validateOverlayParams defaults', () => {
 
 describe('the search in a link', () => {
   it('is read whatever overlay is on', () => {
-    const state = readLink('?overlay=commentary&search=אברם&mode=w', lookup);
+    const state = readLink('?overlay=commentary&search=אברם&mode=w', keys);
     expect(state.overlay).toBe('commentary');
     expect(state.searchParams).toEqual({ search: 'אברם', mode: 'w' });
   });
 
   it('is left out of a link that does not search', () => {
-    expect(readLink('?overlay=commentary', lookup).searchParams).toBeUndefined();
+    expect(readLink('?overlay=commentary', keys).searchParams).toBeUndefined();
   });
 
   it('is written first, before the overlay it sits over', () => {
-    const query = writeLink({
-      searchParams: { search: 'אברם' },
-      overlay: 'commentary',
-      overlayParams: { category: 'Liturgy' },
-    });
+    const query = writeLink(
+      {
+        searchParams: { search: 'אברם' },
+        overlay: 'commentary',
+        overlayParams: { category: 'Liturgy' },
+      },
+      keys,
+    );
     expect(query).toBe(`?search=${encodeURIComponent('אברם')}&overlay=commentary&category=Liturgy`);
   });
 });
 
 describe('a token parameter with allowed values and a default', () => {
   it('parses the Sephardi custom', () => {
-    const state = readLink('?overlay=haftarah&custom=sephardi', lookup);
+    const state = readLink('?overlay=haftarah&custom=sephardi', keys);
     expect(state.overlayParams.custom).toBe('sephardi');
   });
 
   it('parses the Ashkenazi custom', () => {
-    const state = readLink('?overlay=haftarah&custom=ashkenazi', lookup);
+    const state = readLink('?overlay=haftarah&custom=ashkenazi', keys);
     expect(state.overlayParams.custom).toBe('ashkenazi');
   });
 
@@ -914,9 +944,9 @@ describe('a token parameter with allowed values and a default', () => {
       overlay: 'haftarah',
       overlayParams: { custom: 'sephardi' },
     };
-    const query = writeLink(original);
+    const query = writeLink(original, keys);
     expect(query).toContain('custom=sephardi');
-    expect(readLink(query, lookup)).toEqual(original);
+    expect(readLink(query, keys)).toEqual(original);
   });
 });
 
@@ -929,7 +959,7 @@ describe('whole links that search', () => {
 
   links.forEach(([query, expected]) => {
     it(`parses ${query}`, () => {
-      const state = readLink(query, lookup);
+      const state = readLink(query, keys);
       expect(state.searchParams).toEqual(expected);
       expect(state.overlayParams).toEqual({});
     });

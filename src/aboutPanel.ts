@@ -19,7 +19,7 @@ export function aboutHtml(
   site: Site,
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
 ): string {
-  const square = escapeHtml(site.square);
+  const square = escapeHtml(site.squareName);
   return panelHtml(
     'about',
     `<section class="about-section">

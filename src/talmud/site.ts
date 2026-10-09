@@ -8,7 +8,7 @@ const NAME = 'Talmud Map';
 
 export const talmudSite: Site = {
   name: NAME,
-  square: 'segment',
+  squareName: 'segment',
   aboutHtml:
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [
@@ -19,7 +19,7 @@ export const talmudSite: Site = {
     },
   ],
   title(link) {
-    const segment = link.verse ? parseTalmudId(link.verse) : null;
+    const segment = link.square ? parseTalmudId(link.square) : null;
     return viewTitle(NAME, segment && talmudRef(segment), link);
   },
 };

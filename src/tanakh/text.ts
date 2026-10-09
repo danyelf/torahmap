@@ -17,9 +17,11 @@ import { listenForWordClicks } from './search/wordClicks.ts';
 import type { TanakhLayout } from '../types.ts';
 import type { MapText } from '../app/text.ts';
 import { tanakhSite } from './site.ts';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 
 export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
   site: tanakhSite,
+  link: LINK_KEYS,
   firstFiles: [STRUCTURE_FILE],
   timedFile: TEXTS_FILE,
 

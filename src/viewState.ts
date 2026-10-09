@@ -42,7 +42,7 @@ export function resolveViewState(
     overlay,
     overlayParams: overlay === NO_OVERLAY ? {} : url.overlayParams,
     searchParams: url.searchParams ?? {},
-    verse: url.verse ?? null,
+    verse: url.square ?? null,
     camera: {
       zoom: url.zoom ?? defaultCamera.zoom,
       x: url.x ?? defaultCamera.x,

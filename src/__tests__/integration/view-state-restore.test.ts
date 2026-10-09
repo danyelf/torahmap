@@ -7,7 +7,7 @@ import { configure as configureSearch } from '../../tanakh/search/index';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
 import { dataFor } from '../../dataFiles';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
-import { overlayParamSpecs } from '@torahmap/overlay-catalog';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { readLink, writeLink } from '@torahmap/link';
 import { indexItems } from '../../items';
 import { createOverlaySettings } from '../../overlays/settings';
@@ -21,7 +21,7 @@ let settings = createOverlaySettings();
 function viewFor(link: string): ViewState {
   mockWindowLocation(`http://localhost:5173/${link}`);
   return resolveViewState(
-    parseUrlState(overlayParamSpecs),
+    parseUrlState(LINK_KEYS),
     DEFAULT_CAMERA,
     (id) => getOverlay(id) !== undefined,
   );
@@ -140,7 +140,7 @@ describe('restoring a link as one complete view', () => {
 
     it('pins a verse through a written link and back', () => {
       const square = SAMPLE_VERSES[3];
-      const view = viewFor(writeLink({ verse: square.id, overlayParams: {} }));
+      const view = viewFor(writeLink({ square: square.id, overlayParams: {} }, LINK_KEYS));
       expect(indexItems(SAMPLE_VERSES).find(view.verse ?? '')).toBe(square);
     });
 
@@ -220,16 +220,16 @@ describe('restoring a link as one complete view', () => {
 
 describe('a returning reader', () => {
   it('opens folded for a view or for no link', () => {
-    expect(opensFolded(readLink('?verse=Genesis.1.1'), true)).toBe(true);
-    expect(opensFolded(readLink(''), true)).toBe(true);
+    expect(opensFolded(readLink('?verse=Genesis.1.1', LINK_KEYS), true)).toBe(true);
+    expect(opensFolded(readLink('', LINK_KEYS), true)).toBe(true);
   });
 
   it('opens unfolded for a stop link, with or without its story', () => {
-    expect(opensFolded(readLink('?story=tour&stop=abraham_zoom'), true)).toBe(false);
-    expect(opensFolded(readLink('?stop=abraham_zoom'), true)).toBe(false);
+    expect(opensFolded(readLink('?story=tour&stop=abraham_zoom', LINK_KEYS), true)).toBe(false);
+    expect(opensFolded(readLink('?stop=abraham_zoom', LINK_KEYS), true)).toBe(false);
   });
 
   it('opens unfolded when the story was never folded', () => {
-    expect(opensFolded(readLink('?verse=Genesis.1.1'), false)).toBe(false);
+    expect(opensFolded(readLink('?verse=Genesis.1.1', LINK_KEYS), false)).toBe(false);
   });
 });

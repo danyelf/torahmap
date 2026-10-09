@@ -2,13 +2,14 @@
 
 import {
   validateOverlayParams,
-  SEARCH_URL_PARAMS,
   RESERVED_KEYS,
+  SQUARE_ID,
   TEXT_KEYS,
   NUMBER_KEYS,
   type ViewKey,
   type OverlayParams,
   type OverlayParamSpecLookup,
+  type UrlParamSpec,
   type UrlParamValues,
   type ViewFields,
 } from './params.ts';
@@ -17,6 +18,20 @@ export interface UrlState extends ViewFields {
   overlayParams: OverlayParams;
   /** The search's own keys, when the link searches. */
   searchParams?: UrlParamValues;
+}
+
+/** The keys a text's links use beside the view's own. */
+export interface LinkKeys {
+  /** The pinned square's key. */
+  square: string;
+  /** The search's keys, read whatever overlay is on. */
+  search: readonly UrlParamSpec[];
+  overlayParams: OverlayParamSpecLookup;
+}
+
+/** The keys no overlay may have: the view's own, the square's and the search's. */
+function takenKeys(keys: LinkKeys): ReadonlySet<string> {
+  return new Set([...RESERVED_KEYS, keys.square, ...keys.search.map((spec) => spec.key)]);
 }
 
 // Allows letters (including Hebrew), spaces, and dots, for names like "I.Samuel".
@@ -32,7 +47,7 @@ function validateBookName(book: string): boolean {
  * ever populated alongside an overlay, which is checked directly.
  */
 export function linkNamesAView(state: UrlState): boolean {
-  const named = [...keysOf(TEXT_KEYS), ...keysOf(NUMBER_KEYS)].some(
+  const named = [...keysOf(TEXT_KEYS), ...keysOf(NUMBER_KEYS), 'square' as const].some(
     (key) => state[key] !== undefined,
   );
   return named || state.searchParams !== undefined;
@@ -49,27 +64,24 @@ export function linkKind(state: UrlState): LinkKind {
   return linkNamesAView(state) ? 'view' : 'nothing';
 }
 
-/**
- * The view a link's query string names. Accepts "?a=b", "a=b" or URLSearchParams.
- *
- * Without lookupOverlayParams, overlay parameters are skipped; the core view
- * state still parses.
- */
-export function readLink(
-  query: string | URLSearchParams,
-  lookupOverlayParams?: OverlayParamSpecLookup,
-): UrlState {
+/** The view a link's query string names, under a text's keys. Accepts "?a=b", "a=b" or URLSearchParams. */
+export function readLink(query: string | URLSearchParams, keys: LinkKeys): UrlState {
   const params = typeof query === 'string' ? new URLSearchParams(query) : query;
 
   const state: UrlState = { overlayParams: {} };
   readKeys(state, TEXT_KEYS, params);
   readKeys(state, NUMBER_KEYS, params);
+  const square = params.get(keys.square);
+  const id = square ? SQUARE_ID.parse(square) : null;
+  if (id !== null) state.square = id;
 
   if (state.overlay) {
-    state.overlayParams = validateOverlayParams(lookupOverlayParams?.(state.overlay), params);
+    const taken = takenKeys(keys);
+    const specs = keys.overlayParams(state.overlay)?.filter((spec) => !taken.has(spec.key));
+    state.overlayParams = validateOverlayParams(specs, params);
   }
 
-  const search = validateOverlayParams(SEARCH_URL_PARAMS, params);
+  const search = validateOverlayParams(keys.search, params);
   if (Object.keys(search).length > 0) state.searchParams = search;
   return state;
 }
@@ -103,7 +115,7 @@ function writeKeys<K extends string, V>(
 }
 
 /** The query string for a view, with its leading "?", or "" for the default view. */
-export function writeLink(state: UrlState): string {
+export function writeLink(state: UrlState, keys: LinkKeys): string {
   const params = new URLSearchParams();
   if (linkKind(state) === 'stop') {
     writeKeys(params, state, { story: TEXT_KEYS.story, stop: TEXT_KEYS.stop });
@@ -115,17 +127,18 @@ export function writeLink(state: UrlState): string {
     if (value) params.set(key, value);
   }
 
-  // A verse centres the map, so a link that names one carries no pan.
-  const view = state.verse ? { ...state, x: undefined, y: undefined } : state;
+  // A square centres the map, so a link that names one carries no pan.
+  const view = state.square ? { ...state, x: undefined, y: undefined } : state;
   writeKeys(params, view, TEXT_KEYS);
+  const square = view.square && SQUARE_ID.format(view.square);
+  if (square) params.set(keys.square, square);
   writeKeys(params, view, NUMBER_KEYS);
 
   // Overlay-specific parameters, written through unchanged. Overlays omit
   // their own defaults, so whatever arrives here belongs in the URL.
+  const taken = takenKeys(keys);
   for (const [key, value] of Object.entries(state.overlayParams)) {
-    if (!value) continue;
-    if (RESERVED_KEYS.has(key)) continue;
-    params.set(key, value);
+    if (value && !taken.has(key)) params.set(key, value);
   }
 
   const query = params.toString();

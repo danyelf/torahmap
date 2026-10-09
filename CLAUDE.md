@@ -145,8 +145,9 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   `worker/` that serves the deployed site, and the `telemetry/` it records
   through.
 - `packages/` — shared code, kept free of the page so the Worker can import
-  it, as npm workspace packages: `link` (reading and writing links),
-  `overlay-catalog` (each overlay's name and link keys), `stories` (the
+  it, as npm workspace packages: `link` (reading and writing links, under
+  each text's keys), `overlay-catalog` (each Tanakh overlay's name and link
+  keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (the
   stories, compiled from Markdown by `generate.mjs`, and which are listed and
   opened by default), and `site` (what the
   Tanakh's site calls things: the site's name and tagline, and how a link is

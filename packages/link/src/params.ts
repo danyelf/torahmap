@@ -63,20 +63,6 @@ type ValueOf<P extends UrlParamSpec> = P extends { allowed: readonly (infer V ex
   : string;
 
 /**
- * The search's keys, read whatever overlay is on; no overlay may claim them.
- * Shortcut: they are the Tanakh's search's keys, read on every text.
- */
-export const SEARCH_URL_PARAMS = [
-  { key: 'search', kind: 'text' },
-  // Positional across the terms in `search`, one letter each, and an empty
-  // entry for a term still on its default (see MODE_LETTERS in src/tanakh/search/terms.ts).
-  { key: 'mode', kind: 'token' },
-  { key: 'm', kind: 'names' },
-] as const satisfies readonly UrlParamSpec[];
-
-export const SEARCH_KEYS: ReadonlySet<string> = new Set(SEARCH_URL_PARAMS.map((p) => p.key));
-
-/**
  * Overlay-specific settings held alongside the view state.
  *
  * This module knows nothing about which keys any particular overlay uses;
@@ -219,11 +205,16 @@ export const DEFAULT_ZOOM = 1.0;
 
 const MAX_PAN_POSITION = 1000000;
 
-type TextKey = 'story' | 'stop' | 'overlay' | 'verse';
+type TextKey = 'story' | 'stop' | 'overlay';
 type NumberKey = 'zoom' | 'x' | 'y';
 
-/** The parts of a view a link names under its own keys. */
-export type ViewFields = { [K in TextKey]?: string } & { [K in NumberKey]?: number };
+/**
+ * The parts of a view a link names under its own keys, and the pinned square's
+ * id, under the key its text names.
+ */
+export type ViewFields = { [K in TextKey]?: string } & { [K in NumberKey]?: number } & {
+  square?: string;
+};
 
 /** How one of the link's own keys is read, or null to drop it, and written, or null to leave it out. */
 export interface ViewKey<V> {
@@ -252,9 +243,10 @@ export const TEXT_KEYS: Readonly<Record<TextKey, ViewKey<string>>> = {
   story: name(),
   stop: name(),
   overlay: name(),
-  // "Book.Chapter.Verse", e.g. "I.Samuel.1.5"
-  verse: name(100),
 };
+
+/** A square's id, e.g. "I.Samuel.1.5" or "Berakhot.2a.1". */
+export const SQUARE_ID: ViewKey<string> = name(100);
 
 export const NUMBER_KEYS: Readonly<Record<NumberKey, ViewKey<number>>> = {
   zoom: number(2, (n) => n >= MIN_ZOOM && n <= MAX_ZOOM, DEFAULT_ZOOM),

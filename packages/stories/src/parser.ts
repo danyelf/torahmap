@@ -6,7 +6,8 @@ import {
   type CameraRef,
   type CameraPosition,
 } from './types.ts';
-import { parseVerseId, SEARCH_KEYS } from '@torahmap/link';
+import { parseVerseId } from '@torahmap/link';
+import { SEARCH_KEYS } from '@torahmap/overlay-catalog';
 
 /** The frontmatter keys a story may set. */
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;
