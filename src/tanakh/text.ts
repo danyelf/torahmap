@@ -10,7 +10,7 @@ import { getDefaultColor } from '../itemColoring.ts';
 import { popupText } from './popup.ts';
 import { reportError } from '../analytics.ts';
 import { STORIES } from '@torahmap/stories';
-import { resolveStops } from '../scrollytelling/storyPanel.ts';
+import { resolveStops } from './stories.ts';
 import { registerAllOverlays, getAllOverlays } from '../overlays/index.ts';
 import { configure as configureSearch, searchTool, type SearchSettings } from './search/index.ts';
 import { listenForWordClicks } from './search/wordClicks.ts';

@@ -77,8 +77,8 @@ import {
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
 import type { MapItem, VerseColor } from './types.ts';
-import { createOverlaySettings, type Overlay } from './overlays/index.ts';
-import type { Tools } from './overlays/types.ts';
+import { createOverlaySettings } from './overlays/settings.ts';
+import type { Overlay, Tools } from './overlays/types.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, downloadFiles, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';

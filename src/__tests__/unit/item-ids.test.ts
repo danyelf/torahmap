@@ -4,7 +4,7 @@ import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { parseVerseId } from '@torahmap/link';
 import { STORIES } from '@torahmap/stories';
-import { namesRegion } from '../../scrollytelling/storyPanel.ts';
+import { namesRegion } from '../../tanakh/stories.ts';
 import { initBookData } from '../../constants/books.ts';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
