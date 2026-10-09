@@ -8,6 +8,11 @@ import { commentaryOverlay } from '../../overlays/commentary';
 import type { Loaded } from '../../dataFiles';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../tanakh/search/data';
+import type { StoryStop } from '@torahmap/stories';
+
+export function createStoryStop(overrides: Partial<StoryStop> = {}): StoryStop {
+  return { id: 's', text: 'Text.', camera: 'initial', overlay: null, ...overrides };
+}
 
 export function createVerse(overrides: Partial<TanakhLayout> = {}): TanakhLayout {
   const verse = { book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20, size: 6, ...overrides };
