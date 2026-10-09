@@ -12,7 +12,7 @@ import type { SpatialItem, TalmudIdentity } from '../types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
 import { seededRandom } from '../utils/random.ts';
 import { segmentHashId } from './segmentHash.ts';
-import { bookToUrl } from '@torahmap/link';
+import { bookFromUrl, bookToUrl } from '@torahmap/link';
 import {
   SEGMENT_SIZE,
   PEREK_GAP,
@@ -30,6 +30,26 @@ export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
 /** A segment's id: Bava Kamma 2a:1 is "Bava.Kamma.2a.1". */
 export function talmudId(s: TalmudIdentity): string {
   return `${bookToUrl(s.tractate)}.${s.daf}${s.amud}.${s.segment}`;
+}
+
+/** Read a segment's id: "Bava.Kamma.2a.1" is Bava Kamma 2a:1; null for anything else. */
+export function parseTalmudId(id: string): TalmudIdentity | null {
+  const match = /^(.+)\.(\d+)([ab])\.(\d+)$/.exec(id);
+  if (!match) return null;
+  const [, tractate, daf, amud, segment] = match;
+  const parsed: TalmudIdentity = {
+    tractate: bookFromUrl(tractate),
+    daf: Number(daf),
+    amud: amud as 'a' | 'b',
+    segment: Number(segment),
+  };
+  // "2a" and "02a" are the same page, but only one is a square's id.
+  return talmudId(parsed) === id ? parsed : null;
+}
+
+/** A segment as readers write it: "Bava Kamma 2a:1". */
+export function talmudRef(s: TalmudIdentity): string {
+  return `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
 }
 
 export interface TractateBlock {

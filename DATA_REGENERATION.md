@@ -17,12 +17,13 @@ The Hebrew lexeme index behind meanings-mode search comes from the
 
 Every source named here is also credited in the app, in the Credits tab of the
 help modal. The collection dates shown there are hand-maintained strings in
-`src/credits.ts`: no data file carries a generation timestamp, and a git commit
-date cannot stand in for one, because a commit that merely moves or refactors a
-data file would claim it had been re-collected that month. **Whenever you run
-one of the commands below, set that source's `collected` date.** A source with
-no `collected` line shows as "collection date not recorded" rather than
-guessing; add the field when you are the one collecting.
+`src/tanakh/site.ts` and beside each overlay's and tool's credits: no data file
+carries a generation timestamp, and a git commit date cannot stand in for one,
+because a commit that merely moves or refactors a data file would claim it had
+been re-collected that month. **Whenever you run one of the commands below, set
+that source's `collected` date.** A source with no `collected` line shows as
+"collection date not recorded" rather than guessing; add the field when you are
+the one collecting.
 
 ## Verse Texts
 
@@ -34,7 +35,7 @@ bash scripts/download-texts.sh
 npx tsx scripts/bundle-texts.ts
 ```
 
-Then set `collected` for both editions in `src/credits.ts`.
+Then set `collected` for both editions in `src/tanakh/site.ts`.
 
 ### Which editions
 

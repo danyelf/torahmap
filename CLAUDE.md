@@ -149,8 +149,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   `overlay-catalog` (each overlay's name and link keys), `stories` (the
   stories, compiled from Markdown by `generate.mjs`, and which are listed and
   opened by default), and `site` (what the
-  site calls things: the site's name and tagline, and how a link is
-  described).
+  Tanakh's site calls things: the site's name and tagline, and how a link is
+  described; each text's own copy is its `site` slot, `src/app/text.ts`).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud

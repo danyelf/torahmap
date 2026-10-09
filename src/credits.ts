@@ -3,7 +3,7 @@
 //
 // Sources that belong to one feature are declared by the overlay that uses
 // them, through the optional `credits` field on Overlay. Sources the whole map
-// rests on are declared here as APP_CREDITS. The panel shows the second first
+// rests on are declared by its text's site. The panel shows the second first
 // and then one block per overlay, so the reader sees what everything stands on
 // before what each feature adds.
 //
@@ -46,26 +46,6 @@ export interface Credit {
   /** Reserved for licence obligations and caveats, not for describing the source. */
   note?: string;
 }
-
-/** What the map as a whole rests on, regardless of which overlay is showing. */
-export const APP_CREDITS: readonly Credit[] = [
-  {
-    source: 'Miqra according to the Masorah',
-    url: 'https://he.wikisource.org/wiki/%D7%9E%D7%A9%D7%AA%D7%9E%D7%A9:Dovi/%D7%9E%D7%A7%D7%A8%D7%90_%D7%A2%D7%9C_%D7%A4%D7%99_%D7%94%D7%9E%D7%A1%D7%95%D7%A8%D7%94',
-    license: 'CC BY-SA 4.0',
-    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
-    collected: 'September 2026',
-    note: 'The Hebrew text, from Hebrew Wikisource, downloaded via Sefaria. The Trop overlay reads its cantillation marks out of this edition, and Hebrew search matches it with vowels and cantillation ignored.',
-  },
-  {
-    source: 'THE JPS TANAKH: Gender-Sensitive Edition',
-    url: 'https://jps.org/books/the-jps-tanakh-gender-sensitive-edition/',
-    license: 'CC BY-NC 4.0',
-    licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
-    collected: 'September 2026',
-    note: 'The English text, from the Jewish Publication Society, downloaded via Sefaria. The English search index is built from it.',
-  },
-];
 
 /**
  * Text in `className`, linked when there is somewhere to link it. One helper so
@@ -117,10 +97,11 @@ export function renderCreditBlock(title: string, credits: readonly Credit[]): st
  * All the credits: what the map rests on, then what each overlay adds.
  */
 export function renderCreditsHtml(
+  mapCredits: readonly Credit[],
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
 ): string {
   const blocks = [
-    renderCreditBlock('The map itself', APP_CREDITS),
+    renderCreditBlock('The map itself', mapCredits),
     ...overlays.map((o) => renderCreditBlock(o.name, o.credits ?? [])),
   ];
 

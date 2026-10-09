@@ -4,7 +4,8 @@ import type { MapText } from '../app/text.ts';
 import type { Story } from '@torahmap/stories';
 import { cameraToFit } from '../camera.ts';
 import { sefariaUrl } from '../sefaria.ts';
-import { computeTalmudLayout, type TalmudLayoutItem } from './layout.ts';
+import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
+import { talmudSite } from './site.ts';
 import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { talmudSearch, type TalmudSearchSettings } from './search.ts';
@@ -15,8 +16,6 @@ import {
   textsFile,
   type TalmudTractateText,
 } from './data.ts';
-
-const ref = (s: TalmudLayoutItem): string => `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
 
 // Shortcut: the Talmud's one story is a single stop showing the whole map, until
 // its first real story is written.
@@ -38,6 +37,7 @@ const WHOLE_MAP: Story = {
 };
 
 export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
+  site: talmudSite,
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {
@@ -79,7 +79,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
       popupText(item, loaded) {
         const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;
         return {
-          ref: ref(item),
+          ref: talmudRef(item),
           hebrew: file ? segmentText(item, file) : '',
           english: '',
           link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
