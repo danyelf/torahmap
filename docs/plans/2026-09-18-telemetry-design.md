@@ -64,10 +64,10 @@ that opens with the story folded.
 | `view_settled` | the camera stops somewhere new while the reader drives |
 | `overlay_switch` | the overlay changes |
 | `search_execute` | the reader changes the search, once per term |
-| `verse_click` | a verse on the map is clicked |
+| `square_click` | a square on the map is pinned, by click or arrow key |
 | `word_menu_open` | a word in the verse text is clicked |
 | `word_search` | a choice in the word menu is picked |
-| `sefaria_click` | the sidebar's Sefaria link is clicked |
+| `sefaria_open` | the popup's Sefaria link is clicked |
 
 Both story events name the stop the story is at, and are sent from the one
 function in `main.ts` that changes the driver, only when it passes between

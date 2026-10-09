@@ -3,7 +3,6 @@
 import type { MapText } from './app/text.ts';
 import { SEARCH_BOX_ID } from './app/search.ts';
 import { mapPoint } from './mapPoint.ts';
-import { TEXTS_FILE } from './verseTexts.ts';
 import {
   DRAG_PX,
   STORY,
@@ -32,12 +31,12 @@ import {
   reportError,
   trackOverlaySwitch,
   trackPageView,
-  trackSefariaClick,
+  trackSefariaOpen,
   trackShare,
   trackStoryExit,
   trackStoryReturn,
   trackStoryStop,
-  trackVerseClick,
+  trackSquareClick,
   trackViewSettled,
   trackWebGLMissing,
 } from './analytics.ts';
@@ -190,7 +189,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   // For load_timing (sendLoadTiming).
   let firstFrame = 0;
-  let textsIn = 0;
+  let timedIn = 0;
   let searchReady = 0;
   let searchPrebuilt = false;
   let downloadsSettled = false;
@@ -698,8 +697,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // sets the view directly. So each takes the wheel.
   function pinVerse(verse: I, centerCamera: boolean = false): void {
     takeOver('takeover');
-    const tracked = text.track.verse(verse);
-    trackVerseClick(tracked.book, tracked.chapter, tracked.verse);
+    trackSquareClick(verse.id, text.area(verse).area);
     pinnedVerse = verse;
     updateSidebarWrapper(verse, true);
     if (centerCamera) {
@@ -844,7 +842,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
     markViewSettled();
     const near = findNearestItem(verses, camera.x, camera.y);
-    const where = near ? text.track.area(near) : { area: '', section: '' };
+    const where = near ? text.area(near) : { area: '', section: '' };
     trackViewSettled(where.area, where.section, camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
@@ -1048,8 +1046,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   sidebarElements.link?.addEventListener('click', () => {
     const verse = pinnedVerse ?? hoveredVerse;
     if (!verse) return;
-    const tracked = text.track.verse(verse);
-    trackSefariaClick(tracked.book, tracked.chapter, tracked.verse, currentOverlayId());
+    trackSefariaOpen(verse.id, text.area(verse).area, currentOverlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -1517,8 +1514,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function fileLanded(path: string, content: unknown): void {
-    // Shortcut: load timing measures the Tanakh's texts file.
-    if (path === TEXTS_FILE) textsIn = performance.now();
+    if (path === source.timedFile) timedIn = performance.now();
     downloads.pending.delete(path);
     const before = loaded;
     loaded = new Map(before).set(path, content);
@@ -1558,15 +1554,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (timingSent || !downloadsSettled) return;
     if (dataFor(searchTool, loaded) && !searchPrebuilt) return;
     timingSent = true;
-    const textsEntry = performance
-      .getEntriesByType('resource')
-      .find((e) => e.name.endsWith(`/${TEXTS_FILE}`)) as PerformanceResourceTiming | undefined;
+    const { timedFile } = source;
+    const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+    const timedEntry = timedFile
+      ? resources.find((e) => e.name.endsWith(`/${timedFile}`))
+      : undefined;
     const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
     trackLoadTiming({
       first_frame: Math.round(firstFrame),
-      texts_in: Math.round(textsIn),
+      texts_in: Math.round(timedIn),
       search_ready: Math.round(searchReady),
-      texts_kbps: downloadKbps(textsEntry),
+      texts_kbps: downloadKbps(timedEntry),
       connection: connection?.effectiveType ?? '',
     });
   }

@@ -95,11 +95,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
         resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
       },
 
-      // The tractate stands in for the book.
-      track: {
-        verse: (s) => ({ book: s.tractate, chapter: s.daf, verse: s.segment }),
-        area: (s) => ({ area: s.tractate, section: tractates.get(s.tractate)?.seder ?? '' }),
-      },
+      area: (s) => ({ area: s.tractate, section: tractates.get(s.tractate)?.seder ?? '' }),
     };
   },
 };

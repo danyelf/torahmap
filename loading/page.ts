@@ -138,20 +138,20 @@ interface Sent {
   fields: Record<string, unknown>;
 }
 
-/** The fields of every load_timing event sent so far. */
-export async function sentLoadTiming(page: Page): Promise<Record<string, unknown>[]> {
-  return page.evaluate(() =>
-    ((window as unknown as { sent?: Sent[] }).sent ?? [])
-      .filter((e) => e.event === 'load_timing')
-      .map((e) => e.fields),
+/** The fields of every `event` sent so far, in order. */
+export async function sentFields(page: Page, event: string): Promise<Record<string, unknown>[]> {
+  return page.evaluate(
+    (name) =>
+      ((window as unknown as { sent?: Sent[] }).sent ?? [])
+        .filter((e) => e.event === name)
+        .map((e) => e.fields),
+    event,
   );
 }
 
+export const sentLoadTiming = (page: Page) => sentFields(page, 'load_timing');
+
 /** The term of every search recorded so far, in order. */
 export async function sentSearches(page: Page): Promise<unknown[]> {
-  return page.evaluate(() =>
-    ((window as unknown as { sent?: Sent[] }).sent ?? [])
-      .filter((e) => e.event === 'search_execute')
-      .map((e) => e.fields.term),
-  );
+  return (await sentFields(page, 'search_execute')).map((fields) => fields.term);
 }

@@ -40,7 +40,7 @@ describe('toDataPoint', () => {
 
   it('fills a missing field with an empty string or zero', () => {
     const point = toDataPoint(
-      { event: 'view_settled', visit: 'v1', mode: 'reader', fields: { book: 'Genesis' } },
+      { event: 'view_settled', visit: 'v1', mode: 'reader', fields: { area: 'Genesis' } },
       context,
     );
     expect(point?.blobs).toEqual([

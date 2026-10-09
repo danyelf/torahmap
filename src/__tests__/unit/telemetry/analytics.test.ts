@@ -10,7 +10,9 @@ import {
   trackStoryReturn,
   trackPageView,
   trackSearchExecute,
+  trackSefariaOpen,
   trackShare,
+  trackSquareClick,
   trackStoryStop,
   trackViewSettled,
 } from '../../../analytics.ts';
@@ -90,6 +92,15 @@ describe('analytics', () => {
     expect(sent().map((e) => [e.event, e.fields])).toEqual([
       ['story_exit', { stop_id: 'sinai', stop_number: 4, how: 'fold', story: 'tour' }],
       ['story_return', { stop_id: 'flood', how: 'rejoin', story: 'tour' }],
+    ]);
+  });
+
+  it("sends a square click and a Sefaria visit by the square's id and area", () => {
+    trackSquareClick('Berakhot.2a.1', 'Berakhot');
+    trackSefariaOpen('Berakhot.2a.1', 'Berakhot', 'none');
+    expect(sent().map((e) => [e.event, e.fields])).toEqual([
+      ['square_click', { id: 'Berakhot.2a.1', area: 'Berakhot' }],
+      ['sefaria_open', { id: 'Berakhot.2a.1', area: 'Berakhot', overlay: 'none' }],
     ]);
   });
 

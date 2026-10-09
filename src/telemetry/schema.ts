@@ -32,13 +32,15 @@ export const EVENTS = {
   story_stop: { blobs: ['stop_id', 'story'], doubles: ['stop_number', 'total_stops'] },
   story_exit: { blobs: ['stop_id', 'how', 'story'], doubles: ['stop_number'] },
   story_return: { blobs: ['stop_id', 'how', 'story'], doubles: [] },
-  view_settled: { blobs: ['book', 'section', 'zoom_band'], doubles: ['zoom'] },
+  // A square's id is its link form, and its area the text's area(); a word's
+  // id is its verse's.
+  view_settled: { blobs: ['area', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
-  verse_click: { blobs: ['book'], doubles: ['chapter', 'verse'] },
-  word_menu_open: { blobs: ['word', 'verse', 'palette_full'], doubles: ['meanings'] },
-  word_search: { blobs: ['word', 'choice', 'verse'], doubles: [] },
-  sefaria_click: { blobs: ['book', 'overlay'], doubles: ['chapter', 'verse'] },
+  square_click: { blobs: ['id', 'area'], doubles: [] },
+  word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
+  word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
+  sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },
   // A browser with WebGL 2 whose shaders fail to compile records an error from
   // 'main' instead: both show the same notice, but the causes differ.
   webgl_missing: { blobs: ['browser'], doubles: [] },
@@ -53,7 +55,7 @@ export const EVENTS = {
   },
   // Milliseconds since navigation start, sent once every download has settled:
   // first_frame when the map first draws, from the structure alone; texts_in
-  // when the texts land; search_ready when search's index and dictionary are
+  // when the text's timed file lands, 0 for a text that names none; search_ready when search's index and dictionary are
   // built, 0 if its files never arrived or it failed to build. texts_kbps is 0
   // where the browser did not report the download (a cached copy, or no
   // Resource Timing entry).
