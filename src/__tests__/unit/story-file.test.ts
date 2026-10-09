@@ -4,15 +4,11 @@
 import { beforeAll, describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import {
-  parseStoryMarkdown,
-  STOP_COMMENT_RE,
-  STORY_HEADER_KEYS,
-  STORY_MARKDOWN,
-} from '@torahmap/stories';
+import { parseStoryMarkdown, STOP_COMMENT_RE, STORY_HEADER_KEYS } from '@torahmap/stories';
+import { STORY_MARKDOWN } from '@torahmap/stories/tanakh';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { writeLink, parseVerseId } from '@torahmap/link';
-import { LINK_KEYS } from '@torahmap/overlay-catalog';
+import { LINK_KEYS, SEARCH_KEYS } from '@torahmap/overlay-catalog';
 import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../tanakh/search/index';
 import { settingsFromLink } from '../../overlays/settings';
@@ -50,7 +46,7 @@ function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']):
 }
 
 describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
-  const story = parseStoryMarkdown(markdown);
+  const story = parseStoryMarkdown(markdown, SEARCH_KEYS);
   const { stops } = story;
   const comments = [...markdown.matchAll(STOP_COMMENT_RE)];
   // The header as written, read without the parser, which drops what it does not know.
@@ -100,21 +96,18 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
     expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
   });
 
-  it('names only verses that exist', () => {
-    const texts = JSON.parse(fs.readFileSync(path.join(dataDir, 'all-texts.json'), 'utf-8'));
-    const exists = (ref: string): boolean => {
-      const v = parseVerseId(ref);
-      return !!v && !!texts[v.book]?.[String(v.chapter)]?.[String(v.verse)];
-    };
-    const missing = stops.flatMap((s) => {
-      const refs = [s.verse, typeof s.camera === 'object' && 'ref' in s.camera && s.camera.ref];
-      return refs.filter((r): r is string => !!r && !exists(r)).map((r) => `${s.id}: ${r}`);
-    });
-    expect(missing).toEqual([]);
+  const texts = JSON.parse(fs.readFileSync(path.join(dataDir, 'all-texts.json'), 'utf-8'));
+  const verseExists = (ref: string): boolean => {
+    const v = parseVerseId(ref);
+    return !!v && !!texts[v.book]?.[String(v.chapter)]?.[String(v.verse)];
+  };
+
+  it('pins only verses that exist', () => {
+    const missing = stops.filter((s) => s.pin && !verseExists(s.pin));
+    expect(missing.map((s) => `${s.id}: ${s.pin}`)).toEqual([]);
   });
 
-  it('names only regions that exist', () => {
-    // A camera the parser does not otherwise read is taken as region names.
+  it('names only places that exist: a verse, or a region', () => {
     const structure = JSON.parse(
       fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8'),
     );
@@ -127,7 +120,9 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
     ]);
     const unknown = stops.flatMap((s) =>
       typeof s.camera === 'object' && 'names' in s.camera
-        ? s.camera.names.filter((n) => !regions.has(n)).map((n) => `${s.id}: ${n}`)
+        ? s.camera.names
+            .filter((n) => !regions.has(n) && !verseExists(n))
+            .map((n) => `${s.id}: ${n}`)
         : [],
     );
     expect(unknown).toEqual([]);

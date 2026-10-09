@@ -6,8 +6,6 @@ import {
   type CameraRef,
   type CameraPosition,
 } from './types.ts';
-import { parseVerseId } from '@torahmap/link';
-import { SEARCH_KEYS } from '@torahmap/overlay-catalog';
 
 /** The frontmatter keys a story may set. */
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;
@@ -15,12 +13,12 @@ type HeaderKey = (typeof STORY_HEADER_KEYS)[number];
 
 // A story is optional frontmatter (STORY_HEADER_KEYS) followed by stops, each
 // opened by `<!-- stop: id | camera: ... | search: ... | overlay: ... | key: value -->`
-// and a `# Title` heading. The search's keys go to the search; params other
-// than camera/overlay/easing/verse/zoom become the overlay's. See markdown/
-// for examples.
-export function parseStoryMarkdown(markdown: string): StoryData {
+// and a `# Title` heading. `searchKeys` go to the search; params other than
+// camera/overlay/easing/pin/zoom become the overlay's. See markdown/ for
+// examples.
+export function parseStoryMarkdown(markdown: string, searchKeys: ReadonlySet<string>): StoryData {
   const front = parseFrontmatter(markdown);
-  const stops = parseStops(stripFrontmatter(markdown));
+  const stops = parseStops(stripFrontmatter(markdown), searchKeys);
   const order = Number(front.order);
   return {
     stops,
@@ -110,20 +108,15 @@ function parseCamera(params: Record<string, string>): CameraRef {
     return { x: parts[0], y: parts[1], zoom: parts[2] };
   }
 
-  // e.g. "Genesis.12.1" or "I.Samuel.1.5"
-  if (parseVerseId(cameraStr)) {
-    return { kind: 'verse', ref: cameraStr };
-  }
-
-  // Region names, checked against the map when the stop is resolved.
+  // Places on the map, which the text finds when the stop is resolved.
   const names = cameraStr
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  return { kind: 'regions', names };
+  return { kind: 'places', names };
 }
 
-function parseStops(body: string): StoryStop[] {
+function parseStops(body: string, searchKeys: ReadonlySet<string>): StoryStop[] {
   const stops: StoryStop[] = [];
   const metas: StopMeta[] = [];
 
@@ -162,7 +155,7 @@ function parseStops(body: string): StoryStop[] {
     let overlay: string | null = null;
     let easing: EasingName | undefined;
 
-    let verse: string | undefined;
+    let pin: string | undefined;
     let zoom: number | undefined;
 
     for (const [key, value] of Object.entries(meta.params)) {
@@ -171,12 +164,12 @@ function parseStops(body: string): StoryStop[] {
         overlay = value;
       } else if (key === 'easing') {
         easing = easingNamed(value);
-      } else if (key === 'verse') {
-        verse = value;
+      } else if (key === 'pin') {
+        pin = value;
       } else if (key === 'zoom') {
         const z = parseFloat(value);
         if (!isNaN(z)) zoom = z;
-      } else if (SEARCH_KEYS.has(key)) {
+      } else if (searchKeys.has(key)) {
         searchParams[key] = value;
       } else {
         overlayParams[key] = value;
@@ -191,7 +184,7 @@ function parseStops(body: string): StoryStop[] {
       overlay,
       overlayParams: Object.keys(overlayParams).length > 0 ? overlayParams : undefined,
       searchParams: Object.keys(searchParams).length > 0 ? searchParams : undefined,
-      verse,
+      pin,
       easing,
       zoom,
     });

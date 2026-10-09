@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { STORY_MARKDOWN, STORIES } from '@torahmap/stories';
+import { STORY_MARKDOWN, STORIES } from '@torahmap/stories/tanakh';
 
 // The folder as Vite lists it, without the generator. Not loaded, only listed.
 const files = Object.keys(import.meta.glob('../markdown/*.md'));

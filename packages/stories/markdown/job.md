@@ -17,7 +17,7 @@ The Book of Job is a good example.
 
 The framing story of Job is about a man whose faith is tested when everything is taken from him.
 
-<!-- stop: frame | camera: Job.1.1 | zoom: 2.5 | verse: Job.1.1 | overlay: verse-length -->
+<!-- stop: frame | camera: Job.1.1 | zoom: 2.5 | pin: Job.1.1 | overlay: verse-length -->
 
 The framing verses are in prose, and they’re long: descriptive paragraphs setting the stage.
 
@@ -25,7 +25,7 @@ The framing verses are in prose, and they’re long: descriptive paragraphs sett
 
 The heart of the story, from chapter 3 to 41, is a argument between Job and his three friends, in the form of a poem.
 
-<!-- stop: poem_short | camera: Job.3.3 | zoom: 2 | verse: Job.3.3 | overlay: verse-length -->
+<!-- stop: poem_short | camera: Job.3.3 | zoom: 2 | pin: Job.3.3 | overlay: verse-length -->
 
 Most verses are under ten Hebrew words, as is common in Biblical poetry.
 
@@ -45,10 +45,10 @@ The poetic books — Psalms, Proverbs, and the poetic core of Job — never use 
 
 There is a different system of cantillation for poetry. Dehi (<span lang="he" style="font-family: 'SBL Hebrew', serif; font-size: 1.6em">ב֭</span>), for example, appears *only* in poetry.
 
-<!-- stop: dehi_gone | camera: Job.42.7 | zoom: 1.5 | verse: Job.42.7 | overlay: trop | trop: dehi -->
+<!-- stop: dehi_gone | camera: Job.42.7 | zoom: 1.5 | pin: Job.42.7 | overlay: trop | trop: dehi -->
 
 In the last lines of Job, the Dehi disappears
 
-<!-- stop: pashta_returns | camera: Job.42.7 | zoom: 1.5 | verse: Job.42.7 | overlay: trop | trop: pashta -->
+<!-- stop: pashta_returns | camera: Job.42.7 | zoom: 1.5 | pin: Job.42.7 | overlay: trop | trop: pashta -->
 
 and the Pashta returns as the story concludes with a prose ending.

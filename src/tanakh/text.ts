@@ -9,7 +9,7 @@ import { createCamera } from '../camera.ts';
 import { getDefaultColor } from '../itemColoring.ts';
 import { popupText } from './popup.ts';
 import { reportError } from '../analytics.ts';
-import { STORIES } from '@torahmap/stories';
+import { STORIES } from '@torahmap/stories/tanakh';
 import { resolveStops } from './stories.ts';
 import { registerAllOverlays, getAllOverlays } from '../overlays/index.ts';
 import { configure as configureSearch, searchTool, type SearchSettings } from './search/index.ts';
@@ -69,7 +69,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
         listenForWordClicks(shell);
         // An edited story reloads in place on the dev server, keeping the reader's scroll.
         if (import.meta.hot) {
-          import.meta.hot.accept('@torahmap/stories', (module) => {
+          import.meta.hot.accept('@torahmap/stories/tanakh', (module) => {
             if (module) shell.storiesChanged(module.STORIES);
           });
         }

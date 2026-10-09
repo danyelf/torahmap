@@ -20,7 +20,7 @@ export function storyStopLine(name: string, query: string): string | null {
   else if (verse) parts.push(`camera: ${verse}`, `zoom: ${zoom}`);
   const overlay = params.get('overlay');
   if (overlay) parts.push(`overlay: ${overlay}`);
-  if (verse) parts.push(`verse: ${verse}`);
+  if (verse) parts.push(`pin: ${verse}`);
   for (const [key, value] of params) {
     if (!['overlay', LINK_KEYS.square, 'zoom', 'x', 'y'].includes(key))
       parts.push(`${key}: ${value}`);

@@ -16,7 +16,7 @@ import {
 } from '../telemetry/schema.ts';
 import { readLink, writeLink, linkKind } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { describeLink } from '@torahmap/site';
+import { describeLink } from '@torahmap/site/tanakh';
 import { rewritePage } from './page.ts';
 import { previewFetcher } from './fetchers.ts';
 import { browserName } from './browser.ts';

@@ -6,7 +6,7 @@ import type { Picture } from '../geometry.ts';
 import { fillDefaultColors, toolsPicture } from '../itemColoring';
 import { still, type ColorLayer } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '@torahmap/link';
-import { NO_OVERLAY } from '@torahmap/overlay-catalog';
+import { NO_OVERLAY } from '../overlays/types.ts';
 import { settingsFromLink } from '../overlays/settings.ts';
 import type { SearchTool } from '../app/search.ts';
 import { toolsPicked, toolsShown } from '../tools.ts';

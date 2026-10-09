@@ -1,4 +1,4 @@
-// Where a Tanakh story's stops put the camera: a verse, or regions of the map by name.
+// Where a Tanakh story's stops put the camera: places on the map by name.
 
 import type { StoryStop, CameraPosition, CameraRef } from '@torahmap/stories';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
@@ -9,12 +9,8 @@ import { getBookSection } from '../constants/books.ts';
 import { SECTION_LABEL_REACH } from '../labels.ts';
 import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera.ts';
 
-function isVerseRef(cam: CameraRef): cam is { kind: 'verse'; ref: string } {
-  return typeof cam === 'object' && 'kind' in cam && cam.kind === 'verse';
-}
-
-function isRegions(cam: CameraRef): cam is { kind: 'regions'; names: string[] } {
-  return typeof cam === 'object' && 'kind' in cam && cam.kind === 'regions';
+function isPlaces(cam: CameraRef): cam is { kind: 'places'; names: string[] } {
+  return typeof cam === 'object' && 'kind' in cam && cam.kind === 'places';
 }
 
 /** The camera that puts a verse at `focus`. */
@@ -33,26 +29,27 @@ const SECTIONS: Record<string, Book['section']> = {
   Ketuvim: 'ketuvim',
 };
 
-function inRegion(verse: TanakhLayout, name: string): boolean {
-  if (name === 'everything') return true;
+/** Whether `verse` is in the place `name`: everything, a section, a book, or the verse itself. */
+function inPlace(verse: TanakhLayout, name: string): boolean {
+  if (name === 'everything' || name === verse.id) return true;
   const section = SECTIONS[name];
   if (section) return getBookSection(verse.book) === section;
   return verse.book === bookFromUrl(name);
 }
 
-/** Whether `name` is a region of the map: everything, a section or a book. */
-export function namesRegion(verses: TanakhLayout[], name: string): boolean {
-  return verses.some((v) => inRegion(v, name));
+/** Whether `name` is a place on the map. */
+export function namesPlace(verses: TanakhLayout[], name: string): boolean {
+  return verses.some((v) => inPlace(v, name));
 }
 
 /**
- * The box around every verse in the named regions and the section label to
+ * The box around every verse in the named places and the section label to
  * their right, or null if they hold none.
  */
-function regionBox(verses: TanakhLayout[], names: string[]): WorldBox | null {
+function placeBox(verses: TanakhLayout[], names: string[]): WorldBox | null {
   const inside = names.flatMap((name) => {
-    const found = verses.filter((v) => inRegion(v, name));
-    if (found.length === 0) console.warn(`[story] no region named "${name}"`);
+    const found = verses.filter((v) => inPlace(v, name));
+    if (found.length === 0) console.warn(`[story] no place named "${name}"`);
     return found;
   });
   if (inside.length === 0) return null;
@@ -70,9 +67,9 @@ export interface MapSize {
   height: number;
 }
 
-// "initial" uses the app's default camera position, unless the stop names a
-// verse to pin on, in which case that verse is put at `focus` instead. A region
-// camera fits its regions to `mapSize`.
+// "initial" uses the app's default camera position, unless the stop pins a
+// verse, in which case that verse is put at `focus` instead. A camera naming
+// one verse puts it at `focus` too; any other places are fitted to `mapSize`.
 export function resolveStops(
   stops: StoryStop[],
   initialCamera: CameraPosition,
@@ -85,28 +82,21 @@ export function resolveStops(
     const cam = stop.camera;
     let camera: CameraPosition;
 
-    if (isRegions(cam)) {
-      const box = regionBox(verses, cam.names);
-      camera = box
-        ? cameraToFit(box, mapSize.width, mapSize.height, stop.zoom)
-        : { ...initialCamera };
-    } else if (isVerseRef(cam)) {
-      const zoom = stop.zoom ?? 3;
-      const verseLayout = squares.find(cam.ref);
-      if (verseLayout) {
-        camera = cameraForVerse(verseLayout, zoom, focus, mapSize);
-      } else {
-        camera = { ...initialCamera };
-      }
+    if (isPlaces(cam)) {
+      const verse = cam.names.length === 1 ? squares.find(cam.names[0]) : undefined;
+      const box = verse ? null : placeBox(verses, cam.names);
+      camera = verse
+        ? cameraForVerse(verse, stop.zoom ?? 3, focus, mapSize)
+        : box
+          ? cameraToFit(box, mapSize.width, mapSize.height, stop.zoom)
+          : { ...initialCamera };
     } else if (cam !== 'initial') {
       camera = cam;
-    } else if (stop.verse) {
-      const verseLayout = squares.find(stop.verse);
-      if (verseLayout) {
-        camera = cameraForVerse(verseLayout, initialCamera.zoom, focus, mapSize);
-      } else {
-        camera = { ...initialCamera };
-      }
+    } else if (stop.pin) {
+      const verse = squares.find(stop.pin);
+      camera = verse
+        ? cameraForVerse(verse, initialCamera.zoom, focus, mapSize)
+        : { ...initialCamera };
     } else {
       camera = { ...initialCamera };
     }

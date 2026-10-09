@@ -42,31 +42,31 @@ These are the Haftarahs of Consolation, read in the late summer alongside the bo
 
 Tisha b’Av, a fast day mourning ancient disaster, has just passed.
 
-<!-- stop: consolation_1 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | verse: Isaiah.40.1 | reading: Vaetchanan -->
+<!-- stop: consolation_1 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | pin: Isaiah.40.1 | reading: Vaetchanan -->
 
 The readings switch to words of hope from Isaiah. *“Comfort, comfort My people.”*
 
-<!-- stop: consolation_2 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Eikev | verse: Isaiah.51.3 -->
+<!-- stop: consolation_2 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Eikev | pin: Isaiah.51.3 -->
 
 *Truly GOD has comforted...*
 
-<!-- stop: consolation_3 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Re'eh | verse: Isaiah.54.11 -->
+<!-- stop: consolation_3 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Re'eh | pin: Isaiah.54.11 -->
 
 *Unhappy, storm-tossed one, uncomforted!*
 
-<!-- stop: consolation_4 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Shoftim | verse: Isaiah.51.12 -->
+<!-- stop: consolation_4 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Shoftim | pin: Isaiah.51.12 -->
 
 *I am the One who comforts you!*
 
-<!-- stop: consolation_5 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Ki Teitzei | verse: Isaiah.54.1 -->
+<!-- stop: consolation_5 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Ki Teitzei | pin: Isaiah.54.1 -->
 
 *Shout aloud for joy...*
 
-<!-- stop: consolation_6 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Ki Tavo | verse: Isaiah.60.1 -->
+<!-- stop: consolation_6 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Ki Tavo | pin: Isaiah.60.1 -->
 
 *Arise, shine, for your light has dawned!*
 
-<!-- stop: consolation_7 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Nitzavim | verse: Isaiah.61.10 -->
+<!-- stop: consolation_7 | camera: Isaiah.52.1 | zoom: 1 | overlay: haftarah | custom: ashkenazi | reading: Nitzavim | pin: Isaiah.61.10 -->
 
 *I greatly rejoice in GOD...*
 

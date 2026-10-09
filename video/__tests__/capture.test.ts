@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { captureLine, storyStopLine } from '../capture.ts';
 import { parseScript } from '../script.ts';
 import { parseStoryMarkdown } from '@torahmap/stories';
+import { SEARCH_KEYS } from '@torahmap/overlay-catalog';
 
 const queryOf = (params: Record<string, string>) => `?${new URLSearchParams(params)}`;
 
@@ -14,7 +15,7 @@ describe('storyStopLine', () => {
     expect(line).toBe(
       '<!-- stop: abram | camera: 2832.5,500,0.39 | overlay: search | q: אברם,יצחק -->\n\n',
     );
-    const [stop] = parseStoryMarkdown(line!).stops;
+    const [stop] = parseStoryMarkdown(line!, SEARCH_KEYS).stops;
     expect(stop).toMatchObject({
       id: 'abram',
       camera: { x: 2832.5, y: 500, zoom: 0.39 },
@@ -24,20 +25,23 @@ describe('storyStopLine', () => {
   });
 
   it('takes the zoom the URL leaves out as 1', () => {
-    const [stop] = parseStoryMarkdown(storyStopLine('a', queryOf({ x: '1', y: '2' }))!).stops;
+    const [stop] = parseStoryMarkdown(
+      storyStopLine('a', queryOf({ x: '1', y: '2' }))!,
+      SEARCH_KEYS,
+    ).stops;
     expect(stop.camera).toEqual({ x: 1, y: 2, zoom: 1 });
   });
 
   it('centres a pinned verse, as the app does, at the zoom the URL holds', () => {
     const line = storyStopLine('call', queryOf({ verse: 'Genesis.12.1', zoom: '2.5' }));
     expect(line).toBe(
-      '<!-- stop: call | camera: Genesis.12.1 | zoom: 2.5 | verse: Genesis.12.1 -->\n\n',
+      '<!-- stop: call | camera: Genesis.12.1 | zoom: 2.5 | pin: Genesis.12.1 -->\n\n',
     );
-    const [stop] = parseStoryMarkdown(line!).stops;
+    const [stop] = parseStoryMarkdown(line!, SEARCH_KEYS).stops;
     expect(stop).toMatchObject({
-      camera: { kind: 'verse', ref: 'Genesis.12.1' },
+      camera: { kind: 'places', names: ['Genesis.12.1'] },
       zoom: 2.5,
-      verse: 'Genesis.12.1',
+      pin: 'Genesis.12.1',
     });
   });
 

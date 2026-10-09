@@ -1,13 +1,13 @@
-// What a link is called in a tab and a chat preview.
+// What a Tanakh link is called in a tab and a chat preview.
 
 import { linkKind, parseVerseId, verseRef, type UrlState } from '@torahmap/link';
 import { overlayName } from '@torahmap/overlay-catalog';
-import { STORIES, listedStories, storyToOpen, firstSentence } from '@torahmap/stories';
+import { listedStories, storyToOpen, firstSentence } from '@torahmap/stories';
+import { STORIES } from '@torahmap/stories/tanakh';
+import { SEPARATOR, viewTitle } from './view.ts';
 
-export const ORIGIN = 'https://torahmap.org';
 export const SITE_NAME = 'Torahmap';
 export const TAGLINE = 'A Visual Concordance of the Hebrew Bible.';
-const SEPARATOR = ' · ';
 
 // torahmap.org's list; a preview build that lists drafts can open another story.
 const LISTED = listedStories(STORIES, false);
@@ -35,10 +35,4 @@ export function describeLink(state: UrlState): LinkDescription {
     title: viewTitle(SITE_NAME, verse && verseRef(verse), state),
     description: overlay ? `${overlay} overlay. ${TAGLINE}` : TAGLINE,
   };
-}
-
-/** A view's title on any text's site: what it pins, then its search, then the site's name. */
-export function viewTitle(siteName: string, pinned: string | null, state: UrlState): string {
-  const search = state.searchParams?.search;
-  return [pinned, search && `Search: ${search}`, siteName].filter(Boolean).join(SEPARATOR);
 }

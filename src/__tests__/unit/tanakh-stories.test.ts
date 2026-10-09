@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { resolveStops } from '../../tanakh/stories';
 import { initBookData } from '../../constants/books';
-import { cameraToFit } from '../../camera';
+import { cameraToFit, centreForFocus } from '../../camera';
 import { SECTION_LABEL_REACH } from '../../labels';
 import type { TanakhLayout } from '../../types';
 import { createStoryStop as stop, createVerse } from '../helpers/fixtures';
@@ -22,11 +22,11 @@ describe('resolveStops with a pinned verse', () => {
     )[0].camera;
 
   it('moves the camera to a verse the map holds', () => {
-    expect(resolve({ verse: verses[1].id })).not.toEqual(initial);
+    expect(resolve({ pin: verses[1].id })).not.toEqual(initial);
   });
 
   it('keeps the initial camera for a verse the map does not hold', () => {
-    expect(resolve({ verse: 'Genesis.99.1' })).toEqual(initial);
+    expect(resolve({ pin: 'Genesis.99.1' })).toEqual(initial);
   });
 });
 
@@ -50,26 +50,40 @@ describe('resolveStops with a region camera', () => {
 
   it('fits a book', () => {
     const box = { minX: 90, minY: 100, maxX: 100 + SECTION_LABEL_REACH, maxY: 110 };
-    expect(resolve({ camera: { kind: 'regions', names: ['I.Samuel'] } })).toEqual(
+    expect(resolve({ camera: { kind: 'places', names: ['I.Samuel'] } })).toEqual(
       cameraToFit(box, 400, 300),
     );
   });
 
   it('fits several regions together', () => {
     const box = { minX: 90, minY: 100, maxX: 200 + SECTION_LABEL_REACH, maxY: 210 };
-    expect(resolve({ camera: { kind: 'regions', names: ['Neviim', 'Ketuvim'] } })).toEqual(
+    expect(resolve({ camera: { kind: 'places', names: ['Neviim', 'Ketuvim'] } })).toEqual(
       cameraToFit(box, 400, 300),
     );
   });
 
   it('fits everything, at a given zoom', () => {
     const box = { minX: 0, minY: 0, maxX: 200 + SECTION_LABEL_REACH, maxY: 210 };
-    expect(resolve({ camera: { kind: 'regions', names: ['everything'] }, zoom: 0.5 })).toEqual(
+    expect(resolve({ camera: { kind: 'places', names: ['everything'] }, zoom: 0.5 })).toEqual(
       cameraToFit(box, 400, 300, 0.5),
     );
   });
 
-  it('uses the initial camera when no region is found', () => {
-    expect(resolve({ camera: { kind: 'regions', names: ['Nowhere'] } })).toEqual(initial);
+  it('fits a verse with a region', () => {
+    const box = { minX: 0, minY: 0, maxX: 100 + SECTION_LABEL_REACH, maxY: 110 };
+    expect(resolve({ camera: { kind: 'places', names: [verses[0].id, 'I.Samuel'] } })).toEqual(
+      cameraToFit(box, 400, 300),
+    );
+  });
+
+  it('centres a camera naming only a verse, at the stop’s zoom', () => {
+    expect(resolve({ camera: { kind: 'places', names: [verses[1].id] }, zoom: 2 })).toEqual({
+      ...centreForFocus(verses[1], 2, { x: 0, y: 0 }, map),
+      zoom: 2,
+    });
+  });
+
+  it('uses the initial camera when no place is found', () => {
+    expect(resolve({ camera: { kind: 'places', names: ['Nowhere'] } })).toEqual(initial);
   });
 });

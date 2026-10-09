@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readLink } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { describeLink, TAGLINE } from '@torahmap/site';
+import { describeLink, TAGLINE } from '@torahmap/site/tanakh';
 
 const describeQuery = (q: string) => describeLink(readLink(q, LINK_KEYS));
 
