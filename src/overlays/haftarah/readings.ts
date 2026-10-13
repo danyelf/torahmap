@@ -4,7 +4,7 @@
 
 import type { Color } from '../types.ts';
 import type { TorahData } from '../../types.ts';
-import { verseId } from '@torahmap/link/verse';
+import { verseId } from '@torahmap/link/tanakh';
 import { hslToRgb } from '../../utils/color.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { memoByValueAndKey } from '../../utils/memo.ts';

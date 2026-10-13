@@ -9,7 +9,7 @@ import {
   type UrlState,
   type UrlParamSpec,
 } from '../src/index.ts';
-import { verseId, parseVerseId } from '../src/verse.ts';
+import { verseId, parseVerseId } from '../src/tanakh.ts';
 import { keys, lookup } from './sampleOverlays.ts';
 
 describe('readLink', () => {

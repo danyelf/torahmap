@@ -10,6 +10,7 @@ export { EASINGS, DEFAULT_EASING } from './types.ts';
 export {
   parseStoryMarkdown,
   writeStopComment,
+  cameraSetting,
   STOP_COMMENT_RE,
   STORY_HEADER_KEYS,
 } from './parser.ts';

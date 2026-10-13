@@ -30,7 +30,7 @@ describe('resolveStops with a pinned verse', () => {
   });
 });
 
-describe('resolveStops with a region camera', () => {
+describe('resolveStops with a camera naming places', () => {
   initBookData({
     books: [
       { name: 'Genesis', hebrewName: '', section: 'torah', chapters: [1] },
@@ -55,7 +55,7 @@ describe('resolveStops with a region camera', () => {
     );
   });
 
-  it('fits several regions together', () => {
+  it('fits several places together', () => {
     const box = { minX: 90, minY: 100, maxX: 200 + SECTION_LABEL_REACH, maxY: 210 };
     expect(resolve({ camera: { kind: 'places', names: ['Neviim', 'Ketuvim'] } })).toEqual(
       cameraToFit(box, 400, 300),

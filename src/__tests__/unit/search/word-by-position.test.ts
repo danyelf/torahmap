@@ -10,7 +10,7 @@
 // there names the word next door, so they are lined up by letter instead.
 
 import { describe, it, expect } from 'vitest';
-import { parseVerseId } from '@torahmap/link/verse';
+import { parseVerseId } from '@torahmap/link/tanakh';
 import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../tanakh/search/dictionary';
 import { splitIntoWords, stripNikkud } from '../../../hebrew';
 import { verseWords } from '../../../verseWords';

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseStoryMarkdown, writeStopComment } from '../src/parser';
+import { cameraSetting, parseStoryMarkdown, writeStopComment } from '../src/parser';
 
 const parse = (md: string) => parseStoryMarkdown(md, new Set(['search', 'mode']));
 
@@ -221,8 +221,12 @@ describe('writeStopComment', () => {
   it('writes a stop the parser reads back', () => {
     const comment = writeStopComment(
       'abraham',
-      { x: 12.345, y: -6.7, zoom: 2.5 },
-      { overlay: 'haftarah', custom: 'sephardi', search: 'אברהם', pin: 'I.Samuel.1.5' },
+      {
+        camera: cameraSetting({ x: 12.345, y: -6.7, zoom: 2.5 }),
+        overlay: 'haftarah',
+        pin: 'I.Samuel.1.5',
+      },
+      { custom: 'sephardi', search: 'אברהם' },
     );
     const [stop] = parse(`${comment}\nText.`).stops;
     expect(stop).toMatchObject({

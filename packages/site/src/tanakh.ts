@@ -1,7 +1,7 @@
 // What a Tanakh link is called in a tab and a chat preview.
 
 import { linkKind, type UrlState } from '@torahmap/link';
-import { parseVerseId, verseRef } from '@torahmap/link/verse';
+import { parseVerseId, verseRef } from '@torahmap/link/tanakh';
 import { overlayName } from '@torahmap/overlay-catalog';
 import { listedStories, storyToOpen, firstSentence } from '@torahmap/stories';
 import { STORIES } from '@torahmap/stories/tanakh';

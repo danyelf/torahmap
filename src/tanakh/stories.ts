@@ -29,26 +29,44 @@ const SECTIONS: Record<string, Book['section']> = {
   Ketuvim: 'ketuvim',
 };
 
-/** Whether `verse` is in the place `name`: everything, a section, a book, or the verse itself. */
-function inPlace(verse: TanakhLayout, name: string): boolean {
-  if (name === 'everything' || name === verse.id) return true;
+/** Whether `verse` is in the region `name`: everything, a section, or a book. */
+function inRegion(verse: TanakhLayout, name: string): boolean {
+  if (name === 'everything') return true;
   const section = SECTIONS[name];
   if (section) return getBookSection(verse.book) === section;
   return verse.book === bookFromUrl(name);
 }
 
+/** The verses in the place `name`: the verse with that id, or every verse in that region. */
+function versesIn(
+  verses: TanakhLayout[],
+  squares: ItemIndex<TanakhLayout>,
+  name: string,
+): TanakhLayout[] {
+  const verse = squares.find(name);
+  return verse ? [verse] : verses.filter((v) => inRegion(v, name));
+}
+
 /** Whether `name` is a place on the map. */
-export function namesPlace(verses: TanakhLayout[], name: string): boolean {
-  return verses.some((v) => inPlace(v, name));
+export function namesPlace(
+  verses: TanakhLayout[],
+  squares: ItemIndex<TanakhLayout>,
+  name: string,
+): boolean {
+  return versesIn(verses, squares, name).length > 0;
 }
 
 /**
  * The box around every verse in the named places and the section label to
  * their right, or null if they hold none.
  */
-function placeBox(verses: TanakhLayout[], names: string[]): WorldBox | null {
+function placeBox(
+  verses: TanakhLayout[],
+  squares: ItemIndex<TanakhLayout>,
+  names: string[],
+): WorldBox | null {
   const inside = names.flatMap((name) => {
-    const found = verses.filter((v) => inPlace(v, name));
+    const found = versesIn(verses, squares, name);
     if (found.length === 0) console.warn(`[story] no place named "${name}"`);
     return found;
   });
@@ -84,7 +102,7 @@ export function resolveStops(
 
     if (isPlaces(cam)) {
       const verse = cam.names.length === 1 ? squares.find(cam.names[0]) : undefined;
-      const box = verse ? null : placeBox(verses, cam.names);
+      const box = verse ? null : placeBox(verses, squares, cam.names);
       camera = verse
         ? cameraForVerse(verse, stop.zoom ?? 3, focus, mapSize)
         : box

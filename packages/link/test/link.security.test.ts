@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { keys } from './sampleOverlays.ts';
 import { readLink } from '../src/index.ts';
-import { parseVerseId } from '../src/verse.ts';
+import { parseVerseId } from '../src/tanakh.ts';
 
 describe('URL Parameter Security Validation', () => {
   describe('XSS Prevention', () => {

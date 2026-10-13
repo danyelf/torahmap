@@ -4,12 +4,11 @@
 import { beforeAll, describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseStoryMarkdown, STOP_COMMENT_RE, STORY_HEADER_KEYS } from '@torahmap/stories';
-import { STORY_MARKDOWN } from '@torahmap/stories/tanakh';
+import { STOP_COMMENT_RE, STORY_HEADER_KEYS, type StoryStop } from '@torahmap/stories';
+import { STORIES, STORY_MARKDOWN } from '@torahmap/stories/tanakh';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { writeLink } from '@torahmap/link';
-import { parseVerseId } from '@torahmap/link/verse';
-import { LINK_KEYS, SEARCH_KEYS } from '@torahmap/overlay-catalog';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { parseUrlState } from '../../urlState';
 import { isSearching, searchTool } from '../../tanakh/search/index';
 import { settingsFromLink } from '../../overlays/settings';
@@ -36,7 +35,7 @@ beforeAll(async () => {
  * Stops whose haftarah reading, once read the way the app does, is no
  * reading's name. The app lights nothing for such a stop rather than failing.
  */
-function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']): string[] {
+function unknownReadings(stops: StoryStop[]): string[] {
   return stops
     .filter((s) => s.overlay === 'haftarah' && s.overlayParams?.reading)
     .filter((s) => {
@@ -46,8 +45,8 @@ function unknownReadings(stops: ReturnType<typeof parseStoryMarkdown>['stops']):
     .map((s) => `${s.id}: ${s.overlayParams!.reading}`);
 }
 
-describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
-  const story = parseStoryMarkdown(markdown, SEARCH_KEYS);
+describe.each(STORIES.map((story) => [story.id, story.data] as const))('%s', (id, story) => {
+  const markdown = STORY_MARKDOWN[id];
   const { stops } = story;
   const comments = [...markdown.matchAll(STOP_COMMENT_RE)];
   // The header as written, read without the parser, which drops what it does not know.
@@ -95,38 +94,6 @@ describe.each(Object.entries(STORY_MARKDOWN))('%s', (id, markdown) => {
   it('gives every stop its own id', () => {
     const ids = stops.map((s) => s.id);
     expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
-  });
-
-  const texts = JSON.parse(fs.readFileSync(path.join(dataDir, 'all-texts.json'), 'utf-8'));
-  const verseExists = (ref: string): boolean => {
-    const v = parseVerseId(ref);
-    return !!v && !!texts[v.book]?.[String(v.chapter)]?.[String(v.verse)];
-  };
-
-  it('pins only verses that exist', () => {
-    const missing = stops.filter((s) => s.pin && !verseExists(s.pin));
-    expect(missing.map((s) => `${s.id}: ${s.pin}`)).toEqual([]);
-  });
-
-  it('names only places that exist: a verse, or a region', () => {
-    const structure = JSON.parse(
-      fs.readFileSync(path.join(dataDir, 'tanakh-structure.json'), 'utf-8'),
-    );
-    const regions = new Set([
-      'everything',
-      'Torah',
-      'Neviim',
-      'Ketuvim',
-      ...structure.books.map((b: { name: string }) => b.name.replace(/ /g, '.')),
-    ]);
-    const unknown = stops.flatMap((s) =>
-      typeof s.camera === 'object' && 'names' in s.camera
-        ? s.camera.names
-            .filter((n) => !regions.has(n) && !verseExists(n))
-            .map((n) => `${s.id}: ${n}`)
-        : [],
-    );
-    expect(unknown).toEqual([]);
   });
 
   it('uses only overlays that exist, with settings they take', () => {

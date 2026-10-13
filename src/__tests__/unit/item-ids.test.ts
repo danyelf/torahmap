@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
-import { parseVerseId } from '@torahmap/link/verse';
+import { parseVerseId } from '@torahmap/link/tanakh';
 import { STORIES } from '@torahmap/stories/tanakh';
 import { namesPlace } from '../../tanakh/stories.ts';
 import { initBookData } from '../../constants/books.ts';
@@ -53,6 +53,7 @@ describe('the shipped data', () => {
   it('has every story name only places the map holds', () => {
     initBookData(shipped(STRUCTURE_FILE));
     const verses = computeLayout(shipped(STRUCTURE_FILE));
+    const squares = indexItems(verses);
     const named = STORIES.flatMap(({ id, data }) =>
       data.stops.flatMap((stop) =>
         typeof stop.camera === 'object' && 'kind' in stop.camera && stop.camera.kind === 'places'
@@ -60,7 +61,9 @@ describe('the shipped data', () => {
           : [],
       ),
     );
-    expect(named.filter(({ name }) => !namesPlace(verses, name)).map((n) => n.where)).toEqual([]);
+    expect(
+      named.filter(({ name }) => !namesPlace(verses, squares, name)).map((n) => n.where),
+    ).toEqual([]);
   });
 
   it('lays out the Talmud with no two squares sharing an id', () => {

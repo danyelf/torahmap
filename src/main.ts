@@ -95,7 +95,7 @@ import { isPhone } from './phone.ts';
 import type { Picture } from './geometry.ts';
 import { URL_UPDATE_DEBOUNCE_MS, SEARCH_WITH_OVERLAY, MAP_FADE } from './constants.ts';
 import { stopLabel } from './scrollytelling/storyPanel';
-import { DEFAULT_EASING, listedStories, writeStopComment } from '@torahmap/stories';
+import { DEFAULT_EASING, cameraSetting, listedStories, writeStopComment } from '@torahmap/stories';
 import {
   createStoryColumn,
   nearerStop,
@@ -1061,17 +1061,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'C') {
         e.preventDefault();
-        const params: Record<string, string> = {
-          ...(currentOverlay && {
-            overlay: currentOverlay.id,
-            ...overlaySettings.toUrl(currentOverlay),
-          }),
-          ...overlaySettings.toUrl(searchTool),
-        };
-        if (pinnedVerse) {
-          params.pin = pinnedVerse.id;
-        }
-        const comment = writeStopComment('STOP_ID', camera, params);
+        const comment = writeStopComment(
+          'STOP_ID',
+          { camera: cameraSetting(camera), overlay: currentOverlay?.id, pin: pinnedVerse?.id },
+          {
+            ...(currentOverlay && overlaySettings.toUrl(currentOverlay)),
+            ...overlaySettings.toUrl(searchTool),
+          },
+        );
         navigator.clipboard.writeText(comment);
         console.log(`[capture] Copied to clipboard:\n${comment}`);
       }

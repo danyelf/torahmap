@@ -11,11 +11,19 @@ import {
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;
 type HeaderKey = (typeof STORY_HEADER_KEYS)[number];
 
+/** The settings a stop's comment may give, beside the search's and the overlay's. */
+const STOP_KEYS = ['camera', 'zoom', 'overlay', 'pin', 'easing'] as const;
+type StopKey = (typeof STOP_KEYS)[number];
+type StopSettings = Partial<Record<StopKey, string>>;
+
+function isStopKey(key: string): key is StopKey {
+  return (STOP_KEYS as readonly string[]).includes(key);
+}
+
 // A story is optional frontmatter (STORY_HEADER_KEYS) followed by stops, each
 // opened by `<!-- stop: id | camera: ... | search: ... | overlay: ... | key: value -->`
-// and a `# Title` heading. `searchKeys` go to the search; params other than
-// camera/overlay/easing/pin/zoom become the overlay's. See markdown/ for
-// examples.
+// and a `# Title` heading. `searchKeys` go to the search, and settings other
+// than STOP_KEYS to the overlay. See markdown/ for examples.
 export function parseStoryMarkdown(markdown: string, searchKeys: ReadonlySet<string>): StoryData {
   const front = parseFrontmatter(markdown);
   const stops = parseStops(stripFrontmatter(markdown), searchKeys);
@@ -62,16 +70,21 @@ function stripFrontmatter(md: string): string {
 /** A stop's opening comment: its id, then its `key: value` settings, each after a `|`. */
 export const STOP_COMMENT_RE = /<!--\s*stop:\s*([^|>]+?)(?:\s*\|(.+?))?\s*-->/g;
 
-/** The comment that opens a stop at `camera`, to two decimals, with `params` after it. */
+/** A camera position as a stop's comment writes it, to two decimals. */
+export function cameraSetting(camera: CameraPosition): string {
+  const round = (n: number) => Math.round(n * 100) / 100;
+  return [camera.x, camera.y, camera.zoom].map(round).join(',');
+}
+
+/** The comment that opens stop `id`: its settings, then the search's and the overlay's `params`. */
 export function writeStopComment(
   id: string,
-  camera: CameraPosition,
-  params: Record<string, string>,
+  settings: StopSettings,
+  params: Record<string, string> = {},
 ): string {
-  const round = (n: number) => Math.round(n * 100) / 100;
-  const settings = { camera: [camera.x, camera.y, camera.zoom].map(round).join(','), ...params };
-  const parts = [id, ...Object.entries(settings).map(([key, value]) => `${key}: ${value}`)];
-  return `<!-- stop: ${parts.join(' | ')} -->`;
+  const own = STOP_KEYS.flatMap((key) => (settings[key] ? [[key, settings[key]]] : []));
+  const parts = [...own, ...Object.entries(params)].map(([key, value]) => `${key}: ${value}`);
+  return `<!-- stop: ${[id, ...parts].join(' | ')} -->`;
 }
 
 interface StopMeta {
@@ -98,8 +111,7 @@ function parseStopComment(
   return { id: id.trim(), params };
 }
 
-function parseCamera(params: Record<string, string>): CameraRef {
-  const cameraStr = params.camera;
+function parseCamera(cameraStr: string | undefined): CameraRef {
   if (!cameraStr || cameraStr === 'initial') return 'initial';
 
   // Support "x,y,zoom" format
@@ -148,45 +160,27 @@ function parseStops(body: string, searchKeys: ReadonlySet<string>): StoryStop[] 
       ? rawContent.slice(rawContent.indexOf(titleMatch[0]) + titleMatch[0].length).trim()
       : rawContent;
 
-    const camera = parseCamera(meta.params);
-
+    const settings: StopSettings = {};
     const overlayParams: Record<string, string> = {};
     const searchParams: Record<string, string> = {};
-    let overlay: string | null = null;
-    let easing: EasingName | undefined;
-
-    let pin: string | undefined;
-    let zoom: number | undefined;
-
     for (const [key, value] of Object.entries(meta.params)) {
-      if (key === 'camera') continue;
-      if (key === 'overlay') {
-        overlay = value;
-      } else if (key === 'easing') {
-        easing = easingNamed(value);
-      } else if (key === 'pin') {
-        pin = value;
-      } else if (key === 'zoom') {
-        const z = parseFloat(value);
-        if (!isNaN(z)) zoom = z;
-      } else if (searchKeys.has(key)) {
-        searchParams[key] = value;
-      } else {
-        overlayParams[key] = value;
-      }
+      if (isStopKey(key)) settings[key] = value;
+      else if (searchKeys.has(key)) searchParams[key] = value;
+      else overlayParams[key] = value;
     }
+    const zoom = parseFloat(settings.zoom ?? '');
 
     stops.push({
       id: meta.id,
       title,
       text,
-      camera,
-      overlay,
+      camera: parseCamera(settings.camera),
+      overlay: settings.overlay ?? null,
       overlayParams: Object.keys(overlayParams).length > 0 ? overlayParams : undefined,
       searchParams: Object.keys(searchParams).length > 0 ? searchParams : undefined,
-      pin,
-      easing,
-      zoom,
+      pin: settings.pin,
+      easing: easingNamed(settings.easing),
+      zoom: isNaN(zoom) ? undefined : zoom,
     });
   }
 

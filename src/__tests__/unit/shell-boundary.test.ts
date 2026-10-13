@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = resolve(__dirname, '../../..');
 
-/** Each text's own code: its folder and page, and for the Tanakh its overlays, layout and packages. */
+/** Each text's own code. */
 const TANAKH = [
   'src/tanakh/',
   'src/main-tanakh.ts',
@@ -15,7 +15,7 @@ const TANAKH = [
   'src/mapTitle.ts',
   'src/constants/books.ts',
   'src/verseTexts.ts',
-  'packages/link/src/verse.ts',
+  'packages/link/src/tanakh.ts',
   'packages/overlay-catalog/',
   'packages/site/src/tanakh.ts',
   'packages/stories/src/tanakh.ts',
@@ -39,7 +39,7 @@ function target(file: string, spec: string): string | undefined {
   if (spec.startsWith('.')) {
     const path = resolve(dirname(file), spec);
     return [path, `${path}.ts`, `${path}/index.ts`].find(
-      (file) => file.endsWith('.ts') && existsSync(file),
+      (candidate) => candidate.endsWith('.ts') && existsSync(candidate),
     );
   }
   const [, name, entry = ''] = spec.match(/^@torahmap\/([^/]+)(\/.+)?$/)!;
