@@ -150,11 +150,15 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `packages/` — shared code, kept free of the page so the Worker can import
   it, as npm workspace packages: `link` (reading and writing links, under
   each text's keys), `overlay-catalog` (each Tanakh overlay's name and link
-  keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (the
-  stories, compiled from Markdown by `generate.mjs`, and which are listed and
-  opened by default), and `site` (what the
-  Tanakh's site calls things: the site's name and tagline, and how a link is
-  described; each text's own copy is its `site` slot, `src/app/text.ts`).
+  keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (how
+  a story is written, and which are listed and opened by default; the
+  Tanakh's own, compiled from Markdown by `generate.mjs`, at
+  `@torahmap/stories/tanakh`), and `site` (the address and view titles every
+  text's site shares; at `@torahmap/site/tanakh`, what the Tanakh's site
+  calls things: the site's name and tagline, and how a link is described;
+  each text's own copy is its `site` slot, `src/app/text.ts`). A package's
+  Tanakh-only code sits behind its `/tanakh` entry, so the app shell can
+  import the rest.
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
@@ -218,7 +222,7 @@ The codebase follows a **functional, modular design** with clear separation of c
 
 ### Key Concepts
 
-- **main.ts** is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given
+- **main.ts** is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `src/__tests__/unit/shell-boundary.test.ts` lists what counts
 - **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
 - **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors

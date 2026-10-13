@@ -1,4 +1,4 @@
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/tanakh';
 import type { Dictionary, SearchResult, TextIndex } from '../../tanakh/search/search';
 import type { Parse } from '../../tanakh/search/dictionary';
 import { addTerm, setMode, type SearchMode } from '../../tanakh/search/terms';

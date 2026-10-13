@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CHROME, STATES, viaMenu } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
-import { NO_OVERLAY } from '@torahmap/overlay-catalog';
+import { NO_OVERLAY } from '../src/overlays/types.ts';
 import { asReturningReader, boxes, DRAWN_FLOOR, drawnPixels, allLoaded, openMap } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {

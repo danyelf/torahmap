@@ -1,6 +1,7 @@
 // What the Tanakh's page says before the map runs. Imported by the Vite config, so it imports no app code.
 
-import { ORIGIN, SITE_NAME, TAGLINE } from '@torahmap/site';
+import { ORIGIN } from '@torahmap/site';
+import { SITE_NAME, TAGLINE } from '@torahmap/site/tanakh';
 import type { PageCopy } from '../app/page.ts';
 
 export const TANAKH_PAGE: PageCopy = {

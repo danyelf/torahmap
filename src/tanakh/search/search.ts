@@ -4,7 +4,7 @@
 import type { VerseTexts } from '../../verseTexts';
 import { memoByValue } from '../../utils/memo.ts';
 import { HEBREW } from '../../types.ts';
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/tanakh';
 
 import {
   TERM_SEPARATORS,

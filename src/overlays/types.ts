@@ -7,6 +7,9 @@ export type { Credit } from '../credits.ts';
 
 export type { Color };
 
+/** The overlay id that stands for none: the picker's first option, and what telemetry records. */
+export const NO_OVERLAY = 'none';
+
 // A change to an overlay's settings: the next settings, worked out from the
 // current ones. Typed through a method so that its parameter is checked
 // bivariantly, like the Overlay members below; as a plain function type, S would

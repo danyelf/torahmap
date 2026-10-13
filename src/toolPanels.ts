@@ -1,4 +1,4 @@
-import { NO_OVERLAY } from '@torahmap/overlay-catalog';
+import { NO_OVERLAY } from './overlays/types.ts';
 import { CONTROL, panelHtml } from './panel.ts';
 
 /**

@@ -4,10 +4,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./tanakh": "./src/tanakh.ts",
     "./vite-plugin": "./vite-plugin.mjs"
   },
   "dependencies": {
-    "@torahmap/link": "*",
     "@torahmap/overlay-catalog": "*"
   }
 }

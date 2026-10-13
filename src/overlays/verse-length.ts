@@ -1,7 +1,7 @@
 import './verse-length.css';
 import type { Overlay, Color } from './types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/tanakh';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { verseWords } from '../verseWords.ts';
 import type { ColorStop } from '../utils/color.ts';

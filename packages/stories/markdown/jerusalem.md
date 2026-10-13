@@ -8,7 +8,7 @@ draft: true
 
 The Torah never names Jerusalem. Nowhere in the Five Books of Moses is there a discussion of where in the land the people will set up their Temple.
 
-<!-- stop: first | camera: Joshua.10.1 | zoom: 2.5 | verse: Joshua.10.1 | search: ירושלם -->
+<!-- stop: first | camera: Joshua.10.1 | zoom: 2.5 | pin: Joshua.10.1 | search: ירושלם -->
 
 In the book of Joshua, we meet the King of Jerusalem
 

@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
-import { parseVerseId } from '@torahmap/link';
-import { STORIES } from '@torahmap/stories';
-import { namesRegion } from '../../scrollytelling/storyPanel.ts';
+import { parseVerseId } from '@torahmap/link/tanakh';
+import { STORIES } from '@torahmap/stories/tanakh';
+import { namesPlace } from '../../tanakh/stories.ts';
 import { initBookData } from '../../constants/books.ts';
 import { computeLayout } from '../../layout.ts';
 import { computeTalmudLayout } from '../../talmud/layout.ts';
@@ -42,31 +42,28 @@ describe('the shipped data', () => {
     expect(keys.filter((key) => !squares.find(key))).toEqual([]);
   });
 
-  it('has every story name only verses the map holds', () => {
+  it('has every story pin only verses the map holds', () => {
     const squares = indexItems(computeLayout(shipped(STRUCTURE_FILE)));
-    const named = STORIES.flatMap(({ id, data }) =>
-      data.stops.flatMap((stop) => {
-        const camera =
-          typeof stop.camera === 'object' && 'kind' in stop.camera && stop.camera.kind === 'verse'
-            ? stop.camera.ref
-            : undefined;
-        return [stop.verse, camera].flatMap((ref) => (ref ? [`${id}/${stop.id}: ${ref}`] : []));
-      }),
+    const pinned = STORIES.flatMap(({ id, data }) =>
+      data.stops.flatMap((stop) => (stop.pin ? [`${id}/${stop.id}: ${stop.pin}`] : [])),
     );
-    expect(named.filter((where) => !squares.find(where.split(': ')[1]))).toEqual([]);
+    expect(pinned.filter((where) => !squares.find(where.split(': ')[1]))).toEqual([]);
   });
 
   it('has every story name only places the map holds', () => {
     initBookData(shipped(STRUCTURE_FILE));
     const verses = computeLayout(shipped(STRUCTURE_FILE));
+    const squares = indexItems(verses);
     const named = STORIES.flatMap(({ id, data }) =>
       data.stops.flatMap((stop) =>
-        typeof stop.camera === 'object' && 'kind' in stop.camera && stop.camera.kind === 'regions'
+        typeof stop.camera === 'object' && 'kind' in stop.camera && stop.camera.kind === 'places'
           ? stop.camera.names.map((name) => ({ where: `${id}/${stop.id}: ${name}`, name }))
           : [],
       ),
     );
-    expect(named.filter(({ name }) => !namesRegion(verses, name)).map((n) => n.where)).toEqual([]);
+    expect(
+      named.filter(({ name }) => !namesPlace(verses, squares, name)).map((n) => n.where),
+    ).toEqual([]);
   });
 
   it('lays out the Talmud with no two squares sharing an id', () => {

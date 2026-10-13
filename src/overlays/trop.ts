@@ -7,7 +7,7 @@ import './trop.css';
 import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../types.ts';
 import { HEBREW } from '../types.ts';
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/tanakh';
 import { isNikkud } from '../hebrew.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import {

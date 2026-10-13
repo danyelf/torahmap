@@ -47,7 +47,6 @@ import {
   type LinkKeys,
   type UrlState,
 } from '@torahmap/link';
-import { NO_OVERLAY } from '@torahmap/overlay-catalog';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
@@ -77,8 +76,8 @@ import {
 } from './rendering.ts';
 import { getWebGL2 } from './webgl.ts';
 import type { MapItem, VerseColor } from './types.ts';
-import { createOverlaySettings, type Overlay } from './overlays/index.ts';
-import type { Tools } from './overlays/types.ts';
+import { createOverlaySettings } from './overlays/settings.ts';
+import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, downloadFiles, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';
@@ -96,7 +95,7 @@ import { isPhone } from './phone.ts';
 import type { Picture } from './geometry.ts';
 import { URL_UPDATE_DEBOUNCE_MS, SEARCH_WITH_OVERLAY, MAP_FADE } from './constants.ts';
 import { stopLabel } from './scrollytelling/storyPanel';
-import { DEFAULT_EASING, listedStories, writeStopComment } from '@torahmap/stories';
+import { DEFAULT_EASING, cameraSetting, listedStories, writeStopComment } from '@torahmap/stories';
 import {
   createStoryColumn,
   nearerStop,
@@ -472,8 +471,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (searching()) frontTool = 'search';
 
     // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
-    if (stop.verse) {
-      const verse = squares.find(stop.verse);
+    if (stop.pin) {
+      const verse = squares.find(stop.pin);
       if (verse && !sameItem(pinnedVerse, verse)) {
         pinnedVerse = verse;
         updateSidebarWrapper(verse, true);
@@ -1062,17 +1061,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'C') {
         e.preventDefault();
-        const params: Record<string, string> = {
-          ...(currentOverlay && {
-            overlay: currentOverlay.id,
-            ...overlaySettings.toUrl(currentOverlay),
-          }),
-          ...overlaySettings.toUrl(searchTool),
-        };
-        if (pinnedVerse) {
-          params.verse = pinnedVerse.id;
-        }
-        const comment = writeStopComment('STOP_ID', camera, params);
+        const comment = writeStopComment(
+          'STOP_ID',
+          { camera: cameraSetting(camera), overlay: currentOverlay?.id, pin: pinnedVerse?.id },
+          {
+            ...(currentOverlay && overlaySettings.toUrl(currentOverlay)),
+            ...overlaySettings.toUrl(searchTool),
+          },
+        );
         navigator.clipboard.writeText(comment);
         console.log(`[capture] Copied to clipboard:\n${comment}`);
       }
@@ -1481,7 +1477,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (frame.mode !== 'story')
       return { tools: pickedTools(), popup: pinnedVerse && text.popupFile(pinnedVerse) };
     const { stop } = storyColumn.where();
-    const verse = stop.verse ? squares.find(stop.verse) : null;
+    const verse = stop.pin ? squares.find(stop.pin) : null;
     return { tools: stopTools(stop, textTools), popup: verse && text.popupFile(verse) };
   }
 
