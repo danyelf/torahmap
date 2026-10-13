@@ -1,7 +1,7 @@
 // The site's layout with Psalms in three columns, which makes the map short
 // enough to fill a 36-inch sheet's width with the key beneath it.
 
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/verse';
 import { computeLayout } from '../../src/layout.ts';
 import type { TanakhLayout, TorahData } from '../../src/types.ts';
 

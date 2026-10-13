@@ -15,6 +15,7 @@ const TANAKH = [
   'src/mapTitle.ts',
   'src/constants/books.ts',
   'src/verseTexts.ts',
+  'packages/link/src/verse.ts',
   'packages/overlay-catalog/',
   'packages/site/src/tanakh.ts',
   'packages/stories/src/tanakh.ts',

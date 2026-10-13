@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
-import { parseVerseId } from '@torahmap/link';
+import { parseVerseId } from '@torahmap/link/verse';
 import { STORIES } from '@torahmap/stories/tanakh';
 import { namesPlace } from '../../tanakh/stories.ts';
 import { initBookData } from '../../constants/books.ts';

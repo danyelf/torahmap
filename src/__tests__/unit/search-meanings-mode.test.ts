@@ -5,7 +5,7 @@
 // "leafage", and more. A meanings-mode search looks for all of them.
 
 import { describe, it, expect } from 'vitest';
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/verse';
 import { excerptOf } from '../helpers/excerpt';
 import { findLexemesForWord, getLexeme } from '../../tanakh/search/search';
 import { addTerm, onlyMeaning } from '../../tanakh/search/terms';

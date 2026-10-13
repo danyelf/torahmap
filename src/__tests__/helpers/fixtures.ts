@@ -1,5 +1,5 @@
 // Test fixtures for Torah Map tests
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/verse';
 import type { TanakhIdentity, TanakhLayout, TorahData } from '../../types';
 import type { Overlay } from '../../overlays/types';
 import type { CommentaryCounts } from '../../overlays/commentary';

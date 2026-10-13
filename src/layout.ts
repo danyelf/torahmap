@@ -1,7 +1,7 @@
 // Layout algorithm: compute (x, y) position for every verse
 
 import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from './types.ts';
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/verse';
 import { seededRandom } from './utils/random.ts';
 import { JITTER_CENTER, JITTER_RANGE } from './constants.ts';
 

@@ -4,13 +4,12 @@ import {
   writeLink,
   linkNamesAView,
   linkKind,
-  verseId,
-  parseVerseId,
   validateOverlayParams,
   type LinkKeys,
   type UrlState,
   type UrlParamSpec,
 } from '../src/index.ts';
+import { verseId, parseVerseId } from '../src/verse.ts';
 import { keys, lookup } from './sampleOverlays.ts';
 
 describe('readLink', () => {

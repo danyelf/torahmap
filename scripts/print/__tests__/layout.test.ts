@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { verseId } from '@torahmap/link';
+import { verseId } from '@torahmap/link/verse';
 import { computeLayout } from '../../../src/layout.ts';
 import type { TanakhLayout } from '../../../src/types.ts';
 import { PSALMS_COLUMNS, printLayout } from '../layout.ts';

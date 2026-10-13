@@ -6,7 +6,7 @@ import type { SearchResult, Snippet } from './search.ts';
 import { colorIndexAt, termIsHebrew, type SearchTerm } from './terms.ts';
 import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { markRange } from './highlight.ts';
-import { verseRef } from '@torahmap/link';
+import { verseRef } from '@torahmap/link/verse';
 
 /** Everything one pass of the list needs to know. */
 export interface ResultsView {

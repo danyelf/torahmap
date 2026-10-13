@@ -54,7 +54,7 @@ const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
   await import('../../src/tanakh/search/dictionary.ts');
 const { verseWords } = await import('../../src/verseWords.ts');
 const { stripNikkud } = await import('../../src/hebrew.ts');
-const { verseId } = await import('@torahmap/link');
+const { verseId } = await import('@torahmap/link/verse');
 
 interface Report {
   /** Words whose reading the verse settles to exactly one dictionary word. */

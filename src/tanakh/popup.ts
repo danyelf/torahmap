@@ -1,6 +1,6 @@
 // What the Tanakh's popup says of a verse.
 
-import { verseRef } from '@torahmap/link';
+import { verseRef } from '@torahmap/link/verse';
 import type { Loaded } from '../dataFiles.ts';
 import type { TanakhTool } from '../overlays/index.ts';
 import { sefariaUrl } from '../sefaria.ts';
