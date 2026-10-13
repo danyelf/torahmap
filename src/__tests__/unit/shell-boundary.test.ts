@@ -30,7 +30,7 @@ const OVERLAY_BASE = [
 ];
 
 // `from './x'`, `import './x'` and `import('./x')`, or the same of one of our packages.
-const IMPORT = /(?:\bfrom|\bimport)\s*\(?\s*'(\.[^']+|@torahmap\/[^']+)'/g;
+const IMPORT = /(?:\bfrom|\bimport)\s*\(?\s*['"](\.[^'"]+|@torahmap\/[^'"]+)['"]/g;
 // A stylesheet or picture: `./frame.css`, `./mapTitle.svg?raw`.
 const ASSET = /\.(?!ts$)\w+(\?\w*)?$/;
 
@@ -76,6 +76,11 @@ function reachedIn(start: string, ...texts: string[][]): string[] {
 }
 
 describe('the code each page runs', () => {
+  it('is listed by paths that exist', () => {
+    const lists = [...TANAKH, ...TALMUD, ...OVERLAY_BASE];
+    expect(lists.filter((path) => !existsSync(resolve(ROOT, path)))).toEqual([]);
+  });
+
   it('in the app shell, is no text’s own', () => {
     expect(reachedIn('main.ts', TANAKH, TALMUD)).toEqual([]);
   });

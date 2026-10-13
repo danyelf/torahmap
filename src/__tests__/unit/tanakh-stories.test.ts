@@ -21,8 +21,11 @@ describe('resolveStops with a pinned verse', () => {
       { width: 400, height: 300 },
     )[0].camera;
 
-  it('moves the camera to a verse the map holds', () => {
-    expect(resolve({ pin: verses[1].id })).not.toEqual(initial);
+  it('centres a verse the map holds, at the initial zoom', () => {
+    expect(resolve({ pin: verses[1].id })).toEqual({
+      ...centreForFocus(verses[1], initial.zoom, { x: 0, y: 0 }, { width: 400, height: 300 }),
+      zoom: initial.zoom,
+    });
   });
 
   it('keeps the initial camera for a verse the map does not hold', () => {
