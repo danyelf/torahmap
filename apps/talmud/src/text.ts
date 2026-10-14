@@ -57,8 +57,8 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
 
     /** A segment's text in its tractate's file, which holds one list of segments per amud. */
     const segmentText = (s: TalmudLayoutItem, file: TalmudTractateText): string => {
-      const firstDaf = tractates.get(s.tractate)?.firstDaf ?? 0;
-      return file.amudim[amudIndex(s.daf, s.amud, firstDaf)]?.[s.segment - 1] ?? '';
+      const first = tractates.get(s.tractate)?.amudim[0];
+      return (first && file.amudim[amudIndex(s.daf, s.amud, first)]?.[s.segment - 1]) ?? '';
     };
 
     return {

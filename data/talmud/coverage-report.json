@@ -1,5 +1,4 @@
 {
-  "generatedAt": "2026-04-07T20:29:21.242Z",
   "totalTractates": 37,
   "passed": 37,
   "failed": 0,
@@ -20,8 +19,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 34,
-        "gemara": 34,
-        "hadran": 9
+        "gemara": 34
       }
     },
     {
@@ -40,8 +38,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 137,
-        "gemara": 137,
-        "hadran": 24
+        "gemara": 137
       }
     },
     {
@@ -60,8 +57,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 85,
-        "gemara": 85,
-        "hadran": 12
+        "gemara": 85
       }
     },
     {
@@ -79,9 +75,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 79,
-        "gemara": 78,
-        "hadran": 10
+        "matnitin": 78,
+        "gemara": 75
       }
     },
     {
@@ -100,8 +95,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 41,
-        "gemara": 41,
-        "hadran": 8
+        "gemara": 41
       }
     },
     {
@@ -120,8 +114,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 47,
-        "gemara": 47,
-        "hadran": 5
+        "gemara": 47
       }
     },
     {
@@ -140,8 +133,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 48,
-        "gemara": 48,
-        "hadran": 6
+        "gemara": 47
       }
     },
     {
@@ -160,8 +152,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 30,
-        "gemara": 29,
-        "hadran": 4
+        "gemara": 29
       }
     },
     {
@@ -180,8 +171,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 8,
-        "gemara": 8,
-        "hadran": 4
+        "gemara": 8
       }
     },
     {
@@ -200,8 +190,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 32,
-        "gemara": 32,
-        "hadran": 4
+        "gemara": 32
       }
     },
     {
@@ -220,8 +209,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 22,
-        "gemara": 22,
-        "hadran": 3
+        "gemara": 22
       }
     },
     {
@@ -240,8 +228,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 16,
-        "gemara": 16,
-        "hadran": 3
+        "gemara": 16
       }
     },
     {
@@ -260,8 +247,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 97,
-        "gemara": 94,
-        "hadran": 16
+        "gemara": 97
       }
     },
     {
@@ -280,8 +266,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 94,
-        "gemara": 94,
-        "hadran": 13
+        "gemara": 94
       }
     },
     {
@@ -300,8 +285,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 89,
-        "gemara": 88,
-        "hadran": 11
+        "gemara": 88
       }
     },
     {
@@ -320,8 +304,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 57,
-        "gemara": 57,
-        "hadran": 9
+        "gemara": 57
       }
     },
     {
@@ -340,8 +323,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 30,
-        "gemara": 31,
-        "hadran": 9
+        "gemara": 31
       }
     },
     {
@@ -360,8 +342,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 81,
-        "gemara": 81,
-        "hadran": 10
+        "gemara": 81
       }
     },
     {
@@ -380,8 +361,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 47,
-        "gemara": 47,
-        "hadran": 4
+        "gemara": 47
       }
     },
     {
@@ -400,8 +380,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 80,
-        "gemara": 80,
-        "hadran": 10
+        "gemara": 80
       }
     },
     {
@@ -419,9 +398,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 96,
-        "gemara": 96,
-        "hadran": 10
+        "matnitin": 97,
+        "gemara": 96
       }
     },
     {
@@ -439,9 +417,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 96,
-        "gemara": 98,
-        "hadran": 12
+        "matnitin": 98,
+        "gemara": 98
       }
     },
     {
@@ -459,9 +436,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 67,
-        "gemara": 67,
-        "hadran": 11
+        "matnitin": 68,
+        "gemara": 68
       }
     },
     {
@@ -479,9 +455,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 29,
-        "gemara": 29,
-        "hadran": 3
+        "matnitin": 30,
+        "gemara": 29
       }
     },
     {
@@ -500,8 +475,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 21,
-        "gemara": 21,
-        "hadran": 8
+        "gemara": 21
       }
     },
     {
@@ -520,8 +494,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 53,
-        "gemara": 53,
-        "hadran": 5
+        "gemara": 51
       }
     },
     {
@@ -540,8 +513,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 19,
-        "gemara": 19,
-        "hadran": 3
+        "gemara": 19
       }
     },
     {
@@ -559,9 +531,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 67,
-        "gemara": 69,
-        "hadran": 14
+        "matnitin": 70,
+        "gemara": 70
       }
     },
     {
@@ -580,8 +551,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 98,
-        "gemara": 98,
-        "hadran": 13
+        "gemara": 98
       }
     },
     {
@@ -600,8 +570,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 88,
-        "gemara": 87,
-        "hadran": 13
+        "gemara": 87
       }
     },
     {
@@ -619,9 +588,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 81,
-        "gemara": 80,
-        "hadran": 9
+        "matnitin": 82,
+        "gemara": 81
       }
     },
     {
@@ -639,9 +607,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 53,
-        "gemara": 52,
-        "hadran": 9
+        "matnitin": 52,
+        "gemara": 52
       }
     },
     {
@@ -660,8 +627,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 31,
-        "gemara": 31,
-        "hadran": 7
+        "gemara": 31
       }
     },
     {
@@ -679,9 +645,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 30,
-        "gemara": 31,
-        "hadran": 6
+        "matnitin": 32,
+        "gemara": 31
       }
     },
     {
@@ -700,8 +665,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 32,
-        "gemara": 32,
-        "hadran": 6
+        "gemara": 31
       }
     },
     {
@@ -719,9 +683,8 @@
       },
       "shapeMatch": true,
       "markers": {
-        "matnitin": 5,
-        "gemara": 4,
-        "hadran": 7
+        "matnitin": 18,
+        "gemara": 4
       }
     },
     {
@@ -740,8 +703,7 @@
       "shapeMatch": true,
       "markers": {
         "matnitin": 65,
-        "gemara": 65,
-        "hadran": 10
+        "gemara": 64
       }
     }
   ]

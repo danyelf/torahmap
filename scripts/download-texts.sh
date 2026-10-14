@@ -12,7 +12,8 @@
 # below, so a wrong or stale download stops the build.
 set -euo pipefail
 
-BASE_URL="https://storage.googleapis.com/sefaria-export/json/Tanakh"
+source "$(dirname "${BASH_SOURCE[0]}")/sefaria-export.env"
+BASE_URL="$SEFARIA_EXPORT/json/Tanakh"
 OUT_DIR="data/texts"
 
 # Edition names as they appear in the bucket path (no colon; see above).
