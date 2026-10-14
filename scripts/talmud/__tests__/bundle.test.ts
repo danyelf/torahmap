@@ -285,6 +285,20 @@ describe('processTractate', () => {
     expect(text.amudim[2].slice(0, 3)).toEqual(['הכל כשרים', 'מתני׳ דלא כרבי', 'סוף']);
   });
 
+  it('keeps the word הדרן, in a chapter’s closing line and in running text', () => {
+    const wikisource = fakeWikisource();
+    wikisource.text[2] = [
+      'a1',
+      'והדרן אמרו',
+      'a3',
+      'a4',
+      '<big><strong>הדרן עלך כל כתבי</strong></big>',
+    ];
+    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema());
+    expect(text.amudim[2][1]).toBe('והדרן אמרו');
+    expect(text.amudim[2][4]).toBe('הדרן עלך כל כתבי');
+  });
+
   it('removes the marker word where only the other edition marks the segment', () => {
     const wikisource = fakeWikisource();
     wikisource.text[2] = ["מתני' סתם נזירות", "גמ' מנהני מילי", 'a3', 'a4', 'a5'];

@@ -319,12 +319,7 @@ export function processTractate(
 
   const cleanText: string[][] = rawText.map((amud, ai) =>
     amud.map((seg, si) =>
-      stripHtml(
-        stripMarkerWords(seg, markerAt(rawText, otherEdition, ai, si) !== null).replace(
-          /הדרן/g,
-          '',
-        ),
-      ),
+      stripHtml(stripMarkerWords(seg, markerAt(rawText, otherEdition, ai, si) !== null)),
     ),
   );
 
