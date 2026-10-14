@@ -40,7 +40,7 @@ export function isHebrewSeparator(code: number): boolean {
  */
 export function isNikkud(code: number): boolean {
   if (code === GRAPHEME_JOINER) return true;
-  return code >= NIKKUD_START && code <= NIKKUD_END && !SEPARATOR_CODES.has(code);
+  return code >= NIKKUD_START && code <= NIKKUD_END && !isHebrewSeparator(code);
 }
 
 const HEBREW_LETTER = /[\u05D0-\u05EA]/;
@@ -69,10 +69,7 @@ const BRACKETS = new Set(['(', ')', '[', ']']);
 /** Whitespace, hyphen, a bracket, or one of the four Hebrew characters that break words. */
 export function isWordSeparator(char: string): boolean {
   return (
-    /\s/.test(char) ||
-    SEPARATOR_CODES.has(char.codePointAt(0)!) ||
-    char === '-' ||
-    BRACKETS.has(char)
+    /\s/.test(char) || isHebrewSeparator(char.codePointAt(0)!) || char === '-' || BRACKETS.has(char)
   );
 }
 

@@ -12,7 +12,7 @@ import { mockHistory } from '../apps/tanakh/test/helpers/mocks.ts';
 import { setLink } from '../apps/tanakh/test/helpers/setLink.ts';
 import { registerAllOverlays, getAllOverlays } from '@torahmap/tanakh/overlays/index.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
+import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();

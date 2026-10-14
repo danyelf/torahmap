@@ -149,7 +149,7 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   dev-only.
 - `test/` — checks of the whole repository: that each package and app keeps to
   its imports and each page runs only its own text's code, the saved telemetry
-  queries, and tests of the shell run with a text's data.
+  queries, and the shell's tests that need a text's data.
 - `packages/` — shared code, as npm workspace packages: `link` (reading and
   writing links, under each text's keys), `utils` (small helpers that depend
   on nothing else here), `engine` (drawing the squares, the camera, hit

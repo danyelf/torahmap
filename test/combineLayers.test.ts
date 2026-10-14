@@ -5,9 +5,9 @@ import {
   fillDefaultColors,
   getDefaultColor,
   toolsPicture,
-} from '@torahmap/shell/itemColoring.ts';
-import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '@torahmap/shell/constants.ts';
-import { createVerse, testOverlay } from '../helpers/fixtures';
+} from '../packages/shell/src/itemColoring.ts';
+import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
+import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 
 const CYAN: Color = [0.1, 0.7, 0.8];
 const ORANGE: Color = [1, 0.5, 0];

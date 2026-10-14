@@ -5,14 +5,14 @@ import { registerAllOverlays, getOverlay } from '@torahmap/tanakh/overlays/index
 import { configure as configureSearch } from '@torahmap/tanakh/search/index.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../apps/tanakh/test/helpers/fixtures.ts';
-import { dataFor } from '@torahmap/shell/dataFiles.ts';
+import { dataFor } from '../packages/shell/src/dataFiles.ts';
 import {
   mockHistory,
   mockWindowLocation,
   restoreAllMocks,
 } from '../apps/tanakh/test/helpers/mocks.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
+import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
 
 describe('URL State Sync Integration', () => {
   let originalLocation: Location;

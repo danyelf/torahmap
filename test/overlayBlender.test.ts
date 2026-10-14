@@ -9,18 +9,18 @@ import {
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
 import { getOverlay, registerOverlay } from '@torahmap/tanakh/overlays/registry.ts';
 import { commentaryOverlay } from '@torahmap/tanakh/overlays/commentary.ts';
-import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
-import type { ResolvedStoryStop } from '@torahmap/shell/scrollytelling/types.ts';
+import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
+import type { ResolvedStoryStop } from '../packages/shell/src/scrollytelling/types.ts';
 import type { TanakhLayout } from '@torahmap/tanakh/types.ts';
-import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import type { Overlay, UrlParamValues } from '../packages/shell/src/overlays/types.ts';
 import type { TanakhOverlay } from '@torahmap/tanakh/overlays/index.ts';
 import {
   SAMPLE_COMMENTARY_COUNTS,
   SAMPLE_LOADED,
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
-import { getDefaultColor } from '@torahmap/shell/itemColoring.ts';
-import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '@torahmap/shell/constants.ts';
+import { getDefaultColor } from '../packages/shell/src/itemColoring.ts';
+import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 
 // The tools a stop can name, as a text hands them over: the overlays these
 // tests register, and search.

@@ -9,12 +9,12 @@ import {
   optionalFiles,
   overlayFiles,
   requiredFiles,
-} from '@torahmap/shell/dataFiles.ts';
-import { reportError } from '@torahmap/shell/analytics.ts';
-import { mockFetch, mockFetchStatus } from '../helpers/mocks';
-import { testOverlay } from '../helpers/fixtures';
+} from '../packages/shell/src/dataFiles.ts';
+import { reportError } from '../packages/shell/src/analytics.ts';
+import { mockFetch, mockFetchStatus } from '../apps/tanakh/test/helpers/mocks.ts';
+import { testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 
-vi.mock('@torahmap/shell/analytics.ts', () => ({ reportError: vi.fn() }));
+vi.mock('../packages/shell/src/analytics.ts', () => ({ reportError: vi.fn() }));
 
 const realFetch = globalThis.fetch;
 beforeEach(() => vi.mocked(reportError).mockClear());

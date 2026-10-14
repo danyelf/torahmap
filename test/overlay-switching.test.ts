@@ -12,7 +12,7 @@ import {
   SAMPLE_LOADED,
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
-import { dataFor } from '@torahmap/shell/dataFiles.ts';
+import { dataFor } from '../packages/shell/src/dataFiles.ts';
 import { toolsShown } from '../packages/shell/src/tools.ts';
 import { configure as configureSearch, searchTool } from '@torahmap/tanakh/search/index.ts';
 import { commentaryOverlay, type CommentaryCounts } from '@torahmap/tanakh/overlays/commentary.ts';
@@ -21,7 +21,7 @@ import {
   createOverlaySettings,
   settingsFromLink,
   type OverlaySettings,
-} from '@torahmap/shell/overlays/settings.ts';
+} from '../packages/shell/src/overlays/settings.ts';
 
 describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;

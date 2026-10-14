@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { TanakhTool } from '../../src/overlays/index';
+import type { TanakhTool } from '@torahmap/tanakh/overlays/index.ts';
 import {
   getSidebarElements,
   setWordClickHandler,
   type SidebarElements,
-} from '@torahmap/shell/sidebar.ts';
-import { getSefariaUrl } from '../../src/popup';
-import { showVerse } from '../helpers/tanakhPopup';
-import type { VerseTexts } from '../../src/verseTexts';
-import { createVerse, testOverlay } from '../helpers/index';
+} from '../packages/shell/src/sidebar.ts';
+import { getSefariaUrl } from '@torahmap/tanakh/popup.ts';
+import { showVerse } from '../apps/tanakh/test/helpers/tanakhPopup.ts';
+import type { VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
+import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/index.ts';
 
 // Mock the overlay modules
-vi.mock('../../src/overlays/trop.ts', () => ({
+vi.mock('@torahmap/tanakh/overlays/trop.ts', () => ({
   highlightTropInText: vi.fn((text: string) => text),
 }));
 

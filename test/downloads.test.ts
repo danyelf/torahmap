@@ -9,7 +9,7 @@ import {
   type Downloads,
   type LandingView,
 } from '../packages/shell/src/downloads.ts';
-import type { Loaded } from '@torahmap/shell/dataFiles.ts';
+import type { Loaded } from '../packages/shell/src/dataFiles.ts';
 import { commentaryOverlay } from '@torahmap/tanakh/overlays/commentary.ts';
 import { tropOverlay } from '@torahmap/tanakh/overlays/trop.ts';
 import { HAFTARAH_FILES } from '@torahmap/tanakh/overlays/haftarah/readings.ts';

@@ -11,7 +11,7 @@ import { writeLink } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { parseUrlState } from '../packages/shell/src/urlState.ts';
 import { isSearching, searchTool } from '@torahmap/tanakh/search/index.ts';
-import { settingsFromLink } from '@torahmap/shell/overlays/settings.ts';
+import { settingsFromLink } from '../packages/shell/src/overlays/settings.ts';
 import { haftarahOverlay } from '@torahmap/tanakh/overlays/haftarah.ts';
 import { commentaryOverlay } from '@torahmap/tanakh/overlays/commentary.ts';
 import {
@@ -19,7 +19,7 @@ import {
   HAFTARAH_FILES,
   type HaftarahData,
 } from '@torahmap/tanakh/overlays/haftarah/readings.ts';
-import { loadNamedFiles } from '@torahmap/shell/dataFiles.ts';
+import { loadNamedFiles } from '../packages/shell/src/dataFiles.ts';
 import { setLink } from '../apps/tanakh/test/helpers/setLink.ts';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');

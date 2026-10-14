@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { HEBREW_LABEL_FONT } from '@torahmap/shell/labelTypography.ts';
+import { HEBREW_LABEL_FONT } from '../packages/shell/src/labelTypography.ts';
 
 // The label code names a font family; the HTML is what makes that name resolve
 // to a real face. They live in different files, so a typeface change can update

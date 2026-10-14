@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { fillPage } from '@torahmap/shell/app/page.ts';
+import { fillPage } from '../packages/shell/src/app/page.ts';
 import { PAGES, pageAt } from '../pages.ts';
 import { tanakhText } from '@torahmap/tanakh/text.ts';
 import { talmudText } from '@torahmap/talmud/text.ts';

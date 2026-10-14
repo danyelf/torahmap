@@ -10,7 +10,7 @@ import {
 import { registerAllOverlays, getOverlay } from '@torahmap/tanakh/overlays/index.ts';
 import { configure as configureSearch } from '@torahmap/tanakh/search/index.ts';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../apps/tanakh/test/helpers/fixtures.ts';
-import { dataFor } from '@torahmap/shell/dataFiles.ts';
+import { dataFor } from '../packages/shell/src/dataFiles.ts';
 import {
   mockHistory,
   mockWindowLocation,
@@ -18,7 +18,7 @@ import {
 } from '../apps/tanakh/test/helpers/mocks.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { readLink, writeLink } from '@torahmap/link';
-import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
+import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
 
 const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };

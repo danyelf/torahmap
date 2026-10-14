@@ -133,13 +133,13 @@ against the baseline it keeps in `scripts/search/`.
 ## One thing to watch
 
 `normalize()` in the generator and `normalizeHebrewForSearch()` in
-`packages/shell/src/hebrew.ts` must fold Hebrew the same way. If they drift apart, every
+`apps/tanakh/src/search/spelling.ts` must fold Hebrew the same way. If they drift apart, every
 lookup misses and meanings search silently finds nothing. Change one
 and you have to change the other.
 
 The same goes for which characters separate one word from the next — maqaf,
-paseq, sof pasuq and nun hafukha. The generator's `SEPARATORS` and the set
-`normalizeHebrewForSearch()` turns into spaces have to hold the same four
+paseq, sof pasuq and nun hafukha. The generator's `SEPARATORS` and `SEPARATOR_CODES` in
+`packages/shell/src/hebrew.ts` have to hold the same four
 codepoints, and the word boundaries above are only true while they do.
 
 Each function folds both sources' quirks, including the one its own source

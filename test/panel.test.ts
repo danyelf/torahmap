@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CONTROL, panelHtml } from '@torahmap/shell/panel.ts';
+import { CONTROL, panelHtml } from '../packages/shell/src/panel.ts';
 import { PANEL_TITLES, type Panel } from '../packages/shell/src/frame.ts';
 import { storiesHtml } from '../packages/shell/src/storiesPanel.ts';
 import { aboutHtml } from '../packages/shell/src/aboutPanel.ts';

@@ -5,10 +5,10 @@
 // listening.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getSidebarElements, setWordClickHandler } from '@torahmap/shell/sidebar.ts';
-import { showVerse } from '../helpers/tanakhPopup';
-import { createVerse, testOverlay } from '../helpers/fixtures';
-import type { VerseTexts } from '../../src/verseTexts';
+import { getSidebarElements, setWordClickHandler } from '../packages/shell/src/sidebar.ts';
+import { showVerse } from '../apps/tanakh/test/helpers/tanakhPopup.ts';
+import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
+import type { VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
 
 const texts: VerseTexts = {
   Genesis: { 1: { 2: { he: 'וְר֣וּחַ אֱלֹהִ֔ים מְרַחֶ֖פֶת', en: 'a wind from God sweeping' } } },
