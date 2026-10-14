@@ -1,11 +1,10 @@
+import { cameraToFit, centreForFocus, indexItems } from '@torahmap/engine';
 import { describe, it, expect } from 'vitest';
 import { resolveStops } from '../../tanakh/stories';
 import { initBookData } from '../../constants/books';
-import { cameraToFit, centreForFocus } from '../../camera';
 import { SECTION_LABEL_REACH } from '../../labels';
 import type { TanakhLayout } from '../../types';
 import { createStoryStop as stop, createVerse, ZOOM } from '../helpers/fixtures';
-import { indexItems } from '../../items';
 import type { StoryStop } from '@torahmap/stories';
 
 describe('resolveStops with a pinned verse', () => {

@@ -1,7 +1,8 @@
 // The popup for a square: what the text says of it, marked by the overlay and
 // the search, with its words clickable for the search.
 
-import type { MapItem, TextLanguage } from './types.ts';
+import type { MapItem } from '@torahmap/engine';
+import type { TextLanguage } from './types.ts';
 import { ENGLISH, HEBREW } from './types.ts';
 import type { ToolOnMap } from './overlays/types.ts';
 import { verseWords, wrapWordsInFragment } from './verseWords.ts';

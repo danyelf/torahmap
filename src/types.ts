@@ -1,8 +1,5 @@
 // Shared types for Torah Map
-import type { Color } from '@torahmap/utils';
-
-/** A verse's colour, or its stripes. */
-export type VerseColor = Color | Color[];
+import type { SpatialItem } from '@torahmap/engine';
 
 export const HEBREW = 'he';
 export const ENGLISH = 'en';
@@ -34,20 +31,6 @@ export interface TorahData {
 }
 
 /**
- * A square on the map. The app compares and finds squares by id without
- * knowing what they hold. Drawing, hit testing and the camera read only this.
- */
-export interface MapItem {
-  id: string;
-  x: number;
-  y: number;
-  size: number;
-}
-
-/** A text's own fields (book, chapter and verse; or a Talmud segment) on a square. */
-export type SpatialItem<T> = T & MapItem;
-
-/**
  * Identity of a Tanakh verse. Three levels: book, chapter, verse.
  */
 export interface TanakhIdentity {
@@ -68,8 +51,3 @@ export interface TalmudIdentity {
 }
 
 export type TanakhLayout = SpatialItem<TanakhIdentity>;
-
-export interface Bounds {
-  width: number;
-  height: number;
-}

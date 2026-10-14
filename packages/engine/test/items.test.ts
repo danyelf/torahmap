@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { indexItems, sameItem } from '../../items.ts';
+import { indexItems, sameItem } from '../src/index.ts';
 
 const square = (id: string) => ({ id, x: 0, y: 0, size: 1 });
 const [a, b, c] = ['A.1.1', 'A.1.2', 'A.1.3'].map(square);

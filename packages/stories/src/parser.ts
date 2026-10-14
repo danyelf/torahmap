@@ -1,11 +1,5 @@
-import {
-  EASINGS,
-  type StoryData,
-  type StoryStop,
-  type EasingName,
-  type CameraRef,
-  type CameraPosition,
-} from './types.ts';
+import { EASINGS, type EasingName, type CameraPosition } from '@torahmap/engine';
+import { type StoryData, type StoryStop, type CameraRef } from './types.ts';
 
 /** The frontmatter keys a story may set. */
 export const STORY_HEADER_KEYS = ['title', 'description', 'order', 'draft', 'easing'] as const;

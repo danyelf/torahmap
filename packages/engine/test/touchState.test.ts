@@ -6,7 +6,7 @@ import {
   getPinchDistance,
   getPinchCenter,
   resetTouchState,
-} from '../../touchState';
+} from '../src/index.ts';
 
 describe('touchState', () => {
   describe('createTouchState', () => {

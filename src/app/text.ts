@@ -1,17 +1,23 @@
 // What a text (the Tanakh, the Talmud) hands the app shell, and what the shell hands back.
 
+import type {
+  CameraPosition,
+  Camera,
+  ScreenPoint,
+  Viewport,
+  ItemIndex,
+  MapItem,
+  VerseColor,
+} from '@torahmap/engine';
 import type { LinkKeys, UrlState } from '@torahmap/link';
-import type { CameraPosition, Story, StoryStop } from '@torahmap/stories';
+import type { Story, StoryStop } from '@torahmap/stories';
 import type { Credit } from '../credits.ts';
 import type { PageCopy } from './page.ts';
-import type { Camera, ScreenPoint, Viewport } from '../camera.ts';
 import type { Loaded } from '../dataFiles.ts';
-import type { ItemIndex } from '../items.ts';
 import type { Overlay, ToolOnMap } from '../overlays/types.ts';
 import type { SearchTool } from './search.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { PopupText } from '../sidebar.ts';
-import type { MapItem, VerseColor } from '../types.ts';
 
 /** What a text's site calls itself and its links. */
 export interface Site {

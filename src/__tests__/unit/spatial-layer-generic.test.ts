@@ -1,7 +1,6 @@
+import { type SpatialItem, buildItemGeometry, findExactHit } from '@torahmap/engine';
 import { describe, it, expect } from 'vitest';
-import type { SpatialItem, TanakhIdentity, TalmudIdentity } from '../../types.ts';
-import { buildItemGeometry } from '../../geometry.ts';
-import { findExactHit } from '../../hitDetection.ts';
+import type { TanakhIdentity, TalmudIdentity } from '../../types.ts';
 
 describe('spatial layer genericization', () => {
   it('buildItemGeometry accepts SpatialItem<TanakhIdentity>', () => {

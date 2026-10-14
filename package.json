@@ -43,6 +43,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@torahmap/engine": "*",
     "@torahmap/link": "*",
     "@torahmap/overlay-catalog": "*",
     "@torahmap/site": "*",

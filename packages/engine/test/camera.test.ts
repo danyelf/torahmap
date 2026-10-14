@@ -8,10 +8,10 @@ import {
   zoomAtPoint,
   centreForFocus,
   type Camera,
-} from '../../camera';
-import { worldToScreen } from '../helpers/worldToScreen';
-import type { Bounds } from '../../types';
-import { ZOOM } from '../helpers/fixtures';
+  worldToScreen,
+  type Bounds,
+} from '../src/index.ts';
+import { ZOOM } from './fixtures.ts';
 
 describe('camera', () => {
   describe('createCamera', () => {

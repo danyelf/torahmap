@@ -150,8 +150,10 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `packages/` — shared code, kept free of the page so the Worker can import
   it, as npm workspace packages: `link` (reading and writing links, under
   each text's keys), `utils` (small helpers that depend on nothing else
-  here), `overlay-catalog` (each Tanakh overlay's name and link keys, and
-  with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (how
+  here), `engine` (drawing the squares, the camera, hit testing and the
+  cross-fade, knowing nothing of either text), `overlay-catalog` (each
+  Tanakh overlay's name and link keys, and with the search's, `LINK_KEYS`:
+  a Tanakh link's), `stories` (how
   a story is written, and which are listed and opened by default; the
   Tanakh's own, compiled from Markdown by `generate.mjs`, at
   `@torahmap/stories/tanakh`), and `site` (the address and view titles every
@@ -227,7 +229,7 @@ The codebase follows a **functional, modular design** with clear separation of c
 
 - **main.ts** is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `src/__tests__/unit/shell-boundary.test.ts` lists what counts
 - **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
-- **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
+- **rendering.ts** (`packages/engine`) manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors
 - **overlays/** are pluggable and easy to add
 - Any animated change to what the map shows goes through the renderer's

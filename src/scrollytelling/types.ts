@@ -1,4 +1,5 @@
-import type { CameraPosition, StoryStop } from '@torahmap/stories';
+import type { CameraPosition } from '@torahmap/engine';
+import type { StoryStop } from '@torahmap/stories';
 
 /** A StoryStop with camera resolved to actual coordinates */
 export interface ResolvedStoryStop extends Omit<StoryStop, 'camera'> {

@@ -1,9 +1,9 @@
+import { MAP_BACKGROUND } from '@torahmap/engine';
 import { type Color, type ColorStop, scale, LOG, memoByValueAndKey } from '@torahmap/utils';
 import type { Overlay, UrlParamValues } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { axisGradient, renderAxisWithZero } from './legend.ts';
 import { CONTROL } from '../panel.ts';
-import { MAP_BACKGROUND } from '../constants.ts';
 import { COMMENTARY } from '@torahmap/overlay-catalog';
 
 const HEATMAP_STOPS: ColorStop[] = [

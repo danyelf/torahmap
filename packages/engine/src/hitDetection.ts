@@ -1,8 +1,8 @@
 // Hit Detection module - handles verse hit detection from screen coordinates
 
-import type { SpatialItem } from './types';
-import { screenToWorld, type Camera, type Viewport } from './camera';
-import { HIGHLIGHT_CONSTANTS } from './constants';
+import type { SpatialItem } from './types.ts';
+import { screenToWorld, type Camera, type Viewport } from './camera.ts';
+import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 /** Check if a point (in world coordinates) is inside a spatial item's bounds. */
 export function isPointInItem<T>(worldX: number, worldY: number, verse: SpatialItem<T>): boolean {

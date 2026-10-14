@@ -1,5 +1,6 @@
 // Reading and writing the view a link names.
 
+import type { ZoomRange } from '@torahmap/engine';
 import {
   validateOverlayParams,
   RESERVED_KEYS,
@@ -9,7 +10,6 @@ import {
   VIEW_KEYS,
   zoomKey,
   type ViewKey,
-  type ZoomRange,
   type OverlayParams,
   type OverlayParamSpecLookup,
   type UrlParamSpec,

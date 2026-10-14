@@ -1,9 +1,38 @@
 // The app shell: the map, its panels, story, popup and links, for whichever text it is given.
 
+import {
+  mapPoint,
+  clampZoom,
+  zoomAtPoint,
+  centreForFocus,
+  viewFocusedOn,
+  animateCameraTo,
+  type Camera,
+  type ScreenPoint,
+  type Viewport,
+  indexItems,
+  sameItem,
+  findItemAtPoint,
+  findNearestItem,
+  createRenderContext,
+  createRenderState,
+  rebuildGeometry,
+  render as renderFrame,
+  type RenderContext,
+  getWebGL2,
+  type MapItem,
+  type VerseColor,
+  type Picture,
+  DEFAULT_EASING,
+  flatten,
+  still,
+  type ColorLayer,
+  easingFunctions,
+  lerpCamera,
+} from '@torahmap/engine';
 import { debounce } from '@torahmap/utils';
 import type { MapText, Site } from './app/text.ts';
 import { SEARCH_BOX_ID } from './app/search.ts';
-import { mapPoint } from './mapPoint.ts';
 import {
   DRAG_PX,
   STORY,
@@ -47,29 +76,8 @@ import { resolveViewState, cameraForView, opensFolded, type ViewState } from './
 import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
-import {
-  clampZoom,
-  zoomAtPoint,
-  centreForFocus,
-  viewFocusedOn,
-  animateCameraTo,
-  type Camera,
-  type ScreenPoint,
-  type Viewport,
-} from './camera.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
-import { indexItems, sameItem } from './items.ts';
-import { findItemAtPoint, findNearestItem } from './hitDetection.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
-import {
-  createRenderContext,
-  createRenderState,
-  rebuildGeometry,
-  render as renderFrame,
-  type RenderContext,
-} from './rendering.ts';
-import { getWebGL2 } from './webgl.ts';
-import type { MapItem, VerseColor } from './types.ts';
 import { createOverlaySettings } from './overlays/settings.ts';
 import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
@@ -86,10 +94,9 @@ import {
 import { LOADING, loadNotice } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
-import type { Picture } from './geometry.ts';
 import { URL_UPDATE_DEBOUNCE_MS, SEARCH_WITH_OVERLAY, MAP_FADE } from './constants.ts';
 import { stopLabel } from './scrollytelling/storyPanel';
-import { DEFAULT_EASING, cameraSetting, listedStories, writeStopComment } from '@torahmap/stories';
+import { cameraSetting, listedStories, writeStopComment } from '@torahmap/stories';
 import {
   createStoryColumn,
   nearerStop,
@@ -97,8 +104,6 @@ import {
   type StopPlace,
 } from './scrollytelling/storyColumn.ts';
 import { computeBlendedColors, stopTools, type TextTools } from './scrollytelling/overlayBlender';
-import { flatten, still, type ColorLayer } from './scrollytelling/colorBlending';
-import { easingFunctions, lerpCamera } from './scrollytelling/interpolation';
 import {
   REJOIN_EASE_MS,
   STORY_DRIVING,

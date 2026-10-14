@@ -1,11 +1,11 @@
 // The Tanakh as a text for the app shell.
 
+import { createCamera } from '@torahmap/engine';
 import { computeLayout, getLayoutBounds } from '../layout.ts';
 import { createBookLabels, createSectionLabels, updateLabelPositions } from '../labels.ts';
 import { createMapTitle, updateMapTitlePosition } from '../mapTitle.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from '../verseTexts.ts';
 import { initBookData } from '../constants/books.ts';
-import { createCamera } from '../camera.ts';
 import { getDefaultColor } from '../itemColoring.ts';
 import { popupText } from './popup.ts';
 import { reportError } from '../analytics.ts';

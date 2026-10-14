@@ -4,7 +4,6 @@ export type {
   UrlParamValues,
   OverlayParams,
   OverlayParamSpecLookup,
-  ZoomRange,
 } from './params.ts';
 export { RESERVED_KEYS, validateOverlayParams } from './params.ts';
 

@@ -1,12 +1,10 @@
 // Colour computation for spatial items
 
+import { type SpatialItem, type VerseColor, type Picture, sameItem } from '@torahmap/engine';
 import { type Color, seededRandom, brighten } from '@torahmap/utils';
-import type { SpatialItem, VerseColor } from './types';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
-import type { Picture } from './geometry';
 import type { ColorSource } from './scrollytelling/driver';
-import { sameItem } from './items.ts';
-import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
+import { DEFAULT_BRIGHTNESS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
 
 /**
  * Default gray for a verse with no overlay color, brightness-varied by a
@@ -14,8 +12,7 @@ import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constan
  */
 export function getDefaultColor(verseIndex: number): Color {
   const brightness =
-    HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
-    seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
+    DEFAULT_BRIGHTNESS.MIN + seededRandom(verseIndex * 3) * DEFAULT_BRIGHTNESS.RANGE;
   return [brightness, brightness, brightness];
 }
 

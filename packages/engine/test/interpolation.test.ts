@@ -1,6 +1,6 @@
 // src/scrollytelling/__tests__/interpolation.test.ts
 import { describe, it, expect } from 'vitest';
-import { easingFunctions, lerpCamera, lerpColor } from '../interpolation';
+import { easingFunctions, lerpCamera, lerpColor } from '../src/index.ts';
 
 describe('easing functions', () => {
   it('linear is identity', () => {

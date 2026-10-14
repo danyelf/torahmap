@@ -1,9 +1,9 @@
 // Camera module - handles zoom and pan state
 
-import type { Bounds } from './types';
-import { lerpCamera, easingFunctions } from './scrollytelling/interpolation.ts';
-import type { ZoomRange } from '@torahmap/link';
-import { DEFAULT_EASING } from '@torahmap/stories';
+import type { Bounds } from './types.ts';
+import { lerpCamera, easingFunctions } from './interpolation.ts';
+import type { ZoomRange } from './types.ts';
+import { DEFAULT_EASING } from './types.ts';
 
 export interface Camera {
   x: number; // pan x position
@@ -55,6 +55,18 @@ export function screenToWorld(
   return {
     x: (p.x - viewport.width / 2) / camera.zoom + camera.x,
     y: (p.y - viewport.height / 2) / camera.zoom + camera.y,
+  };
+}
+
+/** Where a map point lands on the canvas: the inverse of screenToWorld. */
+export function worldToScreen(
+  p: { x: number; y: number },
+  camera: Camera,
+  viewport: Viewport,
+): ScreenPoint {
+  return {
+    x: (p.x - camera.x) * camera.zoom + viewport.width / 2,
+    y: (p.y - camera.y) * camera.zoom + viewport.height / 2,
   };
 }
 

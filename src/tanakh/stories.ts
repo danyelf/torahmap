@@ -1,13 +1,20 @@
 // Where a Tanakh story's stops put the camera: places on the map by name.
 
-import type { StoryStop, CameraPosition, CameraRef } from '@torahmap/stories';
+import {
+  type CameraPosition,
+  type ItemIndex,
+  type ZoomRange,
+  cameraToFit,
+  centreForFocus,
+  type ScreenPoint,
+  type WorldBox,
+} from '@torahmap/engine';
+import type { StoryStop, CameraRef } from '@torahmap/stories';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { Book, TanakhLayout } from '../types.ts';
-import type { ItemIndex } from '../items.ts';
-import { bookFromUrl, type ZoomRange } from '@torahmap/link';
+import { bookFromUrl } from '@torahmap/link';
 import { getBookSection } from '../constants/books.ts';
 import { SECTION_LABEL_REACH } from '../labels.ts';
-import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera.ts';
 
 function isPlaces(cam: CameraRef): cam is { kind: 'places'; names: string[] } {
   return typeof cam === 'object' && 'kind' in cam && cam.kind === 'places';

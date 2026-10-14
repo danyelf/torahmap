@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildOutlineGeometry } from '../../outline';
-import type { OutlineBounds } from '../../outline';
+import { buildOutlineGeometry, type OutlineBounds } from '../src/index.ts';
 
 const floatsPerVertex = 2; // x, y
 

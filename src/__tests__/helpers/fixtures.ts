@@ -1,4 +1,5 @@
 // Test fixtures for Torah Map tests
+import type { ZoomRange } from '@torahmap/engine';
 import { verseId } from '@torahmap/link/tanakh';
 import type { TanakhIdentity, TanakhLayout, TorahData } from '../../types';
 import type { Overlay } from '../../overlays/types';
@@ -9,7 +10,6 @@ import type { Loaded } from '../../dataFiles';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../tanakh/search/data';
 import type { StoryStop } from '@torahmap/stories';
-import type { ZoomRange } from '@torahmap/link';
 
 /** A text's zoom range, for tests of the code that keeps to one. */
 export const ZOOM: ZoomRange = { min: 0.1, max: 10, start: 1 };

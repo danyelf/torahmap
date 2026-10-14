@@ -1,6 +1,6 @@
 // When each scene is on screen, and what it shows at a given second.
 
-import { easingFunctions, lerpCamera } from '../src/scrollytelling/interpolation.ts';
+import { easingFunctions, lerpCamera } from '@torahmap/engine';
 import type { Scene, Script, Step, ViewScene } from './script.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 

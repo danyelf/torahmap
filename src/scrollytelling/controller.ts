@@ -1,6 +1,5 @@
-import { DEFAULT_EASING, type EasingName } from '@torahmap/stories';
+import { DEFAULT_EASING, type EasingName, lerpCamera, easingFunctions } from '@torahmap/engine';
 import type { ResolvedStoryStop, InterpolatedState } from './types';
-import { lerpCamera, easingFunctions } from './interpolation';
 
 // Each stop has a "rest zone" in the middle where the view holds steady.
 // REST_ZONE_FRACTION of each stop's height is the rest zone (centered).

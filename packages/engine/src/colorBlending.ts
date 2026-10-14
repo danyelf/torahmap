@@ -1,6 +1,6 @@
 import type { Color } from '@torahmap/utils';
-import type { Picture } from '../geometry.ts';
-import { lerpColor } from './interpolation';
+import type { Picture } from './geometry.ts';
+import { lerpColor } from './interpolation.ts';
 
 /** What the map shows: one picture, `t` of the way to fading into another. */
 export interface ColorLayer<C = Color | Color[]> {

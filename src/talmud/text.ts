@@ -1,10 +1,10 @@
 // The Babylonian Talmud as a text for the app shell.
 
+import { cameraToFit } from '@torahmap/engine';
 import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '../app/text.ts';
 import type { Story } from '@torahmap/stories';
 import type { LinkKeys } from '@torahmap/link';
-import { cameraToFit } from '../camera.ts';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
 import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
