@@ -1,3 +1,4 @@
+export * from './bars.ts';
 export * from './camera.ts';
 export * from './colorBlending.ts';
 export * from './constants.ts';

@@ -6,11 +6,11 @@ import {
   ITEM_ATTRIBUTES,
   type ItemAttributeName,
 } from './geometry.ts';
-import { HIGHLIGHT_CONSTANTS } from './constants.ts';
+import { BARS, HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
-  attribs: Record<ItemAttributeName, number>;
+  attribs: Record<ItemAttributeName | typeof REACH_ATTRIBUTE, number>;
   uniforms: {
     resolution: WebGLUniformLocation | null;
     pan: WebGLUniformLocation | null;
@@ -20,6 +20,9 @@ export interface ShaderProgram {
     hovered: WebGLUniformLocation | null;
   };
 }
+
+/** World units from a square's right edge to its row neighbour's left (gapsToRightNeighbour). */
+export const REACH_ATTRIBUTE = 'a_reach';
 
 const GLSL_TYPES = { 1: 'float', 2: 'vec2', 3: 'vec3', 4: 'vec4' } as const;
 
@@ -41,6 +44,7 @@ const VERTEX_SHADER = `#version 300 es
   uniform int u_hovered;
 
   ${ITEM_INPUTS}
+  in float ${REACH_ATTRIBUTE};
 
   // The two triangles of a square, as fractions of the way across it. Every
   // square is drawn from these six corners, picked by gl_VertexID.
@@ -81,6 +85,12 @@ const VERTEX_SHADER = `#version 300 es
     bool holes = side >= u_ring.z;
     float grow = mix(reach(a_shape, holes), reach(a_nextShape, holes), u_fade);
     vec4 rect = a_rect + vec4(-grow, -grow, grow, grow);
+    // A square too small to draw cleanly reaches across to its row neighbour,
+    // so the row reads as one bar. Never under one device pixel, so it is
+    // always drawn.
+    float widen = clamp((${BARS.START_PX.toFixed(4)} - side) / ${(BARS.START_PX - BARS.FULL_PX).toFixed(4)}, 0.0, 1.0);
+    rect.z = max(rect.z, a_rect.z + ${REACH_ATTRIBUTE} * widen);
+    rect.zw = max(rect.zw, rect.xy + 1.0 / u_zoom);
     float pad = max(bandReach(a_shape), bandReach(a_nextShape));
     uv = mix(vec2(-pad), vec2(1.0 + pad), uv);
     vec2 world = mix(rect.xy, rect.zw, uv);
@@ -257,7 +267,10 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
   return {
     program,
     attribs: Object.fromEntries(
-      ITEM_ATTRIBUTES.map((a) => [a.name, gl.getAttribLocation(program, a.name)]),
+      [...ITEM_ATTRIBUTES.map((a) => a.name), REACH_ATTRIBUTE].map((name) => [
+        name,
+        gl.getAttribLocation(program, name),
+      ]),
     ) as ShaderProgram['attribs'],
     uniforms: {
       resolution: gl.getUniformLocation(program, 'u_resolution'),

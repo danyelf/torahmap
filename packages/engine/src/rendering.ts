@@ -5,6 +5,7 @@ import {
   initWebGL,
   createProgram,
   createOutlineProgram,
+  REACH_ATTRIBUTE,
   type OutlineProgram,
   type ShaderProgram,
 } from './webgl.ts';
@@ -17,6 +18,7 @@ import {
   type Picture,
 } from './geometry.ts';
 import { buildOutlineGeometry } from './outline.ts';
+import { gapsToRightNeighbour } from './bars.ts';
 import type { SpatialItem } from './types.ts';
 import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera.ts';
@@ -87,6 +89,12 @@ export function createRenderState<T>(
     // Advance once per square rather than once per corner
     gl.vertexAttribDivisor(location, 1);
   }
+  // Its own buffer, as it never changes with the colours
+  createBuffer(gl, gapsToRightNeighbour(items));
+  const reach = programs.main.attribs[REACH_ATTRIBUTE];
+  gl.enableVertexAttribArray(reach);
+  gl.vertexAttribPointer(reach, 1, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(reach, 1);
   // Unbound, so the outline program's setup is not recorded into it
   gl.bindVertexArray(null);
 
