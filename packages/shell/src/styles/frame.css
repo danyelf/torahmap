@@ -2,11 +2,11 @@
    column in both modes — the story, or the open tool — headed by the ☰ that
    drops the menu, so the map never moves or changes width when the mode does;
    closing the tool gives the column to the map. The map starts
-   at --map-left (src/styles/main.css), which the canvas and the labels
+   at --map-left (main.css), which the canvas and the labels
    read. What colours the map is named on the map, in the legend
    card. On a phone the panel is a sheet along the bottom and the ☰ floats in
    the top-left corner. The mode and the open panel are data- attributes on
-   <body>, set by main.ts from src/frame.ts. */
+   <body>, set by main.ts from ../frame.ts. */
 :root {
   /* A finger's worth: every control in the frame is at least this tall. */
   --tap: 44px;

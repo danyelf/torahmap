@@ -67,10 +67,10 @@ npx tsx scripts/overlays/haftarah/generate.ts
 ```
 
 Then update the commit hash above, and the `collected` date on the hebcal
-credit in `src/overlays/haftarah.ts`.
+credit in `apps/tanakh/src/overlays/haftarah.ts`.
 
 The generator fails rather than writing a bad file if hebcal renames a key it
 looks for, or if any reference falls outside the verse counts in
-`public/data/tanakh-structure.json`. `src/__tests__/unit/overlays/haftarah-data.test.ts`
+`public/data/tanakh-structure.json`. `apps/tanakh/test/unit/overlays/haftarah-data.test.ts`
 checks the generated file independently, so run the tests after a refresh: a
 changed reading will show up there as a failure, which is the point.

@@ -2,7 +2,7 @@
 
 Videos of the map made from a script: a list of scenes that plays the same way
 on every render. A headless browser drives the app from outside, on a fake
-clock, and screenshots every frame; nothing under `src/` changes. The design is
+clock, and screenshots every frame; nothing in the app changes. The design is
 in `docs/plans/2026-09-27-video-harness-design.md`.
 
 ## Commands

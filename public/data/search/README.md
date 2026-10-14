@@ -79,7 +79,7 @@ To line up against the Hebrew in `all-texts.json`, fold it the way
   square ones; BHSA carries only the word that is read;
 - split on whitespace and maqaf, and keep only Hebrew letters.
 
-`src/__tests__/unit/search-lexeme-index.test.ts` asserts that every verse not in
+`apps/tanakh/test/unit/search-lexeme-index.test.ts` asserts that every verse not in
 `realigned` lines up under exactly those rules, so a change to either copy of
 them fails the test suite with the offending verses named.
 
@@ -133,13 +133,13 @@ against the baseline it keeps in `scripts/search/`.
 ## One thing to watch
 
 `normalize()` in the generator and `normalizeHebrewForSearch()` in
-`packages/shell/src/hebrew.ts` must fold Hebrew the same way. If they drift apart, every
+`apps/tanakh/src/search/spelling.ts` must fold Hebrew the same way. If they drift apart, every
 lookup misses and meanings search silently finds nothing. Change one
 and you have to change the other.
 
 The same goes for which characters separate one word from the next — maqaf,
-paseq, sof pasuq and nun hafukha. The generator's `SEPARATORS` and the set
-`normalizeHebrewForSearch()` turns into spaces have to hold the same four
+paseq, sof pasuq and nun hafukha. The generator's `SEPARATORS` and `SEPARATOR_CODES` in
+`packages/shell/src/hebrew.ts` have to hold the same four
 codepoints, and the word boundaries above are only true while they do.
 
 Each function folds both sources' quirks, including the one its own source
@@ -148,7 +148,7 @@ shin. A rule that is inert on the data in front of you is the price of not
 having to read the other function to predict this one.
 
 `scripts/search/folding-cases.json` states the rules once; the test beside it
-and `src/__tests__/unit/search-normalization.test.ts` each assert their own side
+and `apps/tanakh/test/unit/search-normalization.test.ts` each assert their own side
 against it. The check that would notice a rule missing from one side, or an
 index built before one existed, is "resolves every word a reader can click" in
 `search-lexeme-index.test.ts`, which walks the corpus through the real lookup.

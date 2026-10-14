@@ -4,7 +4,8 @@ import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from '@torahmap/shell/app/page.ts';
-import { TALMUD_PATH, pageAt } from './src/pages.ts';
+import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
+import { pageAt } from './pages.ts';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -19,7 +20,7 @@ function getGitBranch(): string {
   }
 }
 
-// index.html is every text's page, filled from its copy by address (src/pages.ts).
+// index.html is every text's page, filled from its copy by address (pages.ts).
 // Runs first, so Vite sees the filled-in entry script.
 function pagePlugin(): Plugin {
   return {

@@ -9,13 +9,14 @@ export default defineConfig({
   },
   test: {
     include: [
-      'src/**/*.test.ts',
+      'apps/*/test/**/*.test.ts',
       'packages/*/test/**/*.test.ts',
+      'test/**/*.test.ts',
       'video/**/*.test.ts',
-      'scripts/print/**/*.test.ts',
+      'scripts/**/*.test.ts',
     ],
     environment: 'happy-dom',
-    setupFiles: ['./src/__tests__/setup.ts'],
+    setupFiles: ['./test/setup.ts'],
     pool: 'forks',
     maxWorkers: 4,
     minWorkers: 1,

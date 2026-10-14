@@ -4,23 +4,23 @@
 import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '@torahmap/engine';
 import { readFileSync } from 'node:fs';
 import { loadNamedFiles } from '@torahmap/shell/dataFiles.ts';
-import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '../../src/verseTexts.ts';
+import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
 import {
   deriveHaftarah,
   HAFTARAH_FILES,
   type HaftarahData,
   type HaftarahDerivation,
   type HaftarahItem,
-} from '../../src/overlays/haftarah/readings.ts';
+} from '@torahmap/tanakh/overlays/haftarah/readings.ts';
 import {
   buildDictionary,
   findLexemesForWord,
   getLexeme,
   searchByLexemes,
   type Dictionary,
-} from '../../src/tanakh/search/search.ts';
-import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/tanakh/search/data.ts';
-import type { Book, TanakhLayout, TorahData } from '../../src/types.ts';
+} from '@torahmap/tanakh/search/search.ts';
+import { DICTIONARY_FILES, type DictionaryFiles } from '@torahmap/tanakh/search/data.ts';
+import type { Book, TanakhLayout, TorahData } from '@torahmap/tanakh/types.ts';
 import {
   INK,
   INK_SOFT,
@@ -114,7 +114,7 @@ function sheet(
       fills: fillsOf(v, i),
     })),
     ...titles(layout, structure.books),
-    logoSvg: readFileSync('src/mapTitle.svg', 'utf8'),
+    logoSvg: readFileSync('apps/tanakh/src/mapTitle.svg', 'utf8'),
     key,
     credits,
     bandOffset: BAND_OFFSET,
@@ -194,7 +194,7 @@ export async function haftarahSheet(structure: TorahData, marks: boolean): Promi
   const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
   const colours = readingColours(derived.items.length);
   const colourOf = (item: HaftarahItem) => colours[derived.items.indexOf(item)];
-  // As colorAt in src/overlays/haftarah.ts: a Torah verse shows its portion,
+  // As colorAt in apps/tanakh/src/overlays/haftarah.ts: a Torah verse shows its portion,
   // any other verse every reading it is part of.
   const fillsOf = (v: TanakhLayout, i: number) => {
     const key = v.id;
