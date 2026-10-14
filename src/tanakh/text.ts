@@ -36,7 +36,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
     return {
       items,
 
-      startCamera: (viewport) => createCamera(viewport, bounds),
+      startCamera: (viewport) => createCamera(viewport, bounds, LINK_KEYS.zoom),
 
       baseColor: (_, i) => getDefaultColor(i),
 

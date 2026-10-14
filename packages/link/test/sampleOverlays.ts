@@ -26,4 +26,5 @@ export const keys: LinkKeys = {
     { key: 'm', kind: 'names' },
   ],
   overlayParams: lookup,
+  zoom: { min: 0.1, max: 10, start: 1 },
 };

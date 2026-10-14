@@ -196,17 +196,21 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   return values as UrlParamValues<S>;
 }
 
-// The range a link may carry and the range the camera allows are one range;
-// this package owns it because packages cannot import from src/.
-export const MIN_ZOOM = 0.1;
-export const MAX_ZOOM = 10.0;
-// The zoom the map opens at, which a link leaves out.
-export const DEFAULT_ZOOM = 1.0;
+/**
+ * A text's zooms: the range its camera allows, which is the range a link may
+ * carry, and the zoom its map opens at, which a link leaves out.
+ */
+export interface ZoomRange {
+  min: number;
+  max: number;
+  start: number;
+}
 
 const MAX_PAN_POSITION = 1000000;
 
 type TextKey = 'story' | 'stop' | 'overlay';
-type NumberKey = 'zoom' | 'x' | 'y';
+export const NUMBER_KEY_NAMES = ['zoom', 'x', 'y'] as const;
+type NumberKey = (typeof NUMBER_KEY_NAMES)[number];
 
 /**
  * The parts of a view a link names under its own keys, and the pinned square's
@@ -248,16 +252,19 @@ export const TEXT_KEYS: Readonly<Record<TextKey, ViewKey<string>>> = {
 /** A square's id, e.g. "I.Samuel.1.5" or "Berakhot.2a.1". */
 export const SQUARE_ID: ViewKey<string> = name(100);
 
-export const NUMBER_KEYS: Readonly<Record<NumberKey, ViewKey<number>>> = {
-  zoom: number(2, (n) => n >= MIN_ZOOM && n <= MAX_ZOOM, DEFAULT_ZOOM),
-  x: pan,
-  y: pan,
-};
+/** The link's number keys, its zoom kept to `zoom`. */
+export function numberKeys(zoom: ZoomRange): Readonly<Record<NumberKey, ViewKey<number>>> {
+  return {
+    zoom: number(2, (n) => n >= zoom.min && n <= zoom.max, zoom.start),
+    x: pan,
+    y: pan,
+  };
+}
 
 /** No overlay may claim one of the link's own keys. */
 export const RESERVED_KEYS: ReadonlySet<string> = new Set([
   ...Object.keys(TEXT_KEYS),
-  ...Object.keys(NUMBER_KEYS),
+  ...NUMBER_KEY_NAMES,
 ]);
 
 function stripHtmlTags(value: string): string {

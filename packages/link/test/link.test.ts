@@ -67,6 +67,14 @@ describe('readLink', () => {
     expect(state.zoom).toBeUndefined();
   });
 
+  it("keeps a zoom within the text's own range, and only that", () => {
+    const wide: LinkKeys = { ...keys, zoom: { min: 0.01, max: 4, start: 0.5 } };
+    expect(readLink('?zoom=0.05', wide).zoom).toBe(0.05);
+    expect(readLink('?zoom=5', wide).zoom).toBeUndefined();
+    expect(writeLink({ overlayParams: {}, zoom: 0.5 }, wide)).toBe('');
+    expect(writeLink({ overlayParams: {}, zoom: 1 }, wide)).toBe('?zoom=1');
+  });
+
   it('parses x and y pan positions', () => {
     const state = readLink('?x=100.5&y=-50.25', keys);
     expect(state.x).toBe(100.5);
@@ -455,6 +463,7 @@ describe("a text's own keys", () => {
     square: 'at',
     search: [{ key: 'search', kind: 'text' }],
     overlayParams: lookup,
+    zoom: keys.zoom,
   };
 
   it('reads and writes the pinned square under the key its text names', () => {

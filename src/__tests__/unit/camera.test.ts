@@ -12,12 +12,14 @@ import {
 import { worldToScreen } from '../helpers/worldToScreen';
 import type { Bounds } from '../../types';
 
+const ZOOM = { min: 0.1, max: 10, start: 1 };
+
 describe('camera', () => {
   describe('createCamera', () => {
     it('opens with Genesis 1:1 320 px in from the window’s right edge, below the labels', () => {
       const bounds: Bounds = { width: 1000, height: 800 };
       const view = { width: 1540, height: 1080 };
-      const camera = createCamera(view, bounds, 1920);
+      const camera = createCamera(view, bounds, ZOOM, 1920);
 
       expect(camera.zoom).toBe(1);
       // Genesis 1:1 is the rightmost verse, so its right edge is the map's.
@@ -29,40 +31,36 @@ describe('camera', () => {
     it('measures from the canvas when no window width is given', () => {
       const bounds: Bounds = { width: 500, height: 400 };
       const view = { width: 800, height: 600 };
-      const corner = worldToScreen({ x: 500, y: 0 }, createCamera(view, bounds), view);
+      const corner = worldToScreen({ x: 500, y: 0 }, createCamera(view, bounds, ZOOM), view);
       expect(corner.x).toBeCloseTo(800 - 320, 10);
     });
   });
 
   describe('clampZoom', () => {
-    it('clamps values below minimum to 0.1', () => {
-      expect(clampZoom(0.05)).toBe(0.1);
-      expect(clampZoom(0.01)).toBe(0.1);
-      expect(clampZoom(0)).toBe(0.1);
-      expect(clampZoom(-1)).toBe(0.1);
+    const range = { min: 0.1, max: 10, start: 1 };
+
+    it('clamps values below minimum to the minimum', () => {
+      expect(clampZoom(0.05, range)).toBe(0.1);
+      expect(clampZoom(0, range)).toBe(0.1);
+      expect(clampZoom(-1, range)).toBe(0.1);
     });
 
-    it('clamps values above maximum to 10.0', () => {
-      expect(clampZoom(10.5)).toBe(10.0);
-      expect(clampZoom(20)).toBe(10.0);
-      expect(clampZoom(100)).toBe(10.0);
+    it('clamps values above maximum to the maximum', () => {
+      expect(clampZoom(10.5, range)).toBe(10.0);
+      expect(clampZoom(100, range)).toBe(10.0);
     });
 
-    it('returns values within range unchanged', () => {
-      expect(clampZoom(0.5)).toBe(0.5);
-      expect(clampZoom(1.0)).toBe(1.0);
-      expect(clampZoom(5.0)).toBe(5.0);
-      expect(clampZoom(9.9)).toBe(9.9);
+    it('returns values within range unchanged, boundaries included', () => {
+      expect(clampZoom(0.1, range)).toBe(0.1);
+      expect(clampZoom(5.0, range)).toBe(5.0);
+      expect(clampZoom(10.0, range)).toBe(10.0);
+      expect(clampZoom(0.10000001, range)).toBe(0.10000001);
     });
 
-    it('handles edge cases at exact boundaries', () => {
-      expect(clampZoom(0.1)).toBe(0.1);
-      expect(clampZoom(10.0)).toBe(10.0);
-    });
-
-    it('handles floating point precision near boundaries', () => {
-      expect(clampZoom(0.10000001)).toBe(0.10000001);
-      expect(clampZoom(9.99999999)).toBe(9.99999999);
+    it("keeps to the text's own range", () => {
+      const wide = { min: 0.01, max: 4, start: 0.5 };
+      expect(clampZoom(0.05, wide)).toBe(0.05);
+      expect(clampZoom(5, wide)).toBe(4);
     });
   });
 });
@@ -73,7 +71,7 @@ describe('cameraToFit', () => {
     worldToScreen({ x, y }, c, { width, height });
 
   it('fits a wide box to the width, centred', () => {
-    const c = cameraToFit(box, 832, 1000);
+    const c = cameraToFit(box, 832, 1000, ZOOM);
     expect(c.zoom).toBeCloseTo(2);
     const topLeft = onScreen(box.minX, box.minY, c, 832, 1000);
     const bottomRight = onScreen(box.maxX, box.maxY, c, 832, 1000);
@@ -84,7 +82,7 @@ describe('cameraToFit', () => {
   });
 
   it('fits a tall box to the height, below the book labels', () => {
-    const c = cameraToFit(box, 4000, 256);
+    const c = cameraToFit(box, 4000, 256, ZOOM);
     expect(c.zoom).toBeCloseTo(1);
     expect(onScreen(box.minX, box.minY, c, 4000, 256).y).toBeCloseTo(40);
     expect(onScreen(box.maxX, box.maxY, c, 4000, 256).y).toBeCloseTo(240);
@@ -92,7 +90,7 @@ describe('cameraToFit', () => {
   });
 
   it('keeps the box centred at a given zoom', () => {
-    const c = cameraToFit(box, 832, 1000, 0.5);
+    const c = cameraToFit(box, 832, 1000, ZOOM, 0.5);
     expect(c.zoom).toBe(0.5);
     expect(onScreen(300, 150, c, 832, 1000).x).toBeCloseTo(416);
   });

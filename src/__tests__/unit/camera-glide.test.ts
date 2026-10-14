@@ -9,7 +9,7 @@ import {
   type Camera,
 } from '../../camera';
 import { worldToScreen } from '../helpers/worldToScreen';
-import { MAX_ZOOM } from '@torahmap/link';
+const ZOOM = { min: 0.1, max: 10, start: 1 };
 
 const VERSE = { x: 400, y: 300, size: 6 };
 const FOCUS = { x: 300, y: 400 };
@@ -37,7 +37,7 @@ describe('centreForFocus', () => {
 
 describe('viewFocusedOn', () => {
   it('zooms in when the map is scaled out past the floor', () => {
-    const view = viewFocusedOn(VERSE, 1, 2.5, FOCUS, VIEW);
+    const view = viewFocusedOn(VERSE, 1, 2.5, FOCUS, VIEW, ZOOM);
 
     expect(view.zoom).toBe(2.5);
     expect(screenPosition(VERSE, view)).toBeCloseTo(FOCUS.x);
@@ -45,20 +45,20 @@ describe('viewFocusedOn', () => {
 
   it('leaves a reader who is already closer where they are', () => {
     // Pulling them back would undo a zoom they chose.
-    const view = viewFocusedOn(VERSE, 6, 2.5, FOCUS, VIEW);
+    const view = viewFocusedOn(VERSE, 6, 2.5, FOCUS, VIEW, ZOOM);
 
     expect(view.zoom).toBe(6);
   });
 
   it('centres at the zoom it settles on, not the one it started from', () => {
-    const view = viewFocusedOn(VERSE, 0.1, 2.5, FOCUS, VIEW);
+    const view = viewFocusedOn(VERSE, 0.1, 2.5, FOCUS, VIEW, ZOOM);
 
     // The trap: centre at 0.1 and then zoom to 2.5 and the verse flies away.
     expect(screenPosition(VERSE, view)).toBeCloseTo(FOCUS.x);
   });
 
   it('never exceeds the maximum zoom', () => {
-    expect(viewFocusedOn(VERSE, 1, MAX_ZOOM * 2, FOCUS, VIEW).zoom).toBe(MAX_ZOOM);
+    expect(viewFocusedOn(VERSE, 1, ZOOM.max * 2, FOCUS, VIEW, ZOOM).zoom).toBe(ZOOM.max);
   });
 });
 
